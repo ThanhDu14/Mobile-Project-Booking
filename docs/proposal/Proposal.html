@@ -1,0 +1,929 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset=utf8>
+    <meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <style>
+        :root {
+            box-sizing: border-box;
+            padding-top: env(safe-area-inset-top, 0px);
+            padding-bottom: env(safe-area-inset-bottom, 0px)
+        }
+
+        html {
+            scroll-padding-top: env(safe-area-inset-top, 0px)
+        }
+    </style>
+    <style>
+        :root {
+            color-scheme: light dark;
+            --md-bg: #fff;
+            --md-text: rgba(0, 0, 0, .8);
+            --md-muted: rgba(0, 0, 0, .6);
+            --md-fill: rgba(0, 0, 0, .04);
+            --md-fill-strong: rgba(0, 0, 0, .06);
+            --md-rule: rgba(0, 0, 0, .1);
+            --md-rule-strong: rgba(0, 0, 0, .16);
+            --md-link: hsl(210 100% 45%)
+        }
+
+        @media (prefers-color-scheme:dark) {
+            :root:where(:not([data-theme="light"])) {
+                --md-bg: #0d0d0d;
+                --md-text: rgba(255, 255, 255, .85);
+                --md-muted: rgba(255, 255, 255, .6);
+                --md-fill: rgba(255, 255, 255, .06);
+                --md-fill-strong: rgba(255, 255, 255, .09);
+                --md-rule: rgba(255, 255, 255, .14);
+                --md-rule-strong: rgba(255, 255, 255, .22);
+                --md-link: hsl(210 100% 72%)
+            }
+        }
+
+        :root[data-theme="dark"] {
+            color-scheme: dark;
+            --md-bg: #0d0d0d;
+            --md-text: rgba(255, 255, 255, .85);
+            --md-muted: rgba(255, 255, 255, .6);
+            --md-fill: rgba(255, 255, 255, .06);
+            --md-fill-strong: rgba(255, 255, 255, .09);
+            --md-rule: rgba(255, 255, 255, .14);
+            --md-rule-strong: rgba(255, 255, 255, .22);
+            --md-link: hsl(210 100% 72%)
+        }
+
+        :root[data-theme="light"] {
+            color-scheme: light
+        }
+
+        @media print {
+
+            :root,
+            :root[data-theme="dark"] {
+                color-scheme: light;
+                --md-bg: #fff;
+                --md-text: rgba(0, 0, 0, .8);
+                --md-muted: rgba(0, 0, 0, .6);
+                --md-fill: rgba(0, 0, 0, .04);
+                --md-fill-strong: rgba(0, 0, 0, .06);
+                --md-rule: rgba(0, 0, 0, .1);
+                --md-rule-strong: rgba(0, 0, 0, .16);
+                --md-link: hsl(210 100% 45%)
+            }
+        }
+
+        body {
+            background: var(--md-bg);
+            color: var(--md-text);
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            font: 14px/1.55 -apple-system, BlinkMacSystemFont, 'SF Pro', 'Segoe UI', sans-serif;
+            overflow-wrap: break-word
+        }
+
+        body>:first-child {
+            margin-top: 0
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+            margin: 6px 0 0;
+            line-height: 1.25;
+            font-weight: 600;
+            text-wrap: balance
+        }
+
+        h1 {
+            font-size: 1.35em
+        }
+
+        h2 {
+            font-size: 1.15em;
+            color: var(--md-muted)
+        }
+
+        h3,
+        h4,
+        h5,
+        h6 {
+            font-size: 1em
+        }
+
+        p,
+        ul,
+        ol,
+        blockquote,
+        table,
+        pre,
+        hr {
+            margin: 0
+        }
+
+        strong {
+            font-weight: 600
+        }
+
+        a {
+            color: var(--md-link);
+            text-decoration: none
+        }
+
+        a:hover {
+            text-decoration: underline
+        }
+
+        ul,
+        ol {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding-left: 22px
+        }
+
+        ul {
+            list-style: disc
+        }
+
+        ol {
+            list-style: decimal
+        }
+
+        :is(li, td, th)>*+:is(p, ul, ol, blockquote) {
+            margin-top: 6px
+        }
+
+        blockquote {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            border-left: 2px solid var(--md-rule);
+            padding-left: 10px;
+            color: var(--md-muted)
+        }
+
+        :not(pre)>code {
+            background: var(--md-fill);
+            padding: 1px 3px;
+            border-radius: 4px;
+            font: .92em 'SF Mono', ui-monospace, Menlo, Consolas, monospace
+        }
+
+        a>code {
+            background: none;
+            color: inherit
+        }
+
+        pre {
+            background: var(--md-fill);
+            padding: 10px 12px;
+            border-radius: 6px;
+            overflow-x: auto;
+            font: 12px/1.5 'SF Mono', ui-monospace, Menlo, Consolas, monospace;
+            margin-block: 4px
+        }
+
+        pre code {
+            background: none;
+            padding: 0;
+            font: inherit
+        }
+
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 2px;
+            font: inherit
+        }
+
+        th,
+        td {
+            padding: 6px 8px;
+            border-radius: 3px;
+            text-align: left;
+            vertical-align: top
+        }
+
+        th {
+            background: var(--md-fill-strong);
+            font-weight: 600
+        }
+
+        td {
+            background: var(--md-fill)
+        }
+
+        :is(th, td) :not(pre)>code {
+            background: transparent
+        }
+
+        hr {
+            border: 0;
+            border-top: 1px solid var(--md-rule-strong);
+            margin-block: 10px
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 4px
+        }
+    </style>
+</head>
+
+<body>
+    <h1>PROPOSAL ĐỒ ÁN</h1>
+    <h2>Ứng dụng di động đặt sân và kết nối cộng đồng cầu lông: <strong>SmashNow</strong></h2>
+    <blockquote>
+        <p>Ghi chú: tên app &quot;SmashNow&quot;
+        </p>
+    </blockquote>
+    <table>
+        <thead>
+            <tr>
+                <th>Mục</th>
+                <th>Nội dung</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Môn học / Giảng viên</td>
+                <td>Thầy Trương Toàn Thịnh, Thầy Hồ Tuấn Thanh</td>
+            </tr>
+            <tr>
+                <td>Nhóm</td>
+                <td>6</td>
+            </tr>
+            <tr>
+                <td>4 Thành viên</td>
+                <td>
+
+                </td>
+            </tr>
+            <tr>
+                <td>Repository Git</td>
+                <td>[Link]</td>
+            </tr>
+            <tr>
+                <td>App tham khảo</td>
+                <td>Alobo</td>
+            </tr>
+        </tbody>
+    </table>
+    <hr>
+    <h2>1. Giới thiệu và đặt vấn đề</h2>
+    <p>Cầu lông là một trong những môn thể thao phổ biến nhất tại Việt Nam. Tuy nhiên, việc đặt sân hiện vẫn còn nhiều
+        bất tiện:</p>
+    <ul>
+        <li>Người chơi phải gọi điện hoặc nhắn Zalo cho từng sân để hỏi giờ trống, dễ bị trùng lịch hoặc mất công hỏi
+            nhiều nơi.</li>
+        <li>Chủ sân quản lý lịch bằng sổ sách hoặc tin nhắn, khó thống kê doanh thu, dễ nhầm giờ.</li>
+        <li>Người chơi lẻ muốn chơi theo lượt (vãng lai), không thuê nguyên sân, thường phải hỏi từng sân hoặc tìm qua
+            nhóm mạng xã hội rời rạc để biết buổi nào còn chỗ.</li>
+    </ul>
+    <p><strong>SmashCourt</strong> là ứng dụng di động kết nối ba đối tượng: <strong>người chơi</strong>, <strong>chủ
+            sân</strong> và <strong>quản trị viên</strong>. Ứng dụng cho phép tìm sân, xem lịch trống theo thời gian
+        thực, đặt sân, đăng ký chơi vãng lai, trò chuyện và quản lý sân trên cùng một nền tảng.</p>
+    <h2>2. Mục tiêu</h2>
+    <p><strong>Mục tiêu chung:</strong> xây dựng ứng dụng đặt sân cầu lông hoàn chỉnh, có thể sử dụng thực tế trong phạm
+        vi một cụm sân nhỏ hoặc một CLB.</p>
+    <p><strong>Mục tiêu cụ thể:</strong></p>
+    <ol>
+        <li>Hoàn thành tối thiểu 12 nhóm tính năng như mô tả ở mục 5 (yêu cầu của môn học: tối thiểu 9 nhóm và không ít
+            hơn 3 nhóm cho mỗi thành viên).</li>
+        <li>Giải quyết đúng bài toán <strong>không trùng khung giờ</strong> khi nhiều người đặt cùng lúc.</li>
+        <li>Có đủ ba vai trò với giao diện và quyền hạn riêng: người chơi, chủ sân, admin.</li>
+        <li>Tuân thủ quy định pháp luật về dữ liệu cá nhân và thương mại điện tử (mục 8).</li>
+        <li>Quản lý mã nguồn bằng Git, ghi lại quy trình dùng AI, báo cáo tiến độ hàng tuần.</li>
+    </ol>
+    <h2>3. Phân tích ứng dụng tham khảo</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>App</th>
+                <th>Vai trò trong đồ án</th>
+                <th>Nhóm tính năng tham khảo</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Alobo</strong></td>
+                <td>App chính, nổi tiếng quốc tế</td>
+                <td>Tìm sân, chi tiết sân, đặt sân, đặt lịch vãng lai, nhóm, đánh giá, thông báo</td>
+            </tr>
+        </tbody>
+    </table>
+    <p>Những nhóm tính năng app tham khảo không có hoặc không cho dùng thử miễn phí (ví dụ trang admin, đặt cố định theo
+        tuần) sẽ được nhóm tự thiết kế dựa trên nghiệp vụ thực tế và có ghi chú rõ trong tài liệu.</p>
+    <h2>4. Phạm vi và khác biệt so với app có sẵn</h2>
+    <ul>
+        <li><strong>Không trùng với app có sẵn trên Android</strong> (album ảnh, quản lý file, ghi âm, bản đồ). Bản đồ
+            Google Maps chỉ dùng để hiển thị vị trí các sân cầu lông (marker icon quả cầu lông) trong nhóm &quot;Tìm
+            kiếm sân&quot; và &quot;Chi tiết sân&quot;, không phải trọng tâm; nghiệp vụ chính vẫn là đặt lịch và quản lý
+            sân.</li>
+        <li><strong>Có ý nghĩa sử dụng:</strong> trọng tâm là nghiệp vụ đặt lịch, quản lý sân, đặt lịch vãng lai, không
+            phải chỉ để trình diễn kỹ thuật.</li>
+        <li><strong>Ngoài phạm vi:</strong> thanh toán tiền thật (chỉ giả lập), tích hợp cổng thanh toán chính thức, ứng
+            dụng dành cho iOS (nếu chọn Android-only).</li>
+    </ul>
+    <h2>5. Danh sách nhóm tính năng chi tiết</h2>
+    <h3>Phía người chơi</h3>
+    <p><strong>Nhóm 1. Tài khoản</strong></p>
+    <ul>
+        <li>Đăng ký bằng email hoặc số điện thoại, chọn mục đích sử dụng: &quot;Tôi muốn đặt sân&quot; (người chơi) hoặc
+            &quot;Tôi là chủ sân&quot;</li>
+        <li>Đăng nhập bằng email/mật khẩu, số điện thoại, Google</li>
+        <li>Xác thực OTP</li>
+        <li>Quên mật khẩu, đặt lại mật khẩu</li>
+        <li>Xem và chỉnh sửa hồ sơ (ảnh đại diện, tên, trình độ, khu vực hay chơi)</li>
+        <li>Đổi mật khẩu, đăng xuất</li>
+        <li>Chuyển chế độ &quot;Người chơi / Quản lý sân&quot; đối với tài khoản chủ sân đã được duyệt</li>
+        <li>Xem trạng thái hồ sơ chủ sân (chờ duyệt, đã duyệt, bị từ chối kèm lý do) và nộp lại hồ sơ</li>
+    </ul>
+    <p><strong>Nhóm 2. Tìm kiếm sân</strong></p>
+    <ul>
+        <li>Tìm theo tên sân, quận/huyện</li>
+        <li>Bộ lọc: khoảng giá, khung giờ còn trống, tiện ích (gửi xe, nước uống, phòng tắm, cho thuê vợt)</li>
+        <li>Sắp xếp: gần nhất, giá, đánh giá</li>
+        <li>Gợi ý sân gần vị trí hiện tại</li>
+        <li>Chế độ xem bản đồ: hiển thị các sân cầu lông bằng marker icon quả cầu lông, chạm vào marker để xem thẻ tóm
+            tắt (tên, giá từ, đánh giá) rồi vào chi tiết sân</li>
+        <li>Lưu lịch sử tìm kiếm</li>
+    </ul>
+    <p><strong>Nhóm 3. Chi tiết sân</strong></p>
+    <ul>
+        <li>Thư viện ảnh</li>
+        <li>Bảng giá theo khung giờ (giờ thường, giờ cao điểm, cuối tuần)</li>
+        <li>Tiện ích, số lượng sân, loại mặt sân</li>
+        <li>Giờ mở cửa, thông tin liên hệ</li>
+        <li>Vị trí trên bản đồ nhúng (marker quả cầu lông) và chỉ đường (mở Google Maps)</li>
+        <li>Đánh giá tổng quan</li>
+    </ul>
+    <p><strong>Nhóm 4. Đặt sân</strong></p>
+    <ul>
+        <li>Chọn ngày trên lịch</li>
+        <li>Xem lưới khung giờ theo từng sân (trống / đã đặt / khóa)</li>
+        <li>Chọn nhiều sân, nhiều khung giờ liên tiếp trong một đơn</li>
+        <li>Đặt cố định theo tuần (ví dụ mỗi tối thứ Ba)</li>
+        <li>Màn hình xác nhận đơn, tổng tiền</li>
+        <li>Giữ chỗ tạm thời trong 5 phút trong lúc thanh toán</li>
+        <li>Chống trùng lịch khi nhiều người đặt cùng lúc</li>
+    </ul>
+    <p><strong>Nhóm 5. Thanh toán và khuyến mãi (giả lập)</strong></p>
+    <ul>
+        <li>Chọn phương thức: thanh toán tại sân, đặt cọc, ví giả lập</li>
+        <li>Nhập mã voucher, kiểm tra điều kiện áp dụng</li>
+        <li>Xem hóa đơn điện tử</li>
+        <li>Tự động hủy đơn nếu quá hạn thanh toán</li>
+    </ul>
+    <p><strong>Nhóm 6. Quản lý lịch đặt</strong></p>
+    <ul>
+        <li>Danh sách lịch sắp tới, đang chờ duyệt, đã hoàn thành, đã hủy</li>
+        <li>Xem chi tiết đơn</li>
+        <li>Hủy đơn theo chính sách (ví dụ hủy trước 4 giờ)</li>
+        <li>Đề nghị đổi lịch</li>
+        <li>Mã QR check-in tại sân</li>
+        <li>Đặt lại nhanh từ lịch sử</li>
+    </ul>
+    <p><strong>Nhóm 7. Đánh giá và yêu thích</strong></p>
+    <ul>
+        <li>Chấm sao theo tiêu chí (chất lượng sân, vệ sinh, thái độ phục vụ)</li>
+        <li>Viết bình luận, đính kèm ảnh</li>
+        <li>Chỉ cho phép đánh giá sau khi đã hoàn thành đơn</li>
+        <li>Lưu sân yêu thích, xem danh sách yêu thích</li>
+        <li>Chủ sân phản hồi đánh giá</li>
+    </ul>
+    <p><strong>Nhóm 8. Đặt lịch vãng lai</strong></p>
+    <ul>
+        <li>Danh sách buổi vãng lai do sân/CLB mở (ngày, giờ, sân, trình độ, số chỗ còn lại, giá theo lượt)</li>
+        <li>Lọc theo khu vực, ngày, khung giờ, trình độ, mức giá</li>
+        <li>Đăng ký chơi theo lượt: chọn buổi, số người (đi một mình hoặc kèm bạn), xác nhận</li>
+        <li>Thanh toán theo lượt (giả lập) hoặc trả tại sân, xem vé lượt và mã QR check-in</li>
+        <li>Xếp hàng chờ khi buổi đã đủ người, tự động thông báo khi có người hủy</li>
+        <li>Hủy đăng ký theo chính sách, xem lịch sử các buổi đã tham gia</li>
+        <li>Đánh giá buổi chơi sau khi tham gia</li>
+    </ul>
+    <p><strong>Nhóm 9. Cộng đồng và chat</strong></p>
+    <ul>
+        <li>Tạo, tham gia nhóm/CLB</li>
+        <li>Bảng tin nhóm (bài đăng, sự kiện giao lưu)</li>
+        <li>Chat nhóm thời gian thực</li>
+        <li>Chat riêng với chủ sân để hỏi về lịch, giá</li>
+        <li>Gửi ảnh trong chat</li>
+        <li>Báo cáo tin nhắn, bài đăng vi phạm</li>
+    </ul>
+    <p><strong>Nhóm 10. Thông báo</strong></p>
+    <ul>
+        <li>Xác nhận đặt sân thành công / bị từ chối</li>
+        <li>Nhắc lịch trước giờ chơi (ví dụ trước 2 giờ)</li>
+        <li>Thông báo vãng lai: đăng ký thành công, có chỗ trống từ hàng chờ, buổi bị hủy hoặc đổi giờ</li>
+        <li>Khuyến mãi từ sân đã theo dõi</li>
+        <li>Trung tâm thông báo, đánh dấu đã đọc, bật/tắt từng loại</li>
+    </ul>
+    <h3>Phía chủ sân và quản trị</h3>
+    <p><strong>Nhóm 11. Quản lý sân (chủ sân)</strong></p>
+    <ul>
+        <li>Đăng ký chủ sân: tạo tài khoản, điền hồ sơ cơ sở (tên cơ sở, địa chỉ ghim bản đồ, số sân, giờ mở cửa, người
+            đại diện, số điện thoại), tải ảnh cơ sở và ảnh giấy tờ chứng minh</li>
+        <li>Theo dõi trạng thái duyệt; trong lúc chờ duyệt chỉ dùng được như người chơi, chưa đăng được sân</li>
+        <li>Sau khi được duyệt: nhận thông báo và mở khóa các chức năng quản lý bên dưới</li>
+        <li>Thêm, sửa, ẩn cơ sở; quản lý từng sân con</li>
+        <li>Ghim vị trí cơ sở trên bản đồ hoặc nhập địa chỉ để lấy tọa độ</li>
+        <li>Thiết lập bảng giá theo khung giờ và ngày trong tuần</li>
+        <li>Khóa giờ (bảo trì, sự kiện, khách đặt trực tiếp)</li>
+        <li>Duyệt hoặc từ chối đơn đặt</li>
+        <li>Xem lịch tổng hợp theo ngày, tuần</li>
+        <li>Mở buổi vãng lai: đặt ngày, giờ, sân, số chỗ, giá theo lượt; xem và duyệt danh sách đăng ký, check-in bằng
+            QR</li>
+        <li>Tạo voucher khuyến mãi</li>
+        <li>Thống kê doanh thu, tỉ lệ lấp đầy, khung giờ đông nhất (biểu đồ)</li>
+    </ul>
+    <p><strong>Nhóm 12. Quản trị (admin)</strong></p>
+    <ul>
+        <li>Xem danh sách hồ sơ chủ sân đang chờ duyệt, xem chi tiết và giấy tờ đính kèm</li>
+        <li>Duyệt (nâng vai trò thành chủ sân) hoặc từ chối kèm lý do bắt buộc; thông báo kết quả cho người nộp</li>
+        <li>Thu hồi quyền chủ sân, khóa cơ sở vi phạm</li>
+        <li>Quản lý người dùng: xem, khóa, mở khóa tài khoản</li>
+        <li>Xử lý báo cáo vi phạm (bài đăng, tin nhắn, đánh giá, tin đăng)</li>
+        <li>Quản lý danh mục: khu vực, tiện ích</li>
+        <li>Thống kê toàn hệ thống (số người dùng, số đơn, sân hoạt động)</li>
+        <li>Gửi thông báo hệ thống</li>
+    </ul>
+    <p><strong>Nhóm dự phòng (làm nếu còn thời gian):</strong> tích điểm và hạng thành viên; đối tượng thi đấu/giải giao
+        hữu.</p>
+    <h3>Sơ đồ luồng tổng quan của ứng dụng</h3>
+    <p>Sơ đồ dưới đây mô tả luồng người dùng từ lúc khởi chạy, đăng ký/đăng nhập, phân quyền, đặt sân hoặc đặt lịch vãng
+        lai, thanh toán, check-in, đánh giá, đến kết nối cộng đồng và phần quản trị của chủ sân. Số trong từng khối
+        tương ứng với số thứ tự nhóm tính năng ở trên. <em>(Kéo ngang để xem toàn bộ sơ đồ.)</em></p>
+    <pre style="font-size:10px;line-height:1.35;white-space:pre">┌────────────────────────────────────────────────────────┐
+               │              KHỞI CHẠY ỨNG DỤNG MOBILE                 │
+               │   - Màn hình Splash / Onboarding giới thiệu tính năng  │
+               └───────────────────────────┬────────────────────────────┘
+                                           │
+                                           ▼
+               ┌────────────────────────────────────────────────────────┐
+               │           1. ĐĂNG KÝ / ĐĂNG NHẬP / XÁC THỰC            │
+               │ - Đăng ký: Chọn "Tôi muốn đặt sân" / "Tôi là chủ sân"  │
+               │ - Đăng nhập Email, SĐT, Google, OTP, Quên mật khẩu     │
+               └───────────────────────────┬────────────────────────────┘
+                                           │
+                                           ▼
+                                   /───────────────\
+                                  &lt;   Phân quyền    &gt;
+                                   \───────┬───────/
+                       Chủ sân (Đã duyệt)  │   Người chơi / Chủ sân chờ duyệt
+                 ┌─────────────────────────┴────────────────────────┐
+                 │                                                  │
+                 ▼                                                  ▼
+┌──────────────────────────────────────────┐      ┌──────────────────────────────────────────┐
+│  BẬT CHUYỂN "QUẢN LÝ SÂN" (CHỦ SÂN)      │      │          GIAO DIỆN NGƯỜI CHƠI            │
+│  (Chế độ điều hành &amp; quản trị cơ sở)     │      │  - Xem hồ sơ, chỉnh sửa trình độ, khu vực│
+└────────────────────┬─────────────────────┘      │  - Xem trạng thái duyệt hồ sơ chủ sân    │
+                     │                            └────────────────────┬─────────────────────┘
+                     │                                                 │
+                     │                  ┌──────────────────────────────┴──────────────────────────────┐
+                     │                  │                                                             │
+                     │                  ▼                                                             ▼
+                     │   ┌──────────────────────────────────────────┐                  ┌──────────────────────────────────────────┐
+                     │   │        2. TÌM KIẾM &amp; BẢN ĐỒ SÂN          │                  │           8. ĐẶT LỊCH VÃNG LAI           │
+                     │   │ - Lọc giá, giờ trống, tiện ích, cự ly    │                  │ - Danh sách buổi vãng lai (CLB/Sân mở)   │
+                     │   │ - Xem bản đồ (Marker quả cầu lông)       │                  │ - Lọc theo trình độ, giá, khu vực, giờ   │
+                     │   │ - Xem thẻ tóm tắt -&gt; Vào chi tiết sân    │                  └──────────────────────┬───────────────────┘
+                     │   └──────────────────┬───────────────────────┘                                         │
+                     │                      │                                                                 │
+                     │                      ▼                                                                 ▼
+                     │   ┌──────────────────────────────────────────┐                  ┌──────────────────────────────────────────┐
+                     │   │            3. CHI TIẾT SÂN               │                  │       ĐĂNG KÝ CHƠI LƯỢT / HÀNG CHỜ       │
+                     │   │ - Thư viện ảnh, bảng giá khung giờ/tuần  │                  │ - Chọn số người tham gia (đi 1/kèm bạn)  │
+                     │   │ - Tiện ích, loại thảm, chỉ đường Maps    │                  │ - Hết chỗ: Xếp hàng chờ (Báo khi có slot)│
+                     │   │ - Đánh giá tổng quan, Chat hỏi chủ sân   │                  └──────────────────────┬───────────────────┘
+                     │   └──────────────────┬───────────────────────┘                                         │
+                     │                      │                                                                 │
+                     │                      ▼                                                                 │
+                     │   ┌──────────────────────────────────────────┐                                         │
+                     │   │          4. CHỌN LỊCH ĐẶT SÂN            │                                         │
+                     │   │ - Chọn ngày, lưới giờ (Trống/Đã đặt/Khóa)│                                         │
+                     │   │ - Đặt lẻ nhiều slot hoặc Cố định tuần    │                                         │
+                     │   │ - Giữ chỗ tạm thời 5 phút (Chống trùng)  │                                         │
+                     │   └──────────────────┬───────────────────────┘                                         │
+                     │                      │                                                                 │
+                     │                      └──────────────────────────────┬──────────────────────────────────┘
+                     │                                                     │
+                     │                                                     ▼
+                     │                                  ┌──────────────────────────────────────────┐
+                     │                                  │      5. THANH TOÁN (GIẢ LẬP) &amp; VOUCHER   │
+                     │                                  │ - Nhập mã khuyến mãi, kiểm tra hợp lệ    │
+                     │                                  │ - Chọn: Trả tại sân, đặt cọc, ví giả lập │
+                     │                                  │ - Quá 5 phút: Tự hủy &amp; hoàn lại slot     │
+                     │                                  └──────────────────┬───────────────────────┘
+                     │                                                     │ (Thanh toán thành công)
+                     │                                                     ▼
+                     │                                  ┌──────────────────────────────────────────┐
+                     │                                  │         6. QUẢN LÝ ĐƠN &amp; VÉ CHECK-IN     │
+                     │                                  │ - Xuất hóa đơn điện tử / Vé lượt vãng lai│
+                     │                                  │ - Nhận QR Code check-in tại sân          │
+                     │                                  │ - Hủy đơn theo hạn / Yêu cầu đổi lịch    │
+                     │                                  └──────────────────┬───────────────────────┘
+                     │                                                     │ (Đến sân quét QR)
+                     │                                                     ▼
+┌────────────────────┴─────────────────────┐            ┌──────────────────────────────────────────┐
+│        11. QUẢN TRỊ DÀNH CHO CHỦ SÂN     │            │          CHECK-IN &amp; HOÀN THÀNH           │
+│ - Quét QR check-in khách tại sân         │◄───────────┤ - Chủ sân xác thực vé QR tại quầy        │
+│ - Xem lưới lịch tổng hợp (ngày/tuần)     │ (Đối soát) │ - Bắt đầu buổi chơi cầu                  │
+│ - Khóa giờ sự kiện, bảo trì, khách vãng  │            └──────────────────┬───────────────────────┘
+│ - Quản lý sân con, giá giờ cao điểm      │                               │ (Chơi xong)
+│ - Mở buổi vãng lai, duyệt danh sách      │                               ▼
+│ - Tạo voucher &amp; Thống kê doanh thu/tỷ lệ │            ┌──────────────────────────────────────────┐
+└──────────────────────────────────────────┘            │         7. ĐÁNH GIÁ &amp; LƯU YÊU THÍCH      │
+                                                        │ - Chấm điểm sao (Thảm, vệ sinh, dịch vụ) │
+                                                        │ - Đính kèm ảnh thực tế &amp; bình luận       │
+                                                        │ - Thêm sân vào danh sách "Yêu thích"     │
+                                                        │ - Chủ sân phản hồi đánh giá              │
+                                                        └──────────────────┬───────────────────────┘
+                                                                           │
+                                                                           ▼
+                                                        ┌──────────────────────────────────────────┐
+                                                        │       9 &amp; 10. KẾT NỐI &amp; THÔNG BÁO        │
+                                                        │ - Tham gia CLB, đăng bài bảng tin nhóm   │
+                                                        │ - Chat realtime nội bộ nhóm giao lưu     │
+                                                        │ - Nhận push nhắc lịch trước 2h           │
+                                                        └──────────────────────────────────────────┘</pre>
+    <h2>6. Phân quyền theo vai trò</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Chức năng</th>
+                <th style="text-align:center">Khách</th>
+                <th style="text-align:center">Người chơi</th>
+                <th style="text-align:center">Chủ sân</th>
+                <th style="text-align:center">Admin</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Xem danh sách sân</td>
+                <td style="text-align:center">Có</td>
+                <td style="text-align:center">Có</td>
+                <td style="text-align:center">Có</td>
+                <td style="text-align:center">Có</td>
+            </tr>
+            <tr>
+                <td>Đặt sân, đăng ký vãng lai, chat</td>
+                <td style="text-align:center">Không</td>
+                <td style="text-align:center">Có</td>
+                <td style="text-align:center">Có (chat)</td>
+                <td style="text-align:center">Không</td>
+            </tr>
+            <tr>
+                <td>Nộp hồ sơ đăng ký chủ sân</td>
+                <td style="text-align:center">Không</td>
+                <td style="text-align:center">Có</td>
+                <td style="text-align:center">Có (nộp lại khi bị từ chối)</td>
+                <td style="text-align:center">Không</td>
+            </tr>
+            <tr>
+                <td>Quản lý sân, duyệt đơn</td>
+                <td style="text-align:center">Không</td>
+                <td style="text-align:center">Không</td>
+                <td style="text-align:center">Có</td>
+                <td style="text-align:center">Không</td>
+            </tr>
+            <tr>
+                <td>Duyệt cơ sở, xử lý vi phạm</td>
+                <td style="text-align:center">Không</td>
+                <td style="text-align:center">Không</td>
+                <td style="text-align:center">Không</td>
+                <td style="text-align:center">Có</td>
+            </tr>
+        </tbody>
+    </table>
+    <h3>Quy trình xác minh vai trò chủ sân</h3>
+    <ol>
+        <li>Người dùng chọn &quot;Tôi là chủ sân&quot; khi đăng ký, tạo tài khoản như người chơi
+            (<code>role = player</code>, <code>ownerStatus = pending</code> sau khi nộp hồ sơ).</li>
+        <li>Điền hồ sơ cơ sở và tải ảnh giấy tờ chứng minh (giấy phép kinh doanh hoặc ảnh biển hiệu kèm giấy tờ người
+            đại diện).</li>
+        <li>Trong lúc chờ duyệt, người dùng dùng app như người chơi, chưa đăng được sân.</li>
+        <li>Admin xem hồ sơ: duyệt thì <code>role = owner</code>, <code>ownerStatus = approved</code> và gửi thông báo;
+            từ chối thì <code>ownerStatus = rejected</code> kèm lý do, người dùng sửa và nộp lại.</li>
+        <li>Chủ sân đã duyệt có thể chuyển chế độ &quot;Người chơi / Quản lý sân&quot; trong cùng một tài khoản.</li>
+    </ol>
+    <p>Quyền được kiểm tra ở phía server (Security Rules, Cloud Functions), vì chỉ ẩn nút trên giao diện thì người dùng
+        vẫn có thể gọi trực tiếp vào cơ sở dữ liệu. Dữ liệu giấy tờ là dữ liệu nhạy cảm nên chỉ admin và người nộp được
+        xem.</p>
+    <h2>7. Yêu cầu phi chức năng</h2>
+    <ul>
+        <li><strong>Hiệu năng:</strong> màn hình danh sách và lưới giờ tải dưới 3 giây trên mạng 4G thông thường.</li>
+        <li><strong>Bảo mật:</strong> dùng Firebase Security Rules phân quyền theo vai trò (kiểm tra quyền ở phía
+            server, không chỉ ẩn nút trên giao diện; người dùng không tự sửa được trường <code>role</code>; chỉ chủ sân
+            đã duyệt mới ghi được vào cơ sở và sân; tài khoản admin do nhóm cấp thủ công, không có màn hình đăng ký
+            admin; ảnh giấy tờ lưu riêng, chỉ admin và người nộp xem được); mật khẩu không lưu ở client; không đưa khóa
+            bí mật vào repository.</li>
+        <li><strong>Tính dùng được:</strong> giao diện tiếng Việt, hỗ trợ chế độ sáng/tối, thao tác đặt sân tối đa 5
+            bước.</li>
+        <li><strong>Độ tin cậy:</strong> xử lý mất mạng (hiển thị thông báo, thử lại), không tạo đơn trùng khi bấm nhiều
+            lần.</li>
+        <li><strong>Khả năng bảo trì:</strong> chia module theo tính năng, đặt tên nhất quán, có README hướng dẫn chạy.
+        </li>
+    </ul>
+    <h2>9. Tuân thủ pháp luật và đạo đức</h2>
+    <ul>
+        <li><strong>Dữ liệu cá nhân:</strong> thu thập tối thiểu (họ tên, số điện thoại, email, vị trí khi được cho
+            phép); có màn hình đồng ý điều khoản và chính sách quyền riêng tư khi đăng ký, cho phép người dùng xóa tài
+            khoản; tuân thủ tinh thần Nghị định 13/2023/NĐ-CP về bảo vệ dữ liệu cá nhân.</li>
+        <li><strong>Thanh toán:</strong> chỉ giả lập, không thu tiền thật, không lưu thông tin thẻ. Ghi rõ trong app đây
+            là phiên bản học tập.</li>
+        <li><strong>Nội dung người dùng:</strong> có cơ chế báo cáo và kiểm duyệt bình luận, tin nhắn, ảnh.</li>
+        <li><strong>Bản quyền:</strong> ảnh sân dùng ảnh tự chụp, ảnh miễn phí bản quyền hoặc ảnh do chủ sân cung cấp;
+            không sao chép nguyên văn giao diện, logo, nội dung của app tham khảo.</li>
+        <li><strong>Dữ liệu demo:</strong> dùng dữ liệu giả hợp lý, không dùng thông tin thật của người khác.</li>
+    </ul>
+    <h2>10. Phân công công việc</h2>
+    <p>Phân công theo từng thành viên sẽ chốt sau khi biết số người. Nguyên tắc: mỗi người phụ trách trọn vẹn tối thiểu
+        3 nhóm tính năng (cả giao diện, logic, kiểm thử), và cùng tham gia viết tài liệu.</p>
+    <p><strong>Phương án 4 thành viên (12 nhóm)</strong></p>
+    <table>
+        <thead>
+            <tr>
+                <th>Thành viên</th>
+                <th>Nhóm phụ trách</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>A</td>
+                <td>1, 2, 3</td>
+            </tr>
+            <tr>
+                <td>B</td>
+                <td>4, 5, 6</td>
+            </tr>
+            <tr>
+                <td>C</td>
+                <td>7, 8, 9</td>
+            </tr>
+            <tr>
+                <td>D</td>
+                <td>10, 11, 12</td>
+            </tr>
+        </tbody>
+    </table>
+    <p><strong>Việc chung:</strong> thiết kế giao diện (Figma), thiết kế CSDL, cấu hình Firebase, viết báo cáo tuần,
+        quay video demo. Mỗi việc chung có một người đứng đầu luân phiên.</p>
+    <h2>11. Kế hoạch thực hiện</h2>
+    <p><em>(Điều chỉnh theo lịch học kỳ; dưới đây là kế hoạch 12 tuần.)</em></p>
+    <table>
+        <thead>
+            <tr>
+                <th>Tuần</th>
+                <th>Công việc chính</th>
+                <th>Sản phẩm</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>1</td>
+                <td>Chốt ý tưởng, khảo sát app tham khảo, chụp màn hình luồng tính năng, họp 02/10</td>
+                <td>Danh sách nhóm tính năng + ảnh chụp, proposal</td>
+            </tr>
+            <tr>
+                <td>2</td>
+                <td>Thiết kế CSDL, wireframe Figma, dựng project, cấu hình Firebase, quy ước Git</td>
+                <td>Repo, sơ đồ ER, wireframe</td>
+            </tr>
+            <tr>
+                <td>3</td>
+                <td>Nhóm 1 (Tài khoản) và khung điều hướng theo vai trò</td>
+                <td>Đăng ký/đăng nhập chạy được</td>
+            </tr>
+            <tr>
+                <td>4-5</td>
+                <td>Nhóm 2, 3, 11 (dữ liệu sân), nhập dữ liệu mẫu</td>
+                <td>Xem được sân, chủ sân thêm sân</td>
+            </tr>
+            <tr>
+                <td>6-7</td>
+                <td>Nhóm 4, 5, 6 (đặt sân, thanh toán, lịch đặt), kiểm thử chống trùng lịch</td>
+                <td>Luồng đặt sân hoàn chỉnh</td>
+            </tr>
+            <tr>
+                <td>8</td>
+                <td>Nhóm 7, 10 (đánh giá, thông báo)</td>
+                <td>Đánh giá và thông báo chạy được</td>
+            </tr>
+            <tr>
+                <td>9-10</td>
+                <td>Nhóm 8, 9 (đặt lịch vãng lai, cộng đồng, chat)</td>
+                <td>Đặt lịch vãng lai và chat chạy được</td>
+            </tr>
+            <tr>
+                <td>11</td>
+                <td>Nhóm 12 (admin), thống kê, sửa lỗi, kiểm thử tổng thể</td>
+                <td>Bản beta</td>
+            </tr>
+            <tr>
+                <td>12</td>
+                <td>Hoàn thiện, viết báo cáo, quay video demo, chuẩn bị bảo vệ</td>
+                <td>Bản nộp cuối</td>
+            </tr>
+        </tbody>
+    </table>
+    <h2>12. Quản lý mã nguồn bằng Git</h2>
+    <ul>
+        <li><strong>Mô hình nhánh:</strong> <code>main</code> (ổn định), <code>develop</code> (tích hợp),
+            <code>feature/&lt;nhóm&gt;-&lt;tên&gt;</code> (mỗi tính năng một nhánh).
+        </li>
+        <li><strong>Quy tắc commit:</strong> nhỏ, thường xuyên, thông điệp rõ ràng theo dạng
+            <code>feat(booking): thêm lưới chọn khung giờ</code>, <code>fix(auth): sửa lỗi OTP</code>,
+            <code>docs: cập nhật proposal</code>.
+        </li>
+        <li><strong>Pull Request:</strong> mỗi PR cần ít nhất một thành viên khác review trước khi merge vào
+            <code>develop</code>.
+        </li>
+        <li><strong>Cân bằng đóng góp:</strong> mỗi người cam kết tối thiểu vài commit mỗi tuần; đội theo dõi thống kê
+            commit hàng tuần (GitHub Insights), có ghi nhận trong báo cáo tuần.</li>
+        <li><strong>Tài liệu cũng lưu trong repo:</strong> thư mục <code>docs/</code> (proposal, báo cáo tuần, thiết kế,
+            log AI).</li>
+        <li>Không commit khóa API, file cấu hình bí mật (dùng <code>.gitignore</code>).</li>
+    </ul>
+    <h2>13. Quy trình sử dụng AI có trách nhiệm</h2>
+    <p>AI (ví dụ Claude) được dùng như trợ lý, không thay thế việc hiểu và chịu trách nhiệm về sản phẩm.</p>
+    <p><strong>Quy trình 5 bước:</strong></p>
+    <ol>
+        <li><strong>Xác định mục đích:</strong> ghi rõ cần AI hỗ trợ việc gì (giải thích khái niệm, gợi ý cấu trúc, sinh
+            mã mẫu, review, viết test).</li>
+        <li><strong>Viết prompt có ngữ cảnh:</strong> nêu công nghệ, ràng buộc, đầu ra mong muốn.</li>
+        <li><strong>Kiểm tra kết quả:</strong> tự đọc, chạy thử, so với tài liệu chính thức; không dán mã mà chưa hiểu.
+        </li>
+        <li><strong>Chỉnh sửa và tích hợp:</strong> sửa cho phù hợp kiến trúc dự án, chạy test.</li>
+        <li><strong>Ghi log:</strong> lưu prompt, kết quả, phần đã dùng/đã sửa/bị loại và lý do.</li>
+    </ol>
+    <p><strong>Nơi lưu log:</strong> thư mục <code>docs/ai-log/</code>, mỗi tệp theo mẫu:</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Trường</th>
+                <th>Nội dung</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Ngày, người thực hiện</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Nhóm tính năng liên quan</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Mục đích</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Prompt đã dùng</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Tóm tắt phản hồi của AI</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Phần đã sử dụng / chỉnh sửa / bỏ</td>
+                <td></td>
+            </tr>
+            <tr>
+                <td>Cách kiểm chứng</td>
+                <td></td>
+            </tr>
+        </tbody>
+    </table>
+    <p><strong>Nguyên tắc:</strong></p>
+    <ul>
+        <li>Không đưa dữ liệu cá nhân thật, khóa bí mật vào prompt.</li>
+        <li>Mọi thành viên phải giải thích được phần mã mình nộp, kể cả khi có AI hỗ trợ.</li>
+        <li>Không dùng AI để làm thay toàn bộ nhóm tính năng của người khác.</li>
+        <li>Nêu rõ trong báo cáo phần nào có hỗ trợ của AI.</li>
+    </ul>
+    <h2>14. Báo cáo tiến độ hàng tuần</h2>
+    <p>Mỗi tuần nộp báo cáo (link Moodle) gồm:</p>
+    <ul>
+        <li>Công việc đã hoàn thành của từng thành viên</li>
+        <li>Minh chứng: link commit/PR, ảnh chụp màn hình, video ngắn</li>
+        <li>Vấn đề gặp phải và cách giải quyết</li>
+        <li>Kế hoạch tuần kế tiếp</li>
+        <li>Thống kê commit của từng người</li>
+        <li>Liên kết đến log AI của tuần</li>
+    </ul>
+    <h2>15. Rủi ro và phương án xử lý</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Rủi ro</th>
+                <th>Phương án</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Thành viên không đều tiến độ</td>
+                <td>Họp nhanh 2 lần/tuần, theo dõi bằng bảng công việc, chia lại việc sớm</td>
+            </tr>
+            <tr>
+                <td>Xung đột khi merge</td>
+                <td>Chia code theo feature, PR nhỏ, review nhanh</td>
+            </tr>
+            <tr>
+                <td>Xác thực OTP điện thoại hạn chế miễn phí</td>
+                <td>Ưu tiên email và Google; OTP số điện thoại dùng số thử nghiệm hoặc email OTP</td>
+            </tr>
+            <tr>
+                <td>Google Maps API cần API key và tài khoản thanh toán, có thể bị lạm dụng nếu lộ key</td>
+                <td>Giới hạn key theo package name/SHA-1, chỉ bật Maps SDK và Geocoding, không commit key vào repo (dùng
+                    file cấu hình bị .gitignore); nếu không có thanh toán thì dùng phương án thay thế OpenStreetMap
+                    (flutter_map) với cùng marker icon</td>
+            </tr>
+            <tr>
+                <td>Giới hạn gói miễn phí Firebase</td>
+                <td>Dữ liệu demo nhỏ, tối ưu truy vấn, tránh listener không cần thiết</td>
+            </tr>
+            <tr>
+                <td>Trùng lịch khi đặt đồng thời</td>
+                <td>Dùng transaction, viết test đồng thời</td>
+            </tr>
+            <tr>
+                <td>Thiếu thời gian</td>
+                <td>Ưu tiên nhóm 1-8 và 11; nhóm 9, 10, 12 rút gọn phạm vi nếu cần</td>
+            </tr>
+            <tr>
+                <td>App tham khảo không cho dùng thử luồng chủ sân</td>
+                <td>Tự thiết kế dựa trên nghiệp vụ, ghi rõ trong tài liệu</td>
+            </tr>
+        </tbody>
+    </table>
+    <h2>16. Tiêu chí hoàn thành (Definition of Done)</h2>
+    <p>Một nhóm tính năng được xem là xong khi:</p>
+    <ol>
+        <li>Chạy được đủ các chức năng nhỏ đã liệt kê, có xử lý lỗi cơ bản.</li>
+        <li>Giao diện đúng thiết kế, hiển thị tốt trên ít nhất hai kích thước màn hình.</li>
+        <li>Đã được thành viên khác review và merge vào <code>develop</code>.</li>
+        <li>Có kịch bản kiểm thử và ảnh/video minh chứng.</li>
+        <li>Có log AI (nếu dùng AI hỗ trợ).</li>
+    </ol>
+    <h2>17. Chuẩn bị cho buổi meeting 02/10</h2>
+    <p>Với mỗi nhóm trong 12 nhóm, nhóm chuẩn bị:</p>
+    <ol>
+        <li>Bảng liệt kê chức năng nhỏ (mục 5).</li>
+        <li>Ảnh chụp giao diện <strong>đầy đủ các bước</strong> trên app tham khảo, đặt tên
+            <code>NN_nhom_buocX_mota.png</code> (ví dụ <code>04_dat-san_buoc3_chon-khung-gio.png</code>).
+        </li>
+        <li>Ghi rõ app tham khảo dùng cho từng nhóm.</li>
+        <li>Nhóm nào chưa chụp được (admin, chủ sân) đánh dấu &quot;tự thiết kế&quot; kèm wireframe đơn giản.</li>
+    </ol>
+    <p><strong>Ví dụ các bước cần chụp:</strong></p>
+    <table>
+        <thead>
+            <tr>
+                <th>Nhóm</th>
+                <th>Các bước</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>1. Tài khoản</td>
+                <td>Màn hình chào → chọn vai trò → đăng ký → nhập OTP → đăng nhập → quên mật khẩu → hồ sơ → đăng xuất
+                </td>
+            </tr>
+            <tr>
+                <td>4. Đặt sân</td>
+                <td>Chi tiết sân → chọn ngày → lưới giờ → chọn sân/giờ → xác nhận → thanh toán → thành công</td>
+            </tr>
+            <tr>
+                <td>8. Đặt lịch vãng lai</td>
+                <td>Danh sách buổi vãng lai → chi tiết buổi → chọn số người → xác nhận đăng ký → thanh toán/vé QR → hàng
+                    chờ/hủy</td>
+            </tr>
+            <tr>
+                <td>11. Quản lý sân</td>
+                <td>Dashboard → thêm sân → thiết lập giá → khóa giờ → duyệt đơn → thống kê</td>
+            </tr>
+        </tbody>
+    </table>
+    <h2>18. Kết quả dự kiến</h2>
+    <ul>
+        <li>Ứng dụng di động chạy được trên thiết bị Android thật với 12 nhóm tính năng.</li>
+        <li>Mã nguồn trên Git với lịch sử commit cân bằng giữa các thành viên.</li>
+        <li>Bộ tài liệu: proposal, thiết kế (ER, wireframe), báo cáo tuần, log AI, hướng dẫn cài đặt.</li>
+        <li>Video demo 5-7 phút thể hiện đủ ba vai trò.</li>
+        <li>Báo cáo kỹ thuật, trong đó nêu rõ giải pháp chống trùng lịch và kết quả kiểm thử.</li>
+    </ul>
+
+</body>
+
+</html>
