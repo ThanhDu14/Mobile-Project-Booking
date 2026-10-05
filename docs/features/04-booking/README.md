@@ -8,7 +8,7 @@
 | App tham khảo | Alobo |
 | Trạng thái | ⬜ Chưa bắt đầu |
 | Nhánh Git | `feature/04-<ten-tinh-nang>` |
-| Spec (Spec Kit) | _Chưa tạo — chạy `/speckit-specify` rồi dán link `specs/NNN-.../spec.md` vào đây_ |
+| Spec (Spec Kit) | [`specs/040-booking-slot-grid/spec.md`](../../../specs/040-booking-slot-grid/spec.md) (đã clarify) |
 
 ## Phạm vi chức năng
 
