@@ -4,11 +4,11 @@
 |---|---|
 | Mã nhóm | `07` |
 | Vai trò sử dụng | Người chơi |
-| Thành viên phụ trách | C |
+| Thành viên phụ trách | Nguyễn Đức Duy (C) |
 | App tham khảo | Alobo |
 | Trạng thái | ⬜ Chưa bắt đầu |
-| Nhánh Git | `feature/07-<ten-tinh-nang>` |
-| Spec (Spec Kit) | _Chưa tạo — chạy `/speckit-specify` rồi dán link `specs/NNN-.../spec.md` vào đây_ |
+| Nhánh Git | `feature/07-review-favorite` |
+| Spec (Spec Kit) | [`specs/070-review-favorite/spec.md`](../../../specs/070-review-favorite/spec.md) (bản đầu, chưa clarify) |
 
 ## Phạm vi chức năng
 
