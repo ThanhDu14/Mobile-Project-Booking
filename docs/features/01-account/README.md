@@ -1,20 +1,21 @@
 # Nhóm 1 — Tài khoản
 
-| Thuộc tính | Giá trị |
-|---|---|
-| Mã nhóm | `01` |
-| Vai trò sử dụng | Người chơi |
-| Thành viên phụ trách | A |
-| App tham khảo | Alobo |
-| Trạng thái | ⬜ Chưa bắt đầu |
-| Nhánh Git | `feature/01-<ten-tinh-nang>` |
-| Spec (Spec Kit) | _Chưa tạo — chạy `/speckit-specify` rồi dán link `specs/NNN-.../spec.md` vào đây_ |
+| Thuộc tính | Giá trị                                                                  |
+|---|--------------------------------------------------------------------------|
+| Mã nhóm | `01`                                                                     |
+| Vai trò sử dụng | Người chơi                                                               |
+| Thành viên phụ trách | Nguyễn Thành Dự                                                          |
+| App tham khảo | Alobo                                                                    |
+| Trạng thái | ⬜ Chưa bắt đầu                                                           |
+| Nhánh Git | `feature/01-<ten-tinh-nang>`                                             |
+| Spec (Spec Kit) | Đã  chạy `/speckit-specify` tại `specs/010-account-auth/spec.md`  |
 
 ## Phạm vi chức năng
 
 Lấy từ [Proposal](../../proposal/Proposal.html), mục 5.
 
-- [ ] Đăng ký bằng email hoặc số điện thoại, chọn mục đích: "Tôi muốn đặt sân" / "Tôi là chủ sân"
+- [ ] Đăng ký bằng email hoặc số điện thoại (mọi tài khoản mới là người chơi, không chọn vai trò khi đăng ký)
+- [ ] Sau đăng nhập, điều hướng theo vai trò: chủ sân đã duyệt → giao diện chủ sân, người chơi → giao diện người chơi, admin → quản trị
 - [ ] Đăng nhập bằng email/mật khẩu, số điện thoại, Google
 - [ ] Xác thực OTP
 - [ ] Quên mật khẩu, đặt lại mật khẩu
