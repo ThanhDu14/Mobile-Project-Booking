@@ -7,6 +7,7 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 1 | 2026-10-05 | Viết spec 070 (đánh giá sân, sân yêu thích) bằng `/speckit-specify` | 07 |
 | 2 | 2026-10-05 | Làm rõ spec 070 bằng `/speckit-clarify` (5 câu hỏi) | 07 |
 | 3 | 2026-10-05 | Lập kế hoạch kỹ thuật spec 070 bằng `/speckit-plan` | 07 |
+| 4 | 2026-10-05 | Chia task triển khai spec 070 bằng `/speckit-tasks` | 07 |
 
 ---
 
@@ -185,3 +186,51 @@ những thay đổi cần các thành viên khác cập nhật trên collection 
 - Đối chiếu mọi FR trong spec với ít nhất một quy tắc trong data-model/contract hoặc một kịch bản trong `quickstart.md`.
 - Kiểm tra lại giới hạn của gói Spark (không có Cloud Functions) theo constitution phần Ràng buộc công nghệ.
 - Việc tiếp theo: gửi bảng "Phối hợp với nhóm" trong `plan.md` cho A, B, D; chạy `/speckit-tasks`.
+
+---
+
+## Mục 4: Chia task triển khai spec 070 bằng `/speckit-tasks`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-05 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 07 – Đánh giá và yêu thích (spec `specs/070-review-favorite`) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5), lệnh Spec Kit `/speckit-tasks` |
+| Mục đích | Chia kế hoạch kỹ thuật thành danh sách task có thứ tự, theo từng user story, kèm test bắt buộc |
+| Nhánh Git | `feature/07-review-favorite` |
+
+### Prompt đã dùng
+
+```
+/speckit-tasks
+Chia plan của spec 070 thành các task cụ thể theo từng user story, có đường dẫn file rõ ràng.
+Theo constitution nguyên tắc IV, thêm task viết test trước (Rules trên Emulator, Edge Function,
+ViewModel) và đánh dấu những task làm song song được.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Sinh `specs/070-review-favorite/tasks.md` gồm **78 task** chia 9 phase:
+  - Phase 1 Setup (9 task): thư viện, Hilt, Firebase/Supabase module, Emulator, Supabase local — ghi chú dùng lại PR `chore(core)` chung của nhóm nếu đã có;
+  - Phase 2 Foundational (16 task): model domain, interface repository, DTO, chuỗi, nav graph, `ReviewAdapter`, hàm tính tổng điểm, xác thực token, Rules + index, dữ liệu demo;
+  - Phase 3–8 theo user story: US1 12 task (MVP), US2 9, US3 8, US4 7, US5 5, US6 5;
+  - Phase 9 Polish (7 task): `applyReviewVisibility()` cho D, cập nhật đặc tả CSDL, Espresso, kiểm tra chế độ tối/`w600dp`/TalkBack, chạy quickstart.
+- Mỗi story có test viết trước (ví dụ test 10 người gửi đánh giá cùng lúc cho SC-005), 45 task đánh dấu `[P]` làm song song được.
+- Bảng phụ thuộc giữa các story và với thành viên khác (B: `completedAt`; D: `ratingSums`, Rules `venues`, `send-notification`).
+- Đề xuất thứ tự giao: US1 → US3 → US2 → US6 → US4 → US5, khớp lịch tuần 5 trong team contract.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Có task viết test trước | Dùng | Constitution nguyên tắc IV bắt buộc test Rules, đồng thời, ViewModel |
+| Phase 1 dùng lại PR `chore(core)` của nhóm | Dùng | Tránh 4 người cấu hình Hilt/Firebase/Supabase trùng nhau |
+| MVP chỉ gồm US1 | Dùng | Demo được sớm luồng chính "đánh giá sau khi chơi" |
+| Thứ tự US3 trước US2 | Dùng | Yêu thích độc lập, nhanh xong, dễ demo |
+
+### Cách kiểm chứng
+
+- Kiểm tra định dạng: cả 78 task có ô đánh dấu, mã T001–T078, đường dẫn file; mọi task ở Phase 3–8 có nhãn `[US1]`…`[US6]`.
+- Đối chiếu: mỗi user story trong spec có ít nhất một task test và các task cài đặt đủ từ server tới giao diện; mỗi kịch bản trong `quickstart.md` được một checkpoint nhắc tới.
+- Việc tiếp theo: chạy `/speckit-analyze` để kiểm tra độ khớp giữa spec, plan và tasks trước khi code.
