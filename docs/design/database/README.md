@@ -30,6 +30,8 @@ Người phụ trách viết bảng trường chi tiết, index, Rules và test 
 |---|---|---|---|
 | `users/{uid}` | Hồ sơ người dùng, vai trò | **A** | 01, mọi nhóm đọc |
 | `users/{uid}/searchHistory/{id}` | Lịch sử tìm kiếm | **A** | 02 |
+| `users/{uid}/aiUsage/{yyyyMMdd}` | Số lượt dùng AI Assistant trong ngày, số câu lạc đề liên tiếp 🔒 | **A** | 02 (AI) |
+| `aiSearchCache/{hash}` | Kết quả phân tích của câu đã chuẩn hóa, hết hạn trong ngày 🔒 | **A** | 02 (AI) |
 | `districts/{id}`, `amenities/{id}` | Danh mục khu vực, tiện ích | **A** | 02, 03, 11 đọc; 12 ghi |
 | `ownerApplications/{id}` | Hồ sơ đăng ký chủ sân | **D** | 01 đọc, 11 tạo, 12 duyệt |
 | `venues/{venueId}` | Cơ sở (cụm sân) | **D** | 11 ghi; 02, 03 đọc |
@@ -99,6 +101,10 @@ Các bảng dưới đây là bản khởi đầu. Người phụ trách hoàn t
 | `termsAcceptedAt` | Timestamp | Bắt buộc khi đăng ký |
 
 Xóa tài khoản: Edge Function `delete-account` xóa document, ảnh, lịch sử tìm kiếm, yêu thích; ẩn danh hóa `userId` trong đơn đặt và đánh giá cũ.
+
+**AI Assistant (spec 022):**
+- `users/{uid}/aiUsage/{yyyyMMdd}` 🔒: `count` (Int, số lượt trong ngày), `offTopicStreak` (Int), `lockedUntil` (Timestamp?, tạm khóa sau 3 câu lạc đề liên tiếp). Chỉ Edge Function ghi; chủ tài khoản được đọc để hiển thị số lượt còn lại.
+- `aiSearchCache/{hash}` 🔒: `hash` = SHA-256 của câu đã chuẩn hóa + ngày; `result` (Map, JSON đã kiểm tra), `expiresAt` (Timestamp, hết ngày). Không lưu câu gốc hay thông tin người dùng. Client không đọc/ghi.
 
 ### 4.2. `ownerApplications/{id}` — D
 
@@ -264,6 +270,7 @@ Ký hiệu: R đọc, C tạo, U sửa, D xóa. "Chủ" = người sở hữu do
 | Collection | Người chơi | Owner sân | Admin | Server (Edge Functions) |
 |---|---|---|---|---|
 | `users` | R mọi người (trường công khai), CU của mình trừ 🔒 | như người chơi | R, U `accountStatus` | Ghi 🔒 |
+| `aiUsage`, `aiSearchCache` | R `aiUsage` của mình; không ghi | như người chơi | R | Ghi toàn bộ |
 | `ownerApplications` | C, R của mình; U khi `REJECTED` (nộp lại) | R của mình | R, duyệt qua Edge Function | Ghi 🔒 |
 | `venues`, `courts`, `priceRules` | R khi `ACTIVE` | CRUD cơ sở của mình (trừ 🔒) | R, khóa | Ghi 🔒 |
 | `slots` | R; C/U chỉ trong transaction đặt sân với `holdBy == uid` | C/D `BLOCKED` cho sân của mình | R | Dọn slot hết hạn |
@@ -301,6 +308,7 @@ Mỗi dòng trên cần ít nhất một test Emulator "được phép" và mộ
 |---|---|---|
 | `on-signup` | Gán claim `role: "authenticated"`, `appRole: "PLAYER"`; tạo `users/{uid}` | A |
 | `delete-account` | Xóa dữ liệu và ảnh của người dùng | A |
+| `ai-search-parse` | AI Assistant: kiểm tra lượt dùng và cache, gọi LLM, kiểm tra JSON theo schema, trả bộ lọc (xem [AI-feature.md](../../proposal/AI-feature.md)) | A |
 | `create-booking`, `cancel-booking` | Transaction giữ chỗ/đặt/hủy, tính tiền, áp voucher | B |
 | `expire-holds` (pg_cron mỗi phút) | Chuyển đơn `HOLD` quá hạn sang `EXPIRED`, xóa slot | B |
 | `register-drop-in`, `cancel-drop-in` | Transaction đăng ký, hàng chờ | C |
