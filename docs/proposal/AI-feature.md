@@ -9,7 +9,7 @@ flowchart TD
     A["Người dùng nhập câu<br/>(gõ hoặc dùng micro)"] --> P{"Kiểm tra sơ bộ trên app<br/>rỗng, quá dài, hết lượt"}
     P -- "Không hợp lệ" --> X["Báo ngay trên app<br/>không gọi AI"]
     P -- "Hợp lệ" --> B["Ứng dụng di động<br/>gửi câu kèm ngày giờ hiện tại"]
-    B --> C["Cloud Function<br/>giữ API key, giới hạn lượt, kiểm tra cache"]
+    B --> C["Supabase Edge Function ai-search-parse<br/>giữ API key, giới hạn lượt, kiểm tra cache"]
     C --> D["LLM phân loại ý định<br/>và trích bộ lọc, chỉ trả về JSON"]
     D --> E{"Kiểm tra JSON<br/>đúng schema, giá trị hợp lệ"}
     E -- "Sai / thiếu" --> F["Hỏi lại 1 câu kèm gợi ý nhanh<br/>hoặc dùng bộ lọc thủ công"]
@@ -27,6 +27,8 @@ flowchart TD
     class A,B,G,H,I,P existing
     class F,X,Q,O fallback
 ```
+
+Phần phía server chạy bằng **Supabase Edge Function** theo constitution v1.1.0 (dự án không dùng Cloud Functions vì cần gói Blaze). Khóa API của LLM chỉ nằm trong secrets của Edge Function, không nằm trong app. Nhà cung cấp LLM phải có gói miễn phí, không bắt buộc gắn thẻ.
 
 Chú thích màu: tím là phần mới của tính năng AI, xám là logic đã có sẵn ở các feature khác, cam là nhánh ngoại lệ và dự phòng.
 
@@ -95,7 +97,7 @@ Ngày hiện tại: {{today}}, múi giờ: Asia/Ho_Chi_Minh.
 |---|---|---|
 | 1. Kiểm tra trên app | Chặn câu rỗng, quá dài (ví dụ trên 200 ký tự), bấm gửi liên tục, hết lượt trong ngày | 0 |
 | 2. Cache | Cùng một câu (đã chuẩn hóa chữ hoa, khoảng trắng) trong ngày thì dùng lại kết quả cũ | 0 |
-| 3. Cloud Function | Giới hạn số lượt mỗi người mỗi ngày; nếu có 3 câu `off_topic` liên tiếp thì tạm khóa ô AI vài phút và chỉ cho dùng bộ lọc thủ công | 0 |
+| 3. Edge Function | Giới hạn số lượt mỗi người mỗi ngày; nếu có 3 câu `off_topic` liên tiếp thì tạm khóa ô AI vài phút và chỉ cho dùng bộ lọc thủ công | 0 |
 | 4. LLM | Một lần gọi, đầu ra là JSON ngắn, `max_tokens` thấp | Rất nhỏ |
 | 5. Chọn mô hình | Việc trích xuất đơn giản nên dùng mô hình nhỏ, rẻ (ví dụ dòng Flash hoặc Haiku), không cần mô hình lớn | Giảm đơn giá |
 
@@ -131,7 +133,7 @@ Kết quả AI hiện thành các chip bộ lọc (quận, giờ, giá). Ngườ
 
 ### 4.5. Che dữ liệu cá nhân trước khi gửi
 
-Nếu người dùng lỡ gõ số điện thoại hay email trong câu, app dùng regex thay bằng ký tự che trước khi gửi lên Cloud Function.
+Nếu người dùng lỡ gõ số điện thoại hay email trong câu, app dùng regex thay bằng ký tự che trước khi gửi lên Edge Function.
 
 ### 4.6. Ghi log và đo lường
 
@@ -168,7 +170,7 @@ Hai điểm khác biệt về bản chất:
 - **Kiểm thử ngoại lệ:** thêm khoảng 10-15 câu gồm: lạc đề hoàn toàn, câu pha trộn tìm sân và lạc đề, câu hỏi chính sách (`faq`), câu cố bẻ prompt, câu rất dài, câu chứa số điện thoại. Ghi lại app xử lý đúng nhánh nào.
 - Đưa số liệu vào báo cáo kỹ thuật và video demo.
 - **Phân công:** thành viên A (Nhóm 2).
-- **Khối lượng:** một Cloud Function, một ô nhập trên màn hình tìm kiếm, một hàm kiểm tra và map JSON sang bộ lọc, các chuỗi thông báo cố định và nội dung FAQ; khoảng 1 đến 1,5 tuần ở giai đoạn tuần 4-5.
+- **Khối lượng:** một Supabase Edge Function (`ai-search-parse`), một ô nhập trên màn hình tìm kiếm, một hàm kiểm tra và map JSON sang bộ lọc, các chuỗi thông báo cố định và nội dung FAQ; khoảng 1 đến 1,5 tuần ở giai đoạn tuần 4-5.
 
 ## 8. Hướng mở rộng (nhóm dự phòng)
 
