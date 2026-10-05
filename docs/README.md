@@ -34,6 +34,8 @@ Các file sinh ra trong quá trình làm việc nằm ngoài `docs/`:
 - [Proposal](proposal/Proposal.html)
 - [Tính năng AI: Tìm sân thông minh (AI Assistant)](proposal/AI-feature.md)
 - [Danh sách nhóm tính năng](features/README.md)
+- [Phân công tuần 1–2: đặc tả và CSDL](guides/w1-w2-spec-assignment.md)
+- [Đặc tả CSDL chung](design/database/README.md)
 - [Quy trình phát triển một tính năng](guides/feature-workflow.md)
 - [Quy ước Git](guides/git-workflow.md)
 - [Mẫu báo cáo tuần](reports/weekly/_template.md)
