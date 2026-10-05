@@ -7,8 +7,7 @@ SmashNow là ứng dụng Android để đặt sân và kết nối cộng đồ
 ```
 docs/
 ├── README.md                 ← Mục lục (file này)
-├── team-contract.md          ← Thỏa thuận nhóm, lịch họp, kế hoạch 10 tuần
-├── proposal/                 ← Proposal đồ án (bản gốc)
+├── proposal/                 ← Proposal đồ án (bản gốc) và đặc tả AI Assistant
 ├── features/                 ← 12 nhóm tính năng: phạm vi, ảnh tham khảo, checklist DoD
 │   ├── README.md             ← Bảng tổng hợp trạng thái và người phụ trách
 │   └── NN-<ten-nhom>/
@@ -33,7 +32,7 @@ Các file sinh ra trong quá trình làm việc nằm ngoài `docs/`:
 ## Truy cập nhanh
 
 - [Proposal](proposal/Proposal.html)
-- [Thỏa thuận nhóm và kế hoạch 10 tuần](team-contract.md)
+- [Tính năng AI: Tìm sân thông minh (AI Assistant)](proposal/AI-feature.md)
 - [Danh sách nhóm tính năng](features/README.md)
 - [Phân công tuần 1–2: đặc tả và CSDL](guides/w1-w2-spec-assignment.md)
 - [Đặc tả CSDL chung](design/database/README.md)
