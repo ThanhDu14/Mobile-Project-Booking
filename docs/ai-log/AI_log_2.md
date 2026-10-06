@@ -8,6 +8,8 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 2 | 2026-10-06 | Làm rõ spec 040 bằng `/speckit-clarify` (3 câu hỏi) | 04 |
 | 3 | 2026-10-06 | Viết spec 041 (đặt sân cố định theo tuần) bằng `/speckit-specify` | 04 |
 | 4 | 2026-10-06 | Làm rõ spec 041 bằng `/speckit-clarify` (3 câu hỏi) | 04 |
+| 5 | 2026-10-06 | Viết spec 050 (thanh toán và khuyến mãi giả lập) bằng `/speckit-specify` | 05 |
+| 6 | 2026-10-06 | Làm rõ spec 050 bằng `/speckit-clarify` (3 câu hỏi) | 05 |
 
 ---
 
@@ -233,4 +235,109 @@ Bảng đối chiếu lựa chọn:
 - Kiểm tra file `specs/041-weekly-recurring-booking/spec.md` không còn chứa chuỗi `NEEDS CLARIFICATION`.
 - Kiểm tra checklist `specs/041-weekly-recurring-booking/checklists/requirements.md` đạt 100% checkmark.
 - Đối chiếu với Constitution và tài liệu phân công CSDL (liên kết `recurringGroupId`).
+
+---
+
+## Mục 5: Viết spec 050 (thanh toán và khuyến mãi giả lập) bằng `/speckit-specify`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-06 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 05 – Thanh toán và khuyến mãi (spec `specs/050-payment-voucher`) |
+| Công cụ AI | Antigravity, lệnh Spec Kit `/speckit-specify` |
+| Mục đích | Soạn thảo, đánh giá và sinh bản đặc tả kỹ thuật thanh toán giả lập, áp voucher khuyến mãi và tự hủy đơn quá hạn |
+| Nhánh Git | `Hung` |
+
+### Prompt đã dùng
+
+**Lần 1: Yêu cầu AI rà soát và hoàn thiện bản nháp mô tả tính năng**
+
+User đưa bản thảo chi tiết gồm: Mục tiêu (thanh toán giả lập học tập, không thu tiền thật), Luồng chính (kế thừa đếm ngược từ 040/041, voucher, 3 phương thức thanh toán: tại sân, cọc, ví giả lập; xác nhận tạo hóa đơn điện tử E-receipt), Giả định mặc định (tính voucher lúc commit, tổng = 0đ miễn chọn phương thức, đơn cố định tính cả chuỗi), Tự hủy đơn quá hạn (slot trống ngay lập tức, server dọn trong 2 phút), Lỗi & biên (ví thiếu cho nạp ảo, race condition trừ ví và voucher), Tiêu chí đo được, Ranh giới (tuân thủ Nguyên tắc II, III, VI Constitution), Cần làm rõ.
+AI đánh giá 9.8/10, đề xuất chốt mốc dọn dẹp slot trong tối đa 2 phút và chỉ rõ Nguyên tắc VI trong Constitution.
+
+**Lần 2: Chạy lệnh `/speckit-specify` với bản prompt hoàn chỉnh**
+
+```text
+/speckit-specify SPECIFY_FEATURE_DIRECTORY=specs/050-payment-voucher
+[Nội dung prompt hoàn chỉnh theo đề xuất]
+```
+
+### Tóm tắt phản hồi của AI
+
+- Khởi tạo thư mục `specs/050-payment-voucher/` và sinh file `spec.md`:
+  - 5 User Stories có độ ưu tiên:
+    - US1 (P1): Áp dụng mã khuyến mãi (Voucher) cho đơn đặt sân (kiểm tra điều kiện, % có trần hoặc tiền cố định, cập nhật < 1s, tổng = 0đ miễn chọn phương thức).
+    - US2 (P1): Lựa chọn phương thức thanh toán và xác nhận giao dịch giả lập (3 phương thức: `AT_VENUE`, `DEPOSIT`, `MOCK_WALLET`, hóa đơn E-receipt có nhãn giao dịch học tập).
+    - US3 (P1): Xử lý hết hạn giữ chỗ trong lúc thanh toán (đếm ngược kế thừa, chạm 00:00 khóa nút, slot trống ngay lập tức, dọn trong tối đa 2 phút).
+    - US4 (P2): Nạp tiền vào ví giả lập và xử lý số dư không đủ (nạp tiền ảo học tập, chuyển đổi phương thức).
+    - US5 (P3): Đảm bảo tính toàn vẹn giao dịch và chống trừ tiền trùng lặp (Idempotent với UUID `requestId`, race condition voucher & ví không âm).
+  - 28 yêu cầu chức năng chuẩn hóa (FR-001 → FR-028).
+  - 7 tiêu chí thành công đo lường được (SC-001 → SC-007): Áp voucher < 1s, xác nhận < 1.5s trên 4G, zero duplicate charge, 100% hóa đơn gắn nhãn học tập...
+  - 5 trường hợp biên (Edge cases) chi tiết.
+  - 4 thực thể chính: `Booking`, `Voucher`, `VoucherRedemption`, `UserWallet`.
+- Tạo checklist chất lượng tại `specs/050-payment-voucher/checklists/requirements.md`.
+- Cập nhật link trỏ đến spec 050 trong `docs/features/05-payment-promotion/README.md`.
+- Xác định 3 điểm cần làm rõ (`[NEEDS CLARIFICATION]`):
+  1. Trạng thái đơn sau thanh toán (PENDING hay CONFIRMED) và luồng hoàn ví khi chủ sân từ chối (với D, spec 112).
+  2. Tỷ lệ cọc mặc định khi chọn DEPOSIT (với D, spec 111).
+  3. Số dư ban đầu của ví giả lập và vị trí tính năng nạp tiền ví giả lập (với A, spec 011).
+
+---
+
+## Mục 6: Làm rõ spec 050 bằng `/speckit-clarify`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-06 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 05 – Thanh toán và khuyến mãi (spec `specs/050-payment-voucher`) |
+| Công cụ AI | Antigravity, lệnh Spec Kit `/speckit-clarify` |
+| Mục đích | Giải quyết các điểm còn mơ hồ về trạng thái đơn sau thanh toán (PENDING/CONFIRMED), tỷ lệ đặt cọc DEPOSIT và khởi tạo số dư ví giả lập |
+| Nhánh Git | `Hung` |
+
+### Prompt đã dùng
+
+AI đưa ra 3 câu hỏi clarification dựa trên các điểm [NEEDS CLARIFICATION] từ spec 050. Người dùng chọn phương án:
+
+```text
+Q1: A, Q2: A , Q3: B
+```
+
+Bảng đối chiếu lựa chọn:
+
+| # | Câu hỏi của AI | Các phương án | Người dùng chọn | Ý nghĩa kỹ thuật & nghiệp vụ |
+|---|---|---|---|---|
+| 1 | Trạng thái đơn sau khi thanh toán thành công và luồng hoàn tiền | A: Chuyển sang `PENDING` (chờ chủ sân duyệt trong 60 phút; nếu bị từ chối hoặc quá hạn, hoàn 100% ví)<br/>B: Tự động `CONFIRMED` ngay | **A** (Chuyển sang `PENDING`, duyệt trong 60 phút) | Tôn trọng quyền tiếp nhận đơn của chủ sân (spec 112); bảo vệ quyền lợi người chơi bằng cơ chế tự động hoàn ví 100% nếu bị từ chối hoặc quá hạn |
+| 2 | Tỷ lệ đặt cọc khi chọn phương thức `DEPOSIT` | A: Cố định 30% trên tổng đơn (toàn hệ thống), làm tròn đến hàng nghìn đồng<br/>B: Do chủ sân cấu hình trong bảng giá | **A** (Cố định 30% toàn hệ thống) | Đồng nhất trải nghiệm người dùng, đơn giản hóa công thức tính toán và giao diện thanh toán |
+| 3 | Số dư ví giả lập ban đầu và vị trí nút nạp ví ảo | A: Khởi tạo sẵn 1.000.000đ<br/>B: Khởi tạo 0đ, người dùng tự bấm "Nạp ví giả lập" khi thanh toán hoặc trong trang cá nhân | **B** (Khởi tạo 0đ, cho phép nạp ảo) | Giúp kiểm thử được cả 2 luồng: luồng ví không đủ tiền (báo thiếu, hướng dẫn nạp) và luồng nạp tiền ảo học tập |
+
+### Tóm tắt phản hồi của AI
+
+- Cập nhật mục `Clarifications` trong `specs/050-payment-voucher/spec.md`, xóa bỏ hoàn toàn 3 tag `[NEEDS CLARIFICATION]`.
+- Cập nhật các yêu cầu chức năng và trường hợp biên liên quan:
+  - `US2 & Scenarios`: Chuyển trạng thái đơn sang `PENDING` chờ chủ sân duyệt trong 60 phút cho cả 3 phương thức.
+  - `FR-013`: Cố định tỷ lệ đặt cọc 30% trên tổng giá trị đơn hàng, làm tròn đến hàng nghìn đồng chẵn gần nhất.
+  - `FR-017`: Khởi tạo số dư ví tài khoản mới là 0đ, cung cấp nút "Nạp ví giả lập" ngay tại màn hình thanh toán hoặc trang cá nhân.
+  - `FR-018`: Quy định rõ đơn chuyển sang `PENDING`, tự động hoàn 100% tiền cọc/ví vào số dư ví nếu chủ sân từ chối hoặc quá 60 phút chưa duyệt.
+  - `Edge Cases`: Bổ sung cơ chế hoàn tiền tự động 100% khi đơn quá hạn 60 phút chờ duyệt.
+  - `Key Entities & Assumptions`: Ghi nhận `walletBalance` khởi tạo 0đ, tỷ lệ cọc cố định 30%.
+- Cập nhật `specs/050-payment-voucher/checklists/requirements.md`: Đánh dấu `[x] No [NEEDS CLARIFICATION] markers remain`, hoàn thành 16/16 tiêu chí đạt chuẩn chất lượng đặc tả.
+- Cập nhật `docs/features/05-payment-promotion/README.md` sang trạng thái `(đã clarify)`.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Trạng thái `PENDING` + timeout 60p | Dùng | Khớp chặt chẽ với quy trình vận hành của chủ sân (spec 112) và đảm bảo an toàn tiền cọc cho người chơi |
+| Cố định 30% đặt cọc | Dùng | Thống nhất toàn hệ thống, tránh phức tạp hóa cho cả người chơi lẫn chủ sân |
+| Ví 0đ + nút nạp ảo | Dùng | Phục vụ học tập và demo giáo dục, kiểm thử được toàn bộ edge case ví thiếu tiền |
+
+### Cách kiểm chứng
+
+- Kiểm tra file `specs/050-payment-voucher/spec.md` không còn chứa chuỗi `NEEDS CLARIFICATION`.
+- Kiểm tra checklist `specs/050-payment-voucher/checklists/requirements.md` đạt 100% checkmark (16/16).
+- Đối chiếu với Constitution Nguyên tắc II (server validation), III (Long VND, deterministic hold), VI (thanh toán giả lập phi thương mại).
+
+
 
