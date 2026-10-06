@@ -8,7 +8,7 @@
 | App tham khảo | Alobo |
 | Trạng thái | ⬜ Chưa bắt đầu |
 | Nhánh Git | `feature/06-<ten-tinh-nang>` |
-| Spec (Spec Kit) | _Chưa tạo — chạy `/speckit-specify` rồi dán link `specs/NNN-.../spec.md` vào đây_ |
+| Spec (Spec Kit) | [`specs/060-my-bookings/spec.md`](../../../specs/060-my-bookings/spec.md) (đã clarify) |
 
 ## Phạm vi chức năng
 

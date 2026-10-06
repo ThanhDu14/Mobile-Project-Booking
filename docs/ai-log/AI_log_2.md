@@ -10,6 +10,8 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 4 | 2026-10-06 | Làm rõ spec 041 bằng `/speckit-clarify` (3 câu hỏi) | 04 |
 | 5 | 2026-10-06 | Viết spec 050 (thanh toán và khuyến mãi giả lập) bằng `/speckit-specify` | 05 |
 | 6 | 2026-10-06 | Làm rõ spec 050 bằng `/speckit-clarify` (3 câu hỏi) | 05 |
+| 7 | 2026-10-06 | Viết spec 060 (quản lý lịch đặt của tôi) bằng `/speckit-specify` | 06 |
+| 8 | 2026-10-06 | Làm rõ spec 060 bằng `/speckit-clarify` (3 câu hỏi) | 06 |
 
 ---
 
@@ -338,6 +340,110 @@ Bảng đối chiếu lựa chọn:
 - Kiểm tra file `specs/050-payment-voucher/spec.md` không còn chứa chuỗi `NEEDS CLARIFICATION`.
 - Kiểm tra checklist `specs/050-payment-voucher/checklists/requirements.md` đạt 100% checkmark (16/16).
 - Đối chiếu với Constitution Nguyên tắc II (server validation), III (Long VND, deterministic hold), VI (thanh toán giả lập phi thương mại).
+
+---
+
+## Mục 7: Viết spec 060 (quản lý lịch đặt của tôi) bằng `/speckit-specify`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-06 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 06 – Quản lý lịch đặt (spec `specs/060-my-bookings`) |
+| Công cụ AI | Antigravity, lệnh Spec Kit `/speckit-specify` |
+| Mục đích | Soạn thảo, đánh giá và sinh bản đặc tả kỹ thuật quản lý lịch đặt, mã QR check-in, hủy đơn hoàn tiền ví giả lập và tiếp tục thanh toán/đặt lại nhanh |
+| Nhánh Git | `Hung` |
+
+### Prompt đã dùng
+
+**Lần 1: Yêu cầu AI đánh giá khách quan bản nháp mô tả tính năng**
+
+User đưa bản thảo phân mục chi tiết: Mục tiêu, Luồng chính (5 tab, chi tiết đơn, mã QR check-in, hủy đơn theo mốc 4 tiếng, đặt lại nhanh), Đơn cố định (hủy từng buổi lẻ, phân bổ cọc/giảm giá), Luồng lỗi & biên, Tiêu chí đo được, Ranh giới, Ràng buộc, Cần làm rõ.
+AI đánh giá 8/10, chỉ ra các lỗ hổng cần hoàn thiện: bổ sung tab "Chờ thanh toán" cho đơn HOLD (kết nối spec 050 FR-027), ẩn đơn EXPIRED, quy định cụ thể mức phạt hủy trễ theo từng phương thức thanh toán, làm tròn phân bổ tiền cho đơn cố định, và xử lý race condition với chủ sân.
+
+**Lần 2: Chạy lệnh `/speckit-specify` với bản prompt hoàn chỉnh**
+
+```text
+/speckit-specify SPECIFY_FEATURE_DIRECTORY=specs/060-my-bookings
+[Nội dung prompt hoàn chỉnh theo đề xuất]
+```
+
+### Tóm tắt phản hồi của AI
+
+- Khởi tạo thư mục `specs/060-my-bookings/` và sinh file `spec.md`:
+  - 5 User Stories có độ ưu tiên:
+    - US1 (P1): Xem danh sách lịch đặt theo 5 tab trạng thái và xem chi tiết đơn (Chờ thanh toán `HOLD`, Chờ duyệt `PENDING`, Sắp tới `CONFIRMED`, Đã hoàn thành `COMPLETED`, Đã hủy `CANCELLED`/`REJECTED`; phân trang, mới nhất xếp trước).
+    - US2 (P1): Hiển thị mã QR check-in tại sân cho đơn đã xác nhận (sinh từ `qrToken` bí mật, hỗ trợ cache xem offline khi mất mạng tại sân).
+    - US3 (P1): Hủy đơn đặt sân và hoàn tiền ví giả lập theo chính sách (PENDING hoàn 100%; CONFIRMED hủy sớm ≥ 4h hoàn 100%, hủy trễ < 4h không hoàn tiền; nhả slot và hoàn tiền trong cùng transaction; idempotent).
+    - US4 (P2): Quản lý và hủy riêng lẻ buổi trong chuỗi đặt cố định theo tuần (xem theo `recurringGroupId`, hủy buổi lẻ theo mốc 4h riêng, phân bổ tiền cọc/giảm giá theo tỷ lệ, dư dồn buổi cuối).
+    - US5 (P2): Tiếp tục thanh toán đơn giữ chỗ và đặt lại nhanh từ lịch sử (mở lại spec 050 từ tab Chờ thanh toán; điều hướng 1 chạm sang spec 040 từ tab Hoàn thành/Hủy).
+  - 28 yêu cầu chức năng chuẩn hóa (FR-001 → FR-028).
+  - 7 tiêu chí thành công đo lường được (SC-001 → SC-007): Tải trang đầu < 2s, hủy đơn < 1.5s, zero duplicate refund, 100% QR offline ready...
+  - 9 trường hợp biên (Edge cases) chi tiết.
+  - 4 thực thể chính: `Booking`, `CourtSlot`, `UserWallet`, `VoucherRedemption`.
+- Tạo checklist chất lượng tại `specs/060-my-bookings/checklists/requirements.md`.
+- Cập nhật link trỏ đến spec 060 trong `docs/features/06-booking-management/README.md`.
+- Xác định 3 điểm cần làm rõ (`[NEEDS CLARIFICATION]`):
+  1. Mốc thời gian hủy đơn 4 tiếng: Cố định toàn hệ thống hay do chủ sân tự cấu hình trong bảng giá/cơ sở (với D, spec 111).
+  2. Xử lý no-show (quá giờ chơi không check-in): Chuyển COMPLETED nhãn "Chưa check-in" hay CANCELLED, do hệ thống quét hay chủ sân xác nhận (với C và spec 112).
+  3. Mức phạt hủy trễ qua ví giả lập: Mất 100% hay chỉ phạt tiền cọc 30% và hoàn 70% còn lại (với spec 050).
+
+---
+
+## Mục 8: Làm rõ spec 060 bằng `/speckit-clarify`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-06 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 06 – Quản lý lịch đặt (spec `specs/060-my-bookings`) |
+| Công cụ AI | Antigravity, lệnh Spec Kit `/speckit-clarify` |
+| Mục đích | Giải quyết các điểm còn mơ hồ về mốc thời gian hủy đơn, xử lý đơn vắng mặt (no-show) và mức phạt hủy trễ đối với ví giả lập |
+| Nhánh Git | `Hung` |
+
+### Prompt đã dùng
+
+AI đưa ra 3 câu hỏi clarification dựa trên các điểm [NEEDS CLARIFICATION] từ spec 060. Người dùng chọn phương án:
+
+```text
+Q1: A , Q2: B, Q3: B
+```
+
+Bảng đối chiếu lựa chọn:
+
+| # | Câu hỏi của AI | Các phương án | Người dùng chọn | Ý nghĩa kỹ thuật & nghiệp vụ |
+|---|---|---|---|---|
+| 1 | Quy định mốc thời gian hủy đơn để được hoàn 100% tiền | A: Cố định 4 tiếng (240 phút) trên toàn hệ thống<br/>B: Do chủ sân cấu hình theo cơ sở<br/>C: Phân tầng tỷ lệ hoàn tiền | **A** (Cố định 4 tiếng toàn hệ thống) | Đồng nhất trải nghiệm người chơi, quy định rõ ràng, dễ nhớ, tránh tranh chấp giữa khách và sân |
+| 2 | Xử lý đơn quá giờ chơi mà không đến check-in (No-show) | A: Hệ thống chuyển `COMPLETED` nhãn Chưa check-in<br/>B: Chuyển sang trạng thái riêng `NO_SHOW`, khóa quyền đánh giá ở spec 070<br/>C: Chủ sân chủ động bấm vắng mặt | **B** (Chuyển `NO_SHOW`, khóa quyền đánh giá) | Phân định rạch ròi giữa khách hoàn thành buổi chơi và khách vắng mặt; ngăn chặn đánh giá ảo khi chưa trải nghiệm thực tế |
+| 3 | Mức phạt tiền khi hủy đơn trễ đối với phương thức "Ví giả lập" | A: Mất 100% số tiền đã trả<br/>B: Chỉ phạt 30% (tương đương mức cọc), hoàn 70% còn lại vào ví giả lập<br/>C: Phạt 50%, hoàn 50% | **B** (Phạt 30%, hoàn 70% vào ví) | Đảm bảo tính công bằng giữa người thanh toán trước 100% qua ví và người chỉ đặt cọc 30% |
+
+### Tóm tắt phản hồi của AI
+
+- Cập nhật mục `Clarifications` trong `specs/060-my-bookings/spec.md`, xóa bỏ hoàn toàn 3 tag `[NEEDS CLARIFICATION]`.
+- Cập nhật các yêu cầu chức năng, trường hợp biên và thực thể liên quan:
+  - `US1 & US3`: Bổ sung trạng thái `NO_SHOW` trong tab "Đã hoàn thành" với nhãn cảnh báo; cập nhật chính sách hủy trễ: đơn cọc mất 100% cọc, đơn ví giả lập phạt 30% và tự động hoàn trả 70% vào ví giả lập.
+  - `FR-007 & FR-029`: Quy định máy chủ tự động chuyển đơn quá giờ kết thúc slot sang `NO_SHOW` và chặn quyền tạo đánh giá đối với đơn này ở spec 070.
+  - `FR-019`: Quy định chi tiết mức phạt hủy trễ theo phương thức thanh toán (cọc mất cọc, ví hoàn 70%, tại sân không phát sinh hoàn).
+  - `Edge Cases`: Làm rõ xử lý no-show và cơ chế tự động chuyển `NO_SHOW`.
+  - `Key Entities`: Bổ sung `NO_SHOW` vào tập giá trị hợp lệ của `status` trong `Booking`.
+  - `Assumptions`: Ghi nhận mốc 4h cố định, phạt 30% ví giả lập và xử lý no-show.
+- Cập nhật `specs/060-my-bookings/checklists/requirements.md`: Đánh dấu `[x] No [NEEDS CLARIFICATION] markers remain`, hoàn thành 16/16 tiêu chí đạt chuẩn chất lượng đặc tả.
+- Cập nhật `docs/features/06-booking-management/README.md` sang trạng thái `(đã clarify)`.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Mốc hủy 4h cố định | Dùng | Đơn giản hóa tính toán cho hệ thống và quy tắc minh bạch cho người chơi |
+| Trạng thái `NO_SHOW` + khóa đánh giá | Dùng | Đảm bảo chất lượng dữ liệu đánh giá (spec 070), ngăn chặn review ảo |
+| Phạt 30% hoàn 70% ví giả lập | Dùng | Công bằng tài chính giữa các phương thức thanh toán, không đối xử bất lợi với người trả trước 100% |
+
+### Cách kiểm chứng
+
+- Kiểm tra file `specs/060-my-bookings/spec.md` không còn chứa chuỗi `NEEDS CLARIFICATION`.
+- Kiểm tra checklist `specs/060-my-bookings/checklists/requirements.md` đạt 100% checkmark (16/16).
+- Đối chiếu với Constitution Nguyên tắc II (server validation), III (Long VND, deterministic hold/timestamp), VI (ví giả lập phi thương mại).
+
 
 
 
