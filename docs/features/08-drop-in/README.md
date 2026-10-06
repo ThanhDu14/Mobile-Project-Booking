@@ -4,11 +4,11 @@
 |---|---|
 | Mã nhóm | `08` |
 | Vai trò sử dụng | Người chơi |
-| Thành viên phụ trách | C |
+| Thành viên phụ trách | Nguyễn Đức Duy (C) |
 | App tham khảo | Alobo |
 | Trạng thái | ⬜ Chưa bắt đầu |
-| Nhánh Git | `feature/08-<ten-tinh-nang>` |
-| Spec (Spec Kit) | _Chưa tạo — chạy `/speckit-specify` rồi dán link `specs/NNN-.../spec.md` vào đây_ |
+| Nhánh Git | `feature/08-drop-in` |
+| Spec (Spec Kit) | [`specs/080-drop-in-session/spec.md`](../../../specs/080-drop-in-session/spec.md) (đã clarify) · `specs/081-drop-in-waitlist` (chưa tạo) |
 
 ## Phạm vi chức năng
 

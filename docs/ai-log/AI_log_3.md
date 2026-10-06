@@ -8,6 +8,8 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 2 | 2026-10-05 | Làm rõ spec 070 bằng `/speckit-clarify` (5 câu hỏi) | 07 |
 | 3 | 2026-10-05 | Lập kế hoạch kỹ thuật spec 070 bằng `/speckit-plan` | 07 |
 | 4 | 2026-10-05 | Chia task triển khai spec 070 bằng `/speckit-tasks` | 07 |
+| 5 | 2026-10-06 | Viết spec 080 (đặt lịch chơi vãng lai theo lượt) bằng `/speckit-specify` | 08 |
+| 6 | 2026-10-06 | Làm rõ spec 080 bằng `/speckit-clarify` (5 câu hỏi) | 08 |
 
 ---
 
@@ -234,3 +236,119 @@ ViewModel) và đánh dấu những task làm song song được.
 - Kiểm tra định dạng: cả 78 task có ô đánh dấu, mã T001–T078, đường dẫn file; mọi task ở Phase 3–8 có nhãn `[US1]`…`[US6]`.
 - Đối chiếu: mỗi user story trong spec có ít nhất một task test và các task cài đặt đủ từ server tới giao diện; mỗi kịch bản trong `quickstart.md` được một checkpoint nhắc tới.
 - Việc tiếp theo: chạy `/speckit-analyze` để kiểm tra độ khớp giữa spec, plan và tasks trước khi code.
+
+---
+
+## Mục 5: Viết spec 080 (đặt lịch chơi vãng lai theo lượt) bằng `/speckit-specify`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-06 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 08 – Đặt lịch vãng lai (spec `specs/080-drop-in-session`) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5), lệnh Spec Kit `/speckit-specify` |
+| Mục đích | Sinh bản đặc tả đầu tiên cho phần tìm, đăng ký, vé QR, hủy, lịch sử và đánh giá buổi vãng lai |
+| Nhánh Git | `feature/08-drop-in` |
+
+### Prompt đã dùng
+
+```
+/speckit-specify SPECIFY_FEATURE_DIRECTORY=specs/080-drop-in-session
+Người chơi tìm và đăng ký các buổi chơi vãng lai do sân/CLB mở.
+- Danh sách buổi: ngày, giờ, sân, trình độ, số chỗ còn lại, giá theo lượt; lọc theo khu vực,
+  ngày, khung giờ, trình độ, mức giá.
+- Đăng ký: chọn buổi, số người (đi một mình hoặc kèm bạn), xác nhận. Không được vượt số chỗ còn
+  lại; việc đăng ký chạy phía server trong transaction (Edge Function register-drop-in) để không
+  vượt chỗ khi nhiều người đăng ký cùng lúc.
+- Thanh toán theo lượt (giả lập) hoặc trả tại sân; sau khi đăng ký có vé lượt kèm mã QR check-in.
+- Hủy đăng ký theo chính sách (cancel-drop-in), xem lịch sử các buổi đã tham gia, đánh giá buổi
+  chơi sau khi tham gia (reviews với targetType = DROP_IN, mỗi lượt một lần).
+- Xử lý mất mạng, buổi bị hủy hoặc đã đủ người, trạng thái rỗng.
+Không bao gồm: hàng chờ và tự đẩy người lên (spec 081), chủ sân mở buổi và quét QR check-in
+(spec 112), gửi thông báo (spec 100), thanh toán đặt sân thường (spec 050).
+Dữ liệu: dropInSessions, dropInSessions/{id}/registrations/{uid}, reviews theo
+docs/design/database/README.md mục 4.7, 4.9.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Đọc constitution, đặc tả CSDL (mục 4.5, 4.7, 4.9, 4.13, 7, 8a), spec 070, 011, 022 để thống nhất trình độ, khu vực, cách đánh giá và lối vào từ AI Assistant.
+- Tạo `specs/080-drop-in-session/spec.md` và `checklists/requirements.md`:
+  - 5 user story: tìm buổi (P1), đăng ký và nhận vé QR (P1), xem vé và lịch sử (P2), hủy theo chính sách (P2), đánh giá buổi chơi (P3);
+  - 27 yêu cầu chức năng (FR-001 → FR-027), 14 trường hợp biên, 8 tiêu chí thành công (SC-001 → SC-008);
+  - giá trị mặc định do AI chọn: nhóm tối đa 4 người (bản thân + 3 bạn), hủy trước hơn 4 giờ hoàn 100% / trong 4 giờ không hoàn, chỉ đánh giá khi đã check-in, khung giờ Sáng/Chiều/Tối, danh sách 14 ngày tới;
+  - AI tự bổ sung: chủ sân không đăng ký buổi của chính mình; buổi bị chủ sân đổi giờ/giá thì người chơi được hủy hoàn 100%; vé xem được khi mất mạng; lượt không check-in hiện "Không đến"; đánh giá vãng lai dùng chung quy tắc spec 070 và tính vào điểm cơ sở.
+- Đề xuất SC-002: 20 người cùng đăng ký 5 chỗ cuối thì đúng 5 người thành công, để kiểm thử nguyên tắc III của constitution.
+- Checklist chất lượng đạt 16/16, không còn `[NEEDS CLARIFICATION]`. Cập nhật link spec và nhánh Git trong `docs/features/08-drop-in/README.md`.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| 5 user story và độ ưu tiên | Dùng | Bao đủ các chức năng nhóm 08 trong proposal, trừ hàng chờ (để riêng spec 081) |
+| Đăng ký xác nhận ngay, không giữ chỗ tạm, không cần chủ sân duyệt | Dùng | Buổi vãng lai đã do chủ sân mở sẵn; giữ luồng ≤ 4 bước |
+| Nhóm tối đa 4 người, mốc hủy 4 giờ, đánh giá cần check-in | Dùng tạm | Để hỏi lại ở bước clarify |
+| Đánh giá vãng lai tính vào điểm trung bình cơ sở | Dùng | Dùng lại cơ chế của spec 070, không thêm luồng tính điểm mới |
+
+### Cách kiểm chứng
+
+- Đối chiếu đặc tả CSDL mục 4.9: trạng thái buổi (`OPEN`, `FULL`, `CANCELLED`, `COMPLETED`) và đăng ký (`REGISTERED`, `CANCELLED`, `CHECKED_IN`; `WAITLISTED` để spec 081) khớp với Key Entities.
+- Đối chiếu constitution: nguyên tắc III (FR-007, FR-008, FR-018 – bước nguyên tử, chống trùng), II (FR-009, FR-014, FR-021 – kiểm tra phía server), V (FR-024 – 4 trạng thái màn hình), VI (FR-010 – ghi rõ thanh toán giả lập).
+- Đối chiếu spec 011 FR-022a (xóa tài khoản hủy lượt vãng lai) và spec 022 FR-012 (AI điền bộ lọc vãng lai).
+- Checklist 16/16; tìm "Edge Function", "transaction", "Firestore" trong spec chỉ còn ở dòng Input gốc.
+
+---
+
+## Mục 6: Làm rõ spec 080 bằng `/speckit-clarify`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-06 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 08 – Đặt lịch vãng lai (spec `specs/080-drop-in-session`) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5), lệnh Spec Kit `/speckit-clarify` |
+| Mục đích | Chốt các giá trị mặc định AI tự chọn ở bước specify và các điểm ảnh hưởng tới tiền, phân quyền, quyền riêng tư |
+| Nhánh Git | `feature/08-drop-in` |
+
+### Prompt đã dùng
+
+```
+/speckit-clarify
+Rà soát spec 080 và hỏi mình lần lượt từng câu về những điểm còn mơ hồ, ưu tiên các điểm ảnh
+hưởng tới tiền hoàn khi hủy, điều kiện đánh giá và quyền riêng tư của người đăng ký; mỗi câu
+kèm phương án bạn đề xuất và lý do.
+```
+
+AI hỏi lần lượt 5 câu. Câu trả lời của mình:
+
+| # | Câu hỏi của AI | AI đề xuất | Mình chọn |
+|---|---|---|---|
+| 1 | Chính sách hoàn tiền khi người chơi tự hủy? | A – trước hơn 4 giờ hoàn 100%, trong 4 giờ vẫn hủy được nhưng không hoàn | A – đồng ý |
+| 2 | Điều kiện để được đánh giá buổi đã kết thúc? | A – chỉ lượt đã check-in | Theo đề xuất |
+| 3 | "Thanh toán ngay (giả lập)" hoạt động thế nào? | A – màn hình giả lập luôn thành công, không dùng ví có số dư | Theo đề xuất |
+| 4 | Một lần đăng ký kèm tối đa bao nhiêu người? | B – 4 người (bản thân + 3 bạn) | B – đồng ý |
+| 5 | Người khác có xem được danh sách người đăng ký không? | A – không, chỉ thấy số chỗ còn lại | A – đồng ý |
+
+### Tóm tắt phản hồi của AI
+
+- Thêm mục **Clarifications / Session 2026-10-06** với 5 câu hỏi – trả lời.
+- FR-010: mô tả rõ thanh toán giả lập là màn hình mẫu luôn thành công, hoàn tiền chỉ đổi trạng thái thành "Đã hoàn tiền"; spec 080 không phụ thuộc ví của spec 050.
+- FR-021: người chơi khác không thấy danh sách, tên hay ảnh người đăng ký, kể cả người cùng buổi; chi tiết buổi không có phần "Người tham gia".
+- User Story 2 kịch bản 2: ghi rõ giới hạn 4 người.
+- Assumptions: chuyển 4 giá trị mặc định sang "đã chốt", ghi việc cần báo B (mốc hủy 4 giờ) và D (spec 112 nhắc chủ sân check-in đủ người).
+- Checklist chất lượng vẫn 16/16, không còn `[NEEDS CLARIFICATION]`.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Mốc hủy 4 giờ, hoàn 100% / 0% | Dùng | Đơn giản, dễ kiểm thử; vẫn cho hủy sát giờ để trả chỗ cho người khác |
+| Chỉ đánh giá khi đã check-in | Dùng | Bảo đảm người đánh giá thật sự đã chơi, giống quy tắc spec 070 |
+| Ví giả lập có số dư (phương án B câu 3) | **Bỏ** | Phụ thuộc tiến độ spec 050 của B và thêm nhiều trường hợp lỗi không cần thiết |
+| Cho người cùng buổi xem nhau (phương án B câu 5) | **Bỏ** | Hạn chế lộ dữ liệu cá nhân (constitution nguyên tắc VI); giao lưu thuộc nhóm 09 |
+
+### Cách kiểm chứng
+
+- Mục Clarifications có đúng 5 dòng; mỗi câu trả lời khớp với FR-006, FR-010, FR-017, FR-021, FR-022 và phần Assumptions.
+- Tìm trong spec: không còn "cần xác nhận ở `/speckit-clarify`" hay `[NEEDS CLARIFICATION]`.
+- Việc tiếp theo: báo B về mốc hủy 4 giờ, báo D về việc nhắc check-in ở spec 112; sau đó chạy `/speckit-specify` cho spec 081 (hàng chờ).
