@@ -6,6 +6,9 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 |---|---|---|---|
 | 1 | 2026-10-05 | Viết spec 010 (đăng ký, đăng nhập) bằng `/speckit-specify` + `/speckit-clarify` | 01 |
 | 2 | 2026-10-05 | Viết spec 011 (hồ sơ, quản lý tài khoản) bằng `/speckit-specify` | 01 |
+| 3 | 2026-10-05 | Đối chiếu spec 010 với proposal bằng `/speckit-analyze` | 01 |
+| 4 | 2026-10-05 | Viết spec 020 (tìm kiếm sân) bằng `/speckit-specify` | 02 |
+| 5 | 2026-10-05 | Viết spec 022 (tìm sân thông minh – AI Assistant) bằng `/speckit-specify` | 02 |
 
 ---
 
@@ -139,3 +142,184 @@ Câu trả lời cho câu hỏi làm rõ của AI về xóa tài khoản khi cò
 - Đối chiếu với constitution nguyên tắc VI (người dùng xóa được tài khoản theo Nghị định 13/2023) và đặc tả CSDL mục 4.1, 4.2.
 - Checklist `specs/011-account-profile/checklists/requirements.md` đạt 16/16, không còn `[NEEDS CLARIFICATION]`.
 - Việc cần làm tiếp: thống nhất với B (chính sách hủy), C (hủy lượt vãng lai), D (ẩn cơ sở, thông báo) trước `/speckit-plan`; nhờ B review spec qua PR.
+
+---
+
+## Mục 3: Đối chiếu spec 010 với proposal bằng `/speckit-analyze`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-05 |
+| Người thực hiện | Thành Dự |
+| Nhóm tính năng liên quan | 01 – Tài khoản (`specs/010-account-auth`) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5), lệnh Spec Kit `/speckit-analyze` (chỉ đọc) |
+| Mục đích | Kiểm tra spec 010 có khớp proposal, constitution và đặc tả CSDL không |
+| Nhánh Git | `feature/01-account-specs` |
+
+### Prompt đã dùng
+
+```
+/speckit-analyze hãy check lại mô tả spec với lại proposal phần 010-account-auth
+```
+
+### Tóm tắt phản hồi của AI
+
+- Spec 010 mới có `spec.md` (chưa có plan, tasks) nên không chạy được phần độ phủ task; AI chỉ đối chiếu spec với `Proposal.html`, constitution 1.2.0 và đặc tả CSDL mục 4.1.
+- 11 phát hiện, trong đó 4 mức HIGH:
+  - F1: bỏ bước chọn "Tôi muốn đặt sân / Tôi là chủ sân" nhưng proposal vẫn còn ở 4 chỗ (mục 5, sơ đồ luồng, quy trình xác minh chủ sân, bảng luồng chụp ảnh);
+  - F2: khóa tài khoản chỉ mô tả hành vi trên app, thiếu yêu cầu chặn phía server (nguyên tắc II);
+  - F3: cho dùng app khi chưa xác minh email + liên kết Google cùng email → Firebase có thể gỡ phương thức mật khẩu;
+  - F4: OTP 5 phút, 5 lần sai không cấu hình được trong Firebase Phone Auth, không test được với số thử nghiệm.
+- Các mức MEDIUM/LOW: chính sách không tiết lộ email chưa thống nhất, điều hướng chủ sân lệch với "bật chuyển Quản lý sân" của proposal, thiếu luồng liên kết số điện thoại, chính sách mật khẩu ở trang đặt lại, thiếu Splash/Onboarding, phương án email OTP, cách viết `role/ownerStatus`.
+- Bảng độ phủ: 9/12 mục proposal nhóm 1 được phủ đúng.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Báo cáo 11 phát hiện | Dùng làm danh sách việc cần sửa | AI chưa sửa file nào; mình sẽ tự quyết định sửa |
+| F3, F4, F8 (giới hạn của Firebase) | Cần kiểm chứng thêm | Phụ thuộc cấu hình Firebase, sẽ xác minh ở bước `/speckit-plan` |
+
+### Cách kiểm chứng
+
+- Mở `Proposal.html` tại các dòng AI dẫn (342, 469, 475, 488, 611, 845, 901) để xác nhận.
+- Đối chiếu tài liệu Firebase Auth về liên kết tài khoản cùng email và giới hạn Phone Auth trước khi sửa FR-012, FR-016.
+
+---
+
+## Mục 4: Viết spec 020 (tìm kiếm sân) bằng `/speckit-specify`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-05 |
+| Người thực hiện | Thành Dự |
+| Nhóm tính năng liên quan | 02 – Tìm kiếm sân (spec `specs/020-court-search`) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5), lệnh Spec Kit `/speckit-specify` |
+| Mục đích | Sinh bản đặc tả cho tìm kiếm sân (tên/quận, bộ lọc, sắp xếp, lịch sử) |
+| Nhánh Git | `feature/02-court-search` (tạo mới từ `origin/main`) |
+
+### Prompt đã dùng
+
+```
+/speckit-specify SPECIFY_FEATURE_DIRECTORY=specs/020-court-search
+Người chơi tìm cơ sở sân cầu lông để đặt. Màn hình tìm kiếm có ô tìm theo tên sân (gõ không dấu,
+viết hoa hay thường đều khớp, khớp theo phần đầu của từ) và chọn quận/huyện từ danh mục. Bộ lọc
+gồm: khoảng giá theo giờ; khung giờ còn trống (chọn ngày + giờ bắt đầu/kết thúc, chỉ hiện cơ sở có
+ít nhất một sân con trống trọn khung đó); tiện ích (gửi xe, nước uống, phòng tắm, cho thuê vợt;
+cơ sở phải có đủ mọi tiện ích đã chọn). Bộ lọc đang áp dụng hiện thành chip, bỏ từng chip hoặc
+xóa hết được. Sắp xếp theo: gần nhất, giá thấp đến cao, đánh giá cao nhất. Thẻ kết quả gồm ảnh,
+tên, quận, giá "từ X đ/giờ", điểm và số lượt đánh giá, khoảng cách (khi có vị trí); danh sách
+tải thêm khi cuộn; bấm thẻ mở chi tiết sân. Chỉ hiện cơ sở đang hoạt động.
+Lịch sử tìm kiếm: lưu các lần tìm gần đây của chính người dùng (từ khóa + bộ lọc), bấm để tìm
+lại, xóa từng mục hoặc xóa hết; người khác không xem được.
+Vị trí: xin quyền lúc người dùng chọn "gần nhất"; từ chối thì ẩn khoảng cách, không sắp xếp theo
+khoảng cách được, các chức năng khác vẫn dùng bình thường.
+Bộ lọc là đầu vào dùng chung: spec 022 (AI) điền vào đúng bộ lọc này rồi chạy cùng truy vấn.
+Có trạng thái đang tải, rỗng (gợi ý bỏ bớt bộ lọc), lỗi kèm thử lại; mất mạng không crash.
+Danh sách trang đầu tải dưới 3 giây trên 4G.
+Không bao gồm: bản đồ, marker và gợi ý sân gần vị trí hiện tại (spec 021); tìm bằng câu tự do
+hoặc giọng nói (spec 022); chi tiết sân (spec 030); lưới giờ và đặt sân (spec 040); tìm buổi
+vãng lai (spec 080).
+Dữ liệu: venues (nameKeywords, districtId, amenityIds, minPricePerHour, ratingAvg, geohash,
+status), slots để xét giờ trống, districts, amenities, users/{uid}/searchHistory theo
+docs/design/database/README.md.
+```
+
+Câu trả lời cho 2 câu hỏi làm rõ của AI: `Q1: B, Q2: B`.
+
+### Tóm tắt phản hồi của AI
+
+- Tạo `specs/020-court-search/spec.md` và `checklists/requirements.md`:
+  - 4 user story: tìm theo tên/quận (P1), lọc giá + khung giờ trống + tiện ích (P1), sắp xếp và khoảng cách (P2), lịch sử tìm kiếm (P3);
+  - 28 yêu cầu chức năng, 7 tiêu chí thành công, các trường hợp biên (mất mạng, gõ nhanh, khoảng giá ngược, cơ sở chưa có bảng giá...).
+- AI hỏi 2 câu: giá dùng để lọc khi có khung giờ, và khách chưa đăng nhập có được tìm sân không.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Q1 – giá theo khung giờ | Chọn **B** (thay vì A: giá thấp nhất) | Giá trên thẻ phải khớp ý người dùng khi lọc "tối mai dưới 100k" |
+| Q2 – khách tìm sân | Chọn **B** | Người mới xem được sân ngay, chỉ đặt sân và lịch sử mới cần đăng nhập |
+| Mặc định: lịch sử 10 mục, trang 20, đặt trước 14 ngày, sắp xếp mặc định theo đánh giá | Dùng tạm | Sẽ rà lại ở `/speckit-clarify` |
+
+### Cách kiểm chứng
+
+- Checklist `specs/020-court-search/checklists/requirements.md` đạt 16/16, không còn `[NEEDS CLARIFICATION]`.
+- Đối chiếu với constitution (nguyên tắc V: 4 trạng thái màn hình, dưới 3 giây; nguyên tắc VI: xin quyền vị trí lúc cần) và đặc tả CSDL mục 4.3, 4.4.
+- Việc cần làm tiếp: thống nhất với B, D cách tính giá theo khung (để khớp spec 040); với D về quyền đọc công khai `venues`, `districts`, `amenities`, `slots` cho khách.
+
+---
+
+## Mục 5: Viết spec 022 (tìm sân thông minh – AI Assistant) bằng `/speckit-specify`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-05 |
+| Người thực hiện | Thành Dự |
+| Nhóm tính năng liên quan | 02 – Tìm kiếm sân (spec `specs/022-ai-court-search`) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5), lệnh Spec Kit `/speckit-specify` |
+| Mục đích | Sinh spec cho ô tìm sân bằng câu tự nhiên/giọng nói theo `docs/proposal/AI-feature.md` |
+| Nhánh Git | `feature/02-court-search` |
+
+### Prompt đã dùng
+
+```
+/speckit-specify SPECIFY_FEATURE_DIRECTORY=specs/022-ai-court-search
+Người chơi tìm sân bằng một câu tiếng Việt tự nhiên, gõ hoặc nói (giọng nói xin quyền micro lúc
+bấm; từ chối thì vẫn gõ được). Ví dụ "tối mai 7h-9h sân gần Quận 10 dưới 100k có gửi xe", kể cả
+viết tắt, không dấu ("q10 duoi 100k co gui xe"). AI phân loại ý định trong một lần gọi:
+- search: trích bộ lọc gồm quận, ngày, giờ bắt đầu/kết thúc, giá tối đa, tiện ích, loại (sân
+  thường hay buổi vãng lai). Hiểu thời gian đời thường theo ngày giờ hiện tại, múi giờ
+  Asia/Ho_Chi_Minh ("mai", "cuối tuần này", "tối" = 18:00–22:00). Kết quả hiện thành chip bộ lọc
+  để người dùng sửa trước khi tìm, rồi chạy truy vấn của spec 020.
+- unclear: hỏi lại đúng 1 câu kèm chip chọn nhanh (ví dụ [Tối nay] [Tối mai] [Cuối tuần]); bấm
+  chip thì app tự điền, không gọi AI lần hai; vẫn thiếu thì chuyển sang bộ lọc thủ công với phần
+  đã hiểu được điền sẵn.
+- faq: hiện nội dung chính sách có sẵn theo chủ đề (hủy sân, đặt cọc, voucher, thanh toán), không
+  do AI viết.
+- off_topic: hiện thông báo cố định "chỉ hỗ trợ tìm và đặt sân" kèm câu ví dụ. Câu pha trộn thì
+  chỉ lấy phần tìm sân.
+Kết quả AI luôn được kiểm tra trước khi dùng: quận và tiện ích phải có trong danh mục, giờ và
+giá hợp lệ, trường lạ bị bỏ; sai thì xử lý như unclear. AI không trả lời tự do, không tự đặt sân,
+không đọc hay ghi dữ liệu nghiệp vụ; câu cố bẻ prompt chỉ cho ra bộ lọc sai hoặc off_topic.
+Giới hạn: câu rỗng hoặc quá 200 ký tự bị chặn ngay trên app; mỗi người tối đa N lượt mỗi ngày
+và app hiện số lượt còn lại; 3 câu lạc đề liên tiếp thì tạm khóa ô AI vài phút, vẫn dùng bộ lọc
+thủ công được; cùng một câu trong ngày dùng lại kết quả cũ. Số điện thoại và email trong câu bị
+che trước khi gửi; không gửi tên hay thông tin tài khoản. AI lỗi, quá thời gian hoặc mất mạng
+thì báo ngắn và quay về bộ lọc thủ công, giữ nguyên câu đã nhập. Có câu ví dụ gợi ý dưới ô nhập.
+Không có kết quả thì gợi ý nới điều kiện (tăng giá, đổi giờ) bằng truy vấn lại, không gọi AI.
+Ghi số liệu không kèm thông tin cá nhân (intent, kiểm tra hợp lệ hay không, độ trễ) để đo tỉ lệ
+trích đúng trên bộ 20–30 câu mẫu và 10–15 câu ngoại lệ.
+Không bao gồm: bộ lọc thủ công, danh sách kết quả, lịch sử tìm kiếm (spec 020); bản đồ (spec
+021); danh sách buổi vãng lai (spec 080, AI chỉ điền bộ lọc rồi chuyển sang); nội dung chính
+sách (lấy từ spec 050, 060); chọn nhà cung cấp LLM (họp 09/10).
+Dữ liệu và quy tắc: docs/proposal/AI-feature.md; districts, amenities, venues,
+users/{uid}/aiUsage, aiSearchCache theo docs/design/database/README.md; Edge Function
+ai-search-parse theo constitution v1.2.0.
+```
+
+Câu trả lời cho 2 câu hỏi làm rõ của AI: `Q1: A, Q2: A`.
+
+### Tóm tắt phản hồi của AI
+
+- Tạo `specs/022-ai-court-search/spec.md` và `checklists/requirements.md`:
+  - 6 user story: tìm bằng câu tự nhiên (P1), câu thiếu thông tin / không hiểu được (P1), hỏi chính sách và lạc đề (P2), nhập giọng nói (P2), giới hạn lượt và quay về bộ lọc thủ công (P2), gợi ý nới điều kiện khi không có kết quả (P3);
+  - 25 yêu cầu chức năng, 8 tiêu chí thành công (trích đúng toàn bộ ≥ 85% câu mẫu, 100% câu ngoại lệ vào đúng nhánh, 0 số điện thoại/email lọt ra ngoài...).
+- AI dùng lại các quyết định đã chốt ở spec 020 (bộ lọc dùng chung, giá theo khung giờ, bước 30 phút, đặt trước 14 ngày) và tự đặt mặc định cho các buổi trong ngày, "7h-9h" hiểu là buổi tối, tạm khóa 5 phút, chờ 10 giây.
+- AI hỏi 2 câu: số lượt AI mỗi ngày (N), và khách chưa đăng nhập có được dùng ô AI không.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Q1 – số lượt mỗi ngày | Chọn **A: 10 lượt/ngày** | An toàn nhất cho gói miễn phí; kiểm thử dùng nhiều tài khoản thử nghiệm |
+| Q2 – khách dùng ô AI | Chọn **A: phải đăng nhập** | Giới hạn lượt gắn chắc với tài khoản, khó lạm dụng; khách vẫn dùng bộ lọc thủ công |
+| Mặc định thời gian ("sáng/trưa/chiều/tối", "7h-9h" = tối), tạm khóa 5 phút, chờ 10 giây, bậc nới giá 20.000 đ | Dùng tạm | Sẽ rà lại ở `/speckit-clarify` |
+| Dòng **Input** gốc vẫn ghi "N lượt" | Giữ | Spec Kit giữ mô tả gốc để lưu vết; giá trị đã chốt nằm ở Clarifications và FR-016 |
+
+### Cách kiểm chứng
+
+- Checklist `specs/022-ai-court-search/checklists/requirements.md` đạt 16/16, không còn `[NEEDS CLARIFICATION]`.
+- Đối chiếu với `docs/proposal/AI-feature.md` (workflow, 4 ý định, các lớp chặn, chống prompt injection) và dòng "AI Assistant (LLM)" trong constitution 1.2.0 (không gửi tên/email/SĐT, AI không ghi dữ liệu nghiệp vụ).
+- Hai spec 020 và 022 được commit chung (`b08bd6a`) trên nhánh `feature/02-court-search`.
+- Việc cần làm tiếp: thống nhất với C (bộ lọc buổi vãng lai), B (chủ đề chính sách), D (khoảng giá hợp lệ); spec 010 cần luồng "đăng nhập rồi quay lại màn hình trước".
