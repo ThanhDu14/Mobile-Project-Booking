@@ -9,6 +9,7 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 3 | 2026-10-05 | Đối chiếu spec 010 với proposal bằng `/speckit-analyze` | 01 |
 | 4 | 2026-10-05 | Viết spec 020 (tìm kiếm sân) bằng `/speckit-specify` | 02 |
 | 5 | 2026-10-05 | Viết spec 022 (tìm sân thông minh – AI Assistant) bằng `/speckit-specify` | 02 |
+| 7 | 2026-10-06 | Viết spec 021 (bản đồ sân, sân gần bạn) bằng `/speckit-specify` | 02 |
 
 ---
 
@@ -323,3 +324,76 @@ Câu trả lời cho 2 câu hỏi làm rõ của AI: `Q1: A, Q2: A`.
 - Đối chiếu với `docs/proposal/AI-feature.md` (workflow, 4 ý định, các lớp chặn, chống prompt injection) và dòng "AI Assistant (LLM)" trong constitution 1.2.0 (không gửi tên/email/SĐT, AI không ghi dữ liệu nghiệp vụ).
 - Hai spec 020 và 022 được commit chung (`b08bd6a`) trên nhánh `feature/02-court-search`.
 - Việc cần làm tiếp: thống nhất với C (bộ lọc buổi vãng lai), B (chủ đề chính sách), D (khoảng giá hợp lệ); spec 010 cần luồng "đăng nhập rồi quay lại màn hình trước".
+---
+
+## Mục 7: Viết spec 021 (bản đồ sân và sân gần bạn) bằng `/speckit-specify`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-06 |
+| Người thực hiện | Thành Dự |
+| Nhóm tính năng liên quan | 02 – Tìm kiếm sân (spec `specs/021-court-map`) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5), lệnh Spec Kit `/speckit-specify` |
+| Mục đích | Sinh bản đặc tả cho chế độ bản đồ (marker quả cầu lông, cụm, thẻ tóm tắt), "Vị trí của tôi" và mục "Sân gần bạn" |
+| Nhánh Git | `feature/02-court-map` (tạo mới từ `origin/main`) |
+
+### Prompt đã dùng
+
+```
+/speckit-specify SPECIFY_FEATURE_DIRECTORY=specs/021-court-map
+Người chơi (kể cả khách chưa đăng nhập) xem các cơ sở sân cầu lông trên bản đồ và tìm sân gần mình.
+Chế độ bản đồ: trên màn hình tìm kiếm của spec 020 có nút chuyển "Danh sách / Bản đồ"; hai chế độ
+dùng chung một bộ lọc (từ khóa, quận/huyện, khoảng giá, khung giờ còn trống, tiện ích), đổi chế độ
+không mất bộ lọc. Mỗi cơ sở đang hoạt động khớp bộ lọc hiện thành một marker hình quả cầu lông tại
+vị trí của cơ sở; nhiều marker gần nhau thì gộp thành một cụm có số lượng, phóng to thì tách ra.
+Chạm vào marker: marker được làm nổi bật và hiện thẻ tóm tắt ở cuối màn hình (ảnh, tên, quận, giá
+"từ X đ/giờ" hoặc giá của khung đã chọn theo cách tính của spec 020, điểm và số lượt đánh giá,
+khoảng cách nếu có vị trí); vuốt ngang thẻ để chuyển sang cơ sở kế bên và bản đồ di theo; chạm
+thẻ mở chi tiết sân (spec 030), mang theo ngày và khung giờ đã chọn. Khi kéo hoặc phóng bản đồ sang
+vùng khác, hiện nút "Tìm ở khu vực này" để tải cơ sở trong vùng đang xem, không tự tải lại liên
+tục.
+Vị trí của tôi: nút "Vị trí của tôi" đưa bản đồ về vị trí hiện tại và hiện chấm vị trí; xin quyền
+vị trí lúc người dùng bấm nút hoặc mở mục "Sân gần bạn" lần đầu, có giải thích trước. Từ chối quyền
+hoặc tắt định vị thì bản đồ mở ở khu vực mặc định, mọi chức năng khác vẫn dùng được.
+Sân gần bạn: một mục gợi ý các cơ sở đang hoạt động gần vị trí hiện tại nhất, xếp theo khoảng cách,
+hiện khoảng cách và nút "Xem tất cả trên bản đồ"; không có cơ sở nào trong bán kính gợi ý thì báo
+và gợi ý mở rộng tìm kiếm. Vị trí chỉ dùng trên thiết bị, không lưu lên máy chủ.
+Có trạng thái đang tải marker, không có cơ sở nào trong vùng hoặc khớp bộ lọc (gợi ý bỏ bớt bộ lọc
+hoặc thu nhỏ bản đồ), lỗi kèm thử lại. Bản đồ không tải được (mất mạng, dịch vụ bản đồ lỗi) thì
+báo và chuyển về chế độ danh sách của spec 020, không crash. Marker trong vùng đang xem hiện trong
+dưới 3 giây trên 4G. Hiển thị đúng trên điện thoại và máy tính bảng (máy tính bảng có thể đặt danh
+sách và bản đồ cạnh nhau), chế độ sáng và tối; marker và nút có mô tả cho trình đọc màn hình.
+Không bao gồm: ô tìm kiếm, bộ lọc, sắp xếp và lịch sử (spec 020); tìm bằng câu tự do (spec 022);
+bản đồ nhúng và chỉ đường trong chi tiết sân (spec 030); buổi vãng lai trên bản đồ (spec 080); chủ
+sân ghim vị trí cơ sở (spec 110, 111).
+Dữ liệu: venues (location, geohash, status, name, photoPaths, districtId, amenityIds,
+minPricePerHour, ratingAvg, ratingCount), districts, cùng quy tắc giờ trống và giá theo khung của
+spec 020 (slots, priceRules) theo docs/design/database/README.md.
+```
+
+Câu trả lời cho 2 câu hỏi làm rõ của AI: `Q1: A`, `Q2: Mình muốn nó ở bên dưới thanh tìm kiếm`.
+
+### Tóm tắt phản hồi của AI
+
+- Tạo `specs/021-court-map/spec.md` và `checklists/requirements.md`:
+  - 4 user story: xem sân trên bản đồ và mở chi tiết (P1), duyệt nhiều sân bằng cụm marker, vuốt thẻ, "Tìm ở khu vực này" (P2), vị trí của tôi (P2), sân gần bạn (P2);
+  - 24 yêu cầu chức năng, 7 tiêu chí thành công (marker hiện dưới 3 giây, tập cơ sở trên bản đồ trùng 100% với danh sách của spec 020, kéo/phóng 1 phút không tự tải lại lần nào...);
+  - trường hợp biên: bản đồ lỗi thì về danh sách, cơ sở thiếu vị trí, nhiều cơ sở cùng tọa độ, AI điền bộ lọc khi đang ở bản đồ, người chơi đang di chuyển, máy tính bảng.
+- AI tự thêm: giới hạn 100 cơ sở mỗi lần tải (giữ trong hạn mức miễn phí), bỏ bộ lọc quận khi "Tìm ở khu vực này" ở vùng khác, mặc định bán kính 5 km và tối đa 10 sân cho "Sân gần bạn".
+- AI hỏi 2 câu: khu vực mặc định khi không có vị trí, và mục "Sân gần bạn" đặt ở đâu.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| 4 user story và độ ưu tiên | Dùng | Bao đủ phạm vi spec 021 trong bảng phân công |
+| Q1 – khu vực mặc định | Chọn **A: trung tâm TP.HCM** | Đơn giản, không cần thêm tọa độ tâm quận vào CSDL |
+| Q2 – vị trí "Sân gần bạn" | **Tự trả lời: ngay dưới thanh tìm kiếm** (không chọn A/B/C của AI) | Người chơi thấy ngay khi vào màn hình tìm kiếm, không phụ thuộc trang chủ chưa có spec |
+| Mục thu gọn khi bắt đầu tìm hoặc mở lịch sử (FR-015a) | Dùng | AI thêm để không tranh chỗ với kết quả và lịch sử của spec 020 |
+| Mặc định 5 km, 10 sân, 100 cơ sở mỗi lần tải, chờ vị trí 10 giây | Dùng tạm | Rà lại ở `/speckit-clarify` |
+
+### Cách kiểm chứng
+
+- Checklist `specs/021-court-map/checklists/requirements.md` đạt 16/16, không còn `[NEEDS CLARIFICATION]`.
+- Đối chiếu với spec 020 (bộ lọc dùng chung, giá theo khung, quy tắc khoảng cách, khách được tìm sân), spec 030 (mở chi tiết mang theo ngày và khung giờ), constitution nguyên tắc V và VI (4 trạng thái, xin quyền vị trí lúc cần, không lưu vị trí).
+- Việc cần làm tiếp: spec 020 chừa chỗ cho "Sân gần bạn" dưới thanh tìm kiếm; chốt dịch vụ bản đồ (Google Maps hay osmdroid) ở buổi họp 09/10.
