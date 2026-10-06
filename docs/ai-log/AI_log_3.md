@@ -12,6 +12,8 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 6 | 2026-10-06 | Làm rõ spec 080 bằng `/speckit-clarify` (5 câu hỏi) | 08 |
 | 7 | 2026-10-06 | Viết spec 081 (hàng chờ buổi vãng lai) bằng `/speckit-specify` | 08 |
 | 8 | 2026-10-06 | Làm rõ spec 081 bằng `/speckit-clarify` (5 câu hỏi) | 08 |
+| 9 | 2026-10-06 | Viết spec 090 (nhóm/CLB và bảng tin cộng đồng) bằng `/speckit-specify` | 09 |
+| 10 | 2026-10-06 | Làm rõ spec 090 bằng `/speckit-clarify` (5 câu hỏi) | 09 |
 
 ---
 
@@ -469,3 +471,117 @@ Sau câu 1, mình đồng ý dùng phương án AI đề xuất cho cả 5 câu 
 - Mục Clarifications có đúng 5 dòng; mỗi câu trả lời khớp với FR-001, FR-007, FR-010, FR-010a, FR-011, FR-014 và User Story 2, 4.
 - Tìm trong spec: không còn "đến tận lúc buổi bắt đầu", "hỏi lại ở `/speckit-clarify`" hay `[NEEDS CLARIFICATION]`.
 - Việc tiếp theo: báo D về mốc đóng hàng chờ 30 phút và việc tăng sức chứa/hủy buổi ở spec 112 phải gọi quy tắc đẩy lên; gửi D danh sách loại thông báo của 080 và 081 trước 14/10.
+
+---
+
+## Mục 9: Viết spec 090 (nhóm/CLB và bảng tin cộng đồng) bằng `/speckit-specify`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-06 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 09 – Cộng đồng và chat (spec `specs/090-community-group`) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5), lệnh Spec Kit `/speckit-specify` |
+| Mục đích | Sinh bản đặc tả đầu tiên cho nhóm/CLB, bảng tin, sự kiện giao lưu và báo cáo bài đăng |
+| Nhánh Git | `feature/09-community-chat` |
+
+### Prompt đã dùng
+
+```
+/speckit-specify SPECIFY_FEATURE_DIRECTORY=specs/090-community-group
+Người chơi tạo và tham gia nhóm/CLB cầu lông, đăng bài và sự kiện giao lưu trên bảng tin nhóm.
+- Tạo nhóm: tên, mô tả, ảnh đại diện, khu vực, chế độ công khai hoặc riêng tư; người tạo là
+  chủ nhóm. Tìm nhóm theo tên và khu vực; tham gia nhóm công khai ngay, nhóm riêng tư phải được
+  chủ nhóm/quản trị viên duyệt. Rời nhóm; chủ nhóm phân quyền quản trị viên, mời ra khỏi nhóm.
+- Bảng tin nhóm: thành viên đăng bài (chữ, tối đa vài ảnh) hoặc sự kiện giao lưu (thời gian,
+  địa điểm, số người dự kiến); thành viên bấm "Tham gia sự kiện". Người đăng sửa/xóa bài của mình,
+  quản trị viên ẩn bài vi phạm trong nhóm.
+- Báo cáo bài đăng vi phạm (gửi vào hàng đợi kiểm duyệt của admin, spec 120).
+- Số thành viên do hệ thống cập nhật, người dùng không tự ghi. Ảnh lưu ở bucket group-media
+  của Supabase. Có xử lý mất mạng, upload ảnh lỗi, trạng thái rỗng.
+Không bao gồm: chat nhóm và chat riêng (spec 091), xử lý báo cáo của admin (spec 120), gửi
+thông báo (spec 100).
+Dữ liệu: groups/{groupId} (+ members, posts), reports theo docs/design/database/README.md
+mục 4.10, 4.12, 8.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Đọc đặc tả CSDL mục 4.10 (`groups`, `members`, `posts`), 4.12 (`reports`), 7 (phân quyền), 8 (bucket `group-media`) và spec 011 (khu vực, xóa tài khoản).
+- Tạo `specs/090-community-group/spec.md` và `checklists/requirements.md`:
+  - 6 user story: tạo nhóm (P1), tìm và tham gia (P1), đăng bài (P2), sự kiện giao lưu (P2), quản lý thành viên (P2), báo cáo và ẩn bài (P3);
+  - 22 yêu cầu chức năng (FR-001 → FR-022), 10 trường hợp biên, 8 tiêu chí thành công (SC-001 → SC-008);
+  - giá trị mặc định do AI chọn: tên nhóm 3–50 ký tự, bài ≤ 2000 ký tự, tối đa 4 ảnh mỗi bài, mỗi người làm chủ tối đa 5 nhóm, số người dự kiến của sự kiện chỉ để tham khảo, không có bình luận/lượt thích;
+  - AI tự bổ sung: phân quyền 3 vai trò (chủ nhóm, quản trị viên, thành viên), chủ nhóm phải chuyển quyền trước khi rời, người bị mời ra phải xin vào lại, danh sách thành viên chỉ thành viên xem được, chuyển quyền chủ nhóm tự động khi chủ nhóm xóa tài khoản.
+- Phát hiện mâu thuẫn trong đặc tả CSDL: mục 7 cho mọi người đọc nhóm công khai, nhưng mục 8 để ảnh nhóm ở bucket private chỉ thành viên xem → ghi vào Assumptions để chốt ở clarify.
+- Checklist chất lượng đạt 16/16, không còn `[NEEDS CLARIFICATION]`. Cập nhật link spec và nhánh Git trong `docs/features/09-community-chat/README.md`.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| 6 user story và độ ưu tiên | Dùng | Bao đủ phần nhóm và bảng tin của nhóm 09; chat để riêng spec 091 |
+| Phân quyền 3 vai trò | Dùng | Khớp `members.role` (`OWNER`, `ADMIN`, `MEMBER`) trong đặc tả CSDL mục 4.10 |
+| Danh sách thành viên là nguồn của chat nhóm (FR-022) | Dùng | Tránh hai nơi quản lý thành viên lệch nhau giữa 090 và 091 |
+| Xem ảnh nhóm công khai, bình luận/lượt thích, giới hạn sự kiện | Dùng tạm | Để hỏi lại ở bước clarify |
+
+### Cách kiểm chứng
+
+- Đối chiếu đặc tả CSDL mục 4.10: các trường của nhóm, thành viên và bài đăng (`type`: `POST`, `EVENT`) đều có trong Key Entities.
+- Đối chiếu constitution: nguyên tắc II (FR-002, FR-003, FR-009 – kiểm tra quyền phía server), V (FR-020 – 4 trạng thái màn hình), VI (FR-018 – nội dung báo cáo được).
+- Checklist 16/16; tìm "Supabase", "group-media" trong spec chỉ còn ở dòng Input gốc.
+
+---
+
+## Mục 10: Làm rõ spec 090 bằng `/speckit-clarify`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-06 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 09 – Cộng đồng và chat (spec `specs/090-community-group`) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5), lệnh Spec Kit `/speckit-clarify` |
+| Mục đích | Chốt quyền xem bảng tin, phạm vi tương tác trên bài đăng và cách hoạt động của sự kiện giao lưu |
+| Nhánh Git | `feature/09-community-chat` |
+
+### Prompt đã dùng
+
+```
+/speckit-clarify
+Rà soát spec 090 và nêu tối đa 5 điểm còn mơ hồ ảnh hưởng tới phân quyền, quyền riêng tư và
+trải nghiệm trên bảng tin nhóm, ưu tiên điểm mâu thuẫn trong đặc tả CSDL về việc người ngoài
+xem bài và ảnh của nhóm công khai. Mỗi điểm kèm phương án đề xuất và lý do; mình đồng ý dùng
+phương án đề xuất cho cả 5 câu, bạn ghi vào spec.
+```
+
+| # | Câu hỏi của AI | AI đề xuất | Mình chọn |
+|---|---|---|---|
+| 1 | Người ngoài có xem được bảng tin (bài, sự kiện, ảnh) của nhóm công khai không? | Không; "công khai" chỉ là tham gia ngay không cần duyệt | Theo đề xuất |
+| 2 | Bài đăng có bình luận và lượt thích không? | Không ở phiên bản này; thảo luận qua chat nhóm | Theo đề xuất |
+| 3 | Sự kiện đủ số người dự kiến thì có chặn tham gia không? | Không chặn, chỉ hiện "Vượt số dự kiến" | Theo đề xuất |
+| 4 | Nhóm riêng tư có hiện khi tìm kiếm không? | Có, hiện trang giới thiệu để xin tham gia | Theo đề xuất |
+| 5 | Bài đăng có cần chủ nhóm/quản trị viên duyệt trước không? | Không; hiện ngay, ẩn sau nếu vi phạm | Theo đề xuất |
+
+### Tóm tắt phản hồi của AI
+
+- Thêm mục **Clarifications / Session 2026-10-06** với 5 câu hỏi – trả lời.
+- FR-014 và User Story 3 kịch bản 7: bảng tin của mọi nhóm chỉ thành viên đọc được, người ngoài chỉ thấy trang giới thiệu (bản đầu cho người ngoài đọc bài nhóm công khai). Thêm kịch bản 8: bài hiện ngay không qua duyệt.
+- FR-005: kết quả tìm kiếm gồm cả nhóm riêng tư (chỉ phần giới thiệu). FR-013: ghi rõ không duyệt bài, không bình luận/lượt thích.
+- Edge Cases "Đổi chế độ nhóm", "Người chưa đăng nhập", User Story 6 kịch bản 3 và SC-004 sửa theo quyền xem mới.
+- Assumptions: ghi việc sửa dòng `groups` ở mục 7 đặc tả CSDL cho khớp khi viết plan.
+- Checklist chất lượng vẫn 16/16, không còn `[NEEDS CLARIFICATION]`.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Người ngoài đọc bảng tin nhóm công khai (bản đầu) | **Sửa** thành chỉ thành viên | Khớp bucket `group-media` private (mục 8), ít lộ dữ liệu cá nhân (constitution nguyên tắc VI), Rules đơn giản hơn |
+| Bình luận, lượt thích | **Bỏ** khỏi phiên bản này | YAGNI (nguyên tắc VII); chat nhóm spec 091 đã đáp ứng việc thảo luận |
+| Số người dự kiến chỉ để tham khảo | Dùng | Không cần transaction giữ chỗ như buổi vãng lai |
+| Bài hiện ngay, ẩn sau khi vi phạm | Dùng | Nhóm nhỏ, kiểm duyệt sau qua báo cáo (spec 120) là đủ |
+
+### Cách kiểm chứng
+
+- Mục Clarifications có đúng 5 dòng; mỗi câu trả lời khớp với FR-005, FR-013, FR-014, FR-016 và User Story 3.
+- Tìm trong spec: không còn câu cho người ngoài đọc bài, không còn "hỏi lại ở `/speckit-clarify`" hay `[NEEDS CLARIFICATION]`.
+- Việc tiếp theo: khi viết plan, sửa dòng `groups` ở mục 7 đặc tả CSDL; chạy `/speckit-specify` cho spec 091 (chat).

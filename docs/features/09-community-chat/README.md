@@ -4,11 +4,11 @@
 |---|---|
 | Mã nhóm | `09` |
 | Vai trò sử dụng | Người chơi |
-| Thành viên phụ trách | C |
+| Thành viên phụ trách | Nguyễn Đức Duy (C) |
 | App tham khảo | Alobo |
 | Trạng thái | ⬜ Chưa bắt đầu |
-| Nhánh Git | `feature/09-<ten-tinh-nang>` |
-| Spec (Spec Kit) | _Chưa tạo — chạy `/speckit-specify` rồi dán link `specs/NNN-.../spec.md` vào đây_ |
+| Nhánh Git | `feature/09-community-chat` |
+| Spec (Spec Kit) | [`specs/090-community-group/spec.md`](../../../specs/090-community-group/spec.md) (đã clarify) · `specs/091-chat` (chưa tạo) |
 
 ## Phạm vi chức năng
 
