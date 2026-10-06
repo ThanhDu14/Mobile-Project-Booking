@@ -150,6 +150,7 @@ Thỏa thuận được sửa qua PR chỉ thay đổi file này, cần ít nh�
 |---|---|---|
 | 03/10/2026 | Tạo bản đầu tiên | |
 | 05/10/2026 | Chỉ dùng Firebase gói Spark; ảnh và logic server chuyển sang Supabase (constitution v1.1.0) | |
+| 05/10/2026 | Thêm AI Assistant vào nhóm 02 (spec 022, A); ràng buộc LLM trong constitution v1.2.0 | |
 
 ## 8. Xác nhận của thành viên
 

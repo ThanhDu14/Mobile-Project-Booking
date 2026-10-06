@@ -1,6 +1,9 @@
 <!--
 Sync Impact Report
-- Version change: 1.0.0 → 1.1.0 (MINOR: đổi nhà cung cấp lưu trữ file và logic phía server)
+- Version change: 1.1.0 → 1.2.0 (MINOR: thêm ràng buộc cho tính năng AI Assistant)
+- Modified sections: Ràng buộc công nghệ (thêm dòng LLM cho AI Assistant)
+- Lý do: nhóm thêm tính năng tìm sân thông minh (docs/proposal/AI-feature.md, spec 022)
+- Lịch sử: 1.0.0 → 1.1.0 (MINOR: đổi nhà cung cấp lưu trữ file và logic phía server)
 - Modified principles:
   II. Bảo mật kiểm tra phía server: Cloud Storage → Supabase Storage (RLS),
       Cloud Functions → Supabase Edge Functions
@@ -161,6 +164,7 @@ app trông như một sản phẩm thống nhất.
 | DI | Hilt |
 | Backend (Firebase) | **Chỉ gói Spark (miễn phí)**, qua Firebase BoM: Authentication (Email, Google, Phone với số thử nghiệm), Cloud Firestore, Cloud Messaging (FCM), App Check. KHÔNG dùng Cloud Storage, Cloud Functions hay dịch vụ cần gói Blaze |
 | Backend (Supabase) | **Gói Free**, dùng Firebase Auth làm Third-party Auth: **Storage** (ảnh, bucket public/private + RLS), **Edge Functions** (TypeScript/Deno) cho thao tác nhạy cảm, **pg_cron** cho tác vụ định kỳ. KHÔNG dùng database của Supabase để lưu dữ liệu nghiệp vụ |
+| AI Assistant (LLM) | Chỉ gọi từ Edge Function `ai-search-parse`, khóa API nằm trong secrets. Nhà cung cấp chốt ở họp 09/10, PHẢI có gói miễn phí và không bắt buộc gắn thẻ; dùng mô hình nhỏ, đầu ra chỉ là JSON theo schema, `max_tokens` thấp. Không gửi tên, email, số điện thoại vào prompt. AI KHÔNG được tự ghi dữ liệu nghiệp vụ hay đặt sân |
 | Mã server | Edge Functions trong `supabase/functions/<ten>/`, code dùng chung trong `supabase/functions/_shared/`; Rules ở `firestore.rules`; chính sách Storage ở `supabase/migrations/` |
 | Bản đồ | Google Maps SDK + Places/Geocoding; nếu không có tài khoản thanh toán thì dùng **osmdroid** (OpenStreetMap) với cùng marker |
 | Ảnh | Coil (hoặc Glide) để tải ảnh; nén ảnh trước khi upload |
@@ -219,4 +223,4 @@ Các ràng buộc khác:
   trong kế hoạch 12 tuần, nhóm rà lại constitution một lần.
 - Hướng dẫn chi tiết lúc phát triển nằm trong `docs/` (bắt đầu từ `docs/README.md`).
 
-**Version**: 1.1.0 | **Ratified**: 2026-10-03 | **Last Amended**: 2026-10-05
+**Version**: 1.2.0 | **Ratified**: 2026-10-03 | **Last Amended**: 2026-10-05
