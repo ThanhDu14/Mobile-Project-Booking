@@ -8,7 +8,7 @@
 | App tham khảo | Alobo |
 | Trạng thái | ⬜ Chưa bắt đầu |
 | Nhánh Git | `feature/08-drop-in` |
-| Spec (Spec Kit) | [`specs/080-drop-in-session/spec.md`](../../../specs/080-drop-in-session/spec.md) (đã clarify) · `specs/081-drop-in-waitlist` (chưa tạo) |
+| Spec (Spec Kit) | [`specs/080-drop-in-session/spec.md`](../../../specs/080-drop-in-session/spec.md) (đã clarify) · [`specs/081-drop-in-waitlist/spec.md`](../../../specs/081-drop-in-waitlist/spec.md) (đã clarify) |
 
 ## Phạm vi chức năng
 

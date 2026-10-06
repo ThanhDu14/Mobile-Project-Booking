@@ -10,6 +10,8 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 4 | 2026-10-05 | Chia task triển khai spec 070 bằng `/speckit-tasks` | 07 |
 | 5 | 2026-10-06 | Viết spec 080 (đặt lịch chơi vãng lai theo lượt) bằng `/speckit-specify` | 08 |
 | 6 | 2026-10-06 | Làm rõ spec 080 bằng `/speckit-clarify` (5 câu hỏi) | 08 |
+| 7 | 2026-10-06 | Viết spec 081 (hàng chờ buổi vãng lai) bằng `/speckit-specify` | 08 |
+| 8 | 2026-10-06 | Làm rõ spec 081 bằng `/speckit-clarify` (5 câu hỏi) | 08 |
 
 ---
 
@@ -352,3 +354,118 @@ AI hỏi lần lượt 5 câu. Câu trả lời của mình:
 - Mục Clarifications có đúng 5 dòng; mỗi câu trả lời khớp với FR-006, FR-010, FR-017, FR-021, FR-022 và phần Assumptions.
 - Tìm trong spec: không còn "cần xác nhận ở `/speckit-clarify`" hay `[NEEDS CLARIFICATION]`.
 - Việc tiếp theo: báo B về mốc hủy 4 giờ, báo D về việc nhắc check-in ở spec 112; sau đó chạy `/speckit-specify` cho spec 081 (hàng chờ).
+
+---
+
+## Mục 7: Viết spec 081 (hàng chờ buổi vãng lai) bằng `/speckit-specify`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-06 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 08 – Đặt lịch vãng lai (spec `specs/081-drop-in-waitlist`) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5), lệnh Spec Kit `/speckit-specify` |
+| Mục đích | Sinh bản đặc tả đầu tiên cho hàng chờ khi buổi đủ người và việc tự đẩy người lên khi có chỗ |
+| Nhánh Git | `feature/08-drop-in` |
+
+### Prompt đã dùng
+
+```
+/speckit-specify SPECIFY_FEATURE_DIRECTORY=specs/081-drop-in-waitlist
+Người chơi vào hàng chờ khi buổi vãng lai đã đủ người, và được tự động đẩy lên khi có chỗ trống.
+- Ở buổi "Đã đủ người" (spec 080), người chơi bấm "Vào hàng chờ", chọn số người (tối đa 4 như
+  spec 080); xem được vị trí của mình trong hàng chờ và rời hàng chờ bất cứ lúc nào.
+- Khi có người hủy hoặc chủ sân tăng sức chứa, hệ thống tự đẩy người chờ lâu nhất có số người vừa
+  với số chỗ trống lên thành đăng ký chính thức, chạy phía server trong transaction (Edge Function
+  cancel-drop-in / register-drop-in) để không vượt chỗ và không đẩy trùng.
+- Người được đẩy lên nhận vé QR và thông báo "Đã có chỗ" (DROPIN_SPOT_OPENED); thanh toán theo
+  cách đã chọn khi vào hàng chờ (giả lập hoặc trả tại sân), áp dụng chính sách hủy của spec 080.
+- Hàng chờ tự đóng khi buổi bắt đầu hoặc bị hủy; người còn trong hàng chờ được báo.
+- Có xử lý mất mạng, bấm nhiều lần, trạng thái rỗng.
+Không bao gồm: danh sách, đăng ký, vé, hủy và đánh giá buổi (spec 080); chủ sân mở và sửa buổi
+(spec 112); gửi thông báo (spec 100).
+Dữ liệu: dropInSessions, dropInSessions/{id}/registrations/{uid} (status WAITLISTED,
+waitlistedAt) theo docs/design/database/README.md mục 4.9.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Dựa trên spec 080 đã clarify (giới hạn 4 người, thanh toán giả lập luôn thành công, mốc hủy 4 giờ, không lộ danh sách người đăng ký) để hàng chờ dùng chung quy tắc.
+- Tạo `specs/081-drop-in-waitlist/spec.md` và `checklists/requirements.md`:
+  - 4 user story: vào hàng chờ (P1), tự động được đẩy lên (P1), rời hàng chờ (P2), hàng chờ đóng khi buổi bắt đầu/bị hủy (P2);
+  - 17 yêu cầu chức năng (FR-001 → FR-017), 10 trường hợp biên, 6 tiêu chí thành công (SC-001 → SC-006);
+  - quy tắc đẩy lên: theo thứ tự vào hàng chờ, bỏ qua nhưng giữ vị trí cho nhóm lớn hơn số chỗ trống, chạy cùng bước với thao tác hủy để không vượt chỗ;
+  - giá trị mặc định do AI chọn: đẩy lên thành đăng ký ngay (không giữ chỗ chờ xác nhận), hàng chờ không giới hạn, được hủy hoàn 100% trong 30 phút nếu được đẩy lên sát giờ, giá tính theo lúc vào hàng chờ.
+- Đề xuất SC-003: 5 lượt hủy và 10 người chờ cùng lúc, không vượt chỗ, không đẩy trùng, đúng thứ tự.
+- Checklist chất lượng đạt 16/16, không còn `[NEEDS CLARIFICATION]`. Cập nhật link spec 081 trong `docs/features/08-drop-in/README.md`.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| 4 user story và độ ưu tiên | Dùng | Bao đủ phần hàng chờ của nhóm 08, tách khỏi luồng đăng ký spec 080 |
+| Lượt chờ dùng chung dữ liệu đăng ký của spec 080 | Dùng | Khớp đặc tả CSDL mục 4.9 (`WAITLISTED`, `waitlistedAt`), mỗi người một document mỗi buổi |
+| Không trừ tiền khi đang chờ | Dùng | Người chơi chưa có chỗ; rời hàng chờ không mất phí |
+| Đẩy lên ngay, cửa sổ hủy 30 phút, hàng chờ không giới hạn | Dùng tạm | Để hỏi lại ở bước clarify |
+
+### Cách kiểm chứng
+
+- Đối chiếu constitution nguyên tắc III: FR-007, FR-008, FR-013 yêu cầu đẩy lên trong cùng bước nguyên tử với thao tác hủy, không vượt chỗ, không vừa rời vừa được đẩy lên.
+- Đối chiếu spec 080: giới hạn 4 người (FR-002), quy tắc không lộ danh tính (FR-006), vé và chính sách hủy dùng lại (FR-010, FR-011).
+- Checklist 16/16; tìm "Edge Function", "transaction" trong spec chỉ còn ở dòng Input gốc.
+
+---
+
+## Mục 8: Làm rõ spec 081 bằng `/speckit-clarify`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-06 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 08 – Đặt lịch vãng lai (spec `specs/081-drop-in-waitlist`) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5), lệnh Spec Kit `/speckit-clarify` |
+| Mục đích | Chốt cách đẩy người từ hàng chờ lên, quyền lợi khi được đẩy lên sát giờ và giới hạn của hàng chờ |
+| Nhánh Git | `feature/08-drop-in` |
+
+### Prompt đã dùng
+
+```
+/speckit-clarify
+Rà soát spec 081 và hỏi lần lượt từng câu về những điểm còn mơ hồ, ưu tiên cách đẩy người lên
+khi có chỗ, quyền lợi của người được đẩy lên sát giờ và giới hạn của hàng chờ; mỗi câu kèm
+phương án đề xuất và lý do.
+```
+
+Sau câu 1, mình đồng ý dùng phương án AI đề xuất cho cả 5 câu (đã đọc lại lý do từng câu trước khi chốt):
+
+| # | Câu hỏi của AI | AI đề xuất | Mình chọn |
+|---|---|---|---|
+| 1 | Được đẩy lên là thành đăng ký ngay hay giữ chỗ chờ xác nhận? | A – thành đăng ký ngay, có vé QR luôn | Theo đề xuất |
+| 2 | Người đầu hàng chờ đi nhóm đông hơn số chỗ trống thì sao? | Bỏ qua nhưng giữ vị trí, xét người tiếp theo vừa chỗ | Theo đề xuất |
+| 3 | Được đẩy lên sát giờ (trong 4 giờ) có quyền lợi gì khi hủy? | Hủy hoàn 100% trong 30 phút sau khi được đẩy lên | Theo đề xuất |
+| 4 | Hàng chờ có giới hạn không, ngừng đẩy lên lúc nào? | Không giới hạn; đóng 30 phút trước giờ bắt đầu, chỗ trống sau đó mở cho đăng ký thường | Theo đề xuất |
+| 5 | Chờ nhiều buổi trùng giờ, được đẩy lên một buổi thì sao? | Tự rời hàng chờ các buổi trùng giờ còn lại, không mất phí | Theo đề xuất |
+
+### Tóm tắt phản hồi của AI
+
+- Thêm mục **Clarifications / Session 2026-10-06** với 5 câu hỏi – trả lời.
+- FR-001, FR-007, FR-014 và User Story 4: hàng chờ đóng và ngừng đẩy lên 30 phút trước giờ bắt đầu (bản đầu là lúc buổi bắt đầu); chỗ trống sau mốc này mở cho đăng ký thường.
+- FR-010: ghi rõ không có bước giữ chỗ chờ xác nhận. Thêm FR-010a: tự rời hàng chờ các buổi trùng giờ khi được đẩy lên; thêm kịch bản 7 cho User Story 2.
+- Edge Cases: bổ sung "chỗ trống sát giờ" và quy tắc trùng giờ mới; SC-005 tính cả trường hợp tự rời do trùng giờ.
+- Assumptions: chuyển các giá trị mặc định sang "đã chốt", ghi việc báo D về mốc 30 phút.
+- Checklist chất lượng vẫn 16/16, không còn `[NEEDS CLARIFICATION]`.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Đẩy lên thành đăng ký ngay | Dùng | Đúng mô tả "tự đẩy lên"; không cần tác vụ định kỳ thu hồi chỗ giữ tạm |
+| Giữ chỗ 30 phút chờ xác nhận (phương án B câu 1) | **Bỏ** | Thêm trạng thái và tác vụ định kỳ, chỗ trống bị treo lâu hơn |
+| Đẩy lên đến tận lúc bắt đầu ở bản đầu | **Sửa** thành đóng trước 30 phút | Người được đẩy lên quá sát giờ có thể không kịp biết để đến |
+| Tự rời hàng chờ trùng giờ | Dùng (bổ sung mới) | Tránh một người bị tự động đăng ký hai buổi cùng giờ |
+
+### Cách kiểm chứng
+
+- Mục Clarifications có đúng 5 dòng; mỗi câu trả lời khớp với FR-001, FR-007, FR-010, FR-010a, FR-011, FR-014 và User Story 2, 4.
+- Tìm trong spec: không còn "đến tận lúc buổi bắt đầu", "hỏi lại ở `/speckit-clarify`" hay `[NEEDS CLARIFICATION]`.
+- Việc tiếp theo: báo D về mốc đóng hàng chờ 30 phút và việc tăng sức chứa/hủy buổi ở spec 112 phải gọi quy tắc đẩy lên; gửi D danh sách loại thông báo của 080 và 081 trước 14/10.
