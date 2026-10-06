@@ -9,6 +9,7 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 3 | 2026-10-05 | Đối chiếu spec 010 với proposal bằng `/speckit-analyze` | 01 |
 | 4 | 2026-10-05 | Viết spec 020 (tìm kiếm sân) bằng `/speckit-specify` | 02 |
 | 5 | 2026-10-05 | Viết spec 022 (tìm sân thông minh – AI Assistant) bằng `/speckit-specify` | 02 |
+| 6 | 2026-10-06 | Viết spec 030 (chi tiết sân) bằng `/speckit-specify` | 03 |
 
 ---
 
@@ -323,3 +324,85 @@ Câu trả lời cho 2 câu hỏi làm rõ của AI: `Q1: A, Q2: A`.
 - Đối chiếu với `docs/proposal/AI-feature.md` (workflow, 4 ý định, các lớp chặn, chống prompt injection) và dòng "AI Assistant (LLM)" trong constitution 1.2.0 (không gửi tên/email/SĐT, AI không ghi dữ liệu nghiệp vụ).
 - Hai spec 020 và 022 được commit chung (`b08bd6a`) trên nhánh `feature/02-court-search`.
 - Việc cần làm tiếp: thống nhất với C (bộ lọc buổi vãng lai), B (chủ đề chính sách), D (khoảng giá hợp lệ); spec 010 cần luồng "đăng nhập rồi quay lại màn hình trước".
+
+---
+
+## Mục 6: Viết spec 030 (chi tiết sân) bằng `/speckit-specify`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-06 |
+| Người thực hiện | Thành Dự |
+| Nhóm tính năng liên quan | 03 – Chi tiết sân (spec `specs/030-court-detail`) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5), lệnh Spec Kit `/speckit-specify` |
+| Mục đích | Sinh bản đặc tả cho màn hình chi tiết cơ sở: ảnh, bảng giá, tiện ích, giờ mở cửa, liên hệ, bản đồ, đánh giá tổng quan, nút Đặt sân |
+| Nhánh Git | `feature/03-court-detail` (tạo mới từ `origin/main`) |
+
+### Prompt đã dùng
+
+```
+/speckit-specify SPECIFY_FEATURE_DIRECTORY=specs/030-court-detail
+Người chơi (kể cả khách chưa đăng nhập) xem chi tiết một cơ sở sân cầu lông trước khi đặt. Vào từ
+danh sách kết quả (spec 020), thẻ trên bản đồ (spec 021) hoặc danh sách sân yêu thích (spec 070).
+Màn hình gồm:
+- Thư viện ảnh: vuốt ngang, bấm để xem toàn màn hình và phóng to; không có ảnh thì hiện ảnh mặc định.
+- Thông tin chính: tên, địa chỉ, quận/huyện, điểm trung bình và số lượt đánh giá.
+- Bảng giá theo khung giờ và thứ trong tuần (giờ thường, giờ cao điểm, cuối tuần), hiển thị theo
+  đ/giờ; chưa có bảng giá thì hiện "Liên hệ". Nếu người chơi đến từ tìm kiếm có chọn ngày và khung
+  giờ thì làm nổi bật giá của đúng khung đó, cách tính giống spec 020 và spec 040.
+- Tiện ích (lấy tên và biểu tượng từ danh mục), số sân con đang hoạt động và loại mặt sân (gỗ, PU,
+  thảm).
+- Giờ mở cửa kèm trạng thái "Đang mở cửa" / "Đã đóng cửa" theo giờ Việt Nam; số điện thoại liên hệ,
+  bấm vào thì mở trình gọi điện của máy.
+- Bản đồ nhúng có marker quả cầu lông tại vị trí cơ sở; nút "Chỉ đường" mở ứng dụng bản đồ (không
+  có thì mở trình duyệt). Không cần quyền vị trí để xem bản đồ.
+- Đánh giá tổng quan: điểm trung bình, số lượt, điểm trung bình từng tiêu chí (chất lượng sân, vệ
+  sinh, thái độ phục vụ), 3 đánh giá mới nhất đang hiển thị, nút "Xem tất cả" mở danh sách đầy đủ
+  của spec 070; chưa có đánh giá thì hiện "Sân chưa có đánh giá".
+- Nút trái tim yêu thích (hành vi theo spec 070), nút "Chat với chủ sân" (mở hội thoại của spec
+  091) và nút "Đặt sân" luôn hiển thị ở cuối màn hình. "Đặt sân" mở lưới giờ của spec 040, mang
+  theo ngày và khung giờ đã chọn ở tìm kiếm nếu có.
+Khách chưa đăng nhập xem được mọi thông tin. Bấm "Đặt sân", trái tim hoặc "Chat với chủ sân" thì
+mời đăng nhập; đăng nhập xong quay lại đúng màn hình này và tiếp tục thao tác vừa bấm.
+Cơ sở bị chủ sân ẩn hoặc bị admin khóa: hiện thông tin kèm ghi chú "Sân tạm ngừng hoạt động", ẩn
+nút "Đặt sân" và "Chat với chủ sân", vẫn bỏ yêu thích được. Cơ sở không còn tồn tại: hiện màn hình
+"Sân không còn tồn tại" kèm nút quay lại.
+Có trạng thái đang tải, lỗi kèm thử lại; mất mạng thì hiện dữ liệu đã tải trước đó (nếu có) kèm
+thông báo, không crash. Phần đầu màn hình (ảnh, tên, giá, nút Đặt sân) hiện trong dưới 3 giây trên
+4G; bản đồ và đánh giá được phép tải sau. Hiển thị đúng trên điện thoại và máy tính bảng, chế độ
+sáng và tối.
+Không bao gồm: lưới giờ và đặt sân (spec 040); danh sách đầy đủ, viết đánh giá và logic yêu thích
+(spec 070); nội dung chat (spec 091); buổi vãng lai của cơ sở (spec 080); chủ sân sửa thông tin
+cơ sở, bảng giá, sân con (spec 111); bản đồ tìm sân (spec 021).
+Dữ liệu: venues (name, address, districtId, location, openTime, closeTime, phone, amenityIds,
+photoPaths, ratingAvg, ratingCount, ratingSums, status), venues/{id}/courts (surfaceType,
+isActive), venues/{id}/priceRules, reviews (status VISIBLE, mới nhất), amenities, districts theo
+docs/design/database/README.md.
+```
+
+Câu trả lời cho câu hỏi làm rõ của AI: `Q1: A`.
+
+### Tóm tắt phản hồi của AI
+
+- Tạo `specs/030-court-detail/spec.md` và `checklists/requirements.md`:
+  - 6 user story: xem thông tin và bấm Đặt sân (P1), bảng giá theo khung giờ (P1), vị trí, chỉ đường và liên hệ (P2), đánh giá tổng quan (P2), khách chưa đăng nhập và thao tác cần tài khoản (P2), cơ sở tạm ngừng hoặc không còn tồn tại (P3);
+  - 27 yêu cầu chức năng, 7 tiêu chí thành công (phần đầu màn hình dưới 3 giây, giá "Khung bạn chọn" khớp 100% với spec 020 và 040, khách đăng nhập xong được tiếp tục thao tác...);
+  - trường hợp biên: giờ mở qua nửa đêm, mở 24 giờ, không có sân con hoạt động, nhiều loại mặt sân, thiếu số điện thoại hoặc vị trí, khung giờ từ tìm kiếm đã qua, một mục tải lỗi.
+- AI dùng lại các quyết định đã chốt ở spec 020 (khách được xem sân, giá theo đúng khung giờ) và spec 070 (trái tim, 3 đánh giá mới nhất, "Xem tất cả", cơ sở tạm ngừng); tự thêm quy tắc chủ sân không đặt sân hoặc chat với cơ sở của chính mình.
+- AI hỏi 1 câu: số điện thoại của cơ sở có hiện cho khách chưa đăng nhập không.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| 6 user story và độ ưu tiên | Dùng | Bao đủ phạm vi nhóm 03 trong proposal mục 5 |
+| Q1 – số điện thoại cho khách | Chọn **A: công khai cho mọi người** | Là thông tin kinh doanh của cơ sở, giống các app đặt sân khác; spec 111 cần báo cho chủ sân biết |
+| Chủ sân không đặt sân/chat với cơ sở của mình (FR-018) | Dùng | Khớp quy tắc chủ sân không tự đánh giá sân mình ở spec 070 |
+| Mặc định: giờ mở cửa giống nhau mọi ngày, không có nút chia sẻ, không hiện buổi vãng lai của cơ sở | Dùng tạm | Theo đặc tả CSDL hiện tại; rà lại ở `/speckit-clarify` |
+
+### Cách kiểm chứng
+
+- Checklist `specs/030-court-detail/checklists/requirements.md` đạt 16/16, không còn `[NEEDS CLARIFICATION]`.
+- Đối chiếu với phạm vi nhóm 03 (`docs/features/03-court-detail/README.md`, proposal mục 5), constitution nguyên tắc V (4 trạng thái, dưới 3 giây, điện thoại và `w600dp`, accessibility) và đặc tả CSDL mục 4.3 (`venues`, `courts`, `priceRules`).
+- Đối chiếu điểm nối với spec 070 (`contracts/ui-screens.md`: trái tim, tổng quan, "Xem tất cả") và spec 020 (FR-017, giá theo khung giờ).
+- Việc cần làm tiếp: D xác nhận quyền đọc công khai `venues`, `courts`, `priceRules`, `reviews` và đọc theo ID cơ sở tạm ngừng; B ↔ D chốt cách tính giá theo khung; C xác nhận lối vào chat riêng với chủ sân (spec 091).
