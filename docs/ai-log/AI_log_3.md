@@ -14,6 +14,8 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 8 | 2026-10-06 | Làm rõ spec 081 bằng `/speckit-clarify` (5 câu hỏi) | 08 |
 | 9 | 2026-10-06 | Viết spec 090 (nhóm/CLB và bảng tin cộng đồng) bằng `/speckit-specify` | 09 |
 | 10 | 2026-10-06 | Làm rõ spec 090 bằng `/speckit-clarify` (5 câu hỏi) | 09 |
+| 11 | 2026-10-06 | Viết spec 091 (chat nhóm và chat với chủ sân) bằng `/speckit-specify` | 09 |
+| 12 | 2026-10-06 | Làm rõ spec 091 bằng `/speckit-clarify` (5 câu hỏi) | 09 |
 
 ---
 
@@ -585,3 +587,112 @@ phương án đề xuất cho cả 5 câu, bạn ghi vào spec.
 - Mục Clarifications có đúng 5 dòng; mỗi câu trả lời khớp với FR-005, FR-013, FR-014, FR-016 và User Story 3.
 - Tìm trong spec: không còn câu cho người ngoài đọc bài, không còn "hỏi lại ở `/speckit-clarify`" hay `[NEEDS CLARIFICATION]`.
 - Việc tiếp theo: khi viết plan, sửa dòng `groups` ở mục 7 đặc tả CSDL; chạy `/speckit-specify` cho spec 091 (chat).
+
+---
+
+## Mục 11: Viết spec 091 (chat nhóm và chat với chủ sân) bằng `/speckit-specify`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-06 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 09 – Cộng đồng và chat (spec `specs/091-chat`) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5), lệnh Spec Kit `/speckit-specify` |
+| Mục đích | Sinh bản đặc tả đầu tiên cho chat nhóm, chat riêng với chủ sân, gửi ảnh và báo cáo tin nhắn |
+| Nhánh Git | `feature/09-community-chat` |
+
+### Prompt đã dùng
+
+```
+/speckit-specify SPECIFY_FEATURE_DIRECTORY=specs/091-chat
+Người dùng trò chuyện theo thời gian thực.
+- Mỗi nhóm/CLB (spec 090) có một cuộc trò chuyện chung, thành viên trong đó đúng bằng danh sách
+  thành viên nhóm.
+- Người chơi nhắn riêng cho chủ sân từ chi tiết sân để hỏi lịch, giá; chủ sân trả lời trong chế
+  độ quản lý sân.
+- Gửi tin nhắn chữ và ảnh (bucket chat-media của Supabase, chỉ người trong cuộc trò chuyện xem
+  được). Danh sách cuộc trò chuyện sắp xếp theo tin nhắn mới nhất, có số tin chưa đọc.
+- Báo cáo tin nhắn vi phạm (spec 120).
+- Có xử lý mất mạng (tin chờ gửi, gửi lại), gửi lỗi, trạng thái rỗng.
+Không bao gồm: tạo/quản lý nhóm và thành viên (spec 090), xử lý báo cáo của admin (spec 120),
+gửi thông báo đẩy (spec 100).
+Dữ liệu: chats/{chatId} (+ messages), reports theo docs/design/database/README.md mục 4.11,
+4.12, 8.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Đọc đặc tả CSDL mục 4.11 (`chats`, `messages`), 4.12 (`reports`), 4.13 (`CHAT_MESSAGE`), 5 (ID tất định chat riêng), 8 (bucket `chat-media` private) và spec 090 (FR-022 – thành viên nhóm là nguồn của chat nhóm).
+- Tạo `specs/091-chat/spec.md` và `checklists/requirements.md`:
+  - 5 user story: nhắn riêng với chủ sân (P1), chat nhóm (P1), danh sách trò chuyện và tin chưa đọc (P2), gửi ảnh (P2), thu hồi/báo cáo/chặn (P3);
+  - 18 yêu cầu chức năng (FR-001 → FR-018), 9 trường hợp biên, 7 tiêu chí thành công (SC-001 → SC-007);
+  - giá trị mặc định do AI chọn: chỉ chat riêng người chơi – chủ sân, thành viên mới đọc toàn bộ lịch sử nhóm, thu hồi tin trong 10 phút (không sửa tin), chặn trong chat riêng, tin chữ ≤ 1000 ký tự, một ảnh mỗi tin, tải 30 tin mỗi lần;
+  - AI tự bổ sung: tin chờ gửi khi mất mạng và chống gửi trùng, tắt thông báo từng cuộc trò chuyện, mục "Tin nhắn khách hàng" riêng cho chủ sân, nhóm bị khóa thì chat chỉ đọc.
+- Checklist chất lượng đạt 16/16, không còn `[NEEDS CLARIFICATION]`. Cập nhật link spec 091 trong `docs/features/09-community-chat/README.md`.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| 5 user story và độ ưu tiên | Dùng | Bao đủ 4 chức năng chat còn lại của nhóm 09 trong proposal |
+| Một cuộc trò chuyện cho mỗi cặp người chơi – chủ sân | Dùng | Khớp ID tất định `{uidNhỏ}_{uidLớn}` ở đặc tả CSDL mục 5 |
+| Tin chờ gửi và chống trùng khi mất mạng | Dùng | Constitution nguyên tắc V: mất mạng không được treo hay mất dữ liệu |
+| Phạm vi chat riêng, thu hồi, chặn, lịch sử nhóm | Dùng tạm | Để hỏi lại ở bước clarify |
+
+### Cách kiểm chứng
+
+- Đối chiếu đặc tả CSDL mục 4.11: loại `GROUP`/`DIRECT`, `groupId`, `venueId`, `lastMessage`, trạng thái tin nhắn đều có trong Key Entities.
+- Đối chiếu constitution: nguyên tắc II (FR-004, FR-016 – kiểm tra phía server), V (FR-017 – 4 trạng thái màn hình), VI (FR-014 – báo cáo tin nhắn).
+- Checklist 16/16; tìm "Supabase", "chat-media" trong spec chỉ còn ở dòng Input gốc.
+
+---
+
+## Mục 12: Làm rõ spec 091 bằng `/speckit-clarify`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-06 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 09 – Cộng đồng và chat (spec `specs/091-chat`) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5), lệnh Spec Kit `/speckit-clarify` |
+| Mục đích | Chốt phạm vi chat riêng, quyền đọc lịch sử chat nhóm và các thao tác an toàn (thu hồi, chặn) |
+| Nhánh Git | `feature/09-community-chat` |
+
+### Prompt đã dùng
+
+```
+/speckit-clarify
+Rà soát spec 091 và nêu tối đa 5 điểm còn mơ hồ ảnh hưởng tới phân quyền, quyền riêng tư và an
+toàn khi nhắn tin (ai được nhắn riêng cho ai, ai đọc được lịch sử chat nhóm, thu hồi tin, chặn
+người dùng). Mỗi điểm kèm phương án đề xuất và lý do; mình đồng ý dùng phương án đề xuất cho cả
+5 câu, bạn ghi vào spec.
+```
+
+| # | Câu hỏi của AI | AI đề xuất | Mình chọn |
+|---|---|---|---|
+| 1 | Người chơi có nhắn riêng cho người chơi khác không? | Không; chỉ người chơi – chủ sân, người chơi với nhau qua chat nhóm | Theo đề xuất |
+| 2 | Thành viên mới có đọc được tin cũ của chat nhóm không? | Có, toàn bộ lịch sử | Theo đề xuất |
+| 3 | Có thu hồi hoặc sửa tin nhắn không? | Thu hồi trong 10 phút, không sửa | Theo đề xuất |
+| 4 | Có chặn người dùng trong chat riêng không? | Có, cả hai bên chặn/bỏ chặn được | Theo đề xuất |
+| 5 | Chủ sân nhiều cơ sở: mỗi cơ sở một cuộc trò chuyện hay một cuộc chung? | Một cuộc chung mỗi cặp, hiện cơ sở hỏi gần nhất | Theo đề xuất |
+
+### Tóm tắt phản hồi của AI
+
+- Thêm mục **Clarifications / Session 2026-10-06** với 5 câu hỏi – trả lời. Cả 5 câu trùng với giá trị mặc định ở bản đầu nên FR-001, FR-002, FR-003, FR-010, FR-016 giữ nguyên nội dung, chỉ chuyển từ "giả định" sang "đã chốt".
+- Assumptions: ghi rõ trạng thái chặn và thời điểm đọc gần nhất là dữ liệu mới so với đặc tả CSDL mục 4.11, cần bổ sung khi viết plan.
+- Checklist chất lượng vẫn 16/16, không còn `[NEEDS CLARIFICATION]`.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Chỉ chat riêng người chơi – chủ sân | Dùng | Đúng phạm vi proposal; giảm tin nhắn rác giữa người lạ |
+| Thành viên mới đọc toàn bộ lịch sử | Dùng | Rules chỉ cần kiểm tra đang là thành viên; người mới nắm được lịch hẹn của CLB |
+| Sửa tin nhắn | **Bỏ** | Tránh đổi nội dung sau khi đã bị báo cáo; thu hồi 10 phút đủ cho trường hợp gửi nhầm |
+| Chặn trong chat riêng | Dùng | Constitution nguyên tắc VI: người dùng tự bảo vệ trước tin làm phiền |
+
+### Cách kiểm chứng
+
+- Mục Clarifications có đúng 5 dòng; mỗi câu trả lời khớp với FR-001, FR-002, FR-003, FR-010, FR-016 và User Story 1, 2, 5.
+- Tìm trong spec: không còn "hỏi lại ở `/speckit-clarify`" hay `[NEEDS CLARIFICATION]`.
+- Việc tiếp theo: báo A về nút "Nhắn tin cho chủ sân" ở spec 030, báo D về mục "Tin nhắn khách hàng" trong menu chủ sân; khi viết plan bổ sung trạng thái đọc/chặn vào đặc tả CSDL mục 4.11.

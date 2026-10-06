@@ -8,7 +8,7 @@
 | App tham khảo | Alobo |
 | Trạng thái | ⬜ Chưa bắt đầu |
 | Nhánh Git | `feature/09-community-chat` |
-| Spec (Spec Kit) | [`specs/090-community-group/spec.md`](../../../specs/090-community-group/spec.md) (đã clarify) · `specs/091-chat` (chưa tạo) |
+| Spec (Spec Kit) | [`specs/090-community-group/spec.md`](../../../specs/090-community-group/spec.md) (đã clarify) · [`specs/091-chat/spec.md`](../../../specs/091-chat/spec.md) (đã clarify) |
 
 ## Phạm vi chức năng
 
