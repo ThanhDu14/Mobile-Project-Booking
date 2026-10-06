@@ -150,7 +150,7 @@ Một document cho mỗi khung giờ **đang bị chiếm**. Không có document
 | `holdExpiresAt` | Timestamp? | `serverTimestamp + 5 phút`. Đã hết hạn coi như trống |
 | `blockReason` | String? | `MAINTENANCE`, `EVENT`, `WALK_IN`, `DROP_IN` (khi `BLOCKED`) |
 
-Độ dài khung giờ: **30 phút** (B chốt trong `/speckit-clarify` của spec 040). Mở buổi vãng lai (11) phải ghi `BLOCKED` với `blockReason = DROP_IN` cho các slot của buổi đó, trong transaction.
+Độ dài khung giờ: **60 phút** (B chốt trong `/speckit-clarify` của spec 040). Mở buổi vãng lai (11) phải ghi `BLOCKED` với `blockReason = DROP_IN` cho các slot của buổi đó, trong transaction.
 
 ### 4.5. `bookings/{bookingId}` — B
 

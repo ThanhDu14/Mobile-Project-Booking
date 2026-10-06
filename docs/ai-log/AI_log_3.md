@@ -8,6 +8,14 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 2 | 2026-10-05 | Làm rõ spec 070 bằng `/speckit-clarify` (5 câu hỏi) | 07 |
 | 3 | 2026-10-05 | Lập kế hoạch kỹ thuật spec 070 bằng `/speckit-plan` | 07 |
 | 4 | 2026-10-05 | Chia task triển khai spec 070 bằng `/speckit-tasks` | 07 |
+| 5 | 2026-10-06 | Viết spec 080 (đặt lịch chơi vãng lai theo lượt) bằng `/speckit-specify` | 08 |
+| 6 | 2026-10-06 | Làm rõ spec 080 bằng `/speckit-clarify` (5 câu hỏi) | 08 |
+| 7 | 2026-10-06 | Viết spec 081 (hàng chờ buổi vãng lai) bằng `/speckit-specify` | 08 |
+| 8 | 2026-10-06 | Làm rõ spec 081 bằng `/speckit-clarify` (5 câu hỏi) | 08 |
+| 9 | 2026-10-06 | Viết spec 090 (nhóm/CLB và bảng tin cộng đồng) bằng `/speckit-specify` | 09 |
+| 10 | 2026-10-06 | Làm rõ spec 090 bằng `/speckit-clarify` (5 câu hỏi) | 09 |
+| 11 | 2026-10-06 | Viết spec 091 (chat nhóm và chat với chủ sân) bằng `/speckit-specify` | 09 |
+| 12 | 2026-10-06 | Làm rõ spec 091 bằng `/speckit-clarify` (5 câu hỏi) | 09 |
 
 ---
 
@@ -234,3 +242,457 @@ ViewModel) và đánh dấu những task làm song song được.
 - Kiểm tra định dạng: cả 78 task có ô đánh dấu, mã T001–T078, đường dẫn file; mọi task ở Phase 3–8 có nhãn `[US1]`…`[US6]`.
 - Đối chiếu: mỗi user story trong spec có ít nhất một task test và các task cài đặt đủ từ server tới giao diện; mỗi kịch bản trong `quickstart.md` được một checkpoint nhắc tới.
 - Việc tiếp theo: chạy `/speckit-analyze` để kiểm tra độ khớp giữa spec, plan và tasks trước khi code.
+
+---
+
+## Mục 5: Viết spec 080 (đặt lịch chơi vãng lai theo lượt) bằng `/speckit-specify`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-06 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 08 – Đặt lịch vãng lai (spec `specs/080-drop-in-session`) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5), lệnh Spec Kit `/speckit-specify` |
+| Mục đích | Sinh bản đặc tả đầu tiên cho phần tìm, đăng ký, vé QR, hủy, lịch sử và đánh giá buổi vãng lai |
+| Nhánh Git | `feature/08-drop-in` |
+
+### Prompt đã dùng
+
+```
+/speckit-specify SPECIFY_FEATURE_DIRECTORY=specs/080-drop-in-session
+Người chơi tìm và đăng ký các buổi chơi vãng lai do sân/CLB mở.
+- Danh sách buổi: ngày, giờ, sân, trình độ, số chỗ còn lại, giá theo lượt; lọc theo khu vực,
+  ngày, khung giờ, trình độ, mức giá.
+- Đăng ký: chọn buổi, số người (đi một mình hoặc kèm bạn), xác nhận. Không được vượt số chỗ còn
+  lại; việc đăng ký chạy phía server trong transaction (Edge Function register-drop-in) để không
+  vượt chỗ khi nhiều người đăng ký cùng lúc.
+- Thanh toán theo lượt (giả lập) hoặc trả tại sân; sau khi đăng ký có vé lượt kèm mã QR check-in.
+- Hủy đăng ký theo chính sách (cancel-drop-in), xem lịch sử các buổi đã tham gia, đánh giá buổi
+  chơi sau khi tham gia (reviews với targetType = DROP_IN, mỗi lượt một lần).
+- Xử lý mất mạng, buổi bị hủy hoặc đã đủ người, trạng thái rỗng.
+Không bao gồm: hàng chờ và tự đẩy người lên (spec 081), chủ sân mở buổi và quét QR check-in
+(spec 112), gửi thông báo (spec 100), thanh toán đặt sân thường (spec 050).
+Dữ liệu: dropInSessions, dropInSessions/{id}/registrations/{uid}, reviews theo
+docs/design/database/README.md mục 4.7, 4.9.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Đọc constitution, đặc tả CSDL (mục 4.5, 4.7, 4.9, 4.13, 7, 8a), spec 070, 011, 022 để thống nhất trình độ, khu vực, cách đánh giá và lối vào từ AI Assistant.
+- Tạo `specs/080-drop-in-session/spec.md` và `checklists/requirements.md`:
+  - 5 user story: tìm buổi (P1), đăng ký và nhận vé QR (P1), xem vé và lịch sử (P2), hủy theo chính sách (P2), đánh giá buổi chơi (P3);
+  - 27 yêu cầu chức năng (FR-001 → FR-027), 14 trường hợp biên, 8 tiêu chí thành công (SC-001 → SC-008);
+  - giá trị mặc định do AI chọn: nhóm tối đa 4 người (bản thân + 3 bạn), hủy trước hơn 4 giờ hoàn 100% / trong 4 giờ không hoàn, chỉ đánh giá khi đã check-in, khung giờ Sáng/Chiều/Tối, danh sách 14 ngày tới;
+  - AI tự bổ sung: chủ sân không đăng ký buổi của chính mình; buổi bị chủ sân đổi giờ/giá thì người chơi được hủy hoàn 100%; vé xem được khi mất mạng; lượt không check-in hiện "Không đến"; đánh giá vãng lai dùng chung quy tắc spec 070 và tính vào điểm cơ sở.
+- Đề xuất SC-002: 20 người cùng đăng ký 5 chỗ cuối thì đúng 5 người thành công, để kiểm thử nguyên tắc III của constitution.
+- Checklist chất lượng đạt 16/16, không còn `[NEEDS CLARIFICATION]`. Cập nhật link spec và nhánh Git trong `docs/features/08-drop-in/README.md`.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| 5 user story và độ ưu tiên | Dùng | Bao đủ các chức năng nhóm 08 trong proposal, trừ hàng chờ (để riêng spec 081) |
+| Đăng ký xác nhận ngay, không giữ chỗ tạm, không cần chủ sân duyệt | Dùng | Buổi vãng lai đã do chủ sân mở sẵn; giữ luồng ≤ 4 bước |
+| Nhóm tối đa 4 người, mốc hủy 4 giờ, đánh giá cần check-in | Dùng tạm | Để hỏi lại ở bước clarify |
+| Đánh giá vãng lai tính vào điểm trung bình cơ sở | Dùng | Dùng lại cơ chế của spec 070, không thêm luồng tính điểm mới |
+
+### Cách kiểm chứng
+
+- Đối chiếu đặc tả CSDL mục 4.9: trạng thái buổi (`OPEN`, `FULL`, `CANCELLED`, `COMPLETED`) và đăng ký (`REGISTERED`, `CANCELLED`, `CHECKED_IN`; `WAITLISTED` để spec 081) khớp với Key Entities.
+- Đối chiếu constitution: nguyên tắc III (FR-007, FR-008, FR-018 – bước nguyên tử, chống trùng), II (FR-009, FR-014, FR-021 – kiểm tra phía server), V (FR-024 – 4 trạng thái màn hình), VI (FR-010 – ghi rõ thanh toán giả lập).
+- Đối chiếu spec 011 FR-022a (xóa tài khoản hủy lượt vãng lai) và spec 022 FR-012 (AI điền bộ lọc vãng lai).
+- Checklist 16/16; tìm "Edge Function", "transaction", "Firestore" trong spec chỉ còn ở dòng Input gốc.
+
+---
+
+## Mục 6: Làm rõ spec 080 bằng `/speckit-clarify`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-06 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 08 – Đặt lịch vãng lai (spec `specs/080-drop-in-session`) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5), lệnh Spec Kit `/speckit-clarify` |
+| Mục đích | Chốt các giá trị mặc định AI tự chọn ở bước specify và các điểm ảnh hưởng tới tiền, phân quyền, quyền riêng tư |
+| Nhánh Git | `feature/08-drop-in` |
+
+### Prompt đã dùng
+
+```
+/speckit-clarify
+Rà soát spec 080 và hỏi mình lần lượt từng câu về những điểm còn mơ hồ, ưu tiên các điểm ảnh
+hưởng tới tiền hoàn khi hủy, điều kiện đánh giá và quyền riêng tư của người đăng ký; mỗi câu
+kèm phương án bạn đề xuất và lý do.
+```
+
+AI hỏi lần lượt 5 câu. Câu trả lời của mình:
+
+| # | Câu hỏi của AI | AI đề xuất | Mình chọn |
+|---|---|---|---|
+| 1 | Chính sách hoàn tiền khi người chơi tự hủy? | A – trước hơn 4 giờ hoàn 100%, trong 4 giờ vẫn hủy được nhưng không hoàn | A – đồng ý |
+| 2 | Điều kiện để được đánh giá buổi đã kết thúc? | A – chỉ lượt đã check-in | Theo đề xuất |
+| 3 | "Thanh toán ngay (giả lập)" hoạt động thế nào? | A – màn hình giả lập luôn thành công, không dùng ví có số dư | Theo đề xuất |
+| 4 | Một lần đăng ký kèm tối đa bao nhiêu người? | B – 4 người (bản thân + 3 bạn) | B – đồng ý |
+| 5 | Người khác có xem được danh sách người đăng ký không? | A – không, chỉ thấy số chỗ còn lại | A – đồng ý |
+
+### Tóm tắt phản hồi của AI
+
+- Thêm mục **Clarifications / Session 2026-10-06** với 5 câu hỏi – trả lời.
+- FR-010: mô tả rõ thanh toán giả lập là màn hình mẫu luôn thành công, hoàn tiền chỉ đổi trạng thái thành "Đã hoàn tiền"; spec 080 không phụ thuộc ví của spec 050.
+- FR-021: người chơi khác không thấy danh sách, tên hay ảnh người đăng ký, kể cả người cùng buổi; chi tiết buổi không có phần "Người tham gia".
+- User Story 2 kịch bản 2: ghi rõ giới hạn 4 người.
+- Assumptions: chuyển 4 giá trị mặc định sang "đã chốt", ghi việc cần báo B (mốc hủy 4 giờ) và D (spec 112 nhắc chủ sân check-in đủ người).
+- Checklist chất lượng vẫn 16/16, không còn `[NEEDS CLARIFICATION]`.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Mốc hủy 4 giờ, hoàn 100% / 0% | Dùng | Đơn giản, dễ kiểm thử; vẫn cho hủy sát giờ để trả chỗ cho người khác |
+| Chỉ đánh giá khi đã check-in | Dùng | Bảo đảm người đánh giá thật sự đã chơi, giống quy tắc spec 070 |
+| Ví giả lập có số dư (phương án B câu 3) | **Bỏ** | Phụ thuộc tiến độ spec 050 của B và thêm nhiều trường hợp lỗi không cần thiết |
+| Cho người cùng buổi xem nhau (phương án B câu 5) | **Bỏ** | Hạn chế lộ dữ liệu cá nhân (constitution nguyên tắc VI); giao lưu thuộc nhóm 09 |
+
+### Cách kiểm chứng
+
+- Mục Clarifications có đúng 5 dòng; mỗi câu trả lời khớp với FR-006, FR-010, FR-017, FR-021, FR-022 và phần Assumptions.
+- Tìm trong spec: không còn "cần xác nhận ở `/speckit-clarify`" hay `[NEEDS CLARIFICATION]`.
+- Việc tiếp theo: báo B về mốc hủy 4 giờ, báo D về việc nhắc check-in ở spec 112; sau đó chạy `/speckit-specify` cho spec 081 (hàng chờ).
+
+---
+
+## Mục 7: Viết spec 081 (hàng chờ buổi vãng lai) bằng `/speckit-specify`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-06 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 08 – Đặt lịch vãng lai (spec `specs/081-drop-in-waitlist`) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5), lệnh Spec Kit `/speckit-specify` |
+| Mục đích | Sinh bản đặc tả đầu tiên cho hàng chờ khi buổi đủ người và việc tự đẩy người lên khi có chỗ |
+| Nhánh Git | `feature/08-drop-in` |
+
+### Prompt đã dùng
+
+```
+/speckit-specify SPECIFY_FEATURE_DIRECTORY=specs/081-drop-in-waitlist
+Người chơi vào hàng chờ khi buổi vãng lai đã đủ người, và được tự động đẩy lên khi có chỗ trống.
+- Ở buổi "Đã đủ người" (spec 080), người chơi bấm "Vào hàng chờ", chọn số người (tối đa 4 như
+  spec 080); xem được vị trí của mình trong hàng chờ và rời hàng chờ bất cứ lúc nào.
+- Khi có người hủy hoặc chủ sân tăng sức chứa, hệ thống tự đẩy người chờ lâu nhất có số người vừa
+  với số chỗ trống lên thành đăng ký chính thức, chạy phía server trong transaction (Edge Function
+  cancel-drop-in / register-drop-in) để không vượt chỗ và không đẩy trùng.
+- Người được đẩy lên nhận vé QR và thông báo "Đã có chỗ" (DROPIN_SPOT_OPENED); thanh toán theo
+  cách đã chọn khi vào hàng chờ (giả lập hoặc trả tại sân), áp dụng chính sách hủy của spec 080.
+- Hàng chờ tự đóng khi buổi bắt đầu hoặc bị hủy; người còn trong hàng chờ được báo.
+- Có xử lý mất mạng, bấm nhiều lần, trạng thái rỗng.
+Không bao gồm: danh sách, đăng ký, vé, hủy và đánh giá buổi (spec 080); chủ sân mở và sửa buổi
+(spec 112); gửi thông báo (spec 100).
+Dữ liệu: dropInSessions, dropInSessions/{id}/registrations/{uid} (status WAITLISTED,
+waitlistedAt) theo docs/design/database/README.md mục 4.9.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Dựa trên spec 080 đã clarify (giới hạn 4 người, thanh toán giả lập luôn thành công, mốc hủy 4 giờ, không lộ danh sách người đăng ký) để hàng chờ dùng chung quy tắc.
+- Tạo `specs/081-drop-in-waitlist/spec.md` và `checklists/requirements.md`:
+  - 4 user story: vào hàng chờ (P1), tự động được đẩy lên (P1), rời hàng chờ (P2), hàng chờ đóng khi buổi bắt đầu/bị hủy (P2);
+  - 17 yêu cầu chức năng (FR-001 → FR-017), 10 trường hợp biên, 6 tiêu chí thành công (SC-001 → SC-006);
+  - quy tắc đẩy lên: theo thứ tự vào hàng chờ, bỏ qua nhưng giữ vị trí cho nhóm lớn hơn số chỗ trống, chạy cùng bước với thao tác hủy để không vượt chỗ;
+  - giá trị mặc định do AI chọn: đẩy lên thành đăng ký ngay (không giữ chỗ chờ xác nhận), hàng chờ không giới hạn, được hủy hoàn 100% trong 30 phút nếu được đẩy lên sát giờ, giá tính theo lúc vào hàng chờ.
+- Đề xuất SC-003: 5 lượt hủy và 10 người chờ cùng lúc, không vượt chỗ, không đẩy trùng, đúng thứ tự.
+- Checklist chất lượng đạt 16/16, không còn `[NEEDS CLARIFICATION]`. Cập nhật link spec 081 trong `docs/features/08-drop-in/README.md`.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| 4 user story và độ ưu tiên | Dùng | Bao đủ phần hàng chờ của nhóm 08, tách khỏi luồng đăng ký spec 080 |
+| Lượt chờ dùng chung dữ liệu đăng ký của spec 080 | Dùng | Khớp đặc tả CSDL mục 4.9 (`WAITLISTED`, `waitlistedAt`), mỗi người một document mỗi buổi |
+| Không trừ tiền khi đang chờ | Dùng | Người chơi chưa có chỗ; rời hàng chờ không mất phí |
+| Đẩy lên ngay, cửa sổ hủy 30 phút, hàng chờ không giới hạn | Dùng tạm | Để hỏi lại ở bước clarify |
+
+### Cách kiểm chứng
+
+- Đối chiếu constitution nguyên tắc III: FR-007, FR-008, FR-013 yêu cầu đẩy lên trong cùng bước nguyên tử với thao tác hủy, không vượt chỗ, không vừa rời vừa được đẩy lên.
+- Đối chiếu spec 080: giới hạn 4 người (FR-002), quy tắc không lộ danh tính (FR-006), vé và chính sách hủy dùng lại (FR-010, FR-011).
+- Checklist 16/16; tìm "Edge Function", "transaction" trong spec chỉ còn ở dòng Input gốc.
+
+---
+
+## Mục 8: Làm rõ spec 081 bằng `/speckit-clarify`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-06 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 08 – Đặt lịch vãng lai (spec `specs/081-drop-in-waitlist`) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5), lệnh Spec Kit `/speckit-clarify` |
+| Mục đích | Chốt cách đẩy người từ hàng chờ lên, quyền lợi khi được đẩy lên sát giờ và giới hạn của hàng chờ |
+| Nhánh Git | `feature/08-drop-in` |
+
+### Prompt đã dùng
+
+```
+/speckit-clarify
+Rà soát spec 081 và hỏi lần lượt từng câu về những điểm còn mơ hồ, ưu tiên cách đẩy người lên
+khi có chỗ, quyền lợi của người được đẩy lên sát giờ và giới hạn của hàng chờ; mỗi câu kèm
+phương án đề xuất và lý do.
+```
+
+Sau câu 1, mình đồng ý dùng phương án AI đề xuất cho cả 5 câu (đã đọc lại lý do từng câu trước khi chốt):
+
+| # | Câu hỏi của AI | AI đề xuất | Mình chọn |
+|---|---|---|---|
+| 1 | Được đẩy lên là thành đăng ký ngay hay giữ chỗ chờ xác nhận? | A – thành đăng ký ngay, có vé QR luôn | Theo đề xuất |
+| 2 | Người đầu hàng chờ đi nhóm đông hơn số chỗ trống thì sao? | Bỏ qua nhưng giữ vị trí, xét người tiếp theo vừa chỗ | Theo đề xuất |
+| 3 | Được đẩy lên sát giờ (trong 4 giờ) có quyền lợi gì khi hủy? | Hủy hoàn 100% trong 30 phút sau khi được đẩy lên | Theo đề xuất |
+| 4 | Hàng chờ có giới hạn không, ngừng đẩy lên lúc nào? | Không giới hạn; đóng 30 phút trước giờ bắt đầu, chỗ trống sau đó mở cho đăng ký thường | Theo đề xuất |
+| 5 | Chờ nhiều buổi trùng giờ, được đẩy lên một buổi thì sao? | Tự rời hàng chờ các buổi trùng giờ còn lại, không mất phí | Theo đề xuất |
+
+### Tóm tắt phản hồi của AI
+
+- Thêm mục **Clarifications / Session 2026-10-06** với 5 câu hỏi – trả lời.
+- FR-001, FR-007, FR-014 và User Story 4: hàng chờ đóng và ngừng đẩy lên 30 phút trước giờ bắt đầu (bản đầu là lúc buổi bắt đầu); chỗ trống sau mốc này mở cho đăng ký thường.
+- FR-010: ghi rõ không có bước giữ chỗ chờ xác nhận. Thêm FR-010a: tự rời hàng chờ các buổi trùng giờ khi được đẩy lên; thêm kịch bản 7 cho User Story 2.
+- Edge Cases: bổ sung "chỗ trống sát giờ" và quy tắc trùng giờ mới; SC-005 tính cả trường hợp tự rời do trùng giờ.
+- Assumptions: chuyển các giá trị mặc định sang "đã chốt", ghi việc báo D về mốc 30 phút.
+- Checklist chất lượng vẫn 16/16, không còn `[NEEDS CLARIFICATION]`.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Đẩy lên thành đăng ký ngay | Dùng | Đúng mô tả "tự đẩy lên"; không cần tác vụ định kỳ thu hồi chỗ giữ tạm |
+| Giữ chỗ 30 phút chờ xác nhận (phương án B câu 1) | **Bỏ** | Thêm trạng thái và tác vụ định kỳ, chỗ trống bị treo lâu hơn |
+| Đẩy lên đến tận lúc bắt đầu ở bản đầu | **Sửa** thành đóng trước 30 phút | Người được đẩy lên quá sát giờ có thể không kịp biết để đến |
+| Tự rời hàng chờ trùng giờ | Dùng (bổ sung mới) | Tránh một người bị tự động đăng ký hai buổi cùng giờ |
+
+### Cách kiểm chứng
+
+- Mục Clarifications có đúng 5 dòng; mỗi câu trả lời khớp với FR-001, FR-007, FR-010, FR-010a, FR-011, FR-014 và User Story 2, 4.
+- Tìm trong spec: không còn "đến tận lúc buổi bắt đầu", "hỏi lại ở `/speckit-clarify`" hay `[NEEDS CLARIFICATION]`.
+- Việc tiếp theo: báo D về mốc đóng hàng chờ 30 phút và việc tăng sức chứa/hủy buổi ở spec 112 phải gọi quy tắc đẩy lên; gửi D danh sách loại thông báo của 080 và 081 trước 14/10.
+
+---
+
+## Mục 9: Viết spec 090 (nhóm/CLB và bảng tin cộng đồng) bằng `/speckit-specify`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-06 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 09 – Cộng đồng và chat (spec `specs/090-community-group`) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5), lệnh Spec Kit `/speckit-specify` |
+| Mục đích | Sinh bản đặc tả đầu tiên cho nhóm/CLB, bảng tin, sự kiện giao lưu và báo cáo bài đăng |
+| Nhánh Git | `feature/09-community-chat` |
+
+### Prompt đã dùng
+
+```
+/speckit-specify SPECIFY_FEATURE_DIRECTORY=specs/090-community-group
+Người chơi tạo và tham gia nhóm/CLB cầu lông, đăng bài và sự kiện giao lưu trên bảng tin nhóm.
+- Tạo nhóm: tên, mô tả, ảnh đại diện, khu vực, chế độ công khai hoặc riêng tư; người tạo là
+  chủ nhóm. Tìm nhóm theo tên và khu vực; tham gia nhóm công khai ngay, nhóm riêng tư phải được
+  chủ nhóm/quản trị viên duyệt. Rời nhóm; chủ nhóm phân quyền quản trị viên, mời ra khỏi nhóm.
+- Bảng tin nhóm: thành viên đăng bài (chữ, tối đa vài ảnh) hoặc sự kiện giao lưu (thời gian,
+  địa điểm, số người dự kiến); thành viên bấm "Tham gia sự kiện". Người đăng sửa/xóa bài của mình,
+  quản trị viên ẩn bài vi phạm trong nhóm.
+- Báo cáo bài đăng vi phạm (gửi vào hàng đợi kiểm duyệt của admin, spec 120).
+- Số thành viên do hệ thống cập nhật, người dùng không tự ghi. Ảnh lưu ở bucket group-media
+  của Supabase. Có xử lý mất mạng, upload ảnh lỗi, trạng thái rỗng.
+Không bao gồm: chat nhóm và chat riêng (spec 091), xử lý báo cáo của admin (spec 120), gửi
+thông báo (spec 100).
+Dữ liệu: groups/{groupId} (+ members, posts), reports theo docs/design/database/README.md
+mục 4.10, 4.12, 8.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Đọc đặc tả CSDL mục 4.10 (`groups`, `members`, `posts`), 4.12 (`reports`), 7 (phân quyền), 8 (bucket `group-media`) và spec 011 (khu vực, xóa tài khoản).
+- Tạo `specs/090-community-group/spec.md` và `checklists/requirements.md`:
+  - 6 user story: tạo nhóm (P1), tìm và tham gia (P1), đăng bài (P2), sự kiện giao lưu (P2), quản lý thành viên (P2), báo cáo và ẩn bài (P3);
+  - 22 yêu cầu chức năng (FR-001 → FR-022), 10 trường hợp biên, 8 tiêu chí thành công (SC-001 → SC-008);
+  - giá trị mặc định do AI chọn: tên nhóm 3–50 ký tự, bài ≤ 2000 ký tự, tối đa 4 ảnh mỗi bài, mỗi người làm chủ tối đa 5 nhóm, số người dự kiến của sự kiện chỉ để tham khảo, không có bình luận/lượt thích;
+  - AI tự bổ sung: phân quyền 3 vai trò (chủ nhóm, quản trị viên, thành viên), chủ nhóm phải chuyển quyền trước khi rời, người bị mời ra phải xin vào lại, danh sách thành viên chỉ thành viên xem được, chuyển quyền chủ nhóm tự động khi chủ nhóm xóa tài khoản.
+- Phát hiện mâu thuẫn trong đặc tả CSDL: mục 7 cho mọi người đọc nhóm công khai, nhưng mục 8 để ảnh nhóm ở bucket private chỉ thành viên xem → ghi vào Assumptions để chốt ở clarify.
+- Checklist chất lượng đạt 16/16, không còn `[NEEDS CLARIFICATION]`. Cập nhật link spec và nhánh Git trong `docs/features/09-community-chat/README.md`.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| 6 user story và độ ưu tiên | Dùng | Bao đủ phần nhóm và bảng tin của nhóm 09; chat để riêng spec 091 |
+| Phân quyền 3 vai trò | Dùng | Khớp `members.role` (`OWNER`, `ADMIN`, `MEMBER`) trong đặc tả CSDL mục 4.10 |
+| Danh sách thành viên là nguồn của chat nhóm (FR-022) | Dùng | Tránh hai nơi quản lý thành viên lệch nhau giữa 090 và 091 |
+| Xem ảnh nhóm công khai, bình luận/lượt thích, giới hạn sự kiện | Dùng tạm | Để hỏi lại ở bước clarify |
+
+### Cách kiểm chứng
+
+- Đối chiếu đặc tả CSDL mục 4.10: các trường của nhóm, thành viên và bài đăng (`type`: `POST`, `EVENT`) đều có trong Key Entities.
+- Đối chiếu constitution: nguyên tắc II (FR-002, FR-003, FR-009 – kiểm tra quyền phía server), V (FR-020 – 4 trạng thái màn hình), VI (FR-018 – nội dung báo cáo được).
+- Checklist 16/16; tìm "Supabase", "group-media" trong spec chỉ còn ở dòng Input gốc.
+
+---
+
+## Mục 10: Làm rõ spec 090 bằng `/speckit-clarify`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-06 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 09 – Cộng đồng và chat (spec `specs/090-community-group`) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5), lệnh Spec Kit `/speckit-clarify` |
+| Mục đích | Chốt quyền xem bảng tin, phạm vi tương tác trên bài đăng và cách hoạt động của sự kiện giao lưu |
+| Nhánh Git | `feature/09-community-chat` |
+
+### Prompt đã dùng
+
+```
+/speckit-clarify
+Rà soát spec 090 và nêu tối đa 5 điểm còn mơ hồ ảnh hưởng tới phân quyền, quyền riêng tư và
+trải nghiệm trên bảng tin nhóm, ưu tiên điểm mâu thuẫn trong đặc tả CSDL về việc người ngoài
+xem bài và ảnh của nhóm công khai. Mỗi điểm kèm phương án đề xuất và lý do; mình đồng ý dùng
+phương án đề xuất cho cả 5 câu, bạn ghi vào spec.
+```
+
+| # | Câu hỏi của AI | AI đề xuất | Mình chọn |
+|---|---|---|---|
+| 1 | Người ngoài có xem được bảng tin (bài, sự kiện, ảnh) của nhóm công khai không? | Không; "công khai" chỉ là tham gia ngay không cần duyệt | Theo đề xuất |
+| 2 | Bài đăng có bình luận và lượt thích không? | Không ở phiên bản này; thảo luận qua chat nhóm | Theo đề xuất |
+| 3 | Sự kiện đủ số người dự kiến thì có chặn tham gia không? | Không chặn, chỉ hiện "Vượt số dự kiến" | Theo đề xuất |
+| 4 | Nhóm riêng tư có hiện khi tìm kiếm không? | Có, hiện trang giới thiệu để xin tham gia | Theo đề xuất |
+| 5 | Bài đăng có cần chủ nhóm/quản trị viên duyệt trước không? | Không; hiện ngay, ẩn sau nếu vi phạm | Theo đề xuất |
+
+### Tóm tắt phản hồi của AI
+
+- Thêm mục **Clarifications / Session 2026-10-06** với 5 câu hỏi – trả lời.
+- FR-014 và User Story 3 kịch bản 7: bảng tin của mọi nhóm chỉ thành viên đọc được, người ngoài chỉ thấy trang giới thiệu (bản đầu cho người ngoài đọc bài nhóm công khai). Thêm kịch bản 8: bài hiện ngay không qua duyệt.
+- FR-005: kết quả tìm kiếm gồm cả nhóm riêng tư (chỉ phần giới thiệu). FR-013: ghi rõ không duyệt bài, không bình luận/lượt thích.
+- Edge Cases "Đổi chế độ nhóm", "Người chưa đăng nhập", User Story 6 kịch bản 3 và SC-004 sửa theo quyền xem mới.
+- Assumptions: ghi việc sửa dòng `groups` ở mục 7 đặc tả CSDL cho khớp khi viết plan.
+- Checklist chất lượng vẫn 16/16, không còn `[NEEDS CLARIFICATION]`.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Người ngoài đọc bảng tin nhóm công khai (bản đầu) | **Sửa** thành chỉ thành viên | Khớp bucket `group-media` private (mục 8), ít lộ dữ liệu cá nhân (constitution nguyên tắc VI), Rules đơn giản hơn |
+| Bình luận, lượt thích | **Bỏ** khỏi phiên bản này | YAGNI (nguyên tắc VII); chat nhóm spec 091 đã đáp ứng việc thảo luận |
+| Số người dự kiến chỉ để tham khảo | Dùng | Không cần transaction giữ chỗ như buổi vãng lai |
+| Bài hiện ngay, ẩn sau khi vi phạm | Dùng | Nhóm nhỏ, kiểm duyệt sau qua báo cáo (spec 120) là đủ |
+
+### Cách kiểm chứng
+
+- Mục Clarifications có đúng 5 dòng; mỗi câu trả lời khớp với FR-005, FR-013, FR-014, FR-016 và User Story 3.
+- Tìm trong spec: không còn câu cho người ngoài đọc bài, không còn "hỏi lại ở `/speckit-clarify`" hay `[NEEDS CLARIFICATION]`.
+- Việc tiếp theo: khi viết plan, sửa dòng `groups` ở mục 7 đặc tả CSDL; chạy `/speckit-specify` cho spec 091 (chat).
+
+---
+
+## Mục 11: Viết spec 091 (chat nhóm và chat với chủ sân) bằng `/speckit-specify`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-06 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 09 – Cộng đồng và chat (spec `specs/091-chat`) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5), lệnh Spec Kit `/speckit-specify` |
+| Mục đích | Sinh bản đặc tả đầu tiên cho chat nhóm, chat riêng với chủ sân, gửi ảnh và báo cáo tin nhắn |
+| Nhánh Git | `feature/09-community-chat` |
+
+### Prompt đã dùng
+
+```
+/speckit-specify SPECIFY_FEATURE_DIRECTORY=specs/091-chat
+Người dùng trò chuyện theo thời gian thực.
+- Mỗi nhóm/CLB (spec 090) có một cuộc trò chuyện chung, thành viên trong đó đúng bằng danh sách
+  thành viên nhóm.
+- Người chơi nhắn riêng cho chủ sân từ chi tiết sân để hỏi lịch, giá; chủ sân trả lời trong chế
+  độ quản lý sân.
+- Gửi tin nhắn chữ và ảnh (bucket chat-media của Supabase, chỉ người trong cuộc trò chuyện xem
+  được). Danh sách cuộc trò chuyện sắp xếp theo tin nhắn mới nhất, có số tin chưa đọc.
+- Báo cáo tin nhắn vi phạm (spec 120).
+- Có xử lý mất mạng (tin chờ gửi, gửi lại), gửi lỗi, trạng thái rỗng.
+Không bao gồm: tạo/quản lý nhóm và thành viên (spec 090), xử lý báo cáo của admin (spec 120),
+gửi thông báo đẩy (spec 100).
+Dữ liệu: chats/{chatId} (+ messages), reports theo docs/design/database/README.md mục 4.11,
+4.12, 8.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Đọc đặc tả CSDL mục 4.11 (`chats`, `messages`), 4.12 (`reports`), 4.13 (`CHAT_MESSAGE`), 5 (ID tất định chat riêng), 8 (bucket `chat-media` private) và spec 090 (FR-022 – thành viên nhóm là nguồn của chat nhóm).
+- Tạo `specs/091-chat/spec.md` và `checklists/requirements.md`:
+  - 5 user story: nhắn riêng với chủ sân (P1), chat nhóm (P1), danh sách trò chuyện và tin chưa đọc (P2), gửi ảnh (P2), thu hồi/báo cáo/chặn (P3);
+  - 18 yêu cầu chức năng (FR-001 → FR-018), 9 trường hợp biên, 7 tiêu chí thành công (SC-001 → SC-007);
+  - giá trị mặc định do AI chọn: chỉ chat riêng người chơi – chủ sân, thành viên mới đọc toàn bộ lịch sử nhóm, thu hồi tin trong 10 phút (không sửa tin), chặn trong chat riêng, tin chữ ≤ 1000 ký tự, một ảnh mỗi tin, tải 30 tin mỗi lần;
+  - AI tự bổ sung: tin chờ gửi khi mất mạng và chống gửi trùng, tắt thông báo từng cuộc trò chuyện, mục "Tin nhắn khách hàng" riêng cho chủ sân, nhóm bị khóa thì chat chỉ đọc.
+- Checklist chất lượng đạt 16/16, không còn `[NEEDS CLARIFICATION]`. Cập nhật link spec 091 trong `docs/features/09-community-chat/README.md`.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| 5 user story và độ ưu tiên | Dùng | Bao đủ 4 chức năng chat còn lại của nhóm 09 trong proposal |
+| Một cuộc trò chuyện cho mỗi cặp người chơi – chủ sân | Dùng | Khớp ID tất định `{uidNhỏ}_{uidLớn}` ở đặc tả CSDL mục 5 |
+| Tin chờ gửi và chống trùng khi mất mạng | Dùng | Constitution nguyên tắc V: mất mạng không được treo hay mất dữ liệu |
+| Phạm vi chat riêng, thu hồi, chặn, lịch sử nhóm | Dùng tạm | Để hỏi lại ở bước clarify |
+
+### Cách kiểm chứng
+
+- Đối chiếu đặc tả CSDL mục 4.11: loại `GROUP`/`DIRECT`, `groupId`, `venueId`, `lastMessage`, trạng thái tin nhắn đều có trong Key Entities.
+- Đối chiếu constitution: nguyên tắc II (FR-004, FR-016 – kiểm tra phía server), V (FR-017 – 4 trạng thái màn hình), VI (FR-014 – báo cáo tin nhắn).
+- Checklist 16/16; tìm "Supabase", "chat-media" trong spec chỉ còn ở dòng Input gốc.
+
+---
+
+## Mục 12: Làm rõ spec 091 bằng `/speckit-clarify`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-06 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 09 – Cộng đồng và chat (spec `specs/091-chat`) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5), lệnh Spec Kit `/speckit-clarify` |
+| Mục đích | Chốt phạm vi chat riêng, quyền đọc lịch sử chat nhóm và các thao tác an toàn (thu hồi, chặn) |
+| Nhánh Git | `feature/09-community-chat` |
+
+### Prompt đã dùng
+
+```
+/speckit-clarify
+Rà soát spec 091 và nêu tối đa 5 điểm còn mơ hồ ảnh hưởng tới phân quyền, quyền riêng tư và an
+toàn khi nhắn tin (ai được nhắn riêng cho ai, ai đọc được lịch sử chat nhóm, thu hồi tin, chặn
+người dùng). Mỗi điểm kèm phương án đề xuất và lý do; mình đồng ý dùng phương án đề xuất cho cả
+5 câu, bạn ghi vào spec.
+```
+
+| # | Câu hỏi của AI | AI đề xuất | Mình chọn |
+|---|---|---|---|
+| 1 | Người chơi có nhắn riêng cho người chơi khác không? | Không; chỉ người chơi – chủ sân, người chơi với nhau qua chat nhóm | Theo đề xuất |
+| 2 | Thành viên mới có đọc được tin cũ của chat nhóm không? | Có, toàn bộ lịch sử | Theo đề xuất |
+| 3 | Có thu hồi hoặc sửa tin nhắn không? | Thu hồi trong 10 phút, không sửa | Theo đề xuất |
+| 4 | Có chặn người dùng trong chat riêng không? | Có, cả hai bên chặn/bỏ chặn được | Theo đề xuất |
+| 5 | Chủ sân nhiều cơ sở: mỗi cơ sở một cuộc trò chuyện hay một cuộc chung? | Một cuộc chung mỗi cặp, hiện cơ sở hỏi gần nhất | Theo đề xuất |
+
+### Tóm tắt phản hồi của AI
+
+- Thêm mục **Clarifications / Session 2026-10-06** với 5 câu hỏi – trả lời. Cả 5 câu trùng với giá trị mặc định ở bản đầu nên FR-001, FR-002, FR-003, FR-010, FR-016 giữ nguyên nội dung, chỉ chuyển từ "giả định" sang "đã chốt".
+- Assumptions: ghi rõ trạng thái chặn và thời điểm đọc gần nhất là dữ liệu mới so với đặc tả CSDL mục 4.11, cần bổ sung khi viết plan.
+- Checklist chất lượng vẫn 16/16, không còn `[NEEDS CLARIFICATION]`.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Chỉ chat riêng người chơi – chủ sân | Dùng | Đúng phạm vi proposal; giảm tin nhắn rác giữa người lạ |
+| Thành viên mới đọc toàn bộ lịch sử | Dùng | Rules chỉ cần kiểm tra đang là thành viên; người mới nắm được lịch hẹn của CLB |
+| Sửa tin nhắn | **Bỏ** | Tránh đổi nội dung sau khi đã bị báo cáo; thu hồi 10 phút đủ cho trường hợp gửi nhầm |
+| Chặn trong chat riêng | Dùng | Constitution nguyên tắc VI: người dùng tự bảo vệ trước tin làm phiền |
+
+### Cách kiểm chứng
+
+- Mục Clarifications có đúng 5 dòng; mỗi câu trả lời khớp với FR-001, FR-002, FR-003, FR-010, FR-016 và User Story 1, 2, 5.
+- Tìm trong spec: không còn "hỏi lại ở `/speckit-clarify`" hay `[NEEDS CLARIFICATION]`.
+- Việc tiếp theo: báo A về nút "Nhắn tin cho chủ sân" ở spec 030, báo D về mục "Tin nhắn khách hàng" trong menu chủ sân; khi viết plan bổ sung trạng thái đọc/chặn vào đặc tả CSDL mục 4.11.
