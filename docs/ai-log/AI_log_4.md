@@ -1,4 +1,4 @@
-# Nhật ký sử dụng AI – Thành viên 4 (Minh Nhựt)
+﻿# Nhật ký sử dụng AI – Thành viên 4 (Minh Nhựt)
 
 Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 
@@ -8,6 +8,7 @@ Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 | 2   | 2026-10-07 | Viết spec 110 (đăng ký chủ sân) bằng `$speckit-specify` và làm rõ bằng `$speckit-clarify`                                  | 11   |
 | 3   | 2026-10-08 | Viết và làm rõ spec 111 (quản lý cơ sở, sân con, bảng giá và khóa giờ) bằng AI, `$speckit-clarify` và `$speckit-checklist` | 11   |
 | 4   | 2026-10-08 | Viết và làm rõ spec 112 (vận hành cơ sở chủ sân) bằng AI và `$speckit-clarify`                                             | 11   |
+| 5   | 2026-10-08 | Viết và làm rõ spec 120 (quản trị, hồ sơ chủ sân và báo cáo) bằng `$speckit-specify` và `$speckit-clarify`                 | 12   |
 
 ---
 
@@ -272,14 +273,14 @@ $speckit-clarify
 
 ## Mục 4: Viết và làm rõ spec 112 (vận hành cơ sở chủ sân)
 
-| Trường                   | Nội dung |
-| ------------------------ | -------- |
-| Ngày                     | 2026-10-08 |
-| Người thực hiện          | Minh Nhựt |
-| Nhóm tính năng liên quan | 11 – Quản lý sân (chủ sân), spec `specs/112-owner-operations` |
-| Công cụ AI               | Codex (GPT-6), `$speckit-specify`, `$speckit-clarify` |
+| Trường                   | Nội dung                                                                                                                                 |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-10-08                                                                                                                               |
+| Người thực hiện          | Minh Nhựt                                                                                                                                |
+| Nhóm tính năng liên quan | 11 – Quản lý sân (chủ sân), spec `specs/112-owner-operations`                                                                            |
+| Công cụ AI               | Codex (GPT-6), `$speckit-specify`, `$speckit-clarify`                                                                                    |
 | Mục đích                 | Đối chiếu tài liệu dự án, viết đặc tả vận hành cho owner đã được duyệt và làm rõ các quyết định về booking, drop-in, voucher và thống kê |
-| Nhánh Git                | `feature/11-owner-specs` |
+| Nhánh Git                | `feature/11-owner-specs`                                                                                                                 |
 
 ### Prompt đã dùng
 
@@ -320,17 +321,17 @@ $speckit-clarify
 
 ### Phần đã sử dụng / chỉnh sửa / bỏ
 
-| Phần | Quyết định | Lý do |
-| ---- | ---------- | ----- |
-| Quyền owner | Chỉ owner có `role = OWNER`, `ownerStatus = APPROVED` và venue có `ownerId` khớp UID được vận hành | Khớp constitution và ngăn truy cập dữ liệu venue khác |
-| Duyệt booking | Chỉ chuyển `PENDING → CONFIRMED` hoặc `PENDING → REJECTED`; kiểm tra trạng thái booking và slot mới nhất | Khớp máy trạng thái trong database README |
-| Đăng ký drop-in | Owner xem danh sách, không duyệt từng người; check-in qua QR | Schema không có trạng thái chờ owner duyệt |
-| Slot drop-in | Dùng slot 30 phút, `slots.status = BLOCKED`, `blockReason = DROP_IN` | Khớp Feature 111 và database README |
-| Voucher | Owner chỉ tạo voucher gắn venue thuộc mình; không tự sửa `usedCount` hoặc redemption | Khớp quyền và schema voucher hiện có |
-| Doanh thu | Tách `DEPOSITED`, `PAID`, `REFUNDED`; chỉ tính `AT_VENUE` khi đã `PAID` | Phân biệt tiền cọc, thanh toán đủ và hoàn tiền |
-| Tiền hoàn | Chỉ hiển thị số tiền nếu dữ liệu hiện có xác định được; không suy đoán hoàn toàn bộ | Schema chưa biểu diễn số tiền hoàn một phần |
-| Khung giờ cao điểm | Xếp theo thời lượng booking xác nhận trong từng khoảng 60 phút theo `Asia/Ho_Chi_Minh` | Cung cấp cách gom nhất quán giữa các ngày |
-| Plan, tasks, data-model và implementation | Không tạo hoặc chạy | Phạm vi công việc chỉ là specify và clarify |
+| Phần                                      | Quyết định                                                                                               | Lý do                                                 |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| Quyền owner                               | Chỉ owner có `role = OWNER`, `ownerStatus = APPROVED` và venue có `ownerId` khớp UID được vận hành       | Khớp constitution và ngăn truy cập dữ liệu venue khác |
+| Duyệt booking                             | Chỉ chuyển `PENDING → CONFIRMED` hoặc `PENDING → REJECTED`; kiểm tra trạng thái booking và slot mới nhất | Khớp máy trạng thái trong database README             |
+| Đăng ký drop-in                           | Owner xem danh sách, không duyệt từng người; check-in qua QR                                             | Schema không có trạng thái chờ owner duyệt            |
+| Slot drop-in                              | Dùng slot 30 phút, `slots.status = BLOCKED`, `blockReason = DROP_IN`                                     | Khớp Feature 111 và database README                   |
+| Voucher                                   | Owner chỉ tạo voucher gắn venue thuộc mình; không tự sửa `usedCount` hoặc redemption                     | Khớp quyền và schema voucher hiện có                  |
+| Doanh thu                                 | Tách `DEPOSITED`, `PAID`, `REFUNDED`; chỉ tính `AT_VENUE` khi đã `PAID`                                  | Phân biệt tiền cọc, thanh toán đủ và hoàn tiền        |
+| Tiền hoàn                                 | Chỉ hiển thị số tiền nếu dữ liệu hiện có xác định được; không suy đoán hoàn toàn bộ                      | Schema chưa biểu diễn số tiền hoàn một phần           |
+| Khung giờ cao điểm                        | Xếp theo thời lượng booking xác nhận trong từng khoảng 60 phút theo `Asia/Ho_Chi_Minh`                   | Cung cấp cách gom nhất quán giữa các ngày             |
+| Plan, tasks, data-model và implementation | Không tạo hoặc chạy                                                                                      | Phạm vi công việc chỉ là specify và clarify           |
 
 ### Cách kiểm chứng
 
@@ -340,3 +341,72 @@ $speckit-clarify
 - Checklist `specs/112-owner-operations/checklists/requirements.md`: **16/16** checkbox đạt;
 - Ghi nhận database README chưa định nghĩa schema trường/chỉ số của `dailyStats`; cần thống nhất hợp đồng báo cáo với người phụ trách CSDL.
 
+---
+
+## Mục 5: Viết và làm rõ spec 120 (quản trị)
+
+| Trường                   | Nội dung                                                                                                                                |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-10-08                                                                                                                              |
+| Người thực hiện          | Minh Nhựt                                                                                                                               |
+| Nhóm tính năng liên quan | 12 – Quản trị (spec `specs/120-admin`)                                                                                                  |
+| Công cụ AI               | Codex (GPT-6), `$speckit-specify`, `$speckit-clarify`                                                                                   |
+| Mục đích                 | Đối chiếu tài liệu dự án, viết đặc tả chức năng Admin và làm rõ các quyết định về duyệt hồ sơ, quyền owner, xử lý báo cáo và khóa venue |
+| Nhánh Git                | `120-admin`                                                                                                                             |
+
+### Prompt đã dùng
+
+**Yêu cầu viết spec**:
+
+```text
+$speckit-specify Admin quản lý và kiểm duyệt các nội dung cần quyền quản trị trong hệ thống. Admin có thể xem danh sách hồ sơ đăng ký chủ sân, kiểm tra thông tin và giấy tờ chứng minh, sau đó duyệt hoặc từ chối hồ sơ. Khi từ chối phải có lý do để người dùng biết và có thể chỉnh sửa, nộp lại. Admin cũng có thể quản lý các báo cáo/vấn đề cần xử lý theo phạm vi được quy định trong proposal và các feature liên quan.
+
+Không bao gồm: luồng người dùng đăng ký trở thành chủ sân và theo dõi hồ sơ (spec 110-owner-onboarding), quản lý venue/court/price rules của owner (spec 111-owner-venue-setup), các thao tác vận hành booking/drop-in/voucher của owner (spec 112-owner-operations), đăng nhập và hồ sơ cá nhân (spec 010, 011).
+
+Dữ liệu liên quan: users, ownerApplications, venues và các dữ liệu quản trị/báo cáo theo docs/design/database/README.md.
+
+Đọc và đối chiếu Proposal.html, constitution, hướng dẫn W1–W2, database README và các spec liên quan. Viết bằng tiếng Việt, chỉ mô tả WHAT/WHY, không viết implementation code. Không chạy plan/tasks/implement; không tạo data-model.md, plan.md hoặc tasks.md. Đặc tả cần có Actors, user stories, acceptance scenarios, trạng thái xử lý, functional requirements, validation, permission/security, error/empty/loading, offline/network failure, edge cases, dependencies và success criteria. Chỉ Admin được truy cập và thực hiện thao tác quản trị. Từ chối hồ sơ phải lưu lý do để người nộp xem và nộp lại; giấy tờ chỉ Admin và người nộp được xem. Không tự đặt field hoặc trạng thái ngoài database README; ghi nhận mâu thuẫn thay vì sửa tài liệu khác.
+```
+
+**Lệnh làm rõ**:
+
+```text
+$speckit-clarify
+```
+
+### Tóm tắt phản hồi của AI
+
+- Đối chiếu Proposal, constitution, hướng dẫn W1–W2, database README, specs 010/011/110/111/112 và các feature liên quan.
+- Tạo `specs/120-admin/spec.md` và checklist `specs/120-admin/checklists/requirements.md`.
+- Spec bao gồm duyệt/từ chối owner application, quản lý tài khoản và venue, xử lý reports, thống kê, danh mục, system notification, permission/security, lỗi, offline, edge cases và success criteria.
+- Các lượt `$speckit-clarify` đã ghi nhận 7 câu trả lời:
+  1. Thu hồi quyền owner: `users.role = PLAYER`, `users.ownerStatus = NONE`; `ownerApplications.status` giữ `APPROVED`.
+  2. Báo cáo “tin đăng” dùng `targetType = VENUE`.
+  3. Report `VENUE` dùng `LOCK_VENUE`; `HIDE_CONTENT` dành cho nội dung.
+  4. Duyệt hồ sơ tạo venue từ `venueDraft`; spec 111 quản lý thay đổi sau đó.
+  5. `SYSTEM` notification gửi tới tất cả tài khoản đang hoạt động.
+  6. Thu hồi quyền owner không tự đổi trạng thái venue; Admin khóa riêng khi cần.
+  7. Admin có thể mở khóa venue `LOCKED` về `ACTIVE` hoặc `HIDDEN`; owner không được tự mở khóa.
+- Không chạy `$speckit-plan`, `$speckit-tasks`, `$speckit-implement` hoặc test.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần                                    | Quyết định                                                                                                                                        | Lý do                                                                              |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Quy trình duyệt hồ sơ                   | Duyệt đặt `role = OWNER`, `ownerStatus = APPROVED`, tạo venue từ `venueDraft`; từ chối lưu lý do và đặt `role = PLAYER`, `ownerStatus = REJECTED` | Khớp database README và cho phép người nộp xem lý do, sửa và nộp lại theo spec 110 |
+| Thu hồi quyền owner                     | Đặt `role = PLAYER`, `ownerStatus = NONE`; hồ sơ giữ `APPROVED`                                                                                   | Dùng enum hiện có và giữ lịch sử hồ sơ đã duyệt                                    |
+| Báo cáo “tin đăng”                      | Ánh xạ sang `targetType = VENUE`                                                                                                                  | Database không có target type riêng cho tin đăng                                   |
+| Hành động theo loại report              | `VENUE` dùng `LOCK_VENUE`; nội dung dùng `HIDE_CONTENT`                                                                                           | Khớp tập action đã có trong schema                                                 |
+| Venue khi thu hồi quyền                 | Giữ nguyên trạng thái; Admin quyết định khóa riêng                                                                                                | Proposal mô tả thu hồi owner và khóa venue là các hành động tách biệt              |
+| Mở khóa venue                           | Chỉ Admin được mở khóa về `ACTIVE` hoặc `HIDDEN`                                                                                                  | Owner không được tự mở venue đã bị Admin khóa                                      |
+| System notification                     | Gửi đến tất cả tài khoản đang hoạt động                                                                                                           | Proposal chưa quy định nhóm nhận riêng                                             |
+| Mâu thuẫn giữa database và spec 110/111 | Ghi nhận trong spec 120; tạo venue là tác động của duyệt hồ sơ, spec 111 quản lý cập nhật sau đó                                                  | Không tự sửa các tài liệu liên quan                                                |
+
+### Cách kiểm chứng
+
+- Đối chiếu các trường và trạng thái với database README; không thêm `targetType`, enum hoặc field mới.
+- Kiểm tra câu trả lời đã được ghi vào `Clarifications` và các phần Acceptance Scenarios, trạng thái xử lý, Functional Requirements, Validation và Open Questions / Assumptions.
+- Checklist chất lượng: **16/16** mục được đánh dấu đạt.
+- `git diff --check` không báo lỗi định dạng.
+- Ghi nhận còn thiếu chi tiết về thao tác quản lý danh mục, chỉ số thống kê và nội dung system notification trong tài liệu hiện có.
+- Không chạy plan, tasks, implementation hoặc test.
