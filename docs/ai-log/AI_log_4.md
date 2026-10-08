@@ -7,6 +7,7 @@ Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 | 1   | 2026-10-06 | Viết và làm rõ spec 100 (thông báo) bằng AI và `$speckit-clarify`                                                          | 10   |
 | 2   | 2026-10-07 | Viết spec 110 (đăng ký chủ sân) bằng `$speckit-specify` và làm rõ bằng `$speckit-clarify`                                  | 11   |
 | 3   | 2026-10-08 | Viết và làm rõ spec 111 (quản lý cơ sở, sân con, bảng giá và khóa giờ) bằng AI, `$speckit-clarify` và `$speckit-checklist` | 11   |
+| 4   | 2026-10-08 | Viết và làm rõ spec 112 (vận hành cơ sở chủ sân) bằng AI và `$speckit-clarify`                                             | 11   |
 
 ---
 
@@ -266,3 +267,76 @@ $speckit-clarify
 - Không tìm thấy spec booking 040/041/050 hoặc spec admin 120 trong repo để đối chiếu hợp đồng chi tiết.
 - Không chạy test, plan, tasks hoặc implementation.
 - Việc xóa `priceRules` chỉ được mở lại sau khi nhóm booking/CSDL chốt và ghi nhận quan hệ sử dụng rule trong hợp đồng dữ liệu.
+
+---
+
+## Mục 4: Viết và làm rõ spec 112 (vận hành cơ sở chủ sân)
+
+| Trường                   | Nội dung |
+| ------------------------ | -------- |
+| Ngày                     | 2026-10-08 |
+| Người thực hiện          | Minh Nhựt |
+| Nhóm tính năng liên quan | 11 – Quản lý sân (chủ sân), spec `specs/112-owner-operations` |
+| Công cụ AI               | Codex (GPT-6), `$speckit-specify`, `$speckit-clarify` |
+| Mục đích                 | Đối chiếu tài liệu dự án, viết đặc tả vận hành cho owner đã được duyệt và làm rõ các quyết định về booking, drop-in, voucher và thống kê |
+| Nhánh Git                | `feature/11-owner-specs` |
+
+### Prompt đã dùng
+
+**Yêu cầu viết spec**:
+
+```text
+$speckit-specify
+
+Chủ sân đã được admin duyệt có thể vận hành cơ sở: duyệt hoặc từ chối booking, xem lịch tổng hợp ngày/tuần, mở buổi drop-in, xem đăng ký và check-in bằng QR, tạo voucher, xem thống kê doanh thu, tỷ lệ lấp đầy và khung giờ cao điểm.
+
+Không bao gồm onboarding chủ sân (spec 110), thiết lập venue/court/giá/khóa giờ (spec 111) và quy trình admin (spec 120).
+
+Đọc và đối chiếu Proposal.html, constitution, hướng dẫn W1–W2, database README, specs 110/111, các spec booking/drop-in/voucher liên quan và spec 120 nếu có. Viết tiếng Việt, giữ tên kỹ thuật và trạng thái hiện có. Chỉ mô tả WHAT/WHY; không viết code, không chạy plan/tasks/implement, không tạo data-model.md, plan.md hoặc tasks.md.
+
+Chỉ owner có ownerStatus = approved được vận hành và chỉ trên venue/court thuộc quyền sở hữu của mình. Đối chiếu database trước khi dùng field hoặc trạng thái; ghi nhận mâu thuẫn thay vì tự sửa tài liệu khác.
+```
+
+**Lệnh làm rõ**:
+
+```text
+$speckit-clarify
+```
+
+### Tóm tắt phản hồi của AI
+
+- Đối chiếu Proposal, constitution, hướng dẫn W1–W2, database README, specs 110 và 111, cùng README các nhóm voucher, drop-in và chủ sân.
+- Tạo `specs/112-owner-operations/spec.md` với actors, user stories, acceptance scenarios, requirements, validation, permission/security, lỗi, offline, edge cases, dependencies và success criteria.
+- Không tìm thấy specs booking, voucher, drop-in và admin được yêu cầu đối chiếu (`040/041/050/060/080/081/120`); giới hạn này được ghi nhận trong spec.
+- Prerequisite của `$speckit-clarify` trỏ tới spec 110 do `.specify/feature.json` cũ. Giữ mục tiêu spec 112 theo ngữ cảnh; không sửa feature.json.
+- Hai lượt clarify đã hỏi và ghi nhận tổng cộng 4 câu trả lời:
+  - Owner xem danh sách đăng ký drop-in và check-in; không duyệt riêng từng người.
+  - Báo cáo tách `DEPOSITED`, `PAID`, `REFUNDED`; `AT_VENUE` chỉ tính sau khi `paymentStatus = PAID`.
+  - Booking `REFUNDED` được đếm riêng; chỉ hiển thị tiền hoàn nếu dữ liệu hiện có xác định được số tiền, không giả định hoàn toàn bộ.
+  - Khung giờ cao điểm gom theo khoảng 60 phút trong `Asia/Ho_Chi_Minh`.
+- Lượt `$speckit-clarify` tiếp theo không phát hiện câu hỏi người dùng nào cần hỏi thêm. Schema `dailyStats` vẫn là điểm cần thống nhất với người phụ trách CSDL.
+- Checklist có 16/16 checkbox đạt. Phần Notes trong checklist vẫn giữ nội dung cũ nói hai câu hỏi clarify đang chờ trả lời.
+- Không chạy plan, tasks, implementation hoặc test.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+| ---- | ---------- | ----- |
+| Quyền owner | Chỉ owner có `role = OWNER`, `ownerStatus = APPROVED` và venue có `ownerId` khớp UID được vận hành | Khớp constitution và ngăn truy cập dữ liệu venue khác |
+| Duyệt booking | Chỉ chuyển `PENDING → CONFIRMED` hoặc `PENDING → REJECTED`; kiểm tra trạng thái booking và slot mới nhất | Khớp máy trạng thái trong database README |
+| Đăng ký drop-in | Owner xem danh sách, không duyệt từng người; check-in qua QR | Schema không có trạng thái chờ owner duyệt |
+| Slot drop-in | Dùng slot 30 phút, `slots.status = BLOCKED`, `blockReason = DROP_IN` | Khớp Feature 111 và database README |
+| Voucher | Owner chỉ tạo voucher gắn venue thuộc mình; không tự sửa `usedCount` hoặc redemption | Khớp quyền và schema voucher hiện có |
+| Doanh thu | Tách `DEPOSITED`, `PAID`, `REFUNDED`; chỉ tính `AT_VENUE` khi đã `PAID` | Phân biệt tiền cọc, thanh toán đủ và hoàn tiền |
+| Tiền hoàn | Chỉ hiển thị số tiền nếu dữ liệu hiện có xác định được; không suy đoán hoàn toàn bộ | Schema chưa biểu diễn số tiền hoàn một phần |
+| Khung giờ cao điểm | Xếp theo thời lượng booking xác nhận trong từng khoảng 60 phút theo `Asia/Ho_Chi_Minh` | Cung cấp cách gom nhất quán giữa các ngày |
+| Plan, tasks, data-model và implementation | Không tạo hoặc chạy | Phạm vi công việc chỉ là specify và clarify |
+
+### Cách kiểm chứng
+
+- Đối chiếu schema và trạng thái `bookings`, `paymentStatus`, `slots`, `blockReason`, `vouchers`, `dropInSessions`, `registrations` và `dailyStats` trong database README.
+- Kiểm tra câu trả lời clarify đã được ghi nhất quán trong `Clarifications`, Acceptance scenarios, Functional Requirements và Assumptions.
+- Xác nhận spec không còn marker `[NEEDS CLARIFICATION]`.
+- Checklist `specs/112-owner-operations/checklists/requirements.md`: **16/16** checkbox đạt;
+- Ghi nhận database README chưa định nghĩa schema trường/chỉ số của `dailyStats`; cần thống nhất hợp đồng báo cáo với người phụ trách CSDL.
+
