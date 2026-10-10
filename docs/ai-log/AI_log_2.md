@@ -12,6 +12,7 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 6 | 2026-10-06 | Làm rõ spec 050 bằng `/speckit-clarify` (3 câu hỏi) | 05 |
 | 7 | 2026-10-06 | Viết spec 060 (quản lý lịch đặt của tôi) bằng `/speckit-specify` | 06 |
 | 8 | 2026-10-06 | Làm rõ spec 060 bằng `/speckit-clarify` (3 câu hỏi) | 06 |
+| 9 | 2026-10-10 | Rà soát điểm giao thoa liên thành viên & Cập nhật slot 30 phút cho spec 040, 041 | 04, 05, 06 |
 
 ---
 
@@ -444,6 +445,44 @@ Bảng đối chiếu lựa chọn:
 - Kiểm tra checklist `specs/060-my-bookings/checklists/requirements.md` đạt 100% checkmark (16/16).
 - Đối chiếu với Constitution Nguyên tắc II (server validation), III (Long VND, deterministic hold/timestamp), VI (ví giả lập phi thương mại).
 
+---
 
+## Mục 9: Rà soát điểm giao thoa liên thành viên & Cập nhật slot 30 phút cho spec 040, 041
 
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-10 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 04 – Đặt sân (`specs/040`, `specs/041`), 05 – Thanh toán (`specs/050`), 06 – Quản lý lịch đặt (`specs/060`) |
+| Công cụ AI | Antigravity |
+| Mục đích | Rà soát các điểm giao thoa kỹ thuật với Thành viên A, C, D; soạn thảo nội dung/câu hỏi trao đổi; đồng thời cập nhật độ dài slot sang 30 phút (thay vì 60 phút) để đồng bộ toàn hệ thống |
+| Nhánh Git | `Hung` |
 
+### Bối cảnh và Yêu cầu
+
+- Sau khi kéo cập nhật từ nhánh `main` (tổng cộng 20 specs từ 4 thành viên hoàn tất giai đoạn đặc tả), xuất hiện điểm không nhất quán: Thành viên B trước đó chốt slot 60 phút ở spec 040, trong khi Thành viên D thiết kế quản lý cơ sở và vận hành (spec 111, 112) và Thành viên C mở ca giao lưu (spec 080) đều dựa trên đơn vị slot **30 phút**.
+- Người dùng yêu cầu:
+  1. Cập nhật đặc tả của Thành viên B (spec 040, 041, database README, requirements checklist, features README) chuyển toàn bộ sang **slot 30 phút**.
+  2. Rà soát bảng điểm giao thoa kỹ thuật liên thành viên và soạn bộ câu hỏi/nội dung trao đổi chi tiết mà Thành viên B cần gửi tới các thành viên A, C, D.
+
+### Các thay đổi kỹ thuật đã thực hiện
+
+1. **Cập nhật spec 040 (`specs/040-booking-slot-grid/spec.md`)**:
+   - `Clarifications`: Chốt độ dài mỗi slot cố định **30 phút** (ví dụ: `07:00–07:30`, `07:30–08:00`...).
+   - Quy tắc tính giá: `priceRules` có mốc giờ tròn theo bước nhảy 30 phút (`HH:00` hoặc `HH:30`). Đơn giá mỗi slot 30 phút quy đổi theo công thức `pricePerSlot = pricePerHour / 2`.
+   - Giới hạn chọn: Tối đa 8 slot 30 phút (tương đương tối đa 4 giờ chơi liên tục) trong 1 đơn đặt sân.
+   - Cập nhật US1, US2, Edge Cases, FR-002, FR-008, FR-026, CourtSlot entity, SC-001 (lưới hỗ trợ tới 32 khung giờ 30 phút/ngày).
+2. **Cập nhật spec 041 (`specs/041-weekly-recurring-booking/spec.md`)**:
+   - US1 & FR-003: Áp dụng quy tắc slot 30 phút cố định.
+   - FR-004: Cho phép chọn từ 2 đến tối đa 6 slot 30 phút liên tiếp/buổi (tương đương 1 đến 3 giờ/buổi).
+   - CourtSlot entity: Chuẩn hóa slot 30 phút.
+3. **Cập nhật `docs/design/database/README.md`**:
+   - Dòng 153: Chuyển ghi chú độ dài khung giờ sang **30 phút** (thống nhất đồng bộ giữa B và D).
+   - Dòng 325: Đánh dấu câu hỏi số 1 là đã giải quyết (`Đã chốt 10/10: Cố định 30 phút toàn hệ thống`).
+4. **Cập nhật checklists & README nhóm 04**:
+   - `specs/040-booking-slot-grid/checklists/requirements.md`: Cập nhật ghi chú slot 30 phút.
+   - `docs/features/04-booking/README.md`: Bổ sung ghi chú thiết kế về độ dài slot 30 phút và quy tắc giá.
+5. **Soạn thảo bộ câu hỏi trao đổi liên thành viên (Cross-Member Coordination)**:
+   - Gửi Thành viên D: Thống nhất format `priceRules` (bước 30 phút, `pricePerHour / 2`), cơ chế quét timeout 60 phút cho đơn `PENDING`, schema `vouchers` phục vụ áp mã, và danh sách mã thông báo FCM từ module B.
+   - Gửi Thành viên C: Khóa quyền đánh giá đối với đơn `NO_SHOW`, cơ chế ghi đè slot `BLOCKED` (`blockReason = DROP_IN`) khi mở ca giao lưu.
+   - Gửi Thành viên A: Văn bản FAQ tĩnh chuẩn hóa (hủy đơn, cọc 30%, ví giả lập, voucher) phục vụ intent `faq` của chatbot/AI search.

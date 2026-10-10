@@ -31,8 +31,8 @@
 
 ## Notes
 
-- Đã giải quyết 3/3 câu hỏi làm rõ (Session 2026-10-06):
-  1. Độ dài mỗi khung giờ: Cố định 60 phút.
-  2. Quy tắc tính giá: `priceRules` bắt buộc mốc giờ tròn theo slot 60 phút (thống nhất với Thành viên D).
-  3. Giới hạn slot: Tối đa 8 slot / đơn đặt sân.
+- Đã giải quyết 3/3 câu hỏi làm rõ (Session 2026-10-06 & Cập nhật thống nhất 2026-10-10):
+  1. Độ dài mỗi khung giờ: Cố định 30 phút (thống nhất đồng bộ với Thành viên D theo spec 111, 112).
+  2. Quy tắc tính giá: `priceRules` bắt buộc mốc giờ tròn theo bước nhảy 30 phút (thống nhất với Thành viên D); đơn giá slot 30 phút = `pricePerHour / 2`.
+  3. Giới hạn slot: Tối đa 8 slot 30 phút (tương đương tối đa 4 giờ chơi liên tục) / đơn đặt sân.
 - Spec đã hoàn tất và sẵn sàng cho giai đoạn `/speckit-plan`.

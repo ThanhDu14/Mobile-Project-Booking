@@ -150,7 +150,7 @@ Một document cho mỗi khung giờ **đang bị chiếm**. Không có document
 | `holdExpiresAt` | Timestamp? | `serverTimestamp + 5 phút`. Đã hết hạn coi như trống |
 | `blockReason` | String? | `MAINTENANCE`, `EVENT`, `WALK_IN`, `DROP_IN` (khi `BLOCKED`) |
 
-Độ dài khung giờ: **60 phút** (B chốt trong `/speckit-clarify` của spec 040). Mở buổi vãng lai (11) phải ghi `BLOCKED` với `blockReason = DROP_IN` cho các slot của buổi đó, trong transaction.
+Độ dài khung giờ: **30 phút** (thống nhất đồng bộ giữa B và D theo spec 111/112 và spec 040/041). Mở buổi vãng lai (11) phải ghi `BLOCKED` với `blockReason = DROP_IN` cho các slot của buổi đó, trong transaction.
 
 ### 4.5. `bookings/{bookingId}` — B
 
@@ -322,7 +322,7 @@ Mỗi dòng trên cần ít nhất một test Emulator "được phép" và mộ
 
 | # | Câu hỏi | Người chốt |
 |---|---|---|
-| 1 | Độ dài một slot: 30 hay 60 phút? Có cho chủ sân tự chọn không? | B, D |
+| 1 | ~~Độ dài một slot: 30 hay 60 phút?~~ Đã chốt 10/10: Cố định **30 phút** toàn hệ thống | B, D |
 | 2 | Đơn có cần chủ sân duyệt không, hay một số sân tự động xác nhận? | B, D |
 | 3 | Chính sách hủy cụ thể (mốc 4 giờ, hoàn cọc bao nhiêu %) | B |
 | 4 | "Sân yêu thích" và "sân đang theo dõi" có là một không? | C, D |
