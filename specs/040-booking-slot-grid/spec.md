@@ -12,11 +12,11 @@
 
 ## Clarifications
 
-### Session 2026-10-06
+### Session 2026-10-06 & Cập nhật thống nhất 2026-10-10
 
-- Q: Quy định độ dài mỗi khung giờ trên lưới là bao nhiêu? → A: Cố định 60 phút (ví dụ 07:00–08:00, 08:00–09:00).
-- Q: Cách tính giá khi khung giờ nằm giữa hai bảng giá (điểm giao với Thành viên D)? → A: Giờ bắt đầu và kết thúc của `priceRules` bắt buộc phải tròn theo độ dài slot (ví dụ 17:00 hoặc 18:00, không được lẻ 17:30). Thành viên D thiết lập bảng giá theo các mốc giờ tròn.
-- Q: Giới hạn tối đa số lượng slot mà một người chơi được chọn trong cùng một đơn đặt là bao nhiêu? → A: Tối đa 8 slot (tương đương 8 giờ chơi) trong một đơn đặt.
+- Q: Quy định độ dài mỗi khung giờ trên lưới là bao nhiêu? → A: Cố định 30 phút (ví dụ 07:00–07:30, 07:30–08:00, 18:00–18:30...). Thống nhất đồng bộ với Thành viên D (spec 111, 112) và Thành viên C (spec 080).
+- Q: Cách tính giá khi khung giờ nằm giữa hai bảng giá (điểm giao với Thành viên D)? → A: Giờ bắt đầu và kết thúc của `priceRules` bắt buộc phải tròn theo bước nhảy 30 phút (ví dụ 17:00, 17:30, 18:00...). Bảng giá `pricePerHour` (VNĐ/giờ) được quy đổi theo từng slot 30 phút bằng công thức `pricePerSlot = pricePerHour / 2`. Thành viên D thiết lập bảng giá theo các mốc tròn 30 phút.
+- Q: Giới hạn tối đa số lượng slot mà một người chơi được chọn trong cùng một đơn đặt là bao nhiêu? → A: Tối đa 8 slot 30 phút (tương đương tối đa 4 giờ chơi liên tục) trong một đơn đặt.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -34,7 +34,7 @@ Từ màn hình chi tiết sân, người chơi bấm "Đặt sân" để vào m
 2. **Given** người chơi xem lưới khung giờ của ngày hôm nay, **When** có các khung giờ có giờ bắt đầu nhỏ hơn hoặc bằng giờ hiện tại, **Then** các slot này ở trạng thái "Đã qua", hiển thị mờ và không cho phép người chơi chọn.
 3. **Given** một slot ở trạng thái "Đã đặt / Đang được giữ" hoặc "Bị khóa" (do chủ sân đóng sân), **When** người chơi bấm vào slot đó, **Then** hệ thống không chọn slot và hiển thị thông báo trạng thái tương ứng.
 4. **Given** người chơi chọn một slot còn trống, **When** bấm vào slot, **Then** slot đổi sang trạng thái "Đang chọn", thanh tóm tắt dưới đáy màn hình hiện "1 khung giờ" và tổng tiền tạm tính chính xác theo bảng giá của cơ sở tại khung giờ đó.
-5. **Given** người chơi đã chọn một slot trên Sân 1 (ví dụ 17:00–18:00), **When** chọn tiếp slot 18:00–19:00 trên cùng Sân 1, **Then** cả 2 slot đều ở trạng thái "Đang chọn", thanh tóm tắt cập nhật "2 khung giờ" và tổng tiền là tổng của 2 slot.
+5. **Given** người chơi đã chọn một slot trên Sân 1 (ví dụ 17:00–17:30), **When** chọn tiếp slot 17:30–18:00 trên cùng Sân 1, **Then** cả 2 slot đều ở trạng thái "Đang chọn", thanh tóm tắt cập nhật "2 khung giờ (1 giờ chơi)" và tổng tiền là tổng của 2 slot.
 6. **Given** người chơi chọn 2 khung giờ không liên tiếp trên cùng một sân con hoặc chọn slot ngắt quãng, **When** bấm slot thứ hai không liền kề, **Then** hệ thống hiển thị thông báo nhắc nhở yêu cầu chọn các khung giờ liên tục trên cùng sân.
 7. **Given** người chơi đã chọn nhiều slot, **When** bấm lại vào một slot đang chọn, **Then** slot đó được hủy chọn, thanh tóm tắt tự động trừ bớt số lượng và tiền; nếu không còn slot nào thì nút "Tiếp tục" bị vô hiệu hóa.
 8. **Given** người chơi chuyển đổi giữa các ngày trên thanh lịch chọn ngày (từ hôm nay đến tối đa ngày thứ 30), **When** chọn ngày mới, **Then** lưới làm mới dữ liệu cho ngày mới và xóa các lựa chọn của ngày cũ (kèm cảnh báo xác nhận nếu đang có slot được chọn).
@@ -47,7 +47,7 @@ Sau khi chọn các slot mong muốn trên lưới, người chơi bấm "Tiếp
 
 **Why this priority**: Đây là giải pháp kỹ thuật cốt lõi giải quyết bài toán chống trùng lịch (double-booking) được xác định trong Constitution (Nguyên tắc III). Đảm bảo tính toàn vẹn dữ liệu đặt chỗ và trải nghiệm minh bạch cho người chơi.
 
-**Independent Test**: Giả lập 2 tài khoản cùng chọn chung slot 18:00–19:00 trên Sân 1 và bấm "Tiếp tục" gần như đồng thời; kiểm tra một tài khoản vào màn hình xác nhận với đồng hồ đếm ngược 5 phút, tài khoản còn lại nhận thông báo slot đã bị giữ và quay lại lưới cập nhật.
+**Independent Test**: Giả lập 2 tài khoản cùng chọn chung slot 18:00–18:30 trên Sân 1 và bấm "Tiếp tục" gần như đồng thời; kiểm tra một tài khoản vào màn hình xác nhận với đồng hồ đếm ngược 5 phút, tài khoản còn lại nhận thông báo slot đã bị giữ và quay lại lưới cập nhật.
 
 **Acceptance Scenarios**:
 
@@ -113,11 +113,11 @@ Trong điều kiện mạng di động chập chờn, khi người chơi bấm "
 
 ### Edge Cases
 
-- **Khung giờ chuyển giao ngày hôm nay**: Người chơi mở app lúc 16:59 xem slot 17:00–18:00 (vẫn còn hợp lệ), nhưng đến 17:01 mới bấm chọn. Hệ thống phải kiểm tra lại thời gian thực lúc bấm và báo slot đã qua giờ đặt, không cho phép chọn.
+- **Khung giờ chuyển giao ngày hôm nay**: Người chơi mở app lúc 16:59 xem slot 17:00–17:30 (vẫn còn hợp lệ), nhưng đến 17:01 mới bấm chọn. Hệ thống phải kiểm tra lại thời gian thực lúc bấm và báo slot đã qua giờ đặt, không cho phép chọn.
 - **Ngày cơ sở đóng cửa hoặc bảo trì**: Người chơi chọn một ngày mà cơ sở tạm ngưng hoạt động hoặc nghỉ lễ (được chủ sân cấu hình từ trước). Lưới giờ hiển thị trạng thái rỗng đặc biệt kèm thông báo: "Cơ sở đóng cửa vào ngày này" và gợi ý chọn ngày khác.
 - **Toàn bộ sân con trong ngày đã kín chỗ**: Khi tất cả khung giờ của tất cả sân con đều ở trạng thái "Đã đặt" hoặc "Khóa", app hiển thị banner thông báo "Hôm nay đã kín sân" và nút chuyển nhanh sang ngày kế tiếp còn giờ trống.
-- **Giá giờ cao điểm / cuối tuần xen kẽ**: Người chơi chọn 2 slot liên tiếp: Slot 1 rơi vào giờ thường (16:00–17:00, 80.000đ), Slot 2 rơi vào giờ cao điểm (17:00–18:00, 120.000đ). Thanh tóm tắt và màn hình xác nhận phải hiển thị tách bạch đơn giá từng slot và tính đúng tổng tiền là 200.000đ.
-- **Xung đột khung giờ giữa 2 priceRules**: Giờ bắt đầu và kết thúc của các quy tắc giá (PriceRule) bắt buộc phải tròn theo khung giờ 60 phút (ví dụ 17:00 hoặc 18:00, không được lẻ như 17:30). Ràng buộc này được thống nhất với Thành viên D khi cấu hình bảng giá, do đó mỗi slot 60 phút luôn có đơn giá xác định duy nhất.
+- **Giá giờ cao điểm / cuối tuần xen kẽ**: Người chơi chọn 2 slot liên tiếp: Slot 1 rơi vào giờ thường (16:30–17:00, 40.000đ), Slot 2 rơi vào giờ cao điểm (17:00–17:30, 60.000đ). Thanh tóm tắt và màn hình xác nhận phải hiển thị tách bạch đơn giá từng slot và tính đúng tổng tiền là 100.000đ.
+- **Xung đột khung giờ giữa 2 priceRules**: Giờ bắt đầu và kết thúc của các quy tắc giá (PriceRule) bắt buộc phải tròn theo bước nhảy 30 phút (ví dụ 17:00, 17:30, 18:00...). Bảng giá theo giờ (`pricePerHour`) được quy đổi chính xác cho từng slot 30 phút (`pricePerSlot = pricePerHour / 2`). Ràng buộc này được thống nhất với Thành viên D khi cấu hình bảng giá, do đó mỗi slot 30 phút luôn có đơn giá xác định duy nhất.
 - **Thiết bị đổi giờ hệ thống (Client time spoofing)**: Người dùng cố tình chỉnh lùi giờ trên điện thoại để đặt slot đã qua. Toàn bộ việc kiểm tra slot hợp lệ và thời hạn 5 phút giữ chỗ đều căn cứ theo thời gian máy chủ (server timestamp), hoàn toàn bỏ qua giờ client.
 - **Chuyển giao sang bước thanh toán**: Khi người chơi ở màn hình xác nhận bấm "Thanh toán", đơn giữ chỗ ở trạng thái `HOLD` được chuyển giao nguyên vẹn sang spec 050 cùng với đồng hồ đếm ngược thời gian còn lại (tổng thời gian giữ chỗ không bị reset lại thành 5 phút mới).
 
@@ -128,13 +128,13 @@ Trong điều kiện mạng di động chập chờn, khi người chơi bấm "
 ### Functional Requirements
 
 - **FR-001**: Hệ thống PHẢI cho phép người chơi xem danh sách các ngày đặt sân từ ngày hiện tại đến tối đa 30 ngày tiếp theo (múi giờ `Asia/Ho_Chi_Minh`).
-- **FR-002**: Hệ thống PHẢI hiển thị lưới khung giờ gồm các cột đại diện cho từng sân con hoạt động của cơ sở và các hàng đại diện cho các khung giờ cố định 60 phút trong ngày theo thời gian mở/đóng cửa của cơ sở.
+- **FR-002**: Hệ thống PHẢI hiển thị lưới khung giờ gồm các cột đại diện cho từng sân con hoạt động của cơ sở và các hàng đại diện cho các khung giờ cố định 30 phút trong ngày theo thời gian mở/đóng cửa của cơ sở.
 - **FR-003**: Hệ thống PHẢI thể hiện rõ ràng và trực quan 3 trạng thái khả dụng của từng slot trên lưới: Còn trống (Available), Đã đặt/Đang giữ chỗ (Booked/Held), Bị khóa (Blocked).
 - **FR-004**: Hệ thống PHẢI tự động làm mờ và vô hiệu hóa các khung giờ có giờ bắt đầu nhỏ hơn hoặc bằng thời gian hiện tại của ngày hôm nay.
 - **FR-005**: Hệ thống PHẢI cho phép người chơi chọn nhiều slot trên cùng một sân con hoặc trên các sân con khác nhau trong cùng một cơ sở và cùng một ngày.
 - **FR-006**: Hệ thống PHẢI ràng buộc các slot được chọn trên cùng một sân con phải là các khung giờ liên tiếp nhau, không được chọn ngắt quãng.
 - **FR-007**: Hệ thống PHẢI hiển thị thanh tóm tắt cố định ở đáy màn hình lưới giờ gồm: số lượng slot đang chọn, danh sách tóm tắt (sân con, khung giờ) và tổng số tiền tạm tính.
-- **FR-008**: Hệ thống PHẢI tính toán chính xác tổng tiền tạm tính dựa trên bảng giá của cơ sở tại ngày và khung giờ được chọn (phân biệt ngày thường, ngày cuối tuần, giờ bình thường và giờ cao điểm). Các quy tắc giá (PriceRule) bắt buộc phải có mốc giờ bắt đầu và kết thúc tròn theo khung giờ 60 phút.
+- **FR-008**: Hệ thống PHẢI tính toán chính xác tổng tiền tạm tính dựa trên bảng giá của cơ sở tại ngày và khung giờ được chọn (phân biệt ngày thường, ngày cuối tuần, giờ bình thường và giờ cao điểm). Các quy tắc giá (PriceRule) bắt buộc phải có mốc giờ bắt đầu và kết thúc tròn theo bước nhảy 30 phút, với đơn giá mỗi slot 30 phút được tính bằng một nửa giá giờ (`pricePerHour / 2`).
 - **FR-009**: Tiền tệ trong hệ thống PHẢI được lưu trữ và tính toán bằng số nguyên đơn vị VND (Việt Nam Đồng), không dùng số thực để tránh sai số thập phân.
 - **FR-010**: Hệ thống PHẢI cung cấp nút "Tiếp tục" trên thanh tóm tắt, chỉ được kích hoạt khi có ít nhất một slot hợp lệ đang được chọn.
 - **FR-011**: Khi người chơi bấm "Tiếp tục", hệ thống PHẢI kiểm tra trạng thái đăng nhập; nếu chưa đăng nhập, hệ thống PHẢI lưu trạng thái các slot đang chọn và chuyển hướng người chơi đến màn hình đăng nhập.
@@ -152,7 +152,7 @@ Trong điều kiện mạng di động chập chờn, khi người chơi bấm "
 - **FR-023**: Khi người chơi bấm "Thanh toán" tại màn hình xác nhận đơn, hệ thống PHẢI chuyển giao đơn đặt đang ở trạng thái `HOLD` cùng thời gian giữ chỗ còn lại sang tính năng Thanh toán (spec 050).
 - **FR-024**: Hệ thống PHẢI xử lý và hiển thị đầy đủ 4 trạng thái giao diện: Đang tải (Loading skeleton), Có dữ liệu (Content), Rỗng (Empty: ngày đóng cửa, không có sân), Lỗi (Error: mất mạng, lỗi máy chủ kèm nút thử lại).
 - **FR-025**: Toàn bộ luồng nghiệp vụ từ màn hình chi tiết sân đến khi chuyển giao sang bước thanh toán PHẢI hoàn tất trong không quá 3 bước màn hình (Chi tiết sân -> Lưới khung giờ -> Màn hình xác nhận giữ chỗ).
-- **FR-026**: Hệ thống PHẢI giới hạn người chơi được chọn tối đa 8 slot (tương đương 8 giờ chơi) trong một đơn đặt sân.
+- **FR-026**: Hệ thống PHẢI giới hạn người chơi được chọn tối đa 8 slot 30 phút (tương đương tối đa 4 giờ chơi liên tục) trong một đơn đặt sân.
 - **FR-027**: Mọi trạng thái đơn đặt sân được quản lý trong spec này PHẢI nằm trong tập trạng thái ban đầu của máy trạng thái: khởi tạo và giữ chỗ thành công chuyển sang `HOLD`, hủy bởi người dùng chuyển sang `CANCELLED`, quá thời gian giữ chỗ chuyển sang `EXPIRED`.
 - **FR-028**: Hệ thống PHẢI hỗ trợ hiển thị giao diện rõ ràng trên cả 2 chế độ Sáng (Light mode) và Tối (Dark mode) với độ tương phản màu đạt chuẩn nhận diện trạng thái slot.
 
@@ -161,8 +161,8 @@ Trong điều kiện mạng di động chập chờn, khi người chơi bấm "
 ### Key Entities *(mandatory)*
 
 - **VenueCourt (Sân con)**: Đại diện cho một sân cầu lông cụ thể trong cơ sở (ví dụ: Sân 1, Sân 2). Thuộc tính: `courtId`, `venueId`, `name`, `status` (ACTIVE / MAINTENANCE).
-- **CourtSlot (Khung giờ sân)**: Đại diện cho một đơn vị thời gian có thể đặt của một sân con cụ thể trong một ngày. Thuộc tính: `slotId` (ID tất định theo định dạng `{courtId}_{yyyyMMdd}_{HHmm}`), `courtId`, `venueId`, `date` (`yyyyMMdd`), `startTime` (`HHmm`), `endTime` (`HHmm`), `status` (`AVAILABLE`, `HELD`, `BOOKED`, `BLOCKED`), `heldByUserId`, `holdExpiresAt` (thời điểm hết hạn giữ chỗ UTC).
-- **PriceRule (Quy tắc giá)**: Đại diện cho cấu hình giá của cơ sở theo khung giờ và ngày. Thuộc tính: `ruleId`, `venueId`, `dayOfWeek` (thứ trong tuần), `startTime`, `endTime`, `pricePerHour` (đơn vị VND, kiểu Long), `ruleType` (REGULAR, PEAK, WEEKEND).
+- **CourtSlot (Khung giờ sân)**: Đại diện cho một đơn vị thời gian 30 phút có thể đặt của một sân con cụ thể trong một ngày. Thuộc tính: `slotId` (ID tất định theo định dạng `{courtId}_{yyyyMMdd}_{HHmm}`), `courtId`, `venueId`, `date` (`yyyyMMdd`), `startTime` (`HHmm`), `endTime` (`HHmm`), `status` (`AVAILABLE`, `HELD`, `BOOKED`, `BLOCKED`), `heldByUserId`, `holdExpiresAt` (thời điểm hết hạn giữ chỗ UTC).
+- **PriceRule (Quy tắc giá)**: Đại diện cho cấu hình giá của cơ sở theo khung giờ và ngày. Thuộc tính: `ruleId`, `venueId`, `dayOfWeek` (thứ trong tuần), `startTime`, `endTime` (bước nhảy 30 phút), `pricePerHour` (đơn vị VND, kiểu Long), `ruleType` (REGULAR, PEAK, WEEKEND).
 - **Booking (Đơn đặt chỗ)**: Đại diện cho đơn đặt của người chơi đang trong quá trình giữ chỗ. Thuộc tính: `bookingId`, `userId`, `venueId`, `totalAmount`, `status` (`HOLD`, `PENDING`, `CONFIRMED`, `CANCELLED`, `EXPIRED`), `slotIds` (danh sách ID slot được giữ), `requestId` (UUID chống trùng lặp), `holdExpiresAt`, `createdAt`, `updatedAt`.
 
 ---
@@ -171,7 +171,7 @@ Trong điều kiện mạng di động chập chờn, khi người chơi bấm "
 
 ### Measurable Outcomes
 
-- **SC-001**: Lưới khung giờ của một cơ sở (với tối đa 10 sân con và 16 khung giờ/ngày) tải và hiển thị hoàn tất dưới **3 giây** trên kết nối mạng di động 4G.
+- **SC-001**: Lưới khung giờ của một cơ sở (với tối đa 10 sân con và 32 khung giờ 30 phút/ngày) tải và hiển thị hoàn tất dưới **3 giây** trên kết nối mạng di động 4G.
 - **SC-002**: Đảm bảo **100% không trùng lịch** (Zero double-booking): Khi giả lập 10 người dùng cùng bấm giữ một slot duy nhất tại cùng một mili-giây, chính xác **1 người** thành công và **9 người** còn lại nhận thông báo từ chối an toàn mà không làm sai lệch trạng thái hệ thống.
 - **SC-003**: Độ tin cậy giữ chỗ toàn vẹn (All-or-Nothing): **100%** trường hợp chọn nhiều slot mà có ít nhất 1 slot không khả dụng đều bị rollback an toàn, không có tình trạng giữ chỗ cục bộ một phần.
 - **SC-004**: Cơ chế chống trùng đơn: Thao tác bấm nhiều lần liên tiếp hoặc thử lại khi timeout mạng tạo ra chính xác **1 đơn đặt chỗ** duy nhất, tỷ lệ tạo đơn trùng là **0%**.
