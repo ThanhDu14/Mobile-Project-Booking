@@ -29,7 +29,10 @@ Lưu ở [`screenshots/`](screenshots/) và đặt tên theo dạng `05_payment-
 
 ## Ghi chú thiết kế / quyết định
 
-- 
+- **Nguồn voucher (Thống nhất 12/10 phương án 3.B)**: Phân tách 2 collection: `venues/{venueId}/vouchers` (voucher riêng của cơ sở) và `systemVouchers` (voucher toàn sàn). Redemptions lưu ở subcollection `redemptions/{bookingId}` dưới voucher tương ứng.
+- **Duyệt đơn PENDING & Timeout 60 phút (Thống nhất 12/10 phương án 2.A)**: Server Cron Job / Supabase Edge Function quét tự động mỗi 1-2 phút, chuyển đơn sang `REJECTED`, kích hoạt hoàn 100% tiền vào ví giả lập và push thông báo FCM.
+- **Tỷ lệ cọc**: Cố định 30% giá trị đơn hàng, làm tròn nghìn đồng chẵn gần nhất.
+- **Nội dung FAQ cho AI (Thống nhất 12/10 phương án 6.A)**: Văn bản tĩnh chuẩn hóa về cọc 30%, ví giả lập, voucher được cung cấp cho Thành viên A để nhúng vào intent FAQ cố định.
 
 ## Kiểm thử và minh chứng (Definition of Done)
 

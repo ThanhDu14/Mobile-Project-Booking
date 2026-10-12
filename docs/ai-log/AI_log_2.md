@@ -13,6 +13,7 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 7 | 2026-10-06 | Viết spec 060 (quản lý lịch đặt của tôi) bằng `/speckit-specify` | 06 |
 | 8 | 2026-10-06 | Làm rõ spec 060 bằng `/speckit-clarify` (3 câu hỏi) | 06 |
 | 9 | 2026-10-10 | Rà soát điểm giao thoa liên thành viên & Cập nhật slot 30 phút cho spec 040, 041 | 04, 05, 06 |
+| 10 | 2026-10-12 | Thống nhất liên thành viên (D: 1A, 2A, 3B; C: 4A, 5A; A: 6A) và hoàn thiện các spec | 04, 05, 06 |
 
 ---
 
@@ -486,3 +487,46 @@ Bảng đối chiếu lựa chọn:
    - Gửi Thành viên D: Thống nhất format `priceRules` (bước 30 phút, `pricePerHour / 2`), cơ chế quét timeout 60 phút cho đơn `PENDING`, schema `vouchers` phục vụ áp mã, và danh sách mã thông báo FCM từ module B.
    - Gửi Thành viên C: Khóa quyền đánh giá đối với đơn `NO_SHOW`, cơ chế ghi đè slot `BLOCKED` (`blockReason = DROP_IN`) khi mở ca giao lưu.
    - Gửi Thành viên A: Văn bản FAQ tĩnh chuẩn hóa (hủy đơn, cọc 30%, ví giả lập, voucher) phục vụ intent `faq` của chatbot/AI search.
+
+---
+
+## Mục 10: Thống nhất liên thành viên (D: 1A, 2A, 3B; C: 4A, 5A; A: 6A) và hoàn thiện các spec
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-12 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 04 – Đặt sân (`specs/040`, `specs/041`), 05 – Thanh toán (`specs/050`), 06 – Quản lý lịch đặt (`specs/060`) |
+| Công cụ AI | Antigravity |
+| Mục đích | Tiếp nhận kết quả thống nhất phương án kỹ thuật từ các thành viên D, C, A và hoàn thiện đồng bộ toàn bộ tài liệu spec, schema database và README |
+| Nhánh Git | `Hung` |
+
+### Các phương án đã được toàn đội chốt
+
+| Mã | Nội dung thống nhất | Thành viên | Phương án chốt | Chi tiết kỹ thuật đã đồng bộ |
+|---|---|---|---|---|
+| **1** | Bảng giá ca 30 phút | B ↔ D | **1.A** | `priceRules` lưu `pricePerHour` (Long VND), mốc bắt đầu/kết thúc là bội số 30 phút; giá 1 slot = `pricePerHour / 2` |
+| **2** | Timeout 60m duyệt đơn PENDING | B ↔ D | **2.A** | Server Cron Job / Supabase Edge Function quét định kỳ mỗi 1-2 phút, tự động chuyển `REJECTED`, hoàn 100% ví giả lập, push FCM |
+| **3** | Schema Collection Vouchers | B ↔ D | **3.B** | Tách 2 collection: `venues/{venueId}/vouchers` (voucher cơ sở do chủ sân tạo) và `systemVouchers` (voucher toàn sàn do admin tạo) |
+| **4** | Khóa slot ca Drop-in | B ↔ C ↔ D | **4.A** | Ghi vào `slots/{courtId}_{yyyyMMdd}_{HHmm}` với `status = 'BLOCKED'` và `blockReason = 'DROP_IN'` trong transaction; lưới của B hiển thị xám có nhãn khóa |
+| **5** | Ràng buộc quyền review | B ↔ C | **5.A** | Chỉ đơn `COMPLETED` (đã quét QR check-in) mới được đánh giá trong 7 ngày; đơn `NO_SHOW` (quá giờ không check-in) bị khóa vĩnh viễn quyền đánh giá |
+| **6** | Cơ chế FAQ cho AI Search | A ↔ B | **6.A** | Hardcode template đối sánh intent `faq` tĩnh trong chatbot AI (Spec 022) theo văn bản chuẩn hóa của B, đảm bảo 0% hallucination |
+
+### Các cập nhật tài liệu đã thực hiện
+
+1. **`specs/050-payment-voucher/spec.md`**:
+   - Bổ sung phiên làm rõ ngày 2026-10-12 ghi nhận phương án 3.B (tách 2 nguồn voucher), 2.A (Server Cron Job quét timeout 60m hoàn tiền), 6.A (FAQ tĩnh cho AI).
+   - Cập nhật FR-005, FR-018 và Key Entities: `VenueVoucher`, `SystemVoucher`, `VoucherRedemption`.
+   - Cập nhật checklist `specs/050-payment-voucher/checklists/requirements.md`.
+2. **`specs/040-booking-slot-grid/spec.md`**:
+   - Ghi nhận phương án 1.A (bảng giá 30 phút) và phương án 4.A (khóa slot `DROP_IN` hiển thị màu xám khóa).
+   - Cập nhật FR-003 mô tả chi tiết hiển thị slot `BLOCKED` với `blockReason = DROP_IN`.
+3. **`specs/060-my-bookings/spec.md`**:
+   - Ghi nhận phương án 2.A (Server cron job quét timeout 60m), 5.A (khóa quyền đánh giá đơn `NO_SHOW`), 6.A (FAQ tĩnh).
+4. **`docs/design/database/README.md`**:
+   - Cập nhật mục 4.6 thành 2 collection: `venues/{venueId}/vouchers/{code}` và `systemVouchers/{code}`.
+   - Cập nhật sơ đồ máy trạng thái bổ sung nhánh `NO_SHOW`.
+   - Cập nhật Mục 9: Đánh dấu đã giải quyết xong câu 2 (duyệt đơn 60m) và câu 3 (chính sách hủy & no-show).
+5. **README nhóm 05 & 06**:
+   - Cập nhật các ghi chú thiết kế về voucher 3.B, timeout 2.A, và no-show 5.A.
+

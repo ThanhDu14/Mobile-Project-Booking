@@ -12,11 +12,12 @@
 
 ## Clarifications
 
-### Session 2026-10-06 & Cập nhật thống nhất 2026-10-10
+### Session 2026-10-06 & Cập nhật thống nhất 2026-10-10, 2026-10-12
 
 - Q: Quy định độ dài mỗi khung giờ trên lưới là bao nhiêu? → A: Cố định 30 phút (ví dụ 07:00–07:30, 07:30–08:00, 18:00–18:30...). Thống nhất đồng bộ với Thành viên D (spec 111, 112) và Thành viên C (spec 080).
-- Q: Cách tính giá khi khung giờ nằm giữa hai bảng giá (điểm giao với Thành viên D)? → A: Giờ bắt đầu và kết thúc của `priceRules` bắt buộc phải tròn theo bước nhảy 30 phút (ví dụ 17:00, 17:30, 18:00...). Bảng giá `pricePerHour` (VNĐ/giờ) được quy đổi theo từng slot 30 phút bằng công thức `pricePerSlot = pricePerHour / 2`. Thành viên D thiết lập bảng giá theo các mốc tròn 30 phút.
+- Q: Cách tính giá khi khung giờ nằm giữa hai bảng giá (Thống nhất với Thành viên D theo Phương án 1.A)? → A: Giờ bắt đầu và kết thúc của `priceRules` bắt buộc phải tròn theo bước nhảy 30 phút (ví dụ 17:00, 17:30, 18:00...). Bảng giá `pricePerHour` (VNĐ/giờ) được quy đổi theo từng slot 30 phút bằng công thức `pricePerSlot = pricePerHour / 2`. Thành viên D thiết lập bảng giá theo các mốc tròn 30 phút.
 - Q: Giới hạn tối đa số lượng slot mà một người chơi được chọn trong cùng một đơn đặt là bao nhiêu? → A: Tối đa 8 slot 30 phút (tương đương tối đa 4 giờ chơi liên tục) trong một đơn đặt.
+- Q: Cơ chế khóa slot khi mở buổi giao lưu Drop-in (Thống nhất với Thành viên C & D theo Phương án 4.A)? → A: Khi chủ sân hoặc ban tổ chức mở ca giao lưu Drop-in ở spec 080/112, hệ thống ghi các slot tương ứng vào collection `slots/{courtId}_{yyyyMMdd}_{HHmm}` với `status = 'BLOCKED'` và `blockReason = 'DROP_IN'` trong Firestore Transaction. Khi đó trên lưới của spec 040, các slot này tự động hiển thị màu xám có icon khóa / nhãn "Giao lưu Drop-in" và bị vô hiệu hóa chọn đặt sân thường.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -129,7 +130,7 @@ Trong điều kiện mạng di động chập chờn, khi người chơi bấm "
 
 - **FR-001**: Hệ thống PHẢI cho phép người chơi xem danh sách các ngày đặt sân từ ngày hiện tại đến tối đa 30 ngày tiếp theo (múi giờ `Asia/Ho_Chi_Minh`).
 - **FR-002**: Hệ thống PHẢI hiển thị lưới khung giờ gồm các cột đại diện cho từng sân con hoạt động của cơ sở và các hàng đại diện cho các khung giờ cố định 30 phút trong ngày theo thời gian mở/đóng cửa của cơ sở.
-- **FR-003**: Hệ thống PHẢI thể hiện rõ ràng và trực quan 3 trạng thái khả dụng của từng slot trên lưới: Còn trống (Available), Đã đặt/Đang giữ chỗ (Booked/Held), Bị khóa (Blocked).
+- **FR-003**: Hệ thống PHẢI thể hiện rõ ràng và trực quan 3 trạng thái khả dụng của từng slot trên lưới: Còn trống (Available), Đã đặt/Đang giữ chỗ (Booked/Held), Bị khóa (Blocked). Các slot mang trạng thái `status = BLOCKED` do ca giao lưu Drop-in (`blockReason = DROP_IN` từ spec 080/112 theo thỏa thuận 4.A) hoặc do đóng sân bảo trì (`blockReason = MAINTENANCE`) PHẢI hiển thị màu xám khóa và vô hiệu hóa không cho phép người chơi bấm chọn.
 - **FR-004**: Hệ thống PHẢI tự động làm mờ và vô hiệu hóa các khung giờ có giờ bắt đầu nhỏ hơn hoặc bằng thời gian hiện tại của ngày hôm nay.
 - **FR-005**: Hệ thống PHẢI cho phép người chơi chọn nhiều slot trên cùng một sân con hoặc trên các sân con khác nhau trong cùng một cơ sở và cùng một ngày.
 - **FR-006**: Hệ thống PHẢI ràng buộc các slot được chọn trên cùng một sân con phải là các khung giờ liên tiếp nhau, không được chọn ngắt quãng.

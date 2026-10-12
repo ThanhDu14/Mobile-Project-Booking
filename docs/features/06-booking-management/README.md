@@ -31,7 +31,9 @@ Lưu ở [`screenshots/`](screenshots/) và đặt tên theo dạng `06_booking-
 
 ## Ghi chú thiết kế / quyết định
 
-- 
+- **Chính sách hủy đơn (Mốc 4 giờ)**: Hủy trước giờ chơi ≥ 4 tiếng hoàn 100% tiền cọc/ví vào ví giả lập; hủy trễ < 4 tiếng mất cọc 100% hoặc phạt 30% ví (hoàn 70% vào ví giả lập).
+- **Trạng thái NO_SHOW & Khóa đánh giá (Thống nhất 12/10 phương án 5.A)**: Khi quá giờ kết thúc ca chơi mà chưa quét QR check-in, đơn tự động chuyển `NO_SHOW`, khóa vĩnh viễn quyền viết review ở spec 070. Chỉ đơn `COMPLETED` mới được đánh giá trong 7 ngày.
+- **Duyệt đơn PENDING & Timeout 60 phút (Thống nhất 12/10 phương án 2.A)**: Server Cron Job tự động quét quá hạn 60 phút, chuyển `REJECTED`, hoàn 100% ví. App tự cập nhật theo realtime listener.
 
 ## Kiểm thử và minh chứng (Definition of Done)
 
