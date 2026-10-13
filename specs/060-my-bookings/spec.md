@@ -18,6 +18,12 @@
 - Q: Xử lý đơn quá giờ chơi mà không đến check-in (no-show) như thế nào và ai chuyển trạng thái? → A: Hệ thống phía máy chủ tự động quét theo giờ kết thúc slot chơi và chuyển trạng thái đơn sang **`NO_SHOW`** (gom hiển thị trong tab "Đã hoàn thành" với nhãn cảnh báo *"Vắng mặt / Chưa check-in"*), đồng thời **khóa quyền viết đánh giá** ở spec 070 đối với đơn này (do người chơi không đến trải nghiệm thực tế).
 - Q: Mức phạt tiền khi hủy đơn trễ đối với phương thức 'Ví giả lập' là bao nhiêu? → A: Đảm bảo tính công bằng giữa các phương thức: Đơn trả 100% qua ví giả lập khi hủy trễ (< 4 tiếng) **chỉ bị phạt 30%** (tương đương mức cọc), hệ thống tự động **hoàn lại 70% còn lại** vào số dư ví giả lập của người chơi. Đơn cọc mất 100% tiền cọc (hoàn 0đ), đơn trả tại sân hoàn 0đ.
 
+### Session 2026-10-12 (Thống nhất liên thành viên)
+
+- Q: Cơ chế xử lý quá hạn 60 phút duyệt đơn PENDING (Thống nhất với Thành viên D theo Phương án 2.A)? → A: Server Cron Job / Supabase Edge Function (`booking-timeout`) của D quét định kỳ mỗi 1-2 phút, tự động chuyển đơn sang `REJECTED`, hoàn trả 100% tiền vào ví giả lập và gửi thông báo FCM. App của B tự động cập nhật hiển thị theo realtime listener mà không cần thao tác thủ công.
+- Q: Điều kiện đánh giá và chặn khách No-Show (Thống nhất với Thành viên C theo Phương án 5.A)? → A: Chỉ những đơn có `bookings.status == 'COMPLETED'` (đã quét QR check-in tại sân ở spec 112) mới được phép viết review trong vòng 7 ngày ở spec 070. Đơn `NO_SHOW` (hết giờ chơi mà chưa quét QR) tự động chuyển sang `NO_SHOW` và bị khóa tuyệt đối quyền viết đánh giá.
+- Q: Cơ chế cung cấp nội dung FAQ cho Chatbot/AI search (Thống nhất với Thành viên A theo Phương án 6.A)? → A: Cung cấp văn bản tĩnh quy chuẩn về chính sách hủy đơn (mốc 4 tiếng, tỷ lệ hoàn tiền theo từng phương thức) cho Thành viên A để nhúng vào template đối sánh FAQ cố định trong spec 022, đảm bảo 0% sai lệch thông tin chính sách.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Xem danh sách lịch đặt theo các tab trạng thái và xem chi tiết đơn (Priority: P1)

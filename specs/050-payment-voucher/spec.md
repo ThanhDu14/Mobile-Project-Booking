@@ -18,6 +18,12 @@
 - Q: Tỷ lệ phần trăm đặt cọc khi người chơi chọn phương thức 'Đặt cọc' là bao nhiêu? → A: Tỷ lệ đặt cọc khi chọn `DEPOSIT` được áp dụng cố định là **30%** trên tổng giá trị đơn hàng cho toàn hệ thống, làm tròn đến hàng nghìn đồng chẵn gần nhất (ví dụ: 30% của 175.000đ = 52.500đ làm tròn thành 53.000đ).
 - Q: Số dư ví giả lập ban đầu của tài khoản mới là bao nhiêu và tính năng 'Nạp ví giả lập' được đặt ở đâu? → A: Số dư ví giả lập ban đầu của tài khoản mới được khởi tạo là **0đ**. Người dùng có thể bấm nút "Nạp ví giả lập" (cộng số dư ảo để test luồng với các mệnh giá gợi ý như 100.000đ, 500.000đ, 1.000.000đ có nhãn "Tính năng thử nghiệm / giả lập") ngay tại màn hình thanh toán hoặc trong trang cá nhân (phối hợp spec 011).
 
+### Session 2026-10-12 (Thống nhất liên thành viên)
+
+- Q: Thống nhất nguồn lưu trữ và cấu trúc dữ liệu Voucher (Thống nhất với Thành viên D theo Phương án 3.B)? → A: Phân tách rõ ràng thành 2 collection độc lập: (1) Voucher riêng của cơ sở lưu tại subcollection `venues/{venueId}/vouchers/{voucherId}` (do chủ sân tạo ở spec 111); (2) Voucher toàn sàn lưu tại collection cấp root `systemVouchers/{voucherId}` (do Admin tạo ở spec 120). Khi người chơi nhập mã hoặc chọn từ danh sách, app kiểm tra đồng thời cả 2 nguồn (ưu tiên voucher cơ sở của venue hiện tại, sau đó kiểm tra voucher toàn hệ thống). Lượt dùng được ghi nhận tại subcollection `redemptions/{bookingId}` bên dưới voucher tương ứng.
+- Q: Cơ chế xử lý quá hạn 60 phút duyệt đơn PENDING (Thống nhất với Thành viên D theo Phương án 2.A)? → A: Server Cron Job / Supabase Edge Function (`booking-timeout`) do Thành viên D phụ trách quét định kỳ mỗi 1-2 phút; tự động chuyển các đơn `PENDING` có `createdAt + 60 phút < now()` sang trạng thái `REJECTED`/`EXPIRED`, gọi logic hoàn 100% tiền cọc/ví vào ví giả lập và push thông báo FCM (`BOOKING_REJECTED` & `WALLET_REFUND_SUCCESS`).
+- Q: Cơ chế cung cấp nội dung FAQ cho Chatbot/AI search (Thống nhất với Thành viên A theo Phương án 6.A)? → A: Cung cấp bộ văn bản tĩnh quy chuẩn về chính sách đặt cọc 30%, ví giả lập phi thương mại, và quy tắc áp voucher cho Thành viên A để nhúng vào template đối sánh FAQ cố định trong spec 022, đảm bảo 0% sai lệch thông tin chính sách.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Áp dụng mã khuyến mãi (Voucher) cho đơn đặt sân (Priority: P1)
@@ -127,7 +133,7 @@ Trong điều kiện mạng di động 4G chập chờn, khi người chơi bấ
 - **FR-002**: Hệ thống PHẢI tiếp tục đếm ngược thời gian giữ chỗ còn lại của đơn dựa trên mốc thời gian máy chủ `holdExpiresAt`, tuyệt đối không khởi tạo lại 5 phút mới.
 - **FR-003**: Hệ thống PHẢI hiển thị bảng tóm tắt đơn hàng gồm: tên cơ sở, địa chỉ, danh sách chi tiết các slot/buổi chơi, đơn giá từng slot và tiền tạm tính (`subtotal`).
 - **FR-004**: Hệ thống PHẢI hiển thị dòng thông báo nổi bật trên giao diện: "Hệ thống thanh toán giả lập phục vụ học tập - Không thu tiền thật" trên mọi màn hình liên quan đến thanh toán.
-- **FR-005**: Hệ thống PHẢI cho phép người chơi nhập mã voucher hoặc chọn từ danh sách voucher hợp lệ của cơ sở và voucher toàn hệ thống.
+- **FR-005**: Hệ thống PHẢI cho phép người chơi nhập mã voucher hoặc chọn từ danh sách voucher hợp lệ lấy từ cả 2 nguồn: voucher riêng của cơ sở (`venues/{venueId}/vouchers`) và voucher toàn hệ thống (`systemVouchers`).
 - **FR-006**: Hệ thống PHẢI kiểm tra đầy đủ các điều kiện hiệu lực của voucher: khoảng thời gian hợp lệ (`validFrom` đến `validTo`), giá trị đơn tối thiểu (`minOrderTotal`), tổng số lượt dùng còn lại (`usedCount` < `usageLimit`), và số lượt dùng của người chơi (`perUserLimit`).
 - **FR-007**: Hệ thống PHẢI tính toán chính xác mức giảm giá theo quy tắc của voucher: giảm theo tỷ lệ phần trăm (áp dụng trần `maxDiscount` nếu có) hoặc giảm theo số tiền cố định, và cập nhật lại tổng tiền thanh toán trong vòng dưới 1 giây.
 - **FR-008**: Hệ thống PHẢI đảm bảo tổng số tiền thanh toán sau khi áp dụng voucher không bao giờ nhỏ hơn 0đ.
@@ -140,7 +146,7 @@ Trong điều kiện mạng di động 4G chập chờn, khi người chơi bấ
 - **FR-015**: Nếu tổng tiền sau giảm giá bằng 0đ, hệ thống PHẢI tự động miễn chọn phương thức thanh toán và cho phép hoàn tất đơn ngay lập tức với trạng thái `PAID`.
 - **FR-016**: Khi người chơi bấm "Xác nhận thanh toán", hệ thống PHẢI kiểm tra lại: đơn còn trong hạn giữ chỗ, voucher còn hợp lệ, và số dư ví giả lập đủ để thanh toán (nếu chọn ví hoặc cọc).
 - **FR-017**: Nếu số dư ví giả lập không đủ, hệ thống PHẢI hiển thị thông báo số tiền còn thiếu và cung cấp chức năng "Nạp ví giả lập" (cộng số dư ảo để thử nghiệm, khởi tạo số dư ban đầu của tài khoản là 0đ) ngay tại màn hình thanh toán hoặc trang cá nhân, hoặc cho phép đổi phương thức khác.
-- **FR-018**: Khi thanh toán thành công, hệ thống PHẢI chuyển trạng thái đơn sang `PENDING` (chờ chủ sân duyệt trong tối đa 60 phút); nếu bị từ chối hoặc sau 60 phút chưa duyệt, hệ thống PHẢI tự động hoàn 100% tiền cọc/ví vào số dư ví giả lập của người chơi.
+- **FR-018**: Khi thanh toán thành công, hệ thống PHẢI chuyển trạng thái đơn sang `PENDING` (chờ chủ sân duyệt trong tối đa 60 phút); hệ thống máy chủ (Server Cron Job / Supabase Edge Function theo thỏa thuận 2.A) PHẢI tự động quét định kỳ: nếu chủ sân từ chối hoặc sau 60 phút chưa duyệt, hệ thống tự động chuyển đơn sang `REJECTED`, hoàn trả 100% tiền cọc/ví vào số dư ví giả lập và gửi thông báo FCM cho người chơi.
 - **FR-019**: Hệ thống PHẢI hiển thị màn hình Hóa đơn điện tử (E-receipt) đối với đơn đã trả tiền/đặt cọc, hoặc Phiếu đặt sân đối với đơn trả tại sân, bao gồm: mã đơn (`bookingId`), mã nhóm (`recurringGroupId` nếu là đơn cố định), chi tiết các slot/buổi, tiền tạm tính, giảm giá, tiền cọc, tổng tiền, phương thức thanh toán, và nút chuyển sang "Lịch đặt của tôi" (spec 060).
 - **FR-020**: Khi thời gian giữ chỗ hết hạn (`holdExpiresAt` quá giờ máy chủ), slot PHẢI được hệ thống coi là trống ngay lập tức đối với những người dùng khác; hệ thống phía server PHẢI chuyển trạng thái đơn sang `EXPIRED` và dọn sạch các slot của đơn trong vòng tối đa 2 phút sau hạn.
 - **FR-021**: Khi hết hạn giữ chỗ trên giao diện, ứng dụng PHẢI lập tức vô hiệu hóa nút thanh toán và hiển thị thông báo "Đã hết thời gian giữ chỗ".
@@ -157,8 +163,9 @@ Trong điều kiện mạng di động 4G chập chờn, khi người chơi bấ
 ### Key Entities *(mandatory)*
 
 - **Booking (Đơn đặt sân)**: Thực thể đơn đặt nhận từ spec 040/041 và hoàn thiện thanh toán. Các thuộc tính liên quan thanh toán: `bookingId`, `userId`, `venueId`, `recurringGroupId` (nếu có), `subtotal` (Long), `discount` (Long), `total` (Long), `depositAmount` (Long), `paymentMethod` (`AT_VENUE`, `DEPOSIT`, `MOCK_WALLET`), `paymentStatus` (`UNPAID`, `DEPOSITED`, `PAID`, `REFUNDED`), `voucherCode`, `status` (`HOLD`, `PENDING`, `CONFIRMED`, `EXPIRED`), `holdExpiresAt`, `requestId`, `updatedAt`.
-- **Voucher (Mã khuyến mãi)**: Đại diện cho chính sách giảm giá. Thuộc tính: `code` (chuỗi ID), `venueId` (null = toàn hệ thống, hoặc ID cơ sở cụ thể), `type` (`PERCENT`, `FIXED`), `value` (Long), `maxDiscount` (Long), `minOrderTotal` (Long), `validFrom` (Timestamp), `validTo` (Timestamp), `usageLimit` (Int), `usedCount` (Int 🔒), `perUserLimit` (Int), `isActive` (Boolean).
-- **VoucherRedemption (Lượt sử dụng voucher)**: Bản ghi ghi nhận việc áp dụng voucher thành công. Đường dẫn: `vouchers/{code}/redemptions/{bookingId}`. Thuộc tính: `bookingId`, `userId`, `usedAt` (Timestamp).
+- **VenueVoucher (Voucher cơ sở)**: Mã khuyến mãi áp dụng cho một cơ sở cụ thể (chủ sân quản lý theo spec 111). Đường dẫn: `venues/{venueId}/vouchers/{voucherId}`. Thuộc tính: `code`, `venueId`, `type` (`PERCENT`, `FIXED`), `value` (Long), `maxDiscount` (Long), `minOrderTotal` (Long), `validFrom`, `validTo`, `usageLimit`, `usedCount` 🔒, `perUserLimit`, `isActive`.
+- **SystemVoucher (Voucher toàn hệ thống)**: Mã khuyến mãi áp dụng cho mọi cơ sở toàn sàn (Admin quản lý theo spec 120). Đường dẫn: `systemVouchers/{voucherId}`. Thuộc tính: tương tự `VenueVoucher` nhưng không có `venueId` (hoặc `venueId = null`).
+- **VoucherRedemption (Lượt sử dụng voucher)**: Bản ghi ghi nhận việc áp dụng voucher thành công. Đường dẫn: `venues/{venueId}/vouchers/{voucherId}/redemptions/{bookingId}` hoặc `systemVouchers/{voucherId}/redemptions/{bookingId}`. Thuộc tính: `bookingId`, `userId`, `usedAt` (Timestamp) 🔒.
 - **UserWallet (Ví giả lập người dùng)**: Quản lý số dư ảo phục vụ học tập. Thuộc tính nằm trong `users/{uid}`: `walletBalance` (Long VND, khởi tạo ban đầu là 0đ; nạp ảo tự do cho mục đích kiểm thử).
 
 ---

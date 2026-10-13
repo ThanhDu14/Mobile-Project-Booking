@@ -22,16 +22,16 @@
 
 ### User Story 1 - Thiết lập cấu hình lịch đặt cố định theo tuần (Priority: P1)
 
-Từ màn hình đặt sân của một cơ sở, người chơi chọn tab "Đặt cố định theo tuần". Người chơi chọn một hoặc nhiều thứ trong tuần (ví dụ Thứ Ba và Thứ Năm), chọn khung giờ cố định cho mỗi buổi (độ dài 60 phút hoặc nhiều slot liên tiếp, mốc giờ tròn theo quy tắc spec 040), chọn sân con ưu tiên (ví dụ Sân 1), và chọn chu kỳ đặt (từ 4 đến 12 tuần, bắt đầu từ tuần hiện tại hoặc tuần kế tiếp). Sau khi người chơi hoàn tất cấu hình, hệ thống tự động kiểm tra khả dụng của toàn bộ các buổi trong chu kỳ và hiển thị bảng tổng hợp lịch: danh sách ngày các buổi, số lượng buổi, và tổng tiền tạm tính theo bảng giá của từng ngày/giờ.
+Từ màn hình đặt sân của một cơ sở, người chơi chọn tab "Đặt cố định theo tuần". Người chơi chọn một hoặc nhiều thứ trong tuần (ví dụ Thứ Ba và Thứ Năm), chọn khung giờ cố định cho mỗi buổi (độ dài 30 phút hoặc nhiều slot liên tiếp, mốc giờ theo quy tắc spec 040), chọn sân con ưu tiên (ví dụ Sân 1), và chọn chu kỳ đặt (từ 4 đến 12 tuần, bắt đầu từ tuần hiện tại hoặc tuần kế tiếp). Sau khi người chơi hoàn tất cấu hình, hệ thống tự động kiểm tra khả dụng của toàn bộ các buổi trong chu kỳ và hiển thị bảng tổng hợp lịch: danh sách ngày các buổi, số lượng buổi, và tổng tiền tạm tính theo bảng giá của từng ngày/giờ.
 
 **Why this priority**: Đây là luồng nghiệp vụ cốt lõi mở đầu cho việc đặt lịch định kỳ. Người chơi cần thiết lập cấu hình mong muốn và biết trước tổng quan toàn bộ lịch chơi cùng chi phí dự tính.
 
-**Independent Test**: Mở một cơ sở sân, chọn chế độ đặt cố định; chọn Thứ Ba từ 18:00–20:00 (2 slot), Sân 1, chu kỳ 8 tuần bắt đầu từ tuần kế tiếp; kiểm tra hệ thống hiển thị bảng tổng hợp đủ 8 buổi chơi (mỗi buổi 2 tiếng) và tổng tiền tạm tính chính xác.
+**Independent Test**: Mở một cơ sở sân, chọn chế độ đặt cố định; chọn Thứ Ba từ 18:00–20:00 (4 slot 30 phút), Sân 1, chu kỳ 8 tuần bắt đầu từ tuần kế tiếp; kiểm tra hệ thống hiển thị bảng tổng hợp đủ 8 buổi chơi (mỗi buổi 2 tiếng) và tổng tiền tạm tính chính xác.
 
 **Acceptance Scenarios**:
 
 1. **Given** người chơi đang ở màn hình đặt sân của một cơ sở, **When** bấm chuyển sang chế độ "Đặt cố định theo tuần", **Then** hệ thống hiển thị giao diện cấu hình gồm: chọn thứ trong tuần, chọn khung giờ, chọn sân con ưu tiên, và chọn chu kỳ (4–12 tuần).
-2. **Given** người chơi chọn các thứ trong tuần và khung giờ, **When** chọn khung giờ bắt đầu và kết thúc, **Then** hệ thống áp dụng quy tắc slot 60 phút và mốc giờ tròn theo spec 040, cho phép chọn tối đa 3 khung giờ liên tiếp trong một buổi (tối đa 3 giờ/buổi).
+2. **Given** người chơi chọn các thứ trong tuần và khung giờ, **When** chọn khung giờ bắt đầu và kết thúc, **Then** hệ thống áp dụng quy tắc slot 30 phút theo spec 040, cho phép chọn từ 2 đến tối đa 6 khung giờ 30 phút liên tiếp trong một buổi (tối thiểu 1 giờ, tối đa 3 giờ/buổi).
 3. **Given** người chơi cấu hình đầy đủ thông tin chu kỳ (ví dụ: Thứ Ba và Thứ Năm, 19:00–20:00, Sân 1, 4 tuần), **When** hệ thống kiểm tra và tất cả các buổi đều còn trống, **Then** hiển thị bảng tổng hợp gồm danh sách 8 buổi với ngày cụ thể, sân con, khung giờ và tổng số tiền tạm tính; nút "Tiếp tục" được kích hoạt.
 4. **Given** cơ sở chưa kích hoạt tính năng đặt cố định hoặc chủ sân tạm ngưng nhận lịch dài hạn, **When** người chơi vào màn hình đặt cố định, **Then** hệ thống hiển thị thông báo "Cơ sở hiện không áp dụng đặt sân cố định" và hướng dẫn chuyển sang đặt lẻ theo ngày (spec 040).
 5. **Given** người chơi chưa chọn đủ thông tin bắt buộc (chưa chọn thứ hoặc chưa chọn giờ), **When** xem giao diện, **Then** nút "Tiếp tục" ở trạng thái vô hiệu hóa.
@@ -126,8 +126,8 @@ Khách vãng lai (chưa đăng nhập tài khoản) vẫn được phép vào m�
 
 - **FR-001**: Hệ thống PHẢI cung cấp tùy chọn "Đặt cố định theo tuần" trên màn hình đặt sân của các cơ sở có hỗ trợ tính năng này.
 - **FR-002**: Hệ thống PHẢI cho phép người chơi chọn một hoặc nhiều thứ trong tuần (từ Thứ Hai đến Chủ Nhật) cho lịch chơi định kỳ.
-- **FR-003**: Hệ thống PHẢI cho phép người chơi chọn khung giờ cố định cho các buổi chơi, tuân thủ quy tắc slot 60 phút cố định và các mốc giờ tròn theo spec 040.
-- **FR-004**: Hệ thống PHẢI cho phép người chơi chọn từ 1 đến tối đa 3 khung giờ liên tiếp trong một buổi chơi (tương đương 1 đến 3 giờ/buổi).
+- **FR-003**: Hệ thống PHẢI cho phép người chơi chọn khung giờ cố định cho các buổi chơi, tuân thủ quy tắc slot 30 phút cố định và các mốc giờ theo spec 040.
+- **FR-004**: Hệ thống PHẢI cho phép người chơi chọn từ 2 đến tối đa 6 khung giờ 30 phút liên tiếp trong một buổi chơi (tương đương 1 đến 3 giờ/buổi).
 - **FR-005**: Hệ thống PHẢI cho phép người chơi chọn sân con ưu tiên trong danh sách các sân con đang hoạt động của cơ sở.
 - **FR-006**: Hệ thống PHẢI cho phép người chơi chọn chu kỳ đặt sân cố định từ 4 tuần đến tối đa 12 tuần (tương đương 1 đến 3 tháng).
 - **FR-007**: Hệ thống PHẢI cho phép người chơi chọn thời điểm bắt đầu chu kỳ: từ "Tuần hiện tại" hoặc từ "Tuần kế tiếp".
@@ -159,7 +159,7 @@ Khách vãng lai (chưa đăng nhập tài khoản) vẫn được phép vào m�
 
 - **RecurringBookingGroup (Nhóm đơn đặt cố định)**: Đại diện cho hợp đồng đặt định kỳ theo tuần của người chơi. Thuộc tính: `recurringGroupId` (UUID), `userId`, `venueId`, `dayOfWeekList` (danh sách các thứ trong tuần), `startTime`, `endTime`, `startDate`, `endDate`, `totalSessions` (tổng số buổi), `totalAmount` (tổng tiền VND), `status` (`HOLD`, `PENDING`, `CONFIRMED`, `CANCELLED`, `EXPIRED`), `createdAt`, `updatedAt`.
 - **Booking (Đơn đặt từng buổi con)**: Đại diện cho từng buổi chơi cụ thể trong chu kỳ đặt cố định. Thuộc tính: `bookingId`, `recurringGroupId` (liên kết với nhóm đơn), `userId`, `venueId`, `courtId`, `courtName`, `date` (`yyyyMMdd`), `slotIds` (danh sách slot của buổi), `subtotal`, `status` (`HOLD`, `PENDING`, `CONFIRMED`, `COMPLETED`, `CANCELLED`, `EXPIRED`), `requestId`, `holdExpiresAt`.
-- **CourtSlot (Khung giờ sân)**: Đại diện cho trạng thái của từng slot 60 phút trên từng sân con. Thuộc tính: `slotId` (`{courtId}_{yyyyMMdd}_{HHmm}`), `courtId`, `venueId`, `date`, `startTime`, `endTime`, `status` (`AVAILABLE`, `HELD`, `BOOKED`, `BLOCKED`), `heldByUserId`, `holdExpiresAt`.
+- **CourtSlot (Khung giờ sân)**: Đại diện cho trạng thái của từng slot 30 phút trên từng sân con. Thuộc tính: `slotId` (`{courtId}_{yyyyMMdd}_{HHmm}`), `courtId`, `venueId`, `date`, `startTime`, `endTime`, `status` (`AVAILABLE`, `HELD`, `BOOKED`, `BLOCKED`), `heldByUserId`, `holdExpiresAt`.
 - **VenueCourt (Sân con)**: Thông tin sân con trong cơ sở. Thuộc tính: `courtId`, `venueId`, `name`, `type` (STANDARD, VIP), `status` (ACTIVE, MAINTENANCE).
 
 ---

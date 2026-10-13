@@ -150,7 +150,7 @@ Một document cho mỗi khung giờ **đang bị chiếm**. Không có document
 | `holdExpiresAt` | Timestamp? | `serverTimestamp + 5 phút`. Đã hết hạn coi như trống |
 | `blockReason` | String? | `MAINTENANCE`, `EVENT`, `WALK_IN`, `DROP_IN` (khi `BLOCKED`) |
 
-Độ dài khung giờ: **60 phút** (B chốt trong `/speckit-clarify` của spec 040). Mở buổi vãng lai (11) phải ghi `BLOCKED` với `blockReason = DROP_IN` cho các slot của buổi đó, trong transaction.
+Độ dài khung giờ: **30 phút** (thống nhất đồng bộ giữa B và D theo spec 111/112 và spec 040/041). Mở buổi vãng lai (11) phải ghi `BLOCKED` với `blockReason = DROP_IN` cho các slot của buổi đó, trong transaction.
 
 ### 4.5. `bookings/{bookingId}` — B
 
@@ -177,8 +177,8 @@ Một document cho mỗi khung giờ **đang bị chiếm**. Không có document
 **Máy trạng thái đơn:**
 
 ```
-HOLD ──(chọn thanh toán)──▶ PENDING ──(chủ sân duyệt)──▶ CONFIRMED ──(qua giờ chơi)──▶ COMPLETED
-  │                           │  └─(chủ sân từ chối)──▶ REJECTED
+HOLD ──(chọn thanh toán)──▶ PENDING ──(chủ sân duyệt)──▶ CONFIRMED ──(check-in)───────▶ COMPLETED
+  │                           │  └─(chủ sân từ chối)──▶ REJECTED      └──(quá giờ, no-show)──▶ NO_SHOW
   └─(quá 5 phút)──▶ EXPIRED   └──────────┬──────────────────┘
                                          ▼
                                      CANCELLED (người chơi hủy theo chính sách / chủ sân hủy)
@@ -186,9 +186,13 @@ HOLD ──(chọn thanh toán)──▶ PENDING ──(chủ sân duyệt)─�
 
 Mọi chuyển trạng thái khác bị Rules/Edge Functions chặn. Khi đơn sang `EXPIRED`, `REJECTED`, `CANCELLED` thì xóa các document `slots` của đơn trong cùng transaction.
 
-### 4.6. `vouchers/{code}` — B
+### 4.6. `venues/{venueId}/vouchers/{code}` & `systemVouchers/{code}` — B & D
 
-`venueId` (null = voucher toàn hệ thống do admin tạo), `type` (`PERCENT`, `FIXED`), `value`, `maxDiscount`, `minOrderTotal` (Long), `validFrom`, `validTo`, `usageLimit`, `usedCount` 🔒, `perUserLimit`, `isActive`. Lượt dùng lưu ở `vouchers/{code}/redemptions/{bookingId}` (`userId`, `usedAt`) 🔒.
+Tách 2 collection độc lập (Thống nhất 12/10 phương án 3.B):
+- **Voucher cơ sở**: `venues/{venueId}/vouchers/{code}` (do chủ sân tạo ở spec 111).
+- **Voucher hệ thống**: `systemVouchers/{code}` (do admin tạo ở spec 120).
+
+Cả hai cùng chia sẻ cấu trúc trường: `code`, `type` (`PERCENT`, `FIXED`), `value`, `maxDiscount`, `minOrderTotal` (Long), `validFrom`, `validTo`, `usageLimit`, `usedCount` 🔒, `perUserLimit`, `isActive`. Lượt dùng lưu ở subcollection `redemptions/{bookingId}` (`userId`, `usedAt`) 🔒 bên dưới voucher tương ứng.
 
 ### 4.7. `reviews/{reviewId}` — C
 
@@ -322,9 +326,9 @@ Mỗi dòng trên cần ít nhất một test Emulator "được phép" và mộ
 
 | # | Câu hỏi | Người chốt |
 |---|---|---|
-| 1 | Độ dài một slot: 30 hay 60 phút? Có cho chủ sân tự chọn không? | B, D |
-| 2 | Đơn có cần chủ sân duyệt không, hay một số sân tự động xác nhận? | B, D |
-| 3 | Chính sách hủy cụ thể (mốc 4 giờ, hoàn cọc bao nhiêu %) | B |
+| 1 | ~~Độ dài một slot: 30 hay 60 phút?~~ Đã chốt 10/10: Cố định **30 phút** toàn hệ thống | B, D |
+| 2 | ~~Đơn có cần chủ sân duyệt không?~~ Đã chốt 12/10: Đơn qua `PENDING` chờ chủ sân duyệt trong 60 phút; quá hạn Server Cron Job tự động hủy và hoàn 100% ví (thỏa thuận 2.A) | B, D |
+| 3 | ~~Chính sách hủy cụ thể~~ Đã chốt 12/10: Mốc 4 giờ cố định; hủy sớm hoàn 100%; hủy trễ mất cọc hoặc phạt 30% ví (hoàn 70%); quá giờ chuyển `NO_SHOW` khóa review (thỏa thuận 5.A) | B |
 | 4 | "Sân yêu thích" và "sân đang theo dõi" có là một không? | C, D |
 | 5 | ~~Có bật gói Blaze không?~~ Đã chốt 05/10: không dùng Blaze; Storage và Functions chuyển sang Supabase | Cả nhóm |
 | 6 | Tìm theo tên bằng `nameKeywords` hay dùng dịch vụ tìm kiếm ngoài? | A |

@@ -32,7 +32,8 @@ Lưu ở [`screenshots/`](screenshots/) và đặt tên theo dạng `04_booking_
 
 ## Ghi chú thiết kế / quyết định
 
-- 
+- **Độ dài khung giờ (Slot Duration)**: Cố định **30 phút** toàn hệ thống. Thống nhất đồng bộ với Thành viên D (spec 111, 112) và Thành viên C (spec 080). Bảng giá `pricePerHour` có bước nhảy 30 phút, giá slot = `pricePerHour / 2`.
+- **Giới hạn đặt**: Đặt lẻ tối đa 8 slot 30 phút (4 giờ liên tục); đặt cố định theo tuần từ 2 đến 6 slot 30 phút/buổi (1 đến 3 giờ/buổi), chu kỳ 4–12 tuần.
 
 ## Kiểm thử và minh chứng (Definition of Done)
 
