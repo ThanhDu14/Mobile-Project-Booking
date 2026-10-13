@@ -14,7 +14,7 @@
 
 ### Session 2026-10-06
 
-- Q: Khi người chơi tự hủy đăng ký buổi vãng lai, áp dụng chính sách hoàn tiền nào? → A: Hủy trước giờ bắt đầu hơn 4 giờ được hoàn 100%; trong vòng 4 giờ vẫn hủy được (chỗ được trả lại) nhưng không hoàn tiền.
+- Q: Khi người chơi tự hủy đăng ký buổi vãng lai, áp dụng chính sách hoàn tiền nào? → A: Hủy trước giờ bắt đầu từ 4 giờ trở lên (≥ 240 phút) được hoàn 100%; dưới 4 giờ vẫn hủy được (chỗ được trả lại) nhưng không hoàn tiền. (Cập nhật 2026-10-13: mốc tính giống chính sách hủy đặt sân của spec 060, theo giờ server.)
 - Q: Điều kiện nào để người chơi được đánh giá một buổi vãng lai đã kết thúc? → A: Chỉ lượt đã check-in mới đánh giá được; lượt "Không đến", đã hủy hoặc buổi bị hủy thì không.
 - Q: "Thanh toán ngay (giả lập)" khi đăng ký vãng lai hoạt động thế nào? → A: Màn hình thanh toán giả lập luôn thành công, không dùng ví có số dư và không phụ thuộc spec 050; hoàn tiền chỉ ghi trạng thái "Đã hoàn tiền".
 - Q: Một lần đăng ký được kèm tối đa bao nhiêu người? → A: Tối đa 4 người (bản thân + 3 bạn), và không vượt số chỗ còn lại.
@@ -90,12 +90,12 @@ Người chơi không đi được thì mở vé và bấm "Hủy đăng ký". A
 
 **Why this priority**: Cần cho sự công bằng và để buổi không bị trống chỗ ảo, nhưng ít dùng hơn tìm và đăng ký.
 
-**Independent Test**: Hủy một lượt 2 người đã thanh toán, trước giờ bắt đầu hơn 4 giờ: được hoàn 100% và buổi tăng lại 2 chỗ. Hủy một lượt khác trong vòng 4 giờ: app báo không hoàn tiền, xác nhận thì vẫn hủy được và chỗ được trả lại.
+**Independent Test**: Hủy một lượt 2 người đã thanh toán, trước giờ bắt đầu từ 4 giờ trở lên: được hoàn 100% và buổi tăng lại 2 chỗ. Hủy một lượt khác khi còn dưới 4 giờ: app báo không hoàn tiền, xác nhận thì vẫn hủy được và chỗ được trả lại.
 
 **Acceptance Scenarios**:
 
-1. **Given** lượt sắp tới còn hơn 4 giờ nữa mới bắt đầu, **When** người chơi bấm "Hủy đăng ký", **Then** app hiện "Bạn được hoàn 100% (X đ)" (hoặc "Không mất phí" nếu trả tại sân) và yêu cầu xác nhận.
-2. **Given** lượt sắp tới còn 4 giờ hoặc ít hơn, **When** người chơi bấm "Hủy đăng ký", **Then** app báo rõ không được hoàn tiền; xác nhận thì vẫn hủy được.
+1. **Given** lượt sắp tới còn từ 4 giờ trở lên mới bắt đầu, **When** người chơi bấm "Hủy đăng ký", **Then** app hiện "Bạn được hoàn 100% (X đ)" (hoặc "Không mất phí" nếu trả tại sân) và yêu cầu xác nhận.
+2. **Given** lượt sắp tới còn dưới 4 giờ, **When** người chơi bấm "Hủy đăng ký", **Then** app báo rõ không được hoàn tiền; xác nhận thì vẫn hủy được.
 3. **Given** người chơi xác nhận hủy, **When** hệ thống xử lý xong, **Then** lượt chuyển sang "Đã hủy", mã QR không còn hiệu lực, số chỗ của buổi tăng đúng số người của lượt, và trạng thái thanh toán ghi nhận hoàn tiền nếu có.
 4. **Given** buổi đã bắt đầu, **When** người chơi mở vé, **Then** không còn nút hủy.
 5. **Given** chủ sân đã đổi giờ buổi sau khi người chơi đăng ký, **When** người chơi hủy (bất kể còn bao lâu), **Then** được hoàn 100%.
@@ -147,7 +147,7 @@ Sau khi buổi kết thúc, lượt đã check-in hiện nút "Đánh giá buổ
 
 - **FR-001**: Hệ thống PHẢI hiển thị danh sách buổi vãng lai còn nhận đăng ký hoặc đã đủ người, chưa bắt đầu, thuộc cơ sở đang hoạt động; sắp xếp theo thời gian bắt đầu gần nhất, tải theo trang (mỗi lần 20 buổi).
 - **FR-002**: Mỗi buổi trong danh sách PHẢI hiển thị: ngày, giờ bắt đầu–kết thúc, tên cơ sở, quận, trình độ, số chỗ còn lại trên sức chứa, giá mỗi lượt; buổi đã đủ người có nhãn "Đã đủ người".
-- **FR-003**: Người chơi PHẢI lọc được theo: khu vực (chọn nhiều quận từ danh mục), ngày (hôm nay đến 14 ngày tới), khung giờ (Sáng 05:00–12:00, Chiều 12:00–17:00, Tối 17:00–23:00, theo giờ bắt đầu), trình độ (Mới chơi, Trung bình, Khá/Nâng cao), mức giá tối đa mỗi lượt. Các bộ lọc kết hợp với nhau (thỏa mãn tất cả); mỗi bộ lọc đang áp dụng hiện thành chip có thể bỏ.
+- **FR-003**: Người chơi PHẢI lọc được theo: khu vực (chọn nhiều quận từ danh mục), ngày (hôm nay đến 30 ngày tới, cùng phạm vi đặt trước với spec 040), khung giờ theo giờ bắt đầu của buổi (Sáng 05:00–11:00, Trưa 11:00–13:00, Chiều 13:00–18:00, Tối 18:00–23:00; mốc giống cách AI hiểu "sáng/trưa/chiều/tối" ở spec 022), trình độ (Mới chơi, Trung bình, Khá/Nâng cao), mức giá tối đa mỗi lượt. Các bộ lọc kết hợp với nhau (thỏa mãn tất cả); mỗi bộ lọc đang áp dụng hiện thành chip có thể bỏ.
 - **FR-004**: Bộ lọc khu vực PHẢI được điền sẵn theo khu vực hay chơi trong hồ sơ (nếu có) và PHẢI nhận được điều kiện điền sẵn từ AI Assistant (spec 022).
 - **FR-005**: Chi tiết buổi PHẢI hiển thị thêm địa chỉ cơ sở, sân con dùng cho buổi, ghi chú của chủ sân, và số chỗ còn lại cập nhật theo thời gian thực khi màn hình đang mở.
 
@@ -170,7 +170,7 @@ Sau khi buổi kết thúc, lượt đã check-in hiện nút "Đánh giá buổ
 **Hủy đăng ký**
 
 - **FR-016**: Người đăng ký PHẢI hủy được lượt của mình trước khi buổi bắt đầu; chỉ người đăng ký được hủy lượt đó (kiểm tra ở phía server). Không hủy một phần số người.
-- **FR-017**: Chính sách hủy: hủy trước giờ bắt đầu hơn 4 giờ được hoàn 100% số tiền đã thanh toán (giả lập); hủy trong vòng 4 giờ vẫn được hủy nhưng không hoàn tiền; nếu chủ sân đã đổi giờ, sân hoặc giá sau khi người chơi đăng ký thì luôn được hoàn 100%. Mốc thời gian tính theo giờ server. App PHẢI hiển thị số tiền được hoàn trước khi người chơi xác nhận.
+- **FR-017**: Chính sách hủy: hủy trước giờ bắt đầu từ 4 giờ trở lên (≥ 240 phút) được hoàn 100% số tiền đã thanh toán (giả lập); dưới 4 giờ vẫn được hủy nhưng không hoàn tiền; nếu chủ sân đã đổi giờ, sân hoặc giá sau khi người chơi đăng ký thì luôn được hoàn 100%. Mốc thời gian tính theo giờ server. App PHẢI hiển thị số tiền được hoàn trước khi người chơi xác nhận.
 - **FR-018**: Hủy lượt và trả lại chỗ cho buổi PHẢI xảy ra trong cùng một bước nguyên tử ở phía server; hủy nhiều lần chỉ có tác dụng một lần. Buổi đã đủ người PHẢI trở lại trạng thái còn chỗ khi có chỗ được trả lại (việc đẩy người từ hàng chờ lên thuộc spec 081).
 
 **Lịch sử**
@@ -188,7 +188,7 @@ Sau khi buổi kết thúc, lượt đã check-in hiện nút "Đánh giá buổ
 
 - **FR-024**: Mỗi màn hình có dữ liệu (danh sách buổi, chi tiết buổi, lượt của tôi, vé) PHẢI có đủ 4 trạng thái: đang tải, có dữ liệu, rỗng, lỗi kèm nút thử lại. Mất mạng PHẢI hiện thông báo, giữ nguyên lựa chọn đang nhập, không crash.
 - **FR-025**: Luồng từ danh sách đến khi nhận vé PHẢI không quá 4 bước: danh sách → chi tiết buổi → xác nhận (số người, thanh toán) → vé.
-- **FR-026**: Hệ thống PHẢI phát sinh sự kiện để nhóm thông báo (spec 100) gửi: đăng ký thành công, hủy đăng ký thành công, buổi bị đổi hoặc hủy (đến mọi người đã đăng ký). Nội dung và cách gửi thuộc spec 100.
+- **FR-026**: Hệ thống PHẢI phát sinh sự kiện để nhóm thông báo (spec 100) gửi: đăng ký thành công (`DROPIN_REGISTERED`), buổi bị đổi hoặc hủy (`DROPIN_CHANGED`, đến mọi người đã đăng ký). Người chơi tự hủy đăng ký thì không nhận thông báo; app hiện kết quả ngay (theo quy tắc chung ở đặc tả CSDL mục 4.13). Nội dung và cách gửi thuộc spec 100.
 - **FR-027**: Thời gian lưu theo UTC và hiển thị theo múi giờ Việt Nam; tiền hiển thị dạng "80.000 đ".
 
 ### Key Entities
@@ -207,7 +207,7 @@ Sau khi buổi kết thúc, lượt đã check-in hiện nút "Đánh giá buổ
 - **SC-002**: Khi 20 người cùng lúc đăng ký 5 chỗ cuối cùng của một buổi, đúng 5 chỗ được lấp, số người đã đăng ký không bao giờ vượt sức chứa, và mỗi người không thành công đều nhận thông báo hết chỗ.
 - **SC-003**: Bấm "Xác nhận" hoặc "Hủy" 5 lần liên tiếp (hoặc thử lại sau khi mất mạng) chỉ tạo đúng 1 đăng ký / 1 lần hủy, tiền giả lập chỉ bị trừ hoặc hoàn 1 lần.
 - **SC-004**: 100% lần thử tự ghi số tiền, trạng thái đăng ký, số chỗ đã đăng ký, hủy lượt của người khác, đọc đăng ký của người khác hoặc đánh giá lượt chưa check-in đều bị từ chối, kể cả khi gửi không qua app.
-- **SC-005**: Số tiền hoàn khi hủy đúng chính sách trong 100% kịch bản kiểm thử (trước hơn 4 giờ, trong vòng 4 giờ, đúng mốc 4 giờ, buổi đã thay đổi).
+- **SC-005**: Số tiền hoàn khi hủy đúng chính sách trong 100% kịch bản kiểm thử (trước hơn 4 giờ, dưới 4 giờ, đúng mốc 4 giờ được hoàn 100%, buổi đã thay đổi).
 - **SC-006**: Trang đầu danh sách buổi vãng lai tải xong trong dưới 3 giây trên mạng 4G; số chỗ còn lại trên chi tiết buổi cập nhật trong vòng 5 giây sau khi người khác đăng ký hoặc hủy.
 - **SC-007**: Vé QR đã xem trước đó mở được trong dưới 1 giây khi không có mạng.
 - **SC-008**: Ít nhất 4/5 người thử (thành viên nhóm khác) tự tìm, đăng ký kèm 1 bạn và mở được vé mà không cần hướng dẫn.
@@ -219,10 +219,11 @@ Sau khi buổi kết thúc, lượt đã check-in hiện nút "Đánh giá buổ
 - **Điều kiện đánh giá là đã check-in**: đã chốt ở Clarifications. Nếu chủ sân quên quét QR thì người chơi không đánh giá được, nên cần báo D để spec 112 nhắc chủ sân check-in đủ người.
 - **Đánh giá buổi vãng lai tính vào điểm trung bình của cơ sở**, dùng chung tiêu chí và quy tắc với spec 070; cách cập nhật điểm dùng lại cơ chế đã thiết kế trong plan 070.
 - Không có bước giữ chỗ tạm và không cần chủ sân duyệt: đăng ký được xác nhận ngay khi server ghi thành công (thanh toán giả lập xảy ra trong cùng bước). Voucher không áp dụng cho buổi vãng lai ở phiên bản này.
-- Đăng ký đóng lúc buổi bắt đầu. Danh sách chỉ hiện buổi trong 14 ngày tới.
+- Đăng ký đóng lúc buổi bắt đầu. Danh sách chỉ hiện buổi trong 30 ngày tới.
 - Trình độ dùng chung 3 mức với hồ sơ (spec 011): Mới chơi, Trung bình, Khá/Nâng cao.
 - Mở/sửa/hủy buổi, quét QR check-in và thu tiền tại sân thuộc spec 112 (D); buổi chuyển sang "đã kết thúc" ở phía server khi qua giờ kết thúc. Spec này chỉ đọc các trạng thái đó.
 - Hàng chờ khi buổi đã đủ người, tự đẩy người lên và thông báo có chỗ trống thuộc spec 081; spec này chỉ đảm bảo chỗ được trả lại đúng khi có người hủy.
 - Lối vào mục "Vãng lai" nằm ở màn hình chính và từ AI Assistant (spec 022); các điều kiện AI được phép điền (khu vực, ngày, giờ, giá, trình độ) cần thống nhất A ↔ C trước `/speckit-plan`.
-- Danh sách loại thông báo ở FR-026 (`DROPIN_REGISTERED`, `DROPIN_CHANGED` và loại cho hủy) phải gửi cho D trước 14/10.
+- Loại thông báo ở FR-026 (`DROPIN_REGISTERED`, `DROPIN_CHANGED`) đã có trong đặc tả CSDL mục 4.13 và spec 100.
+- "Thanh toán ngay (giả lập)" của buổi vãng lai không dùng số dư ví giả lập của spec 050 (đã chốt ở Clarifications): luôn thành công và hoàn tiền chỉ đổi trạng thái thanh toán. Lý do: hàng chờ (spec 081) ghi nhận thanh toán tự động lúc đẩy lên, nên không được phép thất bại vì thiếu số dư.
 - Khách chưa đăng nhập xem được danh sách và chi tiết buổi nhưng phải đăng nhập (spec 010) khi bấm "Đăng ký".

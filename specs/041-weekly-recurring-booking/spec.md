@@ -40,7 +40,7 @@ Từ màn hình đặt sân của một cơ sở, người chơi chọn tab "Đ�
 
 ### User Story 2 - Xử lý xung đột khi có tuần bị trùng lịch (Priority: P1)
 
-Khi hệ thống kiểm tra khả dụng chu kỳ mà phát hiện có một hoặc vài tuần bị trùng slot (do đã có người chơi khác đặt trước, hoặc chủ sân đã khóa slot để bảo trì/tổ chức sự kiện), ứng dụng không hủy bỏ ngay lập tức mà hiển thị rõ ràng danh sách các ngày bị xung đột. Hệ thống cung cấp cho người chơi 2 phương án xử lý linh hoạt: (1) Tự động đổi sang sân con khác còn trống trong cùng khung giờ của ngày đó (ưu tiên cùng loại sân và đồng giá; nếu khác giá thì thông báo rõ chênh lệch); hoặc (2) Bỏ qua buổi bị trùng (chỉ đặt các tuần còn trống, tổng số buổi và tổng tiền được giảm trừ tương ứng). Nếu ngày đó kín tất cả các sân và người chơi không đồng ý bỏ qua, luồng đặt cố định bị chặn để người chơi chọn lại. Sau khi bỏ buổi trùng, nếu số buổi còn lại ít hơn 4 buổi, hệ thống chặn tạo đơn cố định và đề nghị người chơi chuyển sang đặt lẻ.
+Khi hệ thống kiểm tra khả dụng chu kỳ mà phát hiện có một hoặc vài tuần bị trùng slot (do đã có người chơi khác đặt trước, hoặc chủ sân đã khóa slot để bảo trì/tổ chức sự kiện), ứng dụng không hủy bỏ ngay lập tức mà hiển thị rõ ràng danh sách các ngày bị xung đột. Hệ thống cung cấp cho người chơi 2 phương án xử lý linh hoạt: (1) Tự động đổi sang sân con khác còn trống trong cùng khung giờ của ngày đó (ưu tiên sân cùng loại mặt sân; giá không đổi vì bảng giá áp dụng chung cho mọi sân con của cơ sở); hoặc (2) Bỏ qua buổi bị trùng (chỉ đặt các tuần còn trống, tổng số buổi và tổng tiền được giảm trừ tương ứng). Nếu ngày đó kín tất cả các sân và người chơi không đồng ý bỏ qua, luồng đặt cố định bị chặn để người chơi chọn lại. Sau khi bỏ buổi trùng, nếu số buổi còn lại ít hơn 4 buổi, hệ thống chặn tạo đơn cố định và đề nghị người chơi chuyển sang đặt lẻ.
 
 **Why this priority**: Trong thực tế đặt sân dài hạn 1–3 tháng, việc toàn bộ các tuần đều trống 100% trên cùng một sân con là rất khó. Cơ chế giải quyết xung đột linh hoạt này là mấu chốt quyết định tỷ lệ đặt lịch thành công của khách hàng.
 
@@ -50,7 +50,7 @@ Khi hệ thống kiểm tra khả dụng chu kỳ mà phát hiện có một ho�
 
 1. **Given** người chơi chọn chu kỳ 8 tuần nhưng tuần thứ 3 slot Sân 1 đã có người đặt, **When** hệ thống kiểm tra khả dụng, **Then** hiển thị cảnh báo "Phát hiện 1 buổi bị xung đột lịch" kèm chi tiết ngày bị trùng và đưa ra 2 lựa chọn: "Đổi sang sân khác" hoặc "Bỏ qua buổi này".
 2. **Given** người chơi chọn "Đổi sang sân khác" cho buổi bị trùng và Sân 2 còn trống cùng khung giờ có cùng mức giá, **When** hệ thống đổi sân, **Then** buổi đó được cập nhật thành Sân 2 trên danh sách tổng hợp mà không làm thay đổi đơn giá.
-3. **Given** sân con thay thế có mức giá khác (ví dụ: Sân VIP chênh lệch +20.000đ/giờ), **When** người chơi xem màn hình giải quyết xung đột, **Then** hệ thống hiển thị rõ mức giá chênh lệch và chỉ áp dụng đổi sân khi người chơi bấm "Xác nhận chấp nhận chênh lệch giá".
+3. **Given** không còn sân cùng loại mặt sân nhưng còn sân khác loại (ví dụ Sân 1 mặt thảm đã kín, chỉ còn Sân 3 mặt gỗ), **When** người chơi xem màn hình giải quyết xung đột, **Then** hệ thống hiển thị rõ loại mặt sân mới và chỉ đổi sân khi người chơi bấm xác nhận.
 4. **Given** người chơi chọn phương án "Bỏ qua buổi bị trùng", **When** bấm xác nhận, **Then** buổi bị trùng bị xóa khỏi danh sách, số lượng buổi giảm 1 và tổng tiền tự động trừ đi giá của buổi đó.
 5. **Given** sau khi bỏ các buổi bị trùng, số buổi còn lại trong đơn cố định nhỏ hơn 4 buổi (ví dụ chu kỳ 4 tuần bị trùng 2 tuần, còn lại 2 buổi), **When** người chơi chuẩn bị tiếp tục, **Then** hệ thống hiển thị thông báo "Đơn đặt cố định yêu cầu tối thiểu 4 buổi chơi. Vui lòng chọn khung giờ khác hoặc chuyển sang đặt sân lẻ", không cho phép tiếp tục luồng cố định.
 6. **Given** tại ngày bị trùng không còn bất kỳ sân con nào khác còn trống trong cùng khung giờ, **When** hiển thị thông báo xung đột, **Then** tùy chọn "Đổi sang sân khác" bị vô hiệu hóa, chỉ cho phép chọn "Bỏ qua buổi này" hoặc "Chọn lại khung giờ khác".
@@ -79,7 +79,7 @@ Sau khi giải quyết xong các xung đột (nếu có), người chơi bấm "
 
 Trong thời gian 5 phút giữ chỗ ở màn hình xác nhận đơn cố định, người chơi có thể chủ động bấm "Hủy" hoặc nút "Quay lại" để từ bỏ việc đặt lịch. Nếu quá 5 phút mà người chơi chưa hoàn tất chuyển sang bước thanh toán/đặt cọc (spec 050), thời gian giữ chỗ kết thúc: hệ thống tự động giải phóng toàn bộ các slot trong chu kỳ về trạng thái Còn trống một cách đồng bộ. Nếu người chơi vẫn đang mở app tại màn hình xác nhận khi đồng hồ chạm 00:00, app tự động thông báo "Thời gian giữ chỗ 5 phút đã hết", điều hướng quay lại màn hình cấu hình chu kỳ và giữ nguyên các lựa chọn ban đầu nếu các slot vẫn còn trống.
 
-**Why this priority**: Đơn cố định chiếm dụng một lượng lớn slot của cơ sở (từ 4 đến 36 slot). Việc tự động giải phóng sạch sẽ khi hết hạn giúp cơ sở không bị "đóng băng" slot ảo khi người dùng bỏ dở phiên đặt.
+**Why this priority**: Đơn cố định chiếm dụng một lượng lớn slot của cơ sở (từ 8 slot 30 phút trở lên). Việc tự động giải phóng sạch sẽ khi hết hạn giúp cơ sở không bị "đóng băng" slot ảo khi người dùng bỏ dở phiên đặt.
 
 **Independent Test**: Tạo một đơn giữ chỗ chu kỳ 4 tuần (8 slot); để đồng hồ đếm ngược hết 5 phút; kiểm tra toàn bộ 8 slot trên hệ thống đều tự động trở về trạng thái "Còn trống" và có thể đặt lại bình thường.
 
@@ -113,7 +113,7 @@ Khách vãng lai (chưa đăng nhập tài khoản) vẫn được phép vào m�
 ### Edge Cases
 
 - **Các thứ đã qua trong tuần hiện tại**: Khi người chơi chọn bắt đầu chu kỳ từ "Tuần hiện tại", nhưng hôm nay đã là Thứ Năm và người chơi chọn Thứ Ba & Thứ Bảy. Hệ thống tự động bắt đầu tính từ Thứ Bảy tuần này; buổi Thứ Ba đã qua không đưa vào đơn và không tính tiền, chu kỳ kéo dài đủ số tuần đã chọn kể từ ngày bắt đầu thực tế.
-- **Cơ sở có các sân con với mức giá khác nhau**: Khi tự động đổi sân con cho buổi bị trùng, nếu Sân 1 có giá 100.000đ/giờ nhưng chỉ còn Sân VIP giá 150.000đ/giờ, hệ thống tính toán chính xác tổng tiền của chu kỳ dựa trên đơn giá thực tế của từng buổi riêng biệt và hiển thị chi tiết chênh lệch để người chơi duyệt.
+- **Đổi sang sân khác loại mặt sân**: Bảng giá áp dụng chung cho mọi sân con (đặc tả CSDL mục 4.3) nên đổi sân không làm đổi giá; tổng tiền chu kỳ vẫn tính theo từng buổi để phản ánh giá giờ thường, cao điểm, cuối tuần của từng ngày.
 - **Trùng slot ở đúng tuần cuối cùng của chu kỳ (tuần 12)**: Hệ thống áp dụng nhất quán quy tắc xử lý xung đột: cho phép đổi sang sân con khác hoặc bỏ qua tuần 12 (giảm xuống 11 tuần, vẫn thỏa mãn điều kiện ≥ 4 buổi).
 - **Mất mạng khi đang xử lý giữ chỗ hàng loạt (batch hold)**: Do đơn cố định bao gồm nhiều slot, nếu thiết bị mất mạng giữa chừng khi đang gửi yêu cầu giữ chỗ, hệ thống đảm bảo nguyên tắc transaction: hoặc toàn bộ các slot của chu kỳ đều được giữ thành công, hoặc không có slot nào bị giữ dở dang. App hiển thị thông báo lỗi mạng kèm nút "Thử lại" với cùng `requestId`.
 - **Chuyển giao sang màn hình thanh toán/đặt cọc**: Khi người chơi bấm "Thanh toán" tại màn hình xác nhận, toàn bộ nhóm đơn mang trạng thái `HOLD` và mã `recurringGroupId` được chuyển giao nguyên vẹn sang spec 050 cùng với đồng hồ thời gian giữ chỗ còn lại (không được cấp lại 5 phút mới).
@@ -124,7 +124,7 @@ Khách vãng lai (chưa đăng nhập tài khoản) vẫn được phép vào m�
 
 ### Functional Requirements
 
-- **FR-001**: Hệ thống PHẢI cung cấp tùy chọn "Đặt cố định theo tuần" trên màn hình đặt sân của các cơ sở có hỗ trợ tính năng này.
+- **FR-001**: Hệ thống PHẢI cung cấp tùy chọn "Đặt cố định theo tuần" trên màn hình đặt sân của các cơ sở có hỗ trợ tính năng này (`venues.acceptsRecurring = true`, chủ sân bật/tắt ở spec 111).
 - **FR-002**: Hệ thống PHẢI cho phép người chơi chọn một hoặc nhiều thứ trong tuần (từ Thứ Hai đến Chủ Nhật) cho lịch chơi định kỳ.
 - **FR-003**: Hệ thống PHẢI cho phép người chơi chọn khung giờ cố định cho các buổi chơi, tuân thủ quy tắc slot 30 phút cố định và các mốc giờ theo spec 040.
 - **FR-004**: Hệ thống PHẢI cho phép người chơi chọn từ 2 đến tối đa 6 khung giờ 30 phút liên tiếp trong một buổi chơi (tương đương 1 đến 3 giờ/buổi).
@@ -135,7 +135,7 @@ Khách vãng lai (chưa đăng nhập tài khoản) vẫn được phép vào m�
 - **FR-009**: Hệ thống PHẢI hiển thị bảng tổng hợp gồm: danh sách chi tiết các buổi chơi (ngày, thứ, khung giờ, sân con), tổng số lượng buổi, và tổng tiền tạm tính toàn chu kỳ.
 - **FR-010**: Tiền tệ trong toàn bộ đơn đặt cố định PHẢI được lưu trữ và tính toán bằng số nguyên đơn vị VND (Việt Nam Đồng), không dùng số thực.
 - **FR-011**: Khi phát hiện có slot trong chu kỳ bị trùng (đã có người đặt hoặc bị sân khóa), hệ thống PHẢI hiển thị rõ danh sách các ngày bị xung đột và cung cấp 2 phương án xử lý: (1) Tự động đổi sang sân khác còn trống cùng giờ, hoặc (2) Bỏ qua buổi bị trùng.
-- **FR-012**: Khi thực hiện đổi sân con cho buổi bị trùng, hệ thống PHẢI ưu tiên đổi sang sân con cùng loại và cùng mức giá; nếu sân thay thế có mức giá khác, hệ thống PHẢI hiển thị rõ mức chênh lệch giá và yêu cầu người chơi bấm xác nhận đồng ý trước khi tiếp tục.
+- **FR-012**: Khi thực hiện đổi sân con cho buổi bị trùng, hệ thống PHẢI ưu tiên sân con đang hoạt động có cùng loại mặt sân (`surfaceType`); nếu chỉ còn sân khác loại, hệ thống PHẢI hiển thị loại mặt sân mới và yêu cầu người chơi xác nhận trước khi đổi.
 - **FR-013**: Khi người chơi chọn phương án bỏ qua buổi bị trùng, hệ thống PHẢI tự động loại bỏ buổi đó khỏi danh sách đặt, giảm số lượng buổi tương ứng và tự động trừ tiền của buổi bị bỏ qua vào tổng tiền chu kỳ.
 - **FR-014**: Sau khi loại bỏ các buổi bị trùng, nếu tổng số buổi chơi còn lại trong đơn cố định ít hơn 4 buổi, hệ thống PHẢI chặn luồng tiếp tục, hiển thị thông báo yêu cầu chọn lại khung giờ/thứ khác hoặc gợi ý chuyển sang đặt lẻ theo ngày.
 - **FR-015**: Nếu tại ngày bị trùng không còn bất kỳ sân con nào khác còn trống trong cùng khung giờ và người chơi không đồng ý bỏ qua buổi đó, hệ thống PHẢI chặn luồng đặt cố định và yêu cầu người chơi chọn cấu hình khác.
@@ -157,10 +157,10 @@ Khách vãng lai (chưa đăng nhập tài khoản) vẫn được phép vào m�
 
 ### Key Entities *(mandatory)*
 
-- **RecurringBookingGroup (Nhóm đơn đặt cố định)**: Đại diện cho hợp đồng đặt định kỳ theo tuần của người chơi. Thuộc tính: `recurringGroupId` (UUID), `userId`, `venueId`, `dayOfWeekList` (danh sách các thứ trong tuần), `startTime`, `endTime`, `startDate`, `endDate`, `totalSessions` (tổng số buổi), `totalAmount` (tổng tiền VND), `status` (`HOLD`, `PENDING`, `CONFIRMED`, `CANCELLED`, `EXPIRED`), `createdAt`, `updatedAt`.
-- **Booking (Đơn đặt từng buổi con)**: Đại diện cho từng buổi chơi cụ thể trong chu kỳ đặt cố định. Thuộc tính: `bookingId`, `recurringGroupId` (liên kết với nhóm đơn), `userId`, `venueId`, `courtId`, `courtName`, `date` (`yyyyMMdd`), `slotIds` (danh sách slot của buổi), `subtotal`, `status` (`HOLD`, `PENDING`, `CONFIRMED`, `COMPLETED`, `CANCELLED`, `EXPIRED`), `requestId`, `holdExpiresAt`.
-- **CourtSlot (Khung giờ sân)**: Đại diện cho trạng thái của từng slot 30 phút trên từng sân con. Thuộc tính: `slotId` (`{courtId}_{yyyyMMdd}_{HHmm}`), `courtId`, `venueId`, `date`, `startTime`, `endTime`, `status` (`AVAILABLE`, `HELD`, `BOOKED`, `BLOCKED`), `heldByUserId`, `holdExpiresAt`.
-- **VenueCourt (Sân con)**: Thông tin sân con trong cơ sở. Thuộc tính: `courtId`, `venueId`, `name`, `type` (STANDARD, VIP), `status` (ACTIVE, MAINTENANCE).
+- **RecurringBookingGroup (Nhóm đơn đặt cố định)**: Document `recurringGroups/{recurringGroupId}` theo đặc tả CSDL mục 4.5a. Thuộc tính: `userId`, `venueId`, `daysOfWeek`, `startTime`, `endTime`, `startDate`, `endDate`, `totalSessions`, `subtotal`, `discount`, `total`, `depositAmount`, `paymentMethod`, `paymentStatus`, `voucherCode`, `createdAt`. Nhóm không có trạng thái riêng; trạng thái nằm ở từng buổi.
+- **Booking (Đơn đặt từng buổi con)**: Đại diện cho từng buổi chơi cụ thể trong chu kỳ đặt cố định. Mỗi buổi là một document `bookings` theo đặc tả CSDL mục 4.5. Thuộc tính: `bookingId`, `recurringGroupId` (liên kết với nhóm đơn), `userId`, `venueId`, `items` (các khung 30 phút của buổi), `startAt`, `endAt`, `subtotal`, `status` (`HOLD`, `PENDING`, `CONFIRMED`, `COMPLETED`, `NO_SHOW`, `CANCELLED`, `REJECTED`, `EXPIRED`), `holdExpiresAt`.
+- **CourtSlot (Khung giờ sân)**: Khung giờ 30 phút đang bị chiếm của một sân con, theo đặc tả CSDL mục 4.4. Không có document nghĩa là khung đó trống. Thuộc tính: `slotId` (ID tất định `{courtId}_{yyyyMMdd}_{HHmm}`), `venueId`, `courtId`, `date` (`yyyyMMdd`), `startAt`, `endAt`, `status` (`HOLD`, `BOOKED`, `BLOCKED`), `bookingId`, `holdBy`, `holdExpiresAt` (đã hết hạn thì coi như trống), `blockReason`.
+- **VenueCourt (Sân con)**: Sân con của cơ sở theo đặc tả CSDL mục 4.3. Thuộc tính: `courtId`, `venueId`, `name`, `surfaceType` (`WOOD`, `PU`, `MAT`), `isActive`, `sortOrder`.
 
 ---
 
@@ -181,7 +181,7 @@ Khách vãng lai (chưa đăng nhập tài khoản) vẫn được phép vào m�
 ## Assumptions
 
 - Khung giờ hoạt động của cơ sở và bảng giá `priceRules` cho các thứ trong tuần đã được chủ sân thiết lập ổn định trước khi mở tính năng đặt cố định.
-- Tất cả các sân con trong cùng cơ sở mặc định có thể thay thế cho nhau nếu cùng loại sân và cùng khung giờ.
+- Tất cả các sân con đang hoạt động trong cùng cơ sở có thể thay thế cho nhau và có cùng giá ở cùng khung giờ; ưu tiên sân cùng loại mặt sân.
 - Múi giờ chuẩn của toàn bộ hệ thống là giờ Việt Nam (`Asia/Ho_Chi_Minh`, UTC+7).
 - Đơn vị tiền tệ hiển thị và tính toán là Việt Nam Đồng (VND), lưu trữ dưới dạng số nguyên Long.
 - Chính sách đặt cọc theo tỷ lệ %, thanh toán tiền mặt/chuyển khoản và áp dụng mã khuyến mãi cho đơn cố định thuộc phạm vi giải quyết của spec tiếp theo (`specs/050-payment-voucher`).

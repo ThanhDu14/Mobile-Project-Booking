@@ -41,6 +41,12 @@ Giúp người dùng nhận biết các sự kiện nghiệp vụ liên quan đ�
 - Q: Người dùng có cần xóa thông báo khỏi trung tâm không? → A: Không có chức năng xóa thông báo.
 - Q: Thông báo nên được lưu trong trung tâm bao lâu? → A: Giữ thông báo cho đến khi tài khoản bị xóa.
 
+### Session 2026-10-13 (đồng bộ với các spec nguồn)
+
+- Q: Chủ sân biết có đơn cần duyệt trong 60 phút bằng cách nào? → A: Loại mới `BOOKING_NEW` gửi chủ cơ sở ngay khi đơn sang `PENDING`, kèm hạn duyệt; loại này luôn gửi push, người dùng không tắt được.
+- Q: Đơn quá hạn duyệt và tiền hoàn báo bằng loại nào? → A: Dùng `BOOKING_REJECTED` cho cả chủ sân từ chối và quá hạn; nội dung ghi lý do và số tiền đã hoàn. Không có loại riêng cho hoàn tiền.
+- Q: Các sự kiện các spec 070, 081, 090, 120 yêu cầu dùng loại nào? → A: Thêm `REVIEW_NEW`, `REVIEW_REMINDER` (070), `DROPIN_WAITLIST_CLOSED` (081), `GROUP_ACTIVITY` (090, `data.event` ghi loại cụ thể), `OWNER_REVOKED` (120). Thao tác người dùng tự làm (tự hủy đơn, tự hủy đăng ký vãng lai, tự vào hàng chờ) không phát sinh thông báo.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Nhận thông báo đặt sân và nhắc lịch (Priority: P1)
@@ -58,6 +64,8 @@ Người chơi nhận thông tin khi đơn đặt sân được xác nhận ho�
 3. **Given** đơn đặt sân ở trạng thái `CONFIRMED`, **When** còn 2 giờ trước khung giờ bắt đầu sớm nhất của đơn, **Then** hệ thống tạo một `BOOKING_REMINDER` cho người đặt.
 4. **Given** một thông báo được tạo, **When** người nhận có quyền nhận push và bật loại thông báo đó, **Then** thông báo được gửi qua kênh đẩy; nếu push không tới được, thông báo trong trung tâm vẫn có thể được xem.
 5. **Given** đơn của người chơi bị chủ sân hoặc hệ thống hủy, **When** việc hủy có hiệu lực, **Then** người đặt nhận `BOOKING_CANCELLED`; nếu người chơi tự hủy đơn của mình thì không nhận thông báo này.
+6. **Given** người chơi thanh toán xong và đơn sang `PENDING`, **When** trạng thái được ghi, **Then** chủ cơ sở nhận `BOOKING_NEW` kèm hạn duyệt (`approvalDeadline`), push luôn được gửi nếu hệ điều hành cho phép.
+7. **Given** đơn `PENDING` quá hạn duyệt, **When** server chuyển đơn sang `REJECTED` và hoàn tiền, **Then** người đặt nhận một `BOOKING_REJECTED` ghi lý do "Quá hạn duyệt" và số tiền đã hoàn.
 
 ### User Story 2 - Nhận cập nhật buổi vãng lai và khuyến mãi (Priority: P1)
 
@@ -136,7 +144,7 @@ Người dùng liên quan nhận cập nhật kết quả hồ sơ chủ sân, p
 
 ### Functional Requirements
 
-- **FR-001**: Hệ thống PHẢI hỗ trợ các type được khai báo trong CSDL chung: `BOOKING_CONFIRMED`, `BOOKING_REJECTED`, `BOOKING_CANCELLED`, `BOOKING_REMINDER`, `DROPIN_REGISTERED`, `DROPIN_SPOT_OPENED`, `DROPIN_CHANGED`, `PROMOTION`, `OWNER_APPROVED`, `OWNER_REJECTED`, `REVIEW_REPLIED`, `CHAT_MESSAGE` và `SYSTEM`.
+- **FR-001**: Hệ thống PHẢI hỗ trợ các type được khai báo trong CSDL chung: `BOOKING_CONFIRMED`, `BOOKING_REJECTED`, `BOOKING_CANCELLED`, `BOOKING_REMINDER`, `BOOKING_NEW`, `DROPIN_REGISTERED`, `DROPIN_SPOT_OPENED`, `DROPIN_CHANGED`, `DROPIN_WAITLIST_CLOSED`, `PROMOTION`, `OWNER_APPROVED`, `OWNER_REJECTED`, `OWNER_REVOKED`, `REVIEW_REPLIED`, `REVIEW_NEW`, `REVIEW_REMINDER`, `GROUP_ACTIVITY`, `CHAT_MESSAGE` và `SYSTEM`. Thao tác người dùng tự làm không phát sinh thông báo cho chính họ.
 - **FR-002**: Mỗi loại thông báo PHẢI được phát sinh từ sự kiện và nhóm nguồn được quy định trong bảng danh mục dưới đây; nhóm phát sinh chịu trách nhiệm thống nhất người nhận và dữ liệu sự kiện với D.
 - **FR-003**: Hộp thư của người dùng PHẢI hiển thị các trường thông báo đã được CSDL chung quy định: loại, tiêu đề, nội dung, dữ liệu liên quan nếu có, trạng thái đã đọc và thời điểm tạo; danh sách PHẢI sắp xếp mới nhất trước.
 - **FR-004**: Người dùng PHẢI xem được thông báo thuộc hộp thư của mình và KHÔNG ĐƯỢC xem hoặc cập nhật trạng thái thông báo của tài khoản khác.
@@ -147,7 +155,7 @@ Người dùng liên quan nhận cập nhật kết quả hồ sơ chủ sân, p
 - **FR-009**: Màn hình trung tâm và cài đặt PHẢI xử lý trạng thái đang tải, có dữ liệu, rỗng và lỗi theo constitution; lỗi/mất mạng không được làm app crash.
 - **FR-010**: Với mỗi đơn đặt sân ở trạng thái `CONFIRMED`, hệ thống PHẢI tạo một `BOOKING_REMINDER` cho người đặt vào thời điểm 2 giờ trước khung giờ bắt đầu sớm nhất trong đơn. Đơn ở trạng thái khác KHÔNG ĐƯỢC nhận lời nhắc này.
 - **FR-011**: `BOOKING_CANCELLED` PHẢI gửi cho người đặt khi đơn bị chủ sân hoặc hệ thống hủy; KHÔNG ĐƯỢC gửi loại này cho người đặt khi chính họ chủ động hủy. `DROPIN_CHANGED` PHẢI gửi cho người đã đăng ký buổi bị đổi giờ hoặc hủy và KHÔNG ĐƯỢC gửi cho người chỉ ở hàng chờ. `PROMOTION` CHỈ ĐƯỢC gửi cho người đang theo dõi sân và đủ điều kiện sử dụng voucher theo quy tắc Feature 05. `SYSTEM` PHẢI được tạo trong hộp thư của tất cả tài khoản người dùng đang hoạt động, gồm người chơi và chủ sân; push vẫn tuân theo cài đặt loại và quyền hệ điều hành. Với `CHAT_MESSAGE`, hệ thống PHẢI tạo mục trong trung tâm cho thành viên nhận tin; KHÔNG gửi push nếu người nhận đang xem chính cuộc trò chuyện đó, còn lại gửi theo cài đặt loại và quyền hệ điều hành.
-- **FR-012**: Tài khoản mới PHẢI có cài đặt push bật mặc định cho mọi type ngoại trừ `PROMOTION`, type này mặc định tắt. Người dùng PHẢI có thể bật/tắt riêng từng type; quyền thông báo của hệ điều hành vẫn do người dùng cấp riêng.
+- **FR-012**: Tài khoản mới PHẢI có cài đặt push bật mặc định cho mọi type ngoại trừ `PROMOTION`, type này mặc định tắt. Riêng `BOOKING_NEW` luôn bật và không có công tắc tắt, vì chủ sân phải duyệt đơn trước hạn. Người dùng PHẢI có thể bật/tắt riêng từng type; quyền thông báo của hệ điều hành vẫn do người dùng cấp riêng.
 - **FR-013**: Khi người dùng mở một thông báo có liên kết, ứng dụng PHẢI mở nội dung liên quan nếu nội dung còn tồn tại và người dùng còn quyền truy cập; nếu không, PHẢI mở chi tiết thông báo bằng nội dung đã lưu.
 - **FR-014**: Hệ thống KHÔNG ĐƯỢC tạo nhiều bản ghi cho cùng một sự kiện nghiệp vụ, cùng một người nhận và cùng một type khi sự kiện đó được xử lý lại.
 - **FR-015**: Trong phạm vi Feature 10, người dùng KHÔNG ĐƯỢC có chức năng xóa thông báo khỏi trung tâm.
@@ -158,16 +166,22 @@ Người dùng liên quan nhận cập nhật kết quả hồ sơ chủ sân, p
 | Type | Nguồn theo CSDL chung | Nội dung nghiệp vụ đã biết |
 |---|---|---|
 | `BOOKING_CONFIRMED` | 04, 06, 11 | Xác nhận đặt sân thành công |
-| `BOOKING_REJECTED` | 04, 06, 11 | Đơn đặt sân bị từ chối |
+| `BOOKING_REJECTED` | 05, 06, 11 | Đơn bị chủ sân từ chối hoặc quá hạn duyệt (`booking-timeout`); nội dung ghi lý do và số tiền đã hoàn |
+| `BOOKING_NEW` | 05, 11 | Gửi chủ cơ sở khi có đơn `PENDING` cần duyệt, kèm hạn duyệt; luôn gửi push, không tắt được |
 | `BOOKING_CANCELLED` | 04, 06, 11 | Gửi cho người đặt khi chủ sân hoặc hệ thống hủy; không gửi khi người đặt tự hủy |
 | `BOOKING_REMINDER` | 04, 06, 11 | Một lời nhắc cho người đặt, 2 giờ trước khung giờ bắt đầu sớm nhất của đơn `CONFIRMED` |
 | `DROPIN_REGISTERED` | 08, 11 | Đăng ký buổi vãng lai thành công |
 | `DROPIN_SPOT_OPENED` | 08, 11 | Có chỗ từ hàng chờ |
 | `DROPIN_CHANGED` | 08, 11 | Buổi vãng lai bị hủy hoặc đổi giờ; gửi cho người đã đăng ký, không gửi cho người chỉ ở hàng chờ |
+| `DROPIN_WAITLIST_CLOSED` | 08, 11 | Gửi người đang ở hàng chờ khi hàng chờ đóng (30 phút trước giờ bắt đầu) mà chưa được nhận, hoặc khi buổi bị hủy |
 | `PROMOTION` | 05, 11 | Voucher/khuyến mãi của sân đang theo dõi; chỉ gửi cho follower đủ điều kiện sử dụng theo quy tắc Feature 05 |
 | `OWNER_APPROVED` | 12 | Hồ sơ chủ sân được duyệt |
 | `OWNER_REJECTED` | 12 | Hồ sơ chủ sân bị từ chối |
+| `OWNER_REVOKED` | 12 | Quyền chủ sân bị thu hồi, kèm lý do |
 | `REVIEW_REPLIED` | 07, 11 | Chủ sân phản hồi đánh giá |
+| `REVIEW_NEW` | 07 | Gửi chủ cơ sở khi có đánh giá mới |
+| `REVIEW_REMINDER` | 07 | Nhắc người chơi đánh giá khi đơn sang `COMPLETED` |
+| `GROUP_ACTIVITY` | 09 | Yêu cầu tham gia nhóm, được duyệt/từ chối, bị mời ra, sự kiện mới/sửa/xóa; `data.event` ghi loại cụ thể |
 | `CHAT_MESSAGE` | 09 | Có tin nhắn mới; mục trung tâm vẫn được tạo khi người nhận đang xem chat nhưng không gửi push |
 | `SYSTEM` | 12 | Thông báo hệ thống do admin gửi cho mọi tài khoản người dùng đang hoạt động, gồm người chơi và chủ sân |
 
@@ -189,7 +203,7 @@ Người dùng liên quan nhận cập nhật kết quả hồ sơ chủ sân, p
 
 ## Dependencies
 
-- **Spec 040/060/110 — Đặt sân và quản lý lịch đặt**: xác nhận/từ chối/hủy đơn, dữ liệu lịch chơi và sự kiện nhắc (`BOOKING_*`).
+- **Spec 040/050/060/112 — Đặt sân, duyệt đơn và quản lý lịch đặt**: xác nhận/từ chối/hủy đơn, dữ liệu lịch chơi và sự kiện nhắc (`BOOKING_*`).
 - **Spec 050/112 — Thanh toán/voucher và vận hành chủ sân**: phát sinh voucher/khuyến mãi từ sân đang theo dõi (`PROMOTION`).
 - **Spec 070 — Đánh giá và yêu thích**: xác định sân yêu thích đồng thời là sân theo dõi; sự kiện phản hồi đánh giá (`REVIEW_REPLIED`). Clarification của spec 070 xác nhận hai danh sách là một và khuyến mãi điều khiển từ cài đặt Feature 10.
 - **Spec 080/081/112 — Buổi vãng lai và hàng chờ**: đăng ký thành công, được lên từ hàng chờ, buổi đổi/hủy (`DROPIN_*`).

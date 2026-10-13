@@ -211,7 +211,7 @@ Khi người chơi mở một cơ sở đã bị chủ sân ẩn hoặc bị adm
 
 - **Cơ sở (Venue)** (của spec 111): tên, địa chỉ, quận/huyện, vị trí, giờ mở và đóng cửa, số điện thoại, danh sách tiện ích, danh sách ảnh, điểm trung bình, số lượt và tổng điểm theo tiêu chí, chủ sở hữu, trạng thái (hoạt động / bị ẩn / bị khóa). Spec này chỉ đọc.
 - **Sân con (Court)** (của spec 111): tên, loại mặt sân (Gỗ, PU, Thảm), đang hoạt động hay tạm ngưng.
-- **Mức giá (Price rule)** (của spec 111): nhóm ngày trong tuần, giờ bắt đầu, giờ kết thúc, giá mỗi khung 30 phút, nhãn (Giờ thường / Giờ cao điểm / Cuối tuần). Các mức cùng ngày không chồng giờ.
+- **Mức giá (Price rule)** (của spec 111): nhóm ngày trong tuần, giờ bắt đầu, giờ kết thúc (bội số 30 phút), giá theo giờ (`pricePerHour`, giá mỗi khung 30 phút bằng một nửa), nhãn (Giờ thường / Giờ cao điểm / Cuối tuần). Các mức cùng ngày không chồng giờ.
 - **Đánh giá (Review)** (của spec 070): người viết (hoặc đã xóa), điểm từng tiêu chí, điểm tổng, bình luận, ảnh, ngày, phản hồi của chủ sân, trạng thái hiển thị.
 - **Danh mục quận/huyện và tiện ích**: tên và biểu tượng dùng để hiển thị.
 - **Ngữ cảnh từ tìm kiếm**: ngày và khung giờ người chơi đã chọn ở spec 020/022, được mang sang để làm nổi bật giá và mở lưới giờ.
@@ -233,7 +233,7 @@ Khi người chơi mở một cơ sở đã bị chủ sân ẩn hoặc bị adm
 
 - Thông tin cơ sở, sân con, bảng giá và ảnh do chủ sân nhập ở spec 111; điểm và tổng điểm theo tiêu chí do spec 070 cập nhật; spec này chỉ đọc.
 - Giờ mở cửa giống nhau cho mọi ngày trong tuần ở phiên bản này (theo đặc tả CSDL hiện tại); nếu spec 111 mở rộng theo từng thứ thì spec này hiển thị theo thứ.
-- Quy tắc tính giá của một khung (từng khung 30 phút, quy ra đ/giờ) dùng chung với spec 020 và 040; điểm giao B ↔ D "Tính giá từ bảng giá" phải chốt trước `/speckit-plan`, và spec này theo kết quả đó.
+- Quy tắc tính giá của một khung (từng khung 30 phút, quy ra đ/giờ) dùng chung với spec 020 và 040; đã được B ↔ D chốt (phương án 1.A): giá mỗi khung 30 phút = `pricePerHour / 2`.
 - Khách chưa đăng nhập đọc được thông tin công khai của cơ sở đang hoạt động, sân con, bảng giá, đánh giá đang hiển thị và danh mục (cùng yêu cầu với spec 020). Người chơi mở được theo liên kết trực tiếp một cơ sở đang tạm ngừng để thấy ghi chú (cùng đề xuất với spec 070 research R6). Hai điểm này cần D xác nhận ở bảng phân quyền của đặc tả CSDL.
 - Số điện thoại của cơ sở được công khai cho mọi người (đã chốt ở Clarifications); spec 111 cần ghi rõ cho chủ sân biết khi nhập số này.
 - Luồng "đăng nhập rồi quay lại màn hình trước và tiếp tục thao tác" do spec 010 cung cấp; spec 020 và 022 cũng cần cùng cơ chế.

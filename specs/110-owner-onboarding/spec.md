@@ -6,7 +6,7 @@
 
 **Status**: Draft
 
-**Input**: Người chơi chọn “Tôi là chủ sân” để nộp hồ sơ cơ sở, theo dõi kết quả duyệt và nộp lại nếu bị từ chối.
+**Input**: Người chơi chọn “Đăng ký làm chủ sân” để nộp hồ sơ cơ sở, theo dõi kết quả duyệt và nộp lại nếu bị từ chối.
 
 ## Actors
 
@@ -26,7 +26,7 @@ Người chơi muốn đăng ký cơ sở để trở thành chủ sân. Họ nh
 
 **Acceptance Scenarios**:
 
-1. **Given** tài khoản có trạng thái chưa nộp, **When** người chơi chọn “Tôi là chủ sân”, **Then** app mở biểu mẫu trống và giải thích quyền vẫn là người chơi cho tới khi admin duyệt.
+1. **Given** tài khoản có trạng thái chưa nộp, **When** người chơi chọn “Đăng ký làm chủ sân”, **Then** app mở biểu mẫu trống và giải thích quyền vẫn là người chơi cho tới khi admin duyệt.
 2. **Given** biểu mẫu hợp lệ và đủ ảnh/giấy tờ bắt buộc, **When** người chơi nộp hồ sơ, **Then** hồ sơ được ghi nhận một lần, `ownerStatus` thành `pending`, `role` vẫn là `PLAYER`, và app hiện trạng thái chờ duyệt.
 3. **Given** hồ sơ đã `pending`, **When** người dùng mở ứng dụng hoặc thử truy cập chức năng đăng/ quản lý sân, **Then** trạng thái chờ duyệt được hiển thị và thao tác quản lý bị từ chối.
 4. **Given** biểu mẫu còn thiếu hoặc có trường không hợp lệ, **When** người chơi nộp, **Then** lỗi được chỉ rõ tại trường tương ứng và không tạo hồ sơ.
@@ -88,8 +88,8 @@ Tên enum trong database giữ nguyên dạng IN HOA theo [đặc tả CSDL](../
 
 ### Functional Requirements
 
-- **FR-001**: Người dùng đã đăng nhập với `role = PLAYER` PHẢI có thể mở luồng “Tôi là chủ sân” từ khu vực tài khoản/hồ sơ.
-- **FR-002**: Biểu mẫu PHẢI thu thập tên cơ sở, địa chỉ, vị trí ghim bản đồ (tọa độ), số sân, giờ mở cửa, tên người đại diện và số điện thoại người đại diện.
+- **FR-001**: Người dùng đã đăng nhập với `role = PLAYER` PHẢI có thể mở luồng “Đăng ký làm chủ sân” từ khu vực tài khoản/hồ sơ.
+- **FR-002**: Biểu mẫu PHẢI thu thập tên cơ sở, địa chỉ, quận/huyện (chọn từ danh mục chung), vị trí ghim bản đồ (tọa độ), số điện thoại của cơ sở (công khai cho người chơi, spec 030), số sân, giờ mở cửa, tên người đại diện và số điện thoại người đại diện. Các trường này cùng ảnh cơ sở (ít nhất 1 ảnh) PHẢI đủ điều kiện bắt buộc khi tạo cơ sở của spec 111, vì cơ sở được tạo tự động từ hồ sơ khi admin duyệt (spec 120).
 - **FR-003**: Biểu mẫu PHẢI cho người dùng đính kèm ảnh cơ sở và giấy tờ chứng minh trước khi nộp. Giấy tờ chứng minh chỉ nhận ảnh JPEG, PNG hoặc WebP, tối đa 2 MB mỗi tệp.
 - **FR-004**: Trước khi gửi, app PHẢI cho người dùng xem lại thông tin và báo lỗi xác thực ngay tại trường liên quan.
 - **FR-005**: Khi nộp thành công, hệ thống PHẢI ghi hồ sơ chủ sân và đặt `ownerStatus = PENDING`; `role` vẫn là `PLAYER` cho tới quyết định duyệt.
@@ -105,7 +105,7 @@ Tên enum trong database giữ nguyên dạng IN HOA theo [đặc tả CSDL](../
 - **FR-015**: App PHẢI có trạng thái tải, trạng thái chưa có hồ sơ, lỗi tải dữ liệu, lỗi xác thực, lỗi tải tệp và hành động thử lại phù hợp.
 - **FR-016**: Khi tải tệp hoặc nộp hồ sơ đang xử lý, app PHẢI báo tiến trình/trạng thái, khóa thao tác gửi lặp và không làm mất dữ liệu biểu mẫu khi có lỗi có thể khôi phục.
 - **FR-017**: Khi trạng thái hồ sơ thay đổi trong lúc biểu mẫu đang mở, app PHẢI làm mới trạng thái trước khi chấp nhận thao tác và thông báo nếu thao tác không còn hợp lệ.
-- **FR-018**: Nếu người nộp đã được duyệt, luồng đăng ký mới không được tạo thêm hồ sơ. Chỉnh sửa vận hành cơ sở thuộc spec 111 và không yêu cầu duyệt lại; thay đổi người đại diện hoặc giấy tờ chứng minh PHẢI được admin duyệt lại trước khi có hiệu lực.
+- **FR-018**: Khi người dùng đang `ownerStatus = APPROVED`, luồng đăng ký mới không được tạo thêm hồ sơ. Nếu quyền chủ sân đã bị admin thu hồi (`ownerStatus = NONE`, spec 120), người dùng được nộp một hồ sơ mới; hồ sơ cũ giữ `APPROVED` để lưu lịch sử. Chỉnh sửa vận hành cơ sở thuộc spec 111 và không yêu cầu duyệt lại; thay đổi người đại diện hoặc giấy tờ chứng minh PHẢI được admin duyệt lại trước khi có hiệu lực.
 - **FR-019**: Khi `ownerStatus = PENDING`, người nộp KHÔNG ĐƯỢC sửa hoặc rút hồ sơ; app PHẢI giữ nội dung đã gửi cho tới khi có quyết định.
 
 ### Validation
@@ -154,10 +154,10 @@ Tên enum trong database giữ nguyên dạng IN HOA theo [đặc tả CSDL](../
 ### Dependencies
 
 - **Spec 010 — account auth**: cung cấp đăng nhập, danh tính tài khoản và vai trò mặc định người chơi; không thay thế hay mở rộng luồng đăng nhập.
-- **Spec 011 — account profile**: cung cấp lối vào đăng ký và hiển thị trạng thái chủ sân ở tài khoản. Spec này cung cấp biểu mẫu, hồ sơ và hành vi nộp/nộp lại; hai spec cần thống nhất nguồn trạng thái (users hay ownerApplications), nhãn và hành vi điều hướng.
-- **Spec 120 — admin**: quyết định duyệt/từ chối, bắt buộc có lý do khi từ chối, cập nhật `role`/`ownerStatus` và có thể phát thông báo. `specs/120-admin/spec.md` chưa tồn tại tại thời điểm viết; các điểm trên là giả định về giao diện tích hợp, không phải thiết kế màn hình hay quy trình admin trong spec này.
+- **Spec 011 — account profile**: cung cấp lối vào đăng ký và hiển thị trạng thái chủ sân ở tài khoản. Spec này cung cấp biểu mẫu, hồ sơ và hành vi nộp/nộp lại; trạng thái hiển thị lấy từ `users.ownerStatus`, lý do từ chối lấy từ `ownerApplications.rejectReason` (spec 011 FR-008).
+- **Spec 120 — admin**: quyết định duyệt/từ chối, bắt buộc có lý do khi từ chối, cập nhật `role`/`ownerStatus` và có thể phát thông báo. Duyệt hồ sơ tạo cơ sở từ `venueDraft` (spec 120 FR-004).
 - **Spec 111/112 — quản lý sân**: chỉ mở các chức năng thuộc phạm vi đó sau khi đã được duyệt; đăng và quản lý sân không thuộc spec này.
-- **Spec 100 — thông báo**: thông báo đẩy kết quả không thuộc phạm vi; trạng thái vẫn phải xem được trong app.
+- **Spec 100 — thông báo**: kết quả được báo bằng `OWNER_APPROVED`, `OWNER_REJECTED` (và `OWNER_REVOKED` khi bị thu hồi); trạng thái vẫn phải xem được trong app.
 - **Database README**: nguồn dữ liệu `users/{uid}` và `ownerApplications/{id}`, quyền đọc/ghi, private bucket giấy tờ và quy tắc trạng thái.
 
 ## Open Questions / Assumptions

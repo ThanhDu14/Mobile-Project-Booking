@@ -115,7 +115,7 @@ Trong điều kiện mạng di động chập chờn, khi người chơi bấm "
 ### Edge Cases
 
 - **Khung giờ chuyển giao ngày hôm nay**: Người chơi mở app lúc 16:59 xem slot 17:00–17:30 (vẫn còn hợp lệ), nhưng đến 17:01 mới bấm chọn. Hệ thống phải kiểm tra lại thời gian thực lúc bấm và báo slot đã qua giờ đặt, không cho phép chọn.
-- **Ngày cơ sở đóng cửa hoặc bảo trì**: Người chơi chọn một ngày mà cơ sở tạm ngưng hoạt động hoặc nghỉ lễ (được chủ sân cấu hình từ trước). Lưới giờ hiển thị trạng thái rỗng đặc biệt kèm thông báo: "Cơ sở đóng cửa vào ngày này" và gợi ý chọn ngày khác.
+- **Ngày cơ sở đóng cửa hoặc bảo trì**: Chủ sân đóng cả ngày bằng cách khóa toàn bộ khung giờ của ngày đó (`BLOCKED`, lý do `MAINTENANCE` hoặc `EVENT`, spec 111); không có cấu hình ngày nghỉ riêng. Khi mọi khung giờ của mọi sân con trong ngày đều bị khóa, lưới giờ hiển thị trạng thái rỗng đặc biệt kèm thông báo: "Cơ sở đóng cửa vào ngày này" và gợi ý chọn ngày khác.
 - **Toàn bộ sân con trong ngày đã kín chỗ**: Khi tất cả khung giờ của tất cả sân con đều ở trạng thái "Đã đặt" hoặc "Khóa", app hiển thị banner thông báo "Hôm nay đã kín sân" và nút chuyển nhanh sang ngày kế tiếp còn giờ trống.
 - **Giá giờ cao điểm / cuối tuần xen kẽ**: Người chơi chọn 2 slot liên tiếp: Slot 1 rơi vào giờ thường (16:30–17:00, 40.000đ), Slot 2 rơi vào giờ cao điểm (17:00–17:30, 60.000đ). Thanh tóm tắt và màn hình xác nhận phải hiển thị tách bạch đơn giá từng slot và tính đúng tổng tiền là 100.000đ.
 - **Xung đột khung giờ giữa 2 priceRules**: Giờ bắt đầu và kết thúc của các quy tắc giá (PriceRule) bắt buộc phải tròn theo bước nhảy 30 phút (ví dụ 17:00, 17:30, 18:00...). Bảng giá theo giờ (`pricePerHour`) được quy đổi chính xác cho từng slot 30 phút (`pricePerSlot = pricePerHour / 2`). Ràng buộc này được thống nhất với Thành viên D khi cấu hình bảng giá, do đó mỗi slot 30 phút luôn có đơn giá xác định duy nhất.
@@ -154,17 +154,17 @@ Trong điều kiện mạng di động chập chờn, khi người chơi bấm "
 - **FR-024**: Hệ thống PHẢI xử lý và hiển thị đầy đủ 4 trạng thái giao diện: Đang tải (Loading skeleton), Có dữ liệu (Content), Rỗng (Empty: ngày đóng cửa, không có sân), Lỗi (Error: mất mạng, lỗi máy chủ kèm nút thử lại).
 - **FR-025**: Toàn bộ luồng nghiệp vụ từ màn hình chi tiết sân đến khi chuyển giao sang bước thanh toán PHẢI hoàn tất trong không quá 3 bước màn hình (Chi tiết sân -> Lưới khung giờ -> Màn hình xác nhận giữ chỗ).
 - **FR-026**: Hệ thống PHẢI giới hạn người chơi được chọn tối đa 8 slot 30 phút (tương đương tối đa 4 giờ chơi liên tục) trong một đơn đặt sân.
-- **FR-027**: Mọi trạng thái đơn đặt sân được quản lý trong spec này PHẢI nằm trong tập trạng thái ban đầu của máy trạng thái: khởi tạo và giữ chỗ thành công chuyển sang `HOLD`, hủy bởi người dùng chuyển sang `CANCELLED`, quá thời gian giữ chỗ chuyển sang `EXPIRED`.
+- **FR-027**: Đơn trong spec này chỉ có hai trạng thái: giữ chỗ thành công là `HOLD`; hết 5 phút hoặc người chơi bấm "Hủy giữ chỗ"/"Quay lại" là `EXPIRED` (slot được nhả ngay, đơn không hiện trong "Lịch đặt của tôi" theo spec 060 FR-004). Các trạng thái sau thanh toán thuộc spec 050, 060, 112.
 - **FR-028**: Hệ thống PHẢI hỗ trợ hiển thị giao diện rõ ràng trên cả 2 chế độ Sáng (Light mode) và Tối (Dark mode) với độ tương phản màu đạt chuẩn nhận diện trạng thái slot.
 
 ---
 
 ### Key Entities *(mandatory)*
 
-- **VenueCourt (Sân con)**: Đại diện cho một sân cầu lông cụ thể trong cơ sở (ví dụ: Sân 1, Sân 2). Thuộc tính: `courtId`, `venueId`, `name`, `status` (ACTIVE / MAINTENANCE).
-- **CourtSlot (Khung giờ sân)**: Đại diện cho một đơn vị thời gian 30 phút có thể đặt của một sân con cụ thể trong một ngày. Thuộc tính: `slotId` (ID tất định theo định dạng `{courtId}_{yyyyMMdd}_{HHmm}`), `courtId`, `venueId`, `date` (`yyyyMMdd`), `startTime` (`HHmm`), `endTime` (`HHmm`), `status` (`AVAILABLE`, `HELD`, `BOOKED`, `BLOCKED`), `heldByUserId`, `holdExpiresAt` (thời điểm hết hạn giữ chỗ UTC).
-- **PriceRule (Quy tắc giá)**: Đại diện cho cấu hình giá của cơ sở theo khung giờ và ngày. Thuộc tính: `ruleId`, `venueId`, `dayOfWeek` (thứ trong tuần), `startTime`, `endTime` (bước nhảy 30 phút), `pricePerHour` (đơn vị VND, kiểu Long), `ruleType` (REGULAR, PEAK, WEEKEND).
-- **Booking (Đơn đặt chỗ)**: Đại diện cho đơn đặt của người chơi đang trong quá trình giữ chỗ. Thuộc tính: `bookingId`, `userId`, `venueId`, `totalAmount`, `status` (`HOLD`, `PENDING`, `CONFIRMED`, `CANCELLED`, `EXPIRED`), `slotIds` (danh sách ID slot được giữ), `requestId` (UUID chống trùng lặp), `holdExpiresAt`, `createdAt`, `updatedAt`.
+- **VenueCourt (Sân con)**: Sân con của cơ sở theo đặc tả CSDL mục 4.3. Thuộc tính: `courtId`, `venueId`, `name`, `surfaceType` (`WOOD`, `PU`, `MAT`), `isActive`, `sortOrder`.
+- **CourtSlot (Khung giờ sân)**: Khung giờ 30 phút đang bị chiếm của một sân con, theo đặc tả CSDL mục 4.4. Không có document nghĩa là khung đó trống. Thuộc tính: `slotId` (ID tất định `{courtId}_{yyyyMMdd}_{HHmm}`), `venueId`, `courtId`, `date` (`yyyyMMdd`), `startAt`, `endAt`, `status` (`HOLD`, `BOOKED`, `BLOCKED`), `bookingId`, `holdBy`, `holdExpiresAt` (đã hết hạn thì coi như trống), `blockReason`.
+- **PriceRule (Quy tắc giá)**: Bảng giá của cơ sở theo đặc tả CSDL mục 4.3, áp dụng chung cho mọi sân con. Thuộc tính: `daysOfWeek` (1–7), `startTime`, `endTime` (`HHmm`, bội số 30 phút), `pricePerHour` (Long VND), `label` (`NORMAL`, `PEAK`, `WEEKEND`).
+- **Booking (Đơn đặt chỗ)**: Đơn đặt sân theo đặc tả CSDL mục 4.5. Thuộc tính spec này dùng: `bookingId` (chính là `requestId` UUID do app sinh, để chống tạo đơn trùng), `userId`, `venueId`, `venueSnapshot`, `items` (mỗi khung 30 phút: `courtId`, `courtName`, `slotId`, `startAt`, `endAt`, `price`), `startAt`, `endAt`, `subtotal`, `total`, `status` (`HOLD`, `EXPIRED`), `holdExpiresAt`, `createdAt`, `updatedAt`.
 
 ---
 

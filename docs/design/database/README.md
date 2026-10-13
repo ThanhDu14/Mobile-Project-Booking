@@ -38,8 +38,10 @@ Người phụ trách viết bảng trường chi tiết, index, Rules và test 
 | `venues/{venueId}/courts/{courtId}` | Sân con | **D** | 11 ghi; 03, 04 đọc |
 | `venues/{venueId}/priceRules/{id}` | Bảng giá theo khung giờ | **D** | 11 ghi; 03, 04 đọc |
 | `slots/{slotId}` | Trạng thái từng khung giờ của sân con | **B** | 04 ghi (transaction); 11 khóa giờ |
-| `bookings/{bookingId}` | Đơn đặt sân | **B** | 04, 05, 06; 11 duyệt |
-| `vouchers/{code}` | Mã khuyến mãi | **B** | 05 áp dụng; 11 tạo |
+| `bookings/{bookingId}` | Đơn đặt sân | **B** | 04, 05, 06; 11 duyệt, check-in |
+| `recurringGroups/{recurringGroupId}` | Nhóm đơn đặt cố định theo tuần | **B** | 04, 05, 06 |
+| `venues/{venueId}/vouchers/{code}` | Voucher của cơ sở | **B** (schema), **D** (tạo) | 05 áp dụng; 11 tạo |
+| `systemVouchers/{code}` | Voucher toàn hệ thống | **B** (schema), **D** (tạo) | 05 áp dụng; 12 tạo |
 | `reviews/{reviewId}` | Đánh giá sân/buổi vãng lai | **C** | 07, 08; 11 phản hồi |
 | `users/{uid}/favorites/{venueId}` | Sân yêu thích (= theo dõi) | **C** | 07; 10 đọc để gửi khuyến mãi |
 | `dropInSessions/{id}` | Buổi chơi vãng lai | **C** | 08 đọc; 11 tạo |
@@ -61,6 +63,7 @@ erDiagram
     VENUE ||--|{ PRICE_RULE : "có"
     COURT ||--o{ SLOT : "theo ngày giờ"
     USER ||--o{ BOOKING : "đặt"
+    RECURRING_GROUP ||--|{ BOOKING : "gồm các buổi"
     BOOKING ||--|{ SLOT : "giữ"
     VOUCHER |o--o{ BOOKING : "áp dụng"
     BOOKING ||--o| REVIEW : "sinh"
@@ -94,10 +97,12 @@ Các bảng dưới đây là bản khởi đầu. Người phụ trách hoàn t
 | `level` | String | `BEGINNER`, `INTERMEDIATE`, `ADVANCED` |
 | `favoriteDistrictIds` | Array\<String> | Khu vực hay chơi |
 | `role` 🔒 | String | `PLAYER`, `OWNER`, `ADMIN`. Bản sao của custom claim `appRole` |
-| `ownerStatus` 🔒 | String | `NONE`, `PENDING`, `APPROVED`, `REJECTED` |
+| `ownerStatus` 🔒 | String | `NONE`, `PENDING`, `APPROVED`, `REJECTED`. Bị admin thu hồi quyền thì về `NONE` (spec 120) |
+| `ownerRevokedReason` 🔒 | String? | Lý do admin ghi khi thu hồi quyền chủ sân; xóa khi được duyệt lại |
 | `accountStatus` 🔒 | String | `ACTIVE`, `LOCKED` |
 | `fcmTokens` | Array\<String> | Chỉ chủ tài khoản ghi |
 | `notificationPrefs` | Map\<String, Boolean> | Theo loại thông báo ở [4.13](#413-usersuidnotificationsid--d) |
+| `walletBalance` 🔒 | Long | Số dư ví giả lập (VND), khởi tạo 0 khi đăng ký. Chỉ Edge Function ghi (nạp ví giả lập, thanh toán, hoàn tiền); không bao giờ âm (spec 050) |
 | `termsAcceptedAt` | Timestamp | Bắt buộc khi đăng ký |
 
 Xóa tài khoản: Edge Function `delete-account` xóa document, ảnh, lịch sử tìm kiếm, yêu thích; ẩn danh hóa `userId` trong đơn đặt và đánh giá cũ.
@@ -108,7 +113,7 @@ Xóa tài khoản: Edge Function `delete-account` xóa document, ảnh, lịch s
 
 ### 4.2. `ownerApplications/{id}` — D
 
-`uid`, `venueDraft` (Map: tên, địa chỉ, tọa độ, số sân, giờ mở cửa), `representativeName`, `representativePhone`, `documentPaths` (Array, object trong bucket private `owner-docs`), `status` 🔒 (`PENDING`, `APPROVED`, `REJECTED`), `rejectReason` 🔒 (bắt buộc khi từ chối), `reviewedBy` 🔒, `reviewedAt` 🔒, `submittedAt`.
+`uid`, `venueDraft` (Map: tên, địa chỉ, `districtId`, tọa độ, số điện thoại cơ sở, số sân, giờ mở cửa, `photoPaths` ảnh cơ sở; đủ các trường bắt buộc của `venues` để tạo cơ sở khi duyệt), `representativeName`, `representativePhone`, `documentPaths` (Array, object trong bucket private `owner-docs`), `status` 🔒 (`PENDING`, `APPROVED`, `REJECTED`), `rejectReason` 🔒 (bắt buộc khi từ chối), `reviewedBy` 🔒, `reviewedAt` 🔒, `submittedAt`.
 
 Duyệt hồ sơ chạy bằng Edge Function `review-owner-application`: set custom claim `appRole=OWNER`, cập nhật `users.role/ownerStatus`, tạo `venues` từ `venueDraft`, gửi thông báo.
 
@@ -129,11 +134,12 @@ Duyệt hồ sơ chạy bằng Edge Function `review-owner-application`: set cus
 | `courtCount` | Int | |
 | `minPricePerHour` 🔒 | Long | Tính lại khi đổi bảng giá, phục vụ lọc/sắp xếp theo giá |
 | `ratingAvg` 🔒, `ratingCount` 🔒 | Double, Int | Cập nhật khi có đánh giá mới |
+| `acceptsRecurring` | Boolean | Cơ sở có nhận đặt cố định theo tuần không (spec 041). Mặc định `true`, chủ sân bật/tắt ở spec 111 |
 | `status` | String | `ACTIVE`, `HIDDEN` (chủ sân ẩn), `LOCKED` 🔒 (admin khóa) |
 
 **Sân con `courts/{courtId}`:** `name`, `surfaceType` (`WOOD`, `PU`, `MAT`), `isActive`, `sortOrder`.
 
-**Bảng giá `priceRules/{id}`:** `daysOfWeek` (Array\<Int> 1–7), `startTime`, `endTime` (`HHmm`), `pricePerSlot` (Long), `label` (`NORMAL`, `PEAK`, `WEEKEND`). Các rule cùng ngày không được chồng giờ.
+**Bảng giá `priceRules/{id}`:** `daysOfWeek` (Array\<Int> 1–7), `startTime`, `endTime` (`HHmm`, bội số 30 phút), `pricePerHour` (Long, VND/giờ, chia hết cho 2.000), `label` (`NORMAL`, `PEAK`, `WEEKEND`). Giá mỗi khung 30 phút = `pricePerHour / 2` (phương án 1.A). Bảng giá áp dụng chung cho mọi sân con của cơ sở. Các rule cùng ngày không được chồng giờ; khung nào không có rule thì không đặt được.
 
 ### 4.4. `slots/{courtId}_{yyyyMMdd}_{HHmm}` — B
 
@@ -144,7 +150,7 @@ Một document cho mỗi khung giờ **đang bị chiếm**. Không có document
 | `venueId`, `courtId` | String | |
 | `date` | String `yyyyMMdd` | Lưới giờ truy vấn theo `venueId` + `date` |
 | `startAt`, `endAt` | Timestamp | |
-| `status` | String | `HOLD`, `BOOKED`, `BLOCKED` |
+| `status` | String | `HOLD` (đơn đang `HOLD`), `BOOKED` (từ khi đơn sang `PENDING`), `BLOCKED` |
 | `bookingId` | String? | Khi `HOLD`/`BOOKED` |
 | `holdBy` | String? | `uid` người đang giữ |
 | `holdExpiresAt` | Timestamp? | `serverTimestamp + 5 phút`. Đã hết hạn coi như trống |
@@ -159,8 +165,9 @@ Một document cho mỗi khung giờ **đang bị chiếm**. Không có document
 | Trường | Kiểu | Ghi chú |
 |---|---|---|
 | `userId`, `venueId` | String | |
-| `venueSnapshot` | Map | `name`, `address`, `photoUrl` |
-| `items` | Array\<Map> | `courtId`, `courtName`, `slotId`, `startAt`, `endAt`, `price` |
+| `venueSnapshot` | Map | `name`, `address`, `phone`, `photoUrl` |
+| `items` | Array\<Map> | `courtId`, `courtName`, `slotId`, `startAt`, `endAt`, `price` (mỗi phần tử là một khung 30 phút) |
+| `startAt`, `endAt` 🔒 | Timestamp | Giờ bắt đầu sớm nhất và kết thúc muộn nhất trong `items`; dùng để sắp xếp, nhắc lịch, tính hạn hủy và chuyển `COMPLETED`/`NO_SHOW` |
 | `recurringGroupId` | String? | Các đơn đặt cố định theo tuần dùng chung ID |
 | `status` 🔒 | String | Xem máy trạng thái bên dưới |
 | `subtotal`, `discount`, `total` 🔒 | Long | Tính ở server |
@@ -170,21 +177,32 @@ Một document cho mỗi khung giờ **đang bị chiếm**. Không có document
 | `depositAmount` 🔒 | Long | |
 | `holdExpiresAt` | Timestamp | |
 | `qrToken` 🔒 | String | Chuỗi ngẫu nhiên, sinh khi `CONFIRMED` |
-| `checkedInAt` 🔒 | Timestamp? | |
-| `cancelReason`, `cancelledBy` | String? | `USER`, `OWNER`, `SYSTEM` |
+| `checkedInAt` 🔒 | Timestamp? | Ghi khi chủ sân quét QR hoặc nhập mã đặt sân (Edge Function `checkin-booking`); đơn vẫn ở `CONFIRMED` |
+| `completedAt` 🔒 | Timestamp? | Ghi khi đơn chuyển `COMPLETED`; spec 070 tính hạn 7 ngày đánh giá từ mốc này |
+| `pendingAt`, `approvalDeadline` 🔒 | Timestamp? | Ghi khi đơn sang `PENDING`. `approvalDeadline = min(pendingAt + 60 phút, startAt)` |
+| `cancelReason`, `cancelledBy` | String? | `cancelledBy`: `USER`, `OWNER`, `SYSTEM`. Đơn quá hạn duyệt: `REJECTED`, `cancelledBy = SYSTEM`, `cancelReason = "Quá hạn duyệt"` |
+| `cancelledAt`, `refundAmount` 🔒 | Timestamp?, Long? | Thời điểm hủy/từ chối và số tiền đã hoàn vào ví giả lập |
 | `rescheduleRequest` | Map? | `newItems`, `status` (`PENDING`, `ACCEPTED`, `DECLINED`) |
 
 **Máy trạng thái đơn:**
 
 ```
-HOLD ──(chọn thanh toán)──▶ PENDING ──(chủ sân duyệt)──▶ CONFIRMED ──(check-in)───────▶ COMPLETED
-  │                           │  └─(chủ sân từ chối)──▶ REJECTED      └──(quá giờ, no-show)──▶ NO_SHOW
+HOLD ──(chọn thanh toán)──▶ PENDING ──(chủ sân duyệt)──▶ CONFIRMED ──(hết giờ, đã check-in)──▶ COMPLETED
+  │                           │  └─(chủ sân từ chối)──▶ REJECTED      └──(hết giờ, chưa check-in)─▶ NO_SHOW
   └─(quá 5 phút)──▶ EXPIRED   └──────────┬──────────────────┘
                                          ▼
                                      CANCELLED (người chơi hủy theo chính sách / chủ sân hủy)
 ```
 
+Check-in tại sân chỉ ghi `checkedInAt`, đơn vẫn ở `CONFIRMED` cho tới khi hết giờ chơi. Khi qua giờ kết thúc muộn nhất trong `items`, `booking-finalize` chuyển đơn sang `COMPLETED` (nếu có `checkedInAt`, đồng thời ghi `completedAt`) hoặc `NO_SHOW` (nếu không có). Đơn đã check-in không hủy được nữa.
+
+Đơn `PENDING` quá `approvalDeadline` mà chủ sân chưa duyệt thì `booking-timeout` chuyển sang `REJECTED` và hoàn 100% số tiền đã trả vào ví giả lập (phương án 2.A).
+
 Mọi chuyển trạng thái khác bị Rules/Edge Functions chặn. Khi đơn sang `EXPIRED`, `REJECTED`, `CANCELLED` thì xóa các document `slots` của đơn trong cùng transaction.
+
+### 4.5a. `recurringGroups/{recurringGroupId}` — B
+
+Nhóm đơn đặt cố định theo tuần (spec 041). Mỗi buổi là một document `bookings` riêng có `recurringGroupId`; document nhóm chỉ giữ thông tin chung: `userId`, `venueId`, `daysOfWeek`, `startTime`, `endTime`, `startDate`, `endDate`, `totalSessions`, `subtotal`, `discount`, `total`, `depositAmount` 🔒, `paymentMethod`, `paymentStatus` 🔒, `voucherCode`, `createdAt`. Thanh toán một lần cho cả nhóm (spec 050); tiền giảm và tiền cọc được phân bổ xuống từng buổi theo spec 060. Trạng thái từng buổi nằm ở `bookings`, nhóm không có `status` riêng.
 
 ### 4.6. `venues/{venueId}/vouchers/{code}` & `systemVouchers/{code}` — B & D
 
@@ -193,6 +211,8 @@ Tách 2 collection độc lập (Thống nhất 12/10 phương án 3.B):
 - **Voucher hệ thống**: `systemVouchers/{code}` (do admin tạo ở spec 120).
 
 Cả hai cùng chia sẻ cấu trúc trường: `code`, `type` (`PERCENT`, `FIXED`), `value`, `maxDiscount`, `minOrderTotal` (Long), `validFrom`, `validTo`, `usageLimit`, `usedCount` 🔒, `perUserLimit`, `isActive`. Lượt dùng lưu ở subcollection `redemptions/{bookingId}` (`userId`, `usedAt`) 🔒 bên dưới voucher tương ứng.
+
+ID document là chính mã `code` (chữ in hoa). Mã phải duy nhất trên toàn hệ thống, tính cả hai collection; Edge Function tạo voucher kiểm tra bằng collection group query trước khi ghi. Khi người chơi nhập mã, server tìm trong voucher của cơ sở đang đặt trước, rồi tới `systemVouchers`.
 
 ### 4.7. `reviews/{reviewId}` — C
 
@@ -226,16 +246,22 @@ Cả hai cùng chia sẻ cấu trúc trường: `code`, `type` (`PERCENT`, `FIXE
 
 `type`, `title`, `body`, `data` (Map: `bookingId`, `sessionId`, ...), `isRead`, `createdAt`. Client chỉ được sửa `isRead`.
 
-Các `type` (mỗi nhóm phát sinh thông báo báo cho D trước 14/10):
+Các `type` (đã chốt 13/10 theo yêu cầu của các spec nguồn; thêm loại mới phải cập nhật cả bảng này và spec 100):
 
 | type | Phát sinh từ |
 |---|---|
-| `BOOKING_CONFIRMED`, `BOOKING_REJECTED`, `BOOKING_CANCELLED`, `BOOKING_REMINDER` | 04, 06, 11 |
+| `BOOKING_CONFIRMED`, `BOOKING_REJECTED`, `BOOKING_CANCELLED`, `BOOKING_REMINDER` | 04, 06, 11 (người chơi; `BOOKING_REJECTED` dùng cho cả chủ sân từ chối và quá hạn duyệt, nội dung ghi số tiền đã hoàn) |
+| `BOOKING_NEW` | 05 (chủ sân nhận khi có đơn `PENDING` cần duyệt, kèm hạn duyệt) |
 | `DROPIN_REGISTERED`, `DROPIN_SPOT_OPENED`, `DROPIN_CHANGED` | 08, 11 |
+| `DROPIN_WAITLIST_CLOSED` | 08 (hàng chờ đóng mà chưa được nhận, hoặc buổi bị hủy khi đang chờ) |
 | `PROMOTION` | 05, 11 (voucher của sân đang theo dõi) |
-| `OWNER_APPROVED`, `OWNER_REJECTED` | 12 |
-| `REVIEW_REPLIED`, `CHAT_MESSAGE` | 07, 09 |
+| `OWNER_APPROVED`, `OWNER_REJECTED`, `OWNER_REVOKED` | 12 |
+| `REVIEW_REPLIED`, `REVIEW_NEW`, `REVIEW_REMINDER` | 07 (`REVIEW_NEW` cho chủ sân, `REVIEW_REMINDER` nhắc người chơi đánh giá) |
+| `GROUP_ACTIVITY` | 09 (yêu cầu tham gia, được duyệt/từ chối, bị mời ra, sự kiện mới/sửa/xóa; `data.event` ghi loại cụ thể) |
+| `CHAT_MESSAGE` | 09 |
 | `SYSTEM` | 12 |
+
+Người dùng tự làm một thao tác (tự hủy đơn, tự hủy đăng ký vãng lai, tự vào hàng chờ) thì không nhận thông báo cho thao tác đó; app hiện kết quả ngay trên màn hình.
 
 ## 5. ID tất định
 
@@ -261,6 +287,8 @@ Người phụ trách bổ sung vào `firestore.indexes.json` khi viết `plan.m
 | `slots` | `venueId`, `date` | Lưới khung giờ (04), lịch tổng hợp (11) |
 | `bookings` | `userId`, `status`, `startAt` | Lịch của tôi (06) |
 | `bookings` | `venueId`, `status`, `startAt` | Duyệt đơn, lịch chủ sân (11) |
+| `bookings` | `status`, `approvalDeadline` | Quét đơn quá hạn duyệt (`booking-timeout`) |
+| `bookings` | `status`, `endAt` | Chuyển `COMPLETED`/`NO_SHOW` (`booking-finalize`) |
 | `reviews` | `venueId`, `status`, `createdAt desc` | Chi tiết sân (03) |
 | `dropInSessions` | `districtId`, `date`, `status` | Danh sách vãng lai (08) |
 | `chats` | `memberIds` (array-contains), `updatedAt desc` | Danh sách hội thoại (09) |
@@ -278,8 +306,9 @@ Ký hiệu: R đọc, C tạo, U sửa, D xóa. "Chủ" = người sở hữu do
 | `ownerApplications` | C, R của mình; U khi `REJECTED` (nộp lại) | R của mình | R, duyệt qua Edge Function | Ghi 🔒 |
 | `venues`, `courts`, `priceRules` | R khi `ACTIVE` | CRUD cơ sở của mình (trừ 🔒) | R, khóa | Ghi 🔒 |
 | `slots` | R; C/U chỉ trong transaction đặt sân với `holdBy == uid` | C/D `BLOCKED` cho sân của mình | R | Dọn slot hết hạn |
-| `bookings` | C `HOLD` của mình, R của mình, U → `CANCELLED` theo chính sách | R đơn sân mình, U duyệt/từ chối | R | Tính tiền, `EXPIRED`, `COMPLETED` |
-| `vouchers` | R voucher đang hiệu lực | CRUD voucher sân mình | CRUD toàn hệ thống | Ghi `usedCount` |
+| `bookings` | C `HOLD` của mình, R của mình, U → `CANCELLED` theo chính sách | R đơn sân mình, U duyệt/từ chối, check-in qua `checkin-booking` | R | Tính tiền, `EXPIRED`, `COMPLETED`, `NO_SHOW` |
+| `recurringGroups` | R của mình | R nhóm thuộc sân mình | R | Ghi toàn bộ |
+| `venues/*/vouchers`, `systemVouchers` | R voucher đang hiệu lực | CRUD voucher sân mình (qua Edge Function kiểm tra mã trùng) | CRUD `systemVouchers` | Ghi `usedCount`, `redemptions` |
 | `reviews` | C khi đơn `COMPLETED`, U/D của mình | U `ownerReply` cho sân mình | U `status` | Cập nhật `ratingAvg` |
 | `dropInSessions` | R | CRUD buổi sân mình | R, khóa | Ghi `registeredCount` |
 | `groups`, `chats` | Thành viên R/C; nhóm `PUBLIC` ai cũng R | như người chơi | R để kiểm duyệt | |
@@ -315,6 +344,9 @@ Mỗi dòng trên cần ít nhất một test Emulator "được phép" và mộ
 | `ai-search-parse` | AI Assistant: kiểm tra lượt dùng và cache, gọi LLM, kiểm tra JSON theo schema, trả bộ lọc (xem [AI-feature.md](../../proposal/AI-feature.md)) | A |
 | `create-booking`, `cancel-booking` | Transaction giữ chỗ/đặt/hủy, tính tiền, áp voucher | B |
 | `expire-holds` (pg_cron mỗi phút) | Chuyển đơn `HOLD` quá hạn sang `EXPIRED`, xóa slot | B |
+| `booking-timeout` (pg_cron mỗi phút) | Đơn `PENDING` quá `approvalDeadline` → `REJECTED`, hoàn 100% vào ví giả lập, xóa slot, gửi `BOOKING_REJECTED` | D |
+| `booking-finalize` (pg_cron mỗi phút) | Đơn `CONFIRMED` đã qua giờ kết thúc: có `checkedInAt` → `COMPLETED` + `completedAt`; không có → `NO_SHOW` | B |
+| `checkin-booking` | Chủ sân check-in đơn đặt sân bằng QR hoặc mã đặt sân: kiểm tra quyền, trạng thái, khung giờ cho phép; ghi `checkedInAt`, và `paymentStatus = PAID` khi chủ sân xác nhận đã thu tiền | D |
 | `register-drop-in`, `cancel-drop-in` | Transaction đăng ký, hàng chờ | C |
 | `on-review-created` | Cập nhật `ratingAvg`, `ratingCount` | C |
 | `review-owner-application` | Duyệt/từ chối chủ sân, gán `appRole=OWNER` | D |
