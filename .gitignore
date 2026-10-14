@@ -17,3 +17,10 @@ local.properties
 
 # Firebase config (không commit — xem constitution)
 google-services.json
+
+# Firebase
+firebase-debug.log
+firestore-debug.log
+ui-debug.log
+.firebase/
+node_modules/
