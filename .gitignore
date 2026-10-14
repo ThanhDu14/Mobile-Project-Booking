@@ -14,3 +14,6 @@
 .cxx
 local.properties
 /.idea/
+
+# Firebase config (không commit — xem constitution)
+google-services.json
