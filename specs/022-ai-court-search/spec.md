@@ -17,6 +17,10 @@
 - Q: Mỗi người được bao nhiêu lượt AI mỗi ngày (N)? → A: 10 lượt/ngày, làm mới lúc 00:00 giờ Việt Nam.
 - Q: Khách chưa đăng nhập có được dùng ô AI không? → A: Không. Khách thấy ô AI kèm lời mời "Đăng nhập để dùng trợ lý AI"; bộ lọc thủ công của spec 020 vẫn dùng bình thường.
 
+### Session 2026-10-13
+
+- Q: Nội dung trả lời cho ý định hỏi chính sách (`faq`) lấy từ đâu? → A: B cung cấp văn bản cố định (phương án 6.A, spec 050 và 060) cho các chủ đề: hủy sân (mốc 4 giờ: hủy sớm hoàn 100%; hủy trễ mất tiền cọc hoặc phạt 30% với ví giả lập), đặt cọc (30% tổng đơn, làm tròn tới nghìn đồng), ví giả lập và voucher. App chỉ hiển thị văn bản này, AI không viết nội dung chính sách.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Tìm sân bằng một câu tự nhiên (Priority: P1)
@@ -174,7 +178,7 @@ Khi bộ lọc AI điền ra không có sân nào, app gợi ý vài cách nới
 **Xử lý theo ý định**
 
 - **FR-011** (tìm sân thường): Các điều kiện hợp lệ PHẢI được điền vào bộ lọc dùng chung của spec 020 (hiện thành chip) và chạy cùng cách tìm như khi người chơi tự chọn. Người chơi PHẢI sửa hoặc bỏ được từng chip mà không gọi AI lại.
-- **FR-012** (tìm buổi vãng lai): App PHẢI chuyển sang danh sách buổi vãng lai của spec 080 với các điều kiện tương ứng (khu vực, ngày, giờ, giá) đã điền sẵn; điều kiện spec 080 không hỗ trợ bị bỏ kèm thông báo.
+- **FR-012** (tìm buổi vãng lai): App PHẢI chuyển sang danh sách buổi vãng lai của spec 080 với các điều kiện tương ứng (khu vực, ngày, giờ, giá) đã điền sẵn; "sáng/trưa/chiều/tối" được điền thành bộ lọc khung giờ cùng tên của spec 080 (cùng mốc giờ với FR-007), giờ cụ thể được điền thành khung giờ chứa giờ bắt đầu đó; điều kiện spec 080 không hỗ trợ bị bỏ kèm thông báo.
 - **FR-013** (thiếu thông tin): App PHẢI hỏi lại **tối đa một lần** bằng một câu cố định kèm chip chọn nhanh cho thông tin còn thiếu, giữ các điều kiện đã hiểu. Bấm chip thì app tự điền, KHÔNG gọi AI và KHÔNG trừ lượt. Sau lần hỏi lại (hoặc khi người chơi chọn "Tự chọn"), app PHẢI mở bộ lọc thủ công với các giá trị đã hiểu được điền sẵn.
 - **FR-014** (hỏi chính sách): App PHẢI hiển thị nội dung chính sách có sẵn theo chủ đề (hủy sân, đặt cọc, voucher, thanh toán), không gọi AI thêm; chủ đề không xác định thì hiện danh sách chủ đề để chọn.
 - **FR-015** (lạc đề): App PHẢI hiện thông báo cố định kèm câu ví dụ. Câu có cả phần tìm sân và phần lạc đề PHẢI được xử lý như câu tìm sân với phần tìm sân.
@@ -230,9 +234,9 @@ Khi bộ lọc AI điền ra không có sân nào, app gợi ý vài cách nới
 - Nhà cung cấp và mô hình AI được chốt ở buổi họp 09/10, phải có gói miễn phí, không bắt buộc gắn thẻ, theo constitution v1.2.0; spec này không phụ thuộc vào nhà cung cấp cụ thể.
 - Bộ lọc dùng chung, danh sách kết quả, trạng thái rỗng/lỗi và quy tắc xin quyền vị trí thuộc spec 020; tính năng này chỉ điền bộ lọc. Khi có khung giờ, giá được hiểu theo giá của đúng khung đó như spec 020 đã chốt.
 - Danh sách buổi vãng lai và bộ lọc của nó thuộc spec 080 (C). Các điều kiện AI được phép điền cho buổi vãng lai (khu vực, ngày, giờ, giá; có thể thêm trình độ) và màn hình đích phải thống nhất A ↔ C trước `/speckit-plan`.
-- Nội dung chính sách hủy, đặt cọc, voucher, thanh toán lấy từ spec 050, 060 (B) dưới dạng văn bản cố định; A ↔ B thống nhất danh sách chủ đề trước `/speckit-plan`.
+- Nội dung chính sách hủy, đặt cọc, voucher, thanh toán lấy từ spec 050, 060 (B) dưới dạng văn bản cố định (đã chốt ở Clarifications, phương án 6.A).
 - Danh mục quận/huyện, tiện ích và khoảng giá hợp lệ lấy từ dữ liệu chung (A tạo, admin quản lý ở spec 120); A ↔ D thống nhất khoảng giá hợp lệ.
-- Phạm vi đặt trước mặc định 14 ngày và bước giờ 30 phút theo spec 020/040.
+- Phạm vi đặt trước 30 ngày và bước giờ 30 phút theo spec 020/040.
 - Mỗi người 10 lượt/ngày (đã chốt ở Clarifications). Bộ kiểm thử 40 câu của FR-024 cần chạy bằng nhiều tài khoản thử nghiệm hoặc trên môi trường thử nghiệm riêng để không vướng giới hạn này; cách làm để `/speckit-plan` quyết định.
 - Chỉ người đã đăng nhập dùng ô AI (đã chốt ở Clarifications); spec 010 cung cấp màn hình đăng nhập và đưa người dùng quay lại màn hình tìm kiếm.
 - Thời gian tạm khóa 5 phút, thời gian chờ 10 giây, bậc nới giá 20.000 đ, mặc định "7h-9h" là buổi tối và các khoảng "sáng/trưa/chiều/tối" là giá trị mặc định theo [AI-feature.md](../../docs/proposal/AI-feature.md) và thông lệ, có thể chỉnh trong `/speckit-clarify`.

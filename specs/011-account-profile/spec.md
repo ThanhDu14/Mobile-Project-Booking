@@ -1,4 +1,4 @@
-/ú# Feature Specification: Hồ sơ và quản lý tài khoản
+# Feature Specification: Hồ sơ và quản lý tài khoản
 
 **Feature Branch**: `feature/01-account-specs`
 
@@ -15,6 +15,11 @@
 ### Session 2026-10-05
 
 - Q: Có cho xóa tài khoản ngay khi người dùng còn đơn đặt sân sắp tới hoặc là chủ sân đang có cơ sở hoạt động không? → A: Cho xóa (ưu tiên quyền của người dùng). Hệ thống tự hủy đơn sắp tới của người dùng theo chính sách hủy; nếu là chủ sân thì tự ẩn cơ sở, hủy các đơn và buổi vãng lai sắp tới của khách ở cơ sở đó (hoàn tiền giả lập toàn bộ cho khách) và thông báo cho khách.
+
+### Session 2026-10-13
+
+- Q: Số dư ví giả lập (spec 050) hiển thị và nạp ở đâu trong trang tài khoản? → A: Trang "Tài khoản" hiện số dư `walletBalance` kèm nhãn giả lập và nút "Nạp ví giả lập" (dùng chức năng nạp của spec 050); số dư bị xóa cùng tài khoản.
+- Q: Trang tài khoản hiển thị gì khi admin thu hồi quyền chủ sân (spec 120)? → A: Hiện "Quyền chủ sân đã bị thu hồi" kèm lý do của admin và cho nộp hồ sơ mới; dữ liệu là `ownerStatus = NONE`, hồ sơ cũ giữ `APPROVED`.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -158,7 +163,8 @@ Người dùng đăng ký bằng email nhưng gõ nhầm hoặc muốn đổi em
 
 **Hồ sơ**
 
-- **FR-001**: Người dùng đã đăng nhập PHẢI xem được hồ sơ của mình gồm: ảnh đại diện, họ tên, email và/hoặc số điện thoại, trạng thái xác minh email, trình độ, khu vực hay chơi, trạng thái chủ sân.
+- **FR-001**: Người dùng đã đăng nhập PHẢI xem được hồ sơ của mình gồm: ảnh đại diện, họ tên, email và/hoặc số điện thoại, trạng thái xác minh email, trình độ, khu vực hay chơi, trạng thái chủ sân, số dư ví giả lập.
+- **FR-001a**: Trang tài khoản PHẢI hiển thị số dư ví giả lập (`walletBalance`) kèm nhãn "Giả lập, không phải tiền thật" và nút "Nạp ví giả lập" mở chức năng nạp ví của spec 050. Người dùng không sửa trực tiếp số dư; mọi thay đổi số dư do máy chủ ghi (spec 050, 060).
 - **FR-002**: Người dùng PHẢI sửa được họ tên (2–50 ký tự), trình độ (một trong: Mới chơi, Trung bình, Khá/Nâng cao) và khu vực hay chơi (chọn 0–5 khu vực từ danh mục khu vực của hệ thống).
 - **FR-003**: Người dùng PHẢI đổi được ảnh đại diện bằng cách chụp hoặc chọn ảnh, cắt vuông trước khi tải lên. Ảnh sau xử lý KHÔNG ĐƯỢC vượt quá 2 MB; chỉ chấp nhận JPG, PNG, WebP. Người dùng cũng PHẢI xóa được ảnh để về ảnh mặc định.
 - **FR-004**: Ảnh đại diện PHẢI xem được bởi mọi người dùng đã đăng nhập, nhưng chỉ chủ tài khoản được thay hoặc xóa.
@@ -179,6 +185,7 @@ Người dùng đăng ký bằng email nhưng gõ nhầm hoặc muốn đổi em
   | Chờ duyệt | "Đang chờ duyệt" + ngày nộp | Không có |
   | Bị từ chối | "Bị từ chối" + lý do của admin | "Sửa và nộp lại" (mở spec 110 với dữ liệu cũ) |
   | Đã duyệt | "Đã là chủ sân" | Nút chuyển chế độ (FR-010) |
+  | Bị thu hồi (`ownerStatus = NONE`, hồ sơ gần nhất vẫn `APPROVED`) | "Quyền chủ sân đã bị thu hồi" + lý do admin ghi | "Đăng ký làm chủ sân" (mở spec 110 với form trống để nộp hồ sơ mới) |
 
 - **FR-009**: Trạng thái chủ sân hiển thị PHẢI là trạng thái hiện tại trên máy chủ và PHẢI cập nhật khi người dùng quay lại trang tài khoản, không cần đăng xuất.
 - **FR-010**: Chỉ tài khoản có vai trò chủ sân đã duyệt mới thấy và dùng được chức năng chuyển chế độ "Người chơi" ↔ "Quản lý sân". Việc chuyển KHÔNG yêu cầu đăng nhập lại.
@@ -196,7 +203,7 @@ Người dùng đăng ký bằng email nhưng gõ nhầm hoặc muốn đổi em
 **Xóa tài khoản**
 
 - **FR-018**: Người dùng PHẢI xóa được tài khoản của mình. Trước khi xóa, app PHẢI liệt kê dữ liệu sẽ bị xóa và dữ liệu được giữ ở dạng ẩn danh, yêu cầu xác nhận lại danh tính và gõ chữ "XÓA".
-- **FR-019**: Khi xóa tài khoản, hệ thống PHẢI xóa vĩnh viễn: hồ sơ cá nhân (họ tên, email, số điện thoại, ảnh đại diện, trình độ, khu vực), lịch sử tìm kiếm, danh sách sân yêu thích, thông báo, cài đặt thông báo, hồ sơ chủ sân và ảnh giấy tờ, và phương thức đăng nhập.
+- **FR-019**: Khi xóa tài khoản, hệ thống PHẢI xóa vĩnh viễn: hồ sơ cá nhân (họ tên, email, số điện thoại, ảnh đại diện, trình độ, khu vực), lịch sử tìm kiếm, danh sách sân yêu thích, thông báo, cài đặt thông báo, số dư ví giả lập, hồ sơ chủ sân và ảnh giấy tờ, và phương thức đăng nhập.
 - **FR-020**: Dữ liệu liên quan tới người khác (đơn đặt sân đã qua, đánh giá, tin nhắn, bài đăng) PHẢI được giữ lại nhưng ẩn danh: hiển thị "Người dùng đã xóa" và ảnh mặc định, không còn liên kết tới thông tin cá nhân.
 - **FR-021**: Việc xóa PHẢI được thực hiện ở phía máy chủ và PHẢI hoàn tất toàn bộ hoặc không làm gì; nếu thất bại, tài khoản vẫn dùng được bình thường và người dùng được báo để thử lại.
 - **FR-022**: Xóa tài khoản KHÔNG bị chặn bởi đơn sắp tới hay cơ sở đang hoạt động. Trước khi xác nhận, app PHẢI hiển thị tác động: số đơn đặt sân và lượt vãng lai sắp tới của người dùng sẽ bị hủy, số tiền hoàn theo chính sách hủy; với chủ sân, thêm số cơ sở sẽ bị ẩn và số đơn, buổi vãng lai của khách sẽ bị hủy.
@@ -210,7 +217,7 @@ Người dùng đăng ký bằng email nhưng gõ nhầm hoặc muốn đổi em
 
 ### Key Entities *(include if feature involves data)*
 
-- **Người dùng (User)**: hồ sơ của một tài khoản. Trường người dùng sửa được: họ tên, ảnh đại diện, trình độ, khu vực hay chơi. Trường chỉ xem: email, số điện thoại, trạng thái xác minh email, vai trò, trạng thái chủ sân, trạng thái tài khoản. Chi tiết theo [đặc tả CSDL, mục 4.1](../../docs/design/database/README.md#41-usersuid--a).
+- **Người dùng (User)**: hồ sơ của một tài khoản. Trường người dùng sửa được: họ tên, ảnh đại diện, trình độ, khu vực hay chơi. Trường chỉ xem: email, số điện thoại, trạng thái xác minh email, vai trò, trạng thái chủ sân, trạng thái tài khoản, số dư ví giả lập. Chi tiết theo [đặc tả CSDL, mục 4.1](../../docs/design/database/README.md#41-usersuid--a).
 - **Hồ sơ chủ sân (Owner application)**: hồ sơ người dùng nộp để trở thành chủ sân. Spec này chỉ đọc: trạng thái (chờ duyệt / đã duyệt / bị từ chối), ngày nộp, lý do từ chối. Tạo và sửa thuộc spec 110; duyệt thuộc spec 120. Chi tiết theo [đặc tả CSDL, mục 4.2](../../docs/design/database/README.md#42-ownerapplicationsid--d).
 - **Khu vực (District)**: danh mục quận/huyện do admin quản lý; người dùng chọn từ danh sách, không tự nhập.
 - **Ảnh đại diện (Avatar)**: một ảnh cho mỗi người dùng, công khai với người dùng đã đăng nhập.
@@ -234,7 +241,7 @@ Người dùng đăng ký bằng email nhưng gõ nhầm hoặc muốn đổi em
 
 - Spec 010 đã có: đăng nhập, điều hướng theo vai trò khi mở app, banner xác minh email, yêu cầu mật khẩu.
 - Màn hình nộp và sửa hồ sơ chủ sân thuộc spec 110 (D); spec này chỉ có lối vào và phần hiển thị trạng thái. Giao diện quản lý sân thuộc spec 111, 112.
-- Khi admin thu hồi quyền chủ sân (spec 120), trang tài khoản hiển thị như trạng thái "Bị từ chối" kèm lý do thu hồi; nhóm A và D thống nhất lại khi viết spec 120.
+- Khi admin thu hồi quyền chủ sân (spec 120), `ownerStatus` về `NONE` và hồ sơ cũ giữ `APPROVED` để lưu lịch sử; trang tài khoản hiện dòng "Quyền chủ sân đã bị thu hồi" kèm lý do, người dùng nhận thông báo `OWNER_REVOKED` (spec 100) và được nộp hồ sơ mới (spec 110 FR-018).
 - Danh mục khu vực do admin quản lý (spec 120) và có dữ liệu mẫu từ tuần 4.
 - Việc hủy đơn khi xóa tài khoản dùng lại chính sách hủy của spec 060 (B), cách ẩn cơ sở của spec 111 (D), hủy buổi vãng lai của spec 080/112 (C, D) và loại thông báo `BOOKING_CANCELLED`, `DROPIN_CHANGED` của spec 100 (D). Nhóm A cần thống nhất với B, C, D trước khi chạy `/speckit-plan`.
 - Đổi số điện thoại không nằm trong phạm vi phiên bản này (đăng nhập bằng số điện thoại chỉ dùng số thử nghiệm).

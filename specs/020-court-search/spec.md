@@ -110,7 +110,7 @@ Khi bấm vào ô tìm kiếm mà chưa gõ gì, người chơi thấy các lầ
 - **Từ khóa chỉ có khoảng trắng hoặc ký tự đặc biệt**: bị bỏ qua như ô trống.
 - **Khoảng giá ngược** (giá tối thiểu lớn hơn tối đa): app không cho áp dụng và báo lỗi ngay tại bộ lọc.
 - **Khung giờ không thẳng bước 30 phút**: giờ chọn được chỉ theo bước 30 phút, khớp với độ dài khung giờ đặt sân.
-- **Ngày ngoài phạm vi đặt trước**: chỉ chọn được từ hôm nay tới hết số ngày cho phép đặt trước của luồng đặt sân (mặc định 14 ngày).
+- **Ngày ngoài phạm vi đặt trước**: chỉ chọn được từ hôm nay tới hết số ngày cho phép đặt trước của luồng đặt sân (30 ngày theo spec 040 FR-001).
 - **Cơ sở không có ảnh hoặc chưa có đánh giá**: thẻ hiện ảnh mặc định và nhãn "Chưa có đánh giá".
 - **Cơ sở chưa có bảng giá**: vẫn xuất hiện khi không lọc theo giá, thẻ hiện "Liên hệ" thay cho giá; không khớp với bộ lọc giá; đứng cuối khi sắp xếp theo giá.
 - **Bảng giá không phủ hết khung đã chọn** (một phần khung không có mức giá nào): giá của khung không xác định, cơ sở được xử lý như "chưa có bảng giá" cho khung đó.
@@ -195,10 +195,10 @@ Khi bấm vào ô tìm kiếm mà chưa gõ gì, người chơi thấy các lầ
 ## Assumptions
 
 - Danh mục quận/huyện và tiện ích đã có sẵn dữ liệu (nhóm A tạo dữ liệu ban đầu, admin quản lý ở spec 120); bốn tiện ích trong mô tả là ví dụ, bộ lọc hiển thị theo danh mục thực tế.
-- Giá của một khung giờ được tính từ bảng giá theo thứ trong tuần và giờ của cơ sở (spec 111). Cách tính khi khung nằm giữa hai mức giá phải thống nhất với spec 040 (điểm giao B ↔ D "Tính giá từ bảng giá"), để giá trên thẻ kết quả bằng giá ở màn hình đặt sân; nếu B ↔ D chốt cách khác thì spec này theo cách đó.
+- Giá của một khung giờ được tính từ bảng giá theo thứ trong tuần và giờ của cơ sở (spec 111). Cách tính đã được B ↔ D chốt (phương án 1.A, spec 040): mốc giờ của bảng giá là bội số 30 phút, bảng giá lưu giá theo giờ (`pricePerHour`), giá mỗi khung 30 phút = `pricePerHour / 2`; khung nằm giữa hai mức giá được cộng từng khung 30 phút. Spec này dùng đúng cách đó để giá trên thẻ kết quả bằng giá ở màn hình đặt sân.
 - Khách chưa đăng nhập đọc được thông tin công khai của cơ sở, danh mục và trạng thái trống/bận của khung giờ. Điều này đòi hỏi quyền đọc công khai cho các dữ liệu đó (đặc tả CSDL mục 7 cần ghi rõ) và spec 010/030 cần có lối "đăng nhập để đặt sân"; A báo B, D trước `/speckit-plan`.
 - Giá thấp nhất mỗi giờ, điểm trung bình và số lượt đánh giá của cơ sở do hệ thống tính sẵn khi chủ sân đổi bảng giá (spec 111) hoặc khi có đánh giá (spec 070); spec này chỉ đọc. Cách sinh dữ liệu phục vụ tìm theo tên và theo vị trí do A định nghĩa, D ghi khi tạo/sửa cơ sở — điểm giao A ↔ D cần chốt trước `/speckit-plan` (phân công tuần 1–2, mục 2).
-- Độ dài khung giờ là 30 phút và phạm vi đặt trước mặc định 14 ngày theo đặc tả CSDL; nếu spec 040 chốt giá trị khác thì spec này dùng theo spec 040.
+- Độ dài khung giờ là 30 phút (đặc tả CSDL mục 4.4) và phạm vi đặt trước là 30 ngày, theo spec 040.
 - Trạng thái khung giờ (trống, giữ chỗ, đã đặt, bị khóa) do spec 040 và 112 quy định; spec này chỉ đọc để lọc.
 - Giờ mở cửa áp dụng giống nhau cho mọi ngày trong tuần ở phiên bản này.
 - "Gần nhất" tính theo khoảng cách đường chim bay, không theo quãng đường di chuyển; chỉ đường thuộc spec 030.

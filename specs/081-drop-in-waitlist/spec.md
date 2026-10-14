@@ -142,7 +142,7 @@ Khi còn 30 phút nữa buổi bắt đầu mà người chơi vẫn chưa đư�
 
 - **FR-015**: Lượt chờ PHẢI xuất hiện trong "Lượt vãng lai của tôi" (spec 080): tab "Sắp tới" với nhãn "Đang chờ – vị trí N"; tab "Đã qua" với nhãn "Đã rời hàng chờ", "Không được nhận chỗ" hoặc "Buổi bị hủy".
 - **FR-016**: Mỗi màn hình liên quan (chi tiết buổi phần hàng chờ, lượt chờ) PHẢI có đủ 4 trạng thái: đang tải, có dữ liệu, rỗng, lỗi kèm nút thử lại; mất mạng không crash và giữ nguyên lựa chọn đang nhập.
-- **FR-017**: Hệ thống PHẢI phát sinh sự kiện để nhóm thông báo (spec 100) gửi: vào hàng chờ thành công, được đẩy lên ("Đã có chỗ cho bạn"), hàng chờ đóng mà chưa được nhận chỗ, buổi bị hủy khi đang chờ. Nội dung và cách gửi thuộc spec 100.
+- **FR-017**: Hệ thống PHẢI phát sinh sự kiện để nhóm thông báo (spec 100) gửi: được đẩy lên ("Đã có chỗ cho bạn", `DROPIN_SPOT_OPENED`), hàng chờ đóng mà chưa được nhận chỗ hoặc buổi bị hủy khi đang chờ (`DROPIN_WAITLIST_CLOSED`), tự rời hàng chờ của buổi trùng giờ (ghi trong cùng thông báo `DROPIN_SPOT_OPENED`). Vào hàng chờ là thao tác người chơi tự làm nên không gửi thông báo; app hiện vị trí ngay. Nội dung và cách gửi thuộc spec 100.
 
 ### Key Entities
 
@@ -168,5 +168,5 @@ Khi còn 30 phút nữa buổi bắt đầu mà người chơi vẫn chưa đư�
 - Lượt chờ dùng chung loại dữ liệu đăng ký của spec 080 (trạng thái "chờ"); thao tác hủy và mở rộng sức chứa của spec 080/112 phải gọi cùng quy tắc đẩy lên của spec này.
 - Thanh toán giả lập luôn thành công và hoàn tiền chỉ đổi trạng thái (đã chốt ở Clarifications spec 080); vì vậy việc ghi nhận thanh toán lúc đẩy lên không thể thất bại.
 - Tăng/giảm sức chứa và hủy buổi thuộc spec 112 (D); spec này định nghĩa phản ứng của hàng chờ.
-- Loại thông báo ở FR-017 (`DROPIN_SPOT_OPENED` và các loại cho vào hàng chờ, hàng chờ đóng) phải gửi cho D trước 14/10 cùng danh sách của spec 080.
+- Loại thông báo ở FR-017 (`DROPIN_SPOT_OPENED`, `DROPIN_WAITLIST_CLOSED`) đã có trong đặc tả CSDL mục 4.13 và spec 100.
 - Khách chưa đăng nhập phải đăng nhập (spec 010) khi bấm "Vào hàng chờ".

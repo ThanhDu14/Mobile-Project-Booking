@@ -29,6 +29,11 @@ Không bao gồm luồng người dùng đăng ký/theo dõi hồ sơ (spec 110)
 - Q: Khi Admin thu hồi quyền owner, các venue đang thuộc owner đó nên được xử lý thế nào? → A: Giữ nguyên trạng thái venue; Admin khóa riêng venue nếu cần bằng `LOCK_VENUE`.
 - Q: Admin có được mở khóa venue đang ở trạng thái `LOCKED` không? → A: Có; chỉ Admin được mở khóa và đặt venue về `ACTIVE` hoặc `HIDDEN` theo trạng thái phù hợp.
 
+### Session 2026-10-13 (đồng bộ với spec 011, 050, 100, 110)
+
+- Q: Thu hồi quyền chủ sân có cần lý do và báo cho người dùng không? → A: Có. Lý do bắt buộc, lưu ở `users.ownerRevokedReason`; người dùng nhận `OWNER_REVOKED` và trang tài khoản (spec 011) hiện lý do; người dùng được nộp hồ sơ mới (spec 110).
+- Q: Ai tạo voucher toàn hệ thống? → A: Admin, tại `systemVouchers/{code}` (đặc tả CSDL mục 4.6, spec 050).
+
 ## User Scenarios & Testing
 
 ### User Story 1 - Duyệt hồ sơ chủ sân (Priority: P1)
@@ -112,11 +117,12 @@ Là Admin, tôi muốn xem số liệu toàn hệ thống, quản lý danh mục
 - **FR-006**: Nộp lại hồ sơ được phép sau `REJECTED`, đặt hồ sơ về `PENDING`, giữ `role = PLAYER`; quyền owner chỉ được cấp sau lần duyệt hợp lệ.
 - **FR-007**: Việc duyệt/từ chối và nộp lại phải xử lý xung đột đồng thời an toàn; không cho quyết định cũ ghi đè trạng thái mới.
 - **FR-008**: Admin có thể tra cứu người dùng và đổi `accountStatus` giữa `ACTIVE`/`LOCKED`; trạng thái khóa có hiệu lực cho xác thực theo spec 010.
-- **FR-009**: Admin có thể thu hồi quyền owner và khóa venue vi phạm; thu hồi đặt `users.role = PLAYER`, `users.ownerStatus = NONE`, giữ hồ sơ đã duyệt là `APPROVED` và không tự thay đổi trạng thái venue; Admin có thể khóa riêng venue bằng `LOCK_VENUE`. Venue `LOCKED` chỉ Admin mới được mở khóa về `ACTIVE` hoặc `HIDDEN`.
+- **FR-009**: Admin có thể thu hồi quyền owner và khóa venue vi phạm; thu hồi đặt `users.role = PLAYER`, `users.ownerStatus = NONE`, giữ hồ sơ đã duyệt là `APPROVED` và không tự thay đổi trạng thái venue; Admin có thể khóa riêng venue bằng `LOCK_VENUE`. Venue `LOCKED` chỉ Admin mới được mở khóa về `ACTIVE` hoặc `HIDDEN`. Thu hồi quyền bắt buộc có lý do không rỗng, lưu ở `users.ownerRevokedReason`, và gửi `OWNER_REVOKED` cho người bị thu hồi (spec 100).
 - **FR-010**: Admin có thể xem báo cáo `reports` và thông tin đối tượng theo `targetType`/`targetPath`, trong phạm vi quyền Admin.
 - **FR-011**: Khi xử lý báo cáo, Admin chỉ chọn các action đã định nghĩa; hệ thống cập nhật `status`, `action`, `handledBy`, `handledAt` nhất quán với kết quả. Bỏ qua báo cáo dùng `DISMISSED` và `NONE`.
 - **FR-012**: Hành động `HIDE_CONTENT`, `LOCK_USER`, `LOCK_VENUE` chỉ áp dụng cho đối tượng tương ứng nếu tồn tại và còn đủ điều kiện; không biến `RESOLVED` thành bằng chứng rằng nội dung đã bị xóa vĩnh viễn.
 - **FR-013**: Admin có thể đọc `systemStats` và `venues/{venueId}/dailyStats` theo quyền quản trị. Chỉ trình bày dữ liệu tồn tại, không suy diễn chỉ số chưa được định nghĩa.
+- **FR-014a**: Admin có thể tạo, sửa, tắt voucher toàn hệ thống tại `systemVouchers/{code}` với cùng trường và quy tắc của spec 050; mã phải duy nhất trên toàn hệ thống (gồm cả voucher của các cơ sở). Admin không ghi `usedCount` hay `redemptions`.
 - **FR-014**: Admin có thể quản lý danh mục và gửi `SYSTEM` notification tới tất cả tài khoản đang hoạt động; nội dung tuân theo dữ liệu notification hiện có, không tạo trường/trạng thái mới trong spec này.
 - **FR-015**: Hệ thống gửi thông báo `OWNER_APPROVED` hoặc `OWNER_REJECTED` phù hợp, trong đó thông báo từ chối cho người nộp biết lý do và cách tiếp tục theo spec 110.
 - **FR-016**: Hệ thống không cho Admin thao tác nếu quyền admin đã bị thu hồi, phiên hết hạn hoặc tài khoản không còn hợp lệ; mọi yêu cầu trực tiếp không có quyền đều bị từ chối.

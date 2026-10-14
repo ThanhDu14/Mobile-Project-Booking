@@ -196,7 +196,7 @@ Người xem một bài (hoặc sự kiện) thấy nội dung vi phạm thì b�
 **Trải nghiệm chung**
 
 - **FR-020**: Mỗi màn hình có dữ liệu (tìm nhóm, trang nhóm, bảng tin, danh sách thành viên, yêu cầu tham gia, người tham gia sự kiện) PHẢI có đủ 4 trạng thái: đang tải, có dữ liệu, rỗng, lỗi kèm nút thử lại. Mất mạng PHẢI hiện thông báo, giữ nguyên nội dung đang soạn, không crash.
-- **FR-021**: Hệ thống PHẢI phát sinh sự kiện để nhóm thông báo (spec 100) gửi: có yêu cầu tham gia mới (cho chủ nhóm/quản trị viên), yêu cầu được duyệt/từ chối, bị mời ra khỏi nhóm, sự kiện mới trong nhóm, sự kiện mình tham gia bị sửa hoặc xóa. Nội dung và cách gửi thuộc spec 100.
+- **FR-021**: Hệ thống PHẢI phát sinh sự kiện để nhóm thông báo (spec 100) gửi: có yêu cầu tham gia mới (cho chủ nhóm/quản trị viên), yêu cầu được duyệt/từ chối, bị mời ra khỏi nhóm, sự kiện mới trong nhóm, sự kiện mình tham gia bị sửa hoặc xóa. Tất cả dùng loại `GROUP_ACTIVITY`, trường `data.event` ghi sự kiện cụ thể (đặc tả CSDL mục 4.13). Nội dung và cách gửi thuộc spec 100.
 - **FR-022**: Danh sách thành viên của nhóm là nguồn duy nhất để chat nhóm (spec 091) xác định ai ở trong cuộc trò chuyện của nhóm.
 
 ### Key Entities
@@ -229,5 +229,5 @@ Người xem một bài (hoặc sự kiện) thấy nội dung vi phạm thì b�
 - Không giới hạn số thành viên mỗi nhóm và số nhóm một người tham gia.
 - Chat nhóm (tạo cuộc trò chuyện khi tạo nhóm, thêm/bớt người theo thành viên) thuộc spec 091; spec này chỉ quản lý danh sách thành viên.
 - Xử lý báo cáo, khóa nhóm, ẩn bài ở cấp hệ thống thuộc spec 120 (D); spec này tạo báo cáo và tôn trọng kết quả.
-- Danh sách loại thông báo ở FR-021 phải gửi cho D trước 14/10.
+- Loại thông báo ở FR-021 (`GROUP_ACTIVITY`) đã có trong đặc tả CSDL mục 4.13 và spec 100.
 - Danh mục khu vực dùng chung với spec 011/020 (quận/huyện).

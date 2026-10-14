@@ -35,7 +35,7 @@ Sau khi một đơn đặt sân đã hoàn thành, người chơi mở đơn đ�
 1. **Given** người chơi có đơn đã hoàn thành và chưa đánh giá, **When** mở chi tiết đơn, **Then** thấy nút "Đánh giá".
 2. **Given** người chơi ở màn hình đánh giá, **When** chấm đủ 3 tiêu chí (ví dụ 5, 4, 3 sao) và bấm "Gửi", **Then** đánh giá được lưu với điểm tổng 4,0, hiện trong danh sách đánh giá của sân, và nút trên đơn đổi thành "Xem đánh giá của bạn".
 3. **Given** người chơi chưa chấm đủ 3 tiêu chí, **When** bấm "Gửi", **Then** app chỉ rõ tiêu chí còn thiếu và không gửi.
-4. **Given** đơn ở trạng thái chờ duyệt, đã xác nhận, đã hủy, bị từ chối hoặc hết hạn, **When** người chơi xem đơn, **Then** không có nút "Đánh giá"; nếu cố gửi đánh giá bằng cách khác (không qua app) thì hệ thống từ chối.
+4. **Given** đơn ở trạng thái chờ duyệt, đã xác nhận, đã hủy, bị từ chối, hết hạn hoặc vắng mặt (`NO_SHOW`), **When** người chơi xem đơn, **Then** không có nút "Đánh giá"; nếu cố gửi đánh giá bằng cách khác (không qua app) thì hệ thống từ chối.
 5. **Given** đơn đã có đánh giá, **When** người chơi (hoặc một yêu cầu không qua app) cố tạo đánh giá thứ hai cho cùng đơn, **Then** hệ thống từ chối; mỗi đơn chỉ có tối đa một đánh giá.
 6. **Given** một đánh giá mới được gửi, **When** người khác mở danh sách đánh giá của sân sau đó, **Then** điểm trung bình và số lượt đánh giá của sân đã tính cả đánh giá mới.
 7. **Given** người chơi đang soạn đánh giá, **When** mất mạng và bấm "Gửi", **Then** app báo không có kết nối, giữ nguyên nội dung đã nhập và cho thử lại; thử lại nhiều lần không tạo đánh giá trùng.
@@ -197,7 +197,7 @@ Từ phần tổng quan đánh giá ở chi tiết sân (spec 030), người ch�
 
 **Liên kết với tính năng khác**
 
-- **FR-026**: Hệ thống PHẢI phát sinh các sự kiện để nhóm thông báo (spec 100) gửi: nhắc người chơi đánh giá sau khi đơn hoàn thành, báo chủ sân có đánh giá mới, báo người viết khi chủ sân phản hồi. Nội dung và cách gửi thuộc spec 100.
+- **FR-026**: Hệ thống PHẢI phát sinh các sự kiện để nhóm thông báo (spec 100) gửi: nhắc người chơi đánh giá sau khi đơn hoàn thành (`REVIEW_REMINDER`), báo chủ sân có đánh giá mới (`REVIEW_NEW`), báo người viết khi chủ sân phản hồi (`REVIEW_REPLIED`). Nội dung và cách gửi thuộc spec 100.
 - **FR-027**: Mỗi đánh giá PHẢI có điểm vào để người dùng khác báo cáo vi phạm; luồng báo cáo và ẩn đánh giá thuộc spec 120.
 
 ### Key Entities
@@ -226,11 +226,11 @@ Từ phần tổng quan đánh giá ở chi tiết sân (spec 030), người ch�
 
 - **Số ảnh tối đa:** mô tả gốc để "N", đã chốt **3 ảnh** mỗi đánh giá ở Clarifications để tiết kiệm dung lượng gói miễn phí (đặc tả CSDL mục 8).
 - **Hạn đánh giá 7 ngày** sau khi đơn hoàn thành đã chốt ở Clarifications. Giới hạn bình luận 1000 ký tự, phản hồi 500 ký tự, trang 20 đánh giá: giá trị mặc định theo thông lệ.
-- Đơn được chuyển sang "hoàn thành" ở phía server khi qua giờ chơi, theo máy trạng thái đơn của B trong đặc tả CSDL mục 4.5; spec này chỉ đọc trạng thái đó. Cần B xác nhận lưu lại thời điểm hoàn thành để tính hạn 7 ngày.
+- Đơn được chuyển sang "hoàn thành" (`COMPLETED`) ở phía server khi qua giờ kết thúc buổi chơi **và** đã được chủ sân check-in (spec 112); đơn không check-in chuyển sang `NO_SHOW` và không đánh giá được (spec 060 FR-029, đặc tả CSDL mục 4.5). Server ghi `completedAt` 🔒 lúc chuyển trạng thái; hạn 7 ngày tính từ mốc này. Spec này chỉ đọc hai trường đó.
 - "Sân yêu thích" đồng thời là "sân đang theo dõi" (đã chốt ở Clarifications, FR-025a); spec này chỉ lưu danh sách, việc gửi thông báo thuộc spec 100. D cần xác nhận lại phía spec 100 (câu #4 mục 9 đặc tả CSDL).
 - Phản hồi của chủ sân sửa được không giới hạn số lần, không xóa được (đã chốt ở Clarifications).
 - Chủ sân xem đánh giá ở chế độ quản lý sân (spec 011 chuyển chế độ); màn hình "Đánh giá của khách" thuộc spec này, menu chứa nó thuộc spec 111/112.
 - Nút trái tim nằm trên màn hình chi tiết sân của spec 030 (A); spec này định nghĩa hành vi của nút. Phần tổng quan đánh giá ở chi tiết sân (spec 030) mở danh sách đầy đủ của User Story 6.
 - Nút "Đánh giá" nằm trên chi tiết đơn của spec 060 (B); spec này định nghĩa màn hình đánh giá.
-- Danh sách loại thông báo ở FR-026 phải gửi cho D trước 14/10 theo phân công tuần 1–2.
+- Loại thông báo ở FR-026 (`REVIEW_REMINDER`, `REVIEW_NEW`, `REVIEW_REPLIED`) đã có trong đặc tả CSDL mục 4.13 và spec 100.
 - Người dùng đã đăng nhập (spec 010); khách chưa đăng nhập không dùng được tính năng này.
