@@ -16,6 +16,10 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 10 | 2026-10-06 | Làm rõ spec 090 bằng `/speckit-clarify` (5 câu hỏi) | 09 |
 | 11 | 2026-10-06 | Viết spec 091 (chat nhóm và chat với chủ sân) bằng `/speckit-specify` | 09 |
 | 12 | 2026-10-06 | Làm rõ spec 091 bằng `/speckit-clarify` (5 câu hỏi) | 09 |
+| 13 | 2026-10-15 | Lập kế hoạch kỹ thuật spec 080 bằng `/speckit-plan` | 08 |
+| 14 | 2026-10-15 | Chia task triển khai spec 080 bằng `/speckit-tasks` | 08 |
+| 15 | 2026-10-15 | Kiểm tra độ khớp spec/plan/tasks của spec 080 bằng `/speckit-analyze` | 08 |
+| 16 | 2026-10-15 | Lập kế hoạch kỹ thuật spec 081 bằng `/speckit-plan` | 08 |
 
 ---
 
@@ -696,3 +700,263 @@ người dùng). Mỗi điểm kèm phương án đề xuất và lý do; mình 
 - Mục Clarifications có đúng 5 dòng; mỗi câu trả lời khớp với FR-001, FR-002, FR-003, FR-010, FR-016 và User Story 1, 2, 5.
 - Tìm trong spec: không còn "hỏi lại ở `/speckit-clarify`" hay `[NEEDS CLARIFICATION]`.
 - Việc tiếp theo: báo A về nút "Nhắn tin cho chủ sân" ở spec 030, báo D về mục "Tin nhắn khách hàng" trong menu chủ sân; khi viết plan bổ sung trạng thái đọc/chặn vào đặc tả CSDL mục 4.11.
+
+---
+
+## Mục 13: Lập kế hoạch kỹ thuật spec 080 bằng `/speckit-plan`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-15 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 08 – Đặt lịch vãng lai (spec `specs/080-drop-in-session`) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5), lệnh Spec Kit `/speckit-plan` |
+| Mục đích | Sinh thiết kế kỹ thuật: research, data model, contract, hướng dẫn kiểm chứng |
+| Nhánh Git | `feature/08-drop-in` |
+
+### Prompt đã dùng
+
+```
+/speckit-plan SPECIFY_FEATURE_DIRECTORY=specs/080-drop-in-session
+Lập kế hoạch kỹ thuật cho spec 080 theo constitution (MVVM, Firebase gói Spark, Supabase gói Free)
+và đặc tả CSDL chung (mục 4.9 dropInSessions + registrations). Lưu ý: slot đã chốt 30 phút; buổi
+vãng lai giữ slot bằng slots status=BLOCKED, blockReason=DROP_IN trong cùng transaction (spec 111
+FR-010, 112 FR-009); gói Spark không có trigger Firestore nên đăng ký/hủy lượt phải qua Edge
+Function có transaction để không vượt sức chứa. Ghi rõ thay đổi cần B, D cập nhật trên collection
+của họ và các type thông báo cần gửi D.
+```
+
+### Tóm tắt phản hồi của AI
+
+- **Các file đã sinh:**
+  - `plan.md`
+  - `research.md` (15 quyết định R1–R15)
+  - `data-model.md`
+  - `contracts/edge-functions-dropin.md`, `contracts/security-rules.md`, `contracts/ui-screens.md`
+  - `quickstart.md`
+- **Đăng ký và hủy:** qua Edge Function `register-drop-in` và `cancel-drop-in`. Mỗi function chạy một Firestore transaction trên document buổi (`registeredCount`), thử lại tối đa 8 lần khi xung đột. Chống trùng bằng `registrations/{uid}` cộng `requestId`.
+- **Slot:** spec 080 không ghi `slots`. Slot `DROP_IN` do Edge Function tạo/sửa/hủy buổi của D ghi (spec 112).
+- **Thanh toán:** `MOCK_PAY` hoặc `AT_VENUE`. Thêm `paymentStatus` (`PAID`, `UNPAID`, `REFUNDED`).
+- **Hoàn tiền:** hủy trước giờ bắt đầu từ 240 phút trở lên, hoặc buổi đã bị chủ sân đổi, thì hoàn 100%. Mốc tính theo giờ server. App gọi `dryRun` để hiện số tiền được hoàn trước khi người chơi xác nhận.
+- **QR và mã vé:** `qrToken` 32 byte ngẫu nhiên và `ticketCode` dạng `DI-XXXXXXXX`. Cả hai bị xóa khi hủy.
+- **Nhãn "Đã tham gia / Đã hủy / Buổi bị hủy / Không đến":** suy ra từ `status`, `cancelledBy` và giờ kết thúc, không thêm enum.
+- **Trường mới:**
+  - Trong `registrations`: `userId`, `sessionStartAt`, `paymentStatus`, `ticketCode`, `cancelledBy`, `sessionChanged`…
+  - Trong `dropInSessions`: `timeSlot`, `venueSnapshot`.
+- **Đánh giá buổi:** mở rộng Edge Function `review` (spec 070) với `sessionId`. Điều kiện là đăng ký đã `CHECKED_IN` và buổi đã kết thúc.
+- **Hàm dùng chung** trong `_shared/dropin.ts` (`deriveSessionFields`, `computeRefund`, `cancelRegistrationInTx`, `afterSpotsReleased`) để spec 081, spec 112 và `delete-account` gọi lại.
+- **Constitution Check:** đạt cả 7 nguyên tắc.
+- **Bảng phối hợp:**
+  - D: trường suy ra, sửa/hủy buổi, check-in, thông báo `DROPIN_REGISTERED` và `DROPIN_CHANGED`.
+  - B: hàm transaction có thử lại, `UpcomingBookingsReader`, mốc 4 giờ.
+  - A: `delete-account`, bộ lọc AI 022.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Transaction trên document buổi + `requestId` | Dùng | Đúng constitution III, chống vượt chỗ (SC-002) và chống trùng (SC-003) |
+| Không ghi `slots` trong spec 080 | Dùng | Spec 112 FR-009 đã giao việc giữ slot `DROP_IN` cho luồng mở buổi của D |
+| Mở rộng `review` thay vì tạo function mới | Dùng | Dùng lại quy tắc sửa/xóa/phản hồi của spec 070 |
+| Không có cron riêng cho spec 080 | Dùng | Suy ra "đã bắt đầu/kết thúc" từ thời gian; cron đóng hàng chờ thuộc spec 081 |
+| Trường `timeSlot`, `venueSnapshot` trên `dropInSessions` | Chờ D đồng ý | Spec 112 FR-008 ghi "không thêm field" |
+| `UpcomingBookingsReader` (cảnh báo trùng giờ) | Chờ B xác nhận | Interface thuộc tính năng của B |
+
+### Cách kiểm chứng
+
+- Đối chiếu Constitution Check với từng nguyên tắc I–VII trong `.specify/memory/constitution.md`.
+- Mỗi FR trong spec đều có ít nhất một quy tắc trong data-model/contract hoặc một ca test (D1–D13, E1–E15) hay kịch bản Q1–Q15 trong `quickstart.md`.
+- Đối chiếu với spec 111 FR-010, 112 FR-008–FR-012 và đặc tả CSDL mục 4.4, 4.9, 4.13. Tìm trong các file vừa sinh: không còn `NEEDS CLARIFICATION`.
+- Việc tiếp theo: chạy `/speckit-tasks`; mang bảng "Phối hợp với nhóm" trong `plan.md` ra họp 16/10.
+
+---
+
+## Mục 14: Chia task triển khai spec 080 bằng `/speckit-tasks`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-15 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 08 – Đặt lịch vãng lai (spec `specs/080-drop-in-session`) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5), lệnh Spec Kit `/speckit-tasks` |
+| Mục đích | Chia kế hoạch kỹ thuật thành danh sách task có thứ tự theo từng user story, kèm test bắt buộc |
+| Nhánh Git | `feature/08-drop-in` |
+
+### Prompt đã dùng
+
+```
+/speckit-tasks SPECIFY_FEATURE_DIRECTORY=specs/080-drop-in-session
+Chia task theo user story, có test Emulator cho trường hợp 2 người đăng ký lượt cuối cùng lúc.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Sinh `tasks.md` gồm **66 task** chia thành 8 phase:
+
+  | Phase | Nội dung | Task |
+  |---|---|---|
+  | 1 | Setup | 3 |
+  | 2 | Foundational | 13 |
+  | 3 | US1 – Tìm buổi | 13 |
+  | 4 | US2 – Đăng ký và vé QR | 12 |
+  | 5 | US3 – Lịch sử và vé offline | 8 |
+  | 6 | US4 – Hủy theo chính sách | 6 |
+  | 7 | US5 – Đánh giá buổi | 5 |
+  | 8 | Polish | 6 |
+
+  Có 32 task đánh dấu `[P]` (làm song song được).
+- **Test đồng thời trên Firebase Emulator (T030):**
+  - E1: 20 người tranh 5 chỗ cuối, đúng 5 thành công, `registeredCount` không vượt `capacity`.
+  - E2: 2 người cùng đăng ký nhóm 2 người vào 3 chỗ còn lại, đúng 1 người thành công.
+  - Mỗi ca chạy 10 lần liên tiếp.
+- **Test hủy và đăng ký đồng thời (T051).**
+- **Test idempotent:** E3 (bấm "Xác nhận" 5 lần) và E4 (bấm "Hủy" 5 lần).
+- **Test mốc hoàn tiền:** hủy khi còn 239, 240 và 241 phút.
+- Viết test trước (phải fail) rồi mới cài đặt.
+- Phase 1 dùng lại hạ tầng của spec 070 / PR `chore(core)`, chỉ thêm ZXing và `strings_dropin.xml`.
+- **MVP:** US1 + US2.
+- **Bảng phụ thuộc ngoài nhóm:** B (`_shared/firestore.ts`, `UpcomingBookingsReader`), A (`UserProfileReader`), D (trường `timeSlot`/`venueSnapshot`, `DROPIN_REGISTERED`), kèm phương án tạm nếu chưa có.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Test E1, E2 chạy 10 lần liên tiếp | Dùng | Lỗi tranh chấp chỉ lộ ra khi chạy nhiều lần; đây là bài toán cốt lõi theo constitution III |
+| Dùng lại Phase 1 của spec 070 thay vì viết lại | Dùng | Tránh làm trùng hạ tầng chung của nhóm |
+| Interface tạm khi A/B chưa có | Dùng | Không bị chặn khi các bạn chưa xong phần của mình; báo lại để thay bằng bản thật |
+| Lịch tuần (US1–US2 tuần 6, US3–US4 tuần 7) | Dùng | Khớp kế hoạch triển khai trong `docs/team-contract.md` mục 4 |
+
+### Cách kiểm chứng
+
+- Mỗi task có đúng định dạng `- [ ] T### [P?] [US?] mô tả + đường dẫn file`. Dùng `grep` đếm được 66 task, task nào cũng có ID và đường dẫn.
+- Mỗi FR-001 → FR-027 và mỗi ca test D1–D13, E1–E15 trong `contracts/security-rules.md` đều có task tương ứng.
+- Thứ tự trong mỗi story: test → Edge Function → repository → UseCase → ViewModel → giao diện.
+- Việc tiếp theo: chạy `/speckit-analyze` cho spec 080 để kiểm tra độ khớp giữa spec, plan và tasks.
+
+---
+
+## Mục 15: Kiểm tra độ khớp spec 080 bằng `/speckit-analyze`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-15 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 08 – Đặt lịch vãng lai (spec `specs/080-drop-in-session`) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5), lệnh Spec Kit `/speckit-analyze` (chỉ đọc, không sửa file) |
+| Mục đích | Tìm chỗ thiếu, mâu thuẫn giữa spec, plan và tasks trước khi nhờ D, B review và trước khi code |
+| Nhánh Git | `feature/08-drop-in` |
+
+### Prompt đã dùng
+
+```
+/speckit-analyze SPECIFY_FEATURE_DIRECTORY=specs/080-drop-in-session
+Kiểm tra độ khớp giữa spec.md, plan.md và tasks.md của spec 080: mỗi FR và SC phải có task
+tương ứng, không mâu thuẫn với constitution (nhất là nguyên tắc II và III), và khớp với đặc tả
+CSDL chung mục 4.9 cùng các spec liên quan 081, 112, 100.
+```
+
+### Tóm tắt phản hồi của AI
+
+- **Độ phủ 100%:** cả 27 FR và 7 SC cần build đều có task. SC-008 là chỉ số thử với người dùng nên không cần task.
+- **Không có lỗi CRITICAL.** Nguyên tắc II, III và test 2 người đặt cùng lúc (nguyên tắc IV) đều được đáp ứng.
+- **1 lỗi HIGH (F1):** plan thêm `timeSlot` và `venueSnapshot` vào `dropInSessions`, trong khi spec 112 FR-008 ghi "không thêm field".
+- **6 lỗi MEDIUM:**
+  - **F2:** đặc tả CSDL 4.13 nói "tự làm thì không thông báo", mâu thuẫn với việc gửi `DROPIN_REGISTERED`.
+  - **U1:** đăng ký lại sau khi hủy chưa xóa các trường hủy còn sót.
+  - **C1:** thiếu test cho `cancelRegistrationInTx` khi gọi với `OWNER`/`SYSTEM`.
+  - **K1:** T036 đặt interface tạm trong package của B.
+  - **D1:** T022 phụ thuộc Rules `venues` của D nhưng chưa ghi vào bảng phụ thuộc.
+  - **D2:** các trường AI được phép điền chưa được A xác nhận.
+- **3 lỗi LOW:**
+  - **X1:** `SESSION_FULL` chưa có trường `waitlistOpen` mà spec 081 cần.
+  - **T1:** tên `MOCK_PAY` khác `MOCK_WALLET`.
+  - **T2:** câu cũ ở đặc tả CSDL 4.7.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| F1, F2, D1, D2 | Đưa vào danh sách bàn với nhóm ở họp 16/10 | Liên quan collection hoặc quyết định của A, D |
+| U1, C1, K1 | Sửa trong `tasks.md` | Sửa nhỏ, thuộc phần của C |
+| X1 | Xử lý khi chia task spec 081 | Phát sinh từ 081 |
+| T1, T2 | Ghi chú khi cập nhật đặc tả CSDL | Không ảnh hưởng thứ tự triển khai |
+
+### Cách kiểm chứng
+
+- Dùng `grep` đếm các FR/SC xuất hiện trong `tasks.md`, kết hợp đối chiếu theo nội dung (AC, mã ca test E/D) cho các FR không ghi số.
+- Đọc lại spec 112 FR-008, FR-010a, FR-011, spec 100 mục thông báo `DROPIN_*`, đặc tả CSDL 4.7, 4.9, 4.13 để xác nhận từng phát hiện liên spec.
+- Đối chiếu nguyên tắc I–IV của constitution với Rules (D1–D13), Edge Function (E1–E15) và vị trí file trong `tasks.md`.
+
+---
+
+## Mục 16: Lập kế hoạch kỹ thuật spec 081 bằng `/speckit-plan`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-15 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 08 – Đặt lịch vãng lai (spec `specs/081-drop-in-waitlist`) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5), lệnh Spec Kit `/speckit-plan` |
+| Mục đích | Thiết kế hàng chờ dựa trên dữ liệu và Edge Function đã có của spec 080 |
+| Nhánh Git | `feature/08-drop-in` |
+
+### Prompt đã dùng
+
+```
+/speckit-plan SPECIFY_FEATURE_DIRECTORY=specs/081-drop-in-waitlist
+Lập kế hoạch kỹ thuật cho hàng chờ (spec 081) theo constitution và đặc tả CSDL chung, xây trên
+thiết kế đã có của spec 080:
+- Dùng lại document registrations (status WAITLISTED) và hai Edge Function register-drop-in,
+  cancel-drop-in; chỉ tạo collection hoặc function mới khi thật sự cần, kèm lý do.
+- Việc tự đẩy người chờ lên khi có người hủy hoặc chủ sân tăng sức chứa phải chạy trong cùng
+  transaction tạo ra chỗ trống, không vượt sức chứa, không đẩy trùng; người đầu hàng không vừa
+  chỗ thì bỏ qua nhưng giữ vị trí.
+- Người chơi thấy vị trí của mình theo thời gian thực nhưng không lộ danh tính người chờ khác.
+- Hàng chờ đóng 30 phút trước giờ bắt đầu theo giờ server.
+- Thông báo dùng đúng các type đã chốt với D trong spec 100: DROPIN_SPOT_OPENED,
+  DROPIN_WAITLIST_CLOSED.
+- Ghi rõ những gì D (spec 112), A (delete-account) và B (_shared/firestore.ts) cần làm.
+```
+
+### Tóm tắt phản hồi của AI
+
+- **Các file đã sinh:**
+  - `plan.md`
+  - `research.md` (13 quyết định R1–R13)
+  - `data-model.md` (chỉ phần mở rộng so với spec 080)
+  - `contracts/edge-functions-waitlist.md`, `contracts/ui-screens.md`
+  - `quickstart.md`
+- **Không có collection mới:**
+  - Vào hàng chờ dùng `register-drop-in` với `joinWaitlist: true`.
+  - Rời hàng chờ dùng `cancel-drop-in` (có `expectWaitlisted` để không hủy nhầm khi vừa được đẩy lên).
+  - Function mới duy nhất là `dropin-close`, chạy bằng pg_cron mỗi phút: đóng hàng chờ lúc T−30 phút và chuyển buổi đã qua sang `COMPLETED`.
+- **Đẩy lên:** `promoteFromWaitlist` gắn vào hook `afterSpotsReleased` của spec 080, chạy trong cùng transaction hủy hoặc tăng sức chứa. Mọi thao tác hàng chờ đều ghi vào document buổi, nên các thao tác đồng thời được xếp tuần tự.
+- **Vị trí công khai:** document buổi có mảng `waitlistTickets` (chỉ là số vé, không có `uid`), nên app tính vị trí theo realtime mà không lộ ai đang chờ.
+- **Trường mới:**
+  - Trên buổi: `waitlistNextTicket`, `waitlistTickets`, `waitlistCount`.
+  - Trên đăng ký: `waitlistTicket`, `promotedAt`, `waitlistEndReason` (dùng thay cho enum mới).
+- **Các xử lý khác:**
+  - Tự rời hàng chờ của các buổi trùng giờ khi được đẩy lên.
+  - Hoàn 100% nếu hủy trong 30 phút sau khi được đẩy lên sát giờ (`PROMOTED_GRACE`).
+  - Mốc 30 phút được kiểm tra lại trong transaction.
+- **14 ca test Edge Function**, trong đó có Q6 (5 lượt hủy với 10 người chờ chạy đồng thời, lặp 20 lần) và Q7 (rời hàng chờ cùng lúc bị đẩy lên).
+- Constitution Check đạt cả 7 nguyên tắc.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Dùng lại `registrations` và 2 Edge Function của 080 | Dùng | Đúng yêu cầu prompt; một người một document mỗi buổi tự chống vừa đăng ký vừa chờ |
+| Đẩy lên trong cùng transaction hủy | Dùng | Constitution III, FR-007, FR-008 |
+| Mảng số vé công khai trên buổi | Dùng | Vị trí realtime mà vẫn giữ FR-006 (không lộ danh tính) |
+| Function `dropin-close` (pg_cron) | Dùng | Cần để gửi `DROPIN_WAITLIST_CLOSED` đúng mốc; mốc vẫn được kiểm tra lại trong transaction |
+| 3 trường `waitlist*` trên `dropInSessions` | Chờ D đồng ý | Liên quan spec 112 FR-008 (giống phát hiện F1 ở Mục 15) |
+| `runQuery` trong transaction | Chờ B xác nhận | Cần hỗ trợ trong `_shared/firestore.ts` |
+| Giới hạn R11 (nhóm lớn hơn số chỗ còn lại không vào được hàng chờ) | Đưa ra họp nhóm | Đúng chữ FR-001 nhưng có thể gây khó cho người dùng |
+
+### Cách kiểm chứng
+
+- Đối chiếu Constitution Check với nguyên tắc I–VII; kiểm tra mọi thao tác hàng chờ đều ghi vào document buổi (điều kiện để transaction xếp tuần tự).
+- Mỗi FR-001 → FR-017 và SC-001 → SC-005 đều có quy tắc trong data-model hoặc ca test Q1–Q14, W1–W2.
+- Đối chiếu với spec 080 (hook `afterSpotsReleased`, `computeRefund`), spec 112 FR-010a (tăng sức chứa, hủy buổi) và spec 100 (type `DROPIN_SPOT_OPENED`, `DROPIN_WAITLIST_CLOSED`).
+- Việc tiếp theo: chạy `/speckit-tasks` cho spec 081.
