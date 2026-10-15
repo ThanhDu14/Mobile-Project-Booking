@@ -14,6 +14,13 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 8 | 2026-10-06 | Làm rõ spec 060 bằng `/speckit-clarify` (3 câu hỏi) | 06 |
 | 9 | 2026-10-10 | Rà soát điểm giao thoa liên thành viên & Cập nhật slot 30 phút cho spec 040, 041 | 04, 05, 06 |
 | 10 | 2026-10-12 | Thống nhất liên thành viên (D: 1A, 2A, 3B; C: 4A, 5A; A: 6A) và hoàn thiện các spec | 04, 05, 06 |
+| 11 | 2026-10-15 | Lập kế hoạch kỹ thuật spec 040 (lưới ca 30 phút) bằng `/speckit-plan` | 04 |
+| 12 | 2026-10-15 | Lập kế hoạch kỹ thuật spec 041 (đặt cố định theo tuần) bằng `/speckit-plan` | 04 |
+| 13 | 2026-10-15 | Lập kế hoạch kỹ thuật spec 050 (thanh toán và voucher giả lập) bằng `/speckit-plan` | 05 |
+| 14 | 2026-10-15 | Lập kế hoạch kỹ thuật spec 060 (quản lý lịch đặt của tôi) bằng `/speckit-plan` | 06 |
+
+
+
 
 ---
 
@@ -530,3 +537,167 @@ Bảng đối chiếu lựa chọn:
 5. **README nhóm 05 & 06**:
    - Cập nhật các ghi chú thiết kế về voucher 3.B, timeout 2.A, và no-show 5.A.
 
+---
+
+## Mục 11: Lập kế hoạch kỹ thuật spec 040 (lưới ca 30 phút) bằng `/speckit-plan`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-15 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 04 – Đặt sân (`specs/040-booking-slot-grid`) |
+| Công cụ AI | Antigravity, lệnh Spec Kit `/speckit-plan` |
+| Mục đích | Lập kế hoạch kỹ thuật chi tiết (Architecture, Data Models, Research, Contracts, Quickstart) cho tính năng lưới khung giờ 30 phút và giữ chỗ |
+| Nhánh Git | `feature/040-booking-slot-grid` (hoặc `Hung`) |
+
+### Bối cảnh và Quyết định kỹ thuật cốt lõi
+
+1. **Tối ưu Quota Firestore gói Spark (Sparse Storage - Lưu trữ thưa)**:
+   - Client tự động tính toán và sinh lưới ca 30 phút mặc định `AVAILABLE` trong bộ nhớ dựa trên `openTime` và `closeTime` của Venue.
+   - Firestore chỉ lưu và phát realtime snapshot trên root collection `slots/{courtId}_{yyyyMMdd}_{HHmm}` đối với các ca bận (`HELD`, `BOOKED`, `BLOCKED`) trong ngày đang chọn với điều kiện `venueId` và `date`.
+   - Giúp tiết kiệm hơn 85% lượng Document Reads, đảm bảo an toàn tuyệt đối cho hạn mức gói Spark miễn phí.
+2. **Thuật toán chọn ca liên tiếp (`ValidateSlotSelectionUseCase`)**:
+   - Chỉ cho phép chọn các ca 30 phút liên tiếp trên cùng 1 sân con (tối đa 8 slot = 4 tiếng).
+   - Xử lý thông minh: click nối dài đầu mút, click cách quãng tự động reset chọn mốc mới, click ở giữa tự động cắt đuôi.
+3. **Xử lý xung đột Realtime (Race Condition)**:
+   - Dùng `callbackFlow` bọc `SnapshotListener`, tự động hủy listener trong `awaitClose` khi rời màn hình hoặc đổi ngày.
+   - Khi ca đang chọn bị người khác giữ chỗ (`HELD`) hoặc đặt (`BOOKED`), ViewModel tự động loại bỏ slot đó, tính lại tiền và phát `UiEffect.ShowConflictWarning` hiển thị Snackbar thông báo.
+4. **Quy đổi bảng giá 30 phút theo phương án 1.A**:
+   - Mọi mốc trong `priceRules` là bội số của 30 phút. Đơn giá mỗi slot: `pricePerSlot = pricePerHour / 2`.
+5. **Hợp đồng chuyển tiếp sang Spec 041**:
+   - Đóng gói dữ liệu qua Navigation Safe Args: `venueId`, `courtId`, `courtName`, `date`, `selectedSlotTimes: Array<String>`, `subtotalAmount: Long`.
+
+### Các tài liệu kỹ thuật đã sinh
+
+- `specs/040-booking-slot-grid/plan.md`: Kế hoạch kỹ thuật tổng thể (Summary, Context, Constitution Check, Project Structure, Core Rules, Phases).
+- `specs/040-booking-slot-grid/research.md`: 5 quyết định kỹ thuật sâu (Sparse Storage, chọn liên tiếp, Realtime conflict, tính giá 30p, Lifecycle listener).
+- `specs/040-booking-slot-grid/data-model.md`: Chi tiết Schema Firestore, Kotlin DTOs, Domain Entities (`TimeSlot`, `SlotStatus`, `Court`, `PriceRule`, `SlotSelectionState`) và UI State.
+- `specs/040-booking-slot-grid/contracts/ui-contracts.md`: Hợp đồng Navigation Safe Args, Repository Interface, UseCases và bảng mã màu Material 3 cho 6 trạng thái ca.
+- `specs/040-booking-slot-grid/quickstart.md`: Hướng dẫn kiểm thử Unit Test, UI Test và kịch bản xác minh thủ công trên Firebase Emulator.
+
+---
+
+## Mục 12: Lập kế hoạch kỹ thuật spec 041 (đặt cố định theo tuần) bằng `/speckit-plan`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-15 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 04 – Đặt sân (`specs/041-weekly-recurring-booking`) |
+| Công cụ AI | Antigravity, lệnh Spec Kit `/speckit-plan` |
+| Mục đích | Lập kế hoạch kỹ thuật chi tiết (Architecture, Data Models, Research, Contracts, Quickstart) cho tính năng đặt sân cố định theo tuần (chu kỳ 4–12 tuần) |
+| Nhánh Git | `feature/041-weekly-recurring-booking` |
+
+### Bối cảnh và Quyết định kỹ thuật cốt lõi
+
+1. **Vượt giới hạn Firestore `whereIn(30)` bằng Batching song song**:
+   - Khi quét khả dụng chu kỳ 12 tuần (lên tới 36 ngày), áp dụng giải thuật `dates.chunked(30)` kết hợp Coroutines `async/awaitAll` để thực thi truy vấn song song.
+   - Vừa tránh crash do giới hạn 30 phần tử của Firestore SDK, vừa đảm bảo tốc độ phản hồi cực nhanh dưới 1.2 giây trên mạng 4G (đạt tiêu chí SC-001 < 2s).
+2. **Kiểm soát giới hạn 500 operations của Firestore Transaction (All-or-Nothing Hold)**:
+   - Toàn bộ chu kỳ tối đa 36 buổi $\times$ 6 slot 30 phút $\approx$ 216 slot documents + 36 booking documents + 1 recurringGroup document = 253 writes, hoàn toàn nằm an toàn dưới trần 500 operations của Firestore Transaction.
+   - Cơ chế All-or-Nothing: Nếu có bất kỳ slot nào bị chiếm dở dang, Transaction tự động ném `SlotUnavailableException` để rollback sạch sẽ 100%.
+3. **Thuật toán xử lý xung đột lịch thông minh (`ResolveRecurringConflictUseCase`)**:
+   - Một buổi chỉ hợp lệ khi toàn bộ $N$ slot 30 phút liên tiếp trên cùng 1 sân con đều trống.
+   - Tự động quét tìm sân thay thế cùng `surfaceType` trong cùng khung giờ (giá không đổi theo Phương án 1.A).
+   - Cho phép người chơi bỏ qua buổi bị trùng (giảm trừ tiền tương ứng), nhưng bắt buộc phải còn tối thiểu 4 buổi hợp lệ mới cho phép tạo đơn cố định.
+4. **Cơ chế chủ động giải phóng chỗ `ReleaseRecurringHoldUseCase`**:
+   - Khi người dùng bấm Quay lại (Back) hoặc Hủy từ màn hình xác nhận, app chủ động bắn lệnh giải phóng ngay các slot đang giữ, tránh hiện tượng chiếm dụng ảo (ghost holding) suốt 5 phút.
+5. **Hợp đồng chuyển tiếp sang Spec 050**:
+   - Đóng gói Bundle Safe Args `RecurringToPaymentArgs`: `recurringGroupId`, `venueId`, `venueName`, `totalSessions`, `subtotalAmount`, `depositAmount` (30%), `holdExpiresAtMillis`.
+
+### Các tài liệu kỹ thuật đã sinh
+
+- `specs/041-weekly-recurring-booking/plan.md`: Kế hoạch kỹ thuật tổng thể (Summary, Context, Constitution Check, Project Structure, Core Rules, Phases).
+- `specs/041-weekly-recurring-booking/research.md`: 5 nghiên cứu kỹ thuật chuyên sâu (Chunked queries < 2s, Transaction 500 ops limit, tìm sân cùng surfaceType, giải phóng slot chủ động, phân bổ cọc 30%).
+- `specs/041-weekly-recurring-booking/data-model.md`: Chi tiết Schema `recurringGroups`, `bookings`, DTOs, Domain Entities (`RecurringConfig`, `RecurringSession`, `RecurringConflict`, `RecurringSummary`) và UI State.
+- `specs/041-weekly-recurring-booking/contracts/ui-contracts.md`: Hợp đồng Navigation Safe Args sang `[050]`, Domain `RecurringBookingRepository` interface và hợp đồng 6 UseCases.
+- `specs/041-weekly-recurring-booking/quickstart.md`: Hướng dẫn kiểm thử Unit Test (sinh lịch, bỏ ngày quá khứ, đổi sân, rollback All-or-Nothing), UI Test và kịch bản xác minh thủ công.
+
+---
+
+## Mục 13: Lập kế hoạch kỹ thuật spec 050 (thanh toán và voucher giả lập) bằng `/speckit-plan`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-15 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 05 – Thanh toán và khuyến mãi (`specs/050-payment-voucher`) |
+| Công cụ AI | Antigravity, lệnh Spec Kit `/speckit-plan` |
+| Mục đích | Lập kế hoạch kỹ thuật chi tiết (Architecture, Data Models, Research, Contracts, Quickstart) cho tính năng thanh toán giả lập, áp dụng voucher đa nguồn và xuất hóa đơn điện tử E-Receipt |
+| Nhánh Git | `feature/050-payment-voucher` |
+
+### Bối cảnh và Quyết định kỹ thuật cốt lõi
+
+1. **Giao dịch nguyên tử trong Firestore Transaction (Atomic Transaction)**:
+   - Tuân thủ quy tắc 2 pha (Đọc-trước-Ghi-sau): Kiểm tra hạn giữ chỗ (`holdExpiresAt > now`), voucher còn lượt (`usedCount < usageLimit` & `perUserLimit`), và số dư ví ảo ($\ge$ tiền cọc hoặc 100% tiền đơn) trước khi thực hiện ghi.
+   - Trừ số dư ví tại `users/{userId}.walletBalance`, ghi log giao dịch `walletTransactions/{txId}`, tăng lượt voucher và ghi `redemptions/{bookingId}` trong cùng Transaction.
+   - Chuyển trạng thái đơn sang `PENDING` (chờ chủ sân duyệt 60 phút theo Phương án 2.A) và đồng thời chuyển các `slots` liên quan từ `HOLD` sang `BOOKED` (xóa `holdExpiresAt` 5 phút).
+2. **Quản lý đa nguồn Voucher (Phương án 3.B)**:
+   - Hỗ trợ song song: `venues/{venueId}/vouchers/{code}` (cơ sở) và `systemVouchers/{code}` (toàn sàn). Document ID chính là mã code viết hoa không dấu để chống tạo trùng mã.
+   - Thiết kế document `.../vouchers/{code}/userUsage/{userId}` để đọc và tăng lượt dùng cá nhân (`perUserLimit`) nguyên tử trong Transaction.
+3. **Công thức làm tròn đặt cọc 30% an toàn**:
+   - `rawDeposit = (payableAmount * 30) / 100`, làm tròn nghìn đồng: `((rawDeposit + 500) / 1000) * 1000`.
+   - Xử lý biên: Nếu cọc = 0đ thì lấy `payableAmount`; nếu voucher giảm 100% thì `depositAmount = 0đ` và phương thức tự chuyển thành `FREE`.
+4. **Phân tách phương thức thanh toán theo loại đơn**:
+   - `AT_VENUE` (trả tại sân): Chỉ áp dụng cho đơn đặt lẻ (`[040]`); tự động ẩn đối với đơn cố định theo tuần (`[041]`) để tránh rủi ro bùng sân dài hạn.
+5. **Tuân thủ cam kết học tập phi thương mại (Constitution VI)**:
+   - Hiển thị nhãn nổi bật *"Giao dịch giả lập phục vụ học tập - Không thu tiền thật"* trên màn hình thanh toán và E-Receipt.
+   - Cung cấp nút nạp ví ảo thử nghiệm (100k, 500k, 1M) tránh tắc nghẽn luồng chấm điểm.
+6. **Hợp đồng chuyển tiếp sang Spec 060**:
+   - Đóng gói Bundle Safe Args `ReceiptToMyBookingsArgs`: `bookingId`, `isRecurring`, `initialTab = "PENDING"` để mở ngay tab "Chờ duyệt" tại Spec 060.
+
+### Các tài liệu kỹ thuật đã sinh
+
+- `specs/050-payment-voucher/plan.md`: Kế hoạch kỹ thuật tổng thể (Summary, Context, Constitution Check, Project Structure, Core Rules, Phases).
+- `specs/050-payment-voucher/research.md`: 5 nghiên cứu kỹ thuật chuyên sâu (Atomic transaction trừ ví/voucher/slot, 2 nguồn voucher 3.B, làm tròn cọc 30%, timeout 60m duyệt đơn PENDING 2.A, cam kết học tập Constitution VI).
+- `specs/050-payment-voucher/data-model.md`: Chi tiết Schema Firestore (vouchers, userUsage, redemptions, walletTransactions), DTOs, Domain Entities (`Voucher`, `PaymentMethod`, `PaymentBreakdown`, `PaymentReceipt`) và UI State.
+- `specs/050-payment-voucher/contracts/ui-contracts.md`: Hợp đồng Navigation Safe Args từ 040/041 sang 050 và tới 060, Domain `PaymentRepository` interface và hợp đồng các UseCases.
+- `specs/050-payment-voucher/quickstart.md`: Hướng dẫn kiểm thử Unit Test (cọc 30%, voucher biên, rollback Transaction thiếu tiền/hết hạn), UI Test và kịch bản xác minh thủ công.
+
+---
+
+## Mục 14: Lập kế hoạch kỹ thuật spec 060 (quản lý lịch đặt của tôi) bằng `/speckit-plan`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-15 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 06 – Quản lý lịch đặt (`specs/060-my-bookings`) |
+| Công cụ AI | Antigravity, lệnh Spec Kit `/speckit-plan` |
+| Mục đích | Lập kế hoạch kỹ thuật chi tiết (Architecture, Data Models, Research, Contracts, Quickstart) cho tính năng quản lý lịch đặt 5 tab, hiển thị mã QR check-in realtime/offline, chính sách hoàn tiền hủy đơn mốc 240 phút và hủy chuỗi đơn cố định tuần |
+| Nhánh Git | `feature/060-my-bookings` |
+
+### Bối cảnh và Quyết định kỹ thuật cốt lõi
+
+1. **Độc lập kiến trúc sạch (Clean Architecture - Constitution I)**:
+   - Tầng `domain` chỉ chứa pure Kotlin, hoàn toàn không phụ thuộc vào `android.graphics.Bitmap` hay Firebase SDK. Model `QrBitMatrix(width, height, bits: BooleanArray)` được sinh bởi `GenerateCheckInQrUseCase` (sử dụng thư viện thuần ZXing Core) và chuyển đổi thành `Bitmap` tại tầng UI qua `QrBitmapRenderer.kt` với khung viền trắng `#FFFFFF` và kích thước tối thiểu 240dp để máy quét chủ sân nhận diện tốt kể cả khi thiết bị đang ở chế độ Dark Mode.
+2. **Chống gian lận giờ điện thoại bằng `firestore.rules` (Constitution II)**:
+   - Sử dụng `request.time` (Server Timestamp của Google Cloud trong Security Rules) để kiểm tra mốc 240 phút khi hủy đơn. Ngăn chặn triệt để hành vi người dùng cố tình chỉnh lùi đồng hồ trên thiết bị Android để nhận hoàn tiền 100% khi hủy trễ.
+   - Giới hạn quyền đọc chuỗi nhạy cảm `qrToken` chỉ cho chủ đơn (`request.auth.uid == resource.data.userId`) hoặc chủ sân (`role == "VENUE_OWNER"`).
+3. **Thuật toán tính tiền hoàn mốc 240 phút & kẹp biên an toàn khi có Voucher**:
+   - Hủy đơn `PENDING` hoặc đơn `CONFIRMED` hủy sớm ($\ge 240$ phút trước giờ chơi): Hoàn 100% tiền đã trả (`refundAmount = paidAmount`).
+   - Đơn `CONFIRMED` hủy trễ ($< 240$ phút trước giờ chơi):
+     + Thanh toán ví giả lập (`MOCK_WALLET`): Phạt 30% tiền cọc chuẩn hóa, hoàn 70% còn lại.
+     + Kẹp biên an toàn chống số tiền âm khi có áp dụng voucher: `penaltyAmount = minOf(booking.paidAmount, calculatedDepositPenalty)`, `refundAmount = maxOf(0L, booking.paidAmount - penaltyAmount)`.
+     + Đặt cọc 30% (`DEPOSIT`): Mất 100% tiền cọc (`penaltyAmount = paidAmount`, `refundAmount = 0L`).
+     + Trả tại sân (`AT_VENUE`): Hoàn 0đ, phạt 0đ.
+4. **Firestore Transaction hủy đơn & nhả Slot nguyên tử (Constitution III)**:
+   - Tuân thủ quy tắc 2 pha (All Reads Before All Writes).
+   - Đảm bảo tính Idempotent qua document `users/{userId}/walletTransactions/refund_{bookingId}`.
+   - Khi hủy đơn, xóa toàn bộ document `slots/{slotId}` thuộc đơn trong Transaction để nhả sân ngay lập tức trên lưới khung giờ của Spec 040.
+5. **Khắc phục giới hạn Transaction đối với chuỗi đơn cố định tuần (`recurringGroupId`)**:
+   - Do Android Client SDK không hỗ trợ truy vấn (query) bên trong `runTransaction`, tầng Repository thực hiện truy vấn danh sách `DocumentReference` của các buổi còn lại trước, sau đó truyền danh sách tham chiếu này vào Transaction để xử lý hủy nguyên tử.
+6. **Cập nhật realtime khi Check-in & Hỗ trợ QR Offline**:
+   - Lắng nghe realtime `bookings/{bookingId}` qua Flow để tự động cập nhật UI sang trạng thái *"Đã check-in lúc HH:mm"* và ẩn nút hủy đơn ngay khi chủ sân quét mã QR.
+   - Tận dụng Firestore Offline Persistence để người chơi có thể xuất trình mã QR check-in ngay cả khi mất sóng 4G/Wi-Fi tại cụm sân thể thao.
+7. **Tuân thủ thỏa thuận liên thành viên**:
+   - Phương án 2.A: Tab 2 (Chờ duyệt) đếm ngược 60 phút hạn chủ sân duyệt. Nếu quá 60 phút, đơn tự động hủy (`REJECTED`) và hoàn 100% tiền ví giả lập.
+   - Phương án 5.A: Khóa tuyệt đối quyền đánh giá đối với các đơn mang trạng thái `NO_SHOW` (vắng mặt).
+
+### Các tài liệu kỹ thuật đã sinh
+
+- `specs/060-my-bookings/plan.md`: Kế hoạch kỹ thuật tổng thể (Summary, Context, Constitution Check, Project Structure, Core Rules, Phases).
+- `specs/060-my-bookings/research.md`: 5 nghiên cứu kỹ thuật chuyên sâu (Composite Index 5 tab, xử lý biên Voucher khi hủy trễ, chống chỉnh giờ bằng Security Rules, Transaction 2 pha, QR Offline).
+- `specs/060-my-bookings/data-model.md`: Chi tiết Schema Firestore (bookings, recurringGroups, walletTransactions), DTOs, Domain Entities (`BookingSummaryItem`, `BookingDetail`, `RefundPolicyQuote`, `QrBitMatrix`) và UI States.
+- `specs/060-my-bookings/contracts/ui-contracts.md`: Hợp đồng Navigation Safe Args từ 050 sang 060, tới 040/070, Domain `BookingManagementRepository` interface, hợp đồng các UseCases và Firestore Security Rules.
+- `specs/060-my-bookings/quickstart.md`: Hướng dẫn kiểm thử Unit Test (mốc 240m, kẹp biên voucher, tính Idempotent), UI Test và 5 kịch bản xác minh thủ công.
