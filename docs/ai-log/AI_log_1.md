@@ -11,6 +11,7 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 5 | 2026-10-05 | Viết spec 022 (tìm sân thông minh – AI Assistant) bằng `/speckit-specify` | 02 |
 | 6 | 2026-10-06 | Viết spec 021 (bản đồ sân, sân gần bạn) bằng `/speckit-specify` | 02 |
 | 7 | 2026-10-06 | Viết spec 030 (chi tiết sân) bằng `/speckit-specify` | 03 |
+| 8 | 2026-10-15 | Lập kế hoạch kỹ thuật spec 010 bằng `/speckit-plan` | 01 |
 
 ---
 
@@ -481,3 +482,101 @@ Câu trả lời cho câu hỏi làm rõ của AI: `Q1: A`.
 - Đối chiếu với phạm vi nhóm 03 (`docs/features/03-court-detail/README.md`, proposal mục 5), constitution nguyên tắc V (4 trạng thái, dưới 3 giây, điện thoại và `w600dp`, accessibility) và đặc tả CSDL mục 4.3 (`venues`, `courts`, `priceRules`).
 - Đối chiếu điểm nối với spec 070 (`contracts/ui-screens.md`: trái tim, tổng quan, "Xem tất cả") và spec 020 (FR-017, giá theo khung giờ).
 - Việc cần làm tiếp: D xác nhận quyền đọc công khai `venues`, `courts`, `priceRules`, `reviews` và đọc theo ID cơ sở tạm ngừng; B ↔ D chốt cách tính giá theo khung; C xác nhận lối vào chat riêng với chủ sân (spec 091).
+
+---
+
+## Mục 8: Lập kế hoạch kỹ thuật spec 010 bằng `/speckit-plan`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-15 |
+| Người thực hiện | Thành Dự |
+| Nhóm tính năng liên quan | 01 – Tài khoản (`specs/010-account-auth`) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5), lệnh Spec Kit `/speckit-plan`; tra tài liệu Firebase qua MCP `developerknowledge` |
+| Mục đích | Lập kế hoạch kỹ thuật cho đăng ký/đăng nhập, chốt phần `core/` dùng chung cả nhóm, kiểm chứng các giới hạn Firebase còn treo từ lần analyze (F3, F4, F8) |
+| Nhánh Git | `feature/01-account-plan` (tạo mới từ `main`) |
+
+### Prompt đã dùng
+
+```
+/speckit-plan SPECIFY_FEATURE_DIRECTORY=specs/010-account-auth
+Lập kế hoạch kỹ thuật cho spec 010 theo constitution 1.2.0 (MVVM, một Activity + Navigation,
+Hilt, StateFlow; Firebase gói Spark, Supabase gói Free) và đặc tả CSDL chung (mục 4.1 users,
+mục 8a on-signup). Đây là spec nền nên phải chốt rõ phần core/ mà các tính năng khác dùng lại.
+Lưu ý:
+- Gói Spark không có trigger Auth (onCreate/blocking functions) nên on-signup không tự chạy.
+  App phải gọi Edge Function on-signup sau khi tạo tài khoản, gửi kèm Firebase ID token. Function
+  xác minh token, gán custom claim role="authenticated", appRole="PLAYER" (cần cho Third-party
+  Auth Supabase ở PR #23), tạo users/{uid} theo mục 4.1 (role, ownerStatus=NONE,
+  accountStatus=ACTIVE, walletBalance=0, termsAcceptedAt). Sau đó app gọi
+  getIdToken(true). Function phải idempotent để xử lý edge case "tạo tài khoản xong nhưng khởi
+  tạo lỗi" (màn hình chờ + thử lại, tự hoàn tất ở lần mở app sau).
+- Google/OTP lần đầu chỉ tạo users/{uid} sau bước đồng ý điều khoản. Đóng app giữa chừng thì
+  quay lại đúng bước đó. Nêu rõ app nhận biết "chưa khởi tạo" bằng claim hay document.
+- Khóa tài khoản (FR-014): so sánh hai cách, chỉ dùng accountStatus=LOCKED hoặc kết hợp
+  disabled của Firebase Auth do Edge Function của admin (spec 120, D) đặt. Chọn một cách và ghi
+  rõ D cần làm gì.
+- Điều hướng theo vai trò (FR-015) đọc từ custom claim appRole, không đọc từ document. Đặt
+  AuthRepository/SessionManager ở core/ để các feature khác dùng qua interface.
+- Kiểm chứng giới hạn Firebase còn treo từ analyze (F3, F4, F8): liên kết tài khoản cùng
+  email Google và email/mật khẩu (FR-012, cài đặt "one account per email"), thời hạn và số lần
+  sai OTP của Phone Auth có cấu hình được không (FR-016), số điện thoại thử nghiệm, rate limit
+  gửi email đặt lại mật khẩu. Chỗ nào Firebase không cho chỉnh thì ghi rõ để sửa spec.
+- Đăng nhập Google dùng Credential Manager. Email xác minh và đặt lại mật khẩu dùng luồng có
+  sẵn của Firebase. Không lưu mật khẩu trên máy.
+- Security Rules cho users/{uid}: chủ tài khoản không được tạo document và không được sửa các
+  trường 🔒. Kèm test trên Emulator (dựa trên bộ test ở PR #22).
+- UI theo các ảnh trong specs/010-account-auth/ui (7 bước, có chế độ tối).
+Ghi rõ những thay đổi cần cập nhật vào docs/design/database/README.md và việc cần B, C, D
+phối hợp (D: khóa tài khoản, duyệt chủ sân thì gán appRole=OWNER và bắt app làm mới token).
+```
+
+### Tóm tắt phản hồi của AI
+
+- **Các file đã sinh:**
+  - `plan.md`
+  - `research.md` (14 quyết định R1–R14)
+  - `data-model.md`
+  - `contracts/edge-function-on-signup.md` (kèm `_shared/auth.ts`, `_shared/identity.ts`, test S1–S12)
+  - `contracts/security-rules.md` (test U1–U18)
+  - `contracts/ui-screens.md`
+  - `quickstart.md` (kịch bản thủ công M1–M25)
+- **`on-signup`:** app gọi sau khi xác thực và đồng ý điều khoản. Function ghi `users/{uid}` **trước**, gộp claim **sau**. Function idempotent: dùng điều kiện `exists=false` khi tạo, và không bao giờ hạ `appRole`. Function đặt `verify_jwt = false` và tự xác minh token bằng `jose`, vì lúc đó token chưa có claim `role`.
+- **"Chưa khởi tạo"** = token chưa có claim `appRole`:
+  - người đăng ký email (đã đồng ý trên form, lưu tạm `PendingSignup` trong DataStore) thấy màn hình chờ, app tự gọi lại;
+  - người đăng nhập Google/OTP lần đầu vào màn hình Hoàn tất tài khoản.
+- **Khóa tài khoản:** dùng `accountStatus = LOCKED` kèm cờ `disabled` của Firebase Auth. Cả hai do Edge Function mới `set-account-status` (D) ghi. Firebase tự chặn mọi phương thức đăng nhập và làm mới phiên. Admin không sửa `accountStatus` qua Rules nữa.
+- **Điều hướng** đọc claim `appRole`. Listener `users/{uid}` phát hiện vai trò đổi hoặc tài khoản bị khóa khi đang mở app. Vì vậy D phải ghi claim trước rồi mới ghi document.
+- **Phần `core/` dùng chung:** `SessionManager`, `IdTokenProvider`, `SupabaseClient` (Third-party Auth), `AppError` với timeout 15 giây, `UserProfileReader`, banner xác minh email. Phía server: `_shared/auth.ts`, `_shared/identity.ts`.
+- **Kiểm chứng giới hạn Firebase** (tài liệu chính thức):
+  - Gói Spark không gửi được SMS thật; chỉ dùng số thử nghiệm, tối đa 10 số.
+  - Thời hạn OTP và số lần nhập sai không cấu hình được.
+  - Email `@gmail.com` có mật khẩu nhưng chưa xác minh sẽ bị Google ghi đè (mất mật khẩu, giữ `uid`). Email ngoài gmail thì báo lỗi, nên cần thêm hộp thoại liên kết tài khoản.
+  - Password policy không có lựa chọn "có chữ cái bất kỳ".
+  - Hạn mức mỗi ngày: 150 email đặt lại mật khẩu, 1000 email xác minh.
+- **Thay đổi ảnh hưởng cả nhóm:**
+  - Rules nền: `appRole()` không còn mặc định `PLAYER`, thêm `isInitialized()`.
+  - `users` chỉ chủ tài khoản và admin đọc được.
+  - `users.level` đổi thành `String?`; `termsAcceptedAt` thành 🔒.
+- **Constitution Check:** đạt cả 7 nguyên tắc, không có vi phạm.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| App gọi `on-signup`, ghi document trước, claim sau | Dùng | Spark không có trigger; thứ tự này đảm bảo có claim thì chắc chắn có document |
+| Nhận biết "chưa khởi tạo" bằng claim `appRole` | Dùng | Không tốn lượt đọc Firestore; Rules và Edge Function cũng kiểm tra đúng claim này |
+| Khóa bằng `accountStatus` + `disabled` qua `set-account-status` | Chờ xác nhận | Cần D (spec 120) đồng ý viết function và bỏ quyền sửa `accountStatus` qua Rules |
+| Chặn người khác đọc `users/{uid}` | Chờ xác nhận | Đúng nguyên tắc VI (document chứa email, số điện thoại, số dư ví); cần cả nhóm xác nhận không ai đọc hồ sơ người khác |
+| Sửa Rules nền `appRole()`, thêm `isInitialized()` | Chờ xác nhận | Ảnh hưởng Rules của mọi người; báo nhóm trước khi merge |
+| 5 phút / 5 lần sai OTP do app thực thi | Dùng | Firebase không cho cấu hình; sẽ ghi rõ vào spec (R14) |
+| Hộp thoại liên kết tài khoản (không có trong wireframe) | Dùng | Cần cho FR-012 với email Google ngoài gmail |
+| Các sửa đổi spec trong R14 (FR-012, FR-016, FR-018, FR-019) | Chờ thực hiện | Sửa `spec.md` trước `/speckit-tasks` |
+
+### Cách kiểm chứng
+
+- Đối chiếu Constitution Check với từng nguyên tắc I–VII trong `.specify/memory/constitution.md`.
+- Mở lại tài liệu Firebase mà AI dẫn (Auth Limits, Email enumeration protection, Verified email addresses, Phone Auth Android, Password policy) để xác nhận các giới hạn ở R7–R9.
+- Chạy các kịch bản M9, M10 (liên kết Google), M17 (password policy), M20 (tài khoản bị khóa nhập sai mật khẩu) trong `quickstart.md` để kiểm tra những chỗ AI chỉ suy ra từ tài liệu.
+- Đối chiếu mọi FR trong spec với ít nhất một quy tắc trong data-model/contract hoặc một kịch bản trong `quickstart.md`.
+- Việc cần làm tiếp: chốt với D (`set-account-status`, thứ tự ghi claim), B (`_shared/firestore.ts`) và C (`_shared/auth.ts`, `level` nullable) ở họp 16/10; cập nhật đặc tả CSDL theo danh sách cuối `data-model.md`; sửa spec theo R14.
