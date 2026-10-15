@@ -14,6 +14,8 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 8 | 2026-10-06 | Làm rõ spec 060 bằng `/speckit-clarify` (3 câu hỏi) | 06 |
 | 9 | 2026-10-10 | Rà soát điểm giao thoa liên thành viên & Cập nhật slot 30 phút cho spec 040, 041 | 04, 05, 06 |
 | 10 | 2026-10-12 | Thống nhất liên thành viên (D: 1A, 2A, 3B; C: 4A, 5A; A: 6A) và hoàn thiện các spec | 04, 05, 06 |
+| 11 | 2026-10-15 | Lập kế hoạch kỹ thuật spec 040 (lưới ca 30 phút) bằng `/speckit-plan` | 04 |
+
 
 ---
 
@@ -529,4 +531,43 @@ Bảng đối chiếu lựa chọn:
    - Cập nhật Mục 9: Đánh dấu đã giải quyết xong câu 2 (duyệt đơn 60m) và câu 3 (chính sách hủy & no-show).
 5. **README nhóm 05 & 06**:
    - Cập nhật các ghi chú thiết kế về voucher 3.B, timeout 2.A, và no-show 5.A.
+
+---
+
+## Mục 11: Lập kế hoạch kỹ thuật spec 040 (lưới ca 30 phút) bằng `/speckit-plan`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-15 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 04 – Đặt sân (`specs/040-booking-slot-grid`) |
+| Công cụ AI | Antigravity, lệnh Spec Kit `/speckit-plan` |
+| Mục đích | Lập kế hoạch kỹ thuật chi tiết (Architecture, Data Models, Research, Contracts, Quickstart) cho tính năng lưới khung giờ 30 phút và giữ chỗ |
+| Nhánh Git | `feature/040-booking-slot-grid` (hoặc `Hung`) |
+
+### Bối cảnh và Quyết định kỹ thuật cốt lõi
+
+1. **Tối ưu Quota Firestore gói Spark (Sparse Storage - Lưu trữ thưa)**:
+   - Client tự động tính toán và sinh lưới ca 30 phút mặc định `AVAILABLE` trong bộ nhớ dựa trên `openTime` và `closeTime` của Venue.
+   - Firestore chỉ lưu và phát realtime snapshot trên root collection `slots/{courtId}_{yyyyMMdd}_{HHmm}` đối với các ca bận (`HELD`, `BOOKED`, `BLOCKED`) trong ngày đang chọn với điều kiện `venueId` và `date`.
+   - Giúp tiết kiệm hơn 85% lượng Document Reads, đảm bảo an toàn tuyệt đối cho hạn mức gói Spark miễn phí.
+2. **Thuật toán chọn ca liên tiếp (`ValidateSlotSelectionUseCase`)**:
+   - Chỉ cho phép chọn các ca 30 phút liên tiếp trên cùng 1 sân con (tối đa 8 slot = 4 tiếng).
+   - Xử lý thông minh: click nối dài đầu mút, click cách quãng tự động reset chọn mốc mới, click ở giữa tự động cắt đuôi.
+3. **Xử lý xung đột Realtime (Race Condition)**:
+   - Dùng `callbackFlow` bọc `SnapshotListener`, tự động hủy listener trong `awaitClose` khi rời màn hình hoặc đổi ngày.
+   - Khi ca đang chọn bị người khác giữ chỗ (`HELD`) hoặc đặt (`BOOKED`), ViewModel tự động loại bỏ slot đó, tính lại tiền và phát `UiEffect.ShowConflictWarning` hiển thị Snackbar thông báo.
+4. **Quy đổi bảng giá 30 phút theo phương án 1.A**:
+   - Mọi mốc trong `priceRules` là bội số của 30 phút. Đơn giá mỗi slot: `pricePerSlot = pricePerHour / 2`.
+5. **Hợp đồng chuyển tiếp sang Spec 041**:
+   - Đóng gói dữ liệu qua Navigation Safe Args: `venueId`, `courtId`, `courtName`, `date`, `selectedSlotTimes: Array<String>`, `subtotalAmount: Long`.
+
+### Các tài liệu kỹ thuật đã sinh
+
+- `specs/040-booking-slot-grid/plan.md`: Kế hoạch kỹ thuật tổng thể (Summary, Context, Constitution Check, Project Structure, Core Rules, Phases).
+- `specs/040-booking-slot-grid/research.md`: 5 quyết định kỹ thuật sâu (Sparse Storage, chọn liên tiếp, Realtime conflict, tính giá 30p, Lifecycle listener).
+- `specs/040-booking-slot-grid/data-model.md`: Chi tiết Schema Firestore, Kotlin DTOs, Domain Entities (`TimeSlot`, `SlotStatus`, `Court`, `PriceRule`, `SlotSelectionState`) và UI State.
+- `specs/040-booking-slot-grid/contracts/ui-contracts.md`: Hợp đồng Navigation Safe Args, Repository Interface, UseCases và bảng mã màu Material 3 cho 6 trạng thái ca.
+- `specs/040-booking-slot-grid/quickstart.md`: Hướng dẫn kiểm thử Unit Test, UI Test và kịch bản xác minh thủ công trên Firebase Emulator.
+
 
