@@ -17,6 +17,7 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 11 | 2026-10-15 | Lập kế hoạch kỹ thuật spec 040 (lưới ca 30 phút) bằng `/speckit-plan` | 04 |
 | 12 | 2026-10-15 | Lập kế hoạch kỹ thuật spec 041 (đặt cố định theo tuần) bằng `/speckit-plan` | 04 |
 | 13 | 2026-10-15 | Lập kế hoạch kỹ thuật spec 050 (thanh toán và voucher giả lập) bằng `/speckit-plan` | 05 |
+| 14 | 2026-10-15 | Lập kế hoạch kỹ thuật spec 060 (quản lý lịch đặt của tôi) bằng `/speckit-plan` | 06 |
 
 
 
@@ -653,6 +654,50 @@ Bảng đối chiếu lựa chọn:
 - `specs/050-payment-voucher/contracts/ui-contracts.md`: Hợp đồng Navigation Safe Args từ 040/041 sang 050 và tới 060, Domain `PaymentRepository` interface và hợp đồng các UseCases.
 - `specs/050-payment-voucher/quickstart.md`: Hướng dẫn kiểm thử Unit Test (cọc 30%, voucher biên, rollback Transaction thiếu tiền/hết hạn), UI Test và kịch bản xác minh thủ công.
 
+---
 
+## Mục 14: Lập kế hoạch kỹ thuật spec 060 (quản lý lịch đặt của tôi) bằng `/speckit-plan`
 
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-15 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 06 – Quản lý lịch đặt (`specs/060-my-bookings`) |
+| Công cụ AI | Antigravity, lệnh Spec Kit `/speckit-plan` |
+| Mục đích | Lập kế hoạch kỹ thuật chi tiết (Architecture, Data Models, Research, Contracts, Quickstart) cho tính năng quản lý lịch đặt 5 tab, hiển thị mã QR check-in realtime/offline, chính sách hoàn tiền hủy đơn mốc 240 phút và hủy chuỗi đơn cố định tuần |
+| Nhánh Git | `feature/060-my-bookings` |
 
+### Bối cảnh và Quyết định kỹ thuật cốt lõi
+
+1. **Độc lập kiến trúc sạch (Clean Architecture - Constitution I)**:
+   - Tầng `domain` chỉ chứa pure Kotlin, hoàn toàn không phụ thuộc vào `android.graphics.Bitmap` hay Firebase SDK. Model `QrBitMatrix(width, height, bits: BooleanArray)` được sinh bởi `GenerateCheckInQrUseCase` (sử dụng thư viện thuần ZXing Core) và chuyển đổi thành `Bitmap` tại tầng UI qua `QrBitmapRenderer.kt` với khung viền trắng `#FFFFFF` và kích thước tối thiểu 240dp để máy quét chủ sân nhận diện tốt kể cả khi thiết bị đang ở chế độ Dark Mode.
+2. **Chống gian lận giờ điện thoại bằng `firestore.rules` (Constitution II)**:
+   - Sử dụng `request.time` (Server Timestamp của Google Cloud trong Security Rules) để kiểm tra mốc 240 phút khi hủy đơn. Ngăn chặn triệt để hành vi người dùng cố tình chỉnh lùi đồng hồ trên thiết bị Android để nhận hoàn tiền 100% khi hủy trễ.
+   - Giới hạn quyền đọc chuỗi nhạy cảm `qrToken` chỉ cho chủ đơn (`request.auth.uid == resource.data.userId`) hoặc chủ sân (`role == "VENUE_OWNER"`).
+3. **Thuật toán tính tiền hoàn mốc 240 phút & kẹp biên an toàn khi có Voucher**:
+   - Hủy đơn `PENDING` hoặc đơn `CONFIRMED` hủy sớm ($\ge 240$ phút trước giờ chơi): Hoàn 100% tiền đã trả (`refundAmount = paidAmount`).
+   - Đơn `CONFIRMED` hủy trễ ($< 240$ phút trước giờ chơi):
+     + Thanh toán ví giả lập (`MOCK_WALLET`): Phạt 30% tiền cọc chuẩn hóa, hoàn 70% còn lại.
+     + Kẹp biên an toàn chống số tiền âm khi có áp dụng voucher: `penaltyAmount = minOf(booking.paidAmount, calculatedDepositPenalty)`, `refundAmount = maxOf(0L, booking.paidAmount - penaltyAmount)`.
+     + Đặt cọc 30% (`DEPOSIT`): Mất 100% tiền cọc (`penaltyAmount = paidAmount`, `refundAmount = 0L`).
+     + Trả tại sân (`AT_VENUE`): Hoàn 0đ, phạt 0đ.
+4. **Firestore Transaction hủy đơn & nhả Slot nguyên tử (Constitution III)**:
+   - Tuân thủ quy tắc 2 pha (All Reads Before All Writes).
+   - Đảm bảo tính Idempotent qua document `users/{userId}/walletTransactions/refund_{bookingId}`.
+   - Khi hủy đơn, xóa toàn bộ document `slots/{slotId}` thuộc đơn trong Transaction để nhả sân ngay lập tức trên lưới khung giờ của Spec 040.
+5. **Khắc phục giới hạn Transaction đối với chuỗi đơn cố định tuần (`recurringGroupId`)**:
+   - Do Android Client SDK không hỗ trợ truy vấn (query) bên trong `runTransaction`, tầng Repository thực hiện truy vấn danh sách `DocumentReference` của các buổi còn lại trước, sau đó truyền danh sách tham chiếu này vào Transaction để xử lý hủy nguyên tử.
+6. **Cập nhật realtime khi Check-in & Hỗ trợ QR Offline**:
+   - Lắng nghe realtime `bookings/{bookingId}` qua Flow để tự động cập nhật UI sang trạng thái *"Đã check-in lúc HH:mm"* và ẩn nút hủy đơn ngay khi chủ sân quét mã QR.
+   - Tận dụng Firestore Offline Persistence để người chơi có thể xuất trình mã QR check-in ngay cả khi mất sóng 4G/Wi-Fi tại cụm sân thể thao.
+7. **Tuân thủ thỏa thuận liên thành viên**:
+   - Phương án 2.A: Tab 2 (Chờ duyệt) đếm ngược 60 phút hạn chủ sân duyệt. Nếu quá 60 phút, đơn tự động hủy (`REJECTED`) và hoàn 100% tiền ví giả lập.
+   - Phương án 5.A: Khóa tuyệt đối quyền đánh giá đối với các đơn mang trạng thái `NO_SHOW` (vắng mặt).
+
+### Các tài liệu kỹ thuật đã sinh
+
+- `specs/060-my-bookings/plan.md`: Kế hoạch kỹ thuật tổng thể (Summary, Context, Constitution Check, Project Structure, Core Rules, Phases).
+- `specs/060-my-bookings/research.md`: 5 nghiên cứu kỹ thuật chuyên sâu (Composite Index 5 tab, xử lý biên Voucher khi hủy trễ, chống chỉnh giờ bằng Security Rules, Transaction 2 pha, QR Offline).
+- `specs/060-my-bookings/data-model.md`: Chi tiết Schema Firestore (bookings, recurringGroups, walletTransactions), DTOs, Domain Entities (`BookingSummaryItem`, `BookingDetail`, `RefundPolicyQuote`, `QrBitMatrix`) và UI States.
+- `specs/060-my-bookings/contracts/ui-contracts.md`: Hợp đồng Navigation Safe Args từ 050 sang 060, tới 040/070, Domain `BookingManagementRepository` interface, hợp đồng các UseCases và Firestore Security Rules.
+- `specs/060-my-bookings/quickstart.md`: Hướng dẫn kiểm thử Unit Test (mốc 240m, kẹp biên voucher, tính Idempotent), UI Test và 5 kịch bản xác minh thủ công.
