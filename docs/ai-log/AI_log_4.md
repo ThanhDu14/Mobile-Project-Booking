@@ -13,6 +13,7 @@ Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 | 7   | 2026-10-15 | Lập implementation plan cho Feature 110 (đăng ký chủ sân) bằng `$speckit-plan` và viết lại tài liệu bằng tiếng Việt        | 11   |
 | 8   | 2026-10-16 | Lập implementation plan cho Feature 111 (thiết lập cơ sở chủ sân) bằng `$speckit-plan`                                     | 11   |
 | 9   | 2026-10-16 | Lập implementation plan cho Feature 112 (vận hành chủ sân) bằng `$speckit-plan`                                            | 11   |
+| 10  | 2026-10-16 | Lập implementation plan cho Feature 120 (quản trị và kiểm duyệt) bằng `$speckit-plan`                                    | 12   |
 
 ---
 
@@ -618,6 +619,78 @@ Cuối cùng báo cáo file đã tạo, quyết định kỹ thuật, dependency
 - Rà lại bộ artifact chỉ thuộc bước Plan; không tạo `tasks.md` hoặc code triển khai.
 - `git diff --check` không báo lỗi định dạng.
 - Không chạy test, tasks hoặc implementation.
+
+---
+
+## Mục 10: Lập implementation plan cho Feature 120 (quản trị và kiểm duyệt)
+
+| Trường | Nội dung |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ngày | 2026-10-16 |
+| Người thực hiện | Minh Nhựt |
+| Nhóm tính năng liên quan | 12 – Quản trị (`specs/120-admin`) |
+| Công cụ AI | Codex (GPT-6), skill `$speckit-plan` |
+| Mục đích | Đối chiếu spec 120 với constitution, hướng dẫn W1–W2, database README, các spec account/owner/thông báo liên quan và cấu trúc code để lập kế hoạch; không viết code |
+| Nhánh Git | `feature/120-admin-plan` |
+
+### Prompt đã dùng
+
+```text
+$speckit-plan SPECIFY_FEATURE_DIRECTORY=specs/120-admin
+
+Lập Implementation Plan cho Feature 120 – Admin dựa trên specs/120-admin/spec.md.
+
+Đọc và đối chiếu:
+- .specify/memory/constitution.md
+- docs/guides/w1-w2-spec-assignment.md
+- docs/design/database/README.md
+- Các spec 100, 110, 111, 112 và các spec account liên quan
+- Cấu trúc code và quy ước kỹ thuật hiện có
+
+Plan cần xác định:
+- Thành phần quản trị người dùng và xử lý các báo cáo/vi phạm theo phạm vi spec.
+- Quy trình xem xét, duyệt hoặc từ chối hồ sơ chủ sân.
+- Cách quản lý dữ liệu và thống kê hệ thống theo yêu cầu đã đặc tả.
+- Phân quyền admin, bảo vệ dữ liệu nhạy cảm và kiểm tra quyền ở phía server/Security Rules.
+- Tác động đến CSDL, dependency, xử lý lỗi và chiến lược kiểm thử.
+
+Không bao gồm: tự mở rộng nghiệp vụ ngoài specs/120-admin/spec.md, thay đổi quy tắc của các feature khác hoặc triển khai code.
+
+Không tự bịa schema, API, trạng thái hoặc công nghệ mới. Đối chiếu tài liệu và code hiện có; nếu phát hiện mâu thuẫn hoặc thiếu thông tin, ghi nhận rõ. Chỉ tạo tài liệu thuộc bước Plan; không chạy /speckit-tasks, /speckit-implement hoặc viết implementation code.
+
+Cuối cùng báo cáo file đã tạo, quyết định kỹ thuật chính, dependency, rủi ro và điểm cần làm rõ.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Đối chiếu spec 120 với Constitution 1.2.0, hướng dẫn phân công W1–W2, database README, specs 010/011/100/110/111/112 và cấu trúc Android, Firestore Rules, test scaffold.
+- Tạo các artifact Plan trong `specs/120-admin/`: `plan.md`, `research.md`, `data-model.md`, `quickstart.md` và `contracts/admin-boundaries.md`.
+- Ghi nhận các ranh giới quản trị: duyệt/từ chối hồ sơ từ trạng thái `PENDING`; tạo venue từ `venueDraft` khi duyệt; xử lý report bằng các action và trạng thái hiện có; quản lý trạng thái tài khoản, thu hồi quyền owner và khóa/mở khóa venue.
+- Xác định quyền admin phải được xác minh ở server bằng `appRole`; giấy tờ chủ sân dùng bucket riêng `owner-docs` và signed URL hết hạn sau 5 phút.
+- Giữ nguyên schema và enum có trong tài liệu nguồn. Không thêm API, field, collection, dependency hay trạng thái mới.
+- Ghi nhận các điểm chưa được đặc tả đầy đủ: tính nhất quán/recovery giữa Firestore, custom claims và notification; schema và chỉ số thống kê; quy tắc quản lý danh mục; hành vi ẩn đối với report `DROP_IN`; cách xác định tài khoản hoạt động để gửi broadcast.
+- Ghi nhận code hiện tại mới là Android starter; `firestore.rules` chưa có collection-specific rules, `supabase/functions` chưa có code triển khai và version catalog còn thiếu một số dependency kiến trúc/kiểm thử.
+- `setup-plan.sh` không nhận feature directory dưới dạng argument; chạy với biến môi trường `SPECIFY_FEATURE_DIRECTORY=specs/120-admin` và nhận đúng thư mục `specs/120-admin`.
+- Không tạo `tasks.md`, không chạy `$speckit-tasks`, `$speckit-implement` hoặc tests; không viết implementation code.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| Duyệt hồ sơ | Dùng các trạng thái và field đã có; quyết định phải dựa trên hồ sơ hiện còn `PENDING`; từ chối cần lý do không rỗng; duyệt tạo venue từ `venueDraft` | Khớp spec 120, spec 110 và database README; tránh quyết định lỗi thời hoặc mở rộng nghiệp vụ |
+| Báo cáo | Dùng `OPEN → RESOLVED/DISMISSED` và các action hiện có; kiểm tra action tương thích với target | Giữ đúng schema và clarifications trong spec; chưa giả định `DROP_IN` có hỗ trợ ẩn |
+| Quyền và giấy tờ | Xác minh Admin phía server; chỉ người nộp và Admin được truy cập giấy tờ qua signed URL có thời hạn | Tuân Constitution và giới hạn riêng tư trong database README |
+| User, owner và venue | Thu hồi owner theo các field/trạng thái đã chốt; không tự đổi trạng thái venue khi thu hồi quyền; Admin quản lý khóa/mở khóa venue | Khớp spec 120 và phụ thuộc spec 010/011/112 |
+| Thống kê và danh mục | Chỉ dùng collection đã nêu; không tự định nghĩa metrics, field hay thao tác CRUD chưa có đặc tả | Tài liệu nguồn chưa có schema chi tiết và quy tắc nghiệp vụ |
+| Server contract và recovery | Ghi các thiếu hụt về API, transaction, idempotency, claim và notification thành điểm cần làm rõ | Chưa có hợp đồng đủ căn cứ để thiết kế chi tiết |
+| Tasks/implementation | Không tạo hoặc chạy | Phạm vi yêu cầu chỉ gồm bước Plan |
+
+### Cách kiểm chứng
+
+- Đối chiếu các field, trạng thái, quyền và collection với spec 120, database README và các spec liên quan.
+- Rà soát cấu trúc code hiện tại để phân biệt phần đã tồn tại với vị trí dự kiến cho implementation.
+- Chạy `git diff --check`; không có lỗi whitespace được báo cáo.
+- Không chạy test, `$speckit-tasks` hoặc `$speckit-implement`.
 
 ---
 
