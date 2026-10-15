@@ -9,6 +9,7 @@ Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 | 3   | 2026-10-08 | Viết và làm rõ spec 111 (quản lý cơ sở, sân con, bảng giá và khóa giờ) bằng AI, `$speckit-clarify` và `$speckit-checklist` | 11   |
 | 4   | 2026-10-08 | Viết và làm rõ spec 112 (vận hành cơ sở chủ sân) bằng AI và `$speckit-clarify`                                             | 11   |
 | 5   | 2026-10-08 | Viết và làm rõ spec 120 (quản trị, hồ sơ chủ sân và báo cáo) bằng `$speckit-specify` và `$speckit-clarify`                 | 12   |
+| 6   | 2026-10-15 | Lập implementation plan cho Feature 100 (thông báo) bằng `$speckit-plan`                                                   | 10   |
 
 ---
 
@@ -410,3 +411,66 @@ $speckit-clarify
 - `git diff --check` không báo lỗi định dạng.
 - Ghi nhận còn thiếu chi tiết về thao tác quản lý danh mục, chỉ số thống kê và nội dung system notification trong tài liệu hiện có.
 - Không chạy plan, tasks, implementation hoặc test.
+
+---
+
+## Mục 6: Lập implementation plan Feature 100 – Notification
+
+| Trường                   | Nội dung                                                                                                                                    |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-10-15                                                                                                                                  |
+| Người thực hiện          | Minh Nhựt                                                                                                                                   |
+| Nhóm tính năng liên quan | 10 – Thông báo (spec `specs/100-notification`)                                                                                              |
+| Công cụ AI               | Codex (GPT-6), `$speckit-plan`                                                                                                               |
+| Mục đích                 | Đối chiếu spec, checklist, constitution, hướng dẫn W1–W2, CSDL và cấu trúc code để lập kế hoạch triển khai Notification, không viết code   |
+| Nhánh Git                | `feature/100-notification-plan`                                                                                                              |
+
+### Prompt đã dùng
+
+```text
+$speckit-plan SPECIFY_FEATURE_DIRECTORY=specs/100-notification
+
+Lập Implementation Plan cho Feature 100 – Notification dựa trên specification hiện có.
+
+Đọc và đối chiếu trước khi lập plan:
+- specs/100-notification/spec.md
+- specs/100-notification/checklists/requirements.md nếu tồn tại
+- .specify/memory/constitution.md
+- docs/guides/w1-w2-spec-assignment.md
+- docs/design/database/README.md
+- Các spec liên quan đến account/profile, booking, review/favorite, drop-in/waitlist, chat và admin nếu tồn tại
+- Cấu trúc code và quy ước kỹ thuật hiện có
+
+Xác định thành phần cần thay đổi cho notification center/inbox, đánh dấu đã đọc, preference theo type; tích hợp sự kiện và recipient từ feature nguồn; inbox, push, quyền OS và preference; schema/quyền truy cập hiện có; idempotency, booking reminder, chat, deep link/fallback; bảo mật, privacy, phân trang, lỗi, retry, kiểm thử và dependency.
+
+Không thay đổi nghiệp vụ hoặc thiết kế lại feature nguồn; không tự bịa collection, field, trạng thái hay event contract. Ghi mâu thuẫn và điểm cần làm rõ. Chỉ tạo/cập nhật tài liệu bước Plan; không chạy tasks/implement, không viết code. Cuối cùng báo file, quyết định kiến trúc, thành phần, dependency, rủi ro và câu hỏi còn mở.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Đọc spec 100, checklist, constitution, hướng dẫn W1–W2, database README, các spec liên quan và cấu trúc Android/Firebase/Supabase hiện có.
+- Tạo `plan.md`, `research.md`, `data-model.md`, `quickstart.md` và hai contract `contracts/event-integration.md`, `contracts/firestore-security.md` trong `specs/100-notification/`.
+- Plan chọn Firestore path `users/{uid}/notifications/{id}` cùng các field hiện có; preferences và FCM tokens ở `users/{uid}`. Không thêm collection hoặc field mới.
+- Kiến trúc dự kiến theo Android MVVM/package feature và Supabase Edge Functions/pg_cron; notification inbox được lưu độc lập với kết quả gửi FCM.
+- Chưa chốt event transport/payload, idempotency key, trạng thái reminder, retry/backoff, presence của chat, page size/index, token lifecycle, định nghĩa account active và chi tiết deep link. Các điểm này được ghi trong `research.md` thay vì tự suy diễn.
+- Ghi nhận mâu thuẫn quyền tạo `SYSTEM` notification: bảng phân quyền CSDL ghi Admin có thể create, trong khi §4.13 và các spec mô tả server-side creation. Cũng cần thống nhất DataStore trong constitution với `users.notificationPrefs` là nguồn chuẩn.
+- Không chạy `$speckit-tasks`, `$speckit-implement` hoặc test; không tạo code. Không có `.specify/extensions.yml`, nên không có extension hook cần chạy.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần                              | Quyết định                                                                                                      | Lý do                                                                                         |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Inbox và schema                   | Giữ `users/{uid}/notifications/{id}` và các field đã có trong CSDL; client chỉ sửa `isRead`                    | Khớp database README và FR-004/005; tránh tự thêm collection/field                            |
+| Pipeline và feature nguồn        | Feature nguồn cung cấp sự kiện; nhóm D xác thực recipient, ghi inbox và xử lý push phía server                 | Giữ ownership nghiệp vụ và nguyên tắc bảo mật server-side                                     |
+| Push và preferences              | Preference chỉ điều khiển push; PROMOTION tắt mặc định; BOOKING_NEW không tắt; OS permission là lớp riêng      | Tuân thủ clarifications và FR-006–012                                                        |
+| Reminder                          | Một reminder cho booking CONFIRMED, 2 giờ trước startAt sớm nhất                                               | Tuân thủ clarification/FR-010; không sửa state booking                                       |
+| Idempotency/retry                 | Ghi thành điểm cần làm rõ; không tự tạo event ID, delivery state hay outbox schema                              | CSDL/spec chưa xác nhận hợp đồng hoặc field để enforce và retry                              |
+| Quyền SYSTEM                     | Ghi nhận xung đột giữa bảng quyền CSDL và mô tả tạo qua server; yêu cầu đồng bộ trước implementation           | Tránh tự mở quyền tạo từ client hoặc sửa spec của feature khác                               |
+| Tasks/implementation              | Không tạo hoặc chạy                                                                                             | Phạm vi công việc chỉ là Plan                                                               |
+
+### Cách kiểm chứng
+
+- Đối chiếu mapping notification types và recipient với spec 100, database README và các spec nguồn; không sửa nghiệp vụ nguồn.
+- Ghi rõ collection path, field, access rule và các điểm schema/index chưa được xác nhận trong `data-model.md`/contracts.
+- Rà lại danh sách artifact: chỉ gồm tài liệu Plan; không tạo `tasks.md` hoặc code.
+- Không chạy test hoặc lệnh implementation.
