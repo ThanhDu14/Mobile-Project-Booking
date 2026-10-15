@@ -16,6 +16,8 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 10 | 2026-10-12 | Thống nhất liên thành viên (D: 1A, 2A, 3B; C: 4A, 5A; A: 6A) và hoàn thiện các spec | 04, 05, 06 |
 | 11 | 2026-10-15 | Lập kế hoạch kỹ thuật spec 040 (lưới ca 30 phút) bằng `/speckit-plan` | 04 |
 | 12 | 2026-10-15 | Lập kế hoạch kỹ thuật spec 041 (đặt cố định theo tuần) bằng `/speckit-plan` | 04 |
+| 13 | 2026-10-15 | Lập kế hoạch kỹ thuật spec 050 (thanh toán và voucher giả lập) bằng `/speckit-plan` | 05 |
+
 
 
 
@@ -609,6 +611,48 @@ Bảng đối chiếu lựa chọn:
 - `specs/041-weekly-recurring-booking/data-model.md`: Chi tiết Schema `recurringGroups`, `bookings`, DTOs, Domain Entities (`RecurringConfig`, `RecurringSession`, `RecurringConflict`, `RecurringSummary`) và UI State.
 - `specs/041-weekly-recurring-booking/contracts/ui-contracts.md`: Hợp đồng Navigation Safe Args sang `[050]`, Domain `RecurringBookingRepository` interface và hợp đồng 6 UseCases.
 - `specs/041-weekly-recurring-booking/quickstart.md`: Hướng dẫn kiểm thử Unit Test (sinh lịch, bỏ ngày quá khứ, đổi sân, rollback All-or-Nothing), UI Test và kịch bản xác minh thủ công.
+
+---
+
+## Mục 13: Lập kế hoạch kỹ thuật spec 050 (thanh toán và voucher giả lập) bằng `/speckit-plan`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-15 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 05 – Thanh toán và khuyến mãi (`specs/050-payment-voucher`) |
+| Công cụ AI | Antigravity, lệnh Spec Kit `/speckit-plan` |
+| Mục đích | Lập kế hoạch kỹ thuật chi tiết (Architecture, Data Models, Research, Contracts, Quickstart) cho tính năng thanh toán giả lập, áp dụng voucher đa nguồn và xuất hóa đơn điện tử E-Receipt |
+| Nhánh Git | `feature/050-payment-voucher` |
+
+### Bối cảnh và Quyết định kỹ thuật cốt lõi
+
+1. **Giao dịch nguyên tử trong Firestore Transaction (Atomic Transaction)**:
+   - Tuân thủ quy tắc 2 pha (Đọc-trước-Ghi-sau): Kiểm tra hạn giữ chỗ (`holdExpiresAt > now`), voucher còn lượt (`usedCount < usageLimit` & `perUserLimit`), và số dư ví ảo ($\ge$ tiền cọc hoặc 100% tiền đơn) trước khi thực hiện ghi.
+   - Trừ số dư ví tại `users/{userId}.walletBalance`, ghi log giao dịch `walletTransactions/{txId}`, tăng lượt voucher và ghi `redemptions/{bookingId}` trong cùng Transaction.
+   - Chuyển trạng thái đơn sang `PENDING` (chờ chủ sân duyệt 60 phút theo Phương án 2.A) và đồng thời chuyển các `slots` liên quan từ `HOLD` sang `BOOKED` (xóa `holdExpiresAt` 5 phút).
+2. **Quản lý đa nguồn Voucher (Phương án 3.B)**:
+   - Hỗ trợ song song: `venues/{venueId}/vouchers/{code}` (cơ sở) và `systemVouchers/{code}` (toàn sàn). Document ID chính là mã code viết hoa không dấu để chống tạo trùng mã.
+   - Thiết kế document `.../vouchers/{code}/userUsage/{userId}` để đọc và tăng lượt dùng cá nhân (`perUserLimit`) nguyên tử trong Transaction.
+3. **Công thức làm tròn đặt cọc 30% an toàn**:
+   - `rawDeposit = (payableAmount * 30) / 100`, làm tròn nghìn đồng: `((rawDeposit + 500) / 1000) * 1000`.
+   - Xử lý biên: Nếu cọc = 0đ thì lấy `payableAmount`; nếu voucher giảm 100% thì `depositAmount = 0đ` và phương thức tự chuyển thành `FREE`.
+4. **Phân tách phương thức thanh toán theo loại đơn**:
+   - `AT_VENUE` (trả tại sân): Chỉ áp dụng cho đơn đặt lẻ (`[040]`); tự động ẩn đối với đơn cố định theo tuần (`[041]`) để tránh rủi ro bùng sân dài hạn.
+5. **Tuân thủ cam kết học tập phi thương mại (Constitution VI)**:
+   - Hiển thị nhãn nổi bật *"Giao dịch giả lập phục vụ học tập - Không thu tiền thật"* trên màn hình thanh toán và E-Receipt.
+   - Cung cấp nút nạp ví ảo thử nghiệm (100k, 500k, 1M) tránh tắc nghẽn luồng chấm điểm.
+6. **Hợp đồng chuyển tiếp sang Spec 060**:
+   - Đóng gói Bundle Safe Args `ReceiptToMyBookingsArgs`: `bookingId`, `isRecurring`, `initialTab = "PENDING"` để mở ngay tab "Chờ duyệt" tại Spec 060.
+
+### Các tài liệu kỹ thuật đã sinh
+
+- `specs/050-payment-voucher/plan.md`: Kế hoạch kỹ thuật tổng thể (Summary, Context, Constitution Check, Project Structure, Core Rules, Phases).
+- `specs/050-payment-voucher/research.md`: 5 nghiên cứu kỹ thuật chuyên sâu (Atomic transaction trừ ví/voucher/slot, 2 nguồn voucher 3.B, làm tròn cọc 30%, timeout 60m duyệt đơn PENDING 2.A, cam kết học tập Constitution VI).
+- `specs/050-payment-voucher/data-model.md`: Chi tiết Schema Firestore (vouchers, userUsage, redemptions, walletTransactions), DTOs, Domain Entities (`Voucher`, `PaymentMethod`, `PaymentBreakdown`, `PaymentReceipt`) và UI State.
+- `specs/050-payment-voucher/contracts/ui-contracts.md`: Hợp đồng Navigation Safe Args từ 040/041 sang 050 và tới 060, Domain `PaymentRepository` interface và hợp đồng các UseCases.
+- `specs/050-payment-voucher/quickstart.md`: Hướng dẫn kiểm thử Unit Test (cọc 30%, voucher biên, rollback Transaction thiếu tiền/hết hạn), UI Test và kịch bản xác minh thủ công.
+
 
 
 
