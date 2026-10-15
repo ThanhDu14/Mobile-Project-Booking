@@ -15,6 +15,8 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 9 | 2026-10-10 | Rà soát điểm giao thoa liên thành viên & Cập nhật slot 30 phút cho spec 040, 041 | 04, 05, 06 |
 | 10 | 2026-10-12 | Thống nhất liên thành viên (D: 1A, 2A, 3B; C: 4A, 5A; A: 6A) và hoàn thiện các spec | 04, 05, 06 |
 | 11 | 2026-10-15 | Lập kế hoạch kỹ thuật spec 040 (lưới ca 30 phút) bằng `/speckit-plan` | 04 |
+| 12 | 2026-10-15 | Lập kế hoạch kỹ thuật spec 041 (đặt cố định theo tuần) bằng `/speckit-plan` | 04 |
+
 
 
 ---
@@ -569,5 +571,44 @@ Bảng đối chiếu lựa chọn:
 - `specs/040-booking-slot-grid/data-model.md`: Chi tiết Schema Firestore, Kotlin DTOs, Domain Entities (`TimeSlot`, `SlotStatus`, `Court`, `PriceRule`, `SlotSelectionState`) và UI State.
 - `specs/040-booking-slot-grid/contracts/ui-contracts.md`: Hợp đồng Navigation Safe Args, Repository Interface, UseCases và bảng mã màu Material 3 cho 6 trạng thái ca.
 - `specs/040-booking-slot-grid/quickstart.md`: Hướng dẫn kiểm thử Unit Test, UI Test và kịch bản xác minh thủ công trên Firebase Emulator.
+
+---
+
+## Mục 12: Lập kế hoạch kỹ thuật spec 041 (đặt cố định theo tuần) bằng `/speckit-plan`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-15 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 04 – Đặt sân (`specs/041-weekly-recurring-booking`) |
+| Công cụ AI | Antigravity, lệnh Spec Kit `/speckit-plan` |
+| Mục đích | Lập kế hoạch kỹ thuật chi tiết (Architecture, Data Models, Research, Contracts, Quickstart) cho tính năng đặt sân cố định theo tuần (chu kỳ 4–12 tuần) |
+| Nhánh Git | `feature/041-weekly-recurring-booking` |
+
+### Bối cảnh và Quyết định kỹ thuật cốt lõi
+
+1. **Vượt giới hạn Firestore `whereIn(30)` bằng Batching song song**:
+   - Khi quét khả dụng chu kỳ 12 tuần (lên tới 36 ngày), áp dụng giải thuật `dates.chunked(30)` kết hợp Coroutines `async/awaitAll` để thực thi truy vấn song song.
+   - Vừa tránh crash do giới hạn 30 phần tử của Firestore SDK, vừa đảm bảo tốc độ phản hồi cực nhanh dưới 1.2 giây trên mạng 4G (đạt tiêu chí SC-001 < 2s).
+2. **Kiểm soát giới hạn 500 operations của Firestore Transaction (All-or-Nothing Hold)**:
+   - Toàn bộ chu kỳ tối đa 36 buổi $\times$ 6 slot 30 phút $\approx$ 216 slot documents + 36 booking documents + 1 recurringGroup document = 253 writes, hoàn toàn nằm an toàn dưới trần 500 operations của Firestore Transaction.
+   - Cơ chế All-or-Nothing: Nếu có bất kỳ slot nào bị chiếm dở dang, Transaction tự động ném `SlotUnavailableException` để rollback sạch sẽ 100%.
+3. **Thuật toán xử lý xung đột lịch thông minh (`ResolveRecurringConflictUseCase`)**:
+   - Một buổi chỉ hợp lệ khi toàn bộ $N$ slot 30 phút liên tiếp trên cùng 1 sân con đều trống.
+   - Tự động quét tìm sân thay thế cùng `surfaceType` trong cùng khung giờ (giá không đổi theo Phương án 1.A).
+   - Cho phép người chơi bỏ qua buổi bị trùng (giảm trừ tiền tương ứng), nhưng bắt buộc phải còn tối thiểu 4 buổi hợp lệ mới cho phép tạo đơn cố định.
+4. **Cơ chế chủ động giải phóng chỗ `ReleaseRecurringHoldUseCase`**:
+   - Khi người dùng bấm Quay lại (Back) hoặc Hủy từ màn hình xác nhận, app chủ động bắn lệnh giải phóng ngay các slot đang giữ, tránh hiện tượng chiếm dụng ảo (ghost holding) suốt 5 phút.
+5. **Hợp đồng chuyển tiếp sang Spec 050**:
+   - Đóng gói Bundle Safe Args `RecurringToPaymentArgs`: `recurringGroupId`, `venueId`, `venueName`, `totalSessions`, `subtotalAmount`, `depositAmount` (30%), `holdExpiresAtMillis`.
+
+### Các tài liệu kỹ thuật đã sinh
+
+- `specs/041-weekly-recurring-booking/plan.md`: Kế hoạch kỹ thuật tổng thể (Summary, Context, Constitution Check, Project Structure, Core Rules, Phases).
+- `specs/041-weekly-recurring-booking/research.md`: 5 nghiên cứu kỹ thuật chuyên sâu (Chunked queries < 2s, Transaction 500 ops limit, tìm sân cùng surfaceType, giải phóng slot chủ động, phân bổ cọc 30%).
+- `specs/041-weekly-recurring-booking/data-model.md`: Chi tiết Schema `recurringGroups`, `bookings`, DTOs, Domain Entities (`RecurringConfig`, `RecurringSession`, `RecurringConflict`, `RecurringSummary`) và UI State.
+- `specs/041-weekly-recurring-booking/contracts/ui-contracts.md`: Hợp đồng Navigation Safe Args sang `[050]`, Domain `RecurringBookingRepository` interface và hợp đồng 6 UseCases.
+- `specs/041-weekly-recurring-booking/quickstart.md`: Hướng dẫn kiểm thử Unit Test (sinh lịch, bỏ ngày quá khứ, đổi sân, rollback All-or-Nothing), UI Test và kịch bản xác minh thủ công.
+
 
 
