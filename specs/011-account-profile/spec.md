@@ -21,6 +21,15 @@
 - Q: Số dư ví giả lập (spec 050) hiển thị và nạp ở đâu trong trang tài khoản? → A: Trang "Tài khoản" hiện số dư `walletBalance` kèm nhãn giả lập và nút "Nạp ví giả lập" (dùng chức năng nạp của spec 050); số dư bị xóa cùng tài khoản.
 - Q: Trang tài khoản hiển thị gì khi admin thu hồi quyền chủ sân (spec 120)? → A: Hiện "Quyền chủ sân đã bị thu hồi" kèm lý do của admin và cho nộp hồ sơ mới; dữ liệu là `ownerStatus = NONE`, hồ sơ cũ giữ `APPROVED`.
 
+### Session 2026-10-15 (sau `/speckit-plan`, theo research R16)
+
+- Q: App có báo được "email đã được sử dụng" khi đổi email không? → A: Không. Email enumeration protection đang bật nên Firebase không báo lỗi; app luôn hiện cùng một thông báo (US7-2).
+- Q: Ảnh đại diện công khai tới mức nào? → A: Bucket `avatars` public, ai có đường dẫn cũng xem được; đường dẫn chứa `uid` và mốc thời gian nên khó đoán (FR-004).
+- Q: "Toàn bộ hoặc không" của FR-021 áp dụng tới đâu? → A: Tới bước chốt: mọi thay đổi ảnh hưởng người khác nằm trong một lần ghi. Phần xóa dữ liệu cá nhân sau đó do hệ thống tự hoàn tất và thử lại.
+- Q: Tiền hoàn cho đơn của chính người xóa đi đâu? → A: Vào ví giả lập rồi bị xóa cùng ví; màn hình xác nhận ghi rõ (FR-022).
+- Q: Khi nào phải xác nhận lại danh tính? → A: Luôn luôn, cho cả 3 thao tác đổi mật khẩu, đổi email, xóa tài khoản (FR-017).
+- Q: Admin có tự xóa tài khoản được không? → A: Không. Admin không có nút "Xóa tài khoản"; tài khoản admin do nhóm xóa thủ công bằng script.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Xem và sửa hồ sơ cá nhân (Priority: P1)
@@ -63,7 +72,7 @@ Người chơi muốn đưa sân của mình lên SmashNow bấm "Đăng ký là
 
 **Why this priority**: Theo quyết định ở spec 010, đây là **lối vào duy nhất** để trở thành chủ sân. Không có nó thì không ai dùng được các tính năng chủ sân (nhóm 11).
 
-**Independent Test**: Với 4 tài khoản ở 4 trạng thái (chưa nộp, chờ duyệt, đã duyệt, bị từ chối), mỗi tài khoản thấy đúng nội dung và đúng nút tương ứng ở trang "Tài khoản".
+**Independent Test**: Với 5 tài khoản ở 5 trạng thái (chưa nộp, chờ duyệt, đã duyệt, bị từ chối, bị thu hồi quyền), mỗi tài khoản thấy đúng nội dung và đúng nút tương ứng ở trang "Tài khoản".
 
 **Acceptance Scenarios**:
 
@@ -139,7 +148,7 @@ Người dùng đăng ký bằng email nhưng gõ nhầm hoặc muốn đổi em
 **Acceptance Scenarios**:
 
 1. **Given** người dùng có email và mật khẩu, **When** nhập email mới chưa được dùng và đúng mật khẩu hiện tại, **Then** app gửi email xác minh tới địa chỉ mới và báo "Kiểm tra hộp thư mới để hoàn tất"; email đăng nhập chỉ đổi sau khi bấm link.
-2. **Given** email mới đã thuộc tài khoản khác, **When** gửi yêu cầu, **Then** app báo email đã được sử dụng.
+2. **Given** email mới đã thuộc tài khoản khác, **When** gửi yêu cầu, **Then** app hiện cùng thông báo như kịch bản 1 ("Nếu email này chưa được dùng cho tài khoản khác, bạn sẽ nhận được thư xác minh"), không có thư xác minh nào được gửi và email đăng nhập không đổi. App không báo email đã được sử dụng để không lộ email nào đã có tài khoản.
 
 ---
 
@@ -150,12 +159,13 @@ Người dùng đăng ký bằng email nhưng gõ nhầm hoặc muốn đổi em
 - **Danh mục khu vực không tải được**: vẫn sửa được các trường khác; mục khu vực hiển thị lỗi và nút thử lại.
 - **Bấm "Lưu" nhiều lần**: chỉ một lần lưu được thực hiện; nút bị khóa khi đang lưu.
 - **Hồ sơ đang mở trên hai máy**: lần lưu sau cùng được giữ; máy còn lại thấy dữ liệu mới khi mở lại trang.
-- **Phiên đăng nhập quá cũ** khi đổi mật khẩu, đổi email hoặc xóa tài khoản: app yêu cầu xác nhận lại danh tính rồi tiếp tục thao tác, không bắt đăng xuất.
+- **Xác nhận lại danh tính** khi đổi mật khẩu, đổi email hoặc xóa tài khoản: app luôn yêu cầu (FR-017) rồi tiếp tục thao tác, không bắt đăng xuất.
+- **Đổi mật khẩu hoặc email khi đang đăng nhập trên nhiều máy**: máy đang thao tác vẫn dùng tiếp (đổi email thì đăng nhập lại bằng email mới sau khi bấm link); các máy khác bị đăng xuất và báo "Phiên đăng nhập đã hết hạn".
 - **Tài khoản bị khóa trong lúc đang ở trang tài khoản**: thao tác tiếp theo bị từ chối, app đăng xuất và báo tài khoản bị khóa (theo spec 010).
 - **Chưa xác minh email**: trang tài khoản có nút "Gửi lại email xác minh" (dùng lại hành vi ở spec 010).
 - **Đang có đơn ở trạng thái giữ chỗ hoặc đang thanh toán** khi xóa tài khoản: đơn đó bị hủy như đơn sắp tới, khung giờ được nhả ngay.
 - **Khách của chủ sân bị xóa đang mở màn hình chi tiết đơn**: lần làm mới tiếp theo thấy đơn "Đã hủy" với lý do "Cơ sở ngừng hoạt động".
-- **Người dùng là admin**: trang tài khoản không có mục đăng ký chủ sân và không có nút chuyển chế độ.
+- **Người dùng là admin**: trang tài khoản không có mục đăng ký chủ sân, không có nút chuyển chế độ và không có nút "Xóa tài khoản". Tài khoản admin do nhóm xóa thủ công bằng script; máy chủ từ chối yêu cầu admin tự xóa.
 
 ## Requirements *(mandatory)*
 
@@ -167,7 +177,7 @@ Người dùng đăng ký bằng email nhưng gõ nhầm hoặc muốn đổi em
 - **FR-001a**: Trang tài khoản PHẢI hiển thị số dư ví giả lập (`walletBalance`) kèm nhãn "Giả lập, không phải tiền thật" và nút "Nạp ví giả lập" mở chức năng nạp ví của spec 050. Người dùng không sửa trực tiếp số dư; mọi thay đổi số dư do máy chủ ghi (spec 050, 060).
 - **FR-002**: Người dùng PHẢI sửa được họ tên (2–50 ký tự), trình độ (một trong: Mới chơi, Trung bình, Khá/Nâng cao) và khu vực hay chơi (chọn 0–5 khu vực từ danh mục khu vực của hệ thống).
 - **FR-003**: Người dùng PHẢI đổi được ảnh đại diện bằng cách chụp hoặc chọn ảnh, cắt vuông trước khi tải lên. Ảnh sau xử lý KHÔNG ĐƯỢC vượt quá 2 MB; chỉ chấp nhận JPG, PNG, WebP. Người dùng cũng PHẢI xóa được ảnh để về ảnh mặc định.
-- **FR-004**: Ảnh đại diện PHẢI xem được bởi mọi người dùng đã đăng nhập, nhưng chỉ chủ tài khoản được thay hoặc xóa.
+- **FR-004**: Ảnh đại diện PHẢI công khai qua đường dẫn khó đoán (ai có đường dẫn đều xem được, kể cả người chưa đăng nhập), nhưng chỉ chủ tài khoản được thay hoặc xóa.
 - **FR-005**: Người dùng KHÔNG ĐƯỢC sửa vai trò, trạng thái chủ sân, trạng thái tài khoản hay trạng thái xác minh từ trang hồ sơ; các trường này chỉ hiển thị.
 - **FR-006**: Màn hình sửa hồ sơ PHẢI hỏi xác nhận khi người dùng thoát mà còn thay đổi chưa lưu.
 
@@ -198,16 +208,18 @@ Người dùng đăng ký bằng email nhưng gõ nhầm hoặc muốn đổi em
 - **FR-014**: Người dùng có mật khẩu PHẢI đổi được mật khẩu bằng cách nhập mật khẩu hiện tại, mật khẩu mới và nhập lại. Mật khẩu mới PHẢI theo cùng yêu cầu như spec 010 (tối thiểu 8 ký tự, có chữ và số) và khác mật khẩu hiện tại.
 - **FR-015**: Mục đổi mật khẩu và đổi email KHÔNG ĐƯỢC hiển thị với tài khoản không có mật khẩu (chỉ dùng Google hoặc số điện thoại).
 - **FR-016**: Người dùng có email và mật khẩu PHẢI đổi được email đăng nhập; email mới chỉ có hiệu lực sau khi người dùng bấm link xác minh gửi tới email mới.
-- **FR-017**: Các thao tác đổi mật khẩu, đổi email và xóa tài khoản PHẢI yêu cầu xác nhận lại danh tính nếu lần đăng nhập gần nhất đã quá lâu.
+- **FR-017**: Các thao tác đổi mật khẩu, đổi email và xóa tài khoản PHẢI luôn yêu cầu xác nhận lại danh tính (nhập mật khẩu, đăng nhập lại Google hoặc nhập OTP tùy cách đăng nhập). Với xóa tài khoản, máy chủ PHẢI từ chối nếu lần xác nhận đã quá 5 phút.
 
 **Xóa tài khoản**
 
-- **FR-018**: Người dùng PHẢI xóa được tài khoản của mình. Trước khi xóa, app PHẢI liệt kê dữ liệu sẽ bị xóa và dữ liệu được giữ ở dạng ẩn danh, yêu cầu xác nhận lại danh tính và gõ chữ "XÓA".
+- **FR-018**: Người dùng (trừ admin) PHẢI xóa được tài khoản của mình. Trước khi xóa, app PHẢI liệt kê dữ liệu sẽ bị xóa và dữ liệu được giữ ở dạng ẩn danh, yêu cầu xác nhận lại danh tính và gõ chữ "XÓA".
 - **FR-019**: Khi xóa tài khoản, hệ thống PHẢI xóa vĩnh viễn: hồ sơ cá nhân (họ tên, email, số điện thoại, ảnh đại diện, trình độ, khu vực), lịch sử tìm kiếm, danh sách sân yêu thích, thông báo, cài đặt thông báo, số dư ví giả lập, hồ sơ chủ sân và ảnh giấy tờ, và phương thức đăng nhập.
 - **FR-020**: Dữ liệu liên quan tới người khác (đơn đặt sân đã qua, đánh giá, tin nhắn, bài đăng) PHẢI được giữ lại nhưng ẩn danh: hiển thị "Người dùng đã xóa" và ảnh mặc định, không còn liên kết tới thông tin cá nhân.
-- **FR-021**: Việc xóa PHẢI được thực hiện ở phía máy chủ và PHẢI hoàn tất toàn bộ hoặc không làm gì; nếu thất bại, tài khoản vẫn dùng được bình thường và người dùng được báo để thử lại.
-- **FR-022**: Xóa tài khoản KHÔNG bị chặn bởi đơn sắp tới hay cơ sở đang hoạt động. Trước khi xác nhận, app PHẢI hiển thị tác động: số đơn đặt sân và lượt vãng lai sắp tới của người dùng sẽ bị hủy, số tiền hoàn theo chính sách hủy; với chủ sân, thêm số cơ sở sẽ bị ẩn và số đơn, buổi vãng lai của khách sẽ bị hủy.
-- **FR-022a**: Khi xóa, hệ thống PHẢI trong cùng một lần xử lý: (1) hủy các đơn đặt sân và lượt vãng lai sắp tới của người dùng theo chính sách hủy thông thường (người hủy ghi là "hệ thống"); (2) nếu là chủ sân: ẩn mọi cơ sở, hủy mọi đơn đặt sân và buổi vãng lai sắp tới tại các cơ sở đó với hoàn tiền giả lập toàn bộ cho khách, và gửi thông báo hủy kèm lý do "Cơ sở ngừng hoạt động" cho từng khách; (3) nhả mọi khung giờ đã bị chiếm bởi các đơn bị hủy. Nếu bất kỳ bước nào thất bại, theo FR-021 không có gì bị xóa.
+- **FR-021**: Việc xóa PHẢI được thực hiện ở phía máy chủ theo hai bước:
+  - **Chốt**: mọi thay đổi ảnh hưởng tới người khác (hủy đơn, nhả khung giờ, hoàn tiền, ẩn cơ sở) và việc đánh dấu tài khoản đang bị xóa PHẢI xảy ra cùng lúc hoặc không xảy ra. Nếu bước này thất bại, tài khoản vẫn dùng được bình thường và người dùng được báo để thử lại.
+  - **Hoàn tất**: sau khi chốt, tài khoản không đăng nhập hay thao tác được nữa; hệ thống PHẢI tự hoàn tất việc gửi thông báo, ẩn danh và xóa dữ liệu cá nhân (theo FR-019, FR-020), tự thử lại khi lỗi, và xóa phương thức đăng nhập sau cùng.
+- **FR-022**: Xóa tài khoản KHÔNG bị chặn bởi đơn sắp tới hay cơ sở đang hoạt động. Trước khi xác nhận, app PHẢI hiển thị tác động: số đơn đặt sân và lượt vãng lai sắp tới của người dùng sẽ bị hủy, số tiền hoàn theo chính sách hủy; với chủ sân, thêm số cơ sở sẽ bị ẩn và số đơn, buổi vãng lai của khách sẽ bị hủy. Màn hình xác nhận PHẢI ghi rõ tiền hoàn cho đơn của chính người dùng được cộng vào ví giả lập và bị xóa cùng ví, không quy đổi được. Nếu tác động thay đổi giữa lúc xem và lúc xác nhận (ví dụ có đơn mới), app PHẢI hiển thị tác động mới và yêu cầu xác nhận lại.
+- **FR-022a**: Khi xóa, hệ thống PHẢI trong bước chốt của FR-021: (1) hủy các đơn đặt sân và lượt vãng lai sắp tới của người dùng theo chính sách hủy thông thường (người hủy ghi là "hệ thống"); (2) nếu là chủ sân: ẩn mọi cơ sở, hủy mọi đơn đặt sân và buổi vãng lai sắp tới tại các cơ sở đó với hoàn tiền giả lập toàn bộ cho khách; (3) nhả mọi khung giờ đã bị chiếm bởi các đơn bị hủy. Nếu bất kỳ bước nào thất bại, theo FR-021 không có gì bị thay đổi. Thông báo hủy kèm lý do "Cơ sở ngừng hoạt động" cho từng khách PHẢI được gửi ở bước hoàn tất, mỗi khách đúng một lần dù hệ thống phải thử lại.
 
 **Trải nghiệm chung**
 
@@ -220,7 +232,7 @@ Người dùng đăng ký bằng email nhưng gõ nhầm hoặc muốn đổi em
 - **Người dùng (User)**: hồ sơ của một tài khoản. Trường người dùng sửa được: họ tên, ảnh đại diện, trình độ, khu vực hay chơi. Trường chỉ xem: email, số điện thoại, trạng thái xác minh email, vai trò, trạng thái chủ sân, trạng thái tài khoản, số dư ví giả lập. Chi tiết theo [đặc tả CSDL, mục 4.1](../../docs/design/database/README.md#41-usersuid--a).
 - **Hồ sơ chủ sân (Owner application)**: hồ sơ người dùng nộp để trở thành chủ sân. Spec này chỉ đọc: trạng thái (chờ duyệt / đã duyệt / bị từ chối), ngày nộp, lý do từ chối. Tạo và sửa thuộc spec 110; duyệt thuộc spec 120. Chi tiết theo [đặc tả CSDL, mục 4.2](../../docs/design/database/README.md#42-ownerapplicationsid--d).
 - **Khu vực (District)**: danh mục quận/huyện do admin quản lý; người dùng chọn từ danh sách, không tự nhập.
-- **Ảnh đại diện (Avatar)**: một ảnh cho mỗi người dùng, công khai với người dùng đã đăng nhập.
+- **Ảnh đại diện (Avatar)**: một ảnh cho mỗi người dùng, công khai qua đường dẫn khó đoán (FR-004).
 - **Chế độ hiển thị (Mode)**: "Người chơi" hoặc "Quản lý sân", chỉ áp dụng cho chủ sân đã duyệt, chỉ có hiệu lực trong phiên dùng hiện tại.
 
 ## Success Criteria *(mandatory)*
@@ -230,7 +242,7 @@ Người dùng đăng ký bằng email nhưng gõ nhầm hoặc muốn đổi em
 - **SC-001**: Người dùng sửa và lưu xong hồ sơ (tên, trình độ, khu vực) trong dưới 1 phút.
 - **SC-002**: Ảnh đại diện mới hiển thị trên trang tài khoản trong vòng 5 giây sau khi xác nhận, trên mạng 4G thông thường, ở ít nhất 95% số lần thử.
 - **SC-003**: Chủ sân chuyển giữa hai chế độ trong 1 lần chạm từ trang tài khoản, giao diện mới hiện ra trong vòng 1 giây.
-- **SC-004**: 100% tài khoản trong kiểm thử thấy đúng mục chủ sân theo 4 trạng thái ở FR-008.
+- **SC-004**: 100% tài khoản trong kiểm thử thấy đúng mục chủ sân theo 5 trạng thái ở FR-008.
 - **SC-005**: Sau khi xóa tài khoản, 0 thông tin cá nhân của người đó (tên, email, số điện thoại, ảnh) còn xem được ở bất kỳ màn hình nào trong các kịch bản kiểm thử.
 - **SC-006**: 0 trường hợp người dùng tự đổi được vai trò, trạng thái chủ sân hoặc trạng thái tài khoản trong các kịch bản kiểm thử phân quyền.
 - **SC-007**: Trong kiểm thử mất mạng ở mọi thao tác ghi, app không crash và không để dữ liệu ở trạng thái nửa vời.
