@@ -1,0 +1,48 @@
+rules_version = '2';
+
+// Rules nền dùng chung. Quyền chi tiết của từng collection do người phụ trách
+// viết (đặc tả CSDL mục 2 và mục 7), kèm test "được phép" và "bị chặn" trong
+// firestore-tests/.
+//
+// Không có rule nào khớp thì Firestore chặn, nên collection chưa khai báo
+// match là client không đọc/ghi được. Trường 🔒 và thao tác nhạy cảm do Edge
+// Functions ghi bằng service account, không đi qua Rules.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isSelf(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    // Vai trò của app nằm ở custom claim `appRole`; claim `role` dành cho
+    // Supabase (constitution, mục Ràng buộc công nghệ).
+    function appRole() {
+      return isSignedIn() ? request.auth.token.get('appRole', 'PLAYER') : null;
+    }
+
+    function isOwner() {
+      return appRole() == 'OWNER';
+    }
+
+    function isAdmin() {
+      return appRole() == 'ADMIN';
+    }
+
+    // Client chỉ được ghi đúng các trường cho phép.
+    function onlyChanges(fields) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(fields);
+    }
+
+    // createdAt/updatedAt phải ghi bằng serverTimestamp() (đặc tả CSDL mục 1).
+    function hasServerTimestamps() {
+      return request.resource.data.createdAt == request.time
+          && request.resource.data.updatedAt == request.time;
+    }
+
+    // Người phụ trách thêm `match /<collection>/{id} { ... }` bên dưới.
+  }
+}
