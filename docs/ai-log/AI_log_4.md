@@ -11,6 +11,7 @@ Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 | 5   | 2026-10-08 | Viết và làm rõ spec 120 (quản trị, hồ sơ chủ sân và báo cáo) bằng `$speckit-specify` và `$speckit-clarify`                 | 12   |
 | 6   | 2026-10-15 | Lập implementation plan cho Feature 100 (thông báo) bằng `$speckit-plan`                                                   | 10   |
 | 7   | 2026-10-15 | Lập implementation plan cho Feature 110 (đăng ký chủ sân) bằng `$speckit-plan` và viết lại tài liệu bằng tiếng Việt       | 11   |
+| 8   | 2026-10-16 | Lập implementation plan cho Feature 111 (thiết lập cơ sở chủ sân) bằng `$speckit-plan`                                    | 11   |
 
 ---
 
@@ -544,3 +545,75 @@ Cuối cùng báo cáo file đã tạo, quyết định kỹ thuật, dependency
 - Đối chiếu tên trường, trạng thái, bucket và quyền với database README cùng các spec liên quan; không thêm schema hay thay đổi nghiệp vụ.
 - Kiểm tra các tài liệu Plan được tạo/cập nhật đều bằng tiếng Việt và vẫn giữ nguyên các identifier kỹ thuật.
 - Xác nhận không tạo `tasks.md` hoặc mã triển khai; không chạy test.
+
+---
+
+## Mục 8: Lập implementation plan Feature 111 – Thiết lập cơ sở của chủ sân
+
+| Trường | Nội dung |
+| --- | --- |
+| Ngày | 2026-10-16 |
+| Người thực hiện | Minh Nhựt |
+| Nhóm tính năng liên quan | 11 – Chủ sân (spec `specs/111-owner-venue-setup`) |
+| Công cụ AI | Codex (GPT-6), `$speckit-plan` |
+| Mục đích | Đối chiếu spec 111 với constitution, hướng dẫn W1–W2, database README, specs 110/112/120, các spec booking và cấu trúc code để lập kế hoạch triển khai quản lý venue, court, bảng giá và khóa giờ; không viết code |
+| Nhánh Git | `feature/111-owner-venue-setup-plan` |
+
+### Prompt đã dùng
+
+```text
+$speckit-plan SPECIFY_FEATURE_DIRECTORY=specs/111-owner-venue-setup
+
+Lập Implementation Plan cho Feature 111 – Owner Venue Setup dựa trên specs/111-owner-venue-setup/spec.md.
+
+Đọc và đối chiếu:
+- .specify/memory/constitution.md
+- docs/guides/w1-w2-spec-assignment.md
+- docs/design/database/README.md
+- Specs 110, 112, các spec booking liên quan và 120 nếu tồn tại
+- Cấu trúc code và quy ước kỹ thuật hiện có
+
+Plan cần xác định:
+- Thành phần triển khai thêm, sửa và ẩn cơ sở; quản lý sân con.
+- Cách cấu hình bảng giá theo khung giờ và thứ.
+- Cách khóa giờ sân, lý do khóa và ảnh hưởng đến khả năng đặt sân.
+- Tích hợp với venues, courts, priceRules, slots.status, BLOCKED, blockReason theo tài liệu CSDL hiện có.
+- Phân quyền owner đã được duyệt, kiểm tra quyền sở hữu cơ sở/sân, xử lý lỗi và chiến lược kiểm thử.
+
+Không bao gồm: đăng ký chủ sân (Feature 110), duyệt booking, drop-in, voucher và thống kê vận hành (Feature 112), quy trình admin (Feature 120).
+
+Không tự bịa schema, API hoặc thay đổi nghiệp vụ trong spec. Nếu phát hiện mâu thuẫn hoặc thiếu thông tin, ghi nhận rõ. Chỉ tạo tài liệu thuộc bước Plan; không chạy /speckit-tasks, /speckit-implement hoặc viết implementation code.
+
+Cuối cùng báo cáo file đã tạo, quyết định kỹ thuật, dependency, rủi ro và điểm cần làm rõ.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Đối chiếu spec 111 với constitution, hướng dẫn W1–W2, database README, specs 110/112/120, specs booking liên quan và cấu trúc Android/Firestore/Supabase hiện có.
+- Tạo các tài liệu Plan trong `specs/111-owner-venue-setup/`: `plan.md`, `research.md`, `data-model.md`, `quickstart.md` và `contracts/firestore-boundary.md`.
+- Giữ nguyên schema hiện có cho `venues`, `courts`, `priceRules` và `slots`; không thêm field, enum, collection hay API.
+- Xác định quản lý cơ sở bằng `status = HIDDEN`, quản lý sân bằng `isActive`, bảng giá dùng `pricePerHour` và tính giá mỗi slot 30 phút bằng `pricePerHour / 2`; booking cũ giữ nguyên giá đã lưu.
+- Quy định khóa slot bằng `status = BLOCKED` và các lý do owner `MAINTENANCE`, `EVENT`, `WALK_IN`; thao tác khóa/mở phải nguyên tử, kiểm tra xung đột với `HOLD`/`BOOKED`/`BLOCKED`. `DROP_IN` thuộc spec 112/080.
+- Ghi nhận dependency với Feature 110 về trạng thái owner đã duyệt và venue ban đầu; Feature 120 sở hữu khóa venue của admin; specs 030/040/041/050 tiêu thụ dữ liệu venue, court, giá và slot.
+- Ghi rõ các điểm cần làm rõ: nguồn đáng tin cậy cho `ownerStatus`; hợp đồng server cho khóa/mở slot và cách xác định block owner được quyền gỡ; bên cập nhật `minPricePerHour`; một số quy tắc đọc venue ẩn/khóa và giới hạn `courtCount`.
+- Không tạo `tasks.md`, không chạy `$speckit-tasks`, `$speckit-implement` hoặc test; không viết mã triển khai.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+| --- | --- | --- |
+| Venue | Dùng các field hiện có; owner có thể ẩn bằng `status = HIDDEN`; không xóa cứng venue có dữ liệu liên kết | Khớp spec 111 và schema; booking đã xác nhận được giữ nguyên |
+| Court | Quản lý bằng `name`, `surfaceType`, `isActive`, `sortOrder`; ngừng hoạt động để chặn booking mới | Không thêm trạng thái hoặc hành vi xóa chưa có trong schema |
+| Bảng giá | Dùng `pricePerHour` kiểu `Long`, rule theo thứ và khung giờ; giá slot 30 phút bằng một nửa giá giờ | Đồng bộ spec 111, 040 và database README |
+| Xóa price rule | Cho phép xóa theo clarification mới nhất; booking cũ giữ `items[].price` | Không cần quan hệ rule-booking mới; ghi nhận các câu trả lời cũ còn mâu thuẫn trong spec |
+| Khóa slot | Dùng `slots.status = BLOCKED`, `blockReason` hiện có và giao dịch server nguyên tử | Bảo đảm không khóa một phần hoặc ghi đè booking/hold; không tự đặt API |
+| Phân quyền | Kiểm tra `appRole`, trạng thái owner đã duyệt và `venues.ownerId` ở phía server | Tuân thủ Constitution; Rules hiện chưa xác định đầy đủ nguồn `ownerStatus` |
+| Hợp đồng server | Chỉ ghi ranh giới Firestore và bất biến; để tên function/request/response thành điểm cần thống nhất | Tài liệu dự án chưa định nghĩa API khóa/mở slot |
+| Tasks/implementation | Không tạo hoặc chạy | Phạm vi công việc chỉ gồm bước Plan |
+
+### Cách kiểm chứng
+
+- Đối chiếu field, enum, đường dẫn collection và quyền với database README cùng các spec liên quan; không thêm schema hoặc thay đổi nghiệp vụ.
+- Rà lại bộ artifact chỉ thuộc bước Plan; không tạo `tasks.md` hoặc code triển khai.
+- `git diff --check` không báo lỗi định dạng.
+- Không chạy test, tasks hoặc implementation.
