@@ -10,6 +10,7 @@ Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 | 4   | 2026-10-08 | Viết và làm rõ spec 112 (vận hành cơ sở chủ sân) bằng AI và `$speckit-clarify`                                             | 11   |
 | 5   | 2026-10-08 | Viết và làm rõ spec 120 (quản trị, hồ sơ chủ sân và báo cáo) bằng `$speckit-specify` và `$speckit-clarify`                 | 12   |
 | 6   | 2026-10-15 | Lập implementation plan cho Feature 100 (thông báo) bằng `$speckit-plan`                                                   | 10   |
+| 7   | 2026-10-15 | Lập implementation plan cho Feature 110 (đăng ký chủ sân) bằng `$speckit-plan` và viết lại tài liệu bằng tiếng Việt       | 11   |
 
 ---
 
@@ -474,3 +475,72 @@ Không thay đổi nghiệp vụ hoặc thiết kế lại feature nguồn; khô
 - Ghi rõ collection path, field, access rule và các điểm schema/index chưa được xác nhận trong `data-model.md`/contracts.
 - Rà lại danh sách artifact: chỉ gồm tài liệu Plan; không tạo `tasks.md` hoặc code.
 - Không chạy test hoặc lệnh implementation.
+
+---
+
+## Mục 7: Lập implementation plan Feature 110 – Đăng ký làm chủ sân
+
+| Trường                   | Nội dung |
+| ------------------------ | -------- |
+| Ngày                     | 2026-10-15 |
+| Người thực hiện          | Minh Nhựt |
+| Nhóm tính năng liên quan | 11 – Chủ sân (spec `specs/110-owner-onboarding`) |
+| Công cụ AI               | Codex (GPT-6), `$speckit-plan` |
+| Mục đích                 | Đối chiếu spec 110, constitution, hướng dẫn W1–W2, database README, các spec 011/111/112/120 và cấu trúc code để lập kế hoạch onboarding chủ sân; chỉ tạo tài liệu Plan, không viết code |
+| Nhánh Git                | `feature/110-owner-onboarding-plan` |
+
+### Prompt đã dùng
+
+```text
+$speckit-plan SPECIFY_FEATURE_DIRECTORY=specs/110-owner-onboarding
+
+Lập Implementation Plan cho Feature 110 – Owner Onboarding dựa trên specs/110-owner-onboarding/spec.md.
+
+Đọc và đối chiếu:
+- .specify/memory/constitution.md
+- docs/guides/w1-w2-spec-assignment.md
+- docs/design/database/README.md
+- Các spec account/profile, Feature 111, 112 và 120 nếu tồn tại
+- Cấu trúc code và quy ước kỹ thuật hiện có
+
+Plan cần xác định:
+- Kiến trúc và thành phần cho nộp hồ sơ, tải giấy tờ, theo dõi trạng thái và nộp lại sau khi bị từ chối.
+- Tích hợp với users, role, ownerStatus và quy trình admin duyệt.
+- Phân quyền, bảo vệ giấy tờ nhạy cảm và xử lý lỗi/mất mạng/gửi trùng.
+- Tác động dữ liệu, dependency và chiến lược kiểm thử.
+
+Không bao gồm: triển khai quy trình admin, quản lý cơ sở/sân và các chức năng vận hành thuộc Feature 111, 112.
+
+Không tự bịa schema hoặc thay đổi nghiệp vụ trong spec. Nếu phát hiện mâu thuẫn hoặc thiếu thông tin, ghi nhận rõ. Chỉ tạo tài liệu thuộc bước Plan; không chạy /speckit-tasks, /speckit-implement hoặc viết implementation code.
+
+Cuối cùng báo cáo file đã tạo, quyết định kỹ thuật, dependency, rủi ro và điểm cần làm rõ.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Đối chiếu spec 110 với constitution, hướng dẫn W1–W2, database README, spec 011/111/112/120 và cấu trúc Android/Supabase hiện có.
+- Tạo/cập nhật `plan.md`, `research.md`, `data-model.md`, `quickstart.md` và `contracts/owner-onboarding-boundaries.md` trong `specs/110-owner-onboarding/`; sau đó chuyển toàn bộ nội dung các tài liệu này sang tiếng Việt, giữ nguyên tên kỹ thuật và schema.
+- Plan giữ Firestore làm nguồn dữ liệu nghiệp vụ; dùng bucket riêng tư `owner-docs` và signed URL có thời hạn; máy chủ quản lý `role`, `ownerStatus` và trạng thái xét duyệt. Tổ chức dự kiến theo MVVM/package `feature/owner`.
+- Xác định Feature 011 là điểm vào/trình bày trạng thái; Feature 120 sở hữu duyệt/từ chối và tạo venue từ `venueDraft`; Feature 111/112 sở hữu quản lý và vận hành sau khi được duyệt; Feature 100 cung cấp loại thông báo kết quả.
+- Ghi nhận các điểm cần làm rõ: định danh hồ sơ hiện hành và lịch sử khi nộp lại/sau thu hồi quyền; hợp đồng Android–Supabase và thao tác submit; quyền tải ảnh venue trước khi duyệt; dọn tệp mồ côi/xóa tài khoản; một số quy tắc xác thực và xử lý đồng thời.
+- Ghi nhận app hiện là bộ khung: chưa có package theo feature, Hilt/Coroutines, thư viện Supabase, Edge Functions hoặc migration Storage liên quan.
+- Không tạo `tasks.md`, không chạy `$speckit-tasks`, `$speckit-implement` hoặc test; không viết mã triển khai.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+| --- | --- | --- |
+| Nguồn dữ liệu và trạng thái | Dùng `users`, `ownerApplications` và bucket đã có; trạng thái/vai trò do máy chủ quản lý | Tuân theo database README và nguyên tắc bảo mật trong constitution; không thêm schema |
+| Giấy tờ nhạy cảm | Dùng bucket private `owner-docs`, path hiện có và signed URL hết hạn sau 5 phút | Khớp database README và giới hạn riêng tư của giấy tờ |
+| Nộp lại và hồ sơ lịch sử | Chưa chọn cách dùng lại document hay tạo document mới; ghi thành điểm cần làm rõ | Spec cho phép nộp mới sau thu hồi nhưng chưa định nghĩa cách tìm hồ sơ hiện hành và lưu lịch sử |
+| Tải ảnh venue trước khi duyệt | Ghi nhận policy hiện tại dành cho owner đã duyệt chưa đáp ứng rõ luồng applicant | Feature 110 cần ảnh trong `venueDraft` trước khi duyệt; cần quyền upload riêng mà không nới policy chung |
+| Hợp đồng Android–Supabase | Chưa chọn SDK, REST hay cách tích hợp khác; chưa tự đặt endpoint/request schema | Tài liệu dự án chưa quy định cách app truyền Firebase token hoặc hợp đồng upload/submit |
+| Kiểm thử | Đề xuất unit test, Firebase Emulator, Supabase local và UI test | Theo constitution; ghi chú các dependency test còn thiếu trong app hiện tại |
+| Ngôn ngữ tài liệu | Viết lại các artifact Plan bằng tiếng Việt; giữ nguyên tên trường, enum, package và thuật ngữ kỹ thuật cần đối chiếu | Yêu cầu bổ sung để đồng nhất với tài liệu dự án |
+| Tasks/implementation | Không tạo hoặc chạy | Phạm vi công việc chỉ gồm bước Plan |
+
+### Cách kiểm chứng
+
+- Đối chiếu tên trường, trạng thái, bucket và quyền với database README cùng các spec liên quan; không thêm schema hay thay đổi nghiệp vụ.
+- Kiểm tra các tài liệu Plan được tạo/cập nhật đều bằng tiếng Việt và vẫn giữ nguyên các identifier kỹ thuật.
+- Xác nhận không tạo `tasks.md` hoặc mã triển khai; không chạy test.
