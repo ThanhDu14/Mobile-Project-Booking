@@ -20,6 +20,15 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 14 | 2026-10-15 | Chia task triển khai spec 080 bằng `/speckit-tasks` | 08 |
 | 15 | 2026-10-15 | Kiểm tra độ khớp spec/plan/tasks của spec 080 bằng `/speckit-analyze` | 08 |
 | 16 | 2026-10-15 | Lập kế hoạch kỹ thuật spec 081 bằng `/speckit-plan` | 08 |
+| 17 | 2026-10-16 | Chia task triển khai spec 081 bằng `/speckit-tasks` | 08 |
+| 18 | 2026-10-16 | Kiểm tra độ khớp spec/plan/tasks của spec 081 bằng `/speckit-analyze` và sửa theo kết quả | 08 |
+| 19 | 2026-10-16 | Đồng bộ tasks 070/080 với spec 010 và cấu hình Firebase, Supabase trên main | 07, 08 |
+| 20 | 2026-10-16 | Lập kế hoạch kỹ thuật spec 090 bằng `/speckit-plan` | 09 |
+| 21 | 2026-10-16 | Chia task triển khai spec 090 bằng `/speckit-tasks` | 09 |
+| 22 | 2026-10-16 | Kiểm tra độ khớp spec/plan/tasks của spec 090 bằng `/speckit-analyze` và sửa theo kết quả | 09 |
+| 23 | 2026-10-16 | Lập kế hoạch kỹ thuật spec 091 bằng `/speckit-plan` | 09 |
+| 24 | 2026-10-16 | Chia task triển khai spec 091 bằng `/speckit-tasks` | 09 |
+| 25 | 2026-10-16 | Kiểm tra độ khớp spec/plan/tasks của spec 091 bằng `/speckit-analyze` và sửa theo kết quả | 09 |
 
 ---
 
@@ -960,3 +969,543 @@ thiết kế đã có của spec 080:
 - Mỗi FR-001 → FR-017 và SC-001 → SC-005 đều có quy tắc trong data-model hoặc ca test Q1–Q14, W1–W2.
 - Đối chiếu với spec 080 (hook `afterSpotsReleased`, `computeRefund`), spec 112 FR-010a (tăng sức chứa, hủy buổi) và spec 100 (type `DROPIN_SPOT_OPENED`, `DROPIN_WAITLIST_CLOSED`).
 - Việc tiếp theo: chạy `/speckit-tasks` cho spec 081.
+
+---
+
+## Mục 17: Chia task triển khai spec 081 bằng `/speckit-tasks`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-16 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 08 – Đặt lịch vãng lai (spec `specs/081-drop-in-waitlist`) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5), lệnh Spec Kit `/speckit-tasks` |
+| Mục đích | Chia kế hoạch kỹ thuật hàng chờ thành task theo user story, xây tiếp trên tasks 080, kèm test bắt buộc |
+| Nhánh Git | `feature/08-drop-in` (đã pull main `cfe2312`, gồm cấu hình Firebase, `firestore-tests/` và Supabase local) |
+
+### Prompt đã dùng
+
+```
+/speckit-tasks SPECIFY_FEATURE_DIRECTORY=specs/081-drop-in-waitlist
+Chia task theo user story, xây tiếp trên tasks của spec 080: không làm lại Setup/Foundational đã có, chỉ tham chiếu ID task 080 làm phụ thuộc.
+Bắt buộc viết test trước (phải fail) rồi mới cài đặt:
+- Edge Function: các ca test trong quickstart, đặc biệt Q6 (5 lượt hủy với 10 người chờ chạy đồng thời, lặp 20 lần) và Q7 (rời hàng chờ cùng lúc bị đẩy lên).
+- Firestore Rules: viết vào firestore.rules và firestore-tests/test/<collection>.test.ts theo cấu trúc Vitest vừa merge trên main; mỗi dòng phân quyền có ít nhất một assertSucceeds và một assertFails.
+Ghi rõ task nào phụ thuộc nhóm khác (D: trường waitlist* trên dropInSessions, spec 112, type thông báo spec 100; B: runQuery trong _shared/firestore.ts), kèm phương án tạm nếu chưa có.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Sinh `tasks.md` gồm **54 task** chia thành 7 phase:
+
+  | Phase | Nội dung | Task |
+  |---|---|---|
+  | 1 | Setup (kiểm tra nền 080, chuỗi, migration pg_cron, seed) | 4 |
+  | 2 | Foundational (`runQueryInTx`, khung `waitlist.ts`, fixture, Rules, index, model) | 10 |
+  | 3 | US1 – Vào hàng chờ | 11 |
+  | 4 | US2 – Tự động đẩy lên | 10 |
+  | 5 | US3 – Rời hàng chờ | 6 |
+  | 6 | US4 – Đóng hàng chờ | 7 |
+  | 7 | Polish | 6 |
+
+  Có 25 task đánh dấu `[P]`.
+- **Không làm lại hạ tầng:** bảng "Phụ thuộc vào tasks 080" ghi task 081 nào cần task 080 nào (ví dụ T030–T034 cần 080-T006, 080-T053).
+- **Test đồng thời:**
+  - Q6 (T027): 5 lượt hủy song song, 10 người chờ `partySize` 1–3, lặp 20 lần, in `runs=20 overCapacity=0 doublePromoted=0 orderViolations=0`.
+  - Q7 (T036): rời hàng chờ cùng lúc bị đẩy lên, 20 lần, chỉ một kết quả thắng.
+  - Fixture chung `waitlist_fixtures.ts` có `assertWaitlistInvariant` gọi sau mỗi ca.
+- **Test Rules (T008):** bảng cặp `assertSucceeds`/`assertFails` cho từng dòng Rules, trong file `firestore-tests/test/dropInSessions.test.ts`. Dòng `write: if false` chỉ có ca bị chặn vì ca được phép đi qua Edge Function.
+- **Tách file test** (`register-drop-in/waitlist.test.ts`, `cancel-drop-in/waitlist.test.ts`) để không đụng `index.test.ts` của 080.
+- **Phát hiện:** tasks 080 (T008) và quickstart 081 còn dùng đường dẫn cũ `firestore-tests/dropin.test.ts`; tasks 081 dùng đường dẫn mới và thêm T052 để sửa quickstart.
+- **Bảng phụ thuộc ngoài nhóm:** B (`runQueryInTx`), D (3 trường `waitlist*`, spec 112 gọi `promoteFromWaitlist`/`closeWaitlistInTx`, spec 100 hai type thông báo), A (`delete-account`), cả nhóm (pg_cron, pg_net), mỗi dòng kèm phương án tạm.
+- **MVP:** US1 + US2, Q6 phải xanh 20/20 lần trước khi demo.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Tham chiếu `080-T###` thay vì viết lại Setup/Foundational | Dùng | Đúng yêu cầu prompt; tránh làm trùng hạ tầng |
+| Khung `waitlist.ts` công bố chữ ký sớm (T006) | Dùng | D và A import được ngay, không phải chờ C cài xong |
+| Q6, Q7 lặp 20 lần | Dùng | Lỗi tranh chấp chỉ lộ ra khi chạy nhiều lần (constitution III) |
+| Dùng `firestore-tests/test/dropInSessions.test.ts` | Dùng | Khớp cấu trúc Vitest vừa merge trên main |
+| Sửa đường dẫn test Rules trong tasks 080 | Đã làm (commit riêng) | Theo yêu cầu thêm của mình: sửa T002, T008, checkpoint Phase 2 của tasks 080 và plan/quickstart/contract của 080, 081; đổi `npm test -- dropin` (không chạy được vì script bọc vitest trong `firebase emulators:exec`) thành `npm test` |
+| Nếu D không đồng ý 3 trường `waitlist*` | Đưa ra họp nhóm | Ảnh hưởng thiết kế vị trí hàng chờ (research R2) |
+
+### Cách kiểm chứng
+
+- Dùng `grep` đếm được 54 task đúng định dạng `- [ ] T### [P?] [US?] mô tả + đường dẫn`, 0 dòng sai định dạng.
+- Mỗi ca Q1–Q14, W1–W2 trong `contracts/edge-functions-waitlist.md` và M1–M8 trong quickstart đều có task tương ứng.
+- Mỗi FR-001 → FR-017 đều được ít nhất một task nhắc tới.
+- Kiểm tra `git merge-tree` giữa main và `origin/feature/09-community-chat`: không có conflict, nhánh 09 không có commit riêng.
+- Việc tiếp theo: chạy `/speckit-analyze` cho spec 081.
+
+---
+
+## Mục 18: Kiểm tra độ khớp spec/plan/tasks của spec 081 bằng `/speckit-analyze`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-16 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 08 – Đặt lịch vãng lai (spec `specs/081-drop-in-waitlist`) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5), lệnh Spec Kit `/speckit-analyze` |
+| Mục đích | Tìm chỗ thiếu, mâu thuẫn giữa spec, plan, tasks của spec 081 trước khi triển khai, rồi sửa tasks theo kết quả |
+| Nhánh Git | `feature/08-drop-in` |
+
+### Prompt đã dùng
+
+```
+/speckit-analyze SPECIFY_FEATURE_DIRECTORY=specs/081-drop-in-waitlist
+Kiểm tra độ khớp spec/plan/tasks của spec 081, chú ý:
+- mỗi FR-001 → FR-017 và SC-001 → SC-006 có task; mỗi ca Q1–Q14, W1–W2, M1–M8 có task;
+- tham chiếu sang tasks 080 (080-T###) đúng ID và đúng nội dung;
+- phụ thuộc nhóm khác (B runQuery trong transaction, D trường waitlist* và spec 112/100, A delete-account) nhất quán giữa plan và tasks;
+- mâu thuẫn với constitution (đặc biệt nguyên tắc II, III, IV).
+```
+
+Sau khi xem báo cáo, mình nhờ AI sửa luôn cả 9 mục trong `tasks.md` và contract.
+
+### Tóm tắt phản hồi của AI
+
+- **0 lỗi CRITICAL**, không vi phạm constitution. Độ phủ 100% (23 yêu cầu: 17 FR + 6 SC); đủ 16/16 ca Q1–Q14, W1–W2 và M1–M8.
+- 22 tham chiếu `080-T###` đều đúng ID và nội dung.
+- **5 lỗi MEDIUM:**
+  - C1: không có test FR-009 (người đăng ký thường không được lấy chỗ mà người chờ vừa đủ).
+  - C2: test Rules thiếu ca admin đọc lượt chờ (FR-006).
+  - C3: `leaveWaitlistInTx(..., "SYSTEM")`, đường mà `delete-account` của A gọi, chưa có test.
+  - F1: `leaveWaitlistInTx` cài ở US3 nhưng US2 đã cần.
+  - F2: plan ghi cập nhật đặc tả CSDL trước họp 16/10, tasks lại để ở Polish.
+- **4 lỗi LOW:** bảng phụ thuộc thiếu việc màn hình chủ sân của D (F3); contract không ghi tên header của `CRON_SECRET` (U1); kiểu `WaitlistJoinResult` chưa định nghĩa (U2); thiếu test chủ sân giảm sức chứa (G1).
+- **Đã sửa:**
+  - Thêm ca FR-009 vào T027 (chạy 20 lần).
+  - Thêm dòng admin vào bảng Rules T008.
+  - Thêm ca `SYSTEM` và ca giảm sức chứa vào T026.
+  - Chuyển cài `leaveWaitlistInTx` lên T031; T038 chỉ còn kiểm tra `ALREADY_PROMOTED`.
+  - Gộp việc gửi đề xuất CSDL cho D vào T001.
+  - Thêm dòng D vào bảng phụ thuộc.
+  - Ghi header `x-cron-secret` vào contract.
+  - Định nghĩa `WaitlistJoinResult` ở T014.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Sửa cả MEDIUM và LOW | Dùng | Sửa nhỏ, không đổi thiết kế; tránh để sót khi triển khai |
+| AI đề xuất thêm task `T004a` | Bỏ, gộp vào T001 | Giữ đánh số task liên tiếp, không phải đánh số lại cả file |
+| Ca FR-009 chạy 20 lần | Dùng | Tranh chấp giữa hủy và đăng ký thường chỉ lộ ra khi chạy nhiều lần (constitution III) |
+
+### Cách kiểm chứng
+
+- Đọc lại 22 task 080 được tham chiếu để xác nhận đúng nội dung.
+- Sau khi sửa, `grep` vẫn đếm được 54 task đúng định dạng, 0 dòng sai.
+- Đối chiếu constitution nguyên tắc II, III, IV: mọi thao tác hàng chờ chạy trong transaction trên document buổi, trường 🔒 do Edge Function ghi, có test đồng thời trên Emulator.
+- Việc tiếp theo: lập kế hoạch kỹ thuật spec 090.
+
+---
+
+## Mục 19: Đồng bộ tasks 070/080 với spec 010 và cấu hình trên main
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-16 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 07 – Đánh giá và yêu thích (spec 070), 08 – Đặt lịch vãng lai (spec 080) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5), chat thường (không dùng lệnh Spec Kit) |
+| Mục đích | Sau khi pull main, sửa các task Setup của 070/080 đang tạo lại file mà spec 010 (A) hoặc PR #22, #23 đã làm, tránh conflict khi merge |
+| Nhánh Git | `feature/08-drop-in` |
+
+### Prompt đã dùng
+
+```
+Main vừa merge cấu hình Firebase (PR #22: firebase.json, firestore.rules nền, firestore-tests/ dùng Vitest với test/<collection>.test.ts)
+và Supabase local (PR #23), cùng tasks spec 010 của A (010-T001..T004 thư viện/plugin/App, 010-T015 FirebaseModule/SupabaseModule,
+010-T021 _shared/auth.ts). Rà tasks 070 và 080 của mình:
+- task nào tạo lại file đã có thì đổi thành "kiểm tra và dùng lại", chỉ thêm phần riêng (không đổi chữ ký của 010);
+- đổi đường dẫn test Rules sang firestore-tests/test/<collection>.test.ts, mỗi dòng phân quyền có assertSucceeds và assertFails;
+- đổi tên khóa cho khớp 010 (SUPABASE_PUBLISHABLE_KEY, USE_EMULATOR);
+- giữ nguyên ID task để không phải đánh số lại.
+```
+
+### Tóm tắt phản hồi của AI
+
+- **Phát hiện trùng việc với spec 010:**
+  - 070-T004, T005 tạo lại `core/di/FirebaseModule.kt`, `SupabaseModule.kt` mà 010-T015 đã nhận.
+  - 070-T001 → T003 trùng 010-T001, T002, T004.
+  - 070-T020 và 080-T007 cùng tạo `_shared/auth.ts`, mà 010-T021 đã nhận.
+  - 070 dùng `SUPABASE_ANON_KEY`, còn 010 và hướng dẫn Supabase dùng `SUPABASE_PUBLISHABLE_KEY`.
+- **Đã sửa tasks 070:**
+  - T001 → T005, T008, T009, T020 thành "kiểm tra và dùng lại", chỉ thêm phần riêng: `storage-kt`, Coil, plugin `Storage` vào `SupabaseClient`, offline cache.
+  - T022 dùng `firestore-tests/test/reviews.test.ts`, `test/favorites.test.ts`.
+  - Sửa đường dẫn trong plan và contract, tên khóa trong quickstart.
+- **Đã sửa tasks 080:** phần mở đầu Phase 1, T002 và T007 trỏ tới đúng task 010 / 070.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Giữ ID task, chỉ đổi nội dung | Dùng | Các tham chiếu chéo (`070-T006`, `080-T###`) vẫn đúng |
+| "Chỉ thêm, không đổi chữ ký" khi đụng file của 010 | Dùng | Giống quy ước 011 đang làm với 010; tránh phá code của A |
+| Commit sửa 070 trên nhánh `feature/08-drop-in` | Dùng | Chỉ sửa tài liệu, đi cùng thay đổi của 080 để review một lần |
+
+### Cách kiểm chứng
+
+- Đối chiếu từng task với 010-T001 → T004, T015, T021 và các file có trên main (`firebase.json`, `firestore-tests/test/setup.ts`, `supabase/config.toml`).
+- `grep` không còn `SUPABASE_ANON_KEY`, `firestore-tests/reviews.test.ts`, `firestore-tests/dropin.test.ts` trong spec 070/080/081.
+- Việc tiếp theo: lập kế hoạch kỹ thuật spec 090.
+
+---
+
+## Mục 20: Lập kế hoạch kỹ thuật spec 090 bằng `/speckit-plan`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-16 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 09 – Cộng đồng và chat (spec `specs/090-community-group`) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5), lệnh Spec Kit `/speckit-plan` |
+| Mục đích | Lập kế hoạch kỹ thuật cho nhóm/CLB và bảng tin: dữ liệu, Edge Function, Rules, Storage, test |
+| Nhánh Git | `feature/09-community-chat` (tạo từ `feature/08-drop-in` để AI log không bị conflict) |
+
+### Prompt đã dùng
+
+```
+/speckit-plan SPECIFY_FEATURE_DIRECTORY=specs/090-community-group
+Lập kế hoạch kỹ thuật cho spec 090 (nhóm/CLB và bảng tin cộng đồng), theo cùng khuôn với plan 070 và 080 của mình:
+- Dữ liệu đúng collection và trường trong docs/design/database/README.md; trường nào đề xuất thêm thì đánh dấu [MỚI] và đưa vào danh sách cần D/nhóm đồng ý.
+- Thao tác nhạy cảm (tham gia/rời nhóm, đổi vai trò, xóa bài, báo cáo, đếm thành viên) đi qua Edge Function có transaction; Rules chỉ mở quyền đọc đúng phạm vi.
+- Dùng lại phần đã có: core/ của spec 010 (SessionManager, IdTokenProvider, SupabaseModule, _shared/auth.ts), _shared/firestore.ts của B, ảnh qua Supabase Storage có RLS.
+- Ranh giới với spec 091 (chat nhóm dùng chung nhóm), spec 100 (type thông báo), spec 120 (admin xử lý reports).
+- Test: Rules trong firestore-tests/test/<collection>.test.ts (mỗi dòng phân quyền có assertSucceeds và assertFails), Edge Function trên Emulator gồm thao tác đồng thời (nhiều người cùng tham gia nhóm đầy chỗ nếu spec có giới hạn), pgTAP cho RLS Storage.
+- Ghi bảng phối hợp với nhóm (A, B, D) và Constitution Check đủ 7 nguyên tắc.
+```
+
+### Tóm tắt phản hồi của AI
+
+- **Các file đã sinh:** `plan.md`, `research.md` (18 quyết định R1–R18), `data-model.md`, `contracts/edge-functions-community.md`, `contracts/security-rules.md`, `contracts/ui-screens.md`, `quickstart.md`.
+- **Edge Function:** 3 function theo `action`: `group-manage` (11 action), `group-post` (8 action), `group-media-url` (cấp signed URL theo lô). Rules mọi collection `groups` đều `write: if false`.
+- **Dữ liệu:**
+  - Thành viên, yêu cầu tham gia, người bị mời ra là 3 collection con riêng (`members`, `joinRequests` [MỚI], `removals` [MỚI]) để Rules chỉ cần `exists(members/{uid})`.
+  - Người tham gia sự kiện ở `posts/{postId}/attendees/{uid}` [MỚI].
+  - `groupId`, `postId` là `requestId` để chống trùng.
+- **Đếm đúng khi đồng thời:** `memberCount`, `attendeeCount` chỉ đổi trong transaction trên document cha. Test G5, P6: 20 người cùng lúc, lặp 10 lần.
+- **Ảnh:** bảng tin private (`group-media`), signed URL theo lô mỗi trang. Ảnh đại diện nhóm ở bucket public mới `group-avatars` vì phải hiện cho người ngoài và khách.
+- **Ranh giới:**
+  - Hook `onGroupMembershipChanged` cho spec 091, chạy trong cùng transaction.
+  - `anonymizeCommunityGroups` cho `delete-account` của A.
+  - `hiddenBy = SYSTEM` và `groups.status = LOCKED` cho spec 120.
+  - 7 giá trị `data.event` của `GROUP_ACTIVITY` cho spec 100.
+- **Test:** Rules GR1–GR12, pgTAP S1–S5, Edge Function G1–G15, P1–P11, M1–M3, kịch bản thủ công Q1–Q15. Constitution Check đạt cả 7 nguyên tắc.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Mọi ghi qua Edge Function | Dùng | Thao tác nào cũng đổi nhiều document; Rules không kiểm tra được ảnh đã tải lên và không xóa được ảnh (constitution II, III) |
+| Tách `joinRequests`, `removals` khỏi `members` | Dùng | Spec cho phép dùng trạng thái trong `members`, nhưng quên lọc `status` một chỗ là lộ bảng tin cho người chưa duyệt |
+| Bucket public `group-avatars` [MỚI] | Chờ D đồng ý | Đặc tả CSDL chỉ có `group-media` private; ảnh đại diện hiện ở kết quả tìm kiếm cho người ngoài |
+| Đổi `avatarUrl` → `avatarPath` | Chờ D đồng ý | Đặc tả CSDL quy ước Firestore lưu path, không lưu URL |
+| `group-media-url` riêng thay vì `sign-upload` chung của D | Đưa ra họp nhóm | Tránh để D phụ thuộc schema nhóm của C |
+| Giới hạn mềm 5 nhóm (có thể vượt 1 khi 2 yêu cầu song song) | Dùng | Chỉ ảnh hưởng chính người đó, quy mô đồ án |
+| Không có job dọn ảnh mồ côi | Dùng | Constitution VII; app gọi `discard` khi bỏ bài |
+
+### Cách kiểm chứng
+
+- Đối chiếu từng FR-001 → FR-022 và SC-001 → SC-008 với quy tắc trong data-model hoặc ca test (G, P, M, GR, S, Q).
+- Đối chiếu trường với đặc tả CSDL mục 4.10, 4.12, 8; mọi trường mới đều đánh dấu [MỚI] và có trong danh sách cuối data-model.
+- Đối chiếu ranh giới với spec 011 (research R12 `anonymizeCommunity`), spec 100 (`GROUP_ACTIVITY`), spec 120 (`HIDE_CONTENT`, `targetPath`) và spec 091 (chat nhóm theo danh sách thành viên).
+- Việc tiếp theo: chạy `/speckit-tasks` cho spec 090.
+
+---
+
+## Mục 21: Chia task triển khai spec 090 bằng `/speckit-tasks`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-16 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 09 – Cộng đồng và chat (spec `specs/090-community-group`) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5), lệnh Spec Kit `/speckit-tasks` |
+| Mục đích | Chia plan 090 thành task theo 6 user story, có test bắt buộc và bảng phụ thuộc nhóm khác |
+| Nhánh Git | `feature/09-community-chat` |
+
+### Prompt đã dùng
+
+```
+/speckit-tasks SPECIFY_FEATURE_DIRECTORY=specs/090-community-group
+Chia task theo 6 user story của spec 090, cùng khuôn với tasks 080/081:
+- Phase 1 chỉ kiểm tra và dùng lại phần nền đã có (010-T001..T004, T015, T021; 070-T006 UiState; cấu hình Firebase/Supabase trên main), không tạo lại.
+- Viết test trước (phải fail) rồi mới cài đặt: Rules GR1–GR12 trong firestore-tests/test/groups.test.ts (mỗi dòng phân quyền có assertSucceeds và assertFails), pgTAP S1–S5, Edge Function G1–G15, P1–P11, M1–M3; G5 và P6 (20 người cùng lúc) lặp 10 lần.
+- Khung _shared/groups.ts (hook onGroupMembershipChanged, anonymizeCommunityGroups) làm sớm ở Foundational để spec 091 và A dùng được.
+- Ghi rõ phụ thuộc nhóm khác (A, B, D theo bảng phối hợp trong plan) kèm phương án tạm nếu chưa có.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Sinh `tasks.md` gồm **75 task** chia thành 9 phase:
+
+  | Phase | Nội dung | Task |
+  |---|---|---|
+  | 1 | Setup (kiểm tra nền, chuỗi, seed) | 3 |
+  | 2 | Foundational (`_shared/groups.ts`, fixture, Rules, Storage, index, model, nav, nén ảnh) | 17 |
+  | 3 | US1 – Tạo nhóm | 9 |
+  | 4 | US2 – Tìm và tham gia | 10 |
+  | 5 | US3 – Bảng tin | 11 |
+  | 6 | US4 – Sự kiện | 6 |
+  | 7 | US5 – Quản lý thành viên | 7 |
+  | 8 | US6 – Báo cáo, ẩn bài | 5 |
+  | 9 | Polish | 7 |
+
+  Có 31 task đánh dấu `[P]`.
+- **Làm sớm cho người khác:** T006 tạo `_shared/groups.ts` với hook `onGroupMembershipChanged` (thân trống cho spec 091), `anonymizeCommunityGroups` (khung cho A), `getMembership`, `loadGroupForWrite`.
+- **Test đồng thời:** G5 (T030) và P6 (T051): 20 người song song, lặp 10 lần, in `runs=10 expected=20 actual=20 duplicates=0`. Fixture T007 có `assertGroupInvariant` gọi sau mỗi ca.
+- **Rules và Storage:** T009 GR1–GR12 (cặp `assertSucceeds`/`assertFails`), T011 pgTAP S1–S5, viết trước migration và Rules.
+- **Phát hiện:** phần nén ảnh của spec 070 nằm trong `feature/review`; T020 đưa lên `core/image/ImageCompressor.kt` để 070 và 090 dùng chung (constitution I cấm import chéo feature).
+- **Bảng phụ thuộc ngoài nhóm:** A (core, auth, keywords, `delete-account`), B (`runQueryInTx`, dùng chung bản của 081-T005), D (trường mới, `group-avatars`, `group-media-url`, spec 100, spec 120), C-091 (hook). Mỗi dòng kèm phương án tạm, kể cả phương án nếu D không đồng ý bucket `group-avatars`.
+- **MVP:** US1 + US2, G5 phải xanh 10/10 lần; spec 091 bắt đầu được sau MVP.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Phase 1 chỉ kiểm tra phần nền | Dùng | Tránh trùng việc với 010 (A) và 070, đúng bài học ở Mục 19 |
+| Hook và khung `anonymizeCommunityGroups` ở Foundational | Dùng | Spec 091 và A không phải chờ 090 làm xong |
+| Đưa nén ảnh lên `core/image` | Dùng | Constitution I; 070 giữ nguyên chữ ký `ReviewPhotoUploader` |
+| Dùng chung `runQueryInTx` với 081-T005 | Dùng | Không viết hai bản cùng một hàm khi chờ B |
+| Phương án dự phòng khi D không đồng ý `group-avatars` | Dùng | Ghi sẵn để không bị chặn sau họp |
+
+### Cách kiểm chứng
+
+- `grep` đếm được 75 task đúng định dạng `- [ ] T### [P?] [US?] mô tả + đường dẫn`, đánh số liên tiếp, 0 dòng sai.
+- Mỗi ca G1–G15, P1–P11, M1–M3, GR1–GR12, S1–S5 và Q1–Q15 đều có task tương ứng.
+- Thứ tự trong mỗi story: test → Edge Function → repository → UseCase → ViewModel → giao diện.
+- Việc tiếp theo: chạy `/speckit-analyze` cho spec 090.
+
+---
+
+## Mục 22: Kiểm tra độ khớp spec/plan/tasks của spec 090 bằng `/speckit-analyze`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-16 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 09 – Cộng đồng và chat (spec `specs/090-community-group`) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5), lệnh Spec Kit `/speckit-analyze` |
+| Mục đích | Tìm chỗ thiếu, mâu thuẫn giữa spec, plan, tasks và với constitution, đặc tả CSDL trước khi code; sửa theo kết quả |
+| Nhánh Git | `feature/09-community-chat` |
+
+### Prompt đã dùng
+
+```
+/speckit-analyze SPECIFY_FEATURE_DIRECTORY=specs/090-community-group
+Kiểm tra độ khớp spec/plan/tasks của spec 090, chú ý:
+- mỗi FR-001 → FR-022 và SC-001 → SC-008, mỗi Edge Case có task; mỗi ca G1–G15, P1–P11, M1–M3, GR1–GR12, S1–S5, Q1–Q15 có task;
+- tham chiếu task spec khác (010-T###, 070-T###, 081-T###) đúng ID và nội dung;
+- phụ thuộc nhóm khác (A, B, D, spec 091) nhất quán giữa plan, research và tasks;
+- mâu thuẫn với constitution (đặc biệt nguyên tắc I, II, III, IV) và với đặc tả CSDL.
+```
+
+Sau khi xem báo cáo, mình nhờ AI sửa luôn cả 6 mục.
+
+### Tóm tắt phản hồi của AI
+
+- **0 lỗi CRITICAL**, không vi phạm constitution. Độ phủ 100% (30 yêu cầu: 22 FR + 8 SC); đủ mọi ca G, P, M, GR, S, Q. 11 tham chiếu task spec khác đều đúng.
+- **1 lỗi HIGH (F1):** "Nhóm của tôi" đọc nhóm theo lô bằng `whereIn(documentId)` mà không lọc `status`, nên Rules `groups` sẽ từ chối cả query khi chạy thật.
+- **2 lỗi MEDIUM:**
+  - F2: mở nhóm đã xóa trả `PERMISSION_DENIED`, app sẽ hiện lỗi chung thay vì "Nhóm không còn tồn tại".
+  - U1: tìm theo tên nhiều từ chưa rõ dùng từ nào cho `array-contains`.
+- **3 lỗi LOW:** gộp `array-contains` với `whereIn` nhiều quận chưa kiểm chứng (U2); thiếu test tên nhóm trùng (G1); chưa ghi việc đồng bộ danh sách `reason` báo cáo sang spec 070 (F3).
+- **Đã sửa:**
+  - T025 thêm `where status in [ACTIVE, LOCKED]`.
+  - T029, T032 ánh xạ `PERMISSION_DENIED` thành "Nhóm không còn tồn tại".
+  - R5, T031 dùng từ dài nhất cho `array-contains`, lọc các từ còn lại ở app.
+  - T035 ghi phương án chỉ lọc một quận nếu Firestore từ chối.
+  - G1 (T021) thêm ca tên trùng.
+  - Plan thêm dòng C đồng bộ `reason` cho 070, 091.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Sửa F1 ngay | Dùng | Lỗi chỉ lộ ra khi chạy thật với Rules; test Rules GR5 kiểm tra `members` chứ không kiểm tra truy vấn `groups` theo lô |
+| Từ dài nhất cho `array-contains` | Dùng | Từ dài lọc được nhiều hơn, ít phải lọc ở app; vẫn đúng FR-005 |
+| Lọc một quận nếu Firestore từ chối | Dùng | Có phương án sẵn, không chặn khi code |
+
+### Cách kiểm chứng
+
+- Đối chiếu Rules bản phác (`allow list` cần ràng buộc `status`) với từng truy vấn `groups` trong tasks: chỉ T025 thiếu, đã sửa.
+- Đọc lại 010-T001, T002, T004, T012, T015, T016, T021, 070-T005, T006, T043, 081-T005 để xác nhận đúng nội dung.
+- Sau khi sửa, `grep` vẫn đếm được 75 task đúng định dạng.
+- Việc tiếp theo: lập kế hoạch kỹ thuật spec 091.
+
+---
+
+## Mục 23: Lập kế hoạch kỹ thuật spec 091 bằng `/speckit-plan`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-16 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 09 – Cộng đồng và chat (spec `specs/091-chat`) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5), lệnh Spec Kit `/speckit-plan` |
+| Mục đích | Lập kế hoạch kỹ thuật cho chat nhóm và chat với chủ sân, nối với hook của spec 090 |
+| Nhánh Git | `feature/09-community-chat` |
+
+### Prompt đã dùng
+
+```
+/speckit-plan SPECIFY_FEATURE_DIRECTORY=specs/091-chat
+Lập kế hoạch kỹ thuật cho spec 091 (chat nhóm và chat với chủ sân), cùng khuôn với plan 090:
+- Dữ liệu theo đặc tả CSDL mục 4.11 (chats, messages, ID tất định chat riêng); trường mới đánh dấu [MỚI].
+- Chat nhóm đồng bộ với danh sách thành viên qua hook onGroupMembershipChanged của spec 090, trong cùng transaction.
+- Chọn cách gửi tin đáp ứng được: hiện ngay "Đang gửi", tự gửi khi có mạng, "Gửi lại"/"Xóa" tin lỗi, không tạo tin trùng, số chưa đọc realtime, thông báo CHAT_MESSAGE (Supabase không có trigger Firestore).
+- Thu hồi 10 phút theo giờ server, báo cáo (ID tất định như 090), chặn trong chat riêng, ảnh ở chat-media private.
+- Test Rules (mỗi dòng có assertSucceeds và assertFails), Edge Function có ca đồng thời (nhiều người gửi cùng lúc, hai bên mở chat riêng cùng lúc), pgTAP, test outbox khi mất mạng.
+- Bảng phối hợp A, B, D và Constitution Check đủ 7 nguyên tắc.
+```
+
+### Tóm tắt phản hồi của AI
+
+- **Các file đã sinh:** `plan.md`, `research.md` (16 quyết định R1–R16), `data-model.md`, `contracts/edge-functions-chat.md`, `contracts/security-rules.md`, `contracts/ui-screens.md`, `quickstart.md`.
+- **Quyết định chính, gửi tin qua Edge Function `chat-send` + outbox ở app (R1):** hàng đợi offline của Firestore SDK không hủy được lần ghi đã vào hàng đợi, nên không làm được "Xóa" tin lỗi (FR-008); số chưa đọc và thông báo cần tính ở server vì Supabase không có trigger Firestore. `messageId` tất định nên gửi lại không trùng.
+- **Dữ liệu:**
+  - Collection con đặt tên `participants` [MỚI] thay vì `members`, để không lẫn với collection group `members` của spec 090.
+  - `chats.unreadCounts` [MỚI] cho số chưa đọc realtime.
+  - `status` (`ACTIVE`, `READ_ONLY`, `DELETED`), `ownerId`, `playerId`, `venueSnapshot` [MỚI].
+- **Đồng bộ chat nhóm:** `syncGroupChat` (hook của 090) chạy trong cùng transaction; người mới có `lastReadAt = joinedAt` nên đọc được lịch sử mà không bị tính chưa đọc; `purgeChat` gọi sau khi 090 xóa nhóm.
+- **Rules:** chỉ người trong `memberIds` đọc; client chỉ được đặt `unreadCounts.{mình} = 0` và sửa `participants/{mình}`. Huy hiệu qua `core/chat/UnreadChatsReader` để `MainActivity` không import `feature/chat`.
+- **Test:** CR1–CR8, S1–S4, C1–C8 (C3: 20 người gửi cùng lúc × 10), D1–D4 (D1: hai bên mở chat cùng lúc × 20), R1–R2, H1–H2, M1–M2, A1, kịch bản Q1–Q16. Constitution Check đạt 7 nguyên tắc.
+- **Sửa thêm spec 090:** T060 gọi `purgeChat` sau khi xóa nhóm.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Gửi tin qua `chat-send` thay vì app ghi thẳng | Dùng | Đáp ứng "Xóa" tin lỗi, số chưa đọc và thông báo; độ trễ thêm 0,3–0,8 giây vẫn trong mục tiêu 3 giây |
+| Outbox bằng DataStore, không dùng WorkManager | Dùng | Constitution VII: không thêm thư viện; gửi lại khi mở app và khi có mạng là đủ |
+| Đổi tên `participants` | Dùng | Tránh lỗi truy vấn collection group "Nhóm của tôi" của 090 |
+| Tin bị admin ẩn vẫn còn chữ trong document | Đưa ra họp nhóm | Spec 120 chỉ đổi `status`; đề xuất D ghi thêm `text = ""` khi ẩn |
+| `ownerId` cố định lúc tạo chat riêng | Dùng | Trường hợp hai chủ sân hỏi sân của nhau hiếm; giữ một cuộc mỗi cặp đúng đặc tả CSDL |
+
+### Cách kiểm chứng
+
+- Đối chiếu từng FR-001 → FR-018 và SC-001 → SC-007 với quy tắc trong data-model hoặc ca test.
+- Kiểm tra mọi truy vấn trong contract đều có `memberIds array-contains <mình>` để Rules chứng minh được người đọc nằm trong cuộc; truy vấn nhóm theo lô có lọc `status` (bài học F1 của spec 090).
+- Đối chiếu với spec 090 (hook, `ImageCompressor`, danh sách `reason`), spec 011 (`anonymizeCommunity`), spec 100 (`CHAT_MESSAGE`), spec 120 (`HIDE_CONTENT`).
+- Việc tiếp theo: chạy `/speckit-tasks` cho spec 091.
+
+---
+
+## Mục 24: Chia task triển khai spec 091 bằng `/speckit-tasks`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-16 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 09 – Cộng đồng và chat (spec `specs/091-chat`) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5), lệnh Spec Kit `/speckit-tasks` |
+| Mục đích | Chia plan 091 thành task theo 5 user story, có test bắt buộc và bảng phụ thuộc |
+| Nhánh Git | `feature/09-community-chat` |
+
+### Prompt đã dùng
+
+```
+/speckit-tasks SPECIFY_FEATURE_DIRECTORY=specs/091-chat
+Chia task theo 5 user story của spec 091, cùng khuôn với tasks 090:
+- Phase 1 chỉ kiểm tra và dùng lại phần nền (010, 070-T006, 090-T006 hook, 090-T020 ImageCompressor, cấu hình trên main), không tạo lại.
+- Viết test trước (phải fail): Rules CR1–CR8 trong firestore-tests/test/chats.test.ts (mỗi dòng có assertSucceeds và assertFails), pgTAP S1–S4, Edge Function C1–C8, D1–D4, R1–R2, H1–H2, M1–M2, A1; C3 lặp 10 lần, D1 lặp 20 lần; test Android cho outbox khi mất mạng (SC-004).
+- syncGroupChat làm sớm ở Foundational và nối vào hook của 090 để chat nhóm có ngay khi tạo nhóm.
+- Ghi rõ phụ thuộc A (spec 030, MainActivity, delete-account), B (REQUEST_TIME, tăng số trong Map), D (100, 111/112, 120) và spec 090, kèm phương án tạm.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Sinh `tasks.md` gồm **59 task** chia thành 8 phase:
+
+  | Phase | Nội dung | Task |
+  |---|---|---|
+  | 1 | Setup | 3 |
+  | 2 | Foundational (`_shared/media.ts`, `_shared/chats.ts` + nối hook 090, Rules, Storage, index, model, nav, outbox) | 17 |
+  | 3 | US1 – Chat với chủ sân | 10 |
+  | 4 | US2 – Chat nhóm | 5 |
+  | 5 | US3 – Danh sách, chưa đọc | 5 |
+  | 6 | US4 – Gửi ảnh | 6 |
+  | 7 | US5 – Thu hồi, báo cáo, chặn | 6 |
+  | 8 | Polish | 7 |
+
+  Có 25 task đánh dấu `[P]`.
+- **Làm sớm:** T008 cài `syncGroupChat`, `purgeChat` và điền thân hook `onGroupMembershipChanged` của 090, nên tạo nhóm là có chat nhóm ngay. Test G1, G5 của 090 phải vẫn xanh.
+- **Outbox:** T019 (unit test) và T020 (DataStore). T024 là test Android trên Emulator cho SC-004 (tắt mạng, gửi, bật mạng → đúng một tin, lặp 5 lần).
+- **Test đồng thời:** D1 (T021) lặp 20 lần, C3 (T031) lặp 10 lần. T031 có test tích hợp với `group-manage` của 090 (bị mời ra thì gửi bị từ chối).
+- **Tránh import chéo:** `SignedUrlCache` của 090 chuyển lên `core/media` (T045); huy hiệu qua `core/chat/UnreadChatsReader` (T017, T039).
+- **Bảng phụ thuộc ngoài nhóm:** A (spec 030, `MainActivity`, `delete-account`), B (`REQUEST_TIME`, `increment`), D (spec 100, 111/112, 120, đặc tả CSDL), C-090. Mỗi dòng kèm phương án tạm (ví dụ test bằng deep link khi chưa có nút).
+- **MVP:** US1 + US2, với D1 20/20, C3 10/10 và test outbox mất mạng xanh.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Nối `syncGroupChat` vào hook ngay ở Foundational | Dùng | Chat nhóm phải có cùng lúc với nhóm (FR-002); 091 test được ngay khi 090 có `create` |
+| Test Android cho outbox | Dùng | SC-004 liên quan mạng thật trên thiết bị, unit test không đủ |
+| Chuyển `SignedUrlCache` lên `core/media` | Dùng | Constitution I; 090 chỉ đổi import |
+| Chia bước 3 của `chat-send` (khóa nhóm, chặn) sang US2, US5 | Dùng | Mỗi story kiểm thử độc lập được; US1 không phụ thuộc phần chặn |
+
+### Cách kiểm chứng
+
+- `grep` đếm được 59 task đúng định dạng, đánh số liên tiếp, 0 dòng sai.
+- Mỗi ca C1–C8, D1–D4, R1–R2, H1–H2, M1–M2, A1, CR1–CR8, S1–S4 và Q1–Q16 đều có task tương ứng.
+- Thứ tự trong mỗi story: test → Edge Function → repository → UseCase → ViewModel → giao diện.
+- Việc tiếp theo: chạy `/speckit-analyze` cho spec 091.
+
+---
+
+## Mục 25: Kiểm tra độ khớp spec/plan/tasks của spec 091 bằng `/speckit-analyze`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-16 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 09 – Cộng đồng và chat (spec `specs/091-chat`, kèm sửa nhỏ spec 090) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5), lệnh Spec Kit `/speckit-analyze` |
+| Mục đích | Tìm chỗ thiếu, mâu thuẫn giữa spec, plan, tasks của 091, với spec 090 và Rules, trước khi code; sửa theo kết quả |
+| Nhánh Git | `feature/09-community-chat` |
+
+### Prompt đã dùng
+
+```
+/speckit-analyze SPECIFY_FEATURE_DIRECTORY=specs/091-chat
+Kiểm tra độ khớp spec/plan/tasks của spec 091, chú ý:
+- mỗi FR-001 → FR-018, SC-001 → SC-007 và mỗi Edge Case có task; mỗi ca C, D, R, H, M, A, CR, S, Q có task;
+- tham chiếu task spec khác (010, 070, 090) đúng ID và nội dung; khớp với hook và Rules của spec 090;
+- mọi truy vấn đọc khớp Rules (có memberIds array-contains, truy vấn nhóm theo lô có lọc status);
+- mâu thuẫn với constitution (I, II, III, IV) và đặc tả CSDL.
+```
+
+Sau khi xem báo cáo, mình nhờ AI sửa luôn cả 5 mục.
+
+### Tóm tắt phản hồi của AI
+
+- **0 lỗi CRITICAL, 0 lỗi HIGH**. Độ phủ 100% (25 yêu cầu: 18 FR + 7 SC); đủ mọi ca kiểm thử. 17 tham chiếu task spec khác đều đúng; mọi truy vấn `chats` có `memberIds array-contains`.
+- **2 lỗi MEDIUM:**
+  - F1: app ghi `viewingUntil` theo giờ điện thoại, Rules giới hạn `request.time + 2 phút`, nên điện thoại chạy nhanh là bị từ chối (đúng Edge Case "Đồng hồ điện thoại sai").
+  - U1: tin "Gửi lỗi" sau 60 giây có còn tự gửi khi có mạng không, chưa chốt.
+- **3 lỗi LOW:** 090-T047 chưa đặt `SignedUrlCache` ở `core/media` (F2); 090-T045 chưa dùng `_shared/media.ts` (F3); thiếu ca chủ sân bị thu hồi quyền vẫn nhắn được (G1).
+- **Đã sửa:**
+  - Rules nới `viewingUntil` lên 10 phút, app tính theo giờ server ước lượng (research R7, data-model, T011, T023).
+  - Outbox: lỗi do mạng vẫn tự gửi lại, lỗi không thử lại được thì chờ người dùng (R1, T019).
+  - Sửa 090-T045, T047 cho khớp 091.
+  - Thêm ca vào D4.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Nới Rules `viewingUntil` lên 10 phút | Dùng | Chỉ ảnh hưởng việc bỏ qua thông báo, không phải quyền truy cập; vẫn chặn giá trị quá xa |
+| Tin lỗi do mạng vẫn tự gửi | Dùng | Đúng cả hai câu trong spec: tự gửi khi có mạng, và báo "Gửi lỗi" sau 1 phút |
+| Sửa luôn tasks 090 | Dùng | Hai spec cùng của mình; để lệch sẽ tạo hai bản `SignedUrlCache` |
+
+### Cách kiểm chứng
+
+- Đối chiếu từng truy vấn trong tasks/contract với Rules bản phác (`memberIds array-contains`, `status` khi đọc nhóm theo lô, `lastReadAt == request.time`).
+- Đọc lại 010, 070, 090 task được tham chiếu; 090-T060 đã gọi `purgeChat`.
+- Sau khi sửa, `grep` vẫn đếm được 59 task (091) và 75 task (090) đúng định dạng.
+- Việc tiếp theo: họp nhóm 16/10 để chốt các trường [MỚI] và quy ước với A, B, D; sau đó bắt đầu triển khai theo thứ tự 080 → 081 → 090 → 091 (070 song song).

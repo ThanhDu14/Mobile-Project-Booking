@@ -31,7 +31,7 @@ Truy vấn `list` phải có điều kiện khớp Rules: danh sách của sân 
 
 Truy vấn của chủ sân ("Đánh giá của khách") chỉ đọc đánh giá `VISIBLE` nên dùng chung rule trên.
 
-### Test Emulator (`firestore-tests/reviews.test.ts`, `favorites.test.ts`)
+### Test Emulator (`firestore-tests/test/reviews.test.ts`, `test/favorites.test.ts`)
 
 | # | Tình huống | Kết quả mong đợi |
 |---|---|---|

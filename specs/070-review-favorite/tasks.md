@@ -31,17 +31,17 @@ description: "Danh sách task triển khai spec 070 – Đánh giá sân và sâ
 
 ## Phase 1: Setup (hạ tầng dùng chung)
 
-**Purpose**: Thư viện và cấu hình chung. **Nếu PR `chore(core)` của nhóm đã có phần nào thì đánh dấu xong và dùng lại, không làm trùng** (research R12).
+**Purpose**: Thư viện và cấu hình chung. Phần nền app do [tasks 010](../010-account-auth/tasks.md) (A) làm, cấu hình Firebase/Supabase đã có trên main (PR #22, #23). **Spec 070 chỉ kiểm tra và bổ sung phần riêng, không tạo lại file đã có** (research R12).
 
-- [ ] T001 Thêm vào `gradle/libs.versions.toml` các phiên bản và thư viện: Hilt (+ KSP), Firebase BoM (`firebase-auth`, `firebase-firestore`), `supabase-kt` (`storage-kt`, `functions-kt`), `ktor-client-okhttp`, `kotlinx-serialization-json`, Coil, `lifecycle-viewmodel-ktx`, `lifecycle-runtime-ktx`, `kotlinx-coroutines-android`, plugin Navigation Safe Args; test: MockK, Turbine, `kotlinx-coroutines-test`
-- [ ] T002 Áp dụng plugin (Hilt, KSP, kotlin serialization, Safe Args, google-services) và khai báo dependency trong `app/build.gradle.kts` và `build.gradle.kts`
-- [ ] T003 Tạo `APP/SmashNowApp.kt` (`@HiltAndroidApp`), khai báo trong `app/src/main/AndroidManifest.xml`; gắn `@AndroidEntryPoint` cho `APP/MainActivity.kt`
-- [ ] T004 [P] Tạo `APP/core/di/FirebaseModule.kt` cung cấp `FirebaseAuth`, `FirebaseFirestore` (build debug trỏ Emulator `10.0.2.2:9099/8080`, bật offline cache)
-- [ ] T005 [P] Tạo `APP/core/di/SupabaseModule.kt` cung cấp `SupabaseClient` (Storage, Functions) với `SUPABASE_URL`, `SUPABASE_ANON_KEY` đọc từ `local.properties` qua `BuildConfig`; `accessToken` = Firebase ID token (`getIdToken(false)`)
+- [ ] T001 Kiểm tra 010-T001 đã thêm vào `gradle/libs.versions.toml`: Hilt (+ KSP), Firebase BoM, `supabase-kt` (`functions-kt`), `ktor-client-okhttp`, `kotlinx-serialization-json`, lifecycle, coroutines, Safe Args; test: MockK, Turbine, `kotlinx-coroutines-test`. Spec 070 **chỉ thêm** những gì 010 chưa có: `storage-kt` (ảnh đánh giá), Coil
+- [ ] T002 Kiểm tra 010-T002 đã áp dụng plugin (Hilt, KSP, kotlin serialization, Safe Args, Secrets Gradle Plugin, google-services); chỉ khai báo thêm dependency `storage-kt`, Coil trong `app/build.gradle.kts`
+- [ ] T003 Kiểm tra 010-T004 đã tạo `APP/SmashNowApp.kt` (`@HiltAndroidApp`) và gắn `@AndroidEntryPoint` cho `APP/MainActivity.kt`; không tạo lại
+- [ ] T004 [P] Dùng `APP/core/di/FirebaseModule.kt` của 010-T015 (Emulator khi `BuildConfig.USE_EMULATOR == "true"`). Nếu module chưa bật offline cache của Firestore thì **chỉ thêm** cấu hình đó, không đổi chữ ký
+- [ ] T005 [P] Dùng `APP/core/di/SupabaseModule.kt` của 010-T015 (`SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` từ `local.properties` qua Secrets Gradle Plugin; `accessToken = { idTokenProvider.getToken(false) }`). **Chỉ thêm** plugin `Storage` vào `SupabaseClient` (010 mới cài `Functions`)
 - [ ] T006 [P] Tạo `APP/core/ui/UiState.kt` (`Loading`, `Content<T>`, `Empty`, `Error(message, retry)`) và `APP/core/ui/StateViews.kt` (helper hiển thị 4 trạng thái cho layout có `include_state_views.xml`) + `RES/layout/include_state_views.xml`
 - [ ] T007 [P] Tạo `APP/core/model/VenueSummary.kt` (`venueId`, `name`, `photoPath`, `address`)
-- [ ] T008 [P] Khởi tạo `firebase.json` (emulator auth 9099, firestore 8080), `firestore.rules`, `firestore.indexes.json` nếu chưa có; khởi tạo thư mục `firestore-tests/` (Node 20, `@firebase/rules-unit-testing`, `vitest`) với `firestore-tests/package.json`
-- [ ] T009 [P] Khởi tạo Supabase local (`supabase init` → `supabase/config.toml`), thêm `supabase/.env.local.example` (FIREBASE_PROJECT_ID, FIREBASE_SERVICE_ACCOUNT_JSON giả) và đảm bảo `.gitignore` chặn `supabase/.env.local`, `local.properties`
+- [ ] T008 [P] Kiểm tra `firebase.json`, `.firebaserc`, `firestore.rules` (Rules nền), `firestore.indexes.json` và `firestore-tests/` (Vitest + `@firebase/rules-unit-testing`, `test/setup.ts`) đã có trên main từ PR #22; `cd firestore-tests && npm install && npm test` chạy được. Không tạo lại
+- [ ] T009 [P] Kiểm tra `supabase/config.toml` (Third-party Auth Firebase) đã có trên main từ PR #23 và 010-T003 đã xử lý `.gitignore`, file `.example` cho secrets; `npx supabase start` chạy được (xem `docs/guides/supabase-setup.md`). Không chạy `supabase init` lại
 
 **Checkpoint**: `./gradlew assembleDebug` chạy được; `firebase emulators:start` và `supabase start` chạy được.
 
@@ -68,12 +68,12 @@ description: "Danh sách task triển khai spec 070 – Đánh giá sân và sâ
 
 - [ ] T018 [P] Viết test `FN/_shared/reviews.test.ts` cho hàm tính tổng điểm: create/update/delete/ẩn/hiện theo bảng "Ảnh hưởng tới tổng điểm" trong [data-model.md](data-model.md); `overall` = trung bình 3 tiêu chí làm tròn 1 chữ số; `ratingAvg = ratingSums.overall10 / 10 / ratingCount`; `ratingCount == 0` → `ratingAvg = 0`
 - [ ] T019 Cài đặt `FN/_shared/reviews.ts`: `computeOverall()`, `starBucket()`, `applyDelta(venue, oldReview?, newReview?)` để T018 qua
-- [ ] T020 [P] Tạo `FN/_shared/auth.ts`: xác thực Firebase ID token (JWKS của Google, kiểm `aud`, `iss`, `exp`), trả `{ uid, appRole }`; dùng `FN/_shared/firestore.ts` của B cho REST/transaction (nếu chưa có thì tạo bản tối thiểu `beginTransaction`, `get`, `commit`, thử lại 5 lần khi `ABORTED`, và báo B)
+- [ ] T020 [P] Dùng `FN/_shared/auth.ts` của 010-T021 (A; xác thực Firebase ID token, trả `{ uid, appRole }`). Nếu chưa merge thì viết bản tối thiểu đúng chữ ký ở [contract 010 §4](../010-account-auth/contracts/edge-function-on-signup.md#4-_sharedauthts-dùng-chung-cả-nhóm) rồi báo A; dùng `FN/_shared/firestore.ts` của B cho REST/transaction (nếu chưa có thì tạo bản tối thiểu `beginTransaction`, `get`, `commit`, thử lại 5 lần khi `ABORTED`, và báo B)
 - [ ] T021 Tạo khung `FN/review/index.ts`: parse `action`, gọi `auth.ts`, kiểm `users/{uid}.accountStatus == ACTIVE` (`403 ACCOUNT_LOCKED`), router tới các handler trống, chuẩn hóa body lỗi theo [contracts/edge-function-review.md](contracts/edge-function-review.md)
 
 ### Quyền truy cập và index
 
-- [ ] T022 [P] Viết test Rules `firestore-tests/reviews.test.ts` (R1–R9) và `firestore-tests/favorites.test.ts` (F1–F4) theo [contracts/security-rules.md](contracts/security-rules.md); chạy thấy fail
+- [ ] T022 [P] Viết test Rules `firestore-tests/test/reviews.test.ts` (R1–R9) và `firestore-tests/test/favorites.test.ts` (F1–F4) theo [contracts/security-rules.md](contracts/security-rules.md), cấu trúc giống `firestore-tests/test/base.test.ts` (`createTestEnv()`, vai trò qua claim `appRole`); mỗi dòng phân quyền có ít nhất một `assertSucceeds` và một `assertFails`; chạy thấy fail
 - [ ] T023 Thêm Rules cho `reviews` và `users/{uid}/favorites` vào `firestore.rules` đúng [contracts/security-rules.md](contracts/security-rules.md) để T022 qua
 - [ ] T024 [P] Thêm 5 index mới vào `firestore.indexes.json` theo mục 5 của [data-model.md](data-model.md) (`reviews`: `starBucket`, `hasPhotos`, `hasOwnerReply`, `userId`; collection group `favorites.venueId`)
 - [ ] T025 [P] Tạo script dữ liệu demo `scripts/seed/070-review.ts` (player1, player2, owner1, owner2, admin1; venueA ACTIVE với 25 đánh giá, venueB HIDDEN; đơn `b-done`, `b-old`, `b-confirmed`, `b-own`) theo [quickstart.md](quickstart.md) mục 1
