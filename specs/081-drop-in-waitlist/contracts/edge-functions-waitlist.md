@@ -104,7 +104,7 @@ Không cần thêm Rules mới:
 - Lượt chờ là document `registrations`, nên Rules của spec 080 (chỉ chủ lượt, chủ cơ sở, admin đọc; client không ghi) đã che đủ FR-006 và SC-004.
 - Các trường `waitlist*` trên buổi do server ghi, và Rules của buổi đã là `write: if false`.
 
-Bổ sung 2 ca vào `firestore-tests/dropin.test.ts`:
+Bổ sung 2 ca vào `firestore-tests/test/dropInSessions.test.ts`:
 
 | # | Ca | Kỳ vọng |
 |---|---|---|

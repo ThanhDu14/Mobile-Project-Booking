@@ -1020,7 +1020,7 @@ Ghi rõ task nào phụ thuộc nhóm khác (D: trường waitlist* trên dropIn
 | Khung `waitlist.ts` công bố chữ ký sớm (T006) | Dùng | D và A import được ngay, không phải chờ C cài xong |
 | Q6, Q7 lặp 20 lần | Dùng | Lỗi tranh chấp chỉ lộ ra khi chạy nhiều lần (constitution III) |
 | Dùng `firestore-tests/test/dropInSessions.test.ts` | Dùng | Khớp cấu trúc Vitest vừa merge trên main |
-| Sửa đường dẫn test Rules trong tasks 080 | Chưa làm | Ngoài phạm vi lần chạy này; sửa khi làm 080-T008 |
+| Sửa đường dẫn test Rules trong tasks 080 | Đã làm (commit riêng) | Theo yêu cầu thêm của mình: sửa T002, T008, checkpoint Phase 2 của tasks 080 và plan/quickstart/contract của 080, 081; đổi `npm test -- dropin` (không chạy được vì script bọc vitest trong `firebase emulators:exec`) thành `npm test` |
 | Nếu D không đồng ý 3 trường `waitlist*` | Đưa ra họp nhóm | Ảnh hưởng thiết kế vị trí hàng chờ (research R2) |
 
 ### Cách kiểm chứng

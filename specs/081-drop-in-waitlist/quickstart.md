@@ -20,7 +20,7 @@ Script `081-waitlist.ts` tạo:
 ## 2. Test tự động
 
 ```bash
-cd firestore-tests && npm test -- dropin                                   # gồm W1, W2
+cd firestore-tests && npm test                                                 # gồm W1, W2
 deno test -A supabase/functions/register-drop-in supabase/functions/cancel-drop-in \
              supabase/functions/dropin-close supabase/functions/_shared/waitlist.test.ts   # Q1–Q14
 ./gradlew testDebugUnitTest --tests "com.example.booking_app.feature.dropin.*"

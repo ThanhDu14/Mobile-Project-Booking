@@ -41,7 +41,7 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
 Hilt, Firebase, supabase-kt, `UiState`, Emulator và Supabase local đã có trong Phase 1 của [tasks 070](../070-review-favorite/tasks.md) (T001–T009) hoặc trong PR `chore(core)` của nhóm. **Phần nào đã có thì đánh dấu xong và dùng lại, không làm trùng.**
 
 - [ ] T001 Thêm `zxing-android-embedded` vào `gradle/libs.versions.toml` (phiên bản ổn định mới nhất) và khai báo `implementation` trong `app/build.gradle.kts`. Ghi lý do trong mô tả PR (constitution: thêm phụ thuộc phải qua version catalog). Đề xuất đưa vào PR `chore(core)` vì spec 112 dùng để quét (research R15)
-- [ ] T002 [P] Kiểm tra các task T001–T009 của spec 070 (hoặc PR core) đã xong: Hilt, `FirebaseModule` (Emulator, offline cache), `SupabaseModule` (Functions, token = Firebase ID token), `core/ui/UiState.kt`, `include_state_views.xml`, `firebase.json`, `firestore-tests/`, `supabase/config.toml`. Thiếu phần nào thì làm theo đúng mô tả ở tasks 070
+- [ ] T002 [P] Kiểm tra các task T001–T009 của spec 070 (hoặc PR core) đã xong: Hilt, `FirebaseModule` (Emulator, offline cache), `SupabaseModule` (Functions, token = Firebase ID token), `core/ui/UiState.kt`, `include_state_views.xml`. Thiếu phần nào thì làm theo đúng mô tả ở tasks 070. `firebase.json`, `.firebaserc`, `firestore.rules` (Rules nền), `firestore.indexes.json`, `firestore-tests/` (Vitest + `@firebase/rules-unit-testing`) đã có trên main từ PR #22 và `supabase/config.toml` từ PR #23: chỉ kiểm tra, không tạo lại
 - [ ] T003 [P] Tạo `RES/values/strings_dropin.xml`: mọi chuỗi tiền tố `dropin_` cho 5 màn hình, 2 bottom sheet, nhãn, mã lỗi ở [contracts/edge-functions-dropin.md](contracts/edge-functions-dropin.md#4-mã-lỗi) và dòng "Thanh toán giả lập – không thu tiền thật" (FR-010)
 
 **Checkpoint**: `./gradlew assembleDebug` chạy được; `firebase emulators:start --only auth,firestore` và `supabase start` chạy được.
@@ -81,7 +81,11 @@ Hilt, Firebase, supabase-kt, `UiState`, Emulator và Supabase local đã có tro
 
 ### Rules và index
 
-- [ ] T008 Viết test Rules `firestore-tests/dropin.test.ts` cho các ca **D1–D13** ở [contracts/security-rules.md](contracts/security-rules.md) (chạy thấy fail)
+- [ ] T008 Viết test Rules `firestore-tests/test/dropInSessions.test.ts` cho các ca **D1–D13** ở [contracts/security-rules.md](contracts/security-rules.md) (chạy thấy fail):
+  - theo cấu trúc của `firestore-tests/test/base.test.ts`: `createTestEnv()` từ `./setup` (project `demo-smashnow`), `clearFirestore()` trong `beforeEach`, `cleanup()` trong `afterAll`; dữ liệu mẫu ghi bằng `withSecurityRulesDisabled`;
+  - vai trò lấy từ custom claim `appRole` (`authenticatedContext(uid, { appRole: 'PLAYER' | 'OWNER' | 'ADMIN' })`);
+  - mỗi dòng phân quyền ở mục 7 đặc tả CSDL có ít nhất một `assertSucceeds` và một `assertFails`. Dòng `write: if false` chỉ có ca bị chặn, vì ghi hợp lệ đi qua Edge Function chứ không qua Rules;
+  - chạy bằng `cd firestore-tests && npm test` (script tự bật Firestore Emulator).
 - [ ] T009 Cài phần `dropInSessions` và `registrations` trong `firestore.rules` theo bản phác ở [security-rules.md](contracts/security-rules.md#bản-phác-rules):
   - buổi: `read: if true`, `write: if false`;
   - đăng ký: `get, list` cho `isSelf(uid)`, `isSessionOwner(sessionId)`, `isAdmin()`; `write: if false`;
@@ -124,7 +128,7 @@ Hilt, Firebase, supabase-kt, `UiState`, Emulator và Supabase local đã có tro
 
   Buổi phải có đủ `timeSlot`, `venueSnapshot` như khi tạo bằng `deriveSessionFields`
 
-**Checkpoint**: Rules D1–D13 và `dropin.test.ts` xanh; app build được với nav graph `nav_dropin`.
+**Checkpoint**: Rules D1–D13 (`firestore-tests/test/dropInSessions.test.ts`) và `FN/_shared/dropin.test.ts` xanh; app build được với nav graph `nav_dropin`.
 
 ---
 
