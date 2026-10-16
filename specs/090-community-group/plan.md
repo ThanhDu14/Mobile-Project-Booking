@@ -69,6 +69,7 @@ Người chơi tạo nhóm/CLB (công khai hoặc riêng tư), tìm và tham gia
 | **D** (spec 100) | Chốt danh sách `data.event` của `GROUP_ACTIVITY`: `JOIN_REQUESTED`, `JOIN_APPROVED`, `JOIN_REJECTED`, `REMOVED`, `EVENT_CREATED`, `EVENT_UPDATED`, `EVENT_DELETED`; `EVENT_CREATED` gửi `recipientUids` hay để D tự lấy thành viên (R15). Deep link `smashnow://community/group/{groupId}`. | Họp 16/10 |
 | **D** (spec 120) | 1. Ẩn bài theo báo cáo: ghi `status = HIDDEN`, `hiddenBy = SYSTEM` (R7).<br>2. Khóa nhóm: `groups.status = LOCKED` (spec 120 chưa có action này, R17).<br>3. Đồng ý `reportId = POST_{groupId}_{postId}_{uid}` và danh sách `reason` dùng chung cho 070, 090, 091 (R14). | Họp 16/10 |
 | C (mình, spec 091) | Cài `onGroupMembershipChanged` để đồng bộ `chats/{chatId}.memberIds`. | Khi viết plan 091 |
+| C (mình, spec 070) | Sau khi D chốt danh sách `reason` báo cáo (R14), đồng bộ lý do báo cáo đánh giá của spec 070 và tin nhắn của 091 theo cùng danh sách. | Sau họp 16/10 |
 
 ## Project Structure
 

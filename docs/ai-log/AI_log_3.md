@@ -25,6 +25,7 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 19 | 2026-10-16 | Đồng bộ tasks 070/080 với spec 010 và cấu hình Firebase, Supabase trên main | 07, 08 |
 | 20 | 2026-10-16 | Lập kế hoạch kỹ thuật spec 090 bằng `/speckit-plan` | 09 |
 | 21 | 2026-10-16 | Chia task triển khai spec 090 bằng `/speckit-tasks` | 09 |
+| 22 | 2026-10-16 | Kiểm tra độ khớp spec/plan/tasks của spec 090 bằng `/speckit-analyze` và sửa theo kết quả | 09 |
 
 ---
 
@@ -1275,3 +1276,60 @@ Chia task theo 6 user story của spec 090, cùng khuôn với tasks 080/081:
 - Mỗi ca G1–G15, P1–P11, M1–M3, GR1–GR12, S1–S5 và Q1–Q15 đều có task tương ứng.
 - Thứ tự trong mỗi story: test → Edge Function → repository → UseCase → ViewModel → giao diện.
 - Việc tiếp theo: chạy `/speckit-analyze` cho spec 090.
+
+---
+
+## Mục 22: Kiểm tra độ khớp spec/plan/tasks của spec 090 bằng `/speckit-analyze`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-16 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 09 – Cộng đồng và chat (spec `specs/090-community-group`) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5), lệnh Spec Kit `/speckit-analyze` |
+| Mục đích | Tìm chỗ thiếu, mâu thuẫn giữa spec, plan, tasks và với constitution, đặc tả CSDL trước khi code; sửa theo kết quả |
+| Nhánh Git | `feature/09-community-chat` |
+
+### Prompt đã dùng
+
+```
+/speckit-analyze SPECIFY_FEATURE_DIRECTORY=specs/090-community-group
+Kiểm tra độ khớp spec/plan/tasks của spec 090, chú ý:
+- mỗi FR-001 → FR-022 và SC-001 → SC-008, mỗi Edge Case có task; mỗi ca G1–G15, P1–P11, M1–M3, GR1–GR12, S1–S5, Q1–Q15 có task;
+- tham chiếu task spec khác (010-T###, 070-T###, 081-T###) đúng ID và nội dung;
+- phụ thuộc nhóm khác (A, B, D, spec 091) nhất quán giữa plan, research và tasks;
+- mâu thuẫn với constitution (đặc biệt nguyên tắc I, II, III, IV) và với đặc tả CSDL.
+```
+
+Sau khi xem báo cáo, mình nhờ AI sửa luôn cả 6 mục.
+
+### Tóm tắt phản hồi của AI
+
+- **0 lỗi CRITICAL**, không vi phạm constitution. Độ phủ 100% (30 yêu cầu: 22 FR + 8 SC); đủ mọi ca G, P, M, GR, S, Q. 11 tham chiếu task spec khác đều đúng.
+- **1 lỗi HIGH (F1):** "Nhóm của tôi" đọc nhóm theo lô bằng `whereIn(documentId)` mà không lọc `status`, nên Rules `groups` sẽ từ chối cả query khi chạy thật.
+- **2 lỗi MEDIUM:**
+  - F2: mở nhóm đã xóa trả `PERMISSION_DENIED`, app sẽ hiện lỗi chung thay vì "Nhóm không còn tồn tại".
+  - U1: tìm theo tên nhiều từ chưa rõ dùng từ nào cho `array-contains`.
+- **3 lỗi LOW:** gộp `array-contains` với `whereIn` nhiều quận chưa kiểm chứng (U2); thiếu test tên nhóm trùng (G1); chưa ghi việc đồng bộ danh sách `reason` báo cáo sang spec 070 (F3).
+- **Đã sửa:**
+  - T025 thêm `where status in [ACTIVE, LOCKED]`.
+  - T029, T032 ánh xạ `PERMISSION_DENIED` thành "Nhóm không còn tồn tại".
+  - R5, T031 dùng từ dài nhất cho `array-contains`, lọc các từ còn lại ở app.
+  - T035 ghi phương án chỉ lọc một quận nếu Firestore từ chối.
+  - G1 (T021) thêm ca tên trùng.
+  - Plan thêm dòng C đồng bộ `reason` cho 070, 091.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Sửa F1 ngay | Dùng | Lỗi chỉ lộ ra khi chạy thật với Rules; test Rules GR5 kiểm tra `members` chứ không kiểm tra truy vấn `groups` theo lô |
+| Từ dài nhất cho `array-contains` | Dùng | Từ dài lọc được nhiều hơn, ít phải lọc ở app; vẫn đúng FR-005 |
+| Lọc một quận nếu Firestore từ chối | Dùng | Có phương án sẵn, không chặn khi code |
+
+### Cách kiểm chứng
+
+- Đối chiếu Rules bản phác (`allow list` cần ràng buộc `status`) với từng truy vấn `groups` trong tasks: chỉ T025 thiếu, đã sửa.
+- Đọc lại 010-T001, T002, T004, T012, T015, T016, T021, 070-T005, T006, T043, 081-T005 để xác nhận đúng nội dung.
+- Sau khi sửa, `grep` vẫn đếm được 75 task đúng định dạng.
+- Việc tiếp theo: lập kế hoạch kỹ thuật spec 091.

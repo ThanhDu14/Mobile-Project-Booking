@@ -67,7 +67,8 @@ Rules của `groups` và các collection con đều `write: if false`. Rules ch�
 
 **Quyết định:**
 - Thêm `nameKeywords` 🔒 **[MỚI]**: tiền tố của từng từ trong tên, chữ thường, bỏ dấu. Sinh bằng cùng hàm A dùng cho `venues.nameKeywords` (đặc tả CSDL mục 4.3), đặt ở `_shared/keywords.ts`.
-- Truy vấn: `status == ACTIVE`, tùy chọn `nameKeywords array-contains <từ khóa đã chuẩn hóa>`, tùy chọn `districtId ==`, `orderBy memberCount desc`, `limit 20`, `startAfter`.
+- Từ khóa nhiều từ: lấy **từ dài nhất** (đã chuẩn hóa) làm `array-contains`, các từ còn lại lọc ở app theo `nameKeywords` của từng nhóm; trang sau lọc ít hơn 20 vẫn tải tiếp theo cursor.
+- Truy vấn: `status == ACTIVE`, tùy chọn `nameKeywords array-contains <từ dài nhất>`, tùy chọn `districtId ==`, `orderBy memberCount desc`, `limit 20`, `startAfter`.
 
 **Lý do:** cùng cách với tìm sân (spec 020), không cần dịch vụ tìm kiếm ngoài (constitution: không dịch vụ trả phí).
 
