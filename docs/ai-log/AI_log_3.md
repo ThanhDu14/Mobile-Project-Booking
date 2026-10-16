@@ -26,6 +26,7 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 20 | 2026-10-16 | Lập kế hoạch kỹ thuật spec 090 bằng `/speckit-plan` | 09 |
 | 21 | 2026-10-16 | Chia task triển khai spec 090 bằng `/speckit-tasks` | 09 |
 | 22 | 2026-10-16 | Kiểm tra độ khớp spec/plan/tasks của spec 090 bằng `/speckit-analyze` và sửa theo kết quả | 09 |
+| 23 | 2026-10-16 | Lập kế hoạch kỹ thuật spec 091 bằng `/speckit-plan` | 09 |
 
 ---
 
@@ -1333,3 +1334,59 @@ Sau khi xem báo cáo, mình nhờ AI sửa luôn cả 6 mục.
 - Đọc lại 010-T001, T002, T004, T012, T015, T016, T021, 070-T005, T006, T043, 081-T005 để xác nhận đúng nội dung.
 - Sau khi sửa, `grep` vẫn đếm được 75 task đúng định dạng.
 - Việc tiếp theo: lập kế hoạch kỹ thuật spec 091.
+
+---
+
+## Mục 23: Lập kế hoạch kỹ thuật spec 091 bằng `/speckit-plan`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-16 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 09 – Cộng đồng và chat (spec `specs/091-chat`) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5), lệnh Spec Kit `/speckit-plan` |
+| Mục đích | Lập kế hoạch kỹ thuật cho chat nhóm và chat với chủ sân, nối với hook của spec 090 |
+| Nhánh Git | `feature/09-community-chat` |
+
+### Prompt đã dùng
+
+```
+/speckit-plan SPECIFY_FEATURE_DIRECTORY=specs/091-chat
+Lập kế hoạch kỹ thuật cho spec 091 (chat nhóm và chat với chủ sân), cùng khuôn với plan 090:
+- Dữ liệu theo đặc tả CSDL mục 4.11 (chats, messages, ID tất định chat riêng); trường mới đánh dấu [MỚI].
+- Chat nhóm đồng bộ với danh sách thành viên qua hook onGroupMembershipChanged của spec 090, trong cùng transaction.
+- Chọn cách gửi tin đáp ứng được: hiện ngay "Đang gửi", tự gửi khi có mạng, "Gửi lại"/"Xóa" tin lỗi, không tạo tin trùng, số chưa đọc realtime, thông báo CHAT_MESSAGE (Supabase không có trigger Firestore).
+- Thu hồi 10 phút theo giờ server, báo cáo (ID tất định như 090), chặn trong chat riêng, ảnh ở chat-media private.
+- Test Rules (mỗi dòng có assertSucceeds và assertFails), Edge Function có ca đồng thời (nhiều người gửi cùng lúc, hai bên mở chat riêng cùng lúc), pgTAP, test outbox khi mất mạng.
+- Bảng phối hợp A, B, D và Constitution Check đủ 7 nguyên tắc.
+```
+
+### Tóm tắt phản hồi của AI
+
+- **Các file đã sinh:** `plan.md`, `research.md` (16 quyết định R1–R16), `data-model.md`, `contracts/edge-functions-chat.md`, `contracts/security-rules.md`, `contracts/ui-screens.md`, `quickstart.md`.
+- **Quyết định chính, gửi tin qua Edge Function `chat-send` + outbox ở app (R1):** hàng đợi offline của Firestore SDK không hủy được lần ghi đã vào hàng đợi, nên không làm được "Xóa" tin lỗi (FR-008); số chưa đọc và thông báo cần tính ở server vì Supabase không có trigger Firestore. `messageId` tất định nên gửi lại không trùng.
+- **Dữ liệu:**
+  - Collection con đặt tên `participants` [MỚI] thay vì `members`, để không lẫn với collection group `members` của spec 090.
+  - `chats.unreadCounts` [MỚI] cho số chưa đọc realtime.
+  - `status` (`ACTIVE`, `READ_ONLY`, `DELETED`), `ownerId`, `playerId`, `venueSnapshot` [MỚI].
+- **Đồng bộ chat nhóm:** `syncGroupChat` (hook của 090) chạy trong cùng transaction; người mới có `lastReadAt = joinedAt` nên đọc được lịch sử mà không bị tính chưa đọc; `purgeChat` gọi sau khi 090 xóa nhóm.
+- **Rules:** chỉ người trong `memberIds` đọc; client chỉ được đặt `unreadCounts.{mình} = 0` và sửa `participants/{mình}`. Huy hiệu qua `core/chat/UnreadChatsReader` để `MainActivity` không import `feature/chat`.
+- **Test:** CR1–CR8, S1–S4, C1–C8 (C3: 20 người gửi cùng lúc × 10), D1–D4 (D1: hai bên mở chat cùng lúc × 20), R1–R2, H1–H2, M1–M2, A1, kịch bản Q1–Q16. Constitution Check đạt 7 nguyên tắc.
+- **Sửa thêm spec 090:** T060 gọi `purgeChat` sau khi xóa nhóm.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Gửi tin qua `chat-send` thay vì app ghi thẳng | Dùng | Đáp ứng "Xóa" tin lỗi, số chưa đọc và thông báo; độ trễ thêm 0,3–0,8 giây vẫn trong mục tiêu 3 giây |
+| Outbox bằng DataStore, không dùng WorkManager | Dùng | Constitution VII: không thêm thư viện; gửi lại khi mở app và khi có mạng là đủ |
+| Đổi tên `participants` | Dùng | Tránh lỗi truy vấn collection group "Nhóm của tôi" của 090 |
+| Tin bị admin ẩn vẫn còn chữ trong document | Đưa ra họp nhóm | Spec 120 chỉ đổi `status`; đề xuất D ghi thêm `text = ""` khi ẩn |
+| `ownerId` cố định lúc tạo chat riêng | Dùng | Trường hợp hai chủ sân hỏi sân của nhau hiếm; giữ một cuộc mỗi cặp đúng đặc tả CSDL |
+
+### Cách kiểm chứng
+
+- Đối chiếu từng FR-001 → FR-018 và SC-001 → SC-007 với quy tắc trong data-model hoặc ca test.
+- Kiểm tra mọi truy vấn trong contract đều có `memberIds array-contains <mình>` để Rules chứng minh được người đọc nằm trong cuộc; truy vấn nhóm theo lô có lọc `status` (bài học F1 của spec 090).
+- Đối chiếu với spec 090 (hook, `ImageCompressor`, danh sách `reason`), spec 011 (`anonymizeCommunity`), spec 100 (`CHAT_MESSAGE`), spec 120 (`HIDE_CONTENT`).
+- Việc tiếp theo: chạy `/speckit-tasks` cho spec 091.
