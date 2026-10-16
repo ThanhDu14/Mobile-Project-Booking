@@ -120,6 +120,8 @@ Người dùng chọn "Dùng số điện thoại", nhập số điện thoại 
 - **Số điện thoại không phải số thử nghiệm** trong phiên bản học tập: app báo không gửi được mã và gợi ý dùng email hoặc Google.
 - **Gửi OTP hoặc yêu cầu đặt lại mật khẩu quá nhiều lần**: khi bị giới hạn, app báo "Bạn đã thử quá nhiều lần, vui lòng thử lại sau".
 - **Không nhận được email xác minh** (vào thư rác, gõ nhầm email): người dùng vẫn dùng app bình thường và có thể gửi lại email từ banner; nếu gõ nhầm email, sửa email thuộc spec 011.
+- **Đã đăng ký email/mật khẩu bằng địa chỉ Gmail nhưng chưa xác minh, sau đó đăng nhập Google cùng email** (FR-012): vẫn là cùng một tài khoản SmashNow (giữ nguyên hồ sơ và vai trò), nhưng mật khẩu cũ bị gỡ; muốn đăng nhập lại bằng mật khẩu thì dùng "Quên mật khẩu" để đặt lại.
+- **Email Google không phải Gmail trùng với tài khoản email/mật khẩu đã có** (FR-012): app hiện hộp thoại liên kết, yêu cầu nhập mật khẩu của tài khoản đó rồi gộp đăng nhập Google vào cùng tài khoản.
 - **Tài khoản admin**: đăng nhập như người dùng khác ở màn hình này, không có lựa chọn đăng ký làm admin.
 - **Vai trò thay đổi khi đang đăng nhập** (admin vừa duyệt hoặc vừa thu hồi quyền chủ sân): app áp dụng vai trò mới ở lần mở app hoặc lần làm mới phiên kế tiếp và điều hướng lại cho đúng giao diện; người bị thu hồi quyền không còn vào được giao diện chủ sân.
 - **Người dùng đã đăng nhập mở màn hình đăng nhập** (qua nút quay lại): không thể quay về màn hình đăng nhập/đăng ký khi đang đăng nhập.
@@ -151,13 +153,13 @@ Người dùng chọn "Dùng số điện thoại", nhập số điện thoại 
 
 **OTP**
 
-- **FR-016**: Mã OTP PHẢI gồm 6 chữ số, có hiệu lực tối đa 5 phút; nút gửi lại mã chỉ bật sau 60 giây; sau 5 lần nhập sai liên tiếp, mã hiện tại bị vô hiệu.
+- **FR-016**: Mã OTP PHẢI gồm 6 chữ số, có hiệu lực tối đa 5 phút; nút gửi lại mã chỉ bật sau 60 giây; sau 5 lần nhập sai liên tiếp, mã hiện tại bị vô hiệu. Thời hạn 5 phút và giới hạn 5 lần sai do app thực thi trên phiên nhập mã (bỏ phiên, bắt buộc gửi lại mã); máy chủ xác thực không bảo đảm hai giới hạn này.
 - **FR-017**: Ô số điện thoại PHẢI chấp nhận số di động Việt Nam dạng `0xxxxxxxxx` hoặc `+84xxxxxxxxx` và chuẩn hóa về một định dạng duy nhất trước khi gửi mã.
 
 **Quên mật khẩu**
 
 - **FR-018**: Người dùng PHẢI yêu cầu được email đặt lại mật khẩu từ màn hình đăng nhập; thông báo sau khi gửi PHẢI giống nhau dù email có tồn tại hay không.
-- **FR-019**: Mật khẩu mới PHẢI đạt cùng yêu cầu như FR-004; sau khi đặt lại, mật khẩu cũ PHẢI hết hiệu lực.
+- **FR-019**: Mật khẩu mới PHẢI đạt cùng yêu cầu như FR-004; sau khi đặt lại, mật khẩu cũ PHẢI hết hiệu lực. Máy chủ bảo đảm phần "tối thiểu 8 ký tự và có chữ số" ở mọi nơi đặt mật khẩu (kể cả trang đặt lại mật khẩu do dịch vụ xác thực cung cấp); phần "có chữ cái" do app kiểm tra trên các màn hình của app.
 
 **Xử lý lỗi và trải nghiệm**
 
@@ -193,5 +195,6 @@ Người dùng chọn "Dùng số điện thoại", nhập số điện thoại 
 - Tài khoản admin do nhóm cấp thủ công; spec này không có màn hình tạo admin.
 - Màn hình hồ sơ, đổi mật khẩu, đăng xuất, xóa tài khoản và chuyển chế độ thuộc spec 011. 
 - Yêu cầu mật khẩu (8 ký tự, có chữ và số), thời hạn OTP 5 phút, chờ 60 giây giữa hai lần gửi lại và giới hạn 5 lần sai là mặc định theo thông lệ, nhóm có thể chỉnh trong `/speckit-clarify`.
+- Dịch vụ xác thực ở gói miễn phí giới hạn khoảng 150 email đặt lại mật khẩu và 1000 email xác minh mỗi ngày cho cả project; vượt hạn mức thì email không được gửi trong ngày đó, đủ cho quy mô đồ án (FR-018).
 - Nội dung điều khoản và chính sách quyền riêng tư là văn bản tĩnh do nhóm soạn, theo tinh thần Nghị định 13/2023/NĐ-CP.
 - Cách thực hiện bước khởi tạo vai trò và hồ sơ (FR-006), cách lưu trạng thái khóa (FR-014) tuân theo constitution v1.1.0 và [đặc tả CSDL](../../docs/design/database/README.md) (mục 4.1 và 8a); chi tiết để `/speckit-plan` quyết định.
