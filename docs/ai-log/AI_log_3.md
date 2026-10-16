@@ -23,6 +23,7 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 17 | 2026-10-16 | Chia task triển khai spec 081 bằng `/speckit-tasks` | 08 |
 | 18 | 2026-10-16 | Kiểm tra độ khớp spec/plan/tasks của spec 081 bằng `/speckit-analyze` và sửa theo kết quả | 08 |
 | 19 | 2026-10-16 | Đồng bộ tasks 070/080 với spec 010 và cấu hình Firebase, Supabase trên main | 07, 08 |
+| 20 | 2026-10-16 | Lập kế hoạch kỹ thuật spec 090 bằng `/speckit-plan` | 09 |
 
 ---
 
@@ -1146,3 +1147,65 @@ và Supabase local (PR #23), cùng tasks spec 010 của A (010-T001..T004 thư v
 - Đối chiếu từng task với 010-T001 → T004, T015, T021 và các file có trên main (`firebase.json`, `firestore-tests/test/setup.ts`, `supabase/config.toml`).
 - `grep` không còn `SUPABASE_ANON_KEY`, `firestore-tests/reviews.test.ts`, `firestore-tests/dropin.test.ts` trong spec 070/080/081.
 - Việc tiếp theo: lập kế hoạch kỹ thuật spec 090.
+
+---
+
+## Mục 20: Lập kế hoạch kỹ thuật spec 090 bằng `/speckit-plan`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-16 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 09 – Cộng đồng và chat (spec `specs/090-community-group`) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5), lệnh Spec Kit `/speckit-plan` |
+| Mục đích | Lập kế hoạch kỹ thuật cho nhóm/CLB và bảng tin: dữ liệu, Edge Function, Rules, Storage, test |
+| Nhánh Git | `feature/09-community-chat` (tạo từ `feature/08-drop-in` để AI log không bị conflict) |
+
+### Prompt đã dùng
+
+```
+/speckit-plan SPECIFY_FEATURE_DIRECTORY=specs/090-community-group
+Lập kế hoạch kỹ thuật cho spec 090 (nhóm/CLB và bảng tin cộng đồng), theo cùng khuôn với plan 070 và 080 của mình:
+- Dữ liệu đúng collection và trường trong docs/design/database/README.md; trường nào đề xuất thêm thì đánh dấu [MỚI] và đưa vào danh sách cần D/nhóm đồng ý.
+- Thao tác nhạy cảm (tham gia/rời nhóm, đổi vai trò, xóa bài, báo cáo, đếm thành viên) đi qua Edge Function có transaction; Rules chỉ mở quyền đọc đúng phạm vi.
+- Dùng lại phần đã có: core/ của spec 010 (SessionManager, IdTokenProvider, SupabaseModule, _shared/auth.ts), _shared/firestore.ts của B, ảnh qua Supabase Storage có RLS.
+- Ranh giới với spec 091 (chat nhóm dùng chung nhóm), spec 100 (type thông báo), spec 120 (admin xử lý reports).
+- Test: Rules trong firestore-tests/test/<collection>.test.ts (mỗi dòng phân quyền có assertSucceeds và assertFails), Edge Function trên Emulator gồm thao tác đồng thời (nhiều người cùng tham gia nhóm đầy chỗ nếu spec có giới hạn), pgTAP cho RLS Storage.
+- Ghi bảng phối hợp với nhóm (A, B, D) và Constitution Check đủ 7 nguyên tắc.
+```
+
+### Tóm tắt phản hồi của AI
+
+- **Các file đã sinh:** `plan.md`, `research.md` (18 quyết định R1–R18), `data-model.md`, `contracts/edge-functions-community.md`, `contracts/security-rules.md`, `contracts/ui-screens.md`, `quickstart.md`.
+- **Edge Function:** 3 function theo `action`: `group-manage` (11 action), `group-post` (8 action), `group-media-url` (cấp signed URL theo lô). Rules mọi collection `groups` đều `write: if false`.
+- **Dữ liệu:**
+  - Thành viên, yêu cầu tham gia, người bị mời ra là 3 collection con riêng (`members`, `joinRequests` [MỚI], `removals` [MỚI]) để Rules chỉ cần `exists(members/{uid})`.
+  - Người tham gia sự kiện ở `posts/{postId}/attendees/{uid}` [MỚI].
+  - `groupId`, `postId` là `requestId` để chống trùng.
+- **Đếm đúng khi đồng thời:** `memberCount`, `attendeeCount` chỉ đổi trong transaction trên document cha. Test G5, P6: 20 người cùng lúc, lặp 10 lần.
+- **Ảnh:** bảng tin private (`group-media`), signed URL theo lô mỗi trang. Ảnh đại diện nhóm ở bucket public mới `group-avatars` vì phải hiện cho người ngoài và khách.
+- **Ranh giới:**
+  - Hook `onGroupMembershipChanged` cho spec 091, chạy trong cùng transaction.
+  - `anonymizeCommunityGroups` cho `delete-account` của A.
+  - `hiddenBy = SYSTEM` và `groups.status = LOCKED` cho spec 120.
+  - 7 giá trị `data.event` của `GROUP_ACTIVITY` cho spec 100.
+- **Test:** Rules GR1–GR12, pgTAP S1–S5, Edge Function G1–G15, P1–P11, M1–M3, kịch bản thủ công Q1–Q15. Constitution Check đạt cả 7 nguyên tắc.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Mọi ghi qua Edge Function | Dùng | Thao tác nào cũng đổi nhiều document; Rules không kiểm tra được ảnh đã tải lên và không xóa được ảnh (constitution II, III) |
+| Tách `joinRequests`, `removals` khỏi `members` | Dùng | Spec cho phép dùng trạng thái trong `members`, nhưng quên lọc `status` một chỗ là lộ bảng tin cho người chưa duyệt |
+| Bucket public `group-avatars` [MỚI] | Chờ D đồng ý | Đặc tả CSDL chỉ có `group-media` private; ảnh đại diện hiện ở kết quả tìm kiếm cho người ngoài |
+| Đổi `avatarUrl` → `avatarPath` | Chờ D đồng ý | Đặc tả CSDL quy ước Firestore lưu path, không lưu URL |
+| `group-media-url` riêng thay vì `sign-upload` chung của D | Đưa ra họp nhóm | Tránh để D phụ thuộc schema nhóm của C |
+| Giới hạn mềm 5 nhóm (có thể vượt 1 khi 2 yêu cầu song song) | Dùng | Chỉ ảnh hưởng chính người đó, quy mô đồ án |
+| Không có job dọn ảnh mồ côi | Dùng | Constitution VII; app gọi `discard` khi bỏ bài |
+
+### Cách kiểm chứng
+
+- Đối chiếu từng FR-001 → FR-022 và SC-001 → SC-008 với quy tắc trong data-model hoặc ca test (G, P, M, GR, S, Q).
+- Đối chiếu trường với đặc tả CSDL mục 4.10, 4.12, 8; mọi trường mới đều đánh dấu [MỚI] và có trong danh sách cuối data-model.
+- Đối chiếu ranh giới với spec 011 (research R12 `anonymizeCommunity`), spec 100 (`GROUP_ACTIVITY`), spec 120 (`HIDE_CONTENT`, `targetPath`) và spec 091 (chat nhóm theo danh sách thành viên).
+- Việc tiếp theo: chạy `/speckit-tasks` cho spec 090.
