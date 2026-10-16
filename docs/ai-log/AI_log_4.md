@@ -10,6 +10,10 @@ Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 | 4   | 2026-10-08 | Viết và làm rõ spec 112 (vận hành cơ sở chủ sân) bằng AI và `$speckit-clarify`                                             | 11   |
 | 5   | 2026-10-08 | Viết và làm rõ spec 120 (quản trị, hồ sơ chủ sân và báo cáo) bằng `$speckit-specify` và `$speckit-clarify`                 | 12   |
 | 6   | 2026-10-15 | Lập implementation plan cho Feature 100 (thông báo) bằng `$speckit-plan`                                                   | 10   |
+| 7   | 2026-10-15 | Lập implementation plan cho Feature 110 (đăng ký chủ sân) bằng `$speckit-plan` và viết lại tài liệu bằng tiếng Việt        | 11   |
+| 8   | 2026-10-16 | Lập implementation plan cho Feature 111 (thiết lập cơ sở chủ sân) bằng `$speckit-plan`                                     | 11   |
+| 9   | 2026-10-16 | Lập implementation plan cho Feature 112 (vận hành chủ sân) bằng `$speckit-plan`                                            | 11   |
+| 10  | 2026-10-16 | Lập implementation plan cho Feature 120 (quản trị và kiểm duyệt) bằng `$speckit-plan`                                    | 12   |
 
 ---
 
@@ -416,14 +420,14 @@ $speckit-clarify
 
 ## Mục 6: Lập implementation plan Feature 100 – Notification
 
-| Trường                   | Nội dung                                                                                                                                    |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| Ngày                     | 2026-10-15                                                                                                                                  |
-| Người thực hiện          | Minh Nhựt                                                                                                                                   |
-| Nhóm tính năng liên quan | 10 – Thông báo (spec `specs/100-notification`)                                                                                              |
-| Công cụ AI               | Codex (GPT-6), `$speckit-plan`                                                                                                               |
-| Mục đích                 | Đối chiếu spec, checklist, constitution, hướng dẫn W1–W2, CSDL và cấu trúc code để lập kế hoạch triển khai Notification, không viết code   |
-| Nhánh Git                | `feature/100-notification-plan`                                                                                                              |
+| Trường                   | Nội dung                                                                                                                                 |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-10-15                                                                                                                               |
+| Người thực hiện          | Minh Nhựt                                                                                                                                |
+| Nhóm tính năng liên quan | 10 – Thông báo (spec `specs/100-notification`)                                                                                           |
+| Công cụ AI               | Codex (GPT-6), `$speckit-plan`                                                                                                           |
+| Mục đích                 | Đối chiếu spec, checklist, constitution, hướng dẫn W1–W2, CSDL và cấu trúc code để lập kế hoạch triển khai Notification, không viết code |
+| Nhánh Git                | `feature/100-notification-plan`                                                                                                          |
 
 ### Prompt đã dùng
 
@@ -458,15 +462,15 @@ Không thay đổi nghiệp vụ hoặc thiết kế lại feature nguồn; khô
 
 ### Phần đã sử dụng / chỉnh sửa / bỏ
 
-| Phần                              | Quyết định                                                                                                      | Lý do                                                                                         |
-| --------------------------------- | --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| Inbox và schema                   | Giữ `users/{uid}/notifications/{id}` và các field đã có trong CSDL; client chỉ sửa `isRead`                    | Khớp database README và FR-004/005; tránh tự thêm collection/field                            |
-| Pipeline và feature nguồn        | Feature nguồn cung cấp sự kiện; nhóm D xác thực recipient, ghi inbox và xử lý push phía server                 | Giữ ownership nghiệp vụ và nguyên tắc bảo mật server-side                                     |
-| Push và preferences              | Preference chỉ điều khiển push; PROMOTION tắt mặc định; BOOKING_NEW không tắt; OS permission là lớp riêng      | Tuân thủ clarifications và FR-006–012                                                        |
-| Reminder                          | Một reminder cho booking CONFIRMED, 2 giờ trước startAt sớm nhất                                               | Tuân thủ clarification/FR-010; không sửa state booking                                       |
-| Idempotency/retry                 | Ghi thành điểm cần làm rõ; không tự tạo event ID, delivery state hay outbox schema                              | CSDL/spec chưa xác nhận hợp đồng hoặc field để enforce và retry                              |
-| Quyền SYSTEM                     | Ghi nhận xung đột giữa bảng quyền CSDL và mô tả tạo qua server; yêu cầu đồng bộ trước implementation           | Tránh tự mở quyền tạo từ client hoặc sửa spec của feature khác                               |
-| Tasks/implementation              | Không tạo hoặc chạy                                                                                             | Phạm vi công việc chỉ là Plan                                                               |
+| Phần                      | Quyết định                                                                                                | Lý do                                                              |
+| ------------------------- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| Inbox và schema           | Giữ `users/{uid}/notifications/{id}` và các field đã có trong CSDL; client chỉ sửa `isRead`               | Khớp database README và FR-004/005; tránh tự thêm collection/field |
+| Pipeline và feature nguồn | Feature nguồn cung cấp sự kiện; nhóm D xác thực recipient, ghi inbox và xử lý push phía server            | Giữ ownership nghiệp vụ và nguyên tắc bảo mật server-side          |
+| Push và preferences       | Preference chỉ điều khiển push; PROMOTION tắt mặc định; BOOKING_NEW không tắt; OS permission là lớp riêng | Tuân thủ clarifications và FR-006–012                              |
+| Reminder                  | Một reminder cho booking CONFIRMED, 2 giờ trước startAt sớm nhất                                          | Tuân thủ clarification/FR-010; không sửa state booking             |
+| Idempotency/retry         | Ghi thành điểm cần làm rõ; không tự tạo event ID, delivery state hay outbox schema                        | CSDL/spec chưa xác nhận hợp đồng hoặc field để enforce và retry    |
+| Quyền SYSTEM              | Ghi nhận xung đột giữa bảng quyền CSDL và mô tả tạo qua server; yêu cầu đồng bộ trước implementation      | Tránh tự mở quyền tạo từ client hoặc sửa spec của feature khác     |
+| Tasks/implementation      | Không tạo hoặc chạy                                                                                       | Phạm vi công việc chỉ là Plan                                      |
 
 ### Cách kiểm chứng
 
@@ -474,3 +478,290 @@ Không thay đổi nghiệp vụ hoặc thiết kế lại feature nguồn; khô
 - Ghi rõ collection path, field, access rule và các điểm schema/index chưa được xác nhận trong `data-model.md`/contracts.
 - Rà lại danh sách artifact: chỉ gồm tài liệu Plan; không tạo `tasks.md` hoặc code.
 - Không chạy test hoặc lệnh implementation.
+
+---
+
+## Mục 7: Lập implementation plan Feature 110 – Đăng ký làm chủ sân
+
+| Trường                   | Nội dung                                                                                                                                                                                 |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-10-15                                                                                                                                                                               |
+| Người thực hiện          | Minh Nhựt                                                                                                                                                                                |
+| Nhóm tính năng liên quan | 11 – Chủ sân (spec `specs/110-owner-onboarding`)                                                                                                                                         |
+| Công cụ AI               | Codex (GPT-6), `$speckit-plan`                                                                                                                                                           |
+| Mục đích                 | Đối chiếu spec 110, constitution, hướng dẫn W1–W2, database README, các spec 011/111/112/120 và cấu trúc code để lập kế hoạch onboarding chủ sân; chỉ tạo tài liệu Plan, không viết code |
+| Nhánh Git                | `feature/110-owner-onboarding-plan`                                                                                                                                                      |
+
+### Prompt đã dùng
+
+```text
+$speckit-plan SPECIFY_FEATURE_DIRECTORY=specs/110-owner-onboarding
+
+Lập Implementation Plan cho Feature 110 – Owner Onboarding dựa trên specs/110-owner-onboarding/spec.md.
+
+Đọc và đối chiếu:
+- .specify/memory/constitution.md
+- docs/guides/w1-w2-spec-assignment.md
+- docs/design/database/README.md
+- Các spec account/profile, Feature 111, 112 và 120 nếu tồn tại
+- Cấu trúc code và quy ước kỹ thuật hiện có
+
+Plan cần xác định:
+- Kiến trúc và thành phần cho nộp hồ sơ, tải giấy tờ, theo dõi trạng thái và nộp lại sau khi bị từ chối.
+- Tích hợp với users, role, ownerStatus và quy trình admin duyệt.
+- Phân quyền, bảo vệ giấy tờ nhạy cảm và xử lý lỗi/mất mạng/gửi trùng.
+- Tác động dữ liệu, dependency và chiến lược kiểm thử.
+
+Không bao gồm: triển khai quy trình admin, quản lý cơ sở/sân và các chức năng vận hành thuộc Feature 111, 112.
+
+Không tự bịa schema hoặc thay đổi nghiệp vụ trong spec. Nếu phát hiện mâu thuẫn hoặc thiếu thông tin, ghi nhận rõ. Chỉ tạo tài liệu thuộc bước Plan; không chạy /speckit-tasks, /speckit-implement hoặc viết implementation code.
+
+Cuối cùng báo cáo file đã tạo, quyết định kỹ thuật, dependency, rủi ro và điểm cần làm rõ.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Đối chiếu spec 110 với constitution, hướng dẫn W1–W2, database README, spec 011/111/112/120 và cấu trúc Android/Supabase hiện có.
+- Tạo/cập nhật `plan.md`, `research.md`, `data-model.md`, `quickstart.md` và `contracts/owner-onboarding-boundaries.md` trong `specs/110-owner-onboarding/`; sau đó chuyển toàn bộ nội dung các tài liệu này sang tiếng Việt, giữ nguyên tên kỹ thuật và schema.
+- Plan giữ Firestore làm nguồn dữ liệu nghiệp vụ; dùng bucket riêng tư `owner-docs` và signed URL có thời hạn; máy chủ quản lý `role`, `ownerStatus` và trạng thái xét duyệt. Tổ chức dự kiến theo MVVM/package `feature/owner`.
+- Xác định Feature 011 là điểm vào/trình bày trạng thái; Feature 120 sở hữu duyệt/từ chối và tạo venue từ `venueDraft`; Feature 111/112 sở hữu quản lý và vận hành sau khi được duyệt; Feature 100 cung cấp loại thông báo kết quả.
+- Ghi nhận các điểm cần làm rõ: định danh hồ sơ hiện hành và lịch sử khi nộp lại/sau thu hồi quyền; hợp đồng Android–Supabase và thao tác submit; quyền tải ảnh venue trước khi duyệt; dọn tệp mồ côi/xóa tài khoản; một số quy tắc xác thực và xử lý đồng thời.
+- Ghi nhận app hiện là bộ khung: chưa có package theo feature, Hilt/Coroutines, thư viện Supabase, Edge Functions hoặc migration Storage liên quan.
+- Không tạo `tasks.md`, không chạy `$speckit-tasks`, `$speckit-implement` hoặc test; không viết mã triển khai.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần                          | Quyết định                                                                                                           | Lý do                                                                                                    |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Nguồn dữ liệu và trạng thái   | Dùng `users`, `ownerApplications` và bucket đã có; trạng thái/vai trò do máy chủ quản lý                             | Tuân theo database README và nguyên tắc bảo mật trong constitution; không thêm schema                    |
+| Giấy tờ nhạy cảm              | Dùng bucket private `owner-docs`, path hiện có và signed URL hết hạn sau 5 phút                                      | Khớp database README và giới hạn riêng tư của giấy tờ                                                    |
+| Nộp lại và hồ sơ lịch sử      | Chưa chọn cách dùng lại document hay tạo document mới; ghi thành điểm cần làm rõ                                     | Spec cho phép nộp mới sau thu hồi nhưng chưa định nghĩa cách tìm hồ sơ hiện hành và lưu lịch sử          |
+| Tải ảnh venue trước khi duyệt | Ghi nhận policy hiện tại dành cho owner đã duyệt chưa đáp ứng rõ luồng applicant                                     | Feature 110 cần ảnh trong `venueDraft` trước khi duyệt; cần quyền upload riêng mà không nới policy chung |
+| Hợp đồng Android–Supabase     | Chưa chọn SDK, REST hay cách tích hợp khác; chưa tự đặt endpoint/request schema                                      | Tài liệu dự án chưa quy định cách app truyền Firebase token hoặc hợp đồng upload/submit                  |
+| Kiểm thử                      | Đề xuất unit test, Firebase Emulator, Supabase local và UI test                                                      | Theo constitution; ghi chú các dependency test còn thiếu trong app hiện tại                              |
+| Ngôn ngữ tài liệu             | Viết lại các artifact Plan bằng tiếng Việt; giữ nguyên tên trường, enum, package và thuật ngữ kỹ thuật cần đối chiếu | Yêu cầu bổ sung để đồng nhất với tài liệu dự án                                                          |
+| Tasks/implementation          | Không tạo hoặc chạy                                                                                                  | Phạm vi công việc chỉ gồm bước Plan                                                                      |
+
+### Cách kiểm chứng
+
+- Đối chiếu tên trường, trạng thái, bucket và quyền với database README cùng các spec liên quan; không thêm schema hay thay đổi nghiệp vụ.
+- Kiểm tra các tài liệu Plan được tạo/cập nhật đều bằng tiếng Việt và vẫn giữ nguyên các identifier kỹ thuật.
+- Xác nhận không tạo `tasks.md` hoặc mã triển khai; không chạy test.
+
+---
+
+## Mục 8: Lập implementation plan Feature 111 – Thiết lập cơ sở của chủ sân
+
+| Trường                   | Nội dung                                                                                                                                                                                                           |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Ngày                     | 2026-10-16                                                                                                                                                                                                         |
+| Người thực hiện          | Minh Nhựt                                                                                                                                                                                                          |
+| Nhóm tính năng liên quan | 11 – Chủ sân (spec `specs/111-owner-venue-setup`)                                                                                                                                                                  |
+| Công cụ AI               | Codex (GPT-6), `$speckit-plan`                                                                                                                                                                                     |
+| Mục đích                 | Đối chiếu spec 111 với constitution, hướng dẫn W1–W2, database README, specs 110/112/120, các spec booking và cấu trúc code để lập kế hoạch triển khai quản lý venue, court, bảng giá và khóa giờ; không viết code |
+| Nhánh Git                | `feature/111-owner-venue-setup-plan`                                                                                                                                                                               |
+
+### Prompt đã dùng
+
+```text
+$speckit-plan SPECIFY_FEATURE_DIRECTORY=specs/111-owner-venue-setup
+
+Lập Implementation Plan cho Feature 111 – Owner Venue Setup dựa trên specs/111-owner-venue-setup/spec.md.
+
+Đọc và đối chiếu:
+- .specify/memory/constitution.md
+- docs/guides/w1-w2-spec-assignment.md
+- docs/design/database/README.md
+- Specs 110, 112, các spec booking liên quan và 120 nếu tồn tại
+- Cấu trúc code và quy ước kỹ thuật hiện có
+
+Plan cần xác định:
+- Thành phần triển khai thêm, sửa và ẩn cơ sở; quản lý sân con.
+- Cách cấu hình bảng giá theo khung giờ và thứ.
+- Cách khóa giờ sân, lý do khóa và ảnh hưởng đến khả năng đặt sân.
+- Tích hợp với venues, courts, priceRules, slots.status, BLOCKED, blockReason theo tài liệu CSDL hiện có.
+- Phân quyền owner đã được duyệt, kiểm tra quyền sở hữu cơ sở/sân, xử lý lỗi và chiến lược kiểm thử.
+
+Không bao gồm: đăng ký chủ sân (Feature 110), duyệt booking, drop-in, voucher và thống kê vận hành (Feature 112), quy trình admin (Feature 120).
+
+Không tự bịa schema, API hoặc thay đổi nghiệp vụ trong spec. Nếu phát hiện mâu thuẫn hoặc thiếu thông tin, ghi nhận rõ. Chỉ tạo tài liệu thuộc bước Plan; không chạy /speckit-tasks, /speckit-implement hoặc viết implementation code.
+
+Cuối cùng báo cáo file đã tạo, quyết định kỹ thuật, dependency, rủi ro và điểm cần làm rõ.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Đối chiếu spec 111 với constitution, hướng dẫn W1–W2, database README, specs 110/112/120, specs booking liên quan và cấu trúc Android/Firestore/Supabase hiện có.
+- Tạo các tài liệu Plan trong `specs/111-owner-venue-setup/`: `plan.md`, `research.md`, `data-model.md`, `quickstart.md` và `contracts/firestore-boundary.md`.
+- Giữ nguyên schema hiện có cho `venues`, `courts`, `priceRules` và `slots`; không thêm field, enum, collection hay API.
+- Xác định quản lý cơ sở bằng `status = HIDDEN`, quản lý sân bằng `isActive`, bảng giá dùng `pricePerHour` và tính giá mỗi slot 30 phút bằng `pricePerHour / 2`; booking cũ giữ nguyên giá đã lưu.
+- Quy định khóa slot bằng `status = BLOCKED` và các lý do owner `MAINTENANCE`, `EVENT`, `WALK_IN`; thao tác khóa/mở phải nguyên tử, kiểm tra xung đột với `HOLD`/`BOOKED`/`BLOCKED`. `DROP_IN` thuộc spec 112/080.
+- Ghi nhận dependency với Feature 110 về trạng thái owner đã duyệt và venue ban đầu; Feature 120 sở hữu khóa venue của admin; specs 030/040/041/050 tiêu thụ dữ liệu venue, court, giá và slot.
+- Ghi rõ các điểm cần làm rõ: nguồn đáng tin cậy cho `ownerStatus`; hợp đồng server cho khóa/mở slot và cách xác định block owner được quyền gỡ; bên cập nhật `minPricePerHour`; một số quy tắc đọc venue ẩn/khóa và giới hạn `courtCount`.
+- Không tạo `tasks.md`, không chạy `$speckit-tasks`, `$speckit-implement` hoặc test; không viết mã triển khai.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần                 | Quyết định                                                                                               | Lý do                                                                                    |
+| -------------------- | -------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| Venue                | Dùng các field hiện có; owner có thể ẩn bằng `status = HIDDEN`; không xóa cứng venue có dữ liệu liên kết | Khớp spec 111 và schema; booking đã xác nhận được giữ nguyên                             |
+| Court                | Quản lý bằng `name`, `surfaceType`, `isActive`, `sortOrder`; ngừng hoạt động để chặn booking mới         | Không thêm trạng thái hoặc hành vi xóa chưa có trong schema                              |
+| Bảng giá             | Dùng `pricePerHour` kiểu `Long`, rule theo thứ và khung giờ; giá slot 30 phút bằng một nửa giá giờ       | Đồng bộ spec 111, 040 và database README                                                 |
+| Xóa price rule       | Cho phép xóa theo clarification mới nhất; booking cũ giữ `items[].price`                                 | Không cần quan hệ rule-booking mới; ghi nhận các câu trả lời cũ còn mâu thuẫn trong spec |
+| Khóa slot            | Dùng `slots.status = BLOCKED`, `blockReason` hiện có và giao dịch server nguyên tử                       | Bảo đảm không khóa một phần hoặc ghi đè booking/hold; không tự đặt API                   |
+| Phân quyền           | Kiểm tra `appRole`, trạng thái owner đã duyệt và `venues.ownerId` ở phía server                          | Tuân thủ Constitution; Rules hiện chưa xác định đầy đủ nguồn `ownerStatus`               |
+| Hợp đồng server      | Chỉ ghi ranh giới Firestore và bất biến; để tên function/request/response thành điểm cần thống nhất      | Tài liệu dự án chưa định nghĩa API khóa/mở slot                                          |
+| Tasks/implementation | Không tạo hoặc chạy                                                                                      | Phạm vi công việc chỉ gồm bước Plan                                                      |
+
+### Cách kiểm chứng
+
+- Đối chiếu field, enum, đường dẫn collection và quyền với database README cùng các spec liên quan; không thêm schema hoặc thay đổi nghiệp vụ.
+- Rà lại bộ artifact chỉ thuộc bước Plan; không tạo `tasks.md` hoặc code triển khai.
+- `git diff --check` không báo lỗi định dạng.
+- Không chạy test, tasks hoặc implementation.
+
+---
+
+## Mục 10: Lập implementation plan cho Feature 120 (quản trị và kiểm duyệt)
+
+| Trường | Nội dung |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ngày | 2026-10-16 |
+| Người thực hiện | Minh Nhựt |
+| Nhóm tính năng liên quan | 12 – Quản trị (`specs/120-admin`) |
+| Công cụ AI | Codex (GPT-6), skill `$speckit-plan` |
+| Mục đích | Đối chiếu spec 120 với constitution, hướng dẫn W1–W2, database README, các spec account/owner/thông báo liên quan và cấu trúc code để lập kế hoạch; không viết code |
+| Nhánh Git | `feature/120-admin-plan` |
+
+### Prompt đã dùng
+
+```text
+$speckit-plan SPECIFY_FEATURE_DIRECTORY=specs/120-admin
+
+Lập Implementation Plan cho Feature 120 – Admin dựa trên specs/120-admin/spec.md.
+
+Đọc và đối chiếu:
+- .specify/memory/constitution.md
+- docs/guides/w1-w2-spec-assignment.md
+- docs/design/database/README.md
+- Các spec 100, 110, 111, 112 và các spec account liên quan
+- Cấu trúc code và quy ước kỹ thuật hiện có
+
+Plan cần xác định:
+- Thành phần quản trị người dùng và xử lý các báo cáo/vi phạm theo phạm vi spec.
+- Quy trình xem xét, duyệt hoặc từ chối hồ sơ chủ sân.
+- Cách quản lý dữ liệu và thống kê hệ thống theo yêu cầu đã đặc tả.
+- Phân quyền admin, bảo vệ dữ liệu nhạy cảm và kiểm tra quyền ở phía server/Security Rules.
+- Tác động đến CSDL, dependency, xử lý lỗi và chiến lược kiểm thử.
+
+Không bao gồm: tự mở rộng nghiệp vụ ngoài specs/120-admin/spec.md, thay đổi quy tắc của các feature khác hoặc triển khai code.
+
+Không tự bịa schema, API, trạng thái hoặc công nghệ mới. Đối chiếu tài liệu và code hiện có; nếu phát hiện mâu thuẫn hoặc thiếu thông tin, ghi nhận rõ. Chỉ tạo tài liệu thuộc bước Plan; không chạy /speckit-tasks, /speckit-implement hoặc viết implementation code.
+
+Cuối cùng báo cáo file đã tạo, quyết định kỹ thuật chính, dependency, rủi ro và điểm cần làm rõ.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Đối chiếu spec 120 với Constitution 1.2.0, hướng dẫn phân công W1–W2, database README, specs 010/011/100/110/111/112 và cấu trúc Android, Firestore Rules, test scaffold.
+- Tạo các artifact Plan trong `specs/120-admin/`: `plan.md`, `research.md`, `data-model.md`, `quickstart.md` và `contracts/admin-boundaries.md`.
+- Ghi nhận các ranh giới quản trị: duyệt/từ chối hồ sơ từ trạng thái `PENDING`; tạo venue từ `venueDraft` khi duyệt; xử lý report bằng các action và trạng thái hiện có; quản lý trạng thái tài khoản, thu hồi quyền owner và khóa/mở khóa venue.
+- Xác định quyền admin phải được xác minh ở server bằng `appRole`; giấy tờ chủ sân dùng bucket riêng `owner-docs` và signed URL hết hạn sau 5 phút.
+- Giữ nguyên schema và enum có trong tài liệu nguồn. Không thêm API, field, collection, dependency hay trạng thái mới.
+- Ghi nhận các điểm chưa được đặc tả đầy đủ: tính nhất quán/recovery giữa Firestore, custom claims và notification; schema và chỉ số thống kê; quy tắc quản lý danh mục; hành vi ẩn đối với report `DROP_IN`; cách xác định tài khoản hoạt động để gửi broadcast.
+- Ghi nhận code hiện tại mới là Android starter; `firestore.rules` chưa có collection-specific rules, `supabase/functions` chưa có code triển khai và version catalog còn thiếu một số dependency kiến trúc/kiểm thử.
+- `setup-plan.sh` không nhận feature directory dưới dạng argument; chạy với biến môi trường `SPECIFY_FEATURE_DIRECTORY=specs/120-admin` và nhận đúng thư mục `specs/120-admin`.
+- Không tạo `tasks.md`, không chạy `$speckit-tasks`, `$speckit-implement` hoặc tests; không viết implementation code.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| Duyệt hồ sơ | Dùng các trạng thái và field đã có; quyết định phải dựa trên hồ sơ hiện còn `PENDING`; từ chối cần lý do không rỗng; duyệt tạo venue từ `venueDraft` | Khớp spec 120, spec 110 và database README; tránh quyết định lỗi thời hoặc mở rộng nghiệp vụ |
+| Báo cáo | Dùng `OPEN → RESOLVED/DISMISSED` và các action hiện có; kiểm tra action tương thích với target | Giữ đúng schema và clarifications trong spec; chưa giả định `DROP_IN` có hỗ trợ ẩn |
+| Quyền và giấy tờ | Xác minh Admin phía server; chỉ người nộp và Admin được truy cập giấy tờ qua signed URL có thời hạn | Tuân Constitution và giới hạn riêng tư trong database README |
+| User, owner và venue | Thu hồi owner theo các field/trạng thái đã chốt; không tự đổi trạng thái venue khi thu hồi quyền; Admin quản lý khóa/mở khóa venue | Khớp spec 120 và phụ thuộc spec 010/011/112 |
+| Thống kê và danh mục | Chỉ dùng collection đã nêu; không tự định nghĩa metrics, field hay thao tác CRUD chưa có đặc tả | Tài liệu nguồn chưa có schema chi tiết và quy tắc nghiệp vụ |
+| Server contract và recovery | Ghi các thiếu hụt về API, transaction, idempotency, claim và notification thành điểm cần làm rõ | Chưa có hợp đồng đủ căn cứ để thiết kế chi tiết |
+| Tasks/implementation | Không tạo hoặc chạy | Phạm vi yêu cầu chỉ gồm bước Plan |
+
+### Cách kiểm chứng
+
+- Đối chiếu các field, trạng thái, quyền và collection với spec 120, database README và các spec liên quan.
+- Rà soát cấu trúc code hiện tại để phân biệt phần đã tồn tại với vị trí dự kiến cho implementation.
+- Chạy `git diff --check`; không có lỗi whitespace được báo cáo.
+- Không chạy test, `$speckit-tasks` hoặc `$speckit-implement`.
+
+---
+
+## Mục 9: Lập implementation plan Feature 112 – Owner Operations
+
+| Trường                   | Nội dung                                                                                                                                                                                                |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-10-16                                                                                                                                                                                              |
+| Người thực hiện          | Minh Nhựt                                                                                                                                                                                               |
+| Nhóm tính năng liên quan | 11 – Chủ sân (spec `specs/112-owner-operations`)                                                                                                                                                        |
+| Công cụ AI               | Codex (GPT-6), `$speckit-plan`                                                                                                                                                                          |
+| Mục đích                 | Đối chiếu spec 112 với constitution, hướng dẫn W1–W2, database README, specs 110/111/120, các spec booking/drop-in/voucher liên quan và cấu trúc code để lập kế hoạch vận hành chủ sân; không viết code |
+| Nhánh Git                | `feature/112-owner-operations-plan`                                                                                                                                                                     |
+
+### Prompt đã dùng
+
+```text
+$speckit-plan SPECIFY_FEATURE_DIRECTORY=specs/112-owner-operations
+
+Lập Implementation Plan cho Feature 112 – Owner Operations dựa trên specs/112-owner-operations/spec.md.
+
+Đọc và đối chiếu:
+- .specify/memory/constitution.md
+- docs/guides/w1-w2-spec-assignment.md
+- docs/design/database/README.md
+- Specs 110, 111, các spec booking/drop-in/voucher liên quan và 120 nếu tồn tại
+- Cấu trúc code và quy ước kỹ thuật hiện có
+
+Plan cần xác định:
+- Thành phần xử lý duyệt/từ chối booking và lịch tổng hợp ngày/tuần.
+- Luồng tạo buổi drop-in, quản lý đăng ký và QR check-in.
+- Luồng tạo và quản lý voucher theo nghiệp vụ đã đặc tả.
+- Cách tính doanh thu, tỷ lệ lấp đầy và khung giờ cao điểm dựa trên dữ liệu hiện có.
+- Tích hợp với bookings, slots, venues, courts, priceRules và các dữ liệu drop-in/voucher theo CSDL chung.
+- Phân quyền owner đã được duyệt, kiểm tra quyền sở hữu cơ sở/sân, xử lý lỗi và chiến lược kiểm thử.
+
+Không bao gồm: đăng ký chủ sân (Feature 110), quản lý thông tin cơ sở/sân, bảng giá và khóa giờ (Feature 111), quy trình quản trị hệ thống (Feature 120).
+
+Không tự bịa schema, API, trạng thái hoặc thay đổi nghiệp vụ trong spec. Nếu phát hiện mâu thuẫn hoặc thiếu thông tin, ghi nhận rõ. Chỉ tạo tài liệu thuộc bước Plan; không chạy /speckit-tasks, /speckit-implement hoặc viết implementation code.
+
+Cuối cùng báo cáo file đã tạo, quyết định kỹ thuật, dependency, rủi ro và điểm cần làm rõ.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Đối chiếu spec 112 với constitution, hướng dẫn W1–W2, database README, specs 110/111/120, các spec 040/041/050/060/080/081/100 và cấu trúc Android/Supabase hiện có.
+- Tạo các tài liệu Plan trong `specs/112-owner-operations/`: `plan.md`, `research.md`, `data-model.md`, `quickstart.md` và `contracts/owner-operations-boundaries.md`.
+- Xác định kiến trúc Android theo MVVM/package `feature/owner`; các thao tác nhạy cảm được xác minh phía server. Các cập nhật booking/slot và drop-in/slot phải nguyên tử theo transaction Firestore.
+- Lịch ngày/tuần được tổng hợp từ booking, slot và drop-in session theo múi giờ `Asia/Ho_Chi_Minh`. `HOLD` chỉ là cảnh báo tạm thời; drop-in được trình bày từ dữ liệu session, không giả thành booking người chơi.
+- Thống kê doanh thu phân nhóm theo `DEPOSITED`, `PAID`, `REFUNDED`; tỷ lệ lấp đầy và khung giờ cao điểm tuân theo định nghĩa trong spec. Không dùng `priceRules` thay cho số tiền booking thực tế.
+- Giữ nguyên schema hiện có; không thêm collection, field, enum, endpoint hoặc thay đổi nghiệp vụ. Contract server chưa được nguồn quy định đầy đủ được ghi thành điểm cần thống nhất.
+- Ghi nhận `setup-plan.sh` tự chọn Feature 100 theo trạng thái branch/config dù đầu vào yêu cầu Feature 112. Tài liệu được đặt theo đúng thư mục `specs/112-owner-operations`; không dùng đường dẫn setup trả về.
+- Ghi nhận các điểm cần làm rõ: vai trò của Feature 111/112 trong tạo voucher; nguồn claim/trường quyền owner; schema và độ mới của `dailyStats`; hợp đồng server cho approve/reject/cancel booking, quản lý drop-in, check-in drop-in và voucher CRUD.
+- Không tạo `tasks.md`, không chạy `$speckit-tasks`, `$speckit-implement` hoặc test; không viết mã triển khai.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần                 | Quyết định                                                                                                                                  | Lý do                                                                                                        |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Booking và lịch      | Đọc theo venue/khoảng thời gian; quyết định booking phải kiểm tra lại quyền, deadline, status và slot phía server                           | Tuân theo spec 112, máy trạng thái booking và nguyên tắc toàn vẹn dữ liệu trong constitution                 |
+| Drop-in và slot      | Dùng schema hiện có; tạo/sửa/hủy session phải đồng bộ slot `BLOCKED`/`DROP_IN` toàn phần; registration và queue tiếp tục theo specs 080/081 | Tránh vượt chỗ, ghi dở dang hoặc thay đổi luồng đăng ký hiện có                                              |
+| QR check-in          | Dùng `checkin-booking` đã được database README định danh cho booking; check-in drop-in được ghi nhận là cần contract server thống nhất      | Không tự đặt tên function hoặc request/response chưa có trong tài liệu nguồn                                 |
+| Voucher              | Dùng `venues/{venueId}/vouchers/{code}`, giữ quy tắc uniqueness và bảo vệ `usedCount`/redemptions; không quản lý `systemVouchers`           | Khớp schema chung và ranh giới admin của Feature 120; quyền tạo voucher giữa spec 111 và 112 chưa thống nhất |
+| Thống kê             | Tính từ booking thực tế theo FR-016–018; không giả định schema `dailyStats`                                                                 | README có nhắc `dailyStats` nhưng chưa định nghĩa field/chỉ số                                               |
+| Phân quyền           | Server xác minh owner đã duyệt và quyền sở hữu venue; không dựa vào việc ẩn nút                                                             | Tuân thủ Constitution và FR-001/002                                                                          |
+| Schema/API           | Không thêm schema, trạng thái, endpoint hoặc mã lỗi; ghi các contract còn thiếu thành câu hỏi mở                                            | Tài liệu nguồn chưa xác định đủ để suy diễn an toàn                                                          |
+| Tasks/implementation | Không tạo hoặc chạy                                                                                                                         | Phạm vi công việc chỉ gồm bước Plan                                                                          |
+
+### Cách kiểm chứng
+
+- Đối chiếu field, enum, đường dẫn collection và quy tắc nghiệp vụ với database README và các spec liên quan; không tự thêm schema.
+- Xác nhận các artifact chỉ thuộc bước Plan; không tạo `tasks.md` hoặc code triển khai.
+- Setup script trả về nhầm đường dẫn Feature 100; giữ nguyên nội dung Feature 100 và tạo tài liệu đúng trong `specs/112-owner-operations/`.
+- Không chạy test, tasks hoặc implementation.
