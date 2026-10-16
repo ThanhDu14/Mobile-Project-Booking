@@ -21,6 +21,7 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 15 | 2026-10-15 | Kiểm tra độ khớp spec/plan/tasks của spec 080 bằng `/speckit-analyze` | 08 |
 | 16 | 2026-10-15 | Lập kế hoạch kỹ thuật spec 081 bằng `/speckit-plan` | 08 |
 | 17 | 2026-10-16 | Chia task triển khai spec 081 bằng `/speckit-tasks` | 08 |
+| 18 | 2026-10-16 | Kiểm tra độ khớp spec/plan/tasks của spec 081 bằng `/speckit-analyze` và sửa theo kết quả | 08 |
 
 ---
 
@@ -1030,3 +1031,65 @@ Ghi rõ task nào phụ thuộc nhóm khác (D: trường waitlist* trên dropIn
 - Mỗi FR-001 → FR-017 đều được ít nhất một task nhắc tới.
 - Kiểm tra `git merge-tree` giữa main và `origin/feature/09-community-chat`: không có conflict, nhánh 09 không có commit riêng.
 - Việc tiếp theo: chạy `/speckit-analyze` cho spec 081.
+
+---
+
+## Mục 18: Kiểm tra độ khớp spec/plan/tasks của spec 081 bằng `/speckit-analyze`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-16 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 08 – Đặt lịch vãng lai (spec `specs/081-drop-in-waitlist`) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5), lệnh Spec Kit `/speckit-analyze` |
+| Mục đích | Tìm chỗ thiếu, mâu thuẫn giữa spec, plan, tasks của spec 081 trước khi triển khai, rồi sửa tasks theo kết quả |
+| Nhánh Git | `feature/08-drop-in` |
+
+### Prompt đã dùng
+
+```
+/speckit-analyze SPECIFY_FEATURE_DIRECTORY=specs/081-drop-in-waitlist
+Kiểm tra độ khớp spec/plan/tasks của spec 081, chú ý:
+- mỗi FR-001 → FR-017 và SC-001 → SC-006 có task; mỗi ca Q1–Q14, W1–W2, M1–M8 có task;
+- tham chiếu sang tasks 080 (080-T###) đúng ID và đúng nội dung;
+- phụ thuộc nhóm khác (B runQuery trong transaction, D trường waitlist* và spec 112/100, A delete-account) nhất quán giữa plan và tasks;
+- mâu thuẫn với constitution (đặc biệt nguyên tắc II, III, IV).
+```
+
+Sau khi xem báo cáo, mình nhờ AI sửa luôn cả 9 mục trong `tasks.md` và contract.
+
+### Tóm tắt phản hồi của AI
+
+- **0 lỗi CRITICAL**, không vi phạm constitution. Độ phủ 100% (23 yêu cầu: 17 FR + 6 SC); đủ 16/16 ca Q1–Q14, W1–W2 và M1–M8.
+- 22 tham chiếu `080-T###` đều đúng ID và nội dung.
+- **5 lỗi MEDIUM:**
+  - C1: không có test FR-009 (người đăng ký thường không được lấy chỗ mà người chờ vừa đủ).
+  - C2: test Rules thiếu ca admin đọc lượt chờ (FR-006).
+  - C3: `leaveWaitlistInTx(..., "SYSTEM")`, đường mà `delete-account` của A gọi, chưa có test.
+  - F1: `leaveWaitlistInTx` cài ở US3 nhưng US2 đã cần.
+  - F2: plan ghi cập nhật đặc tả CSDL trước họp 16/10, tasks lại để ở Polish.
+- **4 lỗi LOW:** bảng phụ thuộc thiếu việc màn hình chủ sân của D (F3); contract không ghi tên header của `CRON_SECRET` (U1); kiểu `WaitlistJoinResult` chưa định nghĩa (U2); thiếu test chủ sân giảm sức chứa (G1).
+- **Đã sửa:**
+  - Thêm ca FR-009 vào T027 (chạy 20 lần).
+  - Thêm dòng admin vào bảng Rules T008.
+  - Thêm ca `SYSTEM` và ca giảm sức chứa vào T026.
+  - Chuyển cài `leaveWaitlistInTx` lên T031; T038 chỉ còn kiểm tra `ALREADY_PROMOTED`.
+  - Gộp việc gửi đề xuất CSDL cho D vào T001.
+  - Thêm dòng D vào bảng phụ thuộc.
+  - Ghi header `x-cron-secret` vào contract.
+  - Định nghĩa `WaitlistJoinResult` ở T014.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Sửa cả MEDIUM và LOW | Dùng | Sửa nhỏ, không đổi thiết kế; tránh để sót khi triển khai |
+| AI đề xuất thêm task `T004a` | Bỏ, gộp vào T001 | Giữ đánh số task liên tiếp, không phải đánh số lại cả file |
+| Ca FR-009 chạy 20 lần | Dùng | Tranh chấp giữa hủy và đăng ký thường chỉ lộ ra khi chạy nhiều lần (constitution III) |
+
+### Cách kiểm chứng
+
+- Đọc lại 22 task 080 được tham chiếu để xác nhận đúng nội dung.
+- Sau khi sửa, `grep` vẫn đếm được 54 task đúng định dạng, 0 dòng sai.
+- Đối chiếu constitution nguyên tắc II, III, IV: mọi thao tác hàng chờ chạy trong transaction trên document buổi, trường 🔒 do Edge Function ghi, có test đồng thời trên Emulator.
+- Việc tiếp theo: lập kế hoạch kỹ thuật spec 090.

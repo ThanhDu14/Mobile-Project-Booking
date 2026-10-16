@@ -63,7 +63,7 @@ Hoàn tiền: `computeRefund` có thêm lý do `PROMOTED_GRACE` ([research R8](.
 
 ## 4. `dropin-close` (pg_cron mỗi phút)
 
-- **Gọi bằng:** `pg_cron` + `net.http_post` tới `/functions/v1/dropin-close`. Header chứa secret `CRON_SECRET`; function từ chối nếu thiếu hoặc sai.
+- **Gọi bằng:** `pg_cron` + `net.http_post` tới `/functions/v1/dropin-close`. Header `x-cron-secret` chứa giá trị secret `CRON_SECRET`; function trả `401` nếu thiếu hoặc sai.
 - **Việc làm:** xem [research R7](../research.md#r7-đóng-hàng-chờ-30-phút-trước-giờ-bắt-đầu-fr-014-ac-41).
   - Đóng hàng chờ của các buổi đã tới mốc T−30 phút bằng `closeWaitlistInTx(..., "CLOSED")`, mỗi buổi một transaction.
   - Gửi `DROPIN_WAITLIST_CLOSED` với `data = { sessionId, reason: "CLOSED" }`.
