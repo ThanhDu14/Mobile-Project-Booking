@@ -27,6 +27,7 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 21 | 2026-10-16 | Chia task triển khai spec 090 bằng `/speckit-tasks` | 09 |
 | 22 | 2026-10-16 | Kiểm tra độ khớp spec/plan/tasks của spec 090 bằng `/speckit-analyze` và sửa theo kết quả | 09 |
 | 23 | 2026-10-16 | Lập kế hoạch kỹ thuật spec 091 bằng `/speckit-plan` | 09 |
+| 24 | 2026-10-16 | Chia task triển khai spec 091 bằng `/speckit-tasks` | 09 |
 
 ---
 
@@ -1390,3 +1391,66 @@ Lập kế hoạch kỹ thuật cho spec 091 (chat nhóm và chat với chủ s�
 - Kiểm tra mọi truy vấn trong contract đều có `memberIds array-contains <mình>` để Rules chứng minh được người đọc nằm trong cuộc; truy vấn nhóm theo lô có lọc `status` (bài học F1 của spec 090).
 - Đối chiếu với spec 090 (hook, `ImageCompressor`, danh sách `reason`), spec 011 (`anonymizeCommunity`), spec 100 (`CHAT_MESSAGE`), spec 120 (`HIDE_CONTENT`).
 - Việc tiếp theo: chạy `/speckit-tasks` cho spec 091.
+
+---
+
+## Mục 24: Chia task triển khai spec 091 bằng `/speckit-tasks`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-16 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 09 – Cộng đồng và chat (spec `specs/091-chat`) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5), lệnh Spec Kit `/speckit-tasks` |
+| Mục đích | Chia plan 091 thành task theo 5 user story, có test bắt buộc và bảng phụ thuộc |
+| Nhánh Git | `feature/09-community-chat` |
+
+### Prompt đã dùng
+
+```
+/speckit-tasks SPECIFY_FEATURE_DIRECTORY=specs/091-chat
+Chia task theo 5 user story của spec 091, cùng khuôn với tasks 090:
+- Phase 1 chỉ kiểm tra và dùng lại phần nền (010, 070-T006, 090-T006 hook, 090-T020 ImageCompressor, cấu hình trên main), không tạo lại.
+- Viết test trước (phải fail): Rules CR1–CR8 trong firestore-tests/test/chats.test.ts (mỗi dòng có assertSucceeds và assertFails), pgTAP S1–S4, Edge Function C1–C8, D1–D4, R1–R2, H1–H2, M1–M2, A1; C3 lặp 10 lần, D1 lặp 20 lần; test Android cho outbox khi mất mạng (SC-004).
+- syncGroupChat làm sớm ở Foundational và nối vào hook của 090 để chat nhóm có ngay khi tạo nhóm.
+- Ghi rõ phụ thuộc A (spec 030, MainActivity, delete-account), B (REQUEST_TIME, tăng số trong Map), D (100, 111/112, 120) và spec 090, kèm phương án tạm.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Sinh `tasks.md` gồm **59 task** chia thành 8 phase:
+
+  | Phase | Nội dung | Task |
+  |---|---|---|
+  | 1 | Setup | 3 |
+  | 2 | Foundational (`_shared/media.ts`, `_shared/chats.ts` + nối hook 090, Rules, Storage, index, model, nav, outbox) | 17 |
+  | 3 | US1 – Chat với chủ sân | 10 |
+  | 4 | US2 – Chat nhóm | 5 |
+  | 5 | US3 – Danh sách, chưa đọc | 5 |
+  | 6 | US4 – Gửi ảnh | 6 |
+  | 7 | US5 – Thu hồi, báo cáo, chặn | 6 |
+  | 8 | Polish | 7 |
+
+  Có 25 task đánh dấu `[P]`.
+- **Làm sớm:** T008 cài `syncGroupChat`, `purgeChat` và điền thân hook `onGroupMembershipChanged` của 090, nên tạo nhóm là có chat nhóm ngay. Test G1, G5 của 090 phải vẫn xanh.
+- **Outbox:** T019 (unit test) và T020 (DataStore). T024 là test Android trên Emulator cho SC-004 (tắt mạng, gửi, bật mạng → đúng một tin, lặp 5 lần).
+- **Test đồng thời:** D1 (T021) lặp 20 lần, C3 (T031) lặp 10 lần. T031 có test tích hợp với `group-manage` của 090 (bị mời ra thì gửi bị từ chối).
+- **Tránh import chéo:** `SignedUrlCache` của 090 chuyển lên `core/media` (T045); huy hiệu qua `core/chat/UnreadChatsReader` (T017, T039).
+- **Bảng phụ thuộc ngoài nhóm:** A (spec 030, `MainActivity`, `delete-account`), B (`REQUEST_TIME`, `increment`), D (spec 100, 111/112, 120, đặc tả CSDL), C-090. Mỗi dòng kèm phương án tạm (ví dụ test bằng deep link khi chưa có nút).
+- **MVP:** US1 + US2, với D1 20/20, C3 10/10 và test outbox mất mạng xanh.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Nối `syncGroupChat` vào hook ngay ở Foundational | Dùng | Chat nhóm phải có cùng lúc với nhóm (FR-002); 091 test được ngay khi 090 có `create` |
+| Test Android cho outbox | Dùng | SC-004 liên quan mạng thật trên thiết bị, unit test không đủ |
+| Chuyển `SignedUrlCache` lên `core/media` | Dùng | Constitution I; 090 chỉ đổi import |
+| Chia bước 3 của `chat-send` (khóa nhóm, chặn) sang US2, US5 | Dùng | Mỗi story kiểm thử độc lập được; US1 không phụ thuộc phần chặn |
+
+### Cách kiểm chứng
+
+- `grep` đếm được 59 task đúng định dạng, đánh số liên tiếp, 0 dòng sai.
+- Mỗi ca C1–C8, D1–D4, R1–R2, H1–H2, M1–M2, A1, CR1–CR8, S1–S4 và Q1–Q16 đều có task tương ứng.
+- Thứ tự trong mỗi story: test → Edge Function → repository → UseCase → ViewModel → giao diện.
+- Việc tiếp theo: chạy `/speckit-analyze` cho spec 091.
