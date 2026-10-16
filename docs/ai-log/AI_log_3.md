@@ -24,6 +24,7 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 18 | 2026-10-16 | Kiểm tra độ khớp spec/plan/tasks của spec 081 bằng `/speckit-analyze` và sửa theo kết quả | 08 |
 | 19 | 2026-10-16 | Đồng bộ tasks 070/080 với spec 010 và cấu hình Firebase, Supabase trên main | 07, 08 |
 | 20 | 2026-10-16 | Lập kế hoạch kỹ thuật spec 090 bằng `/speckit-plan` | 09 |
+| 21 | 2026-10-16 | Chia task triển khai spec 090 bằng `/speckit-tasks` | 09 |
 
 ---
 
@@ -1209,3 +1210,68 @@ Lập kế hoạch kỹ thuật cho spec 090 (nhóm/CLB và bảng tin cộng đ
 - Đối chiếu trường với đặc tả CSDL mục 4.10, 4.12, 8; mọi trường mới đều đánh dấu [MỚI] và có trong danh sách cuối data-model.
 - Đối chiếu ranh giới với spec 011 (research R12 `anonymizeCommunity`), spec 100 (`GROUP_ACTIVITY`), spec 120 (`HIDE_CONTENT`, `targetPath`) và spec 091 (chat nhóm theo danh sách thành viên).
 - Việc tiếp theo: chạy `/speckit-tasks` cho spec 090.
+
+---
+
+## Mục 21: Chia task triển khai spec 090 bằng `/speckit-tasks`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-16 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 09 – Cộng đồng và chat (spec `specs/090-community-group`) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5), lệnh Spec Kit `/speckit-tasks` |
+| Mục đích | Chia plan 090 thành task theo 6 user story, có test bắt buộc và bảng phụ thuộc nhóm khác |
+| Nhánh Git | `feature/09-community-chat` |
+
+### Prompt đã dùng
+
+```
+/speckit-tasks SPECIFY_FEATURE_DIRECTORY=specs/090-community-group
+Chia task theo 6 user story của spec 090, cùng khuôn với tasks 080/081:
+- Phase 1 chỉ kiểm tra và dùng lại phần nền đã có (010-T001..T004, T015, T021; 070-T006 UiState; cấu hình Firebase/Supabase trên main), không tạo lại.
+- Viết test trước (phải fail) rồi mới cài đặt: Rules GR1–GR12 trong firestore-tests/test/groups.test.ts (mỗi dòng phân quyền có assertSucceeds và assertFails), pgTAP S1–S5, Edge Function G1–G15, P1–P11, M1–M3; G5 và P6 (20 người cùng lúc) lặp 10 lần.
+- Khung _shared/groups.ts (hook onGroupMembershipChanged, anonymizeCommunityGroups) làm sớm ở Foundational để spec 091 và A dùng được.
+- Ghi rõ phụ thuộc nhóm khác (A, B, D theo bảng phối hợp trong plan) kèm phương án tạm nếu chưa có.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Sinh `tasks.md` gồm **75 task** chia thành 9 phase:
+
+  | Phase | Nội dung | Task |
+  |---|---|---|
+  | 1 | Setup (kiểm tra nền, chuỗi, seed) | 3 |
+  | 2 | Foundational (`_shared/groups.ts`, fixture, Rules, Storage, index, model, nav, nén ảnh) | 17 |
+  | 3 | US1 – Tạo nhóm | 9 |
+  | 4 | US2 – Tìm và tham gia | 10 |
+  | 5 | US3 – Bảng tin | 11 |
+  | 6 | US4 – Sự kiện | 6 |
+  | 7 | US5 – Quản lý thành viên | 7 |
+  | 8 | US6 – Báo cáo, ẩn bài | 5 |
+  | 9 | Polish | 7 |
+
+  Có 31 task đánh dấu `[P]`.
+- **Làm sớm cho người khác:** T006 tạo `_shared/groups.ts` với hook `onGroupMembershipChanged` (thân trống cho spec 091), `anonymizeCommunityGroups` (khung cho A), `getMembership`, `loadGroupForWrite`.
+- **Test đồng thời:** G5 (T030) và P6 (T051): 20 người song song, lặp 10 lần, in `runs=10 expected=20 actual=20 duplicates=0`. Fixture T007 có `assertGroupInvariant` gọi sau mỗi ca.
+- **Rules và Storage:** T009 GR1–GR12 (cặp `assertSucceeds`/`assertFails`), T011 pgTAP S1–S5, viết trước migration và Rules.
+- **Phát hiện:** phần nén ảnh của spec 070 nằm trong `feature/review`; T020 đưa lên `core/image/ImageCompressor.kt` để 070 và 090 dùng chung (constitution I cấm import chéo feature).
+- **Bảng phụ thuộc ngoài nhóm:** A (core, auth, keywords, `delete-account`), B (`runQueryInTx`, dùng chung bản của 081-T005), D (trường mới, `group-avatars`, `group-media-url`, spec 100, spec 120), C-091 (hook). Mỗi dòng kèm phương án tạm, kể cả phương án nếu D không đồng ý bucket `group-avatars`.
+- **MVP:** US1 + US2, G5 phải xanh 10/10 lần; spec 091 bắt đầu được sau MVP.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Phase 1 chỉ kiểm tra phần nền | Dùng | Tránh trùng việc với 010 (A) và 070, đúng bài học ở Mục 19 |
+| Hook và khung `anonymizeCommunityGroups` ở Foundational | Dùng | Spec 091 và A không phải chờ 090 làm xong |
+| Đưa nén ảnh lên `core/image` | Dùng | Constitution I; 070 giữ nguyên chữ ký `ReviewPhotoUploader` |
+| Dùng chung `runQueryInTx` với 081-T005 | Dùng | Không viết hai bản cùng một hàm khi chờ B |
+| Phương án dự phòng khi D không đồng ý `group-avatars` | Dùng | Ghi sẵn để không bị chặn sau họp |
+
+### Cách kiểm chứng
+
+- `grep` đếm được 75 task đúng định dạng `- [ ] T### [P?] [US?] mô tả + đường dẫn`, đánh số liên tiếp, 0 dòng sai.
+- Mỗi ca G1–G15, P1–P11, M1–M3, GR1–GR12, S1–S5 và Q1–Q15 đều có task tương ứng.
+- Thứ tự trong mỗi story: test → Edge Function → repository → UseCase → ViewModel → giao diện.
+- Việc tiếp theo: chạy `/speckit-analyze` cho spec 090.
