@@ -20,6 +20,7 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 14 | 2026-10-15 | Chia task triển khai spec 080 bằng `/speckit-tasks` | 08 |
 | 15 | 2026-10-15 | Kiểm tra độ khớp spec/plan/tasks của spec 080 bằng `/speckit-analyze` | 08 |
 | 16 | 2026-10-15 | Lập kế hoạch kỹ thuật spec 081 bằng `/speckit-plan` | 08 |
+| 17 | 2026-10-16 | Chia task triển khai spec 081 bằng `/speckit-tasks` | 08 |
 
 ---
 
@@ -960,3 +961,72 @@ thiết kế đã có của spec 080:
 - Mỗi FR-001 → FR-017 và SC-001 → SC-005 đều có quy tắc trong data-model hoặc ca test Q1–Q14, W1–W2.
 - Đối chiếu với spec 080 (hook `afterSpotsReleased`, `computeRefund`), spec 112 FR-010a (tăng sức chứa, hủy buổi) và spec 100 (type `DROPIN_SPOT_OPENED`, `DROPIN_WAITLIST_CLOSED`).
 - Việc tiếp theo: chạy `/speckit-tasks` cho spec 081.
+
+---
+
+## Mục 17: Chia task triển khai spec 081 bằng `/speckit-tasks`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-16 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 08 – Đặt lịch vãng lai (spec `specs/081-drop-in-waitlist`) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5), lệnh Spec Kit `/speckit-tasks` |
+| Mục đích | Chia kế hoạch kỹ thuật hàng chờ thành task theo user story, xây tiếp trên tasks 080, kèm test bắt buộc |
+| Nhánh Git | `feature/08-drop-in` (đã pull main `cfe2312`, gồm cấu hình Firebase, `firestore-tests/` và Supabase local) |
+
+### Prompt đã dùng
+
+```
+/speckit-tasks SPECIFY_FEATURE_DIRECTORY=specs/081-drop-in-waitlist
+Chia task theo user story, xây tiếp trên tasks của spec 080: không làm lại Setup/Foundational đã có, chỉ tham chiếu ID task 080 làm phụ thuộc.
+Bắt buộc viết test trước (phải fail) rồi mới cài đặt:
+- Edge Function: các ca test trong quickstart, đặc biệt Q6 (5 lượt hủy với 10 người chờ chạy đồng thời, lặp 20 lần) và Q7 (rời hàng chờ cùng lúc bị đẩy lên).
+- Firestore Rules: viết vào firestore.rules và firestore-tests/test/<collection>.test.ts theo cấu trúc Vitest vừa merge trên main; mỗi dòng phân quyền có ít nhất một assertSucceeds và một assertFails.
+Ghi rõ task nào phụ thuộc nhóm khác (D: trường waitlist* trên dropInSessions, spec 112, type thông báo spec 100; B: runQuery trong _shared/firestore.ts), kèm phương án tạm nếu chưa có.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Sinh `tasks.md` gồm **54 task** chia thành 7 phase:
+
+  | Phase | Nội dung | Task |
+  |---|---|---|
+  | 1 | Setup (kiểm tra nền 080, chuỗi, migration pg_cron, seed) | 4 |
+  | 2 | Foundational (`runQueryInTx`, khung `waitlist.ts`, fixture, Rules, index, model) | 10 |
+  | 3 | US1 – Vào hàng chờ | 11 |
+  | 4 | US2 – Tự động đẩy lên | 10 |
+  | 5 | US3 – Rời hàng chờ | 6 |
+  | 6 | US4 – Đóng hàng chờ | 7 |
+  | 7 | Polish | 6 |
+
+  Có 25 task đánh dấu `[P]`.
+- **Không làm lại hạ tầng:** bảng "Phụ thuộc vào tasks 080" ghi task 081 nào cần task 080 nào (ví dụ T030–T034 cần 080-T006, 080-T053).
+- **Test đồng thời:**
+  - Q6 (T027): 5 lượt hủy song song, 10 người chờ `partySize` 1–3, lặp 20 lần, in `runs=20 overCapacity=0 doublePromoted=0 orderViolations=0`.
+  - Q7 (T036): rời hàng chờ cùng lúc bị đẩy lên, 20 lần, chỉ một kết quả thắng.
+  - Fixture chung `waitlist_fixtures.ts` có `assertWaitlistInvariant` gọi sau mỗi ca.
+- **Test Rules (T008):** bảng cặp `assertSucceeds`/`assertFails` cho từng dòng Rules, trong file `firestore-tests/test/dropInSessions.test.ts`. Dòng `write: if false` chỉ có ca bị chặn vì ca được phép đi qua Edge Function.
+- **Tách file test** (`register-drop-in/waitlist.test.ts`, `cancel-drop-in/waitlist.test.ts`) để không đụng `index.test.ts` của 080.
+- **Phát hiện:** tasks 080 (T008) và quickstart 081 còn dùng đường dẫn cũ `firestore-tests/dropin.test.ts`; tasks 081 dùng đường dẫn mới và thêm T052 để sửa quickstart.
+- **Bảng phụ thuộc ngoài nhóm:** B (`runQueryInTx`), D (3 trường `waitlist*`, spec 112 gọi `promoteFromWaitlist`/`closeWaitlistInTx`, spec 100 hai type thông báo), A (`delete-account`), cả nhóm (pg_cron, pg_net), mỗi dòng kèm phương án tạm.
+- **MVP:** US1 + US2, Q6 phải xanh 20/20 lần trước khi demo.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Tham chiếu `080-T###` thay vì viết lại Setup/Foundational | Dùng | Đúng yêu cầu prompt; tránh làm trùng hạ tầng |
+| Khung `waitlist.ts` công bố chữ ký sớm (T006) | Dùng | D và A import được ngay, không phải chờ C cài xong |
+| Q6, Q7 lặp 20 lần | Dùng | Lỗi tranh chấp chỉ lộ ra khi chạy nhiều lần (constitution III) |
+| Dùng `firestore-tests/test/dropInSessions.test.ts` | Dùng | Khớp cấu trúc Vitest vừa merge trên main |
+| Sửa đường dẫn test Rules trong tasks 080 | Chưa làm | Ngoài phạm vi lần chạy này; sửa khi làm 080-T008 |
+| Nếu D không đồng ý 3 trường `waitlist*` | Đưa ra họp nhóm | Ảnh hưởng thiết kế vị trí hàng chờ (research R2) |
+
+### Cách kiểm chứng
+
+- Dùng `grep` đếm được 54 task đúng định dạng `- [ ] T### [P?] [US?] mô tả + đường dẫn`, 0 dòng sai định dạng.
+- Mỗi ca Q1–Q14, W1–W2 trong `contracts/edge-functions-waitlist.md` và M1–M8 trong quickstart đều có task tương ứng.
+- Mỗi FR-001 → FR-017 đều được ít nhất một task nhắc tới.
+- Kiểm tra `git merge-tree` giữa main và `origin/feature/09-community-chat`: không có conflict, nhánh 09 không có commit riêng.
+- Việc tiếp theo: chạy `/speckit-analyze` cho spec 081.
