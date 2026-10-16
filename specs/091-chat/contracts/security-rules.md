@@ -28,7 +28,7 @@ match /chats/{chatId} {
       && (!('lastReadAt' in request.resource.data.diff(resource.data).affectedKeys()) || request.resource.data.lastReadAt == request.time)
       && (!('viewingUntil' in request.resource.data.diff(resource.data).affectedKeys())
           || request.resource.data.viewingUntil == null
-          || request.resource.data.viewingUntil <= request.time + duration.value(2, 'm'));
+          || request.resource.data.viewingUntil <= request.time + duration.value(10, 'm'));
     allow create, delete: if false;
   }
   match /messages/{messageId} {
@@ -49,7 +49,7 @@ match /{path=**}/participants/{uid} {
 | CR2 | `chats` update `unreadCounts` | Người trong cuộc đặt `unreadCounts.{mình} = 0` | Đặt `unreadCounts.{người khác} = 0`; đặt của mình = 5; sửa `lastMessage`, `memberIds` |
 | CR3 | `chats` create/delete | — (`if false`; tạo qua Edge Function) | Người chơi tự tạo `chats/{a}_{b}`; xóa chat |
 | CR4 | `participants` get | Đọc document của mình | Đọc document của người kia (xem họ có chặn/tắt thông báo không) |
-| CR5 | `participants` update | Ghi `lastReadAt = request.time`, `muted`, `blockedOther`, `viewingUntil = now + 60s` của mình | Ghi của người khác; ghi `userSnapshot`; `lastReadAt` là giờ client; `viewingUntil = now + 1 giờ`; ghi sau khi đã rời nhóm |
+| CR5 | `participants` update | Ghi `lastReadAt = request.time`, `muted`, `blockedOther`, `viewingUntil = now + 60s` của mình | Ghi của người khác; ghi `userSnapshot`; `lastReadAt` là giờ client; `viewingUntil = now + 1 giờ` (vượt 10 phút); ghi sau khi đã rời nhóm |
 | CR6 | `messages` read | Người trong cuộc list 30 tin; admin get | Người ngoài list; người vừa bị mời ra khỏi nhóm list (SC-003) |
 | CR7 | `messages` write | — (`if false`) | Người trong cuộc tự tạo tin; tự sửa `status` về `NORMAL`; xóa tin |
 | CR8 | collection group `participants` list | `where userId == <mình>` | Không lọc `userId` |

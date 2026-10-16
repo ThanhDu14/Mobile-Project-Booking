@@ -28,6 +28,7 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 22 | 2026-10-16 | Kiểm tra độ khớp spec/plan/tasks của spec 090 bằng `/speckit-analyze` và sửa theo kết quả | 09 |
 | 23 | 2026-10-16 | Lập kế hoạch kỹ thuật spec 091 bằng `/speckit-plan` | 09 |
 | 24 | 2026-10-16 | Chia task triển khai spec 091 bằng `/speckit-tasks` | 09 |
+| 25 | 2026-10-16 | Kiểm tra độ khớp spec/plan/tasks của spec 091 bằng `/speckit-analyze` và sửa theo kết quả | 09 |
 
 ---
 
@@ -1454,3 +1455,57 @@ Chia task theo 5 user story của spec 091, cùng khuôn với tasks 090:
 - Mỗi ca C1–C8, D1–D4, R1–R2, H1–H2, M1–M2, A1, CR1–CR8, S1–S4 và Q1–Q16 đều có task tương ứng.
 - Thứ tự trong mỗi story: test → Edge Function → repository → UseCase → ViewModel → giao diện.
 - Việc tiếp theo: chạy `/speckit-analyze` cho spec 091.
+
+---
+
+## Mục 25: Kiểm tra độ khớp spec/plan/tasks của spec 091 bằng `/speckit-analyze`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-16 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 09 – Cộng đồng và chat (spec `specs/091-chat`, kèm sửa nhỏ spec 090) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5), lệnh Spec Kit `/speckit-analyze` |
+| Mục đích | Tìm chỗ thiếu, mâu thuẫn giữa spec, plan, tasks của 091, với spec 090 và Rules, trước khi code; sửa theo kết quả |
+| Nhánh Git | `feature/09-community-chat` |
+
+### Prompt đã dùng
+
+```
+/speckit-analyze SPECIFY_FEATURE_DIRECTORY=specs/091-chat
+Kiểm tra độ khớp spec/plan/tasks của spec 091, chú ý:
+- mỗi FR-001 → FR-018, SC-001 → SC-007 và mỗi Edge Case có task; mỗi ca C, D, R, H, M, A, CR, S, Q có task;
+- tham chiếu task spec khác (010, 070, 090) đúng ID và nội dung; khớp với hook và Rules của spec 090;
+- mọi truy vấn đọc khớp Rules (có memberIds array-contains, truy vấn nhóm theo lô có lọc status);
+- mâu thuẫn với constitution (I, II, III, IV) và đặc tả CSDL.
+```
+
+Sau khi xem báo cáo, mình nhờ AI sửa luôn cả 5 mục.
+
+### Tóm tắt phản hồi của AI
+
+- **0 lỗi CRITICAL, 0 lỗi HIGH**. Độ phủ 100% (25 yêu cầu: 18 FR + 7 SC); đủ mọi ca kiểm thử. 17 tham chiếu task spec khác đều đúng; mọi truy vấn `chats` có `memberIds array-contains`.
+- **2 lỗi MEDIUM:**
+  - F1: app ghi `viewingUntil` theo giờ điện thoại, Rules giới hạn `request.time + 2 phút`, nên điện thoại chạy nhanh là bị từ chối (đúng Edge Case "Đồng hồ điện thoại sai").
+  - U1: tin "Gửi lỗi" sau 60 giây có còn tự gửi khi có mạng không, chưa chốt.
+- **3 lỗi LOW:** 090-T047 chưa đặt `SignedUrlCache` ở `core/media` (F2); 090-T045 chưa dùng `_shared/media.ts` (F3); thiếu ca chủ sân bị thu hồi quyền vẫn nhắn được (G1).
+- **Đã sửa:**
+  - Rules nới `viewingUntil` lên 10 phút, app tính theo giờ server ước lượng (research R7, data-model, T011, T023).
+  - Outbox: lỗi do mạng vẫn tự gửi lại, lỗi không thử lại được thì chờ người dùng (R1, T019).
+  - Sửa 090-T045, T047 cho khớp 091.
+  - Thêm ca vào D4.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Nới Rules `viewingUntil` lên 10 phút | Dùng | Chỉ ảnh hưởng việc bỏ qua thông báo, không phải quyền truy cập; vẫn chặn giá trị quá xa |
+| Tin lỗi do mạng vẫn tự gửi | Dùng | Đúng cả hai câu trong spec: tự gửi khi có mạng, và báo "Gửi lỗi" sau 1 phút |
+| Sửa luôn tasks 090 | Dùng | Hai spec cùng của mình; để lệch sẽ tạo hai bản `SignedUrlCache` |
+
+### Cách kiểm chứng
+
+- Đối chiếu từng truy vấn trong tasks/contract với Rules bản phác (`memberIds array-contains`, `status` khi đọc nhóm theo lô, `lastReadAt == request.time`).
+- Đọc lại 010, 070, 090 task được tham chiếu; 090-T060 đã gọi `purgeChat`.
+- Sau khi sửa, `grep` vẫn đếm được 59 task (091) và 75 task (090) đúng định dạng.
+- Việc tiếp theo: họp nhóm 16/10 để chốt các trường [MỚI] và quy ước với A, B, D; sau đó bắt đầu triển khai theo thứ tự 080 → 081 → 090 → 091 (070 song song).

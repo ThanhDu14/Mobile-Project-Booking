@@ -10,7 +10,7 @@ Mỗi mục ghi: quyết định, lý do, phương án đã cân nhắc. Không 
 
 **Quyết định:**
 - App không ghi `messages` trực tiếp. Mỗi tin có `messageId` = UUID sinh khi bấm "Gửi" (cũng là `requestId`).
-- App đưa tin vào `ChatOutbox` (hiện ngay "Đang gửi"), rồi gọi `chat-send`. Mất mạng thì chờ có mạng tự gửi lại cùng `messageId`. Quá 60 giây chưa gửi được thì hiện "Gửi lỗi" kèm "Gửi lại"/"Xóa".
+- App đưa tin vào `ChatOutbox` (hiện ngay "Đang gửi"), rồi gọi `chat-send`. Mất mạng thì chờ có mạng tự gửi lại cùng `messageId`. Quá 60 giây chưa gửi được thì hiện "Gửi lỗi" kèm "Gửi lại"/"Xóa"; nếu lỗi do mạng thì outbox vẫn tự gửi khi có mạng lại, lỗi không thử lại được (`BLOCKED`, `NOT_PARTICIPANT`, `INVALID_ARGUMENT`) thì chờ người dùng.
 - `chat-send` chạy transaction: kiểm tra quyền, tạo `messages/{messageId}` nếu chưa có (đã có thì trả tin cũ), cập nhật `lastMessage`, `updatedAt`, `unreadCounts`; sau commit gửi thông báo (R7).
 - `ChatOutbox` lưu bằng DataStore (theo `chatId`) để tin chưa gửi còn sau khi app bị tắt.
 
@@ -89,7 +89,7 @@ Sau khi spec 090 xóa xong nhóm (090-T060), gọi `purgeChat(chatId)` để xó
 **Quyết định:** sau commit, `chat-send` gọi `send-notification` (D) với `type = CHAT_MESSAGE`, `data = { chatId, messageId }` cho người trong cuộc trừ:
 - người gửi;
 - người có `participants.muted == true`;
-- người đang mở cuộc đó: `participants.viewingUntil > now`. App ghi `viewingUntil = now + 60 giây` khi mở cuộc trò chuyện, gia hạn mỗi 45 giây khi đang mở, xóa khi rời màn hình.
+- người đang mở cuộc đó: `participants.viewingUntil > now`. App ghi `viewingUntil = now + 60 giây` khi mở cuộc trò chuyện, gia hạn mỗi 45 giây khi đang mở, xóa khi rời màn hình. `now` là giờ server ước lượng (độ lệch đo từ lần ghi `serverTimestamp()` gần nhất) để không phụ thuộc đồng hồ điện thoại; Rules cho tối đa `request.time + 10 phút`.
 
 Lỗi gửi thông báo bị bỏ qua. Tắt thông báo không ảnh hưởng `unreadCounts`.
 

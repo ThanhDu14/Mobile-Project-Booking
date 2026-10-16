@@ -37,7 +37,7 @@
 | `lastReadAt` | Timestamp | chính người đó | Phải bằng `request.time` |
 | `muted` | Boolean | chính người đó | Tắt thông báo cuộc này (FR-013) |
 | `blockedOther` | Boolean | chính người đó | Chỉ chat riêng (FR-016) |
-| `viewingUntil` | Timestamp? | chính người đó | Đang mở cuộc này thì không gửi thông báo (R7); ≤ `request.time + 2 phút` |
+| `viewingUntil` | Timestamp? | chính người đó | Đang mở cuộc này thì không gửi thông báo (R7); ≤ `request.time + 10 phút`; app tính theo giờ server ước lượng |
 
 ## 3. `chats/{chatId}/messages/{messageId}`
 
