@@ -22,6 +22,7 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 16 | 2026-10-15 | Lập kế hoạch kỹ thuật spec 081 bằng `/speckit-plan` | 08 |
 | 17 | 2026-10-16 | Chia task triển khai spec 081 bằng `/speckit-tasks` | 08 |
 | 18 | 2026-10-16 | Kiểm tra độ khớp spec/plan/tasks của spec 081 bằng `/speckit-analyze` và sửa theo kết quả | 08 |
+| 19 | 2026-10-16 | Đồng bộ tasks 070/080 với spec 010 và cấu hình Firebase, Supabase trên main | 07, 08 |
 
 ---
 
@@ -1092,4 +1093,56 @@ Sau khi xem báo cáo, mình nhờ AI sửa luôn cả 9 mục trong `tasks.md` 
 - Đọc lại 22 task 080 được tham chiếu để xác nhận đúng nội dung.
 - Sau khi sửa, `grep` vẫn đếm được 54 task đúng định dạng, 0 dòng sai.
 - Đối chiếu constitution nguyên tắc II, III, IV: mọi thao tác hàng chờ chạy trong transaction trên document buổi, trường 🔒 do Edge Function ghi, có test đồng thời trên Emulator.
+- Việc tiếp theo: lập kế hoạch kỹ thuật spec 090.
+
+---
+
+## Mục 19: Đồng bộ tasks 070/080 với spec 010 và cấu hình trên main
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-16 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 07 – Đánh giá và yêu thích (spec 070), 08 – Đặt lịch vãng lai (spec 080) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5), chat thường (không dùng lệnh Spec Kit) |
+| Mục đích | Sau khi pull main, sửa các task Setup của 070/080 đang tạo lại file mà spec 010 (A) hoặc PR #22, #23 đã làm, tránh conflict khi merge |
+| Nhánh Git | `feature/08-drop-in` |
+
+### Prompt đã dùng
+
+```
+Main vừa merge cấu hình Firebase (PR #22: firebase.json, firestore.rules nền, firestore-tests/ dùng Vitest với test/<collection>.test.ts)
+và Supabase local (PR #23), cùng tasks spec 010 của A (010-T001..T004 thư viện/plugin/App, 010-T015 FirebaseModule/SupabaseModule,
+010-T021 _shared/auth.ts). Rà tasks 070 và 080 của mình:
+- task nào tạo lại file đã có thì đổi thành "kiểm tra và dùng lại", chỉ thêm phần riêng (không đổi chữ ký của 010);
+- đổi đường dẫn test Rules sang firestore-tests/test/<collection>.test.ts, mỗi dòng phân quyền có assertSucceeds và assertFails;
+- đổi tên khóa cho khớp 010 (SUPABASE_PUBLISHABLE_KEY, USE_EMULATOR);
+- giữ nguyên ID task để không phải đánh số lại.
+```
+
+### Tóm tắt phản hồi của AI
+
+- **Phát hiện trùng việc với spec 010:**
+  - 070-T004, T005 tạo lại `core/di/FirebaseModule.kt`, `SupabaseModule.kt` mà 010-T015 đã nhận.
+  - 070-T001 → T003 trùng 010-T001, T002, T004.
+  - 070-T020 và 080-T007 cùng tạo `_shared/auth.ts`, mà 010-T021 đã nhận.
+  - 070 dùng `SUPABASE_ANON_KEY`, còn 010 và hướng dẫn Supabase dùng `SUPABASE_PUBLISHABLE_KEY`.
+- **Đã sửa tasks 070:**
+  - T001 → T005, T008, T009, T020 thành "kiểm tra và dùng lại", chỉ thêm phần riêng: `storage-kt`, Coil, plugin `Storage` vào `SupabaseClient`, offline cache.
+  - T022 dùng `firestore-tests/test/reviews.test.ts`, `test/favorites.test.ts`.
+  - Sửa đường dẫn trong plan và contract, tên khóa trong quickstart.
+- **Đã sửa tasks 080:** phần mở đầu Phase 1, T002 và T007 trỏ tới đúng task 010 / 070.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Giữ ID task, chỉ đổi nội dung | Dùng | Các tham chiếu chéo (`070-T006`, `080-T###`) vẫn đúng |
+| "Chỉ thêm, không đổi chữ ký" khi đụng file của 010 | Dùng | Giống quy ước 011 đang làm với 010; tránh phá code của A |
+| Commit sửa 070 trên nhánh `feature/08-drop-in` | Dùng | Chỉ sửa tài liệu, đi cùng thay đổi của 080 để review một lần |
+
+### Cách kiểm chứng
+
+- Đối chiếu từng task với 010-T001 → T004, T015, T021 và các file có trên main (`firebase.json`, `firestore-tests/test/setup.ts`, `supabase/config.toml`).
+- `grep` không còn `SUPABASE_ANON_KEY`, `firestore-tests/reviews.test.ts`, `firestore-tests/dropin.test.ts` trong spec 070/080/081.
 - Việc tiếp theo: lập kế hoạch kỹ thuật spec 090.

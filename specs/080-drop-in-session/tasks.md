@@ -38,10 +38,10 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
 
 **Purpose**: thư viện và cấu hình chung.
 
-Hilt, Firebase, supabase-kt, `UiState`, Emulator và Supabase local đã có trong Phase 1 của [tasks 070](../070-review-favorite/tasks.md) (T001–T009) hoặc trong PR `chore(core)` của nhóm. **Phần nào đã có thì đánh dấu xong và dùng lại, không làm trùng.**
+Hilt, Firebase, supabase-kt và `core/` do [tasks 010](../010-account-auth/tasks.md) (A) làm; `UiState`, `include_state_views` trong Phase 1 của [tasks 070](../070-review-favorite/tasks.md) (T006); cấu hình Emulator và Supabase local đã có trên main (PR #22, #23). **Phần nào đã có thì đánh dấu xong và dùng lại, không làm trùng.**
 
 - [ ] T001 Thêm `zxing-android-embedded` vào `gradle/libs.versions.toml` (phiên bản ổn định mới nhất) và khai báo `implementation` trong `app/build.gradle.kts`. Ghi lý do trong mô tả PR (constitution: thêm phụ thuộc phải qua version catalog). Đề xuất đưa vào PR `chore(core)` vì spec 112 dùng để quét (research R15)
-- [ ] T002 [P] Kiểm tra các task T001–T009 của spec 070 (hoặc PR core) đã xong: Hilt, `FirebaseModule` (Emulator, offline cache), `SupabaseModule` (Functions, token = Firebase ID token), `core/ui/UiState.kt`, `include_state_views.xml`. Thiếu phần nào thì làm theo đúng mô tả ở tasks 070. `firebase.json`, `.firebaserc`, `firestore.rules` (Rules nền), `firestore.indexes.json`, `firestore-tests/` (Vitest + `@firebase/rules-unit-testing`) đã có trên main từ PR #22 và `supabase/config.toml` từ PR #23: chỉ kiểm tra, không tạo lại
+- [ ] T002 [P] Kiểm tra đã xong: Hilt, `FirebaseModule`, `SupabaseModule` (010-T001, 010-T002, 010-T004, 010-T015); `core/ui/UiState.kt`, `include_state_views.xml` (070-T006). Thiếu phần nào thì làm theo đúng mô tả ở task gốc. `firebase.json`, `.firebaserc`, `firestore.rules` (Rules nền), `firestore.indexes.json`, `firestore-tests/` (Vitest + `@firebase/rules-unit-testing`) đã có trên main từ PR #22 và `supabase/config.toml` từ PR #23: chỉ kiểm tra, không tạo lại
 - [ ] T003 [P] Tạo `RES/values/strings_dropin.xml`: mọi chuỗi tiền tố `dropin_` cho 5 màn hình, 2 bottom sheet, nhãn, mã lỗi ở [contracts/edge-functions-dropin.md](contracts/edge-functions-dropin.md#4-mã-lỗi) và dòng "Thanh toán giả lập – không thu tiền thật" (FR-010)
 
 **Checkpoint**: `./gradlew assembleDebug` chạy được; `firebase emulators:start --only auth,firestore` và `supabase start` chạy được.
@@ -77,7 +77,7 @@ Hilt, Firebase, supabase-kt, `UiState`, Emulator và Supabase local đã có tro
   - `newQrToken`, `newTicketCode`.
 
   Sau đó T005 phải xanh
-- [ ] T007 [P] Tạo hàm xác thực dùng chung trong `FN/_shared/auth.ts` nếu chưa có (spec 070 có thể đã làm): kiểm tra Firebase ID token, trả `uid`, `appRole`; đọc `users/{uid}.accountStatus` để trả lỗi `ACCOUNT_LOCKED`; có helper `errorResponse(status, code, message, extra?)` cho đúng dạng `{ "error": { "code", "message", ... } }`
+- [ ] T007 [P] Dùng `FN/_shared/auth.ts` của 010-T021 (A); nếu chưa merge thì viết bản tối thiểu đúng chữ ký ở contract 010 §4 rồi báo A. Bổ sung nếu thiếu: kiểm tra Firebase ID token, trả `uid`, `appRole`; đọc `users/{uid}.accountStatus` để trả lỗi `ACCOUNT_LOCKED`; có helper `errorResponse(status, code, message, extra?)` cho đúng dạng `{ "error": { "code", "message", ... } }`
 
 ### Rules và index
 
