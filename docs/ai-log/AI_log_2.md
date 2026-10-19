@@ -24,6 +24,7 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 18 | 2026-10-19 | Phân tích đối soát chất lượng bằng `/speckit-analyze` & tinh chỉnh spec 041 | 04 |
 | 19 | 2026-10-19 | Lập danh sách công việc spec 050 (thanh toán và voucher giả lập) bằng `/speckit-tasks` | 05 |
 | 20 | 2026-10-19 | Phân tích đối soát chất lượng bằng `/speckit-analyze` & tinh chỉnh spec 050 | 05 |
+| 21 | 2026-10-19 | Lập danh sách công việc spec 060 (quản lý lịch đặt của tôi) bằng `/speckit-tasks` | 06 |
 
 
 
@@ -924,6 +925,50 @@ Bảng đối chiếu lựa chọn:
 - `specs/060-my-bookings/contracts/ui-contracts.md`: Đã chuẩn hóa §1.2 sang `HoldToPaymentArgs`.
 - `specs/050-payment-voucher/tasks.md`: Đã đảm bảo tính tương thích và bao phủ 100%.
 - Toàn bộ bộ tài liệu của Feature 050 đạt độ hoàn thiện 10/10, sẵn sàng cho giai đoạn cài đặt mã nguồn (`/speckit-implement`).
+
+---
+
+## Mục 21: Lập danh sách công việc spec 060 (quản lý lịch đặt của tôi) bằng `/speckit-tasks`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-19 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 06 – Quản lý lịch đặt (`specs/060-my-bookings`) |
+| Công cụ AI | Antigravity, lệnh Spec Kit `/speckit-tasks` |
+| Mục đích | Phân rã kế hoạch kỹ thuật spec 060 thành danh sách 44 task triển khai chi tiết (`tasks.md`), tuân thủ Clean Architecture, TDD, giao dịch Firestore Transaction hủy đơn & nhả slot nguyên tử (All Reads Before All Writes), thuật toán hoàn tiền mốc 240 phút kẹp biên voucher an toàn, xuất trình mã QR check-in realtime/offline và bảo mật Security Rules với `request.time` |
+| Nhánh Git | `060-my-bookings` |
+
+### Bối cảnh và Quyết định cốt lõi khi lập Tasks
+
+1. **Độc lập kiến trúc thuần Kotlin (Clean Architecture - Constitution I)**:
+   - Tầng `domain` hoàn toàn thuần Kotlin, độc lập với Android SDK và Firebase SDK. Model `QrBitMatrix` được sinh bằng ZXing Core thuần JVM; tầng UI render `Bitmap` qua `QrBitmapRenderer.kt` với khung viền trắng `#FFFFFF`, kích thước tối thiểu 240dp để máy quét chủ sân nhận diện tốt kể cả khi thiết bị bật Dark Mode.
+2. **Bảo mật chống gian lận giờ điện thoại & Transaction hủy đơn nguyên tử**:
+   - `firestore.rules` sử dụng `request.time` (Server Timestamp của Google Cloud) đối chiếu với `resource.data.startAt` để kiểm tra mốc 240 phút khi hủy đơn, chặn lùi đồng hồ thiết bị. Giới hạn chỉ chủ đơn (`request.auth.uid == resource.data.userId`) được đọc `qrToken`.
+   - Transaction hủy đơn tuân thủ All Reads Before All Writes: đọc đơn, đọc nhóm chu kỳ (nếu có), kiểm tra tính Idempotent qua document `users/{userId}/walletTransactions/refund_{bookingId}`, đọc số dư ví $\rightarrow$ ghi cập nhật đơn `CANCELLED`, cộng ví và **xóa trực tiếp toàn bộ các document `slots/{slotId}`** thuộc đơn để giải phóng sân ngay lập tức trên lưới của Spec 040.
+3. **Thuật toán Hoàn tiền mốc 240 phút & Kẹp biên an toàn khi có Voucher**:
+   - Đơn `PENDING` và đơn `CONFIRMED` hủy sớm ($\ge 240$ phút): Hoàn 100% tiền đã trả.
+   - Đơn `CONFIRMED` hủy trễ ($< 240$ phút): ví giả lập phạt 30% tiền cọc chuẩn hóa, hoàn 70% còn lại (`penaltyAmount = minOf(booking.paidAmount, calculatedDepositPenalty)`, `refundAmount = maxOf(0L, booking.paidAmount - penaltyAmount)`, chống âm tiền); đặt cọc 30% mất 100% cọc; trả tại sân hoàn 0đ.
+4. **Realtime Check-in, Hỗ trợ QR Offline & Thỏa thuận liên thành viên**:
+   - Lắng nghe realtime `bookings/{bookingId}` qua Flow; khi chủ sân quét QR thành công (`checkedInAt != null`), UI chuyển sang "Đã check-in lúc HH:mm" và ẩn nút "Hủy lịch đặt".
+   - Tận dụng Firestore Offline Persistence để người chơi vẫn mở được mã QR check-in từ cache khi mất mạng tại sân.
+   - Phương án 2.A: Tab 2 (Chờ duyệt) đếm ngược 60 phút hạn chủ sân duyệt. Nếu quá 60 phút, hiển thị đơn `REJECTED` và đã hoàn 100% tiền ví giả lập.
+   - Phương án 5.A: Khóa tuyệt đối quyền viết đánh giá ở Spec 070 đối với các đơn mang trạng thái `NO_SHOW`.
+   - Hỗ trợ hủy riêng lẻ từng buổi trong chuỗi cố định `recurringGroupId` [041], tiền cọc/voucher phân bổ đều, phần lẻ dồn buổi cuối.
+5. **Đồng bộ hóa Ticker Flow trên RecyclerView**:
+   - `MyBookingsViewModel` phát luồng `serverNowMillis` Flow tập trung mỗi giây để `BookingListAdapter` đồng bộ hiển thị đếm ngược cho Tab 1 và Tab 2, triệt tiêu lỗi rò rỉ coroutine/bộ nhớ trên từng item.
+6. **Phân rã 44 Tasks chi tiết**:
+   - **Phase 1 (Setup & Test Infrastructure)**: T001–T002 (Composite Index, Test Fixtures).
+   - **Phase 2 (Domain Layer & TDD)**: T003–T016 (Domain Models, Repository Interface, Unit Tests Red, cài đặt 6 UseCases Green).
+   - **Phase 3 (Data Layer & Infrastructure)**: T017–T023 (DTOs, Mappers, `BookingManagementRepositoryImpl` với Transaction hủy đơn & xóa slot, Hilt Module, Security Rules với `request.time`).
+   - **Phase 4 (UI Layer & ViewModel)**: T024–T037 (XML Layouts Material 3, ListAdapters với DiffUtil, `QrBitmapRenderer`, ViewModels, Fragments).
+   - **Phase 5 (Navigation, Integration & Edge Cases)**: T038–T040 (Safe Args `HoldToPaymentArgs`, `ReceiptToMyBookingsArgs`, QR offline banner, Idempotency).
+   - **Phase 6 (System Verification & Polish)**: T041–T044 (ViewModelTest với Turbine, Emulator Integration Test, Espresso UI Test, rà soát Checklist).
+
+### Tài liệu đã sinh
+
+- `specs/060-my-bookings/tasks.md`: 44 tasks chi tiết có checkbox `- [ ]`, ID `T001`–`T044`, gắn tag User Story (`[US1]`–`[US5]`), nhãn song song `[P]`, đường dẫn file chính xác và lệnh xác minh `Verify:`.
+
 
 
 
