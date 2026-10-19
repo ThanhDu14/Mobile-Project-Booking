@@ -1,3 +1,22 @@
 <resources>
-    <dimen name="fab_margin">16dp</dimen>
+    <!-- Khoảng cách (lưới 4dp) và vùng chạm, theo design system SmashNow -->
+    <dimen name="space_1">4dp</dimen>
+    <dimen name="space_2">8dp</dimen>
+    <dimen name="space_3">12dp</dimen>
+    <dimen name="space_4">16dp</dimen>
+    <dimen name="space_6">24dp</dimen>
+    <dimen name="space_8">32dp</dimen>
+    <dimen name="touch_min">48dp</dimen>
+
+    <!-- Bo góc -->
+    <dimen name="radius_sm">8dp</dimen>
+    <dimen name="radius_md">12dp</dimen>
+    <dimen name="radius_lg">28dp</dimen>
+
+    <!-- Lề trái phải màn hình (gutter) -->
+    <dimen name="screen_gutter">@dimen/space_4</dimen>
+    <!-- Form đăng ký/đăng nhập không rộng quá 480dp, căn giữa (FR-023) -->
+    <dimen name="auth_form_max_width">480dp</dimen>
+    <dimen name="login_prompt_icon_size">64dp</dimen>
+    <dimen name="welcome_feature_icon_box">36dp</dimen>
 </resources>
