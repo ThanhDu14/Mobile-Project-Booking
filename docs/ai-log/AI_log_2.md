@@ -20,6 +20,7 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 14 | 2026-10-15 | Lập kế hoạch kỹ thuật spec 060 (quản lý lịch đặt của tôi) bằng `/speckit-plan` | 06 |
 | 15 | 2026-10-19 | Lập danh sách công việc spec 040 (lưới khung giờ đặt sân) bằng `/speckit-tasks` | 04 |
 | 16 | 2026-10-19 | Phân tích đối soát chất lượng bằng `/speckit-analyze` & tinh chỉnh spec 040 | 04 |
+| 17 | 2026-10-19 | Lập danh sách công việc spec 041 (đặt cố định theo tuần) bằng `/speckit-tasks` | 04 |
 
 
 
@@ -774,3 +775,40 @@ Bảng đối chiếu lựa chọn:
 - `specs/040-booking-slot-grid/plan.md`: Đã đồng nhất `HoldToPaymentArgs`.
 - `specs/040-booking-slot-grid/contracts/ui-contracts.md`: Đã cập nhật §1.2 sang `HoldToPaymentArgs`.
 - Toàn bộ bộ tài liệu đạt chất lượng 10/10, sẵn sàng cho việc bắt đầu cài đặt mã nguồn (`/speckit-implement`).
+
+---
+
+## Mục 17: Lập danh sách công việc spec 041 (đặt cố định theo tuần) bằng `/speckit-tasks`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-19 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 04 – Đặt sân (`specs/041-weekly-recurring-booking`) |
+| Công cụ AI | Antigravity, lệnh Spec Kit `/speckit-tasks` |
+| Mục đích | Phân rã kế hoạch kỹ thuật spec 041 thành danh sách 44 task triển khai chi tiết (`tasks.md`), tuân thủ Clean Architecture, TDD, xử lý xung đột đổi sân cùng `surfaceType` (Phương án 1.A) và kiểm soát giới hạn 500 ops Firestore Transaction |
+| Nhánh Git | `feature/041-weekly-recurring-booking` |
+
+### Bối cảnh và Quyết định cốt lõi khi lập Tasks
+
+1. **Tuân thủ quy trình Clean Architecture & TDD**:
+   - Tầng domain hoàn toàn thuần Kotlin, độc lập với Android và Firebase SDK.
+   - Viết Unit Tests trước cho 6 UseCases: `GenerateRecurringSessionsUseCaseTest` (kiểm tra bắt đầu tuần này/tuần sau, tự động bỏ qua các thứ đã qua, 2–6 slot 30 phút, chu kỳ 4–12 tuần), `CheckRecurringAvailabilityUseCaseTest` (quét sân ưu tiên và các sân thay thế), `ResolveRecurringConflictUseCaseTest` (đổi sân cùng `surfaceType` theo Phương án 1.A, bỏ buổi trùng lịch, chặn nếu còn dưới 4 buổi hợp lệ), `CalculateRecurringPriceUseCaseTest` (tính cọc 30% bằng `Long` VND), `CreateRecurringHoldTransactionUseCaseTest` (All-or-Nothing toàn chu kỳ), `ReleaseRecurringHoldUseCaseTest`.
+2. **Kiểm soát tải và vượt qua giới hạn của Firestore**:
+   - Áp dụng kỹ thuật chia batch `dates.chunked(30)` chạy song song qua Coroutines `async/awaitAll` để vượt qua giới hạn 30 phần tử của toán tử `whereIn` và đảm bảo thời gian phản hồi kiểm tra khả dụng dưới 2 giây.
+   - Giao dịch Firestore Transaction tạo giữ chỗ chu kỳ tuân thủ triệt để nguyên tắc **All Reads Before All Writes**, **All-or-Nothing** và đảm bảo tổng số thao tác đọc/ghi luôn dưới trần **500 operations** cho toàn bộ chuỗi lên tới 12 tuần (khoảng ~290 ops).
+3. **Giải phóng giữ chỗ chủ động & Hợp đồng liên module**:
+   - Xây dựng `OnBackPressedCallback` tự động kích hoạt `ReleaseRecurringHoldUseCase` để giải phóng ngay các slot đang giữ nếu người chơi bấm Hủy hoặc Quay lại (Back) từ màn hình xác nhận, tránh tình trạng chiếm dụng sân ảo (ghost holding) suốt 5 phút.
+   - Thống nhất hợp đồng chuyển tiếp sang Spec 050 bằng Bundle Safe Args `HoldToPaymentArgs` với cờ `isRecurring = true`, `totalSessions` ($\ge 4$), `subtotalAmount` và `depositAmount` (30%).
+4. **Phân rã 44 Tasks chi tiết**:
+   - **Phase 1 (Setup & Index)**: T001–T003 (Dependencies, Composite Index cho `slots`, Fixtures chu kỳ).
+   - **Phase 2 (Domain Layer & TDD)**: T004–T017 (Domain Models, Repository Interface, Unit Tests Red, cài đặt 6 UseCases Green).
+   - **Phase 3 (Data Layer & Infrastructure)**: T018–T023 (DTOs `RecurringGroupDto`, Mapper, Data Source batching `dates.chunked(30)`, Transaction All-or-Nothing an toàn dưới 500 ops, DI Module).
+   - **Phase 4 (UI Layer & ViewModel)**: T024–T037 (XML Layouts Material 3, ListAdapters với DiffUtil, BottomSheet giải quyết xung đột, ViewModel StateFlow + Ticker 5 phút, Fragments).
+   - **Phase 5 (Navigation, Integration & Edge Cases)**: T038–T040 (Safe Args `HoldToPaymentArgs`, cơ chế chủ động giải phóng giữ chỗ, Idempotency với `requestId`).
+   - **Phase 6 (System Verification & Polish)**: T041–T044 (ViewModelTest, RecurringHoldTransactionTest trên Emulator, Espresso UI Test, rà soát Checklist).
+
+### Tài liệu đã sinh
+
+- `specs/041-weekly-recurring-booking/tasks.md`: 44 tasks chi tiết có checkbox `- [ ]`, ID `T001`–`T044`, gắn tag User Story (`[US1]`–`[US5]`), nhãn song song `[P]`, đường dẫn file chính xác và lệnh xác minh `Verify:`.
+
