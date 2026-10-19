@@ -10,3 +10,9 @@
 | [`02_court-search_buoc4_lich-su-tim-kiem.png`](02_court-search_buoc4_lich-su-tim-kiem.png) | `SearchHistory` |
 
 Mã QR, marker bản đồ và ảnh sân trong ảnh là hình minh họa thay cho ảnh tải lên trên canvas.
+
+**Khác biệt đã chốt khi lập plan (research R3, R15):**
+
+- Bước 3: nút chính hiện "Xem N sân" khi biết số đếm, "Xem kết quả" khi chưa biết (lọc trên máy hoặc có khung giờ). Tiêu đề bước 2 tương ứng là "Kết quả phù hợp" không kèm số.
+- Huy hiệu "Đang mở cửa" trên thẻ (nếu có trong ảnh) nằm ngoài phạm vi spec 020, không làm ở phiên bản này.
+- Nút trái tim trên thẻ thuộc spec 070 (C).
