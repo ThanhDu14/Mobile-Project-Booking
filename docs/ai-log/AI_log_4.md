@@ -1,4 +1,4 @@
-# Nhật ký sử dụng AI – Thành viên 4 (Minh Nhựt)
+﻿# Nhật ký sử dụng AI – Thành viên 4 (Minh Nhựt)
 
 Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 
@@ -18,6 +18,7 @@ Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 | 12  | 2026-10-19 | Tạo Tasks Feature 110 bằng `$speckit-tasks`, rà soát bằng `$speckit-analyze` và cập nhật Tasks theo kết quả phân tích      | 11   |
 | 13  | 2026-10-19 | Tạo Tasks Feature 111 bằng `$speckit-tasks`, phân tích bằng `$speckit-analyze` và cập nhật Tasks theo báo cáo              | 11   |
 | 14  | 2026-10-19 | Tạo Tasks Feature 112 bằng `$speckit-tasks`, phân tích bằng `$speckit-analyze` và cập nhật Tasks theo các findings         | 11   |
+| 15  | 2026-10-19 | Tạo Tasks Feature 120 bằng `$speckit-tasks`, phân tích bằng `$speckit-analyze` và cập nhật Tasks theo findings U1–U3        | 12   |
 
 ---
 
@@ -1133,3 +1134,115 @@ data-model, database README hoặc feature khác; không chạy analyze/implemen
 - Kiểm tra có 58 checklist task, ID không trùng và format task hợp lệ.
 - Các task test dùng harness/lệnh đã có khi repository cung cấp; phần còn thiếu được ghi thành dependency/gate.
 - Không chạy tests, `$speckit-analyze` hoặc `$speckit-implement` sau lần cập nhật Tasks.
+## Mục 15: Tạo, phân tích và cập nhật Tasks Feature 120 – Admin
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-19 |
+| Người thực hiện | Minh Nhựt |
+| Nhóm tính năng liên quan | 12 – Quản trị và kiểm duyệt (spec `specs/120-admin`) |
+| Công cụ AI | Codex (GPT-6), `$speckit-tasks`, `$speckit-analyze` |
+| Mục đích | Tạo Tasks Feature 120, phân tích độ khớp spec/plan/tasks và cập nhật theo findings mà không tự quyết định schema hoặc hợp đồng tích hợp còn mở |
+| Nhánh Git | Chưa ghi nhận |
+
+### Prompt đã dùng
+
+**Tạo Tasks lần đầu:**
+
+```text
+$speckit-tasks
+
+Tạo danh sách Tasks cho Feature 120 – Admin.
+
+Trước khi tạo tasks, đọc và đối chiếu:
+- specs/120-admin/spec.md
+- specs/120-admin/plan.md
+- .specify/memory/constitution.md
+- docs/guides/w1-w2-spec-assignment.md
+- docs/design/database/README.md
+- Các spec liên quan Feature 100, 110, 111, 112 và booking nếu có.
+
+Chia task nhỏ, có thứ tự/dependency; bao phủ User Stories, FR, SC, server-side
+authorization, quyền Admin, kiểm tra truy cập trái phép, validation, loading,
+empty, error, offline, retry và edge cases. Đối chiếu database, không tự bịa
+schema/field/status/nghiệp vụ. Bổ sung kiểm thử theo Constitution gồm MVVM,
+XML/accessibility, light/dark và phone/w600dp.
+
+Ghi dependency với notification, owner onboarding, venue setup, owner operations
+và booking; không giải quyết nghiệp vụ feature khác. Giữ package/file ownership
+theo plan. Chỉ tạo/cập nhật Tasks trong specs/120-admin/. Không sửa spec, plan,
+schema hoặc spec feature khác; không chạy analyze/implement và không viết code.
+```
+
+**Phân tích:**
+
+```text
+$speckit-analyze
+```
+
+**Cập nhật theo Specification Analysis Report:**
+
+```text
+$speckit-tasks
+
+Cập nhật Tasks cho Feature 120 theo findings U1, U2, U3.
+
+Chỉ sửa specs/120-admin/tasks.md. Đọc lại spec, plan, tasks, Constitution,
+database README và các spec sở hữu report target.
+
+U1: Xác minh cấu trúc repository trước khi ghi file path cụ thể. Bổ sung path
+khi cấu trúc và contract đã xác định; nếu chưa đủ thông tin, ghi điều kiện cần
+chốt, không tự bịa endpoint, schema hoặc cấu trúc triển khai.
+
+U2: Định nghĩa cách đo SC-006: thời điểm bắt đầu/kết thúc, hồ sơ đầy đủ theo spec,
+ghi nhận thời gian và tiêu chí đạt/không đạt. Nếu spec chưa định nghĩa đủ thì
+ghi câu hỏi cần xác nhận.
+
+U3: Rà soát T025–T027. Thêm dependency gate xác nhận nguồn dữ liệu và quyền đọc
+target với owners Feature 070, 080, 081, 090, 091 và các feature sở hữu dữ liệu
+được report sử dụng. Tách việc xử lý report khỏi việc đọc target; chỉ đọc target
+sau khi hợp đồng và quyền truy cập được xác nhận. Không giao Feature 120 sửa
+schema/code feature khác.
+
+Giữ Task ID nếu có thể; cập nhật dependency và truy vết. Không sửa spec, plan,
+database README hoặc artifact feature khác; không chạy analyze, plan, implement
+hoặc viết implementation code.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Tạo `specs/120-admin/tasks.md` với **54 task**, theo bốn User Stories và các phase setup, foundational, polish; có dependency graph, traceability FR/SC, tiêu chí nghiệm thu độc lập và MVP đề xuất.
+- `$speckit-analyze` ghi nhận ba finding MEDIUM:
+  - **U1:** nhiều task chỉ nêu thư mục, chưa xác định file đích.
+  - **U2:** SC-006 có giới hạn hai phút nhưng chưa quy định cách đo và định nghĩa hồ sơ đầy đủ.
+  - **U3:** chưa chốt quyền đọc target được tham chiếu bởi `reports.targetPath`.
+- Cập nhật Tasks, giữ nguyên 54 task IDs.
+- U1: xác minh repository hiện chỉ có Android starter; package admin và `supabase/functions/`, `supabase/migrations/` chưa tồn tại. `firestore-tests/test/base.test.ts` xác nhận convention test `.test.ts`. Tasks dùng path test TypeScript cụ thể theo convention; tên file Android và server function tiếp tục là điều kiện cần chốt vì plan/contracts chưa quy định class/file layout hoặc callable endpoint.
+- U2: T054 quy định bắt đầu đo khi Admin chọn hồ sơ PENDING trong hàng đợi, dừng khi app hiển thị kết quả được server xác nhận, chạy riêng luồng duyệt và từ chối, ghi timestamp và elapsed time; đạt nếu mỗi luồng không quá 120 giây.
+- Định nghĩa hồ sơ đầy đủ ở T054 dựa trên Feature 110 FR-002/Validation: các trường bắt buộc, ít nhất một ảnh cơ sở, ít nhất một giấy tờ chứng minh hợp lệ và trạng thái PENDING. Cần Feature 110 owner xác nhận các mục này đã là danh sách đầy đủ trước khi cố định fixture.
+- U3: T005 thành gate xác nhận nguồn target và quyền đọc theo từng loại với owners Feature 070/080/081/090/091 và data owners 010/111/112. T025 tách đọc report khỏi đọc target; T026–T027 chỉ cho xử lý target theo hợp đồng owner xác nhận. Feature 120 không sửa schema/code của feature khác.
+- Không sửa spec, plan, database README, code hoặc tài liệu feature khác; không chạy tests, `$speckit-plan`, `$speckit-implement` hay analyze lần nữa sau cập nhật.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| T005 | Mở rộng thành dependency gate cho report targets | Quyền đọc report không tự động cấp quyền đọc dữ liệu target |
+| T009, T014–T015 | Ghi điều kiện chốt server function/file path | Repository chưa có Supabase function layout hoặc callable contract |
+| T010–T011, T022, T031 | Ghi path test `.test.ts` cụ thể theo convention đã xác minh | `firestore-tests/test/base.test.ts` là test file hiện có |
+| T012, T013, T021, T030 | Giữ tên file Android là nội dung cần xác định sau | Chưa có package admin hoặc convention test theo feature trong source |
+| T025–T027, T034 | Gắn target read/action với gate và owner tương ứng | Phân biệt moderation report với quyền truy cập dữ liệu do feature khác sở hữu |
+| T054 | Bổ sung quy trình đo SC-006 và điều kiện hồ sơ đầy đủ | Cần kết quả đo có thể lặp lại, nhưng không tự đặt nghiệp vụ ngoài spec |
+| Dependency graph, traceability, acceptance criteria, open gates | Cập nhật tham chiếu T005 và SC-006 | Phản ánh các điều kiện mới và giữ coverage FR/SC |
+| Các task còn lại | Giữ nguyên ID và nội dung | Không liên quan các findings |
+
+### Cách kiểm chứng
+
+- Xác nhận các task IDs vẫn duy nhất và tổng số task là 54.
+- Kiểm tra cấu trúc hiện tại: có `firestore-tests/test/base.test.ts`; chưa có `app/src/main/java/com/example/booking_app/feature/admin`, `supabase/functions` hoặc `supabase/migrations`.
+- Đối chiếu report target với database README và spec Feature 070, 080, 081, 090, 091; ghi rõ quyền/source vẫn cần owners xác nhận.
+- Đối chiếu SC-006 với Feature 110 FR-002/Validation; để lại câu hỏi xác nhận nếu còn trường bắt buộc chưa được tài liệu xác định.
+- Không chạy tests hoặc implementation. Không sửa file nào ngoài `specs/120-admin/tasks.md` trong lượt cập nhật Tasks.
+
+---
+
