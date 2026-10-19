@@ -13,8 +13,9 @@ Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 | 7   | 2026-10-15 | Lập implementation plan cho Feature 110 (đăng ký chủ sân) bằng `$speckit-plan` và viết lại tài liệu bằng tiếng Việt        | 11   |
 | 8   | 2026-10-16 | Lập implementation plan cho Feature 111 (thiết lập cơ sở chủ sân) bằng `$speckit-plan`                                     | 11   |
 | 9   | 2026-10-16 | Lập implementation plan cho Feature 112 (vận hành chủ sân) bằng `$speckit-plan`                                            | 11   |
-| 10  | 2026-10-16 | Lập implementation plan cho Feature 120 (quản trị và kiểm duyệt) bằng `$speckit-plan`                                    | 12   |
-| 11  | 2026-10-19 | Tạo Tasks Feature 100 bằng `$speckit-tasks`, phân tích bằng `$speckit-analyze` và cập nhật Tasks theo kết quả phân tích          | 10   |
+| 10  | 2026-10-16 | Lập implementation plan cho Feature 120 (quản trị và kiểm duyệt) bằng `$speckit-plan`                                      | 12   |
+| 11  | 2026-10-19 | Tạo Tasks Feature 100 bằng `$speckit-tasks`, phân tích bằng `$speckit-analyze` và cập nhật Tasks theo kết quả phân tích    | 10   |
+| 12  | 2026-10-19 | Tạo Tasks Feature 110 bằng `$speckit-tasks`, rà soát bằng `$speckit-analyze` và cập nhật Tasks theo kết quả phân tích      | 11   |
 
 ---
 
@@ -625,14 +626,14 @@ Cuối cùng báo cáo file đã tạo, quyết định kỹ thuật, dependency
 
 ## Mục 10: Lập implementation plan cho Feature 120 (quản trị và kiểm duyệt)
 
-| Trường | Nội dung |
-| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Ngày | 2026-10-16 |
-| Người thực hiện | Minh Nhựt |
-| Nhóm tính năng liên quan | 12 – Quản trị (`specs/120-admin`) |
-| Công cụ AI | Codex (GPT-6), skill `$speckit-plan` |
-| Mục đích | Đối chiếu spec 120 với constitution, hướng dẫn W1–W2, database README, các spec account/owner/thông báo liên quan và cấu trúc code để lập kế hoạch; không viết code |
-| Nhánh Git | `feature/120-admin-plan` |
+| Trường                   | Nội dung                                                                                                                                                            |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-10-16                                                                                                                                                          |
+| Người thực hiện          | Minh Nhựt                                                                                                                                                           |
+| Nhóm tính năng liên quan | 12 – Quản trị (`specs/120-admin`)                                                                                                                                   |
+| Công cụ AI               | Codex (GPT-6), skill `$speckit-plan`                                                                                                                                |
+| Mục đích                 | Đối chiếu spec 120 với constitution, hướng dẫn W1–W2, database README, các spec account/owner/thông báo liên quan và cấu trúc code để lập kế hoạch; không viết code |
+| Nhánh Git                | `feature/120-admin-plan`                                                                                                                                            |
 
 ### Prompt đã dùng
 
@@ -676,15 +677,15 @@ Cuối cùng báo cáo file đã tạo, quyết định kỹ thuật chính, dep
 
 ### Phần đã sử dụng / chỉnh sửa / bỏ
 
-| Phần | Quyết định | Lý do |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
-| Duyệt hồ sơ | Dùng các trạng thái và field đã có; quyết định phải dựa trên hồ sơ hiện còn `PENDING`; từ chối cần lý do không rỗng; duyệt tạo venue từ `venueDraft` | Khớp spec 120, spec 110 và database README; tránh quyết định lỗi thời hoặc mở rộng nghiệp vụ |
-| Báo cáo | Dùng `OPEN → RESOLVED/DISMISSED` và các action hiện có; kiểm tra action tương thích với target | Giữ đúng schema và clarifications trong spec; chưa giả định `DROP_IN` có hỗ trợ ẩn |
-| Quyền và giấy tờ | Xác minh Admin phía server; chỉ người nộp và Admin được truy cập giấy tờ qua signed URL có thời hạn | Tuân Constitution và giới hạn riêng tư trong database README |
-| User, owner và venue | Thu hồi owner theo các field/trạng thái đã chốt; không tự đổi trạng thái venue khi thu hồi quyền; Admin quản lý khóa/mở khóa venue | Khớp spec 120 và phụ thuộc spec 010/011/112 |
-| Thống kê và danh mục | Chỉ dùng collection đã nêu; không tự định nghĩa metrics, field hay thao tác CRUD chưa có đặc tả | Tài liệu nguồn chưa có schema chi tiết và quy tắc nghiệp vụ |
-| Server contract và recovery | Ghi các thiếu hụt về API, transaction, idempotency, claim và notification thành điểm cần làm rõ | Chưa có hợp đồng đủ căn cứ để thiết kế chi tiết |
-| Tasks/implementation | Không tạo hoặc chạy | Phạm vi yêu cầu chỉ gồm bước Plan |
+| Phần                        | Quyết định                                                                                                                                           | Lý do                                                                                        |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Duyệt hồ sơ                 | Dùng các trạng thái và field đã có; quyết định phải dựa trên hồ sơ hiện còn `PENDING`; từ chối cần lý do không rỗng; duyệt tạo venue từ `venueDraft` | Khớp spec 120, spec 110 và database README; tránh quyết định lỗi thời hoặc mở rộng nghiệp vụ |
+| Báo cáo                     | Dùng `OPEN → RESOLVED/DISMISSED` và các action hiện có; kiểm tra action tương thích với target                                                       | Giữ đúng schema và clarifications trong spec; chưa giả định `DROP_IN` có hỗ trợ ẩn           |
+| Quyền và giấy tờ            | Xác minh Admin phía server; chỉ người nộp và Admin được truy cập giấy tờ qua signed URL có thời hạn                                                  | Tuân Constitution và giới hạn riêng tư trong database README                                 |
+| User, owner và venue        | Thu hồi owner theo các field/trạng thái đã chốt; không tự đổi trạng thái venue khi thu hồi quyền; Admin quản lý khóa/mở khóa venue                   | Khớp spec 120 và phụ thuộc spec 010/011/112                                                  |
+| Thống kê và danh mục        | Chỉ dùng collection đã nêu; không tự định nghĩa metrics, field hay thao tác CRUD chưa có đặc tả                                                      | Tài liệu nguồn chưa có schema chi tiết và quy tắc nghiệp vụ                                  |
+| Server contract và recovery | Ghi các thiếu hụt về API, transaction, idempotency, claim và notification thành điểm cần làm rõ                                                      | Chưa có hợp đồng đủ căn cứ để thiết kế chi tiết                                              |
+| Tasks/implementation        | Không tạo hoặc chạy                                                                                                                                  | Phạm vi yêu cầu chỉ gồm bước Plan                                                            |
 
 ### Cách kiểm chứng
 
@@ -771,14 +772,14 @@ Cuối cùng báo cáo file đã tạo, quyết định kỹ thuật, dependency
 
 ## Mục 11: Tạo và cập nhật Tasks Feature 100 – Notification
 
-| Trường                   | Nội dung                                                                                                                                              |
-| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Ngày                     | 2026-10-19                                                                                                                                             |
-| Người thực hiện          | Minh Nhựt                                                                                                                                              |
-| Nhóm tính năng liên quan | 10 – Thông báo (spec `specs/100-notification`)                                                                                                         |
-| Công cụ AI               | Codex (GPT-6), `$speckit-tasks`, `$speckit-analyze`                                                                                                    |
-| Mục đích                 | Tạo danh sách task theo spec và plan hiện có, sau đó rà soát tính nhất quán và cập nhật Tasks theo các phát hiện phân tích                              |
-| Nhánh Git                | `feature/100-notification-plan`                                                                                                                        |
+| Trường                   | Nội dung                                                                                                                   |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-10-19                                                                                                                 |
+| Người thực hiện          | Minh Nhựt                                                                                                                  |
+| Nhóm tính năng liên quan | 10 – Thông báo (spec `specs/100-notification`)                                                                             |
+| Công cụ AI               | Codex (GPT-6), `$speckit-tasks`, `$speckit-analyze`                                                                        |
+| Mục đích                 | Tạo danh sách task theo spec và plan hiện có, sau đó rà soát tính nhất quán và cập nhật Tasks theo các phát hiện phân tích |
+| Nhánh Git                | `feature/100-notification-plan`                                                                                            |
 
 ### Prompt đã dùng
 
@@ -832,18 +833,112 @@ Không sửa spec, plan, database README hoặc tài liệu feature khác; khôn
 
 ### Phần đã sử dụng / chỉnh sửa / bỏ
 
-| Phần | Quyết định | Lý do |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
-| Nhóm task và thứ tự | Giữ 56 task theo năm User Story, các phase setup/nền tảng/polish và thứ tự ưu tiên trong spec | Duy trì cấu trúc task đã tạo và quan hệ dependency |
-| Quyền Admin/SYSTEM | Ghi mâu thuẫn thành quyết định cần nhóm xác nhận; không sửa quyền/schema/Rules | CSDL, Feature 120 và luồng server chưa đồng bộ |
-| Event và delivery | Ghi rõ các điểm chờ xác nhận về event transport, idempotency, retry, reminder và query/index | Tránh tự chọn giao thức hoặc thêm field/collection/status |
-| Tích hợp Feature 091/120 | Chặn chat push suppression và SYSTEM fan-out tương ứng đến khi nguồn xác nhận | Presence và predicate tài khoản active chưa được định nghĩa đầy đủ |
-| UI và FCM tests | Bổ sung theme/kích thước màn hình và persistence khi FCM thất bại | Phản ánh constitution cùng hành vi trong spec/plan |
-| Parallel marker | Bỏ `[P]` ở T037, không đổi task ID | T026 và T037 cùng sửa một test file |
-| MVP và setup | Ghi rõ MVP backend hiện tại cần được nhóm xác nhận; T001–T003 chỉ khảo sát | Chưa có căn cứ để đổi phạm vi nghiệp vụ hoặc chọn dependency |
+| Phần                     | Quyết định                                                                                    | Lý do                                                              |
+| ------------------------ | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| Nhóm task và thứ tự      | Giữ 56 task theo năm User Story, các phase setup/nền tảng/polish và thứ tự ưu tiên trong spec | Duy trì cấu trúc task đã tạo và quan hệ dependency                 |
+| Quyền Admin/SYSTEM       | Ghi mâu thuẫn thành quyết định cần nhóm xác nhận; không sửa quyền/schema/Rules                | CSDL, Feature 120 và luồng server chưa đồng bộ                     |
+| Event và delivery        | Ghi rõ các điểm chờ xác nhận về event transport, idempotency, retry, reminder và query/index  | Tránh tự chọn giao thức hoặc thêm field/collection/status          |
+| Tích hợp Feature 091/120 | Chặn chat push suppression và SYSTEM fan-out tương ứng đến khi nguồn xác nhận                 | Presence và predicate tài khoản active chưa được định nghĩa đầy đủ |
+| UI và FCM tests          | Bổ sung theme/kích thước màn hình và persistence khi FCM thất bại                             | Phản ánh constitution cùng hành vi trong spec/plan                 |
+| Parallel marker          | Bỏ `[P]` ở T037, không đổi task ID                                                            | T026 và T037 cùng sửa một test file                                |
+| MVP và setup             | Ghi rõ MVP backend hiện tại cần được nhóm xác nhận; T001–T003 chỉ khảo sát                    | Chưa có căn cứ để đổi phạm vi nghiệp vụ hoặc chọn dependency       |
 
 ### Cách kiểm chứng
 
 - Đối chiếu task với spec, plan, research, constitution, database README và tài liệu liên quan Feature 091/120.
 - Kiểm tra danh sách còn 56 task, ID không trùng và định dạng checklist hợp lệ.
 - Không chạy implementation hoặc tests; lần cập nhật này chỉ bổ sung nhật ký sử dụng AI.
+
+---
+
+## Mục 12: Tạo và cập nhật Tasks Feature 110 – Owner Onboarding
+
+| Trường                   | Nội dung                                                                                                                                                                                     |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-10-19                                                                                                                                                                                   |
+| Người thực hiện          | Minh Nhựt                                                                                                                                                                                    |
+| Nhóm tính năng liên quan | 11 – Chủ sân (spec `specs/110-owner-onboarding`)                                                                                                                                             |
+| Công cụ AI               | Codex (GPT-6), `$speckit-tasks`, `$speckit-analyze`                                                                                                                                          |
+| Mục đích                 | Tạo danh sách task triển khai Feature 110, phân tích tính nhất quán với spec/plan/Constitution, rồi cập nhật Tasks theo các phát hiện mà không tự quyết định nghiệp vụ hoặc schema còn thiếu |
+| Nhánh Git                | `feature/110-owner-onboarding-tasks`                                                                                                                                                         |
+
+### Prompt đã dùng
+
+**Tạo Tasks:**
+
+```text
+$speckit-tasks Tạo danh sách Tasks cho Feature 110 – Owner Onboarding.
+
+Đọc và đối chiếu spec.md, plan.md, checklist requirements nếu có,
+constitution, docs/guides/w1-w2-spec-assignment.md, database README,
+các spec account/profile và Feature 111, 112, 120 nếu tồn tại, cùng cấu trúc
+code và quy ước repository.
+
+Chia task nhỏ, có thứ tự/dependency; bao quát nộp hồ sơ, tải giấy tờ, theo dõi,
+rejected/resubmit, validation, bảo mật giấy tờ, kiểm tra quyền server/Security Rules
+và chống hồ sơ trùng. Liên kết task với User Stories, FR và Acceptance Scenarios.
+
+Không tự thiết kế nghiệp vụ thuộc Feature 120; đối chiếu database trước khi đề xuất
+schema/API; ghi rõ mâu thuẫn và chỉ chặn task phụ thuộc quyết định chưa chốt.
+Chỉ tạo/cập nhật Tasks trong specs/110-owner-onboarding/. Không sửa spec/plan,
+không implement, không viết code và không chạy `$speckit-implement`.
+```
+
+**Phân tích:**
+
+```text
+$speckit-analyze
+
+Phân tích chỉ đọc tính nhất quán giữa spec.md, plan.md, tasks.md và Constitution
+của Feature 110. Prerequisite script trỏ nhầm Feature 120; tiếp tục trên thư mục
+Feature 110 đã được chỉ định, không thay đổi file.
+```
+
+**Cập nhật theo Analyze:**
+
+```text
+$speckit-tasks Cập nhật danh sách Tasks Feature 110 theo báo cáo Analyze.
+
+Làm rõ application identity, resubmission, lịch sử và chống gửi trùng; bổ sung
+luồng applicant xem/tải giấy tờ qua sign-download, hết hạn và retry; làm rõ đầu ra
+hợp đồng xác thực/app gọi Supabase và quyền upload applicant mà không tự chọn
+protocol/token/Rules. Gắn task với SC, bổ sung usability evaluation SC-001,
+Material 3/light-dark/phone/w600dp/loading-empty-error, kiểm tra dependency theo
+Constitution và hành vi ghim thủ công khi từ chối quyền vị trí.
+
+Giữ task ID ổn định nếu có thể; chỉ chặn task phụ thuộc quyết định chưa chốt;
+không tự thêm schema, field hoặc ID. Chỉ sửa tasks.md; không sửa spec, plan, CSDL,
+feature khác; không implement, viết code hoặc chạy `$speckit-implement`.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Đọc spec, plan, checklist requirements, data model, boundary contract, research, quickstart, Constitution, database README, hướng dẫn phân công và các tài liệu account/profile, Feature 111/112/120.
+- Tạo danh sách Tasks ban đầu cho ba User Story: nộp hồ sơ (P1), theo dõi trạng thái (P1), sửa và nộp lại hồ sơ rejected (P2), cùng các phase setup, foundational và cross-cutting.
+- Chạy `$speckit-analyze` ở chế độ chỉ đọc. Script prerequisite tự chọn Feature 120 và dừng vì thiếu `specs/120-admin/tasks.md`; tiếp tục phân tích trực tiếp các artifact Feature 110 đã chỉ định.
+- Analyze phát hiện các điểm cần làm rõ: application hiện hành/lịch sử/resubmit/idempotency; applicant download giấy tờ; tích hợp app–Supabase và upload ảnh venue trước duyệt; SC-001 usability; tiêu chí giao diện theo Constitution; rationale của dependency; từ chối quyền vị trí.
+- Cập nhật `specs/110-owner-onboarding/tasks.md`, giữ ID T001–T032, thêm T033–T035 và tổng cộng 35 task. T001–T003 mô tả quyết định nhóm cần xác nhận; các task submit, status query, upload/download và resubmit chỉ bị chặn tại phần thực sự phụ thuộc.
+- T033/T034 bổ sung applicant signed-download cho hồ sơ của chính người nộp, kiểm tra UID khác, hết hạn URL, xin URL mới và lỗi không tiết lộ path.
+- T035 mô tả usability evaluation thủ công cho SC-001: ít nhất 10 người thuộc nhóm mục tiêu, không hướng dẫn trực tiếp, ghi nhận tỷ lệ hoàn tất trong tối đa 5 phút; đạt ít nhất 9/10. Đây không phải automated test.
+- Gắn liên kết SC-001–SC-007 vào task liên quan; thêm tiêu chí Material 3, DayNight, điện thoại/`w600dp`, các trạng thái loading/content/empty/error và marker vị trí thủ công không cần quyền vị trí.
+- T005 yêu cầu rà từng dependency và không thêm thư viện chưa được kiến trúc chấp thuận. Plan hiện nêu dependency còn thiếu nhưng chưa giải thích từng dependency; không sửa plan trong lượt này.
+- Không sửa spec, plan, database README hay tài liệu feature khác; không viết implementation code và không chạy `$speckit-implement` hoặc tests.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần                         | Quyết định                               | Lý do                                                                                                                                    |
+| ---------------------------- | ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| T001–T003                    | Sửa nội dung, giữ ID                     | Làm rõ quyết định về application identity, history, submit idempotency và app–Supabase contract; không chọn schema/protocol thay nhóm    |
+| T005                         | Sửa nội dung, giữ ID                     | Rà dependency theo Constitution; chặn việc thêm dependency mới cho tới khi kiến trúc được duyệt và rationale được ghi nhận               |
+| T009–T010                    | Sửa nội dung, giữ ID                     | Bao quát upload applicant cho `owner-docs` và `venue-photos`, signed download, access control và kiểm thử local theo contract được duyệt |
+| T011–T018                    | Giữ ID, bổ sung truy vết/tiêu chí        | Gắn SC và bổ sung Material 3, theme, kích thước màn hình, marker thủ công và UI test                                                     |
+| T019–T029                    | Giữ ID, làm rõ dependency và truy vết SC | Phân biệt task có thể phát triển bằng fake với phần query/submit/resubmit thật cần quyết định T001–T003                                  |
+| T033–T034                    | Thêm task                                | Bổ sung luồng applicant xem/tải giấy tờ riêng, URL hết hạn, retry và từ chối truy cập hồ sơ người khác                                   |
+| T035                         | Thêm task                                | Đo SC-001 bằng usability evaluation thủ công, không giả định đây là automated test                                                       |
+| Spec, plan, database và code | Không sửa                                | Giữ đúng phạm vi chỉ cập nhật Tasks                                                                                                      |
+
+### Cách kiểm chứng
+
+- Đối chiếu task với 19 FR, 7 SC, User Stories/Acceptance Scenarios, Constitution, database README và các dependency liên quan.
+- Kiểm tra 35 checklist task có ID duy nhất, format checkbox/label/file path hợp lệ; `git diff --check` không báo lỗi whitespace.
+- Không chạy test, implementation hoặc `$speckit-implement`; không sửa file ngoài Tasks.
