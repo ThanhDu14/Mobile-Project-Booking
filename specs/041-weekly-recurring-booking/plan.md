@@ -119,17 +119,19 @@ com.example.booking_app.feature.booking/
    - **Kiểm tra điều kiện tiên quyết**: Nếu số buổi hợp lệ còn lại `validSessions.size < 4` $\rightarrow$ Vô hiệu hóa nút "Tiếp tục", hiển thị cảnh báo yêu cầu tối thiểu 4 buổi cho gói đặt cố định và gợi ý nút chuyển về màn hình đặt sân lẻ `[040]`.
 
 ### 5.2. Hợp đồng chuyển tiếp sang `[050-payment-voucher]`
-Khi giữ chỗ toàn chu kỳ thành công (`HoldRecurringBookingUseCase`), chuyển sang màn hình thanh toán kèm Bundle Safe Args:
+Khi giữ chỗ toàn chu kỳ thành công (`CreateRecurringHoldTransactionUseCase`), chuyển sang màn hình thanh toán `[050]` kèm Bundle Safe Args `HoldToPaymentArgs`:
 
 ```kotlin
-data class RecurringToPaymentArgs(
-    val recurringGroupId: String,         // Mã nhóm UUID
+@Parcelize
+data class HoldToPaymentArgs(
+    val bookingId: String,                // Mã nhóm recurringGroupId
     val venueId: String,
     val venueName: String,
+    val isRecurring: Boolean = true,
     val totalSessions: Int,               // Số lượng buổi hợp lệ (>= 4)
     val subtotalAmount: Long,             // Tổng tiền toàn chu kỳ trước voucher
-    val depositAmount: Long,              // Tiền cọc tối thiểu 30% (subtotalAmount * 30 / 100)
-    val holdExpiresAtMillis: Long         // Mốc hết hạn giữ chỗ (5 phút kể từ lúc Hold thành công)
+    val slotIds: Array<String>,           // Toàn bộ slotIds của các buổi hợp lệ
+    val holdExpiresAtMillis: Long         // Mốc hết hạn giữ chỗ (5 phút)
 ) : Parcelable
 ```
 

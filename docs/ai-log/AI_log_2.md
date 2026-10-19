@@ -18,6 +18,14 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 12 | 2026-10-15 | Lập kế hoạch kỹ thuật spec 041 (đặt cố định theo tuần) bằng `/speckit-plan` | 04 |
 | 13 | 2026-10-15 | Lập kế hoạch kỹ thuật spec 050 (thanh toán và voucher giả lập) bằng `/speckit-plan` | 05 |
 | 14 | 2026-10-15 | Lập kế hoạch kỹ thuật spec 060 (quản lý lịch đặt của tôi) bằng `/speckit-plan` | 06 |
+| 15 | 2026-10-19 | Lập danh sách công việc spec 040 (lưới khung giờ đặt sân) bằng `/speckit-tasks` | 04 |
+| 16 | 2026-10-19 | Phân tích đối soát chất lượng bằng `/speckit-analyze` & tinh chỉnh spec 040 | 04 |
+| 17 | 2026-10-19 | Lập danh sách công việc spec 041 (đặt cố định theo tuần) bằng `/speckit-tasks` | 04 |
+| 18 | 2026-10-19 | Phân tích đối soát chất lượng bằng `/speckit-analyze` & tinh chỉnh spec 041 | 04 |
+| 19 | 2026-10-19 | Lập danh sách công việc spec 050 (thanh toán và voucher giả lập) bằng `/speckit-tasks` | 05 |
+| 20 | 2026-10-19 | Phân tích đối soát chất lượng bằng `/speckit-analyze` & tinh chỉnh spec 050 | 05 |
+| 21 | 2026-10-19 | Lập danh sách công việc spec 060 (quản lý lịch đặt của tôi) bằng `/speckit-tasks` | 06 |
+| 22 | 2026-10-19 | Phân tích đối soát chất lượng bằng `/speckit-analyze` & tinh chỉnh spec 060 | 06 |
 
 
 
@@ -701,3 +709,314 @@ Bảng đối chiếu lựa chọn:
 - `specs/060-my-bookings/data-model.md`: Chi tiết Schema Firestore (bookings, recurringGroups, walletTransactions), DTOs, Domain Entities (`BookingSummaryItem`, `BookingDetail`, `RefundPolicyQuote`, `QrBitMatrix`) và UI States.
 - `specs/060-my-bookings/contracts/ui-contracts.md`: Hợp đồng Navigation Safe Args từ 050 sang 060, tới 040/070, Domain `BookingManagementRepository` interface, hợp đồng các UseCases và Firestore Security Rules.
 - `specs/060-my-bookings/quickstart.md`: Hướng dẫn kiểm thử Unit Test (mốc 240m, kẹp biên voucher, tính Idempotent), UI Test và 5 kịch bản xác minh thủ công.
+
+---
+
+## Mục 15: Lập danh sách công việc spec 040 (lưới khung giờ đặt sân) bằng `/speckit-tasks`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-19 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 04 – Đặt sân (`specs/040-booking-slot-grid`) |
+| Công cụ AI | Antigravity, lệnh Spec Kit `/speckit-tasks` |
+| Mục đích | Phân rã kế hoạch kỹ thuật spec 040 thành danh sách 42 task triển khai chi tiết (`tasks.md`), tuân thủ Clean Architecture, TDD, và giao dịch giữ chỗ 5 phút nguyên tử |
+| Nhánh Git | `feature/040-booking-slot-grid` |
+
+### Bối cảnh và Quyết định cốt lõi khi lập Tasks
+
+1. **Tuân thủ quy trình Clean Architecture & Dependency Inversion**:
+   - Phân chia Phase 2 (Domain Layer & Core Business Logic) trước Phase 3 (Data Layer & Infrastructure). Tầng domain hoàn toàn thuần Kotlin, không import Android SDK hay Firebase SDK.
+   - Viết Unit Tests trước cho các UseCases (`ValidateSlotSelectionUseCaseTest`, `CalculateTotalPriceUseCaseTest`, `GenerateDailySlotsUseCaseTest`, `HoldSlotsTransactionUseCaseTest`, `ReleaseHoldUseCaseTest`) theo tôn chỉ TDD.
+2. **Quy chuẩn tiền tệ & Giao dịch nguyên tử (Constitution II & III)**:
+   - Toàn bộ số tiền (`pricePerHour`, `subtotalAmount`, `depositAmount`) sử dụng kiểu `Long` (VND, cấm âm). Công thức làm tròn cọc 30% an toàn: `((rawDeposit + 500) / 1000) * 1000`.
+   - Firestore Transaction giữ chỗ 5 phút tuân thủ triệt để nguyên tắc **All Reads Before All Writes** và **All-or-Nothing** (chống double-booking khi 2 người cùng giữ 1 ca).
+3. **Thống nhất ca 30 phút & 4 trạng thái slot**:
+   - Mỗi slot biểu diễn 30 phút (`HHmm`). Người chơi có thể chọn từ 2 đến 6 slot liên tiếp (1h đến 3h).
+   - Hiển thị trực quan 4 trạng thái: `AVAILABLE`, `HELD`, `BOOKED`, và `BLOCKED` (kèm tag `DROP_IN` theo Phương án 4.A đã thống nhất liên thành viên).
+4. **Phân rã 42 Tasks chi tiết**:
+   - **Phase 1 (Setup & Index)**: T001–T003 (Dependencies, Composite Index cho `slots`, Fixtures).
+   - **Phase 2 (Domain Layer & TDD)**: T004–T015 (Domain Models, Repository Interface, Unit Tests trước cho UseCases, cài đặt UseCases).
+   - **Phase 3 (Data Layer & Firestore Transaction)**: T016–T022 (DTOs, Mappers, Data Source, Transaction All-or-Nothing, Hilt DI Module, Firestore Security Rules).
+   - **Phase 4 (UI Layer & ViewModel)**: T023–T034 (XML Layouts Material 3, ListAdapters với DiffUtil, ViewModel với StateFlow ticker 5 phút, BookingSlotGridFragment).
+   - **Phase 5 (Navigation, Integration & Edge Cases)**: T035–T038 (Safe Args sang 050, tích hợp đăng nhập Spec 010, xử lý mất mạng `requestId`, dọn dẹp listener trong `onStop`).
+   - **Phase 6 (System Verification & Polish)**: T039–T042 (ViewModelTest, FirestoreSlotTransactionTest trên Firebase Emulator, Espresso UI Test, rà soát Checklist).
+
+### Tài liệu đã sinh
+
+- `specs/040-booking-slot-grid/tasks.md`: 42 tasks chi tiết có checkbox `- [ ]`, ID `T001`–`T042`, gắn tag User Story (`[US1]`–`[US5]`), nhãn song song `[P]`, đường dẫn file chính xác và lệnh xác minh `Verify:`.
+
+---
+
+## Mục 16: Phân tích đối soát chất lượng bằng `/speckit-analyze` & tinh chỉnh spec 040
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-19 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 04 – Đặt sân (`specs/040-booking-slot-grid`) |
+| Công cụ AI | Antigravity, lệnh Spec Kit `/speckit-analyze` |
+| Mục đích | Đối soát chéo 3 bên giữa `spec.md`, `plan.md`, `tasks.md` và `constitution.md`. Phát hiện các điểm lệch hoặc mơ hồ và tiến hành tinh chỉnh chuẩn hóa trước khi bước vào cài đặt mã nguồn (`/speckit-implement`) |
+| Nhánh Git | `feature/040-booking-slot-grid` |
+
+### Kết quả phân tích đối soát chéo (Cross-Artifact Analysis)
+
+- **Tỷ lệ bao phủ (Coverage)**: **100%** (28/28 Functional Requirements và 8/8 Success Criteria đều có ít nhất một task tương ứng trong tổng số 42 tasks).
+- **Tuân thủ Constitution**: Không có bất kỳ vi phạm nào (0 Critical, 0 High). Tầng domain độc lập thuần Kotlin, số tiền dùng `Long` VND, giao dịch Firestore Transaction đảm bảo All-or-Nothing và All Reads Before All Writes.
+- **Các điểm cần tinh chỉnh**: Phát hiện 2 điểm Low (A1, C1) và 1 điểm Medium (U1) về tính đồng nhất câu chữ và ranh giới dọn dẹp dữ liệu.
+
+### Chi tiết các tinh chỉnh đã thực thi
+
+1. **A1 (Low – Chuẩn hóa giới hạn slot tối đa)**:
+   - Cập nhật task `T006` trong `tasks.md`: Xác định rõ ràng đơn ngày lẻ của Spec 040 cho phép chọn tối đa **8 slot 30 phút (= 4 giờ chơi liên tục)** theo đúng FR-026 của `spec.md`, tách biệt rõ với mốc 6 slot (3 giờ) của đơn cố định theo tuần ở Spec 041.
+2. **C1 (Low – Đồng nhất tên Bundle Safe Args)**:
+   - Cập nhật `plan.md` (§5.3), `contracts/ui-contracts.md` (§1.2) và `tasks.md` (`T035`): Thống nhất sử dụng tên class **`HoldToPaymentArgs`** khi điều hướng từ lưới chọn sân sang thanh toán, khớp hoàn toàn với hợp đồng tiếp nhận của Spec 050.
+3. **U1 (Medium – Làm rõ ranh giới dọn dẹp slot `HELD` quá hạn 5 phút)**:
+   - Cập nhật task `T038` trong `tasks.md`: Làm rõ cơ chế phía Client là *Lazy Expiration* (tự động coi slot có `holdExpiresAt < serverNow` là `AVAILABLE` để người dùng khác có thể đặt ngay mà không bị khóa nhầm); việc quét xóa vật lý các document slot rác thuộc trách nhiệm của Supabase Edge Function theo lịch của hệ thống (Constitution III).
+
+### Trạng thái tài liệu sau tinh chỉnh
+
+- `specs/040-booking-slot-grid/tasks.md`: Đã cập nhật T006, T035, T038.
+- `specs/040-booking-slot-grid/plan.md`: Đã đồng nhất `HoldToPaymentArgs`.
+- `specs/040-booking-slot-grid/contracts/ui-contracts.md`: Đã cập nhật §1.2 sang `HoldToPaymentArgs`.
+- Toàn bộ bộ tài liệu đạt chất lượng 10/10, sẵn sàng cho việc bắt đầu cài đặt mã nguồn (`/speckit-implement`).
+
+---
+
+## Mục 17: Lập danh sách công việc spec 041 (đặt cố định theo tuần) bằng `/speckit-tasks`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-19 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 04 – Đặt sân (`specs/041-weekly-recurring-booking`) |
+| Công cụ AI | Antigravity, lệnh Spec Kit `/speckit-tasks` |
+| Mục đích | Phân rã kế hoạch kỹ thuật spec 041 thành danh sách 44 task triển khai chi tiết (`tasks.md`), tuân thủ Clean Architecture, TDD, xử lý xung đột đổi sân cùng `surfaceType` (Phương án 1.A) và kiểm soát giới hạn 500 ops Firestore Transaction |
+| Nhánh Git | `feature/041-weekly-recurring-booking` |
+
+### Bối cảnh và Quyết định cốt lõi khi lập Tasks
+
+1. **Tuân thủ quy trình Clean Architecture & TDD**:
+   - Tầng domain hoàn toàn thuần Kotlin, độc lập với Android và Firebase SDK.
+   - Viết Unit Tests trước cho 6 UseCases: `GenerateRecurringSessionsUseCaseTest` (kiểm tra bắt đầu tuần này/tuần sau, tự động bỏ qua các thứ đã qua, 2–6 slot 30 phút, chu kỳ 4–12 tuần), `CheckRecurringAvailabilityUseCaseTest` (quét sân ưu tiên và các sân thay thế), `ResolveRecurringConflictUseCaseTest` (đổi sân cùng `surfaceType` theo Phương án 1.A, bỏ buổi trùng lịch, chặn nếu còn dưới 4 buổi hợp lệ), `CalculateRecurringPriceUseCaseTest` (tính cọc 30% bằng `Long` VND), `CreateRecurringHoldTransactionUseCaseTest` (All-or-Nothing toàn chu kỳ), `ReleaseRecurringHoldUseCaseTest`.
+2. **Kiểm soát tải và vượt qua giới hạn của Firestore**:
+   - Áp dụng kỹ thuật chia batch `dates.chunked(30)` chạy song song qua Coroutines `async/awaitAll` để vượt qua giới hạn 30 phần tử của toán tử `whereIn` và đảm bảo thời gian phản hồi kiểm tra khả dụng dưới 2 giây.
+   - Giao dịch Firestore Transaction tạo giữ chỗ chu kỳ tuân thủ triệt để nguyên tắc **All Reads Before All Writes**, **All-or-Nothing** và đảm bảo tổng số thao tác đọc/ghi luôn dưới trần **500 operations** cho toàn bộ chuỗi lên tới 12 tuần (khoảng ~290 ops).
+3. **Giải phóng giữ chỗ chủ động & Hợp đồng liên module**:
+   - Xây dựng `OnBackPressedCallback` tự động kích hoạt `ReleaseRecurringHoldUseCase` để giải phóng ngay các slot đang giữ nếu người chơi bấm Hủy hoặc Quay lại (Back) từ màn hình xác nhận, tránh tình trạng chiếm dụng sân ảo (ghost holding) suốt 5 phút.
+   - Thống nhất hợp đồng chuyển tiếp sang Spec 050 bằng Bundle Safe Args `HoldToPaymentArgs` với cờ `isRecurring = true`, `totalSessions` ($\ge 4$), `subtotalAmount` và `depositAmount` (30%).
+4. **Phân rã 44 Tasks chi tiết**:
+   - **Phase 1 (Setup & Index)**: T001–T003 (Dependencies, Composite Index cho `slots`, Fixtures chu kỳ).
+   - **Phase 2 (Domain Layer & TDD)**: T004–T017 (Domain Models, Repository Interface, Unit Tests Red, cài đặt 6 UseCases Green).
+   - **Phase 3 (Data Layer & Infrastructure)**: T018–T023 (DTOs `RecurringGroupDto`, Mapper, Data Source batching `dates.chunked(30)`, Transaction All-or-Nothing an toàn dưới 500 ops, DI Module).
+   - **Phase 4 (UI Layer & ViewModel)**: T024–T037 (XML Layouts Material 3, ListAdapters với DiffUtil, BottomSheet giải quyết xung đột, ViewModel StateFlow + Ticker 5 phút, Fragments).
+   - **Phase 5 (Navigation, Integration & Edge Cases)**: T038–T040 (Safe Args `HoldToPaymentArgs`, cơ chế chủ động giải phóng giữ chỗ, Idempotency với `requestId`).
+   - **Phase 6 (System Verification & Polish)**: T041–T044 (ViewModelTest, RecurringHoldTransactionTest trên Emulator, Espresso UI Test, rà soát Checklist).
+
+### Tài liệu đã sinh
+
+- `specs/041-weekly-recurring-booking/tasks.md`: 44 tasks chi tiết có checkbox `- [ ]`, ID `T001`–`T044`, gắn tag User Story (`[US1]`–`[US5]`), nhãn song song `[P]`, đường dẫn file chính xác và lệnh xác minh `Verify:`.
+
+---
+
+## Mục 18: Phân tích đối soát chất lượng bằng `/speckit-analyze` & tinh chỉnh spec 041
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-19 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 04 – Đặt sân (`specs/041-weekly-recurring-booking`) |
+| Công cụ AI | Antigravity, lệnh Spec Kit `/speckit-analyze` |
+| Mục đích | Đối soát chéo 3 bên giữa `spec.md`, `plan.md`, `tasks.md`, `contracts/ui-contracts.md` và `constitution.md`. Phát hiện các điểm lệch hoặc mơ hồ và tiến hành tinh chỉnh chuẩn hóa trước khi bước vào cài đặt mã nguồn (`/speckit-implement`) |
+| Nhánh Git | `feature/041-weekly-recurring-booking` |
+
+### Kết quả phân tích đối soát chéo (Cross-Artifact Analysis)
+
+- **Tỷ lệ bao phủ (Coverage)**: **100%** (35/35 Functional Requirements và 5/5 Success Criteria đều có ít nhất một task tương ứng trong tổng số 44 tasks).
+- **Tuân thủ Constitution**: Không có bất kỳ vi phạm nào (0 Critical, 0 High). Tầng domain thuần Kotlin độc lập, tiền tệ dùng `Long` VND, thuật toán đổi sân cùng `surfaceType` (Phương án 1.A) chặt chẽ, Firestore Transaction chia batch đọc-ghi an toàn dưới trần 500 operations.
+- **Các điểm cần tinh chỉnh**: Phát hiện 2 điểm Low (A1, C1) về sự đồng nhất trạng thái entity và tên gọi hợp đồng Safe Args chuyển tiếp giữa các spec.
+
+### Chi tiết các tinh chỉnh đã thực thi
+
+1. **A1 (Low – Đồng bộ thuộc tính trạng thái vòng đời của nhóm đơn `RecurringBookingGroup`)**:
+   - Cập nhật `specs/041-weekly-recurring-booking/spec.md`: Bổ sung thuộc tính `status` mang các giá trị (`HOLD`, `CONFIRMED`, `CANCELLED`, `EXPIRED`) cho entity `RecurringBookingGroup`, phản ánh trạng thái vòng đời tổng thể của toàn bộ chu kỳ và khớp hoàn toàn với schema Firestore mục 4.5a trong `data-model.md`.
+2. **C1 (Low – Chuẩn hóa tên lớp và thuộc tính Bundle Safe Args `HoldToPaymentArgs`)**:
+   - Cập nhật `specs/041-weekly-recurring-booking/plan.md` (§5.2) và `contracts/ui-contracts.md` (§1.2): Chuẩn hóa tên lớp dữ liệu chuyển tiếp từ `RecurringToPaymentArgs` sang **`HoldToPaymentArgs`** (với `bookingId` là ID của nhóm `recurringGroupId`, cờ `isRecurring = true`, `slotIds: Array<String>`), đảm bảo tính nhất quán tuyệt đối với hợp đồng tiếp nhận của màn hình thanh toán tại Spec 050 (`specs/050-payment-voucher/contracts/ui-contracts.md`) và luồng đặt đơn lẻ của Spec 040.
+
+### Trạng thái tài liệu sau tinh chỉnh
+
+- `specs/041-weekly-recurring-booking/spec.md`: Đã bổ sung `status` cho `RecurringBookingGroup`.
+- `specs/041-weekly-recurring-booking/plan.md`: Đã chuẩn hóa Safe Args sang `HoldToPaymentArgs`.
+- `specs/041-weekly-recurring-booking/contracts/ui-contracts.md`: Đã chuẩn hóa Safe Args sang `HoldToPaymentArgs`.
+- `specs/041-weekly-recurring-booking/tasks.md`: Đã bảo đảm tương thích 100% với các hợp đồng đã chuẩn hóa.
+- Toàn bộ bộ tài liệu của Feature 041 đạt độ hoàn thiện 10/10, sẵn sàng bước vào giai đoạn thực thi mã nguồn (`/speckit-implement`).
+
+---
+
+## Mục 19: Lập danh sách công việc spec 050 (thanh toán và voucher giả lập) bằng `/speckit-tasks`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-19 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 05 – Thanh toán và khuyến mãi (`specs/050-payment-voucher`) |
+| Công cụ AI | Antigravity, lệnh Spec Kit `/speckit-tasks` |
+| Mục đích | Phân rã kế hoạch kỹ thuật spec 050 thành danh sách 42 task triển khai chi tiết (`tasks.md`), tuân thủ Clean Architecture, TDD, giao dịch Firestore Transaction 2 pha nguyên tử (All Reads Before All Writes), kiểm soát Idempotency với `requestId` UUID, voucher 2 nguồn (Phương án 3.B) và cam kết học tập phi thương mại (Constitution VI) |
+| Nhánh Git | `feature/050-payment-voucher` |
+
+### Bối cảnh và Quyết định cốt lõi khi lập Tasks
+
+1. **Tuân thủ quy trình Clean Architecture & TDD**:
+   - Tầng `domain` hoàn toàn thuần Kotlin, độc lập với Android SDK và Firebase SDK.
+   - Viết Unit Tests trước (Red) cho 6 UseCases: `ValidateAndApplyVoucherUseCaseTest` (kiểm tra %, trần `maxDiscount`, minOrder, perUserLimit, collision 2 nguồn), `GetAvailableVouchersUseCaseTest` (đọc song song 2 nguồn), `CalculatePaymentBreakdownUseCaseTest` (cọc 30% làm tròn nghìn đồng an toàn, giảm 100% ra `FREE`), `TopUpMockWalletUseCaseTest` (nạp tiền ảo +100k, +500k, +1M), `CancelPaymentHoldUseCaseTest` (nhả slot khi hết giờ/hủy đơn), `ProcessMockPaymentUseCaseTest` (kiểm thử 3 phương thức, rollback khi thiếu tiền ví, hết hạn giữ chỗ hoặc mất lượt voucher phút chót).
+2. **Giao dịch Firestore Transaction nguyên tử 2 pha (All Reads Before All Writes)**:
+   - Pha Đọc (All Reads): Kiểm tra tính duy nhất (`walletTransactions/{requestId}`), kiểm tra hạn giữ chỗ (`holdExpiresAt > now`), đọc trạng thái các `slots` đang `HOLD`, kiểm tra voucher (`usedCount < usageLimit` & `userUsage.count < perUserLimit`), kiểm tra số dư ví (`walletBalance >= requiredAmount`).
+   - Pha Ghi (All Writes): Trừ số dư ví, ghi log `walletTransactions/{requestId}`, tăng lượt voucher & ghi `redemptions/{bookingId}`, chuyển đơn sang `PENDING` (chờ duyệt 60 phút theo Phương án 2.A), chuyển toàn bộ `slots` sang `BOOKED` (xóa `holdExpiresAt`). Khống chế tổng số thao tác đọc-ghi an toàn dưới trần **500 operations** cho cả đơn lẻ 040 và đơn chu kỳ 041.
+3. **Idempotency & Ticker đếm ngược kế thừa**:
+   - Client sinh mã UUID `requestId` gắn kèm mỗi phiên thanh toán, vô hiệu hóa nút thanh toán ngay khi click đầu tiên để chống spam và chống trừ tiền kép khi mất mạng.
+   - Ticker đếm ngược tính toán theo thời gian máy chủ thực tế: `remainingMillis = holdExpiresAtMillis - System.currentTimeMillis()`, tuyệt đối không tạo timer 5 phút mới. Chạm 00:00 tự động khóa nút và kích hoạt `CancelPaymentHoldUseCase`.
+4. **Cam kết học tập phi thương mại & Thỏa thuận liên thành viên**:
+   - Phương án 3.B: Đọc song song 2 nguồn voucher (`venues/{venueId}/vouchers` và `systemVouchers`) qua `async/awaitAll`.
+   - Ràng buộc loại đơn: Ẩn hoàn toàn lựa chọn `AT_VENUE` khi đối số `isRecurring = true` (đơn chu kỳ từ 041), chỉ áp dụng cho đơn lẻ 040.
+   - Constitution VI: Luồng thanh toán hoàn toàn GIẢ LẬP, hiển thị nhãn học tập nổi bật trên cả màn hình thanh toán và E-Receipt; cung cấp BottomSheet "Nạp ví giả lập".
+5. **Phân rã 42 Tasks chi tiết**:
+   - **Phase 1 (Setup & Test Infrastructure)**: T001–T002 (Composite Index, Test Fixtures).
+   - **Phase 2 (Domain Layer & TDD)**: T003–T016 (Domain Models, Repository Interface, Unit Tests Red, cài đặt 6 UseCases Green).
+   - **Phase 3 (Data Layer & Infrastructure)**: T017–T023 (DTOs, Mappers, `PaymentRepositoryImpl` với Transaction 2 pha, Hilt Module, Security Rules).
+   - **Phase 4 (UI Layer & ViewModel)**: T024–T035 (XML Layouts Material 3, ListAdapter với DiffUtil, BottomSheets nạp ví/chọn voucher, ViewModel StateFlow + Ticker thực tế, Fragments).
+   - **Phase 5 (Navigation, Integration & Edge Cases)**: T036–T038 (Safe Args `HoldToPaymentArgs`, `ReceiptToMyBookingsArgs`, cơ chế hủy giữ chỗ chủ động, Idempotency).
+   - **Phase 6 (System Verification & Polish)**: T039–T042 (ViewModelTest, Transaction test trên Emulator, Espresso UI Test, rà soát Checklist).
+
+### Tài liệu đã sinh
+
+- `specs/050-payment-voucher/tasks.md`: 42 tasks chi tiết có checkbox `- [ ]`, ID `T001`–`T042`, gắn tag User Story (`[US1]`–`[US5]`), nhãn song song `[P]`, đường dẫn file chính xác và lệnh xác minh `Verify:`.
+
+---
+
+## Mục 20: Phân tích đối soát chất lượng bằng `/speckit-analyze` & tinh chỉnh spec 050
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-19 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 05 – Thanh toán và khuyến mãi (`specs/050-payment-voucher`) |
+| Công cụ AI | Antigravity, lệnh Spec Kit `/speckit-analyze` |
+| Mục đích | Đối soát chéo 3 bên giữa `spec.md`, `plan.md`, `tasks.md`, `data-model.md`, `contracts/ui-contracts.md` và `constitution.md`. Phát hiện các điểm lệch hoặc mơ hồ và tiến hành tinh chỉnh chuẩn hóa trước khi bước vào cài đặt mã nguồn (`/speckit-implement`) |
+| Nhánh Git | `feature/050-payment-voucher` |
+
+### Kết quả phân tích đối soát chéo (Cross-Artifact Analysis)
+
+- **Tỷ lệ bao phủ (Coverage)**: **100%** (28/28 Functional Requirements và 7/7 Success Criteria đều có ít nhất một task tương ứng trong tổng số 42 tasks).
+- **Tuân thủ Constitution**: Không có bất kỳ vi phạm nào (0 Critical, 0 High). Tầng domain thuần Kotlin độc lập, tiền tệ kiểu `Long` VND, kiểm tra giao dịch Firestore Transaction 2 pha an toàn dưới 500 ops, tuân thủ cam kết thanh toán giả lập phi thương mại (Constitution VI).
+- **Các điểm cần tinh chỉnh**: Phát hiện 1 điểm Medium (C1) và 2 điểm Low (I1, I2) về tính nhất quán của mô hình dữ liệu và Safe Args điều hướng.
+
+### Chi tiết các tinh chỉnh đã thực thi
+
+1. **C1 (Medium – Chuẩn hóa tên Bundle Safe Args giữa Spec 050 và 060)**:
+   - Cập nhật `specs/050-payment-voucher/contracts/ui-contracts.md` (§1.1) và `specs/060-my-bookings/contracts/ui-contracts.md` (§1.2): Thống nhất sử dụng chung một lớp Parcelable **`HoldToPaymentArgs`** cho toàn bộ các luồng chuyển tiếp tới màn hình thanh toán của Spec 050 (bao gồm đơn lẻ từ Spec 040, đơn chu kỳ từ Spec 041, và thao tác bấm "Thanh toán tiếp" từ Tab 1 "Chờ thanh toán" của Spec 060 theo FR-027). Xóa bỏ sự phân mảnh với tên gọi `ContinuePaymentArgs`.
+2. **I1 (Low – Đồng nhất tên trường thời gian hết hạn voucher `validUntil`)**:
+   - Cập nhật `specs/050-payment-voucher/spec.md` (FR-006 và mục Key Entities): Thay thế tên trường `validTo` bằng **`validUntil`**, đồng bộ 100% với schema Firestore, DTOs trong `data-model.md` (§1.1, §2) và các use case tầng domain.
+3. **I2 (Low – Chuẩn hóa thuộc tính entity voucher `discountType` và `name`)**:
+   - Cập nhật `specs/050-payment-voucher/spec.md`: Đồng bộ entity `VenueVoucher` và `SystemVoucher` sử dụng `discountType` mang các giá trị Enum (`PERCENT`, `FIXED_AMOUNT`), giá trị giảm `discountValue: Long`, và trường tên hiển thị `name: String`, khớp hoàn toàn với `tasks.md` (`T003`) và `data-model.md`.
+
+### Trạng thái tài liệu sau tinh chỉnh
+
+- `specs/050-payment-voucher/spec.md`: Đã cập nhật FR-006, `validUntil`, `discountType`, `name`.
+- `specs/050-payment-voucher/contracts/ui-contracts.md`: Đã làm rõ `HoldToPaymentArgs` tiếp nhận từ cả 040, 041 và 060.
+- `specs/060-my-bookings/contracts/ui-contracts.md`: Đã chuẩn hóa §1.2 sang `HoldToPaymentArgs`.
+- `specs/050-payment-voucher/tasks.md`: Đã đảm bảo tính tương thích và bao phủ 100%.
+- Toàn bộ bộ tài liệu của Feature 050 đạt độ hoàn thiện 10/10, sẵn sàng cho giai đoạn cài đặt mã nguồn (`/speckit-implement`).
+
+---
+
+## Mục 21: Lập danh sách công việc spec 060 (quản lý lịch đặt của tôi) bằng `/speckit-tasks`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-19 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 06 – Quản lý lịch đặt (`specs/060-my-bookings`) |
+| Công cụ AI | Antigravity, lệnh Spec Kit `/speckit-tasks` |
+| Mục đích | Phân rã kế hoạch kỹ thuật spec 060 thành danh sách 44 task triển khai chi tiết (`tasks.md`), tuân thủ Clean Architecture, TDD, giao dịch Firestore Transaction hủy đơn & nhả slot nguyên tử (All Reads Before All Writes), thuật toán hoàn tiền mốc 240 phút kẹp biên voucher an toàn, xuất trình mã QR check-in realtime/offline và bảo mật Security Rules với `request.time` |
+| Nhánh Git | `060-my-bookings` |
+
+### Bối cảnh và Quyết định cốt lõi khi lập Tasks
+
+1. **Độc lập kiến trúc thuần Kotlin (Clean Architecture - Constitution I)**:
+   - Tầng `domain` hoàn toàn thuần Kotlin, độc lập với Android SDK và Firebase SDK. Model `QrBitMatrix` được sinh bằng ZXing Core thuần JVM; tầng UI render `Bitmap` qua `QrBitmapRenderer.kt` với khung viền trắng `#FFFFFF`, kích thước tối thiểu 240dp để máy quét chủ sân nhận diện tốt kể cả khi thiết bị bật Dark Mode.
+2. **Bảo mật chống gian lận giờ điện thoại & Transaction hủy đơn nguyên tử**:
+   - `firestore.rules` sử dụng `request.time` (Server Timestamp của Google Cloud) đối chiếu với `resource.data.startAt` để kiểm tra mốc 240 phút khi hủy đơn, chặn lùi đồng hồ thiết bị. Giới hạn chỉ chủ đơn (`request.auth.uid == resource.data.userId`) được đọc `qrToken`.
+   - Transaction hủy đơn tuân thủ All Reads Before All Writes: đọc đơn, đọc nhóm chu kỳ (nếu có), kiểm tra tính Idempotent qua document `users/{userId}/walletTransactions/refund_{bookingId}`, đọc số dư ví $\rightarrow$ ghi cập nhật đơn `CANCELLED`, cộng ví và **xóa trực tiếp toàn bộ các document `slots/{slotId}`** thuộc đơn để giải phóng sân ngay lập tức trên lưới của Spec 040.
+3. **Thuật toán Hoàn tiền mốc 240 phút & Kẹp biên an toàn khi có Voucher**:
+   - Đơn `PENDING` và đơn `CONFIRMED` hủy sớm ($\ge 240$ phút): Hoàn 100% tiền đã trả.
+   - Đơn `CONFIRMED` hủy trễ ($< 240$ phút): ví giả lập phạt 30% tiền cọc chuẩn hóa, hoàn 70% còn lại (`penaltyAmount = minOf(booking.paidAmount, calculatedDepositPenalty)`, `refundAmount = maxOf(0L, booking.paidAmount - penaltyAmount)`, chống âm tiền); đặt cọc 30% mất 100% cọc; trả tại sân hoàn 0đ.
+4. **Realtime Check-in, Hỗ trợ QR Offline & Thỏa thuận liên thành viên**:
+   - Lắng nghe realtime `bookings/{bookingId}` qua Flow; khi chủ sân quét QR thành công (`checkedInAt != null`), UI chuyển sang "Đã check-in lúc HH:mm" và ẩn nút "Hủy lịch đặt".
+   - Tận dụng Firestore Offline Persistence để người chơi vẫn mở được mã QR check-in từ cache khi mất mạng tại sân.
+   - Phương án 2.A: Tab 2 (Chờ duyệt) đếm ngược 60 phút hạn chủ sân duyệt. Nếu quá 60 phút, hiển thị đơn `REJECTED` và đã hoàn 100% tiền ví giả lập.
+   - Phương án 5.A: Khóa tuyệt đối quyền viết đánh giá ở Spec 070 đối với các đơn mang trạng thái `NO_SHOW`.
+   - Hỗ trợ hủy riêng lẻ từng buổi trong chuỗi cố định `recurringGroupId` [041], tiền cọc/voucher phân bổ đều, phần lẻ dồn buổi cuối.
+5. **Đồng bộ hóa Ticker Flow trên RecyclerView**:
+   - `MyBookingsViewModel` phát luồng `serverNowMillis` Flow tập trung mỗi giây để `BookingListAdapter` đồng bộ hiển thị đếm ngược cho Tab 1 và Tab 2, triệt tiêu lỗi rò rỉ coroutine/bộ nhớ trên từng item.
+6. **Phân rã 44 Tasks chi tiết**:
+   - **Phase 1 (Setup & Test Infrastructure)**: T001–T002 (Composite Index, Test Fixtures).
+   - **Phase 2 (Domain Layer & TDD)**: T003–T016 (Domain Models, Repository Interface, Unit Tests Red, cài đặt 6 UseCases Green).
+   - **Phase 3 (Data Layer & Infrastructure)**: T017–T023 (DTOs, Mappers, `BookingManagementRepositoryImpl` với Transaction hủy đơn & xóa slot, Hilt Module, Security Rules với `request.time`).
+   - **Phase 4 (UI Layer & ViewModel)**: T024–T037 (XML Layouts Material 3, ListAdapters với DiffUtil, `QrBitmapRenderer`, ViewModels, Fragments).
+   - **Phase 5 (Navigation, Integration & Edge Cases)**: T038–T040 (Safe Args `HoldToPaymentArgs`, `ReceiptToMyBookingsArgs`, QR offline banner, Idempotency).
+   - **Phase 6 (System Verification & Polish)**: T041–T044 (ViewModelTest với Turbine, Emulator Integration Test, Espresso UI Test, rà soát Checklist).
+
+### Tài liệu đã sinh
+
+- `specs/060-my-bookings/tasks.md`: 44 tasks chi tiết có checkbox `- [ ]`, ID `T001`–`T044`, gắn tag User Story (`[US1]`–`[US5]`), nhãn song song `[P]`, đường dẫn file chính xác và lệnh xác minh `Verify:`.
+
+---
+
+## Mục 22: Phân tích đối soát chất lượng bằng `/speckit-analyze` & tinh chỉnh spec 060
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-19 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 06 – Quản lý lịch đặt (`specs/060-my-bookings`) |
+| Công cụ AI | Antigravity, lệnh Spec Kit `/speckit-analyze` |
+| Mục đích | Đối soát toàn diện tính nhất quán, độ phủ yêu cầu và tính khả thi kỹ thuật giữa `spec.md`, `plan.md`, `data-model.md`, `contracts/ui-contracts.md` và `tasks.md`; xử lý triệt để 1 điểm Medium và 2 điểm Low phát hiện từ báo cáo phân tích |
+| Nhánh Git | `060-my-bookings` |
+
+### Kết quả Phân tích Đối soát (`/speckit-analyze`)
+
+- **Độ phủ yêu cầu (Requirements Coverage)**: Đạt **100% (36/36 yêu cầu)** gồm đầy đủ 29 Functional Requirements (FR-001 đến FR-029) và 7 Success Criteria (SC-001 đến SC-007) từ `spec.md`. Toàn bộ 4 User Stories chính và 1 User Story phụ đều được phân rã thành các task khả thi, có tiêu chí kiểm thử rõ ràng.
+- **Rà soát rủi ro & lỗi kiến trúc**:
+  - **Critical**: 0
+  - **High**: 0
+  - **Medium**: 1 (C1: Sự sai lệch giữa kiểu mảng `slotIds: List<String>` ở Firestore DTO và `items: List<BookingSlotItem>` ở Domain/UI)
+  - **Low**: 2 (I1: Tên trường hạn chót duyệt đơn chưa đồng bộ giữa `pendingExpiresAt` và `approvalDeadline`; I2: Tên phương thức Repository giữa `getBookingDetail` và `observeBookingDetail` chưa đồng bộ)
+
+### Chi tiết các điểm tinh chỉnh và khắc phục
+
+1. **Khắc phục điểm Medium (C1 - Làm rõ ánh xạ `slotIds` sang `items: List<BookingSlotItem>`)**:
+   - **Vấn đề**: Trong Firestore, đơn hàng lưu `slotIds: List<String>` dạng ID rút gọn (`{courtId}_{yyyyMMdd}_{HHmm}`) để tiết kiệm dung lượng và phục vụ thao tác xóa slot trong transaction. Tuy nhiên, màn hình chi tiết đơn ở tầng UI và Domain model `BookingDetail` lại yêu cầu danh sách các slot cụ thể (`items: List<BookingSlotItem>`) gồm giờ bắt đầu, kết thúc, tên sân và đơn giá.
+   - **Giải pháp**:
+     - Bổ sung định nghĩa `BookingSlotItem` chuẩn Clean Architecture thuần Kotlin vào Section 3 của `specs/060-my-bookings/data-model.md`.
+     - Cập nhật entity `BookingDetail` trong `data-model.md` bổ sung trường `items: List<BookingSlotItem> = emptyList()` song song với `slotIds: List<String>`.
+     - Bổ sung Section 5 trong `data-model.md` quy định rõ hợp đồng ánh xạ và giải mã (hydration) của `BookingManagementMapper`: bóc tách chuỗi `{courtId}_{yyyyMMdd}_{HHmm}` thành `startAt`, tính `endAt = startAt + 30 phút`, kế thừa `courtName`, `date` và phân bổ đơn giá `price`.
+
+2. **Khắc phục điểm Low (I1 - Đồng bộ hóa tên trường `approvalDeadline`)**:
+   - **Vấn đề**: Trong `data-model.md` dòng 44 và 125 từng sử dụng `pendingExpiresAt`, trong khi `spec.md`, `plan.md` và `tasks.md` đã chuẩn hóa sang `approvalDeadline: Timestamp?` theo Phương án 2.A (hạn chót chủ sân duyệt đơn 60 phút).
+   - **Giải pháp**:
+     - Thay thế `pendingExpiresAt` bằng `approvalDeadline: Timestamp?` tại Section 1.1 và Section 2 (`BookingDto`) trong `specs/060-my-bookings/data-model.md`.
+     - Chuẩn hóa trường thời gian ở Domain/UI thành `approvalDeadlineMillis: Long?` tại Section 3 và Section 5.
+
+3. **Khắc phục điểm Low (I2 - Chuẩn hóa tên hàm `observeBookingDetail` trong `tasks.md`)**:
+   - **Vấn đề**: Hợp đồng `contracts/ui-contracts.md` định nghĩa hàm lắng nghe chi tiết đơn là `observeBookingDetail(bookingId: String): Flow<Result<BookingDetail>>` (thể hiện tính chất Flow realtime callbackFlow), trong khi `tasks.md` tại `T004`, `T010`, `T016`, `T019` dùng tên `getBookingDetail`.
+   - **Giải pháp**:
+     - Đồng bộ hóa toàn bộ tên phương thức trong `specs/060-my-bookings/tasks.md` thành `observeBookingDetail` tại `T004` (Repository interface), `T010` (Unit Test phát dữ liệu qua Flow), `T016` (UseCase kết nối Flow) và `T019` (cài đặt `callbackFlow` với `addSnapshotListener`).
+
+### Tình trạng bộ Artifact sau tinh chỉnh
+
+- Toàn bộ 5 file tài liệu kỹ thuật cốt lõi của tính năng 060 (`spec.md`, `plan.md`, `data-model.md`, `contracts/ui-contracts.md`, `tasks.md`) đạt độ nhất quán 100%, sẵn sàng chuyển sang bước triển khai mã nguồn (`/speckit-implement`).
+
+
+
+
+
