@@ -13,12 +13,23 @@ Wireframe: [ui/README.md](../ui/README.md) (7 bước, có chế độ tối).
 | `nav_owner` | D (111/112) | Spec 010 tạo placeholder |
 | `nav_admin` | D (120) | Spec 010 tạo placeholder |
 
-**Quy tắc điều hướng:**
-- Từ `LauncherFragment` và mọi màn hình trong `nav_auth` sang `nav_player`, `nav_owner`, `nav_admin`: dùng `popUpTo(nav_main, inclusive = true)`. Bấm Back sau khi đăng nhập thì thoát app, không quay lại màn hình đăng nhập (Edge Case cuối của spec).
+**Quy tắc điều hướng** (cập nhật 2026-10-19 cho chế độ khách, [research R15](../research.md#r15-chế-độ-khách-và-quay-lại-đúng-chỗ-sau-khi-đăng-nhập-fr-025-fr-026)):
+- `LauncherFragment` chọn đích bằng `SessionRouter` (hàm thuần, có unit test):
+  - `SignedOut` chưa xem màn hình chào (`welcome_seen = false`) → `nav_auth` / `WelcomeFragment`;
+  - `SignedOut` đã xem → `nav_player` ở **chế độ khách**;
+  - `SignedOut(LOCKED)` → `nav_player` chế độ khách, rồi mở `LoginFragment(lockedNotice = true)` chồng lên;
+  - `SignedIn` → graph theo `appRole`.
+  
+  Mọi lần chuyển từ `LauncherFragment` dùng `popUpTo(nav_main, inclusive = true)`.
+- **Khách mở đăng nhập/đăng ký** từ bất kỳ màn hình nào: gọi `AuthNavigator` (§4), mở `nav_auth` **chồng lên** back stack, không `popUpTo`. Back trong `nav_auth` thì về màn hình bên dưới ở chế độ khách.
+- **Đăng nhập xong** (`SignedOut` → `SignedIn`):
+  - `PLAYER` và dưới `nav_auth` có `nav_player` → `popBackStack(R.id.nav_auth, inclusive = true)`, màn hình cũ và ViewModel theo nav graph còn nguyên (FR-026). Có `returnTo` thì `navigate(Uri)` sau đó;
+  - `OWNER`, `ADMIN`, hoặc `nav_auth` là gốc (đi từ màn hình chào) → `popUpTo(nav_main, inclusive = true)` sang graph của vai trò. Bấm Back sau đó thì thoát app, không quay lại màn hình đăng nhập (Edge Case của spec).
 - `MainActivity` thu thập `sessionState`:
-  - Chuyển sang `SignedOut` (khóa tài khoản, đăng xuất ở spec 011) thì điều hướng về `nav_auth` và xóa back stack.
+  - Chuyển sang `SignedOut` khi đang đăng nhập (đăng xuất ở spec 011, bị khóa) → `nav_player` chế độ khách, `popUpTo(nav_main, inclusive = true)`; bị khóa thì mở thêm `LoginFragment(lockedNotice = true)`.
   - `SignedIn` mà `appRole` đổi thì điều hướng sang graph tương ứng.
-- **Deep link `returnTo`** (plan 080 yêu cầu): `LoginFragment` nhận argument `returnTo: String?` (URI deep link). Đăng nhập xong mà có `returnTo` thì `navigate(Uri)` thay vì về màn hình chính.
+- **Deep link `returnTo`** (plan 080 yêu cầu): `LoginFragment` nhận argument `returnTo: String?` (URI deep link). Đăng nhập xong mà có `returnTo` thì `navigate(Uri)` theo quy tắc trên.
+- **Deep link mở `nav_auth`:** `smashnow://auth/login?returnTo={returnTo}`, `smashnow://auth/register?returnTo={returnTo}`, khai báo trong `nav_auth.xml`.
 
 ## 2. Màn hình của `nav_auth`
 
@@ -94,10 +105,21 @@ interface IdTokenProvider {
 interface UserProfileReader {                                     // plan 080 yêu cầu
     fun observeMyProfile(): Flow<MyProfile?>                      // displayName, level, favoriteDistrictIds, avatarPath
 }
+
+// Chế độ khách (research R15)
+// SessionManager có thêm:
+//     val isGuest: StateFlow<Boolean>                            // true khi SignedOut
+
+interface AuthNavigator {                                         // core/session, cài đặt bằng deep link
+    fun openLogin(navController: NavController, returnTo: Uri? = null)
+    fun openRegister(navController: NavController, returnTo: Uri? = null)
+}
 ```
+
+`LoginPromptView` (`core/ui`, layout `view_login_prompt.xml`): biểu tượng, câu mời (tham số chuỗi), nút "Đăng nhập", "Đăng ký" gọi `AuthNavigator`. Màn hình cần tài khoản hiện view này thay cho nội dung khi `isGuest`.
 
 **Quy ước cho mọi tính năng:**
 - Không gọi `FirebaseAuth.getInstance()` trong `feature/*`.
 - `uid` lấy từ `SessionManager.currentUid()`.
 - Token cho Edge Function lấy từ `IdTokenProvider`. `SupabaseClient` trong `core/di` đã gắn sẵn.
-- Edge Function trả `403 ACCOUNT_LOCKED` thì repository ném `AppError.Locked`. ViewModel không cần xử lý riêng: `core/network` báo cho `SessionManager` để đăng xuất và về màn hình đăng nhập.
+- Edge Function trả `403 ACCOUNT_LOCKED` thì repository ném `AppError.Locked`. ViewModel không cần xử lý riêng: `core/network` báo cho `SessionManager` để đăng xuất; app về chế độ khách và mở màn hình đăng nhập kèm thông báo khóa (research R15).

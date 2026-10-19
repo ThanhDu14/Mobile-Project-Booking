@@ -91,7 +91,7 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
 - [ ] T015 [P] Thêm `AccountDeleted` vào `CORE/network/AppError.kt`, tạo `CORE/network/AccountDeletedBus.kt` (`SharedFlow<Unit>`, cạnh `AccountLockedBus`); sửa `CORE/network/FunctionErrors.kt`: mã `ACCOUNT_DELETING` → `AppError.AccountDeleted` + `AccountDeletedBus`. Cho T010 xanh
 - [ ] T016 [P] Tạo `CORE/session/AppMode.kt` (`PLAYER`, `OWNER`), `CORE/session/AppModeController.kt` (`val mode: StateFlow<AppMode>`, `suspend fun switchTo(target: AppMode): Result<AppMode>`), `CORE/session/OwnerRevokedException.kt`, `CORE/session/DefaultAppModeController.kt` (`@Singleton`, giữ chế độ **trong bộ nhớ, không lưu DataStore** theo FR-011; `switchTo(OWNER)` gọi `refresh(true)` trong `withTimeout(3_000)`, lỗi mạng/hết giờ thì dùng `currentAppRole()`); bind trong `CORE/di/SessionModule.kt`. Cho T006 xanh
 - [ ] T017 [P] Tạo `CORE/media/StorageUrls.kt` (`object StorageUrls { fun publicUrl(bucket: String, path: String): String }`, đọc `BuildConfig.SUPABASE_URL`). Cho T008 xanh
-- [ ] T018 Tạo `CORE/session/RootGraph.kt` (`fun rootGraphFor(appRole: AppRole, mode: AppMode): Int`); sửa `APP/MainActivity.kt` (010-T017, 010-T053) thu thập `combine(sessionState, appModeController.mode)` và điều hướng theo `rootGraphFor`, chỉ điều hướng lại khi graph đích đổi, `popUpTo(nav_main, inclusive = true)`; `SignedOut(SESSION_REVOKED)` → `nav_auth` / `LoginFragment` kèm thông báo "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại"; `SignedOut(ACCOUNT_DELETED)` → `WelcomeFragment` kèm `Snackbar` "Tài khoản đã được xóa". Cho T009 xanh
+- [ ] T018 Tạo `CORE/session/RootGraph.kt` (`fun rootGraphFor(appRole: AppRole, mode: AppMode): Int`); sửa `APP/MainActivity.kt` (010-T017, 010-T053) thu thập `combine(sessionState, appModeController.mode)` và điều hướng theo `rootGraphFor`, chỉ điều hướng lại khi graph đích đổi, `popUpTo(nav_main, inclusive = true)`; `SignedOut(SESSION_REVOKED)` → `nav_player` chế độ khách rồi `LoginFragment` chồng lên kèm thông báo "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại"; `SignedOut(ACCOUNT_DELETED)` → `nav_player` chế độ khách kèm `Snackbar` "Tài khoản đã được xóa". Quyết định đích dùng `SessionRouter` của 010 (010 T081, research R15), mở rộng cho hai lý do mới. Cho T009 xanh
 - [ ] T019 [P] Sửa tài liệu 010 cho khớp code: `specs/010-account-auth/plan.md` và `specs/010-account-auth/contracts/ui-screens.md` §1, §4 ghi `MainActivity` điều hướng theo `(appRole, mode)`, `SignOutReason` có `SESSION_REVOKED`, `ACCOUNT_DELETED`, `SessionManager.signOut(reason)` và `SignOutHook`; thêm ghi chú "sửa bởi 011 T014, T018" cạnh 010-T017, 010-T053 trong `specs/010-account-auth/tasks.md`; thêm ghi chú cho 010-T044: destination `legal` có deep link `smashnow://legal/{doc}` để `feature/account` mở được mà không import `LegalDocumentFragment` (constitution I)
 
 **Checkpoint 2A**: T006–T010 xanh, test 010 vẫn xanh (`./gradlew testDebugUnitTest`). Mở PR `chore(core)`, báo nhóm: (1) dùng `StorageUrls.publicUrl("avatars", path)` để hiện ảnh đại diện; (2) `SignOutHook` cho dữ liệu cần dọn khi đăng xuất; (3) `MainActivity` điều hướng theo `(appRole, mode)`; (4) `ACCOUNT_DELETING` đưa người dùng về màn hình chào với "Tài khoản đã được xóa"; (5) `SessionManager.signOut(reason)` có thân mặc định nên fake cũ không phải sửa.
@@ -177,9 +177,9 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
 
 ## Phase 4: User Story 2 – Đăng xuất (Priority: P1) 🎯 MVP
 
-**Goal**: đăng xuất sau xác nhận, về màn hình đăng nhập, máy không nhận thông báo đẩy của tài khoản cũ.
+**Goal**: đăng xuất sau xác nhận, về Trang chủ chế độ khách, máy không nhận thông báo đẩy của tài khoản cũ.
 
-**Independent Test**: đăng nhập, đăng xuất, mở lại app thấy màn hình đăng nhập; token máy không còn trong `users/{uid}.fcmTokens` (quickstart Q11–Q12).
+**Independent Test**: đăng nhập, đăng xuất, mở lại app vào Trang chủ chế độ khách; token máy không còn trong `users/{uid}.fcmTokens` (quickstart Q11–Q12).
 
 ### Tests for User Story 2 (viết trước, phải fail)
 
@@ -189,7 +189,7 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
 ### Implementation for User Story 2
 
 - [ ] T054 [P] [US2] Tạo `CORE/session/FcmSignOutHook.kt` (`FirebaseMessaging.getInstance().token` → `users/{uid}` `fcmTokens = FieldValue.arrayRemove(token)`, `updatedAt = serverTimestamp()` → `FirebaseMessaging.getInstance().deleteToken()`) và `CORE/session/GoogleSignOutHook.kt` (`CredentialManager.clearCredentialState()`); `@Binds @IntoSet` trong `CORE/di/SessionModule.kt`. Cho T052 xanh
-- [ ] T055 [US2] Thêm nút "Đăng xuất" vào `ACC/ui/account/AccountFragment.kt` mở `MaterialAlertDialog` xác nhận; `AccountViewModel.signOut()` gọi `SessionManager.signOut()`; `MainActivity` (T018) đưa về `nav_auth` và xóa back stack (FR-007). Cho T053 xanh
+- [ ] T055 [US2] Thêm nút "Đăng xuất" vào `ACC/ui/account/AccountFragment.kt` mở `MaterialAlertDialog` xác nhận; `AccountViewModel.signOut()` gọi `SessionManager.signOut()`; `MainActivity` (T018) đưa về `nav_player` chế độ khách và xóa back stack (FR-007, 010 R15). Cho T053 xanh
 - [ ] T056 [P] [US2] (Nên có) Espresso `ATEST/feature/account/SignOutTest.kt` trên Emulator: đăng xuất → `LoginFragment`, `pressBack()` không quay lại trang Tài khoản
 
 **Checkpoint**: US1 + US2 = MVP; quickstart Q11, Q12 đạt.

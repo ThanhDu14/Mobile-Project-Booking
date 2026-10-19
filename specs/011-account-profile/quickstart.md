@@ -81,7 +81,7 @@ Phạm vi bắt buộc:
 | Q8 | Tải trực tiếp file 3 MB lên bucket của Supabase local (`http://127.0.0.1:54321`) bằng `curl` với token của mình | Storage từ chối (giới hạn 2 MB) | FR-003 |
 | Q9 | Bật chế độ máy bay giữa lúc tải ảnh | Ảnh cũ giữ nguyên, có "Thử lại" | Edge Case, SC-007 |
 | Q10 | Danh mục khu vực lỗi (tắt mạng khi mở picker) | Mục khu vực báo lỗi + "Thử lại", ô khác vẫn sửa được | Edge Case |
-| Q11 | Đăng xuất, mở lại app | Về màn hình đăng nhập, Back không quay lại; token của máy không còn trong `fcmTokens` | US2, FR-007 |
+| Q11 | Đăng xuất, mở lại app | Về Trang chủ chế độ khách, Back không quay lại màn hình của tài khoản cũ; token của máy không còn trong `fcmTokens` | US2, FR-007 |
 | Q12 | Đăng xuất rồi gửi thông báo thử tới tài khoản đó (D hoặc FCM console với token cũ) | Máy không nhận | US2-3 |
 | Q13 | 5 tài khoản (`player1`, `player-pending`, `player-rejected`, `player-revoked`, `owner1`) mở Tài khoản | Đúng nội dung và nút theo FR-008 | US3, SC-004 |
 | Q14 | Admin (D) duyệt `player-pending` khi người đó đang mở app, quay lại trang Tài khoản | Trạng thái mới, không đăng xuất | US3-5, FR-009 |
