@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Màn hình chào (wireframe buoc1_man-chao) -->
+    <string name="auth_welcome_headline">Đặt sân cầu lông,\ngặp người cùng chơi</string>
+    <string name="auth_welcome_feature_find">Tìm sân gần bạn, xem giờ trống và giá</string>
+    <string name="auth_welcome_feature_hold">Giữ chỗ 5 phút, không lo trùng lịch</string>
+    <string name="auth_welcome_feature_social">Chơi vãng lai, vào nhóm, chat với chủ sân</string>
+    <string name="auth_welcome_create_account">Tạo tài khoản</string>
+    <string name="auth_welcome_login">Đăng nhập</string>
+    <!-- Tạm thời cho tới khi có màn hình đăng ký (US1 T043) và đăng nhập (US2 T052) -->
+    <string name="auth_welcome_coming_soon">Màn hình này đang được làm</string>
+
+    <!-- Chế độ khách (research R15) -->
+    <string name="auth_guest_browse">Xem sân trước, đăng nhập sau</string>
+    <string name="auth_guest_prompt_default">Đăng nhập để dùng tính năng này</string>
+    <string name="auth_guest_login">Đăng nhập</string>
+    <string name="auth_guest_register">Đăng ký</string>
+
+    <!-- Màn hình chính tạm (spec khác thay bằng màn hình thật) -->
+    <string name="auth_home_placeholder_player">Trang chủ người chơi</string>
+    <string name="auth_home_placeholder_owner">Trang chủ chủ sân</string>
+    <string name="auth_home_placeholder_admin">Trang quản trị</string>
+    <string name="auth_home_guest_note">Bạn đang xem với tư cách khách</string>
+</resources>
