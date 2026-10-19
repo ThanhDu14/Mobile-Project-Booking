@@ -80,8 +80,10 @@ class MainActivity : AppCompatActivity() {
                 else -> execute(RouteDecision.PlayerGuest(showLockedLogin = state.reason == SignOutReason.LOCKED))
             }
             is SessionState.NeedsConsent -> openConsent()
-            // TODO(US1 T047): Initializing / InitFailed → accountSetup.
-            SessionState.Initializing, is SessionState.InitFailed -> Unit
+            // Vừa bấm "Đăng ký": RegisterFragment đang gọi on-signup và tự báo lỗi, không chuyển màn hình.
+            SessionState.Initializing ->
+                if (navController.currentDestination?.id != R.id.registerFragment) openAccountSetup()
+            is SessionState.InitFailed -> openAccountSetup()
             SessionState.Loading -> Unit
         }
     }
@@ -90,8 +92,9 @@ class MainActivity : AppCompatActivity() {
         val authOnStack = hasBackStackEntry(R.id.nav_auth)
         val playerOnStack = hasBackStackEntry(R.id.nav_player)
         if (!authOnStack && appRole == AppRole.PLAYER && playerOnStack) return
-        val returnTo = runCatching { navController.getBackStackEntry(R.id.loginFragment) }.getOrNull()
-            ?.arguments?.getString(ARG_RETURN_TO)?.let(Uri::parse)
+        val returnTo = listOf(R.id.loginFragment, R.id.registerFragment).firstNotNullOfOrNull { id ->
+            runCatching { navController.getBackStackEntry(id) }.getOrNull()?.arguments?.getString(ARG_RETURN_TO)
+        }?.let(Uri::parse)
         execute(SessionRouter.afterSignIn(appRole, hasPlayerGraphBelowAuth = authOnStack && playerOnStack, returnTo))
     }
 
@@ -110,18 +113,23 @@ class MainActivity : AppCompatActivity() {
                 decision.returnTo?.let { navController.navigate(it) }
             }
             RouteDecision.Consent -> openConsent()
-            // TODO(US1 T047): accountSetup chưa có; giữ màn hình khởi động.
-            RouteDecision.AccountSetup -> Unit
+            RouteDecision.AccountSetup -> openAccountSetup()
         }
     }
 
+    /** Chờ `on-signup` (FR-006): xóa back stack, chưa xong thì không vào được màn hình chính. */
+    private fun openAccountSetup() {
+        if (navController.currentDestination?.id == R.id.accountSetupFragment) return
+        navController.navigate(ACCOUNT_SETUP, navOptions { popUpTo(R.id.nav_main) { inclusive = true } })
+    }
+
     /**
-     * Bước Hoàn tất tài khoản. Đi từ màn hình đăng nhập thì mở chồng lên (Back = dùng tài khoản khác);
+     * Bước Hoàn tất tài khoản. Đi từ màn hình đăng nhập/đăng ký thì mở chồng lên (Back = dùng tài khoản khác);
      * mở app lại khi chưa xong bước này thì xóa back stack (Edge Case đóng app ở bước đồng ý).
      */
     private fun openConsent() {
         if (navController.currentDestination?.id == R.id.termsConsentFragment) return
-        if (hasBackStackEntry(R.id.loginFragment)) {
+        if (hasBackStackEntry(R.id.loginFragment) || hasBackStackEntry(R.id.registerFragment)) {
             navController.navigate(R.id.termsConsentFragment)
         } else {
             navController.navigate(CONSENT, navOptions { popUpTo(R.id.nav_main) { inclusive = true } })
@@ -153,6 +161,7 @@ class MainActivity : AppCompatActivity() {
         val LOGIN: NavDeepLinkRequest = deepLink("smashnow://auth/login")
         val LOCKED_LOGIN: NavDeepLinkRequest = deepLink("smashnow://auth/login?lockedNotice=true")
         val CONSENT: NavDeepLinkRequest = deepLink("smashnow://auth/consent")
+        val ACCOUNT_SETUP: NavDeepLinkRequest = deepLink("smashnow://auth/setup")
 
         fun deepLink(uri: String): NavDeepLinkRequest = NavDeepLinkRequest.Builder.fromUri(Uri.parse(uri)).build()
     }

@@ -3,6 +3,7 @@ package com.example.booking_app.feature.auth.ui.login
 import android.os.Bundle
 import android.view.View
 import android.view.inputmethod.EditorInfo
+import androidx.core.os.bundleOf
 import androidx.core.view.isInvisible
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
@@ -11,6 +12,7 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.fragment.findNavController
 import com.example.booking_app.R
 import com.example.booking_app.databinding.FragmentAuthLoginBinding
 import com.example.booking_app.feature.auth.ui.link.LinkAccountDialog
@@ -43,8 +45,10 @@ class LoginFragment : Fragment(R.layout.fragment_auth_login) {
 
         binding.googleButton.setOnClickListener { viewModel.onGoogle(requireActivity()) }
 
-        // TODO(US3 T057, US5 T072, US1 T043): nối Quên mật khẩu, Số điện thoại, Đăng ký.
-        listOf(binding.forgotButton, binding.phoneButton, binding.registerButton).forEach {
+        binding.registerButton.setOnClickListener { openRegister() }
+
+        // TODO(US3 T057, US5 T072): nối Quên mật khẩu, Số điện thoại.
+        listOf(binding.forgotButton, binding.phoneButton).forEach {
             it.setOnClickListener { v -> Snackbar.make(v, R.string.auth_welcome_coming_soon, Snackbar.LENGTH_SHORT).show() }
         }
 
@@ -92,11 +96,25 @@ class LoginFragment : Fragment(R.layout.fragment_auth_login) {
         }
     }
 
+    /** Sang màn hình đăng ký; đi từ màn hình đăng ký thì quay lại đó. Giữ `returnTo` (FR-026). */
+    private fun openRegister() {
+        val navController = findNavController()
+        if (navController.previousBackStackEntry?.destination?.id == R.id.registerFragment) {
+            navController.popBackStack()
+            return
+        }
+        navController.navigate(R.id.action_login_to_register, bundleOf(ARG_RETURN_TO to arguments?.getString(ARG_RETURN_TO)))
+    }
+
     private fun showLockedDialog() {
         MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.auth_locked_title)
             .setMessage(getString(R.string.auth_locked_message, getString(R.string.support_email)))
             .setPositiveButton(R.string.auth_close, null)
             .show()
+    }
+
+    private companion object {
+        const val ARG_RETURN_TO = "returnTo"
     }
 }

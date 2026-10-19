@@ -175,12 +175,12 @@ Thêm sau khi `/speckit-analyze` spec 020 phát hiện khách không vào đư�
 
 ### Tests cho User Story 1 ⚠️ viết trước, phải fail
 
-- [ ] T036 [P] [US1] Unit test `TEST/feature/auth/domain/usecase/RegisterWithEmailUseCaseTest.kt`:
+- [x] T036 [P] [US1] Unit test `TEST/feature/auth/domain/usecase/RegisterWithEmailUseCaseTest.kt`:
   - email được `trim().lowercase()` trước khi tạo;
   - thứ tự: `createUserWithEmailAndPassword` → lưu `PendingSignup(uid, name, termsAt)` → `sendEmailVerification()` (lỗi gửi email bị bỏ qua, ghi `last_verification_email_at` khi gửi được) → `CompleteSignupUseCase`;
   - `EmailInUse` → không tạo, không lưu `PendingSignup`;
   - **thử lại sau timeout** (R13): `currentUser?.email == email` → không gọi tạo lại, đi tiếp bước khởi tạo.
-- [ ] T037 [P] [US1] Unit test `TEST/feature/auth/ui/register/RegisterViewModelTest.kt` (Turbine):
+- [x] T037 [P] [US1] Unit test `TEST/feature/auth/ui/register/RegisterViewModelTest.kt` (Turbine):
   - `canSubmit == false` khi chưa đánh dấu điều khoản (US1-2);
   - lỗi từng ô hiện khi rời ô hoặc bấm "Đăng ký", **không gửi yêu cầu** (US1-6, FR-020);
   - `passwordChecks(len8, letterDigit)` cập nhật khi gõ;
@@ -188,22 +188,22 @@ Thêm sau khi `/speckit-analyze` spec 020 phát hiện khách không vào đư�
   - hết 15 s → sự kiện snackbar mạng; `name`, `email` giữ trong `SavedStateHandle`, mật khẩu không giữ (FR-021);
   - `EmailInUse` → `emailError` "Email đã được sử dụng" kèm hai link (US1-3);
   - thành công → không tự điều hướng, chờ `SessionState` đổi.
-- [ ] T038 [P] [US1] Unit test `TEST/feature/auth/ui/setup/AccountSetupViewModelTest.kt`: có `PendingSignup` → tự gọi `CompleteSignupUseCase`, `Loading`; lỗi → `Failed(AppError)`; "Thử lại" gọi lại; "Đăng xuất" → `signOut()`
-- [ ] T039 [P] [US1] Unit test `TEST/core/ui/VerifyEmailBannerViewModelTest.kt`:
+- [x] T038 [P] [US1] Unit test `TEST/feature/auth/ui/setup/AccountSetupViewModelTest.kt`: có `PendingSignup` → tự gọi `CompleteSignupUseCase`, `Loading`; lỗi → `Failed(AppError)`; "Thử lại" gọi lại; "Đăng xuất" → `signOut()`
+- [x] T039 [P] [US1] Unit test `TEST/core/ui/VerifyEmailBannerViewModelTest.kt`:
   - `visible` khi `SignedIn`, có provider `password`, `!emailVerified`; ẩn với tài khoản Google hoặc chỉ có số điện thoại (FR-009);
   - `onResume` → `reload()`; đã xác minh → `getIdToken(true)` rồi ẩn;
   - "Gửi lại email" → `resendInSeconds` đếm từ 60; mốc lấy từ `last_verification_email_at` nên tạo lại ViewModel vẫn còn đếm.
 
 ### Implementation cho User Story 1
 
-- [ ] T040 [US1] Cài `AUTH/domain/usecase/RegisterWithEmailUseCase.kt`, `ResendVerificationEmailUseCase.kt`; thêm `createUser`, `sendEmailVerification`, `reload` vào `FirebaseAuthDataSource` và `AuthRepositoryImpl`. Cho T036 xanh
-- [ ] T041 [US1] Cài `AUTH/ui/register/RegisterViewModel.kt` (`StateFlow<RegisterUiState>` đúng [contracts/ui-screens.md §3](contracts/ui-screens.md#3-viewmodel--stateflowuistate), sự kiện qua `Channel`). Cho T037 xanh
-- [ ] T042 [US1] Tạo `AUTH/ui/welcome/WelcomeFragment.kt` + `RES/layout/fragment_auth_welcome.xml` theo wireframe `buoc1_man-chao` (nút "Đăng ký", "Đăng nhập", **"Xem sân trước"** (FR-025: ghi `welcome_seen = true` rồi vào `nav_player` chế độ khách, `popUpTo(nav_main, inclusive = true)`); bấm "Đăng ký"/"Đăng nhập" cũng ghi `welcome_seen = true`; nút Google và "Dùng số điện thoại" nối ở US4, US5)
-- [ ] T043 [US1] Tạo `AUTH/ui/register/RegisterFragment.kt` + `RES/layout/fragment_auth_register.xml` theo wireframe `buoc3_dang-ky-email`: dòng "Mọi tài khoản bắt đầu là người chơi…" (FR-002), **không** có lựa chọn vai trò (US1-4), hai dấu tích mật khẩu, checkbox điều khoản có link mở `LegalDocumentFragment`, `TextInputLayout.setError`, ô mật khẩu `android:saveEnabled="false"`, nút có `CircularProgressIndicator` khi `isSubmitting`, `contentDescription`/`hint`, vùng chạm 48dp, form tối đa `auth_form_max_width`
+- [x] T040 [US1] Cài `AUTH/domain/usecase/RegisterWithEmailUseCase.kt`, `ResendVerificationEmailUseCase.kt`; thêm `createUser`, `sendEmailVerification`, `reload` vào `FirebaseAuthDataSource` và `AuthRepositoryImpl`. Cho T036 xanh _(Khi cài đặt: `createUser`, `sendEmailVerification` đã có từ 2C; `reload` dùng `SessionAuthSource.reload()` ở `core/session` (nay trả `AuthUser?` mới nhất) vì banner ở `core/ui` không import `feature/auth`. Banner gửi lại email qua interface `CORE/session/VerificationEmailSender`, `ResendVerificationEmailUseCase` cài đặt và bind trong `AuthModule`. Thêm `CORE/util/AppClock.kt`, `CORE/util/Countdown.kt` cho các mốc 60 giây.)_
+- [x] T041 [US1] Cài `AUTH/ui/register/RegisterViewModel.kt` (`StateFlow<RegisterUiState>` đúng [contracts/ui-screens.md §3](contracts/ui-screens.md#3-viewmodel--stateflowuistate), sự kiện qua `Channel`). Cho T037 xanh
+- [x] T042 [US1] Tạo `AUTH/ui/welcome/WelcomeFragment.kt` + `RES/layout/fragment_auth_welcome.xml` theo wireframe `buoc1_man-chao` (nút "Đăng ký", "Đăng nhập", **"Xem sân trước"** (FR-025: ghi `welcome_seen = true` rồi vào `nav_player` chế độ khách, `popUpTo(nav_main, inclusive = true)`); bấm "Đăng ký"/"Đăng nhập" cũng ghi `welcome_seen = true`; nút Google và "Dùng số điện thoại" nối ở US4, US5) _(Khi cài đặt: `WelcomeFragment` đã có từ 2D, chỉ nối "Tạo tài khoản" sang `registerFragment`.)_
+- [x] T043 [US1] Tạo `AUTH/ui/register/RegisterFragment.kt` + `RES/layout/fragment_auth_register.xml` theo wireframe `buoc3_dang-ky-email`: dòng "Mọi tài khoản bắt đầu là người chơi…" (FR-002), **không** có lựa chọn vai trò (US1-4), hai dấu tích mật khẩu, checkbox điều khoản có link mở `LegalDocumentFragment`, `TextInputLayout.setError`, ô mật khẩu `android:saveEnabled="false"`, nút có `CircularProgressIndicator` khi `isSubmitting`, `contentDescription`/`hint`, vùng chạm 48dp, form tối đa `auth_form_max_width` _(Khi cài đặt: lỗi "Email đã được sử dụng" là `TextView` riêng dưới ô email để hai link bấm được; nút Google dùng `SignInWithGoogleUseCase`, email trùng tài khoản mật khẩu thì mở màn hình đăng nhập để liên kết.)_
 - [x] T044 [P] [US1] Tạo `AUTH/ui/legal/LegalDocumentFragment.kt` + `RES/layout/fragment_auth_legal.xml` (arg `doc: TERMS | PRIVACY`, đọc `res/raw/*_vi.html`, hiển thị bằng `HtmlCompat`) (**011:** destination `legal` trong `nav_auth.xml` có thêm `<deepLink app:uri="smashnow://legal/{doc}"/>` để `feature/account` mở được mà không import class trong `feature/auth/ui`, constitution I)
-- [ ] T045 [US1] Cài `AUTH/ui/setup/AccountSetupViewModel.kt` + `AccountSetupFragment.kt` + `RES/layout/fragment_auth_account_setup.xml` ("Đang chuẩn bị tài khoản…"; lỗi có "Thử lại" và "Đăng xuất"). Cho T038 xanh
-- [ ] T046 [US1] Cài `CORE/ui/VerifyEmailBannerViewModel.kt`, `CORE/ui/VerifyEmailBannerView.kt` + `RES/layout/view_verify_email_banner.xml`; nhúng vào `PlayerHomePlaceholderFragment`. Cho T039 xanh
-- [ ] T047 [US1] Thêm `welcome`, `register`, `legal`, `accountSetup` vào `RES/navigation/nav_auth.xml` (Safe Args); `MainActivity` điều hướng `Initializing` / `InitFailed` → `accountSetup`
+- [x] T045 [US1] Cài `AUTH/ui/setup/AccountSetupViewModel.kt` + `AccountSetupFragment.kt` + `RES/layout/fragment_auth_account_setup.xml` ("Đang chuẩn bị tài khoản…"; lỗi có "Thử lại" và "Đăng xuất"). Cho T038 xanh
+- [x] T046 [US1] Cài `CORE/ui/VerifyEmailBannerViewModel.kt`, `CORE/ui/VerifyEmailBannerView.kt` + `RES/layout/view_verify_email_banner.xml`; nhúng vào `PlayerHomePlaceholderFragment`. Cho T039 xanh
+- [x] T047 [US1] Thêm `welcome`, `register`, `legal`, `accountSetup` vào `RES/navigation/nav_auth.xml` (Safe Args); `MainActivity` điều hướng `Initializing` / `InitFailed` → `accountSetup` _(Khi cài đặt: `Initializing` lúc đang ở `RegisterFragment` thì không chuyển màn hình, vì màn hình đăng ký đang gọi `on-signup` và tự báo lỗi; `accountSetup` mở bằng deep link `smashnow://auth/setup`. Deep link đăng ký chuyển từ graph về `registerFragment`; `loginFragment` có thêm arg `email`.)_
 
 **Checkpoint**: US1 chạy độc lập; quickstart M1, M2, M3, M4 đạt.
 

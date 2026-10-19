@@ -15,8 +15,7 @@ sealed interface WelcomeEvent {
 
     data object OpenLogin : WelcomeEvent
 
-    // TODO(US1 T042): thay bằng OpenRegister khi có màn hình đăng ký.
-    data object NotReady : WelcomeEvent
+    data object OpenRegister : WelcomeEvent
 }
 
 @HiltViewModel
@@ -31,7 +30,7 @@ class WelcomeViewModel @Inject constructor(
     fun onBrowseAsGuest() = markSeenThen(WelcomeEvent.OpenPlayerHome)
 
     /** Bấm "Tạo tài khoản" hoặc "Đăng nhập" cũng tính là đã qua màn hình chào (research R15). */
-    fun onCreateAccount() = markSeenThen(WelcomeEvent.NotReady)
+    fun onCreateAccount() = markSeenThen(WelcomeEvent.OpenRegister)
 
     fun onLogin() = markSeenThen(WelcomeEvent.OpenLogin)
 
