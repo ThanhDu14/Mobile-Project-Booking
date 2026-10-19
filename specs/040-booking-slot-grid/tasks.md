@@ -79,7 +79,7 @@ US5: Chống tạo đơn trùng lặp và xử lý mất kết nối (P3)
   - Bỏ chọn slot ở đầu hoặc đuôi chuỗi $\rightarrow$ chỉ bỏ slot đó, giữ các slot còn lại liên tục.
   - Bỏ chọn slot ở giữa chuỗi $\rightarrow$ tự động cắt bỏ từ slot đó về cuối dãy.
   - Chặn chọn slot có trạng thái `BOOKED`, `HELD`, `BLOCKED`, hoặc `PAST`.
-  - Chặn chọn vượt quá 6 slots (hoặc tối đa 8 slots = 4 giờ chơi liên tiếp).
+  - Chặn chọn vượt quá 8 slots 30 phút (= 4 giờ chơi liên tiếp theo FR-026 của Spec 040; phân biệt với mốc 6 slots của Spec 041).
   - Kiểm tra điều kiện tối thiểu 2 slot (1 giờ) khi bấm tiếp tục đặt sân.
 - [ ] T007 [P] [US1] Viết Unit Test `TEST/feature/booking/domain/CalculateTotalPriceUseCaseTest.kt`:
   - Đơn giá mỗi slot 30 phút = `pricePerHour / 2`.
@@ -188,7 +188,7 @@ US5: Chống tạo đơn trùng lặp và xử lý mất kết nối (P3)
 
 - [ ] T035 [P] [US2] Cấu hình Navigation Safe Args trong `RES/navigation/nav_player.xml`:
   - Action từ `CourtDetailFragment` (Spec 030) sang `BookingSlotGridFragment` nhận `venueId: String`.
-  - Action từ `BookingSlotGridFragment` sang `PaymentFragment` (Spec 050) truyền `HoldToPaymentArgs` ([contracts/ui-contracts.md](contracts/ui-contracts.md#12-điều-hướng-sang-màn-hình-tóm-tắt-đặt-sân-041-booking-summary-state)).
+  - Action từ `BookingSlotGridFragment` sang `PaymentFragment` (Spec 050) truyền `HoldToPaymentArgs` (đồng nhất tên class Safe Args giữa Spec 040 và Spec 050).
 - [ ] T036 [US4] Tích hợp với Auth Flow (Spec 010):
   - Khi khách vãng lai bấm "Tiếp tục", ViewModel phát hiện chưa đăng nhập $\rightarrow$ lưu tạm danh sách slot vào bộ nhớ và điều hướng sang `LoginPromptView`.
   - Khi đăng nhập thành công và quay lại, tự động kiểm tra tính khả dụng: khôi phục nguyên vẹn các slot nếu còn trống, hoặc thông báo nếu có slot đã bị người khác đặt mất.
@@ -196,9 +196,9 @@ US5: Chống tạo đơn trùng lặp và xử lý mất kết nối (P3)
   - Hiển thị thanh thông báo lỗi mạng kèm nút "Thử lại".
   - Giữ nguyên các slot đang chọn, không reset màn hình khi mạng chập chờn.
   - Tạo mã định danh duy nhất `requestId` (UUID) cho mỗi lần bấm "Tiếp tục" để chống tạo trùng đơn giữ chỗ khi bấm nhiều lần hoặc retry.
-- [ ] T038 [US3] Quản lý vòng đời và bộ nhớ:
+- [ ] T038 [US3] Quản lý vòng đời và cơ chế giải phóng slot:
   - Tự động hủy `SnapshotListener` trong `onStop()` để không tiêu tốn Quota Firestore khi app chuyển xuống background.
-  - Tự động gọi `releaseHoldSlots` nếu người dùng chủ động bấm nút "Hủy" hoặc thoát khỏi luồng đặt sân.
+  - Quản lý hết hạn giữ chỗ 5 phút: Client áp dụng cơ chế Lazy Expiration (tự động coi slot có `holdExpiresAt < serverNow` là `AVAILABLE` để người khác đặt ngay mà không bị nghẽn); gọi `releaseHoldSlots` chủ động giải phóng khi người dùng bấm Hủy/Back. (Ranh giới với Server: việc dọn dẹp vật lý các document slot rác do Supabase Edge Function theo lịch của Constitution III phụ trách).
 
 **Checkpoint**: Các luồng biên, đăng nhập và ngắt mạng hoạt động ổn định, không có rò rỉ bộ nhớ hoặc xung đột dữ liệu.
 

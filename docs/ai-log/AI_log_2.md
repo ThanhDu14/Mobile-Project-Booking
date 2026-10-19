@@ -19,6 +19,7 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 13 | 2026-10-15 | Lập kế hoạch kỹ thuật spec 050 (thanh toán và voucher giả lập) bằng `/speckit-plan` | 05 |
 | 14 | 2026-10-15 | Lập kế hoạch kỹ thuật spec 060 (quản lý lịch đặt của tôi) bằng `/speckit-plan` | 06 |
 | 15 | 2026-10-19 | Lập danh sách công việc spec 040 (lưới khung giờ đặt sân) bằng `/speckit-tasks` | 04 |
+| 16 | 2026-10-19 | Phân tích đối soát chất lượng bằng `/speckit-analyze` & tinh chỉnh spec 040 | 04 |
 
 
 
@@ -739,3 +740,37 @@ Bảng đối chiếu lựa chọn:
 
 - `specs/040-booking-slot-grid/tasks.md`: 42 tasks chi tiết có checkbox `- [ ]`, ID `T001`–`T042`, gắn tag User Story (`[US1]`–`[US5]`), nhãn song song `[P]`, đường dẫn file chính xác và lệnh xác minh `Verify:`.
 
+---
+
+## Mục 16: Phân tích đối soát chất lượng bằng `/speckit-analyze` & tinh chỉnh spec 040
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-19 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 04 – Đặt sân (`specs/040-booking-slot-grid`) |
+| Công cụ AI | Antigravity, lệnh Spec Kit `/speckit-analyze` |
+| Mục đích | Đối soát chéo 3 bên giữa `spec.md`, `plan.md`, `tasks.md` và `constitution.md`. Phát hiện các điểm lệch hoặc mơ hồ và tiến hành tinh chỉnh chuẩn hóa trước khi bước vào cài đặt mã nguồn (`/speckit-implement`) |
+| Nhánh Git | `feature/040-booking-slot-grid` |
+
+### Kết quả phân tích đối soát chéo (Cross-Artifact Analysis)
+
+- **Tỷ lệ bao phủ (Coverage)**: **100%** (28/28 Functional Requirements và 8/8 Success Criteria đều có ít nhất một task tương ứng trong tổng số 42 tasks).
+- **Tuân thủ Constitution**: Không có bất kỳ vi phạm nào (0 Critical, 0 High). Tầng domain độc lập thuần Kotlin, số tiền dùng `Long` VND, giao dịch Firestore Transaction đảm bảo All-or-Nothing và All Reads Before All Writes.
+- **Các điểm cần tinh chỉnh**: Phát hiện 2 điểm Low (A1, C1) và 1 điểm Medium (U1) về tính đồng nhất câu chữ và ranh giới dọn dẹp dữ liệu.
+
+### Chi tiết các tinh chỉnh đã thực thi
+
+1. **A1 (Low – Chuẩn hóa giới hạn slot tối đa)**:
+   - Cập nhật task `T006` trong `tasks.md`: Xác định rõ ràng đơn ngày lẻ của Spec 040 cho phép chọn tối đa **8 slot 30 phút (= 4 giờ chơi liên tục)** theo đúng FR-026 của `spec.md`, tách biệt rõ với mốc 6 slot (3 giờ) của đơn cố định theo tuần ở Spec 041.
+2. **C1 (Low – Đồng nhất tên Bundle Safe Args)**:
+   - Cập nhật `plan.md` (§5.3), `contracts/ui-contracts.md` (§1.2) và `tasks.md` (`T035`): Thống nhất sử dụng tên class **`HoldToPaymentArgs`** khi điều hướng từ lưới chọn sân sang thanh toán, khớp hoàn toàn với hợp đồng tiếp nhận của Spec 050.
+3. **U1 (Medium – Làm rõ ranh giới dọn dẹp slot `HELD` quá hạn 5 phút)**:
+   - Cập nhật task `T038` trong `tasks.md`: Làm rõ cơ chế phía Client là *Lazy Expiration* (tự động coi slot có `holdExpiresAt < serverNow` là `AVAILABLE` để người dùng khác có thể đặt ngay mà không bị khóa nhầm); việc quét xóa vật lý các document slot rác thuộc trách nhiệm của Supabase Edge Function theo lịch của hệ thống (Constitution III).
+
+### Trạng thái tài liệu sau tinh chỉnh
+
+- `specs/040-booking-slot-grid/tasks.md`: Đã cập nhật T006, T035, T038.
+- `specs/040-booking-slot-grid/plan.md`: Đã đồng nhất `HoldToPaymentArgs`.
+- `specs/040-booking-slot-grid/contracts/ui-contracts.md`: Đã cập nhật §1.2 sang `HoldToPaymentArgs`.
+- Toàn bộ bộ tài liệu đạt chất lượng 10/10, sẵn sàng cho việc bắt đầu cài đặt mã nguồn (`/speckit-implement`).

@@ -20,16 +20,19 @@ Màn hình chi tiết cơ sở (`CourtDetailFragment`) bấm "Đặt sân" sẽ 
 </action>
 ```
 
-### 1.2. Điều hướng sang Màn hình Tóm tắt đặt sân (`041-booking-summary-state`)
-Khi người dùng bấm "Tiếp tục", ViewModel phát ra `BookingSlotUiEffect.NavigateToBookingSummary`:
+### 1.2. Điều hướng sang Màn hình Thanh toán & Giữ chỗ (`050-payment-voucher`)
+Khi người dùng bấm "Tiếp tục" và giữ chỗ 5 phút thành công, ViewModel phát ra `BookingSlotUiEffect.NavigateToPayment`:
 ```kotlin
-data class BookingSlotToSummaryArgs(
+@Parcelize
+data class HoldToPaymentArgs(
+    val bookingId: String,               // Mã đơn giữ chỗ (requestId UUID)
     val venueId: String,
-    val courtId: String,
-    val courtName: String,
-    val date: String,                      // yyyyMMdd (ví dụ "20261015")
-    val selectedSlotTimes: Array<String>,  // Danh sách các ca 30p: ["1800", "1830", "1900"]
-    val subtotalAmount: Long               // Tổng tiền tạm tính trước khuyến mãi
+    val venueName: String,
+    val isRecurring: Boolean = false,
+    val totalSessions: Int = 1,          // Đơn lẻ = 1 buổi
+    val subtotalAmount: Long,            // Tổng tiền tạm tính
+    val slotIds: Array<String>,          // Danh sách các slot giữ chỗ
+    val holdExpiresAtMillis: Long        // Mốc thời gian hết hạn 5 phút đếm ngược
 ) : Parcelable
 ```
 
