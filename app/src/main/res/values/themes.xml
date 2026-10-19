@@ -127,6 +127,18 @@
         <item name="drawableTint">?attr/colorError</item>
     </style>
 
+    <!-- Dòng có dấu tích trong hộp tóm tắt điều khoản -->
+    <style name="Widget.SmashNow.CheckRow" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">@dimen/space_3</item>
+        <item name="android:drawablePadding">@dimen/space_3</item>
+        <item name="android:textAppearance">@style/TextAppearance.SmashNow.BodyLarge</item>
+        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
+        <item name="drawableStartCompat">@drawable/ic_check_20</item>
+        <item name="drawableTint">?attr/colorOnSurfaceVariant</item>
+    </style>
+
     <!-- Vòng xoay thay chữ trên nút khi đang gửi (FR-022) -->
     <style name="Widget.SmashNow.ButtonProgress" parent="">
         <item name="android:layout_width">wrap_content</item>

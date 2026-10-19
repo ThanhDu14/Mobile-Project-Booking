@@ -72,12 +72,16 @@ class MainActivity : AppCompatActivity() {
                 previous !is SessionState.SignedIn -> onSignedIn(state.appRole)
                 previous.appRole != state.appRole -> execute(RouteDecision.ResetTo(state.appRole))
             }
-            is SessionState.SignedOut -> if (previous !is SessionState.SignedOut) {
+            is SessionState.SignedOut -> when {
+                previous is SessionState.SignedOut -> Unit
+                // "Dùng tài khoản khác" ở bước Hoàn tất tài khoản: về màn hình đăng nhập.
+                previous is SessionState.NeedsConsent && state.reason == null -> backToLogin()
                 // Đăng xuất (spec 011) hoặc bị khóa: về trang chủ ở chế độ khách, không về màn hình chào.
-                execute(RouteDecision.PlayerGuest(showLockedLogin = state.reason == SignOutReason.LOCKED))
+                else -> execute(RouteDecision.PlayerGuest(showLockedLogin = state.reason == SignOutReason.LOCKED))
             }
-            // TODO(US1 T047, US4 T066): Initializing / InitFailed → accountSetup, NeedsConsent → termsConsent.
-            SessionState.Initializing, is SessionState.InitFailed, is SessionState.NeedsConsent -> Unit
+            is SessionState.NeedsConsent -> openConsent()
+            // TODO(US1 T047): Initializing / InitFailed → accountSetup.
+            SessionState.Initializing, is SessionState.InitFailed -> Unit
             SessionState.Loading -> Unit
         }
     }
@@ -105,8 +109,29 @@ class MainActivity : AppCompatActivity() {
                 navController.popBackStack(R.id.nav_auth, inclusive = true)
                 decision.returnTo?.let { navController.navigate(it) }
             }
-            // TODO(US1 T047, US4 T066): accountSetup, termsConsent chưa có; giữ màn hình khởi động.
-            RouteDecision.AccountSetup, RouteDecision.Consent -> Unit
+            RouteDecision.Consent -> openConsent()
+            // TODO(US1 T047): accountSetup chưa có; giữ màn hình khởi động.
+            RouteDecision.AccountSetup -> Unit
+        }
+    }
+
+    /**
+     * Bước Hoàn tất tài khoản. Đi từ màn hình đăng nhập thì mở chồng lên (Back = dùng tài khoản khác);
+     * mở app lại khi chưa xong bước này thì xóa back stack (Edge Case đóng app ở bước đồng ý).
+     */
+    private fun openConsent() {
+        if (navController.currentDestination?.id == R.id.termsConsentFragment) return
+        if (hasBackStackEntry(R.id.loginFragment)) {
+            navController.navigate(R.id.termsConsentFragment)
+        } else {
+            navController.navigate(CONSENT, navOptions { popUpTo(R.id.nav_main) { inclusive = true } })
+        }
+    }
+
+    private fun backToLogin() {
+        if (!navController.popBackStack(R.id.loginFragment, false)) {
+            resetTo(R.id.nav_player)
+            navController.navigate(LOGIN)
         }
     }
 
@@ -125,7 +150,10 @@ class MainActivity : AppCompatActivity() {
 
     private companion object {
         const val ARG_RETURN_TO = "returnTo"
-        val LOCKED_LOGIN: NavDeepLinkRequest =
-            NavDeepLinkRequest.Builder.fromUri(Uri.parse("smashnow://auth/login?lockedNotice=true")).build()
+        val LOGIN: NavDeepLinkRequest = deepLink("smashnow://auth/login")
+        val LOCKED_LOGIN: NavDeepLinkRequest = deepLink("smashnow://auth/login?lockedNotice=true")
+        val CONSENT: NavDeepLinkRequest = deepLink("smashnow://auth/consent")
+
+        fun deepLink(uri: String): NavDeepLinkRequest = NavDeepLinkRequest.Builder.fromUri(Uri.parse(uri)).build()
     }
 }

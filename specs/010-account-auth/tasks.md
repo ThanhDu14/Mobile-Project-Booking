@@ -200,7 +200,7 @@ Thêm sau khi `/speckit-analyze` spec 020 phát hiện khách không vào đư�
 - [ ] T041 [US1] Cài `AUTH/ui/register/RegisterViewModel.kt` (`StateFlow<RegisterUiState>` đúng [contracts/ui-screens.md §3](contracts/ui-screens.md#3-viewmodel--stateflowuistate), sự kiện qua `Channel`). Cho T037 xanh
 - [ ] T042 [US1] Tạo `AUTH/ui/welcome/WelcomeFragment.kt` + `RES/layout/fragment_auth_welcome.xml` theo wireframe `buoc1_man-chao` (nút "Đăng ký", "Đăng nhập", **"Xem sân trước"** (FR-025: ghi `welcome_seen = true` rồi vào `nav_player` chế độ khách, `popUpTo(nav_main, inclusive = true)`); bấm "Đăng ký"/"Đăng nhập" cũng ghi `welcome_seen = true`; nút Google và "Dùng số điện thoại" nối ở US4, US5)
 - [ ] T043 [US1] Tạo `AUTH/ui/register/RegisterFragment.kt` + `RES/layout/fragment_auth_register.xml` theo wireframe `buoc3_dang-ky-email`: dòng "Mọi tài khoản bắt đầu là người chơi…" (FR-002), **không** có lựa chọn vai trò (US1-4), hai dấu tích mật khẩu, checkbox điều khoản có link mở `LegalDocumentFragment`, `TextInputLayout.setError`, ô mật khẩu `android:saveEnabled="false"`, nút có `CircularProgressIndicator` khi `isSubmitting`, `contentDescription`/`hint`, vùng chạm 48dp, form tối đa `auth_form_max_width`
-- [ ] T044 [P] [US1] Tạo `AUTH/ui/legal/LegalDocumentFragment.kt` + `RES/layout/fragment_auth_legal.xml` (arg `doc: TERMS | PRIVACY`, đọc `res/raw/*_vi.html`, hiển thị bằng `HtmlCompat`) (**011:** destination `legal` trong `nav_auth.xml` có thêm `<deepLink app:uri="smashnow://legal/{doc}"/>` để `feature/account` mở được mà không import class trong `feature/auth/ui`, constitution I)
+- [x] T044 [P] [US1] Tạo `AUTH/ui/legal/LegalDocumentFragment.kt` + `RES/layout/fragment_auth_legal.xml` (arg `doc: TERMS | PRIVACY`, đọc `res/raw/*_vi.html`, hiển thị bằng `HtmlCompat`) (**011:** destination `legal` trong `nav_auth.xml` có thêm `<deepLink app:uri="smashnow://legal/{doc}"/>` để `feature/account` mở được mà không import class trong `feature/auth/ui`, constitution I)
 - [ ] T045 [US1] Cài `AUTH/ui/setup/AccountSetupViewModel.kt` + `AccountSetupFragment.kt` + `RES/layout/fragment_auth_account_setup.xml` ("Đang chuẩn bị tài khoản…"; lỗi có "Thử lại" và "Đăng xuất"). Cho T038 xanh
 - [ ] T046 [US1] Cài `CORE/ui/VerifyEmailBannerViewModel.kt`, `CORE/ui/VerifyEmailBannerView.kt` + `RES/layout/view_verify_email_banner.xml`; nhúng vào `PlayerHomePlaceholderFragment`. Cho T039 xanh
 - [ ] T047 [US1] Thêm `welcome`, `register`, `legal`, `accountSetup` vào `RES/navigation/nav_auth.xml` (Safe Args); `MainActivity` điều hướng `Initializing` / `InitFailed` → `accountSetup`
@@ -268,23 +268,23 @@ Thêm sau khi `/speckit-analyze` spec 020 phát hiện khách không vào đư�
 
 ### Tests cho User Story 4 ⚠️ viết trước, phải fail
 
-- [ ] T058 [P] [US4] Unit test `TEST/feature/auth/domain/usecase/SignInWithGoogleUseCaseTest.kt` (fake `GoogleCredentialDataSource`): `GetCredentialCancellationException` → `GoogleCancelled`; `NoCredentialException` → `NoGoogleAccount`; collision → `NeedsLinking(email, pendingCredential)`; thành công → `sessionManager.refresh(true)`
-- [ ] T059 [P] [US4] Unit test `TEST/feature/auth/domain/usecase/LinkGoogleToPasswordUseCaseTest.kt`: `signInWithEmail` rồi `linkWithCredential(pendingCredential)`; sai mật khẩu → `InvalidCredentials`, không liên kết; thành công → `refresh(true)`
-- [ ] T060 [P] [US4] Unit test `TEST/feature/auth/ui/consent/TermsConsentViewModelTest.kt`:
+- [x] T058 [P] [US4] Unit test `TEST/feature/auth/domain/usecase/SignInWithGoogleUseCaseTest.kt` (fake `GoogleCredentialDataSource`): `GetCredentialCancellationException` → `GoogleCancelled`; `NoCredentialException` → `NoGoogleAccount`; collision → `NeedsLinking(email, pendingCredential)`; thành công → `sessionManager.refresh(true)`
+- [x] T059 [P] [US4] Unit test `TEST/feature/auth/domain/usecase/LinkGoogleToPasswordUseCaseTest.kt`: `signInWithEmail` rồi `linkWithCredential(pendingCredential)`; sai mật khẩu → `InvalidCredentials`, không liên kết; thành công → `refresh(true)`
+- [x] T060 [P] [US4] Unit test `TEST/feature/auth/ui/consent/TermsConsentViewModelTest.kt`:
   - `prefill` lấy từ `SessionState.NeedsConsent` (provider, email/số, họ tên sửa được);
   - nút "Bắt đầu dùng SmashNow" tắt khi chưa đánh dấu; `NameRule` lỗi → không gửi;
   - bấm 2 lần → 1 lời gọi `CompleteSignupUseCase(termsAccepted = true)`;
   - "Dùng tài khoản khác" → `signOut()`;
   - hết 15 s → snackbar mạng, giữ họ tên.
-- [ ] T061 [P] [US4] Bổ sung `LoginViewModelTest`: `GoogleCancelled` → không có `formError` (US4-4); `NeedsLinking` → sự kiện mở `LinkAccountDialog(email)`
+- [x] T061 [P] [US4] Bổ sung `LoginViewModelTest`: `GoogleCancelled` → không có `formError` (US4-4); `NeedsLinking` → sự kiện mở `LinkAccountDialog(email)`
 
 ### Implementation cho User Story 4
 
-- [ ] T062 [US4] Tạo `AUTH/data/GoogleCredentialDataSource.kt` theo [R12](research.md#r12-google-sign-in-bằng-credential-manager) (`GetGoogleIdOption`, `setFilterByAuthorizedAccounts(false)`, `serverClientId = default_web_client_id`); thêm `signInWithCredential`, `linkWithCredential` vào `FirebaseAuthDataSource`
-- [ ] T063 [US4] Cài `AUTH/domain/usecase/SignInWithGoogleUseCase.kt`, `LinkGoogleToPasswordUseCase.kt`. Cho T058, T059 xanh
-- [ ] T064 [US4] Cài `AUTH/ui/consent/TermsConsentViewModel.kt` + `TermsConsentFragment.kt` + `RES/layout/fragment_auth_terms_consent.xml` theo wireframe `buoc6_hoan-tat-tai-khoan` (thẻ "Đã xác thực bằng Google / số điện thoại", họ tên điền sẵn, tóm tắt điều khoản, link `LegalDocumentFragment`). Cho T060 xanh
-- [ ] T065 [US4] Tạo `AUTH/ui/link/LinkAccountDialog.kt` + `RES/layout/dialog_auth_link_account.xml` (arg `email`, ô mật khẩu, nút "Liên kết"); thêm nút "Tiếp tục với Google" vào `WelcomeFragment`, `LoginFragment`, nối `LoginViewModel` với `SignInWithGoogleUseCase`. Cho T061 xanh
-- [ ] T066 [US4] Thêm `termsConsent`, `linkAccount` vào `nav_auth.xml`; `MainActivity` điều hướng `NeedsConsent` → `termsConsent` (đóng app ở bước đồng ý thì mở lại vẫn về đây – Edge Case)
+- [x] T062 [US4] Tạo `AUTH/data/GoogleCredentialDataSource.kt` theo [R12](research.md#r12-google-sign-in-bằng-credential-manager) (`GetGoogleIdOption`, `setFilterByAuthorizedAccounts(false)`, `serverClientId = default_web_client_id`); thêm `signInWithCredential`, `linkWithCredential` vào `FirebaseAuthDataSource`
+- [x] T063 [US4] Cài `AUTH/domain/usecase/SignInWithGoogleUseCase.kt`, `LinkGoogleToPasswordUseCase.kt`. Cho T058, T059 xanh
+- [x] T064 [US4] Cài `AUTH/ui/consent/TermsConsentViewModel.kt` + `TermsConsentFragment.kt` + `RES/layout/fragment_auth_terms_consent.xml` theo wireframe `buoc6_hoan-tat-tai-khoan` (thẻ "Đã xác thực bằng Google / số điện thoại", họ tên điền sẵn, tóm tắt điều khoản, link `LegalDocumentFragment`). Cho T060 xanh
+- [x] T065 [US4] Tạo `AUTH/ui/link/LinkAccountDialog.kt` + `RES/layout/dialog_auth_link_account.xml` (arg `email`, ô mật khẩu, nút "Liên kết"); thêm nút "Tiếp tục với Google" vào `WelcomeFragment`, `LoginFragment`, nối `LoginViewModel` với `SignInWithGoogleUseCase`. Cho T061 xanh _(Khi cài đặt: không thêm nút Google vào `WelcomeFragment` vì wireframe `buoc1_man-chao` không có; `LinkAccountDialog` mở bằng `childFragmentManager` của `LoginFragment` để dùng chung credential đang chờ, không phải destination trong `nav_auth`.)_
+- [x] T066 [US4] Thêm `termsConsent`, `linkAccount` vào `nav_auth.xml`; `MainActivity` điều hướng `NeedsConsent` → `termsConsent` (đóng app ở bước đồng ý thì mở lại vẫn về đây – Edge Case)
 
 **Checkpoint**: quickstart M7, M8, M11 đạt (M9, M10 chạy ở T076).
 

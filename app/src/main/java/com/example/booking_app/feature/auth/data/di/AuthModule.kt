@@ -1,6 +1,8 @@
 package com.example.booking_app.feature.auth.data.di
 
 import com.example.booking_app.feature.auth.data.AuthRepositoryImpl
+import com.example.booking_app.feature.auth.data.CredentialManagerGoogleDataSource
+import com.example.booking_app.feature.auth.data.GoogleCredentialDataSource
 import com.example.booking_app.feature.auth.data.OnSignupApi
 import com.example.booking_app.feature.auth.data.SupabaseOnSignupApi
 import com.example.booking_app.feature.auth.domain.AuthRepository
@@ -18,4 +20,7 @@ abstract class AuthModule {
 
     @Binds
     abstract fun bindOnSignupApi(impl: SupabaseOnSignupApi): OnSignupApi
+
+    @Binds
+    abstract fun bindGoogleCredentialDataSource(impl: CredentialManagerGoogleDataSource): GoogleCredentialDataSource
 }

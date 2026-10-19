@@ -13,6 +13,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.example.booking_app.R
 import com.example.booking_app.databinding.FragmentAuthLoginBinding
+import com.example.booking_app.feature.auth.ui.link.LinkAccountDialog
 import com.example.booking_app.feature.auth.ui.messageRes
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
@@ -40,8 +41,10 @@ class LoginFragment : Fragment(R.layout.fragment_auth_login) {
         }
         binding.loginButton.setOnClickListener { viewModel.onSubmit() }
 
+        binding.googleButton.setOnClickListener { viewModel.onGoogle(requireActivity()) }
+
         // TODO(US3 T057, US5 T072, US1 T043): nối Quên mật khẩu, Số điện thoại, Đăng ký.
-        listOf(binding.forgotButton, binding.phoneButton, binding.registerButton, binding.googleButton).forEach {
+        listOf(binding.forgotButton, binding.phoneButton, binding.registerButton).forEach {
             it.setOnClickListener { v -> Snackbar.make(v, R.string.auth_welcome_coming_soon, Snackbar.LENGTH_SHORT).show() }
         }
 
@@ -59,10 +62,13 @@ class LoginFragment : Fragment(R.layout.fragment_auth_login) {
         binding.formError.isVisible = state.formError != null
         state.formError?.let { binding.formError.setText(it.messageRes()) }
 
-        binding.loginButton.isEnabled = !state.isSubmitting
+        val busy = state.isSubmitting || state.isGoogleSubmitting
+        binding.loginButton.isEnabled = !busy
         binding.loginButton.text = if (state.isSubmitting) "" else getString(R.string.auth_login_submit)
         binding.loginProgress.isInvisible = !state.isSubmitting
-        binding.googleButton.isEnabled = !state.isSubmitting
+        binding.googleButton.isEnabled = !busy
+        binding.googleButton.text = if (state.isGoogleSubmitting) "" else getString(R.string.auth_continue_google)
+        binding.googleProgress.isInvisible = !state.isGoogleSubmitting
     }
 
     private fun handle(binding: FragmentAuthLoginBinding, event: LoginEvent) {
@@ -75,6 +81,14 @@ class LoginFragment : Fragment(R.layout.fragment_auth_login) {
                     .show()
             is LoginEvent.ShowError ->
                 Snackbar.make(binding.root, event.error.messageRes(), Snackbar.LENGTH_LONG).show()
+            is LoginEvent.OpenLinkDialog ->
+                if (childFragmentManager.findFragmentByTag(LinkAccountDialog.TAG) == null) {
+                    LinkAccountDialog.newInstance(event.email).show(childFragmentManager, LinkAccountDialog.TAG)
+                }
+            LoginEvent.LinkDone -> {
+                (childFragmentManager.findFragmentByTag(LinkAccountDialog.TAG) as? LinkAccountDialog)?.dismiss()
+                Snackbar.make(binding.root, R.string.auth_link_done, Snackbar.LENGTH_SHORT).show()
+            }
         }
     }
 

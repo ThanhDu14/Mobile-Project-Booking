@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Hộp thông tin nền surface-sunken (tóm tắt điều khoản, ghi chú phiên bản học tập). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="@color/sn_surface_sunken" />
+    <corners android:radius="@dimen/radius_md" />
+</shape>

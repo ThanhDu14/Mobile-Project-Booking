@@ -98,6 +98,7 @@
     <string name="auth_consent_submit">Bắt đầu dùng SmashNow</string>
     <string name="auth_consent_check_to_continue">Đánh dấu đồng ý để tiếp tục</string>
     <string name="auth_consent_other_account">Dùng tài khoản khác</string>
+    <string name="auth_consent_name_helper">Bạn sửa được họ tên này sau trong trang Tài khoản.</string>
 
     <!-- Chờ khởi tạo tài khoản (Edge Case "khởi tạo lỗi", FR-006) -->
     <string name="auth_setup_loading">Đang chuẩn bị tài khoản…</string>
@@ -124,6 +125,7 @@
     <!-- Điều khoản (LegalDocumentFragment) -->
     <string name="auth_legal_terms_title">Điều khoản sử dụng</string>
     <string name="auth_legal_privacy_title">Chính sách quyền riêng tư</string>
+    <string name="auth_terms_checkbox_description">Đồng ý Điều khoản sử dụng và Chính sách quyền riêng tư</string>
 
     <!-- Liên kết tài khoản (FR-012, research R7) -->
     <string name="auth_link_title">Liên kết tài khoản</string>

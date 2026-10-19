@@ -1,15 +1,24 @@
 package com.example.booking_app.feature.auth.ui.login
 
+import android.app.Activity
+import androidx.credentials.exceptions.GetCredentialCancellationException
+import androidx.credentials.exceptions.NoCredentialException
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.example.booking_app.core.session.FakeSessionManager
 import com.example.booking_app.core.testing.MainDispatcherRule
 import com.example.booking_app.feature.auth.FakeAuthRepository
+import com.example.booking_app.feature.auth.FakeGoogleCredentialDataSource
 import com.example.booking_app.feature.auth.domain.model.AuthError
 import com.example.booking_app.feature.auth.domain.model.AuthResult
+import com.example.booking_app.feature.auth.domain.model.PendingCredential
+import com.example.booking_app.feature.auth.domain.usecase.LinkGoogleToPasswordUseCase
 import com.example.booking_app.feature.auth.domain.usecase.SignInWithEmailUseCase
+import com.example.booking_app.feature.auth.domain.usecase.SignInWithGoogleUseCase
 import com.example.booking_app.feature.auth.domain.validation.ValidationError
+import io.mockk.mockk
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -26,9 +35,14 @@ class LoginViewModelTest {
     private val repository = FakeAuthRepository()
     private val sessionManager = FakeSessionManager()
 
-    private fun viewModel(args: Map<String, Any?> = emptyMap()) = LoginViewModel(
+    private val google = FakeGoogleCredentialDataSource()
+    private val activity = mockk<Activity>(relaxed = true)
+
+    private fun viewModel(handle: SavedStateHandle = SavedStateHandle()) = LoginViewModel(
         signInWithEmail = SignInWithEmailUseCase(repository, sessionManager),
-        savedStateHandle = SavedStateHandle(args),
+        signInWithGoogle = SignInWithGoogleUseCase(google, repository, sessionManager),
+        linkGoogleToPassword = LinkGoogleToPasswordUseCase(repository, sessionManager, CoroutineScope(mainRule.dispatcher)),
+        savedStateHandle = handle,
     )
 
     private fun LoginViewModel.fill(email: String = "nam@example.com", password: String = "abc12345") {
@@ -90,10 +104,10 @@ class LoginViewModelTest {
     @Test
     fun `lockedNotice true thi hien hop thoai khoa ngay khi mo, mot lan`() = runTest {
         val handle = SavedStateHandle(mapOf("lockedNotice" to true))
-        val vm = LoginViewModel(SignInWithEmailUseCase(repository, sessionManager), handle)
+        val vm = viewModel(handle)
         vm.events.test { assertEquals(LoginEvent.ShowLocked, awaitItem()) }
         // Tạo lại sau xoay màn hình: không hiện lại.
-        val again = LoginViewModel(SignInWithEmailUseCase(repository, sessionManager), handle)
+        val again = viewModel(handle)
         again.events.test {
             testScheduler.advanceUntilIdle()
             expectNoEvents()
@@ -121,8 +135,70 @@ class LoginViewModelTest {
     @Test
     fun `email giu qua SavedStateHandle, mat khau thi khong`() = runTest {
         val handle = SavedStateHandle()
-        LoginViewModel(SignInWithEmailUseCase(repository, sessionManager), handle).fill()
+        viewModel(handle).fill()
         assertEquals("nam@example.com", handle.get<String>("email"))
         assertFalse(handle.keys().any { it.contains("password", ignoreCase = true) })
+    }
+
+    // ---------- Google (US4, T061) ----------
+
+    @Test
+    fun `huy bottom sheet Google thi khong co loi nao`() = runTest {
+        google.result = { throw GetCredentialCancellationException() }
+        val vm = viewModel()
+        vm.events.test {
+            vm.onGoogle(activity)
+            testScheduler.advanceUntilIdle()
+            expectNoEvents()
+        }
+        assertNull(vm.uiState.value.formError)
+        assertFalse(vm.uiState.value.isSubmitting)
+    }
+
+    @Test
+    fun `Google trung email tai khoan mat khau thi mo hop thoai lien ket`() = runTest {
+        val pending = object : PendingCredential {}
+        repository.googleResult = AuthResult.Failure(AuthError.NeedsLinking("nam@congty.vn", pending))
+        val vm = viewModel()
+        vm.events.test {
+            vm.onGoogle(activity)
+            assertEquals(LoginEvent.OpenLinkDialog("nam@congty.vn"), awaitItem())
+        }
+
+        // Nhập sai mật khẩu trong hộp thoại: báo lỗi trong hộp thoại, chưa liên kết.
+        repository.signInResult = AuthResult.Failure(AuthError.InvalidCredentials)
+        vm.onLinkSubmit("sai")
+        testScheduler.advanceUntilIdle()
+        assertEquals(AuthError.InvalidCredentials, vm.uiState.value.linkError)
+        assertEquals(emptyList<PendingCredential>(), repository.linkCalls)
+
+        repository.signInResult = AuthResult.Success(Unit)
+        vm.events.test {
+            vm.onLinkSubmit("abc12345")
+            assertEquals(LoginEvent.LinkDone, awaitItem())
+        }
+        assertEquals(listOf(pending), repository.linkCalls)
+    }
+
+    @Test
+    fun `khong co tai khoan Google thi bao loi bang snackbar`() = runTest {
+        google.result = { throw NoCredentialException() }
+        val vm = viewModel()
+        vm.events.test {
+            vm.onGoogle(activity)
+            assertEquals(LoginEvent.ShowError(AuthError.NoGoogleAccount), awaitItem())
+        }
+    }
+
+    @Test
+    fun `bam Google hai lan chi mo mot lan`() = runTest {
+        repository.gate = CompletableDeferred()
+        val vm = viewModel()
+        vm.onGoogle(activity)
+        vm.onGoogle(activity)
+        testScheduler.advanceUntilIdle()
+        repository.gate!!.complete(Unit)
+        testScheduler.advanceUntilIdle()
+        assertEquals(1, google.calls)
     }
 }

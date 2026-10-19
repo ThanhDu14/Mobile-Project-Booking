@@ -7,7 +7,7 @@ import com.example.booking_app.core.session.FakeSessionManager
 import com.example.booking_app.core.session.FakeSessionPrefs
 import com.example.booking_app.core.session.PendingSignup
 import com.example.booking_app.core.session.SessionState
-import com.example.booking_app.feature.auth.data.OnSignupApi
+import com.example.booking_app.feature.auth.FakeOnSignupApi
 import com.example.booking_app.feature.auth.data.OnSignupRequest
 import com.example.booking_app.feature.auth.data.OnSignupResponse
 import com.example.booking_app.feature.auth.domain.model.AuthError
@@ -17,15 +17,6 @@ import org.junit.Assert.assertNull
 import org.junit.Test
 
 class CompleteSignupUseCaseTest {
-
-    private class FakeOnSignupApi : OnSignupApi {
-        var result: () -> OnSignupResponse = { OnSignupResponse("CREATED", "PLAYER") }
-        val requests = mutableListOf<OnSignupRequest>()
-        override suspend fun onSignup(request: OnSignupRequest): OnSignupResponse {
-            requests += request
-            return result()
-        }
-    }
 
     private val api = FakeOnSignupApi()
     private val sessionManager = FakeSessionManager(SessionState.Initializing)

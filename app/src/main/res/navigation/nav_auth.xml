@@ -42,4 +42,22 @@
         <deepLink app:uri="smashnow://auth/login?returnTo={returnTo}&amp;lockedNotice={lockedNotice}" />
     </fragment>
 
+    <!-- Google/OTP lần đầu (SessionState.NeedsConsent). MainActivity mở bằng deep link khi nav_auth chưa có. -->
+    <fragment
+        android:id="@+id/termsConsentFragment"
+        android:name="com.example.booking_app.feature.auth.ui.consent.TermsConsentFragment"
+        android:label="@string/auth_consent_title">
+        <deepLink app:uri="smashnow://auth/consent" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/legalDocumentFragment"
+        android:name="com.example.booking_app.feature.auth.ui.legal.LegalDocumentFragment"
+        android:label="@string/auth_legal_terms_title">
+        <argument
+            android:name="doc"
+            android:defaultValue="TERMS"
+            app:argType="string" />
+    </fragment>
+
 </navigation>
