@@ -13,7 +13,12 @@ Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 | 7   | 2026-10-15 | Lập implementation plan cho Feature 110 (đăng ký chủ sân) bằng `$speckit-plan` và viết lại tài liệu bằng tiếng Việt        | 11   |
 | 8   | 2026-10-16 | Lập implementation plan cho Feature 111 (thiết lập cơ sở chủ sân) bằng `$speckit-plan`                                     | 11   |
 | 9   | 2026-10-16 | Lập implementation plan cho Feature 112 (vận hành chủ sân) bằng `$speckit-plan`                                            | 11   |
-| 10  | 2026-10-16 | Lập implementation plan cho Feature 120 (quản trị và kiểm duyệt) bằng `$speckit-plan`                                    | 12   |
+| 10  | 2026-10-16 | Lập implementation plan cho Feature 120 (quản trị và kiểm duyệt) bằng `$speckit-plan`                                      | 12   |
+| 11  | 2026-10-19 | Tạo Tasks Feature 100 bằng `$speckit-tasks`, phân tích bằng `$speckit-analyze` và cập nhật Tasks theo kết quả phân tích    | 10   |
+| 12  | 2026-10-19 | Tạo Tasks Feature 110 bằng `$speckit-tasks`, rà soát bằng `$speckit-analyze` và cập nhật Tasks theo kết quả phân tích      | 11   |
+| 13  | 2026-10-19 | Tạo Tasks Feature 111 bằng `$speckit-tasks`, phân tích bằng `$speckit-analyze` và cập nhật Tasks theo báo cáo              | 11   |
+| 14  | 2026-10-19 | Tạo Tasks Feature 112 bằng `$speckit-tasks`, phân tích bằng `$speckit-analyze` và cập nhật Tasks theo các findings         | 11   |
+| 15  | 2026-10-19 | Tạo Tasks Feature 120 bằng `$speckit-tasks`, phân tích bằng `$speckit-analyze` và cập nhật Tasks theo findings U1–U3        | 12   |
 
 ---
 
@@ -624,14 +629,14 @@ Cuối cùng báo cáo file đã tạo, quyết định kỹ thuật, dependency
 
 ## Mục 10: Lập implementation plan cho Feature 120 (quản trị và kiểm duyệt)
 
-| Trường | Nội dung |
-| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Ngày | 2026-10-16 |
-| Người thực hiện | Minh Nhựt |
-| Nhóm tính năng liên quan | 12 – Quản trị (`specs/120-admin`) |
-| Công cụ AI | Codex (GPT-6), skill `$speckit-plan` |
-| Mục đích | Đối chiếu spec 120 với constitution, hướng dẫn W1–W2, database README, các spec account/owner/thông báo liên quan và cấu trúc code để lập kế hoạch; không viết code |
-| Nhánh Git | `feature/120-admin-plan` |
+| Trường                   | Nội dung                                                                                                                                                            |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-10-16                                                                                                                                                          |
+| Người thực hiện          | Minh Nhựt                                                                                                                                                           |
+| Nhóm tính năng liên quan | 12 – Quản trị (`specs/120-admin`)                                                                                                                                   |
+| Công cụ AI               | Codex (GPT-6), skill `$speckit-plan`                                                                                                                                |
+| Mục đích                 | Đối chiếu spec 120 với constitution, hướng dẫn W1–W2, database README, các spec account/owner/thông báo liên quan và cấu trúc code để lập kế hoạch; không viết code |
+| Nhánh Git                | `feature/120-admin-plan`                                                                                                                                            |
 
 ### Prompt đã dùng
 
@@ -675,15 +680,15 @@ Cuối cùng báo cáo file đã tạo, quyết định kỹ thuật chính, dep
 
 ### Phần đã sử dụng / chỉnh sửa / bỏ
 
-| Phần | Quyết định | Lý do |
-| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
-| Duyệt hồ sơ | Dùng các trạng thái và field đã có; quyết định phải dựa trên hồ sơ hiện còn `PENDING`; từ chối cần lý do không rỗng; duyệt tạo venue từ `venueDraft` | Khớp spec 120, spec 110 và database README; tránh quyết định lỗi thời hoặc mở rộng nghiệp vụ |
-| Báo cáo | Dùng `OPEN → RESOLVED/DISMISSED` và các action hiện có; kiểm tra action tương thích với target | Giữ đúng schema và clarifications trong spec; chưa giả định `DROP_IN` có hỗ trợ ẩn |
-| Quyền và giấy tờ | Xác minh Admin phía server; chỉ người nộp và Admin được truy cập giấy tờ qua signed URL có thời hạn | Tuân Constitution và giới hạn riêng tư trong database README |
-| User, owner và venue | Thu hồi owner theo các field/trạng thái đã chốt; không tự đổi trạng thái venue khi thu hồi quyền; Admin quản lý khóa/mở khóa venue | Khớp spec 120 và phụ thuộc spec 010/011/112 |
-| Thống kê và danh mục | Chỉ dùng collection đã nêu; không tự định nghĩa metrics, field hay thao tác CRUD chưa có đặc tả | Tài liệu nguồn chưa có schema chi tiết và quy tắc nghiệp vụ |
-| Server contract và recovery | Ghi các thiếu hụt về API, transaction, idempotency, claim và notification thành điểm cần làm rõ | Chưa có hợp đồng đủ căn cứ để thiết kế chi tiết |
-| Tasks/implementation | Không tạo hoặc chạy | Phạm vi yêu cầu chỉ gồm bước Plan |
+| Phần                        | Quyết định                                                                                                                                           | Lý do                                                                                        |
+| --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Duyệt hồ sơ                 | Dùng các trạng thái và field đã có; quyết định phải dựa trên hồ sơ hiện còn `PENDING`; từ chối cần lý do không rỗng; duyệt tạo venue từ `venueDraft` | Khớp spec 120, spec 110 và database README; tránh quyết định lỗi thời hoặc mở rộng nghiệp vụ |
+| Báo cáo                     | Dùng `OPEN → RESOLVED/DISMISSED` và các action hiện có; kiểm tra action tương thích với target                                                       | Giữ đúng schema và clarifications trong spec; chưa giả định `DROP_IN` có hỗ trợ ẩn           |
+| Quyền và giấy tờ            | Xác minh Admin phía server; chỉ người nộp và Admin được truy cập giấy tờ qua signed URL có thời hạn                                                  | Tuân Constitution và giới hạn riêng tư trong database README                                 |
+| User, owner và venue        | Thu hồi owner theo các field/trạng thái đã chốt; không tự đổi trạng thái venue khi thu hồi quyền; Admin quản lý khóa/mở khóa venue                   | Khớp spec 120 và phụ thuộc spec 010/011/112                                                  |
+| Thống kê và danh mục        | Chỉ dùng collection đã nêu; không tự định nghĩa metrics, field hay thao tác CRUD chưa có đặc tả                                                      | Tài liệu nguồn chưa có schema chi tiết và quy tắc nghiệp vụ                                  |
+| Server contract và recovery | Ghi các thiếu hụt về API, transaction, idempotency, claim và notification thành điểm cần làm rõ                                                      | Chưa có hợp đồng đủ căn cứ để thiết kế chi tiết                                              |
+| Tasks/implementation        | Không tạo hoặc chạy                                                                                                                                  | Phạm vi yêu cầu chỉ gồm bước Plan                                                            |
 
 ### Cách kiểm chứng
 
@@ -765,3 +770,479 @@ Cuối cùng báo cáo file đã tạo, quyết định kỹ thuật, dependency
 - Xác nhận các artifact chỉ thuộc bước Plan; không tạo `tasks.md` hoặc code triển khai.
 - Setup script trả về nhầm đường dẫn Feature 100; giữ nguyên nội dung Feature 100 và tạo tài liệu đúng trong `specs/112-owner-operations/`.
 - Không chạy test, tasks hoặc implementation.
+
+---
+
+## Mục 11: Tạo và cập nhật Tasks Feature 100 – Notification
+
+| Trường                   | Nội dung                                                                                                                   |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-10-19                                                                                                                 |
+| Người thực hiện          | Minh Nhựt                                                                                                                  |
+| Nhóm tính năng liên quan | 10 – Thông báo (spec `specs/100-notification`)                                                                             |
+| Công cụ AI               | Codex (GPT-6), `$speckit-tasks`, `$speckit-analyze`                                                                        |
+| Mục đích                 | Tạo danh sách task theo spec và plan hiện có, sau đó rà soát tính nhất quán và cập nhật Tasks theo các phát hiện phân tích |
+| Nhánh Git                | `feature/100-notification-plan`                                                                                            |
+
+### Prompt đã dùng
+
+**Tạo Tasks:**
+
+```text
+$speckit-tasks Tạo danh sách Tasks cho Feature 100 – Notification dựa trên specification và implementation plan hiện có.
+
+Trước khi tạo tasks, đọc và đối chiếu spec, plan, checklist requirements nếu có,
+constitution, database README và tài liệu/spec liên quan đến feature nguồn.
+
+Chia công việc thành task nhỏ, rõ ràng, có thể thực hiện và kiểm tra độc lập;
+tuân thủ format, task ID, thứ tự và dependency của Spec Kit; nhóm theo kiến trúc thực tế;
+liên kết với User Story hoặc Functional Requirement khi workflow hỗ trợ.
+
+Ưu tiên bảo mật, chống thông báo trùng, xử lý lỗi và kiểm thử theo spec.
+Không tự thêm nghiệp vụ hoặc thay đổi quyết định đã chốt; không viết implementation code
+và không chạy /speckit-implement. Chỉ tạo hoặc cập nhật tài liệu Tasks.
+```
+
+**Phân tích và cập nhật Tasks:**
+
+```text
+$speckit-analyze
+
+Chỉnh sửa Tasks của Feature 100 – Notification dựa trên báo cáo phân tích đặc tả.
+Đọc lại spec, plan, tasks, research nếu có, constitution, database README và tài liệu
+liên quan Feature 091/120.
+
+Ghi nhận mâu thuẫn quyền Admin/SYSTEM; làm rõ dependency event transport, idempotency,
+retry/reminder, query/index, chat presence và điều kiện tài khoản active. Không tự thêm
+schema hoặc quyết định quyền chưa có căn cứ; chỉ chặn task phụ thuộc trực tiếp.
+
+Bổ sung kiểm thử light/dark, phone/w600dp và inbox đã lưu nhưng FCM thất bại; xử lý
+xung đột song song T026/T037; làm rõ MVP và các task setup T001–T003. Giữ task ID nếu có thể.
+Không sửa spec, plan, database README hoặc tài liệu feature khác; không implement hay viết code.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Đọc và đối chiếu `specs/100-notification/spec.md`, `plan.md`, `checklists/requirements.md`, `data-model.md`, các contract, `research.md`, constitution và database README.
+- Tạo `specs/100-notification/tasks.md` với 56 task theo năm User Story, các giai đoạn setup/nền tảng và polish; có dependency, cơ hội làm song song và MVP sequence.
+- Chạy phân tích chỉ đọc đối với spec, plan, tasks và constitution. Prerequisite script theo nhánh hiện hành trỏ sang Feature 120; phân tích được tiếp tục trực tiếp trên thư mục Feature 100 đã chỉ định.
+- Cập nhật Tasks để làm rõ mâu thuẫn quyền Admin/SYSTEM giữa DB README §7, §4.13 và luồng server-authoritative của Feature 120; không sửa schema, Security Rules hoặc quyền Admin.
+- Ghi các quyết định còn thiếu là `NEEDS DECISION` vì repository chưa định nghĩa nhãn `BLOCKED`. Mỗi quyết định chỉ chặn task phụ thuộc trực tiếp; công việc độc lập có thể tiếp tục.
+- Ghi dependency Feature 091 về chat presence/multi-device và Feature 120 về điều kiện xác định tài khoản active; không tự đặt tiêu chí thay thế.
+- Bổ sung kiểm thử UI light/dark và phone/`w600dp`; bổ sung kiểm thử FCM thất bại sau khi inbox đã lưu và khẳng định inbox record vẫn khả dụng.
+- Bỏ marker `[P]` khỏi T037 vì T026 và T037 cùng sửa `firestore-tests/test/notification-security.test.ts`; giữ nguyên ID task.
+- Làm rõ T001–T003 là các task khảo sát, không tự cài dependency hoặc dựng hạ tầng. Nêu MVP hiện tại là backend booking notifications và cần nhóm xác nhận nếu cần bao gồm inbox tối thiểu US3.
+- Không chạy `$speckit-implement`, không viết implementation code và không chạy tests.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần                     | Quyết định                                                                                    | Lý do                                                              |
+| ------------------------ | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| Nhóm task và thứ tự      | Giữ 56 task theo năm User Story, các phase setup/nền tảng/polish và thứ tự ưu tiên trong spec | Duy trì cấu trúc task đã tạo và quan hệ dependency                 |
+| Quyền Admin/SYSTEM       | Ghi mâu thuẫn thành quyết định cần nhóm xác nhận; không sửa quyền/schema/Rules                | CSDL, Feature 120 và luồng server chưa đồng bộ                     |
+| Event và delivery        | Ghi rõ các điểm chờ xác nhận về event transport, idempotency, retry, reminder và query/index  | Tránh tự chọn giao thức hoặc thêm field/collection/status          |
+| Tích hợp Feature 091/120 | Chặn chat push suppression và SYSTEM fan-out tương ứng đến khi nguồn xác nhận                 | Presence và predicate tài khoản active chưa được định nghĩa đầy đủ |
+| UI và FCM tests          | Bổ sung theme/kích thước màn hình và persistence khi FCM thất bại                             | Phản ánh constitution cùng hành vi trong spec/plan                 |
+| Parallel marker          | Bỏ `[P]` ở T037, không đổi task ID                                                            | T026 và T037 cùng sửa một test file                                |
+| MVP và setup             | Ghi rõ MVP backend hiện tại cần được nhóm xác nhận; T001–T003 chỉ khảo sát                    | Chưa có căn cứ để đổi phạm vi nghiệp vụ hoặc chọn dependency       |
+
+### Cách kiểm chứng
+
+- Đối chiếu task với spec, plan, research, constitution, database README và tài liệu liên quan Feature 091/120.
+- Kiểm tra danh sách còn 56 task, ID không trùng và định dạng checklist hợp lệ.
+- Không chạy implementation hoặc tests; lần cập nhật này chỉ bổ sung nhật ký sử dụng AI.
+
+---
+
+## Mục 12: Tạo và cập nhật Tasks Feature 110 – Owner Onboarding
+
+| Trường                   | Nội dung                                                                                                                                                                                     |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-10-19                                                                                                                                                                                   |
+| Người thực hiện          | Minh Nhựt                                                                                                                                                                                    |
+| Nhóm tính năng liên quan | 11 – Chủ sân (spec `specs/110-owner-onboarding`)                                                                                                                                             |
+| Công cụ AI               | Codex (GPT-6), `$speckit-tasks`, `$speckit-analyze`                                                                                                                                          |
+| Mục đích                 | Tạo danh sách task triển khai Feature 110, phân tích tính nhất quán với spec/plan/Constitution, rồi cập nhật Tasks theo các phát hiện mà không tự quyết định nghiệp vụ hoặc schema còn thiếu |
+| Nhánh Git                | `feature/110-owner-onboarding-tasks`                                                                                                                                                         |
+
+### Prompt đã dùng
+
+**Tạo Tasks:**
+
+```text
+$speckit-tasks Tạo danh sách Tasks cho Feature 110 – Owner Onboarding.
+
+Đọc và đối chiếu spec.md, plan.md, checklist requirements nếu có,
+constitution, docs/guides/w1-w2-spec-assignment.md, database README,
+các spec account/profile và Feature 111, 112, 120 nếu tồn tại, cùng cấu trúc
+code và quy ước repository.
+
+Chia task nhỏ, có thứ tự/dependency; bao quát nộp hồ sơ, tải giấy tờ, theo dõi,
+rejected/resubmit, validation, bảo mật giấy tờ, kiểm tra quyền server/Security Rules
+và chống hồ sơ trùng. Liên kết task với User Stories, FR và Acceptance Scenarios.
+
+Không tự thiết kế nghiệp vụ thuộc Feature 120; đối chiếu database trước khi đề xuất
+schema/API; ghi rõ mâu thuẫn và chỉ chặn task phụ thuộc quyết định chưa chốt.
+Chỉ tạo/cập nhật Tasks trong specs/110-owner-onboarding/. Không sửa spec/plan,
+không implement, không viết code và không chạy `$speckit-implement`.
+```
+
+**Phân tích:**
+
+```text
+$speckit-analyze
+
+Phân tích chỉ đọc tính nhất quán giữa spec.md, plan.md, tasks.md và Constitution
+của Feature 110. Prerequisite script trỏ nhầm Feature 120; tiếp tục trên thư mục
+Feature 110 đã được chỉ định, không thay đổi file.
+```
+
+**Cập nhật theo Analyze:**
+
+```text
+$speckit-tasks Cập nhật danh sách Tasks Feature 110 theo báo cáo Analyze.
+
+Làm rõ application identity, resubmission, lịch sử và chống gửi trùng; bổ sung
+luồng applicant xem/tải giấy tờ qua sign-download, hết hạn và retry; làm rõ đầu ra
+hợp đồng xác thực/app gọi Supabase và quyền upload applicant mà không tự chọn
+protocol/token/Rules. Gắn task với SC, bổ sung usability evaluation SC-001,
+Material 3/light-dark/phone/w600dp/loading-empty-error, kiểm tra dependency theo
+Constitution và hành vi ghim thủ công khi từ chối quyền vị trí.
+
+Giữ task ID ổn định nếu có thể; chỉ chặn task phụ thuộc quyết định chưa chốt;
+không tự thêm schema, field hoặc ID. Chỉ sửa tasks.md; không sửa spec, plan, CSDL,
+feature khác; không implement, viết code hoặc chạy `$speckit-implement`.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Đọc spec, plan, checklist requirements, data model, boundary contract, research, quickstart, Constitution, database README, hướng dẫn phân công và các tài liệu account/profile, Feature 111/112/120.
+- Tạo danh sách Tasks ban đầu cho ba User Story: nộp hồ sơ (P1), theo dõi trạng thái (P1), sửa và nộp lại hồ sơ rejected (P2), cùng các phase setup, foundational và cross-cutting.
+- Chạy `$speckit-analyze` ở chế độ chỉ đọc. Script prerequisite tự chọn Feature 120 và dừng vì thiếu `specs/120-admin/tasks.md`; tiếp tục phân tích trực tiếp các artifact Feature 110 đã chỉ định.
+- Analyze phát hiện các điểm cần làm rõ: application hiện hành/lịch sử/resubmit/idempotency; applicant download giấy tờ; tích hợp app–Supabase và upload ảnh venue trước duyệt; SC-001 usability; tiêu chí giao diện theo Constitution; rationale của dependency; từ chối quyền vị trí.
+- Cập nhật `specs/110-owner-onboarding/tasks.md`, giữ ID T001–T032, thêm T033–T035 và tổng cộng 35 task. T001–T003 mô tả quyết định nhóm cần xác nhận; các task submit, status query, upload/download và resubmit chỉ bị chặn tại phần thực sự phụ thuộc.
+- T033/T034 bổ sung applicant signed-download cho hồ sơ của chính người nộp, kiểm tra UID khác, hết hạn URL, xin URL mới và lỗi không tiết lộ path.
+- T035 mô tả usability evaluation thủ công cho SC-001: ít nhất 10 người thuộc nhóm mục tiêu, không hướng dẫn trực tiếp, ghi nhận tỷ lệ hoàn tất trong tối đa 5 phút; đạt ít nhất 9/10. Đây không phải automated test.
+- Gắn liên kết SC-001–SC-007 vào task liên quan; thêm tiêu chí Material 3, DayNight, điện thoại/`w600dp`, các trạng thái loading/content/empty/error và marker vị trí thủ công không cần quyền vị trí.
+- T005 yêu cầu rà từng dependency và không thêm thư viện chưa được kiến trúc chấp thuận. Plan hiện nêu dependency còn thiếu nhưng chưa giải thích từng dependency; không sửa plan trong lượt này.
+- Không sửa spec, plan, database README hay tài liệu feature khác; không viết implementation code và không chạy `$speckit-implement` hoặc tests.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần                         | Quyết định                               | Lý do                                                                                                                                    |
+| ---------------------------- | ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| T001–T003                    | Sửa nội dung, giữ ID                     | Làm rõ quyết định về application identity, history, submit idempotency và app–Supabase contract; không chọn schema/protocol thay nhóm    |
+| T005                         | Sửa nội dung, giữ ID                     | Rà dependency theo Constitution; chặn việc thêm dependency mới cho tới khi kiến trúc được duyệt và rationale được ghi nhận               |
+| T009–T010                    | Sửa nội dung, giữ ID                     | Bao quát upload applicant cho `owner-docs` và `venue-photos`, signed download, access control và kiểm thử local theo contract được duyệt |
+| T011–T018                    | Giữ ID, bổ sung truy vết/tiêu chí        | Gắn SC và bổ sung Material 3, theme, kích thước màn hình, marker thủ công và UI test                                                     |
+| T019–T029                    | Giữ ID, làm rõ dependency và truy vết SC | Phân biệt task có thể phát triển bằng fake với phần query/submit/resubmit thật cần quyết định T001–T003                                  |
+| T033–T034                    | Thêm task                                | Bổ sung luồng applicant xem/tải giấy tờ riêng, URL hết hạn, retry và từ chối truy cập hồ sơ người khác                                   |
+| T035                         | Thêm task                                | Đo SC-001 bằng usability evaluation thủ công, không giả định đây là automated test                                                       |
+| Spec, plan, database và code | Không sửa                                | Giữ đúng phạm vi chỉ cập nhật Tasks                                                                                                      |
+
+### Cách kiểm chứng
+
+- Đối chiếu task với 19 FR, 7 SC, User Stories/Acceptance Scenarios, Constitution, database README và các dependency liên quan.
+- Kiểm tra 35 checklist task có ID duy nhất, format checkbox/label/file path hợp lệ; `git diff --check` không báo lỗi whitespace.
+- Không chạy test, implementation hoặc `$speckit-implement`; không sửa file ngoài Tasks.
+
+---
+
+## Mục 13: Tạo và cập nhật Tasks Feature 111 – Owner Venue Setup
+
+| Trường                   | Nội dung                                                                                                                           |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-10-19                                                                                                                         |
+| Người thực hiện          | Minh Nhựt                                                                                                                          |
+| Nhóm tính năng liên quan | 11 – Quản lý sân (spec `specs/111-owner-venue-setup`)                                                                              |
+| Công cụ AI               | Codex (GPT-6), `$speckit-tasks`, `$speckit-analyze`                                                                                |
+| Mục đích                 | Tạo danh sách Tasks Feature 111, phân tích nhất quán spec/plan/tasks và cập nhật các điểm chưa rõ mà không tự quyết định nghiệp vụ |
+| Nhánh Git                | `feature/111-owner-venue-setup-tasks`                                                                                              |
+
+### Prompt đã dùng
+
+**Tạo Tasks lần đầu:**
+
+```text
+$speckit-tasks Tạo danh sách Tasks cho Feature 111 – Owner Venue Setup.
+
+Đọc và đối chiếu spec.md, plan.md, constitution, hướng dẫn phân công W1–W2,
+database README, Specs 110/112 và các spec booking liên quan nếu có.
+
+Chia task nhỏ, có thứ tự/dependency; bao phủ thêm/sửa/ẩn venue, quản lý court,
+bảng giá theo thứ/khung giờ, khóa giờ sân, validation, phân quyền, kiểm thử,
+xử lý lỗi và edge cases. Bảo đảm chỉ owner đã được duyệt quản lý venue/court
+thuộc quyền sở hữu của mình. Đối chiếu venues, courts, priceRules, slots.status,
+BLOCKED và blockReason với database README; không tự bịa schema/field/status.
+Liên kết task với User Stories, FR và SC theo quy ước repository. Ghi dependency
+Feature 110, 112 và booking; không tự giải quyết nghiệp vụ thuộc feature khác.
+
+Chỉ tạo/cập nhật Tasks trong specs/111-owner-venue-setup/. Không sửa spec/plan,
+không chạy analyze/implement và không viết implementation code.
+```
+
+**Phân tích:**
+
+```text
+$speckit-analyze
+```
+
+**Cập nhật theo Specification Analysis Report:**
+
+```text
+$speckit-tasks Cập nhật danh sách Tasks Feature 111 theo Specification Analysis Report.
+
+Chỉ chỉnh specs/111-owner-venue-setup/tasks.md. Đọc lại spec, plan, tasks,
+data-model, research, constitution, database README và specs liên quan 110/120/030/040/041.
+
+Giữ kiểm tra quyền server bắt buộc; chặn mọi thao tác ghi đến khi Feature 110/120
+xác nhận nguồn đáng tin cậy cho ownerStatus=APPROVED. Chặn mở khóa slot đến khi
+nhóm booking chốt hợp đồng xác minh ownership, trạng thái block và quyền mở khóa an toàn;
+không thêm schema. Ghi rõ courtCount consistency/maximum và quy tắc so sánh tên court
+trùng chưa được định nghĩa; chỉ kiểm tra/test phần đã xác định. Chặn price-rule
+integration phụ thuộc quyết định bên cập nhật minPricePerHour khi rule đổi hoặc không
+còn rule. Phân biệt task thuộc Feature 111 với task chỉ xác minh hợp đồng/tích hợp
+Feature 030/040; không giao sửa package/chức năng ngoài phạm vi.
+
+Giữ task ID nếu có thể, không tự quyết định nghiệp vụ. Không sửa spec, plan,
+data-model, research, database schema hoặc spec feature khác; không chạy
+analyze/implement trong lượt cập nhật.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Đối chiếu spec, plan, data-model, research, boundary contract, quickstart, constitution, database README và tài liệu/spec liên quan Feature 110, 120, 030, 040, 041.
+- Tạo `specs/111-owner-venue-setup/tasks.md` với 39 task, năm User Story, phase setup/foundational/polish, dependency, cơ hội song song, MVP và truy vết FR/Acceptance Scenarios.
+- Phân tích chỉ đọc ghi nhận sáu findings: nguồn xác minh ownerStatus (A1), an toàn mở khóa (A2), courtCount (A3), tên court trùng (A4), nguồn cập nhật minPricePerHour (A5), và ranh giới Feature 030/040 (A6).
+- Cập nhật Tasks, giữ nguyên 39 task và ID T001–T039; không thêm schema, field, status, endpoint hoặc quyết định nghiệp vụ.
+- T003/T004/T006 đặt xác nhận nguồn ownerStatus từ Feature 110/120 làm prerequisite trước khi bật bất kỳ thao tác ghi quản lý nào.
+- T007 thành cổng hợp đồng với nhóm booking về transaction và cách chứng minh ownership/eligibility. T029 cùng thao tác và kiểm thử phụ thuộc không được triển khai khi chưa xác định block nào owner được phép mở khóa.
+- T008/T022/T023 chặn price-rule mutation/integration phụ thuộc cho tới khi xác định bên có thẩm quyền cập nhật `minPricePerHour` và hành vi khi rules thay đổi hoặc không còn rule.
+- T009 chỉ kiểm tra `courtCount` là số nguyên dương; không áp đặt equality/maximum chưa được xác định. T016 chỉ kiểm tra các trường court đã nêu; không tự thực thi hoặc test chính sách tên trùng.
+- T033/T035 chỉ rà soát hợp đồng và kiểm thử tích hợp; không sửa source/UI/package của Feature 030/040.
+- Không sửa spec, plan, data-model, research, database README hoặc spec feature khác; không chạy implementation hay viết code.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần                     | Quyết định                                                                                             | Lý do                                                                       |
+| ------------------------ | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------- |
+| T003/T004/T006           | Bổ sung prerequisite xác minh ownerStatus trước khi cho phép ghi                                       | Không tự chọn claim/document/field làm nguồn quyền                          |
+| T007/T028/T029/T031/T032 | Làm rõ hợp đồng booking, kiểm tra ownership/trạng thái và chặn mở khóa khi chưa chứng minh eligibility | Schema `slots` không định danh block theo owner/thao tác; không thêm schema |
+| T008/T022/T023           | Chặn rule mutations/integration phụ thuộc `minPricePerHour` đến khi xác định authority                 | Tài liệu chưa quy định bên cập nhật và hành vi khi hết rules                |
+| T009                     | Tách validation đã rõ khỏi equality/maximum chưa có quyết định                                         | Không tự đặt quy tắc hoặc giới hạn                                          |
+| T016                     | Chỉ validate trường court đã xác định; để chính sách tên trùng mở                                      | Spec chưa định nghĩa so sánh/chuẩn hóa                                      |
+| T033/T035                | Chuyển thành xác minh hợp đồng/tích hợp, không sửa Feature 030/040                                     | Giữ ranh giới package theo plan                                             |
+| Task IDs                 | Giữ 39 task, T001–T039                                                                                 | Tránh làm sai tham chiếu hiện có                                            |
+| Artifact khác            | Không sửa                                                                                              | Giữ đúng phạm vi Feature 111 Tasks                                          |
+
+### Cách kiểm chứng
+
+- Kiểm tra 39 checklist task có ID liên tục, không trùng và đúng format; xác nhận các dependency chưa chốt được đánh dấu là điều kiện chặn.
+- Không chạy tests, `$speckit-analyze` hoặc `$speckit-implement` sau lần cập nhật Tasks.
+
+---
+
+## Mục 14: Tạo, phân tích và cập nhật Tasks Feature 112 – Owner Operations
+
+| Trường                   | Nội dung                                                                                                                                                            |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-10-19                                                                                                                                                          |
+| Người thực hiện          | Minh Nhựt                                                                                                                                                          |
+| Nhóm tính năng liên quan | 11 – Chủ sân (spec `specs/112-owner-operations`)                                                                                                                     |
+| Công cụ AI               | Codex (GPT-6), `$speckit-tasks`, `$speckit-analyze`                                                                                                                  |
+| Mục đích                 | Lập danh sách task Feature 112, rà soát tính nhất quán với spec/plan/Constitution và cập nhật Tasks theo findings mà không tự quyết định nghiệp vụ hoặc schema còn mở |
+| Nhánh Git                | `feature/112-owner-operations-tasks`                                                                                                                                |
+
+### Prompt đã dùng
+
+**Tạo Tasks lần đầu:**
+
+```text
+$speckit-tasks
+
+Tạo danh sách Tasks cho Feature 112 – Owner Operations.
+
+Trước khi tạo tasks, đọc và đối chiếu spec, plan, Constitution, hướng dẫn W1–W2,
+database README, spec Feature 110, 111, 120 và booking nếu có.
+
+Chia task nhỏ, có thứ tự/dependency; bao phủ User Stories, FR, SC, authorization
+server-side, quyền sở hữu dữ liệu, validation, loading/empty/error/offline/retry
+và edge cases. Đối chiếu schema hiện có, không tự bịa schema/field/status/nghiệp vụ.
+Bổ sung kiểm thử theo Constitution: MVVM, XML/accessibility, light/dark và phone/w600dp.
+Ghi dependency Feature 110/111/120 và booking; không giải quyết nghiệp vụ feature khác.
+Giữ package/file ownership theo plan.
+
+Chỉ tạo/cập nhật tài liệu Tasks trong specs/112-owner-operations/. Không sửa spec,
+plan, database schema hoặc spec feature khác; không chạy analyze/implement và không
+viết implementation code.
+```
+
+**Phân tích:**
+
+```text
+$speckit-analyze
+```
+
+**Cập nhật theo Specification Analysis Report:**
+
+```text
+$speckit-tasks
+
+Cập nhật Tasks Feature 112 theo findings I1, U1, U2, U3, U4 và D1.
+Chỉ sửa specs/112-owner-operations/tasks.md.
+
+Không tự thêm venueId vào schema/data model; yêu cầu database owner xác nhận ý nghĩa
+venueId trong FR-013 và chặn task voucher đến khi hợp đồng dữ liệu được xác nhận.
+Bổ sung usability study đo SC-007 với nhóm owner, công thức tỷ lệ, thao tác và điều kiện
+hoàn tất không cần hỗ trợ; không tự đặt cỡ mẫu/ngưỡng mới.
+Gộp task setup trùng; làm rõ test file, chức năng, lệnh/harness có thật, còn thiếu thì
+ghi dependency thay vì bịa đường dẫn/function.
+Tách dependency booking cancellation với checkin-booking; Phase 8 chỉ rà soát coverage
+và chạy lại suite, không lặp test đã giao trong story.
+Giữ task ID nếu có thể, cập nhật tham chiếu khi gộp/xóa task. Không sửa spec, plan,
+data-model, database README hoặc feature khác; không chạy analyze/implement.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Đối chiếu spec, plan, data-model, contract boundary, quickstart, Constitution, database README và spec liên quan. Setup/prerequisite scripts trỏ nhầm Feature 120; tài liệu Feature 112 được phân tích trực tiếp theo đường dẫn đã chỉ định.
+- Tạo Tasks ban đầu gồm 56 task, năm User Story, phase nền tảng/polish, dependency, MVP và Coverage Matrix.
+- `$speckit-analyze` ghi nhận sáu findings: ý nghĩa `venueId` của voucher; SC-007 chưa có phép đo usability; T001–T002 trùng lặp; test thiếu path/harness cụ thể; dependency giữa booking cancellation và booking check-in chưa tách; test bị lặp ở Phase 8.
+- Cập nhật Tasks thành 58 task checklist có ID duy nhất. Gộp setup task trùng thành T001; thêm gate xác nhận database owner về `venueId`, usability study SC-007 và transaction test approve/reject.
+- T006 ghi rõ database owner cần xác nhận `venueId` trong FR-013 là context từ đường dẫn `venues/{venueId}/vouchers/{code}` hay field cần lưu. Không thêm field schema/data model; voucher tasks bị chặn khi chưa có quyết định.
+- Usability study SC-007 đo bốn thao tác: duyệt/từ chối booking, mở drop-in, check-in QR và tạo voucher. Tỷ lệ là số owner hoàn thành không cần hỗ trợ trực tiếp chia tổng owner tham gia. Cỡ mẫu và điều kiện chi tiết cần được xác nhận.
+- Làm rõ Rules test dùng `firestore-tests` và `npm test`. Edge Function test location/harness chưa có trong checkout nên các task liên quan yêu cầu xác nhận trước khi tạo test. Tách T005 cho booking và T006 cho drop-in, registration check-in, voucher; `checkin-booking` không phụ thuộc booking cancellation.
+- Phase 8 chỉ rà soát coverage và chạy lại suite đã tạo. Không sửa spec, plan, data-model, database README hoặc artifact feature khác; không chạy implementation hay tests.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần                  | Quyết định                                                                                       | Lý do                                                                                 |
+| --------------------- | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------- |
+| T001–T002             | Gộp thành task rà soát coverage và file ownership                                                 | Hai task setup trùng mục tiêu                                                         |
+| T005/T006             | Tách booking contract khỏi drop-in, registration check-in và voucher contracts                  | Tránh dependency không liên quan                                                      |
+| Voucher `venueId`     | Thêm xác nhận database owner và gate cho voucher tasks                                           | Tài liệu chưa thống nhất; không tự thêm schema                                        |
+| T009, T012–T013       | Chỉ rõ Rules test path/command; đặt điều kiện cho function transaction tests                     | Rules harness có sẵn; Edge Function harness/path chưa có trong checkout              |
+| T022–T023, T032, T039 | Ghi rõ test behavior và dependency xác nhận function path/harness                                 | Không dùng Rules tests để khẳng định transaction/token phía server                   |
+| T035                  | Chuyển thành integration handoff cho `checkin-booking`                                            | Không sửa function thuộc feature khác                                                 |
+| T038–T042             | Chặn voucher implementation đến khi dữ liệu/contract được xác nhận                               | Không suy đoán `venueId` là context hay stored field                                  |
+| T052–T054             | Chuyển Phase 8 thành rà soát coverage và chạy lại suite                                          | Tránh lặp test/layout đã giao trong từng story                                        |
+| T058                  | Bổ sung usability study đo SC-007, giữ ngưỡng ≥90%                                               | Cỡ mẫu/điều kiện nghiên cứu chưa có trong spec                                        |
+| Artifact khác         | Không chỉnh sửa                                                                                  | Giữ phạm vi ở Tasks Feature 112                                                       |
+
+### Cách kiểm chứng
+
+- Kiểm tra có 58 checklist task, ID không trùng và format task hợp lệ.
+- Các task test dùng harness/lệnh đã có khi repository cung cấp; phần còn thiếu được ghi thành dependency/gate.
+- Không chạy tests, `$speckit-analyze` hoặc `$speckit-implement` sau lần cập nhật Tasks.
+## Mục 15: Tạo, phân tích và cập nhật Tasks Feature 120 – Admin
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-19 |
+| Người thực hiện | Minh Nhựt |
+| Nhóm tính năng liên quan | 12 – Quản trị và kiểm duyệt (spec `specs/120-admin`) |
+| Công cụ AI | Codex (GPT-6), `$speckit-tasks`, `$speckit-analyze` |
+| Mục đích | Tạo Tasks Feature 120, phân tích độ khớp spec/plan/tasks và cập nhật theo findings mà không tự quyết định schema hoặc hợp đồng tích hợp còn mở |
+| Nhánh Git | Chưa ghi nhận |
+
+### Prompt đã dùng
+
+**Tạo Tasks lần đầu:**
+
+```text
+$speckit-tasks
+
+Tạo danh sách Tasks cho Feature 120 – Admin.
+
+Trước khi tạo tasks, đọc và đối chiếu:
+- specs/120-admin/spec.md
+- specs/120-admin/plan.md
+- .specify/memory/constitution.md
+- docs/guides/w1-w2-spec-assignment.md
+- docs/design/database/README.md
+- Các spec liên quan Feature 100, 110, 111, 112 và booking nếu có.
+
+Chia task nhỏ, có thứ tự/dependency; bao phủ User Stories, FR, SC, server-side
+authorization, quyền Admin, kiểm tra truy cập trái phép, validation, loading,
+empty, error, offline, retry và edge cases. Đối chiếu database, không tự bịa
+schema/field/status/nghiệp vụ. Bổ sung kiểm thử theo Constitution gồm MVVM,
+XML/accessibility, light/dark và phone/w600dp.
+
+Ghi dependency với notification, owner onboarding, venue setup, owner operations
+và booking; không giải quyết nghiệp vụ feature khác. Giữ package/file ownership
+theo plan. Chỉ tạo/cập nhật Tasks trong specs/120-admin/. Không sửa spec, plan,
+schema hoặc spec feature khác; không chạy analyze/implement và không viết code.
+```
+
+**Phân tích:**
+
+```text
+$speckit-analyze
+```
+
+**Cập nhật theo Specification Analysis Report:**
+
+```text
+$speckit-tasks
+
+Cập nhật Tasks cho Feature 120 theo findings U1, U2, U3.
+
+Chỉ sửa specs/120-admin/tasks.md. Đọc lại spec, plan, tasks, Constitution,
+database README và các spec sở hữu report target.
+
+U1: Xác minh cấu trúc repository trước khi ghi file path cụ thể. Bổ sung path
+khi cấu trúc và contract đã xác định; nếu chưa đủ thông tin, ghi điều kiện cần
+chốt, không tự bịa endpoint, schema hoặc cấu trúc triển khai.
+
+U2: Định nghĩa cách đo SC-006: thời điểm bắt đầu/kết thúc, hồ sơ đầy đủ theo spec,
+ghi nhận thời gian và tiêu chí đạt/không đạt. Nếu spec chưa định nghĩa đủ thì
+ghi câu hỏi cần xác nhận.
+
+U3: Rà soát T025–T027. Thêm dependency gate xác nhận nguồn dữ liệu và quyền đọc
+target với owners Feature 070, 080, 081, 090, 091 và các feature sở hữu dữ liệu
+được report sử dụng. Tách việc xử lý report khỏi việc đọc target; chỉ đọc target
+sau khi hợp đồng và quyền truy cập được xác nhận. Không giao Feature 120 sửa
+schema/code feature khác.
+
+Giữ Task ID nếu có thể; cập nhật dependency và truy vết. Không sửa spec, plan,
+database README hoặc artifact feature khác; không chạy analyze, plan, implement
+hoặc viết implementation code.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Tạo `specs/120-admin/tasks.md` với **54 task**, theo bốn User Stories và các phase setup, foundational, polish; có dependency graph, traceability FR/SC, tiêu chí nghiệm thu độc lập và MVP đề xuất.
+- `$speckit-analyze` ghi nhận ba finding MEDIUM:
+  - **U1:** nhiều task chỉ nêu thư mục, chưa xác định file đích.
+  - **U2:** SC-006 có giới hạn hai phút nhưng chưa quy định cách đo và định nghĩa hồ sơ đầy đủ.
+  - **U3:** chưa chốt quyền đọc target được tham chiếu bởi `reports.targetPath`.
+- Cập nhật Tasks, giữ nguyên 54 task IDs.
+- U1: xác minh repository hiện chỉ có Android starter; package admin và `supabase/functions/`, `supabase/migrations/` chưa tồn tại. `firestore-tests/test/base.test.ts` xác nhận convention test `.test.ts`. Tasks dùng path test TypeScript cụ thể theo convention; tên file Android và server function tiếp tục là điều kiện cần chốt vì plan/contracts chưa quy định class/file layout hoặc callable endpoint.
+- U2: T054 quy định bắt đầu đo khi Admin chọn hồ sơ PENDING trong hàng đợi, dừng khi app hiển thị kết quả được server xác nhận, chạy riêng luồng duyệt và từ chối, ghi timestamp và elapsed time; đạt nếu mỗi luồng không quá 120 giây.
+- Định nghĩa hồ sơ đầy đủ ở T054 dựa trên Feature 110 FR-002/Validation: các trường bắt buộc, ít nhất một ảnh cơ sở, ít nhất một giấy tờ chứng minh hợp lệ và trạng thái PENDING. Cần Feature 110 owner xác nhận các mục này đã là danh sách đầy đủ trước khi cố định fixture.
+- U3: T005 thành gate xác nhận nguồn target và quyền đọc theo từng loại với owners Feature 070/080/081/090/091 và data owners 010/111/112. T025 tách đọc report khỏi đọc target; T026–T027 chỉ cho xử lý target theo hợp đồng owner xác nhận. Feature 120 không sửa schema/code của feature khác.
+- Không sửa spec, plan, database README, code hoặc tài liệu feature khác; không chạy tests, `$speckit-plan`, `$speckit-implement` hay analyze lần nữa sau cập nhật.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| T005 | Mở rộng thành dependency gate cho report targets | Quyền đọc report không tự động cấp quyền đọc dữ liệu target |
+| T009, T014–T015 | Ghi điều kiện chốt server function/file path | Repository chưa có Supabase function layout hoặc callable contract |
+| T010–T011, T022, T031 | Ghi path test `.test.ts` cụ thể theo convention đã xác minh | `firestore-tests/test/base.test.ts` là test file hiện có |
+| T012, T013, T021, T030 | Giữ tên file Android là nội dung cần xác định sau | Chưa có package admin hoặc convention test theo feature trong source |
+| T025–T027, T034 | Gắn target read/action với gate và owner tương ứng | Phân biệt moderation report với quyền truy cập dữ liệu do feature khác sở hữu |
+| T054 | Bổ sung quy trình đo SC-006 và điều kiện hồ sơ đầy đủ | Cần kết quả đo có thể lặp lại, nhưng không tự đặt nghiệp vụ ngoài spec |
+| Dependency graph, traceability, acceptance criteria, open gates | Cập nhật tham chiếu T005 và SC-006 | Phản ánh các điều kiện mới và giữ coverage FR/SC |
+| Các task còn lại | Giữ nguyên ID và nội dung | Không liên quan các findings |
+
+### Cách kiểm chứng
+
+- Xác nhận các task IDs vẫn duy nhất và tổng số task là 54.
+- Kiểm tra cấu trúc hiện tại: có `firestore-tests/test/base.test.ts`; chưa có `app/src/main/java/com/example/booking_app/feature/admin`, `supabase/functions` hoặc `supabase/migrations`.
+- Đối chiếu report target với database README và spec Feature 070, 080, 081, 090, 091; ghi rõ quyền/source vẫn cần owners xác nhận.
+- Đối chiếu SC-006 với Feature 110 FR-002/Validation; để lại câu hỏi xác nhận nếu còn trường bắt buộc chưa được tài liệu xác định.
+- Không chạy tests hoặc implementation. Không sửa file nào ngoài `specs/120-admin/tasks.md` trong lượt cập nhật Tasks.
+
+---
+
