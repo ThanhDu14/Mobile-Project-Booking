@@ -1,6 +1,6 @@
 # Contract: Firestore Rules cho `dropInSessions` và `registrations`
 
-**Vị trí**: phần `dropInSessions` trong `firestore.rules` ở gốc repo. Test đặt ở `firestore-tests/dropin.test.ts` (`@firebase/rules-unit-testing`, chạy trên Firebase Emulator).
+**Vị trí**: phần `dropInSessions` trong `firestore.rules` ở gốc repo. Test đặt ở `firestore-tests/test/dropInSessions.test.ts` (`@firebase/rules-unit-testing`, chạy trên Firebase Emulator).
 
 Mọi ghi nghiệp vụ đi qua Edge Function (service account, bỏ qua Rules). Rules của spec này **chỉ mở quyền đọc**. Riêng việc chủ sân tạo, sửa, hủy buổi do D quyết định ở spec 112. Nếu D ghi qua Edge Function thì Rules cũng không cho client ghi.
 

@@ -32,7 +32,7 @@ Hướng dẫn chạy để chứng minh tính năng đúng spec. Chi tiết d�
 
 ```bash
 # Rules: các ca D1–D13
-cd firestore-tests && npm test -- dropin
+cd firestore-tests && npm test
 
 # Edge Function: các ca E1–E15, gồm 20 lời gọi đồng thời (SC-002)
 deno test -A supabase/functions/register-drop-in supabase/functions/cancel-drop-in supabase/functions/_shared/dropin.test.ts
