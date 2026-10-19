@@ -25,6 +25,7 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 19 | 2026-10-19 | Lập danh sách công việc spec 050 (thanh toán và voucher giả lập) bằng `/speckit-tasks` | 05 |
 | 20 | 2026-10-19 | Phân tích đối soát chất lượng bằng `/speckit-analyze` & tinh chỉnh spec 050 | 05 |
 | 21 | 2026-10-19 | Lập danh sách công việc spec 060 (quản lý lịch đặt của tôi) bằng `/speckit-tasks` | 06 |
+| 22 | 2026-10-19 | Phân tích đối soát chất lượng bằng `/speckit-analyze` & tinh chỉnh spec 060 | 06 |
 
 
 
@@ -968,6 +969,53 @@ Bảng đối chiếu lựa chọn:
 ### Tài liệu đã sinh
 
 - `specs/060-my-bookings/tasks.md`: 44 tasks chi tiết có checkbox `- [ ]`, ID `T001`–`T044`, gắn tag User Story (`[US1]`–`[US5]`), nhãn song song `[P]`, đường dẫn file chính xác và lệnh xác minh `Verify:`.
+
+---
+
+## Mục 22: Phân tích đối soát chất lượng bằng `/speckit-analyze` & tinh chỉnh spec 060
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-19 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 06 – Quản lý lịch đặt (`specs/060-my-bookings`) |
+| Công cụ AI | Antigravity, lệnh Spec Kit `/speckit-analyze` |
+| Mục đích | Đối soát toàn diện tính nhất quán, độ phủ yêu cầu và tính khả thi kỹ thuật giữa `spec.md`, `plan.md`, `data-model.md`, `contracts/ui-contracts.md` và `tasks.md`; xử lý triệt để 1 điểm Medium và 2 điểm Low phát hiện từ báo cáo phân tích |
+| Nhánh Git | `060-my-bookings` |
+
+### Kết quả Phân tích Đối soát (`/speckit-analyze`)
+
+- **Độ phủ yêu cầu (Requirements Coverage)**: Đạt **100% (36/36 yêu cầu)** gồm đầy đủ 29 Functional Requirements (FR-001 đến FR-029) và 7 Success Criteria (SC-001 đến SC-007) từ `spec.md`. Toàn bộ 4 User Stories chính và 1 User Story phụ đều được phân rã thành các task khả thi, có tiêu chí kiểm thử rõ ràng.
+- **Rà soát rủi ro & lỗi kiến trúc**:
+  - **Critical**: 0
+  - **High**: 0
+  - **Medium**: 1 (C1: Sự sai lệch giữa kiểu mảng `slotIds: List<String>` ở Firestore DTO và `items: List<BookingSlotItem>` ở Domain/UI)
+  - **Low**: 2 (I1: Tên trường hạn chót duyệt đơn chưa đồng bộ giữa `pendingExpiresAt` và `approvalDeadline`; I2: Tên phương thức Repository giữa `getBookingDetail` và `observeBookingDetail` chưa đồng bộ)
+
+### Chi tiết các điểm tinh chỉnh và khắc phục
+
+1. **Khắc phục điểm Medium (C1 - Làm rõ ánh xạ `slotIds` sang `items: List<BookingSlotItem>`)**:
+   - **Vấn đề**: Trong Firestore, đơn hàng lưu `slotIds: List<String>` dạng ID rút gọn (`{courtId}_{yyyyMMdd}_{HHmm}`) để tiết kiệm dung lượng và phục vụ thao tác xóa slot trong transaction. Tuy nhiên, màn hình chi tiết đơn ở tầng UI và Domain model `BookingDetail` lại yêu cầu danh sách các slot cụ thể (`items: List<BookingSlotItem>`) gồm giờ bắt đầu, kết thúc, tên sân và đơn giá.
+   - **Giải pháp**:
+     - Bổ sung định nghĩa `BookingSlotItem` chuẩn Clean Architecture thuần Kotlin vào Section 3 của `specs/060-my-bookings/data-model.md`.
+     - Cập nhật entity `BookingDetail` trong `data-model.md` bổ sung trường `items: List<BookingSlotItem> = emptyList()` song song với `slotIds: List<String>`.
+     - Bổ sung Section 5 trong `data-model.md` quy định rõ hợp đồng ánh xạ và giải mã (hydration) của `BookingManagementMapper`: bóc tách chuỗi `{courtId}_{yyyyMMdd}_{HHmm}` thành `startAt`, tính `endAt = startAt + 30 phút`, kế thừa `courtName`, `date` và phân bổ đơn giá `price`.
+
+2. **Khắc phục điểm Low (I1 - Đồng bộ hóa tên trường `approvalDeadline`)**:
+   - **Vấn đề**: Trong `data-model.md` dòng 44 và 125 từng sử dụng `pendingExpiresAt`, trong khi `spec.md`, `plan.md` và `tasks.md` đã chuẩn hóa sang `approvalDeadline: Timestamp?` theo Phương án 2.A (hạn chót chủ sân duyệt đơn 60 phút).
+   - **Giải pháp**:
+     - Thay thế `pendingExpiresAt` bằng `approvalDeadline: Timestamp?` tại Section 1.1 và Section 2 (`BookingDto`) trong `specs/060-my-bookings/data-model.md`.
+     - Chuẩn hóa trường thời gian ở Domain/UI thành `approvalDeadlineMillis: Long?` tại Section 3 và Section 5.
+
+3. **Khắc phục điểm Low (I2 - Chuẩn hóa tên hàm `observeBookingDetail` trong `tasks.md`)**:
+   - **Vấn đề**: Hợp đồng `contracts/ui-contracts.md` định nghĩa hàm lắng nghe chi tiết đơn là `observeBookingDetail(bookingId: String): Flow<Result<BookingDetail>>` (thể hiện tính chất Flow realtime callbackFlow), trong khi `tasks.md` tại `T004`, `T010`, `T016`, `T019` dùng tên `getBookingDetail`.
+   - **Giải pháp**:
+     - Đồng bộ hóa toàn bộ tên phương thức trong `specs/060-my-bookings/tasks.md` thành `observeBookingDetail` tại `T004` (Repository interface), `T010` (Unit Test phát dữ liệu qua Flow), `T016` (UseCase kết nối Flow) và `T019` (cài đặt `callbackFlow` với `addSnapshotListener`).
+
+### Tình trạng bộ Artifact sau tinh chỉnh
+
+- Toàn bộ 5 file tài liệu kỹ thuật cốt lõi của tính năng 060 (`spec.md`, `plan.md`, `data-model.md`, `contracts/ui-contracts.md`, `tasks.md`) đạt độ nhất quán 100%, sẵn sàng chuyển sang bước triển khai mã nguồn (`/speckit-implement`).
+
 
 
 

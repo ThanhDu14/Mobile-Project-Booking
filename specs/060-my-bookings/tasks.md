@@ -93,7 +93,7 @@ US5: Tiếp tục thanh toán đơn giữ chỗ và đặt lại nhanh từ lị
   *Verify*: File thuần Kotlin, tuyệt đối không import `android.*` hay `com.google.firebase.*`.
 - [ ] T004 [P] Định nghĩa `BookingManagementRepository.kt` interface trong `BOOKING_MGT/domain/repository/`:
   - `getBookingsByTab(userId: String, tab: BookingTab, pageSize: Int, lastDocSnapshot: Any?): Flow<Result<List<BookingSummaryItem>>>`
-  - `getBookingDetail(bookingId: String): Flow<Result<BookingDetail>>` (realtime listener)
+  - `observeBookingDetail(bookingId: String): Flow<Result<BookingDetail>>` (realtime listener)
   - `getRecurringGroupDetail(recurringGroupId: String): Result<RecurringBookingGroupDetail>`
   - `calculateRefundQuote(booking: BookingDetail, serverCurrentTimeMillis: Long): Result<RefundPolicyQuote>`
   - `cancelBookingTransaction(userId: String, bookingId: String, reason: String, requestId: String): Result<RefundPolicyQuote>`
@@ -125,7 +125,7 @@ US5: Tiếp tục thanh toán đơn giữ chỗ và đặt lại nhanh từ lị
   - Test đọc danh sách theo từng Tab: lọc đúng `status`, tự động ẩn đơn `EXPIRED` ở Tab 1, sắp xếp `startAt` tăng dần ở Tab 3 và giảm dần ở Tab 4.
   *Verify*: Chạy `./gradlew testDebugUnitTest --tests "*.GetMyBookingsByTabUseCaseTest"` báo Red.
 - [ ] T010 [P] [US1] [US2] Viết Unit Test `TEST/feature/booking_management/usecase/GetBookingDetailUseCaseTest.kt`:
-  - Test phát dữ liệu chi tiết đơn qua Flow và cập nhật realtime khi trường `checkedInAt` có giá trị.
+  - Test phát dữ liệu chi tiết đơn qua Flow (gọi `repository.observeBookingDetail`) và cập nhật realtime khi trường `checkedInAt` có giá trị.
   *Verify*: Chạy `./gradlew testDebugUnitTest --tests "*.GetBookingDetailUseCaseTest"` báo Red.
 
 ### 2C. Cài đặt UseCases (TDD Green)
@@ -139,7 +139,7 @@ US5: Tiếp tục thanh toán đơn giữ chỗ và đặt lại nhanh từ lị
   *Verify*: `CancelRecurringSessionUseCaseTest` chuyển sang Green (Pass).
 - [ ] T015 [P] [US1] Cài đặt `GetMyBookingsByTabUseCase.kt` trong `BOOKING_MGT/domain/usecase/`: Điều phối truy vấn danh sách đơn phân trang theo Tab.
   *Verify*: `GetMyBookingsByTabUseCaseTest` chuyển sang Green (Pass).
-- [ ] T016 [P] [US1] [US2] Cài đặt `GetBookingDetailUseCase.kt` trong `BOOKING_MGT/domain/usecase/`: Kết nối Flow realtime đọc chi tiết đơn.
+- [ ] T016 [P] [US1] [US2] Cài đặt `GetBookingDetailUseCase.kt` trong `BOOKING_MGT/domain/usecase/`: Kết nối Flow realtime đọc chi tiết đơn qua `repository.observeBookingDetail`.
   *Verify*: `GetBookingDetailUseCaseTest` chuyển sang Green (Pass).
 
 **Checkpoint**: Toàn bộ 6 UseCases tầng Domain hoàn thành và vượt qua 100% Unit Tests độc lập.
@@ -159,7 +159,7 @@ US5: Tiếp tục thanh toán đơn giữ chỗ và đặt lại nhanh từ lị
   *Verify*: Viết Unit Test `BookingManagementMapperTest.kt` kiểm tra chuyển đổi không làm mất mát trường dữ liệu.
 - [ ] T019 Xây dựng `BookingManagementRepositoryImpl.kt` trong `BOOKING_MGT/data/repository/` (Phần 1 - Truy vấn phân trang 5 Tab & Lắng nghe Realtime):
   - Cài đặt `getBookingsByTab`: Truy vấn theo Composite Index, phân trang `limit(10)` kèm `startAfterDocument`, lọc bỏ đơn `status == "HOLD"` đã quá hạn `holdExpiresAt <= now`.
-  - Cài đặt `getBookingDetail`: Bọc `collection("bookings").document(bookingId).addSnapshotListener` trong `callbackFlow`, tự động hủy listener khi flow đóng.
+  - Cài đặt `observeBookingDetail`: Bọc `collection("bookings").document(bookingId).addSnapshotListener` trong `callbackFlow`, tự động hủy listener khi flow đóng.
   *Verify*: Unit Test đọc danh sách và lắng nghe realtime hoạt động chính xác với mock Firestore.
 - [ ] T020 Xây dựng `BookingManagementRepositoryImpl.kt` trong `BOOKING_MGT/data/repository/` (Phần 2 - Firestore Transaction Hủy đơn nguyên tử 2 pha):
   - Cài đặt `cancelBookingTransaction` tuân thủ quy tắc Firestore:
