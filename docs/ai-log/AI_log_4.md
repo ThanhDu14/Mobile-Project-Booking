@@ -17,6 +17,7 @@ Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 | 11  | 2026-10-19 | Tạo Tasks Feature 100 bằng `$speckit-tasks`, phân tích bằng `$speckit-analyze` và cập nhật Tasks theo kết quả phân tích    | 10   |
 | 12  | 2026-10-19 | Tạo Tasks Feature 110 bằng `$speckit-tasks`, rà soát bằng `$speckit-analyze` và cập nhật Tasks theo kết quả phân tích      | 11   |
 | 13  | 2026-10-19 | Tạo Tasks Feature 111 bằng `$speckit-tasks`, phân tích bằng `$speckit-analyze` và cập nhật Tasks theo báo cáo              | 11   |
+| 14  | 2026-10-19 | Tạo Tasks Feature 112 bằng `$speckit-tasks`, phân tích bằng `$speckit-analyze` và cập nhật Tasks theo các findings         | 11   |
 
 ---
 
@@ -1036,4 +1037,99 @@ analyze/implement trong lượt cập nhật.
 ### Cách kiểm chứng
 
 - Kiểm tra 39 checklist task có ID liên tục, không trùng và đúng format; xác nhận các dependency chưa chốt được đánh dấu là điều kiện chặn.
+- Không chạy tests, `$speckit-analyze` hoặc `$speckit-implement` sau lần cập nhật Tasks.
+
+---
+
+## Mục 14: Tạo, phân tích và cập nhật Tasks Feature 112 – Owner Operations
+
+| Trường                   | Nội dung                                                                                                                                                            |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-10-19                                                                                                                                                          |
+| Người thực hiện          | Minh Nhựt                                                                                                                                                          |
+| Nhóm tính năng liên quan | 11 – Chủ sân (spec `specs/112-owner-operations`)                                                                                                                     |
+| Công cụ AI               | Codex (GPT-6), `$speckit-tasks`, `$speckit-analyze`                                                                                                                  |
+| Mục đích                 | Lập danh sách task Feature 112, rà soát tính nhất quán với spec/plan/Constitution và cập nhật Tasks theo findings mà không tự quyết định nghiệp vụ hoặc schema còn mở |
+| Nhánh Git                | `feature/112-owner-operations-tasks`                                                                                                                                |
+
+### Prompt đã dùng
+
+**Tạo Tasks lần đầu:**
+
+```text
+$speckit-tasks
+
+Tạo danh sách Tasks cho Feature 112 – Owner Operations.
+
+Trước khi tạo tasks, đọc và đối chiếu spec, plan, Constitution, hướng dẫn W1–W2,
+database README, spec Feature 110, 111, 120 và booking nếu có.
+
+Chia task nhỏ, có thứ tự/dependency; bao phủ User Stories, FR, SC, authorization
+server-side, quyền sở hữu dữ liệu, validation, loading/empty/error/offline/retry
+và edge cases. Đối chiếu schema hiện có, không tự bịa schema/field/status/nghiệp vụ.
+Bổ sung kiểm thử theo Constitution: MVVM, XML/accessibility, light/dark và phone/w600dp.
+Ghi dependency Feature 110/111/120 và booking; không giải quyết nghiệp vụ feature khác.
+Giữ package/file ownership theo plan.
+
+Chỉ tạo/cập nhật tài liệu Tasks trong specs/112-owner-operations/. Không sửa spec,
+plan, database schema hoặc spec feature khác; không chạy analyze/implement và không
+viết implementation code.
+```
+
+**Phân tích:**
+
+```text
+$speckit-analyze
+```
+
+**Cập nhật theo Specification Analysis Report:**
+
+```text
+$speckit-tasks
+
+Cập nhật Tasks Feature 112 theo findings I1, U1, U2, U3, U4 và D1.
+Chỉ sửa specs/112-owner-operations/tasks.md.
+
+Không tự thêm venueId vào schema/data model; yêu cầu database owner xác nhận ý nghĩa
+venueId trong FR-013 và chặn task voucher đến khi hợp đồng dữ liệu được xác nhận.
+Bổ sung usability study đo SC-007 với nhóm owner, công thức tỷ lệ, thao tác và điều kiện
+hoàn tất không cần hỗ trợ; không tự đặt cỡ mẫu/ngưỡng mới.
+Gộp task setup trùng; làm rõ test file, chức năng, lệnh/harness có thật, còn thiếu thì
+ghi dependency thay vì bịa đường dẫn/function.
+Tách dependency booking cancellation với checkin-booking; Phase 8 chỉ rà soát coverage
+và chạy lại suite, không lặp test đã giao trong story.
+Giữ task ID nếu có thể, cập nhật tham chiếu khi gộp/xóa task. Không sửa spec, plan,
+data-model, database README hoặc feature khác; không chạy analyze/implement.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Đối chiếu spec, plan, data-model, contract boundary, quickstart, Constitution, database README và spec liên quan. Setup/prerequisite scripts trỏ nhầm Feature 120; tài liệu Feature 112 được phân tích trực tiếp theo đường dẫn đã chỉ định.
+- Tạo Tasks ban đầu gồm 56 task, năm User Story, phase nền tảng/polish, dependency, MVP và Coverage Matrix.
+- `$speckit-analyze` ghi nhận sáu findings: ý nghĩa `venueId` của voucher; SC-007 chưa có phép đo usability; T001–T002 trùng lặp; test thiếu path/harness cụ thể; dependency giữa booking cancellation và booking check-in chưa tách; test bị lặp ở Phase 8.
+- Cập nhật Tasks thành 58 task checklist có ID duy nhất. Gộp setup task trùng thành T001; thêm gate xác nhận database owner về `venueId`, usability study SC-007 và transaction test approve/reject.
+- T006 ghi rõ database owner cần xác nhận `venueId` trong FR-013 là context từ đường dẫn `venues/{venueId}/vouchers/{code}` hay field cần lưu. Không thêm field schema/data model; voucher tasks bị chặn khi chưa có quyết định.
+- Usability study SC-007 đo bốn thao tác: duyệt/từ chối booking, mở drop-in, check-in QR và tạo voucher. Tỷ lệ là số owner hoàn thành không cần hỗ trợ trực tiếp chia tổng owner tham gia. Cỡ mẫu và điều kiện chi tiết cần được xác nhận.
+- Làm rõ Rules test dùng `firestore-tests` và `npm test`. Edge Function test location/harness chưa có trong checkout nên các task liên quan yêu cầu xác nhận trước khi tạo test. Tách T005 cho booking và T006 cho drop-in, registration check-in, voucher; `checkin-booking` không phụ thuộc booking cancellation.
+- Phase 8 chỉ rà soát coverage và chạy lại suite đã tạo. Không sửa spec, plan, data-model, database README hoặc artifact feature khác; không chạy implementation hay tests.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần                  | Quyết định                                                                                       | Lý do                                                                                 |
+| --------------------- | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------- |
+| T001–T002             | Gộp thành task rà soát coverage và file ownership                                                 | Hai task setup trùng mục tiêu                                                         |
+| T005/T006             | Tách booking contract khỏi drop-in, registration check-in và voucher contracts                  | Tránh dependency không liên quan                                                      |
+| Voucher `venueId`     | Thêm xác nhận database owner và gate cho voucher tasks                                           | Tài liệu chưa thống nhất; không tự thêm schema                                        |
+| T009, T012–T013       | Chỉ rõ Rules test path/command; đặt điều kiện cho function transaction tests                     | Rules harness có sẵn; Edge Function harness/path chưa có trong checkout              |
+| T022–T023, T032, T039 | Ghi rõ test behavior và dependency xác nhận function path/harness                                 | Không dùng Rules tests để khẳng định transaction/token phía server                   |
+| T035                  | Chuyển thành integration handoff cho `checkin-booking`                                            | Không sửa function thuộc feature khác                                                 |
+| T038–T042             | Chặn voucher implementation đến khi dữ liệu/contract được xác nhận                               | Không suy đoán `venueId` là context hay stored field                                  |
+| T052–T054             | Chuyển Phase 8 thành rà soát coverage và chạy lại suite                                          | Tránh lặp test/layout đã giao trong từng story                                        |
+| T058                  | Bổ sung usability study đo SC-007, giữ ngưỡng ≥90%                                               | Cỡ mẫu/điều kiện nghiên cứu chưa có trong spec                                        |
+| Artifact khác         | Không chỉnh sửa                                                                                  | Giữ phạm vi ở Tasks Feature 112                                                       |
+
+### Cách kiểm chứng
+
+- Kiểm tra có 58 checklist task, ID không trùng và format task hợp lệ.
+- Các task test dùng harness/lệnh đã có khi repository cung cấp; phần còn thiếu được ghi thành dependency/gate.
 - Không chạy tests, `$speckit-analyze` hoặc `$speckit-implement` sau lần cập nhật Tasks.
