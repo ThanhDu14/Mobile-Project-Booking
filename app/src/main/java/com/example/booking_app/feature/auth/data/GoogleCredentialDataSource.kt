@@ -6,14 +6,15 @@ import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
 import com.example.booking_app.R
-import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GetSignInWithGoogleOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 
 /**
- * Lấy Google ID token qua bottom sheet chọn tài khoản. Ném `GetCredentialCancellationException` khi người dùng
- * hủy, `NoCredentialException` khi máy không có tài khoản Google (`AuthErrorMapper` đổi thành `AuthError`).
+ * Lấy Google ID token qua hộp thoại "Sign in with Google" — cho phép thêm tài khoản mới ngay trong hộp thoại nên máy
+ * chưa đăng nhập Google vẫn dùng được. Ném `GetCredentialCancellationException` khi người dùng hủy,
+ * `NoCredentialException` khi không lấy được tài khoản (`AuthErrorMapper` đổi thành `AuthError`).
  */
 interface GoogleCredentialDataSource {
     suspend fun requestIdToken(activity: Activity): String
@@ -25,10 +26,7 @@ class CredentialManagerGoogleDataSource @Inject constructor(
 ) : GoogleCredentialDataSource {
 
     override suspend fun requestIdToken(activity: Activity): String {
-        val option = GetGoogleIdOption.Builder()
-            .setFilterByAuthorizedAccounts(false)
-            .setServerClientId(context.getString(R.string.default_web_client_id))
-            .build()
+        val option = GetSignInWithGoogleOption.Builder(context.getString(R.string.default_web_client_id)).build()
         val request = GetCredentialRequest.Builder().addCredentialOption(option).build()
         val credential = CredentialManager.create(activity).getCredential(activity, request).credential
         check(credential is CustomCredential && credential.type == GoogleIdTokenCredential.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL) {
