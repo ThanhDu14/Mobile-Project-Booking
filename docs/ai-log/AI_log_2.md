@@ -22,6 +22,7 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 16 | 2026-10-19 | Phân tích đối soát chất lượng bằng `/speckit-analyze` & tinh chỉnh spec 040 | 04 |
 | 17 | 2026-10-19 | Lập danh sách công việc spec 041 (đặt cố định theo tuần) bằng `/speckit-tasks` | 04 |
 | 18 | 2026-10-19 | Phân tích đối soát chất lượng bằng `/speckit-analyze` & tinh chỉnh spec 041 | 04 |
+| 19 | 2026-10-19 | Lập danh sách công việc spec 050 (thanh toán và voucher giả lập) bằng `/speckit-tasks` | 05 |
 
 
 
@@ -846,4 +847,45 @@ Bảng đối chiếu lựa chọn:
 - `specs/041-weekly-recurring-booking/contracts/ui-contracts.md`: Đã chuẩn hóa Safe Args sang `HoldToPaymentArgs`.
 - `specs/041-weekly-recurring-booking/tasks.md`: Đã bảo đảm tương thích 100% với các hợp đồng đã chuẩn hóa.
 - Toàn bộ bộ tài liệu của Feature 041 đạt độ hoàn thiện 10/10, sẵn sàng bước vào giai đoạn thực thi mã nguồn (`/speckit-implement`).
+
+---
+
+## Mục 19: Lập danh sách công việc spec 050 (thanh toán và voucher giả lập) bằng `/speckit-tasks`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-19 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 05 – Thanh toán và khuyến mãi (`specs/050-payment-voucher`) |
+| Công cụ AI | Antigravity, lệnh Spec Kit `/speckit-tasks` |
+| Mục đích | Phân rã kế hoạch kỹ thuật spec 050 thành danh sách 42 task triển khai chi tiết (`tasks.md`), tuân thủ Clean Architecture, TDD, giao dịch Firestore Transaction 2 pha nguyên tử (All Reads Before All Writes), kiểm soát Idempotency với `requestId` UUID, voucher 2 nguồn (Phương án 3.B) và cam kết học tập phi thương mại (Constitution VI) |
+| Nhánh Git | `feature/050-payment-voucher` |
+
+### Bối cảnh và Quyết định cốt lõi khi lập Tasks
+
+1. **Tuân thủ quy trình Clean Architecture & TDD**:
+   - Tầng `domain` hoàn toàn thuần Kotlin, độc lập với Android SDK và Firebase SDK.
+   - Viết Unit Tests trước (Red) cho 6 UseCases: `ValidateAndApplyVoucherUseCaseTest` (kiểm tra %, trần `maxDiscount`, minOrder, perUserLimit, collision 2 nguồn), `GetAvailableVouchersUseCaseTest` (đọc song song 2 nguồn), `CalculatePaymentBreakdownUseCaseTest` (cọc 30% làm tròn nghìn đồng an toàn, giảm 100% ra `FREE`), `TopUpMockWalletUseCaseTest` (nạp tiền ảo +100k, +500k, +1M), `CancelPaymentHoldUseCaseTest` (nhả slot khi hết giờ/hủy đơn), `ProcessMockPaymentUseCaseTest` (kiểm thử 3 phương thức, rollback khi thiếu tiền ví, hết hạn giữ chỗ hoặc mất lượt voucher phút chót).
+2. **Giao dịch Firestore Transaction nguyên tử 2 pha (All Reads Before All Writes)**:
+   - Pha Đọc (All Reads): Kiểm tra tính duy nhất (`walletTransactions/{requestId}`), kiểm tra hạn giữ chỗ (`holdExpiresAt > now`), đọc trạng thái các `slots` đang `HOLD`, kiểm tra voucher (`usedCount < usageLimit` & `userUsage.count < perUserLimit`), kiểm tra số dư ví (`walletBalance >= requiredAmount`).
+   - Pha Ghi (All Writes): Trừ số dư ví, ghi log `walletTransactions/{requestId}`, tăng lượt voucher & ghi `redemptions/{bookingId}`, chuyển đơn sang `PENDING` (chờ duyệt 60 phút theo Phương án 2.A), chuyển toàn bộ `slots` sang `BOOKED` (xóa `holdExpiresAt`). Khống chế tổng số thao tác đọc-ghi an toàn dưới trần **500 operations** cho cả đơn lẻ 040 và đơn chu kỳ 041.
+3. **Idempotency & Ticker đếm ngược kế thừa**:
+   - Client sinh mã UUID `requestId` gắn kèm mỗi phiên thanh toán, vô hiệu hóa nút thanh toán ngay khi click đầu tiên để chống spam và chống trừ tiền kép khi mất mạng.
+   - Ticker đếm ngược tính toán theo thời gian máy chủ thực tế: `remainingMillis = holdExpiresAtMillis - System.currentTimeMillis()`, tuyệt đối không tạo timer 5 phút mới. Chạm 00:00 tự động khóa nút và kích hoạt `CancelPaymentHoldUseCase`.
+4. **Cam kết học tập phi thương mại & Thỏa thuận liên thành viên**:
+   - Phương án 3.B: Đọc song song 2 nguồn voucher (`venues/{venueId}/vouchers` và `systemVouchers`) qua `async/awaitAll`.
+   - Ràng buộc loại đơn: Ẩn hoàn toàn lựa chọn `AT_VENUE` khi đối số `isRecurring = true` (đơn chu kỳ từ 041), chỉ áp dụng cho đơn lẻ 040.
+   - Constitution VI: Luồng thanh toán hoàn toàn GIẢ LẬP, hiển thị nhãn học tập nổi bật trên cả màn hình thanh toán và E-Receipt; cung cấp BottomSheet "Nạp ví giả lập".
+5. **Phân rã 42 Tasks chi tiết**:
+   - **Phase 1 (Setup & Test Infrastructure)**: T001–T002 (Composite Index, Test Fixtures).
+   - **Phase 2 (Domain Layer & TDD)**: T003–T016 (Domain Models, Repository Interface, Unit Tests Red, cài đặt 6 UseCases Green).
+   - **Phase 3 (Data Layer & Infrastructure)**: T017–T023 (DTOs, Mappers, `PaymentRepositoryImpl` với Transaction 2 pha, Hilt Module, Security Rules).
+   - **Phase 4 (UI Layer & ViewModel)**: T024–T035 (XML Layouts Material 3, ListAdapter với DiffUtil, BottomSheets nạp ví/chọn voucher, ViewModel StateFlow + Ticker thực tế, Fragments).
+   - **Phase 5 (Navigation, Integration & Edge Cases)**: T036–T038 (Safe Args `HoldToPaymentArgs`, `ReceiptToMyBookingsArgs`, cơ chế hủy giữ chỗ chủ động, Idempotency).
+   - **Phase 6 (System Verification & Polish)**: T039–T042 (ViewModelTest, Transaction test trên Emulator, Espresso UI Test, rà soát Checklist).
+
+### Tài liệu đã sinh
+
+- `specs/050-payment-voucher/tasks.md`: 42 tasks chi tiết có checkbox `- [ ]`, ID `T001`–`T042`, gắn tag User Story (`[US1]`–`[US5]`), nhãn song song `[P]`, đường dẫn file chính xác và lệnh xác minh `Verify:`.
+
 
