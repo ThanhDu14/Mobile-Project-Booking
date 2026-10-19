@@ -16,6 +16,7 @@ Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 | 10  | 2026-10-16 | Lập implementation plan cho Feature 120 (quản trị và kiểm duyệt) bằng `$speckit-plan`                                      | 12   |
 | 11  | 2026-10-19 | Tạo Tasks Feature 100 bằng `$speckit-tasks`, phân tích bằng `$speckit-analyze` và cập nhật Tasks theo kết quả phân tích    | 10   |
 | 12  | 2026-10-19 | Tạo Tasks Feature 110 bằng `$speckit-tasks`, rà soát bằng `$speckit-analyze` và cập nhật Tasks theo kết quả phân tích      | 11   |
+| 13  | 2026-10-19 | Tạo Tasks Feature 111 bằng `$speckit-tasks`, phân tích bằng `$speckit-analyze` và cập nhật Tasks theo báo cáo              | 11   |
 
 ---
 
@@ -942,3 +943,97 @@ feature khác; không implement, viết code hoặc chạy `$speckit-implement`.
 - Đối chiếu task với 19 FR, 7 SC, User Stories/Acceptance Scenarios, Constitution, database README và các dependency liên quan.
 - Kiểm tra 35 checklist task có ID duy nhất, format checkbox/label/file path hợp lệ; `git diff --check` không báo lỗi whitespace.
 - Không chạy test, implementation hoặc `$speckit-implement`; không sửa file ngoài Tasks.
+
+---
+
+## Mục 13: Tạo và cập nhật Tasks Feature 111 – Owner Venue Setup
+
+| Trường                   | Nội dung                                                                                                                           |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-10-19                                                                                                                         |
+| Người thực hiện          | Minh Nhựt                                                                                                                          |
+| Nhóm tính năng liên quan | 11 – Quản lý sân (spec `specs/111-owner-venue-setup`)                                                                              |
+| Công cụ AI               | Codex (GPT-6), `$speckit-tasks`, `$speckit-analyze`                                                                                |
+| Mục đích                 | Tạo danh sách Tasks Feature 111, phân tích nhất quán spec/plan/tasks và cập nhật các điểm chưa rõ mà không tự quyết định nghiệp vụ |
+| Nhánh Git                | `feature/111-owner-venue-setup-tasks`                                                                                              |
+
+### Prompt đã dùng
+
+**Tạo Tasks lần đầu:**
+
+```text
+$speckit-tasks Tạo danh sách Tasks cho Feature 111 – Owner Venue Setup.
+
+Đọc và đối chiếu spec.md, plan.md, constitution, hướng dẫn phân công W1–W2,
+database README, Specs 110/112 và các spec booking liên quan nếu có.
+
+Chia task nhỏ, có thứ tự/dependency; bao phủ thêm/sửa/ẩn venue, quản lý court,
+bảng giá theo thứ/khung giờ, khóa giờ sân, validation, phân quyền, kiểm thử,
+xử lý lỗi và edge cases. Bảo đảm chỉ owner đã được duyệt quản lý venue/court
+thuộc quyền sở hữu của mình. Đối chiếu venues, courts, priceRules, slots.status,
+BLOCKED và blockReason với database README; không tự bịa schema/field/status.
+Liên kết task với User Stories, FR và SC theo quy ước repository. Ghi dependency
+Feature 110, 112 và booking; không tự giải quyết nghiệp vụ thuộc feature khác.
+
+Chỉ tạo/cập nhật Tasks trong specs/111-owner-venue-setup/. Không sửa spec/plan,
+không chạy analyze/implement và không viết implementation code.
+```
+
+**Phân tích:**
+
+```text
+$speckit-analyze
+```
+
+**Cập nhật theo Specification Analysis Report:**
+
+```text
+$speckit-tasks Cập nhật danh sách Tasks Feature 111 theo Specification Analysis Report.
+
+Chỉ chỉnh specs/111-owner-venue-setup/tasks.md. Đọc lại spec, plan, tasks,
+data-model, research, constitution, database README và specs liên quan 110/120/030/040/041.
+
+Giữ kiểm tra quyền server bắt buộc; chặn mọi thao tác ghi đến khi Feature 110/120
+xác nhận nguồn đáng tin cậy cho ownerStatus=APPROVED. Chặn mở khóa slot đến khi
+nhóm booking chốt hợp đồng xác minh ownership, trạng thái block và quyền mở khóa an toàn;
+không thêm schema. Ghi rõ courtCount consistency/maximum và quy tắc so sánh tên court
+trùng chưa được định nghĩa; chỉ kiểm tra/test phần đã xác định. Chặn price-rule
+integration phụ thuộc quyết định bên cập nhật minPricePerHour khi rule đổi hoặc không
+còn rule. Phân biệt task thuộc Feature 111 với task chỉ xác minh hợp đồng/tích hợp
+Feature 030/040; không giao sửa package/chức năng ngoài phạm vi.
+
+Giữ task ID nếu có thể, không tự quyết định nghiệp vụ. Không sửa spec, plan,
+data-model, research, database schema hoặc spec feature khác; không chạy
+analyze/implement trong lượt cập nhật.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Đối chiếu spec, plan, data-model, research, boundary contract, quickstart, constitution, database README và tài liệu/spec liên quan Feature 110, 120, 030, 040, 041.
+- Tạo `specs/111-owner-venue-setup/tasks.md` với 39 task, năm User Story, phase setup/foundational/polish, dependency, cơ hội song song, MVP và truy vết FR/Acceptance Scenarios.
+- Phân tích chỉ đọc ghi nhận sáu findings: nguồn xác minh ownerStatus (A1), an toàn mở khóa (A2), courtCount (A3), tên court trùng (A4), nguồn cập nhật minPricePerHour (A5), và ranh giới Feature 030/040 (A6).
+- Cập nhật Tasks, giữ nguyên 39 task và ID T001–T039; không thêm schema, field, status, endpoint hoặc quyết định nghiệp vụ.
+- T003/T004/T006 đặt xác nhận nguồn ownerStatus từ Feature 110/120 làm prerequisite trước khi bật bất kỳ thao tác ghi quản lý nào.
+- T007 thành cổng hợp đồng với nhóm booking về transaction và cách chứng minh ownership/eligibility. T029 cùng thao tác và kiểm thử phụ thuộc không được triển khai khi chưa xác định block nào owner được phép mở khóa.
+- T008/T022/T023 chặn price-rule mutation/integration phụ thuộc cho tới khi xác định bên có thẩm quyền cập nhật `minPricePerHour` và hành vi khi rules thay đổi hoặc không còn rule.
+- T009 chỉ kiểm tra `courtCount` là số nguyên dương; không áp đặt equality/maximum chưa được xác định. T016 chỉ kiểm tra các trường court đã nêu; không tự thực thi hoặc test chính sách tên trùng.
+- T033/T035 chỉ rà soát hợp đồng và kiểm thử tích hợp; không sửa source/UI/package của Feature 030/040.
+- Không sửa spec, plan, data-model, research, database README hoặc spec feature khác; không chạy implementation hay viết code.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần                     | Quyết định                                                                                             | Lý do                                                                       |
+| ------------------------ | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------- |
+| T003/T004/T006           | Bổ sung prerequisite xác minh ownerStatus trước khi cho phép ghi                                       | Không tự chọn claim/document/field làm nguồn quyền                          |
+| T007/T028/T029/T031/T032 | Làm rõ hợp đồng booking, kiểm tra ownership/trạng thái và chặn mở khóa khi chưa chứng minh eligibility | Schema `slots` không định danh block theo owner/thao tác; không thêm schema |
+| T008/T022/T023           | Chặn rule mutations/integration phụ thuộc `minPricePerHour` đến khi xác định authority                 | Tài liệu chưa quy định bên cập nhật và hành vi khi hết rules                |
+| T009                     | Tách validation đã rõ khỏi equality/maximum chưa có quyết định                                         | Không tự đặt quy tắc hoặc giới hạn                                          |
+| T016                     | Chỉ validate trường court đã xác định; để chính sách tên trùng mở                                      | Spec chưa định nghĩa so sánh/chuẩn hóa                                      |
+| T033/T035                | Chuyển thành xác minh hợp đồng/tích hợp, không sửa Feature 030/040                                     | Giữ ranh giới package theo plan                                             |
+| Task IDs                 | Giữ 39 task, T001–T039                                                                                 | Tránh làm sai tham chiếu hiện có                                            |
+| Artifact khác            | Không sửa                                                                                              | Giữ đúng phạm vi Feature 111 Tasks                                          |
+
+### Cách kiểm chứng
+
+- Kiểm tra 39 checklist task có ID liên tục, không trùng và đúng format; xác nhận các dependency chưa chốt được đánh dấu là điều kiện chặn.
+- Không chạy tests, `$speckit-analyze` hoặc `$speckit-implement` sau lần cập nhật Tasks.
