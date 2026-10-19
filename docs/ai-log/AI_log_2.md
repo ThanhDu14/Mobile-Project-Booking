@@ -21,6 +21,7 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 15 | 2026-10-19 | Lập danh sách công việc spec 040 (lưới khung giờ đặt sân) bằng `/speckit-tasks` | 04 |
 | 16 | 2026-10-19 | Phân tích đối soát chất lượng bằng `/speckit-analyze` & tinh chỉnh spec 040 | 04 |
 | 17 | 2026-10-19 | Lập danh sách công việc spec 041 (đặt cố định theo tuần) bằng `/speckit-tasks` | 04 |
+| 18 | 2026-10-19 | Phân tích đối soát chất lượng bằng `/speckit-analyze` & tinh chỉnh spec 041 | 04 |
 
 
 
@@ -811,4 +812,38 @@ Bảng đối chiếu lựa chọn:
 ### Tài liệu đã sinh
 
 - `specs/041-weekly-recurring-booking/tasks.md`: 44 tasks chi tiết có checkbox `- [ ]`, ID `T001`–`T044`, gắn tag User Story (`[US1]`–`[US5]`), nhãn song song `[P]`, đường dẫn file chính xác và lệnh xác minh `Verify:`.
+
+---
+
+## Mục 18: Phân tích đối soát chất lượng bằng `/speckit-analyze` & tinh chỉnh spec 041
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-19 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 04 – Đặt sân (`specs/041-weekly-recurring-booking`) |
+| Công cụ AI | Antigravity, lệnh Spec Kit `/speckit-analyze` |
+| Mục đích | Đối soát chéo 3 bên giữa `spec.md`, `plan.md`, `tasks.md`, `contracts/ui-contracts.md` và `constitution.md`. Phát hiện các điểm lệch hoặc mơ hồ và tiến hành tinh chỉnh chuẩn hóa trước khi bước vào cài đặt mã nguồn (`/speckit-implement`) |
+| Nhánh Git | `feature/041-weekly-recurring-booking` |
+
+### Kết quả phân tích đối soát chéo (Cross-Artifact Analysis)
+
+- **Tỷ lệ bao phủ (Coverage)**: **100%** (35/35 Functional Requirements và 5/5 Success Criteria đều có ít nhất một task tương ứng trong tổng số 44 tasks).
+- **Tuân thủ Constitution**: Không có bất kỳ vi phạm nào (0 Critical, 0 High). Tầng domain thuần Kotlin độc lập, tiền tệ dùng `Long` VND, thuật toán đổi sân cùng `surfaceType` (Phương án 1.A) chặt chẽ, Firestore Transaction chia batch đọc-ghi an toàn dưới trần 500 operations.
+- **Các điểm cần tinh chỉnh**: Phát hiện 2 điểm Low (A1, C1) về sự đồng nhất trạng thái entity và tên gọi hợp đồng Safe Args chuyển tiếp giữa các spec.
+
+### Chi tiết các tinh chỉnh đã thực thi
+
+1. **A1 (Low – Đồng bộ thuộc tính trạng thái vòng đời của nhóm đơn `RecurringBookingGroup`)**:
+   - Cập nhật `specs/041-weekly-recurring-booking/spec.md`: Bổ sung thuộc tính `status` mang các giá trị (`HOLD`, `CONFIRMED`, `CANCELLED`, `EXPIRED`) cho entity `RecurringBookingGroup`, phản ánh trạng thái vòng đời tổng thể của toàn bộ chu kỳ và khớp hoàn toàn với schema Firestore mục 4.5a trong `data-model.md`.
+2. **C1 (Low – Chuẩn hóa tên lớp và thuộc tính Bundle Safe Args `HoldToPaymentArgs`)**:
+   - Cập nhật `specs/041-weekly-recurring-booking/plan.md` (§5.2) và `contracts/ui-contracts.md` (§1.2): Chuẩn hóa tên lớp dữ liệu chuyển tiếp từ `RecurringToPaymentArgs` sang **`HoldToPaymentArgs`** (với `bookingId` là ID của nhóm `recurringGroupId`, cờ `isRecurring = true`, `slotIds: Array<String>`), đảm bảo tính nhất quán tuyệt đối với hợp đồng tiếp nhận của màn hình thanh toán tại Spec 050 (`specs/050-payment-voucher/contracts/ui-contracts.md`) và luồng đặt đơn lẻ của Spec 040.
+
+### Trạng thái tài liệu sau tinh chỉnh
+
+- `specs/041-weekly-recurring-booking/spec.md`: Đã bổ sung `status` cho `RecurringBookingGroup`.
+- `specs/041-weekly-recurring-booking/plan.md`: Đã chuẩn hóa Safe Args sang `HoldToPaymentArgs`.
+- `specs/041-weekly-recurring-booking/contracts/ui-contracts.md`: Đã chuẩn hóa Safe Args sang `HoldToPaymentArgs`.
+- `specs/041-weekly-recurring-booking/tasks.md`: Đã bảo đảm tương thích 100% với các hợp đồng đã chuẩn hóa.
+- Toàn bộ bộ tài liệu của Feature 041 đạt độ hoàn thiện 10/10, sẵn sàng bước vào giai đoạn thực thi mã nguồn (`/speckit-implement`).
 
