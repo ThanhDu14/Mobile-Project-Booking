@@ -107,29 +107,29 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
 
 ### 2B. PR `feat(auth)`: server dùng chung, `on-signup` và Rules
 
-- [ ] T019 **(phụ thuộc B)** Kiểm tra `FN/_shared/firestore.ts` có: `get(path)`, `commit(writes)` hỗ trợ `currentDocument.exists = false` (trả lỗi `ALREADY_EXISTS` phân biệt được), và **xuất** hàm lấy access token service account theo scope (để `identity.ts` dùng chung). Nếu B chưa có: viết bản tối thiểu đúng 3 hàm này, ghi `// TODO(B): thay bằng bản đầy đủ` và báo B
-- [ ] T020 [P] Viết test `FN/_shared/auth.test.ts` (chạy thấy fail):
+- [x] T019 **(phụ thuộc B)** Kiểm tra `FN/_shared/firestore.ts` có: `get(path)`, `commit(writes)` hỗ trợ `currentDocument.exists = false` (trả lỗi `ALREADY_EXISTS` phân biệt được), và **xuất** hàm lấy access token service account theo scope (để `identity.ts` dùng chung). Nếu B chưa có: viết bản tối thiểu đúng 3 hàm này, ghi `// TODO(B): thay bằng bản đầy đủ` và báo B
+- [x] T020 [P] Viết test `FN/_shared/auth.test.ts` (chạy thấy fail):
   - chế độ Emulator: token không ký của Auth Emulator → `verifyIdToken` trả `{ uid, appRole, email, emailVerified, phone, name, signInProvider }`, có log cảnh báo;
   - chế độ thật với JWKS giả: sai chữ ký, hết hạn, sai `aud`, sai `iss`, thiếu header → `401 UNAUTHENTICATED`;
   - `requireUser`: thiếu `appRole` → `403 NOT_INITIALIZED`; `accountStatus == LOCKED` → `403 ACCOUNT_LOCKED`;
   - `requireRole(user, "ADMIN")` với `PLAYER` → `403 FORBIDDEN`;
   - `errorResponse` trả đúng dạng `{ "error": { "code", "message", ...extra } }`.
-- [ ] T021 Cài `FN/_shared/auth.ts` đúng [contract §4](contracts/edge-function-on-signup.md#4-_sharedauthts-dùng-chung-cả-nhóm) (`jose.createRemoteJWKSet`, `iss = https://securetoken.google.com/<projectId>`, `aud = <projectId>`). Cho T020 xanh. **Báo C**: task T020 của 070 và T007 của 080 dùng file này, không tự viết
-- [ ] T022 [P] Viết test `FN/_shared/identity.test.ts` trên Auth Emulator:
+- [x] T021 Cài `FN/_shared/auth.ts` đúng [contract §4](contracts/edge-function-on-signup.md#4-_sharedauthts-dùng-chung-cả-nhóm) (`jose.createRemoteJWKSet`, `iss = https://securetoken.google.com/<projectId>`, `aud = <projectId>`). Cho T020 xanh. **Báo C**: task T020 của 070 và T007 của 080 dùng file này, không tự viết
+- [x] T022 [P] Viết test `FN/_shared/identity.test.ts` trên Auth Emulator:
   - `getCustomClaims` / `setCustomClaims`;
   - `mergeClaims(uid, { appRole: "OWNER" })` giữ nguyên `role: "authenticated"` đã có;
   - claim JSON ≥ 1000 byte → bị từ chối;
   - `setUserDisabled(uid, true)` → đăng nhập bằng mật khẩu trả `USER_DISABLED`; `false` → đăng nhập lại được.
-- [ ] T023 Cài `FN/_shared/identity.ts` đúng [contract §5](contracts/edge-function-on-signup.md#5-_sharedidentityts-dùng-chung-a-d) (Identity Toolkit `accounts:lookup`, `accounts:update` với `customAttributes` / `disableUser`; Emulator dùng `Authorization: Bearer owner`). Cho T022 xanh
-- [ ] T024 [P] Viết test `FN/on-signup/handler.test.ts` (Auth + Firestore Emulator), đủ **S1–S12** của [contract §6](contracts/edge-function-on-signup.md#6-test-deno-test-firebase-emulator-auth--firestore), thêm:
+- [x] T023 Cài `FN/_shared/identity.ts` đúng [contract §5](contracts/edge-function-on-signup.md#5-_sharedidentityts-dùng-chung-a-d) (Identity Toolkit `accounts:lookup`, `accounts:update` với `customAttributes` / `disableUser`; Emulator dùng `Authorization: Bearer owner`). Cho T022 xanh
+- [x] T024 [P] Viết test `FN/on-signup/handler.test.ts` (Auth + Firestore Emulator), đủ **S1–S12** của [contract §6](contracts/edge-function-on-signup.md#6-test-deno-test-firebase-emulator-auth--firestore), thêm:
   - **gọi liên tiếp**: 5 lần cho cùng `uid` → lần 1 `CREATED`, 4 lần sau `ALREADY_INITIALIZED`, `createdAt` không đổi;
   - **gọi đồng thời**: 10 lời gọi song song (`Promise.all`) cho cùng `uid` → cả 10 trả `200`, đúng 1 document, claim đúng `{ role: "authenticated", appRole: "PLAYER" }`; chạy 10 lần liên tiếp đều xanh;
   - S1 kiểm tra đủ trường theo [data-model §2](data-model.md#2-firestore-usersuid-a): `level == null`, `favoriteDistrictIds == []`, `role == "PLAYER"`, `ownerStatus == "NONE"`, `accountStatus == "ACTIVE"`, `fcmTokens == []`, `notificationPrefs == {}`, `walletBalance == 0`, `termsAcceptedAt`/`createdAt`/`updatedAt` là giờ server, `email` đã `lowercase`, không có `ownerRevokedReason`;
   - `GET` → `405 METHOD_NOT_ALLOWED`; token không có email lẫn `phone_number` → `400 MISSING_CONTACT`.
-- [ ] T025 Cài `FN/on-signup/handler.ts` (logic thuần, nhận `firestore`, `identity` qua tham số để test) và `FN/on-signup/index.ts` theo [contract §1–§3](contracts/edge-function-on-signup.md#1-request): `displayName` sau `trim` dài 2–50 (trống thì dùng `token.name`), `termsAccepted == true` khi chưa có document, `email`/`phone` lấy **từ token**, bỏ qua mọi trường lạ trong body; tạo document trước, gộp claim sau, không bao giờ hạ `appRole`. Thêm `[functions.on-signup] verify_jwt = false` vào `supabase/config.toml`. Cho T024 xanh
-- [ ] T026 [P] Viết test `firestore-tests/test/users.test.ts` đủ **U1–U18** của [contracts/security-rules.md §3](contracts/security-rules.md#3-bảng-test-mỗi-dòng-ít-nhất-một-test-theo-đặc-tả-csdl-mục-7); sửa `firestore-tests/test/base.test.ts` nếu đang dựa vào mặc định `PLAYER` của `appRole()`
-- [ ] T027 Sửa `firestore.rules` đúng [contracts/security-rules.md §1–§2](contracts/security-rules.md#1-sửa-rules-nền): `appRole()` trả `null` khi thiếu claim, thêm `isInitialized()`, `isPlayer()`, thêm `match /users/{uid}` (`get` của mình hoặc admin, `list` chỉ admin, `create`/`delete` cấm, `update` chỉ `selfEditableFields()` với `updatedAt == request.time`, `displayName` 2–50). Cho T026 và 3 test nền xanh. **Báo cả nhóm** dùng `isInitialized()` thay `isSignedIn()` cho quyền ghi
-- [ ] T028 [P] Viết `scripts/admin/grant-role.ts <uid> <ADMIN|OWNER|PLAYER>` theo [quickstart §5](quickstart.md#5-cấp-tài-khoản-admin-thủ-công-constitution-ii): dùng service account, **`mergeClaims` trước rồi mới ghi `users.role`**; từ chối khi `users/{uid}` chưa có
+- [x] T025 Cài `FN/on-signup/handler.ts` (logic thuần, nhận `firestore`, `identity` qua tham số để test) và `FN/on-signup/index.ts` theo [contract §1–§3](contracts/edge-function-on-signup.md#1-request): `displayName` sau `trim` dài 2–50 (trống thì dùng `token.name`), `termsAccepted == true` khi chưa có document, `email`/`phone` lấy **từ token**, bỏ qua mọi trường lạ trong body; tạo document trước, gộp claim sau, không bao giờ hạ `appRole`. Thêm `[functions.on-signup] verify_jwt = false` vào `supabase/config.toml`. Cho T024 xanh
+- [x] T026 [P] Viết test `firestore-tests/test/users.test.ts` đủ **U1–U18** của [contracts/security-rules.md §3](contracts/security-rules.md#3-bảng-test-mỗi-dòng-ít-nhất-một-test-theo-đặc-tả-csdl-mục-7); sửa `firestore-tests/test/base.test.ts` nếu đang dựa vào mặc định `PLAYER` của `appRole()`
+- [x] T027 Sửa `firestore.rules` đúng [contracts/security-rules.md §1–§2](contracts/security-rules.md#1-sửa-rules-nền): `appRole()` trả `null` khi thiếu claim, thêm `isInitialized()`, `isPlayer()`, thêm `match /users/{uid}` (`get` của mình hoặc admin, `list` chỉ admin, `create`/`delete` cấm, `update` chỉ `selfEditableFields()` với `updatedAt == request.time`, `displayName` 2–50). Cho T026 và 3 test nền xanh. **Báo cả nhóm** dùng `isInitialized()` thay `isSignedIn()` cho quyền ghi
+- [x] T028 [P] Viết `scripts/admin/grant-role.ts <uid> <ADMIN|OWNER|PLAYER>` theo [quickstart §5](quickstart.md#5-cấp-tài-khoản-admin-thủ-công-constitution-ii): dùng service account, **`mergeClaims` trước rồi mới ghi `users.role`**; từ chối khi `users/{uid}` chưa có
 
 **Checkpoint 2B**: `deno test -A on-signup/ _shared/` và `npm test` trong `firestore-tests/` đều xanh; chạy tay `curl` ở [quickstart §2](quickstart.md#2-test-edge-function-on-signup-bắt-buộc) trả `CREATED` rồi `ALREADY_INITIALIZED`.
 

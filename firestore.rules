@@ -19,9 +19,20 @@ service cloud.firestore {
     }
 
     // Vai trò của app nằm ở custom claim `appRole`; claim `role` dành cho
-    // Supabase (constitution, mục Ràng buộc công nghệ).
+    // Supabase (constitution, mục Ràng buộc công nghệ). Thiếu claim (chưa qua
+    // on-signup) thì trả null, không coi là PLAYER (spec 010, research R10).
     function appRole() {
-      return isSignedIn() ? request.auth.token.get('appRole', 'PLAYER') : null;
+      return isSignedIn() ? request.auth.token.get('appRole', null) : null;
+    }
+
+    // Đã qua on-signup: có claim appRole. Dùng thay isSignedIn() cho quyền
+    // của người dùng, nhất là quyền ghi.
+    function isInitialized() {
+      return appRole() != null;
+    }
+
+    function isPlayer() {
+      return appRole() == 'PLAYER';
     }
 
     function isOwner() {
@@ -44,5 +55,31 @@ service cloud.firestore {
     }
 
     // Người phụ trách thêm `match /<collection>/{id} { ... }` bên dưới.
+
+    // ---------- users (A, spec 010; contracts/security-rules.md) ----------
+    // Tạo bởi on-signup, xóa bởi delete-account (service account, không qua Rules).
+    // Không áp dụng xuống subcollection: favorites, notifications, aiUsage có match riêng.
+    match /users/{uid} {
+      // Trường người dùng tự sửa được. Spec 011 bổ sung kiểm tra chi tiết từng trường.
+      function selfEditableFields() {
+        return ['displayName', 'avatarPath', 'level', 'favoriteDistrictIds',
+                'fcmTokens', 'notificationPrefs', 'updatedAt'];
+      }
+
+      function validDisplayName() {
+        return !('displayName' in request.resource.data.diff(resource.data).affectedKeys())
+            || (request.resource.data.displayName is string
+                && request.resource.data.displayName.size() >= 2
+                && request.resource.data.displayName.size() <= 50);
+      }
+
+      allow get: if (isSelf(uid) && isInitialized()) || isAdmin();
+      allow list: if isAdmin();                       // spec 120 tra cứu người dùng
+      allow create, delete: if false;
+      allow update: if isSelf(uid) && isInitialized()
+                    && onlyChanges(selfEditableFields())
+                    && request.resource.data.updatedAt == request.time
+                    && validDisplayName();
+    }
   }
 }
