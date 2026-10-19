@@ -1,4 +1,4 @@
-﻿# Nhật ký sử dụng AI – Thành viên 4 (Minh Nhựt)
+# Nhật ký sử dụng AI – Thành viên 4 (Minh Nhựt)
 
 Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 
@@ -14,6 +14,7 @@ Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 | 8   | 2026-10-16 | Lập implementation plan cho Feature 111 (thiết lập cơ sở chủ sân) bằng `$speckit-plan`                                     | 11   |
 | 9   | 2026-10-16 | Lập implementation plan cho Feature 112 (vận hành chủ sân) bằng `$speckit-plan`                                            | 11   |
 | 10  | 2026-10-16 | Lập implementation plan cho Feature 120 (quản trị và kiểm duyệt) bằng `$speckit-plan`                                    | 12   |
+| 11  | 2026-10-19 | Tạo Tasks Feature 100 bằng `$speckit-tasks`, phân tích bằng `$speckit-analyze` và cập nhật Tasks theo kết quả phân tích          | 10   |
 
 ---
 
@@ -765,3 +766,84 @@ Cuối cùng báo cáo file đã tạo, quyết định kỹ thuật, dependency
 - Xác nhận các artifact chỉ thuộc bước Plan; không tạo `tasks.md` hoặc code triển khai.
 - Setup script trả về nhầm đường dẫn Feature 100; giữ nguyên nội dung Feature 100 và tạo tài liệu đúng trong `specs/112-owner-operations/`.
 - Không chạy test, tasks hoặc implementation.
+
+---
+
+## Mục 11: Tạo và cập nhật Tasks Feature 100 – Notification
+
+| Trường                   | Nội dung                                                                                                                                              |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-10-19                                                                                                                                             |
+| Người thực hiện          | Minh Nhựt                                                                                                                                              |
+| Nhóm tính năng liên quan | 10 – Thông báo (spec `specs/100-notification`)                                                                                                         |
+| Công cụ AI               | Codex (GPT-6), `$speckit-tasks`, `$speckit-analyze`                                                                                                    |
+| Mục đích                 | Tạo danh sách task theo spec và plan hiện có, sau đó rà soát tính nhất quán và cập nhật Tasks theo các phát hiện phân tích                              |
+| Nhánh Git                | `feature/100-notification-plan`                                                                                                                        |
+
+### Prompt đã dùng
+
+**Tạo Tasks:**
+
+```text
+$speckit-tasks Tạo danh sách Tasks cho Feature 100 – Notification dựa trên specification và implementation plan hiện có.
+
+Trước khi tạo tasks, đọc và đối chiếu spec, plan, checklist requirements nếu có,
+constitution, database README và tài liệu/spec liên quan đến feature nguồn.
+
+Chia công việc thành task nhỏ, rõ ràng, có thể thực hiện và kiểm tra độc lập;
+tuân thủ format, task ID, thứ tự và dependency của Spec Kit; nhóm theo kiến trúc thực tế;
+liên kết với User Story hoặc Functional Requirement khi workflow hỗ trợ.
+
+Ưu tiên bảo mật, chống thông báo trùng, xử lý lỗi và kiểm thử theo spec.
+Không tự thêm nghiệp vụ hoặc thay đổi quyết định đã chốt; không viết implementation code
+và không chạy /speckit-implement. Chỉ tạo hoặc cập nhật tài liệu Tasks.
+```
+
+**Phân tích và cập nhật Tasks:**
+
+```text
+$speckit-analyze
+
+Chỉnh sửa Tasks của Feature 100 – Notification dựa trên báo cáo phân tích đặc tả.
+Đọc lại spec, plan, tasks, research nếu có, constitution, database README và tài liệu
+liên quan Feature 091/120.
+
+Ghi nhận mâu thuẫn quyền Admin/SYSTEM; làm rõ dependency event transport, idempotency,
+retry/reminder, query/index, chat presence và điều kiện tài khoản active. Không tự thêm
+schema hoặc quyết định quyền chưa có căn cứ; chỉ chặn task phụ thuộc trực tiếp.
+
+Bổ sung kiểm thử light/dark, phone/w600dp và inbox đã lưu nhưng FCM thất bại; xử lý
+xung đột song song T026/T037; làm rõ MVP và các task setup T001–T003. Giữ task ID nếu có thể.
+Không sửa spec, plan, database README hoặc tài liệu feature khác; không implement hay viết code.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Đọc và đối chiếu `specs/100-notification/spec.md`, `plan.md`, `checklists/requirements.md`, `data-model.md`, các contract, `research.md`, constitution và database README.
+- Tạo `specs/100-notification/tasks.md` với 56 task theo năm User Story, các giai đoạn setup/nền tảng và polish; có dependency, cơ hội làm song song và MVP sequence.
+- Chạy phân tích chỉ đọc đối với spec, plan, tasks và constitution. Prerequisite script theo nhánh hiện hành trỏ sang Feature 120; phân tích được tiếp tục trực tiếp trên thư mục Feature 100 đã chỉ định.
+- Cập nhật Tasks để làm rõ mâu thuẫn quyền Admin/SYSTEM giữa DB README §7, §4.13 và luồng server-authoritative của Feature 120; không sửa schema, Security Rules hoặc quyền Admin.
+- Ghi các quyết định còn thiếu là `NEEDS DECISION` vì repository chưa định nghĩa nhãn `BLOCKED`. Mỗi quyết định chỉ chặn task phụ thuộc trực tiếp; công việc độc lập có thể tiếp tục.
+- Ghi dependency Feature 091 về chat presence/multi-device và Feature 120 về điều kiện xác định tài khoản active; không tự đặt tiêu chí thay thế.
+- Bổ sung kiểm thử UI light/dark và phone/`w600dp`; bổ sung kiểm thử FCM thất bại sau khi inbox đã lưu và khẳng định inbox record vẫn khả dụng.
+- Bỏ marker `[P]` khỏi T037 vì T026 và T037 cùng sửa `firestore-tests/test/notification-security.test.ts`; giữ nguyên ID task.
+- Làm rõ T001–T003 là các task khảo sát, không tự cài dependency hoặc dựng hạ tầng. Nêu MVP hiện tại là backend booking notifications và cần nhóm xác nhận nếu cần bao gồm inbox tối thiểu US3.
+- Không chạy `$speckit-implement`, không viết implementation code và không chạy tests.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| Nhóm task và thứ tự | Giữ 56 task theo năm User Story, các phase setup/nền tảng/polish và thứ tự ưu tiên trong spec | Duy trì cấu trúc task đã tạo và quan hệ dependency |
+| Quyền Admin/SYSTEM | Ghi mâu thuẫn thành quyết định cần nhóm xác nhận; không sửa quyền/schema/Rules | CSDL, Feature 120 và luồng server chưa đồng bộ |
+| Event và delivery | Ghi rõ các điểm chờ xác nhận về event transport, idempotency, retry, reminder và query/index | Tránh tự chọn giao thức hoặc thêm field/collection/status |
+| Tích hợp Feature 091/120 | Chặn chat push suppression và SYSTEM fan-out tương ứng đến khi nguồn xác nhận | Presence và predicate tài khoản active chưa được định nghĩa đầy đủ |
+| UI và FCM tests | Bổ sung theme/kích thước màn hình và persistence khi FCM thất bại | Phản ánh constitution cùng hành vi trong spec/plan |
+| Parallel marker | Bỏ `[P]` ở T037, không đổi task ID | T026 và T037 cùng sửa một test file |
+| MVP và setup | Ghi rõ MVP backend hiện tại cần được nhóm xác nhận; T001–T003 chỉ khảo sát | Chưa có căn cứ để đổi phạm vi nghiệp vụ hoặc chọn dependency |
+
+### Cách kiểm chứng
+
+- Đối chiếu task với spec, plan, research, constitution, database README và tài liệu liên quan Feature 091/120.
+- Kiểm tra danh sách còn 56 task, ID không trùng và định dạng checklist hợp lệ.
+- Không chạy implementation hoặc tests; lần cập nhật này chỉ bổ sung nhật ký sử dụng AI.
