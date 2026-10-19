@@ -127,11 +127,11 @@ class RegisterFragment : Fragment(R.layout.fragment_auth_register) {
         val login = getString(R.string.auth_register_email_in_use_login)
         val forgot = getString(R.string.auth_register_email_in_use_forgot)
         val text = SpannableString(getString(R.string.auth_register_email_in_use, login, forgot))
-        listOf<Pair<String, (View) -> Unit>>(login to { openLogin() }, forgot to ::comingSoon).forEach { (label, onClick) ->
+        listOf<Pair<String, () -> Unit>>(login to ::openLogin, forgot to ::openForgotPassword).forEach { (label, onClick) ->
             val start = text.indexOf(label)
             text.setSpan(
                 object : ClickableSpan() {
-                    override fun onClick(widget: View) = onClick(widget)
+                    override fun onClick(widget: View) = onClick()
                 },
                 start,
                 start + label.length,
@@ -155,6 +155,10 @@ class RegisterFragment : Fragment(R.layout.fragment_auth_register) {
             R.id.action_register_to_login,
             bundleOf(ARG_EMAIL to viewModel.uiState.value.email, ARG_RETURN_TO to arguments?.getString(ARG_RETURN_TO)),
         )
+    }
+
+    private fun openForgotPassword() {
+        findNavController().navigate(R.id.action_register_to_forgot, bundleOf(ARG_EMAIL to viewModel.uiState.value.email))
     }
 
     private fun comingSoon(view: View) {

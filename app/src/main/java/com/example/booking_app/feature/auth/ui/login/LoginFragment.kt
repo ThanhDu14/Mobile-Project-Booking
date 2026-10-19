@@ -47,9 +47,13 @@ class LoginFragment : Fragment(R.layout.fragment_auth_login) {
 
         binding.registerButton.setOnClickListener { openRegister() }
 
-        // TODO(US3 T057, US5 T072): nối Quên mật khẩu, Số điện thoại.
-        listOf(binding.forgotButton, binding.phoneButton).forEach {
-            it.setOnClickListener { v -> Snackbar.make(v, R.string.auth_welcome_coming_soon, Snackbar.LENGTH_SHORT).show() }
+        binding.forgotButton.setOnClickListener {
+            findNavController().navigate(R.id.action_login_to_forgot, bundleOf(ARG_EMAIL to viewModel.uiState.value.email))
+        }
+
+        // TODO(US5 T072): nối Số điện thoại.
+        binding.phoneButton.setOnClickListener { v ->
+            Snackbar.make(v, R.string.auth_welcome_coming_soon, Snackbar.LENGTH_SHORT).show()
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
@@ -116,5 +120,6 @@ class LoginFragment : Fragment(R.layout.fragment_auth_login) {
 
     private companion object {
         const val ARG_RETURN_TO = "returnTo"
+        const val ARG_EMAIL = "email"
     }
 }

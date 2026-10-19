@@ -52,6 +52,9 @@
             app:destination="@id/registerFragment"
             app:popUpTo="@id/loginFragment"
             app:popUpToInclusive="true" />
+        <action
+            android:id="@+id/action_login_to_forgot"
+            app:destination="@id/forgotPasswordFragment" />
     </fragment>
 
     <fragment
@@ -66,6 +69,26 @@
         <deepLink app:uri="smashnow://auth/register?returnTo={returnTo}" />
         <action
             android:id="@+id/action_register_to_login"
+            app:destination="@id/loginFragment"
+            app:popUpTo="@id/registerFragment"
+            app:popUpToInclusive="true" />
+        <action
+            android:id="@+id/action_register_to_forgot"
+            app:destination="@id/forgotPasswordFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/forgotPasswordFragment"
+        android:name="com.example.booking_app.feature.auth.ui.forgot.ForgotPasswordFragment"
+        android:label="@string/auth_forgot_title">
+        <!-- Điền sẵn từ màn hình đăng nhập hoặc lỗi "Email đã được sử dụng" ở màn hình đăng ký. -->
+        <argument
+            android:name="email"
+            android:defaultValue="@null"
+            app:argType="string"
+            app:nullable="true" />
+        <action
+            android:id="@+id/action_forgot_to_login"
             app:destination="@id/loginFragment"
             app:popUpTo="@id/registerFragment"
             app:popUpToInclusive="true" />

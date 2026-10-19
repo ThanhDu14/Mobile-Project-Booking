@@ -246,13 +246,13 @@ Thêm sau khi `/speckit-analyze` spec 020 phát hiện khách không vào đư�
 
 ### Tests cho User Story 3 ⚠️ viết trước, phải fail
 
-- [ ] T054 [P] [US3] Unit test `TEST/feature/auth/domain/usecase/SendPasswordResetUseCaseTest.kt`: email `trim().lowercase()`; email không tồn tại → vẫn thành công (FR-018); `TooManyAttempts` → lỗi tương ứng; ghi `last_password_reset_at` khi gửi
-- [ ] T055 [P] [US3] Unit test `TEST/feature/auth/ui/forgot/ForgotPasswordViewModelTest.kt`: arg `email` điền sẵn; email sai định dạng → lỗi dưới ô, không gửi; gửi xong `sent = true` với cùng một thông báo; `resendInSeconds` đếm từ 60 (US3-3), lấy mốc từ DataStore
+- [x] T054 [P] [US3] Unit test `TEST/feature/auth/domain/usecase/SendPasswordResetUseCaseTest.kt`: email `trim().lowercase()`; email không tồn tại → vẫn thành công (FR-018); `TooManyAttempts` → lỗi tương ứng; ghi `last_password_reset_at` khi gửi
+- [x] T055 [P] [US3] Unit test `TEST/feature/auth/ui/forgot/ForgotPasswordViewModelTest.kt`: arg `email` điền sẵn; email sai định dạng → lỗi dưới ô, không gửi; gửi xong `sent = true` với cùng một thông báo; `resendInSeconds` đếm từ 60 (US3-3), lấy mốc từ DataStore
 
 ### Implementation cho User Story 3
 
-- [ ] T056 [US3] Cài `AUTH/domain/usecase/SendPasswordResetUseCase.kt`; thêm `sendPasswordResetEmail` vào data source. Cho T054 xanh
-- [ ] T057 [US3] Cài `AUTH/ui/forgot/ForgotPasswordViewModel.kt` + `ForgotPasswordFragment.kt` + `RES/layout/fragment_auth_forgot_password.xml` theo wireframe `buoc7_quen-mat-khau` (Safe Args `email: String?`); thêm vào `nav_auth.xml`, nối từ `LoginFragment` và link "quên mật khẩu" ở lỗi `EmailInUse`. Cho T055 xanh
+- [x] T056 [US3] Cài `AUTH/domain/usecase/SendPasswordResetUseCase.kt`; thêm `sendPasswordResetEmail` vào data source. Cho T054 xanh _(Khi cài đặt: `sendPasswordResetEmail` đã có từ 2C. `InvalidCredentials` (Firebase trả `ERROR_USER_NOT_FOUND` khi chưa bật Email enumeration protection) cũng coi là gửi thành công để giữ FR-018.)_
+- [x] T057 [US3] Cài `AUTH/ui/forgot/ForgotPasswordViewModel.kt` + `ForgotPasswordFragment.kt` + `RES/layout/fragment_auth_forgot_password.xml` theo wireframe `buoc7_quen-mat-khau` (Safe Args `email: String?`); thêm vào `nav_auth.xml`, nối từ `LoginFragment` và link "quên mật khẩu" ở lỗi `EmailInUse`. Cho T055 xanh
 
 **Checkpoint**: quickstart M16, M17 đạt.
 
