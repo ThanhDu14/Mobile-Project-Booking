@@ -23,6 +23,7 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 17 | 2026-10-19 | Lập danh sách công việc spec 041 (đặt cố định theo tuần) bằng `/speckit-tasks` | 04 |
 | 18 | 2026-10-19 | Phân tích đối soát chất lượng bằng `/speckit-analyze` & tinh chỉnh spec 041 | 04 |
 | 19 | 2026-10-19 | Lập danh sách công việc spec 050 (thanh toán và voucher giả lập) bằng `/speckit-tasks` | 05 |
+| 20 | 2026-10-19 | Phân tích đối soát chất lượng bằng `/speckit-analyze` & tinh chỉnh spec 050 | 05 |
 
 
 
@@ -887,5 +888,42 @@ Bảng đối chiếu lựa chọn:
 ### Tài liệu đã sinh
 
 - `specs/050-payment-voucher/tasks.md`: 42 tasks chi tiết có checkbox `- [ ]`, ID `T001`–`T042`, gắn tag User Story (`[US1]`–`[US5]`), nhãn song song `[P]`, đường dẫn file chính xác và lệnh xác minh `Verify:`.
+
+---
+
+## Mục 20: Phân tích đối soát chất lượng bằng `/speckit-analyze` & tinh chỉnh spec 050
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-19 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 05 – Thanh toán và khuyến mãi (`specs/050-payment-voucher`) |
+| Công cụ AI | Antigravity, lệnh Spec Kit `/speckit-analyze` |
+| Mục đích | Đối soát chéo 3 bên giữa `spec.md`, `plan.md`, `tasks.md`, `data-model.md`, `contracts/ui-contracts.md` và `constitution.md`. Phát hiện các điểm lệch hoặc mơ hồ và tiến hành tinh chỉnh chuẩn hóa trước khi bước vào cài đặt mã nguồn (`/speckit-implement`) |
+| Nhánh Git | `feature/050-payment-voucher` |
+
+### Kết quả phân tích đối soát chéo (Cross-Artifact Analysis)
+
+- **Tỷ lệ bao phủ (Coverage)**: **100%** (28/28 Functional Requirements và 7/7 Success Criteria đều có ít nhất một task tương ứng trong tổng số 42 tasks).
+- **Tuân thủ Constitution**: Không có bất kỳ vi phạm nào (0 Critical, 0 High). Tầng domain thuần Kotlin độc lập, tiền tệ kiểu `Long` VND, kiểm tra giao dịch Firestore Transaction 2 pha an toàn dưới 500 ops, tuân thủ cam kết thanh toán giả lập phi thương mại (Constitution VI).
+- **Các điểm cần tinh chỉnh**: Phát hiện 1 điểm Medium (C1) và 2 điểm Low (I1, I2) về tính nhất quán của mô hình dữ liệu và Safe Args điều hướng.
+
+### Chi tiết các tinh chỉnh đã thực thi
+
+1. **C1 (Medium – Chuẩn hóa tên Bundle Safe Args giữa Spec 050 và 060)**:
+   - Cập nhật `specs/050-payment-voucher/contracts/ui-contracts.md` (§1.1) và `specs/060-my-bookings/contracts/ui-contracts.md` (§1.2): Thống nhất sử dụng chung một lớp Parcelable **`HoldToPaymentArgs`** cho toàn bộ các luồng chuyển tiếp tới màn hình thanh toán của Spec 050 (bao gồm đơn lẻ từ Spec 040, đơn chu kỳ từ Spec 041, và thao tác bấm "Thanh toán tiếp" từ Tab 1 "Chờ thanh toán" của Spec 060 theo FR-027). Xóa bỏ sự phân mảnh với tên gọi `ContinuePaymentArgs`.
+2. **I1 (Low – Đồng nhất tên trường thời gian hết hạn voucher `validUntil`)**:
+   - Cập nhật `specs/050-payment-voucher/spec.md` (FR-006 và mục Key Entities): Thay thế tên trường `validTo` bằng **`validUntil`**, đồng bộ 100% với schema Firestore, DTOs trong `data-model.md` (§1.1, §2) và các use case tầng domain.
+3. **I2 (Low – Chuẩn hóa thuộc tính entity voucher `discountType` và `name`)**:
+   - Cập nhật `specs/050-payment-voucher/spec.md`: Đồng bộ entity `VenueVoucher` và `SystemVoucher` sử dụng `discountType` mang các giá trị Enum (`PERCENT`, `FIXED_AMOUNT`), giá trị giảm `discountValue: Long`, và trường tên hiển thị `name: String`, khớp hoàn toàn với `tasks.md` (`T003`) và `data-model.md`.
+
+### Trạng thái tài liệu sau tinh chỉnh
+
+- `specs/050-payment-voucher/spec.md`: Đã cập nhật FR-006, `validUntil`, `discountType`, `name`.
+- `specs/050-payment-voucher/contracts/ui-contracts.md`: Đã làm rõ `HoldToPaymentArgs` tiếp nhận từ cả 040, 041 và 060.
+- `specs/060-my-bookings/contracts/ui-contracts.md`: Đã chuẩn hóa §1.2 sang `HoldToPaymentArgs`.
+- `specs/050-payment-voucher/tasks.md`: Đã đảm bảo tính tương thích và bao phủ 100%.
+- Toàn bộ bộ tài liệu của Feature 050 đạt độ hoàn thiện 10/10, sẵn sàng cho giai đoạn cài đặt mã nguồn (`/speckit-implement`).
+
 
 
