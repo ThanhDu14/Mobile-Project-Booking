@@ -18,6 +18,7 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 12 | 2026-10-15 | Lập kế hoạch kỹ thuật spec 041 (đặt cố định theo tuần) bằng `/speckit-plan` | 04 |
 | 13 | 2026-10-15 | Lập kế hoạch kỹ thuật spec 050 (thanh toán và voucher giả lập) bằng `/speckit-plan` | 05 |
 | 14 | 2026-10-15 | Lập kế hoạch kỹ thuật spec 060 (quản lý lịch đặt của tôi) bằng `/speckit-plan` | 06 |
+| 15 | 2026-10-19 | Lập danh sách công việc spec 040 (lưới khung giờ đặt sân) bằng `/speckit-tasks` | 04 |
 
 
 
@@ -701,3 +702,40 @@ Bảng đối chiếu lựa chọn:
 - `specs/060-my-bookings/data-model.md`: Chi tiết Schema Firestore (bookings, recurringGroups, walletTransactions), DTOs, Domain Entities (`BookingSummaryItem`, `BookingDetail`, `RefundPolicyQuote`, `QrBitMatrix`) và UI States.
 - `specs/060-my-bookings/contracts/ui-contracts.md`: Hợp đồng Navigation Safe Args từ 050 sang 060, tới 040/070, Domain `BookingManagementRepository` interface, hợp đồng các UseCases và Firestore Security Rules.
 - `specs/060-my-bookings/quickstart.md`: Hướng dẫn kiểm thử Unit Test (mốc 240m, kẹp biên voucher, tính Idempotent), UI Test và 5 kịch bản xác minh thủ công.
+
+---
+
+## Mục 15: Lập danh sách công việc spec 040 (lưới khung giờ đặt sân) bằng `/speckit-tasks`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-19 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 04 – Đặt sân (`specs/040-booking-slot-grid`) |
+| Công cụ AI | Antigravity, lệnh Spec Kit `/speckit-tasks` |
+| Mục đích | Phân rã kế hoạch kỹ thuật spec 040 thành danh sách 42 task triển khai chi tiết (`tasks.md`), tuân thủ Clean Architecture, TDD, và giao dịch giữ chỗ 5 phút nguyên tử |
+| Nhánh Git | `feature/040-booking-slot-grid` |
+
+### Bối cảnh và Quyết định cốt lõi khi lập Tasks
+
+1. **Tuân thủ quy trình Clean Architecture & Dependency Inversion**:
+   - Phân chia Phase 2 (Domain Layer & Core Business Logic) trước Phase 3 (Data Layer & Infrastructure). Tầng domain hoàn toàn thuần Kotlin, không import Android SDK hay Firebase SDK.
+   - Viết Unit Tests trước cho các UseCases (`ValidateSlotSelectionUseCaseTest`, `CalculateTotalPriceUseCaseTest`, `GenerateDailySlotsUseCaseTest`, `HoldSlotsTransactionUseCaseTest`, `ReleaseHoldUseCaseTest`) theo tôn chỉ TDD.
+2. **Quy chuẩn tiền tệ & Giao dịch nguyên tử (Constitution II & III)**:
+   - Toàn bộ số tiền (`pricePerHour`, `subtotalAmount`, `depositAmount`) sử dụng kiểu `Long` (VND, cấm âm). Công thức làm tròn cọc 30% an toàn: `((rawDeposit + 500) / 1000) * 1000`.
+   - Firestore Transaction giữ chỗ 5 phút tuân thủ triệt để nguyên tắc **All Reads Before All Writes** và **All-or-Nothing** (chống double-booking khi 2 người cùng giữ 1 ca).
+3. **Thống nhất ca 30 phút & 4 trạng thái slot**:
+   - Mỗi slot biểu diễn 30 phút (`HHmm`). Người chơi có thể chọn từ 2 đến 6 slot liên tiếp (1h đến 3h).
+   - Hiển thị trực quan 4 trạng thái: `AVAILABLE`, `HELD`, `BOOKED`, và `BLOCKED` (kèm tag `DROP_IN` theo Phương án 4.A đã thống nhất liên thành viên).
+4. **Phân rã 42 Tasks chi tiết**:
+   - **Phase 1 (Setup & Index)**: T001–T003 (Dependencies, Composite Index cho `slots`, Fixtures).
+   - **Phase 2 (Domain Layer & TDD)**: T004–T015 (Domain Models, Repository Interface, Unit Tests trước cho UseCases, cài đặt UseCases).
+   - **Phase 3 (Data Layer & Firestore Transaction)**: T016–T022 (DTOs, Mappers, Data Source, Transaction All-or-Nothing, Hilt DI Module, Firestore Security Rules).
+   - **Phase 4 (UI Layer & ViewModel)**: T023–T034 (XML Layouts Material 3, ListAdapters với DiffUtil, ViewModel với StateFlow ticker 5 phút, BookingSlotGridFragment).
+   - **Phase 5 (Navigation, Integration & Edge Cases)**: T035–T038 (Safe Args sang 050, tích hợp đăng nhập Spec 010, xử lý mất mạng `requestId`, dọn dẹp listener trong `onStop`).
+   - **Phase 6 (System Verification & Polish)**: T039–T042 (ViewModelTest, FirestoreSlotTransactionTest trên Firebase Emulator, Espresso UI Test, rà soát Checklist).
+
+### Tài liệu đã sinh
+
+- `specs/040-booking-slot-grid/tasks.md`: 42 tasks chi tiết có checkbox `- [ ]`, ID `T001`–`T042`, gắn tag User Story (`[US1]`–`[US5]`), nhãn song song `[P]`, đường dẫn file chính xác và lệnh xác minh `Verify:`.
+
