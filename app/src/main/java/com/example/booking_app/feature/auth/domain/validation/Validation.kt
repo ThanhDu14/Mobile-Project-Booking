@@ -14,4 +14,7 @@ enum class ValidationError(val key: String) {
     PASSWORD_MISMATCH("auth_error_password_mismatch"),
     PHONE_FORMAT("auth_error_phone_format"),
     OTP_FORMAT("auth_error_otp_format"),
+
+    /** Đăng nhập: chỉ cần không trống, quy tắc mật khẩu chỉ áp dụng khi đặt mật khẩu. */
+    PASSWORD_REQUIRED("auth_error_password_required"),
 }

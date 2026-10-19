@@ -13,7 +13,9 @@ import javax.inject.Inject
 sealed interface WelcomeEvent {
     data object OpenPlayerHome : WelcomeEvent
 
-    // TODO(US1 T042, US2 T052): thay bằng OpenRegister / OpenLogin khi có hai màn hình đó.
+    data object OpenLogin : WelcomeEvent
+
+    // TODO(US1 T042): thay bằng OpenRegister khi có màn hình đăng ký.
     data object NotReady : WelcomeEvent
 }
 
@@ -31,7 +33,7 @@ class WelcomeViewModel @Inject constructor(
     /** Bấm "Tạo tài khoản" hoặc "Đăng nhập" cũng tính là đã qua màn hình chào (research R15). */
     fun onCreateAccount() = markSeenThen(WelcomeEvent.NotReady)
 
-    fun onLogin() = markSeenThen(WelcomeEvent.NotReady)
+    fun onLogin() = markSeenThen(WelcomeEvent.OpenLogin)
 
     private fun markSeenThen(event: WelcomeEvent) {
         viewModelScope.launch {

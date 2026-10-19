@@ -19,4 +19,11 @@
     <dimen name="auth_form_max_width">480dp</dimen>
     <dimen name="login_prompt_icon_size">64dp</dimen>
     <dimen name="welcome_feature_icon_box">36dp</dimen>
+
+    <!-- Hình trang trí đầu màn hình đăng nhập (wireframe buoc2_dang-nhap) -->
+    <dimen name="auth_hero_height">188dp</dimen>
+    <dimen name="auth_hero_lamp_width">104dp</dimen>
+    <dimen name="auth_hero_lamp_height">56dp</dimen>
+    <dimen name="auth_hero_mint_width">56dp</dimen>
+    <dimen name="auth_button_progress_size">24dp</dimen>
 </resources>

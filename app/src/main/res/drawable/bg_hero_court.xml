@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Khối sân ở góc trên màn hình đăng nhập (wireframe buoc2_dang-nhap). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="@color/sn_court" />
+    <corners android:bottomLeftRadius="@dimen/space_6" />
+</shape>

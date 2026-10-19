@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Đăng ký / đăng nhập (spec 010). Các user story thêm destination (login, register, otp...).
-    Deep link mở nav_auth chồng lên màn hình hiện tại cho chế độ khách (research R15).
-    Tạm gắn vào graph; US1 (T047) và US2 (T052) chuyển sang registerFragment, loginFragment.
+    Đăng ký / đăng nhập (spec 010). Deep link mở nav_auth chồng lên màn hình hiện tại cho chế độ khách
+    (research R15). Đăng ký vẫn mở màn hình chào cho tới khi có registerFragment (US1 T047).
 -->
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -15,12 +14,32 @@
         app:argType="string"
         app:nullable="true" />
 
-    <deepLink app:uri="smashnow://auth/login?returnTo={returnTo}" />
     <deepLink app:uri="smashnow://auth/register?returnTo={returnTo}" />
 
     <fragment
         android:id="@+id/welcomeFragment"
         android:name="com.example.booking_app.feature.auth.ui.welcome.WelcomeFragment"
-        android:label="@string/app_name" />
+        android:label="@string/app_name">
+        <action
+            android:id="@+id/action_welcome_to_login"
+            app:destination="@id/loginFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/loginFragment"
+        android:name="com.example.booking_app.feature.auth.ui.login.LoginFragment"
+        android:label="@string/auth_login_title">
+        <!-- URI deep link để mở lại sau khi đăng nhập (FR-026). MainActivity đọc từ back stack entry. -->
+        <argument
+            android:name="returnTo"
+            android:defaultValue="@null"
+            app:argType="string"
+            app:nullable="true" />
+        <argument
+            android:name="lockedNotice"
+            android:defaultValue="false"
+            app:argType="boolean" />
+        <deepLink app:uri="smashnow://auth/login?returnTo={returnTo}&amp;lockedNotice={lockedNotice}" />
+    </fragment>
 
 </navigation>

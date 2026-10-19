@@ -219,8 +219,8 @@ Thêm sau khi `/speckit-analyze` spec 020 phát hiện khách không vào đư�
 
 ### Tests cho User Story 2 ⚠️ viết trước, phải fail
 
-- [ ] T048 [P] [US2] Unit test `TEST/feature/auth/domain/usecase/SignInWithEmailUseCaseTest.kt`: email `trim().lowercase()`; thành công → `sessionManager.refresh(true)`; sai email và sai mật khẩu → cùng `InvalidCredentials`; `ERROR_USER_DISABLED` → `AccountLocked`
-- [ ] T049 [P] [US2] Unit test `TEST/feature/auth/ui/login/LoginViewModelTest.kt`:
+- [x] T048 [P] [US2] Unit test `TEST/feature/auth/domain/usecase/SignInWithEmailUseCaseTest.kt`: email `trim().lowercase()`; thành công → `sessionManager.refresh(true)`; sai email và sai mật khẩu → cùng `InvalidCredentials`; `ERROR_USER_DISABLED` → `AccountLocked`
+- [x] T049 [P] [US2] Unit test `TEST/feature/auth/ui/login/LoginViewModelTest.kt`:
   - bấm 2 lần → 1 lời gọi;
   - `InvalidCredentials` → `formError` chung, không chỉ ra ô nào (US2-4);
   - `AccountLocked` → sự kiện hiện hộp thoại khóa (US2-6); arg `lockedNotice = true` → hiện ngay khi mở;
@@ -229,10 +229,10 @@ Thêm sau khi `/speckit-analyze` spec 020 phát hiện khách không vào đư�
 
 ### Implementation cho User Story 2
 
-- [ ] T050 [US2] Cài `AUTH/domain/usecase/SignInWithEmailUseCase.kt`; thêm `signInWithEmail` vào `FirebaseAuthDataSource`, `AuthRepositoryImpl`. Cho T048 xanh
-- [ ] T051 [US2] Cài `AUTH/ui/login/LoginViewModel.kt`. Cho T049 xanh
-- [ ] T052 [US2] Tạo `AUTH/ui/login/LoginFragment.kt` + `RES/layout/fragment_auth_login.xml` theo wireframe `buoc2_dang-nhap` (cả chế độ tối): Safe Args `returnTo: String?`, `lockedNotice: Boolean = false`; link "Quên mật khẩu" (nối ở US3); `MaterialAlertDialog` "Tài khoản của bạn đã bị khóa" kèm `support_email`; thêm `login` vào `nav_auth.xml`, nối từ `WelcomeFragment` và link "Đăng nhập" ở lỗi `EmailInUse` của `RegisterFragment`
-- [ ] T053 [US2] Hoàn thiện `MainActivity`: `SignedOut(LOCKED)` → `nav_player` chế độ khách rồi `LoginFragment(lockedNotice = true)` chồng lên (R15); đăng nhập xong với `PLAYER` khi dưới `nav_auth` có `nav_player` → `popBackStack(R.id.nav_auth, inclusive = true)` rồi `navigate(returnTo)` nếu có (FR-026); `OWNER`/`ADMIN` hoặc `nav_auth` là gốc → `popUpTo(nav_main, inclusive = true)`; `SignedIn` với `OWNER` / `ADMIN` → `nav_owner` / `nav_admin` placeholder; vai trò đổi khi đang mở app → điều hướng lại (Edge Case vai trò đổi); Back ở màn hình chính → thoát app (Edge Case cuối)
+- [x] T050 [US2] Cài `AUTH/domain/usecase/SignInWithEmailUseCase.kt`; thêm `signInWithEmail` vào `FirebaseAuthDataSource`, `AuthRepositoryImpl`. Cho T048 xanh
+- [x] T051 [US2] Cài `AUTH/ui/login/LoginViewModel.kt`. Cho T049 xanh
+- [x] T052 [US2] Tạo `AUTH/ui/login/LoginFragment.kt` + `RES/layout/fragment_auth_login.xml` theo wireframe `buoc2_dang-nhap` (cả chế độ tối): Safe Args `returnTo: String?`, `lockedNotice: Boolean = false`; link "Quên mật khẩu" (nối ở US3); `MaterialAlertDialog` "Tài khoản của bạn đã bị khóa" kèm `support_email`; thêm `login` vào `nav_auth.xml`, nối từ `WelcomeFragment` và link "Đăng nhập" ở lỗi `EmailInUse` của `RegisterFragment`
+- [x] T053 [US2] Hoàn thiện `MainActivity`: `SignedOut(LOCKED)` → `nav_player` chế độ khách rồi `LoginFragment(lockedNotice = true)` chồng lên (R15); đăng nhập xong với `PLAYER` khi dưới `nav_auth` có `nav_player` → `popBackStack(R.id.nav_auth, inclusive = true)` rồi `navigate(returnTo)` nếu có (FR-026); `OWNER`/`ADMIN` hoặc `nav_auth` là gốc → `popUpTo(nav_main, inclusive = true)`; `SignedIn` với `OWNER` / `ADMIN` → `nav_owner` / `nav_admin` placeholder; vai trò đổi khi đang mở app → điều hướng lại (Edge Case vai trò đổi); Back ở màn hình chính → thoát app (Edge Case cuối)
 
 **Checkpoint**: US1 + US2 = MVP; quickstart M5, M6, M18–M23 đạt (M21 dùng `scripts/admin/grant-role.ts`).
 

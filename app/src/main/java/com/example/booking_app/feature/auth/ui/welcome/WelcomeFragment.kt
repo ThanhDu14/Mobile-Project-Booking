@@ -44,6 +44,7 @@ class WelcomeFragment : Fragment(R.layout.fragment_auth_welcome) {
                             null,
                             navOptions { popUpTo(R.id.nav_main) { inclusive = true } },
                         )
+                        WelcomeEvent.OpenLogin -> findNavController().navigate(R.id.action_welcome_to_login)
                         WelcomeEvent.NotReady ->
                             Snackbar.make(view, R.string.auth_welcome_coming_soon, Snackbar.LENGTH_SHORT).show()
                     }

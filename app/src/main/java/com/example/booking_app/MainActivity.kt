@@ -1,5 +1,6 @@
 package com.example.booking_app
 
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
@@ -10,6 +11,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavController
+import androidx.navigation.NavDeepLinkRequest
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.navOptions
 import com.example.booking_app.core.session.AppRole
@@ -84,8 +86,9 @@ class MainActivity : AppCompatActivity() {
         val authOnStack = hasBackStackEntry(R.id.nav_auth)
         val playerOnStack = hasBackStackEntry(R.id.nav_player)
         if (!authOnStack && appRole == AppRole.PLAYER && playerOnStack) return
-        // TODO(US2 T053): truyền `returnTo` của LoginFragment.
-        execute(SessionRouter.afterSignIn(appRole, hasPlayerGraphBelowAuth = authOnStack && playerOnStack, returnTo = null))
+        val returnTo = runCatching { navController.getBackStackEntry(R.id.loginFragment) }.getOrNull()
+            ?.arguments?.getString(ARG_RETURN_TO)?.let(Uri::parse)
+        execute(SessionRouter.afterSignIn(appRole, hasPlayerGraphBelowAuth = authOnStack && playerOnStack, returnTo))
     }
 
     private fun execute(decision: RouteDecision) {
@@ -93,7 +96,8 @@ class MainActivity : AppCompatActivity() {
             RouteDecision.Welcome -> resetTo(R.id.nav_auth)
             is RouteDecision.PlayerGuest -> {
                 resetTo(R.id.nav_player)
-                // TODO(US2 T053): showLockedLogin → mở LoginFragment(lockedNotice = true) chồng lên.
+                // Bị khóa: trang chủ khách ở dưới, màn hình đăng nhập kèm thông báo khóa ở trên (research R15).
+                if (decision.showLockedLogin) navController.navigate(LOCKED_LOGIN)
             }
             is RouteDecision.RoleHome -> resetTo(graphFor(decision.appRole))
             is RouteDecision.ResetTo -> resetTo(graphFor(decision.appRole))
@@ -117,5 +121,11 @@ class MainActivity : AppCompatActivity() {
         AppRole.PLAYER -> R.id.nav_player
         AppRole.OWNER -> R.id.nav_owner
         AppRole.ADMIN -> R.id.nav_admin
+    }
+
+    private companion object {
+        const val ARG_RETURN_TO = "returnTo"
+        val LOCKED_LOGIN: NavDeepLinkRequest =
+            NavDeepLinkRequest.Builder.fromUri(Uri.parse("smashnow://auth/login?lockedNotice=true")).build()
     }
 }

@@ -3,15 +3,14 @@ package com.example.booking_app.feature.auth.domain.usecase
 import com.example.booking_app.core.network.AppError
 import com.example.booking_app.core.network.FunctionHttpException
 import com.example.booking_app.core.session.AppRole
+import com.example.booking_app.core.session.FakeSessionManager
 import com.example.booking_app.core.session.FakeSessionPrefs
 import com.example.booking_app.core.session.PendingSignup
-import com.example.booking_app.core.session.SessionManager
 import com.example.booking_app.core.session.SessionState
 import com.example.booking_app.feature.auth.data.OnSignupApi
 import com.example.booking_app.feature.auth.data.OnSignupRequest
 import com.example.booking_app.feature.auth.data.OnSignupResponse
 import com.example.booking_app.feature.auth.domain.model.AuthError
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -28,19 +27,8 @@ class CompleteSignupUseCaseTest {
         }
     }
 
-    private class FakeSessionManager : SessionManager {
-        override val sessionState = MutableStateFlow<SessionState>(SessionState.Initializing)
-        override val isGuest = MutableStateFlow(false)
-        val refreshCalls = mutableListOf<Boolean>()
-        var signOutCalls = 0
-        override suspend fun refresh(forceTokenRefresh: Boolean) { refreshCalls += forceTokenRefresh }
-        override suspend fun signOut() { signOutCalls++ }
-        override fun currentUid(): String? = null
-        override fun currentAppRole(): AppRole? = null
-    }
-
     private val api = FakeOnSignupApi()
-    private val sessionManager = FakeSessionManager()
+    private val sessionManager = FakeSessionManager(SessionState.Initializing)
     private val prefs = FakeSessionPrefs().apply { pending = PendingSignup("u1", "Lê Hoàng Nam", 1L) }
     private val useCase = CompleteSignupUseCase(api, sessionManager, prefs)
 
