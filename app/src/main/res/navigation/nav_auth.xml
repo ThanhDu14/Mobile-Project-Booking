@@ -55,6 +55,9 @@
         <action
             android:id="@+id/action_login_to_forgot"
             app:destination="@id/forgotPasswordFragment" />
+        <action
+            android:id="@+id/action_login_to_phone"
+            app:destination="@id/phoneLoginFragment" />
     </fragment>
 
     <fragment
@@ -75,6 +78,39 @@
         <action
             android:id="@+id/action_register_to_forgot"
             app:destination="@id/forgotPasswordFragment" />
+        <action
+            android:id="@+id/action_register_to_phone"
+            app:destination="@id/phoneLoginFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/phoneLoginFragment"
+        android:name="com.example.booking_app.feature.auth.ui.phone.PhoneLoginFragment"
+        android:label="@string/auth_phone_title">
+        <action
+            android:id="@+id/action_phone_to_otp"
+            app:destination="@id/otpVerifyFragment" />
+        <action
+            android:id="@+id/action_phone_to_login"
+            app:destination="@id/loginFragment"
+            app:popUpTo="@id/phoneLoginFragment"
+            app:popUpToInclusive="true" />
+    </fragment>
+
+    <!-- Phiên OTP truyền qua argument; resendToken (ForceResendingToken) đi kèm trong bundle, không khai báo ở đây. -->
+    <fragment
+        android:id="@+id/otpVerifyFragment"
+        android:name="com.example.booking_app.feature.auth.ui.otp.OtpVerifyFragment"
+        android:label="@string/auth_otp_title">
+        <argument
+            android:name="phoneE164"
+            app:argType="string" />
+        <argument
+            android:name="verificationId"
+            app:argType="string" />
+        <argument
+            android:name="sentAtElapsed"
+            app:argType="long" />
     </fragment>
 
     <fragment

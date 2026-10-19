@@ -1,7 +1,10 @@
 package com.example.booking_app.feature.auth
 
+import android.app.Activity
+import android.os.Parcelable
 import com.example.booking_app.feature.auth.domain.AuthRepository
 import com.example.booking_app.feature.auth.domain.model.AuthResult
+import com.example.booking_app.feature.auth.domain.model.OtpSendResult
 import com.example.booking_app.feature.auth.domain.model.PendingCredential
 import kotlinx.coroutines.CompletableDeferred
 
@@ -13,6 +16,8 @@ class FakeAuthRepository : AuthRepository {
     var linkResult: AuthResult<Unit> = AuthResult.Success(Unit)
     var verificationResult: AuthResult<Unit> = AuthResult.Success(Unit)
     var resetResult: AuthResult<Unit> = AuthResult.Success(Unit)
+    var sendOtpResult: AuthResult<OtpSendResult> = AuthResult.Success(OtpSendResult.CodeSent("verification-id", null))
+    var verifyOtpResult: AuthResult<Unit> = AuthResult.Success(Unit)
     var gate: CompletableDeferred<Unit>? = null
 
     /** Tên các lời gọi theo thứ tự, để kiểm tra trình tự của UseCase. */
@@ -23,6 +28,8 @@ class FakeAuthRepository : AuthRepository {
     val linkCalls = mutableListOf<PendingCredential>()
     val resetCalls = mutableListOf<String>()
     var verificationCalls = 0
+    val sendOtpCalls = mutableListOf<Pair<String, Parcelable?>>()
+    val verifyOtpCalls = mutableListOf<Pair<String, String>>()
 
     override suspend fun signUpWithEmail(email: String, password: String): AuthResult<String> {
         calls += "signUp"
@@ -62,5 +69,19 @@ class FakeAuthRepository : AuthRepository {
         calls += "link"
         linkCalls += pending
         return linkResult
+    }
+
+    override suspend fun sendOtp(activity: Activity, phoneE164: String, resendToken: Parcelable?): AuthResult<OtpSendResult> {
+        calls += "sendOtp"
+        sendOtpCalls += phoneE164 to resendToken
+        gate?.await()
+        return sendOtpResult
+    }
+
+    override suspend fun verifyOtp(verificationId: String, code: String): AuthResult<Unit> {
+        calls += "verifyOtp"
+        verifyOtpCalls += verificationId to code
+        gate?.await()
+        return verifyOtpResult
     }
 }

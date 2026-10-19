@@ -71,8 +71,7 @@ class RegisterFragment : Fragment(R.layout.fragment_auth_register) {
         binding.googleButton.setOnClickListener { viewModel.onGoogle(requireActivity()) }
         binding.loginButton.setOnClickListener { openLogin() }
         binding.backButton.setOnClickListener { findNavController().navigateUp() }
-        // TODO(US5 T072): nối màn hình số điện thoại.
-        binding.phoneButton.setOnClickListener { comingSoon(it) }
+        binding.phoneButton.setOnClickListener { findNavController().navigate(R.id.action_register_to_phone) }
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -159,10 +158,6 @@ class RegisterFragment : Fragment(R.layout.fragment_auth_register) {
 
     private fun openForgotPassword() {
         findNavController().navigate(R.id.action_register_to_forgot, bundleOf(ARG_EMAIL to viewModel.uiState.value.email))
-    }
-
-    private fun comingSoon(view: View) {
-        Snackbar.make(view, R.string.auth_welcome_coming_soon, Snackbar.LENGTH_SHORT).show()
     }
 
     private companion object {

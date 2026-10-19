@@ -18,8 +18,6 @@
     <string name="auth_welcome_feature_social">Chơi vãng lai, vào nhóm, chat với chủ sân</string>
     <string name="auth_welcome_create_account">Tạo tài khoản</string>
     <string name="auth_welcome_login">Đăng nhập</string>
-    <!-- Tạm thời cho tới khi có màn hình đăng ký (US1 T043) và đăng nhập (US2 T052) -->
-    <string name="auth_welcome_coming_soon">Màn hình này đang được làm</string>
 
     <!-- Đăng nhập (buoc2_dang-nhap) -->
     <string name="auth_login_title">Đăng nhập</string>

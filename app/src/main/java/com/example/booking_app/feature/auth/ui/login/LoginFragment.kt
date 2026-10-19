@@ -51,10 +51,7 @@ class LoginFragment : Fragment(R.layout.fragment_auth_login) {
             findNavController().navigate(R.id.action_login_to_forgot, bundleOf(ARG_EMAIL to viewModel.uiState.value.email))
         }
 
-        // TODO(US5 T072): nối Số điện thoại.
-        binding.phoneButton.setOnClickListener { v ->
-            Snackbar.make(v, R.string.auth_welcome_coming_soon, Snackbar.LENGTH_SHORT).show()
-        }
+        binding.phoneButton.setOnClickListener { findNavController().navigate(R.id.action_login_to_phone) }
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {

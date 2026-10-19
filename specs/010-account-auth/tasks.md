@@ -300,9 +300,9 @@ Thêm sau khi `/speckit-analyze` spec 020 phát hiện khách không vào đư�
 
 ### Tests cho User Story 5 ⚠️ viết trước, phải fail
 
-- [ ] T067 [P] [US5] Unit test `TEST/feature/auth/domain/model/OtpSessionTest.kt`: `isUsable == false` khi `now >= sentAtElapsed + 300_000` hoặc `wrongCount >= 5`; `remainingAttempts = 5 - wrongCount` (FR-016)
-- [ ] T068 [P] [US5] Unit test `TEST/feature/auth/domain/usecase/SendOtpUseCaseTest.kt` và `VerifyOtpUseCaseTest.kt`: số chuẩn hóa E.164 trước khi gửi (FR-017); `PhoneNotSupported`, `TooManyAttempts` đúng ánh xạ; mã sai → `InvalidCode` và `wrongCount + 1`; phiên không còn dùng được → `CodeExpired` mà **không gọi Firebase**; `ERROR_SESSION_EXPIRED` → `CodeExpired`; đúng mã → `refresh(true)`
-- [ ] T069 [P] [US5] Unit test `TEST/feature/auth/ui/phone/PhoneLoginViewModelTest.kt` và `TEST/feature/auth/ui/otp/OtpViewModelTest.kt`:
+- [x] T067 [P] [US5] Unit test `TEST/feature/auth/domain/model/OtpSessionTest.kt`: `isUsable == false` khi `now >= sentAtElapsed + 300_000` hoặc `wrongCount >= 5`; `remainingAttempts = 5 - wrongCount` (FR-016)
+- [x] T068 [P] [US5] Unit test `TEST/feature/auth/domain/usecase/SendOtpUseCaseTest.kt` và `VerifyOtpUseCaseTest.kt`: số chuẩn hóa E.164 trước khi gửi (FR-017); `PhoneNotSupported`, `TooManyAttempts` đúng ánh xạ; mã sai → `InvalidCode` và `wrongCount + 1`; phiên không còn dùng được → `CodeExpired` mà **không gọi Firebase**; `ERROR_SESSION_EXPIRED` → `CodeExpired`; đúng mã → `refresh(true)`
+- [x] T069 [P] [US5] Unit test `TEST/feature/auth/ui/phone/PhoneLoginViewModelTest.kt` và `TEST/feature/auth/ui/otp/OtpViewModelTest.kt`:
   - số sai định dạng → lỗi dưới ô, không gửi; bấm "Gửi mã" 2 lần → 1 lời gọi;
   - `state` chuyển `Editing → Verifying → WrongCode` (kèm `remainingAttempts`) `→ Locked5` sau 5 lần sai; quá 5 phút → `Expired`;
   - "Gửi lại mã" chỉ bật sau 60 s; gửi lại thì `wrongCount = 0`;
@@ -311,10 +311,10 @@ Thêm sau khi `/speckit-analyze` spec 020 phát hiện khách không vào đư�
 
 ### Implementation cho User Story 5
 
-- [ ] T070 [US5] Tạo `AUTH/domain/model/OtpSession.kt` (`phoneE164`, `verificationId`, `resendToken`, `sentAtElapsed`, `wrongCount`; `isUsable`), `AUTH/domain/model/PhoneNumber.kt`; thêm `verifyPhoneNumber` (`PhoneAuthOptions`, timeout 60 s, gắn Activity, `callbackFlow`) và `signInWithPhoneCredential` vào `FirebaseAuthDataSource`. Cho T067 xanh
-- [ ] T071 [US5] Cài `AUTH/domain/usecase/SendOtpUseCase.kt`, `VerifyOtpUseCase.kt` theo [R8](research.md#r8-otp-số-điện-thoại-fr-016-fr-017-analyze-f4). Cho T068 xanh
-- [ ] T072 [US5] Cài `AUTH/ui/phone/PhoneLoginViewModel.kt` + `PhoneLoginFragment.kt` + `RES/layout/fragment_auth_phone.xml` theo wireframe `buoc4_dang-nhap-so-dien-thoai`; nối nút "Dùng số điện thoại" ở `WelcomeFragment`, `LoginFragment`
-- [ ] T073 [US5] Cài `AUTH/ui/otp/OtpViewModel.kt` + `OtpVerifyFragment.kt` + `RES/layout/fragment_auth_otp.xml` theo wireframe `buoc5_nhap-otp-sai-ma` (6 ô số có `contentDescription`, đếm ngược "Gửi lại mã", thông báo "Mã không đúng" kèm số lần còn lại); Safe Args `phoneE164: String`; thêm `phone`, `otp` vào `nav_auth.xml`. Cho T069 xanh
+- [x] T070 [US5] Tạo `AUTH/domain/model/OtpSession.kt` (`phoneE164`, `verificationId`, `resendToken`, `sentAtElapsed`, `wrongCount`; `isUsable`), `AUTH/domain/model/PhoneNumber.kt`; thêm `verifyPhoneNumber` (`PhoneAuthOptions`, timeout 60 s, gắn Activity, `callbackFlow`) và `signInWithPhoneCredential` vào `FirebaseAuthDataSource`. Cho T067 xanh _(Khi cài đặt: `resendToken` kiểu `Parcelable?` để domain không phụ thuộc Firebase; `AuthRepository.sendOtp` chờ tối đa 60 giây (timeout của `PhoneAuthOptions`, Firebase có thể mở reCAPTCHA) thay vì 15 giây.)_
+- [x] T071 [US5] Cài `AUTH/domain/usecase/SendOtpUseCase.kt`, `VerifyOtpUseCase.kt` theo [R8](research.md#r8-otp-số-điện-thoại-fr-016-fr-017-analyze-f4). Cho T068 xanh
+- [x] T072 [US5] Cài `AUTH/ui/phone/PhoneLoginViewModel.kt` + `PhoneLoginFragment.kt` + `RES/layout/fragment_auth_phone.xml` theo wireframe `buoc4_dang-nhap-so-dien-thoai`; nối nút "Dùng số điện thoại" ở `WelcomeFragment`, `LoginFragment` _(Khi cài đặt: wireframe `buoc1_man-chao` không có nút số điện thoại nên nối ở `LoginFragment` và `RegisterFragment`. Ô "+84" hiện sẵn nên nhận cả dạng `901 234 567`.)_
+- [x] T073 [US5] Cài `AUTH/ui/otp/OtpViewModel.kt` + `OtpVerifyFragment.kt` + `RES/layout/fragment_auth_otp.xml` theo wireframe `buoc5_nhap-otp-sai-ma` (6 ô số có `contentDescription`, đếm ngược "Gửi lại mã", thông báo "Mã không đúng" kèm số lần còn lại); Safe Args `phoneE164: String`; thêm `phone`, `otp` vào `nav_auth.xml`. Cho T069 xanh _(Khi cài đặt: `otpVerifyFragment` nhận thêm `verificationId`, `sentAtElapsed`; `resendToken` đi kèm trong bundle.)_
 
 **Checkpoint**: cả 5 user story chạy độc lập; quickstart M12–M15 đạt.
 

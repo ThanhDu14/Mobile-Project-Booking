@@ -155,6 +155,19 @@
         <item name="indicatorColor">?attr/colorOnSurface</item>
     </style>
 
+    <!-- Một ô chữ số của mã OTP (6 ô, wireframe buoc5). contentDescription đặt trong OtpVerifyFragment. -->
+    <style name="Widget.SmashNow.OtpDigit" parent="">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">56dp</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:background">@drawable/bg_otp_box</item>
+        <item name="android:gravity">center</item>
+        <item name="android:importantForAutofill">no</item>
+        <item name="android:inputType">number</item>
+        <item name="android:textAppearance">@style/TextAppearance.SmashNow.NumLarge</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+    </style>
+
     <style name="ShapeAppearance.SmashNow.Small" parent="">
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">@dimen/radius_sm</item>
