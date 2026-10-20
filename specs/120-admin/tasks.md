@@ -131,23 +131,35 @@ US1 + US2 ──────── US3 integration points; all selected stories 
 
 ## Traceability: FR / SC coverage
 
-| Spec requirement | Tasks |
-|---|---|
-| FR-001, FR-016; SC-004 | T002, T008–T012, T014, T022, T025–T026, T031, T034–T036, T040, T049, T052 |
-| FR-002 | T013–T014, T016–T017, T021–T023 |
-| FR-003; SC-003 | T011, T015–T017, T022–T023 |
-| FR-004; SC-001 | T003, T006, T018–T023 |
-| FR-005, FR-006, FR-015; SC-002 | T006, T018–T023; resubmit remains Feature 110 integration at T053 |
-| FR-007 | T003, T018–T022 |
-| FR-008 | T034, T039–T041 |
-| FR-009 | T003, T006, T035–T041 |
-| FR-010 | T005, T024–T025, T028–T032 |
-| FR-011, FR-012; SC-005 | T005, T026–T032 |
-| FR-013 | T004, T042, T046, T048–T050 |
-| FR-014a | T006, T044, T048–T049 |
-| FR-014 | T004, T043, T045–T050 |
-| Validation, permission, loading/empty/error, offline/retry, edge cases | T008–T012, T016, T018–T023, T026–T032, T034–T041, T046–T054 |
-| SC-006 | T016–T020, T023, T054 (quy trình đo; fixture chờ xác nhận Feature 110) |
+Danh mục requirement lấy nguyên theo `specs/120-admin/spec.md`: **FR-001–FR-014, FR-014a, FR-015–FR-016** (17 mục) và **SC-001–SC-006** (6 mục). Không có FR-017 trong Admin spec.
+
+| Requirement | Task IDs | Đánh giá coverage / ghi chú |
+|---|---|---|
+| FR-001 | T002, T008–T010, T052 | Có task cho contract/Rules/server auth và allow/deny; implementation phụ thuộc gate T002. |
+| FR-002 | T013–T014, T016–T017, T021–T023 | Có task query ưu tiên PENDING, server read, UI và tests cho hàng đợi/detail. |
+| FR-003 | T011, T015–T016, T022–T023, T052 | Có task kiểm tra quyền applicant/Admin, signed URL 5 phút, lỗi file và test truy cập. T011/T015 còn phụ thuộc cấu trúc Storage đã xác nhận. |
+| FR-004 | T003, T006, T018–T023 | Có task approve, cập nhật role/status/venueDraft và kiểm tra consistency/race. Phụ thuộc quyết định recovery/idempotency tại T003 và contract application/venue tại T006. |
+| FR-005 | T018–T023; T053 (phần giao diện applicant thuộc Feature 110) | Server reject/reason/notification được giao. Xem lý do và resubmit do Feature 110 sở hữu; T053 chỉ xác minh boundary, không thay thế task thực hiện/test phía Feature 110. Vì vậy coverage của yêu cầu liên feature còn phụ thuộc Feature 110. |
+| FR-006 | T053 (xác minh boundary với Feature 110) | Admin task không triển khai resubmission; hành vi thuộc Feature 110. Coverage chức năng phụ thuộc Feature 110 và không được tính là implementation bởi T053. |
+| FR-007 | T003, T018, T021–T022 | Có task quyết định recovery/idempotency, từ chối stale state và test cạnh tranh; còn phụ thuộc T003. |
+| FR-008 | T002, T009–T010, T033–T041 | Có task server lookup/mutation, account transitions và kiểm tra tích hợp Feature 010; contract/auth phụ thuộc T002. |
+| FR-009 | T003, T006, T035–T041 | Có task revoke, reason, giữ application/venue state, notification và integration check; phụ thuộc T003/T006. |
+| FR-010 | T005, T024–T025, T028–T032 | Report read có task; target detail chỉ sau xác nhận source/quyền ở T005. Gate giữ nguyên. |
+| FR-011 | T005, T026–T032 | Có task status/action/metadata, resolve/dismiss và tests; mutation theo target phụ thuộc T005. |
+| FR-012 | T005, T026–T027, T030–T031 | Mapping action, target tồn tại/đủ điều kiện và stale handling có task. `DROP_IN` hide vẫn gated; không đánh dấu action đó đã được hỗ trợ. |
+| FR-013 | T004, T042, T046–T050 | Có task read-only stats, empty/source states và tests; schema/metrics phụ thuộc T004. |
+| FR-014a | T006, T044, T048–T049 | Có task tạo/sửa/tắt voucher, uniqueness và bảo vệ usage fields; phụ thuộc contract/validation Feature 050 tại T006. |
+| FR-014 | T004, T043, T045–T050 | Category CRUD và SYSTEM broadcast có task/tests; schema category, active-account predicate và Feature 100 server path còn phụ thuộc T004/T006. |
+| FR-015 | T003, T006, T019, T022–T023 | Có task phát OWNER_APPROVED/OWNER_REJECTED, lý do từ chối và test; retry/notification contract phụ thuộc T003/T006. |
+| FR-016 | T002, T008–T010, T022, T031, T040, T049, T052 | Có task kiểm tra quyền hiện hành, claim/session invalidation và direct denial. Hành vi claim/account validity phụ thuộc T002. |
+| SC-001 | T018, T021–T022 | Có assert consistency trong approve/reject tests; phụ thuộc contract recovery T003. |
+| SC-002 | T018–T023; T053 (tích hợp với Feature 110) | Admin lưu/trả lý do và phát notification; khả năng applicant xem đúng lý do và resubmit thuộc Feature 110, cần xác minh tích hợp. Không coi Feature 120 tự bao phủ phần đó. |
+| SC-003 | T011, T015–T016, T022–T023, T052 | Có tests cho applicant/Admin và các vai trò khác, cùng UI/error behavior; signed access còn phụ thuộc Storage contract/setup. |
+| SC-004 | T010, T022, T031, T040, T049, T052 | Có test unauthenticated/PLAYER/OWNER và rà soát direct requests cho các nhóm thao tác Admin. |
+| SC-005 | T026, T030–T031 | Có task ghi/assert trạng thái cuối, action, handledBy/handledAt và dismissed NONE; action target phụ thuộc T005. |
+| SC-006 | T016–T020, T023, T054 | Có cách đo riêng approve/reject tới server-confirmed result ≤120 giây; fixture đầy đủ vẫn cần Feature 110 xác nhận theo T054. |
+
+**Coverage chưa hoàn tất trong phạm vi Feature 120:** phần resubmission và trải nghiệm applicant của FR-005/FR-006/SC-002 thuộc Feature 110; T053 là boundary check, không phải task triển khai Feature 110. `DROP_IN` + `HIDE_CONTENT` của FR-012 chưa được phép cho tới khi T005 owners xác nhận field/state và quyền tương ứng. Các mục còn lại có task hiện tại, nhưng một số chỉ có thể hoàn thành sau dependency gate nêu trong cột trên.
 
 ## Independent acceptance criteria by story
 

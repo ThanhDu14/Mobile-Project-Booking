@@ -19,6 +19,9 @@ Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 | 13  | 2026-10-19 | Tạo Tasks Feature 111 bằng `$speckit-tasks`, phân tích bằng `$speckit-analyze` và cập nhật Tasks theo báo cáo              | 11   |
 | 14  | 2026-10-19 | Tạo Tasks Feature 112 bằng `$speckit-tasks`, phân tích bằng `$speckit-analyze` và cập nhật Tasks theo các findings         | 11   |
 | 15  | 2026-10-19 | Tạo Tasks Feature 120 bằng `$speckit-tasks`, phân tích bằng `$speckit-analyze` và cập nhật Tasks theo findings U1–U3        | 12   |
+| 16  | 2026-10-20 | Phân tích cuối 5 features 100, 110, 111, 112, 120 bằng `$speckit-analyze`; đối chiếu coverage, security, dependency và findings cũ | 10–12 |
+| 17  | 2026-10-20 | Sửa traceability matrix Feature 120 bằng `$speckit-tasks` theo báo cáo Analyze; chỉ cập nhật `tasks.md` | 12   |
+| 18  | 2026-10-20 | Phân tích lại Feature 120 bằng `$speckit-analyze` sau khi sửa traceability matrix | 12   |
 
 ---
 
@@ -1246,3 +1249,148 @@ hoặc viết implementation code.
 
 ---
 
+## Mục 16: Analyze cuối cho Features 100, 110, 111, 112 và 120
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-20 |
+| Người thực hiện | Minh Nhựt |
+| Nhóm tính năng liên quan | 10 – Thông báo; 11 – Owner; 12 – Admin |
+| Công cụ AI | Codex (GPT-6), `$speckit-analyze` |
+| Mục đích | Đối chiếu spec, plan, tasks, data model, research, Constitution, Database README và dependency của năm features; xác minh findings cũ đã được xử lý hay còn gate mở |
+| Phạm vi | `specs/100-notification/`, `110-owner-onboarding/`, `111-owner-venue-setup/`, `112-owner-operations/`, `120-admin/` |
+
+### Prompt đã dùng
+
+```text
+$speckit-analyze
+
+Thực hiện vòng Specification Analysis cuối cùng cho 5 features:
+100-notification, 110-owner-onboarding, 111-owner-venue-setup,
+112-owner-operations, 120-admin.
+
+Đọc spec.md, plan.md, tasks.md, data-model.md và research.md nếu có;
+đối chiếu Constitution, Database README và các spec booking/feature phụ thuộc.
+Kiểm tra coverage, consistency, security, dependency, ownership, testability,
+Constitution alignment và các findings cũ. Phân biệt vấn đề đã giải quyết,
+open dependency gate và vấn đề chưa xử lý. Chỉ đọc; không sửa file hoặc chạy
+Tasks, Plan, Implement. Báo cáo số FR/SC/task, findings theo mức độ, gate mở,
+kết luận từng feature và kết luận implementation tổng thể. Nêu rõ giới hạn
+nếu prerequisite script hoặc artifact không truy cập được.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Đọc artifacts của cả năm features, Constitution và Database README. Prerequisite script không trả JSON nên phân tích tiếp trực tiếp trong đúng các thư mục feature.
+- Xác nhận cả năm thư mục đều có `spec.md`, `plan.md`, `tasks.md`, `data-model.md` và `research.md`.
+- Đối chiếu findings cũ về notification idempotency/FCM/chat, onboarding identity/tài liệu, venue slot/pricing/schema và owner operations; phân loại điểm còn mở thành dependency gate hoặc finding.
+- Phát hiện traceability matrix của Feature 120 có FR/SC bị sao chép từ Notification. Report-target và SC-006 vẫn có dependency mở.
+- Không sửa file và không chạy Tasks, Plan, Implement hoặc tests.
+
+### Cách kiểm chứng
+
+- Đọc artifacts trong năm thư mục mục tiêu, Constitution và Database README.
+- Ghi rõ prerequisite script không trả JSON; tiếp tục kiểm tra trực tiếp thay vì tuyên bố script thành công.
+- Không thay đổi repository.
+
+---
+
+## Mục 17: Sửa Traceability Matrix của Feature 120
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-20 |
+| Người thực hiện | Minh Nhựt |
+| Nhóm tính năng liên quan | 12 – Quản trị và kiểm duyệt (`specs/120-admin`) |
+| Công cụ AI | Codex (GPT-6), `$speckit-tasks` |
+| Mục đích | Sửa traceability matrix Feature 120 theo kết quả Analyze và phân biệt task Admin với các task xác minh boundary của feature khác |
+| Phạm vi chỉnh sửa | Chỉ `specs/120-admin/tasks.md` |
+
+### Prompt đã dùng
+
+```text
+$speckit-tasks
+
+Sửa lỗi traceability Feature 120 theo báo cáo Analyze cuối cùng.
+Đọc spec.md, plan.md và tasks.md; liệt kê chính xác FR/SC có trong Admin spec;
+đối chiếu từng requirement với task hiện có; sửa Coverage/Traceability Matrix,
+bao gồm FR-014a, FR-015–FR-017 và SC-006. Không đánh dấu requirement đã
+covered khi task không đáp ứng. Chỉ thêm task nếu có căn cứ trong spec và cập
+nhật dependency. Không tạo nghiệp vụ/schema/endpoint mới. Giữ nguyên gate
+report target, authorization và schema chưa xác nhận. Chỉ sửa tasks.md;
+không chạy Analyze hoặc Implement.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Xác định Admin spec có FR-001–FR-014, FR-014a, FR-015–FR-016 và SC-001–SC-006; không có FR-017.
+- Thay ma trận cũ bằng mapping từng requirement tới task IDs và loại các hàng bị sao chép từ Notification.
+- Ghi rõ FR-005, FR-006 và SC-002 phụ thuộc trải nghiệm applicant/resubmission của Feature 110. T053 chỉ xác minh boundary, không thay thế task triển khai Feature 110.
+- Giữ gate T002–T006 và gate fixture SC-006; không thêm nghiệp vụ, schema hoặc endpoint.
+- Chỉ sửa `specs/120-admin/tasks.md`; không chạy Analyze, Implement hoặc tests.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Traceability Matrix | Thay mapping cũ bằng mapping từng FR và SC Admin | Các hàng cũ có requirement IDs của Notification |
+| FR-014a, FR-015–FR-016, SC-006 | Ánh xạ riêng, giữ nguyên ID và hậu tố | Tránh bỏ sót requirement |
+| FR-005, FR-006, SC-002 | Ghi rõ dependency Feature 110 và giới hạn T053 | T053 chỉ là boundary/integration check |
+| FR-012 `DROP_IN` + `HIDE_CONTENT` | Giữ gate T005, không đánh dấu đã hỗ trợ | Chưa xác nhận field/state và quyền xử lý |
+| Các gate còn lại | Giữ authorization, report target, schema/metrics, voucher, notification, application và fixture SC-006 | Không tự quyết định nghiệp vụ/schema để đóng gate |
+| Task count | Giữ nguyên 54 task IDs | Không cần thêm task để sửa traceability |
+
+### Cách kiểm chứng
+
+- Đối chiếu số lượng 17 FR và 6 SC với Admin spec.
+- Kiểm tra task IDs trong matrix tồn tại và duy nhất; tổng số task vẫn là 54.
+- Chỉ sửa `specs/120-admin/tasks.md`.
+- Không chạy Analyze, Implement hoặc tests trong lượt này.
+
+---
+
+## Mục 18: Analyze lại Feature 120 sau khi sửa ma trận
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-20 |
+| Người thực hiện | Minh Nhựt |
+| Nhóm tính năng liên quan | 12 – Quản trị và kiểm duyệt (`specs/120-admin`) |
+| Công cụ AI | Codex (GPT-6), `$speckit-analyze` |
+| Mục đích | Xác minh traceability matrix mới và rà soát coverage, dependency, security, ownership và Constitution alignment của Feature 120 |
+| Phạm vi | `spec.md`, `plan.md`, `tasks.md`, `data-model.md`, `research.md`, Constitution và Database README |
+
+### Prompt đã dùng
+
+```text
+$speckit-analyze
+
+Phân tích lại lần cuối Feature 120 sau khi cập nhật traceability matrix.
+Đối chiếu toàn bộ spec, plan, tasks, data-model, research, Constitution và
+Database README. Xác minh 17 FR/6 SC thực tế, requirement IDs và task IDs hợp lệ,
+phân biệt implementation Admin với integration/boundary checks của Feature 110
+hoặc feature khác. Rà lại các gate DROP_IN + HIDE_CONTENT, report target,
+authorization, schema/metrics, voucher, notification, owner application và
+fixture SC-006; không tuyên bố coverage hoàn chỉnh nếu còn phụ thuộc.
+Kiểm tra dependency, security và Constitution alignment. Chỉ đọc, không sửa
+file và không chạy Tasks, Plan hoặc Implement. Báo cáo findings đã giải quyết,
+findings mở, coverage trực tiếp/phụ thuộc và phần implementation độc lập có thể
+bắt đầu.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Xác nhận matrix có đúng 17 FR, gồm FR-014a, và 6 SC; Admin spec không có FR-017.
+- Xác nhận 54 task IDs duy nhất và task IDs được matrix tham chiếu đều hợp lệ.
+- Finding traceability bị sao chép từ Notification đã được giải quyết. Matrix phân biệt task Feature 120 với T053, task chỉ kiểm tra tích hợp Feature 110.
+- Coverage được ánh xạ đầy đủ trong tài liệu nhưng chưa hoàn tất về chức năng: còn gate authorization, consistency/recovery, report target, schema/metrics, voucher, notification, owner application và fixture SC-006.
+- `DROP_IN` + `HIDE_CONTENT` chưa được phép trước khi xác nhận field/state và quyền target.
+- Có thể bắt đầu khung kiến trúc và UI/state shell độc lập; chưa sẵn sàng cho mutation nhạy cảm hoặc implementation end-to-end.
+- Prerequisite script không trả JSON; artifacts được kiểm tra trực tiếp. Không sửa file và không chạy Tasks, Plan, Implement hoặc tests.
+
+### Cách kiểm chứng
+
+- Đối chiếu từng requirement trong `spec.md` với traceability matrix trong `tasks.md`.
+- Kiểm tra tính hợp lệ và duy nhất của task IDs; rà lại plan, data model, research, Constitution và Database README.
+- Phân biệt coverage có task, coverage phụ thuộc gate và phần thuộc Feature 110.
+- Không thay đổi repository.
