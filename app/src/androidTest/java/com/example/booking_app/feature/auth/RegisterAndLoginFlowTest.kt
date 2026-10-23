@@ -1,6 +1,7 @@
 package com.example.booking_app.feature.auth
 
 import android.content.Context
+import android.os.ParcelFileDescriptor
 import android.view.View
 import androidx.lifecycle.Lifecycle
 import androidx.test.core.app.ActivityScenario
@@ -25,6 +26,7 @@ import com.google.firebase.auth.FirebaseAuth
 import org.hamcrest.Matcher
 import org.hamcrest.Matchers.allOf
 import org.junit.Assert.assertEquals
+import org.junit.After
 import org.junit.Assume.assumeTrue
 import org.junit.Before
 import org.junit.Test
@@ -44,6 +46,7 @@ class RegisterAndLoginFlowTest {
 
     private val email = "e2e.${System.currentTimeMillis()}@example.com"
     private val password = "abc12345"
+    private var autofillService: String? = null
 
     @Before
     fun setUp() {
@@ -51,6 +54,15 @@ class RegisterAndLoginFlowTest {
         // Như cài mới: chưa qua màn hình chào (welcome_seen) và không còn PendingSignup của lần chạy trước.
         val context = ApplicationProvider.getApplicationContext<Context>()
         File(context.filesDir, "datastore/session_prefs.preferences_pb").delete()
+        // Hộp thoại "Lưu mật khẩu" của dịch vụ autofill che app sau khi bấm Đăng ký, Espresso không thấy view.
+        autofillService = shell("settings get secure autofill_service")
+        shell("settings put secure autofill_service null")
+    }
+
+    @After
+    fun tearDown() {
+        autofillService?.takeIf { it.isNotEmpty() && it != "null" }
+            ?.let { shell("settings put secure autofill_service $it") }
     }
 
     @Test
@@ -85,6 +97,10 @@ class RegisterAndLoginFlowTest {
         waitUntil { scenario.state == Lifecycle.State.DESTROYED }
         assertEquals(Lifecycle.State.DESTROYED, scenario.state)
     }
+
+    private fun shell(command: String): String =
+        InstrumentationRegistry.getInstrumentation().uiAutomation.executeShellCommand(command)
+            .let { fd -> ParcelFileDescriptor.AutoCloseInputStream(fd).bufferedReader().use { it.readText().trim() } }
 
     /** Espresso không chờ coroutine/mạng; thử lại tới khi view hiện hoặc hết [timeoutMs]. */
     private fun waitUntilDisplayed(matcher: Matcher<View>, timeoutMs: Long = NETWORK_TIMEOUT_MS) =
