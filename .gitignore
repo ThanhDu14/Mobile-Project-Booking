@@ -33,3 +33,6 @@ supabase/**/.env*
 *service-account*.json
 *serviceAccount*.json
 *-firebase-adminsdk-*.json
+
+# File nén báo cáo tuần (nặng, nộp riêng, không commit)
+docs/reports/weekly/*.zip
