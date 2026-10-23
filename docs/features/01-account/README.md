@@ -28,7 +28,16 @@ Lấy từ [Proposal](../../proposal/Proposal.html), mục 5.
 
 Lưu ở [`screenshots/`](screenshots/) và đặt tên theo dạng `01_account_buocX_mo-ta.png`.
 
-Wireframe của spec 010 nằm ở [`specs/010-account-auth/ui/`](../../../specs/010-account-auth/ui/). Ảnh chụp app thật cho kịch bản M1, M7, M12, M18 ([quickstart §4](../../../specs/010-account-auth/quickstart.md#4-kịch-bản-kiểm-thử-thủ-công-trên-máy-với-project-thật-tài-khoản-thử)) **chưa có**, chụp khi chạy kiểm thử thủ công (T076).
+Wireframe của spec 010 nằm ở [`specs/010-account-auth/ui/`](../../../specs/010-account-auth/ui/). Ảnh chụp app thật trên project `mobile-22e6c` (2026-10-20) cho các kịch bản ở [quickstart §4](../../../specs/010-account-auth/quickstart.md#4-kịch-bản-kiểm-thử-thủ-công-trên-máy-với-project-thật-tài-khoản-thử). Ảnh M7 (Google lần đầu) **chưa có**: cần một Gmail chưa đăng ký trên project.
+
+| Kịch bản | Ảnh | Mô tả |
+|---|---|---|
+| M1 | [`01_account_buoc1_dang-ky-email-vao-trang-chu.png`](screenshots/01_account_buoc1_dang-ky-email-vao-trang-chu.png) | Đăng ký email xong vào trang chủ người chơi, có banner xác minh |
+| M12 | [`01_account_buoc2_otp-so-moi-hoan-tat-tai-khoan.png`](screenshots/01_account_buoc2_otp-so-moi-hoan-tat-tai-khoan.png) | Số thử mới, nhập đúng mã thì sang bước Hoàn tất tài khoản (đã che số) |
+| M12 | [`01_account_buoc2b_otp-vao-trang-chu.png`](screenshots/01_account_buoc2b_otp-vao-trang-chu.png) | Đồng ý điều khoản xong vào trang chủ |
+| M18 | [`01_account_buoc3_tai-khoan-bi-khoa.png`](screenshots/01_account_buoc3_tai-khoan-bi-khoa.png) | Tài khoản bị khóa đăng nhập bằng email, hiện "Tài khoản bị khóa" |
+
+Wireframe:
 
 | Bước | Wireframe | Mô tả |
 |---|---|---|

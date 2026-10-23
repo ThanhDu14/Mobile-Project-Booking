@@ -53,7 +53,7 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
   - kiểm tra phiên bản plugin chạy được với AGP 9.4; nếu không chạy được thì dừng lại và báo nhóm, không tự quay về cách đọc tay.
 - [x] T003 [P] Kiểm tra `.gitignore` chặn `app/google-services.json`, `local.properties`, `supabase/.env*` (trừ `*.example`), và **không** chặn `local.defaults.properties`; tạo `supabase/.env.example` với `FIREBASE_PROJECT_ID`, `FIREBASE_SERVICE_ACCOUNT` giả
 - [x] T004 Tạo `APP/SmashNowApp.kt` (`@HiltAndroidApp`), khai báo trong `app/src/main/AndroidManifest.xml`; gắn `@AndroidEntryPoint` cho `APP/MainActivity.kt`; xóa `APP/FirstFragment.kt`, `APP/SecondFragment.kt`, `RES/navigation/nav_graph.xml` mẫu và layout đi kèm
-- [ ] T005 [P] Cấu hình Firebase Console theo [quickstart §0](quickstart.md#0-chuẩn-bị) (người quản lý project làm): bật Email/Password, Google, Phone; tối đa 10 số thử nghiệm (không ghi vào repo); Email enumeration protection bật; "Link accounts that use the same email"; Password policy min 8, Require numeric, chế độ **Require**; template email tiếng Việt; SHA-1 debug của từng thành viên. Ghi ngày làm vào `docs/guides/firebase-auth-setup.md` _(Chờ người quản lý project làm trên Firebase Console.)_
+- [x] T005 [P] Cấu hình Firebase Console theo [quickstart §0](quickstart.md#0-chuẩn-bị) (người quản lý project làm): bật Email/Password, Google, Phone; tối đa 10 số thử nghiệm (không ghi vào repo); Email enumeration protection bật; "Link accounts that use the same email"; Password policy min 8, Require numeric, chế độ **Require**; template email tiếng Việt; SHA-1 debug của từng thành viên. Ghi ngày làm vào `docs/guides/firebase-auth-setup.md` _(2026-10-20: xong, xem [firebase-auth-setup.md](../../docs/guides/firebase-auth-setup.md). Firebase không cho sửa nội dung template nên email dùng bản dịch tiếng Việt có sẵn qua ngôn ngữ mặc định `vi`.)_
 
 **Checkpoint**: `./gradlew assembleDebug` chạy được.
 
@@ -329,7 +329,7 @@ Thêm sau khi `/speckit-analyze` spec 020 phát hiện khách không vào đư�
   - mục 1: "dữ liệu cá nhân `users` chỉ chủ tài khoản và admin đọc; tính năng khác dùng snapshot".
 
   _(2026-10-20: đã sửa theo đúng danh sách; D, C kiểm tra lại trong PR vì phụ thuộc chốt ở họp 16/10.)_
-- [ ] T075 [P] Espresso (nên có) `ATEST/feature/auth/RegisterAndLoginFlowTest.kt` trên Auth/Firestore Emulator: đăng ký email → màn hình chính; đăng xuất → đăng nhập lại; Back ở màn hình chính thoát app _(2026-10-20: **đã viết và biên dịch, chưa chạy**: cần máy ảo, `USE_EMULATOR=true` trong `local.properties` và `on-signup` chạy local; test tự bỏ qua khi không bật Emulator để không tạo tài khoản trên project thật.)_
+- [x] T075 [P] Espresso (nên có) `ATEST/feature/auth/RegisterAndLoginFlowTest.kt` trên Auth/Firestore Emulator: đăng ký email → màn hình chính; đăng xuất → đăng nhập lại; Back ở màn hình chính thoát app _(2026-10-20: **đã chạy, qua 3 lần liên tiếp** trên máy ảo với Firebase Emulator và `on-signup` chạy bằng Deno. Sửa test: tắt dịch vụ autofill trong lúc chạy vì hộp thoại "Lưu mật khẩu" che app; máy ảo phải bật màn hình.)_
 - [ ] T076 Chạy kịch bản thủ công [quickstart §4](quickstart.md#4-kịch-bản-kiểm-thử-thủ-công-trên-máy-với-project-thật-tài-khoản-thử) trên project thật, **bắt buộc ghi kết quả thật** cho:
   - **M9**: Gmail đã xác minh + Google → cùng `uid`, 2 provider;
   - **M10**: Gmail chưa xác minh + Google → cùng `uid`, provider password bị gỡ (so với dự đoán ở R7);
@@ -338,9 +338,9 @@ Thêm sau khi `/speckit-analyze` spec 020 phát hiện khách không vào đư�
 
   Kết quả khác dự đoán thì sửa `research.md` (R7, R9) và báo nhóm. Ghi kết quả vào log AI
 
-  _(Chờ người làm: phải chạy tay trên máy với project thật.)_
+  _(2026-10-20: **M17, M20 đã chạy** (kết quả ở research R9: M17 đúng dự đoán; M20 trả `USER_DISABLED` cả khi sai mật khẩu, lộ email bị khóa, cần nhóm quyết định). Kèm M1, M12, M18 (email) đạt. **Còn M9, M10**: cần một Gmail chưa có trên project để đăng ký email/mật khẩu rồi đăng nhập Google trên máy.)_
 - [x] T077 [P] Kiểm tra FR-023 / M24 trên cả 10 màn hình: chế độ tối, `w600dp` (form ≤ 480dp, căn giữa; thêm `RES/layout-w600dp/` nếu cần), TalkBack đọc được nhãn, vùng chạm ≥ 48dp; M25 mất mạng ở từng nút không crash (SC-007) _(2026-10-20, phần kiểm tra bằng code đã xong: form ≤ 480dp căn giữa bằng `layout_constraintWidth_max` trên mọi màn hình mới, sửa `fragment_auth_account_setup.xml`; màu lấy từ token có bản `values-night`; nút lùi, ô OTP, link ≥ 48dp; 6 ô OTP có nhãn TalkBack; mọi ViewModel đổi `AuthError.Network` thành snackbar "Thử lại". **Còn kiểm tra tay**: chế độ tối và TalkBack trên máy, máy `w600dp`, M25 tắt mạng ở từng nút.)_
-- [ ] T078 [P] Cập nhật `docs/features/01-account/README.md` (link spec, plan, tasks, hướng dẫn cấu hình Firebase) và cột *Spec* nhóm 01 trong `docs/features/README.md`; lưu ảnh/video M1, M7, M12, M18 vào `docs/features/01-account/screenshots/` _(2026-10-20: đã cập nhật hai README; **còn thiếu ảnh M1, M7, M12, M18**, chụp khi chạy T076.)_
+- [ ] T078 [P] Cập nhật `docs/features/01-account/README.md` (link spec, plan, tasks, hướng dẫn cấu hình Firebase) và cột *Spec* nhóm 01 trong `docs/features/README.md`; lưu ảnh/video M1, M7, M12, M18 vào `docs/features/01-account/screenshots/` _(2026-10-20: đã cập nhật hai README; đã có ảnh M1, M12, M18; **còn thiếu ảnh M7** (Google lần đầu, cần Gmail chưa đăng ký).)_
 - [x] T079 Chạy `./gradlew lint testDebugUnitTest assembleDebug`, `deno test -A on-signup/ _shared/` (với Emulator), `npm test` trong `firestore-tests/`; không còn cảnh báo Lint mức Error _(2026-10-20: Gradle xanh, Lint 0 Error / 42 Warning, 171 unit test; `deno test` 35/35; `firestore-tests` 27/27.)_
 
 ---
