@@ -4,9 +4,23 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="?android:attr/colorBackground"
-    android:gravity="center"
+    android:gravity="center_horizontal"
     android:orientation="vertical"
     android:paddingHorizontal="@dimen/screen_gutter">
+
+    <!-- Chỉ hiện với tài khoản mật khẩu chưa xác minh email (FR-009). -->
+    <com.example.booking_app.core.ui.VerifyEmailBannerView
+        android:id="@+id/verifyEmailBanner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_4"
+        android:visibility="gone"
+        tools:visibility="visible" />
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
 
     <TextView
         android:id="@+id/title"
@@ -36,5 +50,10 @@
         android:maxWidth="@dimen/auth_form_max_width"
         android:visibility="gone"
         tools:visibility="visible" />
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
 
 </LinearLayout>

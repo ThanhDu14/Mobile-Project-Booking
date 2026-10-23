@@ -28,3 +28,11 @@ node_modules/
 # Khóa server của Supabase (Edge Function) — chỉ commit file mẫu
 supabase/**/.env*
 !supabase/**/.env.example
+
+# Khóa service account Firebase (scripts/admin, Edge Function) — không bao giờ commit
+*service-account*.json
+*serviceAccount*.json
+*-firebase-adminsdk-*.json
+
+# File nén báo cáo tuần (nặng, nộp riêng, không commit)
+docs/reports/weekly/*.zip

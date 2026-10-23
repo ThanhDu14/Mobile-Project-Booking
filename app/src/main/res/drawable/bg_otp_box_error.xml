@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ô mã OTP khi mã sai (wireframe buoc5_nhap-otp-sai-ma). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="@color/sn_surface_raised" />
+    <stroke android:width="2dp" android:color="@color/sn_danger" />
+    <corners android:radius="@dimen/radius_md" />
+</shape>

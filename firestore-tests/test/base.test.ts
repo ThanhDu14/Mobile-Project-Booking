@@ -31,6 +31,6 @@ describe('Rules nền', () => {
 
   it('chặn cả admin khi collection chưa khai báo', async () => {
     const db = env.authenticatedContext('admin1', { appRole: 'ADMIN' }).firestore();
-    await assertFails(getDoc(doc(db, 'users/admin1')));
+    await assertFails(getDoc(doc(db, 'anyCollection/doc1')));
   });
 });

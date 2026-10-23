@@ -9,6 +9,9 @@ class FakeSessionAuthSource : SessionAuthSource {
     var claims: (forceRefresh: Boolean) -> Map<String, Any?> = { emptyMap() }
     var reloadError: Throwable? = null
 
+    /** Người dùng sau `reload()` (ví dụ vừa xác minh email). `null` thì trả người dùng hiện tại. */
+    var reloadedUser: AuthUser? = null
+
     val claimCalls = mutableListOf<Boolean>()
     var reloadCalls = 0
     var signOutCalls = 0
@@ -18,9 +21,10 @@ class FakeSessionAuthSource : SessionAuthSource {
         return claims(forceRefresh)
     }
 
-    override suspend fun reload() {
+    override suspend fun reload(): AuthUser? {
         reloadCalls++
         reloadError?.let { throw it }
+        return reloadedUser ?: authState.value
     }
 
     override suspend fun signOut() {
