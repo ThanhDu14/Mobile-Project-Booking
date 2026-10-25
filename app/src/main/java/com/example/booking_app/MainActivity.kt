@@ -15,17 +15,20 @@ import androidx.navigation.NavDeepLinkRequest
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.navOptions
 import com.example.booking_app.core.session.AppRole
+import com.example.booking_app.core.session.GuestNotice
 import com.example.booking_app.core.session.RouteDecision
 import com.example.booking_app.core.session.SessionRouter
 import com.example.booking_app.core.session.SessionState
-import com.example.booking_app.core.session.SignOutReason
+import com.example.booking_app.core.session.rootGraphFor
 import com.example.booking_app.databinding.ActivityMainBinding
+import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 
 /**
  * Single Activity. Thu thập `SessionState` và thực hiện quyết định của `SessionRouter`
- * (contracts/ui-screens.md §1, research R15).
+ * (contracts/ui-screens.md §1, research R15). Spec 011 (T018): graph gốc theo `(appRole, mode)`.
  */
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
@@ -50,7 +53,8 @@ class MainActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.sessionState.collect { route(it) }
+                // Chế độ chủ sân đổi cũng phát lại trạng thái để điều hướng sang graph mới.
+                combine(viewModel.sessionState, viewModel.mode) { state, _ -> state }.collect { route(it) }
             }
         }
     }
@@ -65,19 +69,28 @@ class MainActivity : AppCompatActivity() {
             return
         }
         // Mở lại sau khi hệ thống hủy process: NavController đã khôi phục back stack, chỉ ghi nhận trạng thái.
-        if (previous == null || previous == state) return
+        if (previous == null) {
+            if (state is SessionState.SignedIn) viewModel.lastRootGraph = graphFor(state.appRole)
+            return
+        }
+        if (previous == state) {
+            // Cùng trạng thái nhưng chủ sân vừa đổi chế độ (spec 011 R7).
+            if (state is SessionState.SignedIn) switchRootGraphIfNeeded(state.appRole)
+            return
+        }
 
         when (state) {
             is SessionState.SignedIn -> when {
                 previous !is SessionState.SignedIn -> onSignedIn(state.appRole)
                 previous.appRole != state.appRole -> execute(RouteDecision.ResetTo(state.appRole))
+                else -> switchRootGraphIfNeeded(state.appRole)
             }
             is SessionState.SignedOut -> when {
                 previous is SessionState.SignedOut -> Unit
                 // "Dùng tài khoản khác" ở bước Hoàn tất tài khoản: về màn hình đăng nhập.
                 previous is SessionState.NeedsConsent && state.reason == null -> backToLogin()
-                // Đăng xuất (spec 011) hoặc bị khóa: về trang chủ ở chế độ khách, không về màn hình chào.
-                else -> execute(RouteDecision.PlayerGuest(showLockedLogin = state.reason == SignOutReason.LOCKED))
+                // Đăng xuất, bị khóa, bị thu hồi phiên, tài khoản bị xóa (spec 011): về trang chủ ở chế độ khách.
+                else -> execute(SessionRouter.afterSignOut(state.reason))
             }
             is SessionState.NeedsConsent -> openConsent()
             // Vừa bấm "Đăng ký": RegisterFragment đang gọi on-signup và tự báo lỗi, không chuyển màn hình.
@@ -89,6 +102,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun onSignedIn(appRole: AppRole) {
+        // Mọi nhánh bên dưới đều kết thúc ở graph của vai trò (PopAuth: graph người chơi đang nằm dưới).
+        viewModel.lastRootGraph = graphFor(appRole)
         val authOnStack = hasBackStackEntry(R.id.nav_auth)
         val playerOnStack = hasBackStackEntry(R.id.nav_player)
         if (!authOnStack && appRole == AppRole.PLAYER && playerOnStack) return
@@ -102,12 +117,19 @@ class MainActivity : AppCompatActivity() {
         when (decision) {
             RouteDecision.Welcome -> resetTo(R.id.nav_auth)
             is RouteDecision.PlayerGuest -> {
+                viewModel.lastRootGraph = null
                 resetTo(R.id.nav_player)
                 // Bị khóa: trang chủ khách ở dưới, màn hình đăng nhập kèm thông báo khóa ở trên (research R15).
                 if (decision.showLockedLogin) navController.navigate(LOCKED_LOGIN)
+                when (decision.notice) {
+                    GuestNotice.NONE -> Unit
+                    GuestNotice.SESSION_REVOKED -> navController.navigate(SESSION_REVOKED_LOGIN)
+                    GuestNotice.ACCOUNT_DELETED ->
+                        Snackbar.make(binding.root, R.string.account_deleted, Snackbar.LENGTH_LONG).show()
+                }
             }
-            is RouteDecision.RoleHome -> resetTo(graphFor(decision.appRole))
-            is RouteDecision.ResetTo -> resetTo(graphFor(decision.appRole))
+            is RouteDecision.RoleHome -> resetToRoleGraph(decision.appRole)
+            is RouteDecision.ResetTo -> resetToRoleGraph(decision.appRole)
             is RouteDecision.PopAuth -> {
                 navController.popBackStack(R.id.nav_auth, inclusive = true)
                 decision.returnTo?.let { navController.navigate(it) }
@@ -150,16 +172,25 @@ class MainActivity : AppCompatActivity() {
     private fun hasBackStackEntry(destinationId: Int): Boolean =
         runCatching { navController.getBackStackEntry(destinationId) }.isSuccess
 
-    private fun graphFor(appRole: AppRole): Int = when (appRole) {
-        AppRole.PLAYER -> R.id.nav_player
-        AppRole.OWNER -> R.id.nav_owner
-        AppRole.ADMIN -> R.id.nav_admin
+    private fun graphFor(appRole: AppRole): Int =
+        rootGraphFor(appRole, viewModel.modeFor(viewModel.sessionState.value))
+
+    private fun resetToRoleGraph(appRole: AppRole) {
+        val graph = graphFor(appRole)
+        viewModel.lastRootGraph = graph
+        resetTo(graph)
+    }
+
+    /** Chủ sân chuyển "Người chơi" ↔ "Quản lý sân": chỉ điều hướng khi graph đích đổi (spec 011 T018). */
+    private fun switchRootGraphIfNeeded(appRole: AppRole) {
+        if (graphFor(appRole) != viewModel.lastRootGraph) resetToRoleGraph(appRole)
     }
 
     private companion object {
         const val ARG_RETURN_TO = "returnTo"
         val LOGIN: NavDeepLinkRequest = deepLink("smashnow://auth/login")
         val LOCKED_LOGIN: NavDeepLinkRequest = deepLink("smashnow://auth/login?lockedNotice=true")
+        val SESSION_REVOKED_LOGIN: NavDeepLinkRequest = deepLink("smashnow://auth/login?sessionRevokedNotice=true")
         val CONSENT: NavDeepLinkRequest = deepLink("smashnow://auth/consent")
         val ACCOUNT_SETUP: NavDeepLinkRequest = deepLink("smashnow://auth/setup")
 

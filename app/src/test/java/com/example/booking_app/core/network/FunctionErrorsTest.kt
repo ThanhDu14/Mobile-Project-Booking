@@ -18,7 +18,8 @@ class FunctionErrorsTest {
         coEvery { getToken(any()) } returns "token"
     }
     private val lockedBus = AccountLockedBus()
-    private val functionErrors = FunctionErrors(idTokenProvider, lockedBus)
+    private val deletedBus = AccountDeletedBus()
+    private val functionErrors = FunctionErrors(idTokenProvider, lockedBus, deletedBus)
 
     private suspend fun expectError(block: suspend () -> Unit): AppError {
         try {
@@ -40,6 +41,22 @@ class FunctionErrorsTest {
             }
             assertSame(AppError.Locked, error)
             awaitItem()
+        }
+    }
+
+    @Test
+    fun `403 ACCOUNT_DELETING thanh AccountDeleted va bao AccountDeletedBus, khong bao khoa`() = runTest {
+        lockedBus.events.test {
+            deletedBus.events.test {
+                val error = expectError {
+                    functionErrors.invokeWithAuthRetry<Unit> {
+                        throw FunctionHttpException(403, """{ "error": { "code": "ACCOUNT_DELETING", "message": "x" } }""")
+                    }
+                }
+                assertSame(AppError.AccountDeleted, error)
+                awaitItem()
+            }
+            expectNoEvents()
         }
     }
 

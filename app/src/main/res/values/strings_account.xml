@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Chuỗi của spec 011 (feature/account), tiền tố account_. Câu chữ theo contracts/ui-screens.md §2
+     và wireframe specs/011-account-profile/ui. -->
+<resources>
+    <!-- Trang Tài khoản -->
+    <string name="account_title">Tài khoản</string>
+    <string name="account_notifications">Thông báo</string>
+    <string name="account_avatar_description">Ảnh đại diện của %1$s</string>
+    <string name="account_avatar_change_description">Đổi ảnh đại diện</string>
+    <string name="account_edit_profile">Sửa hồ sơ</string>
+    <string name="account_district_separator">" · "</string>
+    <string name="account_wallet_label">Ví giả lập · không phải tiền thật</string>
+    <string name="account_wallet_balance">%1$s đ</string>
+    <string name="account_wallet_topup">Nạp ví</string>
+    <string name="account_load_error">Không tải được thông tin tài khoản</string>
+    <string name="account_retry">Thử lại</string>
+    <string name="account_footer">SmashNow · Phiên bản học tập</string>
+
+    <!-- Danh sách mục (research R14) -->
+    <string name="account_entry_my_bookings">Lịch đặt của tôi</string>
+    <string name="account_entry_my_dropins">Lượt vãng lai của tôi</string>
+    <string name="account_entry_favorites">Sân yêu thích</string>
+    <string name="account_entry_notification_settings">Cài đặt thông báo</string>
+    <string name="account_entry_change_password">Đổi mật khẩu</string>
+    <string name="account_entry_change_email">Đổi email đăng nhập</string>
+    <string name="account_entry_legal">Điều khoản và quyền riêng tư</string>
+    <string name="account_entry_owner_venues">Cơ sở của tôi</string>
+    <string name="account_entry_owner_chat">Tin nhắn khách hàng</string>
+    <string name="account_entry_owner_application">Hồ sơ chủ sân</string>
+    <string name="account_owner_group">CHỦ SÂN</string>
+
+    <!-- Đăng xuất (US2, FR-007) -->
+    <string name="account_sign_out">Đăng xuất</string>
+    <string name="account_sign_out_confirm_title">Đăng xuất khỏi SmashNow?</string>
+    <string name="account_sign_out_confirm_message">Bạn vẫn xem được sân ở chế độ khách. Máy này sẽ không nhận thông báo của tài khoản nữa.</string>
+    <string name="account_cancel">Hủy</string>
+    <string name="account_delete_account">Xóa tài khoản</string>
+
+    <!-- Mục chủ sân (research R6) -->
+    <string name="account_owner_apply_title">Đăng ký làm chủ sân</string>
+    <string name="account_owner_apply_body">Gửi hồ sơ để đưa sân của bạn lên SmashNow. Admin duyệt trong vài ngày.</string>
+    <string name="account_owner_pending_title">Hồ sơ chủ sân đang chờ duyệt</string>
+    <string name="account_owner_pending_body">Đã nộp lúc %1$s</string>
+    <string name="account_owner_rejected_title">Hồ sơ chủ sân bị từ chối</string>
+    <string name="account_owner_resubmit">Sửa và nộp lại</string>
+    <string name="account_owner_revoked">Quyền chủ sân đã bị thu hồi</string>
+    <string name="account_owner_approved">Đã là chủ sân</string>
+    <string name="account_mode_title">Chế độ đang dùng</string>
+    <string name="account_mode_player">Người chơi</string>
+    <string name="account_mode_owner">Quản lý sân</string>
+    <string name="account_mode_hint">Mỗi lần mở app, bạn vào giao diện quản lý sân</string>
+
+    <!-- Sửa hồ sơ (US1) -->
+    <string name="account_edit_title">Sửa hồ sơ</string>
+    <string name="account_back">Quay lại</string>
+    <string name="account_avatar_change">Đổi ảnh</string>
+    <string name="account_avatar_remove">Xóa ảnh</string>
+    <string name="account_avatar_hint">Ảnh được cắt vuông, tối đa 2 MB</string>
+    <string name="account_avatar_uploading">Đang tải ảnh lên</string>
+    <string name="account_avatar_source_camera">Chụp ảnh</string>
+    <string name="account_avatar_source_gallery">Chọn từ thư viện</string>
+    <string name="account_avatar_crop_title">Cắt ảnh</string>
+    <string name="account_avatar_crop_confirm">Dùng ảnh này</string>
+    <string name="account_camera_permission_denied">Chưa có quyền dùng camera. Bạn vẫn chọn được ảnh từ thư viện.</string>
+    <string name="account_name_label">Họ và tên</string>
+    <string name="account_email_label">Email</string>
+    <string name="account_phone_label">Số điện thoại</string>
+    <string name="account_email_unverified">Chưa xác minh</string>
+    <string name="account_email_change_hint">Đổi email ở mục "Đổi email đăng nhập" trong trang Tài khoản.</string>
+    <string name="account_level_label">Trình độ</string>
+    <string name="account_level_beginner">Mới chơi</string>
+    <string name="account_level_intermediate">Trung bình</string>
+    <string name="account_level_advanced">Khá/Nâng cao</string>
+    <string name="account_districts_label">Khu vực hay chơi</string>
+    <string name="account_districts_counter">%1$d/%2$d</string>
+    <string name="account_districts_add">Thêm khu vực</string>
+    <string name="account_districts_remove">Bỏ %1$s</string>
+    <string name="account_districts_error">Không tải được danh sách khu vực</string>
+    <string name="account_district_picker_title">Chọn khu vực (tối đa 5)</string>
+    <string name="account_district_picker_done">Xong</string>
+    <string name="account_district_inactive">Khu vực đã ngừng</string>
+    <string name="account_unsaved_changes">Có thay đổi chưa lưu</string>
+    <string name="account_save">Lưu thay đổi</string>
+    <string name="account_saved">Đã lưu</string>
+    <string name="account_discard_title">Bỏ các thay đổi chưa lưu?</string>
+    <string name="account_discard_confirm">Bỏ thay đổi</string>
+    <string name="account_keep_editing">Tiếp tục sửa</string>
+
+    <!-- Đổi mật khẩu (US5) -->
+    <string name="account_password_current">Mật khẩu hiện tại</string>
+    <string name="account_password_new">Mật khẩu mới</string>
+    <string name="account_password_confirm">Nhập lại mật khẩu mới</string>
+    <string name="account_password_submit">Đổi mật khẩu</string>
+    <string name="account_password_changed">Đã đổi mật khẩu</string>
+    <string name="account_error_wrong_password">Mật khẩu hiện tại không đúng</string>
+    <string name="account_error_same_password">Mật khẩu mới phải khác mật khẩu hiện tại</string>
+
+    <!-- Đổi email (US7, research R10) -->
+    <string name="account_email_new">Email mới</string>
+    <string name="account_email_submit">Gửi email xác minh</string>
+    <string name="account_email_sent">Nếu email này chưa được dùng cho tài khoản khác, bạn sẽ nhận được thư xác minh. Email đăng nhập chỉ đổi sau khi bấm link.</string>
+    <string name="account_error_same_email">Email mới phải khác email hiện tại</string>
+
+    <!-- Xác nhận lại danh tính (research R8) -->
+    <string name="account_reauth_title">Xác nhận danh tính</string>
+    <string name="account_reauth_google">Xác nhận bằng Google</string>
+    <string name="account_reauth_send_otp">Gửi mã OTP</string>
+    <string name="account_reauth_wrong_account">Hãy chọn đúng tài khoản Google đang đăng nhập</string>
+
+    <!-- Xóa tài khoản (US6, contracts/edge-functions-account.md §1.4) -->
+    <string name="account_delete_title">Xóa tài khoản</string>
+    <string name="account_delete_confirm_label">Gõ XÓA để xác nhận</string>
+    <string name="account_delete_confirm_word">XÓA</string>
+    <string name="account_delete_submit">Xóa vĩnh viễn tài khoản</string>
+    <string name="account_delete_keep">Giữ tài khoản</string>
+    <string name="account_delete_wallet_notice">Số dư ví giả lập %1$s đ và tiền hoàn sẽ bị xóa, không quy đổi được</string>
+    <string name="account_deleted">Tài khoản đã được xóa</string>
+    <string name="account_error_delete_confirm">Gõ đúng chữ XÓA để xác nhận</string>
+    <string name="account_error_admin_self_delete">Tài khoản quản trị không tự xóa được, liên hệ nhóm phát triển</string>
+    <string name="account_error_delete_too_large">Tài khoản có quá nhiều đơn sắp tới để xóa tự động. Vui lòng hủy bớt hoặc liên hệ hỗ trợ</string>
+    <string name="account_error_delete_failed">Chưa xóa được tài khoản. Tài khoản vẫn dùng bình thường, vui lòng thử lại</string>
+    <string name="account_error_delete_unknown_result">Chưa rõ kết quả, vui lòng kiểm tra kết nối rồi thử lại</string>
+
+    <!-- Lỗi chung -->
+    <string name="account_session_revoked">Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại</string>
+    <string name="account_error_network">Không có kết nối mạng</string>
+    <string name="account_error_generic">Đã có lỗi, vui lòng thử lại</string>
+    <string name="account_error_district_max">Chọn tối đa 5 khu vực</string>
+    <string name="account_error_image_type">Chỉ hỗ trợ ảnh JPG, PNG, WebP</string>
+    <string name="account_error_image_size">Ảnh quá lớn, tối đa 2 MB</string>
+</resources>

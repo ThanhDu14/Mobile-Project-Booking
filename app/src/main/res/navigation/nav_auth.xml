@@ -40,13 +40,18 @@
             android:name="lockedNotice"
             android:defaultValue="false"
             app:argType="boolean" />
+        <!-- [011 T018] Phiên bị thu hồi (đổi mật khẩu/email ở máy khác): báo "Phiên đăng nhập đã hết hạn". -->
+        <argument
+            android:name="sessionRevokedNotice"
+            android:defaultValue="false"
+            app:argType="boolean" />
         <!-- Điền sẵn email khi đi từ lỗi "Email đã được sử dụng" (US1-3). LoginViewModel đọc qua SavedStateHandle. -->
         <argument
             android:name="email"
             android:defaultValue="@null"
             app:argType="string"
             app:nullable="true" />
-        <deepLink app:uri="smashnow://auth/login?returnTo={returnTo}&amp;lockedNotice={lockedNotice}" />
+        <deepLink app:uri="smashnow://auth/login?returnTo={returnTo}&amp;lockedNotice={lockedNotice}&amp;sessionRevokedNotice={sessionRevokedNotice}" />
         <action
             android:id="@+id/action_login_to_register"
             app:destination="@id/registerFragment"

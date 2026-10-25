@@ -40,6 +40,34 @@ class SessionRouterTest {
     }
 
     @Test
+    fun `phien bi thu hoi hoac tai khoan bi xoa thi ve trang chu khach kem thong bao (011)`() {
+        for (seen in listOf(false, true)) {
+            assertEquals(
+                RouteDecision.PlayerGuest(showLockedLogin = false, notice = GuestNotice.SESSION_REVOKED),
+                SessionRouter.startDestination(SessionState.SignedOut(SignOutReason.SESSION_REVOKED), welcomeSeen = seen),
+            )
+            assertEquals(
+                RouteDecision.PlayerGuest(showLockedLogin = false, notice = GuestNotice.ACCOUNT_DELETED),
+                SessionRouter.startDestination(SessionState.SignedOut(SignOutReason.ACCOUNT_DELETED), welcomeSeen = seen),
+            )
+        }
+    }
+
+    @Test
+    fun `afterSignOut theo ly do (011)`() {
+        assertEquals(RouteDecision.PlayerGuest(showLockedLogin = false), SessionRouter.afterSignOut(null))
+        assertEquals(RouteDecision.PlayerGuest(showLockedLogin = true), SessionRouter.afterSignOut(SignOutReason.LOCKED))
+        assertEquals(
+            RouteDecision.PlayerGuest(showLockedLogin = false, notice = GuestNotice.SESSION_REVOKED),
+            SessionRouter.afterSignOut(SignOutReason.SESSION_REVOKED),
+        )
+        assertEquals(
+            RouteDecision.PlayerGuest(showLockedLogin = false, notice = GuestNotice.ACCOUNT_DELETED),
+            SessionRouter.afterSignOut(SignOutReason.ACCOUNT_DELETED),
+        )
+    }
+
+    @Test
     fun `da dang nhap thi vao graph theo vai tro`() {
         for (role in AppRole.entries) {
             for (seen in listOf(false, true)) {

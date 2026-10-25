@@ -19,4 +19,12 @@ sealed interface SessionState {
     data class SignedIn(val uid: String, val appRole: AppRole, val emailVerified: Boolean) : SessionState
 }
 
-enum class SignOutReason { LOCKED }
+enum class SignOutReason {
+    LOCKED,
+
+    /** Firebase thu hồi phiên (đổi mật khẩu/email ở máy khác), spec 011 R9. */
+    SESSION_REVOKED,
+
+    /** Tài khoản vừa bị xóa hoặc server trả `ACCOUNT_DELETING`, spec 011 R11. */
+    ACCOUNT_DELETED,
+}

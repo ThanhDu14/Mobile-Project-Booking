@@ -9,7 +9,7 @@ Hướng dẫn chạy và kiểm tra. Không chứa code triển khai. Chi tiế
 - **Mọi kịch bản ở §5 chạy cục bộ** (constitution IV): `local.properties` có `USE_EMULATOR=true` và `SUPABASE_URL=http://10.0.2.2:54321`; Firebase Emulator (Auth, Firestore, project `demo-smashnow`); `npx supabase start` + `npx supabase functions serve`. Không chạy trên `mobile-22e6c` hay Supabase `smashnow` thật.
 - **Chưa chốt:** `supabase/config.toml` để Third-party Auth trỏ `mobile-22e6c`, nên Supabase local dự kiến từ chối ID token không ký của Auth Emulator. Kiểm tra theo task chuẩn bị môi trường trong [tasks.md](tasks.md) Phase 1; nếu bị từ chối thì Q5, Q8, Q9 chờ nhóm chốt cách làm, chính sách Storage vẫn được kiểm bằng pgTAP (§2).
 - Supabase secrets thêm: `CRON_SECRET` (dùng chung với 081). `SUPABASE_SERVICE_ROLE_KEY` có sẵn trong môi trường Edge Function.
-- Dữ liệu mẫu: `scripts/seed/districts.ts` (22 quận/huyện TP.HCM, có 1 khu vực `isActive = false` để test).
+- Dữ liệu mẫu: seed chung `cd scripts/seed && node seed.mjs --emulator` (22 quận/huyện TP.HCM). Khu vực `isActive = false` để test: tạo tay `districts/q-cu` trên Emulator UI hoặc dùng dữ liệu của `firestore-tests`.
 - Tài khoản thử (tạo trên Auth Emulator bằng app hoặc REST + `on-signup`, cấp vai trò bằng `scripts/admin/grant-role.ts` của 010):
 
 | Tài khoản | Đăng nhập bằng | Trạng thái |

@@ -28,6 +28,8 @@ googleid = "1.2.0"
 secretsGradlePlugin = "2.0.1"
 mockk = "1.14.9"
 turbine = "1.2.1"
+# Cắt ảnh đại diện vuông (spec 011 FR-003, plan Complexity Tracking). 4.7.0 dùng Kotlin stdlib 2.0
+imageCropper = "4.7.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -64,6 +66,7 @@ androidx-credentials-play-services-auth = { group = "androidx.credentials", name
 googleid = { group = "com.google.android.libraries.identity.googleid", name = "googleid", version.ref = "googleid" }
 mockk = { group = "io.mockk", name = "mockk", version.ref = "mockk" }
 turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine" }
+android-image-cropper = { group = "com.vanniktech", name = "android-image-cropper", version.ref = "imageCropper" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

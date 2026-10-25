@@ -157,6 +157,8 @@
     <string name="auth_error_phone_not_supported">Không gửi được mã tới số này. Hãy dùng email hoặc Google</string>
     <string name="auth_error_no_google_account">Không tìm thấy tài khoản Google trên máy</string>
     <string name="auth_error_network">Không có kết nối mạng</string>
+    <!-- [011 T018] Mở màn hình đăng nhập sau khi Firebase thu hồi phiên. -->
+    <string name="auth_session_revoked">Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại</string>
     <string name="auth_error_unknown">Đã có lỗi xảy ra, vui lòng thử lại</string>
 
     <!-- Chế độ khách (research R15) -->

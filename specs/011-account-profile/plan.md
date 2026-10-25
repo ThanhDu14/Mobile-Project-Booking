@@ -180,7 +180,7 @@ supabase/
 firestore.rules                                      # mở rộng users; districts; accountDeletions
 firestore.indexes.json                               # districts, ownerApplications, accountDeletions
 firestore-tests/test/users-profile.test.ts, districts.test.ts
-scripts/seed/districts.ts
+scripts/seed/seed.mjs                                # (của nhóm) nạp districts; 011 không viết seed riêng
 scripts/admin/rerun-deletion-step.ts
 ```
 
