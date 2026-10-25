@@ -75,11 +75,11 @@ Phạm vi bắt buộc:
 | Q2 | Sửa tên, chọn "Trung bình", 2 khu vực, Lưu; tắt hẳn app, mở lại | "Đã lưu"; thông tin mới còn; đo thời gian < 1 phút | US1-2, SC-001 |
 | Q3 | Sửa rồi bấm Back | Hỏi "Bỏ các thay đổi chưa lưu?" | US1-5, FR-006 |
 | Q4 | Bấm Lưu 3 lần nhanh | Chỉ 1 lần ghi (xem Firestore `updatedAt`) | Edge Case |
-| Q5 | Chọn ảnh từ thư viện, cắt, xác nhận | Ảnh mới hiện ở Tài khoản < 5 giây trên 4G (đo 20 lần, ≥ 19 lần đạt); object mới `avatar_<ms>.jpg`, object cũ bị xóa | US1-3, SC-002 |
+| Q5 | **[BLOCKED: cả nhóm]** Supabase local từ chối token của Auth Emulator (`"alg" ... not allowed`, xem tasks T005); cần nhóm chốt cách thử Storage. Chọn ảnh từ thư viện, cắt, xác nhận | Ảnh mới hiện ở Tài khoản < 5 giây trên 4G (đo 20 lần, ≥ 19 lần đạt); object mới `avatar_<ms>.jpg`, object cũ bị xóa | US1-3, SC-002 |
 | Q6 | Từ chối quyền camera | Có giải thích, vẫn chọn thư viện được, trang vẫn dùng được | US1-4, FR-024 |
 | Q7 | Chọn file HEIC hoặc GIF | "Chỉ hỗ trợ ảnh JPG, PNG, WebP" | Edge Case |
-| Q8 | Tải trực tiếp file 3 MB lên bucket của Supabase local (`http://127.0.0.1:54321`) bằng `curl` với token của mình | Storage từ chối (giới hạn 2 MB) | FR-003 |
-| Q9 | Bật chế độ máy bay giữa lúc tải ảnh | Ảnh cũ giữ nguyên, có "Thử lại" | Edge Case, SC-007 |
+| Q8 | **[BLOCKED: cả nhóm]** Supabase local từ chối token của Auth Emulator (`"alg" ... not allowed`, xem tasks T005); cần nhóm chốt cách thử Storage. Tải trực tiếp file 3 MB lên bucket của Supabase local (`http://127.0.0.1:54321`) bằng `curl` với token của mình | Storage từ chối (giới hạn 2 MB) | FR-003 |
+| Q9 | **[BLOCKED: cả nhóm]** Supabase local từ chối token của Auth Emulator (`"alg" ... not allowed`, xem tasks T005); cần nhóm chốt cách thử Storage. Bật chế độ máy bay giữa lúc tải ảnh | Ảnh cũ giữ nguyên, có "Thử lại" | Edge Case, SC-007 |
 | Q10 | Danh mục khu vực lỗi (tắt mạng khi mở picker) | Mục khu vực báo lỗi + "Thử lại", ô khác vẫn sửa được | Edge Case |
 | Q11 | Đăng xuất, mở lại app | Về Trang chủ chế độ khách, Back không quay lại màn hình của tài khoản cũ; token của máy không còn trong `fcmTokens` | US2, FR-007 |
 | Q12 | Đăng xuất rồi gửi thông báo thử tới tài khoản đó (D hoặc FCM console với token cũ) | Máy không nhận | US2-3 |

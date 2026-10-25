@@ -14,6 +14,7 @@
     <string name="account_wallet_topup">Nạp ví</string>
     <string name="account_load_error">Không tải được thông tin tài khoản</string>
     <string name="account_retry">Thử lại</string>
+    <string name="account_loading">Đang tải thông tin tài khoản</string>
     <string name="account_footer">SmashNow · Phiên bản học tập</string>
 
     <!-- Danh sách mục (research R14) -->
@@ -61,6 +62,7 @@
     <string name="account_avatar_source_gallery">Chọn từ thư viện</string>
     <string name="account_avatar_crop_title">Cắt ảnh</string>
     <string name="account_avatar_crop_confirm">Dùng ảnh này</string>
+    <string name="account_open_settings">Mở Cài đặt</string>
     <string name="account_camera_permission_denied">Chưa có quyền dùng camera. Bạn vẫn chọn được ảnh từ thư viện.</string>
     <string name="account_name_label">Họ và tên</string>
     <string name="account_email_label">Email</string>
@@ -78,7 +80,9 @@
     <string name="account_districts_error">Không tải được danh sách khu vực</string>
     <string name="account_district_picker_title">Chọn khu vực (tối đa 5)</string>
     <string name="account_district_picker_done">Xong</string>
+    <string name="account_district_empty">Chưa có khu vực nào</string>
     <string name="account_district_inactive">Khu vực đã ngừng</string>
+    <string name="account_district_chip_inactive">%1$s (đã ngừng)</string>
     <string name="account_unsaved_changes">Có thay đổi chưa lưu</string>
     <string name="account_save">Lưu thay đổi</string>
     <string name="account_saved">Đã lưu</string>

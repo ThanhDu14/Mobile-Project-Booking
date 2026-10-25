@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -40,6 +41,19 @@
         android:textAppearance="?attr/textAppearanceBodyMedium"
         android:textColor="?attr/colorOnSurfaceVariant"
         android:visibility="gone"
+        tools:visibility="visible" />
+
+    <!-- Lối vào trang Tài khoản (spec 011) tới khi có thanh điều hướng dưới của 020/111. -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/accountButton"
+        style="@style/Widget.SmashNow.Button.Outlined"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_6"
+        android:text="@string/account_title"
+        android:visibility="gone"
+        app:icon="@drawable/ic_account_circle_24"
+        app:iconTint="?attr/colorOnSurface"
         tools:visibility="visible" />
 
     <com.example.booking_app.core.ui.LoginPromptView

@@ -111,10 +111,13 @@ describe('users/{uid}: sửa', () => {
   });
 
   it('U8: sửa các trường người dùng tự sửa được', async () => {
+    // Sửa bởi 011: khu vực phải tồn tại và đang hoạt động, avatarPath theo mẫu `{uid}/avatar_{ms}.jpg`.
+    await env.withSecurityRulesDisabled((ctx) =>
+      setDoc(doc(ctx.firestore(), 'districts/q1'), { name: 'Quận 1', sortOrder: 1, isActive: true }));
     await assertSucceeds(updateDoc(me(), {
       level: 'INTERMEDIATE',
       favoriteDistrictIds: ['q1'],
-      avatarPath: 'avatars/player1.jpg',
+      avatarPath: 'player1/avatar_1760500000000.jpg',
       fcmTokens: ['token'],
       notificationPrefs: { booking: false },
       updatedAt: serverTimestamp(),

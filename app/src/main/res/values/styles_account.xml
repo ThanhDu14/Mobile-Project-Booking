@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Style riêng của spec 011 (trang Tài khoản). -->
+<resources>
+    <!-- Một dòng trong nhóm mục: icon trái, chữ, mũi tên phải; cao tối thiểu 56dp (vùng chạm >= 48dp, FR-025). -->
+    <style name="Widget.SmashNow.AccountRow" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:minHeight">@dimen/account_row_height</item>
+        <item name="android:background">?attr/selectableItemBackground</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:paddingHorizontal">@dimen/space_4</item>
+        <item name="android:drawablePadding">@dimen/space_4</item>
+        <item name="android:textAppearance">?attr/textAppearanceBodyLarge</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+        <item name="drawableEndCompat">@drawable/ic_chevron_right_24</item>
+        <item name="drawableTint">?attr/colorOnSurfaceVariant</item>
+        <item name="android:focusable">true</item>
+        <item name="android:clickable">true</item>
+    </style>
+
+    <style name="Widget.SmashNow.AccountGroup" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">@dimen/space_4</item>
+        <item name="android:background">@drawable/bg_account_card</item>
+        <item name="android:divider">@drawable/divider_account</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:showDividers">middle</item>
+    </style>
+
+    <style name="Widget.SmashNow.AccountChip" parent="Widget.Material3.Chip.Assist">
+        <item name="chipMinTouchTargetSize">0dp</item>
+        <item name="android:clickable">false</item>
+        <item name="android:focusable">false</item>
+    </style>
+
+    <style name="ShapeAppearance.SmashNow.Circle" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+</resources>

@@ -159,6 +159,8 @@
             android:name="doc"
             android:defaultValue="TERMS"
             app:argType="string" />
+        <!-- Trang Tài khoản (011) mở bằng deep link, không import LegalDocumentFragment (constitution I). -->
+        <deepLink app:uri="smashnow://legal/{doc}" />
     </fragment>
 
 </navigation>

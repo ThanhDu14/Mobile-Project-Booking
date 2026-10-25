@@ -1,0 +1,388 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Trang Tài khoản (spec 011, wireframe ui/01_account_buoc1_tai-khoan.png, contracts/ui-screens.md §2).
+     Ba trạng thái: đang tải (skeleton), có dữ liệu, lỗi + "Thử lại". Nội dung rộng tối đa 480dp và căn giữa. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?android:attr/colorBackground">
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scroll"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:id="@+id/column"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingHorizontal="@dimen/screen_gutter"
+                android:paddingBottom="@dimen/space_8"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintWidth_max="@dimen/auth_form_max_width">
+
+                <TextView
+                    android:id="@+id/title"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_6"
+                    android:accessibilityHeading="true"
+                    android:text="@string/account_title"
+                    android:textAppearance="?attr/textAppearanceHeadlineSmall"
+                    android:textColor="?attr/colorOnSurface" />
+
+                <!-- Đang tải: khối xám giữ chỗ đầu trang và danh sách. -->
+                <LinearLayout
+                    android:id="@+id/loading"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_6"
+                    android:contentDescription="@string/account_loading"
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <View
+                            android:layout_width="@dimen/account_avatar_size"
+                            android:layout_height="@dimen/account_avatar_size"
+                            android:background="@drawable/bg_account_avatar_initials" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/space_4"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <View
+                                android:layout_width="160dp"
+                                android:layout_height="20dp"
+                                android:background="@drawable/bg_account_skeleton" />
+
+                            <View
+                                android:layout_width="120dp"
+                                android:layout_height="16dp"
+                                android:layout_marginTop="@dimen/space_2"
+                                android:background="@drawable/bg_account_skeleton" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/touch_min"
+                        android:layout_marginTop="@dimen/space_6"
+                        android:background="@drawable/bg_account_skeleton" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="96dp"
+                        android:layout_marginTop="@dimen/space_4"
+                        android:background="@drawable/bg_account_skeleton" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="168dp"
+                        android:layout_marginTop="@dimen/space_4"
+                        android:background="@drawable/bg_account_skeleton" />
+                </LinearLayout>
+
+                <!-- Lỗi tải hồ sơ (FR-025). -->
+                <LinearLayout
+                    android:id="@+id/error"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_8"
+                    android:gravity="center_horizontal"
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    tools:visibility="gone">
+
+                    <TextView
+                        android:id="@+id/errorMessage"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:accessibilityLiveRegion="polite"
+                        android:gravity="center"
+                        android:text="@string/account_load_error"
+                        android:textAppearance="?attr/textAppearanceBodyLarge"
+                        android:textColor="?attr/colorOnSurface" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/retryButton"
+                        style="@style/Widget.SmashNow.Button"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_4"
+                        android:text="@string/account_retry" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/content"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <!-- Đầu trang: ảnh hoặc chữ cái đầu, họ tên, email/số điện thoại, chip trình độ và khu vực. -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_6"
+                        android:baselineAligned="false"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <FrameLayout
+                            android:id="@+id/avatarFrame"
+                            android:layout_width="@dimen/account_avatar_size"
+                            android:layout_height="@dimen/account_avatar_size"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:clickable="true"
+                            android:contentDescription="@string/account_avatar_change_description"
+                            android:focusable="true">
+
+                            <TextView
+                                android:id="@+id/avatarInitials"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:background="@drawable/bg_account_avatar_initials"
+                                android:gravity="center"
+                                android:importantForAccessibility="no"
+                                android:textAppearance="?attr/textAppearanceHeadlineMedium"
+                                android:textColor="@color/sn_on_court_container"
+                                tools:text="HN" />
+
+                            <com.google.android.material.imageview.ShapeableImageView
+                                android:id="@+id/avatarImage"
+                                android:layout_width="match_parent"
+                                android:layout_height="match_parent"
+                                android:importantForAccessibility="no"
+                                android:scaleType="centerCrop"
+                                android:visibility="gone"
+                                app:shapeAppearanceOverlay="@style/ShapeAppearance.SmashNow.Circle" />
+
+                            <ImageView
+                                android:layout_width="28dp"
+                                android:layout_height="28dp"
+                                android:layout_gravity="bottom|end"
+                                android:background="@drawable/bg_account_card"
+                                android:importantForAccessibility="no"
+                                android:padding="5dp"
+                                android:src="@drawable/ic_photo_camera_24"
+                                app:tint="?attr/colorOnSurface" />
+                        </FrameLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/space_4"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:id="@+id/displayName"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:textAppearance="?attr/textAppearanceTitleLarge"
+                                android:textColor="?attr/colorOnSurface"
+                                tools:text="Lê Hoàng Nam" />
+
+                            <TextView
+                                android:id="@+id/contact"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:textAppearance="?attr/textAppearanceBodyMedium"
+                                android:textColor="?attr/colorOnSurfaceVariant"
+                                tools:text="nam.le@email.com" />
+
+                            <com.google.android.material.chip.ChipGroup
+                                android:id="@+id/profileChips"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/space_1"
+                                app:chipSpacingVertical="@dimen/space_1" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/editProfileButton"
+                        style="@style/Widget.SmashNow.Button.Outlined"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_6"
+                        android:text="@string/account_edit_profile"
+                        app:icon="@drawable/ic_edit_24"
+                        app:iconGravity="textStart"
+                        app:iconTint="?attr/colorOnSurface" />
+
+                    <!-- Thẻ ví giả lập (FR-001a). -->
+                    <LinearLayout
+                        android:id="@+id/walletCard"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_4"
+                        android:background="@drawable/bg_account_card"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:padding="@dimen/space_4">
+
+                        <ImageView
+                            android:layout_width="@dimen/account_icon_box"
+                            android:layout_height="@dimen/account_icon_box"
+                            android:background="@drawable/bg_account_icon_box"
+                            android:importantForAccessibility="no"
+                            android:padding="@dimen/space_3"
+                            android:src="@drawable/ic_wallet_24"
+                            app:tint="@color/sn_on_court_container" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/space_4"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="@string/account_wallet_label"
+                                android:textAppearance="?attr/textAppearanceBodyMedium"
+                                android:textColor="?attr/colorOnSurfaceVariant" />
+
+                            <TextView
+                                android:id="@+id/walletBalance"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:textAppearance="?attr/textAppearanceTitleLarge"
+                                android:textColor="?attr/colorOnSurface"
+                                tools:text="50.000 đ" />
+                        </LinearLayout>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/walletTopupButton"
+                            style="@style/Widget.Material3.Button.TonalButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:minHeight="@dimen/touch_min"
+                            android:text="@string/account_wallet_topup" />
+                    </LinearLayout>
+
+                    <!-- Dùng lại banner của 010; chỉ hiện với tài khoản mật khẩu chưa xác minh. -->
+                    <com.example.booking_app.core.ui.VerifyEmailBannerView
+                        android:id="@+id/verifyEmailBanner"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_4"
+                        android:visibility="gone" />
+
+                    <LinearLayout
+                        android:id="@+id/activityGroup"
+                        style="@style/Widget.SmashNow.AccountGroup">
+
+                        <TextView
+                            android:id="@+id/entryMyBookings"
+                            style="@style/Widget.SmashNow.AccountRow"
+                            android:text="@string/account_entry_my_bookings"
+                            app:drawableStartCompat="@drawable/ic_event_24" />
+
+                        <TextView
+                            android:id="@+id/entryMyDropins"
+                            style="@style/Widget.SmashNow.AccountRow"
+                            android:text="@string/account_entry_my_dropins"
+                            app:drawableStartCompat="@drawable/ic_groups_24" />
+
+                        <TextView
+                            android:id="@+id/entryFavorites"
+                            style="@style/Widget.SmashNow.AccountRow"
+                            android:text="@string/account_entry_favorites"
+                            app:drawableStartCompat="@drawable/ic_favorite_border_24" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/settingsGroup"
+                        style="@style/Widget.SmashNow.AccountGroup">
+
+                        <TextView
+                            android:id="@+id/entryNotificationSettings"
+                            style="@style/Widget.SmashNow.AccountRow"
+                            android:text="@string/account_entry_notification_settings"
+                            app:drawableStartCompat="@drawable/ic_notifications_none_24" />
+
+                        <TextView
+                            android:id="@+id/entryChangePassword"
+                            style="@style/Widget.SmashNow.AccountRow"
+                            android:text="@string/account_entry_change_password"
+                            app:drawableStartCompat="@drawable/ic_lock_outline_24" />
+
+                        <TextView
+                            android:id="@+id/entryChangeEmail"
+                            style="@style/Widget.SmashNow.AccountRow"
+                            android:text="@string/account_entry_change_email"
+                            app:drawableStartCompat="@drawable/ic_alternate_email_24" />
+
+                        <TextView
+                            android:id="@+id/entryLegal"
+                            style="@style/Widget.SmashNow.AccountRow"
+                            android:text="@string/account_entry_legal"
+                            app:drawableStartCompat="@drawable/ic_description_24" />
+                    </LinearLayout>
+
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_6">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/signOutButton"
+                            style="@style/Widget.SmashNow.Button.Outlined"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/account_sign_out"
+                            app:icon="@drawable/ic_logout_24"
+                            app:iconGravity="textStart"
+                            app:iconTint="?attr/colorOnSurface" />
+
+                        <com.google.android.material.progressindicator.CircularProgressIndicator
+                            android:id="@+id/signOutProgress"
+                            style="@style/Widget.SmashNow.ButtonProgress.OnSurface"
+                            android:visibility="gone" />
+                    </FrameLayout>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/deleteAccountButton"
+                        style="@style/Widget.SmashNow.Button.Text"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
+                        android:layout_marginTop="@dimen/space_2"
+                        android:text="@string/account_delete_account"
+                        android:textColor="?attr/colorError" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_4"
+                        android:gravity="center"
+                        android:text="@string/account_footer"
+                        android:textAppearance="?attr/textAppearanceBodySmall"
+                        android:textColor="?attr/colorOnSurfaceVariant" />
+                </LinearLayout>
+            </LinearLayout>
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.core.widget.NestedScrollView>
+</FrameLayout>

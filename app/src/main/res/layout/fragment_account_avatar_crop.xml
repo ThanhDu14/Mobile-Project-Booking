@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Cắt ảnh đại diện, khung cố định 1:1 (spec 011 FR-003, research R4). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?android:attr/colorBackground"
+    android:orientation="vertical">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        app:navigationContentDescription="@string/account_back"
+        app:navigationIcon="@drawable/ic_arrow_back_24"
+        app:title="@string/account_avatar_crop_title"
+        app:titleTextAppearance="?attr/textAppearanceTitleLarge" />
+
+    <com.canhub.cropper.CropImageView
+        android:id="@+id/cropView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:contentDescription="@string/account_avatar_crop_title"
+        app:cropAspectRatioX="1"
+        app:cropAspectRatioY="1"
+        app:cropFixAspectRatio="true"
+        app:cropGuidelines="onTouch"
+        app:cropShape="oval" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/screen_gutter">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/confirmButton"
+            style="@style/Widget.SmashNow.Button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:enabled="false"
+            android:text="@string/account_avatar_crop_confirm" />
+
+        <com.google.android.material.progressindicator.CircularProgressIndicator
+            android:id="@+id/progress"
+            style="@style/Widget.SmashNow.ButtonProgress"
+            android:visibility="gone" />
+    </FrameLayout>
+</LinearLayout>

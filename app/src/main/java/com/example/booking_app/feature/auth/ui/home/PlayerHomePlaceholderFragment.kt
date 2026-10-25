@@ -8,6 +8,7 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.fragment.findNavController
 import com.example.booking_app.R
 import com.example.booking_app.core.ui.VerifyEmailBannerEvent
 import com.example.booking_app.core.ui.VerifyEmailBannerViewModel
@@ -31,12 +32,16 @@ class PlayerHomePlaceholderFragment : Fragment(R.layout.fragment_home_placeholde
         val binding = FragmentHomePlaceholderBinding.bind(view)
         binding.title.setText(R.string.auth_home_placeholder_player)
         binding.verifyEmailBanner.onResendClick = bannerViewModel::onResend
+        binding.accountButton.setOnClickListener {
+            findNavController().navigate(R.id.action_playerHome_to_account)
+        }
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
                     viewModel.isGuest.collect { isGuest ->
                         binding.guestNote.isVisible = isGuest
                         binding.loginPrompt.isVisible = isGuest
+                        binding.accountButton.isVisible = !isGuest
                     }
                 }
                 launch { bannerViewModel.uiState.collect(binding.verifyEmailBanner::render) }

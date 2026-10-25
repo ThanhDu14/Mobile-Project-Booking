@@ -8,6 +8,13 @@
     <fragment
         android:id="@+id/ownerHomePlaceholderFragment"
         android:name="com.example.booking_app.feature.auth.ui.home.OwnerHomePlaceholderFragment"
-        android:label="@string/app_name" />
+        android:label="@string/app_name">
+        <action
+            android:id="@+id/action_ownerHome_to_account"
+            app:destination="@id/nav_account" />
+    </fragment>
+
+    <!-- Trang Tài khoản của spec 011 (research R14). -->
+    <include app:graph="@navigation/nav_account" />
 
 </navigation>

@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Graph lồng của spec 011 (A), include vào nav_player và nav_owner (contracts/ui-screens.md §1, research R14).
+     Destination của US5–US7 còn là Fragment khung, chưa có deep link nên mục tương ứng trên trang Tài khoản bị ẩn. -->
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_account"
+    app:startDestination="@id/accountFragment">
+
+    <fragment
+        android:id="@+id/accountFragment"
+        android:name="com.example.booking_app.feature.account.ui.account.AccountFragment"
+        android:label="@string/account_title">
+        <action
+            android:id="@+id/action_account_to_editProfile"
+            app:destination="@id/editProfileFragment" />
+        <action
+            android:id="@+id/action_account_to_changePassword"
+            app:destination="@id/changePasswordFragment" />
+        <action
+            android:id="@+id/action_account_to_changeEmail"
+            app:destination="@id/changeEmailFragment" />
+        <action
+            android:id="@+id/action_account_to_deleteAccount"
+            app:destination="@id/deleteAccountFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/editProfileFragment"
+        android:name="com.example.booking_app.feature.account.ui.edit.EditProfileFragment"
+        android:label="@string/account_edit_title">
+        <action
+            android:id="@+id/action_editProfile_to_districtPicker"
+            app:destination="@id/districtPickerBottomSheet" />
+        <action
+            android:id="@+id/action_editProfile_to_avatarSource"
+            app:destination="@id/avatarSourceBottomSheet" />
+        <action
+            android:id="@+id/action_editProfile_to_avatarCrop"
+            app:destination="@id/avatarCropFragment" />
+    </fragment>
+
+    <dialog
+        android:id="@+id/districtPickerBottomSheet"
+        android:name="com.example.booking_app.feature.account.ui.district.DistrictPickerBottomSheet"
+        android:label="@string/account_district_picker_title">
+        <argument
+            android:name="selectedIds"
+            app:argType="string[]" />
+    </dialog>
+
+    <dialog
+        android:id="@+id/avatarSourceBottomSheet"
+        android:name="com.example.booking_app.feature.account.ui.avatar.AvatarSourceBottomSheet"
+        android:label="@string/account_avatar_change" />
+
+    <fragment
+        android:id="@+id/avatarCropFragment"
+        android:name="com.example.booking_app.feature.account.ui.avatar.AvatarCropFragment"
+        android:label="@string/account_avatar_crop_title">
+        <argument
+            android:name="sourceUri"
+            app:argType="string" />
+    </fragment>
+
+    <!-- Khung của US5, US7, US6 (chưa làm). Story nào xong thì thêm deep link smashnow://account/{password|email|delete}. -->
+    <fragment
+        android:id="@+id/changePasswordFragment"
+        android:name="com.example.booking_app.feature.account.ui.password.ChangePasswordFragment"
+        android:label="@string/account_entry_change_password" />
+
+    <fragment
+        android:id="@+id/changeEmailFragment"
+        android:name="com.example.booking_app.feature.account.ui.email.ChangeEmailFragment"
+        android:label="@string/account_entry_change_email" />
+
+    <fragment
+        android:id="@+id/deleteAccountFragment"
+        android:name="com.example.booking_app.feature.account.ui.delete.DeleteAccountFragment"
+        android:label="@string/account_delete_title">
+        <action
+            android:id="@+id/action_deleteAccount_to_reauth"
+            app:destination="@id/reauthDialog" />
+    </fragment>
+
+    <dialog
+        android:id="@+id/reauthDialog"
+        android:name="com.example.booking_app.feature.account.ui.reauth.ReauthDialog"
+        android:label="@string/account_reauth_title">
+        <argument
+            android:name="purpose"
+            android:defaultValue="DELETE"
+            app:argType="string" />
+    </dialog>
+
+</navigation>

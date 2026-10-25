@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Chọn nguồn ảnh đại diện (spec 011 FR-003, FR-024). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingVertical="@dimen/space_3">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:accessibilityHeading="true"
+        android:paddingHorizontal="@dimen/screen_gutter"
+        android:paddingBottom="@dimen/space_2"
+        android:text="@string/account_avatar_change"
+        android:textAppearance="?attr/textAppearanceTitleMedium"
+        android:textColor="?attr/colorOnSurface" />
+
+    <TextView
+        android:id="@+id/cameraOption"
+        style="@style/Widget.SmashNow.AccountRow"
+        android:text="@string/account_avatar_source_camera"
+        app:drawableEndCompat="@null"
+        app:drawableStartCompat="@drawable/ic_photo_camera_24" />
+
+    <TextView
+        android:id="@+id/galleryOption"
+        style="@style/Widget.SmashNow.AccountRow"
+        android:text="@string/account_avatar_source_gallery"
+        app:drawableEndCompat="@null"
+        app:drawableStartCompat="@drawable/ic_photo_library_24" />
+</LinearLayout>

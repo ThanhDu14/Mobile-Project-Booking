@@ -193,3 +193,4 @@ scripts/admin/rerun-deletion-step.ts
 | Vi phạm / bổ sung | Vì sao cần | Phương án đơn giản hơn đã bị loại vì |
 |---|---|---|
 | Thêm `com.vanniktech:android-image-cropper` (không có trong bảng công nghệ) | US1-3 và FR-003 yêu cầu người dùng cắt ảnh vuông rồi xác nhận | Tự viết màn hình cắt (kéo, phóng to) tốn nhiều mã cử chỉ, không phải trọng tâm đồ án; cắt giữa tự động thì không cho người dùng chọn vùng ảnh ([R4](research.md#r4-chọn-cắt-và-nén-ảnh)) |
+| Thêm `io.coil-kt.coil3:coil` + `coil-network-okhttp` 3.4.0 (implement T029; R15 dự kiến PR core của 010 có Coil nhưng chưa có) | Hiện ảnh đại diện từ URL public của bucket `avatars`, có cache bộ nhớ/đĩa, hủy tải theo vòng đời view | Tự tải bằng `HttpURLConnection` + `BitmapFactory` phải tự viết cache và hủy request; Glide nặng hơn và dùng annotation processor. 3.4.0 là bản mới nhất biên dịch bằng Kotlin ≤ 2.3 (AGP 9.4.1 dùng Kotlin 2.2.10). Spec 030 cũng cần Coil: dùng chung khai báo này, không thêm trùng |
