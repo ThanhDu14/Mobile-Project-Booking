@@ -6,8 +6,10 @@ import com.example.booking_app.feature.booking.domain.model.TimeSlot
 import javax.inject.Inject
 
 class ValidateSlotSelectionUseCase @Inject constructor(
-    private val calculateTotalPriceUseCase: CalculateTotalPriceUseCase = CalculateTotalPriceUseCase()
+    private val calculateTotalPriceUseCase: CalculateTotalPriceUseCase
 ) {
+    // Secondary constructor for testing without DI
+    constructor() : this(CalculateTotalPriceUseCase())
 
     operator fun invoke(
         currentSelection: SlotSelectionState,

@@ -27,6 +27,7 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 21 | 2026-10-19 | Lập danh sách công việc spec 060 (quản lý lịch đặt của tôi) bằng `/speckit-tasks` | 06 |
 | 22 | 2026-10-19 | Phân tích đối soát chất lượng bằng `/speckit-analyze` & tinh chỉnh spec 060 | 06 |
 | 23 | 2026-10-26 | Triển khai mã nguồn Phase 1–3 spec 040 bằng `/speckit-implement` | 04 |
+| 24 | 2026-10-26 | Triển khai giao diện Phase 4 (UI & ViewModel) spec 040 bằng `/speckit-implement` | 04 |
 
 
 
@@ -1096,6 +1097,133 @@ Bảng đối chiếu lựa chọn:
 ### Điểm lưu ý cho nhóm thảo luận
 - **Quy ước `daysOfWeek`**: Trong `PriceRule.kt`, quy ước ngày trong tuần được định nghĩa theo chuẩn ISO-8601 (1 = Thứ Hai, ..., 7 = Chủ Nhật) phù hợp với script seed dữ liệu Firestore (PR #41). Cần thống nhất chính thức giữa các thành viên nếu có sự khác biệt với lịch chuẩn của Java/Calendar (Chủ Nhật = 1).
 - **Phân định `Conflict` vs `Locked`**: `AppError.Conflict` đã được thêm chính thức vào core để đại diện cho tranh chấp tài nguyên (ví dụ transaction abort), bảo đảm không kích hoạt `signOutLocked` của `SessionManager`. Toàn bộ các khối `when` exhaustive trên `AppError` trong project (`CompleteSignupUseCase`, `AuthErrorMapper`) đã được cập nhật đồng bộ để đảm bảo an toàn biên dịch.
+
+---
+
+## Mục 24: Triển khai giao diện Phase 4 (UI & ViewModel) spec 040 bằng `/speckit-implement`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-26 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 04 – Đặt sân (spec `specs/040-booking-slot-grid`) |
+| Công cụ AI | Antigravity, kỹ thuật Speckit Implement |
+| Mục đích | Triển khai trọn vẹn Phase 4 (T023 – T034) bao gồm Layouts XML Material 3, RecyclerView Adapters, StateFlow ViewModel, và Fragment tương tác đặt sân |
+| Nhánh Git | `feature/040-booking-slot-grid` |
+
+### Prompt đã dùng
+
+```text
+LÀM PHASE 4 (UI) BẰNG SPECKIT-IMPLEMENT — spec 040, nhánh feature/040-booking-slot-grid (repo ThanhDu14/Mobile-Project-Booking), nối tiếp commit 42e7dd2.
+
+BỐI CẢNH
+- Nhiệm vụ: triển khai Phase 4 (UI) cho spec 040 (Lưới khung giờ đặt sân và giữ chỗ), CHỈ T023–T034 trong specs/040-booking-slot-grid/tasks.md (Phase 4: UI Layer & ViewModels — Phase 4A–4D theo kế hoạch tuần 4).
+- Phase 1–3 (T001–T022) đã xong trên nhánh (domain + data + test + rules + index, 2 commit); T001–T022 đã tick trong tasks.md, không làm lại.
+- Tài liệu nguồn, đọc trước khi code theo thứ tự: tasks.md, spec.md, plan.md, data-model.md, contracts/ trong specs/040-booking-slot-grid/. tasks.md là danh sách việc chính thức.
+- Git: Hưng là người duy nhất quản lý và thao tác trên git. Agent KHÔNG chạy bất kỳ lệnh git nào.
+- Hạn: code phải xong sớm để Hưng review và tự commit trước 18:00 thứ Sáu 30/10/2026, demo 20:00 cùng ngày.
+```
+
+### Nguyên tắc và chuẩn mực tuân thủ
+- **Clean Architecture & Android Architecture Components**:
+  - `BookingSlotGridFragment` chỉ tương tác với `BookingSlotGridViewModel`, tuyệt đối không gọi trực tiếp Firebase SDK hay Repository.
+  - Sử dụng `StateFlow<BookingSlotUiState>` cho UI state liên tục và `SharedFlow<BookingSlotUiEffect>` cho one-shot event (Navigation, Conflict dialog/snackbar).
+  - Thu thập state an toàn vòng đời với `viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED)`.
+- **Material 3 Token Design System**:
+  - Giao diện tuân thủ chuẩn DayNight với color tokens từ `res/values/colors.xml` và `colors_booking.xml`.
+  - Hỗ trợ đầy đủ 6 trạng thái màu sắc slot: Xanh lá (`AVAILABLE`), Xanh dương (`SELECTED`), Vàng cam (`HELD`), Đỏ (`BOOKED`), Xám có biểu tượng khóa (`BLOCKED` kèm tag `Giao lưu Drop-in`), Mờ gạch ngang (`PAST`).
+- **Nguyên tắc YAGNI (Constitution VII)**:
+  - Tránh thêm tùy tiện các thư viện Gradle bên ngoài khi không thật sự cần thiết.
+  - `HoldToPaymentArgs` tự cài đặt chuẩn `android.os.Parcelable` thuần thay vì bắt buộc thêm plugin `kotlin-parcelize`.
+  - Thay thế `SwipeRefreshLayout` bằng `NestedScrollView` tiêu chuẩn để tránh thêm dependency `androidx.swiperefreshlayout`.
+
+### Chi tiết các công việc đã triển khai (T023 – T034)
+
+#### 4A. Layout XML & Resources (T023 – T028)
+- **T028**: Khởi tạo hệ thống màu sắc `res/values/colors_booking.xml` và chuỗi giao diện đa ngôn ngữ `res/values/strings_booking.xml`:
+  - Mã màu trực quan: `booking_slot_available_bg` (#E8F5E9), `booking_slot_selected_bg` (#E3F2FD), `booking_slot_held_bg` (#FFF3E0), `booking_slot_booked_bg` (#FFEBEE), `booking_slot_blocked_bg` (#F5F5F5), `booking_slot_past_bg` (#FAFAFA).
+  - Chuỗi tóm tắt, legend trạng thái, thông báo lỗi xung đột realtime, xác nhận đổi ngày/sân, v.v.
+- **T023**: Tạo `res/layout/item_date_selector.xml`: Thẻ chọn ngày cuộn ngang hiển thị thứ viết tắt (T2, T3.. CN), số ngày, chấm tròn chỉ thị "Hôm nay", và hiệu ứng đổi màu stroke/background khi active.
+- **T024**: Tạo `res/layout/item_court_tab.xml`: Chip chọn sân con hiển thị tên sân (Sân 1, Sân 2...) và huy hiệu loại mặt sân (Gỗ, Thảm, PU) với trạng thái active/inactive rõ ràng.
+- **T025**: Tạo `res/layout/item_slot_grid.xml`: Thẻ hiển thị ca 30 phút với thời gian bắt đầu - kết thúc, đơn giá hiển thị (VND rút gọn), nhãn trạng thái trực quan, icon khóa cho slot bị chặn và tag `Giao lưu Drop-in`.
+- **T026**: Tạo `res/layout/view_booking_bottom_summary.xml`: Thanh tóm tắt cố định đáy màn hình hiển thị số khung giờ/tổng giờ đã chọn, tạm tính tổng tiền, tiền cọc 30%, và nút "Tiếp tục" (`MaterialButton`) tự động disable khi chọn chưa đủ 2 slot hoặc vi phạm quy tắc.
+- **T027**: Tạo `res/layout/fragment_booking_slot_grid.xml`: Kết hợp thanh tiêu đề/back, danh sách ngày ngang, tab sân con, bảng chú thích trạng thái (Legend), lưới ca 30 phút (`GridLayoutManager`), trạng thái rỗng khi sân đóng cửa kèm nút Thử lại, và thanh tóm tắt đáy.
+- **Bổ sung Asset**: Tạo vector drawable `res/drawable/ic_lock_16.xml` hiển thị trên các ca bận hoặc bị chủ sân chặn.
+
+#### 4B. Adapters & Custom UI (T029 – T031)
+- **T029**: Cài đặt `DateSelectorAdapter.kt` kế thừa `ListAdapter` + `DiffUtil.ItemCallback`, hỗ trợ hiển thị 30 ngày từ hôm nay, phát sự kiện khi chọn ngày mới.
+- **T030**: Cài đặt `CourtTabAdapter.kt` kế thừa `ListAdapter`, hiển thị danh sách sân con, xử lý click chuyển sân và highlight tab đang chọn.
+- **T031**: Cài đặt `SlotGridAdapter.kt` kế thừa `ListAdapter`, hiển thị lưới slot 30 phút, điều phối màu sắc nền/chữ theo 6 trạng thái, chặn click đối với các ca `BOOKED`, `BLOCKED`, `PAST`, và kích hoạt callback chọn/bỏ chọn với ca khả dụng.
+
+#### 4C. ViewModel & State Machine (T032 – T033)
+- **T032**: Định nghĩa `BookingSlotUiState.kt` và `BookingSlotUiEffect.kt` tại `feature/booking/ui/`:
+  - `BookingSlotUiState`: Lưu trữ toàn bộ dữ liệu phản ứng của màn hình (`isLoading`, `venueName`, `operatingHours`, `courts`, `selectedCourtId`, `dates`, `selectedDate`, `slots`, `selectedSlotIds`, `totalAmount`, `depositAmount`, `canProceed`, `isHolding`, `errorMessage`).
+  - `BookingSlotUiEffect`: One-shot events gồm `ShowConflictWarning(message)`, `NavigateToBookingSummary(args)`, `NavigateToLogin`, `ShowToast(message)`, `ShowErrorSnackbar(message)`.
+  - Cài đặt `HoldToPaymentArgs.kt` làm cầu nối Parcelable an toàn gửi thông tin giữ chỗ sang màn hình thanh toán/tóm tắt (Phase 5).
+- **T033**: Cài đặt `BookingSlotGridViewModel.kt`:
+  - Khởi tạo nhận `venueId` từ `SavedStateHandle`.
+  - Tải danh sách sân con, bảng giá và giờ hoạt động của cơ sở qua repository.
+  - Tự động tạo danh sách 30 ngày tiếp theo bắt đầu từ ngày hiện tại.
+  - Lắng nghe realtime `getBusySlotsRealtime` từ Firestore theo sân và ngày đang chọn.
+  - Sinh đầy đủ danh sách slot trong ngày thông qua `GenerateDailySlotsUseCase`.
+  - **Xử lý xung đột Realtime**: Nếu slot người dùng đang chọn bị người khác giữ (`HELD`/`BOOKED`), tự động loại bỏ khỏi danh sách đã chọn, tính lại tiền và phát ra `UiEffect.ShowConflictWarning`.
+  - Tích hợp `ValidateSlotSelectionUseCase` khi người dùng click vào ô giờ.
+  - Thực thi giữ chỗ 5 phút nguyên tử qua `HoldSlotsTransactionUseCase`. Khi thành công, phát ra `UiEffect.NavigateToBookingSummary`.
+
+#### 4D. Fragment & User Interactions (T034)
+- **T034**: Cài đặt `BookingSlotGridFragment.kt`:
+  - Tích hợp ViewBinding và cấu hình `GridLayoutManager(context, 3)` cho lưới slot.
+  - Thu thập `UiState` và `UiEffect` an toàn trong `viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED)`.
+  - Hiển thị hộp thoại cảnh báo: *"Bạn có chắc muốn đổi ngày/sân? Lựa chọn khung giờ hiện tại sẽ bị xóa"* khi người dùng bấm chuyển ngày hoặc sân con trong lúc đang có slot được chọn.
+  - Xử lý hiệu ứng Snackbar/Toast khi xảy ra xung đột hoặc lỗi mạng, tự động kích hoạt reload dữ liệu.
+
+### Kết quả Kiểm thử & Quality Gate
+
+1. **Android Lint**:
+   - Chạy `./gradlew lintDebug`: **0 ERRORS, BUILD SUCCESSFUL**.
+2. **Android Unit Tests**:
+   - Chạy `./gradlew testDebugUnitTest`: **37/37 PASS (100%)**.
+3. **Build Debug APK**:
+   - Chạy `./gradlew assembleDebug`: **BUILD SUCCESSFUL**.
+4. **Firebase Emulator Tests**:
+   - Chạy `npm test` trong `firestore-tests`: **34/34 PASS** (100% security rules verification).
+
+### Demo & Cách mở màn hình
+Đã bổ sung đích đến `bookingSlotGridFragment` và action mẫu `action_playerHome_to_bookingSlotGrid` trong `app/src/main/res/navigation/nav_player.xml`. Khi mở app với vai trò Người chơi, màn hình Lưới khung giờ đặt sân có thể được kích hoạt trực tiếp từ `PlayerHomePlaceholderFragment` hoặc truyền tham số `venueId` qua Safe Args.
+
+### Kiểm thử thực tế trên thiết bị thật & Tinh chỉnh trải nghiệm người dùng (UX)
+
+#### 1. Quá trình kiểm thử thực tế (Hưng thực hiện trên thiết bị Samsung thật):
+- Cấu hình bypass điều hướng và mock data tạm thời để nạp app trực tiếp vào thiết bị thật qua Android Studio (`Shift + F10`) nhằm kiểm tra UI spec 040 độc lập.
+- **Kết quả kiểm tra trực quan & thao tác**:
+  - Giao diện thanh chọn ngày ngang 30 ngày, tabs sân con, lưới slot 30 phút và thanh tóm tắt hiển thị mượt mà, đúng chuẩn Material 3.
+  - Thao tác chọn / bỏ chọn slot trống (`AVAILABLE`) hoạt động chính xác, thanh đáy cập nhật tổng tiền và tiền cọc tức thì.
+- **Vấn đề phát hiện khi test tay**:
+  - Khi chạm vào các ô không khả dụng (`BOOKED`, `HELD`, `BLOCKED`, `PAST`), hệ thống chặn chọn thành công nhưng hoàn toàn không có phản hồi nào, khiến người dùng không biết vì sao thao tác không có tác dụng.
+  - Độ mờ (`alpha`) của các ô không khả dụng chưa đủ phân biệt rõ ràng so với các ô trống trước khi người dùng chạm vào.
+
+#### 2. Yêu cầu điều chỉnh từ Hưng & Giải pháp AI thực hiện:
+- **Nguyên tắc**: Giữ nguyên tuyệt đối quy tắc chặn và logic chọn slot (không đổi selection, không đổi thanh tóm tắt).
+- **Phân biệt trực quan**:
+  - Cập nhật `SlotGridAdapter.kt`: Thiết lập mức độ mờ (`alpha`) tương ứng theo từng trạng thái: `AVAILABLE`/`SELECTED` (1.0f), `HELD` (0.80f), `BOOKED` (0.55f), `BLOCKED` (0.50f kèm icon ổ khóa), `PAST` (0.35f).
+- **Phản hồi tức thì qua UiEffect**:
+  - Bổ sung chuỗi thông báo chuẩn trong `strings_booking.xml`.
+  - Trong `BookingSlotGridViewModel.kt`: Bắt các trạng thái không trống trong `onSlotClicked()` và phát ra `BookingSlotUiEffect.ShowErrorSnackbar` với thông điệp tương ứng:
+    - `BOOKED` $\rightarrow$ *"Slot này đã được đặt"*
+    - `HELD` $\rightarrow$ *"Slot này đang được giữ"*
+    - `BLOCKED` $\rightarrow$ *"Slot này không khả dụng"*
+    - `PAST` $\rightarrow$ *"Slot này đã qua giờ"*
+  - Trong `BookingSlotGridFragment.kt`: Thiết lập `setAnchorView(binding.bottomSummary.root)` để Snackbar hiển thị nổi phía trên thanh tóm tắt đáy màn hình, không che khuất giá tiền hay nút bấm.
+
+#### 3. Nghiệm thu & Hoàn nguyên mã nguồn sạch (Revert):
+- Hưng kiểm tra lại trên thiết bị thật, xác nhận các ô đã mờ rõ rệt và bấm vào hiện đúng thông điệp Snackbar tương ứng.
+- Do các tính năng liên quan đến giữ chỗ thực tế cần qua bước đăng nhập (thuộc phạm vi tích hợp Phase 5 & Spec 010), Hưng quyết định sẽ test tiếp ở Phase sau và yêu cầu hoàn nguyên lại các file bypass tạm thời để giữ mã nguồn Phase 4 ở trạng thái chuẩn sản xuất.
+- AI đã hoàn nguyên (revert) chính xác 3 file:
+  1. `app/src/main/res/navigation/nav_main.xml`: Khôi phục `startDestination` về `@id/launcherFragment` và gỡ bỏ fragment đích tạm thời.
+  2. `app/src/main/java/com/example/booking_app/MainActivity.kt`: Khôi phục khối `viewModel.sessionState.collect { route(it) }`.
+  3. `app/src/main/java/com/example/booking_app/feature/booking/ui/BookingSlotGridViewModel.kt`: Gỡ bỏ toàn bộ mock data fallback trong `loadInitialData()` và `observeRealtimeSlots()`, giữ lại logic phản hồi Snackbar khi chạm slot không trống.
+- **Quality Gate sau khi revert**: Full pass 100% (`lintDebug` 0 errors, `testDebugUnitTest` 37/37 pass, `assembleDebug` thành công).
+
 
 
 

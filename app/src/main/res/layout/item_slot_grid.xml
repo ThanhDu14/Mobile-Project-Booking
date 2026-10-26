@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/cardSlot"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="4dp"
+    android:clickable="true"
+    android:focusable="true"
+    app:cardCornerRadius="10dp"
+    app:cardElevation="0dp"
+    app:strokeColor="@color/booking_slot_available_stroke"
+    app:strokeWidth="1dp"
+    app:cardBackgroundColor="@color/booking_slot_available_bg">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:paddingHorizontal="6dp"
+        android:paddingVertical="10dp">
+
+        <TextView
+            android:id="@+id/tvSlotTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="@style/TextAppearance.SmashNow.Label"
+            android:textColor="@color/booking_slot_available_text"
+            android:textSize="13sp"
+            tools:text="18:00 - 18:30" />
+
+        <TextView
+            android:id="@+id/tvSlotPrice"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textAppearance="@style/TextAppearance.SmashNow.Caption"
+            android:textColor="@color/sn_ink_muted"
+            android:textSize="12sp"
+            tools:text="40.000đ" />
+
+        <TextView
+            android:id="@+id/tvSlotBadge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:background="@drawable/bg_wordmark_pill"
+            android:backgroundTint="@color/sn_surface_sunken"
+            android:paddingHorizontal="6dp"
+            android:paddingVertical="2dp"
+            android:textAppearance="@style/TextAppearance.SmashNow.Caption"
+            android:textColor="@color/sn_ink_muted"
+            android:textSize="10sp"
+            android:visibility="gone"
+            tools:text="Đang giữ"
+            tools:visibility="visible" />
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

@@ -141,29 +141,29 @@ US5: Chống tạo đơn trùng lặp và xử lý mất kết nối (P3)
 **Mục tiêu**: Xây dựng toàn bộ giao diện XML Material 3, RecyclerView Adapters, StateFlow ViewModel, và xử lý luồng sự kiện UI.
 
 ### 4A. Layout XML & Resources
-- [ ] T023 [P] [US1] Tạo `RES/layout/item_date_selector.xml`: Thẻ chọn ngày ngang gồm Thứ (T2, T3...), Ngày trong tháng (15, 16...), chấm tròn highlight ngày hôm nay và hiệu ứng đổi màu khi được chọn.
-- [ ] T024 [P] [US1] Tạo `RES/layout/item_court_tab.xml`: Chip chọn sân con (Sân 1, Sân 2...) hiển thị tên sân và loại mặt sân (`Gỗ`, `Thảm`, `PU`).
-- [ ] T025 [P] [US1] Tạo `RES/layout/item_slot_grid.xml`: Ô hiển thị ca 30 phút:
+- [x] T023 [P] [US1] Tạo `RES/layout/item_date_selector.xml`: Thẻ chọn ngày ngang gồm Thứ (T2, T3...), Ngày trong tháng (15, 16...), chấm tròn highlight ngày hôm nay và hiệu ứng đổi màu khi được chọn.
+- [x] T024 [P] [US1] Tạo `RES/layout/item_court_tab.xml`: Chip chọn sân con (Sân 1, Sân 2...) hiển thị tên sân và loại mặt sân (`Gỗ`, `Thảm`, `PU`).
+- [x] T025 [P] [US1] Tạo `RES/layout/item_slot_grid.xml`: Ô hiển thị ca 30 phút:
   - Khung giờ (`18:00 - 18:30`).
   - Giá tiền theo slot (`40k`, `75k`).
   - Màu sắc trạng thái: Xanh lá (`AVAILABLE`), Xanh dương (`SELECTED`), Vàng cam (`HELD`), Đỏ (`BOOKED`), Xám có icon khóa (`BLOCKED` kèm tag nhỏ `Giao lưu Drop-in`), Mờ và gạch ngang (`PAST`).
-- [ ] T026 [P] [US1] Tạo `RES/layout/view_booking_bottom_summary.xml`: Thanh tóm tắt đáy màn hình:
+- [x] T026 [P] [US1] Tạo `RES/layout/view_booking_bottom_summary.xml`: Thanh tóm tắt đáy màn hình:
   - Tóm tắt số khung giờ đã chọn (`2 khung giờ (1 giờ chơi)`).
   - Tạm tính tổng tiền và số tiền cọc 30%.
   - Nút "Tiếp tục" (`MaterialButton`) tích hợp trạng thái loading/disabled.
-- [ ] T027 [P] [US1] Tạo `RES/layout/fragment_booking_slot_grid.xml`: Kết hợp thanh ngày, tab sân con, lưới RecyclerView (`GridLayoutManager`), trạng thái rỗng khi sân đóng cửa/bảo trì, `SwipeRefreshLayout` và thanh tóm tắt đáy.
-- [ ] T028 [P] [US1] Bổ sung chuỗi văn bản trong `RES/values/strings_booking.xml` và bảng màu Material token trong `RES/values/colors_booking.xml`.
+- [x] T027 [P] [US1] Tạo `RES/layout/fragment_booking_slot_grid.xml`: Kết hợp thanh ngày, tab sân con, lưới RecyclerView (`GridLayoutManager`), trạng thái rỗng khi sân đóng cửa/bảo trì, `SwipeRefreshLayout` và thanh tóm tắt đáy.
+- [x] T028 [P] [US1] Bổ sung chuỗi văn bản trong `RES/values/strings_booking.xml` và bảng màu Material token trong `RES/values/colors_booking.xml`.
 
 ### 4B. Adapters & Custom UI
-- [ ] T029 [P] [US1] Cài đặt `BOOKING/ui/adapter/DateSelectorAdapter.kt`: Sử dụng `ListAdapter` + `DiffUtil`, hiển thị danh sách 30 ngày từ hôm nay, tự động cuộn đến ngày đang chọn.
-- [ ] T030 [P] [US1] Cài đặt `BOOKING/ui/adapter/CourtTabAdapter.kt`: `ListAdapter` hiển thị danh sách sân con, xử lý click đổi sân và highlight sân đang kích hoạt.
-- [ ] T031 [P] [US1] Cài đặt `BOOKING/ui/adapter/SlotGridAdapter.kt`: `ListAdapter` hiển thị lưới slot 30 phút, xử lý click chọn/bỏ chọn slot, vô hiệu hóa click với các slot `BOOKED`, `BLOCKED`, `PAST`.
+- [x] T029 [P] [US1] Cài đặt `BOOKING/ui/adapter/DateSelectorAdapter.kt`: Sử dụng `ListAdapter` + `DiffUtil`, hiển thị danh sách 30 ngày từ hôm nay, tự động cuộn đến ngày đang chọn.
+- [x] T030 [P] [US1] Cài đặt `BOOKING/ui/adapter/CourtTabAdapter.kt`: `ListAdapter` hiển thị danh sách sân con, xử lý click đổi sân và highlight sân đang kích hoạt.
+- [x] T031 [P] [US1] Cài đặt `BOOKING/ui/adapter/SlotGridAdapter.kt`: `ListAdapter` hiển thị lưới slot 30 phút, xử lý click chọn/bỏ chọn slot, vô hiệu hóa click với các slot `BOOKED`, `BLOCKED`, `PAST`.
 
 ### 4C. ViewModel & State Machine
-- [ ] T032 [P] [US1, US2] Định nghĩa `BookingSlotUiState.kt` và `BookingSlotUiEffect.kt` trong `BOOKING/ui/`:
+- [x] T032 [P] [US1, US2] Định nghĩa `BookingSlotUiState.kt` và `BookingSlotUiEffect.kt` trong `BOOKING/ui/`:
   - `BookingSlotUiState`: `isLoading`, `venueName`, `operatingHours`, `courts: List<Court>`, `selectedCourtId`, `dates: List<LocalDate>`, `selectedDate`, `slots: List<TimeSlot>`, `selectedSlotIds: Set<String>`, `totalAmount: Long`, `depositAmount: Long`, `canProceed: Boolean`, `isHolding: Boolean`, `errorMessage: String?`.
   - `BookingSlotUiEffect`: `ShowConflictWarning(message)`, `NavigateToBookingSummary(args)`, `NavigateToLogin`, `ShowToast(message)`, `ShowErrorSnackbar(message)`.
-- [ ] T033 [US1, US2, US3, US4, US5] Cài đặt `BOOKING/ui/BookingSlotGridViewModel.kt`:
+- [x] T033 [US1, US2, US3, US4, US5] Cài đặt `BOOKING/ui/BookingSlotGridViewModel.kt`:
   - Khởi tạo nhận `venueId` từ `SavedStateHandle`.
   - Tải danh sách sân con, bảng giá và giờ hoạt động của cơ sở.
   - Lắng nghe Flow `getBusySlotsRealtime` theo sân và ngày đang chọn.
@@ -172,7 +172,7 @@ US5: Chống tạo đơn trùng lặp và xử lý mất kết nối (P3)
   - Hỗ trợ lưu trữ trạng thái lựa chọn vào `SavedStateHandle` khi người dùng chuyển sang màn hình đăng nhập (US4).
 
 ### 4D. Fragment & User Interactions
-- [ ] T034 [US1, US2, US3, US4] Cài đặt `BOOKING/ui/BookingSlotGridFragment.kt`:
+- [x] T034 [US1, US2, US3, US4] Cài đặt `BOOKING/ui/BookingSlotGridFragment.kt`:
   - Khởi tạo ViewBinding và thiết lập LayoutManager cho 3 RecyclerViews.
   - Quan sát `UiState` và thu thập `UiEffect` bằng `viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED)`.
   - Hiển thị Snackbar cảnh báo xung đột kèm hành động làm mới khi có ca bị người khác giữ trước.

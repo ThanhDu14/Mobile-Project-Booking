@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Chuỗi văn bản cho tính năng đặt sân theo khung giờ (Spec 040) -->
+<resources>
+    <string name="booking_title">Đặt sân theo giờ</string>
+    <string name="booking_select_date">Chọn ngày</string>
+    <string name="booking_select_court">Chọn sân thi đấu</string>
+    <string name="booking_select_slot">Khung giờ</string>
+
+    <!-- Chú thích trạng thái (Legend) -->
+    <string name="booking_legend_available">Trống</string>
+    <string name="booking_legend_selected">Đang chọn</string>
+    <string name="booking_legend_held">Đang giữ</string>
+    <string name="booking_legend_booked">Đã đặt</string>
+    <string name="booking_legend_blocked">Khóa</string>
+
+    <!-- Nhãn trạng thái hiển thị trên ô slot -->
+    <string name="booking_status_held_badge">Đang giữ</string>
+    <string name="booking_status_booked_badge">Đã đặt</string>
+    <string name="booking_status_drop_in_badge">Giao lưu</string>
+    <string name="booking_status_blocked_badge">Bị khóa</string>
+    <string name="booking_status_past_badge">Đã qua</string>
+
+    <!-- Phản hồi khi bấm slot không khả dụng -->
+    <string name="booking_slot_booked_message">Slot này đã được đặt</string>
+    <string name="booking_slot_held_message">Slot này đang được giữ</string>
+    <string name="booking_slot_blocked_message">Slot này không khả dụng</string>
+    <string name="booking_slot_past_message">Slot này đã qua giờ</string>
+
+    <!-- Thanh tóm tắt đáy màn hình (Bottom Summary) -->
+    <string name="booking_summary_placeholder">Chưa chọn khung giờ nào</string>
+    <string name="booking_summary_selected_count">%1$d khung giờ (%2$s)</string>
+    <string name="booking_summary_total_label">Tạm tính</string>
+    <string name="booking_summary_deposit_label">Tiền cọc (30%%)</string>
+    <string name="booking_summary_proceed_btn">Tiếp tục</string>
+    <string name="booking_summary_holding">Đang giữ chỗ...</string>
+
+    <!-- Cảnh báo & Hộp thoại xác nhận -->
+    <string name="booking_conflict_warning">Khung giờ bạn chọn vừa có người đặt hoặc giữ chỗ. Vui lòng chọn lại.</string>
+    <string name="booking_refresh_action">Làm mới</string>
+    <string name="booking_change_court_dialog_title">Đổi sân thi đấu?</string>
+    <string name="booking_change_court_dialog_message">Lựa chọn khung giờ hiện tại sẽ bị xóa nếu bạn đổi sân. Bạn có chắc chắn muốn tiếp tục?</string>
+    <string name="booking_change_date_dialog_title">Đổi ngày đặt sân?</string>
+    <string name="booking_change_date_dialog_message">Lựa chọn khung giờ hiện tại sẽ bị xóa nếu bạn đổi ngày. Bạn có chắc chắn muốn tiếp tục?</string>
+    <string name="booking_dialog_confirm">Đồng ý</string>
+    <string name="booking_dialog_cancel">Hủy</string>
+
+    <!-- Trạng thái rỗng & Lỗi -->
+    <string name="booking_venue_closed_title">Cơ sở đóng cửa</string>
+    <string name="booking_venue_closed_message">Cơ sở không mở cửa vào ngày này hoặc đang bảo trì. Vui lòng chọn ngày khác.</string>
+    <string name="booking_no_courts_title">Không có sân khả dụng</string>
+    <string name="booking_no_courts_message">Cơ sở hiện không có sân nào đang hoạt động.</string>
+    <string name="booking_retry">Thử lại</string>
+    <string name="booking_login_required">Vui lòng đăng nhập để tiếp tục giữ chỗ đặt sân.</string>
+
+    <!-- Định dạng thứ và ngày -->
+    <string name="day_mon">T2</string>
+    <string name="day_tue">T3</string>
+    <string name="day_wed">T4</string>
+    <string name="day_thu">T5</string>
+    <string name="day_fri">T6</string>
+    <string name="day_sat">T7</string>
+    <string name="day_sun">CN</string>
+    <string name="day_today">Hôm nay</string>
+</resources>
