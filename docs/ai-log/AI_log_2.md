@@ -26,6 +26,7 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 20 | 2026-10-19 | Phân tích đối soát chất lượng bằng `/speckit-analyze` & tinh chỉnh spec 050 | 05 |
 | 21 | 2026-10-19 | Lập danh sách công việc spec 060 (quản lý lịch đặt của tôi) bằng `/speckit-tasks` | 06 |
 | 22 | 2026-10-19 | Phân tích đối soát chất lượng bằng `/speckit-analyze` & tinh chỉnh spec 060 | 06 |
+| 23 | 2026-10-26 | Triển khai mã nguồn Phase 1–3 spec 040 bằng `/speckit-implement` | 04 |
 
 
 
@@ -1015,6 +1016,85 @@ Bảng đối chiếu lựa chọn:
 ### Tình trạng bộ Artifact sau tinh chỉnh
 
 - Toàn bộ 5 file tài liệu kỹ thuật cốt lõi của tính năng 060 (`spec.md`, `plan.md`, `data-model.md`, `contracts/ui-contracts.md`, `tasks.md`) đạt độ nhất quán 100%, sẵn sàng chuyển sang bước triển khai mã nguồn (`/speckit-implement`).
+
+---
+
+## Mục 23: Triển khai mã nguồn Phase 1–3 spec 040 bằng `/speckit-implement`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-26 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 04 – Đặt sân (`specs/040-booking-slot-grid`) |
+| Công cụ AI | Antigravity, quy trình `/speckit-implement` (TDD Red-Green) |
+| Mục đích | Triển khai toàn bộ mã nguồn Phase 1–3 (Task T001–T022) của spec 040 gồm: Data Infrastructure, Domain Layer (Domain Models, Repository Interface, UseCases thuần Kotlin theo quy chuẩn TDD Red-Green), Data Layer (DTOs, Mappers, Firestore Transaction giữ chỗ nguyên tử 5 phút All Reads Before All Writes, Repository bọc AppError, DI Module), và Firestore Security Rules kèm bộ test emulator. |
+| Nhánh Git | `feature/040-booking-slot-grid` |
+
+### Bối cảnh và phạm vi thực hiện
+
+- **Phạm vi nghiêm ngặt**: Triển khai chính xác Phase 1–3 (T001–T022) theo `specs/040-booking-slot-grid/tasks.md`. Dừng lại trước Phase 4 (T023+ UI Layer) theo kế hoạch Tuần 43 (Week 4) của dự án. Demo ở mức Domain & Data layer.
+- **Chính sách Git Zero-Touch**: Toàn bộ thao tác sửa đổi file do AI thực hiện trên working directory hiện tại; tuyệt đối không chạy bất kỳ lệnh can thiệp Git (`add`, `commit`, `push`, `branch`, `checkout`).
+- **Tuân thủ Hiến pháp kỹ thuật (`constitution.md v1.2.0`)**:
+  - *Constitution I*: Tầng `domain` 100% Kotlin thuần túy, tuyệt đối không phụ thuộc Android SDK hay Firebase SDK.
+  - *Constitution II & III*: Toàn bộ tiền tệ dùng kiểu `Long` (VND, không dùng Float/Double, cấm âm); slot ID tất định `{courtId}_{yyyyMMdd}_{HHmm}`; giữ chỗ trong Firestore Transaction nguyên tử (*All Reads Before All Writes*), hạn 5 phút theo server timestamp (`request.time`), chống double-submit qua UUID `requestId`.
+  - *Constitution IV*: Thực thi quy trình TDD Red $\rightarrow$ Green cho toàn bộ UseCases và Data Mappers/Repositories; kiểm thử Security Rules trên Firebase Emulator local.
+
+### Chi tiết các công việc đã triển khai (T001 – T022)
+
+#### Phase 1: Setup & Data Infrastructure (T001 – T003)
+- **T001**: Rà soát xác nhận các thư viện cấu hình trong `app/build.gradle.kts`: Navigation Safe Args, Hilt DI, Coroutines/Flow, Material 3, ViewBinding, Firebase Firestore, Turbine, MockK.
+- **T002**: Bổ sung Composite Index cho collection `slots` trong `firestore.indexes.json` gồm các trường `venueId` (ASC), `date` (ASC), `startTime` (ASC) phục vụ truy vấn tối ưu sparse storage theo cơ sở và ngày.
+- **T003**: Xây dựng bộ test fixture `BookingSlotFixtures.kt` tại `app/src/test/java/.../feature/booking/fixture/` với bảng giá chuẩn (giờ thường 80k/h $\rightarrow$ 40k/slot, cao điểm 150k/h $\rightarrow$ 75k/slot) và các DTOs/Entities mẫu.
+
+#### Phase 2: Domain Layer & Core Business Logic qua TDD (T004 – T015)
+- **T004**: Khởi tạo đầy đủ các Domain Models thuần Kotlin tại `feature/booking/domain/model/`:
+  - `Court.kt`: Đại diện sân thi đấu con.
+  - `PriceRule.kt`: Khung giá theo ngày trong tuần (`daysOfWeek: List<Int>` chuẩn ISO 1=Thứ 2..7=Chủ nhật) và khung giờ.
+  - `TimeSlot.kt`: Đại diện ca 30 phút (`slotId`, `courtId`, `date`, `startTime`, `endTime`, `price`, `status`, `blockReason`, `holdExpiresAtMillis`).
+  - `SlotStatus.kt`: Enum 6 trạng thái (`AVAILABLE`, `SELECTED`, `BOOKED`, `HELD`, `BLOCKED`, `PAST`).
+  - `SlotSelectionState.kt`: Trạng thái chọn slot (`selectedSlots`, `totalPrice`, `depositAmount`, `isValid`, `errorMessage`).
+  - `HoldResult.kt`: Sealed class kết quả giữ chỗ nguyên tử (`Success`, `Conflict`).
+- **T005**: Khởi tạo Interface `BookingRepository.kt` tại `feature/booking/domain/repository/` định nghĩa đầy đủ 6 phương thức thao tác dữ liệu cơ sở, khung giá, slot realtime và giữ/hủy slot.
+- **T006 – T010 (TDD RED)**: Viết 5 bộ Unit Test suite (tổng cộng 22 test cases) tại `app/src/test/.../feature/booking/domain/` và xác nhận toàn bộ báo đỏ (`NotImplementedError`):
+  - `ValidateSlotSelectionUseCaseTest.kt` (9 tests): Chọn slot đầu tiên, nối chuỗi liền kề, chọn cách quãng tự reset chuỗi, bỏ chọn slot đầu/cuối, cắt đuôi khi bỏ chọn slot ở giữa, chặn chọn slot bận/quá khứ, chặn vượt quá 8 slots 30p (= 4 giờ theo FR-026), kiểm tra điều kiện tối thiểu 2 slots (1 giờ).
+  - `CalculateTotalPriceUseCaseTest.kt` (4 tests): Giá slot = nửa đơn giá giờ, tính tổng tiền khung thường, cao điểm, giao thoa khung giờ, tính cọc 30% làm tròn `((rawDeposit + 500) / 1000) * 1000`.
+  - `GenerateDailySlotsUseCaseTest.kt` (4 tests): Sinh đủ 32 slots từ 06:00 đến 22:00, gộp slot bận từ Firestore, gắn nhãn `PAST` theo timezone `Asia/Ho_Chi_Minh`, gắn nhãn `BLOCKED` kèm lý do `DROP_IN`.
+  - `HoldSlotsTransactionUseCaseTest.kt` (3 tests): Giữ slot thành công, phát hiện conflict All-or-Nothing, kiểm tra idempotent.
+  - `ReleaseHoldUseCaseTest.kt` (2 tests): Hủy giữ slot thành công và xử lý ngoại lệ.
+- **T011 – T015 (TDD GREEN)**: Lần lượt hoàn thiện logic cho 5 UseCases tại `feature/booking/domain/usecase/`:
+  - `ValidateSlotSelectionUseCase.kt`
+  - `CalculateTotalPriceUseCase.kt`
+  - `GenerateDailySlotsUseCase.kt`
+  - `HoldSlotsTransactionUseCase.kt`
+  - `ReleaseHoldUseCase.kt`
+  - Chạy lại kiểm thử: 22/22 domain tests chuyển sang xanh (100% PASS).
+
+#### Phase 3: Data Layer & Infrastructure (T016 – T022)
+- **T016**: Khởi tạo Data Transfer Objects tại `feature/booking/data/model/`: `CourtDto`, `PriceRuleDto`, `SlotDto` (có `@DocumentId`), `HoldBookingRequestDto`.
+- **T017**: Cài đặt `BookingSlotMapper.kt` ánh xạ hai chiều an toàn DTO $\leftrightarrow$ Domain Model; viết `BookingSlotMapperTest.kt` (4 tests PASS).
+- **T018 & T019**: Cài đặt `BookingRemoteDataSource` và `FirestoreBookingRemoteDataSource`:
+  - Đọc `venues/{venueId}`, subcollection `courts` và `priceRules`.
+  - Lắng nghe realtime `slots` bằng `callbackFlow` với `awaitClose { listener.remove() }` bảo vệ Quota Spark.
+  - Firestore Transaction giữ chỗ 2 pha nghiêm ngặt:
+    - *Pha 1 (All Reads)*: Đọc toàn bộ các document slot `{courtId}_{yyyyMMdd}_{HHmm}`. Nếu phát hiện slot đã có người giữ (chưa hết hạn) hoặc `BOOKED`/`BLOCKED` $\rightarrow$ Rollback và trả về `HoldResult.Conflict`.
+    - *Pha 2 (All Writes)*: Ghi đồng thời toàn bộ documents với `status = "HELD"`, `holdBy = userId`, `holdExpiresAt = serverNow + 5 phút`.
+- **T020**: Cài đặt `BookingRepositoryImpl.kt` triển khai `BookingRepository`, bọc dữ liệu trong `Result<T>` và ánh xạ ngoại lệ Firestore/mạng sang `AppError.Network`, `Locked`, `Timeout`, `Unknown(cause)`. Viết `BookingRepositoryImplTest.kt` (8 tests PASS).
+- **T021**: Cài đặt DI Module `BookingModule.kt` tại `feature/booking/di/` với `@Binds` kết nối `BookingRepository` sang `BookingRepositoryImpl`.
+- **T022**: Cập nhật `firestore.rules` khai báo quy tắc bảo mật cho `venues`, `courts`, `priceRules`, và `slots` (ràng buộc `request.time` và `holdExpiresAt <= request.time + 5m`). Xây dựng bộ test `firestore-tests/test/slots.test.ts` (6 tests). Chạy toàn bộ 33 tests trên Firebase Emulator đều đạt 100% PASS.
+
+### Kết quả Kiểm thử & Quality Gate
+
+1. **Android Unit Tests**:
+   - `testDebugUnitTest` chạy 34/34 test cases liên quan đến `feature.booking.*` (22 Domain + 4 Mapper + 8 Repository).
+   - Kết quả: **34/34 PASS (0 failure, 0 error, 0 skipped)**.
+2. **Build Debug**:
+   - `./gradlew assembleDebug`: **BUILD SUCCESSFUL**.
+3. **Firebase Emulator Security Rules**:
+   - `vitest run` trong `firestore-tests`: **33/33 PASS (3 test files: users, base, slots)**.
+
+### Điểm lưu ý cho nhóm thảo luận
+- **Quy ước `daysOfWeek`**: Trong `PriceRule.kt`, quy ước ngày trong tuần được định nghĩa theo chuẩn ISO-8601 (1 = Thứ Hai, ..., 7 = Chủ Nhật) phù hợp với script seed dữ liệu Firestore (PR #41). Cần thống nhất chính thức giữa các thành viên nếu có sự khác biệt với lịch chuẩn của Java/Calendar (Chủ Nhật = 1).
+
 
 
 

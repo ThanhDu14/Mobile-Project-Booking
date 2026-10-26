@@ -43,9 +43,9 @@ US5: Chống tạo đơn trùng lặp và xử lý mất kết nối (P3)
 
 **Mục tiêu**: Chuẩn bị cấu hình dự án, fixtures dữ liệu giả lập và kiểm tra index Firestore phục vụ truy vấn lưới slot.
 
-- [ ] T001 Kiểm tra và xác nhận các thư viện cần thiết trong `app/build.gradle.kts`: Navigation Component Safe Args, Hilt DI, Coroutines/Flow, Material 3, ViewBinding, Firebase Firestore, Turbine, MockK.
-- [ ] T002 [P] Khai báo Composite Index cho collection `slots` trong `firestore.indexes.json`: Fields `venueId` (ASC), `date` (ASC), `startTime` (ASC) để tối ưu query Sparse Storage theo ngày của cơ sở.
-- [ ] T003 [P] Tạo bộ test fixtures `TEST/feature/booking/fixture/BookingSlotFixtures.kt`: Cung cấp dữ liệu mẫu cho `CourtDto`, `PriceRuleDto`, `SlotDto`, bảng giá giờ thường (80k/h) và giờ cao điểm (150k/h) để tái sử dụng xuyên suốt bộ Unit Test.
+- [x] T001 Kiểm tra và xác nhận các thư viện cần thiết trong `app/build.gradle.kts`: Navigation Component Safe Args, Hilt DI, Coroutines/Flow, Material 3, ViewBinding, Firebase Firestore, Turbine, MockK.
+- [x] T002 [P] Khai báo Composite Index cho collection `slots` trong `firestore.indexes.json`: Fields `venueId` (ASC), `date` (ASC), `startTime` (ASC) để tối ưu query Sparse Storage theo ngày của cơ sở.
+- [x] T003 [P] Tạo bộ test fixtures `TEST/feature/booking/fixture/BookingSlotFixtures.kt`: Cung cấp dữ liệu mẫu cho `CourtDto`, `PriceRuleDto`, `SlotDto`, bảng giá giờ thường (80k/h) và giờ cao điểm (150k/h) để tái sử dụng xuyên suốt bộ Unit Test.
 
 **Checkpoint**: Chạy `./gradlew assembleDebug` thành công, index Firestore hợp lệ.
 
@@ -56,14 +56,14 @@ US5: Chống tạo đơn trùng lặp và xử lý mất kết nối (P3)
 **Mục tiêu**: Xây dựng toàn bộ Entities, Repository Interfaces và UseCases thuần Kotlin tại tầng Domain. Viết Unit Tests trước theo quy chuẩn TDD.
 
 ### 2A. Domain Models & Repository Interface
-- [ ] T004 [P] Định nghĩa các Domain Models trong `BOOKING/domain/model/`:
+- [x] T004 [P] Định nghĩa các Domain Models trong `BOOKING/domain/model/`:
   - `Court.kt` (`id`, `name`, `surfaceType`, `isActive`, `sortOrder`)
   - `PriceRule.kt` (`id`, `daysOfWeek: List<Int>`, `startTime`, `endTime`, `pricePerHour: Long`, `label`)
   - `TimeSlot.kt` (`slotId`, `courtId`, `date`, `startTime`, `endTime`, `price: Long`, `status: SlotStatus`, `blockReason: String?`, `holdExpiresAtMillis: Long?`)
   - `SlotStatus.kt` (`AVAILABLE`, `SELECTED`, `BOOKED`, `HELD`, `BLOCKED`, `PAST`)
   - `SlotSelectionState.kt` (`selectedSlots: List<TimeSlot>`, `totalPrice: Long`, `depositAmount: Long`, `isValid: Boolean`, `errorMessage: String?`)
   - `HoldResult.kt` (`Success(bookingId, holdExpiresAtMillis)`, `Conflict(conflictedSlotIds: List<String>)`)
-- [ ] T005 [P] Định nghĩa Interface `BOOKING/domain/repository/BookingRepository.kt`:
+- [x] T005 [P] Định nghĩa Interface `BOOKING/domain/repository/BookingRepository.kt`:
   - `suspend fun getVenueOperatingHours(venueId: String): Result<Pair<String, String>>`
   - `suspend fun getActiveCourts(venueId: String): Result<List<Court>>`
   - `suspend fun getPriceRules(venueId: String): Result<List<PriceRule>>`
@@ -72,7 +72,7 @@ US5: Chống tạo đơn trùng lặp và xử lý mất kết nối (P3)
   - `suspend fun releaseHoldSlots(venueId: String, slotIds: List<String>, userId: String): Result<Unit>`
 
 ### 2B. Unit Tests (Viết trước, phải FAIL)
-- [ ] T006 [P] [US1] Viết Unit Test `TEST/feature/booking/domain/ValidateSlotSelectionUseCaseTest.kt`:
+- [x] T006 [P] [US1] Viết Unit Test `TEST/feature/booking/domain/ValidateSlotSelectionUseCaseTest.kt`:
   - Chọn 1 slot `AVAILABLE` đầu tiên $\rightarrow$ hợp lệ, chuyển sang `SELECTED`.
   - Chọn slot tiếp theo liền kề trước/sau $\rightarrow$ nối dài chuỗi chọn thành công.
   - Chọn slot cách quãng (không liền kề) $\rightarrow$ tự động hủy chuỗi cũ, chọn slot mới làm mốc bắt đầu.
@@ -81,30 +81,30 @@ US5: Chống tạo đơn trùng lặp và xử lý mất kết nối (P3)
   - Chặn chọn slot có trạng thái `BOOKED`, `HELD`, `BLOCKED`, hoặc `PAST`.
   - Chặn chọn vượt quá 8 slots 30 phút (= 4 giờ chơi liên tiếp theo FR-026 của Spec 040; phân biệt với mốc 6 slots của Spec 041).
   - Kiểm tra điều kiện tối thiểu 2 slot (1 giờ) khi bấm tiếp tục đặt sân.
-- [ ] T007 [P] [US1] Viết Unit Test `TEST/feature/booking/domain/CalculateTotalPriceUseCaseTest.kt`:
+- [x] T007 [P] [US1] Viết Unit Test `TEST/feature/booking/domain/CalculateTotalPriceUseCaseTest.kt`:
   - Đơn giá mỗi slot 30 phút = `pricePerHour / 2`.
   - Tính đúng tổng tiền khi toàn bộ slot nằm trong khung giờ thường (80.000đ/h $\rightarrow$ 40.000đ/slot).
   - Tính đúng tổng tiền khi toàn bộ slot nằm trong khung giờ cao điểm (150.000đ/h $\rightarrow$ 75.000đ/slot).
   - Tính đúng tổng tiền khi dãy slot vắt qua thời điểm giao thoa giữa 2 khung giá (VD: 16:30–17:30 với mốc cao điểm từ 17:00).
   - Tính cọc 30% làm tròn an toàn theo công thức `((rawDeposit + 500) / 1000) * 1000` (VND, dùng kiểu `Long`, không dùng `Double`).
-- [ ] T008 [P] [US1] Viết Unit Test `TEST/feature/booking/domain/GenerateDailySlotsUseCaseTest.kt`:
+- [x] T008 [P] [US1] Viết Unit Test `TEST/feature/booking/domain/GenerateDailySlotsUseCaseTest.kt`:
   - Sinh đủ các slot 30 phút từ `openTime` đến `closeTime` (ví dụ: `0600` đến `2200` sinh đúng 32 slots).
   - Gộp các slot bận từ Firestore vào lưới (các slot không có trong Firestore mặc định là `AVAILABLE`).
   - Gắn nhãn `PAST` cho các slot có thời gian bắt đầu nhỏ hơn hoặc bằng thời gian hiện tại nếu chọn ngày hôm nay.
   - Gắn nhãn `BLOCKED` kèm lý do `DROP_IN` cho các ca giao lưu mở ở Spec 080.
-- [ ] T009 [P] [US2] Viết Unit Test `TEST/feature/booking/domain/HoldSlotsTransactionUseCaseTest.kt`:
+- [x] T009 [P] [US2] Viết Unit Test `TEST/feature/booking/domain/HoldSlotsTransactionUseCaseTest.kt`:
   - Toàn bộ slot hợp lệ $\rightarrow$ Trả về `HoldResult.Success` kèm mốc hết hạn 5 phút.
   - 1 trong các slot bị trùng lịch/đã có người giữ $\rightarrow$ Trả về `HoldResult.Conflict` chỉ rõ slot bị mất, không giữ bất kỳ slot nào (All-or-Nothing).
   - Đảm bảo tính Idempotent với cùng `requestId`: không tạo nhiều phiên giữ chỗ trùng lặp.
-- [ ] T010 [P] [US3] Viết Unit Test `TEST/feature/booking/domain/ReleaseHoldUseCaseTest.kt`:
+- [x] T010 [P] [US3] Viết Unit Test `TEST/feature/booking/domain/ReleaseHoldUseCaseTest.kt`:
   - Hủy giữ chỗ thành công $\rightarrow$ slot được nhả về trạng thái `AVAILABLE`.
 
 ### 2C. Cài đặt UseCases (Làm cho Unit Tests chuyển sang XANH)
-- [ ] T011 Cài đặt `BOOKING/domain/usecase/ValidateSlotSelectionUseCase.kt`. Chạy T006 chuyển sang xanh.
-- [ ] T012 Cài đặt `BOOKING/domain/usecase/CalculateTotalPriceUseCase.kt`. Chạy T007 chuyển sang xanh.
-- [ ] T013 Cài đặt `BOOKING/domain/usecase/GenerateDailySlotsUseCase.kt`. Chạy T008 chuyển sang xanh.
-- [ ] T014 Cài đặt `BOOKING/domain/usecase/HoldSlotsTransactionUseCase.kt`. Chạy T009 chuyển sang xanh.
-- [ ] T015 Cài đặt `BOOKING/domain/usecase/ReleaseHoldUseCase.kt`. Chạy T010 chuyển sang xanh.
+- [x] T011 Cài đặt `BOOKING/domain/usecase/ValidateSlotSelectionUseCase.kt`. Chạy T006 chuyển sang xanh.
+- [x] T012 Cài đặt `BOOKING/domain/usecase/CalculateTotalPriceUseCase.kt`. Chạy T007 chuyển sang xanh.
+- [x] T013 Cài đặt `BOOKING/domain/usecase/GenerateDailySlotsUseCase.kt`. Chạy T008 chuyển sang xanh.
+- [x] T014 Cài đặt `BOOKING/domain/usecase/HoldSlotsTransactionUseCase.kt`. Chạy T009 chuyển sang xanh.
+- [x] T015 Cài đặt `BOOKING/domain/usecase/ReleaseHoldUseCase.kt`. Chạy T010 chuyển sang xanh.
 
 **Checkpoint**: Toàn bộ Unit Test tầng Domain trong package `com.example.booking_app.feature.booking.domain` pass 100%.
 
@@ -114,21 +114,21 @@ US5: Chống tạo đơn trùng lặp và xử lý mất kết nối (P3)
 
 **Mục tiêu**: Xây dựng DTOs, Mappers, Remote Data Source và Firestore Transaction giữ chỗ nguyên tử.
 
-- [ ] T016 [P] Tạo các Data Transfer Objects trong `BOOKING/data/model/`:
+- [x] T016 [P] Tạo các Data Transfer Objects trong `BOOKING/data/model/`:
   - `CourtDto.kt` (`@DocumentId id`, `name`, `surfaceType`, `isActive`, `sortOrder`)
   - `PriceRuleDto.kt` (`@DocumentId id`, `daysOfWeek`, `startTime`, `endTime`, `pricePerHour: Long`, `label`)
   - `SlotDto.kt` (`@DocumentId id`, `venueId`, `courtId`, `date`, `startTime`, `endTime`, `status`, `blockReason`, `holdExpiresAt: Timestamp?`, `holdBy: String?`, `bookingId: String?`)
   - `HoldBookingRequestDto.kt` (`venueId`, `courtId`, `date`, `slotIds: List<String>`, `userId`, `requestId`)
-- [ ] T017 [P] Cài đặt Mapper `BOOKING/data/mapper/BookingSlotMapper.kt`: Chuyển đổi hai chiều giữa DTOs và Domain Entities, xử lý an toàn giá trị `null` và định dạng `HHmm`.
-- [ ] T018 Cài đặt DataSource `BOOKING/data/datasource/BookingRemoteDataSource.kt` & `FirestoreBookingRemoteDataSource.kt`:
+- [x] T017 [P] Cài đặt Mapper `BOOKING/data/mapper/BookingSlotMapper.kt`: Chuyển đổi hai chiều giữa DTOs và Domain Entities, xử lý an toàn giá trị `null` và định dạng `HHmm`.
+- [x] T018 Cài đặt DataSource `BOOKING/data/datasource/BookingRemoteDataSource.kt` & `FirestoreBookingRemoteDataSource.kt`:
   - Đọc thông tin cơ sở `venues/{venueId}`, subcollection `courts` và `priceRules`.
   - Lắng nghe realtime `slots` theo `venueId` và `date` thông qua `callbackFlow`. Tự động gọi `remove()` trong `awaitClose` để giải phóng listener, tối ưu Quota Spark.
-- [ ] T019 Cài đặt Firestore Transaction giữ chỗ nguyên tử trong `FirestoreBookingRemoteDataSource.kt`:
+- [x] T019 Cài đặt Firestore Transaction giữ chỗ nguyên tử trong `FirestoreBookingRemoteDataSource.kt`:
   - **Pha 1 (ALL READS)**: Đọc toàn bộ các document `slots/{courtId}_{yyyyMMdd}_{HHmm}` trong danh sách yêu cầu. Kiểm tra xem có slot nào đã tồn tại và đang ở trạng thái `BOOKED`, `BLOCKED`, hoặc `HELD` (chưa hết hạn) hay không.
   - **Pha 2 (ALL WRITES)**: Nếu có bất kỳ slot nào bị trùng $\rightarrow$ rollback và trả về `HoldResult.Conflict`. Nếu tất cả đều trống $\rightarrow$ ghi đồng loạt các document slot với `status = "HELD"`, `holdExpiresAt = serverNow + 5 phút`, `holdBy = userId`.
-- [ ] T020 Cài đặt `BOOKING/data/repository/BookingRepositoryImpl.kt`: Triển khai đầy đủ interface `BookingRepository` từ tầng domain, bọc kết quả bằng `Result<T>` và bắt lỗi mạng chuyển đổi thành `AppError`.
-- [ ] T021 [P] Tạo DI Module `BOOKING/di/BookingModule.kt`: Sử dụng `@Module` và `@InstallIn(SingletonComponent::class)` để bind `BookingRepositoryImpl` và inject các UseCases.
-- [ ] T022 [P] Khai báo và kiểm tra Security Rules trong `firestore.rules`:
+- [x] T020 Cài đặt `BOOKING/data/repository/BookingRepositoryImpl.kt`: Triển khai đầy đủ interface `BookingRepository` từ tầng domain, bọc kết quả bằng `Result<T>` và bắt lỗi mạng chuyển đổi thành `AppError`.
+- [x] T021 [P] Tạo DI Module `BOOKING/di/BookingModule.kt`: Sử dụng `@Module` và `@InstallIn(SingletonComponent::class)` để bind `BookingRepositoryImpl` và inject các UseCases.
+- [x] T022 [P] Khai báo và kiểm tra Security Rules trong `firestore.rules`:
   - Cho phép người dùng đọc thông tin `slots`.
   - Chỉ cho phép tạo/cập nhật trạng thái `HELD` khi người dùng đã đăng nhập (`request.auth != null`), slot chưa có người giữ hoặc đã hết hạn giữ chỗ (`resource.data.holdExpiresAt < request.time`), và `request.resource.data.holdExpiresAt <= request.time + duration.value(5, 'm')`.
 

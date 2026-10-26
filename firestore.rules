@@ -81,5 +81,58 @@ service cloud.firestore {
                     && request.resource.data.updatedAt == request.time
                     && validDisplayName();
     }
+
+    // ---------- venues, courts, priceRules (B, spec 040 / D, spec 111) ----------
+    // Đọc công khai thông tin cơ sở, sân con và bảng giá để hiển thị lưới khung giờ
+    match /venues/{venueId} {
+      allow read: if true;
+      allow write: if isAdmin() || (isOwner() && resource.data.ownerId == request.auth.uid);
+
+      match /courts/{courtId} {
+        allow read: if true;
+        allow write: if isAdmin() || (isOwner() && get(/databases/$(database)/documents/venues/$(venueId)).data.ownerId == request.auth.uid);
+      }
+
+      match /priceRules/{ruleId} {
+        allow read: if true;
+        allow write: if isAdmin() || (isOwner() && get(/databases/$(database)/documents/venues/$(venueId)).data.ownerId == request.auth.uid);
+      }
+    }
+
+    // ---------- slots (B, spec 040; tasks.md T022) ----------
+    // Lắng nghe realtime công khai các khung giờ bận/trống.
+    // Giữ chỗ HELD 5 phút khi đã đăng nhập, slot chưa có người giữ hoặc đã hết hạn,
+    // và thời gian hết hạn không được vượt quá 5 phút so với request.time (chống lùi/ăn gian giờ).
+    match /slots/{slotId} {
+      allow read: if true;
+
+      allow create: if isSignedIn()
+                    && request.resource.data.status == 'HELD'
+                    && request.resource.data.holdBy == request.auth.uid
+                    && request.resource.data.holdExpiresAt is timestamp
+                    && request.resource.data.holdExpiresAt <= request.time + duration.value(5, 'm')
+                    && request.resource.data.holdExpiresAt > request.time;
+
+      allow update: if isSignedIn()
+                    && (
+                      // Đặt giữ chỗ slot đã tồn tại nhưng đã hết hạn hoặc do chính mình giữ
+                      (
+                        request.resource.data.status == 'HELD'
+                        && request.resource.data.holdBy == request.auth.uid
+                        && request.resource.data.holdExpiresAt is timestamp
+                        && request.resource.data.holdExpiresAt <= request.time + duration.value(5, 'm')
+                        && request.resource.data.holdExpiresAt > request.time
+                        && (resource.data.status != 'BOOKED' && resource.data.status != 'BLOCKED')
+                        && (resource.data.status != 'HELD' || resource.data.holdExpiresAt < request.time || resource.data.holdBy == request.auth.uid)
+                      )
+                      // Hủy giữ chỗ hoặc nhả slot về AVAILABLE bởi chính người đang giữ
+                      || (
+                        request.resource.data.status == 'AVAILABLE'
+                        && resource.data.holdBy == request.auth.uid
+                      )
+                    );
+
+      allow delete: if isAdmin() || (isSignedIn() && resource.data.holdBy == request.auth.uid);
+    }
   }
 }
