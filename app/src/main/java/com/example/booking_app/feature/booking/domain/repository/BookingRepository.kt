@@ -4,10 +4,13 @@ import com.example.booking_app.feature.booking.domain.model.Court
 import com.example.booking_app.feature.booking.domain.model.HoldResult
 import com.example.booking_app.feature.booking.domain.model.PriceRule
 import com.example.booking_app.feature.booking.domain.model.TimeSlot
+import com.example.booking_app.feature.booking.domain.model.VenueInfo
 import kotlinx.coroutines.flow.Flow
 
 interface BookingRepository {
     suspend fun getVenueOperatingHours(venueId: String): Result<Pair<String, String>>
+
+    suspend fun getVenueInfo(venueId: String): Result<VenueInfo>
 
     suspend fun getActiveCourts(venueId: String): Result<List<Court>>
 
@@ -17,7 +20,7 @@ interface BookingRepository {
 
     suspend fun holdSlotsAtomic(
         venueId: String,
-        courtId: String,
+        courtId: String = "",
         date: String,
         slotIds: List<String>,
         userId: String,

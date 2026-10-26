@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.TextView
 import android.widget.Toast
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
@@ -12,24 +13,21 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
-import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.booking_app.R
 import com.example.booking_app.databinding.FragmentBookingSlotGridBinding
+import com.example.booking_app.databinding.ItemCourtColumnHeaderBinding
 import com.example.booking_app.feature.booking.domain.model.Court
-import com.example.booking_app.feature.booking.ui.adapter.CourtTabAdapter
-import com.example.booking_app.feature.booking.ui.adapter.CourtTabItem
 import com.example.booking_app.feature.booking.ui.adapter.DateItem
 import com.example.booking_app.feature.booking.ui.adapter.DateSelectorAdapter
-import com.example.booking_app.feature.booking.ui.adapter.SlotGridAdapter
+import com.example.booking_app.feature.booking.ui.adapter.SlotMatrixRowAdapter
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import java.text.DecimalFormat
-import java.text.DecimalFormatSymbols
 import java.time.LocalDate
-import java.util.Locale
+import java.time.ZoneId
 
 @AndroidEntryPoint
 class BookingSlotGridFragment : Fragment() {
@@ -39,11 +37,12 @@ class BookingSlotGridFragment : Fragment() {
 
     private val viewModel: BookingSlotGridViewModel by viewModels()
 
-    private val priceFormat = DecimalFormat("#,###", DecimalFormatSymbols(Locale.GERMANY))
+    private val priceFormat = DecimalFormat("#,###")
+    private val zoneVietnam = ZoneId.of("Asia/Ho_Chi_Minh")
 
     private lateinit var dateAdapter: DateSelectorAdapter
-    private lateinit var courtAdapter: CourtTabAdapter
-    private lateinit var slotAdapter: SlotGridAdapter
+    private lateinit var matrixAdapter: SlotMatrixRowAdapter
+    private var renderedCourts: List<Court> = emptyList()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -63,8 +62,14 @@ class BookingSlotGridFragment : Fragment() {
         observeUiEffects()
     }
 
+    override fun onResume() {
+        super.onResume()
+        // Q10: Kiểm tra và khôi phục lựa chọn nếu người dùng vừa quay lại sau khi đăng nhập
+        viewModel.checkAndRestorePendingSelection()
+    }
+
     private fun setupRecyclerViews() {
-        // 1. Adapter chọn ngày
+        // 1. Adapter chọn ngày (Dải ngày cuộn ngang)
         dateAdapter = DateSelectorAdapter { selectedDate ->
             if (viewModel.hasSelectedSlots()) {
                 showChangeDateDialog(selectedDate)
@@ -77,26 +82,13 @@ class BookingSlotGridFragment : Fragment() {
             adapter = dateAdapter
         }
 
-        // 2. Adapter chọn sân con
-        courtAdapter = CourtTabAdapter { selectedCourt ->
-            if (viewModel.hasSelectedSlots()) {
-                showChangeCourtDialog(selectedCourt)
-            } else {
-                viewModel.selectCourt(selectedCourt)
-            }
-        }
-        binding.rvCourtTabs.apply {
-            layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
-            adapter = courtAdapter
-        }
-
-        // 3. Adapter lưới khung giờ 30 phút (3 cột)
-        slotAdapter = SlotGridAdapter { clickedSlot ->
+        // 2. Adapter lưới ma trận (Q3: Danh sách các hàng giờ 30 phút)
+        matrixAdapter = SlotMatrixRowAdapter { clickedSlot ->
             viewModel.onSlotClicked(clickedSlot)
         }
-        binding.rvSlotGrid.apply {
-            layoutManager = GridLayoutManager(requireContext(), 3)
-            adapter = slotAdapter
+        binding.rvSlotMatrixRows.apply {
+            layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.VERTICAL, false)
+            adapter = matrixAdapter
         }
     }
 
@@ -112,6 +104,29 @@ class BookingSlotGridFragment : Fragment() {
         binding.bottomSummary.btnProceed.setOnClickListener {
             viewModel.onProceedClicked()
         }
+
+        // Q13: Nút điều hướng sang Feature 041 "Đặt cố định theo tuần"
+        binding.btnRecurringBooking.setOnClickListener {
+            try {
+                // Kiểm tra xem destination hoặc action của 041 có tồn tại trong nav graph không
+                val recurringActionId = resources.getIdentifier("action_bookingSlotGrid_to_recurringBooking", "id", requireContext().packageName)
+                if (recurringActionId != 0) {
+                    findNavController().navigate(recurringActionId)
+                } else {
+                    Snackbar.make(
+                        binding.root,
+                        "Chức năng Đặt cố định theo tuần (Feature 041 - đang phát triển)",
+                        Snackbar.LENGTH_LONG
+                    ).show()
+                }
+            } catch (e: Exception) {
+                Snackbar.make(
+                    binding.root,
+                    "Chức năng Đặt cố định theo tuần (Feature 041 - đang phát triển)",
+                    Snackbar.LENGTH_LONG
+                ).show()
+            }
+        }
     }
 
     private fun observeUiState() {
@@ -125,18 +140,23 @@ class BookingSlotGridFragment : Fragment() {
     }
 
     private fun renderUi(state: BookingSlotUiState) {
-        val context = requireContext()
+        // 1. Header (Q7: "Chọn khung giờ" + tên cơ sở + quận từ dữ liệu thật)
+        binding.tvHeaderTitle.setText(R.string.booking_title)
+        val venueName = state.venueName.ifEmpty { "Cơ sở ${state.venueId}" }
+        val locationPart = if (state.districtName.isNotEmpty()) {
+            "Quận ${state.districtName}"
+        } else if (state.operatingHours.isNotEmpty()) {
+            state.operatingHours
+        } else {
+            "TP. Hồ Chí Minh"
+        }
+        binding.tvVenueInfo.text = "$venueName · $locationPart"
 
-        // 1. Header & Giờ hoạt động
-        val venueDisplay = state.venueName.ifEmpty { "Cơ sở ${state.venueId}" }
-        val hoursDisplay = state.operatingHours.ifEmpty { "06:00 - 22:00" }
-        binding.tvVenueInfo.text = "$venueDisplay • $hoursDisplay"
-
-        // 2. Loading
+        // 2. Loading indicator
         binding.loadingIndicator.isVisible = state.isLoading
 
-        // 3. Danh sách ngày
-        val today = LocalDate.now()
+        // 3. Dải chọn ngày (Hôm nay, Mai, T2..CN + chấm hôm nay)
+        val today = LocalDate.now(zoneVietnam)
         val dateItems = state.dates.map { date ->
             DateItem(
                 date = date,
@@ -146,53 +166,82 @@ class BookingSlotGridFragment : Fragment() {
         }
         dateAdapter.submitList(dateItems)
 
-        // 4. Danh sách sân con
-        val courtItems = state.courts.map { court ->
-            CourtTabItem(
-                court = court,
-                isSelected = court.id == state.selectedCourtId
-            )
+        // 4. Cập nhật Banner Giờ Cao Điểm (Q5)
+        if (!state.peakHourBannerText.isNullOrEmpty()) {
+            binding.layoutPeakHourBanner.isVisible = true
+            binding.tvPeakHourBannerText.text = state.peakHourBannerText
+        } else {
+            binding.layoutPeakHourBanner.isVisible = false
         }
-        courtAdapter.submitList(courtItems)
 
-        // 5. Lưới slot
-        slotAdapter.submitList(state.slots)
+        // 5. Banner Kín Sân
+        binding.layoutFullyBookedBanner.isVisible = state.isFullyBooked
+        binding.btnNextAvailableDate.setOnClickListener {
+            viewModel.selectDate(state.selectedDate.plusDays(1))
+        }
 
-        // 6. Trạng thái rỗng / Đóng cửa
+        // 6. Header các cột sân con (Ma trận lưới Q3)
+        if (state.courts != renderedCourts) {
+            renderedCourts = state.courts
+            renderCourtHeaders(state.courts)
+        }
+
+        // 7. Lưới slot ma trận
+        matrixAdapter.submitList(state.matrixRows)
+
+        // 8. Trạng thái rỗng / Đóng cửa
         val showEmpty = state.isClosed || (state.courts.isEmpty() && !state.isLoading)
         binding.layoutEmptyState.isVisible = showEmpty
-        binding.rvSlotGrid.isVisible = !showEmpty
+        binding.scrollViewMatrix.isVisible = !showEmpty
         if (state.isClosed) {
             binding.tvEmptyTitle.setText(R.string.booking_venue_closed_title)
-            binding.tvEmptyMessage.setText(R.string.booking_venue_closed_message)
+            binding.tvEmptyMessage.text = state.errorMessage ?: getString(R.string.booking_venue_closed_message)
         } else if (state.courts.isEmpty() && !state.isLoading) {
             binding.tvEmptyTitle.setText(R.string.booking_no_courts_title)
             binding.tvEmptyMessage.setText(R.string.booking_no_courts_message)
         }
 
-        // 7. Thanh tóm tắt đáy màn hình
+        // 9. Thanh tóm tắt đáy màn hình (Bottom Summary)
         if (state.selectedSlotsCount > 0) {
-            val totalHours = state.selectedSlotsCount * 0.5
-            val hoursString = if (totalHours % 1.0 == 0.0) {
-                "${totalHours.toInt()} giờ chơi"
+            if (state.selectionDetailSummary.isNotEmpty()) {
+                binding.bottomSummary.tvSelectedSummary.text = state.selectionDetailSummary
             } else {
-                "$totalHours giờ chơi"
+                val totalHours = state.selectedSlotsCount * 0.5
+                val hoursString = if (totalHours % 1.0 == 0.0) {
+                    "${totalHours.toInt()} giờ chơi"
+                } else {
+                    "$totalHours giờ chơi"
+                }
+                binding.bottomSummary.tvSelectedSummary.text = getString(
+                    R.string.booking_summary_selected_count,
+                    state.selectedSlotsCount,
+                    hoursString
+                )
             }
-            binding.bottomSummary.tvSelectedSummary.text = getString(
-                R.string.booking_summary_selected_count,
-                state.selectedSlotsCount,
-                hoursString
-            )
         } else {
             binding.bottomSummary.tvSelectedSummary.setText(R.string.booking_summary_placeholder)
         }
 
-        binding.bottomSummary.tvTotalPrice.text = "${priceFormat.format(state.totalPrice)}đ"
-        binding.bottomSummary.tvDepositAmount.text = "• Cọc 30%: ${priceFormat.format(state.depositAmount)}đ"
+        binding.bottomSummary.tvTotalPrice.text = "${priceFormat.format(state.totalPrice)} đ"
+        binding.bottomSummary.tvDepositAmount.text = "• Cọc 30%: ${priceFormat.format(state.depositAmount)} đ"
 
+        // Nút "Giữ chỗ" (Q6, Q2: chỉ kích hoạt khi đủ >= 2 slot hợp lệ)
         binding.bottomSummary.btnProceed.isEnabled = state.canProceed && !state.isHolding
         binding.bottomSummary.btnProceed.isVisible = !state.isHolding
         binding.bottomSummary.progressProceed.isVisible = state.isHolding
+    }
+
+    private fun renderCourtHeaders(courts: List<Court>) {
+        val container = binding.layoutCourtHeaders
+        container.removeAllViews()
+        val inflater = LayoutInflater.from(requireContext())
+
+        for (court in courts) {
+            val headerBinding = ItemCourtColumnHeaderBinding.inflate(inflater, container, false)
+            headerBinding.tvCourtName.text = court.name
+            headerBinding.tvCourtSurface.text = if (court.surfaceType.isNotEmpty()) court.surfaceType else "Thảm"
+            container.addView(headerBinding.root)
+        }
     }
 
     private fun observeUiEffects() {
@@ -221,19 +270,24 @@ class BookingSlotGridFragment : Fragment() {
                         is BookingSlotUiEffect.NavigateToLogin -> {
                             Snackbar.make(binding.root, R.string.booking_login_required, Snackbar.LENGTH_LONG)
                                 .setAction("Đăng nhập") {
-                                    // Điều hướng tới Login (Spec 010)
-                                    findNavController().navigate(R.id.nav_auth)
+                                    try {
+                                        findNavController().navigate(R.id.nav_auth)
+                                    } catch (e: Exception) {
+                                        Snackbar.make(binding.root, "Đang mở màn hình đăng nhập...", Snackbar.LENGTH_SHORT).show()
+                                    }
                                 }
                                 .show()
                         }
 
                         is BookingSlotUiEffect.NavigateToBookingSummary -> {
-                            Toast.makeText(
-                                requireContext(),
-                                "Giữ chỗ thành công 5 phút! Mã đơn: ${effect.args.bookingId}",
-                                Toast.LENGTH_LONG
-                            ).show()
-                            // Điều hướng sang màn hình thanh toán (Spec 050) sẽ được kết nối ở Phase 5 (T035)
+                            // Q4: Điều hướng sang BookingConfirmFragment thuộc 040
+                            val bundle = Bundle().apply {
+                                putParcelable("args", effect.args)
+                            }
+                            findNavController().navigate(
+                                R.id.action_bookingSlotGrid_to_bookingConfirm,
+                                bundle
+                            )
                         }
                     }
                 }
@@ -247,17 +301,6 @@ class BookingSlotGridFragment : Fragment() {
             .setMessage(R.string.booking_change_date_dialog_message)
             .setPositiveButton(R.string.booking_dialog_confirm) { _, _ ->
                 viewModel.selectDate(newDate)
-            }
-            .setNegativeButton(R.string.booking_dialog_cancel, null)
-            .show()
-    }
-
-    private fun showChangeCourtDialog(newCourt: Court) {
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle(R.string.booking_change_court_dialog_title)
-            .setMessage(R.string.booking_change_court_dialog_message)
-            .setPositiveButton(R.string.booking_dialog_confirm) { _, _ ->
-                viewModel.selectCourt(newCourt)
             }
             .setNegativeButton(R.string.booking_dialog_cancel, null)
             .show()

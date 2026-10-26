@@ -1,17 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Chuỗi văn bản cho tính năng đặt sân theo khung giờ (Spec 040) -->
 <resources>
-    <string name="booking_title">Đặt sân theo giờ</string>
+    <string name="booking_title">Chọn khung giờ</string>
     <string name="booking_select_date">Chọn ngày</string>
     <string name="booking_select_court">Chọn sân thi đấu</string>
     <string name="booking_select_slot">Khung giờ</string>
+    <string name="booking_recurring_button">Đặt cố định theo tuần</string>
 
     <!-- Chú thích trạng thái (Legend) -->
     <string name="booking_legend_available">Trống</string>
     <string name="booking_legend_selected">Đang chọn</string>
     <string name="booking_legend_held">Đang giữ</string>
     <string name="booking_legend_booked">Đã đặt</string>
-    <string name="booking_legend_blocked">Khóa</string>
+    <string name="booking_legend_blocked">Bị khóa</string>
+    <string name="booking_legend_past">Đã qua</string>
 
     <!-- Nhãn trạng thái hiển thị trên ô slot -->
     <string name="booking_status_held_badge">Đang giữ</string>
@@ -31,8 +33,9 @@
     <string name="booking_summary_selected_count">%1$d khung giờ (%2$s)</string>
     <string name="booking_summary_total_label">Tạm tính</string>
     <string name="booking_summary_deposit_label">Tiền cọc (30%%)</string>
-    <string name="booking_summary_proceed_btn">Tiếp tục</string>
+    <string name="booking_summary_proceed_btn">Giữ chỗ</string>
     <string name="booking_summary_holding">Đang giữ chỗ...</string>
+    <string name="booking_non_adjacent_message">Vui lòng chọn các khung giờ liên tiếp trên cùng sân</string>
 
     <!-- Cảnh báo & Hộp thoại xác nhận -->
     <string name="booking_conflict_warning">Khung giờ bạn chọn vừa có người đặt hoặc giữ chỗ. Vui lòng chọn lại.</string>
@@ -61,4 +64,18 @@
     <string name="day_sat">T7</string>
     <string name="day_sun">CN</string>
     <string name="day_today">Hôm nay</string>
+    <string name="day_tomorrow">Mai</string>
+
+    <!-- Màn hình xác nhận giữ chỗ (BookingConfirmFragment) -->
+    <string name="booking_confirm_title">Xác nhận giữ chỗ</string>
+    <string name="booking_confirm_countdown_badge">Giữ chỗ: %s</string>
+    <string name="booking_confirm_countdown_banner">Thời gian giữ chỗ còn lại: %s</string>
+    <string name="booking_confirm_venue_label">Thông tin cơ sở</string>
+    <string name="booking_confirm_selected_slots">Khung giờ đã chọn</string>
+    <string name="booking_confirm_total_label">Tổng thanh toán</string>
+    <string name="booking_confirm_pay_btn">Thanh toán</string>
+    <string name="booking_confirm_cancel_btn">Hủy / Quay lại</string>
+    <string name="booking_confirm_timeout_title">Hết thời gian giữ chỗ</string>
+    <string name="booking_confirm_timeout_message">Thời gian giữ chỗ 5 phút đã kết thúc. Vui lòng quay lại và chọn lại khung giờ.</string>
+    <string name="booking_confirm_timeout_ok">Về danh sách khung giờ</string>
 </resources>

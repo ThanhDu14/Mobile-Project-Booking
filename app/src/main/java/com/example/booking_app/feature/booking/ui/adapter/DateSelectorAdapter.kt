@@ -42,16 +42,24 @@ class DateSelectorAdapter(
         fun bind(item: DateItem) {
             val context = itemView.context
 
-            // Hiển thị Thứ (T2, T3... CN)
-            binding.tvDayOfWeek.text = when (item.date.dayOfWeek) {
-                DayOfWeek.MONDAY -> context.getString(R.string.day_mon)
-                DayOfWeek.TUESDAY -> context.getString(R.string.day_tue)
-                DayOfWeek.WEDNESDAY -> context.getString(R.string.day_wed)
-                DayOfWeek.THURSDAY -> context.getString(R.string.day_thu)
-                DayOfWeek.FRIDAY -> context.getString(R.string.day_fri)
-                DayOfWeek.SATURDAY -> context.getString(R.string.day_sat)
-                DayOfWeek.SUNDAY -> context.getString(R.string.day_sun)
-                else -> ""
+            val zoneVietnam = java.time.ZoneId.of("Asia/Ho_Chi_Minh")
+            val today = LocalDate.now(zoneVietnam)
+            val tomorrow = today.plusDays(1)
+
+            // Hiển thị Thứ (Hôm nay, Mai, T2..CN) theo Q7
+            binding.tvDayOfWeek.text = when {
+                item.date.isEqual(today) -> context.getString(R.string.day_today)
+                item.date.isEqual(tomorrow) -> context.getString(R.string.day_tomorrow)
+                else -> when (item.date.dayOfWeek) {
+                    DayOfWeek.MONDAY -> context.getString(R.string.day_mon)
+                    DayOfWeek.TUESDAY -> context.getString(R.string.day_tue)
+                    DayOfWeek.WEDNESDAY -> context.getString(R.string.day_wed)
+                    DayOfWeek.THURSDAY -> context.getString(R.string.day_thu)
+                    DayOfWeek.FRIDAY -> context.getString(R.string.day_fri)
+                    DayOfWeek.SATURDAY -> context.getString(R.string.day_sat)
+                    DayOfWeek.SUNDAY -> context.getString(R.string.day_sun)
+                    else -> ""
+                }
             }
 
             // Hiển thị Ngày trong tháng

@@ -154,4 +154,22 @@ class BookingRepositoryImplTest {
         assertTrue(result.isFailure)
         assertTrue(result.exceptionOrNull() is AppError.Conflict)
     }
+
+    @Test
+    fun getVenueInfo_success_returnsVenueInfo() = runTest {
+        val expectedInfo = com.example.booking_app.feature.booking.domain.model.VenueInfo(
+            id = venueId,
+            name = "CLB Cầu Lông Trường Chinh 909",
+            address = "909/6 Trường Chinh, Quận Tân Phú",
+            districtName = "Tân Phú",
+            openTime = "0500",
+            closeTime = "2400"
+        )
+        coEvery { remoteDataSource.getVenueInfo(venueId) } returns expectedInfo
+
+        val result = repository.getVenueInfo(venueId)
+
+        assertTrue(result.isSuccess)
+        assertEquals(expectedInfo, result.getOrNull())
+    }
 }

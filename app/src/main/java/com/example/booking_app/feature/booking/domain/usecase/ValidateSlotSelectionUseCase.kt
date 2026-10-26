@@ -23,32 +23,40 @@ class ValidateSlotSelectionUseCase @Inject constructor(
         }
 
         val currentList = currentSelection.selectedSlots
+        val targetCourtId = clickedSlot.courtId
+        val targetCourtSlots = currentList.filter { it.courtId == targetCourtId }
+        val otherCourtsSlots = currentList.filter { it.courtId != targetCourtId }
 
         if (isAlreadySelected) {
-            // Deselection flow
-            val clickedIndex = currentList.indexOfFirst { it.slotId == clickedSlot.slotId }
-            val newList = when (clickedIndex) {
-                0 -> currentList.drop(1)
-                currentList.size - 1 -> currentList.dropLast(1)
-                else -> currentList.subList(0, clickedIndex) // Middle click truncates from middle to end
+            // Deselection flow trên sân mục tiêu (không ảnh hưởng sân khác)
+            val clickedIndex = targetCourtSlots.indexOfFirst { it.slotId == clickedSlot.slotId }
+            val newCourtSlots = when (clickedIndex) {
+                0 -> targetCourtSlots.drop(1)
+                targetCourtSlots.size - 1 -> targetCourtSlots.dropLast(1)
+                else -> targetCourtSlots.subList(0, clickedIndex) // Cắt từ giữa về cuối dãy trên sân này
             }
 
-            return updateStateWithSlots(newList)
+            return updateStateWithSlots(otherCourtsSlots + newCourtSlots)
         } else {
             // Selection flow
-            if (currentList.isEmpty()) {
+            if (targetCourtSlots.isEmpty()) {
+                if (currentList.size >= MAX_SLOTS) {
+                    return currentSelection.copy(
+                        errorMessage = "Tối đa $MAX_SLOTS khung giờ (4 tiếng) cho một lần đặt"
+                    )
+                }
                 val newSlot = clickedSlot.copy(status = SlotStatus.SELECTED)
-                return updateStateWithSlots(listOf(newSlot))
+                return updateStateWithSlots(otherCourtsSlots + listOf(newSlot))
             }
 
-            val head = currentList.first()
-            val tail = currentList.last()
+            val head = targetCourtSlots.first()
+            val tail = targetCourtSlots.last()
 
             val isPrepended = clickedSlot.endTime == head.startTime
             val isAppended = clickedSlot.startTime == tail.endTime
 
             if (isPrepended || isAppended) {
-                // Continuous selection
+                // Continuous selection trên sân mục tiêu
                 if (currentList.size >= MAX_SLOTS) {
                     return currentSelection.copy(
                         errorMessage = "Tối đa $MAX_SLOTS khung giờ (4 tiếng) cho một lần đặt"
@@ -56,17 +64,20 @@ class ValidateSlotSelectionUseCase @Inject constructor(
                 }
 
                 val selectedSlot = clickedSlot.copy(status = SlotStatus.SELECTED)
-                val newList = if (isPrepended) {
-                    listOf(selectedSlot) + currentList
+                val newCourtSlots = if (isPrepended) {
+                    listOf(selectedSlot) + targetCourtSlots
                 } else {
-                    currentList + selectedSlot
+                    targetCourtSlots + selectedSlot
                 }
 
-                return updateStateWithSlots(newList)
+                return updateStateWithSlots(otherCourtsSlots + newCourtSlots)
             } else {
-                // Non-continuous click -> reset and start new chain at clicked slot
+                // Không liền kề trên cùng sân -> reset chuỗi sân này, giữ nguyên sân khác, thêm nhắc nhở (Q9)
                 val newSlot = clickedSlot.copy(status = SlotStatus.SELECTED)
-                return updateStateWithSlots(listOf(newSlot))
+                val updatedState = updateStateWithSlots(otherCourtsSlots + listOf(newSlot))
+                return updatedState.copy(
+                    errorMessage = "Vui lòng chọn các khung giờ liên tiếp trên cùng sân"
+                )
             }
         }
     }

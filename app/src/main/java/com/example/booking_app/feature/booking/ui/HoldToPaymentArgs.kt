@@ -7,6 +7,8 @@ data class HoldToPaymentArgs(
     val bookingId: String,
     val venueId: String,
     val venueName: String,
+    val venueAddress: String = "",
+    val districtName: String = "",
     val isRecurring: Boolean = false,
     val totalSessions: Int = 1,
     val subtotalAmount: Long,
@@ -17,6 +19,8 @@ data class HoldToPaymentArgs(
         bookingId = parcel.readString().orEmpty(),
         venueId = parcel.readString().orEmpty(),
         venueName = parcel.readString().orEmpty(),
+        venueAddress = parcel.readString().orEmpty(),
+        districtName = parcel.readString().orEmpty(),
         isRecurring = parcel.readByte() != 0.toByte(),
         totalSessions = parcel.readInt(),
         subtotalAmount = parcel.readLong(),
@@ -28,6 +32,8 @@ data class HoldToPaymentArgs(
         parcel.writeString(bookingId)
         parcel.writeString(venueId)
         parcel.writeString(venueName)
+        parcel.writeString(venueAddress)
+        parcel.writeString(districtName)
         parcel.writeByte(if (isRecurring) 1 else 0)
         parcel.writeInt(totalSessions)
         parcel.writeLong(subtotalAmount)
@@ -56,6 +62,8 @@ data class HoldToPaymentArgs(
         if (bookingId != other.bookingId) return false
         if (venueId != other.venueId) return false
         if (venueName != other.venueName) return false
+        if (venueAddress != other.venueAddress) return false
+        if (districtName != other.districtName) return false
         if (isRecurring != other.isRecurring) return false
         if (totalSessions != other.totalSessions) return false
         if (subtotalAmount != other.subtotalAmount) return false
@@ -69,6 +77,8 @@ data class HoldToPaymentArgs(
         var result = bookingId.hashCode()
         result = 31 * result + venueId.hashCode()
         result = 31 * result + venueName.hashCode()
+        result = 31 * result + venueAddress.hashCode()
+        result = 31 * result + districtName.hashCode()
         result = 31 * result + isRecurring.hashCode()
         result = 31 * result + totalSessions
         result = 31 * result + subtotalAmount.hashCode()

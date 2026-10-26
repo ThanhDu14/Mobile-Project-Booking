@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/cardSlotCell"
+    android:layout_width="80dp"
+    android:layout_height="44dp"
+    android:layout_margin="3dp"
+    android:clickable="true"
+    android:focusable="true"
+    app:cardCornerRadius="8dp"
+    app:cardElevation="0dp"
+    app:strokeColor="@color/booking_slot_available_stroke"
+    app:strokeWidth="1dp"
+    app:cardBackgroundColor="@color/booking_slot_available_bg">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:paddingHorizontal="4dp">
+
+        <ImageView
+            android:id="@+id/ivCellIcon"
+            android:layout_width="14dp"
+            android:layout_height="14dp"
+            android:layout_marginEnd="3dp"
+            android:contentDescription="@null"
+            android:visibility="gone"
+            tools:src="@drawable/ic_check_20"
+            tools:visibility="visible" />
+
+        <TextView
+            android:id="@+id/tvCellTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily="sans-serif-medium"
+            android:includeFontPadding="false"
+            android:textColor="@color/booking_slot_available_text"
+            android:textSize="13sp"
+            tools:text="17:00" />
+
+        <TextView
+            android:id="@+id/tvCellDropInBadge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="2dp"
+            android:background="@drawable/bg_wordmark_pill"
+            android:backgroundTint="@color/sn_lamp"
+            android:paddingHorizontal="3dp"
+            android:paddingVertical="1dp"
+            android:text="@string/booking_status_drop_in_badge"
+            android:textColor="@color/sn_on_lamp"
+            android:textSize="8sp"
+            android:visibility="gone"
+            tools:visibility="gone" />
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

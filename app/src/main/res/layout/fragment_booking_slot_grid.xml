@@ -12,7 +12,7 @@
         android:layout_height="match_parent"
         android:orientation="vertical">
 
-        <!-- Header / App Bar -->
+        <!-- Header / App Bar (Q7: "Chọn khung giờ" + tên cơ sở + quận) -->
         <LinearLayout
             android:id="@+id/layoutHeader"
             android:layout_width="match_parent"
@@ -59,13 +59,13 @@
                     android:textAppearance="@style/TextAppearance.SmashNow.Caption"
                     android:textColor="@color/sn_ink_muted"
                     android:textSize="12sp"
-                    tools:text="CLB SmashNow • 06:00 - 22:00" />
+                    tools:text="CLB Cầu Lông Trường Chinh 909 · Quận Tân Phú" />
 
             </LinearLayout>
 
         </LinearLayout>
 
-        <!-- Main Content -->
+        <!-- Main Content (Cuộn dọc) -->
         <androidx.core.widget.NestedScrollView
             android:id="@+id/scrollViewContent"
             android:layout_width="match_parent"
@@ -73,228 +73,315 @@
             android:layout_weight="1"
             android:fillViewport="true">
 
-                <LinearLayout
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingBottom="16dp">
+
+                <!-- Section: Dải chọn ngày (Horizontal) -->
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rvDateSelector"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:paddingBottom="16dp">
+                    android:layout_marginTop="12dp"
+                    android:clipToPadding="false"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="16dp"
+                    app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                    tools:listitem="@layout/item_date_selector" />
 
-                    <!-- Section: Chọn Ngày -->
+                <!-- Nút Pill "Đặt cố định theo tuần" (Q13 - M16) -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnRecurringBooking"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="42dp"
+                    android:layout_marginHorizontal="16dp"
+                    android:layout_marginTop="10dp"
+                    android:text="@string/booking_recurring_button"
+                    android:textAppearance="@style/TextAppearance.SmashNow.Caption"
+                    android:textColor="@color/sn_court"
+                    app:cornerRadius="21dp"
+                    app:icon="@drawable/ic_calendar_24"
+                    app:iconGravity="textStart"
+                    app:iconPadding="8dp"
+                    app:iconSize="18dp"
+                    app:iconTint="@color/sn_court"
+                    app:strokeColor="@color/sn_court" />
+
+                <!-- Banner Giờ Cao Điểm (Q5) -->
+                <LinearLayout
+                    android:id="@+id/layoutPeakHourBanner"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="16dp"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_wordmark_pill"
+                    android:backgroundTint="@color/sn_court_container"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="8dp"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <ImageView
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_timer_24"
+                        app:tint="@color/sn_on_court_container" />
+
                     <TextView
+                        android:id="@+id/tvPeakHourBannerText"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="16dp"
-                        android:layout_marginTop="16dp"
-                        android:layout_marginBottom="8dp"
-                        android:text="@string/booking_select_date"
-                        android:textAppearance="@style/TextAppearance.SmashNow.Label"
-                        android:textColor="@color/sn_ink"
-                        android:textSize="14sp" />
-
-                    <androidx.recyclerview.widget.RecyclerView
-                        android:id="@+id/rvDateSelector"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:clipToPadding="false"
-                        android:orientation="horizontal"
-                        android:paddingHorizontal="16dp"
-                        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-                        tools:listitem="@layout/item_date_selector" />
-
-                    <!-- Section: Chọn Sân Con -->
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="16dp"
-                        android:layout_marginTop="16dp"
-                        android:layout_marginBottom="8dp"
-                        android:text="@string/booking_select_court"
-                        android:textAppearance="@style/TextAppearance.SmashNow.Label"
-                        android:textColor="@color/sn_ink"
-                        android:textSize="14sp" />
-
-                    <androidx.recyclerview.widget.RecyclerView
-                        android:id="@+id/rvCourtTabs"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:clipToPadding="false"
-                        android:orientation="horizontal"
-                        android:paddingHorizontal="16dp"
-                        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
-                        tools:listitem="@layout/item_court_tab" />
-
-                    <!-- Section: Chú thích trạng thái (Legend) -->
-                    <HorizontalScrollView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
-                        android:clipToPadding="false"
-                        android:paddingHorizontal="16dp"
-                        android:scrollbars="none">
-
-                        <LinearLayout
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-
-                            <!-- Available -->
-                            <View
-                                android:layout_width="12dp"
-                                android:layout_height="12dp"
-                                android:background="@drawable/bg_wordmark_pill"
-                                android:backgroundTint="@color/booking_slot_available_bg" />
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="4dp"
-                                android:layout_marginEnd="12dp"
-                                android:text="@string/booking_legend_available"
-                                android:textAppearance="@style/TextAppearance.SmashNow.Caption"
-                                android:textSize="11sp" />
-
-                            <!-- Selected -->
-                            <View
-                                android:layout_width="12dp"
-                                android:layout_height="12dp"
-                                android:background="@drawable/bg_wordmark_pill"
-                                android:backgroundTint="@color/booking_slot_selected_bg" />
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="4dp"
-                                android:layout_marginEnd="12dp"
-                                android:text="@string/booking_legend_selected"
-                                android:textAppearance="@style/TextAppearance.SmashNow.Caption"
-                                android:textSize="11sp" />
-
-                            <!-- Held -->
-                            <View
-                                android:layout_width="12dp"
-                                android:layout_height="12dp"
-                                android:background="@drawable/bg_wordmark_pill"
-                                android:backgroundTint="@color/booking_slot_held_bg" />
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="4dp"
-                                android:layout_marginEnd="12dp"
-                                android:text="@string/booking_legend_held"
-                                android:textAppearance="@style/TextAppearance.SmashNow.Caption"
-                                android:textSize="11sp" />
-
-                            <!-- Booked -->
-                            <View
-                                android:layout_width="12dp"
-                                android:layout_height="12dp"
-                                android:background="@drawable/bg_wordmark_pill"
-                                android:backgroundTint="@color/booking_slot_booked_bg" />
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="4dp"
-                                android:layout_marginEnd="12dp"
-                                android:text="@string/booking_legend_booked"
-                                android:textAppearance="@style/TextAppearance.SmashNow.Caption"
-                                android:textSize="11sp" />
-
-                            <!-- Blocked -->
-                            <View
-                                android:layout_width="12dp"
-                                android:layout_height="12dp"
-                                android:background="@drawable/bg_wordmark_pill"
-                                android:backgroundTint="@color/booking_slot_blocked_bg" />
-                            <TextView
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="4dp"
-                                android:text="@string/booking_legend_blocked"
-                                android:textAppearance="@style/TextAppearance.SmashNow.Caption"
-                                android:textSize="11sp" />
-
-                        </LinearLayout>
-
-                    </HorizontalScrollView>
-
-                    <!-- Section: Lưới Slot -->
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="16dp"
-                        android:layout_marginTop="16dp"
-                        android:layout_marginBottom="8dp"
-                        android:text="@string/booking_select_slot"
-                        android:textAppearance="@style/TextAppearance.SmashNow.Label"
-                        android:textColor="@color/sn_ink"
-                        android:textSize="14sp" />
-
-                    <androidx.recyclerview.widget.RecyclerView
-                        android:id="@+id/rvSlotGrid"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:clipToPadding="false"
-                        android:nestedScrollingEnabled="false"
-                        android:paddingHorizontal="12dp"
-                        tools:itemCount="12"
-                        tools:layoutManager="androidx.recyclerview.widget.GridLayoutManager"
-                        tools:listitem="@layout/item_slot_grid"
-                        tools:spanCount="3" />
-
-                    <!-- Empty State (Khi sân đóng cửa / không có sân) -->
-                    <LinearLayout
-                        android:id="@+id/layoutEmptyState"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center"
-                        android:orientation="vertical"
-                        android:paddingHorizontal="24dp"
-                        android:paddingVertical="48dp"
-                        android:visibility="gone"
-                        tools:visibility="gone">
-
-                        <ImageView
-                            android:layout_width="64dp"
-                            android:layout_height="64dp"
-                            android:contentDescription="@null"
-                            android:src="@drawable/ic_error_24"
-                            app:tint="@color/sn_outline" />
-
-                        <TextView
-                            android:id="@+id/tvEmptyTitle"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="12dp"
-                            android:text="@string/booking_venue_closed_title"
-                            android:textAppearance="@style/TextAppearance.SmashNow.Title"
-                            android:textColor="@color/sn_ink"
-                            android:textSize="16sp" />
-
-                        <TextView
-                            android:id="@+id/tvEmptyMessage"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:gravity="center"
-                            android:text="@string/booking_venue_closed_message"
-                            android:textAppearance="@style/TextAppearance.SmashNow.Body"
-                            android:textColor="@color/sn_ink_muted"
-                            android:textSize="13sp" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnEmptyRetry"
-                            style="@style/Widget.Material3.Button.OutlinedButton"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="16dp"
-                            android:text="@string/booking_retry" />
-
-                    </LinearLayout>
+                        android:layout_marginStart="6dp"
+                        android:fontFamily="sans-serif-medium"
+                        android:textColor="@color/sn_on_court_container"
+                        android:textSize="12sp"
+                        tools:text="Giờ cao điểm 18:00 - 24:00 • 130.000 đ/giờ" />
 
                 </LinearLayout>
 
-            </androidx.core.widget.NestedScrollView>
+                <!-- Banner Kín Sân (Khi toàn bộ slot trong ngày đã hết) -->
+                <LinearLayout
+                    android:id="@+id/layoutFullyBookedBanner"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="16dp"
+                    android:layout_marginTop="10dp"
+                    android:background="@drawable/bg_wordmark_pill"
+                    android:backgroundTint="@color/sn_lamp_container"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="8dp"
+                    android:visibility="gone"
+                    tools:visibility="gone">
 
-        <!-- Bottom Summary Bar -->
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="Ngày này đã kín sân."
+                        android:textColor="@color/sn_on_lamp_container"
+                        android:textSize="12sp" />
+
+                    <TextView
+                        android:id="@+id/btnNextAvailableDate"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-medium"
+                        android:padding="4dp"
+                        android:text="Xem ngày kế tiếp →"
+                        android:textColor="@color/sn_court"
+                        android:textSize="12sp" />
+
+                </LinearLayout>
+
+                <!-- Section: Legend 6 mục (Q7: Trống, Đang chọn, Đang giữ, Đã đặt, Khóa, Đã qua) -->
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:clipToPadding="false"
+                    android:paddingHorizontal="16dp"
+                    android:scrollbars="none">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <!-- 1. Trống -->
+                        <View
+                            android:layout_width="12dp"
+                            android:layout_height="12dp"
+                            android:background="@drawable/bg_wordmark_pill"
+                            android:backgroundTint="@color/booking_slot_available_bg" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="4dp"
+                            android:layout_marginEnd="10dp"
+                            android:text="@string/booking_legend_available"
+                            android:textAppearance="@style/TextAppearance.SmashNow.Caption"
+                            android:textSize="11sp" />
+
+                        <!-- 2. Đang chọn -->
+                        <View
+                            android:layout_width="12dp"
+                            android:layout_height="12dp"
+                            android:background="@drawable/bg_wordmark_pill"
+                            android:backgroundTint="@color/booking_slot_selected_bg" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="4dp"
+                            android:layout_marginEnd="10dp"
+                            android:text="@string/booking_legend_selected"
+                            android:textAppearance="@style/TextAppearance.SmashNow.Caption"
+                            android:textSize="11sp" />
+
+                        <!-- 3. Đang giữ -->
+                        <View
+                            android:layout_width="12dp"
+                            android:layout_height="12dp"
+                            android:background="@drawable/bg_wordmark_pill"
+                            android:backgroundTint="@color/booking_slot_held_bg" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="4dp"
+                            android:layout_marginEnd="10dp"
+                            android:text="@string/booking_legend_held"
+                            android:textAppearance="@style/TextAppearance.SmashNow.Caption"
+                            android:textSize="11sp" />
+
+                        <!-- 4. Đã đặt -->
+                        <View
+                            android:layout_width="12dp"
+                            android:layout_height="12dp"
+                            android:background="@drawable/bg_wordmark_pill"
+                            android:backgroundTint="@color/booking_slot_booked_bg" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="4dp"
+                            android:layout_marginEnd="10dp"
+                            android:text="@string/booking_legend_booked"
+                            android:textAppearance="@style/TextAppearance.SmashNow.Caption"
+                            android:textSize="11sp" />
+
+                        <!-- 5. Bị khóa -->
+                        <View
+                            android:layout_width="12dp"
+                            android:layout_height="12dp"
+                            android:background="@drawable/bg_wordmark_pill"
+                            android:backgroundTint="@color/booking_slot_blocked_bg" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="4dp"
+                            android:layout_marginEnd="10dp"
+                            android:text="@string/booking_legend_blocked"
+                            android:textAppearance="@style/TextAppearance.SmashNow.Caption"
+                            android:textSize="11sp" />
+
+                        <!-- 6. Đã qua -->
+                        <View
+                            android:layout_width="12dp"
+                            android:layout_height="12dp"
+                            android:alpha="0.35"
+                            android:background="@drawable/bg_wordmark_pill"
+                            android:backgroundTint="@color/booking_slot_past_bg" />
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="4dp"
+                            android:text="@string/booking_legend_past"
+                            android:textAppearance="@style/TextAppearance.SmashNow.Caption"
+                            android:textSize="11sp" />
+
+                    </LinearLayout>
+
+                </HorizontalScrollView>
+
+                <!-- Section: Lưới Ma Trận (Q3: Cột = sân con cuộn ngang, Hàng = giờ cuộn dọc) -->
+                <HorizontalScrollView
+                    android:id="@+id/scrollViewMatrix"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="12dp"
+                    android:clipToPadding="false"
+                    android:paddingHorizontal="16dp"
+                    android:scrollbars="horizontal">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical">
+
+                        <!-- Header hàng sân con (Cột) -->
+                        <LinearLayout
+                            android:id="@+id/layoutCourtHeaders"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:paddingBottom="4dp" />
+
+                        <!-- Danh sách các hàng giờ (Mỗi hàng chứa ô của từng sân) -->
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/rvSlotMatrixRows"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:nestedScrollingEnabled="false"
+                            tools:itemCount="10"
+                            tools:listitem="@layout/item_slot_matrix_row" />
+
+                    </LinearLayout>
+
+                </HorizontalScrollView>
+
+                <!-- Empty State (Khi sân đóng cửa / không có dữ liệu sân) -->
+                <LinearLayout
+                    android:id="@+id/layoutEmptyState"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:paddingHorizontal="24dp"
+                    android:paddingVertical="48dp"
+                    android:visibility="gone"
+                    tools:visibility="gone">
+
+                    <ImageView
+                        android:layout_width="64dp"
+                        android:layout_height="64dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_error_24"
+                        app:tint="@color/sn_outline" />
+
+                    <TextView
+                        android:id="@+id/tvEmptyTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:text="@string/booking_venue_closed_title"
+                        android:textAppearance="@style/TextAppearance.SmashNow.Title"
+                        android:textColor="@color/sn_ink"
+                        android:textSize="16sp" />
+
+                    <TextView
+                        android:id="@+id/tvEmptyMessage"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:gravity="center"
+                        android:text="@string/booking_venue_closed_message"
+                        android:textAppearance="@style/TextAppearance.SmashNow.Body"
+                        android:textColor="@color/sn_ink_muted"
+                        android:textSize="13sp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnEmptyRetry"
+                        style="@style/Widget.Material3.Button.OutlinedButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:text="@string/booking_retry" />
+
+                </LinearLayout>
+
+            </LinearLayout>
+
+        </androidx.core.widget.NestedScrollView>
+
+        <!-- Bottom Summary Bar (Thanh tóm tắt và nút Giữ chỗ) -->
         <include
             android:id="@+id/bottomSummary"
             layout="@layout/view_booking_bottom_summary" />

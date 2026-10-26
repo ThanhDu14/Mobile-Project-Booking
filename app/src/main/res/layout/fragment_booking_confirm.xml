@@ -1,0 +1,280 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/sn_surface"
+    android:orientation="vertical">
+
+    <!-- App Bar -->
+    <LinearLayout
+        android:id="@+id/layoutConfirmHeader"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/sn_surface_raised"
+        android:elevation="2dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="8dp"
+        android:paddingVertical="8dp">
+
+        <ImageButton
+            android:id="@+id/btnConfirmBack"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/booking_confirm_cancel_btn"
+            android:src="@drawable/ic_arrow_back_24"
+            app:tint="@color/sn_ink" />
+
+        <TextView
+            android:id="@+id/tvConfirmHeaderTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:layout_weight="1"
+            android:text="@string/booking_confirm_title"
+            android:textAppearance="@style/TextAppearance.SmashNow.Title"
+            android:textColor="@color/sn_ink"
+            android:textSize="18sp" />
+
+    </LinearLayout>
+
+    <!-- Countdown Timer Banner -->
+    <LinearLayout
+        android:id="@+id/layoutCountdownBanner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/sn_lamp_container"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="10dp">
+
+        <ImageView
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:contentDescription="@null"
+            android:src="@drawable/ic_timer_24"
+            app:tint="@color/sn_on_lamp_container" />
+
+        <TextView
+            android:id="@+id/tvCountdownText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:fontFamily="sans-serif-medium"
+            android:textColor="@color/sn_on_lamp_container"
+            android:textSize="13sp"
+            tools:text="Thời gian giữ chỗ còn lại: 04:59" />
+
+    </LinearLayout>
+
+    <!-- Scrollable Content -->
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- Venue Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="16dp"
+                app:cardBackgroundColor="@color/sn_surface_raised"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:strokeColor="@color/sn_line"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/booking_confirm_venue_label"
+                        android:textAppearance="@style/TextAppearance.SmashNow.Caption"
+                        android:textColor="@color/sn_ink_muted"
+                        android:textSize="12sp" />
+
+                    <TextView
+                        android:id="@+id/tvConfirmVenueName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:textAppearance="@style/TextAppearance.SmashNow.Title"
+                        android:textColor="@color/sn_ink"
+                        android:textSize="16sp"
+                        tools:text="CLB Cầu Lông Trường Chinh 909" />
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:layout_width="14dp"
+                            android:layout_height="14dp"
+                            android:contentDescription="@null"
+                            android:src="@drawable/ic_location_on_24"
+                            app:tint="@color/sn_ink_muted" />
+
+                        <TextView
+                            android:id="@+id/tvConfirmVenueAddress"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="4dp"
+                            android:textAppearance="@style/TextAppearance.SmashNow.Body"
+                            android:textColor="@color/sn_ink_muted"
+                            android:textSize="13sp"
+                            tools:text="909/6 Trường Chinh, Quận Tân Phú, TP. Hồ Chí Minh" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Section: Selected Slots -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="8dp"
+                android:text="@string/booking_confirm_selected_slots"
+                android:textAppearance="@style/TextAppearance.SmashNow.Label"
+                android:textColor="@color/sn_ink"
+                android:textSize="14sp" />
+
+            <LinearLayout
+                android:id="@+id/layoutSelectedSlotsContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical" />
+
+            <!-- Price Summary Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                app:cardBackgroundColor="@color/sn_surface_raised"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:strokeColor="@color/sn_line"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/booking_confirm_total_label"
+                            android:textAppearance="@style/TextAppearance.SmashNow.Label"
+                            android:textColor="@color/sn_ink"
+                            android:textSize="15sp" />
+
+                        <TextView
+                            android:id="@+id/tvConfirmTotalPrice"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textAppearance="@style/TextAppearance.SmashNow.Title"
+                            android:textColor="@color/sn_court"
+                            android:textSize="18sp"
+                            tools:text="180.000 đ" />
+
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/booking_summary_deposit_label"
+                            android:textAppearance="@style/TextAppearance.SmashNow.Caption"
+                            android:textColor="@color/sn_ink_muted"
+                            android:textSize="13sp" />
+
+                        <TextView
+                            android:id="@+id/tvConfirmDepositAmount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textAppearance="@style/TextAppearance.SmashNow.Label"
+                            android:textColor="@color/sn_ink"
+                            android:textSize="14sp"
+                            tools:text="54.000 đ" />
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- Bottom Actions Bar -->
+    <LinearLayout
+        android:id="@+id/layoutConfirmBottomBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/sn_surface_raised"
+        android:elevation="8dp"
+        android:orientation="horizontal"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="12dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnConfirmCancel"
+            style="@style/Widget.Material3.Button.OutlinedButton"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_marginEnd="8dp"
+            android:layout_weight="1"
+            android:text="@string/booking_confirm_cancel_btn"
+            android:textAppearance="@style/TextAppearance.SmashNow.Label"
+            app:cornerRadius="24dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnConfirmPay"
+            style="@style/Widget.Material3.Button"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1.2"
+            android:text="@string/booking_confirm_pay_btn"
+            android:textAppearance="@style/TextAppearance.SmashNow.Label"
+            app:cornerRadius="24dp" />
+
+    </LinearLayout>
+
+</LinearLayout>

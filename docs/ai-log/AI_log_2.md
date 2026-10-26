@@ -28,6 +28,7 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 22 | 2026-10-19 | Phân tích đối soát chất lượng bằng `/speckit-analyze` & tinh chỉnh spec 060 | 06 |
 | 23 | 2026-10-26 | Triển khai mã nguồn Phase 1–3 spec 040 bằng `/speckit-implement` | 04 |
 | 24 | 2026-10-26 | Triển khai giao diện Phase 4 (UI & ViewModel) spec 040 bằng `/speckit-implement` | 04 |
+| 25 | 2026-10-27 | Thống nhất 3 chiều (Spec ↔ Tasks ↔ Sản phẩm) theo Q1–Q13 & Mockup Spec 040 | 04 |
 
 
 
@@ -1223,6 +1224,82 @@ BỐI CẢNH
   2. `app/src/main/java/com/example/booking_app/MainActivity.kt`: Khôi phục khối `viewModel.sessionState.collect { route(it) }`.
   3. `app/src/main/java/com/example/booking_app/feature/booking/ui/BookingSlotGridViewModel.kt`: Gỡ bỏ toàn bộ mock data fallback trong `loadInitialData()` và `observeRealtimeSlots()`, giữ lại logic phản hồi Snackbar khi chạm slot không trống.
 - **Quality Gate sau khi revert**: Full pass 100% (`lintDebug` 0 errors, `testDebugUnitTest` 37/37 pass, `assembleDebug` thành công).
+
+---
+
+## Mục 25: Thống nhất 3 chiều (Spec ↔ Tasks ↔ Sản phẩm) theo Quyết định Q1–Q13 & Mockup chuẩn Spec 040
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-27 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 04 – Đặt sân (spec `specs/040-booking-slot-grid`) |
+| Công cụ AI | Antigravity CLI |
+| Mục đích | Thống nhất tuyệt đối 3 chiều giữa Tài liệu (spec.md, tasks.md, plan.md, ui-contracts.md) ↔ Thiết kế (Mockup 1 & 2) ↔ Mã nguồn (Domain, Data, UI, ViewModel, Tests) theo 13 quyết định chốt Q1–Q13 |
+| Nhánh Git | `feature/040-booking-slot-grid` (nối tiếp commit `ec41041`) |
+
+### Bối cảnh & 13 Quyết định đã chốt (Q1–Q13)
+
+Sau đợt kiểm thử trên thiết bị thật và đối chiếu kỹ lưỡng giữa 2 ảnh wireframe mockup (`specs/040-booking-slot-grid/ui/`) với tài liệu spec và mã nguồn hiện tại, Hưng đã chốt 13 quyết định cốt lõi để chuẩn hóa toàn bộ tính năng đặt sân theo giờ:
+
+1. **Q1 (Đa sân M1)**: Cho phép một đơn chứa nhiều chuỗi slot trên nhiều sân con khác nhau (cùng ngày, cùng cơ sở); mỗi sân là một chuỗi liên tục độc lập; tổng số slot tối đa là 8 slot (4 tiếng).
+2. **Q2 (Tối thiểu 2 slot M2)**: Giữ nguyên `MIN_SLOTS = 2` (1 tiếng) để bảo đảm hiệu quả vận hành sân. Nút "Giữ chỗ" chỉ kích hoạt khi có đủ ít nhất 2 slot hợp lệ liên tiếp.
+3. **Q3 (Lưới ma trận M3)**: Chuyển hoàn toàn sang bố cục ma trận 2 chiều (Cột = Sân con cuộn ngang tối đa 10 sân; Hàng = Mốc giờ 30 phút cuộn dọc). Bỏ `CourtTabAdapter` và dialog đổi sân con; giữ dialog cảnh báo đổi ngày (US1-AS8).
+4. **Q4 (Màn hình xác nhận M4 - FR-018)**: Xây dựng `BookingConfirmFragment` thuộc phạm vi Spec 040: hiển thị tên + địa chỉ cơ sở thật, danh sách slot gom theo từng sân, tổng tiền, đồng hồ đếm ngược 5 phút theo `holdExpiresAtMillis` thật từ Firestore. Nút "Hủy / Quay lại" nhả slot ngay lập tức; nút "Thanh toán" chuyển tiếp dữ liệu `HoldToPaymentArgs` sang Spec 050.
+5. **Q5 (Định giá theo dữ liệu M5)**: Toàn bộ đơn giá, banner giờ cao điểm và tổng tiền tính động từ `priceRules` của cơ sở, không hardcode bất kỳ con số nào.
+6. **Q6 (Đồng bộ nhãn nút M6)**: Đổi tên nút hành động chính ở đáy màn hình từ *"Tiếp tục"* thành *"Giữ chỗ"* trên toàn bộ tài liệu và chuỗi giao diện.
+7. **Q7 (Chuẩn thị giác Mockup M13/M14/M15)**: Header chuẩn: *"Chọn khung giờ"* + `{tên cơ sở} · {quận}`; dải ngày ngang có nhãn *"Hôm nay"*, *"Mai"*, *"T2–CN"* + chấm highlight hôm nay; ô slot ma trận chỉ ghi giờ bắt đầu (vd: `17:00`), kích thước 80dp × 44dp; 6 trạng thái màu sắc chuẩn Semantic Tokens SmashNow (`AVAILABLE`, `SELECTED`, `HELD`, `BOOKED`, `BLOCKED` kèm icon/badge, `PAST` với alpha 0.35f); bảng chú thích (Legend) đầy đủ 6 mục.
+8. **Q8 (Xử lý xung đột giữ chỗ M7)**: Khi giữ chỗ thất bại vì có slot bị tranh chấp (`HoldResult.Conflict`), chỉ loại bỏ các slot bị mất, thông báo rõ tên slot bị tranh chấp, giữ nguyên các slot còn trống đang chọn (không clear toàn bộ lựa chọn).
+9. **Q9 (Bấm slot không liền kề M8)**: Khi bấm slot không liền kề trên cùng một sân, reset chuỗi cũ trên sân đó, lấy slot mới làm mốc và phát Snackbar: *"Vui lòng chọn các khung giờ liên tiếp trên cùng sân"*.
+10. **Q10 (Bảo toàn lựa chọn khi đăng nhập M9 - US4)**: Khi người dùng chưa đăng nhập bấm "Giữ chỗ", lưu danh sách `slotIds` và ngày chọn vào `SavedStateHandle` trước khi sang màn hình đăng nhập; khi đăng nhập xong quay lại, tự động khôi phục các slot còn trống và cảnh báo nếu có slot đã bị người khác lấy. Nút Hủy/Bỏ qua ở đăng nhập quay lại lưới giữ nguyên lựa chọn.
+11. **Q11 (Lọc giá & kiểm soát thời gian M10)**: Lọc `priceRule` theo `daysOfWeek` (chuẩn ISO 1..7) và khung giờ. Slot không khớp rule nào sẽ bị khóa (`BLOCKED`, `NO_PRICE_RULE`, tránh giá 0đ). Chặn giữ slot quá khứ theo giờ máy chủ Firestore (`Timestamp.now()`).
+12. **Q12 (Dữ liệu cơ sở thật M11/M12)**: Bổ sung API `getVenueInfo` đọc tên, địa chỉ, quận từ Firestore; gỡ bỏ hoàn toàn fallback `demo-venue-01` im lặng; sử dụng mã cơ sở seed thật `demo-truong-chinh-909`.
+13. **Q13 (Nút Đặt cố định theo tuần M16)**: Bổ sung nút pill *"Đặt cố định theo tuần"* ngay dưới dải ngày để điều hướng sang Feature 041 theo hợp đồng điều hướng liên spec.
+
+### Chi tiết các công việc đã thực hiện
+
+#### 1. Tài liệu (Spec Kit & Contracts)
+- `specs/040-booking-slot-grid/spec.md`: Cập nhật ghi chú đa sân tại FR-005, FR-006; chuẩn hóa điều kiện kích hoạt nút tại FR-010, US1-AS4, US1-AS7; đồng bộ nhãn nút "Giữ chỗ" (Input, US2, US4, US5, FR-010, FR-011, FR-013).
+- `specs/040-booking-slot-grid/plan.md`: Cập nhật kiến trúc ma trận thay thế tab sân, bổ sung `BookingConfirmFragment` và `SlotMatrixRowAdapter`.
+- `specs/040-booking-slot-grid/contracts/ui-contracts.md`: Cập nhật §1.2 luồng điều hướng lưới $\rightarrow$ xác nhận 040 $\rightarrow$ thanh toán 050; cập nhật §4 bảng token màu sắc và kích thước ô slot chuẩn wireframe.
+- `specs/040-booking-slot-grid/tasks.md`: Cập nhật checklist T006, T025, T026, T027, T030, T031, T032, T033, T034, T035 theo ma trận đa sân và màn hình xác nhận.
+
+#### 2. Domain & Data Architecture
+- Tạo `VenueInfo.kt` chứa thông tin cơ sở (tên, địa chỉ, quận, giờ mở/đóng cửa).
+- Thêm `getVenueInfo(venueId)` vào `BookingRepository`, `BookingRemoteDataSource`, `FirestoreBookingRemoteDataSource`, `BookingRepositoryImpl`.
+- Cập nhật `FirestoreBookingRemoteDataSource.kt`:
+  - Đọc `venues/{id}` và map chuẩn 22 quận/huyện TP.HCM.
+  - Cập nhật transaction `holdSlotsAtomic`: Đánh giá mốc thời gian slot với `Timestamp.now()` server time để từ chối slot quá khứ; trích xuất `courtId` từ từng slot ID cho phép giữ chỗ đa sân nguyên tử trong 1 transaction duy nhất.
+- Cập nhật `GenerateDailySlotsUseCase.kt`: Lọc giá theo ngày trong tuần chuẩn ISO (`1 = T2 .. 7 = CN`), gán `BLOCKED` với `NO_PRICE_RULE` nếu không tìm thấy bảng giá tương ứng.
+- Cập nhật `ValidateSlotSelectionUseCase.kt`: Hỗ trợ đa sân độc lập, duy trì chuỗi liên tục trên từng sân, tổng tối đa 8 slot, phát lỗi rõ ràng khi bấm slot không liền kề.
+- Cập nhật `HoldToPaymentArgs.kt`: Bổ sung `venueAddress` và `districtName` hỗ trợ hiển thị màn hình xác nhận và thanh toán.
+
+#### 3. Giao diện người dùng (UI & Adapters)
+- Gỡ bỏ `CourtTabAdapter.kt` và `item_court_tab.xml`.
+- Tạo `item_slot_matrix_cell.xml` (ô 80dp × 44dp, chỉ hiển thị giờ bắt đầu, bo góc 8dp, hiệu ứng icon và màu nền theo 6 trạng thái).
+- Tạo `item_slot_matrix_row.xml` và `item_court_column_header.xml`.
+- Cài đặt `SlotMatrixRowAdapter.kt`: Quản lý hiển thị các hàng ma trận giờ 30 phút, đồng bộ cuộn ngang với danh sách sân con.
+- Cập nhật `DateSelectorAdapter.kt`: Hiển thị nhãn *"Hôm nay"*, *"Mai"*, *"T2–CN"* kèm chấm highlight hôm nay theo Q7.
+- Cập nhật `fragment_booking_slot_grid.xml`: Bố cục ma trận cuộn ngang, banner giờ cao điểm động, banner kín sân kèm nút xem ngày mai, nút pill *"Đặt cố định theo tuần"*, bảng chú thích 6 mục.
+- Xây dựng `fragment_booking_confirm.xml` và `BookingConfirmFragment.kt` (Q4):
+  - Đồng hồ đếm ngược 5 phút từ `holdExpiresAtMillis`, tự động hiển thị hộp thoại timeout và hủy giữ chỗ khi hết giờ.
+  - Hiển thị thông tin cơ sở thật và danh sách slot gom theo từng sân.
+  - Nút *"Hủy / Quay lại"* nhả slot qua `ReleaseHoldUseCase` và quay về lưới.
+  - Nút *"Thanh toán"* chuẩn bị chuyển tiếp dữ liệu sang Spec 050.
+- Cập nhật `BookingSlotGridViewModel.kt` và `BookingSlotGridFragment.kt`: Tích hợp toàn diện ma trận đa sân, khôi phục pending selection sau đăng nhập, xử lý xung đột hold chỉ loại bỏ slot mất.
+- Cập nhật `nav_player.xml`: Đăng ký `bookingConfirmFragment`, thêm action điều hướng, thiết lập venue mặc định `demo-truong-chinh-909`.
+
+#### 4. Kết quả Kiểm thử & Quality Gates (Full Pass)
+1. **Unit Tests (`./gradlew testDebugUnitTest`)**:
+   - **218/218 tests PASS (100%)**.
+   - Bổ sung các ca kiểm thử chuyên biệt: chọn đa sân độc lập, bấm không liền kề reset từng sân, lọc giá theo ISO ngày, không khớp giá bị chặn, giữ chỗ xung đột giữ lại slot trống, và luồng ViewModel lưu trạng thái đăng nhập.
+2. **Build Debug APK (`./gradlew assembleDebug`)**:
+   - **BUILD SUCCESSFUL**.
+3. **Android Lint (`./gradlew lintDebug`)**:
+   - **0 ERRORS, BUILD SUCCESSFUL**.
+4. **Firestore Security & Emulator Tests (`npm test` trong `firestore-tests`)**:
+   - **34/34 tests PASS (100%)**.
+
 
 
 
