@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
 import java.util.Date
+import java.util.Locale
 import javax.inject.Inject
 
 class FirestoreBookingRemoteDataSource @Inject constructor(
@@ -139,7 +140,7 @@ class FirestoreBookingRemoteDataSource @Inject constructor(
                 val startMinutes = (startTime.substring(0, 2).toIntOrNull() ?: 0) * 60 +
                         (startTime.substring(2, 4).toIntOrNull() ?: 0)
                 val endMinutes = startMinutes + 30
-                val endTime = String.format("%02d%02d", endMinutes / 60, endMinutes % 60)
+                val endTime = String.format(Locale.US, "%02d%02d", endMinutes / 60, endMinutes % 60)
 
                 val data = hashMapOf<String, Any?>(
                     "venueId" to venueId,

@@ -98,6 +98,7 @@ class BookingRepositoryImpl @Inject constructor(
                     FirebaseFirestoreException.Code.UNAVAILABLE -> AppError.Network
                     FirebaseFirestoreException.Code.DEADLINE_EXCEEDED -> AppError.Timeout
                     FirebaseFirestoreException.Code.RESOURCE_EXHAUSTED -> AppError.RateLimited
+                    FirebaseFirestoreException.Code.ABORTED -> AppError.Conflict
                     FirebaseFirestoreException.Code.PERMISSION_DENIED,
                     FirebaseFirestoreException.Code.UNAUTHENTICATED -> AppError.NotSignedIn
                     else -> AppError.Unknown(throwable)

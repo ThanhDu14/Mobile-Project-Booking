@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest';
 import { assertFails, assertSucceeds, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
-import { doc, getDoc, setDoc, Timestamp, updateDoc } from 'firebase/firestore';
+import { doc, deleteDoc, getDoc, setDoc, Timestamp, updateDoc } from 'firebase/firestore';
 import { createTestEnv } from './setup';
 
 let env: RulesTestEnvironment;
@@ -136,5 +136,28 @@ describe('slots collection (T022)', () => {
         bookingId: 'req-02',
       })
     );
+  });
+
+  it('holding player can delete their held slot, but others cannot', async () => {
+    // Seed active hold by player1
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), 'slots/court-01_20261027_0600'), {
+        venueId: 'demo-venue-01',
+        courtId: 'court-01',
+        date: '20261027',
+        startTime: '0600',
+        endTime: '0630',
+        status: 'HELD',
+        holdExpiresAt: Timestamp.fromMillis(Date.now() + 4 * 60 * 1000),
+        holdBy: 'player1',
+        bookingId: 'req-01',
+      });
+    });
+
+    const fsOther = otherPlayer('player2');
+    await assertFails(deleteDoc(doc(fsOther, 'slots/court-01_20261027_0600')));
+
+    const fsHolder = player('player1');
+    await assertSucceeds(deleteDoc(doc(fsHolder, 'slots/court-01_20261027_0600')));
   });
 });

@@ -1078,22 +1078,24 @@ Bảng đối chiếu lựa chọn:
   - Firestore Transaction giữ chỗ 2 pha nghiêm ngặt:
     - *Pha 1 (All Reads)*: Đọc toàn bộ các document slot `{courtId}_{yyyyMMdd}_{HHmm}`. Nếu phát hiện slot đã có người giữ (chưa hết hạn) hoặc `BOOKED`/`BLOCKED` $\rightarrow$ Rollback và trả về `HoldResult.Conflict`.
     - *Pha 2 (All Writes)*: Ghi đồng thời toàn bộ documents với `status = "HELD"`, `holdBy = userId`, `holdExpiresAt = serverNow + 5 phút`.
-- **T020**: Cài đặt `BookingRepositoryImpl.kt` triển khai `BookingRepository`, bọc dữ liệu trong `Result<T>` và ánh xạ ngoại lệ Firestore/mạng sang `AppError.Network`, `Locked`, `Timeout`, `Unknown(cause)`. Viết `BookingRepositoryImplTest.kt` (8 tests PASS).
+- **T020**: Cài đặt `BookingRepositoryImpl.kt` triển khai `BookingRepository`, bọc dữ liệu trong `Result<T>` và ánh xạ ngoại lệ Firestore/mạng sang `AppError.Network`, `Timeout`, `RateLimited`, `Conflict`, `NotSignedIn`, `Unknown(cause)`. Thêm `AppError.Conflict` vào `core/network/AppError.kt` chuyên xử lý tranh chấp tài nguyên (Firestore transaction abort do nhiều client giữ cùng slot), tách biệt hoàn toàn khỏi `AppError.Locked` (vốn chỉ dành cho tài khoản bị khóa FR-014 để tránh đăng xuất nhầm người dùng). Viết `BookingRepositoryImplTest.kt` (10 tests PASS bao gồm case `DEADLINE_EXCEEDED` $\rightarrow$ `Timeout` và `ABORTED` $\rightarrow$ `Conflict`).
 - **T021**: Cài đặt DI Module `BookingModule.kt` tại `feature/booking/di/` với `@Binds` kết nối `BookingRepository` sang `BookingRepositoryImpl`.
-- **T022**: Cập nhật `firestore.rules` khai báo quy tắc bảo mật cho `venues`, `courts`, `priceRules`, và `slots` (ràng buộc `request.time` và `holdExpiresAt <= request.time + 5m`). Xây dựng bộ test `firestore-tests/test/slots.test.ts` (6 tests). Chạy toàn bộ 33 tests trên Firebase Emulator đều đạt 100% PASS.
+- **T022**: Cập nhật `firestore.rules` khai báo quy tắc bảo mật cho `venues`, `courts`, `priceRules`, và `slots` (ràng buộc `request.time` và `holdExpiresAt <= request.time + 5m`, quyền delete cho chủ slot hoặc admin). Xây dựng bộ test `firestore-tests/test/slots.test.ts` (7 tests gồm create, update, expiry guard, read và delete/release slot). Chạy toàn bộ 34 tests trên Firebase Emulator đều đạt 100% PASS.
 
-### Kết quả Kiểm thử & Quality Gate
+### Kết quả Kiểm thử & Quality Gate (Sau tinh chỉnh, fix lint & bổ sung AppError.Conflict)
 
-1. **Android Unit Tests**:
-   - `testDebugUnitTest` chạy 34/34 test cases liên quan đến `feature.booking.*` (22 Domain + 4 Mapper + 8 Repository).
-   - Kết quả: **34/34 PASS (0 failure, 0 error, 0 skipped)**.
-2. **Build Debug**:
+1. **Android Lint**:
+   - Chạy `./gradlew lintDebug`: **0 ERRORS, 44 WARNINGS** (đã fix triệt để 2 warning `DefaultLocale` với `String.format(Locale.US, "%02d%02d", ...)` tại `FirestoreBookingRemoteDataSource.kt:142` và `GenerateDailySlotsUseCase.kt:92`; 44 warnings còn lại là các cảnh báo nền tiền khả dụng ở XML Auth).
+2. **Android Unit Tests**:
+   - Chạy `./gradlew testDebugUnitTest --tests "com.example.booking_app.feature.booking.*"`: **36/36 PASS (0 failure, 0 error, 0 skipped)** gồm 22 Domain UseCases + 4 Mapper + 10 Repository.
+3. **Build Debug APK**:
    - `./gradlew assembleDebug`: **BUILD SUCCESSFUL**.
-3. **Firebase Emulator Security Rules**:
-   - `vitest run` trong `firestore-tests`: **33/33 PASS (3 test files: users, base, slots)**.
+4. **Firebase Emulator Security Rules**:
+   - `vitest run` trong `firestore-tests`: **34/34 PASS** (3 test files: 24 users + 7 slots + 3 base).
 
 ### Điểm lưu ý cho nhóm thảo luận
 - **Quy ước `daysOfWeek`**: Trong `PriceRule.kt`, quy ước ngày trong tuần được định nghĩa theo chuẩn ISO-8601 (1 = Thứ Hai, ..., 7 = Chủ Nhật) phù hợp với script seed dữ liệu Firestore (PR #41). Cần thống nhất chính thức giữa các thành viên nếu có sự khác biệt với lịch chuẩn của Java/Calendar (Chủ Nhật = 1).
+- **Phân định `Conflict` vs `Locked`**: `AppError.Conflict` đã được thêm chính thức vào core để đại diện cho tranh chấp tài nguyên (ví dụ transaction abort), bảo đảm không kích hoạt `signOutLocked` của `SessionManager`. Toàn bộ các khối `when` exhaustive trên `AppError` trong project (`CompleteSignupUseCase`, `AuthErrorMapper`) đã được cập nhật đồng bộ để đảm bảo an toàn biên dịch.
 
 
 

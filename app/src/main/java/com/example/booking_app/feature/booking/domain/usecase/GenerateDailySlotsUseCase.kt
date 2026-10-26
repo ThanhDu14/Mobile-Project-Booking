@@ -5,6 +5,7 @@ import com.example.booking_app.feature.booking.domain.model.SlotStatus
 import com.example.booking_app.feature.booking.domain.model.TimeSlot
 import java.time.ZoneId
 import java.time.ZonedDateTime
+import java.util.Locale
 import javax.inject.Inject
 
 class GenerateDailySlotsUseCase @Inject constructor() {
@@ -89,7 +90,7 @@ class GenerateDailySlotsUseCase @Inject constructor() {
     private fun formatTime(minutes: Int): String {
         val h = minutes / 60
         val m = minutes % 60
-        return String.format("%02d%02d", h, m)
+        return String.format(Locale.US, "%02d%02d", h, m)
     }
 
     private fun calculateSlotStartMillis(date: String, startTime: String): Long {

@@ -132,4 +132,26 @@ class BookingRepositoryImplTest {
         assertTrue(result.isFailure)
         assertTrue(result.exceptionOrNull() is AppError.NotSignedIn)
     }
+
+    @Test
+    fun errorMapping_deadlineExceeded_mapsToAppErrorTimeout() = runTest {
+        val firestoreEx = FirebaseFirestoreException("Deadline exceeded", FirebaseFirestoreException.Code.DEADLINE_EXCEEDED)
+        coEvery { remoteDataSource.getVenueOperatingHours(venueId) } throws firestoreEx
+
+        val result = repository.getVenueOperatingHours(venueId)
+
+        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull() is AppError.Timeout)
+    }
+
+    @Test
+    fun errorMapping_aborted_mapsToAppErrorConflict() = runTest {
+        val firestoreEx = FirebaseFirestoreException("Transaction aborted", FirebaseFirestoreException.Code.ABORTED)
+        coEvery { remoteDataSource.getVenueOperatingHours(venueId) } throws firestoreEx
+
+        val result = repository.getVenueOperatingHours(venueId)
+
+        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull() is AppError.Conflict)
+    }
 }
