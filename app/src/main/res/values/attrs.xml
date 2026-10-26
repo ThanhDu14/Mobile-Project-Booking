@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="LoginPromptView">
+        <!-- Câu mời đăng nhập; mặc định "Đăng nhập để dùng tính năng này" -->
+        <attr name="promptMessage" format="string" />
+    </declare-styleable>
+</resources>

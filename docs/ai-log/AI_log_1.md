@@ -580,3 +580,51 @@ phối hợp (D: khóa tài khoản, duyệt chủ sân thì gán appRole=OWNER 
 - Chạy các kịch bản M9, M10 (liên kết Google), M17 (password policy), M20 (tài khoản bị khóa nhập sai mật khẩu) trong `quickstart.md` để kiểm tra những chỗ AI chỉ suy ra từ tài liệu.
 - Đối chiếu mọi FR trong spec với ít nhất một quy tắc trong data-model/contract hoặc một kịch bản trong `quickstart.md`.
 - Việc cần làm tiếp: chốt với D (`set-account-status`, thứ tự ghi claim), B (`_shared/firestore.ts`) và C (`_shared/auth.ts`, `level` nullable) ở họp 16/10; cập nhật đặc tả CSDL theo danh sách cuối `data-model.md`; sửa spec theo R14.
+
+## Mục 9: Cài đặt US1, US3, US5 và Polish spec 010 bằng `/speckit-implement`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-20 |
+| Người thực hiện | Thành Dự |
+| Nhóm tính năng liên quan | 01 – Tài khoản (`specs/010-account-auth`) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5), lệnh Spec Kit `/speckit-implement` |
+| Mục đích | Làm nốt các task còn mở của spec 010: đăng ký email, màn hình chờ khởi tạo, banner xác minh email (US1), quên mật khẩu (US3), đăng nhập số điện thoại + OTP (US5), Polish (T074–T079) |
+| Nhánh Git | `feature/01-account-auth-domain` (đã merge `main` mới nhất trước khi làm) |
+
+### Prompt đã dùng
+
+```text
+/speckit-implement Làm tiếp spec 010-account-auth trên nhánh feature/01-account-auth-domain, chỉ các task còn `- [ ]`,
+theo thứ tự: 1. US1 (T036–T043, T045–T047): viết test T036–T039 trước, chạy cho thấy fail, rồi mới cài đặt cho xanh;
+WelcomeFragment đã có sẵn, chỉ nối nút "Đăng ký". 2. US3 (T054–T057). 3. US5 (T067–T073). 4. Polish: T074, T075, T078,
+T079; T077 chỉ làm phần kiểm tra/sửa được bằng code, phần còn lại ghi chú để kiểm tra tay.
+Bỏ qua T005 và T076 (không đánh dấu [x], ghi rõ còn chờ người làm).
+Hết mỗi story: chạy ./gradlew testDebugUnitTest assembleDebug cho xanh, đánh dấu [x], commit riêng, không push.
+Test fail hoặc build lỗi thì dừng lại sửa; không sửa test cho khớp code sai.
+Cuối cùng báo lại: task nào xong, task nào còn lại và lý do, kết quả lệnh T079.
+```
+
+### Tóm tắt phản hồi của AI
+
+- **US1** (commit `417b843`): `RegisterWithEmailUseCase` (đăng ký → lưu `PendingSignup` → gửi email xác minh → gọi `on-signup`), `RegisterFragment`, màn hình chờ khởi tạo `AccountSetupFragment` (Thử lại / Đăng xuất), banner xác minh email trong `core/ui` với đếm ngược 60 giây. Thêm `AppClock` để test được thời gian. Viết test trước, chạy thấy fail (lỗi biên dịch) rồi mới cài đặt.
+- **US3** (commit `933f589`): `SendPasswordResetUseCase` coi "email không tồn tại" là thành công (FR-018, không lộ email), màn hình quên mật khẩu có đếm ngược gửi lại.
+- **US5** (commit `aecd299`): `verifyPhoneNumber` bọc bằng `callbackFlow`, `OtpSession` tự giới hạn 5 phút / 5 lần sai (Firebase không cấu hình được, R8), màn hình số điện thoại và 6 ô OTP (tự nhảy ô, dán cả mã, xóa lùi).
+- **Polish** (commit `7ca49ca`): cập nhật đặc tả CSDL, README nhóm 01, test Espresso đăng ký → đăng xuất → đăng nhập lại, sửa layout màn hình chờ (thuộc tính `maxWidth` không có tác dụng trên `LinearLayout`) và cảnh báo Lint ở ô OTP.
+- Kết quả T079: Gradle `lint testDebugUnitTest assembleDebug` xanh (Lint 0 Error / 42 Warning, 171 unit test); `firestore-tests` 27/27; `deno test` Edge Function 35/35.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Code US1, US3, US5 | Dùng | Test xanh, bám `contracts/ui-screens.md` và wireframe |
+| `VerificationEmailSender` trong `core/` | Dùng | Banner ở `core/ui` không được import `feature/auth` |
+| Đang ở màn hình đăng ký thì `Initializing` không chuyển màn hình | Dùng | Tránh nhảy màn hình giữa lúc đăng ký đang chạy |
+| Test Espresso T075 | Dùng, chưa chạy | Cần máy ảo, `USE_EMULATOR=true` và `on-signup` chạy local; test tự bỏ qua khi không bật Emulator |
+| T005, T076, ảnh M1/M7/M12/M18 (T078) | Chưa làm | Phải làm tay trên Firebase Console và máy thật |
+
+### Cách kiểm chứng
+
+- Chạy lại toàn bộ lệnh T079 (kết quả ở trên).
+- Đọc diff từng commit, đối chiếu với task trong `tasks.md` và `contracts/ui-screens.md`.
+- Việc cần làm tiếp: chạy T076 (kịch bản M1–M25 trên máy thật), chụp ảnh cho README, chạy T075 trên máy ảo; D, C xem lại phần sửa đặc tả CSDL trong PR.

@@ -1,9 +1,184 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
+    <!--
+        Theme SmashNow: Material 3 DayNight, màu và chữ lấy từ design system SmashNow.
+        Chế độ tối đổi qua values-night/colors.xml nên chỉ cần một định nghĩa theme.
+    -->
     <style name="Base.Theme.Bookingapp" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <!-- court: màu nhấn duy nhất -->
+        <item name="colorPrimary">@color/sn_court</item>
+        <item name="colorOnPrimary">@color/sn_on_court</item>
+        <item name="colorPrimaryContainer">@color/sn_court_container</item>
+        <item name="colorOnPrimaryContainer">@color/sn_on_court_container</item>
+        <item name="colorSecondary">@color/sn_court</item>
+        <item name="colorOnSecondary">@color/sn_on_court</item>
+        <!-- Viên thuốc của tab đang chọn, chip đang chọn dạng nhạt -->
+        <item name="colorSecondaryContainer">@color/sn_court_container</item>
+        <item name="colorOnSecondaryContainer">@color/sn_on_court_container</item>
+        <!-- lamp: chỉ cho trạng thái cần chú ý (giữ chỗ, sao đánh giá) -->
+        <item name="colorTertiary">@color/sn_lamp</item>
+        <item name="colorOnTertiary">@color/sn_on_lamp</item>
+        <item name="colorTertiaryContainer">@color/sn_lamp_container</item>
+        <item name="colorOnTertiaryContainer">@color/sn_on_lamp_container</item>
+        <item name="colorError">@color/sn_danger</item>
+        <item name="colorOnError">@color/sn_on_danger</item>
+
+        <item name="android:colorBackground">@color/sn_surface</item>
+        <item name="colorOnBackground">@color/sn_ink</item>
+        <item name="colorSurface">@color/sn_surface</item>
+        <item name="colorOnSurface">@color/sn_ink</item>
+        <item name="colorOnSurfaceVariant">@color/sn_ink_muted</item>
+        <item name="colorSurfaceVariant">@color/sn_surface_sunken</item>
+        <item name="colorSurfaceContainerLowest">@color/sn_surface_raised</item>
+        <item name="colorSurfaceContainerLow">@color/sn_surface_raised</item>
+        <item name="colorSurfaceContainer">@color/sn_surface_raised</item>
+        <item name="colorSurfaceContainerHigh">@color/sn_surface_raised</item>
+        <item name="colorSurfaceContainerHighest">@color/sn_surface_sunken</item>
+        <item name="colorOutline">@color/sn_outline</item>
+        <item name="colorOutlineVariant">@color/sn_line</item>
+
+        <!--
+            Chữ: Be Vietnam Pro, thang chữ ở type.xml. Không đặt android:fontFamily ở cấp theme vì nó đè
+            font của textAppearance (mất độ đậm 500/600); TextView không khai báo gì dùng kiểu Body.
+        -->
+        <item name="android:textViewStyle">@style/Widget.SmashNow.TextView</item>
+        <item name="textAppearanceHeadlineSmall">@style/TextAppearance.SmashNow.Headline</item>
+        <item name="textAppearanceTitleLarge">@style/TextAppearance.SmashNow.TitleLarge</item>
+        <item name="textAppearanceTitleMedium">@style/TextAppearance.SmashNow.Title</item>
+        <item name="textAppearanceBodyLarge">@style/TextAppearance.SmashNow.BodyLarge</item>
+        <item name="textAppearanceBodyMedium">@style/TextAppearance.SmashNow.Body</item>
+        <item name="textAppearanceLabelLarge">@style/TextAppearance.SmashNow.Label</item>
+        <item name="textAppearanceBodySmall">@style/TextAppearance.SmashNow.Caption</item>
+
+        <!-- Nút: vùng chạm 48dp, nút viền chữ ink như wireframe -->
+        <item name="materialButtonStyle">@style/Widget.SmashNow.Button</item>
+        <item name="materialButtonOutlinedStyle">@style/Widget.SmashNow.Button.Outlined</item>
+        <item name="borderlessButtonStyle">@style/Widget.SmashNow.Button.Text</item>
+
+        <!-- Bo góc theo vai trò: ô nhập 8dp, thẻ 12dp, bottom sheet/hộp thoại 28dp, nút và chip dạng viên thuốc -->
+        <item name="shapeAppearanceCornerExtraSmall">@style/ShapeAppearance.SmashNow.Small</item>
+        <item name="shapeAppearanceCornerSmall">@style/ShapeAppearance.SmashNow.Small</item>
+        <item name="shapeAppearanceCornerMedium">@style/ShapeAppearance.SmashNow.Medium</item>
+        <item name="shapeAppearanceCornerLarge">@style/ShapeAppearance.SmashNow.Large</item>
+        <item name="shapeAppearanceCornerExtraLarge">@style/ShapeAppearance.SmashNow.Large</item>
     </style>
 
     <style name="Theme.Bookingapp" parent="Base.Theme.Bookingapp" />
+
+    <style name="Widget.SmashNow.TextView" parent="Widget.MaterialComponents.TextView">
+        <item name="android:textAppearance">@style/TextAppearance.SmashNow.Body</item>
+    </style>
+
+    <style name="Widget.SmashNow.Button" parent="Widget.Material3.Button">
+        <item name="android:minHeight">@dimen/touch_min</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+    </style>
+
+    <style name="Widget.SmashNow.Button.Outlined" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="android:minHeight">@dimen/touch_min</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+        <item name="strokeColor">?attr/colorOutline</item>
+    </style>
+
+    <style name="Widget.SmashNow.Button.Text" parent="Widget.Material3.Button.TextButton">
+        <item name="android:minHeight">@dimen/touch_min</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+    </style>
+
+    <!-- Link dạng chữ đậm màu court nằm trong câu ("Chưa có tài khoản? Đăng ký") -->
+    <style name="Widget.SmashNow.Button.Link" parent="Widget.SmashNow.Button.Text">
+        <item name="android:paddingStart">@dimen/space_1</item>
+        <item name="android:paddingEnd">@dimen/space_1</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:textAppearance">@style/TextAppearance.SmashNow.Title</item>
+    </style>
+
+    <!-- Ô nhập: nhãn đặt phía trên (FieldLabel), trong ô chỉ có placeholder như wireframe -->
+    <style name="Widget.SmashNow.FieldLabel" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">@dimen/space_4</item>
+        <item name="android:layout_marginBottom">@dimen/space_2</item>
+        <item name="android:textAppearance">@style/TextAppearance.SmashNow.Label</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+    </style>
+
+    <style name="Widget.SmashNow.TextInputLayout" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="hintEnabled">false</item>
+        <item name="boxBackgroundColor">@color/sn_surface_raised</item>
+        <item name="errorIconDrawable">@drawable/ic_error_24</item>
+    </style>
+
+    <!-- Lỗi chung của form, không gắn với ô nào (FR-011) -->
+    <style name="Widget.SmashNow.FormError" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">@dimen/space_2</item>
+        <item name="android:drawablePadding">@dimen/space_2</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:textColor">?attr/colorError</item>
+        <item name="android:accessibilityLiveRegion">polite</item>
+        <item name="drawableStartCompat">@drawable/ic_error_24</item>
+        <item name="drawableTint">?attr/colorError</item>
+    </style>
+
+    <!-- Dòng có dấu tích trong hộp tóm tắt điều khoản -->
+    <style name="Widget.SmashNow.CheckRow" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">@dimen/space_3</item>
+        <item name="android:drawablePadding">@dimen/space_3</item>
+        <item name="android:textAppearance">@style/TextAppearance.SmashNow.BodyLarge</item>
+        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
+        <item name="drawableStartCompat">@drawable/ic_check_20</item>
+        <item name="drawableTint">?attr/colorOnSurfaceVariant</item>
+    </style>
+
+    <!-- Vòng xoay thay chữ trên nút khi đang gửi (FR-022) -->
+    <style name="Widget.SmashNow.ButtonProgress" parent="">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_gravity">center</item>
+        <item name="android:indeterminate">true</item>
+        <item name="indicatorSize">@dimen/auth_button_progress_size</item>
+        <item name="indicatorColor">?attr/colorOnPrimary</item>
+        <item name="trackThickness">3dp</item>
+        <item name="android:elevation">4dp</item>
+    </style>
+
+    <style name="Widget.SmashNow.ButtonProgress.OnSurface">
+        <item name="indicatorColor">?attr/colorOnSurface</item>
+    </style>
+
+    <!-- Một ô chữ số của mã OTP (6 ô, wireframe buoc5). contentDescription đặt trong OtpVerifyFragment. -->
+    <style name="Widget.SmashNow.OtpDigit" parent="">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">56dp</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:background">@drawable/bg_otp_box</item>
+        <item name="android:gravity">center</item>
+        <item name="android:inputType">number</item>
+        <item name="android:textAppearance">@style/TextAppearance.SmashNow.NumLarge</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+    </style>
+
+    <style name="ShapeAppearance.SmashNow.Small" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">@dimen/radius_sm</item>
+    </style>
+
+    <style name="ShapeAppearance.SmashNow.Medium" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">@dimen/radius_md</item>
+    </style>
+
+    <style name="ShapeAppearance.SmashNow.Large" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">@dimen/radius_lg</item>
+    </style>
 </resources>

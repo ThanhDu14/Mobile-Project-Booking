@@ -140,7 +140,7 @@ Khi bấm vào ô tìm kiếm mà chưa gõ gì, người chơi thấy các lầ
 - **FR-006**: Người chơi PHẢI lọc được theo khung giờ còn trống bằng cách chọn một ngày (từ hôm nay tới hết số ngày cho phép đặt trước) và giờ bắt đầu, giờ kết thúc theo bước 30 phút. Một cơ sở khớp khi có **ít nhất một sân con** trống liên tục suốt khung đó và khung đó nằm trong giờ mở cửa. Khung giờ đang bị giữ chỗ đã hết hạn được coi là trống; khung đã đặt, đang giữ còn hạn, hoặc bị chủ sân khóa được coi là bận.
 - **FR-007**: Khi chọn ngày hôm nay, app KHÔNG ĐƯỢC cho chọn giờ bắt đầu đã qua; giờ kết thúc PHẢI sau giờ bắt đầu.
 - **FR-008**: Người chơi PHẢI lọc được theo một hoặc nhiều tiện ích lấy từ danh mục chung (ví dụ gửi xe, nước uống, phòng tắm, cho thuê vợt). Một cơ sở khớp khi có **đủ tất cả** tiện ích đã chọn.
-- **FR-009**: Mỗi bộ lọc đang áp dụng (quận, khoảng giá, khung giờ, từng tiện ích) PHẢI hiện thành một chip có nhãn ngắn; bỏ một chip chỉ bỏ bộ lọc đó; "Xóa bộ lọc" bỏ mọi bộ lọc nhưng giữ từ khóa.
+- **FR-009**: Mỗi bộ lọc đang áp dụng (quận, khoảng giá, khung giờ, từng tiện ích) PHẢI hiện thành một chip có nhãn ngắn; bỏ một chip chỉ bỏ bộ lọc đó; "Xóa bộ lọc" bỏ mọi bộ lọc khác nhưng giữ từ khóa và quận đã chọn (khớp US2-8).
 - **FR-010**: Bộ lọc tìm kiếm PHẢI là một tập điều kiện dùng chung (từ khóa, quận/huyện, khoảng giá, ngày và khung giờ, tiện ích, cách sắp xếp) mà spec 022 có thể điền sẵn rồi chạy cùng một cách tìm như khi người chơi tự chọn. Giá trị không hợp lệ (ngày đã qua, quận/tiện ích không có trong danh mục, khoảng giá ngược) PHẢI bị bỏ và không làm hỏng các điều kiện còn lại.
 
 **Sắp xếp và vị trí**
@@ -153,7 +153,7 @@ Khi bấm vào ô tìm kiếm mà chưa gõ gì, người chơi thấy các lầ
 **Danh sách kết quả**
 
 - **FR-015**: Mỗi thẻ kết quả PHẢI hiện ảnh đại diện (hoặc ảnh mặc định), tên cơ sở, quận/huyện, giá (khi không có bộ lọc khung giờ: "từ X đ/giờ"; khi có: "X đ/giờ · HH:mm–HH:mm" của khung đã chọn; "Liên hệ" khi chưa có giá), điểm trung bình kèm số lượt đánh giá (hoặc "Chưa có đánh giá"), và khoảng cách khi có vị trí.
-- **FR-016**: Danh sách PHẢI tải theo trang, mỗi trang 20 cơ sở, tải thêm khi cuộn tới cuối.
+- **FR-016**: Danh sách PHẢI tải theo trang, mỗi trang 20 cơ sở, tải thêm khi cuộn tới cuối. Một trang có thể ít hơn 20 khi phải đọc thêm quá nhiều dữ liệu mới đủ; cuộn tiếp sẽ tải phần còn lại.
 - **FR-017**: Bấm một thẻ PHẢI mở chi tiết sân (spec 030) của đúng cơ sở đó; quay lại PHẢI giữ nguyên từ khóa, bộ lọc, cách sắp xếp và vị trí cuộn.
 - **FR-018**: Danh sách PHẢI cập nhật theo nội dung cuối cùng người chơi gõ hoặc chọn; kết quả của điều kiện cũ KHÔNG ĐƯỢC ghi đè kết quả của điều kiện mới.
 - **FR-019**: Màn hình PHẢI có đủ 4 trạng thái: đang tải, có kết quả, rỗng (thông báo "Không tìm thấy sân phù hợp", gợi ý bỏ bớt bộ lọc, nút "Xóa bộ lọc"), lỗi (kèm nút "Thử lại").
@@ -169,7 +169,7 @@ Khi bấm vào ô tìm kiếm mà chưa gõ gì, người chơi thấy các lầ
 
 **Truy cập**
 
-- **FR-026**: Khách chưa đăng nhập PHẢI dùng được toàn bộ tìm kiếm của spec này (tìm theo tên/quận, bộ lọc, sắp xếp, khoảng cách, mở chi tiết sân) mà không bị yêu cầu đăng nhập. Chỉ thông tin công khai của cơ sở hoạt động và danh mục quận/huyện, tiện ích được hiển thị cho khách; trạng thái khung giờ chỉ được dùng để xét trống/bận, không lộ ai đã đặt.
+- **FR-026**: Khách chưa đăng nhập PHẢI dùng được toàn bộ tìm kiếm của spec này (tìm theo tên/quận, bộ lọc, sắp xếp, khoảng cách, mở chi tiết sân) mà không bị yêu cầu đăng nhập. Chỉ thông tin công khai của cơ sở hoạt động và danh mục quận/huyện, tiện ích được hiển thị cho khách; trạng thái khung giờ chỉ được dùng để xét trống/bận, không lộ thông tin cá nhân của người đã đặt.
 - **FR-027**: Lịch sử tìm kiếm chỉ có với người đã đăng nhập; khách không có lịch sử và không có dữ liệu tìm kiếm nào được lưu lên máy chủ. Thao tác cần tài khoản (đặt sân, yêu thích...) do spec tương ứng yêu cầu đăng nhập.
 
 ### Key Entities *(include if feature involves data)*
@@ -203,4 +203,5 @@ Khi bấm vào ô tìm kiếm mà chưa gõ gì, người chơi thấy các lầ
 - Giờ mở cửa áp dụng giống nhau cho mọi ngày trong tuần ở phiên bản này.
 - "Gần nhất" tính theo khoảng cách đường chim bay, không theo quãng đường di chuyển; chỉ đường thuộc spec 030.
 - Lịch sử 10 mục và trang 20 kết quả là giá trị mặc định theo thông lệ, có thể chỉnh trong `/speckit-clarify`.
+- Với sắp xếp "Gần nhất" hoặc sắp xếp giá có khung giờ, mỗi lần tìm xét tối đa 150 cơ sở; vượt quá thì app gợi ý chọn quận. Quy mô đồ án (dưới 100 cơ sở) không chạm giới hạn này.
 - Gợi ý sân gần vị trí hiện tại và chế độ bản đồ thuộc spec 021; tìm bằng câu tự do hoặc giọng nói thuộc spec 022; tìm buổi vãng lai thuộc spec 080.

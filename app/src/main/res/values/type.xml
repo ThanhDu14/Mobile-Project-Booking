@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Thang chữ SmashNow (design system, mục Chữ). Cỡ tính bằng sp; chỉ dùng 400/500/600.
+    Không tự đặt cỡ ngoài thang này.
+-->
+<resources>
+    <style name="TextAppearance.SmashNow.Headline" parent="TextAppearance.Material3.HeadlineSmall">
+        <item name="android:fontFamily">@font/be_vietnam_pro_semibold</item>
+        <item name="fontFamily">@font/be_vietnam_pro_semibold</item>
+        <item name="android:textSize">24sp</item>
+        <item name="lineHeight">32sp</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+
+    <style name="TextAppearance.SmashNow.TitleLarge" parent="TextAppearance.Material3.TitleLarge">
+        <item name="android:fontFamily">@font/be_vietnam_pro_semibold</item>
+        <item name="fontFamily">@font/be_vietnam_pro_semibold</item>
+        <item name="android:textSize">20sp</item>
+        <item name="lineHeight">28sp</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+
+    <style name="TextAppearance.SmashNow.Title" parent="TextAppearance.Material3.TitleMedium">
+        <item name="android:fontFamily">@font/be_vietnam_pro_semibold</item>
+        <item name="fontFamily">@font/be_vietnam_pro_semibold</item>
+        <item name="android:textSize">16sp</item>
+        <item name="lineHeight">24sp</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+
+    <style name="TextAppearance.SmashNow.BodyLarge" parent="TextAppearance.Material3.BodyLarge">
+        <item name="android:fontFamily">@font/be_vietnam_pro_regular</item>
+        <item name="fontFamily">@font/be_vietnam_pro_regular</item>
+        <item name="android:textSize">16sp</item>
+        <item name="lineHeight">24sp</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+
+    <style name="TextAppearance.SmashNow.Body" parent="TextAppearance.Material3.BodyMedium">
+        <item name="android:fontFamily">@font/be_vietnam_pro_regular</item>
+        <item name="fontFamily">@font/be_vietnam_pro_regular</item>
+        <item name="android:textSize">14sp</item>
+        <item name="lineHeight">21sp</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+
+    <style name="TextAppearance.SmashNow.Label" parent="TextAppearance.Material3.LabelLarge">
+        <item name="android:fontFamily">@font/be_vietnam_pro_medium</item>
+        <item name="fontFamily">@font/be_vietnam_pro_medium</item>
+        <item name="android:textSize">14sp</item>
+        <item name="lineHeight">20sp</item>
+        <item name="android:letterSpacing">0.007</item>
+    </style>
+
+    <style name="TextAppearance.SmashNow.Caption" parent="TextAppearance.Material3.BodySmall">
+        <item name="android:fontFamily">@font/be_vietnam_pro_regular</item>
+        <item name="fontFamily">@font/be_vietnam_pro_regular</item>
+        <item name="android:textSize">12sp</item>
+        <item name="lineHeight">18sp</item>
+        <item name="android:letterSpacing">0.017</item>
+    </style>
+
+    <!-- Số liệu: Barlow Semi Condensed, chữ số đều độ rộng (tnum) để giá và giờ thẳng hàng -->
+    <style name="TextAppearance.SmashNow.NumDisplay" parent="">
+        <item name="android:fontFamily">@font/barlow_semi_condensed_semibold</item>
+        <item name="fontFamily">@font/barlow_semi_condensed_semibold</item>
+        <item name="android:fontFeatureSettings">tnum</item>
+        <item name="android:textSize">32sp</item>
+        <item name="lineHeight">36sp</item>
+    </style>
+
+    <style name="TextAppearance.SmashNow.NumLarge" parent="TextAppearance.SmashNow.NumDisplay">
+        <item name="android:textSize">20sp</item>
+        <item name="lineHeight">24sp</item>
+    </style>
+
+    <style name="TextAppearance.SmashNow.Num" parent="TextAppearance.SmashNow.NumDisplay">
+        <item name="android:textSize">15sp</item>
+        <item name="lineHeight">20sp</item>
+    </style>
+
+    <style name="TextAppearance.SmashNow.NumSmall" parent="TextAppearance.SmashNow.NumDisplay">
+        <item name="android:fontFamily">@font/barlow_semi_condensed_medium</item>
+        <item name="fontFamily">@font/barlow_semi_condensed_medium</item>
+        <item name="android:textSize">13sp</item>
+        <item name="lineHeight">16sp</item>
+    </style>
+
+    <!-- Chữ "SmashNow" khi chưa có logo: Barlow Semi Condensed 600 -->
+    <style name="TextAppearance.SmashNow.Wordmark" parent="TextAppearance.SmashNow.NumDisplay">
+        <item name="android:fontFeatureSettings">normal</item>
+        <item name="android:textSize">24sp</item>
+        <item name="lineHeight">28sp</item>
+    </style>
+
+    <!-- Nhãn nhỏ viết hoa phía trên tiêu đề ("BƯỚC CUỐI") -->
+    <style name="TextAppearance.SmashNow.Eyebrow" parent="TextAppearance.SmashNow.NumDisplay">
+        <item name="android:fontFeatureSettings">normal</item>
+        <item name="android:textSize">15sp</item>
+        <item name="lineHeight">20sp</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:letterSpacing">0.04</item>
+    </style>
+</resources>

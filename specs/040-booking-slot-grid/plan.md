@@ -111,17 +111,19 @@ com.example.booking_app.feature.booking/
 ### 5.2. Xử lý xung đột Realtime (Race Condition)
 - Khi `SnapshotListener` bắn dữ liệu các slot bận mới: Nếu có bất kỳ slot nào người dùng đang chọn (`SELECTED`) bị chuyển sang `HELD`, `BOOKED`, hoặc `BLOCKED` $\rightarrow$ Tự động xóa slot đó khỏi danh sách chọn, tính lại tổng tiền và bắn `UiEffect.ShowConflictWarning("Ca chơi vừa có người đặt/giữ chỗ")` hiển thị Snackbar.
 
-### 5.3. Hợp đồng chuyển màn hình sang `[041]` (Navigation Safe Args Contract)
-Khi người dùng bấm "Tiếp tục", Fragment điều hướng sang `BookingSummaryFragment` (`[041]`) kèm theo Bundle Safe Args:
+### 5.3. Hợp đồng chuyển màn hình sang thanh toán `[050]` (Navigation Safe Args Contract)
+Khi người dùng bấm "Tiếp tục" và giữ chỗ 5 phút thành công, Fragment điều hướng sang màn hình thanh toán `[050]` kèm theo Bundle Safe Args `HoldToPaymentArgs`:
 ```kotlin
-data class BookingSlotToSummaryArgs(
+data class HoldToPaymentArgs(
+    val bookingId: String,
     val venueId: String,
-    val courtId: String,
-    val courtName: String,
-    val date: String,                      // Định dạng yyyyMMdd
-    val selectedSlotTimes: Array<String>,  // Danh sách giờ bắt đầu: ["1800", "1830", "1900"]
-    val subtotalAmount: Long               // Tổng tiền tạm tính trước khi áp dụng voucher
-)
+    val venueName: String,
+    val isRecurring: Boolean = false,
+    val totalSessions: Int = 1,
+    val subtotalAmount: Long,
+    val slotIds: Array<String>,
+    val holdExpiresAtMillis: Long
+) : Parcelable
 ```
 
 ## 6. Implementation Phases (Các giai đoạn triển khai)

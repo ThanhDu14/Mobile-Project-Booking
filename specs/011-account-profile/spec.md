@@ -52,11 +52,11 @@ Người dùng đã đăng nhập mở trang "Tài khoản", xem ảnh đại di
 
 ### User Story 2 - Đăng xuất (Priority: P1)
 
-Người dùng bấm "Đăng xuất" ở trang "Tài khoản", xác nhận, và được đưa về màn hình đăng nhập.
+Người dùng bấm "Đăng xuất" ở trang "Tài khoản", xác nhận, và được đưa về Trang chủ ở chế độ khách (spec 010 FR-025).
 
 **Why this priority**: Bắt buộc để dùng chung máy hoặc đổi tài khoản, và là điều kiện để kiểm thử mọi luồng đăng nhập của spec 010.
 
-**Independent Test**: Đăng nhập, đăng xuất, mở lại app thì thấy màn hình đăng nhập; không còn thông báo đẩy của tài khoản cũ trên máy đó.
+**Independent Test**: Đăng nhập, đăng xuất, mở lại app thì vào Trang chủ ở chế độ khách (tab Tài khoản hiện lời mời đăng nhập); không còn thông báo đẩy của tài khoản cũ trên máy đó.
 
 **Acceptance Scenarios**:
 
@@ -183,7 +183,7 @@ Người dùng đăng ký bằng email nhưng gõ nhầm hoặc muốn đổi em
 
 **Đăng xuất**
 
-- **FR-007**: Người dùng PHẢI đăng xuất được từ trang tài khoản sau một bước xác nhận. Sau khi đăng xuất, app PHẢI về màn hình đăng nhập, xóa lịch sử điều hướng, và máy đó PHẢI ngừng nhận thông báo đẩy của tài khoản.
+- **FR-007**: Người dùng PHẢI đăng xuất được từ trang tài khoản sau một bước xác nhận. Sau khi đăng xuất, app PHẢI về Trang chủ ở chế độ khách (spec 010 FR-025), xóa lịch sử điều hướng, và máy đó PHẢI ngừng nhận thông báo đẩy của tài khoản.
 
 **Chủ sân**
 

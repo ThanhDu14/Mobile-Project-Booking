@@ -10,7 +10,7 @@ Hướng dẫn chạy và kiểm tra tính năng từ đầu đến cuối. Chi 
 | Node.js 20 + `firebase-tools` | Firebase Emulator Suite (Auth, Firestore) |
 | Supabase CLI + Docker | `supabase start` chạy Storage, Edge Functions local |
 | Deno | Test Edge Function |
-| `local.properties` có `SUPABASE_URL`, `SUPABASE_ANON_KEY` trỏ về local; app bật `useEmulator` ở build debug | Không commit khóa thật (nguyên tắc II) |
+| `local.properties` có `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` trỏ về local và `USE_EMULATOR=true` (xem quickstart 010) | Không commit khóa thật (nguyên tắc II) |
 
 ```bash
 firebase emulators:start --only auth,firestore      # cửa sổ 1

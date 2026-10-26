@@ -19,8 +19,9 @@ Trạng thái: 🟨 Bản nháp, chốt tại buổi họp 16/10/2026 (mốc M1)
 | Xóa | Ưu tiên xóa mềm bằng trường `status` (`HIDDEN`, `LOCKED`, `DELETED`) cho dữ liệu có liên kết |
 | Phi chuẩn hóa | Được phép sao chép trường hiển thị (tên sân, ảnh đại diện) để tránh đọc thêm. Bản sao ghi rõ là `*Snapshot` hoặc nêu trong bảng trường |
 | Trường chỉ server ghi | Đánh dấu 🔒 trong bảng. Client không được ghi, Rules phải chặn |
+| Dữ liệu cá nhân | Trường chứa dữ liệu cá nhân (`users`) chỉ chủ tài khoản và admin đọc; tính năng khác cần tên/ảnh dùng snapshot |
 
-Các trường 🔒 do Edge Functions ghi qua Firestore REST API bằng service account (bỏ qua Rules). Mã truy cập Firestore dùng chung đặt ở `supabase/functions/_shared/firestore.ts` (B phụ trách).
+Các trường 🔒 do Edge Functions ghi qua Firestore REST API bằng service account (bỏ qua Rules). Mã truy cập Firestore dùng chung đặt ở `supabase/functions/_shared/firestore.ts` (B phụ trách). Xác thực Firebase ID token (`verifyIdToken`, `requireUser`, `requireRole`, `errorResponse`) ở `_shared/auth.ts` và thao tác Identity Toolkit (custom claims, khóa tài khoản) ở `_shared/identity.ts` (A phụ trách, spec 010).
 
 ## 2. Danh sách collection và người phụ trách
 
@@ -92,9 +93,9 @@ Các bảng dưới đây là bản khởi đầu. Người phụ trách hoàn t
 | Trường | Kiểu | Ghi chú |
 |---|---|---|
 | `displayName` | String | |
-| `email`, `phone` | String? | Ít nhất một trong hai |
+| `email`, `phone` | String? | Ít nhất một trong hai. Lấy từ Firebase ID token khi tạo (`email` viết thường); đổi email hoặc số điện thoại theo spec 011 |
 | `avatarPath` | String? | Bucket `avatars`, object `{uid}/avatar.jpg` |
-| `level` | String | `BEGINNER`, `INTERMEDIATE`, `ADVANCED` |
+| `level` | String? | `BEGINNER`, `INTERMEDIATE`, `ADVANCED`. Khởi tạo `null` (chưa chọn) |
 | `favoriteDistrictIds` | Array\<String> | Khu vực hay chơi |
 | `role` 🔒 | String | `PLAYER`, `OWNER`, `ADMIN`. Bản sao của custom claim `appRole` |
 | `ownerStatus` 🔒 | String | `NONE`, `PENDING`, `APPROVED`, `REJECTED`. Bị admin thu hồi quyền thì về `NONE` (spec 120) |
@@ -103,7 +104,9 @@ Các bảng dưới đây là bản khởi đầu. Người phụ trách hoàn t
 | `fcmTokens` | Array\<String> | Chỉ chủ tài khoản ghi |
 | `notificationPrefs` | Map\<String, Boolean> | Theo loại thông báo ở [4.13](#413-usersuidnotificationsid--d) |
 | `walletBalance` 🔒 | Long | Số dư ví giả lập (VND), khởi tạo 0 khi đăng ký. Chỉ Edge Function ghi (nạp ví giả lập, thanh toán, hoàn tiền); không bao giờ âm (spec 050) |
-| `termsAcceptedAt` | Timestamp | Bắt buộc khi đăng ký |
+| `termsAcceptedAt` 🔒 | Timestamp | Bắt buộc khi đăng ký. Chỉ `on-signup` ghi, bằng giờ server |
+
+**Custom claims** (Firebase Auth): `role = "authenticated"` (Supabase Third-party Auth cần) và `appRole` (`PLAYER`, `OWNER`, `ADMIN`). Token chưa có `appRole` nghĩa là tài khoản chưa khởi tạo xong (spec 010). Mọi Edge Function ghi claim phải **gộp** vào claim cũ (`_shared/identity.ts` `mergeClaims`) và ghi claim **trước** khi ghi `users.role`, để app làm mới token là thấy vai trò mới.
 
 Xóa tài khoản: Edge Function `delete-account` xóa document, ảnh, lịch sử tìm kiếm, yêu thích; ẩn danh hóa `userId` trong đơn đặt và đánh giá cũ.
 
@@ -301,7 +304,7 @@ Ký hiệu: R đọc, C tạo, U sửa, D xóa. "Chủ" = người sở hữu do
 
 | Collection | Người chơi | Owner sân | Admin | Server (Edge Functions) |
 |---|---|---|---|---|
-| `users` | R mọi người (trường công khai), CU của mình trừ 🔒 | như người chơi | R, U `accountStatus` | Ghi 🔒 |
+| `users` | R **của mình**, U của mình trừ 🔒; không C/D | như người chơi | R; khóa/mở khóa qua Edge Function `set-account-status` | Tạo document (`on-signup`), ghi 🔒 |
 | `aiUsage`, `aiSearchCache` | R `aiUsage` của mình; không ghi | như người chơi | R | Ghi toàn bộ |
 | `ownerApplications` | C, R của mình; U khi `REJECTED` (nộp lại) | R của mình | R, duyệt qua Edge Function | Ghi 🔒 |
 | `venues`, `courts`, `priceRules` | R khi `ACTIVE` | CRUD cơ sở của mình (trừ 🔒) | R, khóa | Ghi 🔒 |
@@ -339,7 +342,8 @@ Mỗi dòng trên cần ít nhất một test Emulator "được phép" và mộ
 
 | Function | Việc | Phụ trách |
 |---|---|---|
-| `on-signup` | Gán claim `role: "authenticated"`, `appRole: "PLAYER"`; tạo `users/{uid}` | A |
+| `on-signup` | App gọi sau khi tạo tài khoản và đồng ý điều khoản (Spark không có trigger Auth). Idempotent; tạo `users/{uid}` rồi gộp claim `role: "authenticated"`, `appRole: "PLAYER"` | A |
+| `set-account-status` | Khóa/mở khóa: ghi `accountStatus` và cờ `disabled` của Firebase Auth | D |
 | `delete-account` | Xóa dữ liệu và ảnh của người dùng | A |
 | `ai-search-parse` | AI Assistant: kiểm tra lượt dùng và cache, gọi LLM, kiểm tra JSON theo schema, trả bộ lọc (xem [AI-feature.md](../../proposal/AI-feature.md)) | A |
 | `create-booking`, `cancel-booking` | Transaction giữ chỗ/đặt/hủy, tính tiền, áp voucher | B |

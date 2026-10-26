@@ -174,6 +174,9 @@ App gọi `getIdToken(true)` sau khi function trả `200`. Chi tiết ở [contr
   - đăng nhập sai trả `INVALID_LOGIN_CREDENTIALS`, không phân biệt email sai hay mật khẩu sai (đúng FR-011);
   - `sendPasswordResetEmail` không báo lỗi khi email chưa đăng ký (đúng FR-018);
   - đăng ký vẫn trả `EMAIL_EXISTS` (cần cho US1-3).
+- **Kết quả chạy thật trên `mobile-22e6c` (T076, 2026-10-20):**
+  - M17: đặt mật khẩu `abcdefgh` qua `accounts:resetPassword` (API mà trang của Firebase gọi) và qua đăng ký đều bị từ chối `PASSWORD_DOES_NOT_MEET_REQUIREMENTS` ("Password must contain a numeric character"). Đúng dự đoán.
+  - M20: tài khoản bị tắt nhập **sai** mật khẩu vẫn nhận `USER_DISABLED`, giống khi nhập đúng; email chưa đăng ký nhận `INVALID_LOGIN_CREDENTIALS`. App hiện "Tài khoản bị khóa" ở cả hai trường hợp đúng/sai mật khẩu. **Khác FR-011**: ai biết email có thể dò ra email đó tồn tại và đang bị khóa. Firebase không cho đổi hành vi này; nhóm cần chọn giữ thông báo khóa (FR-014) hay gộp vào thông báo sai thông tin.
 - Hạn mức gói Spark mỗi ngày: **150 email đặt lại mật khẩu**, **1000 email xác minh**.
 - Password policy hỗ trợ độ dài tối thiểu 6–30 và yêu cầu chữ số, chữ thường, chữ hoa. **Không có lựa chọn "có ít nhất một chữ cái bất kỳ".**
 
@@ -267,3 +270,39 @@ Spec 010 là spec đầu tiên làm code, nên A tạo PR `chore(core)` này tr�
 | Edge Cases "Số không phải số thử nghiệm" | Spark không gửi SMS thật | Giữ nguyên, đã đúng |
 
 Nên chạy `/speckit-clarify` hoặc sửa tay `spec.md` trước `/speckit-tasks`.
+
+## R15. Chế độ khách và quay lại đúng chỗ sau khi đăng nhập (FR-025, FR-026)
+
+Bổ sung ngày 2026-10-19, sau khi `/speckit-analyze` spec 020 phát hiện luồng cũ (`SignedOut` → `nav_auth`, xóa back stack) làm khách không vào được tìm kiếm (FR-026 của 020) và làm mất bộ lọc sau khi đăng nhập.
+
+**Quyết định:**
+- **Khách = `SessionState.SignedOut`.** Không thêm trạng thái mới. Thêm `SessionManager.isGuest: StateFlow<Boolean>` cho tiện dùng.
+- **Điểm vào khi mở app** (`SessionRouter`, hàm thuần trong `core/session`, có unit test):
+
+| `SessionState` | `welcome_seen` (DataStore) | Đích |
+|---|---|---|
+| `SignedOut(reason = null)` | `false` | `nav_auth` / `WelcomeFragment` (có nút "Xem sân trước") |
+| `SignedOut(reason = null)` | `true` | `nav_player` chế độ khách |
+| `SignedOut(LOCKED)` | bất kỳ | `nav_player` chế độ khách, rồi mở `LoginFragment(lockedNotice = true)` chồng lên |
+| `SignedIn` | bất kỳ | Theo `appRole` như R6 |
+| `NeedsConsent`, `Initializing`, `InitFailed` | bất kỳ | Như cũ (bước đồng ý điều khoản, màn hình chờ) |
+
+  Bấm "Xem sân trước", "Đăng ký" hoặc "Đăng nhập" ở màn hình chào đều ghi `welcome_seen = true`.
+- **Mở đăng nhập từ chế độ khách:** dùng deep link `smashnow://auth/login?returnTo=<uri>` (hoặc `smashnow://auth/register`), mở `nav_auth` **chồng lên** back stack hiện tại, không `popUpTo`. Tính năng khác gọi qua `AuthNavigator` ở `core/session` nên không import `feature/auth` (constitution I).
+- **Đăng nhập xong** (`SignedOut` → `SignedIn`), `MainActivity` quyết định:
+  - `appRole == PLAYER` và đang có `nav_player` dưới `nav_auth` → `popBackStack(R.id.nav_auth, inclusive = true)`. Màn hình cũ hiện lại, ViewModel scope theo nav graph (ví dụ `nav_search` của 020) **còn nguyên**, nên bộ lọc được giữ (FR-026). Có `returnTo` thì `navigate(returnTo)` sau khi pop.
+  - `OWNER` / `ADMIN`, hoặc không có `nav_player` bên dưới (mở app lần đầu từ màn hình chào) → `popUpTo(nav_main, inclusive = true)` sang graph của vai trò, như R6.
+  - Đi qua `NeedsConsent` / `Initializing` (Google/OTP lần đầu, đăng ký mới) vẫn nằm trong `nav_auth`, nên quy tắc trên áp dụng khi tới `SignedIn`.
+- **Bấm Back trong `nav_auth`** khi mở từ chế độ khách: về màn hình bên dưới (khách). Khi `nav_auth` là gốc (màn hình chào lần đầu): thoát app như cũ.
+- **Đăng xuất (011) và bị khóa:** `navigate(nav_player)` với `popUpTo(nav_main, inclusive = true)` ở chế độ khách (bị khóa thì mở thêm `LoginFragment(lockedNotice = true)`). Không đưa về màn hình chào.
+- **Màn hình cần tài khoản:** `LoginPromptView` dùng chung ở `core/ui` (biểu tượng, câu mời, nút "Đăng nhập", "Đăng ký"), gọi `AuthNavigator`. Trong spec 010 chỉ `PlayerHomePlaceholderFragment` và các tab placeholder dùng tới; mỗi spec tự quyết màn hình nào của mình khách xem được (mặc định cần đăng nhập).
+- **Rules:** không đổi gì ở 010. Quyền đọc của khách do từng collection quy định (ví dụ spec 020 R13). Khách không có ID token nên Edge Function cần đăng nhập vẫn trả `401`; app không gọi các function đó khi `isGuest`.
+
+**Lý do:**
+- Tìm sân trước khi đăng ký là luồng phổ biến của app đặt chỗ; bắt đăng nhập ngay làm mất người dùng mới (SC-001 của 020 về thời gian tìm sân).
+- `popBackStack` thay vì `popUpTo(nav_main)` là cách duy nhất giữ ViewModel của graph bên dưới mà không phải lưu trạng thái ra ngoài.
+- Dùng `SignedOut` làm khách giữ nguyên máy trạng thái phiên đã test ở T007.
+
+**Phương án đã loại:**
+- **Đăng nhập ẩn danh của Firebase (Anonymous Auth):** khách có `uid` và token, nhưng phải dọn tài khoản ẩn danh, Rules phải phân biệt ẩn danh với tài khoản thật, `on-signup` phải xử lý liên kết tài khoản ẩn danh. Phức tạp hơn nhiều mà spec không cần dữ liệu riêng của khách.
+- **Lưu `SearchCriteria` ra DataStore rồi khôi phục sau khi đăng nhập:** chỉ giải quyết cho tìm kiếm, mỗi spec khác phải tự làm lại; mất vị trí cuộn và trang đã tải.

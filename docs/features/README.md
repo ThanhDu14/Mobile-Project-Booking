@@ -7,7 +7,7 @@ Trạng thái: ⬜ Chưa bắt đầu · 🟨 Đang làm · 🟦 Đang review ·
 
 | # | Nhóm tính năng | Vai trò | Phụ trách | Trạng thái | Spec |
 |---|---|---|---|---|---|
-| 01 | [Tài khoản](01-account/) | Người chơi | A | ⬜ Chưa bắt đầu | — |
+| 01 | [Tài khoản](01-account/) | Người chơi | A | 🟨 Đang làm | [010](../../specs/010-account-auth/spec.md), [011](../../specs/011-account-profile/spec.md) |
 | 02 | [Tìm kiếm sân (tích hợp AI Assistant)](02-court-search/) | Người chơi | A | ⬜ Chưa bắt đầu | — |
 | 03 | [Chi tiết sân](03-court-detail/) | Người chơi | A | ⬜ Chưa bắt đầu | — |
 | 04 | [Đặt sân](04-booking/) | Người chơi | B | ⬜ Chưa bắt đầu | — |

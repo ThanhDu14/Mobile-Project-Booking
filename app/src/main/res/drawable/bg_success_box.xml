@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Hộp báo thành công nền court-container ("Đã gửi yêu cầu", wireframe buoc7). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <solid android:color="@color/sn_court_container" />
+    <corners android:radius="@dimen/radius_md" />
+</shape>

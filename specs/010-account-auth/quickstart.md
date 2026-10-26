@@ -97,6 +97,11 @@ Phạm vi bắt buộc:
 | M23 | Đăng nhập xong bấm Back | Thoát app, không quay lại màn hình đăng nhập | Edge Case |
 | M24 | Chế độ tối, máy tính bảng (`w600dp`), TalkBack | Hiển thị đúng; ô và nút đọc được nhãn | FR-023 |
 | M25 | Mất mạng ở từng nút (Đăng ký, Đăng nhập, Gửi mã, Gửi) | Không crash; snackbar "Thử lại"; giữ dữ liệu trừ mật khẩu và OTP | FR-021, SC-007 |
+| M26 | Cài mới, ở màn hình chào bấm "Xem sân trước" | Vào Trang chủ chế độ khách; tab cần tài khoản hiện lời mời đăng nhập. Đóng app mở lại → vào thẳng Trang chủ, không qua màn hình chào | FR-025 |
+| M27 | Khách đang tìm sân có bộ lọc (spec 020), bấm "Đăng nhập", đăng nhập tài khoản người chơi | Quay lại đúng màn hình tìm kiếm, chip và vị trí cuộn còn nguyên | FR-026 |
+| M28 | Khách bấm "Đăng nhập" rồi bấm Back | Về đúng màn hình trước ở chế độ khách, không thoát app | Edge Case khách |
+| M29 | Khách đăng nhập bằng tài khoản chủ sân | Vào giao diện chủ sân; Back thì thoát app | FR-015, Edge Case khách |
+| M30 | Đăng xuất (spec 011); khóa tài khoản đang mở app | Về Trang chủ chế độ khách; bị khóa thì có thêm màn hình đăng nhập với thông báo khóa | FR-025, FR-014 |
 
 ## 5. Cấp tài khoản admin (thủ công, constitution II)
 
