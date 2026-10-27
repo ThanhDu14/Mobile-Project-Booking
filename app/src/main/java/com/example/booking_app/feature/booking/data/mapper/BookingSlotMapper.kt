@@ -15,7 +15,7 @@ object BookingSlotMapper {
     fun toDomain(dto: CourtDto): Court = Court(
         id = dto.id.ifEmpty { "unknown" },
         name = dto.name.ifEmpty { "Sân" },
-        surfaceType = dto.surfaceType.ifEmpty { "MAT" },
+        surfaceType = dto.surfaceType,
         isActive = dto.isActive,
         sortOrder = dto.sortOrder
     )

@@ -242,7 +242,7 @@ class BookingSlotGridFragment : Fragment() {
         for (court in courts) {
             val headerBinding = ItemCourtColumnHeaderBinding.inflate(inflater, container, false)
             headerBinding.tvCourtName.text = court.name
-            headerBinding.tvCourtSurface.text = if (court.surfaceType.isNotEmpty()) court.surfaceType else "Thảm"
+            headerBinding.tvCourtSurface.text = court.surfaceType
             container.addView(headerBinding.root)
         }
     }

@@ -93,6 +93,16 @@ class BookingSlotGridViewModel @Inject constructor(
 
             // 1. Tải thông tin chi tiết cơ sở (Q12: getVenueInfo tên + địa chỉ + quận)
             bookingRepository.getVenueInfo(venueId).onSuccess { info ->
+                if (info.status != null && info.status != "ACTIVE") {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = "Cơ sở hiện không hoạt động (trạng thái: ${info.status})",
+                            isClosed = true
+                        )
+                    }
+                    return@launch
+                }
                 openTime = info.openTime
                 closeTime = info.closeTime
                 val formattedHours = "${formatHourMinute(openTime)} - ${formatHourMinute(closeTime)}"
@@ -101,6 +111,7 @@ class BookingSlotGridViewModel @Inject constructor(
                         venueName = info.name,
                         venueAddress = info.address,
                         districtName = info.districtName,
+                        photoUrl = info.photoUrl,
                         operatingHours = formattedHours
                     )
                 }
@@ -117,9 +128,28 @@ class BookingSlotGridViewModel @Inject constructor(
 
             // 2. Tải bảng giá của cơ sở (Q5: dynamic peak hour banner từ dữ liệu thật)
             bookingRepository.getPriceRules(venueId).onSuccess { rules ->
+                if (rules.isEmpty()) {
+                    _uiState.update {
+                        it.copy(
+                            isLoading = false,
+                            errorMessage = "Cơ sở chưa có bảng giá hoạt động",
+                            isClosed = true
+                        )
+                    }
+                    return@launch
+                }
                 priceRules = rules
                 val peakBanner = computePeakHourBanner(rules)
                 _uiState.update { it.copy(peakHourBannerText = peakBanner) }
+            }.onFailure { error ->
+                _uiState.update {
+                    it.copy(
+                        isLoading = false,
+                        errorMessage = error.message ?: "Không thể tải bảng giá",
+                        isClosed = true
+                    )
+                }
+                return@launch
             }
 
             // 3. Tải danh sách sân con đang hoạt động (Q3: ma trận mọi sân)
@@ -301,6 +331,7 @@ class BookingSlotGridViewModel @Inject constructor(
                             venueName = _uiState.value.venueName.ifEmpty { "Cơ sở $venueId" },
                             venueAddress = _uiState.value.venueAddress,
                             districtName = _uiState.value.districtName,
+                            photoUrl = _uiState.value.photoUrl.orEmpty(),
                             isRecurring = false,
                             totalSessions = 1,
                             subtotalAmount = selectionState.totalPrice,
@@ -608,7 +639,7 @@ class BookingSlotGridViewModel @Inject constructor(
             val court = activeCourts.find { it.id == courtId }
             val courtBadge = "S$courtIndex"
             val courtName = court?.name ?: "Sân $courtIndex"
-            val surfaceType = if (!court?.surfaceType.isNullOrEmpty()) court!!.surfaceType else "Thảm"
+            val surfaceType = court?.surfaceType.orEmpty()
             val times = courtSlots.map { it.startTime }.sorted()
             val start = if (times.isNotEmpty()) formatHourMinute(times.first()) else ""
             val end = if (times.isNotEmpty()) add30Minutes(times.last()) else ""

@@ -23,141 +23,78 @@ class FirestoreBookingRemoteDataSource @Inject constructor(
 ) : BookingRemoteDataSource {
 
     override suspend fun getVenueOperatingHours(venueId: String): Pair<String, String> {
-        try {
-            val snapshot = firestore.collection(COLLECTION_VENUES)
-                .document(venueId)
-                .get()
-                .await()
+        val snapshot = firestore.collection(COLLECTION_VENUES)
+            .document(venueId)
+            .get()
+            .await()
 
-            if (snapshot.exists()) {
-                val openTime = snapshot.getString("openTime")?.padStart(4, '0') ?: "0500"
-                val closeTime = snapshot.getString("closeTime")?.padStart(4, '0') ?: "2400"
-                return Pair(openTime, closeTime)
-            }
-        } catch (_: Exception) {
-            // Chế độ dự phòng khi Firestore chưa có dữ liệu cơ sở
+        if (!snapshot.exists()) {
+            throw NoSuchElementException("Không tìm thấy thông tin cơ sở: $venueId")
         }
 
-        return Pair("0500", "2400")
+        val openTime = snapshot.getString("openTime")?.padStart(4, '0')
+            ?: throw IllegalStateException("Cơ sở thiếu cấu hình openTime")
+        val closeTime = snapshot.getString("closeTime")?.padStart(4, '0')
+            ?: throw IllegalStateException("Cơ sở thiếu cấu hình closeTime")
+        return Pair(openTime, closeTime)
     }
 
     override suspend fun getVenueInfo(venueId: String): VenueInfo {
-        try {
-            val snapshot = firestore.collection(COLLECTION_VENUES)
-                .document(venueId)
-                .get()
-                .await()
+        val snapshot = firestore.collection(COLLECTION_VENUES)
+            .document(venueId)
+            .get()
+            .await()
 
-            if (snapshot.exists()) {
-                val name = snapshot.getString("name").orEmpty()
-                val address = snapshot.getString("address").orEmpty()
-                val districtId = snapshot.getString("districtId").orEmpty()
-                val openTime = snapshot.getString("openTime")?.padStart(4, '0') ?: "0500"
-                val closeTime = snapshot.getString("closeTime")?.padStart(4, '0') ?: "2400"
-
-                val districtName = DISTRICT_NAMES[districtId] ?: parseDistrictFromAddress(address) ?: districtId
-
-                return VenueInfo(
-                    id = venueId,
-                    name = name.ifEmpty { "CLB Cầu Lông Trường Chinh 909" },
-                    address = address.ifEmpty { "909/6 Trường Chinh, Phường Tây Thạnh, Quận Tân Phú, TP. Hồ Chí Minh" },
-                    districtName = districtName.ifEmpty { "Tân Phú" },
-                    openTime = openTime,
-                    closeTime = closeTime
-                )
-            }
-        } catch (_: Exception) {
-            // Chế độ dự phòng khi Firestore chưa có dữ liệu cơ sở
+        if (!snapshot.exists()) {
+            throw NoSuchElementException("Không tìm thấy thông tin cơ sở: $venueId")
         }
 
-        // Dữ liệu dự phòng khớp seed demo-truong-chinh-909
+        val name = snapshot.getString("name").orEmpty()
+        val address = snapshot.getString("address").orEmpty()
+        val districtId = snapshot.getString("districtId").orEmpty()
+        val openTime = snapshot.getString("openTime")?.padStart(4, '0') ?: "0500"
+        val closeTime = snapshot.getString("closeTime")?.padStart(4, '0') ?: "2400"
+        val status = snapshot.getString("status")
+        val photoPaths = snapshot.get("photoPaths") as? List<*>
+        val photoUrl = photoPaths?.firstOrNull()?.toString()?.takeIf { it.startsWith("http") }
+
+        val districtName = DISTRICT_NAMES[districtId] ?: parseDistrictFromAddress(address) ?: districtId
+
         return VenueInfo(
             id = venueId,
-            name = "CLB Cầu Lông Trường Chinh 909",
-            address = "909/6 Trường Chinh, Phường Tây Thạnh, Quận Tân Phú, TP. Hồ Chí Minh",
-            districtName = "Tân Phú",
-            openTime = "0500",
-            closeTime = "2400"
+            name = name,
+            address = address,
+            districtName = districtName,
+            openTime = openTime,
+            closeTime = closeTime,
+            photoUrl = photoUrl,
+            status = status
         )
     }
 
     override suspend fun getActiveCourts(venueId: String): List<CourtDto> {
-        try {
-            val snapshot = firestore.collection(COLLECTION_VENUES)
-                .document(venueId)
-                .collection(SUBCOLLECTION_COURTS)
-                .whereEqualTo("isActive", true)
-                .get()
-                .await()
+        val snapshot = firestore.collection(COLLECTION_VENUES)
+            .document(venueId)
+            .collection(SUBCOLLECTION_COURTS)
+            .whereEqualTo("isActive", true)
+            .get()
+            .await()
 
-            val courts = snapshot.documents.mapNotNull { doc ->
-                doc.toObject(CourtDto::class.java)?.copy(id = doc.id)
-            }.sortedBy { it.sortOrder }
-
-            if (courts.isNotEmpty()) {
-                return courts
-            }
-        } catch (_: Exception) {
-            // Chế độ dự phòng khi Firestore chưa có dữ liệu cơ sở
-        }
-
-        // Dữ liệu dự phòng 6 sân con cho phép test ma trận cuộn ngang
-        return listOf(
-            CourtDto(id = "court-01", name = "Sân 1", surfaceType = "Thảm", isActive = true, sortOrder = 1),
-            CourtDto(id = "court-02", name = "Sân 2", surfaceType = "Thảm", isActive = true, sortOrder = 2),
-            CourtDto(id = "court-03", name = "Sân 3", surfaceType = "PU", isActive = true, sortOrder = 3),
-            CourtDto(id = "court-04", name = "Sân 4", surfaceType = "PU", isActive = true, sortOrder = 4),
-            CourtDto(id = "court-05", name = "Sân 5", surfaceType = "Gỗ", isActive = true, sortOrder = 5),
-            CourtDto(id = "court-06", name = "Sân 6", surfaceType = "Thảm", isActive = true, sortOrder = 6)
-        )
+        return snapshot.documents.mapNotNull { doc ->
+            doc.toObject(CourtDto::class.java)?.copy(id = doc.id)
+        }.sortedBy { it.sortOrder }
     }
 
     override suspend fun getPriceRules(venueId: String): List<PriceRuleDto> {
-        try {
-            val snapshot = firestore.collection(COLLECTION_VENUES)
-                .document(venueId)
-                .collection(SUBCOLLECTION_PRICE_RULES)
-                .get()
-                .await()
+        val snapshot = firestore.collection(COLLECTION_VENUES)
+            .document(venueId)
+            .collection(SUBCOLLECTION_PRICE_RULES)
+            .get()
+            .await()
 
-            val rules = snapshot.documents.mapNotNull { doc ->
-                doc.toObject(PriceRuleDto::class.java)?.copy(id = doc.id)
-            }
-
-            if (rules.isNotEmpty()) {
-                return rules
-            }
-        } catch (_: Exception) {
-            // Chế độ dự phòng khi Firestore chưa có dữ liệu cơ sở
+        return snapshot.documents.mapNotNull { doc ->
+            doc.toObject(PriceRuleDto::class.java)?.copy(id = doc.id)
         }
-
-        // Dữ liệu dự phòng bảng giá (Khung bình thường và khung cao điểm)
-        return listOf(
-            PriceRuleDto(
-                id = "rule-01",
-                daysOfWeek = listOf(1, 2, 3, 4, 5, 6, 7),
-                startTime = "0500",
-                endTime = "1600",
-                pricePerHour = 50_000L,
-                label = "NORMAL"
-            ),
-            PriceRuleDto(
-                id = "rule-02",
-                daysOfWeek = listOf(1, 2, 3, 4, 5, 6, 7),
-                startTime = "1600",
-                endTime = "1800",
-                pricePerHour = 90_000L,
-                label = "NORMAL"
-            ),
-            PriceRuleDto(
-                id = "rule-03",
-                daysOfWeek = listOf(1, 2, 3, 4, 5, 6, 7),
-                startTime = "1800",
-                endTime = "2400",
-                pricePerHour = 130_000L,
-                label = "PEAK"
-            )
-        )
     }
 
     override fun getBusySlotsRealtime(venueId: String, date: String): Flow<List<SlotDto>> = callbackFlow {
@@ -165,19 +102,9 @@ class FirestoreBookingRemoteDataSource @Inject constructor(
             .whereEqualTo("venueId", venueId)
             .whereEqualTo("date", date)
 
-        val defaultMockBusySlots = listOf(
-            SlotDto(id = "court-01_${date}_1700", venueId = venueId, courtId = "court-01", date = date, startTime = "1700", endTime = "1730", status = "BOOKED"),
-            SlotDto(id = "court-01_${date}_1730", venueId = venueId, courtId = "court-01", date = date, startTime = "1730", endTime = "1800", status = "BOOKED"),
-            SlotDto(id = "court-02_${date}_1800", venueId = venueId, courtId = "court-02", date = date, startTime = "1800", endTime = "1830", status = "HELD", holdExpiresAt = Timestamp(Date(System.currentTimeMillis() + 240_000L)), holdBy = "other-user"),
-            SlotDto(id = "court-03_${date}_1900", venueId = venueId, courtId = "court-03", date = date, startTime = "1900", endTime = "1930", status = "BLOCKED", blockReason = "DROP_IN"),
-            SlotDto(id = "court-03_${date}_1930", venueId = venueId, courtId = "court-03", date = date, startTime = "1930", endTime = "2000", status = "BLOCKED", blockReason = "DROP_IN"),
-            SlotDto(id = "court-04_${date}_2000", venueId = venueId, courtId = "court-04", date = date, startTime = "2000", endTime = "2030", status = "BLOCKED")
-        )
-
         val registration = query.addSnapshotListener { snapshot, error ->
             if (error != null) {
-                // Dự phòng khi Firestore chưa có collection hoặc offline
-                trySend(defaultMockBusySlots)
+                close(error)
                 return@addSnapshotListener
             }
 
@@ -185,12 +112,7 @@ class FirestoreBookingRemoteDataSource @Inject constructor(
                 val slots = snapshot.documents.mapNotNull { doc ->
                     doc.toObject(SlotDto::class.java)?.copy(id = doc.id)
                 }
-                if (slots.isNotEmpty()) {
-                    trySend(slots)
-                } else {
-                    // Nếu trên Firestore chưa có slot bận nào, nạp mock để test đầy đủ 6 trạng thái UI
-                    trySend(defaultMockBusySlots)
-                }
+                trySend(slots)
             }
         }
 
@@ -207,95 +129,87 @@ class FirestoreBookingRemoteDataSource @Inject constructor(
         userId: String,
         requestId: String
     ): HoldResult {
-        return try {
-            firestore.runTransaction { transaction ->
-                // --- Phase 1: ALL READS ---
-                val now = Timestamp.now()
-                val nowMillis = now.toDate().time
-                val snapshots = mutableMapOf<String, DocumentSnapshot>()
-                val conflicts = mutableListOf<String>()
+        return firestore.runTransaction { transaction ->
+            // --- Phase 1: ALL READS ---
+            val now = Timestamp.now()
+            val nowMillis = now.toDate().time
+            val snapshots = mutableMapOf<String, DocumentSnapshot>()
+            val conflicts = mutableListOf<String>()
 
-                for (slotId in slotIds) {
-                    // Kiểm tra slot quá khứ so với giờ máy chủ (Q11)
-                    val parts = slotId.split("_")
-                    val slotDate = if (parts.size >= 2) parts[1] else date
-                    val slotStartTime = if (parts.size >= 3) parts[2].padStart(4, '0') else "0000"
-                    val slotStartMillis = calculateSlotStartMillis(slotDate, slotStartTime)
-                    if (slotStartMillis > 0L && slotStartMillis <= nowMillis) {
-                        conflicts.add(slotId)
-                        continue
-                    }
+            for (slotId in slotIds) {
+                // Kiểm tra slot quá khứ so với giờ máy chủ (Q11)
+                val parts = slotId.split("_")
+                val slotDate = if (parts.size >= 2) parts[1] else date
+                val slotStartTime = if (parts.size >= 3) parts[2].padStart(4, '0') else "0000"
+                val slotStartMillis = calculateSlotStartMillis(slotDate, slotStartTime)
+                if (slotStartMillis > 0L && slotStartMillis <= nowMillis) {
+                    conflicts.add(slotId)
+                    continue
+                }
 
-                    val docRef = firestore.collection(COLLECTION_SLOTS).document(slotId)
-                    val snapshot = transaction.get(docRef)
-                    snapshots[slotId] = snapshot
+                val docRef = firestore.collection(COLLECTION_SLOTS).document(slotId)
+                val snapshot = transaction.get(docRef)
+                snapshots[slotId] = snapshot
 
-                    if (snapshot.exists()) {
-                        val status = snapshot.getString("status")
-                        val holdExpiresAt = snapshot.getTimestamp("holdExpiresAt")
-                        val holdBy = snapshot.getString("holdBy")
-                        val bookingId = snapshot.getString("bookingId")
+                if (snapshot.exists()) {
+                    val status = snapshot.getString("status")
+                    val holdExpiresAt = snapshot.getTimestamp("holdExpiresAt")
+                    val holdBy = snapshot.getString("holdBy")
+                    val bookingId = snapshot.getString("bookingId")
 
-                        when (status) {
-                            "BOOKED", "BLOCKED" -> {
+                    when (status) {
+                        "BOOKED", "BLOCKED" -> {
+                            conflicts.add(slotId)
+                        }
+                        "HELD" -> {
+                            val isStillValidHold = holdExpiresAt != null && holdExpiresAt > now
+                            val isSameUserAndRequest = holdBy == userId && bookingId == requestId
+                            if (isStillValidHold && !isSameUserAndRequest) {
                                 conflicts.add(slotId)
-                            }
-                            "HELD" -> {
-                                val isStillValidHold = holdExpiresAt != null && holdExpiresAt > now
-                                val isSameUserAndRequest = holdBy == userId && bookingId == requestId
-                                if (isStillValidHold && !isSameUserAndRequest) {
-                                    conflicts.add(slotId)
-                                }
                             }
                         }
                     }
                 }
+            }
 
-                if (conflicts.isNotEmpty()) {
-                    return@runTransaction HoldResult.Conflict(conflictedSlotIds = conflicts.distinct())
-                }
+            if (conflicts.isNotEmpty()) {
+                return@runTransaction HoldResult.Conflict(conflictedSlotIds = conflicts.distinct())
+            }
 
-                // --- Phase 2: ALL WRITES ---
-                val holdExpiresAtMillis = System.currentTimeMillis() + HOLD_DURATION_MILLIS
-                val holdExpiresAtTimestamp = Timestamp(Date(holdExpiresAtMillis))
+            // --- Phase 2: ALL WRITES ---
+            val holdExpiresAtMillis = System.currentTimeMillis() + HOLD_DURATION_MILLIS
+            val holdExpiresAtTimestamp = Timestamp(Date(holdExpiresAtMillis))
 
-                for (slotId in slotIds) {
-                    val docRef = firestore.collection(COLLECTION_SLOTS).document(slotId)
-                    val parts = slotId.split("_")
-                    val itemCourtId = if (parts.isNotEmpty() && parts[0].isNotEmpty()) parts[0] else courtId
-                    val itemDate = if (parts.size >= 2) parts[1] else date
-                    val startTime = if (parts.size >= 3) parts[2].padStart(4, '0') else "0000"
-                    val startMinutes = (startTime.substring(0, 2).toIntOrNull() ?: 0) * 60 +
-                            (startTime.substring(2, 4).toIntOrNull() ?: 0)
-                    val endMinutes = startMinutes + 30
-                    val endTime = String.format(Locale.US, "%02d%02d", endMinutes / 60, endMinutes % 60)
+            for (slotId in slotIds) {
+                val docRef = firestore.collection(COLLECTION_SLOTS).document(slotId)
+                val parts = slotId.split("_")
+                val itemCourtId = if (parts.isNotEmpty() && parts[0].isNotEmpty()) parts[0] else courtId
+                val itemDate = if (parts.size >= 2) parts[1] else date
+                val startTime = if (parts.size >= 3) parts[2].padStart(4, '0') else "0000"
+                val startMinutes = (startTime.substring(0, 2).toIntOrNull() ?: 0) * 60 +
+                        (startTime.substring(2, 4).toIntOrNull() ?: 0)
+                val endMinutes = startMinutes + 30
+                val endTime = String.format(Locale.US, "%02d%02d", endMinutes / 60, endMinutes % 60)
 
-                    val data = hashMapOf<String, Any?>(
-                        "venueId" to venueId,
-                        "courtId" to itemCourtId,
-                        "date" to itemDate,
-                        "startTime" to startTime,
-                        "endTime" to endTime,
-                        "status" to "HELD",
-                        "holdExpiresAt" to holdExpiresAtTimestamp,
-                        "holdBy" to userId,
-                        "bookingId" to requestId
-                    )
-                    transaction.set(docRef, data)
-                }
-
-                HoldResult.Success(
-                    bookingId = requestId,
-                    holdExpiresAtMillis = holdExpiresAtMillis
+                val data = hashMapOf<String, Any?>(
+                    "venueId" to venueId,
+                    "courtId" to itemCourtId,
+                    "date" to itemDate,
+                    "startTime" to startTime,
+                    "endTime" to endTime,
+                    "status" to "HELD",
+                    "holdExpiresAt" to holdExpiresAtTimestamp,
+                    "holdBy" to userId,
+                    "bookingId" to requestId
                 )
-            }.await()
-        } catch (e: Exception) {
-            // Dự phòng khi Firestore cloud chưa có dữ liệu/rules: giả lập giữ chỗ thành công để kiểm thử trọn vẹn
+                transaction.set(docRef, data)
+            }
+
             HoldResult.Success(
                 bookingId = requestId,
-                holdExpiresAtMillis = System.currentTimeMillis() + HOLD_DURATION_MILLIS
+                holdExpiresAtMillis = holdExpiresAtMillis
             )
-        }
+        }.await()
     }
 
     override suspend fun releaseHoldSlots(
@@ -303,35 +217,31 @@ class FirestoreBookingRemoteDataSource @Inject constructor(
         slotIds: List<String>,
         userId: String
     ) {
-        try {
-            firestore.runTransaction { transaction ->
-                // Phase 1: ALL READS
-                val validSlotRefs = mutableListOf<com.google.firebase.firestore.DocumentReference>()
-                for (slotId in slotIds) {
-                    val docRef = firestore.collection(COLLECTION_SLOTS).document(slotId)
-                    val snapshot = transaction.get(docRef)
-                    if (snapshot.exists()) {
-                        val holdBy = snapshot.getString("holdBy")
-                        if (holdBy == userId) {
-                            validSlotRefs.add(docRef)
-                        }
+        firestore.runTransaction { transaction ->
+            // Phase 1: ALL READS
+            val validSlotRefs = mutableListOf<com.google.firebase.firestore.DocumentReference>()
+            for (slotId in slotIds) {
+                val docRef = firestore.collection(COLLECTION_SLOTS).document(slotId)
+                val snapshot = transaction.get(docRef)
+                if (snapshot.exists()) {
+                    val holdBy = snapshot.getString("holdBy")
+                    if (holdBy == userId) {
+                        validSlotRefs.add(docRef)
                     }
                 }
+            }
 
-                // Phase 2: ALL WRITES
-                for (ref in validSlotRefs) {
-                    val updateData = hashMapOf<String, Any?>(
-                        "status" to "AVAILABLE",
-                        "holdExpiresAt" to null,
-                        "holdBy" to null,
-                        "bookingId" to null
-                    )
-                    transaction.update(ref, updateData)
-                }
-            }.await()
-        } catch (_: Exception) {
-            // Dự phòng
-        }
+            // Phase 2: ALL WRITES
+            for (ref in validSlotRefs) {
+                val updateData = hashMapOf<String, Any?>(
+                    "status" to "AVAILABLE",
+                    "holdExpiresAt" to null,
+                    "holdBy" to null,
+                    "bookingId" to null
+                )
+                transaction.update(ref, updateData)
+            }
+        }.await()
     }
 
     private fun parseDistrictFromAddress(address: String): String? {

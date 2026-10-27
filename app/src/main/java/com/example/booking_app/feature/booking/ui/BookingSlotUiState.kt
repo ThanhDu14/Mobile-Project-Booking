@@ -16,6 +16,7 @@ data class BookingSlotUiState(
     val venueName: String = "",
     val venueAddress: String = "",
     val districtName: String = "",
+    val photoUrl: String? = null,
     val operatingHours: String = "",
     val courts: List<Court> = emptyList(),
     val selectedCourtId: String? = null,

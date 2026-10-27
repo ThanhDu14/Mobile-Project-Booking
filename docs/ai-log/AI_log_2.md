@@ -31,6 +31,7 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 25 | 2026-10-27 | Thống nhất 3 chiều (Spec ↔ Tasks ↔ Sản phẩm) theo Q1–Q13 & Mockup Spec 040 | 04 |
 | 26 | 2026-10-27 | Tinh chỉnh giao diện Spec 040 chuẩn Mockup & Sửa lỗi hiển thị UI | 04 |
 | 27 | 2026-10-27 | Bổ sung mục Thanh toán (display-only) Màn 2 & Ràng buộc min-2 / max-8 theo từng sân | 04, 05 |
+| 28 | 2026-10-27 | Kết nối Feature 040 với data seed của Duy & Gỡ toàn bộ data ảo trong production | 04 |
 
 
 
@@ -1422,6 +1423,46 @@ Sau đợt kiểm thử trên thiết bị thật và đối chiếu kỹ lưỡ
 3. **Android Lint (`./gradlew lintDebug`)**:
    - **0 ERRORS, BUILD SUCCESSFUL** (đã giải quyết cảnh báo `StringFormatMatches` bằng `30%%` và `formatted="false"`).
 4. **Quy tắc an toàn Git**: Tuyệt đối không chạy bất kỳ lệnh git nào; toàn bộ file chỉnh sửa được báo cáo chi tiết để người dùng tự xem và commit.
+
+---
+
+## Mục 28: Kết nối Feature 040 với data seed của Duy & Gỡ toàn bộ data ảo trong production
+
+| Trường | Nội dung |
+|---|---|
+| **Người thực hiện** | Thành viên số 2 (Lê Quốc Hưng - B) |
+| **Thời điểm** | 27/10/2026 |
+| **Công cụ AI** | Google Antigravity Assistant |
+| **Mục tiêu** | Gỡ bỏ 100% dữ liệu ảo/mock tạm thời trong production code (`FirestoreBookingRemoteDataSource.kt` và các UI/Mapper liên quan); kết nối trực tiếp với dữ liệu seed thật từ PR #41 của Duy (`scripts/seed/`); chứng minh qua grep và nghiệm thu không còn bất kỳ dữ liệu hardcode nào. |
+
+### Các nội dung đã hoàn thành
+
+#### 1. Gỡ bỏ toàn bộ Data ảo trong Production Code
+1. **`getActiveCourts`**: Gỡ bỏ danh sách 6 sân hardcode khi query rỗng hoặc lỗi. Truy vấn trực tiếp `venues/{id}/courts` với điều kiện `isActive == true` và sắp xếp theo `sortOrder`. Khi rỗng hoặc lỗi, trả về danh sách rỗng hoặc lỗi để ViewModel chuyển sang màn hình thông báo lỗi có nút thử lại (FR-024), không hiện sân giả.
+2. **`getPriceRules`**: Gỡ bỏ danh sách 3 rule hardcode khi query rỗng hoặc lỗi. Khi rỗng hoặc lỗi, ViewModel chuyển sang trạng thái lỗi có nút thử lại, không hiện bảng giá giả.
+3. **`getBusySlotsRealtime`**: Gỡ bỏ hoàn toàn `defaultMockBusySlots` (6 slot giả). Khi collection `slots` rỗng, Flow phát danh sách rỗng $\rightarrow$ tất cả các khung giờ trong ngày đều là `AVAILABLE` (hoặc `PAST` nếu đã qua giờ hiện tại). Khi listener gặp lỗi mạng, gọi `close(error)` để Flow phát lỗi lên UI, không nhét mock data.
+4. **`holdSlotsAtomic`**: Gỡ bỏ khối `catch (e: Exception)` trả về `HoldResult.Success` giả lập. Khi xảy ra ngoại lệ Firestore (mất mạng, quyền truy cập, xung đột giao dịch), ngoại lệ được ném ra và chuyển đổi thành `AppError` tương ứng (ABORTED $\rightarrow$ `AppError.Conflict`, UNAVAILABLE $\rightarrow$ `AppError.Network`). UI hiển thị thông báo lỗi rõ ràng kèm nút thử lại, tuyệt đối không cho phép chuyển tiếp sang màn hình xác nhận nếu giữ chỗ chưa thành công thật.
+5. **`getVenueInfo`**: Gỡ bỏ thông tin Trường Chinh và địa chỉ hardcode khi snapshot không tồn tại hoặc lỗi. Khi document thiếu hoặc lỗi, ném ngoại lệ để `Result.failure` kích hoạt màn hình lỗi. Bổ sung trích xuất `photoUrl` từ `photoPaths[0]` khi bắt đầu bằng `"http"` để thẻ cơ sở hiển thị ảnh thật từ seed Alobo.
+6. **`getVenueOperatingHours`**: Gỡ bỏ cặp giờ mặc định `0500/2400` khi document thiếu; ném lỗi khi thiếu document hoặc thiếu trường giờ mở/đóng cửa.
+7. **Đọc trạng thái `status` của cơ sở**: Bổ sung kiểm tra trường `status` trong `VenueInfo`; nếu khác `"ACTIVE"` thì ViewModel hiển thị trạng thái cơ sở không hoạt động thay vì hiển thị lưới đặt sân.
+8. **Chuẩn hóa mặt sân (`surfaceType`)**: Hiển thị chính xác giá trị `surfaceType` từ dữ liệu thật (toàn bộ sân seed là `"PU"`). Gỡ bỏ toàn bộ fallback hardcode `"Thảm"`, `"Gỗ"` hoặc `"MAT"` trong `BookingSlotGridFragment`, `BookingConfirmFragment`, `BookingSlotGridViewModel`, `CourtDto` và `BookingSlotMapper`.
+
+#### 2. Chứng minh Grep trong Production Code (Mục 8)
+- Đã thực hiện quét grep toàn bộ thư mục `feature/booking` trong `app/src/main/`:
+  - Tìm kiếm tên cơ sở, địa chỉ, sân con, bảng giá hardcode: `grep -rn "Trường Chinh\|demo-truong-chinh\|Tân Phú\|Thảm\|Gỗ"` $\rightarrow$ **Chỉ duy nhất 1 kết quả là mapping từ điển `"tan-phu" to "Tân Phú"` trong bảng `DISTRICT_NAMES` theo đúng catalog chuẩn của dự án**.
+  - Tìm kiếm giá hardcode: `grep -rn "50_000\|130_000\|court-01\|rule-01"` $\rightarrow$ **0 kết quả**.
+  - Tìm kiếm mock slot: `grep -rn "defaultMock"` $\rightarrow$ **0 kết quả**.
+
+#### 3. Kết quả Kiểm thử & Quality Gates (Full Pass)
+1. **Unit Tests (`./gradlew testDebugUnitTest`)**:
+   - **226/226 tests PASS (100%)**.
+2. **Build Package Debug (`./gradlew assembleDebug`)**:
+   - **BUILD SUCCESSFUL**.
+3. **Android Lint (`./gradlew lintDebug`)**:
+   - **0 ERRORS, BUILD SUCCESSFUL**.
+4. **Firestore Security & Emulator Tests (`npm test` trong `firestore-tests`)**:
+   - **34/34 tests PASS (100%)**.
+5. **Quy tắc an toàn Git**: Tuyệt đối không chạy bất kỳ lệnh git nào; toàn bộ file chỉnh sửa được liệt kê chi tiết để thành viên Hưng tự kiểm tra và commit.
 
 
 

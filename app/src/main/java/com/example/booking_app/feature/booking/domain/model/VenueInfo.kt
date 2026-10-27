@@ -6,5 +6,7 @@ data class VenueInfo(
     val address: String,
     val districtName: String,
     val openTime: String,
-    val closeTime: String
+    val closeTime: String,
+    val photoUrl: String? = null,
+    val status: String? = null
 )

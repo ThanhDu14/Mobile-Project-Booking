@@ -9,6 +9,7 @@ data class HoldToPaymentArgs(
     val venueName: String,
     val venueAddress: String = "",
     val districtName: String = "",
+    val photoUrl: String = "",
     val isRecurring: Boolean = false,
     val totalSessions: Int = 1,
     val subtotalAmount: Long,
@@ -22,6 +23,7 @@ data class HoldToPaymentArgs(
         venueName = parcel.readString().orEmpty(),
         venueAddress = parcel.readString().orEmpty(),
         districtName = parcel.readString().orEmpty(),
+        photoUrl = parcel.readString().orEmpty(),
         isRecurring = parcel.readByte() != 0.toByte(),
         totalSessions = parcel.readInt(),
         subtotalAmount = parcel.readLong(),
@@ -36,6 +38,7 @@ data class HoldToPaymentArgs(
         parcel.writeString(venueName)
         parcel.writeString(venueAddress)
         parcel.writeString(districtName)
+        parcel.writeString(photoUrl)
         parcel.writeByte(if (isRecurring) 1 else 0)
         parcel.writeInt(totalSessions)
         parcel.writeLong(subtotalAmount)

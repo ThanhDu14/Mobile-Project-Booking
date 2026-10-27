@@ -1,10 +1,12 @@
 package com.example.booking_app.feature.booking.ui
 
+import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.ImageView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
@@ -18,7 +20,9 @@ import com.example.booking_app.feature.booking.domain.usecase.ReleaseHoldUseCase
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.text.DecimalFormat
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -88,6 +92,25 @@ class BookingConfirmFragment : Fragment() {
         binding.tvConfirmVenueName.text = args.venueName.ifEmpty { "Cơ sở ${args.venueId}" }
         binding.tvConfirmVenueAddress.text = args.venueAddress.ifEmpty {
             if (args.districtName.isNotEmpty()) "Quận ${args.districtName}, TP. Hồ Chí Minh" else "TP. Hồ Chí Minh"
+        }
+
+        // Tải ảnh cơ sở thật từ photoUrl (nếu có và bắt đầu bằng http)
+        if (args.photoUrl.isNotEmpty() && args.photoUrl.startsWith("http")) {
+            viewLifecycleOwner.lifecycleScope.launch {
+                try {
+                    val bitmap = withContext(Dispatchers.IO) {
+                        java.net.URL(args.photoUrl).openStream().use { stream ->
+                            BitmapFactory.decodeStream(stream)
+                        }
+                    }
+                    if (bitmap != null) {
+                        binding.ivVenueImagePlaceholder.setImageBitmap(bitmap)
+                        binding.ivVenueImagePlaceholder.scaleType = ImageView.ScaleType.CENTER_CROP
+                    }
+                } catch (_: Exception) {
+                    // Giữ placeholder mặc định nếu lỗi tải ảnh
+                }
+            }
         }
 
         // 2. Hiển thị danh sách các slot đã chọn gom theo sân (2c: định dạng ngày chuẩn T4, 28/10, bỏ hậu tố giờ chơi)
@@ -176,13 +199,13 @@ class BookingConfirmFragment : Fragment() {
                 val itemBinding = ItemConfirmCourtSlotsBinding.inflate(inflater, container, false)
                 val badge = if (parts.isNotEmpty()) parts[0] else "S1"
                 val name = if (parts.size > 1) parts[1] else "Sân"
-                val surface = if (parts.size > 2) parts[2] else "Thảm"
+                val surface = if (parts.size > 2) parts[2] else ""
                 val dateText = if (parts.size > 3) parts[3] else ""
                 val timeRange = if (parts.size > 4) parts[4] else ""
                 val subtotal = if (parts.size > 5) parts[5].toLongOrNull() ?: 0L else 0L
 
                 itemBinding.tvCourtBadge.text = badge
-                itemBinding.tvCourtName.text = "$name · $surface"
+                itemBinding.tvCourtName.text = if (surface.isNotEmpty()) "$name · $surface" else name
                 // 2. Format: "T4, 28/10 · 06:30 – 07:00", không có hậu tố giờ chơi
                 itemBinding.tvSlotDetails.text = if (dateText.isNotEmpty()) {
                     "$dateText · $timeRange"
@@ -203,7 +226,7 @@ class BookingConfirmFragment : Fragment() {
             for ((_, courtSlotIds) in courtGroups) {
                 val itemBinding = ItemConfirmCourtSlotsBinding.inflate(inflater, container, false)
                 itemBinding.tvCourtBadge.text = "S$courtIndex"
-                itemBinding.tvCourtName.text = "Sân $courtIndex · Thảm"
+                itemBinding.tvCourtName.text = "Sân $courtIndex"
 
                 var dateText = ""
                 val times = courtSlotIds.mapNotNull { id ->
