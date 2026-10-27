@@ -7,6 +7,9 @@ import com.example.booking_app.core.session.SessionState
 import com.example.booking_app.feature.account.domain.model.AccountError
 import com.example.booking_app.feature.account.domain.model.PlayerLevel
 import com.example.booking_app.feature.account.domain.model.ProfileDraft
+import com.example.booking_app.feature.account.domain.model.OwnerApplicationSummary
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -104,4 +107,6 @@ class FakeAccountDataSource : AccountDataSource {
         error?.let { throw it }
         writes += uid to fields
     }
+
+    override fun observeLatestOwnerApplication(uid: String): Flow<OwnerApplicationSummary?> = flowOf(null)
 }

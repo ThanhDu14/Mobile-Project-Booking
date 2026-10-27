@@ -6,7 +6,16 @@ import com.example.booking_app.feature.account.domain.AvatarRepository
 import com.example.booking_app.feature.account.domain.DistrictRepository
 import com.example.booking_app.feature.account.domain.model.District
 import com.example.booking_app.feature.account.domain.model.ProfileDraft
+import com.example.booking_app.core.session.AppMode
+import com.example.booking_app.core.session.AppModeController
+import com.example.booking_app.core.session.SessionState
+import com.example.booking_app.feature.account.domain.OwnerApplicationRepository
+import com.example.booking_app.feature.account.domain.model.OwnerApplicationSummary
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.onCompletion
+import kotlinx.coroutines.flow.onStart
 
 /** Ghi lại thứ tự lời gọi của mọi fake để kiểm tra trình tự R3. */
 class CallLog : ArrayList<String>()
@@ -91,3 +100,45 @@ class FakeAvatarImageProcessor : AvatarImageProcessor {
         return result
     }
 }
+
+/** Hồ sơ chủ sân gần nhất; đếm listener đang mở để kiểm tra chỉ mở khi `PENDING`/`REJECTED` (R6). */
+class FakeOwnerApplicationRepository : OwnerApplicationRepository {
+    val latest = MutableStateFlow<OwnerApplicationSummary?>(null)
+    var error: Throwable? = null
+    var activeListeners = 0
+    var openedCount = 0
+
+    override fun observeLatest(): Flow<OwnerApplicationSummary?> = latest
+        .onStart {
+            activeListeners++
+            openedCount++
+            error?.let { throw it }
+        }
+        .onCompletion { activeListeners-- }
+}
+
+class FakeAppModeController(initial: AppMode = AppMode.PLAYER) : AppModeController {
+    override val mode = MutableStateFlow(initial)
+    val switchCalls = mutableListOf<AppMode>()
+
+    /** Trả về cho `switchTo`; mặc định thành công và đổi [mode]. */
+    var result: (AppMode) -> Result<AppMode> = { Result.success(it) }
+
+    override fun modeFor(state: SessionState): AppMode = mode.value
+
+    override suspend fun switchTo(target: AppMode): Result<AppMode> {
+        switchCalls += target
+        return result(target).onSuccess { mode.value = it }
+    }
+}
+
+/** `AccountViewModel` cho test chỉ quan tâm hồ sơ, đăng xuất: mục chủ sân và chế độ dùng fake mặc định. */
+fun accountViewModel(
+    session: com.example.booking_app.core.session.SessionManager,
+    authSource: com.example.booking_app.core.session.SessionAuthSource,
+    reader: com.example.booking_app.core.session.UserProfileReader,
+    modeController: FakeAppModeController = FakeAppModeController(),
+) = com.example.booking_app.feature.account.ui.account.AccountViewModel(
+    session, authSource, reader, FakeDistrictRepository(), FakeOwnerApplicationRepository(), modeController,
+    com.example.booking_app.feature.account.domain.usecase.SwitchModeUseCase(modeController),
+)

@@ -8,7 +8,7 @@ import com.example.booking_app.core.session.MyProfile
 import com.example.booking_app.core.session.SessionState
 import com.example.booking_app.core.session.UserProfileReader
 import com.example.booking_app.core.testing.MainDispatcherRule
-import com.example.booking_app.feature.account.FakeDistrictRepository
+import com.example.booking_app.feature.account.accountViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -28,7 +28,7 @@ class AccountViewModelSignOutTest {
     private val reader = object : UserProfileReader {
         override fun observeMyProfile() = flowOf<MyProfile?>(null)
     }
-    private val vm by lazy { AccountViewModel(session, FakeSessionAuthSource(), reader, FakeDistrictRepository()) }
+    private val vm by lazy { accountViewModel(session, FakeSessionAuthSource(), reader) }
 
     @Test
     fun `bam Dang xuat thi mo hop thoai xac nhan, chua dang xuat`() = runTest(mainRule.dispatcher) {

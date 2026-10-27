@@ -290,6 +290,151 @@
                         android:layout_marginTop="@dimen/space_4"
                         android:visibility="gone" />
 
+                    <!-- Mục chủ sân theo research R6 (US3); ẩn với admin và với chủ sân đã duyệt. -->
+                    <LinearLayout
+                        android:id="@+id/ownerCard"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_4"
+                        android:background="@drawable/bg_account_card"
+                        android:orientation="vertical"
+                        android:padding="@dimen/space_4"
+                        android:visibility="gone"
+                        tools:visibility="visible">
+
+                        <TextView
+                            android:id="@+id/ownerTitle"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:drawablePadding="@dimen/space_3"
+                            android:gravity="center_vertical"
+                            android:textAppearance="?attr/textAppearanceTitleMedium"
+                            android:textColor="?attr/colorOnSurface"
+                            tools:drawableStartCompat="@drawable/ic_error_24"
+                            tools:text="@string/account_owner_revoked" />
+
+                        <TextView
+                            android:id="@+id/ownerBody"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_2"
+                            android:textAppearance="?attr/textAppearanceBodyMedium"
+                            android:textColor="?attr/colorOnSurfaceVariant"
+                            tools:text="Lý do của admin: Nhiều báo cáo thông tin sai sự thật chưa được khắc phục." />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/ownerActionButton"
+                            style="@style/Widget.SmashNow.Button.Outlined"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_3"
+                            android:minHeight="@dimen/touch_min"
+                            tools:text="@string/account_owner_reapply" />
+                    </LinearLayout>
+
+                    <!-- Khối chuyển chế độ của chủ sân (US4, research R7). -->
+                    <LinearLayout
+                        android:id="@+id/modeCard"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_4"
+                        android:background="@drawable/bg_account_card"
+                        android:orientation="vertical"
+                        android:padding="@dimen/space_4"
+                        android:visibility="gone"
+                        tools:visibility="visible">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/account_mode_title"
+                            android:textAppearance="?attr/textAppearanceTitleMedium"
+                            android:textColor="?attr/colorOnSurface" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_1"
+                            android:text="@string/account_mode_subtitle"
+                            android:textAppearance="?attr/textAppearanceBodyMedium"
+                            android:textColor="?attr/colorOnSurfaceVariant" />
+
+                        <com.google.android.material.button.MaterialButtonToggleGroup
+                            android:id="@+id/modeToggle"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_3"
+                            app:selectionRequired="true"
+                            app:singleSelection="true">
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/modePlayerButton"
+                                style="@style/Widget.Material3.Button.OutlinedButton"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:minHeight="@dimen/touch_min"
+                                android:text="@string/account_mode_player"
+                                app:icon="@drawable/ic_person_outline_24"
+                                app:iconGravity="textStart" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/modeOwnerButton"
+                                style="@style/Widget.Material3.Button.OutlinedButton"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:minHeight="@dimen/touch_min"
+                                android:text="@string/account_mode_owner"
+                                app:icon="@drawable/ic_store_24"
+                                app:iconGravity="textStart" />
+                        </com.google.android.material.button.MaterialButtonToggleGroup>
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_3"
+                            android:text="@string/account_mode_hint"
+                            android:textAppearance="?attr/textAppearanceBodySmall"
+                            android:textColor="?attr/colorOnSurfaceVariant" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/ownerGroupLabel"
+                        style="@style/Widget.SmashNow.AccountGroupLabel"
+                        android:text="@string/account_owner_group"
+                        android:visibility="gone" />
+
+                    <LinearLayout
+                        android:id="@+id/ownerGroup"
+                        style="@style/Widget.SmashNow.AccountGroup"
+                        android:visibility="gone">
+
+                        <TextView
+                            android:id="@+id/entryOwnerVenues"
+                            style="@style/Widget.SmashNow.AccountRow"
+                            android:text="@string/account_entry_owner_venues"
+                            app:drawableStartCompat="@drawable/ic_store_24" />
+
+                        <TextView
+                            android:id="@+id/entryOwnerChat"
+                            style="@style/Widget.SmashNow.AccountRow"
+                            android:text="@string/account_entry_owner_chat"
+                            app:drawableStartCompat="@drawable/ic_chat_24" />
+
+                        <TextView
+                            android:id="@+id/entryOwnerApplication"
+                            style="@style/Widget.SmashNow.AccountRow"
+                            android:text="@string/account_entry_owner_application"
+                            app:drawableStartCompat="@drawable/ic_description_24" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/playerGroupLabel"
+                        style="@style/Widget.SmashNow.AccountGroupLabel"
+                        android:text="@string/account_player_group"
+                        android:visibility="gone" />
+
                     <LinearLayout
                         android:id="@+id/activityGroup"
                         style="@style/Widget.SmashNow.AccountGroup">

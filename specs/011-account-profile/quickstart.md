@@ -100,6 +100,18 @@ Phạm vi bắt buộc:
 | Q27 | Chế độ tối, máy tính bảng `w600dp`, TalkBack trên 6 màn hình, 2 bottom sheet và hộp thoại xác nhận danh tính | Hiển thị đúng; đọc được nhãn ảnh và nút | FR-025 |
 | Q28 | Mở Sửa hồ sơ trên 2 máy cùng tài khoản; máy 1 đổi tên, máy 2 đổi trình độ, lưu lần lượt; mở lại trang Tài khoản trên cả hai | Cả hai thay đổi đều còn (mỗi lần lưu chỉ ghi trường đã đổi); trường cùng sửa ở hai máy thì giữ lần lưu sau cùng | Edge Case "hai máy" |
 
+### Kết quả Q13–Q17 (2026-10-25, máy ảo Pixel API 36, Firebase Emulator)
+
+Dữ liệu: `player1`, `player-pending`, `player-rejected`, `player-revoked`, `owner1` (mật khẩu `Test1234`) và 2 document `ownerApplications` tạo bằng script REST trên Emulator; không chạy lên project thật. Ảnh trong `docs/features/01-account/screenshots/`.
+
+| Mục | Kết quả | Ghi chú |
+|---|---|---|
+| Q13 | Đạt | Đủ 5 trạng thái. Nút "Đăng ký làm chủ sân" / "Sửa và nộp lại" đang ẩn vì chưa có destination `smashnow://owner/apply` (spec 110, D), đúng R14. **[BLOCKED: D]** `firestore.rules` chưa có rule đọc `ownerApplications` nên listener bị `PERMISSION_DENIED`: `player-pending` hiện "Admin sẽ xem hồ sơ trong vài ngày" thay vì ngày nộp, `player-rejected` hiện "Mở hồ sơ để xem lý do và sửa lại" thay vì lý do; app không crash, không đăng xuất |
+| Q14 | Đạt | Đổi claim `OWNER` rồi ghi `ownerStatus = APPROVED` khi `player-pending` đang mở trang Tài khoản: không đăng xuất, app tự sang giao diện quản lý sân, trang Tài khoản hiện "Đã là chủ sân" và khối chuyển chế độ |
+| Q15 | Đạt một phần (SC-003) | Đo 8 vòng bằng mốc thời gian logcat (từ trước lệnh `input tap` tới khi Fragment trang chủ `RESUMED`, đã gồm ~0,1 giây khởi động lệnh `input`). Sang "Người chơi": 0,10–0,15 giây. Sang "Quản lý sân": 0,66–1,14 giây, 3/8 lần vượt 1 giây vì bước làm mới token bắt buộc của R7 (gọi Auth Emulator). Một lần trong khoảng 25 lần thử, sau khi mở lại app bằng `force-stop`, toggle đã sang "Quản lý sân" nhưng màn hình không chuyển; chưa tái hiện lại được |
+| Q16 | Đạt | Ở chế độ người chơi, đổi claim `owner1` thành `PLAYER` rồi bấm "Quản lý sân": không vào được, ở lại giao diện người chơi, snackbar "Quyền chủ sân đã bị thu hồi." (lý do trống vì document chưa ghi). Ghi `ownerStatus = NONE` + `ownerRevokedReason` thì trang Tài khoản hiện thẻ thu hồi kèm lý do, mất khối chuyển chế độ |
+| Q17 | Đạt | Chuyển "Người chơi", `am force-stop`, mở lại: vào "Trang chủ chủ sân" |
+
 ## 6. Hoàn tất
 
 - `./gradlew lint testDebugUnitTest assembleDebug` qua.

@@ -205,14 +205,14 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
 
 ### Tests for User Story 3 (viết trước, phải fail)
 
-- [ ] T057 [P] [US3] Unit test `TEST/feature/account/domain/OwnerSectionResolverTest.kt` đủ **6 dòng** bảng [research R6](research.md#r6-mục-chủ-sân-trên-trang-tài-khoản-fr-008-fr-009-fr-013): `ADMIN` + bất kỳ → `Hidden`; `PLAYER` + `NONE` + `ownerRevokedReason == null` → `CanApply`; `PLAYER` + `NONE` + có lý do → `Revoked(reason)`; `PLAYER` + `PENDING` → `Pending(submittedAt)`; `PLAYER` + `REJECTED` → `Rejected(rejectReason)`; `OWNER` + `APPROVED` → `Approved`; thêm ca lệch tạm thời (claim `OWNER`, `ownerStatus` còn `PENDING`) → `Approved` (claim là nguồn quyền)
-- [ ] T058 [P] [US3] Unit test `TEST/feature/account/ui/account/AccountViewModelOwnerTest.kt`: chỉ mở listener hồ sơ gần nhất khi `ownerStatus` là `PENDING` hoặc `REJECTED`; `MyProfile` đổi (admin duyệt) → `ownerSection` mới mà không đăng xuất (US3-5, FR-009); bấm "Sửa và nộp lại" → deep link `smashnow://owner/apply?mode=resubmit`; "Đăng ký làm chủ sân" (kể cả `Revoked`) → `mode=new`
+- [x] T057 [P] [US3] Unit test `TEST/feature/account/domain/OwnerSectionResolverTest.kt` đủ **6 dòng** bảng [research R6](research.md#r6-mục-chủ-sân-trên-trang-tài-khoản-fr-008-fr-009-fr-013): `ADMIN` + bất kỳ → `Hidden`; `PLAYER` + `NONE` + `ownerRevokedReason == null` → `CanApply`; `PLAYER` + `NONE` + có lý do → `Revoked(reason)`; `PLAYER` + `PENDING` → `Pending(submittedAt)`; `PLAYER` + `REJECTED` → `Rejected(rejectReason)`; `OWNER` + `APPROVED` → `Approved`; thêm ca lệch tạm thời (claim `OWNER`, `ownerStatus` còn `PENDING`) → `Approved` (claim là nguồn quyền)
+- [x] T058 [P] [US3] Unit test `TEST/feature/account/ui/account/AccountViewModelOwnerTest.kt`: chỉ mở listener hồ sơ gần nhất khi `ownerStatus` là `PENDING` hoặc `REJECTED`; `MyProfile` đổi (admin duyệt) → `ownerSection` mới mà không đăng xuất (US3-5, FR-009); bấm "Sửa và nộp lại" → deep link `smashnow://owner/apply?mode=resubmit`; "Đăng ký làm chủ sân" (kể cả `Revoked`) → `mode=new`
 
 ### Implementation for User Story 3
 
-- [ ] T059 [P] [US3] Tạo `ACC/domain/OwnerSectionResolver.kt` (hàm thuần). Cho T057 xanh
-- [ ] T060 [US3] Thêm vào `ACC/data/FirestoreAccountDataSource.kt` `observeLatestOwnerApplication(uid)` (`ownerApplications where uid == me order by submittedAt desc limit 1`, trả `status`, `submittedAt`, `rejectReason`)
-- [ ] T061 [US3] Thêm mục chủ sân vào `ACC/ui/account/AccountFragment.kt` / `AccountViewModel.kt` theo wireframe `ui/01_account_buoc1_tai-khoan-bi-thu-hoi-quyen.png`: `CanApply` ("Đăng ký làm chủ sân" + mô tả ngắn), `Pending` ("Đang chờ duyệt" + ngày nộp, không có nút), `Rejected` ("Bị từ chối" + lý do + "Sửa và nộp lại"), `Revoked` ("Quyền chủ sân đã bị thu hồi" + lý do + "Đăng ký làm chủ sân"), `Approved` ("Đã là chủ sân", khối chuyển chế độ thêm ở US4), `Hidden` (FR-013); mục nào chưa có destination (spec 110 chưa làm) thì ẩn nút, vẫn hiện trạng thái. Cho T058 xanh
+- [x] T059 [P] [US3] Tạo `ACC/domain/OwnerSectionResolver.kt` (hàm thuần). Cho T057 xanh
+- [x] T060 [US3] Thêm vào `ACC/data/FirestoreAccountDataSource.kt` `observeLatestOwnerApplication(uid)` (`ownerApplications where uid == me order by submittedAt desc limit 1`, trả `status`, `submittedAt`, `rejectReason`)
+- [x] T061 [US3] Thêm mục chủ sân vào `ACC/ui/account/AccountFragment.kt` / `AccountViewModel.kt` theo wireframe `ui/01_account_buoc1_tai-khoan-bi-thu-hoi-quyen.png`: `CanApply` ("Đăng ký làm chủ sân" + mô tả ngắn), `Pending` ("Đang chờ duyệt" + ngày nộp, không có nút), `Rejected` ("Bị từ chối" + lý do + "Sửa và nộp lại"), `Revoked` ("Quyền chủ sân đã bị thu hồi" + lý do + "Đăng ký làm chủ sân"), `Approved` ("Đã là chủ sân", khối chuyển chế độ thêm ở US4), `Hidden` (FR-013); mục nào chưa có destination (spec 110 chưa làm) thì ẩn nút, vẫn hiện trạng thái. Cho T058 xanh
 
 **Checkpoint**: quickstart Q13, Q14 đạt (Q14 dùng `scripts/admin/grant-role.ts` của 010 nếu màn hình duyệt của D chưa có).
 
@@ -228,13 +228,13 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
 
 ### Tests for User Story 4 (viết trước, phải fail)
 
-- [ ] T062 [P] [US4] Unit test `TEST/feature/account/ui/account/AccountViewModelModeTest.kt` (fake `AppModeController`): chọn "Người chơi" → `switchTo(PLAYER)`; chọn "Quản lý sân" trả `OwnerRevokedException` → toggle về "Người chơi" và sự kiện snackbar "Quyền chủ sân đã bị thu hồi" kèm `ownerRevokedReason` (US4-4, FR-012); tài khoản không phải `OWNER` → không có khối chuyển chế độ (US4-3)
+- [x] T062 [P] [US4] Unit test `TEST/feature/account/ui/account/AccountViewModelModeTest.kt` (fake `AppModeController`): chọn "Người chơi" → `switchTo(PLAYER)`; chọn "Quản lý sân" trả `OwnerRevokedException` → toggle về "Người chơi" và sự kiện snackbar "Quyền chủ sân đã bị thu hồi" kèm `ownerRevokedReason` (US4-4, FR-012); tài khoản không phải `OWNER` → không có khối chuyển chế độ (US4-3)
 
 ### Implementation for User Story 4
 
-- [ ] T063 [US4] Tạo `ACC/domain/usecase/SwitchModeUseCase.kt` (bọc `AppModeController.switchTo`, ánh xạ `OwnerRevokedException` → `AccountError.OwnerRevoked(reason)` với lý do lấy từ `MyProfile.ownerRevokedReason`)
-- [ ] T064 [US4] Thêm khối "Chế độ đang dùng" vào `RES/layout/fragment_account.xml` và `ACC/ui/account/AccountFragment.kt` theo wireframe `ui/01_account_buoc3_chu-san-kiem-nguoi-choi.png`: `MaterialButtonToggleGroup` "Người chơi" / "Quản lý sân", dòng "Mỗi lần mở app, bạn vào giao diện quản lý sân" (FR-011); nhóm "CHỦ SÂN" (Cơ sở của tôi `smashnow://owner/venues`, Tin nhắn khách hàng `smashnow://chat/owner`, Hồ sơ chủ sân `smashnow://owner/application`), ẩn mục chưa có destination. Cho T062 xanh
-- [ ] T065 [US4] Kiểm tra trên máy: `AccountFragment` mở được từ cả `nav_player` và `nav_owner` (nhờ `include` ở T028) và giữ trạng thái toggle đúng `mode` sau khi `MainActivity` đổi graph; đo 5 lần chuyển ≤ 1 giây (SC-003), ghi kết quả vào checklist quickstart
+- [x] T063 [US4] Tạo `ACC/domain/usecase/SwitchModeUseCase.kt` (bọc `AppModeController.switchTo`, ánh xạ `OwnerRevokedException` → `AccountError.OwnerRevoked(reason)` với lý do lấy từ `MyProfile.ownerRevokedReason`)
+- [x] T064 [US4] Thêm khối "Chế độ đang dùng" vào `RES/layout/fragment_account.xml` và `ACC/ui/account/AccountFragment.kt` theo wireframe `ui/01_account_buoc3_chu-san-kiem-nguoi-choi.png`: `MaterialButtonToggleGroup` "Người chơi" / "Quản lý sân", dòng "Mỗi lần mở app, bạn vào giao diện quản lý sân" (FR-011); nhóm "CHỦ SÂN" (Cơ sở của tôi `smashnow://owner/venues`, Tin nhắn khách hàng `smashnow://chat/owner`, Hồ sơ chủ sân `smashnow://owner/application`), ẩn mục chưa có destination. Cho T062 xanh
+- [x] T065 [US4] Kiểm tra trên máy: `AccountFragment` mở được từ cả `nav_player` và `nav_owner` (nhờ `include` ở T028) và giữ trạng thái toggle đúng `mode` sau khi `MainActivity` đổi graph; đo 5 lần chuyển ≤ 1 giây (SC-003), ghi kết quả vào checklist quickstart
 
 **Checkpoint**: quickstart Q15–Q17 đạt.
 

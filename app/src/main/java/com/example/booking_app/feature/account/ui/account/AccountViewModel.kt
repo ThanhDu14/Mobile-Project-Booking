@@ -3,6 +3,8 @@ package com.example.booking_app.feature.account.ui.account
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.booking_app.core.network.AppError
+import com.example.booking_app.core.session.AppMode
+import com.example.booking_app.core.session.AppModeController
 import com.example.booking_app.core.session.AppRole
 import com.example.booking_app.core.session.MyProfile
 import com.example.booking_app.core.session.SessionAuthSource
@@ -10,7 +12,13 @@ import com.example.booking_app.core.session.SessionManager
 import com.example.booking_app.core.session.SessionState
 import com.example.booking_app.core.session.UserProfileReader
 import com.example.booking_app.feature.account.domain.DistrictRepository
+import com.example.booking_app.feature.account.domain.OwnerApplicationRepository
+import com.example.booking_app.feature.account.domain.OwnerSectionResolver
+import com.example.booking_app.feature.account.domain.model.AccountError
+import com.example.booking_app.feature.account.domain.model.OwnerApplicationSummary
+import com.example.booking_app.feature.account.domain.model.OwnerSection
 import com.example.booking_app.feature.account.domain.model.PlayerLevel
+import com.example.booking_app.feature.account.domain.usecase.SwitchModeUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -20,8 +28,13 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.transformLatest
@@ -43,6 +56,11 @@ sealed interface AccountUiState {
         /** Số dư ví đã định dạng, ví dụ `50.000` (chuỗi `account_wallet_balance` thêm " đ"). */
         val walletBalance: String = "0",
         val showVerifyBanner: Boolean = false,
+        val ownerSection: OwnerSection = OwnerSection.Hidden,
+        /** Lối sang màn hình chủ sân đã có destination (R14). */
+        val ownerLinks: Set<OwnerLink> = emptySet(),
+        /** Chế độ đang dùng; `null` là tài khoản không phải `OWNER`, không có khối chuyển chế độ (US4-3). */
+        val mode: AppMode? = null,
     ) : AccountUiState
 }
 
@@ -51,6 +69,14 @@ sealed interface AccountEvent {
 
     /** Hỏi lại trước khi đăng xuất (FR-007). */
     data object ConfirmSignOut : AccountEvent
+
+    /** Mở màn hình của tính năng khác bằng deep link (R14). */
+    data class OpenLink(val deepLink: String) : AccountEvent
+
+    /** Bấm "Quản lý sân" khi quyền đã bị thu hồi (US4-4, FR-012). */
+    data class OwnerRevoked(val reason: String?) : AccountEvent
+
+    data object ModeSwitchFailed : AccountEvent
 }
 
 /**
@@ -64,6 +90,9 @@ class AccountViewModel @Inject constructor(
     private val authSource: SessionAuthSource,
     private val profileReader: UserProfileReader,
     private val districtRepository: DistrictRepository,
+    private val ownerApplications: OwnerApplicationRepository,
+    private val appModeController: AppModeController,
+    private val switchMode: SwitchModeUseCase,
 ) : ViewModel() {
 
     private val retryCount = MutableStateFlow(0)
@@ -73,6 +102,11 @@ class AccountViewModel @Inject constructor(
 
     /** Khóa nút "Đăng xuất" trong lúc chạy `SignOutHook` (tối đa vài giây khi mạng yếu). */
     val isSigningOut: StateFlow<Boolean> = _isSigningOut
+
+    private val _isSwitchingMode = MutableStateFlow(false)
+
+    /** Khóa khối chuyển chế độ trong lúc làm mới token (tối đa 3 giây, R7). */
+    val isSwitchingMode: StateFlow<Boolean> = _isSwitchingMode
 
     val uiState: StateFlow<AccountUiState> = retryCount
         .flatMapLatest { loadState() }
@@ -98,6 +132,43 @@ class AccountViewModel @Inject constructor(
         viewModelScope.launch { _events.send(AccountEvent.ConfirmSignOut) }
     }
 
+    /** Nút trong mục chủ sân: "Sửa và nộp lại" khi bị từ chối, "Đăng ký làm chủ sân" khi chưa nộp hoặc bị thu hồi. */
+    fun onOwnerActionClick() {
+        val link = when ((uiState.value as? AccountUiState.Content)?.ownerSection) {
+            is OwnerSection.Rejected -> OwnerLink.RESUBMIT
+            OwnerSection.CanApply, is OwnerSection.Revoked -> OwnerLink.APPLY_NEW
+            else -> return
+        }
+        onOwnerLinkClick(link)
+    }
+
+    fun onOwnerLinkClick(link: OwnerLink) {
+        viewModelScope.launch { _events.send(AccountEvent.OpenLink(link.deepLink)) }
+    }
+
+    /**
+     * Chọn chế độ trên toggle. Thành công thì `MainActivity` đổi graph theo `AppModeController.mode`; bị thu hồi quyền
+     * thì `mode` giữ `PLAYER` nên toggle tự quay về "Người chơi" và hiện lý do (FR-012).
+     */
+    fun onModeSelected(target: AppMode) {
+        val content = uiState.value as? AccountUiState.Content ?: return
+        if (content.mode == null || content.mode == target || _isSwitchingMode.value) return
+        _isSwitchingMode.value = true
+        viewModelScope.launch {
+            try {
+                switchMode(target, content.profile.ownerRevokedReason).onFailure { error ->
+                    val latestReason = (uiState.value as? AccountUiState.Content)?.profile?.ownerRevokedReason
+                    _events.send(
+                        if (error is AccountError.OwnerRevoked) AccountEvent.OwnerRevoked(latestReason ?: error.reason)
+                        else AccountEvent.ModeSwitchFailed,
+                    )
+                }
+            } finally {
+                _isSwitchingMode.value = false
+            }
+        }
+    }
+
     /**
      * Gọi `SessionManager.signOut()` đúng một lần dù bấm lặp. `MainActivity` (T018) tự đưa về `nav_player` chế độ
      * khách và xóa back stack khi `sessionState` thành `SignedOut` (FR-007, 010 R15).
@@ -119,7 +190,8 @@ class AccountViewModel @Inject constructor(
         sessionManager.sessionState,
         authSource.authState,
         availableDeepLinks,
-    ) { profile, session, user, links ->
+        combine(latestOwnerApplication(), appModeController.mode, ::Pair),
+    ) { profile, session, user, links, (application, mode) ->
         when {
             profile is ProfileLoad.Failed -> AccountUiState.Error(profile.error)
             profile !is ProfileLoad.Loaded || session !is SessionState.SignedIn -> AccountUiState.Loading
@@ -133,6 +205,11 @@ class AccountViewModel @Inject constructor(
                     level = PlayerLevel.fromValue(profile.profile.level),
                     walletBalance = formatVnd(profile.profile.walletBalance),
                     showVerifyBanner = PASSWORD_PROVIDER in providers && !session.emailVerified,
+                    ownerSection = OwnerSectionResolver.resolve(
+                        session.appRole, profile.profile.ownerStatus, profile.profile.ownerRevokedReason, application,
+                    ),
+                    ownerLinks = OwnerLink.entries.filterTo(LinkedHashSet()) { it.deepLink in links },
+                    mode = mode.takeIf { session.appRole == AppRole.OWNER },
                 )
             }
         }
@@ -147,6 +224,19 @@ class AccountViewModel @Inject constructor(
             emit(ProfileLoad.Failed(AppError.Timeout))
         }
     }
+
+    /**
+     * Hồ sơ chủ sân gần nhất, chỉ mở listener khi `ownerStatus` là `PENDING`/`REJECTED` (R6) và đóng khi đổi trạng thái.
+     * Đọc lại `observeMyProfile()` thay vì chia sẻ với [profileOrTimeout]: Firestore gộp hai listener cùng document.
+     * Rules chặn hoặc mất mạng thì vẫn hiện trạng thái, chỉ thiếu ngày nộp và lý do từ chối.
+     */
+    private fun latestOwnerApplication(): Flow<OwnerApplicationSummary?> = profileReader.observeMyProfile()
+        .map { it != null && OwnerSectionResolver.needsLatestApplication(it.ownerStatus) }
+        .distinctUntilChanged()
+        .flatMapLatest { needed ->
+            if (!needed) flowOf(null)
+            else ownerApplications.observeLatest().onStart { emit(null) }.catch { emit(null) }
+        }
 
     /** Danh mục lỗi thì chỉ thiếu chip khu vực, trang vẫn hiện (không chặn cả trang). */
     private suspend fun districtNames(ids: List<String>): List<String> {

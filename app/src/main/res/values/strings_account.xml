@@ -50,6 +50,15 @@
     <string name="account_mode_player">Người chơi</string>
     <string name="account_mode_owner">Quản lý sân</string>
     <string name="account_mode_hint">Mỗi lần mở app, bạn vào giao diện quản lý sân</string>
+    <string name="account_owner_pending_no_date">Admin sẽ xem hồ sơ trong vài ngày</string>
+    <string name="account_owner_rejected_reason">Lý do: %1$s</string>
+    <string name="account_owner_rejected_no_reason">Mở hồ sơ để xem lý do và sửa lại</string>
+    <string name="account_owner_revoked_reason">Lý do của admin: %1$s</string>
+    <string name="account_owner_reapply">Đăng ký làm chủ sân lại</string>
+    <string name="account_owner_revoked_snackbar">Quyền chủ sân đã bị thu hồi. %1$s</string>
+    <string name="account_mode_subtitle">Một tài khoản, hai giao diện. Chuyển không cần đăng nhập lại.</string>
+    <string name="account_mode_switch_failed">Chưa chuyển được chế độ, thử lại sau</string>
+    <string name="account_player_group">NGƯỜI CHƠI</string>
 
     <!-- Sửa hồ sơ (US1) -->
     <string name="account_edit_title">Sửa hồ sơ</string>

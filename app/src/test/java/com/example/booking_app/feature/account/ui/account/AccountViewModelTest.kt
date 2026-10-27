@@ -10,7 +10,7 @@ import com.example.booking_app.core.session.MyProfile
 import com.example.booking_app.core.session.SessionState
 import com.example.booking_app.core.session.UserProfileReader
 import com.example.booking_app.core.testing.MainDispatcherRule
-import com.example.booking_app.feature.account.FakeDistrictRepository
+import com.example.booking_app.feature.account.accountViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.test.advanceTimeBy
@@ -36,7 +36,7 @@ class AccountViewModelTest {
         override fun observeMyProfile() = profile
     }
 
-    private fun viewModel() = AccountViewModel(session, authSource, reader, FakeDistrictRepository())
+    private fun viewModel() = accountViewModel(session, authSource, reader)
 
     private fun myProfile() = MyProfile(
         displayName = "Nguyễn An", level = null, favoriteDistrictIds = emptyList(), avatarPath = null,

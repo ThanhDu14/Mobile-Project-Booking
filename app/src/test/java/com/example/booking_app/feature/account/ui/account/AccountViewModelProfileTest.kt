@@ -9,7 +9,7 @@ import com.example.booking_app.core.session.MyProfile
 import com.example.booking_app.core.session.SessionState
 import com.example.booking_app.core.session.UserProfileReader
 import com.example.booking_app.core.testing.MainDispatcherRule
-import com.example.booking_app.feature.account.FakeDistrictRepository
+import com.example.booking_app.feature.account.accountViewModel
 import com.example.booking_app.feature.account.domain.model.PlayerLevel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -46,7 +46,7 @@ class AccountViewModelProfileTest {
     }
 
     private fun TestScope.content(): AccountUiState.Content {
-        val vm = AccountViewModel(session, authSource, reader, FakeDistrictRepository())
+        val vm = accountViewModel(session, authSource, reader)
         backgroundScope.launch { vm.uiState.collect {} }
         advanceUntilIdle()
         return vm.uiState.value as AccountUiState.Content

@@ -28,6 +28,17 @@
         <item name="android:showDividers">middle</item>
     </style>
 
+    <!-- Nhãn nhóm "CHỦ SÂN" / "NGƯỜI CHƠI" trên trang Tài khoản của chủ sân (wireframe buoc3). -->
+    <style name="Widget.SmashNow.AccountGroupLabel" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">@dimen/space_6</item>
+        <item name="android:paddingHorizontal">@dimen/space_1</item>
+        <item name="android:textAppearance">?attr/textAppearanceLabelLarge</item>
+        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
+        <item name="android:accessibilityHeading">true</item>
+    </style>
+
     <style name="Widget.SmashNow.AccountChip" parent="Widget.Material3.Chip.Assist">
         <item name="chipMinTouchTargetSize">0dp</item>
         <item name="android:clickable">false</item>

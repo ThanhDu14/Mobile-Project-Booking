@@ -8,10 +8,12 @@ import com.example.booking_app.feature.account.data.DistrictRepositoryImpl
 import com.example.booking_app.feature.account.data.FirestoreAccountDataSource
 import com.example.booking_app.feature.account.data.FirestoreDistrictDataSource
 import com.example.booking_app.feature.account.data.ImageProcessor
+import com.example.booking_app.feature.account.data.OwnerApplicationRepositoryImpl
 import com.example.booking_app.feature.account.domain.AccountRepository
 import com.example.booking_app.feature.account.domain.AvatarImageProcessor
 import com.example.booking_app.feature.account.domain.AvatarRepository
 import com.example.booking_app.feature.account.domain.DistrictRepository
+import com.example.booking_app.feature.account.domain.OwnerApplicationRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -26,6 +28,9 @@ abstract class AccountModule {
 
     @Binds
     abstract fun bindAccountRepository(impl: AccountRepositoryImpl): AccountRepository
+
+    @Binds
+    abstract fun bindOwnerApplicationRepository(impl: OwnerApplicationRepositoryImpl): OwnerApplicationRepository
 
     @Binds
     abstract fun bindDistrictDataSource(impl: FirestoreDistrictDataSource): DistrictDataSource
