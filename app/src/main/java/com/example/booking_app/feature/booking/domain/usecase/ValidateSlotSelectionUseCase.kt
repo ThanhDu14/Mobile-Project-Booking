@@ -38,13 +38,14 @@ class ValidateSlotSelectionUseCase @Inject constructor(
 
             return updateStateWithSlots(otherCourtsSlots + newCourtSlots)
         } else {
-            // Selection flow
+            // Selection flow: Cap tối đa 8 khung tính theo TỪNG SÂN (FR-026)
+            if (targetCourtSlots.size >= MAX_SLOTS_PER_COURT) {
+                return currentSelection.copy(
+                    errorMessage = "Sân đã đủ $MAX_SLOTS_PER_COURT khung (4 giờ)"
+                )
+            }
+
             if (targetCourtSlots.isEmpty()) {
-                if (currentList.size >= MAX_SLOTS) {
-                    return currentSelection.copy(
-                        errorMessage = "Tối đa $MAX_SLOTS khung giờ (4 tiếng) cho một lần đặt"
-                    )
-                }
                 val newSlot = clickedSlot.copy(status = SlotStatus.SELECTED)
                 return updateStateWithSlots(otherCourtsSlots + listOf(newSlot))
             }
@@ -57,12 +58,6 @@ class ValidateSlotSelectionUseCase @Inject constructor(
 
             if (isPrepended || isAppended) {
                 // Continuous selection trên sân mục tiêu
-                if (currentList.size >= MAX_SLOTS) {
-                    return currentSelection.copy(
-                        errorMessage = "Tối đa $MAX_SLOTS khung giờ (4 tiếng) cho một lần đặt"
-                    )
-                }
-
                 val selectedSlot = clickedSlot.copy(status = SlotStatus.SELECTED)
                 val newCourtSlots = if (isPrepended) {
                     listOf(selectedSlot) + targetCourtSlots
@@ -82,14 +77,81 @@ class ValidateSlotSelectionUseCase @Inject constructor(
         }
     }
 
-    fun validateForProceed(state: SlotSelectionState): Result<SlotSelectionState> {
-        return if (state.selectedSlots.size < MIN_SLOTS) {
-            Result.failure(
-                IllegalArgumentException("Vui lòng chọn tối thiểu $MIN_SLOTS khung giờ liên tiếp (1 tiếng)")
+    /**
+     * Kiểm tra điều kiện hợp lệ để giữ chỗ:
+     * MỖI sân có trong lựa chọn phải có từ 2 đến 8 khung giờ liên tiếp (1h đến 4h).
+     */
+    fun validateForProceed(
+        state: SlotSelectionState,
+        courtNames: Map<String, String> = emptyMap()
+    ): Result<SlotSelectionState> {
+        if (state.selectedSlots.isEmpty()) {
+            return Result.failure(
+                IllegalArgumentException("Chưa chọn khung giờ nào")
             )
-        } else {
-            Result.success(state.copy(isValid = true))
         }
+
+        val courtGroups = state.selectedSlots.groupBy { it.courtId }
+        for ((courtId, courtSlots) in courtGroups) {
+            val courtName = courtNames[courtId] ?: "Sân"
+            if (courtSlots.size < MIN_SLOTS_PER_COURT) {
+                return Result.failure(
+                    IllegalArgumentException("$courtName mới có ${courtSlots.size} khung giờ. Mỗi sân tối thiểu $MIN_SLOTS_PER_COURT khung giờ liên tiếp (1 giờ)")
+                )
+            }
+            if (courtSlots.size > MAX_SLOTS_PER_COURT) {
+                return Result.failure(
+                    IllegalArgumentException("$courtName đã vượt quá $MAX_SLOTS_PER_COURT khung giờ (4 giờ)")
+                )
+            }
+            if (!isContinuousChain(courtSlots)) {
+                return Result.failure(
+                    IllegalArgumentException("Khung giờ trên $courtName không liên tiếp")
+                )
+            }
+        }
+
+        return Result.success(state.copy(isValid = true))
+    }
+
+    /**
+     * Kiểm tra tính hợp lệ nhanh của danh sách slot theo quy tắc từng sân
+     */
+    fun isSelectionValid(slots: List<TimeSlot>): Boolean {
+        if (slots.isEmpty()) return false
+        val courtGroups = slots.groupBy { it.courtId }
+        return courtGroups.values.all { courtSlots ->
+            courtSlots.size in MIN_SLOTS_PER_COURT..MAX_SLOTS_PER_COURT && isContinuousChain(courtSlots)
+        }
+    }
+
+    /**
+     * Tìm sân đầu tiên chưa đủ điều kiện tối thiểu 2 khung để hiển thị gợi ý trên UI
+     */
+    fun findIncompleteCourt(
+        slots: List<TimeSlot>,
+        courtNames: Map<String, String> = emptyMap()
+    ): String? {
+        if (slots.isEmpty()) return null
+        val courtGroups = slots.groupBy { it.courtId }
+        for ((courtId, courtSlots) in courtGroups) {
+            if (courtSlots.size < MIN_SLOTS_PER_COURT) {
+                val name = courtNames[courtId] ?: "Sân"
+                return "$name cần thêm ${MIN_SLOTS_PER_COURT - courtSlots.size} khung giờ liên tiếp mới đặt được (mỗi sân tối thiểu 2 khung, tức 1 giờ)."
+            }
+        }
+        return null
+    }
+
+    private fun isContinuousChain(courtSlots: List<TimeSlot>): Boolean {
+        if (courtSlots.size <= 1) return true
+        val sorted = courtSlots.sortedBy { it.startTime }
+        for (i in 0 until sorted.size - 1) {
+            if (sorted[i].endTime != sorted[i + 1].startTime) {
+                return false
+            }
+        }
+        return true
     }
 
     private fun updateStateWithSlots(slots: List<TimeSlot>): SlotSelectionState {
@@ -108,13 +170,17 @@ class ValidateSlotSelectionUseCase @Inject constructor(
             selectedSlots = slots,
             totalPrice = total,
             depositAmount = deposit,
-            isValid = slots.size >= MIN_SLOTS,
+            isValid = isSelectionValid(slots),
             errorMessage = null
         )
     }
 
     companion object {
-        const val MIN_SLOTS = 2 // 1 hour
-        const val MAX_SLOTS = 8 // 4 hours (FR-026, Decision #1)
+        const val MIN_SLOTS_PER_COURT = 2 // 1 hour (Mỗi sân tối thiểu 2 khung)
+        const val MAX_SLOTS_PER_COURT = 8 // 4 hours (Mỗi sân tối đa 8 khung theo FR-026, Cap theo từng sân)
+
+        // Tương thích ngược
+        const val MIN_SLOTS = MIN_SLOTS_PER_COURT
+        const val MAX_SLOTS = MAX_SLOTS_PER_COURT
     }
 }

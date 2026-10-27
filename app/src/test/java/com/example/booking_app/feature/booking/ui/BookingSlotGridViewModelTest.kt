@@ -167,6 +167,10 @@ class BookingSlotGridViewModelTest {
         val vm = createViewModel()
         testScheduler.advanceUntilIdle()
 
+        // Chọn ngày mai để đảm bảo tất cả slot đều AVAILABLE (không bị PAST theo giờ hiện tại)
+        vm.selectDate(vm.uiState.value.dates[1])
+        testScheduler.advanceUntilIdle()
+
         // Select 2 continuous slots
         val row1Slot = vm.uiState.value.matrixRows[0].slots[0]
         val row2Slot = vm.uiState.value.matrixRows[1].slots[0]
@@ -192,6 +196,10 @@ class BookingSlotGridViewModelTest {
         val vm = createViewModel()
         testScheduler.advanceUntilIdle()
 
+        // Chọn ngày mai để đảm bảo tất cả slot đều AVAILABLE
+        vm.selectDate(vm.uiState.value.dates[1])
+        testScheduler.advanceUntilIdle()
+
         // Select only 1 slot
         val row1Slot = vm.uiState.value.matrixRows[0].slots[0]
         vm.onSlotClicked(row1Slot)
@@ -203,6 +211,39 @@ class BookingSlotGridViewModelTest {
             assertTrue(effect is BookingSlotUiEffect.ShowErrorSnackbar)
             assertTrue((effect as BookingSlotUiEffect.ShowErrorSnackbar).message.contains("tối thiểu 2 khung giờ"))
         }
+        assertEquals("Sân 1 cần thêm 1 khung giờ liên tiếp mới đặt được (mỗi sân tối thiểu 2 khung, tức 1 giờ).", vm.uiState.value.selectionDetailSummary)
+    }
+
+    @Test
+    fun onSlotClicked_whenCourtHas8Slots_blocks9thSlotWithCourtSnackbar() = runTest {
+        val vm = createViewModel()
+        testScheduler.advanceUntilIdle()
+
+        // Chọn ngày mai để đảm bảo tất cả slot đều AVAILABLE
+        vm.selectDate(vm.uiState.value.dates[1])
+        testScheduler.advanceUntilIdle()
+
+        // Select 8 slots on Court 1 (slots[0] of each row)
+        for (i in 0 until 8) {
+            val slot = vm.uiState.value.matrixRows[i].slots[0]
+            vm.onSlotClicked(slot)
+        }
+        assertEquals(8, vm.uiState.value.selectedSlotsCount)
+
+        // Attempt 9th slot on Court 1
+        val slot9Court1 = vm.uiState.value.matrixRows[8].slots[0]
+        vm.uiEffect.test {
+            vm.onSlotClicked(slot9Court1)
+            val effect = awaitItem()
+            assertTrue(effect is BookingSlotUiEffect.ShowErrorSnackbar)
+            assertEquals("Sân 1 đã đủ 8 khung (4 giờ)", (effect as BookingSlotUiEffect.ShowErrorSnackbar).message)
+        }
+        assertEquals(8, vm.uiState.value.selectedSlotsCount)
+
+        // Attempt 1st slot on Court 2 (slots[1]) -> allowed!
+        val slot1Court2 = vm.uiState.value.matrixRows[0].slots[1]
+        vm.onSlotClicked(slot1Court2)
+        assertEquals(9, vm.uiState.value.selectedSlotsCount)
     }
 
     @Test
@@ -213,6 +254,10 @@ class BookingSlotGridViewModelTest {
             emailVerified = true
         )
         val vm = createViewModel()
+        testScheduler.advanceUntilIdle()
+
+        // Chọn ngày mai để đảm bảo tất cả slot đều AVAILABLE
+        vm.selectDate(vm.uiState.value.dates[1])
         testScheduler.advanceUntilIdle()
 
         val row1Slot = vm.uiState.value.matrixRows[0].slots[0]

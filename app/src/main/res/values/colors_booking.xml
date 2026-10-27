@@ -6,9 +6,10 @@
     <color name="booking_slot_available_stroke">@color/sn_line</color>
     <color name="booking_slot_available_text">@color/sn_ink</color>
 
-    <color name="booking_slot_selected_bg">@color/sn_court</color>
-    <color name="booking_slot_selected_stroke">@color/sn_court</color>
-    <color name="booking_slot_selected_text">@color/sn_on_court</color>
+    <!-- 1a: Màu đang chọn chuẩn Mockup: nền xanh đậm #1B5E45 chữ trắng + ✓ -->
+    <color name="booking_slot_selected_bg">#1B5E45</color>
+    <color name="booking_slot_selected_stroke">#1B5E45</color>
+    <color name="booking_slot_selected_text">#FFFFFF</color>
 
     <color name="booking_slot_held_bg">@color/sn_lamp_container</color>
     <color name="booking_slot_held_stroke">@color/sn_lamp</color>
@@ -26,13 +27,17 @@
     <color name="booking_slot_past_stroke">#D9E0D9</color>
     <color name="booking_slot_past_text">#8A9690</color>
 
-    <!-- Thẻ chọn ngày (item_date_selector) -->
-    <color name="booking_date_selected_bg">@color/sn_court</color>
-    <color name="booking_date_selected_text">@color/sn_on_court</color>
+    <!-- 1a: Thẻ chọn ngày đang chọn: nền xanh đậm #1B5E45 chữ trắng -->
+    <color name="booking_date_selected_bg">#1B5E45</color>
+    <color name="booking_date_selected_text">#FFFFFF</color>
     <color name="booking_date_unselected_bg">@color/sn_surface_raised</color>
     <color name="booking_date_unselected_stroke">@color/sn_line</color>
     <color name="booking_date_unselected_text">@color/sn_ink</color>
     <color name="booking_date_today_dot">@color/sn_lamp</color>
+
+    <!-- 1e: Màu chip Giao hữu (amber nhạt + chữ tối ở cả 2 theme) -->
+    <color name="booking_chip_giao_huu_bg">#FCE8BF</color>
+    <color name="booking_chip_giao_huu_text">#3D2A00</color>
 
     <!-- Chip tab sân (item_court_tab) -->
     <color name="booking_court_tab_selected_bg">@color/sn_court_container</color>

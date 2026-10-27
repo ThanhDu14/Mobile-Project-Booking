@@ -194,6 +194,18 @@ class BookingSlotGridViewModel @Inject constructor(
             SlotStatus.AVAILABLE, SlotStatus.SELECTED -> Unit
         }
 
+        // Kiểm tra cap 8 khung tính theo TỪNG SÂN (FR-026)
+        val targetCourtSlots = selectionState.selectedSlots.filter { it.courtId == clickedSlot.courtId }
+        val isAlreadySelected = selectionState.selectedSlots.any { it.slotId == clickedSlot.slotId }
+        val courtName = activeCourts.find { it.id == clickedSlot.courtId }?.name ?: "Sân"
+
+        if (!isAlreadySelected && targetCourtSlots.size >= ValidateSlotSelectionUseCase.MAX_SLOTS_PER_COURT) {
+            viewModelScope.launch {
+                _uiEffect.send(BookingSlotUiEffect.ShowErrorSnackbar("$courtName đã đủ ${ValidateSlotSelectionUseCase.MAX_SLOTS_PER_COURT} khung (4 giờ)"))
+            }
+            return
+        }
+
         val allCurrentSlots = _uiState.value.matrixRows.flatMap { it.slots }
         val newState = validateSlotSelectionUseCase(selectionState, clickedSlot, allCurrentSlots)
 
@@ -218,7 +230,9 @@ class BookingSlotGridViewModel @Inject constructor(
             row.copy(slots = updatedSlots)
         }
 
-        val summaryText = formatSelectionSummary(selectionState.selectedSlots)
+        val courtNameMap = activeCourts.associate { it.id to it.name }
+        val incompleteHint = validateSlotSelectionUseCase.findIncompleteCourt(selectionState.selectedSlots, courtNameMap)
+        val summaryText = incompleteHint ?: formatSelectionSummary(selectionState.selectedSlots)
 
         _uiState.update {
             it.copy(
@@ -246,11 +260,12 @@ class BookingSlotGridViewModel @Inject constructor(
             return
         }
 
-        // 2. Kiểm tra điều kiện tối thiểu 2 slots (Q2: MIN_SLOTS = 2)
-        val validationResult = validateSlotSelectionUseCase.validateForProceed(selectionState)
+        // 2. Kiểm tra điều kiện tối thiểu 2 slots và tối đa 8 slots theo từng sân (FR-026)
+        val courtNameMap = activeCourts.associate { it.id to it.name }
+        val validationResult = validateSlotSelectionUseCase.validateForProceed(selectionState, courtNameMap)
         if (validationResult.isFailure) {
             val msg = validationResult.exceptionOrNull()?.message
-                ?: "Vui lòng chọn tối thiểu 2 khung giờ liên tiếp (1 tiếng)"
+                ?: "Vui lòng chọn tối thiểu 2 khung giờ liên tiếp cho mỗi sân"
             viewModelScope.launch {
                 _uiEffect.send(BookingSlotUiEffect.ShowErrorSnackbar(msg))
             }
@@ -279,6 +294,7 @@ class BookingSlotGridViewModel @Inject constructor(
             result.onSuccess { holdResult ->
                 when (holdResult) {
                     is HoldResult.Success -> {
+                        val courtDetails = buildCourtDetailsForConfirm(selectionState.selectedSlots)
                         val args = HoldToPaymentArgs(
                             bookingId = holdResult.bookingId,
                             venueId = venueId,
@@ -289,7 +305,8 @@ class BookingSlotGridViewModel @Inject constructor(
                             totalSessions = 1,
                             subtotalAmount = selectionState.totalPrice,
                             slotIds = slotIds.toTypedArray(),
-                            holdExpiresAtMillis = holdResult.holdExpiresAtMillis
+                            holdExpiresAtMillis = holdResult.holdExpiresAtMillis,
+                            courtDetails = courtDetails.toTypedArray()
                         )
                         _uiEffect.send(BookingSlotUiEffect.NavigateToBookingSummary(args))
                     }
@@ -319,11 +336,12 @@ class BookingSlotGridViewModel @Inject constructor(
         }
 
         val (newTotal, newDeposit) = calculateTotalPriceUseCase(remainingSlots)
+        val isValid = validateSlotSelectionUseCase.isSelectionValid(remainingSlots)
         selectionState = SlotSelectionState(
             selectedSlots = remainingSlots,
             totalPrice = newTotal,
             depositAmount = newDeposit,
-            isValid = remainingSlots.size >= ValidateSlotSelectionUseCase.MIN_SLOTS
+            isValid = isValid
         )
 
         val selectedIds = remainingSlots.map { it.slotId }.toSet()
@@ -338,6 +356,10 @@ class BookingSlotGridViewModel @Inject constructor(
             row.copy(slots = updatedSlots)
         }
 
+        val courtNameMap = activeCourts.associate { it.id to it.name }
+        val incompleteHint = validateSlotSelectionUseCase.findIncompleteCourt(remainingSlots, courtNameMap)
+        val summaryText = incompleteHint ?: formatSelectionSummary(remainingSlots)
+
         _uiState.update {
             it.copy(
                 matrixRows = updatedMatrixRows,
@@ -346,7 +368,7 @@ class BookingSlotGridViewModel @Inject constructor(
                 totalPrice = newTotal,
                 depositAmount = newDeposit,
                 canProceed = selectionState.isValid,
-                selectionDetailSummary = formatSelectionSummary(remainingSlots)
+                selectionDetailSummary = summaryText
             )
         }
 
@@ -374,11 +396,12 @@ class BookingSlotGridViewModel @Inject constructor(
 
         if (availablePendingSlots.isNotEmpty()) {
             val (newTotal, newDeposit) = calculateTotalPriceUseCase(availablePendingSlots)
+            val isValid = validateSlotSelectionUseCase.isSelectionValid(availablePendingSlots)
             selectionState = SlotSelectionState(
                 selectedSlots = availablePendingSlots,
                 totalPrice = newTotal,
                 depositAmount = newDeposit,
-                isValid = availablePendingSlots.size >= ValidateSlotSelectionUseCase.MIN_SLOTS
+                isValid = isValid
             )
             val selectedIds = availablePendingSlots.map { it.slotId }.toSet()
             val updatedMatrixRows = _uiState.value.matrixRows.map { row ->
@@ -387,6 +410,10 @@ class BookingSlotGridViewModel @Inject constructor(
                 }
                 row.copy(slots = updatedSlots)
             }
+            val courtNameMap = activeCourts.associate { it.id to it.name }
+            val incompleteHint = validateSlotSelectionUseCase.findIncompleteCourt(availablePendingSlots, courtNameMap)
+            val summaryText = incompleteHint ?: formatSelectionSummary(availablePendingSlots)
+
             _uiState.update {
                 it.copy(
                     matrixRows = updatedMatrixRows,
@@ -395,7 +422,7 @@ class BookingSlotGridViewModel @Inject constructor(
                     totalPrice = newTotal,
                     depositAmount = newDeposit,
                     canProceed = selectionState.isValid,
-                    selectionDetailSummary = formatSelectionSummary(availablePendingSlots)
+                    selectionDetailSummary = summaryText
                 )
             }
         }
@@ -489,11 +516,12 @@ class BookingSlotGridViewModel @Inject constructor(
                             conflictedSlots.none { it.slotId == selected.slotId }
                         }
                         val (newTotal, newDeposit) = calculateTotalPriceUseCase(remainingSlots)
+                        val isValid = validateSlotSelectionUseCase.isSelectionValid(remainingSlots)
                         selectionState = SlotSelectionState(
                             selectedSlots = remainingSlots,
                             totalPrice = newTotal,
                             depositAmount = newDeposit,
-                            isValid = remainingSlots.size >= ValidateSlotSelectionUseCase.MIN_SLOTS
+                            isValid = isValid
                         )
                         _uiEffect.send(
                             BookingSlotUiEffect.ShowConflictWarning(
@@ -520,6 +548,10 @@ class BookingSlotGridViewModel @Inject constructor(
                         it.status == SlotStatus.BOOKED || it.status == SlotStatus.HELD || it.status == SlotStatus.BLOCKED || it.status == SlotStatus.PAST
                     }
 
+                    val courtNameMap = activeCourts.associate { it.id to it.name }
+                    val incompleteHint = validateSlotSelectionUseCase.findIncompleteCourt(selectionState.selectedSlots, courtNameMap)
+                    val summaryText = incompleteHint ?: formatSelectionSummary(selectionState.selectedSlots)
+
                     _uiState.update {
                         it.copy(
                             matrixRows = displayMatrixRows,
@@ -530,7 +562,7 @@ class BookingSlotGridViewModel @Inject constructor(
                             depositAmount = selectionState.depositAmount,
                             canProceed = selectionState.isValid,
                             isFullyBooked = isFullyBooked,
-                            selectionDetailSummary = formatSelectionSummary(selectionState.selectedSlots)
+                            selectionDetailSummary = summaryText
                         )
                     }
                 }
@@ -543,7 +575,7 @@ class BookingSlotGridViewModel @Inject constructor(
         val startFormatted = formatHourMinute(peakRule.startTime)
         val endFormatted = formatHourMinute(peakRule.endTime)
         val priceFormatted = currencyFormatter.format(peakRule.pricePerHour)
-        return "Giờ cao điểm $startFormatted - $endFormatted • $priceFormatted đ/giờ"
+        return "Giờ cao điểm $startFormatted–$endFormatted · <b>$priceFormatted đ/giờ</b>"
     }
 
     private fun formatSelectionSummary(slots: List<TimeSlot>): String {
@@ -558,10 +590,63 @@ class BookingSlotGridViewModel @Inject constructor(
                 val start = formatHourMinute(times.first())
                 val end = add30Minutes(times.last())
                 val hours = courtSlots.size * 0.5
-                parts.add("$courtName: $start - $end (${hours}h)")
+                val hoursText = if (hours % 1.0 == 0.0) "${hours.toInt()} giờ" else "$hours giờ"
+                val date = courtSlots.first().date
+                val dateText = formatDateForSummary(date)
+                parts.add("$courtName · $dateText · $start – $end · $hoursText")
             }
         }
-        return parts.joinToString(" | ")
+        return parts.joinToString("\n")
+    }
+
+    private fun buildCourtDetailsForConfirm(slots: List<TimeSlot>): List<String> {
+        val courtGroups = slots.groupBy { it.courtId }
+        val result = mutableListOf<String>()
+        var courtIndex = 1
+
+        for ((courtId, courtSlots) in courtGroups) {
+            val court = activeCourts.find { it.id == courtId }
+            val courtBadge = "S$courtIndex"
+            val courtName = court?.name ?: "Sân $courtIndex"
+            val surfaceType = if (!court?.surfaceType.isNullOrEmpty()) court!!.surfaceType else "Thảm"
+            val times = courtSlots.map { it.startTime }.sorted()
+            val start = if (times.isNotEmpty()) formatHourMinute(times.first()) else ""
+            val end = if (times.isNotEmpty()) add30Minutes(times.last()) else ""
+            val dateText = if (courtSlots.isNotEmpty()) formatDateForSummary(courtSlots.first().date) else ""
+            val timeRangeText = "$start – $end"
+            val subtotal = courtSlots.sumOf { it.price }
+
+            result.add("$courtBadge|$courtName|$surfaceType|$dateText|$timeRangeText|$subtotal")
+            courtIndex++
+        }
+        return result
+    }
+
+    private fun formatDateForSummary(dateStr: String): String {
+        return try {
+            val date = if (dateStr.length == 8 && dateStr.all { it.isDigit() }) {
+                val y = dateStr.substring(0, 4).toInt()
+                val m = dateStr.substring(4, 6).toInt()
+                val d = dateStr.substring(6, 8).toInt()
+                LocalDate.of(y, m, d)
+            } else {
+                LocalDate.parse(dateStr)
+            }
+            val dow = when (date.dayOfWeek) {
+                java.time.DayOfWeek.MONDAY -> "T2"
+                java.time.DayOfWeek.TUESDAY -> "T3"
+                java.time.DayOfWeek.WEDNESDAY -> "T4"
+                java.time.DayOfWeek.THURSDAY -> "T5"
+                java.time.DayOfWeek.FRIDAY -> "T6"
+                java.time.DayOfWeek.SATURDAY -> "T7"
+                java.time.DayOfWeek.SUNDAY -> "CN"
+                else -> ""
+            }
+            val dayMonth = String.format(Locale.US, "%02d/%02d", date.dayOfMonth, date.monthValue)
+            "$dow, $dayMonth"
+        } catch (e: Exception) {
+            dateStr
+        }
     }
 
     private fun formatSlotShortName(slot: TimeSlot): String {

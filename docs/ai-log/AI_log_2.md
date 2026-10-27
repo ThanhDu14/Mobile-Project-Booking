@@ -29,6 +29,8 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 23 | 2026-10-26 | Triển khai mã nguồn Phase 1–3 spec 040 bằng `/speckit-implement` | 04 |
 | 24 | 2026-10-26 | Triển khai giao diện Phase 4 (UI & ViewModel) spec 040 bằng `/speckit-implement` | 04 |
 | 25 | 2026-10-27 | Thống nhất 3 chiều (Spec ↔ Tasks ↔ Sản phẩm) theo Q1–Q13 & Mockup Spec 040 | 04 |
+| 26 | 2026-10-27 | Tinh chỉnh giao diện Spec 040 chuẩn Mockup & Sửa lỗi hiển thị UI | 04 |
+| 27 | 2026-10-27 | Bổ sung mục Thanh toán (display-only) Màn 2 & Ràng buộc min-2 / max-8 theo từng sân | 04, 05 |
 
 
 
@@ -1299,6 +1301,128 @@ Sau đợt kiểm thử trên thiết bị thật và đối chiếu kỹ lưỡ
    - **0 ERRORS, BUILD SUCCESSFUL**.
 4. **Firestore Security & Emulator Tests (`npm test` trong `firestore-tests`)**:
    - **34/34 tests PASS (100%)**.
+
+---
+
+## Mục 26: Tinh chỉnh giao diện Spec 040 chuẩn Mockup & Sửa lỗi hiển thị UI
+
+| Trường | Nội dung |
+|---|---|
+| **Người thực hiện** | Thành viên số 2 (Lê Quốc Hưng - B) |
+| **Thời điểm** | 27/10/2026 |
+| **Công cụ AI** | Google Antigravity Assistant |
+| **Mục tiêu** | Tinh chỉnh giao diện 2 màn hình của Spec 040 (`SlotGrid` & `BookingConfirm`) sát chuẩn 2 ảnh mockup thiết kế trong `specs/040-booking-slot-grid/ui/`; khắc phục 2 lỗi hiển thị trực quan (badge Giao hữu bị tràn/cắt chữ và chuỗi `30%%`); đảm bảo hoạt động hoàn hảo trên cả Light Theme và Dark Theme. |
+
+### Các hạng mục tinh chỉnh và sửa lỗi đã hoàn thành
+
+#### Màn hình 1 — Chọn khung giờ (SlotGrid)
+1. **1a. Màu đang chọn**: Đổi token màu slot đang chọn và chip ngày đang chọn thành `#1B5E45` + chữ trắng + dấu checkmark ✓ (`ic_check_20`) cho cả Light & Dark theme (`colors_booking.xml`), loại bỏ hoàn toàn hiện tượng xanh mint lệch mockup.
+2. **1b. Header sân**: Loại bỏ dạng pill tối màu có nền sunken; chuyển về dạng văn bản phẳng chuẩn mockup: tên sân in đậm (`tvCourtName`, bold 13sp), loại mặt sân chữ nhạt bên dưới (`tvCourtSurface`, 11sp muted) lấy trực tiếp từ dữ liệu sân thật (`item_court_column_header.xml`).
+3. **1c. Banner giờ cao điểm**: Nền sáng nhạt (`@color/sn_surface_sunken`), biểu tượng tag (`ic_tag_16`), giá tiền in đậm (`<b>$priceFormatted đ/giờ</b>`) từ `priceRules` động của cơ sở, phân cách bằng dấu chấm giữa `·`.
+4. **1d. Bảng chú thích (Legend)**: Bố trí lại thành 2 hàng cân đối (3 cột × 2 hàng), loại bỏ thanh cuộn ngang `HorizontalScrollView` để không một mục nào bị cắt lề phải trên mọi kích thước màn hình. Mục "Trống" dùng hộp bo góc 3dp có viền stroke (`bg_legend_box.xml`).
+5. **1e. Sửa lỗi Badge "Giao hữu" (Thay thế mục 1e cũ)**:
+   - Trong các ô `BLOCKED` dạng giao lưu/giao hữu (`DROP_IN`), tổ chức bố cục 2 dòng căn giữa: Dòng 1 gồm icon khóa 12dp + giờ bắt đầu; Dòng 2 là chip "Giao hữu" nhỏ nằm gọn hoàn toàn bên trong ô slot (nền amber nhạt `#FCE8BF`, chữ tối `#3D2A00`, bo góc 3dp, kích thước 9sp). Đảm bảo không tràn viền, không ngắt chữ, dễ đọc trên cả 2 theme.
+   - Các ô `BLOCKED` thông thường chỉ hiển thị 1 dòng icon khóa + giờ.
+6. **1f. Ghi chú dưới Legend**: Bổ sung văn bản hướng dẫn chuẩn wireframe: *"Mỗi ô là 30 phút. Chọn nhiều ô liền nhau trên cùng sân hoặc ở nhiều sân. Khung giờ được giữ 5 phút khi bạn bấm 'Giữ chỗ'."*
+7. **1g. Nút Pill "Đặt cố định theo tuần"**: Thu gọn về kích thước nội dung (`wrap_content`), căn trái (`layout_gravity="start"`), không kéo giãn toàn màn hình.
+8. **1h. Thanh tóm tắt đáy (Bottom Summary)**: Khi đã chọn slot, hiển thị tổng tiền in đậm (`20sp`) và dòng chi tiết định dạng chuẩn `Sân 1 · T3, 06/10 · 19:00 – 21:00 · 2 giờ`; hỗ trợ liệt kê theo từng sân nếu chọn đa sân; chưa chọn thì giữ thông báo mặc định.
+9. **1i. Phân biệt PAST và BOOKED**:
+   - `PAST`: Làm mờ alpha 0.35f kèm gạch ngang chữ (`STRIKE_THRU_TEXT_FLAG`).
+   - `BOOKED`: Nền xám nhạt (`sn_slot_booked`), chữ xám, alpha 1.0f, **không** gạch ngang.
+
+#### Màn hình 2 — Xác nhận đặt sân (BookingConfirm)
+1. **2a. Tiêu đề**: Đổi tiêu đề màn hình thành *"Xác nhận đặt sân"* (`booking_confirm_title`).
+2. **2b. Sửa lỗi "30%%"**: Khắc phục lỗi hiển thị chuỗi, chuẩn hóa thành *"Tiền cọc (30%)"* (`booking_summary_deposit_label`).
+3. **2c. Thẻ slot đã chọn**: Mỗi thẻ hiển thị đầy đủ badge sân bo vuông (`S1`/`S2`), tên sân in đậm kèm mặt sân (`Sân 1 · Thảm`), thứ ngày tháng và khoảng giờ chơi (`T3, 06/10 · 19:00 – 21:00 (2.0 giờ chơi)`), tổng tiền theo sân căn phải (`tvCourtSubtotal`).
+4. **2d. Link "Đổi khung giờ"**: Thêm liên kết văn bản màu xanh thương hiệu (`#1B5E45`) ngay dưới danh sách thẻ slot; khi bấm sẽ quay lại màn hình lưới mà **không** nhả giữ chỗ (duy trì hold trong hạn 5 phút theo US3).
+5. **2e. Khung thông tin cơ sở**: Bổ sung ô ảnh placeholder minh họa vạch sân cầu lông (`illus_court_lines`) trên nền xanh `#1B5E45` bo góc 10dp bên trái thẻ cơ sở, giữ nguyên tên và địa chỉ cơ sở từ dữ liệu thật.
+6. **2f. Ranh giới tính năng Spec 050**: Tuyệt đối không build phần chọn phương thức thanh toán, số dư ví hay mã voucher (thuộc 050). Màn hình kết thúc tại bảng tổng kết tiền và 2 nút: `[Hủy / Quay lại]` (nhả hold) và `[Thanh toán]` (bàn giao sang 050 qua `HoldToPaymentArgs`).
+7. **2g. Banner đếm ngược**: Đồng hồ đếm ngược thời gian thực từ `holdExpiresAtMillis`, hiển thị thông điệp *"Đang giữ chỗ cho bạn. Hoàn tất trước khi hết giờ."* kèm đồng hồ số phút:giây in đậm nổi bật bên phải.
+
+#### Kết quả Kiểm thử & Quality Gates
+- **Unit Tests**: `./gradlew testDebugUnitTest` $\rightarrow$ **218/218 tests PASS (100%)**.
+- **Build Package**: `./gradlew assembleDebug` $\rightarrow$ **BUILD SUCCESSFUL**.
+- **Android Lint**: `./gradlew lintDebug` $\rightarrow$ **0 ERRORS, BUILD SUCCESSFUL**.
+- **Quy tắc an toàn Git**: Không thực hiện bất kỳ lệnh git nào; toàn bộ file chỉnh sửa được liệt kê minh bạch để thành viên Hưng tự kiểm tra và commit.
+
+---
+
+## Mục 27: Bổ sung mục Thanh toán (display-only) Màn 2 & Ràng buộc min-2 / max-8 theo từng sân
+
+| Trường | Nội dung |
+|---|---|
+| **Người thực hiện** | Thành viên số 2 (Lê Quốc Hưng - B) |
+| **Thời điểm** | 27/10/2026 |
+| **Công cụ AI** | Google Antigravity Assistant |
+| **Mục tiêu** | 1. Xây dựng phần hiển thị (display-only) của mục Thanh toán trên màn hình Xác nhận (`BookingConfirmFragment`) khớp từng chi tiết với mockup `04_booking_buoc2_xac-nhan-giu-cho.png` (không làm logic thật, đánh dấu `// TODO(050)`).<br>2. Sửa lỗi định dạng chuỗi ngày thô trên thẻ slot thành `T4, 28/10 · 06:30 – 07:00` (bỏ hậu tố `(0.5 giờ chơi)`).<br>3. Điều chỉnh quy tắc chọn khung giờ: Áp dụng ràng buộc tối thiểu 2 khung liên tiếp và tối đa 8 khung theo **TỪNG SÂN** (thay thế giới hạn tổng 8 khung trên toàn bộ lựa chọn theo FR-026). |
+
+### Các nội dung đã hoàn thành
+
+#### 1. Mục "Thanh toán" hiển thị trên Màn hình Xác nhận (BookingConfirm - Display-Only)
+- **Thứ tự khối theo đúng mockup bước 2**: Banner đếm ngược $\rightarrow$ Thẻ thông tin cơ sở $\rightarrow$ "Khung giờ đã chọn" + Thẻ slot $\rightarrow$ Liên kết "Đổi khung giờ" $\rightarrow$ Khối "Thanh toán" (3 radio options) $\rightarrow$ Thanh số dư ví giả lập $\rightarrow$ Hàng mã giảm giá (viền nét đứt) $\rightarrow$ Thẻ breakdown (Tạm tính, Giảm giá 0 đ, gạch ngang, Tổng cộng) $\rightarrow$ Ghi chú chính sách hủy $\rightarrow$ Bottom bar cố định dưới cùng.
+- **Thẻ phương thức thanh toán (3 radio options)**:
+  - *"Trả tại sân"* (mặc định): *"Trả khi đến sân. Chủ sân duyệt trong tối đa 60 phút"*.
+  - *"Đặt cọc"*: *"Cọc 30% (X đ) bằng ví giả lập, phần còn lại trả tại sân"* (X tính động bằng 30% từ tổng tiền thật).
+  - *"Ví SmashNow (giả lập)"*: *"Trừ đủ [tổng thật] đ từ ví, không phải tiền thật"*.
+  - Bấm chọn radio chỉ thay đổi trạng thái chọn giao diện (UI selection), không gọi API, không trừ tiền, không làm logic của 050.
+- **Thanh số dư ví giả lập**: Nền sunken xám nhạt (`bg_wallet_bar.xml`), icon ví vector (`ic_account_balance_wallet_20.xml`), dòng chữ *"Số dư ví giả lập 0 đ"* (placeholder kèm `// TODO(050)`), bên phải là nút bấm chữ xanh *"Nạp ví giả lập"*. Bấm vào hiển thị Snackbar thông báo tính năng thuộc feature 050.
+- **Hàng mã giảm giá**: Hộp viền nét đứt (`bg_voucher_row.xml`), icon vé (`ic_confirmation_number_20.xml`), chữ *"Thêm mã giảm giá"*, icon chevron `>` (`ic_chevron_right_20.xml`). Bấm vào hiển thị Snackbar tính năng thuộc feature 050.
+- **Thẻ breakdown chi tiết tiền**:
+  - Dòng 1: *"Tạm tính (N × 30 phút)"* bên trái, số tiền tạm tính bên phải.
+  - Dòng 2: *"Giảm giá"* bên trái, *"0 đ"* bên phải (kèm `// TODO(050)`).
+  - Đường kẻ mờ phân cách.
+  - Dòng 3: *"Tổng cộng"* in đậm bên trái, tổng tiền in đậm bên phải (`20sp`).
+- **Ghi chú chính sách hủy**: Văn bản ghi chú màu xám nhạt, cỡ chữ nhỏ, nguyên văn mockup: *"Bấm "Xác nhận đặt" là bạn đồng ý chính sách hủy: hủy trước giờ chơi từ 4 giờ trở lên được hoàn 100%; hủy trễ mất tiền cọc, hoặc phạt 30% nếu trả bằng ví. Giao dịch giả lập phục vụ học tập, không thu tiền thật."* (sử dụng thuộc tính `formatted="false"` trong XML để tránh lỗi phân tích cú pháp ký tự `%`).
+- **Bottom bar**:
+  - Bên trái: Chip đếm ngược màu amber bo góc (`Giữ chỗ: 04:58`) + Tổng tiền in đậm 20sp.
+  - Bên phải: Nút xanh thương hiệu `#1B5E45`, bo góc 12dp, chữ trắng in đậm *"Xác nhận đặt"*. Bấm vào hiển thị Snackbar: *"Đã ghi nhận phương thức thanh toán. Thanh toán thật sẽ được tích hợp ở feature 050."*
+- **Hành vi nhả slot**: Mũi tên back trên top bar kích hoạt `handleCancelAndRelease()` nhả giữ chỗ nguyên tử theo đúng US3.
+
+#### 2. Sửa lỗi định dạng chuỗi ngày trên Thẻ slot đã chọn
+- **Nguyên nhân gốc**: `TimeSlot.date` lưu trữ chuỗi 8 chữ số `yyyyMMdd` (vd: `"20261028"`). `LocalDate.parse(dateStr)` mặc định chỉ chấp nhận định dạng ISO-8601 (`yyyy-MM-dd`), dẫn đến ngoại lệ `DateTimeParseException` và fallback trả về chuỗi số thô dạng `20261028 · 06:30 – 07:00 (0.5 giờ chơi)`.
+- **Giải pháp**: Xử lý bóc tách 8 chữ số thành `LocalDate.of(y, m, d)`, tính toán chính xác thứ trong tuần theo múi giờ `Asia/Ho_Chi_Minh` (`T2`–`CN`).
+- **Kết quả hiển thị**:
+  - Dòng 1: Tên sân + mặt sân (vd: `"Sân 3 · PU"`).
+  - Dòng 2: `"T4, 28/10 · 06:30 – 07:00"`, loại bỏ hậu tố `(0.5 giờ chơi)`.
+  - Bên phải: Giá tiền của chuỗi sân tương ứng.
+
+#### 3. Ràng buộc tối thiểu 2 khung & tối đa 8 khung theo TỪNG SÂN (Thay thế Cap tổng 8 slots)
+- **Quy tắc mới**:
+  - Bỏ điều kiện giới hạn tổng số slot trên toàn bộ lựa chọn $\le 8$.
+  - Áp dụng giới hạn: **Mỗi sân tham gia vào lựa chọn phải có từ 2 đến 8 khung giờ liên tiếp ($1\text{h} \le t \le 4\text{h}$)**.
+  - Nút *"Giữ chỗ"* chỉ sáng (enable) khi **tất cả** các sân được chọn đều thỏa mãn điều kiện $2 \le \text{độ dài chuỗi} \le 8$.
+- **Hành vi tương tác chi tiết**:
+  - Khi một sân đã đủ 8 khung: Bấm tiếp khung thứ 9 liền kề trên sân đó sẽ bị chặn ngay lập tức và phát Snackbar: `"$courtName đã đủ 8 khung (4 giờ)"`. Người chơi vẫn có thể chọn thêm các khung giờ trên các sân khác bình thường.
+  - Vùng tóm tắt UI lưới: Khi có sân chưa đủ 2 khung liên tiếp, nút *"Giữ chỗ"* disable và vùng tóm tắt hiển thị gợi ý thông minh: `"$courtName cần thêm 1 khung giờ liên tiếp mới đặt được (mỗi sân tối thiểu 2 khung, tức 1 giờ)."`.
+  - Khi người chơi bấm "Giữ chỗ": Kiểm tra toàn diện qua `ValidateSlotSelectionUseCase.validateForProceed(state, courtNameMap)`, nếu không thỏa mãn sẽ từ chối và hiển thị thông báo chi tiết rõ tên sân.
+  - Xử lý xung đột Realtime / Hold: Sau khi loại bỏ các slot bị tranh chấp, hệ thống tự động tái thẩm định tính hợp lệ theo từng sân. Nếu sân còn lại rơi xuống dưới 2 khung, nút "Giữ chỗ" lập tức disable và vùng tóm tắt hiển thị gợi ý bổ sung khung giờ cho sân đó.
+
+#### 4. Đề xuất cập nhật câu chữ Spec (Proposed Spec Wording)
+- **FR-010**:
+  > *"Người dùng có thể chọn tối đa 8 khung giờ liên tiếp (4 tiếng) trên mỗi sân con và tối thiểu 2 khung giờ liên tiếp (1 tiếng) trên mỗi sân con tham gia vào lượt đặt. Một đơn đặt có thể chứa nhiều sân con khác nhau trong cùng một ngày, mỗi sân con tuân thủ độc lập giới hạn từ 2 đến 8 khung giờ liên tiếp."*
+- **US1-AS4**:
+  > *"Khi người dùng chọn đủ tối thiểu 2 khung giờ liên tiếp cho tất cả các sân trong lựa chọn, nút 'Giữ chỗ' chuyển sang trạng thái kích hoạt (enabled). Nếu có bất kỳ sân nào mới chỉ chọn 1 khung giờ, nút 'Giữ chỗ' giữ trạng thái vô hiệu hóa (disabled) và thanh tóm tắt hiển thị gợi ý: '{Tên sân} cần thêm 1 khung giờ liên tiếp mới đặt được (mỗi sân tối thiểu 2 khung, tức 1 giờ).'"*
+- **US1-AS7**:
+  > *"Khi người dùng cố gắng chọn vượt quá 8 khung giờ liên tiếp trên cùng một sân con, hệ thống chặn hành động chọn và hiển thị thông báo: '{Tên sân} đã đủ 8 khung (4 giờ)'. Người dùng vẫn có thể tiếp tục chọn khung giờ trên các sân con khác."*
+- **FR-026**:
+  > *"Ràng buộc số lượng khung giờ đặt: Hệ thống áp dụng quy tắc theo từng sân con độc lập — tối thiểu 2 slot (1 giờ) và tối đa 8 slot (4 giờ) liên tục trên mỗi sân con. Không áp đặt trần tối đa 8 slot trên tổng số lượng slot đa sân của toàn đơn."*
+
+#### 5. Kết quả Kiểm thử & Quality Gates (Full Pass)
+1. **Unit Tests (`./gradlew testDebugUnitTest`)**:
+   - **226/226 tests PASS (100%)**.
+   - Bổ sung và cập nhật đầy đủ các ca kiểm thử:
+     - `selectExceedingMax8SlotsPerCourt_isBlockedOnSameCourt_allowedOnOtherCourt` (chặn slot thứ 9 trên sân 1, cho phép chọn tiếp trên sân 2).
+     - `validateForProceed_requiresMinimum2SlotsPerCourt` (kiểm tra 1 sân FAIL, 1+1 sân FAIL, 2+1 sân FAIL, 2+2 sân PASS).
+     - `multiCourtValidation_8Plus8SlotsAllowed` (cho phép 8 slot sân 1 + 8 slot sân 2 = 16 slots).
+     - `multiCourtValidation_total9SlotsAcrossCourtsAllowed` (cho phép 2+2+2+3 = 9 slots trên 4 sân).
+     - `findIncompleteCourt_returnsHelpfulHintWhenUnder2Slots` (gợi ý chính xác tên sân thiếu khung).
+     - `onSlotClicked_whenCourtHas8Slots_blocks9thSlotWithCourtSnackbar` (ViewModel phát Snackbar khi sân chạm trần 8 khung).
+2. **Build Package Debug (`./gradlew assembleDebug`)**:
+   - **BUILD SUCCESSFUL**.
+3. **Android Lint (`./gradlew lintDebug`)**:
+   - **0 ERRORS, BUILD SUCCESSFUL** (đã giải quyết cảnh báo `StringFormatMatches` bằng `30%%` và `formatted="false"`).
+4. **Quy tắc an toàn Git**: Tuyệt đối không chạy bất kỳ lệnh git nào; toàn bộ file chỉnh sửa được báo cáo chi tiết để người dùng tự xem và commit.
+
 
 
 

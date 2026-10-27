@@ -166,10 +166,13 @@ class BookingSlotGridFragment : Fragment() {
         }
         dateAdapter.submitList(dateItems)
 
-        // 4. Cập nhật Banner Giờ Cao Điểm (Q5)
+        // 4. Cập nhật Banner Giờ Cao Điểm (Q5, 1c)
         if (!state.peakHourBannerText.isNullOrEmpty()) {
             binding.layoutPeakHourBanner.isVisible = true
-            binding.tvPeakHourBannerText.text = state.peakHourBannerText
+            binding.tvPeakHourBannerText.text = androidx.core.text.HtmlCompat.fromHtml(
+                state.peakHourBannerText,
+                androidx.core.text.HtmlCompat.FROM_HTML_MODE_LEGACY
+            )
         } else {
             binding.layoutPeakHourBanner.isVisible = false
         }

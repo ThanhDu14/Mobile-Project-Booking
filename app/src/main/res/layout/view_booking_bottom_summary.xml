@@ -31,19 +31,9 @@
             android:layout_weight="1"
             android:orientation="vertical">
 
-            <TextView
-                android:id="@+id/tvSelectedSummary"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textAppearance="@style/TextAppearance.SmashNow.Label"
-                android:textColor="@color/sn_ink"
-                android:textSize="13sp"
-                tools:text="2 khung giờ (1 giờ chơi)" />
-
             <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
@@ -51,10 +41,11 @@
                     android:id="@+id/tvTotalPrice"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textAppearance="@style/TextAppearance.SmashNow.Title"
-                    android:textColor="@color/sn_court"
-                    android:textSize="18sp"
-                    tools:text="80.000đ" />
+                    android:fontFamily="sans-serif-bold"
+                    android:textStyle="bold"
+                    android:textColor="@color/sn_ink"
+                    android:textSize="20sp"
+                    tools:text="240.000 đ" />
 
                 <TextView
                     android:id="@+id/tvDepositAmount"
@@ -64,9 +55,19 @@
                     android:textAppearance="@style/TextAppearance.SmashNow.Caption"
                     android:textColor="@color/sn_ink_muted"
                     android:textSize="12sp"
-                    tools:text="• Cọc 30%: 24.000đ" />
+                    tools:text="• Cọc 30%: 72.000 đ" />
 
             </LinearLayout>
+
+            <TextView
+                android:id="@+id/tvSelectedSummary"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textAppearance="@style/TextAppearance.SmashNow.Caption"
+                android:textColor="@color/sn_ink_muted"
+                android:textSize="12sp"
+                tools:text="Sân 1 · T3, 06/10 · 19:00 – 21:00 · 2 giờ" />
 
         </LinearLayout>
 

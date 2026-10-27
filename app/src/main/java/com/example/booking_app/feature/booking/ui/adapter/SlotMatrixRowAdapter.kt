@@ -122,10 +122,10 @@ class SlotMatrixRowAdapter(
                         cellBinding.tvCellTime.setTextColor(
                             ContextCompat.getColor(context, R.color.booking_slot_booked_text)
                         )
-                        cellBinding.tvCellTime.paintFlags = cellBinding.tvCellTime.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
+                        // 1i: BOOKED là xám nhạt, KHÔNG gạch ngang
                         cellBinding.ivCellIcon.isVisible = false
                         cellBinding.tvCellDropInBadge.isVisible = false
-                        cellBinding.root.alpha = 0.85f
+                        cellBinding.root.alpha = 1.0f
                     }
 
                     SlotStatus.BLOCKED -> {
@@ -142,8 +142,9 @@ class SlotMatrixRowAdapter(
                         cellBinding.ivCellIcon.setColorFilter(
                             ContextCompat.getColor(context, R.color.booking_slot_blocked_text)
                         )
+                        // 1e: Ô BLOCKED dạng giao hữu hiển thị chip nhỏ dòng 2; ô BLOCKED thường ẩn chip
                         cellBinding.tvCellDropInBadge.isVisible = (slot.blockReason == "DROP_IN")
-                        cellBinding.root.alpha = 0.85f
+                        cellBinding.root.alpha = 0.9f
                     }
 
                     SlotStatus.PAST -> {
@@ -154,14 +155,15 @@ class SlotMatrixRowAdapter(
                         cellBinding.tvCellTime.setTextColor(
                             ContextCompat.getColor(context, R.color.booking_slot_past_text)
                         )
+                        // 1i: PAST giữ mờ ~0.35 + gạch ngang, phân biệt rõ với BOOKED
+                        cellBinding.tvCellTime.paintFlags = cellBinding.tvCellTime.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
                         cellBinding.ivCellIcon.isVisible = false
                         cellBinding.tvCellDropInBadge.isVisible = false
-                        // Q7: PAST mờ (alpha ~0.35)
                         cellBinding.root.alpha = 0.35f
                     }
                 }
 
-                cellBinding.cardSlotCell.setOnClickListener {
+                cellBinding.root.setOnClickListener {
                     onSlotClick(slot)
                 }
             }
@@ -174,7 +176,19 @@ class SlotMatrixRowAdapter(
         }
 
         override fun areContentsTheSame(oldItem: SlotMatrixRow, newItem: SlotMatrixRow): Boolean {
-            return oldItem == newItem
+            if (oldItem.slots.size != newItem.slots.size) return false
+            for (i in oldItem.slots.indices) {
+                val s1 = oldItem.slots[i]
+                val s2 = newItem.slots[i]
+                if (s1.slotId != s2.slotId ||
+                    s1.status != s2.status ||
+                    s1.price != s2.price ||
+                    s1.blockReason != s2.blockReason
+                ) {
+                    return false
+                }
+            }
+            return true
         }
     }
 }

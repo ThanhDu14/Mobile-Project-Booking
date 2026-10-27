@@ -8,7 +8,7 @@
     android:background="@color/sn_surface"
     android:orientation="vertical">
 
-    <!-- App Bar -->
+    <!-- App Bar (2a: "Xác nhận đặt sân") -->
     <LinearLayout
         android:id="@+id/layoutConfirmHeader"
         android:layout_width="match_parent"
@@ -42,33 +42,48 @@
 
     </LinearLayout>
 
-    <!-- Countdown Timer Banner -->
+    <!-- Countdown Timer Banner (2g) -->
     <LinearLayout
         android:id="@+id/layoutCountdownBanner"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/sn_lamp_container"
-        android:gravity="center"
+        android:layout_marginHorizontal="16dp"
+        android:layout_marginTop="12dp"
+        android:background="@drawable/bg_wordmark_pill"
+        android:backgroundTint="@color/sn_lamp_container"
+        android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingHorizontal="16dp"
-        android:paddingVertical="10dp">
+        android:paddingVertical="12dp">
 
         <ImageView
-            android:layout_width="18dp"
-            android:layout_height="18dp"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
             android:contentDescription="@null"
             android:src="@drawable/ic_timer_24"
             app:tint="@color/sn_on_lamp_container" />
 
         <TextView
             android:id="@+id/tvCountdownText"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
+            android:layout_marginStart="10dp"
+            android:layout_weight="1"
             android:fontFamily="sans-serif-medium"
             android:textColor="@color/sn_on_lamp_container"
             android:textSize="13sp"
-            tools:text="Thời gian giữ chỗ còn lại: 04:59" />
+            tools:text="Đang giữ chỗ cho bạn. Hoàn tất trước khi hết giờ." />
+
+        <TextView
+            android:id="@+id/tvCountdownDigits"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:fontFamily="sans-serif-bold"
+            android:textStyle="bold"
+            android:textColor="@color/sn_on_lamp_container"
+            android:textSize="18sp"
+            tools:text="04:52" />
 
     </LinearLayout>
 
@@ -85,7 +100,7 @@
             android:orientation="vertical"
             android:padding="16dp">
 
-            <!-- Venue Card -->
+            <!-- Venue Card (2e: Khung ảnh bên trái + tên + địa chỉ) -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -99,46 +114,47 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
                     android:padding="16dp">
 
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/booking_confirm_venue_label"
-                        android:textAppearance="@style/TextAppearance.SmashNow.Caption"
-                        android:textColor="@color/sn_ink_muted"
-                        android:textSize="12sp" />
-
-                    <TextView
-                        android:id="@+id/tvConfirmVenueName"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:textAppearance="@style/TextAppearance.SmashNow.Title"
-                        android:textColor="@color/sn_ink"
-                        android:textSize="16sp"
-                        tools:text="CLB Cầu Lông Trường Chinh 909" />
-
-                    <LinearLayout
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
+                    <FrameLayout
+                        android:layout_width="60dp"
+                        android:layout_height="60dp"
+                        android:layout_marginEnd="12dp">
 
                         <ImageView
-                            android:layout_width="14dp"
-                            android:layout_height="14dp"
+                            android:id="@+id/ivVenueImagePlaceholder"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:background="@drawable/bg_venue_court_box"
                             android:contentDescription="@null"
-                            android:src="@drawable/ic_location_on_24"
-                            app:tint="@color/sn_ink_muted" />
+                            android:padding="6dp"
+                            android:src="@drawable/illus_court_lines" />
+
+                    </FrameLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/tvConfirmVenueName"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textAppearance="@style/TextAppearance.SmashNow.Title"
+                            android:textColor="@color/sn_ink"
+                            android:textSize="16sp"
+                            android:textStyle="bold"
+                            tools:text="CLB Cầu Lông Trường Chinh 909" />
 
                         <TextView
                             android:id="@+id/tvConfirmVenueAddress"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="4dp"
+                            android:layout_marginTop="4dp"
                             android:textAppearance="@style/TextAppearance.SmashNow.Body"
                             android:textColor="@color/sn_ink_muted"
                             android:textSize="13sp"
@@ -158,7 +174,8 @@
                 android:text="@string/booking_confirm_selected_slots"
                 android:textAppearance="@style/TextAppearance.SmashNow.Label"
                 android:textColor="@color/sn_ink"
-                android:textSize="14sp" />
+                android:textSize="15sp"
+                android:textStyle="bold" />
 
             <LinearLayout
                 android:id="@+id/layoutSelectedSlotsContainer"
@@ -166,8 +183,303 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical" />
 
-            <!-- Price Summary Card -->
+            <!-- Link "Đổi khung giờ" (2d: bấm về lại lưới, không nhả hold) -->
+            <TextView
+                android:id="@+id/btnChangeSlots"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:paddingVertical="6dp"
+                android:paddingHorizontal="4dp"
+                android:text="@string/booking_confirm_change_slots"
+                android:fontFamily="sans-serif-medium"
+                android:textColor="@color/sn_court"
+                android:textSize="14sp"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackground" />
+
+            <!-- Section: Thanh toán (3a) -->
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="8dp"
+                android:text="@string/booking_payment_title"
+                android:textAppearance="@style/TextAppearance.SmashNow.Label"
+                android:textColor="@color/sn_ink"
+                android:textSize="15sp"
+                android:textStyle="bold" />
+
+            <!-- Card: 3 Radio Options (3b) -->
             <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardPaymentMethods"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/sn_surface_raised"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:strokeColor="@color/sn_line"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                    <!-- Option 1: Trả tại sân -->
+                    <LinearLayout
+                        android:id="@+id/rowPayAtVenue"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:padding="14dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?attr/selectableItemBackground">
+
+                        <RadioButton
+                            android:id="@+id/rbPayAtVenue"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:checked="true"
+                            android:clickable="false"
+                            app:buttonTint="@color/sn_court" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/booking_payment_pay_at_venue_title"
+                                android:textAppearance="@style/TextAppearance.SmashNow.Label"
+                                android:textColor="@color/sn_ink"
+                                android:textSize="15sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="@string/booking_payment_pay_at_venue_desc"
+                                android:textAppearance="@style/TextAppearance.SmashNow.Caption"
+                                android:textColor="@color/sn_ink_muted"
+                                android:textSize="13sp" />
+
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@color/sn_line" />
+
+                    <!-- Option 2: Đặt cọc -->
+                    <LinearLayout
+                        android:id="@+id/rowDeposit"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:padding="14dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?attr/selectableItemBackground">
+
+                        <RadioButton
+                            android:id="@+id/rbDeposit"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:checked="false"
+                            android:clickable="false"
+                            app:buttonTint="@color/sn_court" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/booking_payment_deposit_title"
+                                android:textAppearance="@style/TextAppearance.SmashNow.Label"
+                                android:textColor="@color/sn_ink"
+                                android:textSize="15sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/tvDepositDescription"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:textAppearance="@style/TextAppearance.SmashNow.Caption"
+                                android:textColor="@color/sn_ink_muted"
+                                android:textSize="13sp"
+                                tools:text="Cọc 30% (72.000 đ) bằng ví giả lập, phần còn lại trả tại sân" />
+
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@color/sn_line" />
+
+                    <!-- Option 3: Ví SmashNow (giả lập) -->
+                    <LinearLayout
+                        android:id="@+id/rowWallet"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:padding="14dp"
+                        android:clickable="true"
+                        android:focusable="true"
+                        android:background="?attr/selectableItemBackground">
+
+                        <RadioButton
+                            android:id="@+id/rbWallet"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:checked="false"
+                            android:clickable="false"
+                            app:buttonTint="@color/sn_court" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="8dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/booking_payment_wallet_title"
+                                android:textAppearance="@style/TextAppearance.SmashNow.Label"
+                                android:textColor="@color/sn_ink"
+                                android:textSize="15sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:id="@+id/tvWalletDescription"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:textAppearance="@style/TextAppearance.SmashNow.Caption"
+                                android:textColor="@color/sn_ink_muted"
+                                android:textSize="13sp"
+                                tools:text="Trừ đủ 240.000 đ từ ví, không phải tiền thật" />
+
+                        </LinearLayout>
+
+                    </LinearLayout>
+
+                </LinearLayout>
+
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Thanh số dư ví (3c: icon ví + Số dư ví giả lập [số dư] + Nạp ví giả lập) -->
+            <LinearLayout
+                android:id="@+id/layoutWalletBalance"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_wallet_bar"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="14dp"
+                android:paddingVertical="12dp">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_account_balance_wallet_20"
+                    app:tint="@color/sn_ink_muted" />
+
+                <TextView
+                    android:id="@+id/tvWalletBalance"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:layout_weight="1"
+                    android:fontFamily="sans-serif-medium"
+                    android:textColor="@color/sn_ink"
+                    android:textSize="13sp"
+                    tools:text="Số dư ví giả lập 0 đ" />
+
+                <!-- TODO(050): Tích hợp luồng nạp ví giả lập -->
+                <TextView
+                    android:id="@+id/btnTopUpWallet"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-bold"
+                    android:textStyle="bold"
+                    android:textColor="@color/sn_court"
+                    android:textSize="13sp"
+                    android:text="@string/booking_wallet_top_up_action"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?attr/selectableItemBackground" />
+
+            </LinearLayout>
+
+            <!-- Hàng mã giảm giá (3d: viền nét đứt, icon vé, Thêm mã giảm giá, chevron) -->
+            <LinearLayout
+                android:id="@+id/layoutVoucherRow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_voucher_row"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="14dp"
+                android:paddingVertical="12dp"
+                android:clickable="true"
+                android:focusable="true">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_confirmation_number_20"
+                    app:tint="@color/sn_court" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="10dp"
+                    android:layout_weight="1"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="@string/booking_voucher_add_action"
+                    android:textColor="@color/sn_ink"
+                    android:textSize="14sp" />
+
+                <!-- TODO(050): Tích hợp luồng áp dụng voucher -->
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_chevron_right_20"
+                    app:tint="@color/sn_ink_muted" />
+
+            </LinearLayout>
+
+            <!-- Thẻ Breakdown (3e: Tạm tính N x 30p, Giảm giá, Tổng cộng) -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardBreakdown"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
@@ -183,31 +495,35 @@
                     android:orientation="vertical"
                     android:padding="16dp">
 
+                    <!-- Dòng 1: Tạm tính (N x 30 phút) -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal">
 
                         <TextView
+                            android:id="@+id/tvBreakdownSlotsLabel"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="@string/booking_confirm_total_label"
                             android:textAppearance="@style/TextAppearance.SmashNow.Label"
                             android:textColor="@color/sn_ink"
-                            android:textSize="15sp" />
+                            android:textSize="14sp"
+                            tools:text="Tạm tính (4 × 30 phút)" />
 
                         <TextView
-                            android:id="@+id/tvConfirmTotalPrice"
+                            android:id="@+id/tvBreakdownSubtotal"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:textAppearance="@style/TextAppearance.SmashNow.Title"
-                            android:textColor="@color/sn_court"
-                            android:textSize="18sp"
-                            tools:text="180.000 đ" />
+                            android:fontFamily="sans-serif-bold"
+                            android:textStyle="bold"
+                            android:textColor="@color/sn_ink"
+                            android:textSize="15sp"
+                            tools:text="240.000 đ" />
 
                     </LinearLayout>
 
+                    <!-- Dòng 2: Giảm giá -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -218,19 +534,54 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="@string/booking_summary_deposit_label"
+                            android:text="@string/booking_breakdown_discount_label"
                             android:textAppearance="@style/TextAppearance.SmashNow.Caption"
                             android:textColor="@color/sn_ink_muted"
                             android:textSize="13sp" />
 
                         <TextView
-                            android:id="@+id/tvConfirmDepositAmount"
+                            android:id="@+id/tvBreakdownDiscount"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:textAppearance="@style/TextAppearance.SmashNow.Label"
+                            android:fontFamily="sans-serif-bold"
+                            android:textStyle="bold"
                             android:textColor="@color/sn_ink"
                             android:textSize="14sp"
-                            tools:text="54.000 đ" />
+                            android:text="0 đ" />
+
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginVertical="12dp"
+                        android:background="@color/sn_line" />
+
+                    <!-- Dòng 3: Tổng cộng -->
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/booking_breakdown_total_label"
+                            android:fontFamily="sans-serif-bold"
+                            android:textStyle="bold"
+                            android:textColor="@color/sn_ink"
+                            android:textSize="16sp" />
+
+                        <TextView
+                            android:id="@+id/tvBreakdownTotal"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-bold"
+                            android:textStyle="bold"
+                            android:textColor="@color/sn_ink"
+                            android:textSize="18sp"
+                            tools:text="240.000 đ" />
 
                     </LinearLayout>
 
@@ -238,41 +589,98 @@
 
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- Ghi chú chính sách hủy (3f) -->
+            <TextView
+                android:id="@+id/tvCancelPolicyNote"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:layout_marginBottom="16dp"
+                android:lineSpacingExtra="2dp"
+                android:text="@string/booking_cancel_policy_note"
+                android:textAppearance="@style/TextAppearance.SmashNow.Caption"
+                android:textColor="@color/sn_ink_muted"
+                android:textSize="12sp" />
+
         </LinearLayout>
 
     </androidx.core.widget.NestedScrollView>
 
-    <!-- Bottom Actions Bar -->
+    <!-- Bottom Bar (3g: Chip đếm ngược + Tổng tiền in đậm + Nút "Xác nhận đặt") -->
     <LinearLayout
         android:id="@+id/layoutConfirmBottomBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@color/sn_surface_raised"
         android:elevation="8dp"
+        android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingHorizontal="16dp"
         android:paddingVertical="12dp">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnConfirmCancel"
-            style="@style/Widget.Material3.Button.OutlinedButton"
+        <LinearLayout
             android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_marginEnd="8dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="@string/booking_confirm_cancel_btn"
-            android:textAppearance="@style/TextAppearance.SmashNow.Label"
-            app:cornerRadius="24dp" />
+            android:orientation="vertical">
 
+            <!-- Chip đếm ngược amber -->
+            <LinearLayout
+                android:id="@+id/layoutBottomCountdownChip"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_wordmark_pill"
+                android:backgroundTint="@color/sn_lamp_container"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="2dp">
+
+                <ImageView
+                    android:layout_width="12dp"
+                    android:layout_height="12dp"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_timer_24"
+                    app:tint="@color/sn_on_lamp_container" />
+
+                <TextView
+                    android:id="@+id/tvBottomCountdown"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:fontFamily="sans-serif-bold"
+                    android:textStyle="bold"
+                    android:textColor="@color/sn_on_lamp_container"
+                    android:textSize="12sp"
+                    tools:text="04:52" />
+
+            </LinearLayout>
+
+            <!-- Tổng tiền in đậm -->
+            <TextView
+                android:id="@+id/tvBottomTotalPrice"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:fontFamily="sans-serif-bold"
+                android:textStyle="bold"
+                android:textColor="@color/sn_ink"
+                android:textSize="20sp"
+                tools:text="240.000 đ" />
+
+        </LinearLayout>
+
+        <!-- Nút "Xác nhận đặt" (#1B5E45, chữ trắng) -->
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnConfirmPay"
+            android:id="@+id/btnConfirmBooking"
             style="@style/Widget.Material3.Button"
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="48dp"
-            android:layout_marginStart="8dp"
-            android:layout_weight="1.2"
-            android:text="@string/booking_confirm_pay_btn"
+            android:minWidth="140dp"
+            android:backgroundTint="#1B5E45"
+            android:text="@string/booking_confirm_action_btn"
             android:textAppearance="@style/TextAppearance.SmashNow.Label"
+            android:textColor="#FFFFFF"
             app:cornerRadius="24dp" />
 
     </LinearLayout>
