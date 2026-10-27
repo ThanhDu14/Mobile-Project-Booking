@@ -98,4 +98,8 @@
     <string name="booking_cancel_policy_note" formatted="false">Bấm \"Xác nhận đặt\" là bạn đồng ý chính sách hủy: hủy trước giờ chơi từ 4 giờ trở lên được hoàn 100%; hủy trễ mất tiền cọc, hoặc phạt 30% nếu trả bằng ví. Giao dịch giả lập phục vụ học tập, không thu tiền thật.</string>
     <string name="booking_confirm_action_btn">Xác nhận đặt</string>
     <string name="booking_confirm_display_only_notice">Đã ghi nhận phương thức thanh toán. Thanh toán thật sẽ được tích hợp ở feature 050.</string>
+    <string name="booking_bottom_pay_now_label">Thanh toán ngay</string>
+    <string name="booking_bottom_pay_at_venue_subtext">• Trả tại sân</string>
+    <string name="booking_bottom_deposit_subtext">• Cọc 30%</string>
+    <string name="booking_bottom_wallet_subtext">• Ví SmashNow</string>
 </resources>

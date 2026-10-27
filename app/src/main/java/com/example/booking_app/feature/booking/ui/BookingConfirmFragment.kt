@@ -122,7 +122,7 @@ class BookingConfirmFragment : Fragment() {
         }
 
         // 3. Phương thức thanh toán (3b: 3 radio options)
-        val depositAmount = (args.subtotalAmount * 0.3).toLong()
+        val depositAmount = calculateDepositAmount(args.subtotalAmount)
         binding.tvDepositDescription.text = getString(
             R.string.booking_payment_deposit_desc,
             currencyFormatter.format(depositAmount)
@@ -132,16 +132,16 @@ class BookingConfirmFragment : Fragment() {
             currencyFormatter.format(args.subtotalAmount)
         )
 
-        updatePaymentRadioSelection(PaymentOption.PAY_AT_VENUE)
+        updatePaymentRadioSelection(PaymentOption.PAY_AT_VENUE, args)
 
         binding.rowPayAtVenue.setOnClickListener {
-            updatePaymentRadioSelection(PaymentOption.PAY_AT_VENUE)
+            updatePaymentRadioSelection(PaymentOption.PAY_AT_VENUE, args)
         }
         binding.rowDeposit.setOnClickListener {
-            updatePaymentRadioSelection(PaymentOption.DEPOSIT)
+            updatePaymentRadioSelection(PaymentOption.DEPOSIT, args)
         }
         binding.rowWallet.setOnClickListener {
-            updatePaymentRadioSelection(PaymentOption.WALLET)
+            updatePaymentRadioSelection(PaymentOption.WALLET, args)
         }
 
         // 4. Thanh số dư ví (3c: placeholder 0 đ kèm TODO(050))
@@ -164,13 +164,12 @@ class BookingConfirmFragment : Fragment() {
         binding.tvBreakdownTotal.text = "${currencyFormatter.format(args.subtotalAmount)} đ"
 
         // 7. Bottom bar (3g)
-        binding.tvBottomTotalPrice.text = "${currencyFormatter.format(args.subtotalAmount)} đ"
         binding.btnConfirmBooking.setOnClickListener {
             // TODO(050): Tạo đơn và gọi API thanh toán thật khi feature 050 hoàn thiện
-            Snackbar.make(
-                binding.root,
-                getString(R.string.booking_confirm_display_only_notice),
-                Snackbar.LENGTH_LONG
+            Toast.makeText(
+                requireContext(),
+                R.string.booking_confirm_display_only_notice,
+                Toast.LENGTH_SHORT
             ).show()
         }
 
@@ -180,11 +179,32 @@ class BookingConfirmFragment : Fragment() {
         }
     }
 
-    private fun updatePaymentRadioSelection(option: PaymentOption) {
+    private fun updatePaymentRadioSelection(option: PaymentOption, args: HoldToPaymentArgs) {
         selectedPaymentOption = option
         binding.rbPayAtVenue.isChecked = (option == PaymentOption.PAY_AT_VENUE)
         binding.rbDeposit.isChecked = (option == PaymentOption.DEPOSIT)
         binding.rbWallet.isChecked = (option == PaymentOption.WALLET)
+
+        val (amount, subtextResId) = when (option) {
+            PaymentOption.PAY_AT_VENUE -> {
+                0L to R.string.booking_bottom_pay_at_venue_subtext
+            }
+            PaymentOption.DEPOSIT -> {
+                calculateDepositAmount(args.subtotalAmount) to R.string.booking_bottom_deposit_subtext
+            }
+            PaymentOption.WALLET -> {
+                args.subtotalAmount to R.string.booking_bottom_wallet_subtext
+            }
+        }
+
+        binding.tvBottomPaymentLabel.text = getString(R.string.booking_bottom_pay_now_label)
+        binding.tvBottomTotalPrice.text = "${currencyFormatter.format(amount)} đ"
+        binding.tvBottomPaymentSubtext.text = getString(subtextResId)
+    }
+
+    private fun calculateDepositAmount(subtotal: Long): Long {
+        val rawDeposit = (subtotal * 30L) / 100L
+        return ((rawDeposit + 500L) / 1000L) * 1000L
     }
 
     private fun displaySelectedSlots(args: HoldToPaymentArgs) {

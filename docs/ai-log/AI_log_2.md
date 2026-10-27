@@ -32,6 +32,8 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 26 | 2026-10-27 | Tinh chỉnh giao diện Spec 040 chuẩn Mockup & Sửa lỗi hiển thị UI | 04 |
 | 27 | 2026-10-27 | Bổ sung mục Thanh toán (display-only) Màn 2 & Ràng buộc min-2 / max-8 theo từng sân | 04, 05 |
 | 28 | 2026-10-27 | Kết nối Feature 040 với data seed của Duy & Gỡ toàn bộ data ảo trong production | 04 |
+| 29 | 2026-10-27 | Gộp và kiểm chứng Firestore Rules, kiểm tra triển khai và dữ liệu Seed | 04 |
+| 30 | 2026-10-27 | Cập nhật Bottom Bar màn Xác nhận 040 hiển thị "Thanh toán ngay" theo Radio | 04, 05 |
 
 
 
@@ -1464,11 +1466,64 @@ Sau đợt kiểm thử trên thiết bị thật và đối chiếu kỹ lưỡ
    - **34/34 tests PASS (100%)**.
 5. **Quy tắc an toàn Git**: Tuyệt đối không chạy bất kỳ lệnh git nào; toàn bộ file chỉnh sửa được liệt kê chi tiết để thành viên Hưng tự kiểm tra và commit.
 
+---
 
+## Mục 29: Gộp Firestore Rules, Fix test U8, Cập nhật Bottom Bar màn Xác nhận & Sửa lỗi Header sân
 
+| Trường | Nội dung |
+|---|---|
+| **Người thực hiện** | Thành viên số 2 (Lê Quốc Hưng - B) |
+| **Thời điểm** | 27/10/2026 |
+| **Công cụ AI** | Google Antigravity Assistant |
+| **Mục tiêu** | Gộp các quy tắc bảo mật Firestore (spec 011 và spec 040); sửa test U8 trong suite kiểm thử quy tắc; cập nhật Bottom Bar màn Xác nhận hiển thị "Thanh toán ngay" theo phương thức thanh toán đã chọn (display-only); khắc phục lỗi header sân biến mất khi quay lại màn Chọn khung giờ; xác minh toàn bộ test và nghiệm thu trên thiết bị thật. |
 
+### Các nội dung đã hoàn thành
 
+#### 1. Gộp & Triển khai Firestore Rules (`firestore.rules`)
+- **Gộp hoàn chỉnh 2 phía**:
+  - Phía 040: Khối đọc công khai `venues/{venueId}`, `courts`, `priceRules` và cơ chế giữ chỗ nguyên tử trong `slots/{slotId}`.
+  - Phía 011: Khối người dùng `users/{uid}` với các hàm kiểm tra ràng buộc nghiêm ngặt (`validLevel()`, `validDistricts()`, `validAvatarPath()`, `selfEditableFields()`), danh mục `districts/{id}` và chặn đọc/ghi client ở `accountDeletions/{uid}`.
+- **Kiểm tra cú pháp**: Toàn bộ các cặp ngoặc hoàn toàn cân bằng (34 cặp `{ }`, 104 cặp `( )`, 9 cặp `[ ]`).
+- **Triển khai**: Bản rules gộp đã được Hưng tự deploy thành công lên project Cloud `mobile-22e6c` lúc 12:12 ngày 27/10/2026.
 
+#### 2. Nạp Dữ liệu Seed trên Project thật
+- Hưng đã tự thực hiện nạp dữ liệu seed chuẩn của Duy (PR #41) lên project Cloud `mobile-22e6c` lúc 12:22 ngày 27/10/2026.
+- Toàn bộ 10 cơ sở và sân con (100% sân PU), bảng giá giờ bình thường và cao điểm đã sẵn sàng trên backend thật.
 
+#### 3. Sửa test U8 phía test suite (`firestore-tests/test/users.test.ts`)
+- **Nguyên nhân lỗi cũ**: Khi gộp rules 011, test U8 (viết từ spec 010) bị fail do fixture avatarPath không đúng định dạng regex và `districts/q1` chưa được seed `isActive == true` trong `beforeEach`.
+- **Khắc phục**: Sửa duy nhất phía test trong `test/users.test.ts`:
+  - Thêm seed `districts/q1` (`isActive: true`) trong hook `beforeEach`.
+  - Cập nhật fixture `avatarPath` thành `player1/avatar_1760000000000.jpg` đúng regex `uid/avatar_<13 chữ số>.jpg`.
+  - Tuyệt đối không nới lỏng rules 011.
+- **Kết quả chạy lại suite emulator**: **34/34 tests PASS (100%)** (`test/base.test.ts`: 3/3, `test/slots.test.ts`: 7/7, `test/users.test.ts`: 24/24).
 
+#### 4. Cập nhật Bottom Bar màn Xác nhận 040 theo Phương thức thanh toán (`BookingConfirmFragment.kt` & `strings_booking.xml`)
+- Bổ sung nhãn `tvBottomPaymentLabel` ("Thanh toán ngay") và cập nhật số tiền hiển thị theo radio option đang chọn:
+  - **Trả tại sân**: `0 đ • Trả tại sân` (có nhãn rõ ràng để tránh hiểu lầm là miễn phí).
+  - **Đặt cọc**: `30%` của tổng đơn, làm tròn nghìn kèm nhãn `• Cọc 30%` (chuỗi `booking_bottom_deposit_subtext` chuẩn hóa 1 dấu `%`).
+  - **Ví SmashNow**: Toàn bộ tổng cộng kèm nhãn `• Ví SmashNow`.
+- Giữ nguyên thẻ breakdown Tổng cộng ở mọi trạng thái (`tvBreakdownTotal` giữ nguyên giá trị đơn, không thay đổi theo radio).
+- Nút "Xác nhận đặt" giữ nguyên hành vi display-only (hiển thị Toast thông báo tính năng thanh toán thuộc feature 050, không trừ ví, không áp voucher, không tạo booking).
 
+#### 5. Sửa bug Header sân biến mất khi back về màn Chọn khung giờ (`BookingSlotGridFragment.kt`)
+- **Nguyên nhân**: `renderedCourts` lưu trên Fragment instance, khi pop back từ Confirm thì View tạo lại (`layoutCourtHeaders` rỗng) nhưng biến vẫn bằng `state.courts` nên không kích hoạt vẽ lại.
+- **Khắc phục**:
+  - Reset `renderedCourts = emptyList()` trong `onViewCreated()` và `onDestroyView()`.
+  - Cập nhật điều kiện render an toàn: `binding.layoutCourtHeaders.childCount == 0` trong `renderUi()`.
+  - Tuyệt đối không gọi lại `loadInitialData()` khi quay lại, không sửa data layer, không reload mạng.
+
+#### 6. Kết quả Kiểm thử & Quality Gates (Full Pass)
+1. **Firestore Security Rules Emulator Tests (`npm test` trong `firestore-tests`)**:
+   - **34/34 tests PASS (100%)** (base: 3/3, slots: 7/7, users: 24/24).
+2. **Android Lint (`./gradlew lint`)**:
+   - **0 ERRORS, BUILD SUCCESSFUL**.
+3. **Unit Tests (`./gradlew testDebugUnitTest`)**:
+   - **222/222 tests PASS (100%)** (0 failures, 0 errors, 0 skipped).
+4. **Build Package (`./gradlew assembleDebug`)**:
+   - **BUILD SUCCESSFUL**.
+5. **Retest nghiệm thu trên thiết bị thật Samsung SM-A546E (Android 14)**:
+   - Truy cập cơ sở `demo-truong-chinh-909`: Lưới hiển thị đủ 10 cột sân PU, dữ liệu đọc trực tiếp từ Firestore thật.
+   - Chọn slot, bấm "Giữ chỗ" → Tạo document giữ chỗ `HELD` thời gian thực trên Firestore, chuyển sang màn Xác nhận, countdown 5 phút chạy chuẩn xác.
+   - Chuyển đổi qua lại 3 radio phương thức thanh toán: Bottom bar cập nhật tương ứng `0 đ` / `30%` / `toàn bộ`, breakdown giữ nguyên.
+   - Bấm nút quay lại (Back) → Màn Chọn khung giờ hiển thị lại đầy đủ danh sách header các cột sân (Sân 1 PU, Sân 2 PU...), căn chỉnh thẳng hàng với các ô slot bên dưới.

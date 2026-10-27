@@ -55,6 +55,7 @@ class BookingSlotGridFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        renderedCourts = emptyList()
 
         setupRecyclerViews()
         setupListeners()
@@ -184,7 +185,7 @@ class BookingSlotGridFragment : Fragment() {
         }
 
         // 6. Header các cột sân con (Ma trận lưới Q3)
-        if (state.courts != renderedCourts) {
+        if (state.courts.isNotEmpty() && (state.courts != renderedCourts || binding.layoutCourtHeaders.childCount == 0)) {
             renderedCourts = state.courts
             renderCourtHeaders(state.courts)
         }
@@ -311,6 +312,7 @@ class BookingSlotGridFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        renderedCourts = emptyList()
         _binding = null
     }
 }

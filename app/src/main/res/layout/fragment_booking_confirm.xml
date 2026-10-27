@@ -656,17 +656,45 @@
 
             </LinearLayout>
 
-            <!-- Tổng tiền in đậm -->
+            <!-- Nhãn Thanh toán ngay -->
             <TextView
-                android:id="@+id/tvBottomTotalPrice"
+                android:id="@+id/tvBottomPaymentLabel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
-                android:fontFamily="sans-serif-bold"
-                android:textStyle="bold"
-                android:textColor="@color/sn_ink"
-                android:textSize="20sp"
-                tools:text="240.000 đ" />
+                android:textAppearance="@style/TextAppearance.SmashNow.Caption"
+                android:textColor="@color/sn_ink_muted"
+                android:textSize="11sp"
+                android:text="@string/booking_bottom_pay_now_label" />
+
+            <!-- Hàng số tiền và nhãn giải thích rõ ràng -->
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/tvBottomTotalPrice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="sans-serif-bold"
+                    android:textStyle="bold"
+                    android:textColor="@color/sn_ink"
+                    android:textSize="20sp"
+                    tools:text="0 đ" />
+
+                <TextView
+                    android:id="@+id/tvBottomPaymentSubtext"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="6dp"
+                    android:textAppearance="@style/TextAppearance.SmashNow.Caption"
+                    android:textColor="@color/sn_ink_muted"
+                    android:textSize="12sp"
+                    tools:text="• Trả tại sân" />
+
+            </LinearLayout>
 
         </LinearLayout>
 
