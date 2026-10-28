@@ -46,6 +46,7 @@ class CompleteSignupUseCase @Inject constructor(
     private suspend fun AppError.toResult(): CompleteSignupResult = when (this) {
         AppError.Network, AppError.Timeout -> CompleteSignupResult.Failure(AuthError.Network)
         AppError.RateLimited -> CompleteSignupResult.Failure(AuthError.TooManyAttempts)
+        AppError.Conflict -> CompleteSignupResult.Failure(AuthError.Unknown(this))
         // FunctionErrors đã báo AccountLockedBus; SessionManager đăng xuất và giữ lý do LOCKED.
         AppError.Locked -> CompleteSignupResult.Failure(AuthError.AccountLocked)
         // [011] SessionManager tự đăng xuất với lý do ACCOUNT_DELETED / SESSION_REVOKED.

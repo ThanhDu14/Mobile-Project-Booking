@@ -14,6 +14,12 @@ sealed class AppError(message: String? = null, cause: Throwable? = null) : Excep
     /** Firebase hoặc Edge Function báo gửi quá nhiều yêu cầu. */
     data object RateLimited : AppError("Too many requests")
 
+    /**
+     * Tranh chấp tài nguyên, vd transaction Firestore bị abort do nhiều client giữ cùng slot.
+     * Không phải tài khoản bị khóa, không trigger đăng xuất (chỉ Locked mới trigger signOutLocked trong FirebaseSessionManager).
+     */
+    data object Conflict : AppError("Resource conflict")
+
     /** Tài khoản bị khóa (FR-014). `SessionManager` tự đăng xuất khi gặp lỗi này. */
     data object Locked : AppError("Account locked")
 

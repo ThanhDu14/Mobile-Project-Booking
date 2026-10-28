@@ -35,6 +35,15 @@ class PlayerHomePlaceholderFragment : Fragment(R.layout.fragment_home_placeholde
         binding.accountButton.setOnClickListener {
             findNavController().navigate(R.id.action_playerHome_to_account)
         }
+
+        // Nút điều hướng sang Feature 040 (Đặt sân theo giờ) để kiểm thử
+        binding.btnGoToBooking.setOnClickListener {
+            val bundle = Bundle().apply {
+                putString("venueId", "demo-truong-chinh-909")
+            }
+            findNavController().navigate(R.id.action_playerHome_to_bookingSlotGrid, bundle)
+        }
+
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
