@@ -1,3 +1,8 @@
+// BẢN GỘP DRAFT — chưa deploy. Cách gộp: lấy file rules đang chạy trên Firestore
+// (bản Đại ca paste từ Console) làm nền, giữ nguyên khối users bản 011 + districts +
+// accountDeletions, rồi thêm khối venues/courts/priceRules + slots từ repo.
+// LƯU Ý: bản deploy Đại ca paste kết thúc bằng dấu phẩy thừa — hãy xác nhận không còn
+// match nào khác phía dưới accountDeletions trước khi dùng bản này để deploy.
 rules_version = '2';
 
 // Rules nền dùng chung. Quyền chi tiết của từng collection do người phụ trách
@@ -73,13 +78,113 @@ service cloud.firestore {
                 && request.resource.data.displayName.size() <= 50);
       }
 
+      // [011] contracts/security-rules.md §1
+      function changed(field) {
+        return field in request.resource.data.diff(resource.data).affectedKeys();
+      }
+
+      function validLevel() {
+        return !changed('level')
+            || request.resource.data.level == null
+            || request.resource.data.level in ['BEGINNER', 'INTERMEDIATE', 'ADVANCED'];
+      }
+
+      function activeDistrict(id) {
+        return get(/databases/$(database)/documents/districts/$(id)).data.isActive == true;
+      }
+
+      // 0–5 khu vực, không trùng, đều đang hoạt động; tối đa 5 lượt get() (giới hạn của Rules là 10).
+      function validDistricts() {
+        let ids = request.resource.data.favoriteDistrictIds;
+        return !changed('favoriteDistrictIds')
+            || (ids is list && ids.size() <= 5 && ids.toSet().size() == ids.size()
+                && (ids.size() < 1 || activeDistrict(ids[0]))
+                && (ids.size() < 2 || activeDistrict(ids[1]))
+                && (ids.size() < 3 || activeDistrict(ids[2]))
+                && (ids.size() < 4 || activeDistrict(ids[3]))
+                && (ids.size() < 5 || activeDistrict(ids[4])));
+      }
+
+      // Ảnh nằm trong thư mục của chính mình trên bucket avatars (contracts/storage-avatars.md).
+      function validAvatarPath() {
+        let p = request.resource.data.avatarPath;
+        return !changed('avatarPath')
+            || p == null
+            || (p is string && p.matches(uid + '/avatar_[0-9]{13}[.]jpg'));
+      }
+
       allow get: if (isSelf(uid) && isInitialized()) || isAdmin();
       allow list: if isAdmin();                       // spec 120 tra cứu người dùng
       allow create, delete: if false;
       allow update: if isSelf(uid) && isInitialized()
                     && onlyChanges(selfEditableFields())
                     && request.resource.data.updatedAt == request.time
-                    && validDisplayName();
+                    && validDisplayName() && validLevel() && validDistricts() && validAvatarPath();
+    }
+
+    // ---------- districts (A, spec 011; contracts/security-rules.md §2) ----------
+    match /districts/{id} {
+      allow get, list: if isInitialized();
+      allow write: if isAdmin();                      // spec 120 làm màn hình quản lý
+    }
+
+    // ---------- accountDeletions (A, spec 011; contracts/security-rules.md §3) ----------
+    // Chỉ delete-account và delete-account-sweeper (service account) đọc/ghi.
+    match /accountDeletions/{uid} {
+      allow read, write: if false;
+    }
+
+    // ---------- venues, courts, priceRules (B, spec 040 / D, spec 111) ----------
+    // Đọc công khai thông tin cơ sở, sân con và bảng giá để hiển thị lưới khung giờ
+    match /venues/{venueId} {
+      allow read: if true;
+      allow write: if isAdmin() || (isOwner() && resource.data.ownerId == request.auth.uid);
+
+      match /courts/{courtId} {
+        allow read: if true;
+        allow write: if isAdmin() || (isOwner() && get(/databases/$(database)/documents/venues/$(venueId)).data.ownerId == request.auth.uid);
+      }
+
+      match /priceRules/{ruleId} {
+        allow read: if true;
+        allow write: if isAdmin() || (isOwner() && get(/databases/$(database)/documents/venues/$(venueId)).data.ownerId == request.auth.uid);
+      }
+    }
+
+    // ---------- slots (B, spec 040; tasks.md T022) ----------
+    // Lắng nghe realtime công khai các khung giờ bận/trống.
+    // Giữ chỗ HELD 5 phút khi đã đăng nhập, slot chưa có người giữ hoặc đã hết hạn,
+    // và thời gian hết hạn không được vượt quá 5 phút so với request.time (chống lùi/ăn gian giờ).
+    match /slots/{slotId} {
+      allow read: if true;
+
+      allow create: if isSignedIn()
+                    && request.resource.data.status == 'HELD'
+                    && request.resource.data.holdBy == request.auth.uid
+                    && request.resource.data.holdExpiresAt is timestamp
+                    && request.resource.data.holdExpiresAt <= request.time + duration.value(5, 'm')
+                    && request.resource.data.holdExpiresAt > request.time;
+
+      allow update: if isSignedIn()
+                    && (
+                      // Đặt giữ chỗ slot đã tồn tại nhưng đã hết hạn hoặc do chính mình giữ
+                      (
+                        request.resource.data.status == 'HELD'
+                        && request.resource.data.holdBy == request.auth.uid
+                        && request.resource.data.holdExpiresAt is timestamp
+                        && request.resource.data.holdExpiresAt <= request.time + duration.value(5, 'm')
+                        && request.resource.data.holdExpiresAt > request.time
+                        && (resource.data.status != 'BOOKED' && resource.data.status != 'BLOCKED')
+                        && (resource.data.status != 'HELD' || resource.data.holdExpiresAt < request.time || resource.data.holdBy == request.auth.uid)
+                      )
+                      // Hủy giữ chỗ hoặc nhả slot về AVAILABLE bởi chính người đang giữ
+                      || (
+                        request.resource.data.status == 'AVAILABLE'
+                        && resource.data.holdBy == request.auth.uid
+                      )
+                    );
+
+      allow delete: if isAdmin() || (isSignedIn() && resource.data.holdBy == request.auth.uid);
     }
   }
 }
