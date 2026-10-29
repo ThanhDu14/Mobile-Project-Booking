@@ -55,7 +55,7 @@ Khi câu quá chung chung ("tìm sân") hoặc kết quả AI không dùng đư�
 **Acceptance Scenarios**:
 
 1. **Given** người chơi gửi "tìm sân Quận 10", **When** AI trả về thiếu thời gian, **Then** app giữ chip Quận 10 và hỏi "Bạn muốn chơi lúc nào?" kèm chip [Tối nay] [Tối mai] [Cuối tuần].
-2. **Given** câu hỏi lại đang hiện, **When** người chơi bấm [Tối mai], **Then** app điền ngày mai 18:00–22:00 và chạy tìm kiếm mà không gọi AI, không trừ lượt.
+2. **Given** câu hỏi lại đang hiện, **When** người chơi bấm [Tối mai], **Then** app điền ngày mai 18:00–22:00 và chạy tìm kiếm mà không gọi AI, không trừ lượt; bấm [Cuối tuần] thì app điền Thứ Bảy gần nhất 18:00–22:00 (không hỏi thêm, vì chỉ được hỏi lại một lần).
 3. **Given** câu chỉ khoảng nhiều ngày ("cuối tuần này"), **When** gửi, **Then** app hỏi lại bằng chip ngày cụ thể (ví dụ [Thứ Bảy 10/10] [Chủ Nhật 11/10]) và lượt hỏi lại này tính là lượt hỏi lại duy nhất.
 4. **Given** người chơi đã được hỏi lại một lần, **When** vẫn còn thiếu thông tin hoặc người chơi bấm "Tự chọn", **Then** app mở bộ lọc thủ công với các giá trị đã hiểu được điền sẵn; không có câu hỏi thứ hai.
 5. **Given** kết quả AI có một giá trị không hợp lệ (quận không có trong danh mục, ngày đã qua, giờ kết thúc trước giờ bắt đầu, giá âm), **When** app kiểm tra, **Then** giá trị đó bị bỏ, các giá trị hợp lệ còn lại vẫn được điền, và app báo ngắn phần nào chưa hiểu.
@@ -114,7 +114,7 @@ Mỗi người có một số lượt dùng AI mỗi ngày; app hiện số lư�
 2. **Given** người chơi gửi một câu mới tới AI, **When** có kết quả (bất kể nhánh nào), **Then** số lượt giảm 1; **When** câu giống hệt (sau khi chuẩn hóa) một câu đã gửi trong ngày, **Then** dùng lại kết quả cũ và không trừ lượt.
 3. **Given** người chơi đã hết lượt, **When** xem ô AI, **Then** ô bị khóa kèm thông báo "Bạn đã dùng hết lượt hôm nay, thử lại vào ngày mai" và nút mở bộ lọc thủ công; lượt được làm mới lúc 00:00 giờ Việt Nam.
 4. **Given** người chơi cố gửi vượt lượt bằng cách không qua app, **When** yêu cầu tới hệ thống, **Then** hệ thống từ chối.
-5. **Given** mất mạng hoặc AI không phản hồi trong 10 giây, **When** người chơi gửi, **Then** app báo "Trợ lý đang bận, bạn dùng bộ lọc nhé", mở bộ lọc thủ công, giữ nguyên câu trong ô; lượt không bị trừ nếu không có kết quả.
+5. **Given** mất mạng hoặc AI không phản hồi trong 10 giây, **When** người chơi gửi, **Then** app báo "Trợ lý đang bận, bạn dùng bộ lọc nhé", mở bộ lọc thủ công, giữ nguyên câu trong ô; lượt không bị trừ nếu không có kết quả. Trường hợp hiếm app đã hết 10 giây nhưng hệ thống vẫn phân tích xong, lượt có thể đã bị trừ; gửi lại đúng câu đó trong ngày thì dùng lại kết quả đã lưu và không trừ thêm.
 6. **Given** câu rỗng, chỉ có khoảng trắng hoặc dài hơn 200 ký tự, **When** người chơi bấm gửi, **Then** app báo ngay (nút gửi bị khóa với câu rỗng, bộ đếm ký tự đổi màu khi quá dài) và không gửi đi.
 7. **Given** người chơi bấm gửi nhiều lần liên tiếp, **When** yêu cầu đầu tiên đang xử lý, **Then** chỉ một yêu cầu được gửi và chỉ một lượt bị trừ.
 8. **Given** khách chưa đăng nhập, **When** mở màn hình tìm kiếm, **Then** ô AI hiện ở trạng thái khóa kèm lời mời "Đăng nhập để dùng trợ lý AI"; bấm vào thì mở màn hình đăng nhập (spec 010) và sau khi đăng nhập quay lại đúng màn hình tìm kiếm với từ khóa, bộ lọc giữ nguyên; bộ lọc thủ công vẫn dùng được khi chưa đăng nhập.
@@ -178,17 +178,17 @@ Khi bộ lọc AI điền ra không có sân nào, app gợi ý vài cách nới
 **Xử lý theo ý định**
 
 - **FR-011** (tìm sân thường): Các điều kiện hợp lệ PHẢI được điền vào bộ lọc dùng chung của spec 020 (hiện thành chip) và chạy cùng cách tìm như khi người chơi tự chọn. Người chơi PHẢI sửa hoặc bỏ được từng chip mà không gọi AI lại.
-- **FR-012** (tìm buổi vãng lai): App PHẢI chuyển sang danh sách buổi vãng lai của spec 080 với các điều kiện tương ứng (khu vực, ngày, giờ, giá) đã điền sẵn; "sáng/trưa/chiều/tối" được điền thành bộ lọc khung giờ cùng tên của spec 080 (cùng mốc giờ với FR-007), giờ cụ thể được điền thành khung giờ chứa giờ bắt đầu đó; điều kiện spec 080 không hỗ trợ bị bỏ kèm thông báo.
+- **FR-012** (tìm buổi vãng lai): App PHẢI chuyển sang danh sách buổi vãng lai của spec 080 với các điều kiện tương ứng (khu vực, ngày, giờ, giá) đã điền sẵn; "sáng/trưa/chiều/tối" được điền thành bộ lọc khung giờ cùng tên của spec 080 (cùng mốc giờ với FR-007), giờ cụ thể được điền thành khung giờ chứa giờ bắt đầu đó; giá được hiểu là giá **mỗi lượt** của buổi vãng lai (không phải giá mỗi giờ); điều kiện spec 080 không hỗ trợ bị bỏ kèm thông báo.
 - **FR-013** (thiếu thông tin): App PHẢI hỏi lại **tối đa một lần** bằng một câu cố định kèm chip chọn nhanh cho thông tin còn thiếu, giữ các điều kiện đã hiểu. Bấm chip thì app tự điền, KHÔNG gọi AI và KHÔNG trừ lượt. Sau lần hỏi lại (hoặc khi người chơi chọn "Tự chọn"), app PHẢI mở bộ lọc thủ công với các giá trị đã hiểu được điền sẵn.
 - **FR-014** (hỏi chính sách): App PHẢI hiển thị nội dung chính sách có sẵn theo chủ đề (hủy sân, đặt cọc, voucher, thanh toán), không gọi AI thêm; chủ đề không xác định thì hiện danh sách chủ đề để chọn.
 - **FR-015** (lạc đề): App PHẢI hiện thông báo cố định kèm câu ví dụ. Câu có cả phần tìm sân và phần lạc đề PHẢI được xử lý như câu tìm sân với phần tìm sân.
 
 **Giới hạn và bảo vệ**
 
-- **FR-016**: Mỗi người dùng PHẢI có tối đa **10** lượt gửi tới AI mỗi ngày, làm mới lúc 00:00 giờ Việt Nam. Mọi lần gửi có kết quả từ AI (kể cả lạc đề, hỏi chính sách) tính một lượt; câu bị chặn ở FR-002, câu dùng lại kết quả cũ (FR-018), lần gọi lỗi hoặc quá thời gian không tính lượt. Giới hạn PHẢI được kiểm tra ở máy chủ, không chỉ trên app.
+- **FR-016**: Mỗi người dùng PHẢI có tối đa **10** lượt gửi tới AI mỗi ngày, làm mới lúc 00:00 giờ Việt Nam. Mọi lần gửi có kết quả từ AI (kể cả lạc đề, hỏi chính sách) tính một lượt; câu bị chặn ở FR-002, câu dùng lại kết quả cũ (FR-018), lần gọi lỗi hoặc quá thời gian không tính lượt. Giới hạn PHẢI được kiểm tra ở máy chủ, không chỉ trên app. Nếu app đã hết thời gian chờ (FR-020) nhưng máy chủ vẫn phân tích xong thì lượt có thể đã bị trừ; kết quả được lưu theo FR-018 nên gửi lại đúng câu đó trong ngày không bị trừ thêm.
 - **FR-017**: App PHẢI hiển thị số lượt còn lại trong ngày; khi hết lượt, ô AI bị khóa kèm thông báo và lối vào bộ lọc thủ công.
 - **FR-018**: Câu giống hệt một câu đã gửi trong cùng ngày (sau khi chuẩn hóa chữ hoa/thường và khoảng trắng) PHẢI dùng lại kết quả đã có thay vì gọi AI lại. Kết quả lưu lại không chứa câu gốc hay thông tin người dùng và hết hiệu lực khi hết ngày.
-- **FR-019**: Sau 3 câu lạc đề liên tiếp của cùng một người, ô AI PHẢI bị tạm khóa 5 phút (kiểm tra ở máy chủ), hiện thời gian còn lại; một câu tìm sân hợp lệ đặt lại bộ đếm. Bộ lọc thủ công không bị ảnh hưởng.
+- **FR-019**: Sau 3 câu lạc đề liên tiếp của cùng một người, ô AI PHẢI bị tạm khóa 5 phút (kiểm tra ở máy chủ), hiện thời gian còn lại; một câu tìm sân hợp lệ (còn ít nhất một điều kiện sau khi kiểm tra) đặt lại bộ đếm; câu hỏi chính sách và câu thiếu thông tin không làm thay đổi bộ đếm. Câu dùng lại kết quả đã lưu (FR-018) vẫn được tính vào bộ đếm. Bộ lọc thủ công không bị ảnh hưởng.
 - **FR-020**: Khi mất mạng, dịch vụ AI lỗi hoặc không phản hồi trong 10 giây, app PHẢI báo ngắn, mở bộ lọc thủ công và giữ nguyên câu trong ô; không crash, không treo.
 - **FR-021**: Câu cố điều khiển AI (yêu cầu bỏ qua hướng dẫn, xem hướng dẫn nội bộ, đóng vai...) PHẢI chỉ dẫn tới một bộ lọc (đã được kiểm tra theo FR-008) hoặc thông báo lạc đề.
 
@@ -231,9 +231,9 @@ Khi bộ lọc AI điền ra không có sân nào, app gợi ý vài cách nới
 
 ## Assumptions
 
-- Nhà cung cấp và mô hình AI được chốt ở buổi họp 09/10, phải có gói miễn phí, không bắt buộc gắn thẻ, theo constitution v1.2.0; spec này không phụ thuộc vào nhà cung cấp cụ thể.
+- Nhà cung cấp AI (chốt ở `/speckit-plan`, research R2): Google Gemini API dòng Flash-Lite là chính, Groq là dự phòng khi nhà cung cấp chính hết hạn mức hoặc lỗi; cả hai có gói miễn phí, không bắt buộc gắn thẻ, theo constitution v1.2.0. Hành vi trong spec không phụ thuộc vào nhà cung cấp cụ thể.
 - Bộ lọc dùng chung, danh sách kết quả, trạng thái rỗng/lỗi và quy tắc xin quyền vị trí thuộc spec 020; tính năng này chỉ điền bộ lọc. Khi có khung giờ, giá được hiểu theo giá của đúng khung đó như spec 020 đã chốt.
-- Danh sách buổi vãng lai và bộ lọc của nó thuộc spec 080 (C). Các điều kiện AI được phép điền cho buổi vãng lai (khu vực, ngày, giờ, giá; có thể thêm trình độ) và màn hình đích phải thống nhất A ↔ C trước `/speckit-plan`.
+- Danh sách buổi vãng lai và bộ lọc của nó thuộc spec 080 (C). Plan 080 đã chốt các điều kiện AI được điền: khu vực, ngày, khung giờ, trình độ, giá tối đa mỗi lượt; app mở danh sách bằng deep link (plan 022, research R12).
 - Nội dung chính sách hủy, đặt cọc, voucher, thanh toán lấy từ spec 050, 060 (B) dưới dạng văn bản cố định (đã chốt ở Clarifications, phương án 6.A).
 - Danh mục quận/huyện, tiện ích và khoảng giá hợp lệ lấy từ dữ liệu chung (A tạo, admin quản lý ở spec 120); A ↔ D thống nhất khoảng giá hợp lệ.
 - Phạm vi đặt trước 30 ngày và bước giờ 30 phút theo spec 020/040.
