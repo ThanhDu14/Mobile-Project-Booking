@@ -8,7 +8,7 @@
 
 **Phương án đã cân nhắc**: Chỉ kiểm tra ownership ở client (loại vì không an toàn); thêm trường schema để đơn giản hóa kiểm tra (loại vì ngoài phạm vi).
 
-**Cần làm rõ**: Backend đáng tin cậy có claim thể hiện trạng thái owner đã duyệt không, hay phải đọc `users/{uid}.ownerStatus` cho mỗi thao tác nhạy cảm? Rules hiện chỉ expose `appRole`, trong khi spec owner yêu cầu cả role và ownerStatus ở trạng thái đã duyệt. Cần thống nhất nguồn đáng tin cậy trước khi triển khai.
+**Đã chốt khi triển khai**: dùng custom claim `appRole == OWNER` kết hợp đọc server-side `users/{uid}.ownerStatus == APPROVED`. Đây là trường 🔒 do Feature 110/120 cập nhật; Feature 111 không tin giá trị client gửi và không cho owner tự sửa trường này. Rules owner mutation đã áp dụng cả hai điều kiện.
 
 ## R2 — Giao dịch khóa/mở khóa slot
 
@@ -61,3 +61,19 @@
 **Lý do**: Ứng dụng có giao tiếp bên ngoài với Firestore và Edge Functions, nhưng chưa có endpoint khóa slot của Feature 111. Viết hợp đồng API cụ thể lúc này sẽ tự tạo hành vi trái yêu cầu không suy đoán.
 
 **Phương án đã cân nhắc**: Tự đặt tên function và payload (loại); bỏ qua toàn bộ ranh giới giao tiếp (loại vì dữ liệu/phân quyền ảnh hưởng trực tiếp đến an toàn triển khai).
+
+## R8 — Trạng thái quyết định T007/T008/T011 sau kiểm chứng
+
+**Đã có căn cứ:**
+
+- T007 có invariant nghiệp vụ rõ: transaction server-side, all-or-nothing, chỉ tạo slot trống, từ chối `HOLD`/`BOOKED`/`BLOCKED`, xác minh approved owner/venue/court/latest state và không unlock block không chứng minh được owner-removable.
+- T008 có căn cứ về công thức slot (`pricePerHour / 2`) và snapshot `bookings.items[].price`; client tuyệt đối không ghi `minPricePerHour`.
+- T011 có căn cứ rằng venue đầu tiên do lifecycle Feature 110/120 tạo sau approval; Feature 111 chỉ quản lý venue đã tồn tại và đã xác minh ownership.
+
+**Vẫn cần xác nhận bên ngoài:**
+
+- T007: tên/server boundary, transaction compatibility với Feature 040, response/error contract và bằng chứng phân biệt block owner-removable với block Feature 120 hoặc Feature 112/080.
+- T008: trusted authority cập nhật `minPricePerHour`, phép tính khi có nhiều rule và hành vi nguyên tử khi không còn rule. Vì no-rule behavior chưa được quyết định, không mở price-rule mutation.
+- T011: contract tạo venue bổ sung nếu có; không mở client create khi chưa có boundary server được duyệt.
+
+**Hệ quả triển khai:** UI preview, validation, typed write-gate, coverage warning và invariant/security tests tiếp tục được phép; các write path bị khóa đúng decision gate, không thêm schema/endpoint/enum.

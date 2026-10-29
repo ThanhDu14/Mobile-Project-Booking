@@ -44,6 +44,18 @@ service cloud.firestore {
       return appRole() == 'OWNER';
     }
 
+    // `appRole` identifies the role in the token; approval remains a server-read
+    // value so a stale or forged role claim cannot grant owner mutations.
+    function isApprovedOwner() {
+      return isOwner()
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.ownerStatus == 'APPROVED';
+    }
+
+    function ownsVenue(venueId) {
+      return isApprovedOwner()
+          && get(/databases/$(database)/documents/venues/$(venueId)).data.ownerId == request.auth.uid;
+    }
+
     function isAdmin() {
       return appRole() == 'ADMIN';
     }
@@ -135,19 +147,41 @@ service cloud.firestore {
     }
 
     // ---------- venues, courts, priceRules (B, spec 040 / D, spec 111) ----------
-    // Đọc công khai thông tin cơ sở, sân con và bảng giá để hiển thị lưới khung giờ
+    // Người chơi chỉ thấy dữ liệu công khai của venue ACTIVE. Owner đã duyệt
+    // vẫn đọc được dữ liệu quản lý của venue mình.
     match /venues/{venueId} {
-      allow read: if true;
-      allow write: if isAdmin() || (isOwner() && resource.data.ownerId == request.auth.uid);
+      allow read: if isAdmin() || (resource.data.status == 'ACTIVE') || ownsVenue(venueId);
+      allow create: if isAdmin(); // venue đầu tiên do Feature 120 tạo; owner create chờ server boundary T003.
+      allow update: if isAdmin()
+                    || (ownsVenue(venueId)
+                        && resource.data.status != 'LOCKED'
+                        && request.resource.data.ownerId == resource.data.ownerId
+                        && request.resource.data.status in ['ACTIVE', 'HIDDEN']
+                        && onlyChanges(['name', 'nameKeywords', 'address', 'districtId', 'location',
+                                        'geohash', 'openTime', 'closeTime', 'phone', 'amenityIds',
+                                        'photoPaths', 'courtCount', 'acceptsRecurring', 'status']));
+      allow delete: if isAdmin();
 
       match /courts/{courtId} {
-        allow read: if true;
-        allow write: if isAdmin() || (isOwner() && get(/databases/$(database)/documents/venues/$(venueId)).data.ownerId == request.auth.uid);
+        allow read: if isAdmin() || (get(/databases/$(database)/documents/venues/$(venueId)).data.status == 'ACTIVE') || ownsVenue(venueId);
+        allow create: if isAdmin()
+                      || (ownsVenue(venueId)
+                          && request.resource.data.keys().hasOnly(['name', 'surfaceType', 'isActive', 'sortOrder']));
+        allow update: if isAdmin()
+                      || (ownsVenue(venueId)
+                          && onlyChanges(['name', 'surfaceType', 'isActive', 'sortOrder']));
+        allow delete: if isAdmin();
       }
 
       match /priceRules/{ruleId} {
-        allow read: if true;
-        allow write: if isAdmin() || (isOwner() && get(/databases/$(database)/documents/venues/$(venueId)).data.ownerId == request.auth.uid);
+        allow read: if isAdmin() || (get(/databases/$(database)/documents/venues/$(venueId)).data.status == 'ACTIVE') || ownsVenue(venueId);
+        allow create: if isAdmin()
+                      || (ownsVenue(venueId)
+                          && request.resource.data.keys().hasOnly(['daysOfWeek', 'startTime', 'endTime', 'pricePerHour', 'label']));
+        allow update: if isAdmin()
+                      || (ownsVenue(venueId)
+                          && onlyChanges(['daysOfWeek', 'startTime', 'endTime', 'pricePerHour', 'label']));
+        allow delete: if isAdmin() || ownsVenue(venueId);
       }
     }
 

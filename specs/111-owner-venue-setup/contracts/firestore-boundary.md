@@ -13,7 +13,9 @@ Không thêm trường, collection, endpoint, enum hoặc quan hệ booking mớ
 
 ## Yêu cầu phân quyền
 
-Mọi thao tác đọc/ghi owner phải giới hạn theo UID đã xác thực và ownership venue do server xác minh. Thay đổi cần trạng thái owner đã duyệt và `appRole = OWNER`; nguồn biểu diễn trạng thái đã duyệt cần được thống nhất và đáng tin cậy. Không dùng `ownerId` client gửi làm căn cứ quyền. Không cho owner sửa aggregate/trường được bảo vệ, role/status, trạng thái `LOCKED` của admin hoặc dữ liệu owner khác. Quyền hiển thị công khai cho player tuân theo chính sách status hiện có.
+Mọi thao tác đọc/ghi owner phải giới hạn theo UID đã xác thực và ownership venue do server xác minh. Nguồn đáng tin cậy đã chốt theo schema Feature 110/120 là `users/{uid}.ownerStatus == APPROVED`, kết hợp với custom claim `appRole == OWNER`; Rules đọc document `users` phía server cho mỗi mutation. Không dùng `ownerId` client gửi làm căn cứ quyền. Không cho owner sửa aggregate/trường được bảo vệ, role/status, trạng thái `LOCKED` của admin hoặc dữ liệu owner khác. Quyền hiển thị công khai cho player tuân theo chính sách status hiện có.
+
+Implementation note: venue đầu tiên vẫn do lifecycle duyệt của Feature 110/120 tạo. Feature 111 không mở quyền client tự tạo venue cho tới khi boundary server cho thao tác tạo được thống nhất.
 
 ## Bất biến khi đổi slot
 
@@ -28,3 +30,9 @@ Mọi thao tác đọc/ghi owner phải giới hạn theo UID đã xác thực v
 ## Hợp đồng chưa được tài liệu nguồn quy định
 
 Chưa có tên callable/Edge Function, request/response, mã idempotency hoặc dấu hiệu trong schema để xác định block thuộc owner nào. Schema không có trường owner hay tham chiếu thao tác cho block; cần thống nhất cách chứng minh quyền mở đúng block của mình mà không thêm schema. Phải xác định hợp đồng thao tác server cùng nhóm phụ trách booking trước khi triển khai. Client đọc Firestore rồi ghi riêng không phải phương án thay thế chấp nhận được.
+
+## Trạng thái triển khai Feature 111
+
+T007 chưa được chốt ở mức cho phép ghi: Rules hiện tại không cấp quyền owner tạo `BLOCKED` slot, và repo chưa có server boundary để thực thi transaction/kiểm tra ownership/court/latest state. Feature 111 chỉ cung cấp UI preview với typed gate `SLOT_ATOMIC_SERVER_CONTRACT`; không có lock/unlock write fallback.
+
+T008 chưa được chốt: client không ghi `venues.minPricePerHour`, không tự suy ra giá khi không còn rule và không bật price-rule mutation có thể làm thay đổi field được bảo vệ. T011 giữ lifecycle tạo venue đầu tiên ở Feature 110/120; UI Feature 111 chỉ quản lý venue đã tồn tại và hiển thị thông báo server lifecycle khi chưa có create boundary.

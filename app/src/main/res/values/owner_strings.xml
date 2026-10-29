@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="owner_venues_title">Cơ sở của tôi</string>
+    <string name="owner_venues_empty">Chưa có cơ sở nào được cấp cho tài khoản này.</string>
+    <string name="owner_venue_add">Thêm cơ sở</string>
+    <string name="owner_venue_add_server_only">Việc tạo cơ sở mới cần được server xác nhận theo lifecycle Feature 120.</string>
+    <string name="owner_accepts_recurring">Nhận đặt cố định theo tuần</string>
+    <string name="owner_hide">Ẩn cơ sở</string>
+    <string name="owner_name">Tên cơ sở</string>
+    <string name="owner_address">Địa chỉ</string>
+    <string name="owner_open_time">Giờ mở cửa (HHmm)</string>
+    <string name="owner_close_time">Giờ đóng cửa (HHmm)</string>
+    <string name="owner_phone">Số điện thoại</string>
+    <string name="owner_courts_title">Danh sách sân</string>
+    <string name="owner_court_name">Tên sân</string>
+    <string name="owner_court_surface">Mặt sân: WOOD, PU hoặc MAT</string>
+    <string name="owner_court_add">Thêm sân</string>
+    <string name="owner_court_deactivate">Ngừng hoạt động</string>
+    <string name="owner_court_up">Lên</string>
+    <string name="owner_court_down">Xuống</string>
+    <string name="edit">Sửa</string>
+    <string name="owner_status_active">Đang hoạt động</string>
+    <string name="owner_status_inactive">Đã ngừng</string>
+    <string name="save">Lưu</string>
+    <string name="retry">Thử lại</string>
+    <string name="owner_slot_block_title">Khóa giờ sân</string>
+    <string name="owner_slot_date">Ngày (yyyyMMdd)</string>
+    <string name="owner_slot_start">Giờ bắt đầu (HHmm)</string>
+    <string name="owner_slot_end">Giờ kết thúc (HHmm)</string>
+    <string name="owner_slot_reason">Lý do</string>
+    <string name="owner_slot_preview">Kiểm tra khoảng giờ</string>
+    <string name="owner_slot_submit">Gửi yêu cầu khóa</string>
+    <string name="owner_slot_stale">Dữ liệu đã cũ; hãy tải lại trước khi tiếp tục.</string>
+    <string name="owner_slot_offline">Đang ngoại tuyến; thao tác khóa bị tắt.</string>
+    <string name="owner_data_fresh">Dữ liệu vừa được xác nhận từ máy chủ.</string>
+    <string name="owner_data_not_fresh">Chưa xác nhận dữ liệu mới từ máy chủ; không tự gửi lại thao tác.</string>
+    <string name="owner_permission_error">Bạn không có quyền quản lý dữ liệu này.</string>
+    <string name="owner_network_error">Không kết nối được máy chủ. Bạn có thể thử tải lại.</string>
+    <string name="owner_open_venue">Mở chi tiết cơ sở</string>
+</resources>

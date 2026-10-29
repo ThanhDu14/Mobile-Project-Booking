@@ -2,23 +2,29 @@
 
 Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 
-| \#  | Ngày       | Nội dung                                                                                                                   | Nhóm |
-| --- | ---------- | -------------------------------------------------------------------------------------------------------------------------- | ---- |
-| 1   | 2026-10-06 | Viết và làm rõ spec 100 (thông báo) bằng AI và `$speckit-clarify`                                                          | 10   |
-| 2   | 2026-10-07 | Viết spec 110 (đăng ký chủ sân) bằng `$speckit-specify` và làm rõ bằng `$speckit-clarify`                                  | 11   |
-| 3   | 2026-10-08 | Viết và làm rõ spec 111 (quản lý cơ sở, sân con, bảng giá và khóa giờ) bằng AI, `$speckit-clarify` và `$speckit-checklist` | 11   |
-| 4   | 2026-10-08 | Viết và làm rõ spec 112 (vận hành cơ sở chủ sân) bằng AI và `$speckit-clarify`                                             | 11   |
-| 5   | 2026-10-08 | Viết và làm rõ spec 120 (quản trị, hồ sơ chủ sân và báo cáo) bằng `$speckit-specify` và `$speckit-clarify`                 | 12   |
-| 6   | 2026-10-15 | Lập implementation plan cho Feature 100 (thông báo) bằng `$speckit-plan`                                                   | 10   |
-| 7   | 2026-10-15 | Lập implementation plan cho Feature 110 (đăng ký chủ sân) bằng `$speckit-plan` và viết lại tài liệu bằng tiếng Việt        | 11   |
-| 8   | 2026-10-16 | Lập implementation plan cho Feature 111 (thiết lập cơ sở chủ sân) bằng `$speckit-plan`                                     | 11   |
-| 9   | 2026-10-16 | Lập implementation plan cho Feature 112 (vận hành chủ sân) bằng `$speckit-plan`                                            | 11   |
-| 10  | 2026-10-16 | Lập implementation plan cho Feature 120 (quản trị và kiểm duyệt) bằng `$speckit-plan`                                      | 12   |
-| 11  | 2026-10-19 | Tạo Tasks Feature 100 bằng `$speckit-tasks`, phân tích bằng `$speckit-analyze` và cập nhật Tasks theo kết quả phân tích    | 10   |
-| 12  | 2026-10-19 | Tạo Tasks Feature 110 bằng `$speckit-tasks`, rà soát bằng `$speckit-analyze` và cập nhật Tasks theo kết quả phân tích      | 11   |
-| 13  | 2026-10-19 | Tạo Tasks Feature 111 bằng `$speckit-tasks`, phân tích bằng `$speckit-analyze` và cập nhật Tasks theo báo cáo              | 11   |
-| 14  | 2026-10-19 | Tạo Tasks Feature 112 bằng `$speckit-tasks`, phân tích bằng `$speckit-analyze` và cập nhật Tasks theo các findings         | 11   |
-| 15  | 2026-10-19 | Tạo Tasks Feature 120 bằng `$speckit-tasks`, phân tích bằng `$speckit-analyze` và cập nhật Tasks theo findings U1–U3        | 12   |
+| \#  | Ngày       | Nội dung                                                                                                                                                                     | Nhóm |
+| --- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
+| 1   | 2026-10-06 | Viết và làm rõ spec 100 (thông báo) bằng AI và `$speckit-clarify`                                                                                                            | 10   |
+| 2   | 2026-10-07 | Viết spec 110 (đăng ký chủ sân) bằng `$speckit-specify` và làm rõ bằng `$speckit-clarify`                                                                                    | 11   |
+| 3   | 2026-10-08 | Viết và làm rõ spec 111 (quản lý cơ sở, sân con, bảng giá và khóa giờ) bằng AI, `$speckit-clarify` và `$speckit-checklist`                                                   | 11   |
+| 4   | 2026-10-08 | Viết và làm rõ spec 112 (vận hành cơ sở chủ sân) bằng AI và `$speckit-clarify`                                                                                               | 11   |
+| 5   | 2026-10-08 | Viết và làm rõ spec 120 (quản trị, hồ sơ chủ sân và báo cáo) bằng `$speckit-specify` và `$speckit-clarify`                                                                   | 12   |
+| 6   | 2026-10-15 | Lập implementation plan cho Feature 100 (thông báo) bằng `$speckit-plan`                                                                                                     | 10   |
+| 7   | 2026-10-15 | Lập implementation plan cho Feature 110 (đăng ký chủ sân) bằng `$speckit-plan` và viết lại tài liệu bằng tiếng Việt                                                          | 11   |
+| 8   | 2026-10-16 | Lập implementation plan cho Feature 111 (thiết lập cơ sở chủ sân) bằng `$speckit-plan`                                                                                       | 11   |
+| 9   | 2026-10-16 | Lập implementation plan cho Feature 112 (vận hành chủ sân) bằng `$speckit-plan`                                                                                              | 11   |
+| 10  | 2026-10-16 | Lập implementation plan cho Feature 120 (quản trị và kiểm duyệt) bằng `$speckit-plan`                                                                                        | 12   |
+| 11  | 2026-10-19 | Tạo Tasks Feature 100 bằng `$speckit-tasks`, phân tích bằng `$speckit-analyze` và cập nhật Tasks theo kết quả phân tích                                                      | 10   |
+| 12  | 2026-10-19 | Tạo Tasks Feature 110 bằng `$speckit-tasks`, rà soát bằng `$speckit-analyze` và cập nhật Tasks theo kết quả phân tích                                                        | 11   |
+| 13  | 2026-10-19 | Tạo Tasks Feature 111 bằng `$speckit-tasks`, phân tích bằng `$speckit-analyze` và cập nhật Tasks theo báo cáo                                                                | 11   |
+| 14  | 2026-10-19 | Tạo Tasks Feature 112 bằng `$speckit-tasks`, phân tích bằng `$speckit-analyze` và cập nhật Tasks theo các findings                                                           | 11   |
+| 15  | 2026-10-19 | Tạo Tasks Feature 120 bằng `$speckit-tasks`, phân tích bằng `$speckit-analyze` và cập nhật Tasks theo findings U1–U3                                                         | 12   |
+| 16  | 2026-10-29 | Implement Feature 111: validator, Firestore Rules, unit test và Emulator test bằng `$speckit-implement`                                                                      | 11   |
+| 17  | 2026-10-29 | Tiếp tục implement Feature 111: repository, venue management, court management, UI và test bằng `$speckit-implement`                                                         | 11   |
+| 18  | 2026-10-29 | Tiếp tục implement Feature 111: price coverage, slot UI shell, public availability assertions và kiểm thử cross-feature bằng `$speckit-implement`                            | 11   |
+| 19  | 2026-10-29 | Tiếp tục implement Feature 111: price-rules Emulator tests, error/offline/conflict review, UI polish, boundary traceability và kiểm thử build/lint bằng `$speckit-implement` | 11   |
+| 20  | 2026-10-29 | Tiếp tục implement Feature 111: hoàn thiện error/retry/conflict/cache freshness, responsive/accessibility review và kiểm chứng T034/T038 bằng `$speckit-implement`           | 11   |
+| 21  | 2026-10-29 | Tiếp tục implement Feature 111: chốt typed write-gate cho T007, giữ an toàn T008/T011, hoàn thiện T037 và kiểm chứng Emulator/build/lint | 11   |
 
 ---
 
@@ -1044,14 +1050,14 @@ analyze/implement trong lượt cập nhật.
 
 ## Mục 14: Tạo, phân tích và cập nhật Tasks Feature 112 – Owner Operations
 
-| Trường                   | Nội dung                                                                                                                                                            |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Ngày                     | 2026-10-19                                                                                                                                                          |
-| Người thực hiện          | Minh Nhựt                                                                                                                                                          |
-| Nhóm tính năng liên quan | 11 – Chủ sân (spec `specs/112-owner-operations`)                                                                                                                     |
-| Công cụ AI               | Codex (GPT-6), `$speckit-tasks`, `$speckit-analyze`                                                                                                                  |
+| Trường                   | Nội dung                                                                                                                                                              |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-10-19                                                                                                                                                            |
+| Người thực hiện          | Minh Nhựt                                                                                                                                                             |
+| Nhóm tính năng liên quan | 11 – Chủ sân (spec `specs/112-owner-operations`)                                                                                                                      |
+| Công cụ AI               | Codex (GPT-6), `$speckit-tasks`, `$speckit-analyze`                                                                                                                   |
 | Mục đích                 | Lập danh sách task Feature 112, rà soát tính nhất quán với spec/plan/Constitution và cập nhật Tasks theo findings mà không tự quyết định nghiệp vụ hoặc schema còn mở |
-| Nhánh Git                | `feature/112-owner-operations-tasks`                                                                                                                                |
+| Nhánh Git                | `feature/112-owner-operations-tasks`                                                                                                                                  |
 
 ### Prompt đã dùng
 
@@ -1116,34 +1122,35 @@ data-model, database README hoặc feature khác; không chạy analyze/implemen
 
 ### Phần đã sử dụng / chỉnh sửa / bỏ
 
-| Phần                  | Quyết định                                                                                       | Lý do                                                                                 |
-| --------------------- | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------- |
-| T001–T002             | Gộp thành task rà soát coverage và file ownership                                                 | Hai task setup trùng mục tiêu                                                         |
-| T005/T006             | Tách booking contract khỏi drop-in, registration check-in và voucher contracts                  | Tránh dependency không liên quan                                                      |
-| Voucher `venueId`     | Thêm xác nhận database owner và gate cho voucher tasks                                           | Tài liệu chưa thống nhất; không tự thêm schema                                        |
-| T009, T012–T013       | Chỉ rõ Rules test path/command; đặt điều kiện cho function transaction tests                     | Rules harness có sẵn; Edge Function harness/path chưa có trong checkout              |
-| T022–T023, T032, T039 | Ghi rõ test behavior và dependency xác nhận function path/harness                                 | Không dùng Rules tests để khẳng định transaction/token phía server                   |
-| T035                  | Chuyển thành integration handoff cho `checkin-booking`                                            | Không sửa function thuộc feature khác                                                 |
-| T038–T042             | Chặn voucher implementation đến khi dữ liệu/contract được xác nhận                               | Không suy đoán `venueId` là context hay stored field                                  |
-| T052–T054             | Chuyển Phase 8 thành rà soát coverage và chạy lại suite                                          | Tránh lặp test/layout đã giao trong từng story                                        |
-| T058                  | Bổ sung usability study đo SC-007, giữ ngưỡng ≥90%                                               | Cỡ mẫu/điều kiện nghiên cứu chưa có trong spec                                        |
-| Artifact khác         | Không chỉnh sửa                                                                                  | Giữ phạm vi ở Tasks Feature 112                                                       |
+| Phần                  | Quyết định                                                                     | Lý do                                                                   |
+| --------------------- | ------------------------------------------------------------------------------ | ----------------------------------------------------------------------- |
+| T001–T002             | Gộp thành task rà soát coverage và file ownership                              | Hai task setup trùng mục tiêu                                           |
+| T005/T006             | Tách booking contract khỏi drop-in, registration check-in và voucher contracts | Tránh dependency không liên quan                                        |
+| Voucher `venueId`     | Thêm xác nhận database owner và gate cho voucher tasks                         | Tài liệu chưa thống nhất; không tự thêm schema                          |
+| T009, T012–T013       | Chỉ rõ Rules test path/command; đặt điều kiện cho function transaction tests   | Rules harness có sẵn; Edge Function harness/path chưa có trong checkout |
+| T022–T023, T032, T039 | Ghi rõ test behavior và dependency xác nhận function path/harness              | Không dùng Rules tests để khẳng định transaction/token phía server      |
+| T035                  | Chuyển thành integration handoff cho `checkin-booking`                         | Không sửa function thuộc feature khác                                   |
+| T038–T042             | Chặn voucher implementation đến khi dữ liệu/contract được xác nhận             | Không suy đoán `venueId` là context hay stored field                    |
+| T052–T054             | Chuyển Phase 8 thành rà soát coverage và chạy lại suite                        | Tránh lặp test/layout đã giao trong từng story                          |
+| T058                  | Bổ sung usability study đo SC-007, giữ ngưỡng ≥90%                             | Cỡ mẫu/điều kiện nghiên cứu chưa có trong spec                          |
+| Artifact khác         | Không chỉnh sửa                                                                | Giữ phạm vi ở Tasks Feature 112                                         |
 
 ### Cách kiểm chứng
 
 - Kiểm tra có 58 checklist task, ID không trùng và format task hợp lệ.
 - Các task test dùng harness/lệnh đã có khi repository cung cấp; phần còn thiếu được ghi thành dependency/gate.
 - Không chạy tests, `$speckit-analyze` hoặc `$speckit-implement` sau lần cập nhật Tasks.
+
 ## Mục 15: Tạo, phân tích và cập nhật Tasks Feature 120 – Admin
 
-| Trường | Nội dung |
-|---|---|
-| Ngày | 2026-10-19 |
-| Người thực hiện | Minh Nhựt |
-| Nhóm tính năng liên quan | 12 – Quản trị và kiểm duyệt (spec `specs/120-admin`) |
-| Công cụ AI | Codex (GPT-6), `$speckit-tasks`, `$speckit-analyze` |
-| Mục đích | Tạo Tasks Feature 120, phân tích độ khớp spec/plan/tasks và cập nhật theo findings mà không tự quyết định schema hoặc hợp đồng tích hợp còn mở |
-| Nhánh Git | Chưa ghi nhận |
+| Trường                   | Nội dung                                                                                                                                       |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-10-19                                                                                                                                     |
+| Người thực hiện          | Minh Nhựt                                                                                                                                      |
+| Nhóm tính năng liên quan | 12 – Quản trị và kiểm duyệt (spec `specs/120-admin`)                                                                                           |
+| Công cụ AI               | Codex (GPT-6), `$speckit-tasks`, `$speckit-analyze`                                                                                            |
+| Mục đích                 | Tạo Tasks Feature 120, phân tích độ khớp spec/plan/tasks và cập nhật theo findings mà không tự quyết định schema hoặc hợp đồng tích hợp còn mở |
+| Nhánh Git                | Chưa ghi nhận                                                                                                                                  |
 
 ### Prompt đã dùng
 
@@ -1225,16 +1232,16 @@ hoặc viết implementation code.
 
 ### Phần đã sử dụng / chỉnh sửa / bỏ
 
-| Phần | Quyết định | Lý do |
-|---|---|---|
-| T005 | Mở rộng thành dependency gate cho report targets | Quyền đọc report không tự động cấp quyền đọc dữ liệu target |
-| T009, T014–T015 | Ghi điều kiện chốt server function/file path | Repository chưa có Supabase function layout hoặc callable contract |
-| T010–T011, T022, T031 | Ghi path test `.test.ts` cụ thể theo convention đã xác minh | `firestore-tests/test/base.test.ts` là test file hiện có |
-| T012, T013, T021, T030 | Giữ tên file Android là nội dung cần xác định sau | Chưa có package admin hoặc convention test theo feature trong source |
-| T025–T027, T034 | Gắn target read/action với gate và owner tương ứng | Phân biệt moderation report với quyền truy cập dữ liệu do feature khác sở hữu |
-| T054 | Bổ sung quy trình đo SC-006 và điều kiện hồ sơ đầy đủ | Cần kết quả đo có thể lặp lại, nhưng không tự đặt nghiệp vụ ngoài spec |
-| Dependency graph, traceability, acceptance criteria, open gates | Cập nhật tham chiếu T005 và SC-006 | Phản ánh các điều kiện mới và giữ coverage FR/SC |
-| Các task còn lại | Giữ nguyên ID và nội dung | Không liên quan các findings |
+| Phần                                                            | Quyết định                                                  | Lý do                                                                         |
+| --------------------------------------------------------------- | ----------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| T005                                                            | Mở rộng thành dependency gate cho report targets            | Quyền đọc report không tự động cấp quyền đọc dữ liệu target                   |
+| T009, T014–T015                                                 | Ghi điều kiện chốt server function/file path                | Repository chưa có Supabase function layout hoặc callable contract            |
+| T010–T011, T022, T031                                           | Ghi path test `.test.ts` cụ thể theo convention đã xác minh | `firestore-tests/test/base.test.ts` là test file hiện có                      |
+| T012, T013, T021, T030                                          | Giữ tên file Android là nội dung cần xác định sau           | Chưa có package admin hoặc convention test theo feature trong source          |
+| T025–T027, T034                                                 | Gắn target read/action với gate và owner tương ứng          | Phân biệt moderation report với quyền truy cập dữ liệu do feature khác sở hữu |
+| T054                                                            | Bổ sung quy trình đo SC-006 và điều kiện hồ sơ đầy đủ       | Cần kết quả đo có thể lặp lại, nhưng không tự đặt nghiệp vụ ngoài spec        |
+| Dependency graph, traceability, acceptance criteria, open gates | Cập nhật tham chiếu T005 và SC-006                          | Phản ánh các điều kiện mới và giữ coverage FR/SC                              |
+| Các task còn lại                                                | Giữ nguyên ID và nội dung                                   | Không liên quan các findings                                                  |
 
 ### Cách kiểm chứng
 
@@ -1246,3 +1253,379 @@ hoặc viết implementation code.
 
 ---
 
+## Mục 16: Implement Feature 111 — Owner Venue Setup
+
+| Trường                   | Nội dung                                                                                      |
+| ------------------------ | --------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-10-29                                                                                    |
+| Người thực hiện          | Minh Nhựt                                                                                     |
+| Nhóm tính năng liên quan | 111 – Owner Venue Setup                                                                       |
+| Công cụ AI               | Codex, `$speckit-implement`                                                                   |
+| Mục đích                 | Implement các phần có thể triển khai của Feature 111, kiểm tra phân quyền server và viết test |
+
+### Prompt đã dùng
+
+```text
+$speckit-implement Bắt đầu implement Feature 111 — Owner Venue Setup.
+
+Thư mục spec chính xác là `specs/111-owner-venue-setup/`.
+
+Đọc trực tiếp các file:
+- `specs/111-owner-venue-setup/spec.md`
+- `specs/111-owner-venue-setup/plan.md`
+- `specs/111-owner-venue-setup/data-model.md`
+- `specs/111-owner-venue-setup/research.md`
+- `specs/111-owner-venue-setup/quickstart.md`
+- Toàn bộ file trong `specs/111-owner-venue-setup/contracts/`, `checklists/` và `ui/`
+- `specs/111-owner-venue-setup/tasks.md` nếu tồn tại; nếu chưa có, xác định workflow triển khai theo cấu trúc Spec Kit hiện có, không tự tạo backlog thay thế khi chưa kiểm tra.
+
+Sau đó đọc Constitution, database README/schema và code hiện tại liên quan đến Feature 110, 120, venue, courts, pricing và slots.
+
+Bắt đầu implement ngay, không chỉ audit hoặc lập kế hoạch.
+
+1. Kiểm tra từng chức năng đã có để tránh implement trùng lặp.
+2. Xác định task đầu tiên có dependency sẵn sàng và sửa source code/test thực tế.
+3. Tiếp tục các chức năng còn thiếu của Feature 111 theo spec, bao gồm venue management, courts, `priceRules` và block slots nếu chúng thuộc phạm vi được quy định.
+4. Bảo đảm server xác minh Owner đã được duyệt và venue thuộc quyền sở hữu của Owner hiện tại.
+5. Tôn trọng lifecycle tạo venue của Feature 120; không tự tạo venue để vượt qua dependency.
+6. Tuân thủ schema và contract hiện có. Không tự thêm field, collection, endpoint hoặc dependency khi chưa có căn cứ.
+7. Viết và chạy các test phù hợp. Không tuyên bố test pass nếu chưa chạy.
+8. Nếu một phần bị block bởi Feature 110 hoặc quyết định chưa được xác nhận, tiếp tục những phần độc lập.
+9. Cập nhật task theo bằng chứng thực tế.
+10. Bảo toàn các thay đổi hiện có; không commit hoặc push.
+
+Kết thúc bằng báo cáo những file đã thay đổi, chức năng đã implement, kết quả kiểm thử và blocker còn lại.
+
+Hãy sửa code ngay trong lượt này và tiếp tục qua các task có thể triển khai, không dừng sau khi đọc tài liệu.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Đọc spec, plan, data model, research, quickstart, contract, checklist, Constitution, database README và code liên quan.
+- Xác định các cổng chưa đủ điều kiện: contract transaction lock/unlock T007 và authority cập nhật `minPricePerHour` T008.
+- Thêm validator domain cho venue, court, `priceRules` và khoảng khóa slot 30 phút; không thêm schema/enum mới.
+- Cập nhật `firestore.rules` để yêu cầu đồng thời `appRole = OWNER`, `users/{uid}.ownerStatus = APPROVED` và `venues/{venueId}.ownerId == uid`; public chỉ đọc venue `ACTIVE`, owner được đọc venue của mình.
+- Không mở quyền client tự tạo venue đầu tiên; giữ lifecycle tạo venue của Feature 110/120.
+- Thêm unit tests và Emulator Rules tests cho approved/pending/foreign owner, protected fields và hidden venue.
+- Đánh dấu các task đã có bằng chứng: T001, T003, T004, T006, T009, T016, T021, T027, T032.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần                                       | Quyết định      | Lý do                                                                               |
+| ------------------------------------------ | --------------- | ----------------------------------------------------------------------------------- |
+| Validation domain                          | Dùng và chỉnh   | Bám schema hiện có, kiểm tra field/enum/ranh giới đã được đặc tả                    |
+| Firestore Rules                            | Dùng và chỉnh   | Bắt buộc xác minh owner đã được duyệt và ownership ở server                         |
+| Unit/Emulator tests                        | Dùng và chỉnh   | Kiểm chứng validation và zero cross-owner write                                     |
+| Venue/court/price CRUD UI                  | Chưa triển khai | Cần tiếp tục các task còn lại theo dependency và package hiện có                    |
+| Price mutation ảnh hưởng `minPricePerHour` | Chưa triển khai | Chờ quyết định T008                                                                 |
+| Atomic slot lock/unlock                    | Chưa triển khai | Chờ contract server/booking T007; không tự tạo endpoint hoặc client read-then-write |
+
+### Cách kiểm chứng
+
+- `./gradlew.bat --no-daemon testDebugUnitTest --tests 'com.example.booking_app.feature.owner.domain.OwnerValidationTest'`: `BUILD SUCCESSFUL`.
+- Firebase Emulator Rules suite: 4 test files, 38 tests passed.
+- `git diff --check`: không có lỗi whitespace.
+- Không commit hoặc push.
+
+---
+
+## Mục 17: Tiếp tục implement Feature 111 — Venue và Court Management
+
+| Trường                   | Nội dung                                                                         |
+| ------------------------ | -------------------------------------------------------------------------------- |
+| Ngày                     | 2026-10-29                                                                       |
+| Người thực hiện          | Minh Nhựt                                                                        |
+| Nhóm tính năng liên quan | 111 – Owner Venue Setup                                                          |
+| Công cụ AI               | Codex, `$speckit-implement`                                                      |
+| Mục đích                 | Hoàn thiện repository, venue/court management UI và kiểm thử theo tasks hiện tại |
+
+### Prompt đã dùng
+
+```text
+$speckit-implement Tiếp tục implement Feature 111 — Owner Venue Setup từ trạng thái hiện tại.
+
+Đọc specs/111-owner-venue-setup/tasks.md và code hiện có. Giữ nguyên các task đã hoàn thành; không implement lại validation hoặc authorization đã có nếu không phát hiện lỗi cụ thể.
+
+Mục tiêu lượt này: hoàn thiện Venue Management và Court Management bằng code thực tế; hoàn thiện T002/T005, venue list/detail/add/edit, hide, acceptsRecurring, court list/create/update/reorder/deactivate, unit tests và Emulator tests. Tuân thủ MVVM, schema hiện có, lifecycle Feature 110/120, không sửa Feature 030/040/041/050/120, không mở rộng Rules tùy tiện, chạy test/build nếu môi trường cho phép, cập nhật tasks, không commit/push. Nếu blocker thật sự thì tiếp tục task độc lập và ghi rõ blocker; bắt đầu implement ngay, ưu tiên venue CRUD có test rồi court management.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Hoàn thiện domain models, repository interface, Firestore data source/mapping và Hilt binding cho `venues`, `courts`, `priceRules`, `slots`.
+- Thêm `StateFlow` ViewModel cho venue list/detail, loading/empty/error/retry, server-confirmed update, hide và recurring toggle; giữ dữ liệu form khi ghi thất bại.
+- Thêm XML/ViewBinding UI cho venue list/detail/edit, court list/add/edit/reorder/deactivate, phone và `w600dp` layouts.
+- Giữ quyền tạo venue đầu tiên theo Feature 110/120; nút thêm venue ghi rõ server boundary, không tự mở quyền client tạo venue.
+- Thêm fixtures Kotlin/TypeScript và Emulator tests cho venue/court ownership, pending/foreign owner, protected fields, `LOCKED`, hide, recurring toggle và slot history.
+- Cập nhật task đã có bằng chứng: T002, T005, T010, T012–T015, T017–T020; T011 vẫn chưa đánh dấu vì client-side venue creation bị chặn đúng contract lifecycle.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần                                  | Quyết định                              | Lý do                                                             |
+| ------------------------------------- | --------------------------------------- | ----------------------------------------------------------------- |
+| Domain/repository/data source hiện có | Dùng và mở rộng                         | Bổ sung mapping và repository interface theo schema hiện tại      |
+| Venue/court UI MVVM                   | Dùng và chỉnh                           | Thêm list/detail, StateFlow, loading/error/retry và court actions |
+| Venue-first creation                  | Giữ nguyên boundary                     | Không bypass lifecycle tạo venue của Feature 110/120              |
+| Firestore Rules                       | Dùng và chỉnh trong phạm vi Feature 111 | Xác minh approved owner, ownership và protected fields            |
+| Feature 030/040/041/050/120 source    | Không chỉnh sửa                         | Nghiệp vụ thuộc feature khác                                      |
+| Hard-delete venue/court               | Bỏ                                      | Dùng HIDDEN/isActive=false để giữ lịch sử                         |
+
+### Cách kiểm chứng
+
+- Android owner unit tests: `BUILD SUCCESSFUL`.
+- `assembleDebug`: `BUILD SUCCESSFUL`.
+- Firebase Emulator suite: 5 test files, 42 tests passed.
+- Không commit hoặc push.
+
+---
+
+## Mục 18: Tiếp tục implement Feature 111 — Price rules, Slot UI và Public Availability
+
+| Trường                   | Nội dung                                                                                                                                          |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-10-29                                                                                                                                        |
+| Người thực hiện          | Minh Nhựt                                                                                                                                         |
+| Nhóm tính năng liên quan | 111 – Owner Venue Setup                                                                                                                           |
+| Công cụ AI               | Codex, `$speckit-implement`                                                                                                                       |
+| Mục đích                 | Tiếp tục implement từ code hiện tại, chỉ làm các phần không bị T007/T008 block và không viết lại CRUD, validator hoặc authorization đã hoàn thành |
+
+### Prompt đã dùng
+
+```text
+$speckit-implement Tiếp tục implement Feature 111 — Owner Venue Setup từ code hiện tại.
+
+Đọc specs/111-owner-venue-setup/tasks.md, các spec liên quan và kiểm tra các file code/test thực tế. Giữ nguyên các task đã hoàn thành; không implement lại venue/court CRUD, validator hoặc authorization nếu chúng đã đáp ứng acceptance criteria.
+
+## Ưu tiên trong lượt này
+
+### 1. Price rules — làm phần không bị block
+
+- Kiểm tra T021 và các validator/test hiện có.
+- Thực hiện T024: đối chiếu contract hiển thị giá và cách tính giá cho slot 30 phút với Feature 040/050.
+- Thực hiện phần độc lập của T025: unit tests cho price-rule validation, overlap, boundary và bảo toàn giá trong booking history.
+- Có thể chuẩn bị UI shell xem coverage và cảnh báo khoảng giờ thiếu rule, nhưng không cho tạo/sửa/xóa price rule nếu T008 chưa xác định authority cập nhật `minPricePerHour`.
+- Không tự đặt giá trị `minPricePerHour`, không sửa `bookings.items[].price`, không thay đổi code của Feature 040/050.
+
+### 2. Slot management — hoàn thiện phần UI độc lập
+
+- Thực hiện T030 ở phạm vi được phép: calendar UI, chọn khoảng giờ, chọn lý do `MAINTENANCE`/`EVENT`/`WALK_IN`, loading/progress, ngăn submit trùng, trạng thái stale/offline và giữ dữ liệu khi lỗi.
+- Tôn trọng T007: chưa nối thao tác ghi lock/unlock nếu contract atomic server-side chưa được xác nhận.
+- Không dùng client read-then-write để thay thế transaction.
+- Không implement unlock khi chưa chứng minh được block có thể được Owner gỡ an toàn.
+
+### 3. Public availability và cross-feature verification
+
+Tiếp tục T033–T036:
+
+- Kiểm tra các field Feature 111 ghi có phù hợp với contract đọc hiện tại của Feature 030/040 không.
+- Xác minh `ACTIVE`/`HIDDEN`/`LOCKED`, court `isActive`, coverage của price rules và slot `BLOCKED`.
+- Kiểm tra toggle `acceptsRecurring` tương thích với Feature 041: tắt recurring không tạo chuỗi mới nhưng không hủy chuỗi cũ.
+- Kiểm tra điều kiện đóng sân cả ngày theo contract Feature 040.
+- Thêm integration assertions trong `firestore-tests/test/owner-public-availability.test.ts`.
+- Chỉ sửa test và contract thuộc phạm vi Feature 111; không sửa source/UI của Feature 030/040/041/050.
+
+### 4. Polish và kiểm thử
+
+Tiếp tục T037–T039:
+
+- Kiểm tra loading/content/empty/error, retry, permission error, conflict refresh, retained form values và dữ liệu cache cũ.
+- Kiểm tra accessibility, tiếng Việt, light/dark, phone và `w600dp`.
+- Cập nhật quickstart với lệnh chạy và kết quả kiểm thử thực tế.
+- Rà soát ranh giới Feature 110, 112/080, 030/040/041/050 và 120.
+
+### Quy tắc
+
+- Đọc contract và code hiện tại trước khi sửa.
+- Chỉ implement phần còn thiếu, không viết lại phần đã hoàn thành.
+- Không tự thay đổi schema, endpoint, field hoặc nghiệp vụ đã được duyệt.
+- Không tự đánh dấu T008/T007 hoàn thành nếu chưa có quyết định thực tế từ bên chịu trách nhiệm.
+- Chạy unit tests, Gradle build và Firebase Emulator tests nếu môi trường cho phép.
+- Cập nhật checkbox.
+- Không commit hoặc push.
+
+**Bắt đầu sửa code ngay và tiếp tục qua các task có thể triển khai an toàn. Không dừng ở audit hoặc lập kế hoạch.**
+
+Báo cáo cuối cùng: file đã thay đổi, task hoàn thành, kết quả test, task bị chặn và quyết định cần xác nhận.
+```
+
+### Tóm tắt phản hồi của AI
+
+| Hạng mục            | Thay đổi thực tế                                                                                                                                                                              | Bằng chứng                                          |
+| ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| Price rules         | Thêm `PriceRuleCoverage`: `pricePerHour / 2`, tìm rule theo ngày/giờ, phát hiện mốc thiếu rule và cảnh báo deletion gap; không ghi `minPricePerHour` và không sửa booking history             | Android owner unit tests pass                       |
+| Slot UI             | Thêm `OwnerSlotBlockViewModel`, `OwnerSlotBlockFragment` và layout; có range preview, reason selection, validation, progress, stale/offline, retry, retained form; submit không ghi Firestore | Android owner unit tests pass; T007 vẫn block write |
+| Public availability | Thêm assertions cho visibility venue, court inactive, price coverage, BLOCKED slot, full-day closure, recurring group hiện có và historical price snapshot                                    | Emulator 6 files / 46 tests passed                  |
+| Tài liệu            | Cập nhật `tasks.md`, `quickstart.md` và AI log                                                                                                                                                | Đối chiếu task markers và lệnh test thực tế         |
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần                                   | Quyết định                    | Lý do                                                                       |
+| -------------------------------------- | ----------------------------- | --------------------------------------------------------------------------- |
+| PriceRuleCoverage và validator hiện có | Dùng và mở rộng test/coverage | Đối chiếu giá slot 30 phút và phát hiện gap mà không ghi dữ liệu            |
+| Slot block UI shell                    | Dùng và chỉnh                 | Bổ sung preview range, reason, stale/offline/loading/retry và retained form |
+| Slot lock/unlock write                 | Chưa dùng                     | T007 chưa có atomic server contract và điều kiện unlock an toàn             |
+| `minPricePerHour` mutation             | Chưa dùng                     | T008 chưa xác định trusted authority                                        |
+| Feature 030/040/041/050 source/UI      | Không chỉnh sửa               | Chỉ thêm contract assertions trong phạm vi Feature 111                      |
+
+### Task cập nhật
+
+- Đánh dấu hoàn thành: T024, T025, T033, T035, T036.
+- Giữ nguyên chưa hoàn thành: T007, T008, T011, T022, T023, T026, T028, T029, T030 (chỉ UI shell), T031, T034, T037, T038, T039.
+
+### Blocker và quyết định cần xác nhận
+
+- T007 cần contract server-side atomic cho lock/unlock; không được thay bằng read-then-write client.
+- T008 cần authority đáng tin cậy cho `minPricePerHour`; không được tự cho phép price-rule mutation ảnh hưởng field này.
+- T011 và venue đầu tiên vẫn thuộc lifecycle Feature 110/120.
+- T034 cần boundary/API từ Feature 041 để chứng minh đầy đủ việc tắt recurring không tạo chain mới; lượt này chỉ chứng minh chain hiện có không bị thay đổi.
+
+### Cách kiểm chứng
+
+- `./gradlew.bat --no-daemon testDebugUnitTest --tests 'com.example.booking_app.feature.owner.*' assembleDebug`: `BUILD SUCCESSFUL`.
+- Firebase Emulator: `6 test files, 46 tests passed`.
+- `git diff --check`: không có lỗi whitespace; chỉ có cảnh báo line-ending CRLF hiện hữu.
+- Không commit hoặc push.
+
+---
+
+## Mục 19: Tiếp tục implement Feature 111 — T026, T037, T038 và T039
+
+| Trường                   | Nội dung                                                                                                                                   |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Ngày                     | 2026-10-29                                                                                                                                 |
+| Người thực hiện          | Minh Nhựt                                                                                                                                  |
+| Nhóm tính năng liên quan | 111 – Owner Venue Setup                                                                                                                    |
+| Công cụ AI               | Codex, `$speckit-implement`                                                                                                                |
+| Mục đích                 | Hoàn thiện các phần độc lập của price-rule Emulator tests, error handling, UI polish và boundary traceability; không bypass T007/T008/T011 |
+
+### Prompt đã dùng
+
+```text
+$speckit-implement Tiếp tục implement Feature 111 — Owner Venue Setup từ code hiện tại.
+
+Đọc specs/111-owner-venue-setup/tasks.md cùng code/test hiện tại. Giữ nguyên các phần đã hoàn thành; chỉ bổ sung phần còn thiếu. Không commit hoặc push.
+
+Hoàn thiện T026 bằng owner-price-rules Emulator tests cho approved owner, ownership, foreign owner, protected minPricePerHour, schema invariant và booking snapshot; vì T008 chưa xác nhận, không implement price mutations. Hoàn thiện phần độc lập T037 cho permission-vs-empty, retry/retained form, duplicate submit, stale/cached data, uncertain mutation result và conflict refresh. Kiểm tra T038 về resources, accessibility, touch targets, light/dark, phone/w600dp, chạy lint/build/tests và chỉ ghi SLA khi có đo thực tế. Kiểm tra T034 theo boundary Feature 041, không sửa source/UI Feature 041; nếu không chứng minh được thì giữ mở. Xác minh T039 với Feature 110, 112/080, 030/040/041/050 và 120; giữ T007, T008, T011 là decision gates. Chạy Android unit tests, assembleDebug, Firebase Emulator tests và git diff --check; cập nhật tasks.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Thêm `firestore-tests/test/owner-price-rules.test.ts`: approved owner CRUD dưới venue sở hữu, pending/foreign deny, protected `minPricePerHour`, extra-field deny và booking snapshot preservation.
+- Bổ sung `draft` vào `OwnerVenueDetailUiState` để retry/load lỗi không ghi đè dữ liệu form; thêm test phân biệt permission error với empty và duplicate-submit prevention.
+- Không sửa Feature 041; T034 vẫn mở vì boundary hiện có không chứng minh được việc ngăn tạo recurring chain mới.
+- Đánh dấu T026 và T039 hoàn thành. T037/T038 vẫn mở vì chưa có đầy đủ bằng chứng cho uncertain-network conflict refresh và SLA/performance đo trên thiết bị/mạng 4G thật.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần                            | Quyết định          | Lý do                                                                   |
+| ------------------------------- | ------------------- | ----------------------------------------------------------------------- |
+| Owner venue ViewModel           | Chỉnh sửa tối thiểu | Lưu `draft` để retry/load lỗi không ghi đè form chưa lưu                |
+| Unit test fake repository       | Mở rộng             | Kiểm tra permission-vs-empty và duplicate submit khi mutation đang chạy |
+| Price-rule mutations            | Không implement     | T026 chỉ kiểm tra Rules/invariant; T008 vẫn mở                          |
+| Feature 041 recurring source/UI | Không chỉnh sửa     | Không có boundary đủ để chứng minh ngăn chain mới; giữ T034 mở          |
+| Performance SLA                 | Không tuyên bố đạt  | Chỉ chạy build/lint/test, chưa đo thiết bị/mạng 4G thật                 |
+
+### Cách kiểm chứng
+
+- Android owner unit tests: `BUILD SUCCESSFUL`.
+- `assembleDebug lintDebug`: `BUILD SUCCESSFUL`; lint report đã được tạo.
+- Firebase Emulator: **7 test files, 50 tests passed**.
+- `git diff --check`: không có lỗi whitespace.
+- Không commit hoặc push.
+
+---
+
+## Mục 20: Tiếp tục implement Feature 111 — T037, T038 và T034
+
+| Trường                   | Nội dung                                                                                                                                    |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-10-29                                                                                                                                  |
+| Người thực hiện          | Minh Nhựt                                                                                                                                   |
+| Nhóm tính năng liên quan | 111 – Owner Venue Setup                                                                                                                     |
+| Công cụ AI               | Codex, `$speckit-implement`                                                                                                                 |
+| Mục đích                 | Bổ sung error classification, conflict refresh, retained draft, no-blind-retry, freshness indicator và kiểm tra lại boundary Feature 041/UI |
+
+### Prompt đã dùng
+
+```text
+$speckit-implement Tiếp tục implement Feature 111 — Owner Venue Setup từ code hiện tại.
+
+Đọc specs/111-owner-venue-setup/tasks.md, quickstart và code/test thực tế. Giữ nguyên các task đã hoàn thành. Không commit hoặc push.
+
+Hoàn thiện T037 cho permission/network/conflict/empty, uncertain mutation result, authoritative conflict refresh, retained form, duplicate submit và cache freshness; không tự thêm API hoặc server contract. Hoàn thiện T038 bằng kiểm tra/sửa Vietnamese resources, accessibility, touch targets, Material 3, phone/w600dp, loading/error/empty và chạy lint/build; không tuyên bố SLA nếu chưa đo trên thiết bị/4G. Kiểm tra T034 theo boundary Feature 041, không sửa source/UI Feature 041 và giữ mở nếu không có API/boundary chứng minh ngăn recurring chain mới. Giữ T007/T008/T011 là decision gates. Chạy Android unit tests, assembleDebug, lintDebug, Firebase Emulator tests và git diff --check; cập nhật tasks, quickstart.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Thêm `OwnerErrorClassifier` phân biệt permission, network, conflict và unknown error.
+- Bổ sung `errorKind`, `isFresh` cho venue list/detail; hiển thị freshness server-confirmed và thông báo Vietnamese cho permission/network.
+- Conflict chỉ kích hoạt authoritative read-back; timeout/network không tự retry mutation. Draft venue được giữ khi refresh conflict/error.
+- Bổ sung unit tests cho classifier, conflict refresh, retained draft và no-blind-retry.
+- Kiểm tra Feature 041: chỉ có spec/plan/schema recurring, chưa có boundary/API cho điều kiện không tạo chain mới; giữ T034 mở.
+- T038 chưa đánh dấu vì chưa đo SLA trên thiết bị và mạng 4G thật.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần                        | Quyết định          | Lý do                                                                      |
+| --------------------------- | ------------------- | -------------------------------------------------------------------------- |
+| Venue list/detail ViewModel | Chỉnh sửa tối thiểu | Thêm error kind, freshness và conflict read-back; không viết lại flow CRUD |
+| Mutation retry              | Không tự động retry | Tránh gửi lại mù khi timeout/mất mạng; chỉ retry read sau conflict         |
+| Cache repository            | Không thêm          | Code hiện tại không dùng cache; `isFresh` không giả lập cached authority   |
+| Slot/price write            | Không thêm          | T007/T008 vẫn chưa được xác nhận                                           |
+| Feature 041 source/UI       | Không chỉnh sửa     | Không có boundary được phép để kiểm chứng T034                             |
+| Performance SLA             | Không tuyên bố đạt  | Chưa có thiết bị/mạng 4G phù hợp để đo                                     |
+
+### Cách kiểm chứng
+
+- Android owner unit tests: `BUILD SUCCESSFUL`.
+- `assembleDebug lintDebug`: `BUILD SUCCESSFUL`; lint report đã được tạo.
+- Firebase Emulator: **7 test files, 50 tests passed**.
+- `git diff --check`: không có lỗi whitespace; chỉ có cảnh báo line-ending CRLF.
+- Không commit hoặc push.
+
+---
+
+## Mục 21: Tiếp tục implement Feature 111 — Decision gates và T037
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-29 |
+| Người thực hiện | Minh Nhựt |
+| Nhóm tính năng liên quan | 111 – Owner Venue Setup |
+| Công cụ AI | Codex, `$speckit-implement` |
+| Mục đích | Chốt bằng chứng an toàn cho T007/T008/T011, hoàn thiện T037 và kiểm chứng UI/build/Emulator mà không bypass contract |
+
+### Prompt đã dùng
+
+```text
+$speckit-implement Tiếp tục Feature 111 — Owner Venue Setup. Tôi muốn chốt các quyết định thuộc phạm vi Owner Venue Setup để tiếp tục triển khai, thay vì chỉ giữ backlog ở trạng thái chờ.
+
+Đọc contract, spec và code hiện tại. Giữ nguyên các phần đã hoàn thành; không commit hoặc push.
+
+T007: chỉ dùng server-controlled atomic transaction tương thích Feature 040; không client read-then-write; nếu chưa chứng minh server boundary và quyền unlock thì giữ write bị khóa, hoàn thiện UI và typed error. T008: client không ghi minPricePerHour, không bật price mutation khi authority/no-rule policy chưa được xác nhận. T011: giữ venue-first lifecycle ở Feature 110/120, không tự tạo venue đầu tiên. Tiếp tục T037/T038 độc lập, kiểm tra boundary Feature 041 cho T034 nhưng không sửa Feature 041, chạy unit/build/lint/Emulator/diff check và cập nhật tasks, quickstart, AI log theo bằng chứng thực tế.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Thêm `OwnerWriteGate.SLOT_ATOMIC_SERVER_CONTRACT` cho slot UI; submit preview không ghi Firestore.
+- Bổ sung contract/research ghi rõ T007 chưa có server transaction boundary, T008 chưa có trusted authority/no-rule policy và T011 thuộc lifecycle Feature 110/120.
+- Thêm Emulator assertion owner client không thể tự ghi slot `BLOCKED`.
+- Giữ nguyên price-rule mutation, unlock write và venue-first create ở trạng thái bị khóa.
+- Đánh dấu T037 hoàn thành dựa trên error classification, conflict read-back, retained draft, no-blind-retry và freshness tests. Giữ T034/T038 mở đúng bằng chứng còn thiếu.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Slot lock UI | Chỉnh sửa tối thiểu | Thêm typed gate, vẫn chỉ preview và không ghi khi T007 chưa có boundary |
+| Slot Firestore write | Không implement | Rules/server contract hiện không chứng minh được atomic owner lock/unlock |
+| Price-rule mutation/minPricePerHour | Không implement | T008 thiếu authority và no-rule behavior |
+| Venue-first create | Giữ nguyên lifecycle | Feature 110/120 sở hữu approval và creation |
+| Feature 041 source/UI | Không chỉnh sửa | Không có boundary được phép để hoàn tất T034 |
+| T037 error/retry handling | Dùng và mở rộng | Có test permission/network/conflict, retained draft và no-blind-retry |
+
+### Cách kiểm chứng
+
+- Android owner unit tests, `assembleDebug`, `lintDebug`: **BUILD SUCCESSFUL**.
+- Firebase Emulator: **7 test files, 51 tests passed**.
+- `git diff --check`: không có lỗi whitespace; chỉ có cảnh báo line-ending CRLF.
+- Không commit hoặc push.
