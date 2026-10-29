@@ -3,12 +3,16 @@ package com.example.booking_app.feature.account.data.di
 import com.example.booking_app.feature.account.data.AccountDataSource
 import com.example.booking_app.feature.account.data.AccountRepositoryImpl
 import com.example.booking_app.feature.account.data.AvatarRepositoryImpl
+import com.example.booking_app.feature.account.data.CredentialManagerGoogleReauthTokenSource
 import com.example.booking_app.feature.account.data.DistrictDataSource
 import com.example.booking_app.feature.account.data.DistrictRepositoryImpl
 import com.example.booking_app.feature.account.data.FirestoreAccountDataSource
 import com.example.booking_app.feature.account.data.FirestoreDistrictDataSource
+import com.example.booking_app.feature.account.data.GoogleReauthTokenSource
 import com.example.booking_app.feature.account.data.ImageProcessor
+import com.example.booking_app.feature.account.data.FirebaseReauthDataSource
 import com.example.booking_app.feature.account.data.OwnerApplicationRepositoryImpl
+import com.example.booking_app.feature.account.data.ReauthDataSource
 import com.example.booking_app.feature.account.domain.AccountRepository
 import com.example.booking_app.feature.account.domain.AvatarImageProcessor
 import com.example.booking_app.feature.account.domain.AvatarRepository
@@ -43,4 +47,10 @@ abstract class AccountModule {
 
     @Binds
     abstract fun bindAvatarImageProcessor(impl: ImageProcessor): AvatarImageProcessor
+
+    @Binds
+    abstract fun bindReauthDataSource(impl: FirebaseReauthDataSource): ReauthDataSource
+
+    @Binds
+    abstract fun bindGoogleReauthTokenSource(impl: CredentialManagerGoogleReauthTokenSource): GoogleReauthTokenSource
 }

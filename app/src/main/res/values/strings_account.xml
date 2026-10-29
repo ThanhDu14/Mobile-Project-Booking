@@ -119,6 +119,16 @@
     <string name="account_reauth_google">Xác nhận bằng Google</string>
     <string name="account_reauth_send_otp">Gửi mã OTP</string>
     <string name="account_reauth_wrong_account">Hãy chọn đúng tài khoản Google đang đăng nhập</string>
+    <string name="account_reauth_message_password">Nhập mật khẩu hiện tại để tiếp tục.</string>
+    <string name="account_reauth_message_google">Chọn tài khoản Google đang đăng nhập để tiếp tục.</string>
+    <string name="account_reauth_message_phone">Gửi mã OTP tới %1$s để tiếp tục.</string>
+    <string name="account_reauth_code">Mã OTP 6 số</string>
+    <string name="account_reauth_resend">Gửi lại mã</string>
+    <string name="account_reauth_submit">Xác nhận</string>
+    <string name="account_reauth_cancel">Hủy</string>
+    <string name="account_reauth_no_method">Không xác định được cách xác nhận danh tính, vui lòng đăng nhập lại</string>
+    <string name="account_error_wrong_otp">Mã OTP không đúng</string>
+    <string name="account_error_otp_expired">Mã đã hết hạn hoặc nhập sai quá 5 lần, bấm “Gửi lại mã”</string>
 
     <!-- Xóa tài khoản (US6, contracts/edge-functions-account.md §1.4) -->
     <string name="account_delete_title">Xóa tài khoản</string>
@@ -138,6 +148,8 @@
     <string name="account_session_revoked">Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại</string>
     <string name="account_error_network">Không có kết nối mạng</string>
     <string name="account_error_generic">Đã có lỗi, vui lòng thử lại</string>
+    <string name="account_error_too_many_attempts">Bạn đã thử quá nhiều lần, vui lòng thử lại sau</string>
+    <string name="account_error_weak_password">Mật khẩu cần ít nhất 8 ký tự, có chữ và số</string>
     <string name="account_error_district_max">Chọn tối đa 5 khu vực</string>
     <string name="account_error_image_type">Chỉ hỗ trợ ảnh JPG, PNG, WebP</string>
     <string name="account_error_image_size">Ảnh quá lớn, tối đa 2 MB</string>

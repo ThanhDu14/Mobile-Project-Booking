@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Nội dung hộp thoại Xác nhận danh tính (spec 011 research R8, FR-017). Phần hiện ra tùy ReauthMethod. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingHorizontal="@dimen/space_6"
+    android:paddingTop="@dimen/space_2">
+
+    <TextView
+        android:id="@+id/message"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textColor="?attr/colorOnSurfaceVariant" />
+
+    <!-- Tài khoản có mật khẩu -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/passwordLayout"
+        style="@style/Widget.SmashNow.TextInputLayout"
+        android:hint="@string/account_password_current"
+        android:visibility="gone"
+        app:endIconContentDescription="@string/auth_password_toggle"
+        app:endIconMode="password_toggle">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/passwordInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:autofillHints="password"
+            android:imeOptions="actionDone"
+            android:inputType="textPassword"
+            android:saveEnabled="false" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Chỉ Google -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/googleButton"
+        style="@style/Widget.Material3.Button.OutlinedButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_4"
+        android:minHeight="48dp"
+        android:text="@string/account_reauth_google"
+        android:visibility="gone" />
+
+    <!-- Chỉ số điện thoại -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/sendOtpButton"
+        style="@style/Widget.Material3.Button.OutlinedButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_4"
+        android:minHeight="48dp"
+        android:text="@string/account_reauth_send_otp"
+        android:visibility="gone" />
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/codeLayout"
+        style="@style/Widget.SmashNow.TextInputLayout"
+        android:hint="@string/account_reauth_code"
+        android:visibility="gone">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/codeInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:autofillHints="smsOTPCode"
+            android:imeOptions="actionDone"
+            android:inputType="number"
+            android:maxLength="6" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <TextView
+        android:id="@+id/error"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_2"
+        android:accessibilityLiveRegion="polite"
+        android:textColor="?attr/colorError"
+        android:visibility="gone" />
+
+    <com.google.android.material.progressindicator.LinearProgressIndicator
+        android:id="@+id/progress"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_2"
+        android:indeterminate="true"
+        android:visibility="invisible" />
+</LinearLayout>

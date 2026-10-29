@@ -16,6 +16,12 @@ sealed class AccountError(message: String? = null, cause: Throwable? = null) : E
 
     data object ReauthRequired : AccountError("Recent login required")
 
+    /** Sai mã OTP khi xác nhận lại bằng số điện thoại (research R8). */
+    data object WrongOtpCode : AccountError("Wrong OTP code")
+
+    /** Mã OTP hết 5 phút hoặc đã sai 5 lần: phải gửi lại mã. */
+    data object OtpExpired : AccountError("OTP expired")
+
     data class ImpactChanged(val newImpact: DeletionImpact) : AccountError("Deletion impact changed")
 
     data object DeleteTooLarge : AccountError("Too many items to delete")
