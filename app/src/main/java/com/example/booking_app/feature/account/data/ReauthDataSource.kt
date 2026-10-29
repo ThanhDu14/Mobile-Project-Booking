@@ -21,4 +21,7 @@ interface ReauthDataSource {
     suspend fun reauthWithGoogle(idToken: String)
 
     suspend fun reauthWithPhone(verificationId: String, code: String)
+
+    /** Gọi ngay sau `reauthWithPassword` (US5). */
+    suspend fun updatePassword(newPassword: String)
 }

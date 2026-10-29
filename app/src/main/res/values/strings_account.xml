@@ -107,6 +107,9 @@
     <string name="account_password_changed">Đã đổi mật khẩu</string>
     <string name="account_error_wrong_password">Mật khẩu hiện tại không đúng</string>
     <string name="account_error_same_password">Mật khẩu mới phải khác mật khẩu hiện tại</string>
+    <string name="account_error_current_password_required">Nhập mật khẩu hiện tại</string>
+    <string name="account_error_password_mismatch">Mật khẩu nhập lại không khớp</string>
+    <string name="account_password_subtitle">Sau khi đổi, các thiết bị khác đang đăng nhập sẽ bị đăng xuất.</string>
 
     <!-- Đổi email (US7, research R10) -->
     <string name="account_email_new">Email mới</string>

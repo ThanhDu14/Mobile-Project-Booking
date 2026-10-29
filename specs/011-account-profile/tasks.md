@@ -191,7 +191,7 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
 
 - [x] T054 [P] [US2] Tạo `CORE/session/FcmSignOutHook.kt` (`FirebaseMessaging.getInstance().token` → `users/{uid}` `fcmTokens = FieldValue.arrayRemove(token)`, `updatedAt = serverTimestamp()` → `FirebaseMessaging.getInstance().deleteToken()`) và `CORE/session/GoogleSignOutHook.kt` (`CredentialManager.clearCredentialState()`); `@Binds @IntoSet` trong `CORE/di/SessionModule.kt`. Cho T052 xanh — *Implement:* tách `FcmTokenSource`/`FcmTokenStore` để test không cần Firebase; lấy token lỗi vẫn gọi `deleteToken()`
 - [x] T055 [US2] Thêm nút "Đăng xuất" vào `ACC/ui/account/AccountFragment.kt` mở `MaterialAlertDialog` xác nhận; `AccountViewModel.signOut()` gọi `SessionManager.signOut()`; `MainActivity` (T018) đưa về `nav_player` chế độ khách và xóa back stack (FR-007, 010 R15). Cho T053 xanh — *Implement:* nút khóa và hiện vòng xoay trong lúc chạy `SignOutHook`; `MainActivity` (T018) đã `popUpTo(nav_main, inclusive)` nên Back không quay lại trang Tài khoản
-- [ ] T056 [P] [US2] (Nên có) Espresso `ATEST/feature/account/SignOutTest.kt` trên Emulator: đăng xuất → `LoginFragment`, `pressBack()` không quay lại trang Tài khoản — *Chưa làm (2026-10-25):* cần máy ảo đang chạy và `USE_EMULATOR=true`; lưu ý FR-007 về Trang chủ khách chứ không phải `LoginFragment`, sửa mô tả khi làm
+- [ ] T056 [P] [US2] (Nên có) Espresso `ATEST/feature/account/SignOutTest.kt` trên Emulator: đăng xuất → `LoginFragment`, `pressBack()` không quay lại trang Tài khoản — *Chưa làm (2026-10-25):* cần máy ảo đang chạy và `USE_EMULATOR=true`; lưu ý FR-007 về Trang chủ khách chứ không phải `LoginFragment`, sửa mô tả khi làm _(2026-10-29: vẫn bỏ qua — `adb devices` không có máy nào, AVD `Iphone` đang tắt và Firebase Emulator chưa chạy; cần bật cả hai rồi chạy `connectedDebugAndroidTest` với `USE_EMULATOR=true`.)_
 
 **Checkpoint**: US1 + US2 = MVP; quickstart Q11, Q12 đạt.
 
@@ -250,15 +250,15 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
 
 ### Tests for User Story 5 (viết trước, phải fail)
 
-- [ ] T066 [P] [US5] Unit test `TEST/feature/account/domain/validation/DifferentPasswordRuleTest.kt`: mật khẩu mới ≠ mật khẩu hiện tại → hợp lệ; bằng nhau → `account_error_same_password` (so chính xác, phân biệt hoa thường)
-- [ ] T067 [P] [US5] Unit test `TEST/feature/account/ui/password/ChangePasswordViewModelTest.kt` (fake `ChangePasswordUseCase`): dấu tích `len8`, `letterDigit` theo `PasswordRule` của 010; nhập lại không khớp → lỗi `ConfirmPasswordRule`; trùng mật khẩu cũ → lỗi, **không** gọi use case (US5-3); `WrongCurrentPassword` → lỗi dưới ô mật khẩu hiện tại "Mật khẩu hiện tại không đúng" (US5-2); `WeakPassword` → lỗi dưới ô mật khẩu mới; thành công → sự kiện quay lại + snackbar; `isSubmitting` khóa nút; mất mạng → giữ dữ liệu, xóa các ô mật khẩu (FR-023)
+- [x] T066 [P] [US5] Unit test `TEST/feature/account/domain/validation/DifferentPasswordRuleTest.kt`: mật khẩu mới ≠ mật khẩu hiện tại → hợp lệ; bằng nhau → `account_error_same_password` (so chính xác, phân biệt hoa thường) — *Implement (2026-10-29):* rule trả `AccountError?` (`SamePassword`), chuỗi lấy qua `accountErrorMessage`
+- [x] T067 [P] [US5] Unit test `TEST/feature/account/ui/password/ChangePasswordViewModelTest.kt` (fake `ChangePasswordUseCase`): dấu tích `len8`, `letterDigit` theo `PasswordRule` của 010; nhập lại không khớp → lỗi `ConfirmPasswordRule`; trùng mật khẩu cũ → lỗi, **không** gọi use case (US5-3); `WrongCurrentPassword` → lỗi dưới ô mật khẩu hiện tại "Mật khẩu hiện tại không đúng" (US5-2); `WeakPassword` → lỗi dưới ô mật khẩu mới; thành công → sự kiện quay lại + snackbar; `isSubmitting` khóa nút; mất mạng → giữ dữ liệu, xóa các ô mật khẩu (FR-023) — *Implement (2026-10-29):* dùng `ChangePasswordUseCase` thật với `FakeReauthDataSource` thay vì fake use case; thêm ca "chưa nhập mật khẩu hiện tại" và "quá nhiều lần thử"
 
 ### Implementation for User Story 5
 
-- [ ] T068 [P] [US5] Tạo `ACC/domain/validation/DifferentPasswordRule.kt`. Cho T066 xanh
-- [ ] T069 [US5] Thêm `updatePassword(newPassword)` vào `ACC/data/FirebaseReauthDataSource.kt` và tạo `ACC/domain/usecase/ChangePasswordUseCase.kt`: `reauthWithPassword(current)` → `updatePassword(new)`; ánh xạ lỗi qua `AccountErrorMapper`
-- [ ] T070 [US5] Tạo `ACC/ui/password/ChangePasswordViewModel.kt` + `ACC/ui/password/ChangePasswordFragment.kt` + `RES/layout/fragment_account_change_password.xml` (3 ô: hiện tại, mới, nhập lại; hai dấu tích như màn hình đăng ký 010; nút "Đổi mật khẩu"). Cho T067 xanh
-- [ ] T071 [US5] Nối mục "Đổi mật khẩu" trong `AccountFragment` (chỉ khi có provider `password`, theo `accountEntries` T029, FR-015)
+- [x] T068 [P] [US5] Tạo `ACC/domain/validation/DifferentPasswordRule.kt`. Cho T066 xanh
+- [x] T069 [US5] Thêm `updatePassword(newPassword)` vào `ACC/data/FirebaseReauthDataSource.kt` và tạo `ACC/domain/usecase/ChangePasswordUseCase.kt`: `reauthWithPassword(current)` → `updatePassword(new)`; ánh xạ lỗi qua `AccountErrorMapper` — *Implement (2026-10-29):* use case gọi `ReauthenticateUseCase.withPassword` (đã ép làm mới token) rồi `updatePassword`; tự chặn `SamePassword` trước khi gọi Firebase
+- [x] T070 [US5] Tạo `ACC/ui/password/ChangePasswordViewModel.kt` + `ACC/ui/password/ChangePasswordFragment.kt` + `RES/layout/fragment_account_change_password.xml` (3 ô: hiện tại, mới, nhập lại; hai dấu tích như màn hình đăng ký 010; nút "Đổi mật khẩu"). Cho T067 xanh — *Implement (2026-10-29):* màn hình đã có thông báo "các thiết bị khác sẽ bị đăng xuất"; Snackbar "Đã đổi mật khẩu" gắn vào view của Activity để còn hiện sau khi quay lại
+- [x] T071 [US5] Nối mục "Đổi mật khẩu" trong `AccountFragment` (chỉ khi có provider `password`, theo `accountEntries` T029, FR-015) — *Implement (2026-10-29):* chỉ cần khai báo deep link `smashnow://account/password` cho `changePasswordFragment` trong `nav_account.xml`; `AccountFragment` và `accountEntries` đã lọc theo provider `password` từ T029
 
 **Checkpoint**: quickstart Q18 (phần Google/phone), Q19, Q20 đạt.
 

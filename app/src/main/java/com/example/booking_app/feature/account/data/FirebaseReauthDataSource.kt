@@ -38,6 +38,10 @@ class FirebaseReauthDataSource @Inject constructor(
         reauth(requireUser(), PhoneAuthProvider.getCredential(verificationId, code))
     }
 
+    override suspend fun updatePassword(newPassword: String) {
+        requireUser().updatePassword(newPassword).awaitWithTimeout()
+    }
+
     private suspend fun reauth(user: FirebaseUser, credential: AuthCredential) {
         user.reauthenticate(credential).awaitWithTimeout()
     }
