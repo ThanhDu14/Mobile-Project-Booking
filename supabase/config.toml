@@ -418,3 +418,16 @@ enabled = true
 # on-signup tự xác minh Firebase ID token bằng _shared/auth.ts (research R3).
 [functions.on-signup]
 verify_jwt = false
+
+# Owner functions verify Firebase ID tokens with the shared Firebase auth boundary.
+[functions.owner-application-submit]
+verify_jwt = false
+
+[functions.get-owner-application-status]
+verify_jwt = false
+
+[functions.owner-document-download]
+verify_jwt = false
+
+[functions.owner-district-catalog]
+verify_jwt = false

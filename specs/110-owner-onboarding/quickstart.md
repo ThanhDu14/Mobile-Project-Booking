@@ -1,12 +1,47 @@
 # Hướng dẫn kiểm chứng: Feature 110
 
-Tài liệu này mô tả các tình huống cần kiểm chứng sau khi triển khai. Repo hiện chưa có Feature 110, Edge Function hay migration Supabase nên chưa thể chạy các tình huống này. Cần chốt hợp đồng tích hợp trong [ranh giới tích hợp](contracts/owner-onboarding-boundaries.md) trước khi triển khai. Không chạy kiểm thử với dự án Firebase/Supabase production.
+Tài liệu này hướng dẫn kiểm tra trên môi trường local/emulator; không chạy kiểm thử với Firebase/Supabase production. Tại ngày 2026-10-26, repository có Android form/review/status flow, status/submit/catalog/document-download Edge Functions và Firestore Rules tests. Android có thể yêu cầu signed URL mới để mở giấy tờ; URL không được lưu. Submit vẫn fail-closed do verifier chưa xác minh object Storage; chưa có sign-upload hoặc upload UI. README chưa quyết định bucket/path cho ảnh venue trước khi application được duyệt, nên ảnh upload và end-to-end submit chưa sẵn sàng. Có source/test file không thay thế kiểm chứng local.
+
+## Trạng thái triển khai hiện tại
+
+| Phần | Hiện trạng |
+|---|---|
+| Firebase auth và Firestore status/submit | Có shared auth/transaction và handler; status trả dữ liệu applicant-owned hiện hành (gồm draft khi REJECTED); submit từ chối an toàn khi chưa xác minh được tệp. App đối chiếu submit với status read-back authoritative. |
+| District catalog | Có authenticated Edge Function đọc `districts` và Android picker; cần chạy Edge Function/Android tests. |
+| Private document download | Android gọi handler để lấy signed URL 5 phút sau khi chọn giấy tờ; handler xác minh caller, application ID và `documentPaths`. Android không lưu URL, lỗi có thể xin URL mới. Chưa chạy Deno/Supabase local test. |
+| Upload giấy tờ / ảnh venue | Chưa triển khai. Cần sign-upload, local bucket configuration/policies và object verification; đường dẫn ảnh venue trước duyệt chưa được xác định trong README. |
+| Applicant document download | Mỗi lần mở/thử lại đều gọi `owner-document-download` mới, không tái sử dụng URL cũ; handler xác minh UID, application và path. Cần chạy Deno/local Storage test để xác nhận trên môi trường local. |
+| Local `owner-docs` bucket | Migration tạo bucket private nếu chưa tồn tại, giới hạn MIME JPEG/PNG/WebP và 2 MB; không thêm policy direct client. Owner docs access đi qua Edge Function đã xác minh Firestore. |
+| Map marker | Chưa có SDK bản đồ trong dependency hiện tại; form mới nhận tọa độ thủ công. |
+| UI / emulator integration | Android unit suite chạy thành công (214 tests); debug APK đã build thành công. Chưa có Android UI instrumentation tests cho luồng upload/submit vì upload boundary chưa sẵn sàng. |
+
+## Lệnh kiểm thử
+
+Chạy từ thư mục repository, khi đã cài JDK/Android SDK, Deno, Firebase CLI và Supabase CLI theo hướng dẫn dự án:
+
+```powershell
+.\gradlew.bat testDebugUnitTest
+.\gradlew.bat assembleDebug
+Push-Location firestore-tests; npm.cmd test; Pop-Location
+supabase start
+supabase functions serve --env-file .env.local
+```
+
+`npm.cmd test` tự khởi chạy Firebase Firestore Emulator qua `firebase-tools`; lệnh Supabase khởi động dịch vụ local và Edge Functions. Chạy riêng Deno handler tests bằng `deno test --allow-env --allow-net` theo từng file `handler.test.ts` trong các thư mục `owner-district-catalog`, `owner-document-download`, `owner-application-submit` và `get-owner-application-status`. Cấu hình local các biến Firebase service-account và Supabase service-role cần thiết trong `.env.local` không commit; không đưa secret vào source hoặc log. Ghi kết quả thực chạy ở cuối AI log, không xem lệnh chưa chạy là pass.
+
+### Kết quả kiểm chứng thực tế gần nhất (2026-10-26)
+
+- `.\gradlew.bat testDebugUnitTest --offline --no-daemon`: thành công; 214 unit tests, 0 failure, 0 error, 0 skipped.
+- `.\gradlew.bat testDebugUnitTest assembleDebug --offline --no-daemon`: thành công trước đó trong cùng lượt triển khai; unit tests pass và debug APK được assemble.
+- `firestore-tests`: `vitest run test/owner-applications.test.ts` không khởi tạo được do Firestore Emulator host/port chưa cấu hình; 13 test bị skip, không tính là pass.
+- Deno, Firebase CLI/Emulator và Supabase CLI chưa có/sẵn để chạy handler, Security Rules hoặc Storage integration tests. Chưa chạy Android instrumentation tests.
+- `git diff --check`: thành công; chỉ có cảnh báo line ending CRLF từ Git.
 
 ## Điều kiện chuẩn bị
 
-- Cấu hình Android dùng Firebase Emulator Suite và Supabase local.
+- Cấu hình Android dùng Firebase Emulator Suite và Supabase local; function custom auth cần tắt gateway JWT verification theo `supabase/config.toml` vì handler tự verify Firebase ID token.
 - Tài khoản kiểm thử: player đã đăng nhập có `ownerStatus=NONE`; player `PENDING`; player `REJECTED` kèm lý do; owner đã duyệt; người dùng không liên quan; tài khoản admin phục vụ kiểm tra policy.
-- Policy Storage/hàm cục bộ và fixture Rules Emulator khớp [mô hình dữ liệu](data-model.md).
+- Khi Storage upload được triển khai, policy/hàm local và fixture Rules Emulator phải khớp [mô hình dữ liệu](data-model.md). Hiện không có policy upload owner applicant; không cấp quyền thủ công để tiếp tục test.
 - Tệp ảnh hợp lệ JPEG, PNG, WebP; tệp MIME không hợp lệ, hỏng, quá lớn (>2 MB) và upload bị ngắt.
 - Khi bổ sung phụ thuộc/lệnh kiểm thử, ghi lại lệnh đã xác nhận trong hướng dẫn này; tài liệu Plan không tự đặt tên tác vụ Gradle chưa kiểm chứng.
 
@@ -27,5 +62,5 @@ Tài liệu này mô tả các tình huống cần kiểm chứng sau khi triể
 
 - **Unit**: kiểm tra dữ liệu biểu mẫu, ánh xạ trạng thái sang UI, điều kiện gửi, xử lý phản hồi cũ và thử lại bằng repository giả.
 - **Firebase Emulator**: kiểm tra được phép/bị chặn khi đọc/ghi hồ sơ của mình/người khác và trường được bảo vệ; kiểm tra gửi đồng thời/trạng thái cũ.
-- **Supabase local**: kiểm tra `owner-docs` private RLS, quyền của người nộp/admin/người khác, MIME/kích thước và hạn signed URL; kiểm tra policy upload ảnh venue cho người nộp sau khi được xác định.
+- **Supabase local**: kiểm tra `owner-docs` private RLS, quyền applicant/admin/người khác, MIME/kích thước và hạn signed URL; kiểm tra upload ảnh venue chỉ sau khi path trước duyệt được nhóm chốt. Handler tests hiện kiểm tra ownership/path và URL mới khi retry, nhưng chưa thay thế local Storage integration.
 - **UI**: luồng gửi mới và nộp lại hồ sơ bị từ chối, trạng thái tải/rỗng/lỗi, tiến trình upload, thử lại và accessibility.

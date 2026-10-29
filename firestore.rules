@@ -81,5 +81,26 @@ service cloud.firestore {
                     && request.resource.data.updatedAt == request.time
                     && validDisplayName();
     }
+
+    // ---------- ownerApplications (D, spec 110; T001/T003 boundary) ----------
+    // Applicant chỉ được đọc document có uid của chính mình; admin có thể đọc
+    // từng hồ sơ và truy vấn hàng đợi. Submit/resubmit luôn đi qua Edge Function
+    // transaction, vì vậy mọi client create/update/delete đều bị từ chối.
+    match /ownerApplications/{applicationId} {
+      function isApplicant() {
+        return isInitialized()
+            && resource.data.uid == request.auth.uid;
+      }
+
+      allow get: if isApplicant() || isAdmin();
+      allow list: if isAdmin();
+      allow create, update, delete: if false;
+    }
+
+    // Danh mục districts chưa có policy đọc được chấp thuận cho app client.
+    // Không thêm allow ở đây: Firestore mặc định từ chối truy cập.
+    match /districts/{districtId} {
+      allow read, write: if false;
+    }
   }
 }

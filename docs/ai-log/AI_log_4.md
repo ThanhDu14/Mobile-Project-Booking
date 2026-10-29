@@ -1,27 +1,43 @@
-﻿# Nhật ký sử dụng AI – Thành viên 4 (Minh Nhựt)
+# Nhật ký sử dụng AI – Thành viên 4 (Minh Nhựt)
 
 Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 
-| \#  | Ngày       | Nội dung                                                                                                                   | Nhóm |
-| --- | ---------- | -------------------------------------------------------------------------------------------------------------------------- | ---- |
-| 1   | 2026-10-06 | Viết và làm rõ spec 100 (thông báo) bằng AI và `$speckit-clarify`                                                          | 10   |
-| 2   | 2026-10-07 | Viết spec 110 (đăng ký chủ sân) bằng `$speckit-specify` và làm rõ bằng `$speckit-clarify`                                  | 11   |
-| 3   | 2026-10-08 | Viết và làm rõ spec 111 (quản lý cơ sở, sân con, bảng giá và khóa giờ) bằng AI, `$speckit-clarify` và `$speckit-checklist` | 11   |
-| 4   | 2026-10-08 | Viết và làm rõ spec 112 (vận hành cơ sở chủ sân) bằng AI và `$speckit-clarify`                                             | 11   |
-| 5   | 2026-10-08 | Viết và làm rõ spec 120 (quản trị, hồ sơ chủ sân và báo cáo) bằng `$speckit-specify` và `$speckit-clarify`                 | 12   |
-| 6   | 2026-10-15 | Lập implementation plan cho Feature 100 (thông báo) bằng `$speckit-plan`                                                   | 10   |
-| 7   | 2026-10-15 | Lập implementation plan cho Feature 110 (đăng ký chủ sân) bằng `$speckit-plan` và viết lại tài liệu bằng tiếng Việt        | 11   |
-| 8   | 2026-10-16 | Lập implementation plan cho Feature 111 (thiết lập cơ sở chủ sân) bằng `$speckit-plan`                                     | 11   |
-| 9   | 2026-10-16 | Lập implementation plan cho Feature 112 (vận hành chủ sân) bằng `$speckit-plan`                                            | 11   |
-| 10  | 2026-10-16 | Lập implementation plan cho Feature 120 (quản trị và kiểm duyệt) bằng `$speckit-plan`                                      | 12   |
-| 11  | 2026-10-19 | Tạo Tasks Feature 100 bằng `$speckit-tasks`, phân tích bằng `$speckit-analyze` và cập nhật Tasks theo kết quả phân tích    | 10   |
-| 12  | 2026-10-19 | Tạo Tasks Feature 110 bằng `$speckit-tasks`, rà soát bằng `$speckit-analyze` và cập nhật Tasks theo kết quả phân tích      | 11   |
-| 13  | 2026-10-19 | Tạo Tasks Feature 111 bằng `$speckit-tasks`, phân tích bằng `$speckit-analyze` và cập nhật Tasks theo báo cáo              | 11   |
-| 14  | 2026-10-19 | Tạo Tasks Feature 112 bằng `$speckit-tasks`, phân tích bằng `$speckit-analyze` và cập nhật Tasks theo các findings         | 11   |
-| 15  | 2026-10-19 | Tạo Tasks Feature 120 bằng `$speckit-tasks`, phân tích bằng `$speckit-analyze` và cập nhật Tasks theo findings U1–U3        | 12   |
-| 16  | 2026-10-20 | Phân tích cuối 5 features 100, 110, 111, 112, 120 bằng `$speckit-analyze`; đối chiếu coverage, security, dependency và findings cũ | 10–12 |
-| 17  | 2026-10-20 | Sửa traceability matrix Feature 120 bằng `$speckit-tasks` theo báo cáo Analyze; chỉ cập nhật `tasks.md` | 12   |
-| 18  | 2026-10-20 | Phân tích lại Feature 120 bằng `$speckit-analyze` sau khi sửa traceability matrix | 12   |
+| \#  | Ngày       | Nội dung                                                                                                                                                            | Nhóm  |
+| --- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
+| 1   | 2026-10-06 | Viết và làm rõ spec 100 (thông báo) bằng AI và `$speckit-clarify`                                                                                                   | 10    |
+| 2   | 2026-10-07 | Viết spec 110 (đăng ký chủ sân) bằng `$speckit-specify` và làm rõ bằng `$speckit-clarify`                                                                           | 11    |
+| 3   | 2026-10-08 | Viết và làm rõ spec 111 (quản lý cơ sở, sân con, bảng giá và khóa giờ) bằng AI, `$speckit-clarify` và `$speckit-checklist`                                          | 11    |
+| 4   | 2026-10-08 | Viết và làm rõ spec 112 (vận hành cơ sở chủ sân) bằng AI và `$speckit-clarify`                                                                                      | 11    |
+| 5   | 2026-10-08 | Viết và làm rõ spec 120 (quản trị, hồ sơ chủ sân và báo cáo) bằng `$speckit-specify` và `$speckit-clarify`                                                          | 12    |
+| 6   | 2026-10-15 | Lập implementation plan cho Feature 100 (thông báo) bằng `$speckit-plan`                                                                                            | 10    |
+| 7   | 2026-10-15 | Lập implementation plan cho Feature 110 (đăng ký chủ sân) bằng `$speckit-plan` và viết lại tài liệu bằng tiếng Việt                                                 | 11    |
+| 8   | 2026-10-16 | Lập implementation plan cho Feature 111 (thiết lập cơ sở chủ sân) bằng `$speckit-plan`                                                                              | 11    |
+| 9   | 2026-10-16 | Lập implementation plan cho Feature 112 (vận hành chủ sân) bằng `$speckit-plan`                                                                                     | 11    |
+| 10  | 2026-10-16 | Lập implementation plan cho Feature 120 (quản trị và kiểm duyệt) bằng `$speckit-plan`                                                                               | 12    |
+| 11  | 2026-10-19 | Tạo Tasks Feature 100 bằng `$speckit-tasks`, phân tích bằng `$speckit-analyze` và cập nhật Tasks theo kết quả phân tích                                             | 10    |
+| 12  | 2026-10-19 | Tạo Tasks Feature 110 bằng `$speckit-tasks`, rà soát bằng `$speckit-analyze` và cập nhật Tasks theo kết quả phân tích                                               | 11    |
+| 13  | 2026-10-19 | Tạo Tasks Feature 111 bằng `$speckit-tasks`, phân tích bằng `$speckit-analyze` và cập nhật Tasks theo báo cáo                                                       | 11    |
+| 14  | 2026-10-19 | Tạo Tasks Feature 112 bằng `$speckit-tasks`, phân tích bằng `$speckit-analyze` và cập nhật Tasks theo các findings                                                  | 11    |
+| 15  | 2026-10-19 | Tạo Tasks Feature 120 bằng `$speckit-tasks`, phân tích bằng `$speckit-analyze` và cập nhật Tasks theo findings U1–U3                                                | 12    |
+| 16  | 2026-10-20 | Phân tích cuối 5 features 100, 110, 111, 112, 120 bằng `$speckit-analyze`; đối chiếu coverage, security, dependency và findings cũ                                  | 10–12 |
+| 17  | 2026-10-20 | Sửa traceability matrix Feature 120 bằng `$speckit-tasks` theo báo cáo Analyze; chỉ cập nhật `tasks.md`                                                             | 12    |
+| 18  | 2026-10-20 | Phân tích lại Feature 120 bằng `$speckit-analyze` sau khi sửa traceability matrix                                                                                   | 12    |
+| 19  | 2026-10-26 | Implement phần domain độc lập của Feature 110 bằng `$speckit-implement`; thêm model, validator và unit test, giữ nguyên các blocker contract                        | 11    |
+| 20  | 2026-10-26 | Rà soát cấu trúc implementation Feature 110 theo plan/tasks; hoàn thiện T005–T006 và sửa mapping status/time theo schema đã có                                      | 11    |
+| 21  | 2026-10-26 | Tiếp tục implement UI form/review Feature 110 theo tasks; thêm fragment, layout, resources, navigation và giữ blocker map/district/upload/submit                    | 11    |
+| 22  | 2026-10-26 | Củng cố validation gate, điều hướng form/review và unit test; rà dependency map/district trước khi hoàn thiện UI, không thêm SDK hoặc giả lập backend               | 11    |
+| 23  | 2026-10-26 | Kiểm tra bảo mật Firestore Feature 110; bổ sung read policy/deny-by-default cho `ownerApplications`, deny `districts` và chạy test Firebase Emulator                | 11    |
+| 24  | 2026-10-26 | Rà soát tiếp UI/domain/test Feature 110; làm rõ trạng thái tệp nháp chưa upload, hiển thị lỗi tọa độ đầy đủ và chạy lại Emulator/build                              | 11    |
+| 25  | 2026-10-26 | Phân tích T001 Application identity/history; đối chiếu auto-ID, ownerStatus, revoke và resubmit, cập nhật boundary contract với phương án chờ nhóm xác nhận         | 11    |
+| 26  | 2026-10-26 | Ghi nhận nhóm đã chốt Phương án 1 cho T001; cập nhật decision table, nêu giới hạn query sau revoke và chuyển atomicity/retry/idempotency sang T003                  | 11    |
+| 27  | 2026-10-26 | Phân tích T003 submit/resubmit consistency; lập ma trận race, timeout, retry, stale-write và các phương án query application sau revoke; giữ T003 chờ nhóm xác nhận | 11    |
+| 28  | 2026-10-26 | Chuẩn bị bảng quyết định kỹ thuật T001/T003 về server boundary, identity, transaction, retry, stale-write và Emulator/local testing; không chốt thay nhóm           | 11    |
+| 29  | 2026-10-26 | Implement sau khi nhóm chốt; hoàn tất T001, thêm composite index ownerApplications và ghi nhận blocker T003                                                         | 11    |
+| 30  | 2026-10-26 | Implement status mapper/UI và rejected-edit domain Feature 110; bổ sung unit tests cho trạng thái, ambiguous result, conflict và giữ draft                          | 11    |
+| 31  | 2026-10-26 | Tiếp tục Feature 110: nối status authoritative, thêm rejected form flow, submit transaction fail-closed, timeout/conflict và tests                                  | 11    |
+| 32  | 2026-10-26 | Tiếp tục implement Feature 110: thêm district catalog server/picker và applicant signed-download; cập nhật quickstart, giữ blocker upload/map/integration rõ ràng   | 11    |
+| 33  | 2026-10-26 | Nối signed-download vào Android, thêm owner-docs local bootstrap và mở rộng Rules/download tests; cập nhật contract, quickstart và blockers                         | 11    |
+| 34  | 2026-10-26 | Hoàn thiện status presentation/refresh và unit coverage cho resubmit/conflict; chạy Android test/build, sửa tasks và quickstart theo kết quả thực tế                | 11    |
 
 ---
 
@@ -1047,14 +1063,14 @@ analyze/implement trong lượt cập nhật.
 
 ## Mục 14: Tạo, phân tích và cập nhật Tasks Feature 112 – Owner Operations
 
-| Trường                   | Nội dung                                                                                                                                                            |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Ngày                     | 2026-10-19                                                                                                                                                          |
-| Người thực hiện          | Minh Nhựt                                                                                                                                                          |
-| Nhóm tính năng liên quan | 11 – Chủ sân (spec `specs/112-owner-operations`)                                                                                                                     |
-| Công cụ AI               | Codex (GPT-6), `$speckit-tasks`, `$speckit-analyze`                                                                                                                  |
+| Trường                   | Nội dung                                                                                                                                                              |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-10-19                                                                                                                                                            |
+| Người thực hiện          | Minh Nhựt                                                                                                                                                             |
+| Nhóm tính năng liên quan | 11 – Chủ sân (spec `specs/112-owner-operations`)                                                                                                                      |
+| Công cụ AI               | Codex (GPT-6), `$speckit-tasks`, `$speckit-analyze`                                                                                                                   |
 | Mục đích                 | Lập danh sách task Feature 112, rà soát tính nhất quán với spec/plan/Constitution và cập nhật Tasks theo findings mà không tự quyết định nghiệp vụ hoặc schema còn mở |
-| Nhánh Git                | `feature/112-owner-operations-tasks`                                                                                                                                |
+| Nhánh Git                | `feature/112-owner-operations-tasks`                                                                                                                                  |
 
 ### Prompt đã dùng
 
@@ -1119,34 +1135,35 @@ data-model, database README hoặc feature khác; không chạy analyze/implemen
 
 ### Phần đã sử dụng / chỉnh sửa / bỏ
 
-| Phần                  | Quyết định                                                                                       | Lý do                                                                                 |
-| --------------------- | ------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------- |
-| T001–T002             | Gộp thành task rà soát coverage và file ownership                                                 | Hai task setup trùng mục tiêu                                                         |
-| T005/T006             | Tách booking contract khỏi drop-in, registration check-in và voucher contracts                  | Tránh dependency không liên quan                                                      |
-| Voucher `venueId`     | Thêm xác nhận database owner và gate cho voucher tasks                                           | Tài liệu chưa thống nhất; không tự thêm schema                                        |
-| T009, T012–T013       | Chỉ rõ Rules test path/command; đặt điều kiện cho function transaction tests                     | Rules harness có sẵn; Edge Function harness/path chưa có trong checkout              |
-| T022–T023, T032, T039 | Ghi rõ test behavior và dependency xác nhận function path/harness                                 | Không dùng Rules tests để khẳng định transaction/token phía server                   |
-| T035                  | Chuyển thành integration handoff cho `checkin-booking`                                            | Không sửa function thuộc feature khác                                                 |
-| T038–T042             | Chặn voucher implementation đến khi dữ liệu/contract được xác nhận                               | Không suy đoán `venueId` là context hay stored field                                  |
-| T052–T054             | Chuyển Phase 8 thành rà soát coverage và chạy lại suite                                          | Tránh lặp test/layout đã giao trong từng story                                        |
-| T058                  | Bổ sung usability study đo SC-007, giữ ngưỡng ≥90%                                               | Cỡ mẫu/điều kiện nghiên cứu chưa có trong spec                                        |
-| Artifact khác         | Không chỉnh sửa                                                                                  | Giữ phạm vi ở Tasks Feature 112                                                       |
+| Phần                  | Quyết định                                                                     | Lý do                                                                   |
+| --------------------- | ------------------------------------------------------------------------------ | ----------------------------------------------------------------------- |
+| T001–T002             | Gộp thành task rà soát coverage và file ownership                              | Hai task setup trùng mục tiêu                                           |
+| T005/T006             | Tách booking contract khỏi drop-in, registration check-in và voucher contracts | Tránh dependency không liên quan                                        |
+| Voucher `venueId`     | Thêm xác nhận database owner và gate cho voucher tasks                         | Tài liệu chưa thống nhất; không tự thêm schema                          |
+| T009, T012–T013       | Chỉ rõ Rules test path/command; đặt điều kiện cho function transaction tests   | Rules harness có sẵn; Edge Function harness/path chưa có trong checkout |
+| T022–T023, T032, T039 | Ghi rõ test behavior và dependency xác nhận function path/harness              | Không dùng Rules tests để khẳng định transaction/token phía server      |
+| T035                  | Chuyển thành integration handoff cho `checkin-booking`                         | Không sửa function thuộc feature khác                                   |
+| T038–T042             | Chặn voucher implementation đến khi dữ liệu/contract được xác nhận             | Không suy đoán `venueId` là context hay stored field                    |
+| T052–T054             | Chuyển Phase 8 thành rà soát coverage và chạy lại suite                        | Tránh lặp test/layout đã giao trong từng story                          |
+| T058                  | Bổ sung usability study đo SC-007, giữ ngưỡng ≥90%                             | Cỡ mẫu/điều kiện nghiên cứu chưa có trong spec                          |
+| Artifact khác         | Không chỉnh sửa                                                                | Giữ phạm vi ở Tasks Feature 112                                         |
 
 ### Cách kiểm chứng
 
 - Kiểm tra có 58 checklist task, ID không trùng và format task hợp lệ.
 - Các task test dùng harness/lệnh đã có khi repository cung cấp; phần còn thiếu được ghi thành dependency/gate.
 - Không chạy tests, `$speckit-analyze` hoặc `$speckit-implement` sau lần cập nhật Tasks.
+
 ## Mục 15: Tạo, phân tích và cập nhật Tasks Feature 120 – Admin
 
-| Trường | Nội dung |
-|---|---|
-| Ngày | 2026-10-19 |
-| Người thực hiện | Minh Nhựt |
-| Nhóm tính năng liên quan | 12 – Quản trị và kiểm duyệt (spec `specs/120-admin`) |
-| Công cụ AI | Codex (GPT-6), `$speckit-tasks`, `$speckit-analyze` |
-| Mục đích | Tạo Tasks Feature 120, phân tích độ khớp spec/plan/tasks và cập nhật theo findings mà không tự quyết định schema hoặc hợp đồng tích hợp còn mở |
-| Nhánh Git | Chưa ghi nhận |
+| Trường                   | Nội dung                                                                                                                                       |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-10-19                                                                                                                                     |
+| Người thực hiện          | Minh Nhựt                                                                                                                                      |
+| Nhóm tính năng liên quan | 12 – Quản trị và kiểm duyệt (spec `specs/120-admin`)                                                                                           |
+| Công cụ AI               | Codex (GPT-6), `$speckit-tasks`, `$speckit-analyze`                                                                                            |
+| Mục đích                 | Tạo Tasks Feature 120, phân tích độ khớp spec/plan/tasks và cập nhật theo findings mà không tự quyết định schema hoặc hợp đồng tích hợp còn mở |
+| Nhánh Git                | Chưa ghi nhận                                                                                                                                  |
 
 ### Prompt đã dùng
 
@@ -1228,16 +1245,16 @@ hoặc viết implementation code.
 
 ### Phần đã sử dụng / chỉnh sửa / bỏ
 
-| Phần | Quyết định | Lý do |
-|---|---|---|
-| T005 | Mở rộng thành dependency gate cho report targets | Quyền đọc report không tự động cấp quyền đọc dữ liệu target |
-| T009, T014–T015 | Ghi điều kiện chốt server function/file path | Repository chưa có Supabase function layout hoặc callable contract |
-| T010–T011, T022, T031 | Ghi path test `.test.ts` cụ thể theo convention đã xác minh | `firestore-tests/test/base.test.ts` là test file hiện có |
-| T012, T013, T021, T030 | Giữ tên file Android là nội dung cần xác định sau | Chưa có package admin hoặc convention test theo feature trong source |
-| T025–T027, T034 | Gắn target read/action với gate và owner tương ứng | Phân biệt moderation report với quyền truy cập dữ liệu do feature khác sở hữu |
-| T054 | Bổ sung quy trình đo SC-006 và điều kiện hồ sơ đầy đủ | Cần kết quả đo có thể lặp lại, nhưng không tự đặt nghiệp vụ ngoài spec |
-| Dependency graph, traceability, acceptance criteria, open gates | Cập nhật tham chiếu T005 và SC-006 | Phản ánh các điều kiện mới và giữ coverage FR/SC |
-| Các task còn lại | Giữ nguyên ID và nội dung | Không liên quan các findings |
+| Phần                                                            | Quyết định                                                  | Lý do                                                                         |
+| --------------------------------------------------------------- | ----------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| T005                                                            | Mở rộng thành dependency gate cho report targets            | Quyền đọc report không tự động cấp quyền đọc dữ liệu target                   |
+| T009, T014–T015                                                 | Ghi điều kiện chốt server function/file path                | Repository chưa có Supabase function layout hoặc callable contract            |
+| T010–T011, T022, T031                                           | Ghi path test `.test.ts` cụ thể theo convention đã xác minh | `firestore-tests/test/base.test.ts` là test file hiện có                      |
+| T012, T013, T021, T030                                          | Giữ tên file Android là nội dung cần xác định sau           | Chưa có package admin hoặc convention test theo feature trong source          |
+| T025–T027, T034                                                 | Gắn target read/action với gate và owner tương ứng          | Phân biệt moderation report với quyền truy cập dữ liệu do feature khác sở hữu |
+| T054                                                            | Bổ sung quy trình đo SC-006 và điều kiện hồ sơ đầy đủ       | Cần kết quả đo có thể lặp lại, nhưng không tự đặt nghiệp vụ ngoài spec        |
+| Dependency graph, traceability, acceptance criteria, open gates | Cập nhật tham chiếu T005 và SC-006                          | Phản ánh các điều kiện mới và giữ coverage FR/SC                              |
+| Các task còn lại                                                | Giữ nguyên ID và nội dung                                   | Không liên quan các findings                                                  |
 
 ### Cách kiểm chứng
 
@@ -1251,14 +1268,14 @@ hoặc viết implementation code.
 
 ## Mục 16: Analyze cuối cho Features 100, 110, 111, 112 và 120
 
-| Trường | Nội dung |
-|---|---|
-| Ngày | 2026-10-20 |
-| Người thực hiện | Minh Nhựt |
-| Nhóm tính năng liên quan | 10 – Thông báo; 11 – Owner; 12 – Admin |
-| Công cụ AI | Codex (GPT-6), `$speckit-analyze` |
-| Mục đích | Đối chiếu spec, plan, tasks, data model, research, Constitution, Database README và dependency của năm features; xác minh findings cũ đã được xử lý hay còn gate mở |
-| Phạm vi | `specs/100-notification/`, `110-owner-onboarding/`, `111-owner-venue-setup/`, `112-owner-operations/`, `120-admin/` |
+| Trường                   | Nội dung                                                                                                                                                            |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-10-20                                                                                                                                                          |
+| Người thực hiện          | Minh Nhựt                                                                                                                                                           |
+| Nhóm tính năng liên quan | 10 – Thông báo; 11 – Owner; 12 – Admin                                                                                                                              |
+| Công cụ AI               | Codex (GPT-6), `$speckit-analyze`                                                                                                                                   |
+| Mục đích                 | Đối chiếu spec, plan, tasks, data model, research, Constitution, Database README và dependency của năm features; xác minh findings cũ đã được xử lý hay còn gate mở |
+| Phạm vi                  | `specs/100-notification/`, `110-owner-onboarding/`, `111-owner-venue-setup/`, `112-owner-operations/`, `120-admin/`                                                 |
 
 ### Prompt đã dùng
 
@@ -1297,14 +1314,14 @@ nếu prerequisite script hoặc artifact không truy cập được.
 
 ## Mục 17: Sửa Traceability Matrix của Feature 120
 
-| Trường | Nội dung |
-|---|---|
-| Ngày | 2026-10-20 |
-| Người thực hiện | Minh Nhựt |
-| Nhóm tính năng liên quan | 12 – Quản trị và kiểm duyệt (`specs/120-admin`) |
-| Công cụ AI | Codex (GPT-6), `$speckit-tasks` |
-| Mục đích | Sửa traceability matrix Feature 120 theo kết quả Analyze và phân biệt task Admin với các task xác minh boundary của feature khác |
-| Phạm vi chỉnh sửa | Chỉ `specs/120-admin/tasks.md` |
+| Trường                   | Nội dung                                                                                                                         |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-10-20                                                                                                                       |
+| Người thực hiện          | Minh Nhựt                                                                                                                        |
+| Nhóm tính năng liên quan | 12 – Quản trị và kiểm duyệt (`specs/120-admin`)                                                                                  |
+| Công cụ AI               | Codex (GPT-6), `$speckit-tasks`                                                                                                  |
+| Mục đích                 | Sửa traceability matrix Feature 120 theo kết quả Analyze và phân biệt task Admin với các task xác minh boundary của feature khác |
+| Phạm vi chỉnh sửa        | Chỉ `specs/120-admin/tasks.md`                                                                                                   |
 
 ### Prompt đã dùng
 
@@ -1331,14 +1348,14 @@ không chạy Analyze hoặc Implement.
 
 ### Phần đã sử dụng / chỉnh sửa / bỏ
 
-| Phần | Quyết định | Lý do |
-|---|---|---|
-| Traceability Matrix | Thay mapping cũ bằng mapping từng FR và SC Admin | Các hàng cũ có requirement IDs của Notification |
-| FR-014a, FR-015–FR-016, SC-006 | Ánh xạ riêng, giữ nguyên ID và hậu tố | Tránh bỏ sót requirement |
-| FR-005, FR-006, SC-002 | Ghi rõ dependency Feature 110 và giới hạn T053 | T053 chỉ là boundary/integration check |
-| FR-012 `DROP_IN` + `HIDE_CONTENT` | Giữ gate T005, không đánh dấu đã hỗ trợ | Chưa xác nhận field/state và quyền xử lý |
-| Các gate còn lại | Giữ authorization, report target, schema/metrics, voucher, notification, application và fixture SC-006 | Không tự quyết định nghiệp vụ/schema để đóng gate |
-| Task count | Giữ nguyên 54 task IDs | Không cần thêm task để sửa traceability |
+| Phần                              | Quyết định                                                                                             | Lý do                                             |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------- |
+| Traceability Matrix               | Thay mapping cũ bằng mapping từng FR và SC Admin                                                       | Các hàng cũ có requirement IDs của Notification   |
+| FR-014a, FR-015–FR-016, SC-006    | Ánh xạ riêng, giữ nguyên ID và hậu tố                                                                  | Tránh bỏ sót requirement                          |
+| FR-005, FR-006, SC-002            | Ghi rõ dependency Feature 110 và giới hạn T053                                                         | T053 chỉ là boundary/integration check            |
+| FR-012 `DROP_IN` + `HIDE_CONTENT` | Giữ gate T005, không đánh dấu đã hỗ trợ                                                                | Chưa xác nhận field/state và quyền xử lý          |
+| Các gate còn lại                  | Giữ authorization, report target, schema/metrics, voucher, notification, application và fixture SC-006 | Không tự quyết định nghiệp vụ/schema để đóng gate |
+| Task count                        | Giữ nguyên 54 task IDs                                                                                 | Không cần thêm task để sửa traceability           |
 
 ### Cách kiểm chứng
 
@@ -1351,14 +1368,14 @@ không chạy Analyze hoặc Implement.
 
 ## Mục 18: Analyze lại Feature 120 sau khi sửa ma trận
 
-| Trường | Nội dung |
-|---|---|
-| Ngày | 2026-10-20 |
-| Người thực hiện | Minh Nhựt |
-| Nhóm tính năng liên quan | 12 – Quản trị và kiểm duyệt (`specs/120-admin`) |
-| Công cụ AI | Codex (GPT-6), `$speckit-analyze` |
-| Mục đích | Xác minh traceability matrix mới và rà soát coverage, dependency, security, ownership và Constitution alignment của Feature 120 |
-| Phạm vi | `spec.md`, `plan.md`, `tasks.md`, `data-model.md`, `research.md`, Constitution và Database README |
+| Trường                   | Nội dung                                                                                                                        |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-10-20                                                                                                                      |
+| Người thực hiện          | Minh Nhựt                                                                                                                       |
+| Nhóm tính năng liên quan | 12 – Quản trị và kiểm duyệt (`specs/120-admin`)                                                                                 |
+| Công cụ AI               | Codex (GPT-6), `$speckit-analyze`                                                                                               |
+| Mục đích                 | Xác minh traceability matrix mới và rà soát coverage, dependency, security, ownership và Constitution alignment của Feature 120 |
+| Phạm vi                  | `spec.md`, `plan.md`, `tasks.md`, `data-model.md`, `research.md`, Constitution và Database README                               |
 
 ### Prompt đã dùng
 
@@ -1394,3 +1411,635 @@ bắt đầu.
 - Kiểm tra tính hợp lệ và duy nhất của task IDs; rà lại plan, data model, research, Constitution và Database README.
 - Phân biệt coverage có task, coverage phụ thuộc gate và phần thuộc Feature 110.
 - Không thay đổi repository.
+
+---
+
+## Mục 19: Implement phần domain độc lập của Feature 110
+
+| Trường                   | Nội dung                                                                                                 |
+| ------------------------ | -------------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-10-26                                                                                               |
+| Người thực hiện          | Minh Nhựt                                                                                                |
+| Nhóm tính năng liên quan | 11 – Đăng ký chủ sân (`specs/110-owner-onboarding`)                                                      |
+| Công cụ AI               | Codex (GPT-6), `$speckit-implement`                                                                      |
+| Mục đích                 | Triển khai phần domain có thể làm an toàn từ `tasks.md`, không tự quyết định schema hoặc contract còn mở |
+| Phạm vi                  | Domain model/validator, unit test và trạng thái T011 trong `specs/110-owner-onboarding/tasks.md`         |
+
+### Prompt đã dùng
+
+```text
+$speckit-implement Triển khai Feature 110 – Owner Onboarding theo workflow Spec Kit hiện có.
+Đọc Constitution, hướng dẫn repository, spec/plan/tasks và các contract liên quan.
+Dùng tasks.md làm nguồn công việc chính; triển khai trực tiếp; chạy test/build; chỉ đánh dấu task khi đã kiểm chứng.
+Với dependency hoặc contract chưa thống nhất, không tự bịa schema, API hay logic nghiệp vụ; làm task độc lập trước và ghi blocker.
+Chỉ implement Feature 110; không implement Feature 111, 112 hoặc 120; không sửa spec/plan/tasks để né vấn đề; không commit hoặc push.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Đọc Constitution, hướng dẫn skill, spec, plan, tasks, data model, research, quickstart, boundary contract và Database README. Checklist Feature 110 có 16/16 mục được đánh dấu.
+- Thêm domain model cho venue draft, hồ sơ applicant và các giá trị `ownerStatus` đã có trong tài liệu CSDL. Validator kiểm tra trường bắt buộc, tọa độ, số sân nguyên dương, giờ hợp lệ và yêu cầu có ảnh cơ sở/giấy tờ.
+- Không tự thêm field schema, không chuẩn hóa số điện thoại, đặt giới hạn số sân hay quy tắc giờ qua đêm. Giá trị `ownerStatus` không nhận diện được được để trống thay vì diễn giải thành trạng thái nghiệp vụ mới.
+- Bổ sung unit test validator và parser trạng thái; chỉ đánh dấu T011 `[X]` sau khi test/build thành công. T017 vẫn mở vì chưa có ViewModel và các test upload/submit/timeout của task.
+- Không triển khai query hồ sơ hiện hành, submit/resubmit, Firestore Rules, Supabase Storage hay signed URL. T001–T004 còn cần quyết định nhóm về application identity/history, auth/upload contract, idempotency/conflict và cleanup/lifecycle. Không implement Feature 111, 112 hoặc 120.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần                                          | Quyết định                                 | Lý do                                                                                                        |
+| --------------------------------------------- | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| Domain model và validator                     | Dùng, giới hạn theo field/rule đã xác nhận | Đáp ứng T011 mà không mở rộng schema hoặc tự chọn logic nghiệp vụ.                                           |
+| Unit test validator và status parser          | Dùng                                       | Kiểm tra các trường hợp hợp lệ, thiếu/sai dữ liệu và enum trạng thái.                                        |
+| Submit/resubmit, Rules và Storage integration | Chưa triển khai                            | Contract T001–T003 chưa được nhóm chốt; không thể xác định cách ghi, xác thực hoặc cấp quyền upload an toàn. |
+| Các task khác trong tasks.md                  | Để mở                                      | Chưa triển khai hoặc còn phụ thuộc blocker; chỉ T011 đủ điều kiện đánh dấu hoàn thành.                       |
+
+### Cách kiểm chứng
+
+- Chạy `testDebugUnitTest assembleDebug` với Gradle 9.6.0, JDK từ Android Studio và Android SDK cục bộ: **BUILD SUCCESSFUL**; unit tests thành công, không có failure/error.
+- Hai test class mới của Feature 110 có 6 test; build tạo được debug APK.
+- `git diff --check` không báo lỗi. Gradle lần đầu không tìm thấy SDK khi thiếu biến môi trường; chạy lại với Android SDK cục bộ thì thành công.
+- Không chạy Firebase Emulator/Supabase local vì phần Rules/Storage bị chặn bởi contract; không chạy usability session T035 vì cần người tham gia thực tế.
+
+---
+
+## Mục 20: Rà soát cấu trúc và hoàn thiện foundation Feature 110
+
+| Trường                   | Nội dung                                                                                                           |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| Ngày                     | 2026-10-26                                                                                                         |
+| Người thực hiện          | Minh Nhựt                                                                                                          |
+| Nhóm tính năng liên quan | 11 – Đăng ký chủ sân (`specs/110-owner-onboarding`)                                                                |
+| Công cụ AI               | Codex (GPT-6)                                                                                                      |
+| Mục đích                 | Đối chiếu package owner với kiến trúc Auth, kiểm tra dependency order và tiếp tục các task độc lập theo `tasks.md` |
+| Phạm vi                  | T005–T006, model/mapping, form ViewModel và unit test; không sửa spec/plan                                         |
+
+### Prompt đã dùng
+
+```text
+Kiểm tra cấu trúc implementation Feature 110 theo plan.md, tasks.md, cấu trúc feature/auth và file hiện có.
+Xác định các tầng đã/chưa triển khai; nếu lệch dependency hoặc thiếu sót thật thì sửa theo plan/tasks,
+không tạo file chỉ để giống Auth. Không sửa spec/plan, không đánh dấu task khi chưa kiểm chứng,
+không commit hoặc push.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Xác nhận `feature/owner` cần dùng các tầng `data/`, `domain/`, `ui/` theo package-by-feature của Constitution/plan, giống ranh giới kiến trúc Auth; không cần tạo mọi loại class chỉ để đủ tên tầng.
+- Phát hiện T011 đã được đánh dấu trong khi T005–T006 còn mở. Hoàn tất foundation bằng các dependency đã có sẵn trong app, repository interface/read use cases, mapper dữ liệu và form ViewModel dùng Hilt/StateFlow; không thêm thư viện.
+- Sửa model để tách `users.ownerStatus` (có `NONE`) khỏi `ownerApplications.status` (chỉ `PENDING/APPROVED/REJECTED`); map role/status và các trường application/review từ schema hiện có.
+- Đổi giờ cơ sở sang key/format schema `openTime`/`closeTime` (`HHmm`); thời điểm Firestore ánh xạ sang `Instant`. Không chọn application hiện hành, không cài query/source hoặc ghi/submit.
+- Đánh dấu T005/T006 hoàn tất sau khi `testDebugUnitTest assembleDebug` thành công. T011 vẫn hoàn tất; T012 trở đi chưa hoàn tất. Firestore Rules, Storage, submit/resubmit còn đợi contract Phase 1.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần                                               | Quyết định                   | Lý do                                                                                                 |
+| -------------------------------------------------- | ---------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Package `data/domain/ui`                           | Dùng theo package-by-feature | Mỗi tầng có implementation thực: mapper, models/repository/use cases và ViewModel.                    |
+| Repository/DataSource implementation               | Chưa tạo                     | Cần xác thực/session scope và boundary đọc hồ sơ; chưa có Rules cho applicant và T001/T002 còn mở.    |
+| Submit/upload/Navigation destination/form Fragment | Chưa triển khai              | Thuộc các task UI/integration tiếp theo; upload/submit bị contract chặn, form cần quyết định map SDK. |
+
+### Cách kiểm chứng
+
+- `testDebugUnitTest assembleDebug`: **BUILD SUCCESSFUL**; mapper, validator/status và form ViewModel tests chạy cùng unit tests hiện có.
+- Đối chiếu dependency hiện tại trong `app/build.gradle.kts`/`gradle/libs.versions.toml`: ViewBinding, Navigation, Hilt, lifecycle, Coroutines và Firestore đã khai báo; không thêm dependency.
+- `git diff --check` sạch. Không chạy emulator hoặc Supabase local vì chưa có phần policy/server để kiểm tra.
+
+---
+
+## Mục 21: Tiếp tục UI form và review Feature 110
+
+| Trường                   | Nội dung                                                                                                               |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-10-26                                                                                                             |
+| Người thực hiện          | Minh Nhựt                                                                                                              |
+| Nhóm tính năng liên quan | 11 – Đăng ký chủ sân (`specs/110-owner-onboarding`)                                                                    |
+| Công cụ AI               | Codex (GPT-6), `$speckit-implement`                                                                                    |
+| Mục đích                 | Tiếp tục các phần UI độc lập theo T012/T014, không làm giả phần map, danh mục hoặc upload chưa có ranh giới triển khai |
+| Phạm vi                  | Form/review Fragment, XML, navigation, strings và kiểm chứng build/unit tests                                          |
+
+### Prompt đã dùng
+
+```text
+$speckit-implement Tiếp tục implement Feature 110 theo specs/110-owner-onboarding/tasks.md.
+Xác minh T005/T006/T011 bằng code thực tế; tiếp tục task chưa hoàn thành theo dependency graph.
+Ưu tiên form UI, review UI, validation và unit tests. Không triển khai submit/resubmit hoặc upload/download thật khi contract T001–T003/T002 chưa xác nhận.
+Không đánh dấu task chỉ vì có file; không bỏ qua task; chỉ làm Feature 110, không commit/push.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Xác minh T005: `core/` và các package owner tồn tại; ViewBinding, Navigation, Hilt, lifecycle, Coroutines/Flow đã khai báo trong app/version catalog.
+- Xác minh T006: có repository interface, read use cases và mapper cho các field schema hiện có. Chưa có DataSource/repository implementation.
+- Xác minh T011: có model và validator, enum `users.ownerStatus` tách biệt với `ownerApplications.status`; thời gian theo `HHmm`.
+- Thêm form/review Fragment và XML, navigation graph nội bộ, strings tiếng Việt; form giữ draft trong ViewModel, hiển thị validation theo field; review hiển thị tóm tắt và tên file, không render object path.
+- Không đánh dấu T012/T014: form chưa có map marker và danh mục district thật; chưa có file picker/upload; review chưa thực hiện submit. Map/district cần integration đã chọn, upload/submit phụ thuộc contract T002/T009 và T001/T003.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần                                        | Quyết định        | Lý do                                                                                                     |
+| ------------------------------------------- | ----------------- | --------------------------------------------------------------------------------------------------------- |
+| Form/review UI shell                        | Dùng, giữ task mở | Cho phép nhập, validate, xem lại và quay lại sửa; chưa đáp ứng toàn bộ map/district/attachment/send flow. |
+| Map SDK, district repository, upload/submit | Chưa thêm         | Không có dependency/source được chọn; contract upload/submit còn mở.                                      |
+
+### Cách kiểm chứng
+
+- `testDebugUnitTest assembleDebug`: **BUILD SUCCESSFUL**; Android resource/navigation, Kotlin/Hilt compile và unit tests đều qua.
+- Chưa chạy Espresso/device UI test; backend/emulator integration còn chờ các contract và server policy liên quan.
+
+---
+
+## Mục 22: Kiểm tra tiếp T012/T014/T017 theo acceptance scenarios
+
+| Trường                   | Nội dung                                                                                                           |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------ |
+| Ngày                     | 2026-10-26                                                                                                         |
+| Người thực hiện          | Minh Nhựt                                                                                                          |
+| Nhóm tính năng liên quan | 11 – Đăng ký chủ sân (`specs/110-owner-onboarding`)                                                                |
+| Công cụ AI               | Codex (GPT-6), `$speckit-implement`                                                                                |
+| Mục đích                 | Củng cố validation gate, điều hướng form/review và kiểm thử; rà dependency bản đồ/danh mục trước khi hoàn thiện UI |
+| Phạm vi                  | Owner form ViewModel/Fragment, review attachment summary, unit tests; không thêm SDK, Rules hay API                |
+
+### Prompt đã dùng
+
+```text
+$speckit-implement Tiếp tục Feature 110. Hoàn thiện T012/T014/T017 nếu có thể làm an toàn; kiểm tra map SDK/dependency trước khi chọn.
+Không triển khai submit/resubmit, upload/download thật hoặc authoritative status trước khi contract được xác nhận.
+Chỉ đánh dấu task khi toàn bộ phạm vi được triển khai và kiểm chứng; chạy testDebugUnitTest, assembleDebug và git diff --check.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Xác nhận không có Google Maps SDK, osmdroid hay nguồn danh mục quận runtime trong app; `scripts/seed/catalog.json` chứa dữ liệu seed `id/name/sortOrder`, nhưng Firestore Rules hiện không cấp quyền đọc `districts`. Chưa thêm dependency, hardcode danh mục thay cho nguồn runtime, hoặc nới Rules.
+- ViewModel kiểm tra draft trước điều hướng, gửi event một lần chỉ khi hợp lệ; Fragment thu event theo lifecycle. Bổ sung test cho draft hợp lệ/không hợp lệ, không mất dữ liệu, lỗi theo trường và event đi tới review.
+- Review liệt kê đủ thông tin applicant, chỉ hiện basename và trạng thái có/không có đường dẫn tệp; không render raw object path và không giả lập kết quả upload/submit.
+- T012 vẫn mở vì thiếu district selector dùng catalog được phép đọc và map marker thủ công. T014/T017 tiếp tục mở tới khi toàn bộ thao tác sửa theo trường/tệp và các ca upload/retry/submit/timeout có thể được triển khai, kiểm chứng theo contracts.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần                             | Quyết định                         | Lý do                                                                                                                                    |
+| -------------------------------- | ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Validation và điều hướng review  | Dùng Channel event trong ViewModel | Test được luồng hợp lệ/không hợp lệ và tuân thủ ranh giới Fragment → ViewModel.                                                          |
+| Map SDK, district runtime access | Chưa thêm/chưa gọi                 | Chưa có SDK trong version catalog; district collection không có Firestore Rules đọc; không tự thêm dependency hay thay đổi quyền server. |
+| Submit/upload thật               | Không triển khai                   | T001–T003/T002/T009 chưa được chốt.                                                                                                      |
+
+### Cách kiểm chứng
+
+- `testDebugUnitTest assembleDebug`: **BUILD SUCCESSFUL**.
+- Build xác nhận Kotlin, Hilt, Navigation và XML hiện tại compile; unit tests xác nhận validation gate và ViewModel event.
+- Chưa chạy Espresso/device/emulator UI test; `git diff --check` được chạy sau khi hoàn tất chỉnh sửa cuối.
+
+---
+
+## Mục 23: Kiểm tra bảo mật Firestore Feature 110
+
+| Trường                   | Nội dung                                                                                                             |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-10-26                                                                                                           |
+| Người thực hiện          | Minh Nhựt                                                                                                            |
+| Nhóm tính năng liên quan | 11 – Đăng ký chủ sân (`specs/110-owner-onboarding`)                                                                  |
+| Công cụ AI               | Codex (GPT-5), `$speckit-implement`                                                                                  |
+| Mục đích                 | Đối chiếu T007–T010 với README CSDL, Constitution, Rules và test harness; chỉ triển khai phần bảo mật có contract rõ |
+| Phạm vi                  | `firestore.rules`, Firebase Emulator tests cho `ownerApplications`/`districts`; không tạo Supabase policy            |
+
+### Tóm tắt phản hồi của AI
+
+- Rules trước đây chỉ có `users/{uid}`; `ownerApplications` và `districts` không có match nên bị deny mặc định.
+- Thêm read policy tối thiểu cho `ownerApplications`: applicant đọc document có `resource.data.uid` của mình, admin đọc document và list; client vẫn bị deny toàn bộ create/update/delete cho tới khi T001/T003 chốt application identity, resubmit, idempotency và stale-write.
+- Thêm match explicit deny cho `districts`, không mở quyền đọc chỉ để phục vụ UI. Các trường `role`, `ownerStatus`, `status`, `rejectReason`, `reviewedBy`, `reviewedAt` không có đường ghi client.
+- Thêm `firestore-tests/test/owner-applications.test.ts` bao phủ applicant/admin/other-user/unauthenticated reads, client writes, server-only fields và districts.
+- T009/T010 bị block: `supabase/migrations/` chưa tồn tại, chưa có Storage policy/functions/test harness cho owner-docs; T002 chưa xác nhận Firebase token, signed URL và quyền upload venue-photos.
+
+### Cách kiểm chứng
+
+- Firebase Emulator: **35 tests passed** (3 test files), gồm test mới cho ownerApplications/districts và test users hiện có.
+- `testDebugUnitTest assembleDebug`: **BUILD SUCCESSFUL**.
+- `git diff --check`: sạch; chỉ có cảnh báo chuyển đổi CRLF thông thường.
+
+### Ghi chú môi trường
+
+- Lần chạy đầu không có `vitest` local và npm bị policy PowerShell chặn; sau đó đã cài đúng dependency từ `firestore-tests/package-lock.json` và chạy lại với Java runtime của Android Studio.
+- Firebase Firestore Emulator khởi động thành công; không chạy trên project production.
+- Không tạo hoặc sửa `supabase/migrations/`, Storage policy hay Edge Function vì T002 chưa được nhóm xác nhận.
+
+---
+
+## Mục 24: Rà soát tiếp UI/domain/test Feature 110
+
+| Trường                   | Nội dung                                                                                           |
+| ------------------------ | -------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-10-26                                                                                         |
+| Người thực hiện          | Minh Nhựt                                                                                          |
+| Nhóm tính năng liên quan | 11 – Đăng ký chủ sân (`specs/110-owner-onboarding`)                                                |
+| Công cụ AI               | Codex (GPT-5), `$speckit-implement`                                                                |
+| Mục đích                 | Tiếp tục các phần độc lập của T012/T014/T017 sau lượt bảo mật; không giả định contract backend     |
+| Phạm vi                  | Review attachment state, form validation feedback, unit tests và kiểm chứng Emulator/Android build |
+
+### Tóm tắt phản hồi của AI
+
+- T012 tiếp tục bị block ở district selector và map marker: app không có map SDK/district read policy được phê duyệt; không thêm dependency, mở Rules hoặc thay đổi schema.
+- T014 được làm rõ giới hạn: review hiển thị đường dẫn nháp với nhãn “chưa xác nhận tải lên”, cho phép quay lại form; không giả vờ upload thành công.
+- Form hiển thị lỗi vị trí trên cả vĩ độ và kinh độ khi tọa độ thiếu/không hợp lệ.
+- T007/T008 vẫn chưa hoàn thành vì create/resubmit và stale-write policy chưa có contract; T009/T010 vẫn chờ T002.
+
+### Cách kiểm chứng
+
+- Firebase Emulator: **35 tests passed**.
+- `testDebugUnitTest assembleDebug`: **BUILD SUCCESSFUL**.
+- `git diff --check`: sạch, chỉ có cảnh báo CRLF thông thường.
+
+---
+
+## Mục 25: Phân tích T001 Application identity/history Feature 110
+
+| Trường                   | Nội dung                                                                                      |
+| ------------------------ | --------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-10-26                                                                                    |
+| Người thực hiện          | Minh Nhựt                                                                                     |
+| Nhóm tính năng liên quan | 11 – Đăng ký chủ sân (`specs/110-owner-onboarding`)                                           |
+| Công cụ AI               | Codex (GPT-5), `$speckit-implement`                                                           |
+| Mục đích                 | Đối chiếu định danh hồ sơ, lịch sử, revoke, resubmit và retry trước khi mở T003/submit        |
+| Phạm vi                  | `owner-onboarding-boundaries.md`; không sửa schema, Rules, submit/resubmit hoặc task checkbox |
+
+### Tóm tắt phản hồi của AI
+
+- README xác nhận `ownerApplications/{id}` dùng Firestore auto-ID và schema chưa có request ID/version/current pointer/history collection.
+- `users.ownerStatus` là trạng thái quyền hiện hành. Sau revoke, `ownerStatus = NONE` còn application `APPROVED` cũ chỉ là lịch sử; không được dùng hồ sơ đó để cấp quyền hoặc coi là hồ sơ active.
+- Feature 120 xác nhận `REJECTED → PENDING`, hồ sơ `APPROVED` không xử lý lại trong hàng đợi, revoke giữ hồ sơ approved cũ. Feature 011 đọc trạng thái từ `users.ownerStatus` và cho mở form mới sau revoke.
+- Boundary contract ghi ba phương án: A cập nhật hồ sơ rejected và tạo auto-ID mới sau revoke; B tạo document mới mỗi lần resubmit; C dùng một document duy nhất. Khuyến nghị có điều kiện là A, nhưng chưa phải quyết định nhóm.
+- Contract ghi riêng vấn đề history và retry: retry phải đọc authoritative state và không tạo application thứ hai; không tự dùng timestamp/payload/auto-ID client làm idempotency.
+- Thêm bảng `Decision ID T001-application-identity` để nhóm điền phương án, query/index, server operation, người chốt, ngày chốt và tài liệu đồng bộ.
+
+### Cách kiểm chứng
+
+- Đối chiếu `spec.md`, `plan.md`, `tasks.md`, `research.md`, database README, Constitution, Feature 011 và Feature 120.
+- Không chạy build/test vì lượt này chỉ cập nhật tài liệu; không có code/schema/Rules thay đổi.
+- T001 vẫn chưa hoàn thành cho tới khi nhóm điền và xác nhận bảng quyết định trong boundary contract.
+
+---
+
+## Mục 26: Ghi nhận quyết định T001-application-identity
+
+| Trường                   | Nội dung                                                                                             |
+| ------------------------ | ---------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-10-26                                                                                           |
+| Người thực hiện          | Minh Nhựt                                                                                            |
+| Nhóm tính năng liên quan | 11 – Đăng ký chủ sân (`specs/110-owner-onboarding`)                                                  |
+| Công cụ AI               | Codex (GPT-5), `$speckit-implement`                                                                  |
+| Mục đích                 | Cập nhật boundary contract theo quyết định chính thức của nhóm về application identity/history       |
+| Phạm vi                  | Chỉ tài liệu contract và AI log; không triển khai submit/resubmit, schema, Rules hoặc code nghiệp vụ |
+
+### Tóm tắt phản hồi của AI
+
+- Nhóm đã chốt **Phương án 1/A**: resubmit `REJECTED` cập nhật document hiện có thành `PENDING`; đăng ký mới sau revoke tạo Firestore auto-ID mới; giữ application `APPROVED` cũ làm lịch sử; `users.ownerStatus` là nguồn quyền hiện hành.
+- Không thêm revision collection, request ID, version, current pointer, field hoặc index mới.
+- Schema auto-ID hiện tại chưa cung cấp cách chọn duy nhất application mới sau revoke khi có nhiều document cùng UID. Contract ghi đây là vấn đề kỹ thuật cần T003, không tự bịa query hoặc index.
+- Atomicity server-side, authoritative read sau timeout, retry/idempotency và stale-write cũng được ghi rõ là phạm vi T003; T001 chỉ chốt phân biệt retry với lần nộp mới ở mức nghiệp vụ.
+- Đối chiếu Feature 011, Feature 120 và Database README không phát hiện mâu thuẫn nghiệp vụ với Phương án 1. T001 vẫn chưa đánh dấu hoàn thành vì tiêu chí query và retry kỹ thuật còn mở.
+
+### Cách kiểm chứng
+
+- Đọc và đối chiếu `spec.md`, `plan.md`, `tasks.md`, `research.md`, boundary contract, Database README, Constitution, Feature 011 và Feature 120.
+- Không chạy build/test vì lượt này chỉ cập nhật tài liệu; không có code, schema hoặc Rules thay đổi.
+
+---
+
+## Mục 27: Phân tích T003 submit/resubmit consistency Feature 110
+
+| Trường                   | Nội dung                                                                                           |
+| ------------------------ | -------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-10-26                                                                                         |
+| Người thực hiện          | Minh Nhựt                                                                                          |
+| Nhóm tính năng liên quan | 11 – Đăng ký chủ sân (`specs/110-owner-onboarding`)                                                |
+| Công cụ AI               | Codex (GPT-5), `$speckit-implement`                                                                |
+| Mục đích                 | Đề xuất contract nhất quán cho submit/resubmit, retry và xung đột trước khi triển khai ghi dữ liệu |
+| Phạm vi                  | Chỉ boundary contract và AI log; không sửa code, schema, Rules hoặc Storage policy                 |
+
+### Tóm tắt phản hồi của AI
+
+- Bổ sung T003 vào boundary contract với các tình huống: submit lần đầu, resubmit rejected, đăng ký sau revoke, timeout sau commit, retry, hai thiết bị, admin/revoke cạnh tranh và trạng thái không rõ.
+- Đặt các bất biến: server đọc authoritative trước ghi; trường server-only không do client gửi; ghi chuyển trạng thái/tạo application phải atomic; stale write không được ghi đè; timeout phải read-back trước retry.
+- Đối chiếu README: Firestore dùng auto-ID; index đã ghi nhận cho `ownerApplications` là `status, submittedAt` phục vụ hàng đợi, chưa có contract/index theo UID để chọn current sau revoke. Không dùng auto-ID hoặc thứ tự query làm thời gian.
+- Phân tích các phương án query server theo UID/trạng thái/thời gian, bổ sung composite index, thêm current pointer/version và giữ document ID phía client. Chưa chọn phương án triển khai; không tự thêm index/schema.
+- Nêu các câu hỏi nhóm cần xác nhận về boundary server, current lookup, ambiguous result, lỗi stale/conflict và test transaction. T003 chưa hoàn thành; các task submit/status/resubmit phụ thuộc tiếp tục bị block.
+
+### Cách kiểm chứng
+
+- Đối chiếu `spec.md`, `plan.md`, `tasks.md`, `research.md`, boundary contract, Database README, Constitution, Feature 011 và Feature 120.
+- Không chạy build/test vì lượt này chỉ cập nhật tài liệu; không có code, schema, Rules hoặc Storage policy thay đổi.
+
+---
+
+## Mục 28: Bảng quyết định kỹ thuật T001/T003
+
+| Trường                   | Nội dung                                                                                                     |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------ |
+| Ngày                     | 2026-10-26                                                                                                   |
+| Người thực hiện          | Minh Nhựt                                                                                                    |
+| Nhóm tính năng liên quan | 11 – Đăng ký chủ sân (`specs/110-owner-onboarding`)                                                          |
+| Công cụ AI               | Codex (GPT-5), `$speckit-implement`                                                                          |
+| Mục đích                 | Chuẩn bị các câu hỏi quyết định để nhóm có thể chốt contract submit/resubmit consistency                     |
+| Phạm vi                  | Chỉ cập nhật boundary contract và AI log; không sửa schema, index, Rules, Storage policy hoặc code nghiệp vụ |
+
+### Tóm tắt phản hồi của AI
+
+- Đối chiếu repository: Supabase có `on-signup` và shared auth/Firestore helpers, nhưng chưa có owner submit Edge Function; Firestore Emulator harness hiện có thể mở rộng cho concurrency sau khi contract được duyệt.
+- Thêm bảng so sánh server boundary, application identity, atomicity, retry, stale-write và testing. Khuyến nghị kỹ thuật nghiêng về Edge Function + Firestore transaction nhưng giữ ở trạng thái đề xuất.
+- Ghi rõ query theo UID/status/`submittedAt` chưa đủ nếu thiếu index hoặc có timestamp trùng; không dùng thứ tự auto-ID, kết quả đầu tiên hoặc `submittedAt` đơn độc.
+- Đề xuất bộ test duplicate/concurrent submit, admin action cạnh tranh, timeout sau commit, read-back ambiguous và Rules bypass trên Emulator/local.
+- Tạo danh sách 5 câu hỏi ngắn để nhóm trả lời. T001/T003 và task submit/resubmit vẫn chưa đánh dấu hoàn thành.
+
+### Cách kiểm chứng
+
+- Đối chiếu boundary contract, tasks/spec/plan/research Feature 110, Database README, Constitution và contract Feature 011/120.
+- Không chạy build/test vì lượt này chỉ cập nhật tài liệu; không có code, schema, Rules hoặc Storage policy thay đổi.
+
+---
+
+## Mục 29: Implement quyết định T001 và chuẩn bị T003
+
+| Trường                   | Nội dung                                                                                        |
+| ------------------------ | ----------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-10-26                                                                                      |
+| Người thực hiện          | Minh Nhựt                                                                                       |
+| Nhóm tính năng liên quan | 11 – Đăng ký chủ sân (`specs/110-owner-onboarding`)                                             |
+| Công cụ AI               | Codex (GPT-5), `$speckit-implement`                                                             |
+| Mục đích                 | Tiếp tục implement sau khi nhóm chọn các phương án kỹ thuật T003                                |
+| Phạm vi                  | Đánh dấu T001, thêm composite index đã được chọn; chưa triển khai Edge Function submit/resubmit |
+
+### Tóm tắt phản hồi của AI
+
+- Ghi nhận các lựa chọn nhóm đã xác nhận: Edge Function + Firestore transaction; query theo `uid`/status active với composite index; read-back authoritative trước retry; conflict/stale qua transaction; Emulator + local Edge Function harness; verify Firebase ID token; typed result/error contract.
+- Đánh dấu T001 `[X]` sau khi quyết định identity/history, query, resubmit và retry đã được ghi nhận trong boundary contract.
+- Thêm composite index `ownerApplications(uid ASC, status ASC, submittedAt DESC)` vào `firestore.indexes.json`. Index chưa được triển khai lên môi trường Firebase và vẫn cần backend giữ invariant tối đa một hồ sơ active.
+- Không tạo endpoint hoặc payload submit/resubmit vì T002 chưa chốt đầy đủ contract app–Supabase và repository chưa có owner submit function để mở rộng an toàn. T003, T015, T016 và T026 vẫn mở.
+
+### Cách kiểm chứng
+
+- `firestore.indexes.json` được parse thành công bằng PowerShell `ConvertFrom-Json`.
+- `git diff --check`: sạch, chỉ có cảnh báo chuyển đổi CRLF thông thường.
+- Firebase Emulator test không chạy được: `npx firebase-tools@15` không có trong npm cache và môi trường không cho tải package.
+- Android `testDebugUnitTest assembleDebug` không chạy được: Gradle wrapper cần tải Gradle 9.6.0 nhưng network bị chặn; Gradle cache ngoài workspace không cho tạo lock file.
+- Không commit hoặc push.
+
+---
+
+---
+
+## Mục 32: Implement district catalog và signed-download cho Feature 110
+
+| Trường                   | Nội dung                                                                                                                                                                             |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Ngày                     | 2026-10-26                                                                                                                                                                           |
+| Người thực hiện          | Minh Nhựt                                                                                                                                                                            |
+| Nhóm tính năng liên quan | 11 – Đăng ký làm chủ sân (`specs/110-owner-onboarding`)                                                                                                                              |
+| Công cụ AI               | Codex (GPT-6), `$speckit-implement`                                                                                                                                                  |
+| Mục đích                 | Tiếp tục sửa code/test cho task còn mở, ưu tiên district catalog và tài liệu Storage; không implement lại phần đã có                                                                 |
+| Phạm vi                  | Edge Function catalog có Firebase shared auth, Android district picker, applicant document signed-download 5 phút và handler tests; không tạo upload policy hoặc giả xác minh upload |
+
+### Prompt đã dùng
+
+```text
+$speckit-implement Tiếp tục implement Feature 110; kiểm tra trạng thái task và source hiện có, chỉ sửa phần còn thiếu, tập trung Storage, district catalog, tests và quickstart. Không commit/push; không đánh dấu task nếu chưa đủ bằng chứng.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Thêm Edge Function `owner-district-catalog`: yêu cầu Firebase ID token qua shared auth, truy vấn collection `districts` phía server, chỉ trả `id`, `name`, `sortOrder`, sắp xếp ổn định và loại row thiếu tên. Mở rộng Firestore structured query để hỗ trợ collection query không filter.
+- Nối Android API với Supabase Functions và thay ô nhập mã quận/huyện bằng menu chọn từ catalog; giữ `districtId` trong draft và lưu nhãn `name` ở UI. Có lỗi và thao tác retry khi catalog không tải được.
+- Thêm `owner-document-download`: chỉ ký URL sau khi caller đã xác thực, application tồn tại, UID khớp, path thuộc chính application và nằm trong `documentPaths`; signed URL 300 giây, response `private, no-store`. Thêm handler tests cho quyền của chính người nộp, path ngoài UID và path không nằm trong hồ sơ.
+- Cấu hình Supabase gateway không tự kiểm tra JWT Supabase cho owner functions vì handler dùng Firebase shared auth; cập nhật quickstart để phản ánh implementation thật và các phần vẫn chưa sẵn sàng.
+- Không thêm map SDK. Không implement sign-upload, upload object verification, Storage bucket/policies hoặc Android file transfer: URL upload hiện có thời hạn và quy tắc enforcement chưa khớp đầy đủ contract; `venue-photos` draft path trước khi có `venueId` vẫn chưa được xác định.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần                               | Quyết định             | Lý do                                                                                                               |
+| ---------------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Firestore `districts` server query | Dùng                   | Tận dụng catalog hiện có mà không mở Firestore client read.                                                         |
+| Android district picker            | Dùng, giữ T012 mở      | Chọn ID hợp lệ từ catalog; map marker thủ công chưa có bản đồ/SDK trong dependency hiện tại.                        |
+| Signed-download handler            | Dùng, giữ T033/T034 mở | Server xác minh ownership và path, nhưng Android download flow, Supabase local integration và test runtime chưa có. |
+| Storage upload/policies            | Chưa triển khai        | Chưa đủ cơ chế phê duyệt/enforcement cho applicant upload và ảnh draft venue; không nới bucket quyền hiện hữu.      |
+| Task checkbox                      | Không đổi              | Chưa chạy được Deno/Android/Emulator/Supabase local tests và các task còn acceptance criteria chưa đáp ứng.         |
+
+### Files đã chỉnh sửa hoặc tạo
+
+- Android: `app/src/main/java/com/example/booking_app/feature/owner/data/OwnerDistrictCatalogApi.kt`, `app/src/main/java/com/example/booking_app/feature/owner/data/di/OwnerModule.kt`, `app/src/main/java/com/example/booking_app/feature/owner/ui/form/OwnerApplicationFormFragment.kt`, `app/src/main/res/layout/fragment_owner_application_form.xml`, `app/src/main/res/values/strings.xml`.
+- Supabase: `supabase/config.toml`, `supabase/functions/_shared/firestore.ts`, `supabase/functions/owner-district-catalog/{handler.ts,handler.test.ts,index.ts}`, `supabase/functions/owner-document-download/{handler.ts,handler.test.ts,index.ts}`.
+- Feature docs: `specs/110-owner-onboarding/tasks.md`, `specs/110-owner-onboarding/quickstart.md`, `docs/ai-log/AI_log_4.md`.
+
+Không xóa file, không thay đổi schema, Rules, Storage policy, dependency hoặc feature khác.
+
+### Cách kiểm chứng
+
+- Parse `supabase/config.toml` bằng Python `tomllib`: thành công.
+- Parse owner Android XML layouts/navigation/strings: thành công.
+- `git diff --check`: exit 0; Git chỉ cảnh báo chuẩn hóa CRLF.
+- Android `testDebugUnitTest` và `assembleDebug`: không chạy được vì không có `JAVA_HOME` hoặc Java trong `PATH`.
+- Firebase Rules/Vitest test: chạy được Vitest nhưng suite dừng trước test vì Firestore Emulator host/port chưa được cấu hình; 8 test ownerApplications bị skip.
+- Deno handler tests và Supabase local Storage integration: chưa chạy, do môi trường không có Deno/Supabase CLI. Không tuyên bố các test đó pass.
+- Không task checkbox nào được đánh dấu hoàn thành. Không commit hoặc push.
+
+## Mục 30: Implement status UI và rejected-edit domain độc lập Feature 110
+
+| Trường                   | Nội dung                                                                                                              |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-10-26                                                                                                            |
+| Người thực hiện          | Minh Nhựt                                                                                                             |
+| Nhóm tính năng liên quan | 11 – Đăng ký làm chủ sân (specs/110-owner-onboarding)                                                                 |
+| Công cụ AI               | Codex (GPT-6), $speckit-implement                                                                                     |
+| Mục đích                 | Tiếp tục implementation các phần UI/domain/test độc lập sau khi nhóm xác nhận các lựa chọn T002/T003                  |
+| Phạm vi                  | T019/T020/T022/T024/T025/T027/T028 ở mức domain/UI shell; không triển khai submit, upload, download hoặc backend thật |
+
+### Prompt đã dùng
+
+```text
+$speckit-implement Tiếp tục implementation Feature 110; ưu tiên T022, T019, T020, T024–T025, T027–T028 và T017.
+Chỉ làm phần độc lập với backend thật; không tạo fake production thay cho submit/upload/download.
+Giữ nguyên schema, Rules, Storage policy và không đánh dấu task khi chưa có kiểm chứng.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Thêm OwnerApplicationStatusMapper để lấy users.ownerStatus làm nguồn authoritative; không suy quyền từ application APPROVED cũ sau revoke.
+- Khi có nhiều application cùng trạng thái phù hợp, mapper trả Ambiguous thay vì chọn theo thứ tự query hoặc auto-ID.
+- Thêm OwnerApplicationStatusViewModel và màn hình status có các trạng thái loading, content, empty, error và retry; phần repository wiring vẫn chờ T002/T003.
+- Thêm OwnerApplicationRejectedEditSession để giữ draft applicant-owned và trả conflict khi authoritative status đổi khỏi REJECTED; không thêm version, requestId hoặc field schema.
+- Bổ sung unit tests cho NONE/PENDING/APPROVED/REJECTED, dữ liệu ambiguous, loading/error/content và giữ draft khi conflict.
+- Không đánh dấu task checkbox vì test Android chưa chạy được và các tiêu chí tích hợp backend/query authoritative chưa đáp ứng đầy đủ.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần                                  | Quyết định        | Lý do                                                                                        |
+| ------------------------------------- | ----------------- | -------------------------------------------------------------------------------------------- |
+| Status mapper/domain                  | Dùng              | Ánh xạ `ownerStatus` authoritative và trả ambiguous khi không thể chọn duy nhất application. |
+| Status ViewModel/UI shell             | Dùng, giữ task mở | Có loading/content/empty/error/retry nhưng chưa nối repository authoritative.                |
+| Rejected-edit session                 | Dùng, giữ task mở | Giữ draft và phát hiện conflict theo status, không thêm version/requestId.                   |
+| Unit tests mapper/session/ViewModel   | Dùng              | Bao phủ bốn trạng thái, ambiguous, loading/error và draft retention.                         |
+| Submit/resubmit, upload/download thật | Chưa triển khai   | T002/T003/T009/T010 và backend function/policy còn thiếu; không giả lập thành công.          |
+| Task checkbox                         | Không sửa         | Chưa chạy được Android tests và acceptance tích hợp chưa đầy đủ.                             |
+
+### Cách kiểm chứng
+
+- Parse thành công layout status, navigation graph và strings XML bằng PowerShell XML parser.
+- git diff --check: sạch; chỉ có cảnh báo CRLF thông thường.
+- ./gradlew testDebugUnitTest assembleDebug chưa chạy được vì môi trường không có JAVA_HOME/Java.
+- Firebase Emulator chưa chạy; không tuyên bố unit/security/integration test pass.
+- Không sửa schema, Firestore Rules, Storage policy hoặc contract backend.
+- Không commit hoặc push.
+
+---
+
+## Mục 31: Tiếp tục implement backend/status và test Feature 110
+
+| Trường                   | Nội dung                                                                                                                                                                                              |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-10-26                                                                                                                                                                                            |
+| Người thực hiện          | Minh Nhựt                                                                                                                                                                                             |
+| Nhóm tính năng liên quan | 11 – Đăng ký chủ sân (`specs/110-owner-onboarding`)                                                                                                                                                   |
+| Công cụ AI               | Codex (GPT-6), `$speckit-implement`                                                                                                                                                                   |
+| Mục đích                 | Tiếp tục triển khai code Feature 110 theo quyết định T001/T003 và các task còn mở; kiểm tra bằng chứng trước khi cập nhật checkbox                                                                    |
+| Phạm vi                  | Status API/UI, Firestore query/transaction helper, submit Edge Function fail-closed, xử lý timeout/conflict, rejected form và unit/backend tests; không tạo Storage policy hoặc giả upload thành công |
+
+### Prompt đã dùng
+
+```text
+$speckit-implement Đọc lại tasks.md và các file liên quan, kiểm tra code hiện tại rồi implement tất cả task chưa hoàn thành của Feature 110. Ưu tiên sửa source/test thực tế, tiếp tục phần không bị block, cập nhật task/log theo bằng chứng; chạy build/test khi môi trường cho phép, không commit/push.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Hoàn thiện shared Firestore REST query/transaction helper và Edge Function `owner-application-submit` cho create/resubmit theo `ownerStatus` authoritative; tạo/cập nhật application và user status trong cùng transaction, chỉ giữ applicant-owned fields, trả conflict/ambiguous khi trạng thái không duy nhất hoặc đổi.
+- Thêm Edge Function `get-owner-application-status`; endpoint lấy `ownerStatus`/role từ Firestore, bỏ qua application APPROVED cũ khi user đã revoke về NONE, và fail-closed nếu query theo UID/status trả nhiều hồ sơ.
+- Nối Android status API/repository/use case/Hilt/ViewModel; refresh khi màn hình resume, giữ lỗi chung không tiết lộ dữ liệu riêng tư, không suy quyền từ cache. Hồ sơ REJECTED trả applicant-owned fields cần thiết để mở form sửa và giữ application ID/reject reason/draft.
+- Status NONE mở form đăng ký mới; khi chuyển từ hồ sơ cũ sang application mới, object paths cũ bị xóa khỏi draft để không tái dùng tệp thuộc hồ sơ trước.
+- Bổ sung xử lý submit timeout bằng authoritative read-back; retry một lần chỉ khi read-back xác nhận NONE; trạng thái PENDING cùng identity được xác nhận, identity khác trả conflict, kết quả ambiguous giữ nguyên draft. Bổ sung unit tests cho timeout, retry, mismatch và stale status.
+- Phát hiện và sửa trường hợp status API không trả `status` trong application metadata; thêm test snapshot mapper cho bốn trạng thái và trạng thái thiếu application.
+- Submit Edge Function hiện mặc định từ chối `UPLOAD_VERIFICATION_UNAVAILABLE` cho tới khi có verifier Storage thật. Unit harness có thể inject verifier test, nhưng đây không phải bằng chứng tích hợp hoặc lý do đánh dấu T002/T003/T015/T026 hoàn tất.
+- Không thay schema, Firestore Rules, Storage policy hoặc dependency. Không đánh dấu task checkbox vì test/build chưa chạy và Storage/file lifecycle/UI chưa đủ acceptance.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần                                      | Quyết định                   | Lý do                                                                                                                      |
+| ----------------------------------------- | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `_shared/firestore.ts`                    | Chỉnh sửa, giữ lại           | Thêm structured query, transaction REST, retry `ABORTED`; cần chạy Emulator test trước khi coi là hoàn tất.                |
+| Owner status Edge Function/API            | Thêm và nối vào Android      | Đọc status từ `users/{uid}`; application lịch sử không cấp quyền; query mơ hồ trả lỗi thay vì chọn document tùy ý.         |
+| Owner submit/resubmit Edge Function       | Thêm nhưng fail-closed       | Transaction tạo/cập nhật hồ sơ và `ownerStatus`; chưa có Storage verifier nên production không được báo submit thành công. |
+| Android status/domain/data/navigation     | Chỉnh sửa, giữ task mở       | Nối status authoritative, retry/read-back/conflict, mở form NONE và nạp draft REJECTED cùng identity/reject reason.        |
+| Mapper, repository và Edge Function tests | Thêm/chỉnh sửa               | Bao phủ status, timeout, retry, conflict và fail-closed; chưa thể chạy trong môi trường hiện tại.                          |
+| Firestore Rules test cleanup              | Chỉnh sửa nhỏ                | Tránh lỗi phụ khi emulator khởi tạo thất bại; quyền vẫn cần test thực tế bằng Firebase Emulator.                           |
+| UI test mutators và dependency `newId`    | Bỏ                           | Không dùng để thay state giả trong production; không xóa file hoặc dữ liệu người dùng.                                     |
+| Storage, map SDK, district catalog        | Chưa sử dụng/chưa triển khai | Chưa có verifier/policy và boundary catalog; không tự thêm SDK, mở quyền hoặc hardcode dữ liệu.                            |
+| Task checkbox                             | Không đổi                    | Android, Edge Function và Emulator tests chưa chạy; chưa đủ bằng chứng để đánh dấu task hoàn thành.                        |
+
+### Cách kiểm chứng
+
+- `git diff --check`: chạy; không có lỗi whitespace, chỉ cảnh báo line-ending CRLF thông thường.
+- `testDebugUnitTest`: không chạy được vì môi trường thiếu `JAVA_HOME` và không có `java` trong PATH.
+- Firebase Emulator test `firestore-tests/test/owner-applications.test.ts`: đã gọi trực tiếp Vitest; test không khởi chạy vì `FIRESTORE_EMULATOR_HOST`/Firestore Emulator không có. Đã sửa cleanup hook để không tạo lỗi phụ khi `beforeAll` thất bại.
+- Supabase/Deno handler tests: chưa chạy vì không có Deno; không cài package hoặc tải dependency.
+- TypeScript syntax/type check chưa chạy được: không có Deno hoặc TypeScript compiler/esbuild trong local dependencies.
+- Android `assembleDebug`: chưa chạy được do cùng blocker thiếu Java.
+- Không task checkbox nào được đánh dấu hoàn thành trong lượt này. Không commit hoặc push.
+
+## Mục 33: Nối signed-download Android và tăng security coverage Feature 110
+
+| Trường                   | Nội dung                                                                                                                                           |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-10-26                                                                                                                                         |
+| Người thực hiện          | Minh Nhựt                                                                                                                                          |
+| Nhóm tính năng liên quan | 11 – Đăng ký làm chủ sân (`specs/110-owner-onboarding`)                                                                                            |
+| Công cụ AI               | Codex (GPT-6), `$speckit-implement`                                                                                                                |
+| Mục đích                 | Tiếp tục các task còn mở có thể triển khai an toàn; nối signed-download vào Android và bổ sung kiểm thử bảo mật, không bypass Storage verification |
+| Phạm vi                  | Android applicant document flow, status document paths, private bucket bootstrap, Rules/download test code, boundary contract và quickstart        |
+
+### Prompt đã dùng
+
+```text
+$speckit-implement Tiếp tục implement Feature 110 — Owner Onboarding từ code hiện tại.
+Chỉ tập trung phần còn thiếu của task chưa hoàn thành; ưu tiên Storage/upload verification,
+submit/resubmit contract, Firestore Rules/tests, map marker thủ công, signed-download Android,
+tests và quickstart. Không thay đổi schema/bucket/path/security policy/contract đã duyệt;
+nếu quyết định chưa chốt thì tiếp tục phần độc lập. Chạy test/build khi có thể, cập nhật
+tasks.md và AI_log_4.md theo bằng chứng. Không commit hoặc push.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Mở rộng status response để trả `documentPaths` của application hiện hành sau khi shared auth xác định Firebase UID và query xác định application khớp UID/status.
+- Thêm Android `OwnerDocumentDownloadApi`, DI và nút chọn giấy tờ ở status screen. Mỗi thao tác xin signed URL mới từ `owner-document-download`; URL không được cache/persist. Lỗi hiện thông báo và cho thử lại bằng request URL mới.
+- Bổ sung Rules test code cho applicant đọc hồ sơ của mình ở PENDING/APPROVED/REJECTED, chặn hồ sơ người khác, request stale và direct client write từ player/admin.
+- Bổ sung handler test code xác minh không ký path của UID khác hoặc path không thuộc `documentPaths`, và retry xin signed URL 5 phút mới.
+- Thêm migration idempotent chỉ tạo `owner-docs` private nếu bucket chưa tồn tại, với MIME JPEG/PNG/WebP và giới hạn 2 MB. Không thay cấu hình bucket đã tồn tại và không cấp direct client policy.
+- Cập nhật boundary contract, quickstart, trạng thái task và log theo implementation/blocker thực tế.
+- Không hoàn thiện sign-upload hoặc object verifier. Submit tiếp tục fail-closed nếu chưa xác minh đủ object Storage.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần                                  | Quyết định                                            | Lý do                                                                                                                                                                                                 |
+| ------------------------------------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Android signed-download               | Nối API/UI, giữ task mở                               | Handler xác minh application/path; cần build và kiểm thử URL hết hạn trên môi trường local trước khi hoàn tất T033/T034.                                                                              |
+| Status `documentPaths`                | Trả với application hiện hành đã xác thực             | Cần path để người nộp chọn tệp; không trả URL hay application của UID khác.                                                                                                                           |
+| Firestore Rules test                  | Bổ sung test source, giữ T007/T008 mở                 | Quyền client write vẫn deny theo server transaction boundary; Emulator chưa chạy được để chứng minh.                                                                                                  |
+| `owner-docs` local bootstrap          | Tạo bucket private nếu chưa có, giữ cấu hình hiện hữu | README xác nhận bucket private, MIME và giới hạn; không mở quyền Storage client.                                                                                                                      |
+| Upload ảnh draft/sign-upload/verifier | Chưa triển khai                                       | README quy định `venue-photos` path `{venueId}/...`, nhưng applicant cần upload trước khi có `venueId`; chưa có quyết định path/bucket/lifecycle. Không cho submit thành công khi object chưa verify. |
+| Map marker                            | Chưa triển khai                                       | Repository chưa có map SDK/provider được chọn; không tự thêm dependency hoặc nguồn tile ngoài quyết định nhóm.                                                                                        |
+| Task checkbox                         | Không đánh dấu hoàn thành                             | Android/Emulator/Deno/Supabase local tests chưa chạy; acceptance của các task tích hợp chưa đủ bằng chứng.                                                                                            |
+
+### Cách kiểm chứng
+
+- `git diff --check`: thành công; Git chỉ cảnh báo line-ending CRLF.
+- Parse XML layout/navigation/strings: thành công. Parse `supabase/config.toml`: thành công.
+- `.\gradlew.bat testDebugUnitTest assembleDebug`: không chạy được vì thiếu `JAVA_HOME` và không có `java` trong PATH.
+- Vitest ownerApplications: 13 test bị skip; suite không khởi tạo vì Firestore Emulator host/port chưa cấu hình.
+- Deno handler tests chưa chạy vì Deno không có trong PATH. Supabase local Storage integration cũng chưa chạy.
+- Không task checkbox nào được đánh dấu hoàn thành khi chưa có test/build evidence. Không commit hoặc push.
+
+## Mục 34: Tiếp tục Android/domain tests và kiểm chứng Feature 110
+
+| Trường                   | Nội dung                                                                                                                                             |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-10-26                                                                                                                                           |
+| Người thực hiện          | Minh Nhựt                                                                                                                                            |
+| Nhóm tính năng liên quan | 11 – Đăng ký làm chủ sân (`specs/110-owner-onboarding`)                                                                                              |
+| Công cụ AI               | Codex (GPT-6), `$speckit-implement`                                                                                                                  |
+| Mục đích                 | Tiếp tục task còn mở từ code hiện tại, bổ sung kiểm thử cho status/resubmit/conflict và ghi nhận đúng kết quả build cùng các blocker chưa được chốt    |
+| Phạm vi                  | Android status UI/domain, refresh race handling, repository/ViewModel unit tests, task checklist, quickstart và kiểm chứng local                      |
+
+### Prompt đã dùng
+
+```text
+$speckit-implement Tiếp tục implement Feature 110 — Owner Onboarding từ trạng thái code hiện tại.
+Chỉ làm các task còn thiếu; giữ nguyên implementation đã hoàn thành. Ưu tiên Android/domain/UI,
+unit/integration tests, Firestore Rules/security tests, signed-download, quickstart và các task
+còn mở có thể triển khai an toàn. Không tự thay đổi schema, bucket, path, policy hay contract đã
+duyệt; không cho submit thành công khi chưa xác minh object Storage thực tế. Nếu thiếu provider
+bản đồ hoặc môi trường test thì tiếp tục phần độc lập và ghi rõ blocker. Cập nhật tasks.md và
+docs/ai-log/AI_log_4.md theo bằng chứng thực tế, không commit hoặc push. AI-log phải theo đúng
+cấu trúc các mục trước.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Hoàn thiện cách hiển thị thời điểm gửi theo múi giờ `Asia/Ho_Chi_Minh`; status endpoint trả draft applicant-owned của hồ sơ REJECTED để form sửa dùng lại, cùng lý do hiện hành.
+- Bảo vệ status refresh khỏi response cũ ghi đè kết quả mới; khi refresh lỗi, không giữ nội dung APPROVED cũ như thể dữ liệu còn authoritative.
+- Bổ sung unit tests cho timestamp, stale refresh, offline/error state, submit timeout, read-back không khớp, typed conflict và rejected resubmit chỉ thành công khi authoritative read-back khớp PENDING.
+- Chạy Android unit tests và assemble debug thành công. Đánh dấu T019/T022/T024/T028 hoàn tất dựa trên code và test source tương ứng; giữ T025 mở vì chưa thể thay tệp khi upload flow còn bị chặn. Các task đòi hỏi UI/Emulator/Storage runtime tiếp tục mở.
+- Sửa tiến độ trong `tasks.md` và trạng thái/lệnh kiểm chứng trong quickstart. Không thay đổi contract, schema hoặc policy để vượt blocker upload/map.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần                              | Quyết định                                           | Lý do                                                                                                                                       |
+| --------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Status timestamp                  | Hiển thị theo giờ Việt Nam; fallback nếu thiếu       | Có thể triển khai từ `submittedAt` hiện có mà không đổi schema; test formatter xác nhận timezone.                                           |
+| Status refresh                    | Hủy request cũ và bỏ nội dung authoritative khi lỗi  | Tránh response cũ ghi đè và tránh thể hiện dữ liệu cache cũ như trạng thái server mới.                                                      |
+| T019/T022/T024/T028               | Đánh dấu hoàn thành                                  | Android unit suite chạy pass; mapper/status read-back, rejected draft mapping và resubmit/conflict có source tests tương ứng.                 |
+| T025                              | Giữ task mở                                          | Form giữ được rejected draft, nhưng thay tệp và kiểm tra luồng lỗi upload còn phụ thuộc T013 chưa triển khai.                                |
+| Upload verification và submit    | Giữ fail-closed                                      | Chưa có object verifier thực tế và đường upload draft được duyệt; không báo submit thành công khi object chưa xác minh.                     |
+| Firestore/Supabase integration    | Giữ task runtime tests mở                            | Firestore Emulator host/port chưa cấu hình; Deno, Firebase CLI/Emulator và Supabase CLI chưa sẵn sàng trong môi trường.                      |
+| Map marker                        | Giữ blocker provider                                 | Không tìm thấy map SDK/provider được duyệt; chỉ giữ nhập tọa độ thủ công, không thêm dependency.                                             |
+
+### Cách kiểm chứng
+
+- `.\gradlew.bat testDebugUnitTest --offline --no-daemon`: `BUILD SUCCESSFUL`; test reports có 214 tests, 0 failures, 0 errors, 0 skipped.
+- `.\gradlew.bat assembleDebug --offline --no-daemon`: `BUILD SUCCESSFUL`; debug APK assemble task hoàn tất (46 tasks up-to-date).
+- `firestore-tests` ownerApplications Vitest không khởi tạo được do Firestore Emulator host/port chưa cấu hình; 13 test bị skip, không tính là pass.
+- Deno handler/Storage integration, Firebase Emulator Rules và Android instrumentation tests chưa chạy: Deno, Firebase CLI/Emulator, Supabase CLI hoặc thiết lập emulator cần thiết chưa sẵn sàng.
+- `git diff --check`: thành công; chỉ có cảnh báo line-ending CRLF từ Git. Không commit hoặc push.

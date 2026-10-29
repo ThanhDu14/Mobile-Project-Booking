@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_owner_onboarding"
+    app:startDestination="@id/ownerApplicationStatusFragment">
+
+    <fragment
+        android:id="@+id/ownerApplicationFormFragment"
+        android:name="com.example.booking_app.feature.owner.ui.form.OwnerApplicationFormFragment"
+        android:label="@string/owner_form_title">
+        <action
+            android:id="@+id/action_ownerApplicationFormFragment_to_ownerApplicationReviewFragment"
+            app:destination="@id/ownerApplicationReviewFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/ownerApplicationReviewFragment"
+        android:name="com.example.booking_app.feature.owner.ui.review.OwnerApplicationReviewFragment"
+        android:label="@string/owner_review_title" />
+
+    <fragment
+        android:id="@+id/ownerApplicationStatusFragment"
+        android:name="com.example.booking_app.feature.owner.ui.status.OwnerApplicationStatusFragment"
+        android:label="@string/owner_status_title">
+        <action
+            android:id="@+id/action_ownerApplicationStatusFragment_to_ownerApplicationFormFragment"
+            app:destination="@id/ownerApplicationFormFragment" />
+    </fragment>
+
+</navigation>

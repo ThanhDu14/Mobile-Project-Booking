@@ -142,6 +142,140 @@ export async function commit(writes: Write[]): Promise<void> {
   await res.body?.cancel();
 }
 
+export interface QueryFilter {
+  field: string;
+  op: "EQUAL" | "IN";
+  value: unknown;
+}
+
+export interface QueryDocument {
+  id: string;
+  data: Record<string, unknown>;
+}
+
+function documentId(name: string): string {
+  return name.substring(name.lastIndexOf("/") + 1);
+}
+
+function structuredQuery(collectionId: string, filters: QueryFilter[]) {
+  const fieldFilter = (filter: QueryFilter) => ({
+    field: { fieldPath: filter.field },
+    op: filter.op,
+    value: encodeValue(filter.value),
+  });
+  const filtersClause = filters.map(fieldFilter);
+  return {
+    from: [{ collectionId }],
+    ...(filtersClause.length === 0 ? {} : {
+      where: filtersClause.length === 1
+        ? { fieldFilter: filtersClause[0] }
+        : { compositeFilter: { op: "AND", filters: filtersClause.map((filter) => ({ fieldFilter: filter })) } },
+    }),
+  };
+}
+
+async function queryRequest(
+  collectionId: string,
+  filters: QueryFilter[],
+  transaction?: string,
+): Promise<QueryDocument[]> {
+  const res = await request(`${apiBase()}/${databaseRoot()}/documents:runQuery`, {
+    method: "POST",
+    body: JSON.stringify({ structuredQuery: structuredQuery(collectionId, filters), ...(transaction ? { transaction } : {}) }),
+  });
+  if (!res.ok) throw await toError(res);
+  const rows = await res.json() as { document?: { name: string; fields?: Record<string, FirestoreValue> } }[];
+  return rows.flatMap((row) => row.document
+    ? [{ id: documentId(row.document.name), data: decodeFields(row.document.fields ?? {}) }]
+    : []);
+}
+
+/** Run an indexed collection query. Missing documents are omitted from the response. */
+export function query(collectionId: string, filters: QueryFilter[]): Promise<QueryDocument[]> {
+  return queryRequest(collectionId, filters);
+}
+
+export interface FirestoreTransaction {
+  get(path: string): Promise<Record<string, unknown> | null>;
+  query(collectionId: string, filters: QueryFilter[]): Promise<QueryDocument[]>;
+  commit(writes: Write[]): Promise<void>;
+}
+
+/**
+ * Executes reads and writes in a Firestore REST read-write transaction. The callback may be
+ * retried on ABORTED; it must therefore avoid external side effects.
+ */
+export async function runTransaction<T>(
+  operation: (transaction: FirestoreTransaction) => Promise<{ result: T; writes: Write[] }>,
+  maxAttempts = 5,
+): Promise<T> {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const begin = await request(`${apiBase()}/${databaseRoot()}/documents:beginTransaction`, {
+      method: "POST",
+      body: JSON.stringify({ options: { readWrite: {} } }),
+    });
+    if (!begin.ok) throw await toError(begin);
+    const { transaction } = await begin.json() as { transaction: string };
+    const tx: FirestoreTransaction = {
+      async get(path) {
+        const res = await request(`${apiBase()}/${documentName(path)}?transaction=${encodeURIComponent(transaction)}`, {
+          method: "GET",
+        });
+        if (res.status === 404) {
+          await res.body?.cancel();
+          return null;
+        }
+        if (!res.ok) throw await toError(res);
+        const doc = await res.json() as { fields?: Record<string, FirestoreValue> };
+        return decodeFields(doc.fields ?? {});
+      },
+      query: (collectionId, filters) => queryRequest(collectionId, filters, transaction),
+      async commit(writes) {
+        const res = await request(`${apiBase()}/${databaseRoot()}/documents:commit`, {
+          method: "POST",
+          body: JSON.stringify({ writes, transaction }),
+        });
+        if (!res.ok) throw await toError(res);
+        await res.body?.cancel();
+      },
+    };
+
+    try {
+      const outcome = await operation(tx);
+      if (outcome.writes.length > 0) await tx.commit(outcome.writes);
+      else await request(`${apiBase()}/${databaseRoot()}/documents:rollback`, {
+        method: "POST",
+        body: JSON.stringify({ transaction }),
+      });
+      return outcome.result;
+    } catch (error) {
+      await request(`${apiBase()}/${databaseRoot()}/documents:rollback`, {
+        method: "POST",
+        body: JSON.stringify({ transaction }),
+      }).catch(() => undefined);
+      if (error instanceof FirestoreError && error.code === "ABORTED" && attempt < maxAttempts) continue;
+      throw error;
+    }
+  }
+  throw new FirestoreError("ABORTED", 409, "Transaction bị tranh chấp sau nhiều lần thử");
+}
+
+/** Random 20-character Firestore-compatible auto ID; generated on the trusted server. */
+export function newDocumentId(): string {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let id = "";
+  while (id.length < 20) {
+    const bytes = new Uint8Array(32);
+    crypto.getRandomValues(bytes);
+    for (const byte of bytes) {
+      if (byte >= 248) continue;
+      id += alphabet[byte % alphabet.length];
+      if (id.length === 20) break;
+    }
+  }
+  return id;
+}
+
 /** Tạo document mới; đã có thì `commit` ném `ALREADY_EXISTS`. */
 export function createWrite(
   path: string,

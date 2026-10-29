@@ -14,5 +14,6 @@
     <include app:graph="@navigation/nav_player" />
     <include app:graph="@navigation/nav_owner" />
     <include app:graph="@navigation/nav_admin" />
+    <include app:graph="@navigation/nav_owner_onboarding" />
 
 </navigation>
