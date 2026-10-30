@@ -55,6 +55,11 @@ import com.example.booking_app.feature.booking.domain.model.PriceRule
 
 interface RecurringBookingRepository {
     /**
+     * Kiểm tra trạng thái chấp nhận đặt cố định của cơ sở từ venues/{venueId}.acceptsRecurring (Hợp đồng tích hợp Feature 111)
+     */
+    suspend fun isRecurringAccepted(venueId: String): Result<Boolean>
+
+    /**
      * Lấy danh sách sân con đang hoạt động của cơ sở
      */
     suspend fun getActiveCourts(venueId: String): Result<List<Court>>
