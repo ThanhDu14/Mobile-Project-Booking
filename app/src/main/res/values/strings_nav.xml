@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- BottomNav người chơi -->
+    <string name="nav_tab_home">Trang chủ</string>
+    <string name="nav_tab_drop_in">Vãng lai</string>
+    <string name="nav_tab_bookings">Lịch đặt</string>
+    <string name="nav_tab_community">Cộng đồng</string>
+    <string name="nav_tab_account">Tài khoản</string>
+    <!-- OwnerNav chủ sân -->
+    <string name="nav_owner_tab_today">Hôm nay</string>
+    <string name="nav_owner_tab_bookings">Đơn đặt</string>
+    <string name="nav_owner_tab_schedule">Lịch sân</string>
+    <string name="nav_owner_tab_messages">Tin nhắn</string>
+    <string name="nav_owner_tab_venues">Cơ sở</string>
+
+    <string name="owner_home_placeholder_body">Đơn chờ duyệt và lịch sân hôm nay sẽ hiện ở đây</string>
+
+    <!-- Snackbar sau khi chuyển chế độ ở trang Tài khoản -->
+    <string name="nav_mode_switched_player">Đã chuyển sang giao diện người chơi</string>
+    <string name="nav_mode_switched_owner">Đã chuyển sang giao diện quản lý sân</string>
+
+    <string name="nav_tab_coming_soon">%1$s đang được phát triển</string>
+</resources>

@@ -32,33 +32,6 @@
         android:textColor="?attr/colorOnSurface"
         tools:text="@string/auth_home_placeholder_player" />
 
-    <!-- Nút điều hướng tạm sang Feature 040 để kiểm thử -->
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnGoToBooking"
-        android:layout_width="wrap_content"
-        android:layout_height="52dp"
-        android:layout_marginTop="@dimen/space_4"
-        android:text="Đặt sân theo giờ (Feature 040)"
-        android:textAppearance="@style/TextAppearance.SmashNow.Label"
-        app:cornerRadius="26dp"
-        app:icon="@drawable/ic_calendar_24"
-        app:iconGravity="textStart"
-        app:iconPadding="8dp" />
-
-    <!-- Nút tạm sang Feature 070 (Sân yêu thích) để demo; mục chính thức ở trang Tài khoản (spec 011). -->
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnGoToFavorites"
-        style="?attr/materialButtonOutlinedStyle"
-        android:layout_width="wrap_content"
-        android:layout_height="52dp"
-        android:layout_marginTop="@dimen/space_2"
-        android:text="@string/favorite_open_list"
-        android:textAppearance="@style/TextAppearance.SmashNow.Label"
-        app:cornerRadius="26dp"
-        app:icon="@drawable/ic_favorite_border_24"
-        app:iconGravity="textStart"
-        app:iconPadding="8dp" />
-
     <TextView
         android:id="@+id/guestNote"
         android:layout_width="wrap_content"
@@ -68,19 +41,6 @@
         android:textAppearance="?attr/textAppearanceBodyMedium"
         android:textColor="?attr/colorOnSurfaceVariant"
         android:visibility="gone"
-        tools:visibility="visible" />
-
-    <!-- Lối vào trang Tài khoản (spec 011) tới khi có thanh điều hướng dưới của 020/111. -->
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/accountButton"
-        style="@style/Widget.SmashNow.Button.Outlined"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/space_6"
-        android:text="@string/account_title"
-        android:visibility="gone"
-        app:icon="@drawable/ic_account_circle_24"
-        app:iconTint="?attr/colorOnSurface"
         tools:visibility="visible" />
 
     <com.example.booking_app.core.ui.LoginPromptView

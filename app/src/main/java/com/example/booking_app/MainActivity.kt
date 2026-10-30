@@ -7,10 +7,12 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavController
+import androidx.navigation.NavDestination
 import androidx.navigation.NavDeepLinkRequest
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.navOptions
@@ -40,6 +42,9 @@ class MainActivity : AppCompatActivity() {
         (supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment).navController
     }
 
+    /** Menu đang gắn vào BottomNav; layout khởi tạo bằng menu người chơi. */
+    private var bottomNavMenu = R.menu.menu_player_bottom_nav
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -57,6 +62,112 @@ class MainActivity : AppCompatActivity() {
                 combine(viewModel.sessionState, viewModel.mode) { state, _ -> state }.collect { route(it) }
             }
         }
+        setUpBottomNav()
+    }
+
+    /**
+     * Một BottomNav cho cả hai chế độ, đổi menu theo graph gốc: BottomNav người chơi trong `nav_player`, OwnerNav
+     * trong `nav_owner`. Chỉ hiện ở màn gốc của tab. Người chơi mới nối Trang chủ và Tài khoản (Vãng lai, Lịch đặt,
+     * Cộng đồng chờ spec 080/060/090); chủ sân mới nối Hôm nay (màn tạm) và Cơ sở (Đơn đặt, Lịch sân, Tin nhắn chờ
+     * spec 112). Tab chưa có màn hình báo "đang phát triển".
+     */
+    private fun setUpBottomNav() {
+        // Root đã chừa chỗ cho thanh hệ thống; không để BottomNav cộng thêm lần nữa.
+        ViewCompat.setOnApplyWindowInsetsListener(binding.bottomNav) { _, insets -> insets }
+        binding.bottomNav.setOnItemSelectedListener { item ->
+            when (item.itemId) {
+                R.id.tab_home -> {
+                    navController.popBackStack(R.id.playerHomePlaceholderFragment, false)
+                    true
+                }
+                R.id.tab_owner_today -> {
+                    navController.popBackStack(R.id.ownerHomePlaceholderFragment, false)
+                    true
+                }
+                R.id.tab_owner_venues -> {
+                    openOwnerVenues()
+                    true
+                }
+                R.id.tab_account -> {
+                    if (viewModel.sessionState.value is SessionState.SignedIn) {
+                        navController.navigate(
+                            R.id.nav_account,
+                            null,
+                            navOptions {
+                                launchSingleTop = true
+                                popUpTo(R.id.playerHomePlaceholderFragment)
+                            },
+                        )
+                        true
+                    } else {
+                        // Khách chưa có trang Tài khoản: mở đăng nhập, tab vẫn ở Trang chủ.
+                        navController.navigate(LOGIN)
+                        false
+                    }
+                }
+                else -> {
+                    Snackbar.make(binding.root, getString(R.string.nav_tab_coming_soon, item.title), Snackbar.LENGTH_SHORT)
+                        .setAnchorView(binding.bottomNavContainer)
+                        .show()
+                    false
+                }
+            }
+        }
+        // Bấm lại tab đang chọn: không tạo lại màn hình. Chủ sân đang ở trang Tài khoản (mở từ tab đó) thì về màn gốc của tab.
+        binding.bottomNav.setOnItemReselectedListener { item ->
+            if (navController.currentDestination?.id != R.id.accountFragment) return@setOnItemReselectedListener
+            when (item.itemId) {
+                R.id.tab_owner_today -> navController.popBackStack(R.id.ownerHomePlaceholderFragment, false)
+                R.id.tab_owner_venues -> openOwnerVenues()
+            }
+        }
+        navController.addOnDestinationChangedListener { _, destination, _ -> updateBottomNav(destination) }
+    }
+
+    private fun openOwnerVenues() {
+        navController.navigate(
+            R.id.ownerVenueListFragment,
+            null,
+            navOptions {
+                launchSingleTop = true
+                popUpTo(R.id.ownerHomePlaceholderFragment)
+            },
+        )
+    }
+
+    private fun updateBottomNav(destination: NavDestination) {
+        // Graph gốc quyết định menu; khách (lastRootGraph = null) dùng graph người chơi.
+        val ownerMode = viewModel.lastRootGraph == R.id.nav_owner
+        val tab = if (ownerMode) {
+            when (destination.id) {
+                R.id.ownerHomePlaceholderFragment -> R.id.tab_owner_today
+                R.id.ownerVenueListFragment -> R.id.tab_owner_venues
+                // OwnerNav không có tab Tài khoản: giữ sáng tab đã mở trang này (avatar ở Hôm nay → Hôm nay).
+                R.id.accountFragment ->
+                    if (navController.previousBackStackEntry?.destination?.id == R.id.ownerVenueListFragment) {
+                        R.id.tab_owner_venues
+                    } else {
+                        R.id.tab_owner_today
+                    }
+                else -> null
+            }
+        } else {
+            when (destination.id) {
+                R.id.playerHomePlaceholderFragment -> R.id.tab_home
+                R.id.accountFragment -> R.id.tab_account
+                else -> null
+            }
+        }
+        val visible = tab != null && hasBackStackEntry(if (ownerMode) R.id.nav_owner else R.id.nav_player)
+        binding.bottomNavContainer.isVisible = visible
+        if (!visible) return
+        val menuRes = if (ownerMode) R.menu.menu_owner_bottom_nav else R.menu.menu_player_bottom_nav
+        if (bottomNavMenu != menuRes) {
+            binding.bottomNav.menu.clear()
+            binding.bottomNav.inflateMenu(menuRes)
+            bottomNavMenu = menuRes
+        }
+        binding.bottomNav.menu.findItem(tab!!).isChecked = true
     }
 
     private suspend fun route(state: SessionState) {
@@ -71,6 +182,8 @@ class MainActivity : AppCompatActivity() {
         // Mở lại sau khi hệ thống hủy process: NavController đã khôi phục back stack, chỉ ghi nhận trạng thái.
         if (previous == null) {
             if (state is SessionState.SignedIn) viewModel.lastRootGraph = graphFor(state.appRole)
+            // BottomNav đã vẽ theo destination khôi phục trước khi biết graph gốc: vẽ lại đúng menu.
+            navController.currentDestination?.let(::updateBottomNav)
             return
         }
         if (previous == state) {
@@ -183,7 +296,12 @@ class MainActivity : AppCompatActivity() {
 
     /** Chủ sân chuyển "Người chơi" ↔ "Quản lý sân": chỉ điều hướng khi graph đích đổi (spec 011 T018). */
     private fun switchRootGraphIfNeeded(appRole: AppRole) {
-        if (graphFor(appRole) != viewModel.lastRootGraph) resetToRoleGraph(appRole)
+        if (graphFor(appRole) == viewModel.lastRootGraph) return
+        resetToRoleGraph(appRole)
+        // Màn hình và thanh dưới đổi hẳn: báo cho người dùng biết vì sao.
+        val message = if (viewModel.lastRootGraph == R.id.nav_owner) R.string.nav_mode_switched_owner
+        else R.string.nav_mode_switched_player
+        Snackbar.make(binding.root, message, Snackbar.LENGTH_SHORT).setAnchorView(binding.bottomNavContainer).show()
     }
 
     private companion object {

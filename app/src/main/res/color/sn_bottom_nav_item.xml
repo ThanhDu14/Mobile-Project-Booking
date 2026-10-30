@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Tab đang chọn chữ ink, tab khác chữ ink-muted (design system BottomNav). -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:color="@color/sn_ink" android:state_checked="true" />
+    <item android:color="@color/sn_ink_muted" />
+</selector>
