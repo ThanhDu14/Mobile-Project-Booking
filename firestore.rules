@@ -134,6 +134,31 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // ---------- reviews (C, spec 070; contracts/security-rules.md §1) ----------
+    // Đánh giá đang hiển thị: ai đăng nhập cũng đọc được; người viết đọc được bài của mình kể cả
+    // khi bị ẩn; admin đọc tất cả. Truy vấn list phải lọc `status == VISIBLE` hoặc `userId == uid`.
+    // Mọi ghi đi qua Edge Function `review` (service account bỏ qua Rules).
+    match /reviews/{reviewId} {
+      allow get, list: if isSignedIn() && (
+          resource.data.status == 'VISIBLE'
+          || resource.data.userId == request.auth.uid
+          || isAdmin());
+      allow write: if false;
+    }
+
+    // ---------- users/{uid}/favorites (C, spec 070; contracts/security-rules.md §1) ----------
+    // Client ghi trực tiếp (research R7). ID document = venueId nên lưu hai lần không tạo bản trùng.
+    // Không có rule cho collection group `favorites`: chỉ Edge Function của D (service account) truy vấn.
+    match /users/{uid}/favorites/{venueId} {
+      allow read, delete: if isSelf(uid);
+      allow create, update: if isSelf(uid)
+          && request.resource.data.keys().hasOnly(['venueId', 'venueSnapshot', 'createdAt'])
+          && request.resource.data.venueId == venueId
+          && request.resource.data.createdAt == request.time
+          && request.resource.data.venueSnapshot is map
+          && request.resource.data.venueSnapshot.keys().hasOnly(['name', 'photoPath', 'address']);
+    }
+
     // ---------- venues, courts, priceRules (B, spec 040 / D, spec 111) ----------
     // Đọc công khai thông tin cơ sở, sân con và bảng giá để hiển thị lưới khung giờ
     match /venues/{venueId} {

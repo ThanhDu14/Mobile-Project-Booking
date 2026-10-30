@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Nav graph lồng của spec 070 (contracts/ui-screens.md §1), được include vào nav_player.
+    Mới có màn hình "Sân yêu thích" (US3); các màn hình đánh giá thêm vào khi làm US1, US2, US4, US6.
+-->
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_review"
+    app:startDestination="@id/favoriteVenuesFragment">
+
+    <fragment
+        android:id="@+id/favoriteVenuesFragment"
+        android:name="com.example.booking_app.feature.review.ui.favorite.FavoriteVenuesFragment"
+        android:label="@string/favorite_title">
+        <!-- Tạm mở lưới đặt sân (spec 040) cho đến khi có chi tiết sân (spec 030). -->
+        <action
+            android:id="@+id/action_favoriteVenues_to_bookingSlotGrid"
+            app:destination="@id/bookingSlotGridFragment" />
+    </fragment>
+
+</navigation>
