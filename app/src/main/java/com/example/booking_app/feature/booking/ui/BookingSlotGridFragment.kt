@@ -15,12 +15,15 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.booking_app.R
+import com.example.booking_app.core.model.VenueSummary
 import com.example.booking_app.databinding.FragmentBookingSlotGridBinding
 import com.example.booking_app.databinding.ItemCourtColumnHeaderBinding
 import com.example.booking_app.feature.booking.domain.model.Court
 import com.example.booking_app.feature.booking.ui.adapter.DateItem
 import com.example.booking_app.feature.booking.ui.adapter.DateSelectorAdapter
 import com.example.booking_app.feature.booking.ui.adapter.SlotMatrixRowAdapter
+import com.example.booking_app.feature.review.ui.favorite.FavoriteToggleEvent
+import com.example.booking_app.feature.review.ui.favorite.FavoriteToggleViewModel
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
@@ -36,6 +39,9 @@ class BookingSlotGridFragment : Fragment() {
     private val binding get() = _binding!!
 
     private val viewModel: BookingSlotGridViewModel by viewModels()
+
+    // Trái tim yêu thích của spec 070 (C)
+    private val favoriteViewModel: FavoriteToggleViewModel by viewModels()
 
     private val priceFormat = DecimalFormat("#,###")
     private val zoneVietnam = ZoneId.of("Asia/Ho_Chi_Minh")
@@ -61,6 +67,7 @@ class BookingSlotGridFragment : Fragment() {
         setupListeners()
         observeUiState()
         observeUiEffects()
+        observeFavorite()
     }
 
     override fun onResume() {
@@ -152,6 +159,10 @@ class BookingSlotGridFragment : Fragment() {
             "TP. Hồ Chí Minh"
         }
         binding.tvVenueInfo.text = "$venueName · $locationPart"
+        if (state.venueName.isNotEmpty()) {
+            favoriteViewModel.bind(VenueSummary(state.venueId, state.venueName, state.photoUrl, state.venueAddress))
+            binding.btnFavorite.isVisible = true
+        }
 
         // 2. Loading indicator
         binding.loadingIndicator.isVisible = state.isLoading
@@ -308,6 +319,29 @@ class BookingSlotGridFragment : Fragment() {
             }
             .setNegativeButton(R.string.booking_dialog_cancel, null)
             .show()
+    }
+
+    /** Trái tim yêu thích (spec 070 US3): đổi ngay khi bấm, ghi lỗi thì trả về trạng thái cũ. */
+    private fun observeFavorite() {
+        binding.btnFavorite.setOnClickListener { favoriteViewModel.onToggle() }
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch { favoriteViewModel.isFavorite.collect { binding.btnFavorite.isFavorite = it } }
+                launch {
+                    favoriteViewModel.events.collect { event ->
+                        val message = when (event) {
+                            FavoriteToggleEvent.Added -> R.string.favorite_added
+                            FavoriteToggleEvent.Removed -> R.string.favorite_removed
+                            FavoriteToggleEvent.SyncFailed -> R.string.favorite_sync_failed
+                            FavoriteToggleEvent.LoginRequired -> R.string.favorite_login_required
+                        }
+                        Snackbar.make(binding.root, message, Snackbar.LENGTH_SHORT)
+                            .setAnchorView(binding.bottomSummary.root)
+                            .show()
+                    }
+                }
+            }
+        }
     }
 
     override fun onDestroyView() {
