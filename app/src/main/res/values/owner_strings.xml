@@ -3,7 +3,7 @@
     <string name="owner_venues_title">Cơ sở của tôi</string>
     <string name="owner_venues_empty">Chưa có cơ sở nào được cấp cho tài khoản này.</string>
     <string name="owner_venue_add">Thêm cơ sở</string>
-    <string name="owner_venue_add_server_only">Việc tạo cơ sở mới cần được server xác nhận theo lifecycle Feature 120.</string>
+    <string name="owner_venue_add_server_only">Để mở thêm cơ sở mới, vui lòng nộp hồ sơ thẩm định qua luồng Đăng ký cơ sở (Feature 110) để Ban quản trị phê duyệt.</string>
     <string name="owner_accepts_recurring">Nhận đặt cố định theo tuần</string>
     <string name="owner_hide">Ẩn cơ sở</string>
     <string name="owner_name">Tên cơ sở</string>
@@ -23,6 +23,8 @@
     <string name="owner_status_inactive">Đã ngừng</string>
     <string name="save">Lưu</string>
     <string name="retry">Thử lại</string>
+    <string name="confirm">Xác nhận</string>
+    <string name="cancel">Hủy</string>
     <string name="owner_slot_block_title">Khóa giờ sân</string>
     <string name="owner_slot_date">Ngày (yyyyMMdd)</string>
     <string name="owner_slot_start">Giờ bắt đầu (HHmm)</string>
@@ -37,4 +39,15 @@
     <string name="owner_permission_error">Bạn không có quyền quản lý dữ liệu này.</string>
     <string name="owner_network_error">Không kết nối được máy chủ. Bạn có thể thử tải lại.</string>
     <string name="owner_open_venue">Mở chi tiết cơ sở</string>
+    <string name="owner_manage_prices">Quản lý bảng giá</string>
+    <string name="owner_prices_title">Bảng giá cơ sở</string>
+    <string name="owner_price_rule_add">Thêm khung giá</string>
+    <string name="owner_price_days">Thứ áp dụng (ví dụ: 1,2,3,4,5,6,7)</string>
+    <string name="owner_price_start">Giờ bắt đầu (HHmm)</string>
+    <string name="owner_price_end">Giờ kết thúc (HHmm)</string>
+    <string name="owner_price_per_hour">Giá VND/giờ (chia hết 2.000)</string>
+    <string name="owner_price_label">Nhãn: NORMAL, PEAK, WEEKEND</string>
+    <string name="owner_price_delete">Xóa</string>
+    <string name="owner_price_delete_gap_warning">Xóa khung giá này sẽ tạo khoảng trống không có giá trong giờ hoạt động. Các khung giờ này sẽ không thể đặt được. Bạn có chắc chắn muốn xóa?</string>
+    <string name="owner_prices_empty">Chưa có bảng giá nào. Cơ sở cần ít nhất một bảng giá để nhận đặt sân.</string>
 </resources>

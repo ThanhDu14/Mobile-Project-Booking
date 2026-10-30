@@ -38,6 +38,11 @@ class OwnerVenueDetailFragment : Fragment(R.layout.fragment_owner_venue_detail) 
         binding.retry.setOnClickListener { viewModel.load() }
         binding.save.setOnClickListener { saveVenue() }
         binding.addCourt.setOnClickListener { addCourt() }
+        binding.managePrices.setOnClickListener {
+            findNavController().navigate(R.id.action_ownerVenueDetail_to_priceRule, Bundle().apply {
+                putString("venueId", requireArguments().getString("venueId"))
+            })
+        }
         binding.blockSlots.setOnClickListener {
             viewModel.uiState.value.courts.firstOrNull()?.let { court ->
                 findNavController().navigate(R.id.action_ownerVenueDetail_to_slotBlock, Bundle().apply {

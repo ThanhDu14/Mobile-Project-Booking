@@ -418,3 +418,6 @@ enabled = true
 # on-signup tự xác minh Firebase ID token bằng _shared/auth.ts (research R3).
 [functions.on-signup]
 verify_jwt = false
+
+[functions.sync-venue-price]
+verify_jwt = false

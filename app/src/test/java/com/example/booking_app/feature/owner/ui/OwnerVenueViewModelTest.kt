@@ -2,6 +2,7 @@ package com.example.booking_app.feature.owner.ui
 
 import androidx.lifecycle.SavedStateHandle
 import com.example.booking_app.feature.owner.domain.OwnerVenueRepository
+import com.example.booking_app.feature.owner.domain.PriceRuleInput
 import com.example.booking_app.feature.owner.domain.model.CourtFields
 import com.example.booking_app.feature.owner.domain.model.OwnerCourt
 import com.example.booking_app.feature.owner.domain.model.OwnerVenue
@@ -138,7 +139,10 @@ class OwnerVenueViewModelTest {
         override suspend fun createCourt(venueId: String, fields: CourtFields) = Result.success("court-new")
         override suspend fun updateCourt(venueId: String, courtId: String, fields: CourtFields): Result<Unit> { updatedCourtIds += courtId; return Result.success(Unit) }
         override suspend fun deactivateCourt(venueId: String, courtId: String): Result<Unit> { deactivatedCourtId = courtId; return Result.success(Unit) }
-        override suspend fun getPriceRules(venueId: String) = Result.success(listOf(OwnerFixtures.priceRule))
+        override suspend fun getPriceRules(venueId: String): Result<List<OwnerPriceRule>> = Result.success(listOf(OwnerFixtures.priceRule))
+        override suspend fun createPriceRule(venueId: String, rule: PriceRuleInput): Result<String> = Result.success("rule-new")
+        override suspend fun updatePriceRule(venueId: String, ruleId: String, rule: PriceRuleInput): Result<Unit> = Result.success(Unit)
+        override suspend fun deletePriceRule(venueId: String, ruleId: String): Result<Unit> = Result.success(Unit)
         override suspend fun getSlots(venueId: String, date: String) = Result.success(emptyList<OwnerSlot>())
     }
 }

@@ -27,12 +27,25 @@ Implementation note: venue đầu tiên vẫn do lifecycle duyệt của Feature
 - Booking và khóa sân phải dùng đường ghi phía server tương thích giao dịch; giao dịch commit trước là bên thắng.
 - Khi dữ liệu cũ/xung đột, bên gọi nhận đủ thông tin không nhạy cảm để tải lại và thử lại. Không tiết lộ dữ liệu venue khác.
 
-## Hợp đồng chưa được tài liệu nguồn quy định
+## Hợp đồng đã thống nhất (Quyết định 1A, 2A, 3A, 4A — 2026-10-30)
 
-Chưa có tên callable/Edge Function, request/response, mã idempotency hoặc dấu hiệu trong schema để xác định block thuộc owner nào. Schema không có trường owner hay tham chiếu thao tác cho block; cần thống nhất cách chứng minh quyền mở đúng block của mình mà không thêm schema. Phải xác định hợp đồng thao tác server cùng nhóm phụ trách booking trước khi triển khai. Client đọc Firestore rồi ghi riêng không phải phương án thay thế chấp nhận được.
+1. **Đồng bộ bảng giá và `minPricePerHour` (Quyết định 2A — T008, T022, T023)**:
+   - Approved Owner tạo, sửa, xóa `priceRules` trực tiếp trên subcollection `venues/{venueId}/priceRules/{id}` tuân thủ Security Rules hiện có.
+   - Trường bảo vệ `venues.minPricePerHour` được cập nhật đồng bộ bởi Edge Function `sync-venue-price` chạy với quyền service role:
+     - Giá trị = `min(priceRules.pricePerHour)` nếu cơ sở có ít nhất một bảng giá.
+     - Giá trị = `null` nếu cơ sở xóa hết toàn bộ bảng giá (khớp với hợp đồng tại `specs/020-court-search/data-model.md`).
+     - Client không tự ghi trường 🔒 này; sau khi mutation `priceRules` thành công, client gọi `sync-venue-price` để đồng bộ.
+
+2. **Vòng đời cơ sở và thêm cơ sở mới (Quyết định 3A — T011)**:
+   - Feature 111 chỉ quản lý các cơ sở đã được duyệt và có quyền sở hữu hợp lệ (`venues.ownerId == uid`).
+   - Việc mở thêm cơ sở mới (ngoài cơ sở ban đầu) yêu cầu nộp hồ sơ thẩm định qua luồng Đăng ký cơ sở của Feature 110 để Ban quản trị (Feature 120) phê duyệt. Nút "Thêm cơ sở" trong giao diện Feature 111 điều hướng sang luồng đăng ký của Feature 110. Feature 111 không tự cấp quyền tạo venue trực tiếp.
+
+3. **Cơ chế khóa/mở khóa slot và nhận diện block an toàn (Quyết định 1A & 4A — T007, T028, T029)**:
+   - Khóa/mở khóa slot sử dụng Supabase Edge Function `manage-slot-blocks` (chạy Firestore transaction với service role).
+   - Nhận diện slot owner-removable bằng `blockReason in ['MAINTENANCE', 'EVENT', 'WALK_IN']`. Tuyệt đối không xóa/mở khóa các slot `DROP_IN` (Feature 112/080) hoặc các slot `HOLD`/`BOOKED` (Feature 040). Giữ nguyên schema `slots` mà không thêm trường.
 
 ## Trạng thái triển khai Feature 111
 
-T007 chưa được chốt ở mức cho phép ghi: Rules hiện tại không cấp quyền owner tạo `BLOCKED` slot, và repo chưa có server boundary để thực thi transaction/kiểm tra ownership/court/latest state. Feature 111 chỉ cung cấp UI preview với typed gate `SLOT_ATOMIC_SERVER_CONTRACT`; không có lock/unlock write fallback.
-
-T008 chưa được chốt: client không ghi `venues.minPricePerHour`, không tự suy ra giá khi không còn rule và không bật price-rule mutation có thể làm thay đổi field được bảo vệ. T011 giữ lifecycle tạo venue đầu tiên ở Feature 110/120; UI Feature 111 chỉ quản lý venue đã tồn tại và hiển thị thông báo server lifecycle khi chưa có create boundary.
+- T008, T022, T023: Đã giải tỏa blocker qua Quyết định 2A (Edge Function `sync-venue-price` và chính sách `null` khi xóa hết rule). Mở các phương thức CRUD bảng giá trên Repository và giao diện Quản lý bảng giá.
+- T011: Đã giải tỏa blocker qua Quyết định 3A (chuyển tiếp luồng đăng ký cơ sở sang Feature 110).
+- T007, T028, T029, T031: Đã thống nhất Quyết định 1A & 4A; triển khai theo Roadmap Phase 3.

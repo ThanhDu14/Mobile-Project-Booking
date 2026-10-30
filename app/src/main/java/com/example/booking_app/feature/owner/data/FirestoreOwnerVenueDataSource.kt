@@ -1,6 +1,7 @@
 package com.example.booking_app.feature.owner.data
 
 import com.example.booking_app.core.session.SessionManager
+import com.example.booking_app.feature.owner.domain.PriceRuleInput
 import com.example.booking_app.feature.owner.domain.model.CourtFields
 import com.example.booking_app.feature.owner.domain.model.OwnerCourt
 import com.example.booking_app.feature.owner.domain.model.OwnerVenue
@@ -52,20 +53,36 @@ class FirestoreOwnerVenueDataSource @Inject constructor(
         return ref.id
     }
 
+    suspend fun updateCourt(venueId: String, courtId: String, fields: CourtFields) {
+        firestore.collection(VENUES).document(venueId).collection(COURTS).document(courtId)
+            .update(fields.toMap()).await()
+    }
+
     suspend fun getPriceRules(venueId: String): List<OwnerPriceRule> = firestore.collection(VENUES).document(venueId)
         .collection(PRICE_RULES).get().await().documents.map { doc ->
             OwnerPriceRule(doc.id, (doc.get("daysOfWeek") as? List<*>).orEmpty().mapNotNull { it as? Long }.map { it.toInt() }, doc.getString("startTime").orEmpty(), doc.getString("endTime").orEmpty(), doc.getLong("pricePerHour") ?: 0L, doc.getString("label").orEmpty())
         }
 
+    suspend fun createPriceRule(venueId: String, rule: PriceRuleInput): String {
+        val ref = firestore.collection(VENUES).document(venueId).collection(PRICE_RULES).document()
+        ref.set(rule.toMap()).await()
+        return ref.id
+    }
+
+    suspend fun updatePriceRule(venueId: String, ruleId: String, rule: PriceRuleInput) {
+        firestore.collection(VENUES).document(venueId).collection(PRICE_RULES).document(ruleId)
+            .update(rule.toMap()).await()
+    }
+
+    suspend fun deletePriceRule(venueId: String, ruleId: String) {
+        firestore.collection(VENUES).document(venueId).collection(PRICE_RULES).document(ruleId)
+            .delete().await()
+    }
+
     suspend fun getSlots(venueId: String, date: String): List<OwnerSlot> = firestore.collection(SLOTS)
         .whereEqualTo("venueId", venueId).whereEqualTo("date", date).get().await().documents.map { doc ->
             OwnerSlot(doc.id, doc.getString("venueId").orEmpty(), doc.getString("courtId").orEmpty(), doc.getString("date").orEmpty(), doc.getTimestamp("startAt"), doc.getTimestamp("endAt"), doc.getString("status").orEmpty(), doc.getString("blockReason"), doc.getString("bookingId"), doc.getString("holdBy"))
         }
-
-    suspend fun updateCourt(venueId: String, courtId: String, fields: CourtFields) {
-        firestore.collection(VENUES).document(venueId).collection(COURTS).document(courtId)
-            .update(fields.toMap()).await()
-    }
 
     private fun toVenue(doc: com.google.firebase.firestore.DocumentSnapshot) = OwnerVenue(
         id = doc.id,
@@ -102,6 +119,14 @@ class FirestoreOwnerVenueDataSource @Inject constructor(
     private fun CourtFields.toMap() = mapOf(
         "name" to name, "surfaceType" to surfaceType,
         "isActive" to isActive, "sortOrder" to sortOrder
+    )
+
+    private fun PriceRuleInput.toMap() = mapOf(
+        "daysOfWeek" to daysOfWeek,
+        "startTime" to startTime,
+        "endTime" to endTime,
+        "pricePerHour" to pricePerHour,
+        "label" to label
     )
 
     companion object {

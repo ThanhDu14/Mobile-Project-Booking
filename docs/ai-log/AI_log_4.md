@@ -24,7 +24,8 @@ Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 | 18  | 2026-10-29 | Tiếp tục implement Feature 111: price coverage, slot UI shell, public availability assertions và kiểm thử cross-feature bằng `$speckit-implement`                            | 11   |
 | 19  | 2026-10-29 | Tiếp tục implement Feature 111: price-rules Emulator tests, error/offline/conflict review, UI polish, boundary traceability và kiểm thử build/lint bằng `$speckit-implement` | 11   |
 | 20  | 2026-10-29 | Tiếp tục implement Feature 111: hoàn thiện error/retry/conflict/cache freshness, responsive/accessibility review và kiểm chứng T034/T038 bằng `$speckit-implement`           | 11   |
-| 21  | 2026-10-29 | Tiếp tục implement Feature 111: chốt typed write-gate cho T007, giữ an toàn T008/T011, hoàn thiện T037 và kiểm chứng Emulator/build/lint | 11   |
+| 21  | 2026-10-29 | Tiếp tục implement Feature 111: chốt typed write-gate cho T007, giữ an toàn T008/T011, hoàn thiện T037 và kiểm chứng Emulator/build/lint                                     | 11   |
+| 22  | 2026-10-30 | Kiểm toán kỹ thuật & giải tỏa blocker Feature 111: chốt quyết định 1A, 2A, 3A, 4A, hoàn thiện Bảng giá (CRUD, UI, sync minPricePerHour) và điều hướng thêm venue             | 11   |
 
 ---
 
@@ -1586,13 +1587,13 @@ Hoàn thiện T037 cho permission/network/conflict/empty, uncertain mutation res
 
 ## Mục 21: Tiếp tục implement Feature 111 — Decision gates và T037
 
-| Trường | Nội dung |
-|---|---|
-| Ngày | 2026-10-29 |
-| Người thực hiện | Minh Nhựt |
-| Nhóm tính năng liên quan | 111 – Owner Venue Setup |
-| Công cụ AI | Codex, `$speckit-implement` |
-| Mục đích | Chốt bằng chứng an toàn cho T007/T008/T011, hoàn thiện T037 và kiểm chứng UI/build/Emulator mà không bypass contract |
+| Trường                   | Nội dung                                                                                                             |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-10-29                                                                                                           |
+| Người thực hiện          | Minh Nhựt                                                                                                            |
+| Nhóm tính năng liên quan | 111 – Owner Venue Setup                                                                                              |
+| Công cụ AI               | Codex, `$speckit-implement`                                                                                          |
+| Mục đích                 | Chốt bằng chứng an toàn cho T007/T008/T011, hoàn thiện T037 và kiểm chứng UI/build/Emulator mà không bypass contract |
 
 ### Prompt đã dùng
 
@@ -1614,18 +1615,435 @@ T007: chỉ dùng server-controlled atomic transaction tương thích Feature 04
 
 ### Phần đã sử dụng / chỉnh sửa / bỏ
 
-| Phần | Quyết định | Lý do |
-|---|---|---|
-| Slot lock UI | Chỉnh sửa tối thiểu | Thêm typed gate, vẫn chỉ preview và không ghi khi T007 chưa có boundary |
-| Slot Firestore write | Không implement | Rules/server contract hiện không chứng minh được atomic owner lock/unlock |
-| Price-rule mutation/minPricePerHour | Không implement | T008 thiếu authority và no-rule behavior |
-| Venue-first create | Giữ nguyên lifecycle | Feature 110/120 sở hữu approval và creation |
-| Feature 041 source/UI | Không chỉnh sửa | Không có boundary được phép để hoàn tất T034 |
-| T037 error/retry handling | Dùng và mở rộng | Có test permission/network/conflict, retained draft và no-blind-retry |
+| Phần                                | Quyết định           | Lý do                                                                     |
+| ----------------------------------- | -------------------- | ------------------------------------------------------------------------- |
+| Slot lock UI                        | Chỉnh sửa tối thiểu  | Thêm typed gate, vẫn chỉ preview và không ghi khi T007 chưa có boundary   |
+| Slot Firestore write                | Không implement      | Rules/server contract hiện không chứng minh được atomic owner lock/unlock |
+| Price-rule mutation/minPricePerHour | Không implement      | T008 thiếu authority và no-rule behavior                                  |
+| Venue-first create                  | Giữ nguyên lifecycle | Feature 110/120 sở hữu approval và creation                               |
+| Feature 041 source/UI               | Không chỉnh sửa      | Không có boundary được phép để hoàn tất T034                              |
+| T037 error/retry handling           | Dùng và mở rộng      | Có test permission/network/conflict, retained draft và no-blind-retry     |
 
 ### Cách kiểm chứng
 
 - Android owner unit tests, `assembleDebug`, `lintDebug`: **BUILD SUCCESSFUL**.
 - Firebase Emulator: **7 test files, 51 tests passed**.
 - `git diff --check`: không có lỗi whitespace; chỉ có cảnh báo line-ending CRLF.
+- Không commit hoặc push.
+
+---
+
+## Mục 22: Kiểm toán kỹ thuật và triển khai Phase 2 Feature 111 — Bảng giá, minPricePerHour và Vòng đời Venue
+
+| Trường                   | Nội dung                                                                                                                                                                                                                                                                                                           |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Ngày                     | 2026-10-30                                                                                                                                                                                                                                                                                                         |
+| Người thực hiện          | Minh Nhựt                                                                                                                                                                                                                                                                                                          |
+| Nhóm tính năng liên quan | 111 – Owner Venue Setup                                                                                                                                                                                                                                                                                            |
+| Công cụ AI               | Antigravity, Gemini 3.8 Flash                                                                                                                                                                                                                                                                                      |
+| Mục đích                 | Thực hiện kiểm toán kỹ thuật toàn diện Feature 111 ở chế độ Read-Only, phân tích blocker T007/T008/T011/T034/T038; sau khi chốt các quyết định 1A, 2A, 3A, 4A, tiến hành triển khai Phase 2: CRUD Bảng giá, UI Bảng giá kèm cảnh báo gap, Edge Function sync-venue-price và điều hướng thêm cơ sở sang Feature 110 |
+
+### Prompt đã dùng
+
+**Lượt 1 — Read-only Technical Audit & Blocker Analysis**:
+
+```text
+# FEATURE 111 — OWNER VENUE SETUP
+## READ-ONLY TECHNICAL AUDIT & BLOCKER ANALYSIS
+
+Bạn là Senior Software Architect được giao tiếp nhận và đánh giá một Feature 111 đang triển khai dở dang trong dự án Android/Kotlin sử dụng Firebase.
+
+Bạn không có context từ các Agent trước. Hãy tự đọc repository để hiểu toàn bộ kiến trúc, nghiệp vụ, tiến độ và các vấn đề còn tồn đọng.
+
+# 1. STRICT READ-ONLY MODE — BẮT BUỘC
+
+Đây là yêu cầu quan trọng nhất.
+
+**Bạn chỉ được phép đọc và phân tích. Không được thay đổi bất kỳ nội dung nào trong repository.**
+
+Các hành động bị cấm:
+
+- Không sửa, tạo, xóa hoặc đổi tên bất kỳ file nào.
+- Không chỉnh sửa source code.
+- Không chỉnh sửa `tasks.md`, `spec.md`, `plan.md`, `research.md`, `quickstart.md` hoặc AI log.
+- Không tạo `BLOCKER_ANALYSIS.md` hay bất kỳ file báo cáo nào.
+- Không chạy formatter, linter ở chế độ sửa tự động hoặc code generator.
+- Không chạy migration.
+- Không thay đổi Firebase configuration, security rules hoặc database.
+- Không cài đặt package hoặc cập nhật dependency.
+- Không commit, push, checkout, reset, rebase hoặc stash.
+- Không chạy lệnh có khả năng ghi hoặc xóa dữ liệu.
+
+Được phép:
+- Đọc file.
+- Tìm kiếm nội dung trong repository.
+- Đọc Git status, Git diff và Git log.
+- Phân tích source code, tests, contracts và documentation.
+- Chạy các lệnh kiểm tra chỉ đọc nếu chắc chắn chúng không tạo hoặc sửa file, không thay đổi trạng thái môi trường.
+
+Nếu không chắc một lệnh có gây thay đổi hay không, không chạy lệnh đó.
+
+**Toàn bộ báo cáo phải được in trực tiếp ra terminal. Không tạo file báo cáo.**
+
+Trước khi bắt đầu, ghi rõ:
+`READ-ONLY AUDIT MODE: ENABLED`
+
+# 2. PROJECT CONTEXT
+
+Feature 111 — Owner Venue Setup chịu trách nhiệm quản lý venue hiện hữu của Owner sau khi được phê duyệt.
+
+Phạm vi có thể bao gồm:
+- Venue list/detail.
+- Venue information management.
+- Court management.
+- Price rule management.
+- Slot management.
+- Owner-controlled blocks.
+- Recurring configuration.
+- Loading, empty, error, permission, conflict và freshness states.
+
+Hãy đọc spec để xác định phạm vi chính xác, không tự mở rộng chức năng.
+
+Dự án sử dụng Android/Kotlin và Firebase/Firestore. Hãy xác minh chính xác kiến trúc và công nghệ từ repository.
+
+# 3. FEATURE BOUNDARIES
+
+Các ranh giới nghiệp vụ cần tôn trọng:
+
+| Feature | Responsibility |
+|---|---|
+| Feature 030 | Các chức năng thuộc phạm vi Feature 030 |
+| Feature 040 | Booking transaction và slot booking |
+| Feature 041 | Recurring booking và recurring chain |
+| Feature 050 | Booking price/charge |
+| Feature 080/112 | Các chức năng block thuộc phạm vi tương ứng |
+| Feature 110 | Owner onboarding, approval và initial venue creation |
+| Feature 111 | Quản lý venue hiện hữu của Owner |
+| Feature 120 | Admin venue locks và venue catalogs |
+
+Nguyên tắc:
+- Feature 111 không bypass Owner approval.
+- Venue đầu tiên được tạo theo lifecycle Feature 110/120.
+- Feature 111 không tự mở rộng quyền tạo venue.
+- Không ghi đè hoặc gỡ admin lock.
+- Không tự thay đổi booking transaction của Feature 040.
+- Không sửa source/UI Feature 041.
+- Không phá vỡ historical price thuộc Feature 050.
+- Không thêm schema, field, enum, collection hoặc endpoint khi chưa có contract được duyệt.
+
+# 4. CONTEXT VÀ CÁC BLOCKER ĐÃ BIẾT
+
+Hãy xác minh từng nội dung dưới đây bằng code và tài liệu thực tế.
+
+## T007 — Slot lock/unlock
+
+Đã triển khai theo báo cáo trước:
+- `OwnerWriteGate.SLOT_ATOMIC_SERVER_CONTRACT`.
+- Slot UI submit chỉ preview khi thiếu server boundary.
+- Client không ghi Firestore trực tiếp.
+- Emulator assertion chứng minh Owner client không thể tự ghi slot `BLOCKED`.
+
+Còn vướng:
+- Thiếu server transaction boundary tương thích Feature 040.
+- Thiếu bằng chứng phân biệt block Owner được gỡ với block thuộc Feature 120 hoặc Feature 112/080.
+- Chưa chứng minh atomic operation trên toàn bộ slot range.
+
+Phân tích:
+- Schema slot.
+- Security rules.
+- Feature 040 transaction.
+- Các implementation block/unblock hiện có.
+- Server functions/services hiện hữu.
+- Khả năng atomic lock/unlock không cần thay đổi schema.
+- Các phương án an toàn và dependency cần xác nhận.
+
+## T008 — Price rules và `minPricePerHour`
+
+Đã xác định:
+- Client không được ghi trực tiếp `venues.minPricePerHour`.
+- Price-rule mutation đang bị khóa.
+
+Còn vướng:
+- Thiếu trusted authority cập nhật field.
+- Thiếu no-rule policy.
+- Chưa xác minh consistency giữa price rules và `minPricePerHour`.
+
+Phân tích:
+- Schema và nơi đọc/ghi field.
+- Rule có hiệu lực.
+- Feature 050 và historical price.
+- Server authority hiện có.
+- Tạo, sửa, xóa rule.
+- Xóa rule cuối cùng.
+- Transaction và consistency.
+- Các quyết định nghiệp vụ còn thiếu.
+
+Không tự chọn giá trị mặc định cho trường hợp không còn rule.
+
+## T011 — Venue lifecycle
+
+Đã xác định:
+- Feature 110/120 sở hữu initial venue creation từ `venueDraft` sau approval.
+- Feature 111 quản lý venue hiện hữu.
+
+Còn vướng:
+- Chưa có contract xác nhận quyền tạo venue bổ sung.
+
+Phân tích lifecycle approval, ownership và cách xử lý UI khi Owner chưa có venue.
+
+## T034 — Recurring booking
+
+Đã xác định:
+- Feature 111 quản lý `venues.acceptsRecurring`.
+- Feature 041 sở hữu recurring booking và recurring chain.
+- Chưa có boundary chứng minh `acceptsRecurring=false` chặn recurring chain mới.
+
+Phân tích:
+- Nơi tạo recurring chain.
+- Nơi kiểm tra `acceptsRecurring`.
+- Enforcement phía client/server/rules.
+- Cách chặn chain mới.
+- Bảo toàn recurring chain hiện có.
+- Contract cần Feature 041 cung cấp.
+
+Không sửa Feature 041.
+
+## T037 — Error, Freshness và Recovery
+
+Đã được đánh dấu hoàn thành.
+
+Implementation được báo cáo:
+- `OwnerErrorClassifier`.
+- Phân loại permission/network-timeout/conflict-stale/unknown.
+- `errorKind`, `isFresh`.
+- Conflict authoritative read-back.
+- Không blind retry mutation khi timeout.
+- Giữ form draft.
+- Unit tests cho các hành vi trên.
+
+Hãy xác minh implementation, tests, cache/freshness và uncertain network outcome. Chỉ nêu vấn đề nếu có bằng chứng cụ thể.
+
+## T038 — Accessibility, Responsive và SLA
+
+Đã có:
+- Accessibility content descriptions.
+- Phone và `w600dp` layouts.
+- Build/lint đã pass theo báo cáo trước.
+
+Còn vướng:
+- Chưa có số liệu SLA trên thiết bị và mạng 4G thật.
+
+Phân tích:
+- Accessibility.
+- 48dp touch targets.
+- Phone/`w600dp`.
+- Light/dark.
+- Material 3.
+- Các UI states.
+- List/calendar dưới 3 giây trên 4G.
+- Write acknowledgment dưới 1 giây và completion dưới 3 giây, nếu spec xác nhận.
+
+Phân biệt rõ điều có thể xác minh bằng code với điều phải đo thực tế.
+
+# 5. REPOSITORY INVESTIGATION
+
+Bắt đầu bằng:
+- `git status --short`
+- `git diff --stat`
+- `git diff --`
+
+Chỉ đọc, không thay đổi trạng thái Git.
+
+Sau đó đọc toàn bộ Feature 111:
+- `spec.md`
+- `plan.md`
+- `tasks.md`
+- `research.md`
+- `data-model.md`
+- `contracts/`
+- `quickstart.md`
+- `AI_log_4.md`
+
+Tiếp tục tìm hiểu:
+- Android source code.
+- ViewModels, repositories, UI và models.
+- Firestore security rules.
+- Firebase Functions/backend.
+- Unit tests.
+- Emulator tests.
+- Các Feature 040, 041, 050, 110 và 120 có liên quan.
+
+Không giả định các đường dẫn trên tồn tại. Hãy tìm đường dẫn thực tế.
+
+Đọc toàn bộ `tasks.md`, không chỉ các task đang mở.
+
+# 6. TASK-BY-TASK ANALYSIS
+
+Với từng task chưa hoàn thành, báo cáo:
+
+1. Task ID và tên.
+2. Yêu cầu gốc.
+3. Trạng thái trong `tasks.md`.
+4. Dependency.
+5. Code và contract liên quan.
+6. Phần đã implement.
+7. Phần còn thiếu.
+8. Root cause.
+9. Loại blocker:
+   - Implementation.
+   - Security.
+   - Architecture.
+   - Contract.
+   - Business decision.
+   - Cross-feature dependency.
+   - Real-device testing.
+10. Rủi ro nếu cố triển khai khi chưa giải quyết blocker.
+11. Giải pháp đề xuất.
+12. File/module dự kiến cần thay đổi.
+13. Test cần bổ sung.
+14. Acceptance criteria để đóng task.
+
+Nếu task completed nhưng bằng chứng không đầy đủ, ghi thành finding riêng. Không tự đổi trạng thái task.
+
+# 7. RESOLUTION PROPOSALS
+
+Phân loại vấn đề thành bốn nhóm:
+
+### A. Feature 111 tự giải quyết được
+Ví dụ validation, UI states, tests, error mapping, accessibility và documentation.
+
+### B. Cần phối hợp Feature khác
+Nêu Feature owner, contract cần cung cấp, interface, tests và điều kiện tiếp tục.
+
+### C. Cần quyết định nghiệp vụ/kiến trúc
+Đưa ra 2–3 phương án, ưu nhược điểm, khuyến nghị và hậu quả nếu chưa quyết định.
+
+### D. Cần kiểm thử môi trường thực tế
+Đưa ra test matrix, thiết bị, điều kiện mạng, metric và tiêu chí pass.
+
+# 8. OUTPUT — IN TERMINAL ONLY
+
+In báo cáo trực tiếp ra terminal theo cấu trúc sau:
+
+## 1. Executive Summary
+- Tổng số task.
+- Completed/open/blocked.
+- Mức độ sẵn sàng của Feature 111.
+- Các blocker quan trọng nhất.
+
+## 2. Current Implementation Status
+Mô tả code thực tế, không chỉ nhắc lại tài liệu.
+
+## 3. Task-by-Task Analysis
+Bảng:
+
+| Task | Status | What Exists | What Is Missing | Root Cause | Proposed Resolution |
+
+Sau bảng, phân tích chi tiết từng task còn vướng.
+
+## 4. Cross-Feature Dependencies
+Bảng:
+
+| Dependency | Owner Feature | Required Contract | Current Gap | Recommended Next Action |
+
+## 5. Business/Architecture Decisions
+Mỗi quyết định cần có:
+- Câu hỏi.
+- Các phương án.
+- Trade-offs.
+- Khuyến nghị.
+- Người/nhóm cần xác nhận.
+
+## 6. Recommended Implementation Roadmap
+Chia thành các phase có thứ tự:
+- Mục tiêu.
+- Tasks.
+- Files/modules dự kiến.
+- Dependencies.
+- Tests.
+- Acceptance criteria.
+- Risks.
+
+## 7. Test and Verification Plan
+Phân biệt test đã có, test còn thiếu và kiểm thử thực tế.
+
+## 8. Final Recommendations
+Trả lời rõ:
+- Có thể implement ngay những gì?
+- Những gì phải chờ Feature khác?
+- Những gì cần quyết định nghiệp vụ?
+- Thứ tự giải quyết tối ưu?
+- Điều kiện để hoàn thành Feature 111?
+
+# 9. EVIDENCE REQUIREMENTS
+
+Mọi kết luận kỹ thuật phải có bằng chứng:
+- File path.
+- Class/function hoặc contract.
+- Test liên quan.
+- Nếu có thể, line number.
+
+Phân biệt rõ:
+- VERIFIED: đã xác minh trong code/test.
+- DOCUMENTED: chỉ được ghi trong tài liệu.
+- INFERRED: suy luận từ implementation.
+- PROPOSED: giải pháp đề xuất.
+- EXTERNAL DECISION: cần người khác xác nhận.
+
+Không bịa tên API, file, class hoặc test.
+
+Nếu không tìm thấy contract, ghi rõ đã tìm ở đâu và không tìm thấy gì.
+
+# 10. FINAL SAFETY CHECK
+
+Trước khi kết thúc:
+- Kiểm tra lại `git status --short`.
+- Xác nhận không có file nào bị thay đổi bởi Agent.
+- Xác nhận không tạo file báo cáo.
+- Xác nhận không commit hoặc push.
+
+Dòng cuối cùng phải ghi:
+
+`READ-ONLY AUDIT COMPLETED — NO FILES CREATED OR MODIFIED`
+
+Bắt đầu ngay. Không hỏi lại người dùng nếu repository đã có đủ tài liệu để tiến hành. Không dừng ở phần tóm tắt; phải phân tích từng blocker và đề xuất phương án cụ thể.
+```
+
+**Lượt 2 — Chốt quyết định giải tỏa Blocker**:
+
+```text
+1A, 2A, 3A, 4A
+```
+
+### Tóm tắt phản hồi của AI
+
+- Thực hiện kiểm toán kỹ thuật độc lập không sửa đổi file: rà soát 39 task, phân tích chi tiết blocker T007 (slot lock/unlock), T008 (minPricePerHour), T011 (venue lifecycle), T034 (recurring booking) và T038 (SLA trên thiết bị thật).
+- Đề xuất và được duyệt 4 phương án:
+  - 1A: Server atomic slot lock/unlock qua Supabase Edge Function `manage-slot-blocks` chạy service role.
+  - 2A: Authority cập nhật `venues.minPricePerHour` là Edge Function `sync-venue-price`, chính sách khi hết rule đưa về `null`.
+  - 3A: Quy trình tạo thêm venue điều hướng sang luồng nộp hồ sơ của Feature 110 để Admin duyệt (Feature 120), Feature 111 chỉ quản lý venue đã duyệt.
+  - 4A: Giữ nguyên schema `slots`, mở khóa an toàn dựa trên `blockReason in ['MAINTENANCE', 'EVENT', 'WALK_IN']`, bảo vệ `DROP_IN`, `HOLD` và `BOOKED`.
+- Cập nhật tài liệu hợp đồng và đặc tả: `contracts/firestore-boundary.md`, `research.md`, `tasks.md` (đánh dấu hoàn thành T008, T011, T022, T023).
+- Triển khai Backend Edge Function: tạo `supabase/functions/sync-venue-price/` (`index.ts`, `handler.ts`, `handler.test.ts`), cập nhật `supabase/config.toml` và bổ sung helper `list` vào `_shared/firestore.ts`.
+- Triển khai Android Domain & Data: cập nhật `OwnerVenueRepository`, `FirestoreOwnerVenueDataSource`, `OwnerVenueRepositoryImpl` và `SyncVenuePriceApi` (gọi Edge Function `sync-venue-price`).
+- Triển khai Android UI: tạo `OwnerPriceRuleFragment`, `OwnerPriceRuleViewModel`, `OwnerPriceRuleAdapter`, các layout XML `fragment_owner_price_rule.xml`, `item_owner_price_rule.xml`, phiên bản `layout-w600dp`, thêm navigation trong `nav_owner.xml`, kết nối nút "Quản lý bảng giá" trong `OwnerVenueDetailFragment`, cập nhật chuỗi và xử lý cảnh báo coverage gap khi xóa rule.
+- Điều hướng nút "Thêm cơ sở" trong `OwnerVenueListFragment` thông báo nộp hồ sơ qua Feature 110 theo quyết định 3A.
+- Cập nhật lại toàn bộ nội dung nguyên văn của tất cả các lượt prompt trong `AI_log_4.md` mà không lược bỏ hay dùng dấu `...`.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần                             | Quyết định            | Lý do                                                                                                           |
+| -------------------------------- | --------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Edge Function `sync-venue-price` | Tạo mới               | Cập nhật `venues.minPricePerHour` 🔒 bằng service role, đưa về `null` khi không còn rule theo Quyết định 2A     |
+| Bảng giá (Price Rules CRUD)      | Dùng và mở rộng       | Mở quyền CRUD trên repository và data source; thêm giao diện quản lý bảng giá đầy đủ                            |
+| Cảnh báo khoảng trống giá        | Dùng                  | Tích hợp `PriceRuleCoverage.deletionLeavesCoverageGap` hiển thị dialog cảnh báo trước khi xóa rule              |
+| Vòng đời tạo thêm cơ sở          | Chỉnh sửa             | Nút thêm cơ sở hướng dẫn chuyển sang luồng nộp hồ sơ Onboarding (Feature 110) theo Quyết định 3A                |
+| Slot lock/unlock write           | Tạm hoãn sang Phase 3 | Giữ nguyên typed gate `SLOT_ATOMIC_SERVER_CONTRACT` chờ triển khai Edge Function `manage-slot-blocks` ở Phase 3 |
+| Feature 041 source/UI            | Không chỉnh sửa       | T034 tiếp tục mở chờ Feature 041 triển khai mã nguồn                                                            |
+
+### Cách kiểm chứng
+
+- Android owner unit tests: `./gradlew.bat testDebugUnitTest --tests 'com.example.booking_app.feature.owner.*'` -> **BUILD SUCCESSFUL** (24 tests passed, gồm 6 test mới cho `OwnerPriceRuleViewModelTest`).
+- Build và Lint: `./gradlew.bat assembleDebug lintDebug` -> **BUILD SUCCESSFUL** (0 errors).
+- Firestore Emulator tests: chạy vitest với `owner-price-rules.test.ts`, `owner-venue-authorization.test.ts`, `owner-courts.test.ts`, `owner-public-availability.test.ts` -> **4 files, 17 tests passed**.
 - Không commit hoặc push.

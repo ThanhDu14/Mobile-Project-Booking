@@ -19,11 +19,19 @@
         android:label="@string/owner_name">
         <argument android:name="venueId" app:argType="string" />
         <action android:id="@+id/action_ownerVenueDetail_to_slotBlock" app:destination="@id/ownerSlotBlockFragment" />
+        <action android:id="@+id/action_ownerVenueDetail_to_priceRule" app:destination="@id/ownerPriceRuleFragment" />
     </fragment>
 
     <fragment android:id="@+id/ownerSlotBlockFragment" android:name="com.example.booking_app.feature.owner.ui.OwnerSlotBlockFragment" android:label="@string/owner_slot_block_title">
         <argument android:name="venueId" app:argType="string" />
         <argument android:name="courtId" app:argType="string" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/ownerPriceRuleFragment"
+        android:name="com.example.booking_app.feature.owner.ui.OwnerPriceRuleFragment"
+        android:label="@string/owner_prices_title">
+        <argument android:name="venueId" app:argType="string" />
     </fragment>
 
 </navigation>

@@ -1,6 +1,8 @@
 package com.example.booking_app.feature.owner.di
 
 import com.example.booking_app.feature.owner.data.OwnerVenueRepositoryImpl
+import com.example.booking_app.feature.owner.data.SupabaseSyncVenuePriceApi
+import com.example.booking_app.feature.owner.data.SyncVenuePriceApi
 import com.example.booking_app.feature.owner.domain.OwnerVenueRepository
 import dagger.Binds
 import dagger.Module
@@ -14,4 +16,8 @@ abstract class OwnerModule {
     @Binds
     @Singleton
     abstract fun bindOwnerVenueRepository(impl: OwnerVenueRepositoryImpl): OwnerVenueRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindSyncVenuePriceApi(impl: SupabaseSyncVenuePriceApi): SyncVenuePriceApi
 }

@@ -16,6 +16,7 @@
         <EditText android:id="@+id/courtName" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/owner_court_name" android:minHeight="48dp" />
         <EditText android:id="@+id/courtSurface" android:layout_width="match_parent" android:layout_height="wrap_content" android:hint="@string/owner_court_surface" android:minHeight="48dp" />
         <com.google.android.material.button.MaterialButton android:id="@+id/addCourt" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/owner_court_add" android:minHeight="48dp" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/managePrices" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/owner_manage_prices" android:minHeight="48dp" />
         <com.google.android.material.button.MaterialButton android:id="@+id/blockSlots" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/owner_slot_block_title" android:minHeight="48dp" />
         <com.google.android.material.button.MaterialButton android:id="@+id/retry" android:layout_width="match_parent" android:layout_height="wrap_content" android:text="@string/retry" android:minHeight="48dp" android:visibility="gone" />
     </LinearLayout>

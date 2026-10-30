@@ -18,6 +18,11 @@ interface OwnerVenueRepository {
     suspend fun createCourt(venueId: String, fields: CourtFields): Result<String>
     suspend fun updateCourt(venueId: String, courtId: String, fields: CourtFields): Result<Unit>
     suspend fun deactivateCourt(venueId: String, courtId: String): Result<Unit>
+
     suspend fun getPriceRules(venueId: String): Result<List<OwnerPriceRule>>
+    suspend fun createPriceRule(venueId: String, rule: PriceRuleInput): Result<String>
+    suspend fun updatePriceRule(venueId: String, ruleId: String, rule: PriceRuleInput): Result<Unit>
+    suspend fun deletePriceRule(venueId: String, ruleId: String): Result<Unit>
+
     suspend fun getSlots(venueId: String, date: String): Result<List<OwnerSlot>>
 }
