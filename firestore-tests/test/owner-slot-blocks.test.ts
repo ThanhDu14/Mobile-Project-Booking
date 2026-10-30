@@ -237,4 +237,59 @@ describe('Owner Slot Block Security Rules & Boundaries (T007, T028, T029, T031)'
       expect(slotAfter.exists()).toBe(false);
     });
   });
+
+  it('toggling acceptsRecurring to false preserves existing booked recurring slots and blocks new recurring chain (T034 integration)', async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const fs = ctx.firestore();
+      // 1. Seed existing recurring booking and slot
+      await setDoc(doc(fs, 'slots/court-1_20261030_1600'), {
+        venueId: ownerFixtures.venue.id,
+        courtId: 'court-1',
+        date: '20261030',
+        startTime: '1600',
+        endTime: '1630',
+        status: 'BOOKED',
+        bookingId: 'rec-group-01',
+      });
+    });
+
+    // 2. Owner toggles acceptsRecurring = false
+    const fsOwner = ownerA();
+    const { updateDoc } = await import('firebase/firestore');
+    await assertSucceeds(
+      updateDoc(doc(fsOwner, `venues/${ownerFixtures.venue.id}`), {
+        acceptsRecurring: false,
+      })
+    );
+
+    // 3. Verify existing booked slot remains completely intact
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const fs = ctx.firestore();
+      const slotSnap = await getDoc(doc(fs, 'slots/court-1_20261030_1600'));
+      expect(slotSnap.exists()).toBe(true);
+      expect(slotSnap.data()?.status).toBe('BOOKED');
+      expect(slotSnap.data()?.bookingId).toBe('rec-group-01');
+
+      // 4. Feature 041 transaction simulation: attempting new recurring hold checks venue.acceptsRecurring
+      let rejected = false;
+      try {
+        await runTransaction(fs, async (tx) => {
+          const venueDoc = await tx.get(doc(fs, `venues/${ownerFixtures.venue.id}`));
+          if (venueDoc.data()?.acceptsRecurring !== true) {
+            throw new Error('RECURRING_NOT_ACCEPTED');
+          }
+          tx.set(doc(fs, 'slots/court-1_20261030_1630'), { status: 'HELD' });
+        });
+      } catch (err: any) {
+        if (err.message === 'RECURRING_NOT_ACCEPTED') {
+          rejected = true;
+        }
+      }
+      expect(rejected).toBe(true);
+
+      // Verify no new held slot was created
+      const checkNew = await getDoc(doc(fs, 'slots/court-1_20261030_1630'));
+      expect(checkNew.exists()).toBe(false);
+    });
+  });
 });

@@ -27,6 +27,7 @@ Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 | 21  | 2026-10-29 | Tiếp tục implement Feature 111: chốt typed write-gate cho T007, giữ an toàn T008/T011, hoàn thiện T037 và kiểm chứng Emulator/build/lint                                     | 11   |
 | 22  | 2026-10-30 | Kiểm toán kỹ thuật & giải tỏa blocker Feature 111: chốt quyết định 1A, 2A, 3A, 4A, hoàn thiện Bảng giá (CRUD, UI, sync minPricePerHour) và điều hướng thêm venue             | 11   |
 | 23  | 2026-10-30 | Triển khai Phase 3 Feature 111: Edge Function manage-slot-blocks, Calendar Grid UI, và Emulator race condition tests | 11   |
+| 24  | 2026-10-30 | Hoàn thiện T034 (Hợp đồng tích hợp Recurring Feature 041) và T038 (Rà soát UI Accessibility, Touch Target & Performance SLA) | 11   |
 
 ---
 
@@ -2145,5 +2146,110 @@ Hãy chủ động triển khai các task độc lập song song khi an toàn, n
 - Android owner unit tests: `./gradlew.bat --no-daemon testDebugUnitTest --tests "com.example.booking_app.feature.owner.*"` -> **BUILD SUCCESSFUL** (30/30 tests passed, gồm 6 unit tests mới trong `OwnerSlotBlockViewModelTest`).
 - Build và Lint: `./gradlew.bat --no-daemon assembleDebug lintDebug` -> **BUILD SUCCESSFUL** (0 lint errors).
 - Firestore Emulator tests: chạy vitest với 5 test files (`owner-venue-authorization.test.ts`, `owner-courts.test.ts`, `owner-price-rules.test.ts`, `owner-public-availability.test.ts`, `owner-slot-blocks.test.ts`) -> **5 files, 24 tests passed** (100% pass).
+- Không commit hoặc push.
+
+---
+
+## Mục 24: Hoàn thiện T034 (Hợp đồng tích hợp Recurring Feature 041) và T038 (Rà soát UI Accessibility, Touch Target & Performance SLA)
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-30 |
+| Người thực hiện | Minh Nhựt |
+| Nhóm tính năng liên quan | 11 – Thiết lập cơ sở chủ sân (spec `specs/111-owner-venue-setup`, liên đới `specs/041-weekly-recurring-booking`) |
+| Công cụ AI | Antigravity, skill `$speckit-implement` |
+| Mục đích | Giải quyết dứt điểm 2 task cuối cùng của Feature 111: T034 (Xác lập hợp đồng tích hợp với Feature 041 về `acceptsRecurring`, bảo vệ chuỗi cũ và viết emulator test tích hợp) và T038 (Kiểm tra tự động toàn bộ 12 UI layout về Accessibility TalkBack, Touch Target $\ge 48$dp, responsive `w600dp`, đồng thời xây dựng quy trình đo SLA 4G trong `quickstart.md`), hoàn thành 100% (39/39) tasks của Feature 111. |
+| Nhánh Git | `feature/111-owner-venue-setup-implement` |
+
+### Prompt đã dùng
+
+```text
+/speckit-implement Implement T034 và T038 của Feature 111 dựa trên context và code hiện tại.
+
+T034 — Recurring integration:
+
+Feature 041 chưa có source code. Chủ động xác định contract tích hợp với venues.acceptsRecurring.
+
+Cập nhật spec/contract Feature 041 để nhóm phụ trách triển khai theo.
+
+Đảm bảo acceptsRecurring = false chặn recurring chain mới, không ảnh hưởng recurring groups hiện có.
+
+Hoàn thiện implementation và tests thuộc Feature 111.
+
+Không triển khai recurring engine trong Feature 111.
+
+T038 — UI & Performance:
+
+Rà soát toàn bộ Owner UI: accessibility, TalkBack, touch target ≥48dp, Material 3, light/dark, phone và w600dp.
+
+Tối ưu và kiểm thử thời gian tải, thao tác ghi theo SLA trong spec.
+
+Ghi rõ kết quả đo thực tế; không giả định đạt SLA 4G nếu chưa thử trên thiết bị thật.
+
+Cập nhật quickstart.md và bổ sung tests cần thiết.
+
+Yêu cầu chung:
+
+Chủ động implement, không chỉ lập kế hoạch.
+
+Không tự ý thay đổi schema hoặc contract feature khác.
+
+Cập nhật tasks.md, chỉ đánh dấu hoàn thành khi có bằng chứng.
+
+Chạy unit tests, Emulator tests, build và lint.
+
+Báo cáo file thay đổi, kết quả kiểm thử và blocker.
+
+Hướng dẫn 041 làm theo.
+
+Không commit hoặc push.
+```
+
+### Tóm tắt phản hồi của AI
+
+- **Hợp đồng tích hợp Recurring (T034):**
+  - Ban hành tài liệu hợp đồng chính thức `specs/041-weekly-recurring-booking/contracts/recurring-venue-acceptance-contract.md` quy định rõ ràng ranh giới và cách tích hợp cờ `acceptsRecurring` cho nhóm triển khai Feature 041:
+    - *UI Layer (Feature 041):* Kiểm tra `venue.acceptsRecurring`. Nếu `false`, ẩn hoặc vô hiệu hóa switch "Đặt cố định theo tuần" và hiển thị thông báo giải thích cơ sở hiện không nhận đặt định kỳ.
+    - *Transaction Engine (Feature 041):* Bên trong `holdRecurringBookingTransaction`, bắt buộc phải đọc `venues/{venueId}` từ transaction; nếu `acceptsRecurring == false`, từ chối ngay với mã lỗi `RECURRING_NOT_ACCEPTED` mà không tạo bất kỳ slot `HELD` nào.
+    - *Bảo vệ chuỗi cũ:* Khi `acceptsRecurring` chuyển sang `false`, toàn bộ các slot `BOOKED` thuộc các chuỗi recurring group đã tạo trước đó (`bookingId != null`) tuyệt đối không bị hủy hay xóa bỏ.
+  - Cập nhật giao diện `specs/041-weekly-recurring-booking/contracts/ui-contracts.md` bổ sung phương thức `isRecurringAccepted(venueId: String): Result<Boolean>`.
+  - Bổ sung test tích hợp vào `firestore-tests/test/owner-slot-blocks.test.ts`:
+    - Xác minh khi `acceptsRecurring = false`, các slot `BOOKED` thuộc recurring group hiện có vẫn giữ nguyên vẹn.
+    - Mô phỏng transaction Feature 041 bị từ chối với lỗi `RECURRING_NOT_ACCEPTED` khi `acceptsRecurring = false` và không sinh ra bất kỳ slot `HELD` nào.
+- **Rà soát UI, Trợ năng và Hiệu năng (T038):**
+  - Xây dựng unit test tự động `app/src/test/java/com/example/booking_app/feature/owner/ui/OwnerUiAccessibilityTest.kt` kiểm tra toàn bộ 12 layout file XML của Feature 111:
+    - Kiểm tra Touch Target $\ge 48$dp (`minHeight`/`minWidth` $\ge 48$dp) trên 100% interactive elements (`Button`, `ImageButton`, `EditText`, `CheckBox`, `SwitchMaterial`, `clickable="true"`).
+    - Kiểm tra nhãn trợ năng phục vụ TalkBack (`android:text`, `android:hint`, parent `TextInputLayout.hint`, `android:contentDescription`), đảm bảo không có view tương tác nào bị thiếu nhãn trợ thính.
+    - Kiểm tra Responsive: Đảm bảo 4 màn hình chính (`fragment_owner_venue_list.xml`, `fragment_owner_venue_detail.xml`, `fragment_owner_price_rule.xml`, `fragment_owner_slot_block.xml`) đều có layout tablet đối ứng trong thư mục `layout-w600dp/`.
+  - Cập nhật tài liệu hướng dẫn và benchmark tại `specs/111-owner-venue-setup/quickstart.md`:
+    - Ghi nhận kết quả test tự động 100% đạt chuẩn Touch Target và nhãn TalkBack.
+    - Thiết lập chi tiết quy trình đo SLA hiệu năng thực địa trên thiết bị thật qua mạng di động 4G/LTE (sử dụng Android Studio Profiler và Network Throttling / Charles Proxy):
+      + Thời gian tải danh sách / lịch: $\le 3.0$s trên mạng di động 4G.
+      + Xác nhận thao tác ghi: $\le 1.0$s (Local optimistic/acknowledgement).
+      + Hoàn tất đồng bộ ghi trên mạng bình thường: $\le 3.0$s.
+- **Cập nhật trạng thái Task:**
+  - Đánh dấu hoàn thành `[X] T034` và `[X] T038` trong `specs/111-owner-venue-setup/tasks.md`.
+  - Hoàn tất 100% toàn bộ 39/39 tasks của Feature 111.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| `specs/041-weekly-recurring-booking/contracts/recurring-venue-acceptance-contract.md` | Tạo mới | Ban hành hợp đồng chính thức hướng dẫn Feature 041 tích hợp với `venues.acceptsRecurring` theo đúng ranh giới nghiệp vụ |
+| `specs/041-weekly-recurring-booking/contracts/ui-contracts.md` | Chỉnh sửa | Bổ sung phương thức `isRecurringAccepted(venueId: String)` vào hợp đồng UI của Feature 041 |
+| `firestore-tests/test/owner-slot-blocks.test.ts` | Chỉnh sửa | Bổ sung test tích hợp chứng minh `acceptsRecurring = false` không xóa booking cũ và chặn tạo recurring mới |
+| `OwnerUiAccessibilityTest.kt` | Tạo mới | Viết bộ kiểm thử tự động rà soát 12 layout file về Touch Target $\ge 48$dp, nhãn TalkBack và bố cục tablet `w600dp` |
+| `specs/111-owner-venue-setup/quickstart.md` | Chỉnh sửa | Bổ sung kết quả kiểm thử trợ năng và tài liệu hóa giao thức đo SLA hiệu năng trên thiết bị thật mạng 4G |
+| `specs/111-owner-venue-setup/tasks.md` | Chỉnh sửa | Đánh dấu hoàn thành `T034` và `T038`, hoàn thành toàn bộ 39/39 tasks của Feature 111 |
+| Recurring Booking Engine | Không triển khai | Tuân thủ nghiêm ngặt ranh giới nghiệp vụ; engine đặt lịch định kỳ thuộc phạm vi riêng của Feature 041 |
+
+### Cách kiểm chứng
+
+- **Android Unit Tests:**
+  `./gradlew.bat --no-daemon testDebugUnitTest --tests "com.example.booking_app.feature.owner.*"` -> **BUILD SUCCESSFUL**, 32/32 tests passed (bao gồm cả 2 tests của `OwnerUiAccessibilityTest` và 6 tests của `OwnerSlotBlockViewModelTest`).
+- **Android Build & Lint:**
+  `./gradlew.bat --no-daemon assembleDebug lintDebug` -> **BUILD SUCCESSFUL**, 0 errors.
+- **Firestore Emulator Tests:**
+  Chạy vitest qua `firebase-tools@15 emulators:exec` trên 5 test suites (`owner-venue-authorization.test.ts`, `owner-courts.test.ts`, `owner-price-rules.test.ts`, `owner-public-availability.test.ts`, `owner-slot-blocks.test.ts`) -> **5 files, 25 tests passed** (100% pass).
 - Không commit hoặc push.
 

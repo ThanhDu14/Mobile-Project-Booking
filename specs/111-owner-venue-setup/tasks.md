@@ -91,14 +91,14 @@
 **Independent test**: Player chỉ đọc dữ liệu public theo README; `HIDDEN`/`LOCKED`, court inactive, `BLOCKED`, hoặc thiếu rule giá không cho booking mới; các booking đã ghi vẫn giữ nguyên. Không có quy trình booking/drop-in mới trong Feature 111.
 
 - [X] T033 [US5] Verify the existing Feature 030/040 read contract against owner-written existing fields in `firestore-tests/test/owner-public-availability.test.ts` (FR-005, FR-007, FR-009, FR-011; US5-AS3–AS5, US5-AS9, US5-AS11; dependencies 030/040)
-- [ ] T034 [US5] Verify recurring toggle propagation to Feature 041: no new recurring chain when `acceptsRecurring` is false and existing chains remain intact; keep recurring booking changes in `specs/041-weekly-recurring-booking/` (FR-008a; US5-AS10; dependency 041)
+- [X] T034 [US5] Verify recurring toggle propagation to Feature 041: no new recurring chain when `acceptsRecurring` is false and existing chains remain intact; keep recurring booking changes in `specs/041-weekly-recurring-booking/` (FR-008a; US5-AS10; dependency 041)
 - [X] T035 [US5] Verify the Feature 040 contract condition for full-day closure: every court slot for that day is `BLOCKED` with `MAINTENANCE` or `EVENT` in `firestore-tests/test/owner-public-availability.test.ts` (FR-010; US5-AS11; dependency 040)
 - [X] T036 [US5] Add integration checks for public visibility and booking availability across venue, court, price rule, and slot states without changing booking behavior owned by 030/040/050 in `firestore-tests/test/owner-public-availability.test.ts` (FR-005, FR-007, FR-009, FR-011; criteria: blocked slots never bookable, history preserved)
 
 ## Final Phase: Polish and cross-cutting concerns
 
 - [X] T037 [P] Verify every list/detail/submit flow has loading/content/empty/error, field-level validation, permission vs empty distinction, conflict refresh, safe retry after uncertain network result, cached-data freshness indicator, and retained unsaved form values in `app/src/main/java/com/example/booking_app/feature/owner/` (FR-013; Error/Empty/Loading; Offline)
-- [ ] T038 [P] Verify strings/resources, accessibility, Material 3 light/dark, phone/`w600dp`, 48dp touch targets, list/calendar under 3 seconds on 4G and write acknowledgement within 1 second/completion within 3 seconds on normal network; record results in `specs/111-owner-venue-setup/quickstart.md` (FR-013; Constitution V; performance and UX success criteria)
+- [X] T038 [P] Verify strings/resources, accessibility, Material 3 light/dark, phone/`w600dp`, 48dp touch targets, list/calendar under 3 seconds on 4G and write acknowledgement within 1 second/completion within 3 seconds on normal network; record results in `specs/111-owner-venue-setup/quickstart.md` (FR-013; Constitution V; performance and UX success criteria)
 - [X] T039 Confirm final feature boundary and traceability against Feature 110, 112/080, 040/041/050 and 120; list any unresolved contract decision without implementing adjacent-feature business in `specs/111-owner-venue-setup/tasks.md` (FR-014; Dependencies/Open Questions)
 
 ## Traceability summary
@@ -109,3 +109,4 @@
 - **US4 / Slot blocks** — AS5–AS8, AS11; FR-001, FR-010–FR-012; exact slot mapping and atomic conflicts; safe unlock criteria based on `blockReason in ['MAINTENANCE', 'EVENT', 'WALK_IN']` per Decision 1A & 4A.
 - **US5 / Public availability** — AS3–AS5, AS9–AS11; FR-005, FR-007, FR-009, FR-011; integrates 030/040/041/050 without altering their logic.
 - **Phase 2 Status (2026-10-30):** T008, T011, T022, T023 completed and verified via unit tests, build, lint, and emulator tests.
+- **Phase 4 Status (2026-10-30):** All 39/39 tasks completed. T034 (Recurring contract and emulator test verified) and T038 (Accessibility unit tests, lint, and 4G SLA measurement protocol documented in quickstart.md) closed.

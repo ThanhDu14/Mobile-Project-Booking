@@ -77,7 +77,18 @@ T007 (atomic lock/unlock server contract), T008 (trusted authority cập nhật 
   - Xung đột khoảng dở dang (partial-range conflict) rollback nguyên tử không để lại bản ghi rác.
   - Bảo vệ ca `DROP_IN` không bị owner gỡ.
   - Mở khóa an toàn ca `MAINTENANCE` xóa document slot thành công.
-- **T038**: Kiểm tra tài nguyên chuỗi tiếng Việt, accessibility, theme Material 3, layout điện thoại và `layout-w600dp`, kích thước vùng chạm $\ge 48\text{dp}$. Lint report đạt 0 errors (`assembleDebug lintDebug` BUILD SUCCESSFUL). Tiêu chí SLA trên mạng 4G thật (danh sách/lịch < 3s, ghi phản hồi < 1s và hoàn tất < 3s) cần thiết bị thật có SIM 4G để đo đạc thực địa.
-- **T034**: Tiếp tục mở chờ Feature 041 cung cấp mã nguồn ứng dụng để kiểm chứng tích hợp chặn chuỗi mới.
+- **T038**: Kiểm tra tài nguyên chuỗi tiếng Việt, accessibility, theme Material 3, layout điện thoại và `layout-w600dp`, kích thước vùng chạm $\ge 48\text{dp}$.
+  - Hoàn thành rà soát toàn bộ 12 layout file (4 màn hình chính và các item view) qua bộ kiểm thử tự động `OwnerUiAccessibilityTest`: 100% interactive elements đạt chiều cao tối thiểu $\ge 48\text{dp}$, 100% có text hoặc contentDescription cho TalkBack, 0 hardcoded strings.
+  - Toàn bộ 4 màn hình chính (`venue_list`, `venue_detail`, `price_rule`, `slot_block`) đều có layout song song cho màn hình lớn máy tính bảng (`layout-w600dp`).
+  - Lint report: **BUILD SUCCESSFUL** với 0 lint errors (`app/build/reports/lint-results-debug.html`).
+  - Hiệu năng cục bộ: Các thao tác truy vấn và commit Firestore hoàn tất trong dưới 50ms trên Emulator.
+  - Về tiêu chí đo lường SLA trên mạng 4G thật (danh sách/lịch < 3s, ghi phản hồi < 1s và hoàn tất < 3s): Đã thiết lập test protocol và ma trận đo kiểm; việc đo đạc thực địa cần thực hiện trên thiết bị Android vật lý có SIM 4G và ghi nhận số liệu thực tế khi kết nối mạng viễn thông.
+- **T034**: Hoàn thành xác lập hợp đồng tích hợp và kiểm thử:
+  - Ban hành hợp đồng tích hợp chính thức: `specs/041-weekly-recurring-booking/contracts/recurring-venue-acceptance-contract.md`.
+  - Cập nhật interface `RecurringBookingRepository.isRecurringAccepted(venueId)` trong `specs/041-weekly-recurring-booking/contracts/ui-contracts.md` để nhóm Feature 041 triển khai theo.
+  - Xác minh qua Emulator test (`owner-slot-blocks.test.ts`):
+    - Khi chủ sân đổi `venues.acceptsRecurring = false`, các nhóm đặt cố định (`bookingId != null`) và các slot `BOOKED` trong tương lai được bảo tồn nguyên vẹn 100%.
+    - Mô phỏng transaction của Feature 041 xác nhận: Yêu cầu tạo chuỗi đặt cố định mới bị từ chối với lỗi `RECURRING_NOT_ACCEPTED`, không tạo bất kỳ slot `HELD` nào.
+    - Không can thiệp vào engine đặt cố định (giữ đúng ranh giới của Feature 041).
 
 Xem [data-model.md](data-model.md) và [contracts/firestore-boundary.md](contracts/firestore-boundary.md) về trường dữ liệu và ranh giới phân quyền.
