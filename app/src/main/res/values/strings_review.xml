@@ -15,6 +15,20 @@
     <string name="review_discard_title">Bỏ đánh giá đang viết?</string>
     <string name="review_empty_venue">Sân chưa có đánh giá</string>
 
+    <!-- Thông báo theo ReviewError (contracts/edge-function-review.md, bảng mã lỗi) -->
+    <string name="review_error_invalid_argument">Thông tin đánh giá chưa hợp lệ, vui lòng kiểm tra lại</string>
+    <string name="review_error_unauthenticated">Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại</string>
+    <string name="review_error_not_owner">Bạn không có quyền thực hiện thao tác này</string>
+    <string name="review_error_own_venue">Bạn không thể đánh giá sân của chính mình</string>
+    <string name="review_error_account_locked">Tài khoản đang bị khóa</string>
+    <string name="review_error_not_found">Không tìm thấy đánh giá</string>
+    <string name="review_error_booking_not_completed">Bạn chỉ đánh giá được sau khi đã chơi</string>
+    <string name="review_error_window_closed">Đã hết hạn đánh giá hoặc sửa đánh giá</string>
+    <string name="review_error_already_reviewed">Bạn đã đánh giá lượt chơi này</string>
+    <string name="review_error_photo_missing">Có ảnh chưa tải lên xong, vui lòng thử lại</string>
+    <string name="review_error_internal">Có lỗi xảy ra, vui lòng thử lại</string>
+    <string name="review_error_network">Không có kết nối mạng</string>
+
     <!-- Sân yêu thích -->
     <string name="favorite_title">Sân yêu thích</string>
     <string name="favorite_added">Đã thêm vào yêu thích</string>
