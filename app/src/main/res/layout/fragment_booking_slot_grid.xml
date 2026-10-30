@@ -63,6 +63,14 @@
 
             </LinearLayout>
 
+            <!-- Trái tim yêu thích (spec 070 US3); hiện khi đã tải xong thông tin cơ sở. -->
+            <com.example.booking_app.feature.review.ui.favorite.FavoriteToggleButton
+                android:id="@+id/btnFavorite"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:visibility="gone"
+                tools:visibility="visible" />
+
         </LinearLayout>
 
         <!-- Main Content (Cuộn dọc) -->

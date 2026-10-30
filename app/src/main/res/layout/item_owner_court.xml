@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="8dp">
+    <TextView android:id="@+id/name" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" />
+    <TextView android:id="@+id/surface" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingHorizontal="8dp" />
+    <TextView android:id="@+id/active" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingHorizontal="8dp" />
+    <com.google.android.material.button.MaterialButton android:id="@+id/edit" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/edit" android:minHeight="48dp" />
+    <com.google.android.material.button.MaterialButton android:id="@+id/up" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/owner_court_up" android:minHeight="48dp" />
+    <com.google.android.material.button.MaterialButton android:id="@+id/down" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/owner_court_down" android:minHeight="48dp" />
+    <com.google.android.material.button.MaterialButton android:id="@+id/deactivate" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/owner_court_deactivate" android:minHeight="48dp" />
+</LinearLayout>

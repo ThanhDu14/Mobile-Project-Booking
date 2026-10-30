@@ -44,6 +44,11 @@ class PlayerHomePlaceholderFragment : Fragment(R.layout.fragment_home_placeholde
             findNavController().navigate(R.id.action_playerHome_to_bookingSlotGrid, bundle)
         }
 
+        // Nút tạm sang Feature 070 (Sân yêu thích) để demo
+        binding.btnGoToFavorites.setOnClickListener {
+            findNavController().navigate(R.id.action_playerHome_to_favoriteVenues)
+        }
+
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {

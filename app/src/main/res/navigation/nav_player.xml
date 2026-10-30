@@ -15,6 +15,10 @@
         <action
             android:id="@+id/action_playerHome_to_bookingSlotGrid"
             app:destination="@id/bookingSlotGridFragment" />
+        <!-- Tạm để demo spec 070; mục chính thức nằm ở trang Tài khoản (spec 011). -->
+        <action
+            android:id="@+id/action_playerHome_to_favoriteVenues"
+            app:destination="@id/nav_review" />
     </fragment>
 
     <fragment
@@ -41,5 +45,7 @@
 
     <!-- Trang Tài khoản của spec 011 (research R14). -->
     <include app:graph="@navigation/nav_account" />
+
+    <include app:graph="@navigation/nav_review" />
 
 </navigation>
