@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest';
 import { assertFails, assertSucceeds, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, updateDoc, where } from 'firebase/firestore';
 import { createTestEnv } from './setup';
 
 let env: RulesTestEnvironment;
@@ -45,6 +45,14 @@ describe('Feature 111 owner boundary', () => {
     const ownerFs = env.authenticatedContext('owner-a', { appRole: 'OWNER' }).firestore();
     await assertFails(getDoc(doc(publicFs, 'venues/venue-hidden')));
     await assertSucceeds(getDoc(doc(ownerFs, 'venues/venue-hidden')));
+  });
+
+  it('approved owner can list own venues by ownerId, including hidden ones; pending owner cannot', async () => {
+    const ownerFs = env.authenticatedContext('owner-a', { appRole: 'OWNER' }).firestore();
+    const pendingFs = env.authenticatedContext('pending', { appRole: 'OWNER' }).firestore();
+    await assertSucceeds(getDocs(query(collection(ownerFs, 'venues'), where('ownerId', '==', 'owner-a'))));
+    await assertFails(getDocs(query(collection(pendingFs, 'venues'), where('ownerId', '==', 'pending'))));
+    await assertFails(getDocs(query(collection(ownerFs, 'venues'), where('ownerId', '==', 'owner-b'))));
   });
 
   it('owner can hide and toggle recurring without changing protected fields', async () => {

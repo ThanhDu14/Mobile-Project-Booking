@@ -8,7 +8,6 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.navigation.fragment.findNavController
 import com.example.booking_app.R
 import com.example.booking_app.core.ui.VerifyEmailBannerEvent
 import com.example.booking_app.core.ui.VerifyEmailBannerViewModel
@@ -32,19 +31,6 @@ class PlayerHomePlaceholderFragment : Fragment(R.layout.fragment_home_placeholde
         val binding = FragmentHomePlaceholderBinding.bind(view)
         binding.title.setText(R.string.auth_home_placeholder_player)
         binding.verifyEmailBanner.onResendClick = bannerViewModel::onResend
-
-        // Nút điều hướng sang Feature 040 (Đặt sân theo giờ) để kiểm thử
-        binding.btnGoToBooking.setOnClickListener {
-            val bundle = Bundle().apply {
-                putString("venueId", "demo-truong-chinh-909")
-            }
-            findNavController().navigate(R.id.action_playerHome_to_bookingSlotGrid, bundle)
-        }
-
-        // Nút tạm sang Feature 070 (Sân yêu thích) để demo
-        binding.btnGoToFavorites.setOnClickListener {
-            findNavController().navigate(R.id.action_playerHome_to_favoriteVenues)
-        }
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {

@@ -6,8 +6,11 @@ import android.net.Uri
 sealed interface RouteDecision {
     data object Welcome : RouteDecision
 
-    /** Trang chủ người chơi ở chế độ khách; bị khóa thì mở thêm màn hình đăng nhập chồng lên. */
-    data class PlayerGuest(val showLockedLogin: Boolean) : RouteDecision
+    /**
+     * Trang chủ người chơi ở chế độ khách; bị khóa thì mở thêm màn hình đăng nhập chồng lên.
+     * [notice] (spec 011): phiên bị thu hồi thì mở đăng nhập kèm thông báo; tài khoản vừa xóa thì hiện Snackbar.
+     */
+    data class PlayerGuest(val showLockedLogin: Boolean, val notice: GuestNotice = GuestNotice.NONE) : RouteDecision
 
     data class RoleHome(val appRole: AppRole) : RouteDecision
 
@@ -22,13 +25,24 @@ sealed interface RouteDecision {
     data class ResetTo(val appRole: AppRole) : RouteDecision
 }
 
+/** Thông báo khi về chế độ khách (spec 011 T018). */
+enum class GuestNotice { NONE, SESSION_REVOKED, ACCOUNT_DELETED }
+
 object SessionRouter {
+
+    /** Đích sau khi phiên kết thúc (đăng xuất, bị khóa, bị thu hồi, tài khoản bị xóa). */
+    fun afterSignOut(reason: SignOutReason?): RouteDecision = when (reason) {
+        null -> RouteDecision.PlayerGuest(showLockedLogin = false)
+        SignOutReason.LOCKED -> RouteDecision.PlayerGuest(showLockedLogin = true)
+        SignOutReason.SESSION_REVOKED -> RouteDecision.PlayerGuest(showLockedLogin = false, GuestNotice.SESSION_REVOKED)
+        SignOutReason.ACCOUNT_DELETED -> RouteDecision.PlayerGuest(showLockedLogin = false, GuestNotice.ACCOUNT_DELETED)
+    }
 
     /** Đích khi mở app. `null` khi còn đang tải phiên. */
     fun startDestination(state: SessionState, welcomeSeen: Boolean): RouteDecision? = when (state) {
         SessionState.Loading -> null
         is SessionState.SignedOut -> when {
-            state.reason == SignOutReason.LOCKED -> RouteDecision.PlayerGuest(showLockedLogin = true)
+            state.reason != null -> afterSignOut(state.reason)
             welcomeSeen -> RouteDecision.PlayerGuest(showLockedLogin = false)
             else -> RouteDecision.Welcome
         }

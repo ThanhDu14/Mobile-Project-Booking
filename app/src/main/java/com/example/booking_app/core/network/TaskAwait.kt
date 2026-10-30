@@ -13,6 +13,7 @@ import kotlin.coroutines.cancellation.CancellationException
 const val DEFAULT_TIMEOUT_MS = 15_000L
 
 private const val ERROR_USER_DISABLED = "ERROR_USER_DISABLED"
+private const val ERROR_USER_TOKEN_EXPIRED = "ERROR_USER_TOKEN_EXPIRED"
 
 /** Chờ một Task của Firebase, tối đa [timeoutMs] (FR-021). Mọi lỗi được đổi thành [AppError]. */
 suspend fun <T> Task<T>.awaitWithTimeout(timeoutMs: Long = DEFAULT_TIMEOUT_MS): T =
@@ -31,7 +32,10 @@ fun Throwable.toAppError(): AppError = when (this) {
     is AppError -> this
     is FirebaseNetworkException, is IOException -> AppError.Network
     is FirebaseTooManyRequestsException -> AppError.RateLimited
-    is FirebaseAuthInvalidUserException ->
-        if (errorCode == ERROR_USER_DISABLED) AppError.Locked else AppError.Unknown(this)
+    is FirebaseAuthInvalidUserException -> when (errorCode) {
+        ERROR_USER_DISABLED -> AppError.Locked
+        ERROR_USER_TOKEN_EXPIRED -> AppError.SessionRevoked
+        else -> AppError.Unknown(this)
+    }
     else -> AppError.Unknown(this)
 }

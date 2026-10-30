@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Viên thuốc court-container sau icon tab đang chọn -->
+    <style name="Widget.SmashNow.BottomNav.ActiveIndicator" parent="Widget.Material3.BottomNavigationView.ActiveIndicator">
+        <item name="android:color">@color/sn_court_container</item>
+    </style>
+
+    <style name="TextAppearance.SmashNow.BottomNav" parent="TextAppearance.SmashNow.Caption">
+        <item name="android:textSize">13sp</item>
+    </style>
+
+    <style name="TextAppearance.SmashNow.BottomNav.Active">
+        <item name="android:fontFamily">@font/be_vietnam_pro_semibold</item>
+        <item name="fontFamily">@font/be_vietnam_pro_semibold</item>
+    </style>
+</resources>

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- BottomNav người chơi theo design system SmashNow (wireframe 02_court-search_buoc1_trang-chu.png).
+     Vãng lai, Lịch đặt, Cộng đồng chưa có màn hình: spec 080/060/090 nối vào khi làm. -->
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/tab_home"
+        android:icon="@drawable/ic_home_24"
+        android:title="@string/nav_tab_home" />
+    <item
+        android:id="@+id/tab_drop_in"
+        android:icon="@drawable/ic_groups_24"
+        android:title="@string/nav_tab_drop_in" />
+    <item
+        android:id="@+id/tab_bookings"
+        android:icon="@drawable/ic_event_24"
+        android:title="@string/nav_tab_bookings" />
+    <item
+        android:id="@+id/tab_community"
+        android:icon="@drawable/ic_chat_24"
+        android:title="@string/nav_tab_community" />
+    <item
+        android:id="@+id/tab_account"
+        android:icon="@drawable/ic_person_outline_24"
+        android:title="@string/nav_tab_account" />
+</menu>

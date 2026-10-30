@@ -52,7 +52,6 @@ beforeEach(async () => {
     await setDoc(doc(db, 'users/player1'), seedUser('player1'));
     await setDoc(doc(db, 'users/player2'), seedUser('player2'));
     await setDoc(doc(db, 'users/admin1'), seedUser('admin1', { role: 'ADMIN' }));
-    await setDoc(doc(db, 'districts/q1'), { name: 'Quận 1', isActive: true });
   });
 });
 
@@ -112,10 +111,13 @@ describe('users/{uid}: sửa', () => {
   });
 
   it('U8: sửa các trường người dùng tự sửa được', async () => {
+    // Sửa bởi 011: khu vực phải tồn tại và đang hoạt động, avatarPath theo mẫu `{uid}/avatar_{ms}.jpg`.
+    await env.withSecurityRulesDisabled((ctx) =>
+      setDoc(doc(ctx.firestore(), 'districts/q1'), { name: 'Quận 1', sortOrder: 1, isActive: true }));
     await assertSucceeds(updateDoc(me(), {
       level: 'INTERMEDIATE',
       favoriteDistrictIds: ['q1'],
-      avatarPath: 'player1/avatar_1760000000000.jpg',
+      avatarPath: 'player1/avatar_1760500000000.jpg',
       fcmTokens: ['token'],
       notificationPrefs: { booking: false },
       updatedAt: serverTimestamp(),

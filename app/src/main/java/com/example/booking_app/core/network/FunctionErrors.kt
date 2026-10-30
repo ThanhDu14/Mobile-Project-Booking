@@ -12,6 +12,7 @@ import kotlin.coroutines.cancellation.CancellationException
 
 private const val CODE_ACCOUNT_LOCKED = "ACCOUNT_LOCKED"
 private const val CODE_RATE_LIMITED = "RATE_LIMITED"
+private const val CODE_ACCOUNT_DELETING = "ACCOUNT_DELETING"
 
 /** Lỗi HTTP của Edge Function, tách khỏi kiểu của supabase-kt để đọc body và test được. */
 class FunctionHttpException(val status: Int, val body: String?) : Exception("Edge Function HTTP $status")
@@ -29,12 +30,14 @@ fun parseFunctionErrorCode(body: String?): String? {
  * Bọc mọi lời gọi Edge Function:
  * - `401`: làm mới ID token rồi thử lại đúng một lần;
  * - `403 ACCOUNT_LOCKED`: báo [AccountLockedBus] để `SessionManager` đăng xuất, ném [AppError.Locked];
+ * - `403 ACCOUNT_DELETING` (spec 011): báo [AccountDeletedBus], ném [AppError.AccountDeleted];
  * - lỗi mạng và các mã khác đổi thành [AppError].
  */
 @Singleton
 class FunctionErrors @Inject constructor(
     private val idTokenProvider: IdTokenProvider,
     private val lockedBus: AccountLockedBus,
+    private val deletedBus: AccountDeletedBus,
 ) {
     suspend fun <T> invokeWithAuthRetry(call: suspend () -> T): T {
         try {
@@ -60,6 +63,10 @@ class FunctionErrors @Inject constructor(
             failure.status == 403 && code == CODE_ACCOUNT_LOCKED -> {
                 lockedBus.publish()
                 AppError.Locked
+            }
+            failure.status == 403 && code == CODE_ACCOUNT_DELETING -> {
+                deletedBus.publish()
+                AppError.AccountDeleted
             }
             failure.status == 429 || code == CODE_RATE_LIMITED -> AppError.RateLimited
             else -> AppError.Unknown(failure)

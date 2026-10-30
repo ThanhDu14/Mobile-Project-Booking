@@ -2,12 +2,14 @@
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/nav_owner"
-    app:startDestination="@id/ownerVenueListFragment">
+    app:startDestination="@id/ownerHomePlaceholderFragment">
 
     <fragment
         android:id="@+id/ownerVenueListFragment"
         android:name="com.example.booking_app.feature.owner.ui.OwnerVenueListFragment"
         android:label="@string/owner_venues_title">
+        <!-- Mục "Cơ sở của tôi" trên trang Tài khoản (spec 011, OwnerLink.VENUES) mở bằng deep link này. -->
+        <deepLink app:uri="smashnow://owner/venues" />
         <action
             android:id="@+id/action_ownerVenueList_to_detail"
             app:destination="@id/ownerVenueDetailFragment" />
@@ -33,5 +35,18 @@
         android:label="@string/owner_prices_title">
         <argument android:name="venueId" app:argType="string" />
     </fragment>
+
+    <!-- Tab Hôm nay của OwnerNav, màn tạm tới khi spec 112 làm màn Hôm nay. Là màn đầu của graph theo thứ tự tab. -->
+    <fragment
+        android:id="@+id/ownerHomePlaceholderFragment"
+        android:name="com.example.booking_app.feature.auth.ui.home.OwnerHomePlaceholderFragment"
+        android:label="@string/app_name">
+        <action
+            android:id="@+id/action_ownerHome_to_account"
+            app:destination="@id/nav_account" />
+    </fragment>
+
+    <!-- Trang Tài khoản của spec 011 (research R14). -->
+    <include app:graph="@navigation/nav_account" />
 
 </navigation>

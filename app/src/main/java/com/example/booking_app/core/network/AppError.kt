@@ -26,6 +26,15 @@ sealed class AppError(message: String? = null, cause: Throwable? = null) : Excep
     /** Thao tác cần đăng nhập mà đang ở chế độ khách hoặc token hết hiệu lực. */
     data object NotSignedIn : AppError("Not signed in")
 
+    /** [011] Server trả `ACCOUNT_DELETING`: tài khoản đã được xóa. `SessionManager` tự đăng xuất. */
+    data object AccountDeleted : AppError("Account deleted")
+
+    /**
+     * [011] Firebase thu hồi phiên (`ERROR_USER_TOKEN_EXPIRED`), ví dụ sau khi đổi mật khẩu ở máy khác.
+     * `SessionManager` đăng xuất với lý do `SESSION_REVOKED` (spec 011 R9).
+     */
+    data object SessionRevoked : AppError("Session revoked")
+
     /** Lỗi còn lại. Giữ `cause` để tầng gọi tự phân loại thêm (ví dụ lỗi riêng của Firebase Auth). */
     data class Unknown(override val cause: Throwable?) : AppError(cause?.message, cause)
 }

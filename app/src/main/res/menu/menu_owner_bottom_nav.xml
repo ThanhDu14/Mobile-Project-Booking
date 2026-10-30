@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- OwnerNav theo design system SmashNow (wireframe 11_court-owner_buoc1_hom-nay.png). Hôm nay đang là màn tạm,
+     Đơn đặt, Lịch sân, Tin nhắn chưa có màn hình: spec 112 nối vào khi làm. Trang Tài khoản thuộc tab Cơ sở. -->
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/tab_owner_today"
+        android:icon="@drawable/ic_calendar_24"
+        android:title="@string/nav_owner_tab_today" />
+    <item
+        android:id="@+id/tab_owner_bookings"
+        android:icon="@drawable/ic_inbox_24"
+        android:title="@string/nav_owner_tab_bookings" />
+    <item
+        android:id="@+id/tab_owner_schedule"
+        android:icon="@drawable/ic_view_agenda_24"
+        android:title="@string/nav_owner_tab_schedule" />
+    <item
+        android:id="@+id/tab_owner_messages"
+        android:icon="@drawable/ic_chat_24"
+        android:title="@string/nav_owner_tab_messages" />
+    <item
+        android:id="@+id/tab_owner_venues"
+        android:icon="@drawable/ic_store_24"
+        android:title="@string/nav_owner_tab_venues" />
+</menu>

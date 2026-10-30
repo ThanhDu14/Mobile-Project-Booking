@@ -26,4 +26,9 @@
     <dimen name="auth_hero_lamp_height">56dp</dimen>
     <dimen name="auth_hero_mint_width">56dp</dimen>
     <dimen name="auth_button_progress_size">24dp</dimen>
+    <!-- Spec 011: trang Tài khoản -->
+    <dimen name="account_avatar_size">88dp</dimen>
+    <dimen name="account_avatar_large">120dp</dimen>
+    <dimen name="account_icon_box">48dp</dimen>
+    <dimen name="account_row_height">56dp</dimen>
 </resources>
