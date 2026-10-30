@@ -13,6 +13,7 @@ import com.google.firebase.firestore.CollectionReference
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -123,6 +124,9 @@ class FirestoreFavoriteRepository @Inject constructor(
         }
     } catch (e: CancellationException) {
         throw e
+    } catch (e: FirebaseFirestoreException) {
+        // Rules chỉ cho người chơi đọc cơ sở ACTIVE: bị từ chối nghĩa là sân đã ẩn, khóa hoặc xóa.
+        if (e.code == FirebaseFirestoreException.Code.PERMISSION_DENIED) FavoriteVenueStateDto(exists = true) else null
     } catch (e: Exception) {
         // Offline và chưa có cache của cơ sở: hiển thị theo venueSnapshot.
         null
