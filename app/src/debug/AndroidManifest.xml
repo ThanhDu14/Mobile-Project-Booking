@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!--
+        Android 17 (API 37) chặn app gọi địa chỉ mạng cục bộ như 10.0.2.2 nếu chưa có quyền này,
+        nên Firebase Emulator và Supabase local bị timeout ("không có kết nối mạng").
+        Quyền thuộc loại dangerous: cấp bằng `adb shell pm grant com.example.booking_app android.permission.ACCESS_LOCAL_NETWORK`.
+    -->
+    <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
+
     <!-- Chỉ bản debug: cho phép HTTP tới Supabase local và Firebase Emulator trên máy tính. -->
     <application android:networkSecurityConfig="@xml/network_security_config" />
 </manifest>
