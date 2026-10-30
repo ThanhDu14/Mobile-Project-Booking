@@ -3,4 +3,6 @@
     <!-- Email hỗ trợ hiện trong thông báo khóa tài khoản (FR-014). Thay bằng hộp thư thật của nhóm trước demo. -->
     <string name="support_email" translatable="false">smashnow.support@example.com</string>
     <string name="launcher_loading">Đang tải</string>
+    <!-- Dùng chung cho include_state_views.xml (core/ui/StateViews.kt). -->
+    <string name="common_retry">Thử lại</string>
 </resources>
