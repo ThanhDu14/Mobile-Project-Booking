@@ -75,7 +75,7 @@ description: "Danh sách task triển khai spec 070 – Đánh giá sân và sâ
 
 - [X] T022 [P] Viết test Rules `firestore-tests/test/reviews.test.ts` (R1–R9) và `firestore-tests/test/favorites.test.ts` (F1–F4) theo [contracts/security-rules.md](contracts/security-rules.md), cấu trúc giống `firestore-tests/test/base.test.ts` (`createTestEnv()`, vai trò qua claim `appRole`); mỗi dòng phân quyền có ít nhất một `assertSucceeds` và một `assertFails`; chạy thấy fail — *30/10: xong `favorites.test.ts` (F1–F4) và `reviews.test.ts` (R1–R9); cả bộ 52 test qua.*
 - [X] T023 Thêm Rules cho `reviews` và `users/{uid}/favorites` vào `firestore.rules` đúng [contracts/security-rules.md](contracts/security-rules.md) để T022 qua
-- [ ] T024 [P] Thêm 5 index mới vào `firestore.indexes.json` theo mục 5 của [data-model.md](data-model.md) (`reviews`: `starBucket`, `hasPhotos`, `hasOwnerReply`, `userId`; collection group `favorites.venueId`)
+- [X] T024 [P] Thêm 5 index mới vào `firestore.indexes.json` theo mục 5 của [data-model.md](data-model.md) (`reviews`: `starBucket`, `hasPhotos`, `hasOwnerReply`, `userId`; collection group `favorites.venueId`) — *30/10: thêm 6 index (5 index mới + `venueId, status, createdAt desc` cho danh sách đánh giá); index lọc "Chưa phản hồi" có thêm `status` cho khớp truy vấn T058.*
 - [ ] T025 [P] Tạo script dữ liệu demo `scripts/seed/070-review.ts` (player1, player2, owner1, owner2, admin1; venueA ACTIVE với 25 đánh giá, venueB HIDDEN; đơn `b-done`, `b-old`, `b-confirmed`, `b-own`) theo [quickstart.md](quickstart.md) mục 1
 
 **Checkpoint**: Rules test qua; `deno test FN/_shared` qua; app build được với nav graph mới.
