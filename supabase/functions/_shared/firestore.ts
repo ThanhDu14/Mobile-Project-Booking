@@ -135,7 +135,8 @@ export async function list(collectionPath: string): Promise<Record<string, unkno
 
 /** Một thao tác ghi theo REST API (`Write`). Dùng `createWrite` / `updateWrite` để tạo. */
 export interface Write {
-  update: { name: string; fields: Record<string, FirestoreValue> };
+  update?: { name: string; fields: Record<string, FirestoreValue> };
+  delete?: string;
   updateMask?: { fieldPaths: string[] };
   updateTransforms?: { fieldPath: string; setToServerValue: "REQUEST_TIME" }[];
   currentDocument?: { exists: boolean };
@@ -178,6 +179,14 @@ export function updateWrite(
     updateMask: { fieldPaths: Object.keys(data) },
     updateTransforms: serverTimestampFields.map((fieldPath) => ({ fieldPath, setToServerValue: "REQUEST_TIME" })),
     currentDocument: { exists: true },
+  };
+}
+
+/** Xóa document; precondition exists = true để báo lỗi nếu document không tồn tại. */
+export function deleteWrite(path: string, preconditionExists = true): Write {
+  return {
+    delete: documentName(path),
+    currentDocument: preconditionExists ? { exists: true } : undefined,
   };
 }
 

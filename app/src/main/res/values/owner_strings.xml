@@ -32,6 +32,14 @@
     <string name="owner_slot_reason">Lý do</string>
     <string name="owner_slot_preview">Kiểm tra khoảng giờ</string>
     <string name="owner_slot_submit">Gửi yêu cầu khóa</string>
+    <string name="owner_slot_unlock_submit">Mở khóa giờ đã chọn</string>
+    <string name="owner_slot_grid_title">Lưới khung giờ trong ngày</string>
+    <string name="owner_slot_status_available">Trống</string>
+    <string name="owner_slot_status_blocked">Đã khóa</string>
+    <string name="owner_slot_status_booked">Đã đặt</string>
+    <string name="owner_slot_status_held">Đang giữ</string>
+    <string name="owner_slot_lock_success">Đã khóa %1$d khung giờ thành công</string>
+    <string name="owner_slot_unlock_success">Đã mở khóa %1$d khung giờ thành công</string>
     <string name="owner_slot_stale">Dữ liệu đã cũ; hãy tải lại trước khi tiếp tục.</string>
     <string name="owner_slot_offline">Đang ngoại tuyến; thao tác khóa bị tắt.</string>
     <string name="owner_data_fresh">Dữ liệu vừa được xác nhận từ máy chủ.</string>

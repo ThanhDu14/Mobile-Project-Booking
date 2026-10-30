@@ -12,7 +12,8 @@ import javax.inject.Inject
 
 class OwnerVenueRepositoryImpl @Inject constructor(
     private val source: FirestoreOwnerVenueDataSource,
-    private val syncApi: SyncVenuePriceApi
+    private val syncApi: SyncVenuePriceApi,
+    private val slotBlocksApi: ManageSlotBlocksApi
 ) : OwnerVenueRepository {
     override suspend fun getOwnedVenues(): Result<List<OwnerVenue>> = runCatching { source.getOwnedVenues() }
     override suspend fun getVenue(venueId: String): Result<OwnerVenue> = runCatching { source.getVenue(venueId) }
@@ -45,4 +46,18 @@ class OwnerVenueRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getSlots(venueId: String, date: String): Result<List<OwnerSlot>> = runCatching { source.getSlots(venueId, date) }
+
+    override suspend fun lockSlots(
+        venueId: String,
+        courtId: String,
+        date: String,
+        slotIds: List<String>,
+        reason: String
+    ): Result<Unit> = slotBlocksApi.lockSlots(venueId, courtId, date, slotIds, reason)
+
+    override suspend fun unlockSlots(
+        venueId: String,
+        courtId: String,
+        slotIds: List<String>
+    ): Result<Unit> = slotBlocksApi.unlockSlots(venueId, courtId, slotIds)
 }

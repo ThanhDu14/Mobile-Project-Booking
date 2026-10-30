@@ -421,3 +421,6 @@ verify_jwt = false
 
 [functions.sync-venue-price]
 verify_jwt = false
+
+[functions.manage-slot-blocks]
+verify_jwt = false

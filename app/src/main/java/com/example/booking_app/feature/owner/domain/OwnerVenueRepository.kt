@@ -25,4 +25,6 @@ interface OwnerVenueRepository {
     suspend fun deletePriceRule(venueId: String, ruleId: String): Result<Unit>
 
     suspend fun getSlots(venueId: String, date: String): Result<List<OwnerSlot>>
+    suspend fun lockSlots(venueId: String, courtId: String, date: String, slotIds: List<String>, reason: String): Result<Unit>
+    suspend fun unlockSlots(venueId: String, courtId: String, slotIds: List<String>): Result<Unit>
 }

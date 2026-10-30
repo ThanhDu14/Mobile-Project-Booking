@@ -26,6 +26,7 @@ Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 | 20  | 2026-10-29 | Tiếp tục implement Feature 111: hoàn thiện error/retry/conflict/cache freshness, responsive/accessibility review và kiểm chứng T034/T038 bằng `$speckit-implement`           | 11   |
 | 21  | 2026-10-29 | Tiếp tục implement Feature 111: chốt typed write-gate cho T007, giữ an toàn T008/T011, hoàn thiện T037 và kiểm chứng Emulator/build/lint                                     | 11   |
 | 22  | 2026-10-30 | Kiểm toán kỹ thuật & giải tỏa blocker Feature 111: chốt quyết định 1A, 2A, 3A, 4A, hoàn thiện Bảng giá (CRUD, UI, sync minPricePerHour) và điều hướng thêm venue             | 11   |
+| 23  | 2026-10-30 | Triển khai Phase 3 Feature 111: Edge Function manage-slot-blocks, Calendar Grid UI, và Emulator race condition tests | 11   |
 
 ---
 
@@ -2047,3 +2048,102 @@ Bắt đầu ngay. Không hỏi lại người dùng nếu repository đã có �
 - Build và Lint: `./gradlew.bat assembleDebug lintDebug` -> **BUILD SUCCESSFUL** (0 errors).
 - Firestore Emulator tests: chạy vitest với `owner-price-rules.test.ts`, `owner-venue-authorization.test.ts`, `owner-courts.test.ts`, `owner-public-availability.test.ts` -> **4 files, 17 tests passed**.
 - Không commit hoặc push.
+
+---
+
+## Mục 23: Triển khai hoàn thiện Phase 3 Feature 111 — Server Atomic Slot Lock & Unlock
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-30 |
+| Người thực hiện | Minh Nhựt |
+| Nhóm tính năng liên quan | 111 – Owner Venue Setup |
+| Công cụ AI | Antigravity, Gemini 3.8 Flash, `$speckit-implement` |
+| Mục đích | Triển khai hoàn thiện Phase 3: Server atomic slot lock/unlock qua Supabase Edge Function `manage-slot-blocks`, Calendar Grid UI shell (`OwnerSlotGridAdapter`, ViewModel, layouts phone & `w600dp`), và bổ sung kiểm thử Emulator transaction isolation (`owner-slot-blocks.test.ts`), giải tỏa và đóng T007, T028, T029, T030, T031. |
+
+### Prompt đã dùng
+
+```text
+/speckit-implement Tiếp tục triển khai Feature 111 dựa trên toàn bộ context, spec, tasks.md và các quyết định đã thống nhất.
+
+**Mục tiêu:** Hoàn thành tối đa các task còn mở trong `specs/111-owner-venue-setup/tasks.md` trong một lượt làm việc.
+
+Yêu cầu:
+
+1. Đọc trạng thái hiện tại của từng task, kiểm tra code thực tế trước khi sửa.
+2. Ưu tiên triển khai theo dependency:
+   - **T007:** Hoàn thiện và xác minh server-controlled slot lock/unlock contract.
+   - **T028:** Implement atomic slot locking qua `manage-slot-blocks`.
+   - **T029:** Implement atomic slot unlocking và bảo vệ HOLD, BOOKED, DROP_IN.
+   - **T030:** Hoàn thiện Calendar Grid UI cho Owner Slot Block.
+   - **T031:** Bổ sung Emulator transaction tests, đặc biệt các trường hợp race condition và partial conflict.
+   - **T034:** Kiểm tra recurring toggle, bảo đảm chặn recurring booking mới nhưng không ảnh hưởng các booking group hiện có.
+   - **T038:** Hoàn thiện UI, accessibility, responsive và kiểm thử hiệu năng trong phạm vi môi trường hiện có.
+3. Kiểm tra lại T007, T008, T011, T022, T023 và T037 để xác nhận implementation thực tế khớp với trạng thái `[X]`. Không mở lại task nếu đã đáp ứng acceptance criteria.
+4. Tuân thủ tuyệt đối schema, Security Rules, ownership, approved owner và các contract đã được thống nhất. Không tự ý thêm collection, field, enum, endpoint hoặc thay đổi contract.
+5. Nếu phụ thuộc Feature 040, 041 hoặc backend chưa tồn tại, không giả lập implementation. Ghi rõ blocker và phần có thể hoàn thành độc lập.
+6. Bổ sung unit tests, integration tests và Emulator tests tương ứng. Chạy build, lint và test liên quan.
+7. Cập nhật `tasks.md`, tài liệu liên quan và AI log nếu thực sự có thay đổi.
+8. Không đánh dấu task hoàn thành nếu chưa đáp ứng acceptance criteria và chưa có bằng chứng kiểm chứng.
+
+**Nguyên tắc thực hiện:**
+- Được phép chỉnh sửa code và test trong phạm vi Feature 111.
+- Không mở rộng sang feature khác ngoài những phần tích hợp cần thiết.
+- Không commit hoặc push.
+- Không bỏ qua lỗi test bằng cách disable test hoặc nới lỏng assertion.
+- Nếu phát hiện contract chưa đủ rõ, dừng phần phụ thuộc và báo cáo thay vì tự suy diễn.
+
+**Báo cáo cuối cùng:**
+- Danh sách task đã hoàn thành.
+- Danh sách task còn mở và nguyên nhân.
+- Các file đã tạo/sửa.
+- Test, build, lint đã chạy và kết quả.
+- Các blocker/dependency còn tồn tại.
+- Những điểm cần tôi quyết định hoặc phê duyệt.
+
+Hãy chủ động triển khai các task độc lập song song khi an toàn, nhưng phải bảo đảm không xung đột code và không vi phạm dependency.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Triển khai Backend Edge Function:
+  - Tạo `supabase/functions/manage-slot-blocks/` (`handler.ts`, `index.ts`, `handler.test.ts`), đăng ký trong `supabase/config.toml`.
+  - Cập nhật `supabase/functions/_shared/firestore.ts` bổ sung `deleteWrite` và `Write.delete` phục vụ mở khóa slot.
+  - Xử lý xác thực approved owner, quyền sở hữu cơ sở, tính nguyên tử khi khóa sân (rollback toàn bộ nếu có bất kỳ slot nào bị chiếm bởi `BOOKED`, `HELD`, `BLOCKED`).
+  - Xử lý mở khóa an toàn: chỉ cho phép mở khóa các slot `BLOCKED` có `blockReason in ['MAINTENANCE', 'EVENT', 'WALK_IN']`; bảo vệ nghiêm ngặt các slot `DROP_IN` (Feature 112/080) và các slot `HOLD`/`BOOKED` (Feature 040).
+- Triển khai Android Data Layer:
+  - Tạo `ManageSlotBlocksApi.kt` (gọi Edge Function qua Supabase SDK với cơ chế retry xác thực).
+  - Cập nhật `OwnerVenueRepository.kt` và `OwnerVenueRepositoryImpl.kt` bổ sung `lockSlots` và `unlockSlots`.
+  - Cập nhật `OwnerModule.kt` bind `ManageSlotBlocksApi`.
+- Triển khai Android UI Layer:
+  - Tạo `OwnerSlotGridAdapter.kt` và layout `item_owner_slot_grid.xml` hiển thị lưới các khung giờ trong ngày theo mốc 30 phút.
+  - Nâng cấp `OwnerSlotBlockViewModel.kt` hỗ trợ chọn khung giờ trực quan, phân loại trạng thái, khóa/mở khóa slot, ngăn duplicate submit, phát hiện dữ liệu cũ (`isStale`), tắt khi ngoại tuyến (`isOffline`), giữ nguyên biểu mẫu và lựa chọn khi gặp lỗi xung đột.
+  - Nâng cấp `fragment_owner_slot_block.xml` và tạo bản máy tính bảng `layout-w600dp/fragment_owner_slot_block.xml` đáp ứng Touch targets $\ge 48\text{dp}$.
+  - Cập nhật `OwnerSlotBlockFragment.kt` kết nối RecyclerView, xử lý chọn ngày, chọn lý do và kích hoạt khóa/mở khóa.
+- Triển khai Emulator Tests:
+  - Tạo `firestore-tests/test/owner-slot-blocks.test.ts` (7 tests passed): kiểm chứng Security Rules chặn owner client tự ghi/xóa `BLOCKED`, kiểm chứng transaction isolation giữa owner lock và player hold, kiểm chứng rollback khi xung đột dở dang (partial conflict), kiểm chứng bảo vệ ca `DROP_IN` và mở khóa an toàn ca `MAINTENANCE`.
+- Cập nhật tài liệu:
+  - Đóng `T007`, `T028`, `T029`, `T030`, `T031` trong `specs/111-owner-venue-setup/tasks.md` (37/39 tasks hoàn thành).
+  - Cập nhật hợp đồng tại `specs/111-owner-venue-setup/contracts/firestore-boundary.md` và hướng dẫn kiểm thử tại `specs/111-owner-venue-setup/quickstart.md`.
+  - Báo cáo rõ 2 task còn mở: `T034` (chờ Feature 041 cung cấp mã nguồn) và `T038` (chờ đo SLA trên thiết bị thật dùng mạng 4G).
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Edge Function `manage-slot-blocks` | Tạo mới | Thực thi khóa/mở khóa slot nguyên tử bằng service role, bảo vệ ca DROP_IN và HOLD/BOOKED theo Quyết định 1A & 4A |
+| Helper `deleteWrite` trong `_shared/firestore.ts` | Tạo mới | Hỗ trợ xóa document nguyên tử qua Firestore REST API commit |
+| Android API `ManageSlotBlocksApi` | Tạo mới | Gọi Edge Function `manage-slot-blocks` từ client |
+| Lưới khung giờ (`OwnerSlotGridAdapter`, item layout) | Tạo mới | Hiển thị ma trận khung giờ trực quan thay cho việc nhập tay theo yêu cầu T030 |
+| `layout-w600dp/fragment_owner_slot_block.xml` | Tạo mới | Hỗ trợ hiển thị 2 cột trên máy tính bảng, đảm bảo touch target $\ge 48\text{dp}$ theo T038 |
+| `OwnerSlotBlockViewModel` & `OwnerSlotBlockFragment` | Chỉnh sửa | Mở rộng tính năng khóa/mở khóa slot thật qua repository, giữ nguyên tính tương thích ngược với các test trước |
+| Emulator test `owner-slot-blocks.test.ts` | Tạo mới | Kiểm chứng ranh giới giao dịch đua giữa Owner Lock và Player Hold, partial conflict và bảo vệ DROP_IN theo T031 |
+| Feature 041 source/UI | Không chỉnh sửa | T034 tiếp tục mở chờ Feature 041 triển khai mã nguồn theo nguyên tắc ranh giới |
+
+### Cách kiểm chứng
+
+- Android owner unit tests: `./gradlew.bat --no-daemon testDebugUnitTest --tests "com.example.booking_app.feature.owner.*"` -> **BUILD SUCCESSFUL** (30/30 tests passed, gồm 6 unit tests mới trong `OwnerSlotBlockViewModelTest`).
+- Build và Lint: `./gradlew.bat --no-daemon assembleDebug lintDebug` -> **BUILD SUCCESSFUL** (0 lint errors).
+- Firestore Emulator tests: chạy vitest với 5 test files (`owner-venue-authorization.test.ts`, `owner-courts.test.ts`, `owner-price-rules.test.ts`, `owner-public-availability.test.ts`, `owner-slot-blocks.test.ts`) -> **5 files, 24 tests passed** (100% pass).
+- Không commit hoặc push.
+

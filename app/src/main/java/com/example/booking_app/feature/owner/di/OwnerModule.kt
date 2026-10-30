@@ -1,6 +1,8 @@
 package com.example.booking_app.feature.owner.di
 
+import com.example.booking_app.feature.owner.data.ManageSlotBlocksApi
 import com.example.booking_app.feature.owner.data.OwnerVenueRepositoryImpl
+import com.example.booking_app.feature.owner.data.SupabaseManageSlotBlocksApi
 import com.example.booking_app.feature.owner.data.SupabaseSyncVenuePriceApi
 import com.example.booking_app.feature.owner.data.SyncVenuePriceApi
 import com.example.booking_app.feature.owner.domain.OwnerVenueRepository
@@ -20,4 +22,8 @@ abstract class OwnerModule {
     @Binds
     @Singleton
     abstract fun bindSyncVenuePriceApi(impl: SupabaseSyncVenuePriceApi): SyncVenuePriceApi
+
+    @Binds
+    @Singleton
+    abstract fun bindManageSlotBlocksApi(impl: SupabaseManageSlotBlocksApi): ManageSlotBlocksApi
 }

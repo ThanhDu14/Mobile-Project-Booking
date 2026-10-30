@@ -59,4 +59,25 @@ T007 (atomic lock/unlock server contract), T008 (trusted authority cập nhật 
 - T038: Vietnamese resources, accessibility content description, 48dp controls, phone/`w600dp`, light/dark-compatible resources và lint/build đã kiểm tra. Chưa đo SLA trên thiết bị/mạng 4G thật, nên T038 vẫn mở.
 - T034: Feature 041 chưa cung cấp boundary/API cho việc chứng minh `acceptsRecurring = false` chặn recurring-chain creation; chỉ có thể giữ nguyên chain cũ.
 
+## Bổ sung kiểm chứng Phase 3 — Server Atomic Slot Lock & Unlock (2026-10-30)
+
+- **T007, T028, T029**: Triển khai Supabase Edge Function `manage-slot-blocks` chạy Firestore REST transaction / batch với service role.
+  - Khóa nguyên tử (`action: "LOCK"`): Kiểm tra quyền chủ sân đã duyệt, kiểm tra quyền sở hữu sân, kiểm tra tất cả các slot không bị chiếm (`BOOKED`, `HELD`, `BLOCKED`); rollback nguyên tử nếu có xung đột; tạo slot `BLOCKED` với lý do hợp lệ (`MAINTENANCE`, `EVENT`, `WALK_IN`).
+  - Mở khóa an toàn (`action: "UNLOCK"`): Chỉ mở khóa slot `BLOCKED` do chủ sân tạo; từ chối và bảo vệ tuyệt đối ca `DROP_IN` (Feature 112/080) và các slot `HOLD`/`BOOKED` (Feature 040).
+  - Tích hợp Android Data Layer: `ManageSlotBlocksApi`, kết nối vào `OwnerVenueRepository` và `OwnerVenueRepositoryImpl`.
+- **T030**: Hoàn thiện giao diện Calendar Grid UI shell:
+  - Tạo `OwnerSlotGridAdapter` hiển thị danh sách slot theo khung giờ 30 phút.
+  - Nâng cấp `OwnerSlotBlockViewModel` hỗ trợ chọn khung giờ trực quan, phân biệt trạng thái `AVAILABLE`, `BLOCKED`, `BOOKED`, `HELD`, nhận diện slot có thể gỡ (`isOwnerRemovable`).
+  - Nâng cấp `fragment_owner_slot_block.xml` và tạo bản tối ưu `layout-w600dp/fragment_owner_slot_block.xml` cho máy tính bảng, đảm bảo tất cả touch targets $\ge 48\text{dp}$.
+  - Hỗ trợ đầy đủ: vô hiệu hóa khi ngoại tuyến (`isOffline`), chỉ báo dữ liệu cũ (`isStale`), thanh tiến trình và ngăn chặn bấm lặp lại (`isSubmitting`), giữ nguyên biểu mẫu và lựa chọn khi gặp lỗi xung đột.
+- **T031**: Bổ sung `firestore-tests/test/owner-slot-blocks.test.ts` (7 tests passed):
+  - Chặn owner client ghi trực tiếp slot `BLOCKED` (bảo vệ bởi Security Rules).
+  - Chặn owner client tự xóa slot `BLOCKED` trực tiếp (bảo vệ bởi Security Rules).
+  - Đua transaction giữa owner lock và player hold (Feature 040 transaction boundary) đảm bảo cách ly và rollback toàn bộ khi xung đột.
+  - Xung đột khoảng dở dang (partial-range conflict) rollback nguyên tử không để lại bản ghi rác.
+  - Bảo vệ ca `DROP_IN` không bị owner gỡ.
+  - Mở khóa an toàn ca `MAINTENANCE` xóa document slot thành công.
+- **T038**: Kiểm tra tài nguyên chuỗi tiếng Việt, accessibility, theme Material 3, layout điện thoại và `layout-w600dp`, kích thước vùng chạm $\ge 48\text{dp}$. Lint report đạt 0 errors (`assembleDebug lintDebug` BUILD SUCCESSFUL). Tiêu chí SLA trên mạng 4G thật (danh sách/lịch < 3s, ghi phản hồi < 1s và hoàn tất < 3s) cần thiết bị thật có SIM 4G để đo đạc thực địa.
+- **T034**: Tiếp tục mở chờ Feature 041 cung cấp mã nguồn ứng dụng để kiểm chứng tích hợp chặn chuỗi mới.
+
 Xem [data-model.md](data-model.md) và [contracts/firestore-boundary.md](contracts/firestore-boundary.md) về trường dữ liệu và ranh giới phân quyền.

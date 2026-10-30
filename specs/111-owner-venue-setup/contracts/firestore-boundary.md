@@ -42,10 +42,19 @@ Implementation note: venue đầu tiên vẫn do lifecycle duyệt của Feature
 
 3. **Cơ chế khóa/mở khóa slot và nhận diện block an toàn (Quyết định 1A & 4A — T007, T028, T029)**:
    - Khóa/mở khóa slot sử dụng Supabase Edge Function `manage-slot-blocks` (chạy Firestore transaction với service role).
+   - **Giao diện gọi (`POST /functions/v1/manage-slot-blocks`)**:
+     - Header: `Authorization: Bearer <firebase_id_token>`
+     - Payload LOCK: `{ venueId, courtId, action: "LOCK", date: "yyyyMMdd", slotIds: string[], blockReason: "MAINTENANCE"|"EVENT"|"WALK_IN" }`
+     - Payload UNLOCK: `{ venueId, courtId, action: "UNLOCK", slotIds: string[] }`
+     - Response thành công: `200 OK` `{ success: true, count: number, ... }`
+     - Response xung đột: `409 CONFLICT` khi slot đã có người đặt (`BOOKED`), đang giữ chỗ (`HELD`), hoặc đã bị khóa (`BLOCKED`). Thao tác rollback toàn bộ atomically.
+     - Response quyền hạn: `403 FORBIDDEN` khi chưa được duyệt (`ownerStatus != APPROVED`), không sở hữu cơ sở, hoặc mở khóa ca `DROP_IN`.
    - Nhận diện slot owner-removable bằng `blockReason in ['MAINTENANCE', 'EVENT', 'WALK_IN']`. Tuyệt đối không xóa/mở khóa các slot `DROP_IN` (Feature 112/080) hoặc các slot `HOLD`/`BOOKED` (Feature 040). Giữ nguyên schema `slots` mà không thêm trường.
 
 ## Trạng thái triển khai Feature 111
 
-- T008, T022, T023: Đã giải tỏa blocker qua Quyết định 2A (Edge Function `sync-venue-price` và chính sách `null` khi xóa hết rule). Mở các phương thức CRUD bảng giá trên Repository và giao diện Quản lý bảng giá.
-- T011: Đã giải tỏa blocker qua Quyết định 3A (chuyển tiếp luồng đăng ký cơ sở sang Feature 110).
-- T007, T028, T029, T031: Đã thống nhất Quyết định 1A & 4A; triển khai theo Roadmap Phase 3.
+- T008, T022, T023: Đã hoàn thành (Edge Function `sync-venue-price`, CRUD priceRules, ViewModel, Fragment).
+- T011: Đã hoàn thành (chuyển tiếp luồng đăng ký cơ sở sang Feature 110 theo Quyết định 3A).
+- T007, T028, T029, T030, T031: Đã hoàn thành (Edge Function `manage-slot-blocks`, Android Data Layer `ManageSlotBlocksApi`, Calendar Grid UI shell `OwnerSlotGridAdapter` / `OwnerSlotBlockViewModel`, Firestore Emulator tests).
+- T034: Mở chờ Feature 041 hoàn thiện mã nguồn ứng dụng để kiểm chứng tích hợp chuỗi đặt cố định.
+- T038: Đã hoàn thiện tài nguyên chuỗi, accessibility, responsive phone/w600dp, 48dp touch targets; mở phần kiểm thử SLA trên thiết bị thật dùng mạng 4G.

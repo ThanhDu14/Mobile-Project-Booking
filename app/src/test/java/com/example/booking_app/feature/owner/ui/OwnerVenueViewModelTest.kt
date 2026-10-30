@@ -144,5 +144,7 @@ class OwnerVenueViewModelTest {
         override suspend fun updatePriceRule(venueId: String, ruleId: String, rule: PriceRuleInput): Result<Unit> = Result.success(Unit)
         override suspend fun deletePriceRule(venueId: String, ruleId: String): Result<Unit> = Result.success(Unit)
         override suspend fun getSlots(venueId: String, date: String) = Result.success(emptyList<OwnerSlot>())
+        override suspend fun lockSlots(venueId: String, courtId: String, date: String, slotIds: List<String>, reason: String) = Result.success(Unit)
+        override suspend fun unlockSlots(venueId: String, courtId: String, slotIds: List<String>) = Result.success(Unit)
     }
 }
