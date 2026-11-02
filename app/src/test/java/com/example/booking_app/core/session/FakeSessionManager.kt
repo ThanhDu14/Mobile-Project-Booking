@@ -8,7 +8,13 @@ class FakeSessionManager(initial: SessionState = SessionState.SignedOut(null)) :
     val refreshCalls = mutableListOf<Boolean>()
     var signOutCalls = 0
 
-    override suspend fun refresh(forceTokenRefresh: Boolean) { refreshCalls += forceTokenRefresh }
+    /** Việc làm khi `refresh` (đổi vai trò, ném lỗi, treo). Mặc định không làm gì. */
+    var onRefresh: suspend () -> Unit = {}
+
+    override suspend fun refresh(forceTokenRefresh: Boolean) {
+        refreshCalls += forceTokenRefresh
+        onRefresh()
+    }
     override suspend fun signOut() {
         signOutCalls++
         sessionState.value = SessionState.SignedOut(null)

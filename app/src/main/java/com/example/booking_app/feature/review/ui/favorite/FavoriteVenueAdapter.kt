@@ -6,7 +6,10 @@ import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import coil.load
+import coil3.load
+import coil3.request.crossfade
+import coil3.request.placeholder
+import coil3.request.error
 import com.example.booking_app.R
 import com.example.booking_app.databinding.ItemFavoriteVenueBinding
 import com.example.booking_app.feature.review.domain.model.FavoriteVenue

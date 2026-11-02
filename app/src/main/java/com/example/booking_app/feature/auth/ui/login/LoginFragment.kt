@@ -79,6 +79,8 @@ class LoginFragment : Fragment(R.layout.fragment_auth_login) {
     private fun handle(binding: FragmentAuthLoginBinding, event: LoginEvent) {
         when (event) {
             LoginEvent.ShowLocked -> showLockedDialog()
+            LoginEvent.ShowSessionRevoked ->
+                Snackbar.make(binding.root, R.string.auth_session_revoked, Snackbar.LENGTH_LONG).show()
             LoginEvent.ClearPassword -> binding.passwordInput.text = null
             LoginEvent.ShowNetworkError ->
                 Snackbar.make(binding.root, R.string.auth_error_network, Snackbar.LENGTH_LONG)

@@ -8,15 +8,8 @@
     <fragment
         android:id="@+id/playerHomePlaceholderFragment"
         android:name="com.example.booking_app.feature.auth.ui.home.PlayerHomePlaceholderFragment"
-        android:label="@string/app_name">
-        <action
-            android:id="@+id/action_playerHome_to_bookingSlotGrid"
-            app:destination="@id/bookingSlotGridFragment" />
-        <!-- Tạm để demo spec 070; mục chính thức nằm ở trang Tài khoản (spec 011). -->
-        <action
-            android:id="@+id/action_playerHome_to_favoriteVenues"
-            app:destination="@id/nav_review" />
-    </fragment>
+        android:label="@string/app_name" />
+    <!-- Lưới đặt sân (040) mở từ nút "Đặt sân" ở chi tiết sân (030) khi màn đó có; chưa có lối vào từ Trang chủ. -->
 
     <fragment
         android:id="@+id/bookingSlotGridFragment"
@@ -39,6 +32,9 @@
             android:name="args"
             app:argType="com.example.booking_app.feature.booking.ui.HoldToPaymentArgs" />
     </fragment>
+
+    <!-- Trang Tài khoản của spec 011 (research R14). -->
+    <include app:graph="@navigation/nav_account" />
 
     <include app:graph="@navigation/nav_review" />
 

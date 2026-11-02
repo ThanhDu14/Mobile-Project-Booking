@@ -27,6 +27,8 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 21 | 2026-10-25 | Lập kế hoạch kỹ thuật spec 030 bằng `/speckit-plan` | 03 |
 | 22 | 2026-10-25 | Chia task spec 030 bằng `/speckit-tasks` | 03 |
 | 23 | 2026-10-25 | Phân tích chéo spec 030 bằng `/speckit-analyze` và sửa theo kết quả | 03 |
+| 24 | 2026-10-25 | Cài đặt Phase 1, 2A spec 011 bằng `/speckit-implement` | 01 |
+| 25 | 2026-10-25 | Cài đặt Phase 2C, US1, US2 spec 011 bằng `/speckit-implement` | 01 |
 
 ---
 
@@ -1575,3 +1577,169 @@ C1 tôi dùng vài dữ liệu để mà phục vụ đồ án để show lên, 
 - `grep` để chắc không còn "VD-1 → VD-9", regex `\d{9}$` cũ hay dòng "Cả nhóm quyết định" chưa cập nhật.
 - Tự kiểm tra số `028 3812 3456` bỏ khoảng trắng có 11 chữ số, khớp `0` + 10 chữ số.
 - Việc cần làm tiếp: gửi D đề nghị Rules (VD-10) và việc T077; bắt đầu `/speckit-implement` từ Setup.
+
+## Mục 24: Cài đặt Phase 1, 2A spec 011 bằng `/speckit-implement`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-25 |
+| Người thực hiện | Thành Dự |
+| Nhóm tính năng liên quan | 01 – Tài khoản (`specs/011-account-profile`) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5), lệnh Spec Kit `/speckit-implement` |
+| Mục đích | Cài phần nền của spec 011: thư viện, chuỗi, index (Phase 1) và phần mở rộng `core/session` cả nhóm dùng (Phase 2A), tách PR `chore(core)` |
+| Nhánh Git | `feature/01-account-profile-core` (tạo từ `main` mới nhất) |
+
+### Prompt đã dùng
+
+```text
+/speckit-implement SPECIFY_FEATURE_DIRECTORY=specs/011-account-profile
+Cài đặt spec 011 theo tasks.md, phạm vi tuần 4: Phase 1 (T001–T005), Phase 2A (T006–T019),
+Phase 2C (T027–T030), US1 sửa hồ sơ (T031–T051), US2 đăng xuất (T052–T056). Không làm 2B, US3–US7
+và Polish. Làm đúng thứ tự: test viết trước, chạy thấy fail rồi mới cài đặt; đánh dấu [x] từng
+task trong tasks.md khi xong.
+
+Nhánh và PR:
+- Từ main mới nhất tạo nhánh feature/01-account-profile-core cho Phase 1 + 2A. Xong 2A thì dừng,
+  chạy ./gradlew testDebugUnitTest (test 010 vẫn phải xanh), báo mình để commit và mở PR
+  chore(core). Commit theo Conventional Commits, nội dung tiếng Việt, scope account hoặc core.
+- Sau đó tạo nhánh feature/01-account-profile từ nhánh core cho 2C + US1 + US2.
+
+Lưu ý khi làm:
+- 011 xây trên 010: chỉ THÊM vào core/session, MainActivity, firestore.rules; không đổi chữ ký đã
+  công bố cho nhóm. Hàm mới trong interface SessionManager phải có thân mặc định (T014) để fake
+  của B, C, D vẫn biên dịch.
+- T001: storage-kt đã có trong gradle/libs.versions.toml (BoM supabase 3.6.0), không thêm trùng.
+  Chỉ thêm com.vanniktech:android-image-cropper. Không build được với AGP 9.4 thì dừng và báo
+  mình, không tự đổi thư viện khác.
+- T004: KHÔNG tạo scripts/seed/districts.ts. Seed của Duy (scripts/seed/seed.mjs, catalog.json)
+  đã nạp 22 quận cùng ID. Không sửa seed.mjs. Seed ghi cityName = "TP. Hồ Chí Minh", data-model
+  011 ghi city = "HCM": đối chiếu xem app 011 có đọc trường này không. Nếu không đọc thì sửa
+  data-model 011 cho khớp seed; nếu có đọc thì báo mình để hỏi Duy. Bản ghi q-cu (isActive =
+  false) chỉ tạo trong dữ liệu test (firestore-tests, unit test), không thêm vào seed. Vẫn thêm
+  3 index vào firestore.indexes.json như T004.
+- T005: chỉ chạy trên Firebase Emulator và Supabase local, không chạy trên mobile-22e6c hay
+  Supabase smashnow thật. Supabase local không nhận token của Auth Emulator thì ghi rõ kết quả,
+  không tự đổi cách xác thực.
+- T039 sửa firestore.rules: chỉ thêm phần match users/{uid} và districts theo
+  contracts/security-rules.md; bộ test U1–U18 của 010 vẫn phải xanh.
+- T040 migration bucket avatars: tạo file migration và chạy pgTAP trên Supabase local. Không
+  apply lên project smashnow thật.
+- Deep link của B, C, D chưa có (ví, đơn của tôi, yêu thích…) thì ẩn mục đó theo R14, không tạo
+  destination giả.
+- Giao diện theo wireframe trong specs/011-account-profile/ui, đủ 4 trạng thái (đang tải / có dữ
+  liệu / rỗng / lỗi), chế độ tối, vùng chạm 48dp, chuỗi trong strings_account.xml.
+- Task nào bị chặn vì phụ thuộc người khác thì ghi [BLOCKED: B/C/D] kèm lý do trong tasks.md và
+  làm tiếp task khác.
+
+Cuối mỗi checkpoint (Phase 1, 2A, 2C, US1, US2): chạy ./gradlew lint testDebugUnitTest
+assembleDebug, cd firestore-tests && npm test, npx supabase test db; báo số test xanh/đỏ và kịch
+bản quickstart Q1–Q12 đã chạy hay chưa. Không tự push
+```
+
+AI dừng sau Phase 2A như prompt yêu cầu; mình trả lời "tôi đồng ý" để commit và chuyển sang lần cài đặt tiếp theo (Mục 25).
+
+### Tóm tắt phản hồi của AI
+
+- **Phase 1:** thêm `com.vanniktech:android-image-cropper` 4.7.0 (bản cuối biên dịch bằng Kotlin ≤ 2.3), quyền `CAMERA`, `FileProvider` cho `cacheDir/avatar/`, bộ chuỗi `strings_account.xml`, 3 index trong `firestore.indexes.json`. Không tạo `districts.ts`; app 011 không đọc trường thành phố nên sửa data-model 011 thành `cityName` cho khớp seed của Duy.
+- **T005:** Supabase local (CLI 2.121.0) từ chối token của Auth Emulator (`"alg" (Algorithm) Header Parameter value not allowed`). Ghi kết quả vào `tasks.md`, không tự đổi cách xác thực.
+- **Phase 2A:** `MyProfile` thêm trường có giá trị mặc định; `SignOutReason` thêm `SESSION_REVOKED`, `ACCOUNT_DELETED`; `SignOutHook` (chạy trước khi đăng xuất, tối đa 5 giây mỗi hook, bỏ qua lỗi); `SessionManager.signOut(reason)` có thân mặc định; `AppModeController` (chế độ người chơi / quản lý sân, chỉ trong bộ nhớ); `StorageUrls.publicUrl`; `MainActivity` điều hướng theo `(appRole, mode)`; màn hình đăng nhập báo "Phiên đăng nhập đã hết hạn".
+- Commit `67f678b` (`chore(core)`). Kết quả: 199/199 unit test, Lint 0 Error, `firestore-tests` 27/27.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Phần mở rộng `core/session` | Dùng | Chỉ thêm, không đổi chữ ký cũ; fake của nhóm vẫn biên dịch |
+| `modeFor(state)` tính đồng bộ | Dùng | Tránh chủ sân vừa đăng nhập bị nháy qua `nav_player` |
+| Sửa `when` trong `CompleteSignupUseCase` khi thêm lỗi mới | Dùng, cần báo nhóm | Ai dùng `when` đầy đủ trên `AppError` sẽ phải thêm nhánh |
+| Push và mở PR | Mình tự làm | Prompt yêu cầu không tự push |
+
+### Cách kiểm chứng
+
+- Chạy `./gradlew lint testDebugUnitTest assembleDebug` và `firestore-tests` (kết quả ở trên).
+- Đọc diff commit `67f678b`, đối chiếu `tasks.md` (T001–T019) và `contracts/ui-screens.md` §4.
+- Việc cần làm tiếp: cả nhóm chốt cách thử Storage khi Supabase local không nhận token Emulator.
+
+## Mục 25: Cài đặt Phase 2C, US1, US2 spec 011 bằng `/speckit-implement`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-25 |
+| Người thực hiện | Thành Dự |
+| Nhóm tính năng liên quan | 01 – Tài khoản (`specs/011-account-profile`) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5), lệnh Spec Kit `/speckit-implement` |
+| Mục đích | Trang Tài khoản và điều hướng (2C), xem và sửa hồ sơ kèm ảnh đại diện (US1), đăng xuất (US2) |
+| Nhánh Git | `feature/01-account-profile` (tạo từ `feature/01-account-profile-core`) |
+
+### Prompt đã dùng
+
+```text
+/speckit-implement SPECIFY_FEATURE_DIRECTORY=specs/011-account-profile
+Tiếp tục spec 011 trên nhánh feature/01-account-profile (tạo từ feature/01-account-profile-core, đã
+xong Phase 1 + 2A, T001–T019 đã [x]). Phạm vi lần này: Phase 2C (T027–T030), US1 sửa hồ sơ
+(T031–T051), US2 đăng xuất (T052–T056). Không làm 2B, US3–US7 và Polish. Test viết trước, chạy thấy
+fail rồi mới cài đặt; đánh dấu [x] từng task khi xong.
+
+Dùng lại phần 2A, không viết lại: StorageUrls.publicUrl, SignOutHook (@Binds @IntoSet),
+SessionManager.signOut(reason), AppModeController, MyProfile đã có email/phone/walletBalance/
+ownerStatus. Đọc lại tasks.md (ghi chú implement ở T004, T005, T015, T018) trước khi làm.
+
+Lưu ý khi làm:
+- Coil chưa có trong version catalog (plan ghi nhầm là có sẵn). Thêm io.coil-kt.coil3:coil và
+  coil-network-okhttp bản 3.4.0 ở T029 (bản cuối dùng Kotlin 2.3; 3.5+ cần Kotlin 2.4 nên không dùng
+  được với AGP 9.4.1). Ghi lý do trong catalog và plan Complexity Tracking. Nếu nhánh 030 đã thêm
+  Coil thì dùng chung một khai báo, không thêm trùng.
+- T028: nav_account include vào nav_player (tab "Tài khoản") và nav_owner. Destination của US3–US7
+  (đổi mật khẩu, đổi email, xóa tài khoản, reauth) chưa làm thì để Fragment khung, mục tương ứng ẩn
+  trên trang Tài khoản. Thêm deep link smashnow://legal/{doc} vào destination legal của nav_auth.
+- T029: deep link của B, C, D chưa có destination (ví, đơn của tôi, vãng lai, yêu thích, cài đặt
+  thông báo, chủ sân) thì ẩn theo R14, kiểm bằng navController.graph.hasDeepLink; không tạo
+  destination giả. Mục "Điều khoản" mở bằng deep link, không import LegalDocumentFragment.
+- T031 Rules và T039 sửa firestore.rules: chỉ thêm phần users/{uid} và districts theo
+  contracts/security-rules.md. Bộ U1–U18 của 010 vẫn phải xanh. Dữ liệu test có districts/q-cu
+  (isActive = false) trong firestore-tests, không thêm vào seed của Duy.
+- T032 pgTAP và T040 migration bucket avatars: chỉ chạy trên Supabase local (npx supabase test db,
+  supabase db reset nếu cần). Không apply lên project smashnow thật.
+- Supabase local không nhận token của Auth Emulator (T005), nên ảnh đại diện trên máy ảo (Q5, Q8,
+  Q9) chưa chạy được; ghi [BLOCKED: cả nhóm] ở các kịch bản đó, phần code và unit test vẫn làm đủ.
+- T043 ImageProcessor: test được phần thuần (tính kích thước thu nhỏ, chọn chất lượng nén) bằng
+  unit test; phần ImageDecoder/Bitmap để kiểm tay.
+- T054 FcmSignOutHook bind @IntoSet trong module của core; ghi Firestore lỗi thì vẫn deleteToken().
+- Giao diện theo wireframe ui/01_account_buoc1_tai-khoan.png và buoc2_sua-ho-so.png: đủ trạng thái
+  đang tải / có dữ liệu / lỗi + "Thử lại" (trang Tài khoản không có trạng thái rỗng), chế độ tối,
+  w600dp giới hạn 480dp (auth_form_max_width), vùng chạm 48dp, contentDescription cho ảnh, chuỗi
+  trong strings_account.xml (đã có ở T003, thiếu thì thêm vào đó).
+- Firestore Emulator đang chạy nền thì npm test trong firestore-tests báo trùng cổng 8080: tắt
+  emulator trước, hoặc chạy FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 npx vitest run.
+- Task bị chặn vì người khác thì ghi [BLOCKED: B/C/D] kèm lý do, làm tiếp task khác.
+
+Cuối mỗi checkpoint (2C, US1, US2): chạy ./gradlew lint testDebugUnitTest assembleDebug, test Rules
+trong firestore-tests, npx supabase test db; báo số test xanh/đỏ, lỗi Lint mức Error, và kịch bản
+quickstart Q1–Q12 nào đã chạy, chưa chạy hay bị chặn. Không tự commit, không tự push.
+```
+
+### Tóm tắt phản hồi của AI
+
+- **2C:** `nav_account.xml` include vào `nav_player`, `nav_owner`; nút "Tài khoản" tạm trên màn hình chủ của 010; deep link `smashnow://legal/{doc}`. `AccountEntry` + `accountEntries(...)`: mục ẩn khi không có provider `password`, khi là admin, hoặc khi deep link chưa có destination. `AccountFragment` có skeleton, lỗi + "Thử lại" (quá 15 giây chưa có hồ sơ). Thêm Coil 3.4.0.
+- **US1:**
+  - Rules: kiểm tra `level`, `favoriteDistrictIds` (0–5, không trùng, khu vực đang hoạt động), `avatarPath`; thêm `match /districts`, `/accountDeletions`. Test P1–P18, D1–D4, A1 kèm vài ca thêm.
+  - Storage: migration bucket `avatars` và pgTAP ST1–ST8, chỉ chạy trên Supabase local.
+  - App: `DistrictRepository`, `AccountRepository` (chỉ ghi trường đổi), `AvatarRepository` (Supabase), `ImageProcessor` (512 px, JPEG 85→50, ≤ 2 MB), đổi ảnh theo thứ tự R3. Màn hình sửa hồ sơ, chọn khu vực, chọn nguồn ảnh, cắt ảnh vuông. Trang Tài khoản có chip trình độ/khu vực, thẻ ví, banner xác minh email.
+- **US2:** `FcmSignOutHook` (gỡ token khỏi `users/{uid}`, lỗi ghi vẫn xóa token trên máy), `GoogleSignOutHook`; nút "Đăng xuất" có hộp thoại xác nhận, bấm lặp chỉ đăng xuất một lần.
+- Kết quả cuối: 264/264 unit test, Lint 0 Error, Rules 55/55, pgTAP 8/8. Chưa chạy kịch bản Q1–Q12 trên máy ảo; Q5, Q8, Q9 ghi `[BLOCKED: cả nhóm]`.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Code 2C, US1, US2 | Dùng | Test viết trước, chạy thấy đỏ rồi mới xanh; bám wireframe buoc1, buoc2 |
+| Sửa dữ liệu mẫu test U8 của 010 | Dùng | 011 siết kiểm tra `avatarPath` và khu vực; ý nghĩa U8 không đổi |
+| Làm sớm model T022 và kiểu `AccountError` (T023) | Dùng | US1 không biên dịch được nếu thiếu; mapper lỗi để lần sau |
+| Mục US5–US7 ẩn nhờ deep link `smashnow://account/...` chưa khai báo | Dùng | Story nào xong thì thêm deep link là mục hiện |
+| T056 (Espresso đăng xuất) | Chưa làm | Cần máy ảo đang chạy |
+
+### Cách kiểm chứng
+
+- Chạy lại `./gradlew lint testDebugUnitTest assembleDebug`, `FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 npx vitest run`, `npx supabase test db` (kết quả ở trên).
+- Đối chiếu `tasks.md` (T027–T055 đã `[x]`, có ghi chú implement) với `contracts/ui-screens.md`, `security-rules.md`, `storage-avatars.md`.
+- Việc cần làm tiếp: chạy app trên máy ảo để kiểm giao diện (Q1–Q4, Q6, Q7, Q10–Q12), chạy T056.

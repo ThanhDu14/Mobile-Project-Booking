@@ -115,6 +115,18 @@ class LoginViewModelTest {
     }
 
     @Test
+    fun `sessionRevokedNotice true thi bao phien het han mot lan (011 T018)`() = runTest {
+        val handle = SavedStateHandle(mapOf("sessionRevokedNotice" to true))
+        val vm = viewModel(handle)
+        vm.events.test { assertEquals(LoginEvent.ShowSessionRevoked, awaitItem()) }
+        val again = viewModel(handle)
+        again.events.test {
+            testScheduler.advanceUntilIdle()
+            expectNoEvents()
+        }
+    }
+
+    @Test
     fun `mat mang hoac het 15 giay thi snackbar mang, giu email, xoa mat khau`() = runTest {
         repository.signInResult = AuthResult.Failure(AuthError.Network)
         val vm = viewModel().apply { fill() }

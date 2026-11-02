@@ -9,7 +9,7 @@ Hướng dẫn chạy và kiểm tra. Không chứa code triển khai. Chi tiế
 - **Mọi kịch bản ở §5 chạy cục bộ** (constitution IV): `local.properties` có `USE_EMULATOR=true` và `SUPABASE_URL=http://10.0.2.2:54321`; Firebase Emulator (Auth, Firestore, project `demo-smashnow`); `npx supabase start` + `npx supabase functions serve`. Không chạy trên `mobile-22e6c` hay Supabase `smashnow` thật.
 - **Chưa chốt:** `supabase/config.toml` để Third-party Auth trỏ `mobile-22e6c`, nên Supabase local dự kiến từ chối ID token không ký của Auth Emulator. Kiểm tra theo task chuẩn bị môi trường trong [tasks.md](tasks.md) Phase 1; nếu bị từ chối thì Q5, Q8, Q9 chờ nhóm chốt cách làm, chính sách Storage vẫn được kiểm bằng pgTAP (§2).
 - Supabase secrets thêm: `CRON_SECRET` (dùng chung với 081). `SUPABASE_SERVICE_ROLE_KEY` có sẵn trong môi trường Edge Function.
-- Dữ liệu mẫu: `scripts/seed/districts.ts` (22 quận/huyện TP.HCM, có 1 khu vực `isActive = false` để test).
+- Dữ liệu mẫu: seed chung `cd scripts/seed && node seed.mjs --emulator` (22 quận/huyện TP.HCM). Khu vực `isActive = false` để test: tạo tay `districts/q-cu` trên Emulator UI hoặc dùng dữ liệu của `firestore-tests`.
 - Tài khoản thử (tạo trên Auth Emulator bằng app hoặc REST + `on-signup`, cấp vai trò bằng `scripts/admin/grant-role.ts` của 010):
 
 | Tài khoản | Đăng nhập bằng | Trạng thái |
@@ -75,11 +75,11 @@ Phạm vi bắt buộc:
 | Q2 | Sửa tên, chọn "Trung bình", 2 khu vực, Lưu; tắt hẳn app, mở lại | "Đã lưu"; thông tin mới còn; đo thời gian < 1 phút | US1-2, SC-001 |
 | Q3 | Sửa rồi bấm Back | Hỏi "Bỏ các thay đổi chưa lưu?" | US1-5, FR-006 |
 | Q4 | Bấm Lưu 3 lần nhanh | Chỉ 1 lần ghi (xem Firestore `updatedAt`) | Edge Case |
-| Q5 | Chọn ảnh từ thư viện, cắt, xác nhận | Ảnh mới hiện ở Tài khoản < 5 giây trên 4G (đo 20 lần, ≥ 19 lần đạt); object mới `avatar_<ms>.jpg`, object cũ bị xóa | US1-3, SC-002 |
+| Q5 | **[BLOCKED: cả nhóm]** Supabase local từ chối token của Auth Emulator (`"alg" ... not allowed`, xem tasks T005); cần nhóm chốt cách thử Storage. Chọn ảnh từ thư viện, cắt, xác nhận | Ảnh mới hiện ở Tài khoản < 5 giây trên 4G (đo 20 lần, ≥ 19 lần đạt); object mới `avatar_<ms>.jpg`, object cũ bị xóa | US1-3, SC-002 |
 | Q6 | Từ chối quyền camera | Có giải thích, vẫn chọn thư viện được, trang vẫn dùng được | US1-4, FR-024 |
 | Q7 | Chọn file HEIC hoặc GIF | "Chỉ hỗ trợ ảnh JPG, PNG, WebP" | Edge Case |
-| Q8 | Tải trực tiếp file 3 MB lên bucket của Supabase local (`http://127.0.0.1:54321`) bằng `curl` với token của mình | Storage từ chối (giới hạn 2 MB) | FR-003 |
-| Q9 | Bật chế độ máy bay giữa lúc tải ảnh | Ảnh cũ giữ nguyên, có "Thử lại" | Edge Case, SC-007 |
+| Q8 | **[BLOCKED: cả nhóm]** Supabase local từ chối token của Auth Emulator (`"alg" ... not allowed`, xem tasks T005); cần nhóm chốt cách thử Storage. Tải trực tiếp file 3 MB lên bucket của Supabase local (`http://127.0.0.1:54321`) bằng `curl` với token của mình | Storage từ chối (giới hạn 2 MB) | FR-003 |
+| Q9 | **[BLOCKED: cả nhóm]** Supabase local từ chối token của Auth Emulator (`"alg" ... not allowed`, xem tasks T005); cần nhóm chốt cách thử Storage. Bật chế độ máy bay giữa lúc tải ảnh | Ảnh cũ giữ nguyên, có "Thử lại" | Edge Case, SC-007 |
 | Q10 | Danh mục khu vực lỗi (tắt mạng khi mở picker) | Mục khu vực báo lỗi + "Thử lại", ô khác vẫn sửa được | Edge Case |
 | Q11 | Đăng xuất, mở lại app | Về Trang chủ chế độ khách, Back không quay lại màn hình của tài khoản cũ; token của máy không còn trong `fcmTokens` | US2, FR-007 |
 | Q12 | Đăng xuất rồi gửi thông báo thử tới tài khoản đó (D hoặc FCM console với token cũ) | Máy không nhận | US2-3 |
@@ -99,6 +99,18 @@ Phạm vi bắt buộc:
 | Q26 | Mở trang xem trước, dùng máy khác đặt thêm 1 đơn, quay lại bấm xóa | Màn hình cập nhật số đơn mới, phải đánh dấu lại | R11 (`IMPACT_CHANGED`) |
 | Q27 | Chế độ tối, máy tính bảng `w600dp`, TalkBack trên 6 màn hình, 2 bottom sheet và hộp thoại xác nhận danh tính | Hiển thị đúng; đọc được nhãn ảnh và nút | FR-025 |
 | Q28 | Mở Sửa hồ sơ trên 2 máy cùng tài khoản; máy 1 đổi tên, máy 2 đổi trình độ, lưu lần lượt; mở lại trang Tài khoản trên cả hai | Cả hai thay đổi đều còn (mỗi lần lưu chỉ ghi trường đã đổi); trường cùng sửa ở hai máy thì giữ lần lưu sau cùng | Edge Case "hai máy" |
+
+### Kết quả Q13–Q17 (2026-10-25, máy ảo Pixel API 36, Firebase Emulator)
+
+Dữ liệu: `player1`, `player-pending`, `player-rejected`, `player-revoked`, `owner1` (mật khẩu `Test1234`) và 2 document `ownerApplications` tạo bằng script REST trên Emulator; không chạy lên project thật. Ảnh trong `docs/features/01-account/screenshots/`.
+
+| Mục | Kết quả | Ghi chú |
+|---|---|---|
+| Q13 | Đạt | Đủ 5 trạng thái. Nút "Đăng ký làm chủ sân" / "Sửa và nộp lại" đang ẩn vì chưa có destination `smashnow://owner/apply` (spec 110, D), đúng R14. **[BLOCKED: D]** `firestore.rules` chưa có rule đọc `ownerApplications` nên listener bị `PERMISSION_DENIED`: `player-pending` hiện "Admin sẽ xem hồ sơ trong vài ngày" thay vì ngày nộp, `player-rejected` hiện "Mở hồ sơ để xem lý do và sửa lại" thay vì lý do; app không crash, không đăng xuất |
+| Q14 | Đạt | Đổi claim `OWNER` rồi ghi `ownerStatus = APPROVED` khi `player-pending` đang mở trang Tài khoản: không đăng xuất, app tự sang giao diện quản lý sân, trang Tài khoản hiện "Đã là chủ sân" và khối chuyển chế độ |
+| Q15 | Đạt một phần (SC-003) | Đo 8 vòng bằng mốc thời gian logcat (từ trước lệnh `input tap` tới khi Fragment trang chủ `RESUMED`, đã gồm ~0,1 giây khởi động lệnh `input`). Sang "Người chơi": 0,10–0,15 giây. Sang "Quản lý sân": 0,66–1,14 giây, 3/8 lần vượt 1 giây vì bước làm mới token bắt buộc của R7 (gọi Auth Emulator). Một lần trong khoảng 25 lần thử, sau khi mở lại app bằng `force-stop`, toggle đã sang "Quản lý sân" nhưng màn hình không chuyển; chưa tái hiện lại được |
+| Q16 | Đạt | Ở chế độ người chơi, đổi claim `owner1` thành `PLAYER` rồi bấm "Quản lý sân": không vào được, ở lại giao diện người chơi, snackbar "Quyền chủ sân đã bị thu hồi." (lý do trống vì document chưa ghi). Ghi `ownerStatus = NONE` + `ownerRevokedReason` thì trang Tài khoản hiện thẻ thu hồi kèm lý do, mất khối chuyển chế độ |
+| Q17 | Đạt | Chuyển "Người chơi", `am force-stop`, mở lại: vào "Trang chủ chủ sân" |
 
 ## 6. Hoàn tất
 

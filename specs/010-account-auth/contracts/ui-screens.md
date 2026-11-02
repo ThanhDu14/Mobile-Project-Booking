@@ -27,7 +27,9 @@ Wireframe: [ui/README.md](../ui/README.md) (7 bước, có chế độ tối).
   - `OWNER`, `ADMIN`, hoặc `nav_auth` là gốc (đi từ màn hình chào) → `popUpTo(nav_main, inclusive = true)` sang graph của vai trò. Bấm Back sau đó thì thoát app, không quay lại màn hình đăng nhập (Edge Case của spec).
 - `MainActivity` thu thập `sessionState`:
   - Chuyển sang `SignedOut` khi đang đăng nhập (đăng xuất ở spec 011, bị khóa) → `nav_player` chế độ khách, `popUpTo(nav_main, inclusive = true)`; bị khóa thì mở thêm `LoginFragment(lockedNotice = true)`.
+  - **[sửa bởi 011 T014, T018]** `SignedOut(SESSION_REVOKED)` → `nav_player` chế độ khách rồi `LoginFragment(sessionRevokedNotice = true)` chồng lên ("Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại"); `SignedOut(ACCOUNT_DELETED)` → `nav_player` chế độ khách kèm Snackbar "Tài khoản đã được xóa". Quyết định đích vẫn ở `SessionRouter` (`afterSignOut(reason)`).
   - `SignedIn` mà `appRole` đổi thì điều hướng sang graph tương ứng.
+  - **[sửa bởi 011 T018]** Graph gốc theo cặp `(appRole, mode)` của `AppModeController`: `rootGraphFor(OWNER, OWNER) = nav_owner`, `rootGraphFor(OWNER, PLAYER) = nav_player`; chủ sân đổi chế độ thì điều hướng lại, chỉ khi graph đích đổi.
 - **Deep link `returnTo`** (plan 080 yêu cầu): `LoginFragment` nhận argument `returnTo: String?` (URI deep link). Đăng nhập xong mà có `returnTo` thì `navigate(Uri)` theo quy tắc trên.
 - **Deep link mở `nav_auth`:** `smashnow://auth/login?returnTo={returnTo}`, `smashnow://auth/register?returnTo={returnTo}`, khai báo trong `nav_auth.xml`.
 
@@ -94,6 +96,7 @@ interface SessionManager {
     val sessionState: StateFlow<SessionState>
     suspend fun refresh(forceTokenRefresh: Boolean = true)   // gọi sau khi D đổi vai trò, sau on-signup
     suspend fun signOut()                                     // spec 011 gọi
+    suspend fun signOut(reason: SignOutReason?) { signOut() } // [011] có thân mặc định, fake cũ không phải sửa
     fun currentUid(): String?                                 // null khi chưa SignedIn
     fun currentAppRole(): AppRole?
 }
@@ -110,6 +113,10 @@ interface UserProfileReader {                                     // plan 080 y�
 // SessionManager có thêm:
 //     val isGuest: StateFlow<Boolean>                            // true khi SignedOut
 
+// [011] SignOutReason: LOCKED, SESSION_REVOKED, ACCOUNT_DELETED
+// [011] fun interface SignOutHook { suspend fun beforeSignOut(uid: String) }   // Hilt @IntoSet, chạy trước signOut
+// [011] interface AppModeController { val mode: StateFlow<AppMode>; suspend fun switchTo(target): Result<AppMode> }
+
 interface AuthNavigator {                                         // core/session, cài đặt bằng deep link
     fun openLogin(navController: NavController, returnTo: Uri? = null)
     fun openRegister(navController: NavController, returnTo: Uri? = null)
@@ -122,4 +129,5 @@ interface AuthNavigator {                                         // core/sessio
 - Không gọi `FirebaseAuth.getInstance()` trong `feature/*`.
 - `uid` lấy từ `SessionManager.currentUid()`.
 - Token cho Edge Function lấy từ `IdTokenProvider`. `SupabaseClient` trong `core/di` đã gắn sẵn.
+- **[011]** Edge Function trả `403 ACCOUNT_DELETING` thì repository ném `AppError.AccountDeleted`; `core/network` báo `AccountDeletedBus`, `SessionManager` đăng xuất với lý do `ACCOUNT_DELETED`. `AppError` có thêm `AccountDeleted`, `SessionRevoked`: `when` vét cạn trên `AppError` cần thêm nhánh.
 - Edge Function trả `403 ACCOUNT_LOCKED` thì repository ném `AppError.Locked`. ViewModel không cần xử lý riêng: `core/network` báo cho `SessionManager` để đăng xuất; app về chế độ khách và mở màn hình đăng nhập kèm thông báo khóa (research R15).

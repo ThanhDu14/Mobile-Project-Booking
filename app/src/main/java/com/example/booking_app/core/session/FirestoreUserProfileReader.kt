@@ -45,6 +45,12 @@ class FirestoreUserProfileReader @Inject constructor(
             avatarPath = getString("avatarPath"),
             role = getString("role"),
             accountStatus = getString("accountStatus"),
+            email = getString("email"),
+            phone = getString("phone"),
+            walletBalance = getLong("walletBalance") ?: 0L,
+            ownerStatus = getString("ownerStatus") ?: "NONE",
+            ownerRevokedReason = getString("ownerRevokedReason"),
+            deletionRequestedAt = getTimestamp("deletionRequestedAt")?.toInstant(),
         )
     }
 }
