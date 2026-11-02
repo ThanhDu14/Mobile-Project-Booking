@@ -2,6 +2,8 @@
 <!-- Chuỗi văn bản cho tính năng đặt sân theo khung giờ (Spec 040) -->
 <resources>
     <string name="booking_title">Chọn khung giờ</string>
+    <!-- TODO(030): Nút TẠM để vào 040 khi chưa có màn chi tiết sân. Xóa khi 030 xong. -->
+    <string name="booking_home_temp_entry">Đặt sân theo giờ</string>
     <string name="booking_select_date">Chọn ngày</string>
     <string name="booking_select_court">Chọn sân thi đấu</string>
     <string name="booking_select_slot">Khung giờ</string>
@@ -21,7 +23,7 @@
     <string name="booking_status_drop_in_badge">Giao hữu</string>
     <string name="booking_status_blocked_badge">Bị khóa</string>
     <string name="booking_status_past_badge">Đã qua</string>
-    <string name="booking_legend_note">Mỗi ô là 30 phút. Chọn nhiều ô liền nhau trên cùng sân hoặc ở nhiều sân. Khung giờ được giữ 5 phút khi bạn bấm \'Giữ chỗ\'.</string>
+    <string name="booking_legend_note">Mỗi ô là 30 phút. Được chọn nhiều khối trên cùng sân; không để trống lẻ 1 ô (30 phút) giữa 2 khối.</string>
 
     <!-- Phản hồi khi bấm slot không khả dụng -->
     <string name="booking_slot_booked_message">Slot này đã được đặt</string>
