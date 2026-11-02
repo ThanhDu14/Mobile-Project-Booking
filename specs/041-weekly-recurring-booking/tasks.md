@@ -200,7 +200,7 @@ US5: Tóm tắt chi phí, cọc 30% và chuyển tiếp sang thanh toán Spec 05
   - Kiểm thử chọn thứ, giờ, chu kỳ và tự động sinh buổi.
   - Kiểm thử nhận diện xung đột lịch và cập nhật phương án đổi sân cùng `surfaceType`.
   - Kiểm thử chặn nút tiếp tục khi số buổi hợp lệ $< 4$.
-- [ ] T042 [P] Viết Integration Test `TEST/feature/booking/data/RecurringHoldTransactionTest.kt` chạy trên Firebase Emulator:
+- [x] T042 [P] Viết Integration Test `TEST/feature/booking/data/RecurringHoldTransactionTest.kt` chạy trên Firebase Emulator:
   - Kiểm thử giữ chỗ chu kỳ 12 tuần All-or-Nothing.
   - Kiểm thử rollback khi có 1 slot bất kỳ trong chu kỳ bị người khác giữ trước.
 - [ ] T043 Viết UI Test Espresso `ATEST/feature/booking/BookingRecurringFlowTest.kt`:

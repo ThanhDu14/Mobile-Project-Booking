@@ -73,7 +73,7 @@ object RecurringBookingMapper {
             startTime = session.startTime,
             endTime = session.endTime,
             slotIds = session.slotIds,
-            status = if (session.status == RecurringSessionStatus.HELD) "HOLD" else "AVAILABLE",
+            status = "HOLD",
             price = session.price,
             depositAmount = depositAmount
         )
