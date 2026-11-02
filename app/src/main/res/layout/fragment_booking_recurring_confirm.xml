@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/sn_surface">
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/appBarLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/sn_surface_raised"
+        app:elevation="0dp">
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            app:navigationIcon="@drawable/ic_arrow_back_24"
+            app:navigationIconTint="@color/sn_ink"
+            app:title="@string/recurring_confirm_title"
+            app:titleTextAppearance="@style/TextAppearance.Material3.TitleMedium"
+            app:titleTextColor="@color/sn_ink" />
+
+        <!-- Countdown Banner -->
+        <LinearLayout
+            android:id="@+id/layoutCountdownBanner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/sn_lamp_container"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:paddingVertical="10dp">
+
+            <ImageView
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:src="@drawable/ic_timer_24"
+                app:tint="@color/sn_on_lamp_container" />
+
+            <TextView
+                android:id="@+id/tvCountdownTimer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:fontFamily="sans-serif-medium"
+                android:text="Khung giờ được giữ trong 05:00"
+                android:textColor="@color/sn_on_lamp_container"
+                android:textSize="14sp" />
+        </LinearLayout>
+
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clipToPadding="false"
+        android:fillViewport="true"
+        android:paddingBottom="96dp"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <!-- Card Cơ sở & Lịch -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                app:cardBackgroundColor="@color/sn_surface_raised"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:strokeColor="@color/sn_line"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:id="@+id/tvVenueName"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="Cơ sở SmashNow"
+                        android:textColor="@color/sn_ink"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvRecurringScheduleOverview"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="Thứ 3, Thứ 5 · 18:00 - 20:00 · 8 tuần"
+                        android:textColor="@color/sn_ink_muted"
+                        android:textSize="13sp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Card Danh sách các buổi -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                app:cardBackgroundColor="@color/sn_surface_raised"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:strokeColor="@color/sn_line"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingTop="16dp"
+                    android:paddingBottom="8dp">
+
+                    <TextView
+                        android:id="@+id/tvSessionsListHeader"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-medium"
+                        android:paddingHorizontal="16dp"
+                        android:text="Danh sách các buổi đặt (16 buổi)"
+                        android:textColor="@color/sn_ink"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginTop="12dp"
+                        android:background="@color/sn_line" />
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/rvConfirmSessions"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:nestedScrollingEnabled="false"
+                        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                        tools:listitem="@layout/item_recurring_session_summary" />
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Card Tóm tắt thanh toán -->
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                app:cardBackgroundColor="@color/sn_surface_raised"
+                app:cardCornerRadius="12dp"
+                app:cardElevation="0dp"
+                app:strokeColor="@color/sn_line"
+                app:strokeWidth="1dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="sans-serif-medium"
+                        android:text="@string/recurring_summary_card_title"
+                        android:textColor="@color/sn_ink"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/recurring_summary_total_sessions"
+                            android:textColor="@color/sn_ink_muted"
+                            android:textSize="14sp" />
+
+                        <TextView
+                            android:id="@+id/tvConfirmTotalSessions"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="16 buổi"
+                            android:textColor="@color/sn_ink"
+                            android:textSize="14sp" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/recurring_summary_subtotal"
+                            android:textColor="@color/sn_ink_muted"
+                            android:textSize="14sp" />
+
+                        <TextView
+                            android:id="@+id/tvConfirmSubtotal"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="1.600.000 đ"
+                            android:textColor="@color/sn_ink"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
+                    </LinearLayout>
+
+                    <View
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:layout_marginBottom="12dp"
+                        android:layout_marginTop="12dp"
+                        android:background="@color/sn_line" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:fontFamily="sans-serif-medium"
+                            android:text="@string/recurring_summary_deposit"
+                            android:textColor="@color/sn_ink"
+                            android:textSize="14sp" />
+
+                        <TextView
+                            android:id="@+id/tvConfirmDeposit"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-bold"
+                            android:text="480.000 đ"
+                            android:textColor="@color/sn_court"
+                            android:textSize="16sp" />
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+        </LinearLayout>
+
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- Bottom Bar -->
+    <LinearLayout
+        android:id="@+id/layoutBottomBar"
+        android:layout_width="match_parent"
+        android:layout_height="72dp"
+        android:layout_gravity="bottom"
+        android:background="@color/sn_surface_raised"
+        android:elevation="8dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="16dp">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnCancelHold"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="48dp"
+            android:layout_marginEnd="12dp"
+            android:text="@string/recurring_btn_cancel_hold"
+            android:textColor="@color/sn_ink_muted"
+            app:cornerRadius="8dp"
+            app:strokeColor="@color/sn_line" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnContinueToPayment"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:backgroundTint="@color/sn_court"
+            android:fontFamily="sans-serif-medium"
+            android:text="@string/recurring_btn_continue_to_payment"
+            android:textColor="@color/sn_on_court"
+            app:cornerRadius="8dp" />
+
+    </LinearLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>
