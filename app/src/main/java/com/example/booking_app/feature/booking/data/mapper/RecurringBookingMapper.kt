@@ -14,7 +14,7 @@ import java.util.UUID
 
 object RecurringBookingMapper {
 
-    private val DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd")
+    val DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd")
 
     fun toRecurringGroupDto(
         recurringGroupId: String,

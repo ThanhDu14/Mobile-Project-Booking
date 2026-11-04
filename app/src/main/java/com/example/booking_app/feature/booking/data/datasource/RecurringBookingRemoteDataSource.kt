@@ -9,7 +9,6 @@ import com.example.booking_app.feature.booking.domain.model.RecurringHoldResult
 
 interface RecurringBookingRemoteDataSource {
     suspend fun isRecurringAccepted(venueId: String): Boolean
-    suspend fun getVenueName(venueId: String): String
     suspend fun getActiveCourts(venueId: String): List<CourtDto>
     suspend fun getPriceRules(venueId: String): List<PriceRuleDto>
     suspend fun getBusySlotsForDates(venueId: String, dates: List<String>): List<SlotDto>

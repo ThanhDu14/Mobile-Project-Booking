@@ -1,5 +1,6 @@
 package com.example.booking_app.feature.booking.data.datasource
 
+import com.example.booking_app.core.network.AppError
 import com.example.booking_app.feature.booking.data.model.BookingSessionDto
 import com.example.booking_app.feature.booking.data.model.CourtDto
 import com.example.booking_app.feature.booking.data.model.PriceRuleDto
@@ -35,14 +36,6 @@ class FirestoreRecurringBookingRemoteDataSource @Inject constructor(
             ?: true
     }
 
-    override suspend fun getVenueName(venueId: String): String {
-        val snapshot = firestore.collection(COLLECTION_VENUES)
-            .document(venueId)
-            .get()
-            .await()
-        return snapshot.getString("name").orEmpty()
-    }
-
     override suspend fun getActiveCourts(venueId: String): List<CourtDto> {
         val snapshot = firestore.collection(COLLECTION_VENUES)
             .document(venueId)
@@ -74,12 +67,15 @@ class FirestoreRecurringBookingRemoteDataSource @Inject constructor(
     ): List<SlotDto> = coroutineScope {
         if (dates.isEmpty()) return@coroutineScope emptyList()
 
-        val chunks = dates.chunked(30)
-        val deferredList = chunks.map { chunk ->
+        val uniqueDates = dates.distinct()
+        val busyStatuses = listOf("BOOKED", "BLOCKED", "HELD")
+
+        val deferredList = uniqueDates.map { date ->
             async {
                 val querySnapshot = firestore.collection(COLLECTION_SLOTS)
                     .whereEqualTo("venueId", venueId)
-                    .whereIn("date", chunk)
+                    .whereEqualTo("date", date)
+                    .whereIn("status", busyStatuses)
                     .get()
                     .await()
 
@@ -105,6 +101,26 @@ class FirestoreRecurringBookingRemoteDataSource @Inject constructor(
                 val conflicts = mutableListOf<String>()
 
                 // --- Phase 1: ALL READS ---
+                // P0-3: Idempotency check trên recurringGroups
+                val groupRef = firestore.collection(COLLECTION_RECURRING_GROUPS).document(recurringGroup.id)
+                val existingGroupSnap = transaction.get(groupRef)
+                if (existingGroupSnap.exists()) {
+                    val existingUserId = existingGroupSnap.getString("userId")
+                    val existingStatus = existingGroupSnap.getString("status")
+                    val existingExpiresAt = existingGroupSnap.getTimestamp("holdExpiresAt")
+                    if (existingUserId == userId && existingStatus == "HOLD") {
+                        val expiresAtMillis = existingExpiresAt?.toDate()?.time
+                            ?: recurringGroup.holdExpiresAt?.toDate()?.time
+                            ?: (nowMillis + HOLD_DURATION_MILLIS)
+                        return@runTransaction RecurringHoldResult.Success(
+                            recurringGroupId = recurringGroup.id,
+                            holdExpiresAtMillis = expiresAtMillis
+                        )
+                    } else {
+                        throw AppError.Conflict
+                    }
+                }
+
                 val venueRef = firestore.collection(COLLECTION_VENUES).document(venueId)
                 val venueSnap = transaction.get(venueRef)
                 val acceptsRecurring = venueSnap.getBoolean("acceptsRecurring")
@@ -153,7 +169,6 @@ class FirestoreRecurringBookingRemoteDataSource @Inject constructor(
 
                 // --- Phase 2: ALL WRITES ---
                 // 1. Write recurringGroups/{recurringGroupId}
-                val groupRef = firestore.collection(COLLECTION_RECURRING_GROUPS).document(recurringGroup.id)
                 transaction.set(groupRef, recurringGroup)
 
                 // 2. Write bookings/{bookingId} for each session

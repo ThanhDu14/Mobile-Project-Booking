@@ -3,6 +3,7 @@ package com.example.booking_app.feature.booking.data.datasource
 import com.example.booking_app.feature.booking.data.model.CourtDto
 import com.example.booking_app.feature.booking.data.model.PriceRuleDto
 import com.example.booking_app.feature.booking.data.model.SlotDto
+import com.example.booking_app.feature.booking.data.time.ServerTimeOffsetProvider
 import com.example.booking_app.feature.booking.domain.model.HoldResult
 import com.example.booking_app.feature.booking.domain.model.VenueInfo
 import com.google.firebase.Timestamp
@@ -19,7 +20,8 @@ import java.util.Locale
 import javax.inject.Inject
 
 class FirestoreBookingRemoteDataSource @Inject constructor(
-    private val firestore: FirebaseFirestore
+    private val firestore: FirebaseFirestore,
+    private val serverTimeOffsetProvider: ServerTimeOffsetProvider
 ) : BookingRemoteDataSource {
 
     override suspend fun getVenueOperatingHours(venueId: String): Pair<String, String> {
@@ -57,6 +59,9 @@ class FirestoreBookingRemoteDataSource @Inject constructor(
         val status = snapshot.getString("status")
         val photoPaths = snapshot.get("photoPaths") as? List<*>
         val photoUrl = photoPaths?.firstOrNull()?.toString()?.takeIf { it.startsWith("http") }
+        val acceptsRecurring = snapshot.getBoolean("acceptsRecurring")
+            ?: snapshot.getBoolean("isRecurringAccepted")
+            ?: true
 
         val districtName = DISTRICT_NAMES[districtId] ?: parseDistrictFromAddress(address) ?: districtId
 
@@ -68,7 +73,8 @@ class FirestoreBookingRemoteDataSource @Inject constructor(
             openTime = openTime,
             closeTime = closeTime,
             photoUrl = photoUrl,
-            status = status
+            status = status,
+            acceptsRecurring = acceptsRecurring
         )
     }
 
@@ -101,6 +107,7 @@ class FirestoreBookingRemoteDataSource @Inject constructor(
         val query = firestore.collection(COLLECTION_SLOTS)
             .whereEqualTo("venueId", venueId)
             .whereEqualTo("date", date)
+            .whereIn("status", listOf("BOOKED", "BLOCKED", "HELD"))
 
         val registration = query.addSnapshotListener { snapshot, error ->
             if (error != null) {
@@ -177,7 +184,7 @@ class FirestoreBookingRemoteDataSource @Inject constructor(
             }
 
             // --- Phase 2: ALL WRITES ---
-            val holdExpiresAtMillis = System.currentTimeMillis() + HOLD_DURATION_MILLIS
+            val holdExpiresAtMillis = serverTimeOffsetProvider.now() + HOLD_DURATION_MILLIS
             val holdExpiresAtTimestamp = Timestamp(Date(holdExpiresAtMillis))
 
             for (slotId in slotIds) {

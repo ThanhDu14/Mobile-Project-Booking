@@ -1,6 +1,8 @@
 package com.example.booking_app.feature.booking.data
 
 import com.example.booking_app.core.network.AppError
+import com.example.booking_app.core.util.SystemAppClock
+import com.example.booking_app.feature.booking.data.cache.VenueMetadataCache
 import com.example.booking_app.feature.booking.data.datasource.BookingRemoteDataSource
 import com.example.booking_app.feature.booking.data.model.CourtDto
 import com.example.booking_app.feature.booking.data.model.PriceRuleDto
@@ -29,7 +31,7 @@ class BookingRepositoryImplTest {
 
     @Before
     fun setUp() {
-        repository = BookingRepositoryImpl(remoteDataSource)
+        repository = BookingRepositoryImpl(remoteDataSource, VenueMetadataCache(SystemAppClock()))
     }
 
     @Test
@@ -123,7 +125,18 @@ class BookingRepositoryImplTest {
     }
 
     @Test
-    fun errorMapping_permissionDenied_mapsToAppErrorNotSignedIn() = runTest {
+    fun errorMapping_unauthenticated_mapsToAppErrorNotSignedIn() = runTest {
+        val firestoreEx = FirebaseFirestoreException("Unauthenticated", FirebaseFirestoreException.Code.UNAUTHENTICATED)
+        coEvery { remoteDataSource.getVenueOperatingHours(venueId) } throws firestoreEx
+
+        val result = repository.getVenueOperatingHours(venueId)
+
+        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull() is AppError.NotSignedIn)
+    }
+
+    @Test
+    fun errorMapping_permissionDenied_whenNotSignedIn_mapsToAppErrorNotSignedIn() = runTest {
         val firestoreEx = FirebaseFirestoreException("Permission denied", FirebaseFirestoreException.Code.PERMISSION_DENIED)
         coEvery { remoteDataSource.getVenueOperatingHours(venueId) } throws firestoreEx
 
