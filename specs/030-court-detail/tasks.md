@@ -231,28 +231,28 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
 
 ### Tests cho User Story 1 ⚠️ viết trước, phải fail
 
-- [ ] T027 [P] [US1] Unit test `TEST/feature/courtdetail/domain/SearchWindowArgsTest.kt`:
+- [x] T027 [P] [US1] Unit test `TEST/feature/courtdetail/domain/SearchWindowArgsTest.kt`:
   - đủ 3 tham số hợp lệ → `SearchWindow`;
   - thiếu một tham số, sai định dạng, `start >= end`, không phải mốc `:00`/`:30` → `null`;
   - `end = "2400"` hợp lệ;
   - khung đã qua so với `now` (`date + start <= now` theo `Asia/Ho_Chi_Minh`) → `null`.
-- [ ] T028 [P] [US1] Unit test `TEST/feature/courtdetail/domain/OpeningHoursTest.kt` với `AppClock` giả:
+- [x] T028 [P] [US1] Unit test `TEST/feature/courtdetail/domain/OpeningHoursTest.kt` với `AppClock` giả:
   - `0500`–`2300`: 20:00 → `Open(23:00)`, 23:30 → `Closed(reopensAt = 05:00)` (US1-4);
   - `0500`–`0100` (qua nửa đêm): 00:30 → `Open`, 02:00 → `Closed(05:00)`;
   - `0500`–`2400`: 00:30 → `Closed(05:00)`, 23:59 → `Open`;
   - `0000`–`2400` hoặc `open == close` → `AllDay`;
   - tính theo `Asia/Ho_Chi_Minh` kể cả khi `AppClock` trả `Instant` UTC.
-- [ ] T029 [P] [US1] Unit test `TEST/feature/courtdetail/domain/CourtSummaryTest.kt`:
+- [x] T029 [P] [US1] Unit test `TEST/feature/courtdetail/domain/CourtSummaryTest.kt`:
   - 3 `MAT` hoạt động + 1 `MAT` tạm ngưng → `activeCount = 3`, `[MAT to 3]` (US1-3);
   - 2 `WOOD` + 1 `MAT` → sắp theo số lượng giảm dần `[WOOD to 2, MAT to 1]`;
   - 0 sân hoạt động → `activeCount = 0`;
   - `surfaceType` lạ → `OTHER`.
-- [ ] T030 [P] [US1] Unit test `TEST/feature/courtdetail/domain/usecase/CheckVenueBookableUseCaseTest.kt`:
+- [x] T030 [P] [US1] Unit test `TEST/feature/courtdetail/domain/usecase/CheckVenueBookableUseCaseTest.kt`:
   - server trả `ACTIVE` → `Bookable`;
   - `SUSPENDED`/`GONE` → `NotBookable(availability)`;
   - `fetchStatusFromServer` trả `null` (mất mạng) → dùng trạng thái mới nhất từ listener;
   - hết 15 s → coi như mất mạng.
-- [ ] T031 [P] [US1] Unit test `TEST/feature/courtdetail/ui/CourtDetailViewModelUs1Test.kt` (Turbine, `FakeVenueDetailRepository`, `SavedStateHandle` có tham số):
+- [x] T031 [P] [US1] Unit test `TEST/feature/courtdetail/ui/CourtDetailViewModelUs1Test.kt` (Turbine, `FakeVenueDetailRepository`, `SavedStateHandle` có tham số):
   - lần đầu `availability == null`, `header = Loading`; venue tới → `header = Content` mà **không chờ** `courts`/`priceRules`;
   - `courts` lỗi → chỉ `courts = Error`, `header` vẫn `Content`; `onRetry(COURTS)` chỉ gọi lại `loadCourts`;
   - `amenityIds = []` → `amenities = Empty`;
@@ -265,16 +265,16 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
 
 ### Implementation cho User Story 1
 
-- [ ] T032 [P] [US1] Cài `CD/domain/SearchWindowArgs.kt`. Cho T027 xanh
-- [ ] T033 [P] [US1] Cài `CD/domain/OpeningHours.kt` (`status(openTime, closeTime, now: ZonedDateTime): OpeningStatus`; dùng `TimeOfDay.parseEnd` cho `closeTime`) và `CD/domain/OpeningTicker.kt` (`Flow<ZonedDateTime>` phát mỗi phút từ `AppClock`). Cho T028 xanh
-- [ ] T034 [P] [US1] Cài `CD/domain/CourtSummary.kt` (`from(courts)`). Cho T029 xanh
-- [ ] T035 [US1] Cài trong `CD/domain/usecase/`:
+- [x] T032 [P] [US1] Cài `CD/domain/SearchWindowArgs.kt`. Cho T027 xanh
+- [x] T033 [P] [US1] Cài `CD/domain/OpeningHours.kt` (`status(openTime, closeTime, now: ZonedDateTime): OpeningStatus`; dùng `TimeOfDay.parseEnd` cho `closeTime`) và `CD/domain/OpeningTicker.kt` (`Flow<ZonedDateTime>` phát mỗi phút từ `AppClock`). Cho T028 xanh
+- [x] T034 [P] [US1] Cài `CD/domain/CourtSummary.kt` (`from(courts)`). Cho T029 xanh
+- [x] T035 [US1] Cài trong `CD/domain/usecase/`:
   - `ObserveVenueDetailUseCase.kt`: gộp `observeVenue` + `CatalogRepository`; **chỉ ở đây** đổi `PermissionDenied` thành `SUSPENDED_GUEST` khi `SessionManager.isGuest == true`, ngược lại thành `Failed(AppError.Unknown)`;
   - `LoadCourtSummaryUseCase.kt`;
   - `CheckVenueBookableUseCase.kt`.
 
   Cho T030 xanh
-- [ ] T036 [US1] Cài `CD/ui/CourtDetailUiState.kt` (đúng [data-model §2.5](data-model.md#25-trạng-thái-màn-hình), `Section<T> = Loading | Content | Empty | Error(AppError)`, `CourtDetailEffect`) và `CD/ui/CourtDetailViewModel.kt`:
+- [x] T036 [US1] Cài `CD/ui/CourtDetailUiState.kt` (đúng [data-model §2.5](data-model.md#25-trạng-thái-màn-hình), `Section<T> = Loading | Content | Empty | Error(AppError)`, `CourtDetailEffect`) và `CD/ui/CourtDetailViewModel.kt`:
   - phần US1: header, courts, amenities, `isOffline`, `bottomBar`;
   - các hàm `onRetry`, `onBookClicked`, `onPhotoClicked`, `onPhotoPageChanged`;
   - ba luồng venue/courts/priceRules chạy song song bằng `async`;
@@ -282,7 +282,7 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
   - khung giờ đưa vào `OpeningTicker`: qua giờ bắt đầu thì đặt `window = null`.
 
   Cho T031 xanh
-- [ ] T037 [US1] Viết `RES/layout/fragment_court_detail.xml` theo wireframe `03_court-detail_buoc1_chi-tiet-san.png`:
+- [x] T037 [US1] Viết `RES/layout/fragment_court_detail.xml` theo wireframe `03_court-detail_buoc1_chi-tiet-san.png`:
   - `CoordinatorLayout` + `NestedScrollView` (có `id` để tự lưu vị trí cuộn);
   - mục 1 là `ViewPager2` 16:9 kèm chỉ báo "1/5", nút quay lại và trái tim 48dp chồng lên;
   - mục 2 là tên, địa chỉ · quận, điểm, chip trạng thái mở cửa;
@@ -292,15 +292,18 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
   - banner offline; mỗi mục có `ProgressBar`/khung chờ và dòng lỗi kèm "Thử lại".
 
   Kèm `RES/layout/item_court_detail_photo.xml`; mọi màu và kích thước lấy từ resource
-- [ ] T038 [US1] Cài `CD/ui/CourtDetailFragment.kt` + `CD/ui/PhotoGalleryAdapter.kt` (`ListAdapter`, Coil, lỗi → `img_venue_placeholder`, `contentDescription` "Ảnh %1$d trên %2$d của %3$s"):
+  - 2026-11-04: mục 5–7 để LinearLayout trống, ViewStub bản đồ thêm ở US3 (T049). FlexboxLayout không có trong dự án nên hàng điểm + chip mở cửa dùng ChipGroup.
+- [x] T038 [US1] Cài `CD/ui/CourtDetailFragment.kt` + `CD/ui/PhotoGalleryAdapter.kt` (`ListAdapter`, Coil, lỗi → `img_venue_placeholder`, `contentDescription` "Ảnh %1$d trên %2$d của %3$s"):
   - thu thập state bằng `repeatOnLifecycle(STARTED)`;
   - chạm ảnh → `action_global_photoViewer`;
   - chip tiện ích dùng `ic_amenity_{iconKey}`;
   - thẻ sân con hiện "N sân · 2 Gỗ, 1 Thảm" hoặc "Tạm thời chưa có sân hoạt động".
-- [ ] T039 [US1] Thêm action `action_courtDetail_to_bookingSlotGrid` vào `RES/navigation/nav_court_detail.xml` theo [040 ui-contracts §1.1](../040-booking-slot-grid/contracts/ui-contracts.md):
+  - 2026-11-04: chạy trên emulator-5554 (Firebase Emulator, khách): deep link smashnow://venue/demo-truong-chinh-909?date=20261110&start=1900&end=2100 hiện ảnh 1/3, "10 sân · PU", "Đang mở cửa · 05:00–24:00", chạm ảnh mở trình xem ảnh. Khách không đọc được districts/amenities (firestore.rules chưa có match amenities, districts chỉ cho isInitialized) nên mục Tiện ích báo lỗi kèm "Thử lại" và không hiện tên quận: chờ spec 020 T019 (A) thêm Rules đọc danh mục cho khách.
+- [x] T039 [US1] Thêm action `action_courtDetail_to_bookingSlotGrid` vào `RES/navigation/nav_court_detail.xml` theo [040 ui-contracts §1.1](../040-booking-slot-grid/contracts/ui-contracts.md):
   - **phụ thuộc B**: truyền `venueId`, và `date`/`startTime`/`endTime` khi `bookingSlotGridFragment` đã có ba tham số này;
   - B chưa thêm thì chỉ truyền `venueId` và ghi `// TODO(B): truyền date/startTime/endTime khi 040 có tham số (research R1)`;
   - 040 chưa có màn hình thì action trỏ tạm `PlayerHomePlaceholderFragment`, kèm `TODO(B)` và snackbar "Tính năng sắp có".
+  - 2026-11-04: bookingSlotGridFragment mới nhận venueId nên chỉ truyền venueId, ghi TODO(B). Khách bấm "Đặt sân" thì mời đăng nhập (US5 T063), nên mở lưới trên máy mới kiểm qua unit test (OpenBookingGrid).
 
 **Checkpoint**: US1 chạy độc lập; quickstart Q1, Q2, Q3, Q6, Q7 đạt.
 

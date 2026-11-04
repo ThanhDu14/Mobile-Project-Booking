@@ -12,6 +12,10 @@
     <string name="court_detail_courts_summary">%1$d sân · %2$s</string>
     <string name="court_detail_courts_none">Tạm thời chưa có sân hoạt động</string>
     <string name="court_detail_courts_label">Sân con</string>
+    <plurals name="court_detail_court_count">
+        <item quantity="one">%1$d sân</item>
+        <item quantity="other">%1$d sân</item>
+    </plurals>
     <string name="court_detail_surface_wood">Gỗ</string>
     <string name="court_detail_surface_pu">PU</string>
     <string name="court_detail_surface_mat">Thảm</string>

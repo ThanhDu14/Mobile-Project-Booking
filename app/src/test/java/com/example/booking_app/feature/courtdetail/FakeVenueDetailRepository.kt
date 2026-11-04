@@ -24,8 +24,8 @@ class FakeVenueDetailRepository : VenueDetailRepository {
     var loadPriceRulesCalls = 0
     var fetchStatusCalls = 0
 
-    var courts: () -> List<Court> = { emptyList() }
-    var priceRules: () -> List<PriceRule> = { emptyList() }
+    var courts: suspend () -> List<Court> = { emptyList() }
+    var priceRules: suspend () -> List<PriceRule> = { emptyList() }
     var serverStatus: suspend () -> VenueAvailability? = { VenueAvailability.ACTIVE }
 
     suspend fun emit(result: VenueResult) = venue.emit(result)

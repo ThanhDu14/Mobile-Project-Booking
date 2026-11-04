@@ -1,6 +1,436 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Chi tiết sân (spec 030). Khung rỗng của T024; bố cục đầy đủ ở T037. -->
+<!--
+    Chi tiết sân (spec 030, wireframe ui/03_court-detail_buoc1_chi-tiet-san.png, contracts/ui-screens.md §2).
+    Thứ tự mục: 1 ảnh, 2 thông tin chính, 3 thẻ nhanh, 4 tiện ích, 5 bảng giá, 6 vị trí, 7 đánh giá, 8 thanh dưới.
+    layout-w600dp/fragment_court_detail.xml dùng cùng ID để Fragment dùng chung ViewBinding.
+-->
 <androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/courtDetailRoot"
     android:layout_width="match_parent"
-    android:layout_height="match_parent" />
+    android:layout_height="match_parent"
+    android:background="?android:attr/colorBackground">
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/scrollView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clipToPadding="false"
+        android:paddingBottom="@dimen/court_detail_bottom_bar_height">
+
+        <LinearLayout
+            android:id="@+id/content"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <!-- 1. Thư viện ảnh 16:9 -->
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/galleryContainer"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <androidx.viewpager2.widget.ViewPager2
+                    android:id="@+id/photoPager"
+                    android:layout_width="0dp"
+                    android:layout_height="0dp"
+                    app:layout_constraintDimensionRatio="16:9"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <ImageButton
+                    android:id="@+id/backButton"
+                    android:layout_width="@dimen/touch_min"
+                    android:layout_height="@dimen/touch_min"
+                    android:layout_margin="@dimen/space_2"
+                    android:background="@drawable/bg_court_detail_circle"
+                    android:contentDescription="@string/court_detail_cd_back"
+                    android:src="@drawable/ic_arrow_back_24"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:tint="?attr/colorOnSurface" />
+
+                <ImageButton
+                    android:id="@+id/favoriteButton"
+                    android:layout_width="@dimen/touch_min"
+                    android:layout_height="@dimen/touch_min"
+                    android:layout_margin="@dimen/space_2"
+                    android:background="@drawable/bg_court_detail_circle"
+                    android:contentDescription="@string/court_detail_cd_favorite_add"
+                    android:src="@drawable/ic_favorite_border_24"
+                    android:visibility="gone"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:tint="?attr/colorPrimary"
+                    tools:visibility="visible" />
+
+                <TextView
+                    android:id="@+id/photoIndicator"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="@dimen/space_3"
+                    android:background="@drawable/bg_photo_indicator"
+                    android:paddingHorizontal="@dimen/space_3"
+                    android:paddingVertical="@dimen/space_1"
+                    android:textAppearance="?attr/textAppearanceLabelLarge"
+                    android:textColor="@color/photo_viewer_on_background"
+                    app:layout_constraintBottom_toBottomOf="@id/photoPager"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    tools:text="1/5" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
+
+            <!-- Banner offline (FR-026) -->
+            <TextView
+                android:id="@+id/offlineBanner"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="@dimen/screen_gutter"
+                android:layout_marginTop="@dimen/space_3"
+                android:background="@drawable/bg_court_detail_banner"
+                android:drawablePadding="@dimen/space_2"
+                android:gravity="center_vertical"
+                android:padding="@dimen/space_3"
+                android:text="@string/court_detail_offline_banner"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textColor="@color/sn_on_lamp_container"
+                android:visibility="gone"
+                app:drawableStartCompat="@drawable/ic_wifi_off_24"
+                app:drawableTint="@color/sn_on_lamp_container"
+                tools:visibility="visible" />
+
+            <!-- 2. Thông tin chính -->
+            <LinearLayout
+                android:id="@+id/infoSection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingHorizontal="@dimen/screen_gutter"
+                android:paddingTop="@dimen/space_4">
+
+                <TextView
+                    android:id="@+id/suspendedNote"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="@dimen/space_3"
+                    android:background="@drawable/bg_court_detail_banner"
+                    android:padding="@dimen/space_3"
+                    android:text="@string/court_detail_suspended"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    android:textColor="@color/sn_on_lamp_container"
+                    android:visibility="gone"
+                    tools:visibility="visible" />
+
+                <TextView
+                    android:id="@+id/nameText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:accessibilityHeading="true"
+                    android:textAppearance="?attr/textAppearanceHeadlineSmall"
+                    android:textColor="?attr/colorOnSurface"
+                    tools:text="Sân cầu lông Hòa Bình" />
+
+                <TextView
+                    android:id="@+id/addressText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_2"
+                    android:textAppearance="?attr/textAppearanceBodyLarge"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    tools:text="245 Ba Tháng Hai · Quận 10" />
+
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/ratingRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_2"
+                    app:chipSpacingVertical="@dimen/space_1"
+                    app:chipSpacingHorizontal="0dp">
+
+                    <TextView
+                        android:id="@+id/ratingText"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="@dimen/space_3"
+                        android:drawablePadding="@dimen/space_1"
+                        android:gravity="center_vertical"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorOnSurface"
+                        app:drawableStartCompat="@drawable/ic_star_16"
+                        app:drawableTint="?attr/colorTertiary"
+                        tools:text="4,6 (128 đánh giá)" />
+
+                    <TextView
+                        android:id="@+id/openingChip"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_court_detail_chip_status"
+                        android:drawablePadding="@dimen/space_1"
+                        android:gravity="center_vertical"
+                        android:paddingHorizontal="@dimen/space_2"
+                        android:paddingVertical="@dimen/space_1"
+                        android:textAppearance="?attr/textAppearanceBodySmall"
+                        android:textColor="@color/sn_on_court_container"
+                        app:drawableStartCompat="@drawable/ic_schedule_24"
+                        app:drawableTint="@color/sn_on_court_container"
+                        tools:text="Đang mở cửa · 05:00–23:00" />
+                </com.google.android.material.chip.ChipGroup>
+            </LinearLayout>
+
+            <!-- 3. Ba thẻ nhanh -->
+            <LinearLayout
+                android:id="@+id/quickCards"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_4"
+                android:baselineAligned="false"
+                android:orientation="horizontal"
+                android:paddingHorizontal="@dimen/screen_gutter">
+
+                <include
+                    android:id="@+id/courtsCard"
+                    layout="@layout/view_court_detail_quick_card" />
+
+                <Space
+                    android:id="@+id/distanceCardSpace"
+                    android:layout_width="@dimen/space_2"
+                    android:layout_height="0dp" />
+
+                <include
+                    android:id="@+id/distanceCard"
+                    layout="@layout/view_court_detail_quick_card" />
+
+                <Space
+                    android:id="@+id/phoneCardSpace"
+                    android:layout_width="@dimen/space_2"
+                    android:layout_height="0dp" />
+
+                <include
+                    android:id="@+id/phoneCard"
+                    layout="@layout/view_court_detail_quick_card" />
+            </LinearLayout>
+
+            <!-- 4. Tiện ích -->
+            <LinearLayout
+                android:id="@+id/amenitiesSection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/court_detail_section_gap"
+                android:orientation="vertical"
+                android:paddingHorizontal="@dimen/screen_gutter">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:accessibilityHeading="true"
+                    android:text="@string/court_detail_amenities_title"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    android:textColor="?attr/colorOnSurface" />
+
+                <com.google.android.material.progressindicator.LinearProgressIndicator
+                    android:id="@+id/amenitiesLoading"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_3"
+                    android:indeterminate="true" />
+
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/amenityChips"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_2"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:id="@+id/amenitiesEmpty"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_2"
+                    android:text="@string/court_detail_amenities_empty"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:visibility="gone" />
+
+                <include
+                    android:id="@+id/amenitiesError"
+                    layout="@layout/view_court_detail_section_error" />
+            </LinearLayout>
+
+            <!-- 5. Bảng giá (US2) -->
+            <LinearLayout
+                android:id="@+id/pricesSection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/court_detail_section_gap"
+                android:orientation="vertical"
+                android:paddingHorizontal="@dimen/screen_gutter"
+                android:visibility="gone" />
+
+            <!-- 6. Vị trí (US3) -->
+            <LinearLayout
+                android:id="@+id/locationSection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/court_detail_section_gap"
+                android:orientation="vertical"
+                android:paddingHorizontal="@dimen/screen_gutter"
+                android:visibility="gone" />
+
+            <!-- 7. Đánh giá (US4) -->
+            <LinearLayout
+                android:id="@+id/reviewsSection"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/court_detail_section_gap"
+                android:orientation="vertical"
+                android:paddingHorizontal="@dimen/screen_gutter"
+                android:visibility="gone" />
+
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/space_6" />
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <!-- 8. Thanh dưới cố định (FR-016, FR-017) -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/bottomBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:visibility="gone"
+        app:cardCornerRadius="0dp"
+        app:cardElevation="8dp"
+        app:strokeWidth="0dp"
+        tools:visibility="visible">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:minHeight="@dimen/court_detail_bottom_bar_height"
+            android:orientation="horizontal"
+            android:paddingHorizontal="@dimen/screen_gutter"
+            android:paddingVertical="@dimen/space_3">
+
+            <LinearLayout
+                android:id="@+id/bottomPriceBlock"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/bottomPriceText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?attr/textAppearanceTitleLarge"
+                    android:textColor="?attr/colorOnSurface"
+                    tools:text="120.000 đ/giờ" />
+
+                <TextView
+                    android:id="@+id/bottomWindowText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?attr/textAppearanceBodySmall"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:visibility="gone"
+                    tools:text="T3, 06/10 · 19:00 – 21:00"
+                    tools:visibility="visible" />
+
+                <TextView
+                    android:id="@+id/bottomSuspendedText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/court_detail_suspended"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    android:textColor="?attr/colorError"
+                    android:visibility="gone" />
+            </LinearLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/chatButton"
+                style="@style/Widget.Material3.Button.OutlinedButton.Icon"
+                android:layout_width="@dimen/touch_min"
+                android:layout_height="@dimen/touch_min"
+                android:layout_marginEnd="@dimen/space_2"
+                android:contentDescription="@string/court_detail_cd_chat"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:padding="0dp"
+                app:icon="@drawable/ic_chat_24"
+                app:iconGravity="textStart"
+                app:iconPadding="0dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/bookButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minWidth="120dp"
+                android:text="@string/court_detail_book" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Trạng thái toàn màn hình: đang tải lần đầu, lỗi chưa có dữ liệu -->
+    <FrameLayout
+        android:id="@+id/fullScreenState"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="?android:attr/colorBackground"
+        android:clickable="true"
+        android:focusable="true"
+        android:visibility="gone"
+        tools:visibility="gone">
+
+        <com.google.android.material.progressindicator.CircularProgressIndicator
+            android:id="@+id/fullScreenLoading"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:indeterminate="true" />
+
+        <LinearLayout
+            android:id="@+id/fullScreenError"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:padding="@dimen/space_6"
+            android:visibility="gone">
+
+            <ImageView
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_error_24"
+                app:tint="?attr/colorOnSurfaceVariant" />
+
+            <TextView
+                android:id="@+id/fullScreenErrorText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_3"
+                android:gravity="center"
+                android:text="@string/court_detail_error_generic"
+                android:textAppearance="?attr/textAppearanceBodyLarge"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/fullScreenRetry"
+                style="@style/Widget.SmashNow.Button.Outlined"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_4"
+                android:text="@string/court_detail_retry" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/fullScreenBack"
+                style="@style/Widget.SmashNow.Button.Text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/court_detail_back" />
+        </LinearLayout>
+    </FrameLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

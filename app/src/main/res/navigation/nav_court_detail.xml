@@ -31,6 +31,13 @@
             app:argType="string"
             app:nullable="true" />
         <deepLink app:uri="smashnow://venue/{venueId}?date={date}&amp;start={startTime}&amp;end={endTime}" />
+        <!--
+            Lưới đặt sân của 040 (ui-contracts §1.1). TODO(B): truyền date/startTime/endTime khi 040 có tham số
+            (research R1); hiện bookingSlotGridFragment mới nhận venueId.
+        -->
+        <action
+            android:id="@+id/action_courtDetail_to_bookingSlotGrid"
+            app:destination="@id/bookingSlotGridFragment" />
     </fragment>
 
 </navigation>
