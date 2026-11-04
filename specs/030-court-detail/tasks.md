@@ -205,17 +205,19 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
 
 ### 2C. Test Rules và dữ liệu demo
 
-- [ ] T025 [P] Viết `FT/court-detail.test.ts` đủ **VD-1 → VD-10** của [contracts/security-rules.md §2](contracts/security-rules.md#2-bảng-test-firestore-teststestcourt-detailtestts). Dữ liệu `v-active`, `v-hidden`, `v-locked`, `v-deleted`, không có `v-missing`, kèm `courts`, `priceRules`, 2 `reviews`. Trong đó **VD-10** (khách `get venues/v-deleted` → ✅ để app hiện "Sân không còn tồn tại", FR-022) được thêm sau `/speckit-analyze` I1.
+- [x] T025 [P] Viết `FT/court-detail.test.ts` đủ **VD-1 → VD-10** của [contracts/security-rules.md §2](contracts/security-rules.md#2-bảng-test-firestore-teststestcourt-detailtestts). Dữ liệu `v-active`, `v-hidden`, `v-locked`, `v-deleted`, không có `v-missing`, kèm `courts`, `priceRules`, 2 `reviews`. Trong đó **VD-10** (khách `get venues/v-deleted` → ✅ để app hiện "Sân không còn tồn tại", FR-022) được thêm sau `/speckit-analyze` I1.
   - **Không sửa `firestore.rules`**: `venues` thuộc D, `reviews` thuộc C.
   - Chạy `npm test` trong `firestore-tests/` và ghi kết quả vào PR. Các test VD-1 → VD-4, VD-6, VD-7, VD-10 **sẽ đỏ cho tới khi D và C sửa Rules** theo contract; ghi rõ "[BLOCKED: D]" / "[BLOCKED: C]" trong tên test, không chuyển thành `it.todo`.
   - Test `users` của 010 và test nền vẫn phải xanh.
-- [ ] T026 [P] **Có điều kiện, chỉ khi seed đánh giá của 070 (T025 của 070) chưa có:** tạo `scripts/seed/seed-reviews-030.mjs`:
+  - **2026-11-04:** `npm test`: 114 xanh, 5 đỏ đúng dự kiến — VD-3, VD-4, VD-10 và VD-1b (courts/priceRules của cơ sở tạm ngừng, thêm để kiểm `read: if true` của R10) `[BLOCKED: D]`; VD-6 `[BLOCKED: C]`. VD-1, VD-2, VD-5, VD-7, VD-8, VD-9 đã xanh với Rules hiện tại; thêm VD-6b (người chơi đọc 3 đánh giá `VISIBLE`) xanh.
+- [x] T026 [P] **Có điều kiện, chỉ khi seed đánh giá của 070 (T025 của 070) chưa có:** tạo `scripts/seed/seed-reviews-030.mjs`:
   - chỉ chạy với `--emulator`, thiếu cờ thì thoát kèm thông báo;
   - ghi 12 `reviews` cho `demo-k3` theo [070 data-model](../070-review-favorite/data-model.md): 1 `HIDDEN`, 1 `authorDeleted = true` (`userId = null`, `userSnapshot = { displayName: null, avatarPath: null }`), 1 có `ownerReply`, 2 có `photoPaths`; `createdAt` cách nhau 1 ngày;
   - cập nhật `venues/demo-k3` với `ratingAvg`, `ratingCount = 11`, `ratingSums` tính từ 11 đánh giá `VISIBLE`;
   - ID tất định nên chạy lại không trùng; **không sửa `scripts/seed/seed.mjs`** của Duy.
 
   Ghi cách chạy vào `scripts/seed/README.md` (một mục mới, không sửa phần của Duy)
+  - **2026-11-04:** seed đánh giá của 070 chưa có → đã tạo. Thêm `--project-id` vì Emulator của app chạy với projectId `mobile-22e6c` (singleProjectMode); vẫn chỉ ghi vào Emulator.
 
 **Checkpoint**: nền xong, các user story bắt đầu được.
 
