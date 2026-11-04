@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.booking_app.core.network.AppError
+import com.example.booking_app.core.pricing.PriceRule
 import com.example.booking_app.core.network.toAppError
 import com.example.booking_app.core.schedule.BookingWindow
 import com.example.booking_app.core.schedule.TimeOfDay
@@ -20,6 +21,7 @@ import com.example.booking_app.feature.courtdetail.domain.model.VenueDetail
 import com.example.booking_app.feature.courtdetail.domain.usecase.Bookable
 import com.example.booking_app.feature.courtdetail.domain.usecase.CheckVenueBookableUseCase
 import com.example.booking_app.feature.courtdetail.domain.usecase.LoadCourtSummaryUseCase
+import com.example.booking_app.feature.courtdetail.domain.usecase.LoadPriceTableUseCase
 import com.example.booking_app.feature.courtdetail.domain.usecase.ObserveVenueDetailUseCase
 import com.example.booking_app.feature.courtdetail.domain.usecase.VenueView
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -57,6 +59,7 @@ class CourtDetailViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val observeVenueDetail: ObserveVenueDetailUseCase,
     private val loadCourtSummary: LoadCourtSummaryUseCase,
+    private val loadPriceTable: LoadPriceTableUseCase,
     private val checkVenueBookable: CheckVenueBookableUseCase,
     private val sessionManager: SessionManager,
     private val clock: AppClock,
@@ -76,6 +79,8 @@ class CourtDetailViewModel @Inject constructor(
     /** Các mục đọc một lần và trạng thái phụ, gộp vào [uiState]. */
     private data class Sections(
         val courts: Section<CourtSummary> = Section.Loading,
+        /** Dòng giá thô: bảng giá dựng lại từ đây khi khung giờ đổi hoặc hết hạn. */
+        val priceRules: Section<List<PriceRule>> = Section.Loading,
         val availabilityOverride: VenueAvailability? = null,
         val photoIndex: Int = 0,
     )
@@ -115,7 +120,8 @@ class CourtDetailViewModel @Inject constructor(
         when (section) {
             SectionId.HEADER, SectionId.AMENITIES -> venueReload.update { it + 1 }
             SectionId.COURTS -> loadCourts()
-            SectionId.PRICES, SectionId.REVIEWS -> Unit
+            SectionId.PRICES -> loadPrices()
+            SectionId.REVIEWS -> Unit
         }
     }
 
@@ -186,7 +192,41 @@ class CourtDetailViewModel @Inject constructor(
     private fun startLoads() {
         loadsStarted = true
         loadCourts()
+        loadPrices()
     }
+
+    private fun loadPrices() {
+        sections.update { it.copy(priceRules = Section.Loading) }
+        viewModelScope.launch {
+            val section = try {
+                loadPriceTable.rules(venueId).let { if (it.isEmpty()) Section.Empty else Section.Content(it) }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Section.Error(e.toAppError())
+            }
+            sections.update { it.copy(priceRules = section) }
+        }
+    }
+
+    /** Mục bảng giá và giá ở thanh dưới, dựng từ dòng giá thô và khung giờ còn hiệu lực. */
+    private fun prices(rules: Section<List<PriceRule>>, w: SearchWindow?): Pair<Section<PriceContent>, BottomPrice> =
+        when (rules) {
+            Section.Loading -> Section.Loading to BottomPrice.Loading
+            Section.Empty -> Section.Empty to BottomPrice.Contact
+            is Section.Error -> rules to BottomPrice.Loading
+            is Section.Content -> {
+                val table = loadPriceTable.table(rules.data, w)
+                val section = if (table.groups.isEmpty()) Section.Empty else Section.Content(PriceContent(table.groups, table.selected))
+                val selected = table.selected
+                val bottom = when {
+                    selected != null -> selected.perHour?.let { BottomPrice.ForWindow(it, selected.window) } ?: BottomPrice.Contact
+                    table.minPerHour != null -> BottomPrice.From(table.minPerHour)
+                    else -> BottomPrice.Contact
+                }
+                section to bottom
+            }
+        }
 
     private fun loadCourts() {
         sections.update { it.copy(courts = Section.Loading) }
@@ -213,6 +253,7 @@ class CourtDetailViewModel @Inject constructor(
                 val venue = view.result.venue
                 val availability = s.availabilityOverride ?: venue.availability
                 val suspended = availability != VenueAvailability.ACTIVE
+                val (prices, bottomPrice) = prices(s.priceRules, w)
                 base.copy(
                     availability = availability,
                     header = Section.Content(
@@ -229,12 +270,13 @@ class CourtDetailViewModel @Inject constructor(
                         ),
                     ),
                     courts = s.courts,
+                    prices = prices,
                     amenities = when (val list = venue.amenities) {
                         null -> Section.Error(AppError.Unknown(null))
                         else -> if (list.isEmpty()) Section.Empty else Section.Content(list)
                     },
                     isOffline = venue.isFromCache,
-                    bottomBar = if (suspended) BottomBarState.Suspended else BottomBarState.Book(BottomPrice.Loading),
+                    bottomBar = if (suspended) BottomBarState.Suspended else BottomBarState.Book(bottomPrice),
                 )
             }
         }

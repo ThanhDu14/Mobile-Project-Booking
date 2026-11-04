@@ -317,7 +317,7 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
 
 ### Tests cho User Story 2 ⚠️ viết trước, phải fail
 
-- [ ] T040 [P] [US2] Unit test `TEST/feature/courtdetail/domain/PriceTableBuilderTest.kt` (dữ liệu lấy từ `scripts/seed/venues.json`, `daysOfWeek` ISO):
+- [x] T040 [P] [US2] Unit test `TEST/feature/courtdetail/domain/PriceTableBuilderTest.kt` (dữ liệu lấy từ `scripts/seed/venues.json`, `daysOfWeek` ISO):
   - `demo-quang-vinh` → **3 nhóm** "Thứ 2" / "Thứ 3 – Thứ 6" / "Thứ 7, Chủ nhật";
   - `demo-son-ta` → "Thứ 2 – Thứ 6" / "Thứ 7" / "Chủ nhật";
   - `demo-truong-chinh-909` → 2 nhóm;
@@ -325,11 +325,11 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
   - `endTime = "2400"` in "24:00";
   - có `SearchWindow` T3 17:00–19:00 → `highlighted` đúng hai dòng (US2-3); không có `SearchWindow` → không dòng nào (US2-5);
   - không có rule → danh sách rỗng.
-- [ ] T041 [P] [US2] Unit test `TEST/feature/courtdetail/domain/usecase/LoadPriceTableUseCaseTest.kt`:
+- [x] T041 [P] [US2] Unit test `TEST/feature/courtdetail/domain/usecase/LoadPriceTableUseCaseTest.kt`:
   - đọc `TRES/pricing/window-price-vectors.json`, với mỗi ca P1–P9 `SelectedWindowPrice.perHour == expectedPerHour` và dòng tô khớp `highlightedRuleIndexes` (SC-002);
   - P3 → `perHour = null` ("Liên hệ");
   - `window == null` → không có `SelectedWindowPrice`.
-- [ ] T042 [P] [US2] Unit test `TEST/feature/courtdetail/ui/CourtDetailViewModelUs2Test.kt`:
+- [x] T042 [P] [US2] Unit test `TEST/feature/courtdetail/ui/CourtDetailViewModelUs2Test.kt`:
   - `prices` lỗi → chỉ mục giá lỗi, `onRetry(PRICES)` chỉ gọi `loadPriceRules`;
   - rỗng → `prices = Empty`;
   - thanh dưới: có khung → "120.000 đ/giờ" kèm "T3, 27/10 · 19:00 – 21:00"; không có khung → "từ 50.000 đ/giờ" (giá thấp nhất của các rule); không có rule → "Liên hệ";
@@ -337,12 +337,13 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
 
 ### Implementation cho User Story 2
 
-- [ ] T043 [P] [US2] Cài `CD/domain/PriceTableBuilder.kt` ([R4](research.md#r4-bảng-giá-nhóm-theo-ngày-và-giá-khung-bạn-chọn-fr-008-fr-009-sc-002)): dựng lịch giá từng ngày qua `DayConvention`, gộp ngày liền nhau có danh sách giống hệt, tạo `DayGroupTitle`. Cho T040 xanh
-- [ ] T044 [US2] Cài `CD/domain/usecase/LoadPriceTableUseCase.kt`: gọi `SlotPricing.priceForWindow` rồi `SlotPricing.perHour` của `core/pricing`, **không viết lại phép tính**. Cho T041 xanh
-- [ ] T045 [US2] Thêm mục `prices` và giá thanh dưới vào `CD/ui/CourtDetailViewModel.kt`. Cho T042 xanh
-- [ ] T046 [US2] Cài `RES/layout/item_court_detail_price_group.xml`, `item_court_detail_price_row.xml`, `CD/ui/PriceTableAdapter.kt` (nền tô từ theme attribute), và thẻ "Khung bạn chọn" trong `fragment_court_detail.xml`:
+- [x] T043 [P] [US2] Cài `CD/domain/PriceTableBuilder.kt` ([R4](research.md#r4-bảng-giá-nhóm-theo-ngày-và-giá-khung-bạn-chọn-fr-008-fr-009-sc-002)): dựng lịch giá từng ngày qua `DayConvention`, gộp ngày liền nhau có danh sách giống hệt, tạo `DayGroupTitle`. Cho T040 xanh
+- [x] T044 [US2] Cài `CD/domain/usecase/LoadPriceTableUseCase.kt`: gọi `SlotPricing.priceForWindow` rồi `SlotPricing.perHour` của `core/pricing`, **không viết lại phép tính**. Cho T041 xanh
+- [x] T045 [US2] Thêm mục `prices` và giá thanh dưới vào `CD/ui/CourtDetailViewModel.kt`. Cho T042 xanh
+- [x] T046 [US2] Cài `RES/layout/item_court_detail_price_group.xml`, `item_court_detail_price_row.xml`, `CD/ui/PriceTableAdapter.kt` (nền tô từ theme attribute), và thẻ "Khung bạn chọn" trong `fragment_court_detail.xml`:
   - định dạng tiền `NumberFormat` locale `vi-VN` + " đ/giờ";
   - mục rỗng hiện "Liên hệ" kèm số điện thoại (`PhoneDisplay`, nối ở US3), hoặc "Liên hệ chủ sân" kèm nút chat khi không có số (Edge case).
+  - 2026-11-04: tiền định dạng bằng CourtDetailFormat.vnd (nhóm 3 chữ số bằng dấu chấm, không phụ thuộc locale máy) thay NumberFormat vi-VN, kết quả giống nhau. Mục rỗng tạm hiện "Liên hệ chủ sân"; hiện số điện thoại nối ở US3. Kiểm trên emulator-5554: demo-truong-chinh-909 T3 10/11 17:00–19:00 → "Khung bạn chọn · 110.000 đ/giờ", tô 16:00–18:00 và 18:00–24:00; demo-quang-vinh không có khung → 3 nhóm, không dòng nào tô, thanh dưới "từ 50.000 đ/giờ".
 
 **Checkpoint**: US1 + US2 = MVP; quickstart Q4, Q5 và mọi ca P1–P9 đạt.
 

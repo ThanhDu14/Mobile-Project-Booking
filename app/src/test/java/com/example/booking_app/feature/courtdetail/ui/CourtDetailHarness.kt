@@ -9,6 +9,7 @@ import com.example.booking_app.feature.courtdetail.FakeCatalogRepository
 import com.example.booking_app.feature.courtdetail.FakeVenueDetailRepository
 import com.example.booking_app.feature.courtdetail.domain.usecase.CheckVenueBookableUseCase
 import com.example.booking_app.feature.courtdetail.domain.usecase.LoadCourtSummaryUseCase
+import com.example.booking_app.feature.courtdetail.domain.usecase.LoadPriceTableUseCase
 import com.example.booking_app.feature.courtdetail.domain.usecase.ObserveVenueDetailUseCase
 import com.example.booking_app.feature.courtdetail.vnMillis
 import kotlinx.coroutines.Job
@@ -38,6 +39,7 @@ class CourtDetailHarness(
         savedStateHandle = savedState,
         observeVenueDetail = ObserveVenueDetailUseCase(repository, catalog, session),
         loadCourtSummary = LoadCourtSummaryUseCase(repository),
+        loadPriceTable = LoadPriceTableUseCase(repository),
         checkVenueBookable = CheckVenueBookableUseCase(repository),
         sessionManager = session,
         clock = clock,

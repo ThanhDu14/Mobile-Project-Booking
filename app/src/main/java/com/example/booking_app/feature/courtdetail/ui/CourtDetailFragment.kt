@@ -39,6 +39,7 @@ class CourtDetailFragment : Fragment() {
     private val binding get() = _binding!!
 
     private lateinit var galleryAdapter: PhotoGalleryAdapter
+    private val priceAdapter = PriceTableAdapter()
     private var galleryRestored = false
     private var venueName: String = ""
 
@@ -65,6 +66,8 @@ class CourtDetailFragment : Fragment() {
         binding.backButton.setOnClickListener { findNavController().navigateUp() }
         binding.fullScreenBack.setOnClickListener { findNavController().navigateUp() }
         binding.fullScreenRetry.setOnClickListener { viewModel.onRetry(SectionId.HEADER) }
+        binding.priceList.adapter = priceAdapter
+        binding.pricesError.retryButton.setOnClickListener { viewModel.onRetry(SectionId.PRICES) }
         binding.amenitiesError.retryButton.setOnClickListener { viewModel.onRetry(SectionId.AMENITIES) }
         binding.courtsCard.root.setOnClickListener {
             if (viewModel.uiState.value.courts is Section.Error) viewModel.onRetry(SectionId.COURTS)
@@ -90,6 +93,7 @@ class CourtDetailFragment : Fragment() {
     override fun onDestroyView() {
         binding.photoPager.unregisterOnPageChangeCallback(pageCallback)
         binding.photoPager.adapter = null
+        binding.priceList.adapter = null
         _binding = null
         super.onDestroyView()
     }
@@ -110,6 +114,7 @@ class CourtDetailFragment : Fragment() {
         if (header is Section.Content) renderHeader(header.data, state.photoIndex)
         renderCourts(state)
         renderAmenities(state.amenities)
+        renderPrices(state.prices)
         renderBottomBar(state)
     }
 
@@ -222,6 +227,24 @@ class CourtDetailFragment : Fragment() {
                     contentDescription = getString(R.string.court_detail_cd_amenity, amenity.name)
                 },
             )
+        }
+    }
+
+    private fun renderPrices(section: Section<PriceContent>) {
+        binding.pricesLoading.isVisible = section is Section.Loading
+        binding.priceList.isVisible = section is Section.Content
+        // TODO(US3): "Liên hệ" kèm số điện thoại khi có PhoneDisplay; chưa có số thì "Liên hệ chủ sân" (Edge case).
+        binding.pricesEmpty.isVisible = section is Section.Empty
+        showSectionError(binding.pricesError, section)
+        val content = (section as? Section.Content)?.data
+        priceAdapter.submitGroups(content?.groups.orEmpty())
+        val selected = content?.selected
+        binding.selectedWindowCard.isVisible = selected != null
+        if (selected != null) {
+            binding.selectedWindowText.text = CourtDetailFormat.window(requireContext(), selected.window)
+            binding.selectedWindowPrice.text = selected.perHour
+                ?.let { getString(R.string.court_detail_price_per_hour, CourtDetailFormat.vnd(it)) }
+                ?: getString(R.string.court_detail_contact)
         }
     }
 

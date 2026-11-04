@@ -257,15 +257,97 @@
                     layout="@layout/view_court_detail_section_error" />
             </LinearLayout>
 
-            <!-- 5. Bảng giá (US2) -->
+            <!-- 5. Bảng giá (FR-008, FR-009) -->
             <LinearLayout
                 android:id="@+id/pricesSection"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/court_detail_section_gap"
                 android:orientation="vertical"
-                android:paddingHorizontal="@dimen/screen_gutter"
-                android:visibility="gone" />
+                android:paddingHorizontal="@dimen/screen_gutter">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:accessibilityHeading="true"
+                    android:text="@string/court_detail_prices_title"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    android:textColor="?attr/colorOnSurface" />
+
+                <!-- Thẻ "Khung bạn chọn": chỉ hiện khi mở từ tìm kiếm có khung giờ còn hiệu lực -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/selectedWindowCard"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_3"
+                    android:visibility="gone"
+                    app:cardBackgroundColor="?attr/colorPrimary"
+                    app:strokeWidth="0dp"
+                    tools:visibility="visible">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="@dimen/space_4">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/court_detail_selected_window"
+                            android:textAppearance="?attr/textAppearanceLabelLarge"
+                            android:textColor="?attr/colorOnPrimary" />
+
+                        <TextView
+                            android:id="@+id/selectedWindowText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_1"
+                            android:textAppearance="?attr/textAppearanceBodyMedium"
+                            android:textColor="?attr/colorOnPrimary"
+                            tools:text="T3, 27/10 · 19:00 – 21:00" />
+
+                        <TextView
+                            android:id="@+id/selectedWindowPrice"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_2"
+                            android:textAppearance="?attr/textAppearanceHeadlineSmall"
+                            android:textColor="?attr/colorOnPrimary"
+                            tools:text="130.000 đ/giờ" />
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.progressindicator.LinearProgressIndicator
+                    android:id="@+id/pricesLoading"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_3"
+                    android:indeterminate="true" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/priceList"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:nestedScrollingEnabled="false"
+                    android:overScrollMode="never"
+                    android:visibility="gone"
+                    app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+                <TextView
+                    android:id="@+id/pricesEmpty"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_2"
+                    android:text="@string/court_detail_contact_owner"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:visibility="gone" />
+
+                <include
+                    android:id="@+id/pricesError"
+                    layout="@layout/view_court_detail_section_error" />
+            </LinearLayout>
 
             <!-- 6. Vị trí (US3) -->
             <LinearLayout
