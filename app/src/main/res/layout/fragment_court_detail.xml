@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Chi tiết sân (spec 030). Khung rỗng của T024; bố cục đầy đủ ở T037. -->
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/courtDetailRoot"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent" />

@@ -157,7 +157,7 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
 
 **Tests (viết trước, phải fail)**
 
-- [ ] T020 [P] Viết `TEST/feature/courtdetail/data/VenueDetailMapperTest.kt` cho hàm thuần `VenueDetailMapper.map(snapshotData, exists, isFromCache, catalog, resolver)`:
+- [x] T020 [P] Viết `TEST/feature/courtdetail/data/VenueDetailMapperTest.kt` cho hàm thuần `VenueDetailMapper.map(snapshotData, exists, isFromCache, catalog, resolver)`:
   - `status` `ACTIVE` → `VenueAvailability.ACTIVE`; `HIDDEN`, `LOCKED` → `SUSPENDED`; `DELETED` hoặc `exists == false` → `GONE`;
   - `photoPaths` giữ thứ tự, path rỗng bị bỏ, URL đầy đủ giữ nguyên;
   - `amenityIds` không có trong danh mục bị bỏ (FR-005);
@@ -169,18 +169,19 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
 
 **Implementation**
 
-- [ ] T021 [P] Tạo model trong `CD/domain/model/` đúng [data-model §2](data-model.md#2-mô-hình-phía-app):
+- [x] T021 [P] Tạo model trong `CD/domain/model/` đúng [data-model §2](data-model.md#2-mô-hình-phía-app):
   - `CourtDetailArgs`, `SearchWindow`;
   - `VenueDetail`, `VenueAvailability` (`ACTIVE`, `SUSPENDED`, `GONE`, `SUSPENDED_GUEST`), `OpeningStatus` (`AllDay`, `Open(closesAt)`, `Closed(reopensAt)`);
   - `CourtSummary`, `SurfaceType` (`WOOD`, `PU`, `MAT`, `OTHER`), `PhoneDisplay` (`Dialable(e164, display)`, `DisplayOnly(raw)`);
   - `PriceDayGroup`, `DayGroupTitle` (`Single`, `Pair`, `Range`), `PriceRow`, `PriceLabel` (`NORMAL`, `PEAK`, `WEEKEND`; giá trị lạ → `NORMAL`), `SelectedWindowPrice`;
   - `PendingAction` (`BOOK`, `FAVORITE`, `CHAT`), `PendingDecision` (`Run`, `RejectOwnVenue`, `Cancel`, `Wait`), `ReviewPreview`.
-- [ ] T022 [P] Tạo `CD/domain/VenueDetailRepository.kt` (interface):
+  - **2026-11-04:** `VenueDetail.phone` giữ chuỗi gốc, đổi sang `PhoneDisplay` ở ViewModel (US3); thêm `VenueCatalog` (danh mục truyền vào `observeVenue`), `coverPhotoPath` (cho `VenueSummary` khi lưu yêu thích), `PriceTable`.
+- [x] T022 [P] Tạo `CD/domain/VenueDetailRepository.kt` (interface):
   - `observeVenue(venueId): Flow<VenueResult>`, với `VenueResult` = `Found(VenueDetail)` | `Gone` | `PermissionDenied` | `Failed(AppError)`;
   - `suspend fun loadCourts(venueId): List<Court>`, `loadPriceRules(venueId): List<PriceRule>`, `fetchStatusFromServer(venueId): VenueAvailability?` (`null` khi mất mạng).
 
   Tạo bản giả `TEST/feature/courtdetail/FakeVenueDetailRepository.kt` (đẩy giá trị bằng `MutableSharedFlow`, đếm số lần gọi để kiểm tra "đọc lại một mục")
-- [ ] T023 Cài `CD/data/FirestoreVenueDetailRepository.kt`, `CD/data/VenueDetailMapper.kt`, `CD/data/VenueErrorMapper.kt`, `CD/data/dto/CourtDto.kt`, và `CD/di/CourtDetailModule.kt`:
+- [x] T023 Cài `CD/data/FirestoreVenueDetailRepository.kt`, `CD/data/VenueDetailMapper.kt`, `CD/data/VenueErrorMapper.kt`, `CD/data/dto/CourtDto.kt`, và `CD/di/CourtDetailModule.kt`:
   - `observeVenue` là `callbackFlow` trên `venues/{id}` với `MetadataChanges.INCLUDE`, dừng khi không còn người thu thập ([R2](research.md#r2-đọc-dữ-liệu-thứ-tự-tải-và-số-lượt-đọc-fr-024-fr-025-sc-001));
   - `loadCourts`, `loadPriceRules` dùng `get()` + `awaitWithTimeout`; `priceRules` qua `PriceRuleMapper`;
   - `fetchStatusFromServer` dùng `get(Source.SERVER)`.
@@ -194,11 +195,13 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
   - `FirestoreLatestReviewsSource` (T055, bản tạm): tối đa 3 đánh giá `VISIBLE`, mới nhất trước, không có đánh giá `HIDDEN`.
 
   Test tự bỏ qua khi `BuildConfig.USE_EMULATOR != "true"` như Espresso của 010
-- [ ] T024 Tạo `RES/navigation/nav_court_detail.xml` đúng [contracts/navigation.md §1.1](contracts/navigation.md#11-nav-graph-và-tham-số):
+  - **2026-11-04:** phần repository đã chạy trên máy ảo + Emulator: 7/7 xanh. Hai ca `..._BLOCKED_D` (đổi sang `LOCKED`, xóa document) hiện nhận `PERMISSION_DENIED` vì Rules `venues` chưa theo R10; test chấp nhận cả hai tới khi D sửa. Chưa đánh dấu xong: còn ca `FirestoreLatestReviewsSource` (làm cùng T055).
+- [x] T024 Tạo `RES/navigation/nav_court_detail.xml` đúng [contracts/navigation.md §1.1](contracts/navigation.md#11-nav-graph-và-tham-số):
   - `courtDetailFragment` với `venueId`, `date?`, `startTime?`, `endTime?` và deep link `smashnow://venue/{venueId}?date={date}&start={startTime}&end={endTime}`;
   - `include` vào `RES/navigation/nav_player.xml`;
   - tạo khung `CD/ui/CourtDetailFragment.kt` (`@AndroidEntryPoint`, ViewBinding) + `RES/layout/fragment_court_detail.xml` rỗng;
   - kiểm tra bằng `adb shell am start -d "smashnow://venue/demo-k3"`.
+  - **2026-11-04:** đã kiểm trên máy ảo API 35: `adb shell am start -d "smashnow://venue/demo-k3"` mở `courtDetailFragment` khi app tắt và khi app đang mở (thêm `onNewIntent` → `handleDeepLink` ở `MainActivity`).
 
 ### 2C. Test Rules và dữ liệu demo
 

@@ -1,5 +1,6 @@
 package com.example.booking_app
 
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
@@ -63,6 +64,12 @@ class MainActivity : AppCompatActivity() {
             }
         }
         setUpBottomNav()
+    }
+
+    /** Deep link `smashnow://...` tới khi app đang mở (thông báo, adb): điều hướng như lúc khởi động (spec 030 T005). */
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        if (intent.data?.scheme == "smashnow") navController.handleDeepLink(intent)
     }
 
     /**

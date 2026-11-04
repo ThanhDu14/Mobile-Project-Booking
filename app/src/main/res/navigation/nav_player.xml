@@ -38,6 +38,9 @@
 
     <include app:graph="@navigation/nav_review" />
 
+    <!-- Chi tiết sân (spec 030): mở bằng deep link smashnow://venue/{venueId} hoặc action tới nav_court_detail. -->
+    <include app:graph="@navigation/nav_court_detail" />
+
     <!-- Xem ảnh toàn màn hình dùng chung (core/ui/photo, spec 030 T019); 070 dùng cho ảnh đánh giá. -->
     <fragment
         android:id="@+id/photoViewerFragment"
