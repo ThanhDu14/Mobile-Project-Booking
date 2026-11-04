@@ -1,14 +1,17 @@
 package com.example.booking_app
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.booking_app.core.session.AppMode
 import com.example.booking_app.core.session.AppModeController
 import com.example.booking_app.core.session.SessionManager
 import com.example.booking_app.core.session.SessionPrefs
 import com.example.booking_app.core.session.SessionState
+import com.example.booking_app.feature.booking.data.time.ServerTimeOffsetProvider
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
@@ -16,6 +19,7 @@ class MainViewModel @Inject constructor(
     sessionManager: SessionManager,
     private val prefs: SessionPrefs,
     private val appModeController: AppModeController,
+    private val serverTimeOffsetProvider: ServerTimeOffsetProvider,
 ) : ViewModel() {
 
     val sessionState: StateFlow<SessionState> = sessionManager.sessionState
@@ -30,6 +34,16 @@ class MainViewModel @Inject constructor(
 
     /** Trạng thái đã xử lý gần nhất. Giữ qua xoay màn hình để chỉ điều hướng khi trạng thái đổi thật. */
     var lastRoutedState: SessionState? = null
+
+    init {
+        viewModelScope.launch {
+            sessionState.collect { state ->
+                if (state is SessionState.SignedIn) {
+                    serverTimeOffsetProvider.ensureSynced()
+                }
+            }
+        }
+    }
 
     suspend fun welcomeSeen(): Boolean = prefs.welcomeSeen.first()
 }

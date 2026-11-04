@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="recurring_title">Đặt cố định theo tuần</string>
+    <string name="recurring_select_days_label">Chọn thứ trong tuần</string>
+    <string name="recurring_time_label">Khung giờ cố định</string>
+    <string name="recurring_from_time">Từ</string>
+    <string name="recurring_to_time">Đến</string>
+    <string name="recurring_time_note">Mỗi buổi từ 1 đến 3 giờ, theo mốc 30 phút.</string>
+    <string name="recurring_preferred_court_label">Sân ưu tiên</string>
+    <string name="recurring_duration_label">Thời gian áp dụng</string>
+    <string name="recurring_duration_weeks_label">Số tuần</string>
+    <string name="recurring_duration_4_weeks">1 tháng (4 tuần)</string>
+    <string name="recurring_duration_8_weeks">2 tháng (8 tuần)</string>
+    <string name="recurring_duration_12_weeks">3 tháng (12 tuần)</string>
+    <string name="recurring_weeks_format">%d tuần</string>
+    <string name="recurring_start_week_label">Bắt đầu từ</string>
+    <string name="recurring_start_this_week">Tuần này</string>
+    <string name="recurring_start_next_week">Tuần sau</string>
+    <string name="recurring_btn_check_availability">Kiểm tra khả dụng</string>
+    <string name="recurring_checking">Đang kiểm tra khả dụng...</string>
+    <string name="recurring_not_accepted">Cơ sở này hiện không nhận đặt sân cố định theo tuần</string>
+
+    <!-- Conflict & Availability -->
+    <string name="recurring_check_result_title">Kết quả kiểm tra khả dụng</string>
+    <string name="recurring_all_available_title">Tất cả %d buổi đều khả dụng</string>
+    <string name="recurring_availability_summary">%1$d/%2$d buổi khả dụng</string>
+    <string name="recurring_conflicts_summary">%d buổi trùng lịch</string>
+    <string name="recurring_conflict_badge_label">%d trùng lịch</string>
+    <string name="recurring_conflict_session_header">Buổi %1$s · %2$s (%3$s)</string>
+    <string name="recurring_conflict_item_busy">%1$s %2$s: %3$s đã có người đặt</string>
+    <string name="recurring_conflict_court_alternative">%1$s (cùng mặt thảm) còn trống cùng giờ, cùng giá.</string>
+    <string name="recurring_btn_change_court_short">Đổi sang %s</string>
+    <string name="recurring_btn_skip_session_short">Bỏ buổi này</string>
+    <string name="recurring_conflict_court_busy">Sân %1$s đã bận vào khung giờ này</string>
+    <string name="recurring_conflict_action_change_court">Đổi sang %1$s (%2$s)</string>
+    <string name="recurring_conflict_action_skip">Bỏ qua buổi này (Trừ tiền)</string>
+    <string name="recurring_conflict_must_skip">Tất cả các sân đều đã kín lịch</string>
+    <string name="recurring_min_sessions_warning">Gói cố định yêu cầu tối thiểu 4 buổi. Hiện chỉ có %d buổi hợp lệ.</string>
+    <string name="recurring_btn_back_to_grid">Quay về đặt sân lẻ</string>
+    <string name="recurring_btn_proceed">Tiếp tục</string>
+    <string name="recurring_btn_hold_chain">Giữ chỗ cả chuỗi</string>
+    <string name="recurring_bottom_deposit_note">%1$d buổi · cọc 30%% hoặc trả trước toàn bộ</string>
+    <string name="recurring_more_sessions_format">… và %d buổi nữa</string>
+    <string name="recurring_btn_holding">Đang giữ chỗ...</string>
+
+    <!-- Confirm Screen -->
+    <string name="recurring_confirm_title">Xác nhận đặt cố định</string>
+    <string name="recurring_timer_banner">Khung giờ được giữ trong %s</string>
+    <string name="recurring_sessions_list_title">Danh sách các buổi đặt (%d buổi)</string>
+    <string name="recurring_summary_card_title">Tóm tắt thanh toán</string>
+    <string name="recurring_summary_total_sessions">Tổng số buổi:</string>
+    <string name="recurring_summary_subtotal">Tổng cộng:</string>
+    <string name="recurring_summary_deposit">Tiền cọc (30%):</string>
+    <string name="recurring_btn_continue_to_payment">Tiếp tục thanh toán</string>
+    <string name="recurring_btn_cancel_hold">Hủy đặt</string>
+    <string name="recurring_cancel_dialog_title">Hủy giữ chỗ?</string>
+    <string name="recurring_cancel_dialog_message">Các khung giờ đã giữ sẽ được giải phóng. Bạn có chắc chắn muốn hủy?</string>
+</resources>

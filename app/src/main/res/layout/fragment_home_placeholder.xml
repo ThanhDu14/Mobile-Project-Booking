@@ -32,6 +32,14 @@
         android:textColor="?attr/colorOnSurface"
         tools:text="@string/auth_home_placeholder_player" />
 
+    <!-- TODO(030): Nút TẠM để vào 040 khi chưa có màn chi tiết sân. Xóa khi 030 xong — lối vào chính thức là nút "Đặt sân" ở chi tiết sân. -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnTempBookingGrid"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_4"
+        android:text="@string/booking_home_temp_entry" />
+
     <TextView
         android:id="@+id/guestNote"
         android:layout_width="wrap_content"

@@ -15,7 +15,8 @@ data class HoldToPaymentArgs(
     val subtotalAmount: Long,
     val slotIds: Array<String>,
     val holdExpiresAtMillis: Long,
-    val courtDetails: Array<String> = emptyArray()
+    val courtDetails: Array<String> = emptyArray(),
+    val depositAmount: Long = 0L
 ) : Parcelable {
     constructor(parcel: Parcel) : this(
         bookingId = parcel.readString().orEmpty(),
@@ -29,7 +30,8 @@ data class HoldToPaymentArgs(
         subtotalAmount = parcel.readLong(),
         slotIds = parcel.createStringArray() ?: emptyArray(),
         holdExpiresAtMillis = parcel.readLong(),
-        courtDetails = parcel.createStringArray() ?: emptyArray()
+        courtDetails = parcel.createStringArray() ?: emptyArray(),
+        depositAmount = parcel.readLong()
     )
 
     override fun writeToParcel(parcel: Parcel, flags: Int) {
@@ -45,6 +47,7 @@ data class HoldToPaymentArgs(
         parcel.writeStringArray(slotIds)
         parcel.writeLong(holdExpiresAtMillis)
         parcel.writeStringArray(courtDetails)
+        parcel.writeLong(depositAmount)
     }
 
     override fun describeContents(): Int = 0
@@ -76,6 +79,7 @@ data class HoldToPaymentArgs(
         if (!slotIds.contentEquals(other.slotIds)) return false
         if (holdExpiresAtMillis != other.holdExpiresAtMillis) return false
         if (!courtDetails.contentEquals(other.courtDetails)) return false
+        if (depositAmount != other.depositAmount) return false
 
         return true
     }
@@ -92,6 +96,7 @@ data class HoldToPaymentArgs(
         result = 31 * result + slotIds.contentHashCode()
         result = 31 * result + holdExpiresAtMillis.hashCode()
         result = 31 * result + courtDetails.contentHashCode()
+        result = 31 * result + depositAmount.hashCode()
         return result
     }
 }
