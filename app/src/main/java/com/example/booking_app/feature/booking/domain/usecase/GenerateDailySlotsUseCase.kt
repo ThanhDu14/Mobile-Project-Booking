@@ -9,7 +9,71 @@ import java.time.ZonedDateTime
 import java.util.Locale
 import javax.inject.Inject
 
+/**
+ * P1-2: Index bảng giá theo (dayOfWeek, time) -> PriceRule để tra cứu O(1) cho mỗi slot 30 phút.
+ * Giữ nguyên 100% ngữ nghĩa matching của firstOrNull:
+ * - daysOfWeek rỗng = mọi ngày trong tuần;
+ * - slot nằm trọn trong [startTime, endTime];
+ * - nếu nhiều rule cùng khớp thì rule đầu tiên trong list thắng;
+ * - không rule nào khớp thì giá 0 và slot thành BLOCKED với reason NO_PRICE_RULE.
+ */
+class IndexedPriceRules(
+    private val rulesBySlotIndex: Array<PriceRule?>
+) {
+    fun getRule(slotStartMinutes: Int): PriceRule? {
+        val index = slotStartMinutes / GenerateDailySlotsUseCase.SLOT_DURATION_MINUTES
+        return if (index in rulesBySlotIndex.indices) rulesBySlotIndex[index] else null
+    }
+
+    companion object {
+        fun from(priceRules: List<PriceRule>, isoDayOfWeek: Int): IndexedPriceRules {
+            if (priceRules.isEmpty()) {
+                return IndexedPriceRules(emptyArray())
+            }
+
+            // Parse trước giờ bắt đầu/kết thúc (phút) của từng rule một lần duy nhất
+            val parsedRules = priceRules.map { rule ->
+                val dayMatch = rule.daysOfWeek.isEmpty() || rule.daysOfWeek.contains(isoDayOfWeek)
+                val start = toMinutes(rule.startTime)
+                val end = toMinutes(rule.endTime)
+                Triple(rule, dayMatch, start to end)
+            }
+
+            // 48 slot trong 24 giờ (mỗi slot 30 phút: 00:00 -> 24:00)
+            val table = Array<PriceRule?>(48) { slotIndex ->
+                val currentMin = slotIndex * GenerateDailySlotsUseCase.SLOT_DURATION_MINUTES
+                val nextMin = currentMin + GenerateDailySlotsUseCase.SLOT_DURATION_MINUTES
+                parsedRules.firstOrNull { (rule, dayMatch, range) ->
+                    dayMatch && currentMin >= range.first && nextMin <= range.second
+                }?.first
+            }
+            return IndexedPriceRules(table)
+        }
+
+        private fun toMinutes(hhmm: String): Int {
+            val h = hhmm.substring(0, 2).toIntOrNull() ?: 0
+            val m = hhmm.substring(2, 4).toIntOrNull() ?: 0
+            return h * 60 + m
+        }
+    }
+}
+
 class GenerateDailySlotsUseCase @Inject constructor() {
+
+    fun indexPriceRules(priceRules: List<PriceRule>, isoDayOfWeek: Int): IndexedPriceRules {
+        return IndexedPriceRules.from(priceRules, isoDayOfWeek)
+    }
+
+    fun parseIsoDayOfWeek(date: String): Int {
+        return try {
+            val y = date.substring(0, 4).toInt()
+            val m = date.substring(4, 6).toInt()
+            val d = date.substring(6, 8).toInt()
+            LocalDate.of(y, m, d).dayOfWeek.value // 1 = Monday .. 7 = Sunday
+        } catch (e: Exception) {
+            1
+        }
+    }
 
     operator fun invoke(
         courtId: String,
@@ -19,20 +83,15 @@ class GenerateDailySlotsUseCase @Inject constructor() {
         priceRules: List<PriceRule>,
         busySlots: List<TimeSlot>,
         selectedSlotIds: Set<String> = emptySet(),
-        currentTimeMillis: Long = System.currentTimeMillis()
+        currentTimeMillis: Long = System.currentTimeMillis(),
+        precomputedRules: IndexedPriceRules? = null
     ): List<TimeSlot> {
         val openMinutes = toMinutes(openTime)
         val closeMinutes = toMinutes(closeTime)
         if (openMinutes >= closeMinutes) return emptyList()
 
-        val isoDayOfWeek = try {
-            val y = date.substring(0, 4).toInt()
-            val m = date.substring(4, 6).toInt()
-            val d = date.substring(6, 8).toInt()
-            LocalDate.of(y, m, d).dayOfWeek.value // 1 = Monday .. 7 = Sunday
-        } catch (e: Exception) {
-            1
-        }
+        val isoDayOfWeek = parseIsoDayOfWeek(date)
+        val indexedRules = precomputedRules ?: indexPriceRules(priceRules, isoDayOfWeek)
 
         val busyMap = busySlots.associateBy { it.slotId }
         val slots = mutableListOf<TimeSlot>()
@@ -44,15 +103,8 @@ class GenerateDailySlotsUseCase @Inject constructor() {
             val endTime = formatTime(nextMin)
             val slotId = "${courtId}_${date}_$startTime"
 
-            // Determine slot price from PriceRules (Q11)
-            // TODO: Pending team consensus with D (currently using ISO convention: 1 = Monday .. 7 = Sunday)
-            val matchedRule = priceRules.firstOrNull { rule ->
-                val dayMatch = rule.daysOfWeek.isEmpty() || rule.daysOfWeek.contains(isoDayOfWeek)
-                val ruleStart = toMinutes(rule.startTime)
-                val ruleEnd = toMinutes(rule.endTime)
-                val timeMatch = currentMin >= ruleStart && nextMin <= ruleEnd
-                dayMatch && timeMatch
-            }
+            // P1-2: Tra cứu O(1) từ indexedRules
+            val matchedRule = indexedRules.getRule(currentMin)
             val isOutOfPriceRule = matchedRule == null
             val price = matchedRule?.pricePerSlot ?: 0L
 

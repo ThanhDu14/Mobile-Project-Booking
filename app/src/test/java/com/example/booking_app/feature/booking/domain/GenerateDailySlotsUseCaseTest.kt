@@ -243,4 +243,55 @@ class GenerateDailySlotsUseCaseTest {
         assertNotNull(slot0830)
         assertEquals(SlotStatus.HELD, slot0830?.status)
     }
+
+    @Test
+    fun goldenTest_indexedRulesMatchesFirstOrNullExactSemantics() {
+        // Test golden: Cùng input (rule chồng lấn, daysOfWeek rỗng / cụ thể, khoảng không có rule)
+        // đảm bảo output dùng indexed rules khớp 100% với ngữ nghĩa firstOrNull tuyến tính
+        val ruleAllDays = PriceRule("r_all", emptyList(), "0600", "1200", 60_000L, "Sáng")
+        val ruleOverlapping1 = PriceRule("r_overlap_1", listOf(2), "1200", "1800", 80_000L, "Thắng vì đứng trước")
+        val ruleOverlapping2 = PriceRule("r_overlap_2", listOf(2), "1200", "2000", 120_000L, "Thua vì đứng sau")
+        val ruleNight = PriceRule("r_night", listOf(2), "2000", "2200", 100_000L, "Tối")
+        // 18:00 - 20:00: ruleOverlapping2 vẫn khớp
+        // 22:00 - 24:00: Không rule nào khớp -> BLOCKED NO_PRICE_RULE
+
+        val testRules = listOf(ruleAllDays, ruleOverlapping1, ruleOverlapping2, ruleNight)
+        // 2026-10-27 là Thứ 3 (isoDayOfWeek = 2)
+        val testDate = "20261027"
+
+        val slots = useCase(
+            courtId = courtId,
+            date = testDate,
+            openTime = "0600",
+            closeTime = "2400",
+            priceRules = testRules,
+            busySlots = emptyList(),
+            currentTimeMillis = 0L
+        )
+
+        // 1. Kiểm tra slot sáng (0600-0630): khớp r_all (daysOfWeek rỗng)
+        val slot0600 = slots.find { it.startTime == "0600" }!!
+        assertEquals(30_000L, slot0600.price)
+        assertEquals(SlotStatus.AVAILABLE, slot0600.status)
+
+        // 2. Kiểm tra slot chồng lấn (1200-1230): cả r_overlap_1 và r_overlap_2 cùng khớp, r_overlap_1 thắng
+        val slot1200 = slots.find { it.startTime == "1200" }!!
+        assertEquals(40_000L, slot1200.price) // 80_000 / 2
+        assertEquals(SlotStatus.AVAILABLE, slot1200.status)
+
+        // 3. Kiểm tra slot 1800-1830: r_overlap_1 hết hạn, r_overlap_2 thắng
+        val slot1800 = slots.find { it.startTime == "1800" }!!
+        assertEquals(60_000L, slot1800.price) // 120_000 / 2
+        assertEquals(SlotStatus.AVAILABLE, slot1800.status)
+
+        // 4. Kiểm tra slot tối (2000-2030): r_night thắng
+        val slot2000 = slots.find { it.startTime == "2000" }!!
+        assertEquals(50_000L, slot2000.price) // 100_000 / 2
+
+        // 5. Kiểm tra slot đêm (2200-2230): Không rule nào khớp -> BLOCKED với NO_PRICE_RULE
+        val slot2200 = slots.find { it.startTime == "2200" }!!
+        assertEquals(0L, slot2200.price)
+        assertEquals(SlotStatus.BLOCKED, slot2200.status)
+        assertEquals("NO_PRICE_RULE", slot2200.blockReason)
+    }
 }

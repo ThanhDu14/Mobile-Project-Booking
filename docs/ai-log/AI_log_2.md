@@ -35,6 +35,8 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 29 | 2026-10-27 | Gộp và kiểm chứng Firestore Rules, kiểm tra triển khai và dữ liệu Seed | 04 |
 | 30 | 2026-10-27 | Cập nhật Bottom Bar màn Xác nhận 040 hiển thị "Thanh toán ngay" theo Radio | 04, 05 |
 | 31 | 2026-11-04 | Tối ưu load 040/041 + chống đụng độ và lỗi đúng đắn (P0-1 đến P0-7) | 04 |
+| 32 | 2026-11-04 | Kích hoạt đồng bộ offset giờ server P0-7, check đụng độ & countdown | 04 |
+| 33 | 2026-11-04 | Tối ưu UI phản hồi chậm ở lưới 040 (P1-2 + P1-3 + P1-1) | 04 |
 
 
 
@@ -1693,3 +1695,101 @@ Sau đợt kiểm thử trên thiết bị thật và đối chiếu kỹ lưỡ
      - Trước P0-1: Query mọi slot trong 16 ngày $\to$ **~6.144 documents/lần kiểm tra**.
      - Sau P0-1 (giả sử trung bình 5 slot bận/ngày trên toàn cơ sở): Query 16 ngày song song $\to$ $16 \times 5 =$ **~80 documents**.
      - Giảm tải: **~98.7% số document đọc**.
+
+
+---
+
+## 15. Kích hoạt đồng bộ offset giờ server (Fix P0-7 hoàn chỉnh) (04/11/2026)
+
+**Thành viên phụ trách**: Lê Quốc Hưng (`LqHung06`) — Phụ trách nhóm 04 Đặt sân (040/041/050/060)  
+**Phạm vi thực hiện**: Kích hoạt mạch đồng bộ offset giờ server thực tế cho `ServerTimeOffsetProvider`, chuyển đổi toàn bộ logic check đụng độ trong transaction và bộ đếm ngược trên các màn hình xác nhận sang giờ server.
+
+### Chi tiết các công việc đã triển khai
+
+#### 1. Kích hoạt `ensureSynced()` trong `ServerTimeOffsetProvider`
+- Bổ sung `ensureSynced(forceRefresh: Boolean = false)` với khoảng cách tối thiểu 1 giờ (`SYNC_INTERVAL_MS = 3.600.000 ms`). Chỉ gọi mạng đồng bộ offset khi chưa từng sync hoặc lần sync cuối đã quá 1 giờ; nếu xảy ra ngoại lệ giữ nguyên offset hiện tại, không crash app và không gián đoạn luồng đặt sân.
+- Dùng `Mutex` chống gọi đồng thời nhiều request lấy token Firebase Auth.
+- Gọi kích hoạt ở 2 nơi:
+  - **(a) Eager tại thời điểm đăng nhập**: Trong `MainViewModel`, theo dõi `sessionState` và gọi `serverTimeOffsetProvider.ensureSynced()` ngay khi phát hiện trạng thái `SessionState.SignedIn`.
+  - **(b) Lazy trước khi giữ chỗ**: Tại đầu `BookingRepositoryImpl.holdSlotsAtomic` (040), `FirestoreBookingRemoteDataSource.holdSlotsAtomic`, `RecurringBookingRepositoryImpl.holdRecurringBookingTransaction` (041), và `FirestoreRecurringBookingRemoteDataSource.holdRecurringBookingTransaction`.
+
+#### 2. Dùng giờ server kiểm tra đụng độ trong Firestore Transaction
+- **040 (`FirestoreBookingRemoteDataSource.holdSlotsAtomic`)**: Thay thế `Timestamp.now()` bằng `val nowMillis = serverTimeOffsetProvider.now()` và `val now = Timestamp(Date(nowMillis))`. Cả việc so khớp ca quá khứ (`slotStartMillis <= nowMillis`) và kiểm tra slot `HELD` còn hiệu lực (`holdExpiresAt > now`) đều dùng giờ chuẩn server.
+- **041 (`FirestoreRecurringBookingRemoteDataSource.holdRecurringBookingTransaction`)**: Inject `ServerTimeOffsetProvider`, thay thế `Timestamp.now()` bằng `serverTimeOffsetProvider.now()`. Kiểm tra slot quá khứ và so sánh hạn giữ chỗ chu kỳ hoàn toàn độc lập với đồng hồ máy khách.
+
+#### 3. Đồng bộ đếm ngược tại 2 màn hình xác nhận giữ chỗ
+- **Màn 040 (`BookingConfirmFragment`)**: Inject `ServerTimeOffsetProvider`, tính thời gian đếm ngược còn lại: `remainingMillis = holdExpiresAtMillis - serverTimeOffsetProvider.now()`.
+- **Màn 041 (`BookingRecurringConfirmFragment`)**: Inject `ServerTimeOffsetProvider`, tính thời gian đếm ngược: `millisRemaining = (args.holdExpiresAtMillis - serverTimeOffsetProvider.now()).coerceAtLeast(0L)`.
+- Nhờ `holdExpiresAtMillis` và `now()` đều theo giờ server, bộ đếm ngược hiển thị chính xác ~5:00 dù đồng hồ máy người dùng có bị chỉnh nhanh hay chậm.
+
+### Kết quả Kiểm thử
+
+1. **Android Unit Tests (`./gradlew testDebugUnitTest --tests "com.example.booking_app.feature.booking.*"`)**:
+   - **105/105 tests PASS (100%)** trên 18 test suite (0 failure, 0 error).
+   - `ServerTimeOffsetProviderTest` (9/9 PASS): kiểm tra sync 1 lần khi gọi liên tiếp, tự động resync sau 1 giờ, bảo toàn offset khi lỗi mạng, force refresh.
+   - `RecurringHoldTransactionTest` (4/4 PASS): kiểm tra giữ chỗ với clock drift (máy chậm 2 phút) vẫn ghi đúng hạn giữ chỗ theo giờ server.
+   - `BookingRepositoryImplTest` (12/12 PASS): kiểm tra `ensureSynced` được gọi khi giữ chỗ.
+2. **Firestore Emulator Rules Test Suite (`npm test`)**:
+   - **15/15 test files PASS (100%)**, **144/144 tests PASS (100%)**.
+
+---
+
+## 16. Tối ưu UI phản hồi chậm ở lưới 040 (P1-2 + P1-3 + P1-1) (04/11/2026)
+
+**Thành viên phụ trách**: Lê Quốc Hưng (`LqHung06`) — Phụ trách nhóm 04 Đặt sân (040/041/050/060)  
+**Phạm vi thực hiện**: Xử lý triệt để hiện tượng đơ UI, giật lag, rớt khung hình (Choreographer skipped frames, OpenGLRenderer Davey!) trên màn hình lưới chọn khung giờ đặt sân (Feature 040).
+
+### 1. Số đo trước khi tối ưu (Benchmark JVM & Logcat)
+- **Logcat thực tế trước tối ưu (build sau P0)**: Mở lưới nhảy `Skipped 122 frames!`, `Davey! duration=2228ms`; mỗi lần click chọn slot nhảy `Skipped 78–107 frames`, `Davey! 1.3–1.9s`; đổi ngày đơ 1–2 giây.
+- **Đo thời gian build vs bind/layout**:
+  - `GenerateDailySlotsUseCase` (10 sân × 38 slot, 61 price rules): ~5.76 ms (trên CPU Core i5 Desktop), tương đương 100–200 ms trên CPU ARM di động khi chạy tuần tự trên Main thread.
+  - Quét tuyến tính bảng giá `firstOrNull`: 61 rules × 380 slot = ~23.000 so sánh mỗi lần rebuild ma trận.
+  - Khâu ghép ma trận (stitching) tìm slot theo `find { it.startTime == timeRaw }`: 38 × 10 = 380 lần tìm kiếm trên danh sách 38 phần tử = 14.440 so sánh, mất ~2.67 ms.
+  - Tái tạo toàn bộ 38 `SlotMatrixRow` mới mỗi lần bấm ô khiến `ListAdapter` / `DiffUtil` phải quét so sánh toàn bộ các hàng và cell, ép RecyclerView rebind nhiều hàng.
+
+### 2. Chi tiết các công việc đã triển khai
+
+#### A. P1-2: Index Price Rules + Chuyển build ma trận & tính toán sang background thread
+- **`GenerateDailySlotsUseCase`**:
+  - Tạo cấu trúc `IndexedPriceRules` index sẵn theo `(dayOfWeek, 48 slot 30 phút) -> PriceRule?`.
+  - Giữ nguyên 100% ngữ nghĩa matching của `firstOrNull`: `daysOfWeek` rỗng = mọi ngày; slot nằm trọn trong `[startTime, endTime]`; rule đầu tiên trong list thắng khi chồng lấn; không rule nào khớp thì slot thành `BLOCKED` với lý do `NO_PRICE_RULE`.
+  - Giúp tra cứu giá mỗi slot đạt $O(1)$ thay vì quét tuyến tính toàn bộ danh sách quy tắc.
+  - Bổ sung test golden `goldenTest_indexedRulesMatchesFirstOrNullExactSemantics` khóa chặt tính tương đương.
+- **`BookingSlotGridViewModel`**:
+  - Inject `@param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default`.
+  - Đưa toàn bộ tác vụ nặng (`buildMatrix`, xử lý `latestBusySlots`, áp delta) sang `withContext(defaultDispatcher)`.
+  - Thay thế thuật toán ghép hàng từ `find` sang truy cập theo chỉ mục $O(1)$ (`courtSlotsMap[court.id]?.getOrNull(slotIdx)`), triệt tiêu hoàn toàn 14.440 so sánh khi ghép hàng.
+  - Tối ưu DiffUtil: trong `onSlotClicked`, `applyUpdatedSlots`, `clearSelection`, `handleHoldConflict`, chỉ tạo đối tượng mới cho các hàng có slot thay đổi (`row.timeRaw in affectedStartTimes`). Các hàng không đổi giữ nguyên tham chiếu đối tượng (`row`), cho phép `DiffUtil` (`oldItem === newItem`) bỏ qua tức thì trong 0ms.
+
+#### B. P1-3: Mở màn: Bẻ gãy waterfall + Render lạc quan + Sửa `isLoading`
+- **Bẻ gãy waterfall**: Khởi chạy `observeRealtimeSlots(_uiState.value.selectedDate)` ngay tại $t = 0$ song song với 3 lời gọi metadata (`getVenueInfo`, `getPriceRules`, `getActiveCourts`).
+- **Xử lý race condition**: Nếu Firestore snapshot về trước khi metadata hoàn tất, lưu snapshot vào `latestBusySlotsUpdate`. Khi metadata tải xong trong `courtsResult.onSuccess`, tự động đọc snapshot này để dựng ma trận mà không làm thất thoát dữ liệu.
+- **Render lạc quan lúc mở màn**: Nếu metadata về trước khi có snapshot từ Firestore, lập tức dựng và hiển thị ma trận toàn bộ slot `AVAILABLE` kèm đầy đủ giá trên `defaultDispatcher` trong ~1ms và tắt loading. Khi snapshot về sẽ cập nhật đè các slot bận lên.
+- **Render lạc quan lúc đổi ngày (`selectDate`)**: Khi người dùng chuyển ngày, lập tức render ma trận lạc quan ngày mới với trạng thái AVAILABLE, xóa lựa chọn cũ và gắn listener mới. Người dùng thấy ngay lưới ngày mới mà không bị khựng đơ hay hiển thị màn hình trắng.
+- **Sửa `isLoading`**: Chỉ chuyển `isLoading = false` khi ma trận đầu tiên (lạc quan hoặc thật) đã hoàn tất và gán vào `_uiState.value.matrixRows`. Tuyệt đối không còn tình trạng header hiện trước, lưới trắng trơn rồi slot mới nhảy ra sau.
+
+#### C. P1-1: Cập nhật ma trận theo delta (`DocumentChange`)
+- **Tầng Remote Data Source (`FirestoreBookingRemoteDataSource`)**:
+  - Lắng nghe `snapshot.documentChanges` và phát hiện các loại thay đổi `ADDED`, `MODIFIED`, `REMOVED`.
+  - Đóng gói thành `BusySlotsUpdateDto(allSlots, isInitial, changes)`. Lần phát đầu tiên (`isInitial = true`) chứa toàn bộ slot bận; các lần phát sau (`isInitial = false`) chỉ chứa các thay đổi delta.
+- **Tầng Repository & Domain**:
+  - Định nghĩa model `BusySlotsUpdate`, `SlotChange`, `SlotChangeType` và mapper tương ứng.
+- **Tầng UI (`BookingSlotGridViewModel`)**:
+  - Khi nhận delta update: chỉ định vị đúng hàng chứa slot thay đổi theo `startTime`, cập nhật trạng thái ô và giữ nguyên tham chiếu các hàng khác.
+  - **Xử lý `REMOVED`**: Khi slot `HELD` hết hạn hoặc bị hủy đặt (rời khỏi query `[BOOKED, BLOCKED, HELD]`), xử lý `REMOVED` đưa slot về lại `AVAILABLE` (hoặc `PAST`/`BLOCKED` nếu quá giờ/thiếu rule).
+  - **Phát hiện đụng độ Realtime**: Nếu slot người dùng đang chọn bị người khác giữ hoặc đặt (`MODIFIED`/`ADDED` sang `HELD`/`BOOKED`), tự động gỡ khỏi danh sách chọn và phát `ShowConflictWarning`.
+  - Cập nhật liên tục `latestBusySlots = update.allBusySlots` để tính năng tự động dọn HELD hết hạn định kỳ 30s (P0-4) tiếp tục hoạt động chính xác.
+
+### 3. Kết quả Kiểm thử
+1. **Android Unit Tests (`./gradlew testDebugUnitTest --tests "com.example.booking_app.feature.booking.*"`)**:
+   - **112/112 tests PASS (100%)** trên 18 test suite files (0 failure, 0 error).
+   - Bổ sung 6 test cases mới cho P1:
+     - `p1_2_matrixBuiltOnDefaultDispatcher_hasExpectedRowsAndSlots`: kiểm tra ma trận 38 hàng, 2 sân con được dựng chính xác trên background dispatcher.
+     - `p1_3_raceCondition_snapshotArrivesBeforeMetadata_matrixBuiltSuccessfully`: kiểm tra snapshot Firestore về trước metadata không làm rớt dữ liệu.
+     - `p1_3_optimisticRender_showsAvailableSlotsBeforeSnapshotArrives`: kiểm tra ma trận lạc quan hiển thị trước khi snapshot về và được patch chính xác sau đó.
+     - `p1_3_selectDate_rendersOptimisticMatrixImmediately`: kiểm tra đổi ngày render ngay lập tức ma trận ngày mới.
+     - `p1_1_applyDelta_addedModifiedRemoved`: kiểm tra áp delta ADDED, MODIFIED và REMOVED phục hồi slot về AVAILABLE.
+     - `p1_1_applyDelta_realtimeConflict_removesSelectedSlotAndWarns`: kiểm tra đụng độ realtime tự động loại slot đang chọn và cảnh báo người dùng.
+   - Golden test `goldenTest_indexedRulesMatchesFirstOrNullExactSemantics` trong `GenerateDailySlotsUseCaseTest` đạt 100% độ chuẩn xác.
+2. **Firestore Emulator Rules Test Suite (`npm test`)**:
+   - **15/15 test files PASS (100%)**, **144/144 tests PASS (100%)**.

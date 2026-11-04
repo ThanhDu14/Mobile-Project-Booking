@@ -5,6 +5,8 @@ import com.example.booking_app.core.util.SystemAppClock
 import com.example.booking_app.feature.booking.data.cache.VenueMetadataCache
 import com.example.booking_app.feature.booking.data.datasource.BookingRemoteDataSource
 import com.example.booking_app.feature.booking.data.mapper.BookingSlotMapper
+import com.example.booking_app.feature.booking.data.time.ServerTimeOffsetProvider
+import com.example.booking_app.feature.booking.domain.model.BusySlotsUpdate
 import com.example.booking_app.feature.booking.domain.model.Court
 import com.example.booking_app.feature.booking.domain.model.HoldResult
 import com.example.booking_app.feature.booking.domain.model.PriceRule
@@ -21,7 +23,8 @@ import javax.inject.Inject
 
 class BookingRepositoryImpl @Inject constructor(
     private val remoteDataSource: BookingRemoteDataSource,
-    private val venueMetadataCache: VenueMetadataCache
+    private val venueMetadataCache: VenueMetadataCache,
+    private val serverTimeOffsetProvider: ServerTimeOffsetProvider
 ) : BookingRepository {
 
     override suspend fun getVenueOperatingHours(venueId: String): Result<Pair<String, String>> {
@@ -66,10 +69,10 @@ class BookingRepositoryImpl @Inject constructor(
         }
     }
 
-    override fun getBusySlotsRealtime(venueId: String, date: String): Flow<List<TimeSlot>> {
+    override fun getBusySlotsRealtime(venueId: String, date: String): Flow<BusySlotsUpdate> {
         return remoteDataSource.getBusySlotsRealtime(venueId, date)
-            .map { dtos ->
-                dtos.map { BookingSlotMapper.toDomain(it) }
+            .map { dto ->
+                BookingSlotMapper.toDomain(dto)
             }
             .catch { e ->
                 throw mapToAppError(e)
@@ -84,6 +87,7 @@ class BookingRepositoryImpl @Inject constructor(
         userId: String,
         requestId: String
     ): Result<HoldResult> {
+        serverTimeOffsetProvider.ensureSynced()
         return safeApiCall {
             remoteDataSource.holdSlotsAtomic(
                 venueId = venueId,

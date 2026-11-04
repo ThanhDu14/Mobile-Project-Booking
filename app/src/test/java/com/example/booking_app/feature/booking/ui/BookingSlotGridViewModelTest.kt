@@ -5,9 +5,12 @@ import app.cash.turbine.test
 import com.example.booking_app.core.session.FakeSessionManager
 import com.example.booking_app.core.session.SessionState
 import com.example.booking_app.core.testing.MainDispatcherRule
+import com.example.booking_app.feature.booking.domain.model.BusySlotsUpdate
 import com.example.booking_app.feature.booking.domain.model.Court
 import com.example.booking_app.feature.booking.domain.model.HoldResult
 import com.example.booking_app.feature.booking.domain.model.PriceRule
+import com.example.booking_app.feature.booking.domain.model.SlotChange
+import com.example.booking_app.feature.booking.domain.model.SlotChangeType
 import com.example.booking_app.feature.booking.domain.model.SlotStatus
 import com.example.booking_app.feature.booking.domain.model.TimeSlot
 import com.example.booking_app.feature.booking.domain.model.VenueInfo
@@ -19,6 +22,7 @@ import com.example.booking_app.feature.booking.domain.usecase.ReleaseHoldUseCase
 import com.example.booking_app.feature.booking.domain.usecase.ValidateSlotSelectionUseCase
 import io.mockk.coEvery
 import io.mockk.mockk
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -84,7 +88,9 @@ class BookingSlotGridViewModelTest {
         coEvery { repository.getVenueInfo(venueId) } returns Result.success(venueInfo)
         coEvery { repository.getPriceRules(venueId) } returns Result.success(priceRules)
         coEvery { repository.getActiveCourts(venueId) } returns Result.success(courts)
-        coEvery { repository.getBusySlotsRealtime(venueId, any()) } returns flowOf(emptyList())
+        coEvery { repository.getBusySlotsRealtime(venueId, any()) } returns flowOf(
+            BusySlotsUpdate(allBusySlots = emptyList(), isInitial = true)
+        )
     }
 
     private fun createViewModel(
@@ -98,7 +104,8 @@ class BookingSlotGridViewModelTest {
             calculateTotalPriceUseCase = calculateTotalPriceUseCase,
             generateDailySlotsUseCase = generateDailySlotsUseCase,
             holdSlotsTransactionUseCase = holdSlotsTransactionUseCase,
-            releaseHoldUseCase = releaseHoldUseCase
+            releaseHoldUseCase = releaseHoldUseCase,
+            defaultDispatcher = mainRule.dispatcher
         )
     }
 
@@ -319,6 +326,174 @@ class BookingSlotGridViewModelTest {
             assertTrue(dialogEffect.canAddSlot)
             assertNotNull(dialogEffect.gapSlotToAdd)
             assertEquals(2, dialogEffect.trailingBlockSlotsToRemove.size)
+        }
+    }
+
+    @Test
+    fun p1_2_matrixBuiltOnDefaultDispatcher_hasExpectedRowsAndSlots() = runTest {
+        val vm = createViewModel()
+        testScheduler.advanceUntilIdle()
+
+        val state = vm.uiState.value
+        assertEquals(38, state.matrixRows.size) // 05:00 to 24:00 = 19 hours * 2 = 38 slots
+        assertEquals(2, state.matrixRows[0].slots.size)
+        assertEquals("0500", state.matrixRows[0].timeRaw)
+        assertEquals("2330", state.matrixRows.last().timeRaw)
+    }
+
+    @Test
+    fun p1_3_raceCondition_snapshotArrivesBeforeMetadata_matrixBuiltSuccessfully() = runTest {
+        val busyFlow = MutableSharedFlow<BusySlotsUpdate>(replay = 1)
+        val selectedDateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"))
+        val bookedSlot = TimeSlot("c1_${selectedDateStr}_0600", "c1", selectedDateStr, "0600", "0630", 40000L, SlotStatus.BOOKED)
+
+        // Snapshot arrives BEFORE metadata completes
+        busyFlow.emit(BusySlotsUpdate(allBusySlots = listOf(bookedSlot), isInitial = true))
+        coEvery { repository.getBusySlotsRealtime(venueId, any()) } returns busyFlow
+
+        val vm = createViewModel()
+        testScheduler.advanceUntilIdle()
+
+        val state = vm.uiState.value
+        assertFalse(state.isLoading)
+        assertTrue(state.matrixRows.isNotEmpty())
+        val slot = state.matrixRows.flatMap { it.slots }.find { it.slotId == "c1_${selectedDateStr}_0600" }
+        assertNotNull(slot)
+        assertEquals(SlotStatus.BOOKED, slot!!.status)
+    }
+
+    @Test
+    fun p1_3_optimisticRender_showsAvailableSlotsBeforeSnapshotArrives() = runTest {
+        val busyFlow = MutableSharedFlow<BusySlotsUpdate>()
+        coEvery { repository.getBusySlotsRealtime(venueId, any()) } returns busyFlow
+
+        val vm = createViewModel()
+        testScheduler.advanceUntilIdle()
+
+        // Optimistic render: metadata completed, busyFlow hasn't emitted yet -> all slots AVAILABLE
+        val optimisticState = vm.uiState.value
+        assertFalse(optimisticState.isLoading)
+        assertTrue(optimisticState.matrixRows.isNotEmpty())
+        val selectedDateStr = optimisticState.selectedDate.format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"))
+        val slot = optimisticState.matrixRows.flatMap { it.slots }.find { it.slotId == "c1_${selectedDateStr}_0600" }
+        assertNotNull(slot)
+        // With optimistic rendering, slot is available with correct price
+        assertEquals(40000L, slot!!.price)
+
+        // Snapshot arrives later with busy slot
+        val bookedSlot = TimeSlot("c1_${selectedDateStr}_0600", "c1", selectedDateStr, "0600", "0630", 40000L, SlotStatus.BOOKED)
+        busyFlow.emit(BusySlotsUpdate(allBusySlots = listOf(bookedSlot), isInitial = true))
+        testScheduler.advanceUntilIdle()
+
+        val updatedState = vm.uiState.value
+        val updatedSlot = updatedState.matrixRows.flatMap { it.slots }.find { it.slotId == "c1_${selectedDateStr}_0600" }
+        assertEquals(SlotStatus.BOOKED, updatedSlot!!.status)
+    }
+
+    @Test
+    fun p1_3_selectDate_rendersOptimisticMatrixImmediately() = runTest {
+        val busyFlow = MutableSharedFlow<BusySlotsUpdate>()
+        coEvery { repository.getBusySlotsRealtime(venueId, any()) } returns busyFlow
+
+        val vm = createViewModel()
+        testScheduler.advanceUntilIdle()
+
+        val targetDate = vm.uiState.value.dates[3]
+        val targetDateStr = targetDate.format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"))
+
+        // Select new date
+        vm.selectDate(targetDate)
+        testScheduler.advanceUntilIdle()
+
+        val state = vm.uiState.value
+        assertEquals(targetDate, state.selectedDate)
+        assertTrue(state.matrixRows.isNotEmpty())
+        // All slots for targetDate rendered optimistically
+        assertTrue(state.matrixRows.first().slots.all { it.date == targetDateStr })
+    }
+
+    @Test
+    fun p1_1_applyDelta_addedModifiedRemoved() = runTest {
+        val busyFlow = MutableSharedFlow<BusySlotsUpdate>(replay = 1)
+        coEvery { repository.getBusySlotsRealtime(venueId, any()) } returns busyFlow
+
+        val vm = createViewModel()
+        // Initialize with empty busy slots
+        busyFlow.emit(BusySlotsUpdate(allBusySlots = emptyList(), isInitial = true))
+        testScheduler.advanceUntilIdle()
+
+        // Chọn ngày mai để tránh PAST
+        val tomorrow = vm.uiState.value.dates[1]
+        vm.selectDate(tomorrow)
+        testScheduler.advanceUntilIdle()
+
+        // 1. ADDED / MODIFIED: Slot becomes HELD
+        val dateStr = tomorrow.format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"))
+        val heldSlot = TimeSlot("c1_${dateStr}_0700", "c1", dateStr, "0700", "0730", 40000L, SlotStatus.HELD, holdExpiresAtMillis = System.currentTimeMillis() + 300_000L)
+        busyFlow.emit(
+            BusySlotsUpdate(
+                allBusySlots = listOf(heldSlot),
+                isInitial = false,
+                changes = listOf(SlotChange(type = SlotChangeType.ADDED, slot = heldSlot))
+            )
+        )
+        testScheduler.advanceUntilIdle()
+
+        var slot = vm.uiState.value.matrixRows.flatMap { it.slots }.find { it.slotId == heldSlot.slotId }
+        assertEquals(SlotStatus.HELD, slot?.status)
+
+        // 2. REMOVED: Hold released -> slot reverts to AVAILABLE
+        busyFlow.emit(
+            BusySlotsUpdate(
+                allBusySlots = emptyList(),
+                isInitial = false,
+                changes = listOf(SlotChange(type = SlotChangeType.REMOVED, slot = heldSlot))
+            )
+        )
+        testScheduler.advanceUntilIdle()
+
+        slot = vm.uiState.value.matrixRows.flatMap { it.slots }.find { it.slotId == heldSlot.slotId }
+        assertEquals(SlotStatus.AVAILABLE, slot?.status)
+    }
+
+    @Test
+    fun p1_1_applyDelta_realtimeConflict_removesSelectedSlotAndWarns() = runTest {
+        val busyFlow = MutableSharedFlow<BusySlotsUpdate>(replay = 1)
+        coEvery { repository.getBusySlotsRealtime(venueId, any()) } returns busyFlow
+
+        val vm = createViewModel()
+        busyFlow.emit(BusySlotsUpdate(allBusySlots = emptyList(), isInitial = true))
+        testScheduler.advanceUntilIdle()
+
+        // Chọn ngày mai để tránh PAST
+        val tomorrow = vm.uiState.value.dates[1]
+        vm.selectDate(tomorrow)
+        testScheduler.advanceUntilIdle()
+
+        val row1Slot = vm.uiState.value.matrixRows[0].slots[0]
+        val row2Slot = vm.uiState.value.matrixRows[1].slots[0]
+        vm.onSlotClicked(row1Slot)
+        vm.onSlotClicked(row2Slot)
+        assertEquals(2, vm.uiState.value.selectedSlotsCount)
+
+        // Delta arrives: row1Slot is booked by someone else
+        val bookedConflictSlot = row1Slot.copy(status = SlotStatus.BOOKED)
+        vm.uiEffect.test {
+            busyFlow.emit(
+                BusySlotsUpdate(
+                    allBusySlots = listOf(bookedConflictSlot),
+                    isInitial = false,
+                    changes = listOf(SlotChange(type = SlotChangeType.MODIFIED, slot = bookedConflictSlot))
+                )
+            )
+            testScheduler.advanceUntilIdle()
+
+            val effect = awaitItem()
+            assertTrue(effect is BookingSlotUiEffect.ShowConflictWarning)
+            // row1Slot was removed from selection, row2Slot remains
+            assertEquals(1, vm.uiState.value.selectedSlotsCount)
+            assertFalse(vm.uiState.value.selectedSlotIds.contains(row1Slot.slotId))
+            assertTrue(vm.uiState.value.selectedSlotIds.contains(row2Slot.slotId))
         }
     }
 }

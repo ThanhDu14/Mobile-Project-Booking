@@ -1,5 +1,6 @@
 package com.example.booking_app.feature.booking.domain.repository
 
+import com.example.booking_app.feature.booking.domain.model.BusySlotsUpdate
 import com.example.booking_app.feature.booking.domain.model.Court
 import com.example.booking_app.feature.booking.domain.model.HoldResult
 import com.example.booking_app.feature.booking.domain.model.PriceRule
@@ -16,7 +17,7 @@ interface BookingRepository {
 
     suspend fun getPriceRules(venueId: String, forceRefresh: Boolean = false): Result<List<PriceRule>>
 
-    fun getBusySlotsRealtime(venueId: String, date: String): Flow<List<TimeSlot>>
+    fun getBusySlotsRealtime(venueId: String, date: String): Flow<BusySlotsUpdate>
 
     suspend fun holdSlotsAtomic(
         venueId: String,

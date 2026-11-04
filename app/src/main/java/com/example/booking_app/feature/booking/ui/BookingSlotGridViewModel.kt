@@ -3,10 +3,14 @@ package com.example.booking_app.feature.booking.ui
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.booking_app.core.di.DefaultDispatcher
 import com.example.booking_app.core.session.SessionManager
+import com.example.booking_app.feature.booking.domain.model.BusySlotsUpdate
 import com.example.booking_app.feature.booking.domain.model.Court
 import com.example.booking_app.feature.booking.domain.model.HoldResult
 import com.example.booking_app.feature.booking.domain.model.PriceRule
+import com.example.booking_app.feature.booking.domain.model.SlotChange
+import com.example.booking_app.feature.booking.domain.model.SlotChangeType
 import com.example.booking_app.feature.booking.domain.model.SlotSelectionState
 import com.example.booking_app.feature.booking.domain.model.SlotStatus
 import com.example.booking_app.feature.booking.domain.model.TimeSlot
@@ -17,6 +21,8 @@ import com.example.booking_app.feature.booking.domain.usecase.HoldSlotsTransacti
 import com.example.booking_app.feature.booking.domain.usecase.ReleaseHoldUseCase
 import com.example.booking_app.feature.booking.domain.usecase.ValidateSlotSelectionUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
@@ -29,6 +35,7 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.text.DecimalFormat
 import java.time.LocalDate
 import java.time.ZoneId
@@ -46,7 +53,8 @@ class BookingSlotGridViewModel @Inject constructor(
     private val calculateTotalPriceUseCase: CalculateTotalPriceUseCase,
     private val generateDailySlotsUseCase: GenerateDailySlotsUseCase,
     private val holdSlotsTransactionUseCase: HoldSlotsTransactionUseCase,
-    private val releaseHoldUseCase: ReleaseHoldUseCase
+    private val releaseHoldUseCase: ReleaseHoldUseCase,
+    @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default
 ) : ViewModel() {
 
     private val zoneVietnam = ZoneId.of("Asia/Ho_Chi_Minh")
@@ -74,6 +82,7 @@ class BookingSlotGridViewModel @Inject constructor(
     private var realtimeSlotsJob: Job? = null
     private var periodicExpiryJob: Job? = null
     private var latestBusySlots: List<TimeSlot> = emptyList()
+    private var latestBusySlotsUpdate: BusySlotsUpdate? = null
     private var currentRequestId: String = UUID.randomUUID().toString()
 
     // Giữ trạng thái lựa chọn hiện tại (hỗ trợ đa sân theo Q1)
@@ -100,6 +109,9 @@ class BookingSlotGridViewModel @Inject constructor(
     fun loadVenueAndSlots(forceRefresh: Boolean = false) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+
+            // P1-3: Bẻ waterfall - khởi chạy listener slot song song từ t = 0
+            observeRealtimeSlots(_uiState.value.selectedDate)
 
             val venueDeferred = async { bookingRepository.getVenueInfo(venueId, forceRefresh) }
             val priceRulesDeferred = async { bookingRepository.getPriceRules(venueId, forceRefresh) }
@@ -191,11 +203,17 @@ class BookingSlotGridViewModel @Inject constructor(
                 } else {
                     _uiState.update {
                         it.copy(
-                            isLoading = false,
                             courts = courts
                         )
                     }
-                    observeRealtimeSlots(_uiState.value.selectedDate)
+                    // P1-3: Xử lý race snapshot về trước & Render lạc quan
+                    val dateString = _uiState.value.selectedDate.format(dateFormatter)
+                    val snapshotToUse = latestBusySlotsUpdate
+                    if (snapshotToUse != null) {
+                        processBusySlots(snapshotToUse.allBusySlots, dateString)
+                    } else {
+                        renderOptimisticMatrix(dateString)
+                    }
                 }
             }.onFailure { error ->
                 _uiState.update {
@@ -208,6 +226,40 @@ class BookingSlotGridViewModel @Inject constructor(
         }
     }
 
+    private suspend fun renderOptimisticMatrix(dateString: String) {
+        if (activeCourts.isEmpty() || priceRules.isEmpty()) return
+        val selectedIds = selectionState.selectedSlots.map { it.slotId }.toSet()
+        val now = System.currentTimeMillis()
+
+        val optimisticRows = withContext(defaultDispatcher) {
+            buildMatrix(
+                courts = activeCourts,
+                rules = priceRules,
+                openTime = openTime,
+                closeTime = closeTime,
+                dateString = dateString,
+                busySlots = emptyList(),
+                selectedSlotIds = selectedIds,
+                currentTimeMillis = now
+            )
+        }
+
+        val allSlotsFlat = optimisticRows.flatMap { it.slots }
+        val courtNameMap = activeCourts.associate { it.id to it.name }
+        val incompleteHint = validateSlotSelectionUseCase.findIncompleteCourt(selectionState.selectedSlots, courtNameMap)
+        val summaryText = incompleteHint ?: formatSelectionSummary(selectionState.selectedSlots)
+
+        _uiState.update {
+            it.copy(
+                isLoading = false,
+                matrixRows = optimisticRows,
+                slots = allSlotsFlat,
+                isFullyBooked = false,
+                selectionDetailSummary = summaryText
+            )
+        }
+    }
+
     fun selectDate(newDate: LocalDate) {
         if (_uiState.value.selectedDate == newDate) return
 
@@ -215,6 +267,36 @@ class BookingSlotGridViewModel @Inject constructor(
         clearSelection()
 
         _uiState.update { it.copy(selectedDate = newDate) }
+        val dateString = newDate.format(dateFormatter)
+
+        // P1-3: Render lạc quan ngay lập tức cho ngày mới (courts + priceRules đã có sẵn)
+        if (activeCourts.isNotEmpty() && priceRules.isNotEmpty()) {
+            viewModelScope.launch {
+                val optimisticRows = withContext(defaultDispatcher) {
+                    buildMatrix(
+                        courts = activeCourts,
+                        rules = priceRules,
+                        openTime = openTime,
+                        closeTime = closeTime,
+                        dateString = dateString,
+                        busySlots = emptyList(),
+                        selectedSlotIds = emptySet(),
+                        currentTimeMillis = System.currentTimeMillis()
+                    )
+                }
+                if (_uiState.value.selectedDate == newDate) {
+                    val allSlotsFlat = optimisticRows.flatMap { it.slots }
+                    _uiState.update {
+                        it.copy(
+                            matrixRows = optimisticRows,
+                            slots = allSlotsFlat,
+                            isFullyBooked = false
+                        )
+                    }
+                }
+            }
+        }
+
         observeRealtimeSlots(newDate)
     }
 
@@ -281,17 +363,25 @@ class BookingSlotGridViewModel @Inject constructor(
             currentRequestId = UUID.randomUUID().toString()
         }
         val selectedIds = selectionState.selectedSlots.map { it.slotId }.toSet()
+        val oldSelectedIds = oldSelectedSlots.map { it.slotId }.toSet()
 
-        // Cập nhật lại ma trận hàng/cột
+        // P1-2: Tối ưu DiffUtil: Chỉ tái tạo hàng chứa slot thay đổi, giữ nguyên reference các hàng khác
+        val changedSlotIds = (selectedIds - oldSelectedIds) + (oldSelectedIds - selectedIds)
+        val affectedStartTimes = changedSlotIds.mapNotNull { it.split("_").getOrNull(2) }.toSet()
+
         val updatedMatrixRows = _uiState.value.matrixRows.map { row ->
-            val updatedSlots = row.slots.map { slot ->
-                when {
-                    selectedIds.contains(slot.slotId) -> slot.copy(status = SlotStatus.SELECTED)
-                    slot.status == SlotStatus.SELECTED -> slot.copy(status = SlotStatus.AVAILABLE)
-                    else -> slot
+            if (row.timeRaw !in affectedStartTimes) {
+                row
+            } else {
+                val updatedSlots = row.slots.map { slot ->
+                    when {
+                        selectedIds.contains(slot.slotId) -> if (slot.status != SlotStatus.SELECTED) slot.copy(status = SlotStatus.SELECTED) else slot
+                        slot.status == SlotStatus.SELECTED -> slot.copy(status = SlotStatus.AVAILABLE)
+                        else -> slot
+                    }
                 }
+                row.copy(slots = updatedSlots)
             }
-            row.copy(slots = updatedSlots)
         }
 
         val courtNameMap = activeCourts.associate { it.id to it.name }
@@ -454,15 +544,21 @@ class BookingSlotGridViewModel @Inject constructor(
         )
 
         val selectedIds = remainingSlots.map { it.slotId }.toSet()
+        val affectedStartTimes = conflictedSlotIds.mapNotNull { it.split("_").getOrNull(2) }.toSet()
+
         val updatedMatrixRows = _uiState.value.matrixRows.map { row ->
-            val updatedSlots = row.slots.map { slot ->
-                when {
-                    selectedIds.contains(slot.slotId) -> slot.copy(status = SlotStatus.SELECTED)
-                    slot.status == SlotStatus.SELECTED -> slot.copy(status = SlotStatus.AVAILABLE)
-                    else -> slot
+            if (row.timeRaw !in affectedStartTimes) {
+                row
+            } else {
+                val updatedSlots = row.slots.map { slot ->
+                    when {
+                        selectedIds.contains(slot.slotId) -> if (slot.status != SlotStatus.SELECTED) slot.copy(status = SlotStatus.SELECTED) else slot
+                        slot.status == SlotStatus.SELECTED -> slot.copy(status = SlotStatus.AVAILABLE)
+                        else -> slot
+                    }
                 }
+                row.copy(slots = updatedSlots)
             }
-            row.copy(slots = updatedSlots)
         }
 
         val courtNameMap = activeCourts.associate { it.id to it.name }
@@ -504,7 +600,11 @@ class BookingSlotGridViewModel @Inject constructor(
     }
 
     private fun applyUpdatedSlots(slots: List<TimeSlot>) {
-        val selectedIds = slots.map { it.slotId }.toSet()
+        val oldSelectedIds = selectionState.selectedSlots.map { it.slotId }.toSet()
+        val newSelectedIds = slots.map { it.slotId }.toSet()
+        val changedSlotIds = (newSelectedIds - oldSelectedIds) + (oldSelectedIds - newSelectedIds)
+        val affectedStartTimes = changedSlotIds.mapNotNull { it.split("_").getOrNull(2) }.toSet()
+
         val (total, deposit) = calculateTotalPriceUseCase(slots)
         selectionState = selectionState.copy(
             selectedSlots = slots,
@@ -514,14 +614,18 @@ class BookingSlotGridViewModel @Inject constructor(
         )
 
         val updatedMatrixRows = _uiState.value.matrixRows.map { row ->
-            val updatedSlots = row.slots.map { slot ->
-                when {
-                    selectedIds.contains(slot.slotId) -> slot.copy(status = SlotStatus.SELECTED)
-                    slot.status == SlotStatus.SELECTED -> slot.copy(status = SlotStatus.AVAILABLE)
-                    else -> slot
+            if (row.timeRaw !in affectedStartTimes) {
+                row
+            } else {
+                val updatedSlots = row.slots.map { slot ->
+                    when {
+                        newSelectedIds.contains(slot.slotId) -> if (slot.status != SlotStatus.SELECTED) slot.copy(status = SlotStatus.SELECTED) else slot
+                        slot.status == SlotStatus.SELECTED -> slot.copy(status = SlotStatus.AVAILABLE)
+                        else -> slot
+                    }
                 }
+                row.copy(slots = updatedSlots)
             }
-            row.copy(slots = updatedSlots)
         }
 
         val courtNameMap = activeCourts.associate { it.id to it.name }
@@ -532,7 +636,7 @@ class BookingSlotGridViewModel @Inject constructor(
             it.copy(
                 matrixRows = updatedMatrixRows,
                 selectedSlots = slots,
-                selectedSlotIds = selectedIds,
+                selectedSlotIds = newSelectedIds,
                 totalPrice = total,
                 depositAmount = deposit,
                 canProceed = selectionState.isValid,
@@ -600,12 +704,19 @@ class BookingSlotGridViewModel @Inject constructor(
 
     fun clearSelection() {
         currentRequestId = UUID.randomUUID().toString()
+        val oldSelectedIds = selectionState.selectedSlots.map { it.slotId }.toSet()
         selectionState = SlotSelectionState()
+        val affectedStartTimes = oldSelectedIds.mapNotNull { it.split("_").getOrNull(2) }.toSet()
+
         val updatedMatrixRows = _uiState.value.matrixRows.map { row ->
-            val updatedSlots = row.slots.map { slot ->
-                if (slot.status == SlotStatus.SELECTED) slot.copy(status = SlotStatus.AVAILABLE) else slot
+            if (row.timeRaw !in affectedStartTimes) {
+                row
+            } else {
+                val updatedSlots = row.slots.map { slot ->
+                    if (slot.status == SlotStatus.SELECTED) slot.copy(status = SlotStatus.AVAILABLE) else slot
+                }
+                row.copy(slots = updatedSlots)
             }
-            row.copy(slots = updatedSlots)
         }
         _uiState.update {
             it.copy(
@@ -623,16 +734,31 @@ class BookingSlotGridViewModel @Inject constructor(
     private fun observeRealtimeSlots(date: LocalDate) {
         realtimeSlotsJob?.cancel()
         val dateString = date.format(dateFormatter)
+        latestBusySlotsUpdate = null
 
         realtimeSlotsJob = viewModelScope.launch {
             bookingRepository.getBusySlotsRealtime(venueId, dateString)
                 .catch { error ->
                     _uiState.update { it.copy(errorMessage = error.message) }
                 }
-                .collect { busySlots ->
-                    latestBusySlots = busySlots
-                    processBusySlots(busySlots, dateString)
+                .collect { update ->
+                    onBusySlotsUpdate(update, dateString)
                 }
+        }
+    }
+
+    private suspend fun onBusySlotsUpdate(update: BusySlotsUpdate, dateString: String) {
+        latestBusySlots = update.allBusySlots
+        latestBusySlotsUpdate = update
+
+        if (activeCourts.isEmpty() || priceRules.isEmpty()) {
+            return
+        }
+
+        if (update.isInitial || _uiState.value.matrixRows.isEmpty()) {
+            processBusySlots(update.allBusySlots, dateString)
+        } else {
+            applyDeltaUpdate(update.changes, update.allBusySlots, dateString)
         }
     }
 
@@ -655,42 +781,27 @@ class BookingSlotGridViewModel @Inject constructor(
     }
 
     private suspend fun processBusySlots(busySlots: List<TimeSlot>, dateString: String) {
-        if (activeCourts.isEmpty()) return
+        if (activeCourts.isEmpty() || priceRules.isEmpty()) return
 
         val selectedIds = selectionState.selectedSlots.map { it.slotId }.toSet()
+        val now = System.currentTimeMillis()
 
-        // Sinh slot cho từng sân con (P0-4: giải phóng HELD đã hết hạn với currentTimeMillis)
-        val courtSlotsMap = activeCourts.associate { court ->
-            court.id to generateDailySlotsUseCase(
-                courtId = court.id,
-                date = dateString,
+        // P1-2: Sinh slot và ghép ma trận hoàn toàn trên background thread
+        val builtMatrixRows = withContext(defaultDispatcher) {
+            buildMatrix(
+                courts = activeCourts,
+                rules = priceRules,
                 openTime = openTime,
                 closeTime = closeTime,
-                priceRules = priceRules,
+                dateString = dateString,
                 busySlots = busySlots,
                 selectedSlotIds = selectedIds,
-                currentTimeMillis = System.currentTimeMillis()
-            )
-        }
-
-        // Xây dựng các hàng ma trận (SlotMatrixRow)
-        // Lấy tất cả các mốc thời gian duy nhất từ các sân (thường giống nhau)
-        val sampleCourtSlots = courtSlotsMap[activeCourts.first().id] ?: emptyList()
-        val matrixRows = sampleCourtSlots.map { sampleSlot ->
-            val timeRaw = sampleSlot.startTime
-            val timeFormatted = formatHourMinute(timeRaw)
-            val rowSlots = activeCourts.mapNotNull { court ->
-                courtSlotsMap[court.id]?.find { it.startTime == timeRaw }
-            }
-            SlotMatrixRow(
-                timeFormatted = timeFormatted,
-                timeRaw = timeRaw,
-                slots = rowSlots
+                currentTimeMillis = now
             )
         }
 
         // Kiểm tra xung đột Realtime: nếu slot đang chọn bị người khác giữ/đặt mất
-        val allSlotsFlat = matrixRows.flatMap { it.slots }
+        val allSlotsFlat = builtMatrixRows.flatMap { it.slots }
         val conflictedSlots = allSlotsFlat.filter { slot ->
             selectedIds.contains(slot.slotId) &&
                     (slot.status == SlotStatus.HELD || slot.status == SlotStatus.BOOKED || slot.status == SlotStatus.BLOCKED)
@@ -715,9 +826,8 @@ class BookingSlotGridViewModel @Inject constructor(
             )
         }
 
-        // Đánh dấu lại trạng thái SELECTED cho matrixRows
         val currentSelectedIds = selectionState.selectedSlots.map { it.slotId }.toSet()
-        val displayMatrixRows = matrixRows.map { row ->
+        val displayMatrixRows = builtMatrixRows.map { row ->
             val updatedSlots = row.slots.map { slot ->
                 if (currentSelectedIds.contains(slot.slotId)) {
                     slot.copy(status = SlotStatus.SELECTED)
@@ -728,7 +838,6 @@ class BookingSlotGridViewModel @Inject constructor(
             row.copy(slots = updatedSlots)
         }
 
-        // Kiểm tra kín sân toàn bộ ngày
         val isFullyBooked = allSlotsFlat.isNotEmpty() && allSlotsFlat.all {
             it.status == SlotStatus.BOOKED || it.status == SlotStatus.HELD || it.status == SlotStatus.BLOCKED || it.status == SlotStatus.PAST
         }
@@ -739,6 +848,7 @@ class BookingSlotGridViewModel @Inject constructor(
 
         _uiState.update {
             it.copy(
+                isLoading = false,
                 matrixRows = displayMatrixRows,
                 slots = allSlotsFlat,
                 selectedSlots = selectionState.selectedSlots,
@@ -749,6 +859,209 @@ class BookingSlotGridViewModel @Inject constructor(
                 isFullyBooked = isFullyBooked,
                 selectionDetailSummary = summaryText
             )
+        }
+    }
+
+    private suspend fun applyDeltaUpdate(
+        changes: List<SlotChange>,
+        allBusySlots: List<TimeSlot>,
+        dateString: String
+    ) {
+        if (changes.isEmpty() || activeCourts.isEmpty() || priceRules.isEmpty()) return
+
+        val currentRows = _uiState.value.matrixRows
+        if (currentRows.isEmpty()) {
+            processBusySlots(allBusySlots, dateString)
+            return
+        }
+
+        val selectedIds = selectionState.selectedSlots.map { it.slotId }.toSet()
+        val now = System.currentTimeMillis()
+
+        val result = withContext(defaultDispatcher) {
+            val isoDayOfWeek = generateDailySlotsUseCase.parseIsoDayOfWeek(dateString)
+            val indexedRules = generateDailySlotsUseCase.indexPriceRules(priceRules, isoDayOfWeek)
+
+            val conflictedSlotIds = mutableListOf<String>()
+            val changesByStartTime = changes.groupBy { it.slot.startTime }
+
+            val updatedRows = currentRows.map { row ->
+                val rowChanges = changesByStartTime[row.timeRaw]
+                if (rowChanges == null) {
+                    row // Giữ nguyên object reference (DiffUtil skip O(1))
+                } else {
+                    val changeMap = rowChanges.associateBy { it.slot.slotId }
+                    val updatedSlots = row.slots.map { slot ->
+                        val change = changeMap[slot.slotId]
+                        if (change == null) {
+                            slot
+                        } else {
+                            when (change.type) {
+                                SlotChangeType.REMOVED -> {
+                                    val startMin = toMinutes(slot.startTime)
+                                    val matchedRule = indexedRules.getRule(startMin)
+                                    val isOutOfRule = matchedRule == null
+                                    val price = matchedRule?.pricePerSlot ?: 0L
+                                    var status = if (isOutOfRule) SlotStatus.BLOCKED else SlotStatus.AVAILABLE
+                                    val blockReason = if (isOutOfRule) "NO_PRICE_RULE" else null
+                                    val startMillis = calculateSlotStartMillis(dateString, slot.startTime)
+                                    if (status == SlotStatus.AVAILABLE && startMillis > 0L && startMillis <= now) {
+                                        status = SlotStatus.PAST
+                                    }
+                                    if (status == SlotStatus.AVAILABLE && selectedIds.contains(slot.slotId)) {
+                                        status = SlotStatus.SELECTED
+                                    }
+                                    slot.copy(
+                                        price = price,
+                                        status = status,
+                                        blockReason = blockReason,
+                                        holdExpiresAtMillis = null
+                                    )
+                                }
+                                SlotChangeType.ADDED, SlotChangeType.MODIFIED -> {
+                                    val cSlot = change.slot
+                                    val startMin = toMinutes(cSlot.startTime)
+                                    val matchedRule = indexedRules.getRule(startMin)
+                                    val isOutOfRule = matchedRule == null
+                                    val price = matchedRule?.pricePerSlot ?: cSlot.price
+
+                                    var status = cSlot.status
+                                    var holdExpiresAt = cSlot.holdExpiresAtMillis
+                                    var blockReason = cSlot.blockReason
+
+                                    // P0-4: HELD hết hạn -> AVAILABLE
+                                    if (status == SlotStatus.HELD && holdExpiresAt != null && holdExpiresAt <= now) {
+                                        status = if (isOutOfRule) SlotStatus.BLOCKED else SlotStatus.AVAILABLE
+                                        blockReason = if (isOutOfRule) "NO_PRICE_RULE" else null
+                                        holdExpiresAt = null
+                                    }
+
+                                    if (selectedIds.contains(cSlot.slotId) &&
+                                        (status == SlotStatus.HELD || status == SlotStatus.BOOKED || status == SlotStatus.BLOCKED)
+                                    ) {
+                                        conflictedSlotIds.add(cSlot.slotId)
+                                    }
+
+                                    slot.copy(
+                                        price = price,
+                                        status = status,
+                                        blockReason = blockReason,
+                                        holdExpiresAtMillis = holdExpiresAt
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    row.copy(slots = updatedSlots)
+                }
+            }
+            Triple(updatedRows, conflictedSlotIds, updatedRows.flatMap { it.slots })
+        }
+
+        val (updatedRows, conflictedSlotIds, allSlotsFlat) = result
+
+        if (conflictedSlotIds.isNotEmpty()) {
+            val remainingSlots = selectionState.selectedSlots.filterNot { it.slotId in conflictedSlotIds }
+            val (newTotal, newDeposit) = calculateTotalPriceUseCase(remainingSlots)
+            val isValid = validateSlotSelectionUseCase.isSelectionValid(remainingSlots)
+            selectionState = SlotSelectionState(
+                selectedSlots = remainingSlots,
+                totalPrice = newTotal,
+                depositAmount = newDeposit,
+                isValid = isValid
+            )
+            _uiEffect.send(
+                BookingSlotUiEffect.ShowConflictWarning(
+                    "Khung giờ bạn chọn vừa có người đặt hoặc giữ chỗ. Vui lòng chọn lại."
+                )
+            )
+        }
+
+        val isFullyBooked = allSlotsFlat.isNotEmpty() && allSlotsFlat.all {
+            it.status == SlotStatus.BOOKED || it.status == SlotStatus.HELD || it.status == SlotStatus.BLOCKED || it.status == SlotStatus.PAST
+        }
+
+        val courtNameMap = activeCourts.associate { it.id to it.name }
+        val incompleteHint = validateSlotSelectionUseCase.findIncompleteCourt(selectionState.selectedSlots, courtNameMap)
+        val summaryText = incompleteHint ?: formatSelectionSummary(selectionState.selectedSlots)
+
+        _uiState.update {
+            it.copy(
+                matrixRows = updatedRows,
+                slots = allSlotsFlat,
+                selectedSlots = selectionState.selectedSlots,
+                selectedSlotIds = selectionState.selectedSlots.map { s -> s.slotId }.toSet(),
+                totalPrice = selectionState.totalPrice,
+                depositAmount = selectionState.depositAmount,
+                canProceed = selectionState.isValid,
+                isFullyBooked = isFullyBooked,
+                selectionDetailSummary = summaryText
+            )
+        }
+    }
+
+    private fun buildMatrix(
+        courts: List<Court>,
+        rules: List<PriceRule>,
+        openTime: String,
+        closeTime: String,
+        dateString: String,
+        busySlots: List<TimeSlot>,
+        selectedSlotIds: Set<String>,
+        currentTimeMillis: Long
+    ): List<SlotMatrixRow> {
+        if (courts.isEmpty()) return emptyList()
+
+        val isoDayOfWeek = generateDailySlotsUseCase.parseIsoDayOfWeek(dateString)
+        val indexedRules = generateDailySlotsUseCase.indexPriceRules(rules, isoDayOfWeek)
+
+        val courtSlotsMap = courts.associate { court ->
+            court.id to generateDailySlotsUseCase(
+                courtId = court.id,
+                date = dateString,
+                openTime = openTime,
+                closeTime = closeTime,
+                priceRules = rules,
+                busySlots = busySlots,
+                selectedSlotIds = selectedSlotIds,
+                currentTimeMillis = currentTimeMillis,
+                precomputedRules = indexedRules
+            )
+        }
+
+        val sampleCourtSlots = courtSlotsMap[courts.first().id] ?: emptyList()
+        return sampleCourtSlots.indices.map { slotIdx ->
+            val sampleSlot = sampleCourtSlots[slotIdx]
+            val rowSlots = courts.mapNotNull { court ->
+                courtSlotsMap[court.id]?.getOrNull(slotIdx)
+            }
+            SlotMatrixRow(
+                timeFormatted = formatHourMinute(sampleSlot.startTime),
+                timeRaw = sampleSlot.startTime,
+                slots = rowSlots
+            )
+        }
+    }
+
+    private fun toMinutes(hhmm: String): Int {
+        val h = hhmm.substring(0, 2).toIntOrNull() ?: 0
+        val m = hhmm.substring(2, 4).toIntOrNull() ?: 0
+        return h * 60 + m
+    }
+
+    private fun calculateSlotStartMillis(date: String, startTime: String): Long {
+        return try {
+            val year = date.substring(0, 4).toInt()
+            val month = date.substring(4, 6).toInt()
+            val day = date.substring(6, 8).toInt()
+            val hour = startTime.substring(0, 2).toInt()
+            val minute = startTime.substring(2, 4).toInt()
+            java.time.ZonedDateTime.of(
+                year, month, day, hour, minute, 0, 0,
+                zoneVietnam
+            ).toInstant().toEpochMilli()
+        } catch (e: Exception) {
+            0L
         }
     }
 
