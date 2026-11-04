@@ -38,4 +38,22 @@
 
     <include app:graph="@navigation/nav_review" />
 
+    <!-- Xem ảnh toàn màn hình dùng chung (core/ui/photo, spec 030 T019); 070 dùng cho ảnh đánh giá. -->
+    <fragment
+        android:id="@+id/photoViewerFragment"
+        android:name="com.example.booking_app.core.ui.photo.PhotoViewerFragment"
+        android:label="@string/court_detail_title">
+        <argument
+            android:name="photoUrls"
+            app:argType="string[]" />
+        <argument
+            android:name="startIndex"
+            app:argType="integer"
+            android:defaultValue="0" />
+    </fragment>
+
+    <action
+        android:id="@+id/action_global_photoViewer"
+        app:destination="@id/photoViewerFragment" />
+
 </navigation>

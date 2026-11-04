@@ -245,7 +245,10 @@ class MainActivity : AppCompatActivity() {
             is RouteDecision.ResetTo -> resetToRoleGraph(decision.appRole)
             is RouteDecision.PopAuth -> {
                 navController.popBackStack(R.id.nav_auth, inclusive = true)
-                decision.returnTo?.let { navController.navigate(it) }
+                // returnTo có thể đến từ deep link ngoài app (spec 030 T005): chỉ nhận URI smashnow:// có trong graph.
+                decision.returnTo?.takeIf { it.scheme == "smashnow" }?.let { uri ->
+                    runCatching { navController.navigate(uri) }
+                }
             }
             RouteDecision.Consent -> openConsent()
             RouteDecision.AccountSetup -> openAccountSetup()
