@@ -14,9 +14,12 @@ import com.example.booking_app.R
 import com.example.booking_app.core.ui.VerifyEmailBannerEvent
 import com.example.booking_app.core.ui.VerifyEmailBannerViewModel
 import com.example.booking_app.databinding.FragmentHomePlaceholderBinding
+import com.example.booking_app.feature.booking.domain.repository.BookingRepository
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /**
  * Trang chủ người chơi tạm thời, có banner xác minh email. Spec sở hữu màn hình chính (020/060…) thay bằng
@@ -28,10 +31,32 @@ class PlayerHomePlaceholderFragment : Fragment(R.layout.fragment_home_placeholde
     private val viewModel: HomePlaceholderViewModel by viewModels()
     private val bannerViewModel: VerifyEmailBannerViewModel by viewModels()
 
+    @Inject
+    lateinit var bookingRepository: BookingRepository
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val binding = FragmentHomePlaceholderBinding.bind(view)
         binding.title.setText(R.string.auth_home_placeholder_player)
+
+        // Prefetch ngầm metadata cơ sở vào in-memory cache để khi bấm "Đặt sân theo giờ" mở tức thì (0ms)
+        viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                bookingRepository.getVenueInfo("demo-truong-chinh-909")
+                bookingRepository.getPriceRules("demo-truong-chinh-909")
+                bookingRepository.getActiveCourts("demo-truong-chinh-909")
+            } catch (_: Exception) {
+                // Prefetch ngầm thất bại thì bỏ qua, màn lưới sẽ tự tải bình thường
+            }
+        }
+
+        // Pre-warm view hierarchy của màn lưới trên Main thread idle để lần đầu bấm cũng mở tức thì
+        android.os.Looper.myQueue().addIdleHandler {
+            context?.let { ctx ->
+                com.example.booking_app.feature.booking.ui.BookingSlotGridFragment.prewarm(ctx, "demo-truong-chinh-909")
+            }
+            false
+        }
 
         // TODO(030): xem ghi chú ở layout.
         binding.btnTempBookingGrid.setOnClickListener {

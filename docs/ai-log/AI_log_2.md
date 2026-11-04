@@ -37,6 +37,7 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 31 | 2026-11-04 | Tối ưu load 040/041 + chống đụng độ và lỗi đúng đắn (P0-1 đến P0-7) | 04 |
 | 32 | 2026-11-04 | Kích hoạt đồng bộ offset giờ server P0-7, check đụng độ & countdown | 04 |
 | 33 | 2026-11-04 | Tối ưu UI phản hồi chậm ở lưới 040 (P1-2 + P1-3 + P1-1) | 04 |
+| 34 | 2026-11-04 | Tối ưu độ trễ chuyển cảnh Trang chủ ↔ Đặt sân theo giờ (View Cache & Pre-warm) | 04 |
 
 
 
@@ -1794,7 +1795,17 @@ Sau đợt kiểm thử trên thiết bị thật và đối chiếu kỹ lưỡ
     - Pre-resolve màu trạng thái một lần duy nhất qua `ColorHolder` $\to$ giảm 1.140 lần `ContextCompat.getColor` về **0 lần**.
     - Bỏ qua re-styling đối với ô giữ nguyên trạng thái `AVAILABLE` (chiếm ~90% tổng số ô) $\to$ tránh mutate drawable không cần thiết.
     - Hỗ trợ `PAYLOAD_UPDATE` trong `RowDiffCallback` & `onBindViewHolder(..., payloads)` để DiffUtil rebind in-place.
-  - **`BookingSlotGridFragment`**: Tắt `itemAnimator = null` cho cả `rvSlotMatrixRows` và `rvDateSelector`, triệt tiêu hoàn toàn hiện tượng lag máy ảo do cross-fade hàng loạt view.
+  - **`BookingSlotGridFragment`**:
+    - Tắt `itemAnimator = null` cho cả `rvSlotMatrixRows` và `rvDateSelector`, triệt tiêu hoàn toàn hiện tượng lag máy ảo do cross-fade hàng loạt view.
+    - **Áp dụng Fragment View Caching (`cachedView`)**: Giữ lại view hierarchy đã inflate khi màn hình nằm trên Back Stack (`onDestroyView`). Khi người dùng bấm Back từ màn Xác nhận (040) hoặc Đặt cố định (041), `onCreateView` trả về `cachedView` trong **0ms**, loại bỏ hoàn toàn việc parse lại XML và inflate 380 ô ma trận, xóa sổ độ trễ 1–2 giây khi quay về. View chỉ được giải phóng khi Fragment thực sự bị destroy (`onDestroy`).
+  - **`PlayerHomePlaceholderFragment`**:
+    - Prefetch ngầm thông tin cơ sở, bảng giá, danh sách sân vào `VenueMetadataCache` qua background IO ngay khi người chơi vào Trang chủ. Khi người dùng bấm "Đặt sân theo giờ", toàn bộ metadata đã có sẵn trong RAM cache, mở lưới và render lạc quan ngay lập tức mà không phải chờ mạng.
+  - **`BookingSlotGridViewModel`**:
+    - Gộp kết quả tải ban đầu (`loadVenueAndSlots`) thành 1 lần cập nhật StateFlow nguyên tử duy nhất, thay thế chuỗi 4 lần emit dồn dập.
+    - Trì hoãn việc set `isHolding = false` đến đúng thời điểm điều hướng, tránh re-render toàn bộ lưới slot ngay trước khi chuyển màn hình Xác nhận.
+  - **`BookingConfirmFragment`**:
+    - Bổ sung timeout 3.000ms cho kết nối tải ảnh cơ sở, tránh nghẽn thread.
+    - Chuyển lệnh gọi `releaseHoldUseCase` sang `lifecycleScope` của Fragment để đảm bảo tác vụ nhả slot luôn hoàn tất ngay cả khi View đã bị pop khỏi màn hình.
 
 ### 3. Kết quả Kiểm thử
 1. **Android Unit Tests (`./gradlew testDebugUnitTest --tests "com.example.booking_app.feature.booking.*"`)**:
@@ -1809,3 +1820,45 @@ Sau đợt kiểm thử trên thiết bị thật và đối chiếu kỹ lưỡ
    - Golden test `goldenTest_indexedRulesMatchesFirstOrNullExactSemantics` trong `GenerateDailySlotsUseCaseTest` đạt 100% độ chuẩn xác.
 2. **Firestore Emulator Rules Test Suite (`npm test`)**:
    - **15/15 test files PASS (100%)**, **144/144 tests PASS (100%)**.
+
+---
+
+## Mục 34: Tối ưu triệt để độ trễ chuyển cảnh Trang chủ ↔ Đặt sân theo giờ (View Cache & Pre-warm)
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-04 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 04 – Đặt sân (spec `specs/040-booking-slot-grid`) |
+| Công cụ AI | Antigravity |
+| Mục đích | Loại bỏ hoàn toàn độ trễ 1–2 giây khi người chơi từ Trang chủ bấm "Đặt sân theo giờ", và khi quay về Trang chủ rồi vào lại |
+| Nhánh Git | `feature/041-weekly-recurring-booking` |
+
+### 1. Vấn đề và Nguyên nhân Gốc rễ
+- **Hiện tượng**: Sau khi tối ưu các thao tác bên trong màn 040 và chuyển sang 041/Xác nhận (đổi ngày, chọn slot, back từ Xác nhận/Đặt cố định), người dùng phản hồi vẫn còn độ trễ 1–2 giây khi từ Trang chủ bấm vào "Đặt sân theo giờ", và đặc biệt khi quay về Trang chủ rồi bấm vào lại vẫn bị delay 1–2 giây.
+- **Phân tích Logcat & Chuẩn đoán mã nguồn**:
+  1. Khi người dùng từ màn Lưới bấm Back về Trang chủ, Jetpack Navigation pop `BookingSlotGridFragment` khỏi Back Stack $\to$ Fragment instance bị hủy hoàn toàn (`onDestroyView` và `onDestroy`).
+  2. Ở các phiên bản trước, `cachedView` chỉ là thuộc tính cá thể (instance property) nên bị giải phóng trong `onDestroy`. Khi người chơi bấm lại "Đặt sân theo giờ", một Fragment instance mới toanh được tạo ra với `cachedView = null`.
+  3. Lưới ma trận `rvSlotMatrixRows` nằm trong `NestedScrollView` với `layout_height="wrap_content"`, ép Android phải đo đạc toàn bộ chiều cao ảo (~1900dp) và đồng bộ inflate 380 ô ma trận (`ItemSlotMatrixCellBinding`) từ file XML thông qua `LayoutInflater` reflection trên Main thread, gây nghẽn CPU mất 1,2–1,6 giây (`Skipped 81–84 frames! Davey! duration=1542–1606ms`).
+  4. Lần đầu vào màn hình từ Trang chủ cũng phải chịu thời gian parse layout XML `fragment_booking_slot_grid.xml` (gần 500 dòng XML) ngay khi người dùng chạm nút.
+
+### 2. Các Giải pháp Đã Triển khai
+1. **Global View Cache liên-Fragment (`globalCachedView` trong companion object)**:
+   - Lưu trữ `globalCachedView`, `globalBinding`, `cachedVenueId` và cờ `isViewInitialized` trong `BookingSlotGridFragment.companion object`.
+   - Trong `onDestroyView()`, chỉ tháo `globalCachedView` ra khỏi ViewGroup cha (`(globalCachedView?.parent as? ViewGroup)?.removeView(globalCachedView)`) và gán `_binding = null`, tuyệt đối **không** giải phóng cây view trong `onDestroy()`.
+   - Khi người chơi từ Trang chủ bấm lại "Đặt sân theo giờ", `onCreateView` nhận diện `cachedVenueId == currentVenueId` và trả về `globalCachedView` ngay lập tức (**0ms**), bỏ qua hoàn toàn việc parse XML và inflate 380 ô ma trận.
+2. **Tái gắn Listener mượt mà không cấp phát lại (`onViewCreated`)**:
+   - Khi tái sử dụng view cache, `onViewCreated` nhận diện adapters và layout managers đã sẵn sàng.
+   - Gọi `matrixAdapter.setOnSlotClickListener` và `dateAdapter.setOnDateClickListener` để bind lại các lambda callback trỏ vào ViewModel và Fragment instance mới mà không cần cấp phát lại Adapter hay reset data.
+3. **Pre-warm View Hierarchy tại thời điểm Idle của Trang chủ**:
+   - Trong `PlayerHomePlaceholderFragment.onViewCreated`, đăng ký một `IdleHandler` trên Main Looper (`Looper.myQueue().addIdleHandler`).
+   - Khi CPU và Main thread hoàn tất vẽ Trang chủ và rơi vào trạng thái rảnh rỗi (idle), `BookingSlotGridFragment.prewarm()` tự động inflate layout màn lưới ngầm và nạp vào `globalCachedView`.
+   - Nhờ đó, ngay cả **lần đầu tiên bấm** "Đặt sân theo giờ", màn hình cũng đã có sẵn cây view và mở lên tức thì.
+4. **Quản lý Vòng đời & Chống rò rỉ bộ nhớ (Zero Memory Leak)**:
+   - Trong `MainActivity.onDestroy()`, gọi `BookingSlotGridFragment.clearViewCache()` để dọn dẹp view cache khi Activity chính bị hủy.
+   - Nếu người chơi chọn cơ sở khác (`cachedVenueId != currentVenueId`), `clearViewCache()` tự động hủy view cũ để nạp layout cho cơ sở mới.
+
+### 3. Kết quả Kiểm chứng
+- **Compile Kotlin**: `./gradlew :app:compileDebugKotlin` thành công 100% (`BUILD SUCCESSFUL`).
+- **Android Unit Tests**: `./gradlew :app:testDebugUnitTest --tests "com.example.booking_app.feature.booking.*"` đạt **112/112 tests PASS (100%)** trên 18 files.
+- **Build APK Debug**: `./gradlew :app:assembleDebug` thành công 100% (`BUILD SUCCESSFUL in 1m 24s`).

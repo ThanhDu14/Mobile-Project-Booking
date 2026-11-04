@@ -17,8 +17,12 @@ import com.example.booking_app.feature.booking.domain.model.TimeSlot
 import com.example.booking_app.feature.booking.ui.SlotMatrixRow
 
 class SlotMatrixRowAdapter(
-    private val onSlotClick: (TimeSlot) -> Unit
+    private var onSlotClick: (TimeSlot) -> Unit
 ) : ListAdapter<SlotMatrixRow, SlotMatrixRowAdapter.RowViewHolder>(RowDiffCallback) {
+
+    fun setOnSlotClickListener(listener: (TimeSlot) -> Unit) {
+        this.onSlotClick = listener
+    }
 
     private var colorHolder: ColorHolder? = null
 

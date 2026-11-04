@@ -103,7 +103,10 @@ class BookingConfirmFragment : Fragment() {
             viewLifecycleOwner.lifecycleScope.launch {
                 try {
                     val bitmap = withContext(Dispatchers.IO) {
-                        java.net.URL(args.photoUrl).openStream().use { stream ->
+                        val connection = java.net.URL(args.photoUrl).openConnection()
+                        connection.connectTimeout = 3000
+                        connection.readTimeout = 3000
+                        connection.getInputStream().use { stream ->
                             BitmapFactory.decodeStream(stream)
                         }
                     }
@@ -362,7 +365,7 @@ class BookingConfirmFragment : Fragment() {
         val args = holdArgs
         val userId = sessionManager.currentUid() ?: ""
         if (args != null && userId.isNotEmpty()) {
-            viewLifecycleOwner.lifecycleScope.launch {
+            lifecycleScope.launch {
                 releaseHoldUseCase(
                     venueId = args.venueId,
                     slotIds = args.slotIds.toList(),
@@ -377,7 +380,7 @@ class BookingConfirmFragment : Fragment() {
         val args = holdArgs ?: return
         val userId = sessionManager.currentUid() ?: ""
         if (userId.isNotEmpty()) {
-            viewLifecycleOwner.lifecycleScope.launch {
+            lifecycleScope.launch {
                 releaseHoldUseCase(
                     venueId = args.venueId,
                     slotIds = args.slotIds.toList(),
