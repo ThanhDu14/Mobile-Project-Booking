@@ -106,4 +106,55 @@ class CreateRecurringHoldTransactionUseCaseTest {
         val conflict = holdResult as RecurringHoldResult.Conflict
         assertEquals(listOf(conflictedDate), conflict.conflictedSessionDates)
     }
+
+    @Test
+    fun transactionWrites_500Writes_passesGuard() = runTest {
+        // 1 group + 50 sessions + 449 slots = 500 writes
+        val sessions = (1..50).map { i ->
+            val slotCount = if (i == 1) 449 - 49 else 1 // session 1 has 401 slots, remaining 49 have 1 slot each = 449 slots
+            val slots = (1..slotCount).map { s -> "c1_${i}_$s" }
+            RecurringSession(
+                date = LocalDate.of(2026, 11, 1).plusDays(i.toLong()),
+                startTime = "0600",
+                endTime = "0800",
+                courtId = "c1",
+                courtName = "Sân 1",
+                slotIds = slots,
+                price = 100_000L,
+                status = RecurringSessionStatus.AVAILABLE
+            )
+        }
+        val expectedExpiresAt = System.currentTimeMillis() + 300_000L
+        coEvery {
+            repository.holdRecurringBookingTransaction(any(), any(), any(), any(), any())
+        } returns Result.success(RecurringHoldResult.Success("group-500", expectedExpiresAt))
+
+        val result = useCase(venueId, config, sessions, userId, requestId)
+        assertTrue(result.isSuccess)
+    }
+
+    @Test
+    fun transactionWrites_501Writes_failsGuard() = runTest {
+        // 1 group + 50 sessions + 450 slots = 501 writes
+        val sessions = (1..50).map { i ->
+            val slotCount = if (i == 1) 450 - 49 else 1 // session 1 has 402 slots, remaining 49 have 1 slot each = 450 slots
+            val slots = (1..slotCount).map { s -> "c1_${i}_$s" }
+            RecurringSession(
+                date = LocalDate.of(2026, 11, 1).plusDays(i.toLong()),
+                startTime = "0600",
+                endTime = "0800",
+                courtId = "c1",
+                courtName = "Sân 1",
+                slotIds = slots,
+                price = 100_000L,
+                status = RecurringSessionStatus.AVAILABLE
+            )
+        }
+
+        val result = useCase(venueId, config, sessions, userId, requestId)
+        assertTrue(result.isFailure)
+        val ex = result.exceptionOrNull()
+        assertTrue(ex is IllegalArgumentException)
+        assertTrue(ex?.message?.contains("vượt quá giới hạn 500") == true)
+    }
 }

@@ -8,9 +8,10 @@ import com.example.booking_app.feature.booking.domain.model.RecurringSession
 import com.example.booking_app.feature.booking.domain.model.TimeSlot
 
 interface RecurringBookingRepository {
-    suspend fun isRecurringAccepted(venueId: String): Result<Boolean>
-    suspend fun getActiveCourts(venueId: String): Result<List<Court>>
-    suspend fun getPriceRules(venueId: String): Result<List<PriceRule>>
+    suspend fun isRecurringAccepted(venueId: String, forceRefresh: Boolean = false): Result<Boolean>
+    suspend fun getActiveCourts(venueId: String, forceRefresh: Boolean = false): Result<List<Court>>
+    suspend fun getPriceRules(venueId: String, forceRefresh: Boolean = false): Result<List<PriceRule>>
+    suspend fun getVenueName(venueId: String, forceRefresh: Boolean = false): Result<String>
     suspend fun getBusySlotsForDates(venueId: String, dates: List<String>): Result<List<TimeSlot>>
     suspend fun holdRecurringBookingTransaction(
         venueId: String,

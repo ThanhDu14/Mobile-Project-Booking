@@ -62,6 +62,13 @@ class GenerateDailySlotsUseCase @Inject constructor() {
             var blockReason = busy?.blockReason ?: if (isOutOfPriceRule) "NO_PRICE_RULE" else null
             var holdExpiresAtMillis = busy?.holdExpiresAtMillis
 
+            // P0-4: Xử lý slot HELD đã hết hạn (chống zombie HELD)
+            if (status == SlotStatus.HELD && holdExpiresAtMillis != null && holdExpiresAtMillis <= currentTimeMillis) {
+                status = if (isOutOfPriceRule) SlotStatus.BLOCKED else SlotStatus.AVAILABLE
+                blockReason = if (isOutOfPriceRule) "NO_PRICE_RULE" else null
+                holdExpiresAtMillis = null
+            }
+
             // Check if user has this slot currently selected
             if (status == SlotStatus.AVAILABLE && selectedSlotIds.contains(slotId)) {
                 status = SlotStatus.SELECTED

@@ -185,4 +185,62 @@ class GenerateDailySlotsUseCaseTest {
         assertEquals(4, slots.size)
         assertTrue(slots.all { it.status == SlotStatus.BLOCKED && it.blockReason == "NO_PRICE_RULE" })
     }
+
+    @Test
+    fun generateDailySlots_whenHeldSlotExpired_treatedAsAvailable() {
+        val now = 1_700_000_000_000L
+        val expiredHeldSlot = TimeSlot(
+            slotId = "${courtId}_${date}_0830",
+            courtId = courtId,
+            date = date,
+            startTime = "0830",
+            endTime = "0900",
+            price = 40_000L,
+            status = SlotStatus.HELD,
+            holdExpiresAtMillis = now - 1000L // Hết hạn 1 giây trước
+        )
+
+        val slots = useCase(
+            courtId = courtId,
+            date = date,
+            openTime = "0600",
+            closeTime = "2200",
+            priceRules = priceRules,
+            busySlots = listOf(expiredHeldSlot),
+            currentTimeMillis = now
+        )
+
+        val slot0830 = slots.find { it.startTime == "0830" }
+        assertNotNull(slot0830)
+        assertEquals(SlotStatus.AVAILABLE, slot0830?.status)
+    }
+
+    @Test
+    fun generateDailySlots_whenHeldSlotStillValid_treatedAsHeld() {
+        val now = 1_700_000_000_000L
+        val activeHeldSlot = TimeSlot(
+            slotId = "${courtId}_${date}_0830",
+            courtId = courtId,
+            date = date,
+            startTime = "0830",
+            endTime = "0900",
+            price = 40_000L,
+            status = SlotStatus.HELD,
+            holdExpiresAtMillis = now + 60_000L // Còn hạn 1 phút
+        )
+
+        val slots = useCase(
+            courtId = courtId,
+            date = date,
+            openTime = "0600",
+            closeTime = "2200",
+            priceRules = priceRules,
+            busySlots = listOf(activeHeldSlot),
+            currentTimeMillis = now
+        )
+
+        val slot0830 = slots.find { it.startTime == "0830" }
+        assertNotNull(slot0830)
+        assertEquals(SlotStatus.HELD, slot0830?.status)
+    }
 }
