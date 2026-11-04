@@ -264,37 +264,42 @@ class BookingSlotGridViewModel @Inject constructor(
         if (_uiState.value.selectedDate == newDate) return
 
         // Xóa lựa chọn slot khi đổi ngày (US1-AS8)
-        clearSelection()
-
-        _uiState.update { it.copy(selectedDate = newDate) }
+        currentRequestId = UUID.randomUUID().toString()
+        selectionState = SlotSelectionState()
         val dateString = newDate.format(dateFormatter)
 
         // P1-3: Render lạc quan ngay lập tức cho ngày mới (courts + priceRules đã có sẵn)
-        if (activeCourts.isNotEmpty() && priceRules.isNotEmpty()) {
-            viewModelScope.launch {
-                val optimisticRows = withContext(defaultDispatcher) {
-                    buildMatrix(
-                        courts = activeCourts,
-                        rules = priceRules,
-                        openTime = openTime,
-                        closeTime = closeTime,
-                        dateString = dateString,
-                        busySlots = emptyList(),
-                        selectedSlotIds = emptySet(),
-                        currentTimeMillis = System.currentTimeMillis()
-                    )
-                }
-                if (_uiState.value.selectedDate == newDate) {
-                    val allSlotsFlat = optimisticRows.flatMap { it.slots }
-                    _uiState.update {
-                        it.copy(
-                            matrixRows = optimisticRows,
-                            slots = allSlotsFlat,
-                            isFullyBooked = false
-                        )
-                    }
-                }
-            }
+        val optimisticRows = if (activeCourts.isNotEmpty() && priceRules.isNotEmpty()) {
+            buildMatrix(
+                courts = activeCourts,
+                rules = priceRules,
+                openTime = openTime,
+                closeTime = closeTime,
+                dateString = dateString,
+                busySlots = emptyList(),
+                selectedSlotIds = emptySet(),
+                currentTimeMillis = System.currentTimeMillis()
+            )
+        } else {
+            emptyList()
+        }
+
+        val allSlotsFlat = optimisticRows.flatMap { it.slots }
+
+        // Cập nhật nguyên tử 1 lần duy nhất: ngày mới + ma trận lạc quan mới + reset selection
+        _uiState.update {
+            it.copy(
+                selectedDate = newDate,
+                matrixRows = optimisticRows,
+                slots = allSlotsFlat,
+                selectedSlots = emptyList(),
+                selectedSlotIds = emptySet(),
+                totalPrice = 0L,
+                depositAmount = 0L,
+                canProceed = false,
+                isFullyBooked = false,
+                selectionDetailSummary = ""
+            )
         }
 
         observeRealtimeSlots(newDate)
@@ -752,6 +757,17 @@ class BookingSlotGridViewModel @Inject constructor(
         latestBusySlotsUpdate = update
 
         if (activeCourts.isEmpty() || priceRules.isEmpty()) {
+            return
+        }
+
+        // Bỏ qua nếu snapshot thuộc về ngày cũ (người dùng đã bấm sang ngày khác)
+        if (_uiState.value.selectedDate.format(dateFormatter) != dateString) {
+            return
+        }
+
+        // Tối ưu: Nếu là initial load của ngày mà Firestore trả về 0 busy slots (sân trống hoàn toàn)
+        // và ma trận lạc quan đã hiển thị đầy đủ, không cần rebuild lại toàn bộ ma trận!
+        if (update.isInitial && update.allBusySlots.isEmpty() && _uiState.value.matrixRows.isNotEmpty()) {
             return
         }
 

@@ -6,6 +6,7 @@ import com.example.booking_app.feature.booking.data.model.CourtDto
 import com.example.booking_app.feature.booking.data.model.PriceRuleDto
 import com.example.booking_app.feature.booking.data.model.RecurringGroupDto
 import com.example.booking_app.feature.booking.data.model.SlotDto
+import com.example.booking_app.feature.booking.data.time.ServerTimeOffsetProvider
 import com.example.booking_app.feature.booking.domain.model.RecurringHoldResult
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
@@ -19,7 +20,8 @@ import java.util.Locale
 import javax.inject.Inject
 
 class FirestoreRecurringBookingRemoteDataSource @Inject constructor(
-    private val firestore: FirebaseFirestore
+    private val firestore: FirebaseFirestore,
+    private val serverTimeOffsetProvider: ServerTimeOffsetProvider
 ) : RecurringBookingRemoteDataSource {
 
     override suspend fun isRecurringAccepted(venueId: String): Boolean {
@@ -95,9 +97,10 @@ class FirestoreRecurringBookingRemoteDataSource @Inject constructor(
         userId: String
     ): RecurringHoldResult {
         return try {
+            serverTimeOffsetProvider.ensureSynced()
             firestore.runTransaction { transaction ->
-                val now = Timestamp.now()
-                val nowMillis = now.toDate().time
+                val nowMillis = serverTimeOffsetProvider.now()
+                val now = Timestamp(Date(nowMillis))
                 val conflicts = mutableListOf<String>()
 
                 // --- Phase 1: ALL READS ---

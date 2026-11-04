@@ -16,6 +16,7 @@ import com.example.booking_app.R
 import com.example.booking_app.core.session.SessionManager
 import com.example.booking_app.databinding.FragmentBookingConfirmBinding
 import com.example.booking_app.databinding.ItemConfirmCourtSlotsBinding
+import com.example.booking_app.feature.booking.data.time.ServerTimeOffsetProvider
 import com.example.booking_app.feature.booking.domain.usecase.ReleaseHoldUseCase
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
@@ -40,6 +41,9 @@ class BookingConfirmFragment : Fragment() {
 
     @Inject
     lateinit var releaseHoldUseCase: ReleaseHoldUseCase
+
+    @Inject
+    lateinit var serverTimeOffsetProvider: ServerTimeOffsetProvider
 
     private var countDownTimer: CountDownTimer? = null
     private var holdArgs: HoldToPaymentArgs? = null
@@ -309,7 +313,7 @@ class BookingConfirmFragment : Fragment() {
 
     private fun startCountdown(holdExpiresAtMillis: Long) {
         countDownTimer?.cancel()
-        val remainingMillis = holdExpiresAtMillis - System.currentTimeMillis()
+        val remainingMillis = holdExpiresAtMillis - serverTimeOffsetProvider.now()
 
         if (remainingMillis <= 0) {
             onCountdownTimeout()

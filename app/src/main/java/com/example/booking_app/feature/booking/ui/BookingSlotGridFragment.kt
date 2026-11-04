@@ -94,6 +94,7 @@ class BookingSlotGridFragment : Fragment() {
         binding.rvDateSelector.apply {
             layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
             adapter = dateAdapter
+            itemAnimator = null
         }
 
         // 2. Adapter lưới ma trận (Q3: Danh sách các hàng giờ 30 phút)
@@ -103,6 +104,7 @@ class BookingSlotGridFragment : Fragment() {
         binding.rvSlotMatrixRows.apply {
             layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.VERTICAL, false)
             adapter = matrixAdapter
+            itemAnimator = null
         }
     }
 

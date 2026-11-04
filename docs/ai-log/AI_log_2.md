@@ -1458,7 +1458,7 @@ Sau đợt kiểm thử trên thiết bị thật và đối chiếu kỹ lưỡ
   - Tìm kiếm giá hardcode: `grep -rn "50_000\|130_000\|court-01\|rule-01"` $\rightarrow$ **0 kết quả**.
   - Tìm kiếm mock slot: `grep -rn "defaultMock"` $\rightarrow$ **0 kết quả**.
 
-#### 3. Kết quả Kiểm thử & Quality Gates (Full Pass)
+### 3. Kết quả Kiểm thử & Quality Gates (Full Pass)
 1. **Unit Tests (`./gradlew testDebugUnitTest`)**:
    - **226/226 tests PASS (100%)**.
 2. **Build Package Debug (`./gradlew assembleDebug`)**:
@@ -1779,6 +1779,22 @@ Sau đợt kiểm thử trên thiết bị thật và đối chiếu kỹ lưỡ
   - **Xử lý `REMOVED`**: Khi slot `HELD` hết hạn hoặc bị hủy đặt (rời khỏi query `[BOOKED, BLOCKED, HELD]`), xử lý `REMOVED` đưa slot về lại `AVAILABLE` (hoặc `PAST`/`BLOCKED` nếu quá giờ/thiếu rule).
   - **Phát hiện đụng độ Realtime**: Nếu slot người dùng đang chọn bị người khác giữ hoặc đặt (`MODIFIED`/`ADDED` sang `HELD`/`BOOKED`), tự động gỡ khỏi danh sách chọn và phát `ShowConflictWarning`.
   - Cập nhật liên tục `latestBusySlots = update.allBusySlots` để tính năng tự động dọn HELD hết hạn định kỳ 30s (P0-4) tiếp tục hoạt động chính xác.
+
+#### D. Khắc phục triệt để đơ UI khi đổi ngày (Zero-allocation View Binding & Single Atomic State Emission)
+- **Chuẩn đoán từ Logcat máy ảo / thiết bị thật**: Dù logic đã chuyển sang background, khi đổi ngày UI vẫn ghi nhận `Skipped 84–92 frames! Davey! duration=1594–1638ms`.
+- **Nguyên nhân cốt lõi**:
+  - `selectDate` phát sinh 4 lần emit state dồn dập (`clearSelection` mang ngày cũ -> `selectedDate` -> `optimisticRows` -> Firestore initial snapshot).
+  - `SlotMatrixRowAdapter.bind` gọi `ItemSlotMatrixCellBinding.bind(cellView)` cho 380 ô (38 hàng × 10 sân) $\to$ 1.520 lần gọi `findViewById` và 1.140 lần `ContextCompat.getColor` trên Main thread.
+  - `DefaultItemAnimator` của RecyclerView khi nhận 38 hàng thay đổi chạy cross-fade đồng thời, giữ cùng lúc cả view cũ và mới (76 hàng = 760 `MaterialCardView`).
+  - Liên tục mutate drawable trên 380 card bo góc 8dp dù trạng thái ô vẫn là `AVAILABLE`.
+- **Giải pháp xử lý**:
+  - **`BookingSlotGridViewModel.selectDate`**: Tính ma trận lạc quan đồng bộ (~0,2ms qua `IndexedPriceRules`) và cập nhật StateFlow đúng 1 lần nguyên tử duy nhất (ngày mới + ma trận lạc quan mới + reset selection). Trong `onBusySlotsUpdate`, bỏ qua re-render thừa nếu Firestore trả về 0 slot bận.
+  - **`SlotMatrixRowAdapter`**:
+    - Cache trực tiếp `cellBindings: ArrayList<ItemSlotMatrixCellBinding>` trong `RowViewHolder` $\to$ giảm 1.520 lần `findViewById` về **0 lần**.
+    - Pre-resolve màu trạng thái một lần duy nhất qua `ColorHolder` $\to$ giảm 1.140 lần `ContextCompat.getColor` về **0 lần**.
+    - Bỏ qua re-styling đối với ô giữ nguyên trạng thái `AVAILABLE` (chiếm ~90% tổng số ô) $\to$ tránh mutate drawable không cần thiết.
+    - Hỗ trợ `PAYLOAD_UPDATE` trong `RowDiffCallback` & `onBindViewHolder(..., payloads)` để DiffUtil rebind in-place.
+  - **`BookingSlotGridFragment`**: Tắt `itemAnimator = null` cho cả `rvSlotMatrixRows` và `rvDateSelector`, triệt tiêu hoàn toàn hiện tượng lag máy ảo do cross-fade hàng loạt view.
 
 ### 3. Kết quả Kiểm thử
 1. **Android Unit Tests (`./gradlew testDebugUnitTest --tests "com.example.booking_app.feature.booking.*"`)**:

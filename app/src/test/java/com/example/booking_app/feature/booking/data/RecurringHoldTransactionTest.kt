@@ -3,6 +3,7 @@ package com.example.booking_app.feature.booking.data
 import com.example.booking_app.feature.booking.data.datasource.FirestoreRecurringBookingRemoteDataSource
 import com.example.booking_app.feature.booking.data.model.BookingSessionDto
 import com.example.booking_app.feature.booking.data.model.RecurringGroupDto
+import com.example.booking_app.feature.booking.data.time.ServerTimeOffsetProvider
 import com.example.booking_app.feature.booking.domain.model.RecurringHoldResult
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.Timestamp
@@ -45,6 +46,7 @@ class RecurringHoldTransactionTest {
 
     private val venueDocRef: DocumentReference = mockk()
     private val venueSnapshot: DocumentSnapshot = mockk()
+    private val serverTimeOffsetProvider: ServerTimeOffsetProvider = mockk(relaxed = true)
 
     private lateinit var dataSource: FirestoreRecurringBookingRemoteDataSource
 
@@ -70,7 +72,9 @@ class RecurringHoldTransactionTest {
             Tasks.forResult(result)
         }
 
-        dataSource = FirestoreRecurringBookingRemoteDataSource(firestore)
+        every { serverTimeOffsetProvider.now() } returns 1_700_000_000_000L
+
+        dataSource = FirestoreRecurringBookingRemoteDataSource(firestore, serverTimeOffsetProvider)
     }
 
     @Test
@@ -289,5 +293,54 @@ class RecurringHoldTransactionTest {
         io.mockk.verify(exactly = 1) {
             transaction.update(groupRef, "status", "CANCELLED")
         }
+    }
+
+    @Test
+    fun holdRecurringBooking_withClockSkew_calculatesHoldUsingServerTime() = runTest {
+        // Client clock chậm 2 phút so với server (serverTimeMillis = 1_700_000_120_000L)
+        val serverTimeMillis = 1_700_000_120_000L
+        every { serverTimeOffsetProvider.now() } returns serverTimeMillis
+
+        val slotId = "${courtId}_20261110_1800"
+        val slotRef: DocumentReference = mockk()
+        val slotSnap: DocumentSnapshot = mockk()
+
+        val groupRef: DocumentReference = mockk()
+        val groupSnap: DocumentSnapshot = mockk()
+        every { groupsCollection.document("group-skew") } returns groupRef
+        every { transaction.get(groupRef) } returns groupSnap
+        every { groupSnap.exists() } returns false
+
+        every { slotsCollection.document(slotId) } returns slotRef
+        every { transaction.get(slotRef) } returns slotSnap
+        every { slotSnap.exists() } returns false
+
+        val groupDto = RecurringGroupDto(
+            id = "group-skew",
+            venueId = venueId,
+            venueName = "Cơ sở test",
+            userId = userId,
+            daysOfWeek = listOf(2),
+            startTime = "1800",
+            endTime = "1830",
+            totalSessions = 4,
+            status = "HOLD",
+            holdExpiresAt = Timestamp(Date(serverTimeMillis + 300_000L))
+        )
+
+        val result = dataSource.holdRecurringBookingTransaction(
+            venueId = venueId,
+            recurringGroup = groupDto,
+            sessions = emptyList(),
+            slotIds = listOf(slotId),
+            userId = userId
+        )
+
+        assertTrue(result is RecurringHoldResult.Success)
+        val success = result as RecurringHoldResult.Success
+        assertEquals("group-skew", success.recurringGroupId)
+        // holdExpiresAt phải theo giờ server (serverTimeMillis + 5m), không phải theo giờ client
+        assertEquals(serverTimeMillis + 300_000L, success.holdExpiresAtMillis)
+        io.mockk.coVerify(atLeast = 1) { serverTimeOffsetProvider.ensureSynced() }
     }
 }
