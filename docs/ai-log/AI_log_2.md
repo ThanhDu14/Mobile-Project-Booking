@@ -34,6 +34,7 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 28 | 2026-10-27 | Kết nối Feature 040 với data seed của Duy & Gỡ toàn bộ data ảo trong production | 04 |
 | 29 | 2026-10-27 | Gộp và kiểm chứng Firestore Rules, kiểm tra triển khai và dữ liệu Seed | 04 |
 | 30 | 2026-10-27 | Cập nhật Bottom Bar màn Xác nhận 040 hiển thị "Thanh toán ngay" theo Radio | 04, 05 |
+| 31 | 2026-11-04 | Tối ưu load 040/041 + chống đụng độ và lỗi đúng đắn (P0-1 đến P0-7) | 04 |
 
 
 
@@ -1609,3 +1610,86 @@ Sau đợt kiểm thử trên thiết bị thật và đối chiếu kỹ lưỡ
    - **77/77 tests PASS (100%)** (Bao gồm 51 tests của Feature 040 và 26 tests của Feature 041, 0 errors, 0 failures).
 3. **Android Compilation (`./gradlew compileDebugKotlin`)**:
    - **BUILD SUCCESSFUL**, 0 compile errors.
+
+---
+
+## 14. Tối ưu load 040/041 + chống đụng độ và xử lý lỗi đúng đắn (P0) (04/11/2026)
+
+**Thành viên phụ trách**: Lê Quốc Hưng (`LqHung06`) — Phụ trách nhóm 04 Đặt sân (040/041/050/060)  
+**Phạm vi thực hiện**: Giải quyết 3 điểm nghẽn hiệu năng (waterfall load ban đầu, tải thừa slot AVAILABLE, sequential reads) và 4 lỗi đúng đắn (trùng recurringGroups, zombie HELD hết hạn, thiếu cache TTL, lệch giờ máy client) theo 7 task P0: P0-2 → P0-5 → P0-1 → P0-3 → P0-4 → P0-6 → P0-7.
+
+### Chi tiết các công việc đã triển khai
+
+#### 1. P0-2: Song song hoá và Cache in-memory TTL (5 phút) cho lượt đọc ban đầu
+- **Xây dựng Cache**: Tạo `VenueMetadataCache.kt` singleton (Hilt) quản lý in-memory metadata: `venue (name, openTime, closeTime, status, acceptsRecurring)`, `courts`, `priceRules`. TTL = 5 phút (300.000 ms), hỗ trợ injectable clock (`AppClock`) và cờ `forceRefresh: Boolean = false`.
+- **Tích hợp Cache vào Repository**:
+  - `BookingRepositoryImpl.getVenueInfo`, `getActiveCourts`, `getPriceRules`: ưu tiên đọc cache, miss/hết hạn mới gọi remote data source và ghi cache.
+  - `RecurringBookingRepositoryImpl`: inject `VenueMetadataCache`, tái sử dụng dữ liệu sân và bảng giá đã lưu từ màn 040.
+- **Song song hoá ViewModels**:
+  - `BookingSlotGridViewModel.loadVenueAndSlots`: đọc song song `getVenueInfo`, `getPriceRules`, `getActiveCourts` qua `async/awaitAll` thay cho luồng tuần tự (waterfall 3 bước). Khi danh sách sân sẵn sàng mới gắn listener realtime cho slots.
+  - `BookingRecurringViewModel.loadData`: đọc song song `isRecurringAccepted`, `courts`, `priceRules` và lấy `venueName` trực tiếp từ cache đưa vào `uiState.venueName`.
+
+#### 2. P0-5: Bỏ lượt đọc Venue thừa trong Transaction giữ chỗ 041
+- `RecurringBookingRepositoryImpl.holdRecurringBookingTransaction` lấy `venueName` trực tiếp từ `VenueMetadataCache` (hoặc state) thay vì gọi `remoteDataSource.getVenueName(venueId)` gây thêm 1 network roundtrip.
+- Xóa bỏ hoàn toàn hàm `getVenueName` trong `RecurringBookingRemoteDataSource` và `FirestoreRecurringBookingRemoteDataSource` do không còn nơi nào trong codebase sử dụng.
+
+#### 3. P0-1: Lọc slot bận trên server (041 + 040)
+- **041 (`FirestoreRecurringBookingRemoteDataSource.getBusySlotsForDates`)**:
+  - Thay vì tải toàn bộ slot của các ngày (kể cả AVAILABLE ~6.000 docs), thực hiện deduplicate `dates` và query song song theo từng ngày: `.whereEqualTo("venueId", venueId).whereEqualTo("date", date).whereIn("status", listOf("BOOKED", "BLOCKED", "HELD"))`.
+- **040 (`FirestoreBookingRemoteDataSource.getBusySlotsRealtime`)**:
+  - Bổ sung filter `.whereIn("status", listOf("BOOKED", "BLOCKED", "HELD"))` vào `SnapshotListener` realtime, chỉ tải các slot bận/khóa/giữ thay vì tải toàn bộ ~380 slot/ngày.
+- **Composite Index**:
+  - Khai báo composite index collection `slots` trong `firestore.indexes.json`: `venueId ASC, date ASC, status ASC`.
+
+#### 4. P0-3: Stable `requestId` và Idempotent giữ chỗ
+- **040 (`BookingSlotGridViewModel`)**:
+  - Duy trì `currentRequestId` ổn định khi ViewModel khởi tạo.
+  - Chỉ sinh lại `currentRequestId` mới khi: (a) tập `selectedSlots` thay đổi (thêm/bớt slot); (b) người dùng đổi ngày hoặc xóa lựa chọn (`clearSelection()`).
+  - Retry hoặc bấm nhiều lần gửi cùng `requestId` (đã được `FirestoreBookingRemoteDataSource.holdSlotsAtomic` hỗ trợ kiểm tra `isSameUserAndRequest`).
+- **041 (`BookingRecurringViewModel` & Repository)**:
+  - Duy trì `currentRequestId` ổn định, chỉ sinh lại khi người dùng thay đổi cấu hình chu kỳ (`onDaysSelected`, `onTimeRangeSelected`, `onPreferredCourtSelected`, `onDurationWeeksSelected`, `onStartNextWeekSelected`).
+  - Gán deterministic ID: `recurringGroupId = requestId`, `bookingId = "$requestId-$date-$startTime"`.
+  - `FirestoreRecurringBookingRemoteDataSource.holdRecurringBookingTransaction`: Kiểm tra document `recurringGroups/{recurringGroupId}` ở đầu Phase 1 (Reads). Nếu đã tồn tại với cùng `userId` và `status == "HOLD"` thì coi như transaction đã thành công từ lượt gọi trước và trả về kết quả thành công mà không ghi đè hoặc sinh duplicate booking docs; nếu khác `userId` hoặc khác trạng thái thì ném `AppError.Conflict`.
+
+#### 5. P0-4: Xử lý slot HELD đã hết hạn trên lưới 040 (Chống Zombie HELD)
+- **`GenerateDailySlotsUseCase`**:
+  - Khi so khớp `busySlots`: nếu slot có `status == SlotStatus.HELD` nhưng `holdExpiresAtMillis != null && holdExpiresAtMillis <= currentTimeMillis` thì tự động giải phóng coi như `SlotStatus.AVAILABLE` (hoặc `SlotStatus.PAST` nếu giờ bắt đầu ca đã qua).
+- **`BookingSlotGridViewModel`**:
+  - `onSlotClicked`: nếu slot là `HELD` nhưng đã hết hạn (`holdExpiresAtMillis <= now`), không chặn thông báo lỗi, cho phép người dùng chọn bình thường.
+  - Bổ sung cơ chế làm mới định kỳ (`startPeriodicExpiryCheck()` chạy mỗi 30 giây trong `onResume()` / dừng trong `onPause()`) tự động gọi lại `processBusySlots` với local `latestBusySlots` và `now` mới để giải phóng hiển thị các slot HELD đã hết hạn mà Firestore server chưa kịp xóa.
+
+#### 6. P0-6: Guard giới hạn 500 writes của Firestore Transaction trong 041
+- Trong `CreateRecurringHoldTransactionUseCase`: tính toán trước tổng số writes sẽ thực thi: `totalWrites = 1 + validSessions.size + validSessions.sumOf { it.slotIds.size }`.
+- Nếu `totalWrites > 500`: trả về `Result.failure(IllegalArgumentException("Số khung giờ đặt vượt quá giới hạn 500 của hệ thống, vui lòng giảm số tuần hoặc số thứ"))`, chặn request từ tầng usecase trước khi gửi lên Firestore.
+- Bổ sung Unit Tests kiểm tra biên chặt chẽ: kịch bản 500 writes pass, kịch bản 501 writes bị chặn đúng quy tắc.
+
+#### 7. P0-7: Đồng bộ offset giờ server cho `holdExpiresAt` và phân tách lỗi PERMISSION_DENIED
+- **Đồng bộ Clock Drift (Lựa chọn a - không đụng Rules)**:
+  - Tạo `ServerTimeOffsetProvider.kt` singleton tính `serverTimeOffsetMillis = serverTime - localTime` từ `iat` claim / `issuedAtTimestamp` của Firebase Auth token.
+  - Sử dụng `serverTimeOffsetProvider.now()` khi tính `holdExpiresAtMillis = now + 5 phút` trong cả 040 (`FirestoreBookingRemoteDataSource.holdSlotsAtomic`) và 041 (`RecurringBookingRepositoryImpl.holdRecurringBookingTransaction`), đảm bảo không bị Security Rules từ chối do đồng hồ client chạy nhanh.
+- **Phân tách `PERMISSION_DENIED`**:
+  - Trong `BookingRepositoryImpl.mapToAppError` và `RecurringBookingRepositoryImpl.mapToAppError`:
+    - `UNAUTHENTICATED -> AppError.NotSignedIn`.
+    - `PERMISSION_DENIED ->` nếu user đã đăng nhập trả về `AppError.Unknown(SecurityException(...))`, không gộp vào `NotSignedIn` để tránh kích hoạt luồng đăng xuất tài khoản khi bị Rules từ chối do vi phạm quy tắc nghiệp vụ / clock drift.
+
+### Kết quả Kiểm thử & Đo đạc
+
+1. **Unit Tests Android (`./gradlew testDebugUnitTest --tests "com.example.booking_app.feature.booking.*"`)**:
+   - **99/99 tests PASS (100%)** trên 18 test suites:
+     - Thêm mới `VenueMetadataCacheTest` (5 tests): TTL 5 phút, force refresh, cache hit/miss, clear.
+     - Thêm mới `ServerTimeOffsetProviderTest` (4 tests): clock offset, token sync.
+     - Bổ sung `CreateRecurringHoldTransactionUseCaseTest`: kiểm tra biên 500 và 501 writes.
+     - Bổ sung `GenerateDailySlotsUseCaseTest`: slot HELD hết hạn chuyển thành AVAILABLE.
+     - Bổ sung `BookingRepositoryImplTest`: phân tách UNAUTHENTICATED và PERMISSION_DENIED.
+2. **Firestore Emulator Rules Test Suite (`cd firestore-tests && npm test`)**:
+   - **15/15 test files PASS (100%)**, **144/144 tests PASS (100%)**.
+   - Bao gồm toàn bộ suite `recurringHoldTransaction.test.ts` (T042 E2E).
+3. **Đo đạc Document Count đọc trước và sau P0-1**:
+   - **Lưới 040 (1 ngày, cơ sở 12 sân, 32 ca/sân/ngày = 384 slot/ngày)**:
+     - Trước P0-1: Đọc toàn bộ slot trong ngày $\to$ **384 documents/lần mở**.
+     - Sau P0-1 (giả sử có 15 slot bận BOOKED/BLOCKED/HELD): Đọc với filter `status in ["BOOKED", "BLOCKED", "HELD"]` $\to$ **15 documents**.
+     - Giảm tải: **~96.1% số document đọc**.
+   - **Cố định 041 (16 buổi chu kỳ 16 tuần, cơ sở 12 sân = 384 slot/ngày $\times$ 16 ngày = 6.144 slot)**:
+     - Trước P0-1: Query mọi slot trong 16 ngày $\to$ **~6.144 documents/lần kiểm tra**.
+     - Sau P0-1 (giả sử trung bình 5 slot bận/ngày trên toàn cơ sở): Query 16 ngày song song $\to$ $16 \times 5 =$ **~80 documents**.
+     - Giảm tải: **~98.7% số document đọc**.
