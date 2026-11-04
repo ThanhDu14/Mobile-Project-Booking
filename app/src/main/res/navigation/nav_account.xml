@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Graph lồng của spec 011 (A), include vào nav_player và nav_owner (contracts/ui-screens.md §1, research R14).
-     Destination của US6, US7 còn là Fragment khung, chưa có deep link nên mục tương ứng trên trang Tài khoản bị ẩn. -->
+     Destination của US6 còn là Fragment khung, chưa có deep link nên mục tương ứng trên trang Tài khoản bị ẩn. -->
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/nav_account"
@@ -70,12 +70,15 @@
         <deepLink app:uri="smashnow://account/password" />
     </fragment>
 
-    <!-- Khung của US7, US6 (chưa làm). Story nào xong thì thêm deep link smashnow://account/{email|delete}. -->
-
+    <!-- US7. -->
     <fragment
         android:id="@+id/changeEmailFragment"
         android:name="com.example.booking_app.feature.account.ui.email.ChangeEmailFragment"
-        android:label="@string/account_entry_change_email" />
+        android:label="@string/account_entry_change_email">
+        <deepLink app:uri="smashnow://account/email" />
+    </fragment>
+
+    <!-- Khung của US6 (chưa làm). Xong thì thêm deep link smashnow://account/delete. -->
 
     <fragment
         android:id="@+id/deleteAccountFragment"
