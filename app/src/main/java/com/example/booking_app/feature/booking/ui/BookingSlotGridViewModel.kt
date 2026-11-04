@@ -18,13 +18,16 @@ import com.example.booking_app.feature.booking.domain.usecase.ReleaseHoldUseCase
 import com.example.booking_app.feature.booking.domain.usecase.ValidateSlotSelectionUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.text.DecimalFormat
 import java.time.LocalDate
@@ -69,6 +72,9 @@ class BookingSlotGridViewModel @Inject constructor(
     private var priceRules: List<PriceRule> = emptyList()
     private var activeCourts: List<Court> = emptyList()
     private var realtimeSlotsJob: Job? = null
+    private var periodicExpiryJob: Job? = null
+    private var latestBusySlots: List<TimeSlot> = emptyList()
+    private var currentRequestId: String = UUID.randomUUID().toString()
 
     // Giữ trạng thái lựa chọn hiện tại (hỗ trợ đa sân theo Q1)
     private var selectionState = SlotSelectionState()
@@ -88,11 +94,24 @@ class BookingSlotGridViewModel @Inject constructor(
     }
 
     fun loadInitialData() {
+        loadVenueAndSlots()
+    }
+
+    fun loadVenueAndSlots(forceRefresh: Boolean = false) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
+            val venueDeferred = async { bookingRepository.getVenueInfo(venueId, forceRefresh) }
+            val priceRulesDeferred = async { bookingRepository.getPriceRules(venueId, forceRefresh) }
+            val courtsDeferred = async { bookingRepository.getActiveCourts(venueId, forceRefresh) }
+
+            val venueResult = venueDeferred.await()
+            val priceRulesResult = priceRulesDeferred.await()
+            val courtsResult = courtsDeferred.await()
+
             // 1. Tải thông tin chi tiết cơ sở (Q12: getVenueInfo tên + địa chỉ + quận)
-            bookingRepository.getVenueInfo(venueId).onSuccess { info ->
+            var hasVenueError = false
+            venueResult.onSuccess { info ->
                 if (info.status != null && info.status != "ACTIVE") {
                     _uiState.update {
                         it.copy(
@@ -101,7 +120,8 @@ class BookingSlotGridViewModel @Inject constructor(
                             isClosed = true
                         )
                     }
-                    return@launch
+                    hasVenueError = true
+                    return@onSuccess
                 }
                 openTime = info.openTime
                 closeTime = info.closeTime
@@ -123,11 +143,13 @@ class BookingSlotGridViewModel @Inject constructor(
                         isClosed = true
                     )
                 }
-                return@launch
+                hasVenueError = true
             }
+            if (hasVenueError) return@launch
 
             // 2. Tải bảng giá của cơ sở (Q5: dynamic peak hour banner từ dữ liệu thật)
-            bookingRepository.getPriceRules(venueId).onSuccess { rules ->
+            var hasPriceRulesError = false
+            priceRulesResult.onSuccess { rules ->
                 if (rules.isEmpty()) {
                     _uiState.update {
                         it.copy(
@@ -136,7 +158,8 @@ class BookingSlotGridViewModel @Inject constructor(
                             isClosed = true
                         )
                     }
-                    return@launch
+                    hasPriceRulesError = true
+                    return@onSuccess
                 }
                 priceRules = rules
                 val peakBanner = computePeakHourBanner(rules)
@@ -149,11 +172,12 @@ class BookingSlotGridViewModel @Inject constructor(
                         isClosed = true
                     )
                 }
-                return@launch
+                hasPriceRulesError = true
             }
+            if (hasPriceRulesError) return@launch
 
             // 3. Tải danh sách sân con đang hoạt động (Q3: ma trận mọi sân)
-            bookingRepository.getActiveCourts(venueId).onSuccess { courts ->
+            courtsResult.onSuccess { courts ->
                 activeCourts = courts
                 if (courts.isEmpty()) {
                     _uiState.update {
@@ -204,10 +228,16 @@ class BookingSlotGridViewModel @Inject constructor(
                 return
             }
             SlotStatus.HELD -> {
-                viewModelScope.launch {
-                    _uiEffect.send(BookingSlotUiEffect.ShowErrorSnackbar("Slot này đang được giữ"))
+                val now = System.currentTimeMillis()
+                val expiresAt = clickedSlot.holdExpiresAtMillis
+                if (expiresAt != null && expiresAt <= now) {
+                    // Hết hạn HELD: cho phép chọn bình thường (P0-4)
+                } else {
+                    viewModelScope.launch {
+                        _uiEffect.send(BookingSlotUiEffect.ShowErrorSnackbar("Slot này đang được giữ"))
+                    }
+                    return
                 }
-                return
             }
             SlotStatus.BLOCKED -> {
                 viewModelScope.launch {
@@ -245,7 +275,11 @@ class BookingSlotGridViewModel @Inject constructor(
             }
         }
 
+        val oldSelectedSlots = selectionState.selectedSlots
         selectionState = newState.copy(errorMessage = null)
+        if (oldSelectedSlots != selectionState.selectedSlots) {
+            currentRequestId = UUID.randomUUID().toString()
+        }
         val selectedIds = selectionState.selectedSlots.map { it.slotId }.toSet()
 
         // Cập nhật lại ma trận hàng/cột
@@ -349,7 +383,7 @@ class BookingSlotGridViewModel @Inject constructor(
         // 3. Thực thi giữ chỗ 5 phút nguyên tử đa sân trong 1 transaction (Q1, Q4, Q8)
         val dateString = _uiState.value.selectedDate.format(dateFormatter)
         val slotIds = selectionState.selectedSlots.map { it.slotId }
-        val requestId = UUID.randomUUID().toString()
+        val requestId = currentRequestId
 
         viewModelScope.launch {
             _uiState.update { it.copy(isHolding = true) }
@@ -565,6 +599,7 @@ class BookingSlotGridViewModel @Inject constructor(
     fun hasSelectedSlots(): Boolean = _uiState.value.selectedSlotIds.isNotEmpty()
 
     fun clearSelection() {
+        currentRequestId = UUID.randomUUID().toString()
         selectionState = SlotSelectionState()
         val updatedMatrixRows = _uiState.value.matrixRows.map { row ->
             val updatedSlots = row.slots.map { slot ->
@@ -595,101 +630,125 @@ class BookingSlotGridViewModel @Inject constructor(
                     _uiState.update { it.copy(errorMessage = error.message) }
                 }
                 .collect { busySlots ->
-                    if (activeCourts.isEmpty()) return@collect
-
-                    val selectedIds = selectionState.selectedSlots.map { it.slotId }.toSet()
-
-                    // Sinh slot cho từng sân con
-                    val courtSlotsMap = activeCourts.associate { court ->
-                        court.id to generateDailySlotsUseCase(
-                            courtId = court.id,
-                            date = dateString,
-                            openTime = openTime,
-                            closeTime = closeTime,
-                            priceRules = priceRules,
-                            busySlots = busySlots,
-                            selectedSlotIds = selectedIds
-                        )
-                    }
-
-                    // Xây dựng các hàng ma trận (SlotMatrixRow)
-                    // Lấy tất cả các mốc thời gian duy nhất từ các sân (thường giống nhau)
-                    val sampleCourtSlots = courtSlotsMap[activeCourts.first().id] ?: emptyList()
-                    val matrixRows = sampleCourtSlots.map { sampleSlot ->
-                        val timeRaw = sampleSlot.startTime
-                        val timeFormatted = formatHourMinute(timeRaw)
-                        val rowSlots = activeCourts.mapNotNull { court ->
-                            courtSlotsMap[court.id]?.find { it.startTime == timeRaw }
-                        }
-                        SlotMatrixRow(
-                            timeFormatted = timeFormatted,
-                            timeRaw = timeRaw,
-                            slots = rowSlots
-                        )
-                    }
-
-                    // Kiểm tra xung đột Realtime: nếu slot đang chọn bị người khác giữ/đặt mất
-                    val allSlotsFlat = matrixRows.flatMap { it.slots }
-                    val conflictedSlots = allSlotsFlat.filter { slot ->
-                        selectedIds.contains(slot.slotId) &&
-                                (slot.status == SlotStatus.HELD || slot.status == SlotStatus.BOOKED || slot.status == SlotStatus.BLOCKED)
-                    }
-
-                    if (conflictedSlots.isNotEmpty()) {
-                        val remainingSlots = selectionState.selectedSlots.filter { selected ->
-                            conflictedSlots.none { it.slotId == selected.slotId }
-                        }
-                        val (newTotal, newDeposit) = calculateTotalPriceUseCase(remainingSlots)
-                        val isValid = validateSlotSelectionUseCase.isSelectionValid(remainingSlots)
-                        selectionState = SlotSelectionState(
-                            selectedSlots = remainingSlots,
-                            totalPrice = newTotal,
-                            depositAmount = newDeposit,
-                            isValid = isValid
-                        )
-                        _uiEffect.send(
-                            BookingSlotUiEffect.ShowConflictWarning(
-                                "Khung giờ bạn chọn vừa có người đặt hoặc giữ chỗ. Vui lòng chọn lại."
-                            )
-                        )
-                    }
-
-                    // Đánh dấu lại trạng thái SELECTED cho matrixRows
-                    val currentSelectedIds = selectionState.selectedSlots.map { it.slotId }.toSet()
-                    val displayMatrixRows = matrixRows.map { row ->
-                        val updatedSlots = row.slots.map { slot ->
-                            if (currentSelectedIds.contains(slot.slotId)) {
-                                slot.copy(status = SlotStatus.SELECTED)
-                            } else {
-                                slot
-                            }
-                        }
-                        row.copy(slots = updatedSlots)
-                    }
-
-                    // Kiểm tra kín sân toàn bộ ngày
-                    val isFullyBooked = allSlotsFlat.isNotEmpty() && allSlotsFlat.all {
-                        it.status == SlotStatus.BOOKED || it.status == SlotStatus.HELD || it.status == SlotStatus.BLOCKED || it.status == SlotStatus.PAST
-                    }
-
-                    val courtNameMap = activeCourts.associate { it.id to it.name }
-                    val incompleteHint = validateSlotSelectionUseCase.findIncompleteCourt(selectionState.selectedSlots, courtNameMap)
-                    val summaryText = incompleteHint ?: formatSelectionSummary(selectionState.selectedSlots)
-
-                    _uiState.update {
-                        it.copy(
-                            matrixRows = displayMatrixRows,
-                            slots = allSlotsFlat,
-                            selectedSlots = selectionState.selectedSlots,
-                            selectedSlotIds = currentSelectedIds,
-                            totalPrice = selectionState.totalPrice,
-                            depositAmount = selectionState.depositAmount,
-                            canProceed = selectionState.isValid,
-                            isFullyBooked = isFullyBooked,
-                            selectionDetailSummary = summaryText
-                        )
-                    }
+                    latestBusySlots = busySlots
+                    processBusySlots(busySlots, dateString)
                 }
+        }
+    }
+
+    fun startPeriodicExpiryCheck() {
+        periodicExpiryJob?.cancel()
+        periodicExpiryJob = viewModelScope.launch {
+            while (isActive) {
+                delay(30_000L)
+                if (latestBusySlots.isNotEmpty() && activeCourts.isNotEmpty()) {
+                    val dateString = _uiState.value.selectedDate.format(dateFormatter)
+                    processBusySlots(latestBusySlots, dateString)
+                }
+            }
+        }
+    }
+
+    fun stopPeriodicExpiryCheck() {
+        periodicExpiryJob?.cancel()
+        periodicExpiryJob = null
+    }
+
+    private suspend fun processBusySlots(busySlots: List<TimeSlot>, dateString: String) {
+        if (activeCourts.isEmpty()) return
+
+        val selectedIds = selectionState.selectedSlots.map { it.slotId }.toSet()
+
+        // Sinh slot cho từng sân con (P0-4: giải phóng HELD đã hết hạn với currentTimeMillis)
+        val courtSlotsMap = activeCourts.associate { court ->
+            court.id to generateDailySlotsUseCase(
+                courtId = court.id,
+                date = dateString,
+                openTime = openTime,
+                closeTime = closeTime,
+                priceRules = priceRules,
+                busySlots = busySlots,
+                selectedSlotIds = selectedIds,
+                currentTimeMillis = System.currentTimeMillis()
+            )
+        }
+
+        // Xây dựng các hàng ma trận (SlotMatrixRow)
+        // Lấy tất cả các mốc thời gian duy nhất từ các sân (thường giống nhau)
+        val sampleCourtSlots = courtSlotsMap[activeCourts.first().id] ?: emptyList()
+        val matrixRows = sampleCourtSlots.map { sampleSlot ->
+            val timeRaw = sampleSlot.startTime
+            val timeFormatted = formatHourMinute(timeRaw)
+            val rowSlots = activeCourts.mapNotNull { court ->
+                courtSlotsMap[court.id]?.find { it.startTime == timeRaw }
+            }
+            SlotMatrixRow(
+                timeFormatted = timeFormatted,
+                timeRaw = timeRaw,
+                slots = rowSlots
+            )
+        }
+
+        // Kiểm tra xung đột Realtime: nếu slot đang chọn bị người khác giữ/đặt mất
+        val allSlotsFlat = matrixRows.flatMap { it.slots }
+        val conflictedSlots = allSlotsFlat.filter { slot ->
+            selectedIds.contains(slot.slotId) &&
+                    (slot.status == SlotStatus.HELD || slot.status == SlotStatus.BOOKED || slot.status == SlotStatus.BLOCKED)
+        }
+
+        if (conflictedSlots.isNotEmpty()) {
+            val remainingSlots = selectionState.selectedSlots.filter { selected ->
+                conflictedSlots.none { it.slotId == selected.slotId }
+            }
+            val (newTotal, newDeposit) = calculateTotalPriceUseCase(remainingSlots)
+            val isValid = validateSlotSelectionUseCase.isSelectionValid(remainingSlots)
+            selectionState = SlotSelectionState(
+                selectedSlots = remainingSlots,
+                totalPrice = newTotal,
+                depositAmount = newDeposit,
+                isValid = isValid
+            )
+            _uiEffect.send(
+                BookingSlotUiEffect.ShowConflictWarning(
+                    "Khung giờ bạn chọn vừa có người đặt hoặc giữ chỗ. Vui lòng chọn lại."
+                )
+            )
+        }
+
+        // Đánh dấu lại trạng thái SELECTED cho matrixRows
+        val currentSelectedIds = selectionState.selectedSlots.map { it.slotId }.toSet()
+        val displayMatrixRows = matrixRows.map { row ->
+            val updatedSlots = row.slots.map { slot ->
+                if (currentSelectedIds.contains(slot.slotId)) {
+                    slot.copy(status = SlotStatus.SELECTED)
+                } else {
+                    slot
+                }
+            }
+            row.copy(slots = updatedSlots)
+        }
+
+        // Kiểm tra kín sân toàn bộ ngày
+        val isFullyBooked = allSlotsFlat.isNotEmpty() && allSlotsFlat.all {
+            it.status == SlotStatus.BOOKED || it.status == SlotStatus.HELD || it.status == SlotStatus.BLOCKED || it.status == SlotStatus.PAST
+        }
+
+        val courtNameMap = activeCourts.associate { it.id to it.name }
+        val incompleteHint = validateSlotSelectionUseCase.findIncompleteCourt(selectionState.selectedSlots, courtNameMap)
+        val summaryText = incompleteHint ?: formatSelectionSummary(selectionState.selectedSlots)
+
+        _uiState.update {
+            it.copy(
+                matrixRows = displayMatrixRows,
+                slots = allSlotsFlat,
+                selectedSlots = selectionState.selectedSlots,
+                selectedSlotIds = currentSelectedIds,
+                totalPrice = selectionState.totalPrice,
+                depositAmount = selectionState.depositAmount,
+                canProceed = selectionState.isValid,
+                isFullyBooked = isFullyBooked,
+                selectionDetailSummary = summaryText
+            )
         }
     }
 

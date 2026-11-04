@@ -74,6 +74,12 @@ class BookingSlotGridFragment : Fragment() {
         super.onResume()
         // Q10: Kiểm tra và khôi phục lựa chọn nếu người dùng vừa quay lại sau khi đăng nhập
         viewModel.checkAndRestorePendingSelection()
+        viewModel.startPeriodicExpiryCheck()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        viewModel.stopPeriodicExpiryCheck()
     }
 
     private fun setupRecyclerViews() {
