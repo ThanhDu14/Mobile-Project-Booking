@@ -6,15 +6,13 @@
 // - bước DỌN DẸP (ẩn danh, thông báo, xóa hồ sơ chủ sân): ghi SKIPPED, chạy lại bằng
 //   `scripts/admin/rerun-deletion-step.ts <bước>` khi helper đã có.
 //
-// Khi có helper, import vào đây, ví dụ:
-//   import { cancelBookingInTx, computeBookingRefund, anonymizeBookings } from "./booking.ts";   // B
-//   import { cancelRegistrationInTx, computeRefund } from "./dropin.ts";                         // C (080)
-//   import { leaveWaitlistInTx } from "./waitlist.ts";                                            // C (081)
-//   import { anonymizeReviews } from "./reviews.ts";                                              // C (070)
-//   import { anonymizeCommunity } from "./community.ts";                                          // C (090, 091)
-//   import { hideVenueForOwnerDeletionInTx, cancelSessionInTx } from "./venue.ts";                // D
-//   import { deleteOwnerApplications } from "./owner.ts";                                         // D
-//   import { sendNotification } from "./notifications.ts";                                       // D (100)
+// Khi có helper, thêm import vào file này (không viết dòng import mẫu trong comment: Supabase CLI quét cả comment
+// và báo thiếu file khi `supabase start`/deploy). Helper cần có, theo file dự kiến của từng nhóm:
+// - B, booking.ts: cancelBookingInTx, computeBookingRefund, anonymizeBookings
+// - C, dropin.ts (080): cancelRegistrationInTx, computeRefund; waitlist.ts (081): leaveWaitlistInTx;
+//   reviews.ts (070): anonymizeReviews; community.ts (090, 091): anonymizeCommunity
+// - D, venue.ts: hideVenueForOwnerDeletionInTx, cancelSessionInTx; owner.ts: deleteOwnerApplications;
+//   notifications (100): sendNotification
 // Chữ ký phải khớp `DeletionHelpers` trong account-deletion.ts (giao dịch là `DeletionTx`).
 import type { DeletionHelpers } from "./account-deletion.ts";
 
