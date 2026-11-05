@@ -1,6 +1,6 @@
 # feature/review — Đánh giá sân và sân yêu thích (spec 070, C)
 
-Tài liệu thiết kế: [specs/070-review-favorite](../../../../../../../../../specs/070-review-favorite/). Hiện đã có phần **Sân yêu thích (US3)**; phần đánh giá (US1, US2, US4–US6) làm ở tuần 5.
+Tài liệu thiết kế: [specs/070-review-favorite](../../../../../../../../../specs/070-review-favorite/). Hiện đã có **Sân yêu thích (US3)** và **Viết đánh giá (US1)**; US2, US4–US6 làm tiếp.
 
 ## Gắn nút trái tim vào màn hình của nhóm khác
 
@@ -56,6 +56,53 @@ Dùng cho trang Tài khoản (spec 011, A). Màn hình nằm trong nav graph l�
 ```
 
 Nút tạm "Sân yêu thích (Feature 070)" ở trang chủ placeholder dùng cách này; bỏ nút khi trang Tài khoản có mục chính thức.
+
+## Nút "Đánh giá" trên chi tiết đơn
+
+Dùng cho chi tiết đơn trong "Lịch đặt của tôi" (spec 060, B). Inject `ReviewRepository` (interface trong `domain/`), không import `data/`.
+
+1. Quyết định nút theo `ReviewEligibility`:
+
+   ```kotlin
+   @Inject lateinit var reviewRepository: ReviewRepository   // hoặc inject vào ViewModel
+
+   reviewRepository.observeMyReview(bookingId)               // Flow<Review?>, null = chưa đánh giá
+       .map { myReview ->
+           ReviewEligibility.of(
+               bookingStatus = booking.status,                // chuỗi "COMPLETED", "CONFIRMED", ...
+               completedAt = booking.completedAt,             // Instant?, trường bookings.completedAt
+               existingReview = myReview,
+               now = Instant.now(),
+           )
+       }
+   ```
+
+   | Giá trị | Hiển thị |
+   |---|---|
+   | `CAN_WRITE` | Nút "Đánh giá" |
+   | `CAN_VIEW` | Nút "Xem đánh giá của bạn" |
+   | `EXPIRED` | Chữ `R.string.review_window_closed` ("Đã hết hạn đánh giá"), không có nút |
+   | `NOT_ELIGIBLE` | Không hiện gì (đơn chưa hoàn thành, đã hủy, `NO_SHOW`, ...) |
+
+   Gửi xong, listener `observeMyReview` tự phát đánh giá mới nên nút đổi thành "Xem đánh giá của bạn".
+
+2. Mở màn hình viết/xem đánh giá (cả hai nút dùng chung, màn hình tự chuyển sang chỉ xem khi đã có đánh giá):
+
+   ```xml
+   <!-- trong graph của chi tiết đơn -->
+   <action
+       android:id="@+id/action_bookingDetail_to_writeReview"
+       app:destination="@id/writeReviewFragment" />
+   ```
+
+   ```kotlin
+   findNavController().navigate(
+       R.id.action_bookingDetail_to_writeReview,
+       bundleOf("bookingId" to bookingId),   // mode mặc định CREATE; EDIT dùng ở US5
+   )
+   ```
+
+   Hoặc deep link `smashnow://review/write/{bookingId}` (thông báo `REVIEW_REMINDER` của spec 100 cũng dùng link này).
 
 ## Việc còn chờ nhóm khác
 
