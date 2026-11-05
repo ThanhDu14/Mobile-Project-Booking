@@ -31,6 +31,7 @@ Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 | 25  | 2026-11-05 | Rà soát và chỉnh UI Android Feature 111 theo 5 ảnh mẫu, cải thiện bố cục responsive và accessibility; chạy test và build                                                     | 11   |
 | 26  | 2026-11-05 | Khảo sát và triển khai phần validator độc lập của Feature 110; lập traceability mapping và kiểm tra unit test, build, lint, Emulator                                         | 11   |
 | 27  | 2026-11-05 | Ghi nhận quyết định bổ sung Feature 110 về venue identity, recovery, cleanup; map provider tạm hoãn                                                                          | 11   |
+| 28  | 2026-11-05 | Tiếp tục triển khai Feature 110 theo quyết định T001–T005; bổ sung Android onboarding, Edge Functions, Firestore Rules và kiểm chứng                                         | 11   |
 
 ---
 
@@ -2462,6 +2463,160 @@ Chỉ xuất báo cáo và đề xuất, chờ tôi phê duyệt, không  implem
 ### Cách kiểm chứng
 
 - Đối chiếu nội dung contract sau khi cập nhật; chưa chạy test/build do không có thay đổi mã nguồn.
+- Không commit hoặc push.
+
+---
+
+## Mục 28: Tiếp tục triển khai Feature 110 — Owner Onboarding
+
+| Trường                   | Nội dung                                                                                                                               |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-11-05                                                                                                                             |
+| Người thực hiện          | Minh Nhựt                                                                                                                              |
+| Nhóm tính năng liên quan | 11 – Đăng ký chủ sân (spec `specs/110-owner-onboarding`)                                                                               |
+| Công cụ AI               | Codex (GPT-6), skill `$speckit-implement`                                                                                              |
+| Mục đích                 | Tiếp tục triển khai Feature 110 theo decisions T001–T005 đã duyệt; hoàn thiện luồng applicant và kiểm chứng các ranh giới server-side. |
+
+### Prompt đã dùng
+
+```text
+$speckit-implement Tiếp tục IMPLEMENT hoàn chỉnh Feature 110 — Owner Onboarding.
+
+
+### 1. Tuân thủ tài liệu đồ án
+
+Trước khi triển khai, đọc lại và đối chiếu:
+
+- Toàn bộ tài liệu trong `specs/110-owner-onboarding/`.
+- Các quyết định T001–T005 đã được tôi approve.
+- `spec.md`, `plan.md`, `data-model.md`, `contracts/`, `research.md`, `tasks.md`.
+- Database schema tại `docs/design/database/README.md`.
+- Constitution và conventions của project.
+- Feature 111, Feature 120 và các contract liên quan.
+
+Không tự ý thay đổi những quyết định đã được approve. Nếu phát hiện mâu thuẫn, báo cáo thay vì tự suy diễn.
+
+### 2. Tuân thủ UI mẫu
+
+Đây là yêu cầu bắt buộc:
+
+- Mở và đối chiếu trực tiếp toàn bộ ảnh UI trong `specs/110-owner-onboarding/ui/`.
+- Implement đầy đủ các màn hình theo đúng thứ tự và luồng thiết kế.
+- Giữ đúng bố cục, màu sắc, typography, spacing, icon, button, card, form và navigation.
+- Không tự sáng tạo giao diện hoặc thay đổi UX của nhóm.
+- Sử dụng lại design system và component hiện có.
+- Hỗ trợ light/dark, phone, `w600dp`, accessibility và touch target tối thiểu 48dp.
+- Không sửa hoặc thay thế ảnh UI mẫu.
+
+### 3. Implement toàn bộ Feature 110
+
+Triển khai tất cả user stories và tasks theo spec:
+
+- Owner application form.
+- Nhập và xác thực thông tin.
+- Chọn, upload và quản lý giấy tờ.
+- Submit/resubmit application.
+- Xem trạng thái hồ sơ.
+- Luồng review/approval/rejection theo đúng quyền hạn.
+- Xử lý draft, retry, idempotency và cleanup.
+- Initial venue creation theo đúng contract với Feature 120.
+- Điều hướng và tích hợp với Feature 111 sau khi Owner được duyệt.
+
+Sử dụng đúng các quyết định T001–T005 đã approve.
+
+### 4. Backend và Security
+
+- Implement đúng authentication Firebase–Supabase đã thống nhất.
+- Bảo vệ upload/download tài liệu theo contract.
+- Kiểm tra quyền applicant ở server.
+- Không tin dữ liệu role, ownerStatus hoặc approval status từ client.
+- Chống duplicate submission và xử lý retry an toàn.
+- Bảo đảm chỉ Feature 120 thực hiện quyền cấp `OWNER/APPROVED` và initial venue creation theo contract đã thống nhất.
+- Không để Feature 110 vượt quyền sang Feature 111 hoặc Feature 120.
+
+### 5. Android implementation
+
+Tuân thủ kiến trúc hiện tại:
+
+- Clean Architecture.
+- MVVM.
+- Repository pattern.
+- StateFlow/Coroutines.
+- Hilt DI.
+- ViewBinding và Navigation conventions.
+- Material 3 và resource conventions.
+
+Tái sử dụng component hiện có, không tạo kiến trúc song song hoặc duplicate logic.
+
+### 6. Kiểm thử
+
+Bổ sung đầy đủ unit tests, integration tests và Emulator tests cho:
+
+- Validation.
+- Submit/resubmit.
+- Upload/download authorization.
+- Authentication.
+- Approval/rejection.
+- Retry và idempotency.
+- Duplicate requests.
+- Draft cleanup.
+- Initial venue creation.
+- Feature 110 → Feature 120 → Feature 111 integration.
+- Unauthorized access và bảo vệ dữ liệu.
+
+Chạy unit tests, Emulator tests, `assembleDebug` và `lintDebug`. Phân biệt lỗi mới với lỗi tồn tại từ trước.
+
+### 7. Cập nhật tài liệu
+
+- Cập nhật `tasks.md` theo tiến độ thực tế.
+- Cập nhật contracts và implementation mapping nếu cần.
+- Cập nhật quickstart.
+- Cập nhật AI log theo convention đồ án.
+- Đảm bảo requirements, implementation và tests có traceability.
+
+### 8. Nguyên tắc thực hiện
+
+- Chủ động implement, không chỉ lập kế hoạch.
+- Không bỏ qua task hoặc đánh dấu hoàn thành giả.
+- Không tự ý thay đổi quyết định đã approve.
+- Không thay đổi schema hoặc contract ngoài phạm vi được duyệt.
+- Không làm hỏng Feature 111 và Feature 120.
+- Không commit hoặc push.
+
+### 9. Báo cáo cuối cùng
+
+Báo cáo:
+
+- Tasks đã hoàn thành và còn mở.
+- Các màn hình đã implement, đối chiếu với UI mẫu.
+- Files đã tạo/sửa.
+- Backend, authentication và security.
+- Integration Feature 110/120/111.
+- Test/build/lint và kết quả thực tế.
+- Blockers còn lại.
+
+**Hãy bắt đầu triển khai trực tiếp toàn bộ phần đã được phê duyệt. Ưu tiên hoàn thiện end-to-end, không dừng ở domain model hoặc UI prototype.**
+```
+
+### Tóm tắt phản hồi của AI
+
+- Bổ sung contract API applicant và server-side Edge Functions cho trạng thái/submit hồ sơ và quyền thao tác private staging documents; thêm bucket private `owner-docs` với giới hạn MIME/kích thước theo quyết định đã duyệt.
+- Thêm Android repository/data source, ViewModel, form/review/status fragments, navigation, local draft và upload/download qua signed URL; map provider vẫn hoãn, vị trí được nhập thủ công.
+- Thêm Firestore Rules cho read-only applicant/admin và cấm client ghi `ownerApplications`, cùng test Rules Emulator.
+- Cập nhật tasks, data-model/mapping/research/plan/quickstart để phản ánh các lựa chọn và blocker hiện tại.
+- `assembleDebug` thành công; focused validator/accessibility tests thành công sau khi sửa touch targets/layout `w600dp`; Firestore Rules suite thành công (16 files/147 tests); Deno + Auth/Firestore handler suites thành công (8/8) bằng JDK 21 và Deno portable tạm. Supabase Storage HTTP trong handler test được mock. Full Android suite có 7 lỗi trong `FirebaseSessionManagerTest`; lint có một lỗi `DiffUtilEquals` ngoài phạm vi Feature 110.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần                                                                                | Quyết định                       | Lý do                                                                                                                                                                       |
+| ----------------------------------------------------------------------------------- | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Feature 110 Android, Supabase Edge Functions/migration, Firestore Rules và tài liệu | Đã tạo/chỉnh sửa trong workspace | Thực hiện phần onboarding applicant theo quyết định đã được duyệt; các tác vụ thuộc review/approval, promotion, venue creation và cleanup server vẫn thuộc Feature 120/011. |
+| Map provider / SDK bản đồ                                                           | Không thêm                       | Chủ dự án đã tạm hoãn quyết định provider.                                                                                                                                  |
+
+### Cách kiểm chứng
+
+- Đối chiếu trực tiếp ba ảnh UI mẫu: form, review và pending status; ảnh mẫu không bị sửa.
+- Build Android đang chạy lại sau khi sửa lỗi compile; unit tests, Firestore Emulator tests, lint và Supabase local tests cần ghi kết quả sau khi thực chạy.
 - Không commit hoặc push.
 
 ---

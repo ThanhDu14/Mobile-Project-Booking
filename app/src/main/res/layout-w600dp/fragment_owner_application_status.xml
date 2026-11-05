@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="600dp" android:layout_gravity="center_horizontal" android:layout_height="match_parent" android:background="?attr/colorSurface">
+    <LinearLayout android:id="@+id/statusHeader" android:layout_width="0dp" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal" android:paddingHorizontal="18dp" android:paddingTop="12dp" android:paddingBottom="8dp" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="parent">
+        <ImageButton android:id="@+id/backButton" android:layout_width="48dp" android:layout_height="48dp" android:background="?attr/selectableItemBackgroundBorderless" android:contentDescription="@string/common_back" android:src="@drawable/ic_arrow_back_24" app:tint="?attr/colorOnSurface" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:accessibilityHeading="true" android:paddingStart="8dp" android:text="@string/owner_status_title" android:textAppearance="?attr/textAppearanceHeadlineSmall" android:textStyle="bold" />
+    </LinearLayout>
+    <androidx.core.widget.NestedScrollView android:id="@+id/statusScroll" android:layout_width="0dp" android:layout_height="0dp" android:clipToPadding="false" android:paddingHorizontal="18dp" android:paddingBottom="18dp" app:layout_constraintBottom_toTopOf="@id/statusFooter" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toBottomOf="@id/statusHeader">
+        <LinearLayout android:layout_width="600dp" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:orientation="vertical" android:paddingTop="16dp">
+            <com.google.android.material.card.MaterialCardView android:id="@+id/statusBanner" android:layout_width="600dp" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" app:cardBackgroundColor="@color/sn_lamp_container" app:cardCornerRadius="22dp" app:strokeWidth="0dp">
+                <LinearLayout android:layout_width="600dp" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal" android:padding="20dp">
+                    <TextView android:id="@+id/statusIcon" android:layout_width="64dp" android:layout_height="64dp" android:background="@drawable/bg_owner_status_icon" android:gravity="center" android:text="⌛" android:textSize="30sp" />
+                    <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="16dp" android:layout_weight="1" android:orientation="vertical">
+                        <TextView android:id="@+id/statusTitle" android:layout_width="600dp" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:accessibilityHeading="true" android:textAppearance="?attr/textAppearanceTitleLarge" android:textColor="@color/sn_on_lamp_container" android:textStyle="bold" />
+                        <TextView android:id="@+id/statusSubtitle" android:layout_width="600dp" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:layout_marginTop="4dp" android:textAppearance="?attr/textAppearanceBodyLarge" android:textColor="@color/sn_on_lamp_container" />
+                    </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+            <LinearLayout android:id="@+id/timeline" android:layout_width="600dp" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:layout_marginTop="28dp" android:orientation="vertical">
+                <TextView android:id="@+id/timelineSubmitted" style="@style/OwnerTimelineItem" android:text="@string/owner_timeline_submitted" />
+                <TextView android:id="@+id/timelineReview" style="@style/OwnerTimelineItem" android:text="@string/owner_timeline_review" />
+                <TextView android:id="@+id/timelineResult" style="@style/OwnerTimelineItem" android:text="@string/owner_timeline_result" />
+            </LinearLayout>
+            <com.google.android.material.card.MaterialCardView android:id="@+id/submittedCard" android:layout_width="600dp" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:layout_marginTop="20dp" app:cardBackgroundColor="@color/sn_surface_raised" app:cardCornerRadius="18dp" app:strokeColor="@color/sn_line" app:strokeWidth="1dp">
+                <LinearLayout android:layout_width="600dp" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:orientation="vertical">
+                    <LinearLayout android:layout_width="600dp" android:layout_gravity="center_horizontal" android:layout_height="56dp" android:gravity="center_vertical" android:orientation="horizontal" android:paddingHorizontal="18dp">
+                        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/owner_submitted_information" android:textAppearance="?attr/textAppearanceTitleMedium" android:textStyle="bold" />
+                        <TextView android:drawablePadding="6dp" android:text="@string/owner_locked_pending" android:textAppearance="?attr/textAppearanceBodySmall" android:textColor="@color/sn_ink_muted" app:drawableStartCompat="@drawable/ic_lock_24" />
+                    </LinearLayout>
+                    <View android:layout_width="600dp" android:layout_gravity="center_horizontal" android:layout_height="1dp" android:background="@color/sn_line" />
+                    <TextView android:id="@+id/statusSummary" android:layout_width="600dp" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:padding="18dp" android:lineSpacingExtra="6dp" android:textAppearance="?attr/textAppearanceBodyLarge" />
+                    <TextView android:id="@+id/rejectReason" android:layout_width="600dp" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:paddingHorizontal="18dp" android:paddingBottom="18dp" android:textColor="@color/sn_danger" android:visibility="gone" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+            <TextView android:id="@+id/statusMessage" android:layout_width="600dp" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:layout_marginTop="12dp" android:accessibilityLiveRegion="assertive" android:textColor="@color/sn_danger" />
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+    <FrameLayout android:id="@+id/statusFooter" android:layout_width="0dp" android:layout_height="wrap_content" android:background="?attr/colorSurface" android:elevation="8dp" android:paddingHorizontal="18dp" android:paddingVertical="12dp" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent">
+        <com.google.android.material.button.MaterialButton android:id="@+id/statusAction" android:layout_width="600dp" android:layout_gravity="center_horizontal" android:layout_height="58dp" android:minHeight="48dp" android:text="@string/owner_continue_player" app:cornerRadius="30dp" />
+    </FrameLayout>
+    <com.google.android.material.progressindicator.CircularProgressIndicator android:id="@+id/statusProgress" android:layout_width="48dp" android:layout_height="48dp" android:visibility="gone" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="parent" />
+</androidx.constraintlayout.widget.ConstraintLayout>

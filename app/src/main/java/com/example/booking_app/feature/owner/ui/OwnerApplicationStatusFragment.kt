@@ -1,0 +1,145 @@
+package com.example.booking_app.feature.owner.ui
+
+import android.os.Bundle
+import android.view.View
+import androidx.core.net.toUri
+import androidx.core.view.isVisible
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.fragment.findNavController
+import com.example.booking_app.R
+import com.example.booking_app.databinding.FragmentOwnerApplicationStatusBinding
+import com.example.booking_app.feature.owner.domain.OwnerApplicationState
+import androidx.core.content.ContextCompat
+import com.google.firebase.auth.FirebaseAuth
+import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+
+@AndroidEntryPoint
+class OwnerApplicationStatusFragment : Fragment(R.layout.fragment_owner_application_status) {
+    private var _binding: FragmentOwnerApplicationStatusBinding? = null
+    private val binding get() = checkNotNull(_binding)
+    private val viewModel: OwnerApplicationViewModel by activityViewModels()
+    private var state: OwnerApplicationState? = null
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        _binding = FragmentOwnerApplicationStatusBinding.bind(view)
+        binding.backButton.setOnClickListener { findNavController().navigateUp() }
+        binding.statusAction.setOnClickListener { continueForCurrentState() }
+        binding.statusMessage.setOnClickListener { viewModel.refreshStatus() }
+        viewModel.refreshStatus()
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.uiState.collect(::render)
+            }
+        }
+    }
+
+    private fun render(ui: OwnerApplicationUiState) {
+        if (_binding == null) return
+        binding.statusProgress.isVisible = ui.loading
+        val status = ui.status?.ownerStatus
+        state = status
+        if (ui.message != null && ui.status == null) {
+            binding.statusMessage.text = "${ui.message}  ·  ${getString(R.string.owner_refresh)}"
+            binding.statusMessage.setTextColor(ContextCompat.getColor(requireContext(), R.color.sn_danger))
+            binding.statusAction.setText(R.string.owner_refresh)
+            binding.statusAction.setOnClickListener { viewModel.refreshStatus() }
+            binding.submittedCard.isVisible = false
+            return
+        }
+        binding.statusMessage.text = ui.message.orEmpty()
+        binding.statusAction.setOnClickListener { continueForCurrentState() }
+        val app = ui.status?.application
+        binding.submittedCard.isVisible = status in setOf(OwnerApplicationState.PENDING, OwnerApplicationState.REJECTED, OwnerApplicationState.APPROVED) && app != null
+        when (status) {
+            OwnerApplicationState.PENDING -> {
+                applyBannerColors(R.color.sn_lamp_container, R.color.sn_on_lamp_container)
+                binding.statusTitle.setText(R.string.owner_status_pending)
+                binding.statusSubtitle.text = app?.submittedAt?.let { getString(R.string.owner_submitted_at, formatDate(it), getString(R.string.owner_status_pending_message)) } ?: getString(R.string.owner_status_pending_message)
+                binding.statusIcon.text = "⌛"
+                binding.statusAction.setText(R.string.owner_continue_player)
+                binding.rejectReason.isVisible = false
+                binding.timeline.isVisible = true
+                binding.statusSummary.text = app?.let { summary(it.draft) }.orEmpty()
+                binding.timelineSubmitted.text = app?.submittedAt?.let { getString(R.string.owner_timeline_submitted_at, formatDate(it)) } ?: getString(R.string.owner_timeline_submitted)
+                binding.timelineReview.text = getString(R.string.owner_timeline_review_hint)
+                binding.timelineResult.text = getString(R.string.owner_timeline_result)
+            }
+            OwnerApplicationState.REJECTED -> {
+                applyBannerColors(R.color.sn_danger, R.color.sn_on_danger)
+                binding.statusTitle.setText(R.string.owner_status_rejected)
+                binding.statusSubtitle.setText(R.string.owner_status_rejected_message)
+                binding.statusIcon.text = "!"
+                binding.statusAction.setText(R.string.owner_resubmit)
+                binding.rejectReason.isVisible = app?.rejectReason != null
+                binding.rejectReason.text = app?.rejectReason
+                binding.timeline.isVisible = false
+                binding.statusSummary.text = app?.let { summary(it.draft) }.orEmpty()
+            }
+            OwnerApplicationState.APPROVED -> {
+                applyBannerColors(R.color.sn_court_container, R.color.sn_on_court_container)
+                binding.statusTitle.setText(R.string.owner_status_approved)
+                binding.statusSubtitle.setText(R.string.owner_status_approved_message)
+                binding.statusIcon.text = "✓"
+                binding.statusAction.setText(R.string.owner_continue_management)
+                binding.rejectReason.isVisible = false
+                binding.timeline.isVisible = false
+                binding.statusSummary.text = app?.let { summary(it.draft) }.orEmpty()
+            }
+            OwnerApplicationState.NONE, null -> {
+                applyBannerColors(R.color.sn_surface_sunken, R.color.sn_ink)
+                binding.statusTitle.setText(R.string.owner_status_none)
+                binding.statusSubtitle.text = ""
+                binding.statusIcon.text = "i"
+                binding.statusAction.setText(R.string.owner_apply_new)
+                binding.submittedCard.isVisible = false
+                binding.timeline.isVisible = false
+            }
+        }
+    }
+
+    private fun applyBannerColors(background: Int, foreground: Int) {
+        binding.statusBanner.setCardBackgroundColor(ContextCompat.getColor(requireContext(), background))
+        val color = ContextCompat.getColor(requireContext(), foreground)
+        binding.statusTitle.setTextColor(color)
+        binding.statusSubtitle.setTextColor(color)
+        binding.statusIcon.setTextColor(color)
+        binding.statusIcon.backgroundTintList = android.content.res.ColorStateList.valueOf(ContextCompat.getColor(requireContext(), background))
+    }
+
+    private fun continueForCurrentState() {
+        when (state) {
+            OwnerApplicationState.NONE, null -> findNavController().navigate(R.id.action_ownerApplicationStatus_to_form, Bundle().apply { putString("mode", "new") })
+            OwnerApplicationState.REJECTED -> findNavController().navigate(R.id.action_ownerApplicationStatus_to_form, Bundle().apply { putString("mode", "resubmit") })
+            OwnerApplicationState.PENDING -> {
+                if (!findNavController().popBackStack(R.id.accountFragment, false)) findNavController().navigateUp()
+            }
+            OwnerApplicationState.APPROVED -> viewLifecycleOwner.lifecycleScope.launch {
+                runCatching { FirebaseAuth.getInstance().currentUser?.getIdToken(true)?.await() }
+                findNavController().navigate("smashnow://owner/venues".toUri())
+            }
+        }
+    }
+
+    private fun summary(draft: com.example.booking_app.feature.owner.domain.OwnerApplicationDraft): String = listOf(
+        "Cơ sở\t${draft.venue.name}",
+        "Địa chỉ\t${draft.venue.address}",
+        "Số sân\t${draft.venue.courtCount ?: ""}",
+        "Giờ mở cửa\t${draft.venue.openTime} – ${draft.venue.closeTime}",
+        "Giấy tờ\t${draft.documentPaths.size} tệp",
+    ).joinToString("\n\n")
+
+    private fun formatDate(value: String): String = runCatching {
+        DateTimeFormatter.ofPattern("HH:mm · dd/MM").withZone(ZoneId.systemDefault()).format(Instant.parse(value))
+    }.getOrDefault(value)
+
+    override fun onDestroyView() { _binding = null; super.onDestroyView() }
+}
