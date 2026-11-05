@@ -6,7 +6,7 @@
 
 ## Trạng thái
 
-Kịch bản và biểu mẫu đã chuẩn bị. Chưa có phiên thử và chưa ghi nhận người tham gia; T035 vẫn mở cho tới khi có tối thiểu 10 kết quả thực tế.
+Kịch bản và biểu mẫu đã chuẩn bị. Trong lượt triển khai 2026-11-05 không tổ chức phiên người dùng và không ghi nhận người tham gia; không có kết quả nào được suy diễn. T035 vẫn mở cho tới khi có tối thiểu 10 kết quả thực tế. Khi ghi phiên, nêu rõ map provider/pin tương tác còn phụ thuộc Feature 021 và phiên bản build được đánh giá.
 
 ## Kịch bản điều phối
 

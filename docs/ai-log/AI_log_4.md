@@ -33,6 +33,7 @@ Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 | 27  | 2026-11-05 | Ghi nhận quyết định bổ sung Feature 110 về venue identity, recovery, cleanup; map provider tạm hoãn                                                                          | 11   |
 | 28  | 2026-11-05 | Tiếp tục triển khai Feature 110 theo quyết định T001–T005; bổ sung Android onboarding, Edge Functions, Firestore Rules và kiểm chứng                                         | 11   |
 | 29  | 2026-11-05 | Tiếp tục hoàn thiện Feature 110: upload/retry và signed-document flow, kiểm thử lifecycle/idempotency, integration suite và cập nhật traceability                    | 11   |
+| 30  | 2026-11-05 | Hoàn thiện và xác minh các phần còn mở Feature 110: Storage thật, tải tài liệu signed URL, Android tests/build/lint và cập nhật task/evidence                        | 11   |
 
 ---
 
@@ -2688,5 +2689,42 @@ Không commit hoặc push. Chủ động implement, không chỉ lập kế ho�
 - `:app:assembleDebug` pass. `:app:lintDebug` fail với 1 error và 350 warnings; error duy nhất nằm ở Feature 040 `SlotMatrixRowAdapter.kt:203` (`DiffUtilEquals`).
 - Firebase Auth/Firestore Emulator Edge Function tests pass 9/9 (8 application, 1 docs), gồm test role/status mismatch. Supabase local không chạy vì Docker daemon dừng. Storage suite đã được soạn; lần Deno type-check lại bị dừng vì không truy cập được npm registry, và lần type-check trước đó là trước thay đổi assertion cuối. Không tuyên bố signed URL/expiry/MIME/size integration đã pass.
 - Không commit hoặc push.
+
+---
+
+## Mục 30: Tiếp tục hoàn thiện task còn mở — Feature 110 Owner Onboarding
+
+**Ngày**: 2026-11-05
+
+### Prompt đã dùng
+
+```text
+$speckit-implement Tiếp tục hoàn thành các task còn mở T010, T012, T018, T023, T029, T032, T034 và T035 của Feature 110. Đọc và xác minh tài liệu/code hiện tại; hoàn thiện phần thuộc phạm vi Feature 110; chạy Storage thật, Firebase/Android/build/unit/lint tests; cập nhật tasks, quickstart, implementation mapping, usability evaluation và AI log. Không thay đổi quyết định T001–T005, schema hoặc contract chưa duyệt; không sửa UI mẫu, không implement thay Feature 011/021/111/120; không giả kết quả usability; không commit/push. Chỉ đóng task khi có bằng chứng thực tế.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Sửa cách chuẩn hóa signed download URL trong `owner-docs`: Supabase Storage có thể trả path relative, vì vậy handler nay thêm prefix `/storage/v1` để URL signed trỏ đúng gateway.
+- Bổ sung Storage integration test với Supabase local thật và Firebase Auth/Firestore Emulator: signed upload/download, bucket private, quyền applicant/Admin/user khác, path không tham chiếu, MIME/kích thước, expiry/renewal và xóa staged orphan. Suite chạy PASS.
+- Hoàn thiện applicant download qua repository: tải bytes bằng signed URL mới, nếu request lỗi thì xin URL mới và retry một lần; không lưu URL trong draft; lưu file vào Downloads và xóa file dang dở nếu ghi thất bại.
+- Bổ sung unit tests cho renewal/retry; focused downloader/ViewModel/validation/accessibility tests PASS. `assembleDebug` và `compileDebugAndroidTestKotlin` PASS.
+- Full unit suite: 508 tests, 7 failures và 2 skipped. Cả 7 failures là `FirebaseSessionManagerTest` không sửa trong lượt này; chưa có so sánh baseline nên không kết luận lỗi có trước.
+- `lintDebug` FAIL với 1 error và 350 warnings; error `DiffUtilEquals` ở `feature/booking/ui/adapter/SlotMatrixRowAdapter.kt:203`, ngoài Feature 110. `adb devices -l` không có thiết bị; AVD Pixel_6_Pro báo thiếu dung lượng nên không có connected UI test runtime.
+- Giữ các task T010/T012/T018/T023/T029/T032/T034/T035 OPEN nếu còn acceptance hoặc dependency chưa được xác minh. `venue-photos`/review/approval/venue handoff thuộc Feature 120, map picker chờ Feature 021, usability cần 10 người thật.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+| --- | --- | --- |
+| Signed download handler, Android document transfer/download, integration/unit tests và Feature 110 evidence docs | Đã chỉnh sửa trong workspace | Có thể hoàn tất trong phạm vi contract T001–T005; Storage thật xác nhận URL/authorization và retry. |
+| `venue-photos` promotion, approval/venue creation, interactive map SDK, account deletion, usability results | Không tự triển khai/ghi kết quả | Thuộc Feature 120, 021, 011 hoặc cần người dùng mục tiêu thực tế; chưa có đủ contract/runtime evidence. |
+
+### Cách kiểm chứng
+
+- Supabase local Storage + Firebase Auth/Firestore Emulator: signed URL integration PASS; handler Deno tests 9/9 PASS; Firestore Rules suite 16 files/147 tests PASS.
+- Focused Android owner unit tests PASS. `:app:testDebugUnitTest`: 508 tests, 7 failures (`FirebaseSessionManagerTest`), 2 skipped.
+- `:app:assembleDebug` PASS; `:app:compileDebugAndroidTestKotlin` PASS; `:app:connectedDebugAndroidTest` không chạy vì không có device online/AVD không đủ dung lượng.
+- `:app:lintDebug` FAIL: 1 error, 350 warnings, error ngoài Feature 110 tại Feature 040 `SlotMatrixRowAdapter.kt:203`.
+- `git diff --check` PASS tại thời điểm ghi nhật ký; không commit hoặc push.
 
 ---

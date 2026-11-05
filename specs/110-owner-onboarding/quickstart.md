@@ -93,10 +93,16 @@ Test gọi handler `owner-docs` thật với Firebase Auth/Firestore Emulator v�
 
 ## Kết quả kiểm chứng lần triển khai 2026-11-05
 
-- `:app:assembleDebug`: thành công.
-- Hai test mục tiêu `OwnerApplicationValidationTest` và `OwnerUiAccessibilityTest`: thành công sau khi thêm touch target metadata và layout variants `w600dp`.
-- `:app:testDebugUnitTest` đầy đủ: 506 tests, 7 failures, 2 skipped. Cả 7 lỗi là các assertion trong `FirebaseSessionManagerTest`; chưa đối chiếu baseline commit nên chưa thể khẳng định chúng tồn tại từ trước, nhưng test/source này không thuộc Feature 110 và không bị sửa trong lượt này. Owner ViewModel/validation/accessibility focused tests pass.
-- `:app:compileDebugAndroidTestKotlin`: thành công. `:app:connectedDebugAndroidTest` không chạy test cases vì `emulator-5554` chuyển sang OFFLINE; Gradle báo không có thiết bị online.
-- `:app:lintDebug`: thất bại với 1 error và 350 warnings. Error ở code ngoài phạm vi Feature 110: `feature/booking/ui/adapter/SlotMatrixRowAdapter.kt:203` (`DiffUtilEquals`, dùng `===`). Không sửa code Feature khác để làm lint pass.
-- Firestore Emulator suite: thành công, 16 files/147 tests pass (chạy bằng JDK 21 portable tạm trong workspace); test mới xác nhận ownerApplications read/write boundary.
-- Edge Function handler tests: Auth/Firestore Emulator thành công, 9/9 tests pass (8 application, 1 docs), bao gồm cặp role/status không nhất quán. Supabase Storage HTTP trong handler suite được mock; cần Supabase local stack để xác nhận signed upload/download thực tế, expiration và MIME/size enforcement. Storage integration suite được soạn nhưng lần chạy kiểm tra lại Deno bị dừng do package registry không truy cập được; lần type-check trước đó đã pass trước cập nhật handler cuối.
+Các lệnh Gradle được chạy từ PowerShell với `--no-daemon --max-workers=1` và giới hạn heap/processor để giữ môi trường local ổn định.
+
+- `:app:assembleDebug`: PASS.
+- `:app:compileDebugAndroidTestKotlin`: PASS; instrumentation source biên dịch, nhưng không thay thế chạy trên thiết bị.
+- Focused tests `OwnerDocumentTransferTest`, `OwnerApplicationViewModelTest`, `OwnerApplicationValidationTest`, `OwnerUiAccessibilityTest`: PASS.
+- `:app:testDebugUnitTest`: 508 tests, 7 failures, 2 skipped. Cả 7 lỗi nằm trong `FirebaseSessionManagerTest`; test/source đó không đổi trong lượt này, nhưng chưa đối chiếu baseline nên không khẳng định lỗi có trước.
+- `:app:lintDebug`: FAIL với 1 error và 350 warnings. Error nằm ngoài Feature 110 tại `feature/booking/ui/adapter/SlotMatrixRowAdapter.kt:203` (`DiffUtilEquals`, dùng `===`).
+- `:app:connectedDebugAndroidTest`: chưa chạy được trên thiết bị; `adb devices -l` không liệt kê thiết bị online. AVD `Pixel_6_Pro` đã dừng do báo không đủ dung lượng để khởi động. Không có UI test runtime evidence.
+- Firebase Firestore Rules Emulator suite: PASS, 16 files/147 tests. Edge Function tests với Auth/Firestore Emulator: PASS, 9/9 (8 application, 1 docs).
+- Supabase local Storage integration thật: PASS với `npm.cmd exec --yes --package=deno -- deno test --node-modules-dir=auto --allow-all supabase/tests/owner-docs-storage.integration.test.ts`. Suite dùng Firebase Auth/Firestore Emulator và Supabase Storage thật; đã xác minh signed upload/download, private bucket, applicant/Admin/user khác, unreferenced path, MIME/size, URL expiry/renewal và xóa orphan object. Đây không phải mock Storage.
+- `owner-docs` handler trả signed download URL chuẩn `/storage/v1/...`; trước sửa, URL relative từ local Storage dẫn sai gateway path và integration test bắt được lỗi.
+- `T010` còn mở cho đến khi có contract/implementation `venue-photos` của Feature 120 để kiểm chứng promotion và quyền bucket. `T032` còn mở do thiếu connected UI end-to-end và approval handoff của Feature 120.
+- `T035` còn mở: protocol và form có sẵn trong `usability-evaluation.md`, chưa có kết quả từ 10 người thật.

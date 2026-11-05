@@ -33,13 +33,26 @@ Deno.test({
     assertEquals(upload.status, 200);
     const uploadBody = await upload.json() as { path: string; signedUrl: string; token: string };
     assert(uploadBody.path.startsWith(`${applicant.uid}/${applicationId}/`));
-    const signedUploadUrl = new URL(uploadBody.signedUrl, supabaseUrl);
+    const signedUploadUrl = new URL(withStoragePrefix(uploadBody.signedUrl, supabaseUrl));
     signedUploadUrl.searchParams.set("token", uploadBody.token);
     const uploaded = await fetch(signedUploadUrl, {
       method: "PUT", headers: { "Content-Type": "image/jpeg" }, body: new Uint8Array([1, 2, 3, 4]),
     });
     assert(uploaded.ok, `signed upload failed (${uploaded.status})`);
     await uploaded.body?.cancel();
+
+    const orphanSign = await callOwnerDocs(applicant.idToken, {
+      action: "SIGN_UPLOAD", applicationId, fileName: "orphan.png", contentType: "image/png", sizeBytes: 4,
+    });
+    assertEquals(orphanSign.status, 200);
+    const orphanUploadBody = await orphanSign.json() as { path: string; signedUrl: string; token: string };
+    const orphanUploadUrl = new URL(withStoragePrefix(orphanUploadBody.signedUrl, supabaseUrl));
+    orphanUploadUrl.searchParams.set("token", orphanUploadBody.token);
+    const orphanUpload = await fetch(orphanUploadUrl, {
+      method: "PUT", headers: { "Content-Type": "image/png" }, body: new Uint8Array([5, 6, 7, 8]),
+    });
+    assert(orphanUpload.ok, `orphan fixture signed upload failed (${orphanUpload.status})`);
+    await orphanUpload.body?.cancel();
 
     const badMimeRequest = await callOwnerDocs(applicant.idToken, {
       action: "SIGN_UPLOAD", applicationId, fileName: "invalid.pdf", contentType: "application/pdf", sizeBytes: 12,
@@ -54,7 +67,7 @@ Deno.test({
       action: "SIGN_UPLOAD", applicationId, fileName: "forged.jpg", contentType: "image/jpeg", sizeBytes: 4,
     });
     const forgedMimeBody = await forgedMime.json() as { signedUrl: string; token: string; path: string };
-    const forgedMimeUrl = new URL(forgedMimeBody.signedUrl, supabaseUrl);
+    const forgedMimeUrl = new URL(withStoragePrefix(forgedMimeBody.signedUrl, supabaseUrl));
     forgedMimeUrl.searchParams.set("token", forgedMimeBody.token);
     const rejectedMimeUpload = await fetch(forgedMimeUrl, {
       method: "PUT", headers: { "Content-Type": "application/pdf" }, body: new Uint8Array([1, 2, 3, 4]),
@@ -66,7 +79,7 @@ Deno.test({
       action: "SIGN_UPLOAD", applicationId, fileName: "oversized.jpg", contentType: "image/jpeg", sizeBytes: 4,
     });
     const oversizedBody = await undersizedDeclaration.json() as { signedUrl: string; token: string };
-    const oversizedUrl = new URL(oversizedBody.signedUrl, supabaseUrl);
+    const oversizedUrl = new URL(withStoragePrefix(oversizedBody.signedUrl, supabaseUrl));
     oversizedUrl.searchParams.set("token", oversizedBody.token);
     const rejectedOversizedUpload = await fetch(oversizedUrl, {
       method: "PUT", headers: { "Content-Type": "image/jpeg" }, body: new Uint8Array(2 * 1024 * 1024 + 1),
@@ -108,11 +121,34 @@ Deno.test({
     });
     assertEquals(unreferenced.status, 404, "unreferenced paths are never signed");
 
+    const referencedDelete = await callOwnerDocs(applicant.idToken, {
+      action: "DELETE_STAGED", path: uploadBody.path,
+    });
+    assertEquals(referencedDelete.status, 409, "referenced evidence cannot be deleted from a submitted application");
+    const orphanDelete = await callOwnerDocs(applicant.idToken, {
+      action: "DELETE_STAGED", path: orphanUploadBody.path,
+    });
+    assertEquals(orphanDelete.status, 200, "applicant may delete their own unreferenced staged object");
+    const remainingObjects = await listStorageObjects(`${applicant.uid}/${applicationId}`);
+    assert(!remainingObjects.includes(orphanUploadBody.path.split("/").at(-1)!), "DELETE_STAGED removes the real Storage object");
+    const foreignDelete = await callOwnerDocs(other.idToken, {
+      action: "DELETE_STAGED", path: `${applicant.uid}/${applicationId}/foreign-orphan.jpg`,
+    });
+    assertEquals(foreignDelete.status, 403, "another applicant cannot delete a staged path");
+
     const expiredUrl = await createStorageSignedUrl(uploadBody.path, 1);
     await new Promise((resolve) => setTimeout(resolve, 1_500));
     const expiredRead = await fetch(expiredUrl);
     assert(!expiredRead.ok, "Storage must reject an expired signed URL");
     await expiredRead.body?.cancel();
+    const refreshedDownload = await callOwnerDocs(applicant.idToken, {
+      action: "SIGN_DOWNLOAD", applicationId, path: uploadBody.path,
+    });
+    assertEquals(refreshedDownload.status, 200, "applicant can request a fresh URL after expiry");
+    const refreshedBody = await refreshedDownload.json() as { signedUrl: string };
+    const refreshedRead = await fetch(refreshedBody.signedUrl);
+    assert(refreshedRead.ok, "fresh signed URL should download the referenced object");
+    await refreshedRead.body?.cancel();
 
     await cleanupStorageObject(uploadBody.path);
     await commit([
@@ -133,9 +169,10 @@ async function createFirebaseUser(appRole: "PLAYER" | "ADMIN") {
   });
   assert(created.ok, `Auth Emulator sign up failed (${created.status})`);
   const first = await created.json() as { localId: string; idToken: string };
-  const custom = await fetch(`http://${authHost}/identitytoolkit.googleapis.com/v1/accounts:update?key=local-test`, {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ idToken: first.idToken, customAttributes: JSON.stringify({ appRole }), returnSecureToken: true }),
+  const custom = await fetch(`http://${authHost}/identitytoolkit.googleapis.com/v1/projects/${firebaseProject}/accounts:update`, {
+    method: "POST",
+    headers: { Authorization: "Bearer owner", "Content-Type": "application/json" },
+    body: JSON.stringify({ localId: first.localId, customAttributes: JSON.stringify({ appRole }) }),
   });
   assert(custom.ok, `Auth Emulator claim setup failed (${custom.status})`);
   const signIn = await fetch(`http://${authHost}/identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=local-test`, {
@@ -167,7 +204,7 @@ async function createStorageSignedUrl(path: string, expiresIn: number): Promise<
   });
   assert(response.ok, `Storage signing failed (${response.status})`);
   const body = await response.json() as { signedURL?: string; signedUrl?: string };
-  return new URL(body.signedURL ?? body.signedUrl ?? "", supabaseUrl).toString();
+  return withStoragePrefix(body.signedURL ?? body.signedUrl ?? "", supabaseUrl);
 }
 
 async function cleanupStorageObject(path: string) {
@@ -180,4 +217,22 @@ async function cleanupStorageObject(path: string) {
   await response.body?.cancel();
 }
 
+async function listStorageObjects(prefix: string): Promise<string[]> {
+  const response = await fetch(`${supabaseUrl}/storage/v1/object/list/owner-docs`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${serviceKey}`, apikey: serviceKey!, "Content-Type": "application/json" },
+    body: JSON.stringify({ prefix, limit: 100, offset: 0 }),
+  });
+  assert(response.ok, `Storage object list failed (${response.status})`);
+  const objects = await response.json() as Array<{ name: string }>;
+  return objects.map((object) => object.name);
+}
+
 function encodePath(path: string): string { return path.split("/").map(encodeURIComponent).join("/"); }
+function withStoragePrefix(value: string, base: string): string {
+  const url = new URL(value, base);
+  if (url.origin === new URL(base).origin && !url.pathname.startsWith("/storage/v1/")) {
+    url.pathname = `/storage/v1${url.pathname}`;
+  }
+  return url.toString();
+}

@@ -4,10 +4,9 @@ import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
-import android.app.DownloadManager
-import android.content.Context
-import android.net.Uri
+import android.content.ContentValues
 import android.os.Environment
+import android.provider.MediaStore
 import androidx.core.net.toUri
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
@@ -28,6 +27,8 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.tasks.await
 import java.time.Instant
 import java.time.ZoneId
@@ -172,25 +173,47 @@ class OwnerApplicationStatusFragment : Fragment(R.layout.fragment_owner_applicat
 
     private fun downloadDocument(applicationId: String, path: String) {
         viewLifecycleOwner.lifecycleScope.launch {
-            viewModel.signedDocumentUrl(applicationId, path).onSuccess { signedUrl ->
-                if (_binding == null) return@onSuccess
-                val fileName = path.substringAfterLast('/').replace(Regex("[^A-Za-z0-9._-]"), "_")
-                val mimeType = when (fileName.substringAfterLast('.', "").lowercase()) {
-                    "png" -> "image/png"
-                    "webp" -> "image/webp"
-                    else -> "image/jpeg"
-                }
-                val request = DownloadManager.Request(Uri.parse(signedUrl))
-                    .setMimeType(mimeType)
-                    .setTitle(fileName)
-                    .setDescription(getString(R.string.owner_document_download_description))
-                    .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-                    .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
-                val manager = requireContext().getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-                manager.enqueue(request)
+            binding.statusProgress.isVisible = true
+            val fileName = path.substringAfterLast('/').replace(Regex("[^A-Za-z0-9._-]"), "_")
+            val mimeType = when (fileName.substringAfterLast('.', "").lowercase()) {
+                "png" -> "image/png"
+                "webp" -> "image/webp"
+                else -> "image/jpeg"
+            }
+            val bytes = viewModel.downloadDocument(applicationId, path).getOrNull()
+            if (_binding == null) return@launch
+            if (bytes == null) {
+                binding.statusProgress.isVisible = false
+                Snackbar.make(binding.root, R.string.owner_document_load_error, Snackbar.LENGTH_LONG).show()
+                return@launch
+            }
+            val saved = runCatching { saveDocumentToDownloads(fileName, mimeType, bytes) }
+            if (_binding == null) return@launch
+            binding.statusProgress.isVisible = false
+            if (saved.isSuccess) {
                 Snackbar.make(binding.root, R.string.owner_download_started, Snackbar.LENGTH_LONG).show()
-            }.onFailure {
-                if (_binding != null) Snackbar.make(binding.root, R.string.owner_document_load_error, Snackbar.LENGTH_LONG).show()
+            } else {
+                Snackbar.make(binding.root, R.string.owner_document_load_error, Snackbar.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    private suspend fun saveDocumentToDownloads(fileName: String, mimeType: String, bytes: ByteArray) {
+        val resolver = requireContext().applicationContext.contentResolver
+        withContext(Dispatchers.IO) {
+            val values = ContentValues().apply {
+                put(MediaStore.Downloads.DISPLAY_NAME, fileName)
+                put(MediaStore.Downloads.MIME_TYPE, mimeType)
+                put(MediaStore.Downloads.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS)
+                put(MediaStore.Downloads.IS_PENDING, 1)
+            }
+            val uri = requireNotNull(resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values))
+            try {
+                requireNotNull(resolver.openOutputStream(uri)).use { it.write(bytes) }
+                resolver.update(uri, ContentValues().apply { put(MediaStore.Downloads.IS_PENDING, 0) }, null, null)
+            } catch (error: Exception) {
+                resolver.delete(uri, null, null)
+                throw error
             }
         }
     }

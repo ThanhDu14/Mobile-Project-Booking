@@ -199,6 +199,12 @@ class OwnerOnboardingDataSource @Inject constructor(
         requireNotNull(response.signedUrl)
     }
 
+    override suspend fun downloadDocument(applicationId: String, path: String): Result<ByteArray> = runCatching {
+        downloadWithFreshSignedUrl(
+            signedUrl = { signedDocumentUrl(applicationId, path).getOrThrow() },
+        )
+    }
+
     override suspend fun deleteStaged(path: String): Result<Unit> = runCatching {
         functionErrors.invokeWithAuthRetry {
             supabase.functions.invoke(FUNCTION_DOCS, body = OwnerFileRequest(action = "DELETE_STAGED", path = path))

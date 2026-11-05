@@ -23,6 +23,7 @@ interface OwnerOnboardingRepository {
     suspend fun upload(fileName: String, contentType: String, bytes: ByteArray, applicationId: String): Result<UploadedOwnerFile>
     suspend fun submit(applicationId: String, draft: OwnerApplicationDraft): Result<OwnerApplicationStatus>
     suspend fun signedDocumentUrl(applicationId: String, path: String): Result<String>
+    suspend fun downloadDocument(applicationId: String, path: String): Result<ByteArray>
     suspend fun deleteStaged(path: String): Result<Unit>
     suspend fun saveLocalDraft(applicationId: String, draft: OwnerApplicationDraft): Result<Unit>
     suspend fun loadLocalDraft(): Result<Pair<String, OwnerApplicationDraft>?>

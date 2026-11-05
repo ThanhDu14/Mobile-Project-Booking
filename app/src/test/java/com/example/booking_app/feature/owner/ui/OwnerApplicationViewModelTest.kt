@@ -299,6 +299,7 @@ class OwnerApplicationViewModelTest {
             signedDocumentRequest = applicationId to path
             return Result.success("https://signed.test/$path")
         }
+        override suspend fun downloadDocument(applicationId: String, path: String) = Result.success(byteArrayOf(1, 2, 3))
         override suspend fun deleteStaged(path: String) = Result.success(Unit)
         override suspend fun saveLocalDraft(applicationId: String, draft: OwnerApplicationDraft) = Result.success(Unit)
         override suspend fun loadLocalDraft() = Result.success(localDraft)

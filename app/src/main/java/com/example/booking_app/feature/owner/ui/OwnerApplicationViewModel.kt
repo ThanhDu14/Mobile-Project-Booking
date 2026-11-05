@@ -280,6 +280,9 @@ class OwnerApplicationViewModel @Inject constructor(
     suspend fun signedDocumentUrl(applicationId: String, path: String): Result<String> =
         repository.signedDocumentUrl(applicationId, path)
 
+    suspend fun downloadDocument(applicationId: String, path: String): Result<ByteArray> =
+        repository.downloadDocument(applicationId, path)
+
     private fun persistDraft() {
         val state = _uiState.value
         if (state.loading) return

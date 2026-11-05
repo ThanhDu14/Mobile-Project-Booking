@@ -76,7 +76,7 @@ async function signDownload(uid: string, appRole: string, body: Record<string, u
   const base = Deno.env.get("SUPABASE_URL")!;
   const signedUrl = string(signed.signedURL);
   if (!signedUrl) throw new HttpError(503, "STORAGE_ERROR", "Không tạo được đường dẫn tải tệp");
-  return json(200, { signedUrl: new URL(signedUrl, base).toString(), expiresInSeconds: 300 });
+  return json(200, { signedUrl: absoluteStorageUrl(signedUrl, base), expiresInSeconds: 300 });
 }
 
 async function deleteStaged(uid: string, body: Record<string, unknown>): Promise<Response> {
@@ -117,6 +117,14 @@ async function storageRequest(path: string, init: RequestInit): Promise<Record<s
 
 function encodePath(path: string): string { return path.split("/").map(encodeURIComponent).join("/"); }
 function string(value: unknown): string { return typeof value === "string" ? value : ""; }
+function absoluteStorageUrl(value: string, base: string): string {
+  const url = new URL(value, base);
+  const storageOrigin = new URL(base).origin;
+  if (url.origin === storageOrigin && !url.pathname.startsWith("/storage/v1/")) {
+    url.pathname = `/storage/v1${url.pathname}`;
+  }
+  return url.toString();
+}
 function json(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 }
