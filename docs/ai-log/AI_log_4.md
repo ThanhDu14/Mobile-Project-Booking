@@ -26,8 +26,9 @@ Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 | 20  | 2026-10-29 | Tiếp tục implement Feature 111: hoàn thiện error/retry/conflict/cache freshness, responsive/accessibility review và kiểm chứng T034/T038 bằng `$speckit-implement`           | 11   |
 | 21  | 2026-10-29 | Tiếp tục implement Feature 111: chốt typed write-gate cho T007, giữ an toàn T008/T011, hoàn thiện T037 và kiểm chứng Emulator/build/lint                                     | 11   |
 | 22  | 2026-10-30 | Kiểm toán kỹ thuật & giải tỏa blocker Feature 111: chốt quyết định 1A, 2A, 3A, 4A, hoàn thiện Bảng giá (CRUD, UI, sync minPricePerHour) và điều hướng thêm venue             | 11   |
-| 23  | 2026-10-30 | Triển khai Phase 3 Feature 111: Edge Function manage-slot-blocks, Calendar Grid UI, và Emulator race condition tests | 11   |
-| 24  | 2026-10-30 | Hoàn thiện T034 (Hợp đồng tích hợp Recurring Feature 041) và T038 (Rà soát UI Accessibility, Touch Target & Performance SLA) | 11   |
+| 23  | 2026-10-30 | Triển khai Phase 3 Feature 111: Edge Function manage-slot-blocks, Calendar Grid UI, và Emulator race condition tests                                                         | 11   |
+| 24  | 2026-10-30 | Hoàn thiện T034 (Hợp đồng tích hợp Recurring Feature 041) và T038 (Rà soát UI Accessibility, Touch Target & Performance SLA)                                                 | 11   |
+| 25  | 2026-11-05 | Rà soát và chỉnh UI Android Feature 111 theo 5 ảnh mẫu, cải thiện bố cục responsive và accessibility; chạy test và build                                                     | 11   |
 
 ---
 
@@ -1330,8 +1331,6 @@ Hãy sửa code ngay trong lượt này và tiếp tục qua các task có thể
 - `git diff --check`: không có lỗi whitespace.
 - Không commit hoặc push.
 
----
-
 ## Mục 17: Tiếp tục implement Feature 111 — Venue và Court Management
 
 | Trường                   | Nội dung                                                                         |
@@ -2054,13 +2053,13 @@ Bắt đầu ngay. Không hỏi lại người dùng nếu repository đã có �
 
 ## Mục 23: Triển khai hoàn thiện Phase 3 Feature 111 — Server Atomic Slot Lock & Unlock
 
-| Trường | Nội dung |
-|---|---|
-| Ngày | 2026-10-30 |
-| Người thực hiện | Minh Nhựt |
-| Nhóm tính năng liên quan | 111 – Owner Venue Setup |
-| Công cụ AI | Antigravity, Gemini 3.8 Flash, `$speckit-implement` |
-| Mục đích | Triển khai hoàn thiện Phase 3: Server atomic slot lock/unlock qua Supabase Edge Function `manage-slot-blocks`, Calendar Grid UI shell (`OwnerSlotGridAdapter`, ViewModel, layouts phone & `w600dp`), và bổ sung kiểm thử Emulator transaction isolation (`owner-slot-blocks.test.ts`), giải tỏa và đóng T007, T028, T029, T030, T031. |
+| Trường                   | Nội dung                                                                                                                                                                                                                                                                                                                              |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-10-30                                                                                                                                                                                                                                                                                                                            |
+| Người thực hiện          | Minh Nhựt                                                                                                                                                                                                                                                                                                                             |
+| Nhóm tính năng liên quan | 111 – Owner Venue Setup                                                                                                                                                                                                                                                                                                               |
+| Công cụ AI               | Antigravity, Gemini 3.8 Flash, `$speckit-implement`                                                                                                                                                                                                                                                                                   |
+| Mục đích                 | Triển khai hoàn thiện Phase 3: Server atomic slot lock/unlock qua Supabase Edge Function `manage-slot-blocks`, Calendar Grid UI shell (`OwnerSlotGridAdapter`, ViewModel, layouts phone & `w600dp`), và bổ sung kiểm thử Emulator transaction isolation (`owner-slot-blocks.test.ts`), giải tỏa và đóng T007, T028, T029, T030, T031. |
 
 ### Prompt đã dùng
 
@@ -2130,16 +2129,16 @@ Hãy chủ động triển khai các task độc lập song song khi an toàn, n
 
 ### Phần đã sử dụng / chỉnh sửa / bỏ
 
-| Phần | Quyết định | Lý do |
-|---|---|---|
-| Edge Function `manage-slot-blocks` | Tạo mới | Thực thi khóa/mở khóa slot nguyên tử bằng service role, bảo vệ ca DROP_IN và HOLD/BOOKED theo Quyết định 1A & 4A |
-| Helper `deleteWrite` trong `_shared/firestore.ts` | Tạo mới | Hỗ trợ xóa document nguyên tử qua Firestore REST API commit |
-| Android API `ManageSlotBlocksApi` | Tạo mới | Gọi Edge Function `manage-slot-blocks` từ client |
-| Lưới khung giờ (`OwnerSlotGridAdapter`, item layout) | Tạo mới | Hiển thị ma trận khung giờ trực quan thay cho việc nhập tay theo yêu cầu T030 |
-| `layout-w600dp/fragment_owner_slot_block.xml` | Tạo mới | Hỗ trợ hiển thị 2 cột trên máy tính bảng, đảm bảo touch target $\ge 48\text{dp}$ theo T038 |
-| `OwnerSlotBlockViewModel` & `OwnerSlotBlockFragment` | Chỉnh sửa | Mở rộng tính năng khóa/mở khóa slot thật qua repository, giữ nguyên tính tương thích ngược với các test trước |
-| Emulator test `owner-slot-blocks.test.ts` | Tạo mới | Kiểm chứng ranh giới giao dịch đua giữa Owner Lock và Player Hold, partial conflict và bảo vệ DROP_IN theo T031 |
-| Feature 041 source/UI | Không chỉnh sửa | T034 tiếp tục mở chờ Feature 041 triển khai mã nguồn theo nguyên tắc ranh giới |
+| Phần                                                 | Quyết định      | Lý do                                                                                                            |
+| ---------------------------------------------------- | --------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Edge Function `manage-slot-blocks`                   | Tạo mới         | Thực thi khóa/mở khóa slot nguyên tử bằng service role, bảo vệ ca DROP_IN và HOLD/BOOKED theo Quyết định 1A & 4A |
+| Helper `deleteWrite` trong `_shared/firestore.ts`    | Tạo mới         | Hỗ trợ xóa document nguyên tử qua Firestore REST API commit                                                      |
+| Android API `ManageSlotBlocksApi`                    | Tạo mới         | Gọi Edge Function `manage-slot-blocks` từ client                                                                 |
+| Lưới khung giờ (`OwnerSlotGridAdapter`, item layout) | Tạo mới         | Hiển thị ma trận khung giờ trực quan thay cho việc nhập tay theo yêu cầu T030                                    |
+| `layout-w600dp/fragment_owner_slot_block.xml`        | Tạo mới         | Hỗ trợ hiển thị 2 cột trên máy tính bảng, đảm bảo touch target $\ge 48\text{dp}$ theo T038                       |
+| `OwnerSlotBlockViewModel` & `OwnerSlotBlockFragment` | Chỉnh sửa       | Mở rộng tính năng khóa/mở khóa slot thật qua repository, giữ nguyên tính tương thích ngược với các test trước    |
+| Emulator test `owner-slot-blocks.test.ts`            | Tạo mới         | Kiểm chứng ranh giới giao dịch đua giữa Owner Lock và Player Hold, partial conflict và bảo vệ DROP_IN theo T031  |
+| Feature 041 source/UI                                | Không chỉnh sửa | T034 tiếp tục mở chờ Feature 041 triển khai mã nguồn theo nguyên tắc ranh giới                                   |
 
 ### Cách kiểm chứng
 
@@ -2152,14 +2151,14 @@ Hãy chủ động triển khai các task độc lập song song khi an toàn, n
 
 ## Mục 24: Hoàn thiện T034 (Hợp đồng tích hợp Recurring Feature 041) và T038 (Rà soát UI Accessibility, Touch Target & Performance SLA)
 
-| Trường | Nội dung |
-|---|---|
-| Ngày | 2026-10-30 |
-| Người thực hiện | Minh Nhựt |
-| Nhóm tính năng liên quan | 11 – Thiết lập cơ sở chủ sân (spec `specs/111-owner-venue-setup`, liên đới `specs/041-weekly-recurring-booking`) |
-| Công cụ AI | Antigravity, skill `$speckit-implement` |
-| Mục đích | Giải quyết dứt điểm 2 task cuối cùng của Feature 111: T034 (Xác lập hợp đồng tích hợp với Feature 041 về `acceptsRecurring`, bảo vệ chuỗi cũ và viết emulator test tích hợp) và T038 (Kiểm tra tự động toàn bộ 12 UI layout về Accessibility TalkBack, Touch Target $\ge 48$dp, responsive `w600dp`, đồng thời xây dựng quy trình đo SLA 4G trong `quickstart.md`), hoàn thành 100% (39/39) tasks của Feature 111. |
-| Nhánh Git | `feature/111-owner-venue-setup-implement` |
+| Trường                   | Nội dung                                                                                                                                                                                                                                                                                                                                                                                                           |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Ngày                     | 2026-10-30                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Người thực hiện          | Minh Nhựt                                                                                                                                                                                                                                                                                                                                                                                                          |
+| Nhóm tính năng liên quan | 11 – Thiết lập cơ sở chủ sân (spec `specs/111-owner-venue-setup`, liên đới `specs/041-weekly-recurring-booking`)                                                                                                                                                                                                                                                                                                   |
+| Công cụ AI               | Antigravity, skill `$speckit-implement`                                                                                                                                                                                                                                                                                                                                                                            |
+| Mục đích                 | Giải quyết dứt điểm 2 task cuối cùng của Feature 111: T034 (Xác lập hợp đồng tích hợp với Feature 041 về `acceptsRecurring`, bảo vệ chuỗi cũ và viết emulator test tích hợp) và T038 (Kiểm tra tự động toàn bộ 12 UI layout về Accessibility TalkBack, Touch Target $\ge 48$dp, responsive `w600dp`, đồng thời xây dựng quy trình đo SLA 4G trong `quickstart.md`), hoàn thành 100% (39/39) tasks của Feature 111. |
+| Nhánh Git                | `feature/111-owner-venue-setup-implement`                                                                                                                                                                                                                                                                                                                                                                          |
 
 ### Prompt đã dùng
 
@@ -2209,9 +2208,9 @@ Không commit hoặc push.
 
 - **Hợp đồng tích hợp Recurring (T034):**
   - Ban hành tài liệu hợp đồng chính thức `specs/041-weekly-recurring-booking/contracts/recurring-venue-acceptance-contract.md` quy định rõ ràng ranh giới và cách tích hợp cờ `acceptsRecurring` cho nhóm triển khai Feature 041:
-    - *UI Layer (Feature 041):* Kiểm tra `venue.acceptsRecurring`. Nếu `false`, ẩn hoặc vô hiệu hóa switch "Đặt cố định theo tuần" và hiển thị thông báo giải thích cơ sở hiện không nhận đặt định kỳ.
-    - *Transaction Engine (Feature 041):* Bên trong `holdRecurringBookingTransaction`, bắt buộc phải đọc `venues/{venueId}` từ transaction; nếu `acceptsRecurring == false`, từ chối ngay với mã lỗi `RECURRING_NOT_ACCEPTED` mà không tạo bất kỳ slot `HELD` nào.
-    - *Bảo vệ chuỗi cũ:* Khi `acceptsRecurring` chuyển sang `false`, toàn bộ các slot `BOOKED` thuộc các chuỗi recurring group đã tạo trước đó (`bookingId != null`) tuyệt đối không bị hủy hay xóa bỏ.
+    - _UI Layer (Feature 041):_ Kiểm tra `venue.acceptsRecurring`. Nếu `false`, ẩn hoặc vô hiệu hóa switch "Đặt cố định theo tuần" và hiển thị thông báo giải thích cơ sở hiện không nhận đặt định kỳ.
+    - _Transaction Engine (Feature 041):_ Bên trong `holdRecurringBookingTransaction`, bắt buộc phải đọc `venues/{venueId}` từ transaction; nếu `acceptsRecurring == false`, từ chối ngay với mã lỗi `RECURRING_NOT_ACCEPTED` mà không tạo bất kỳ slot `HELD` nào.
+    - _Bảo vệ chuỗi cũ:_ Khi `acceptsRecurring` chuyển sang `false`, toàn bộ các slot `BOOKED` thuộc các chuỗi recurring group đã tạo trước đó (`bookingId != null`) tuyệt đối không bị hủy hay xóa bỏ.
   - Cập nhật giao diện `specs/041-weekly-recurring-booking/contracts/ui-contracts.md` bổ sung phương thức `isRecurringAccepted(venueId: String): Result<Boolean>`.
   - Bổ sung test tích hợp vào `firestore-tests/test/owner-slot-blocks.test.ts`:
     - Xác minh khi `acceptsRecurring = false`, các slot `BOOKED` thuộc recurring group hiện có vẫn giữ nguyên vẹn.
@@ -2224,24 +2223,24 @@ Không commit hoặc push.
   - Cập nhật tài liệu hướng dẫn và benchmark tại `specs/111-owner-venue-setup/quickstart.md`:
     - Ghi nhận kết quả test tự động 100% đạt chuẩn Touch Target và nhãn TalkBack.
     - Thiết lập chi tiết quy trình đo SLA hiệu năng thực địa trên thiết bị thật qua mạng di động 4G/LTE (sử dụng Android Studio Profiler và Network Throttling / Charles Proxy):
-      + Thời gian tải danh sách / lịch: $\le 3.0$s trên mạng di động 4G.
-      + Xác nhận thao tác ghi: $\le 1.0$s (Local optimistic/acknowledgement).
-      + Hoàn tất đồng bộ ghi trên mạng bình thường: $\le 3.0$s.
+      - Thời gian tải danh sách / lịch: $\le 3.0$s trên mạng di động 4G.
+      - Xác nhận thao tác ghi: $\le 1.0$s (Local optimistic/acknowledgement).
+      - Hoàn tất đồng bộ ghi trên mạng bình thường: $\le 3.0$s.
 - **Cập nhật trạng thái Task:**
   - Đánh dấu hoàn thành `[X] T034` và `[X] T038` trong `specs/111-owner-venue-setup/tasks.md`.
   - Hoàn tất 100% toàn bộ 39/39 tasks của Feature 111.
 
 ### Phần đã sử dụng / chỉnh sửa / bỏ
 
-| Phần | Quyết định | Lý do |
-|---|---|---|
-| `specs/041-weekly-recurring-booking/contracts/recurring-venue-acceptance-contract.md` | Tạo mới | Ban hành hợp đồng chính thức hướng dẫn Feature 041 tích hợp với `venues.acceptsRecurring` theo đúng ranh giới nghiệp vụ |
-| `specs/041-weekly-recurring-booking/contracts/ui-contracts.md` | Chỉnh sửa | Bổ sung phương thức `isRecurringAccepted(venueId: String)` vào hợp đồng UI của Feature 041 |
-| `firestore-tests/test/owner-slot-blocks.test.ts` | Chỉnh sửa | Bổ sung test tích hợp chứng minh `acceptsRecurring = false` không xóa booking cũ và chặn tạo recurring mới |
-| `OwnerUiAccessibilityTest.kt` | Tạo mới | Viết bộ kiểm thử tự động rà soát 12 layout file về Touch Target $\ge 48$dp, nhãn TalkBack và bố cục tablet `w600dp` |
-| `specs/111-owner-venue-setup/quickstart.md` | Chỉnh sửa | Bổ sung kết quả kiểm thử trợ năng và tài liệu hóa giao thức đo SLA hiệu năng trên thiết bị thật mạng 4G |
-| `specs/111-owner-venue-setup/tasks.md` | Chỉnh sửa | Đánh dấu hoàn thành `T034` và `T038`, hoàn thành toàn bộ 39/39 tasks của Feature 111 |
-| Recurring Booking Engine | Không triển khai | Tuân thủ nghiêm ngặt ranh giới nghiệp vụ; engine đặt lịch định kỳ thuộc phạm vi riêng của Feature 041 |
+| Phần                                                                                  | Quyết định       | Lý do                                                                                                                   |
+| ------------------------------------------------------------------------------------- | ---------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `specs/041-weekly-recurring-booking/contracts/recurring-venue-acceptance-contract.md` | Tạo mới          | Ban hành hợp đồng chính thức hướng dẫn Feature 041 tích hợp với `venues.acceptsRecurring` theo đúng ranh giới nghiệp vụ |
+| `specs/041-weekly-recurring-booking/contracts/ui-contracts.md`                        | Chỉnh sửa        | Bổ sung phương thức `isRecurringAccepted(venueId: String)` vào hợp đồng UI của Feature 041                              |
+| `firestore-tests/test/owner-slot-blocks.test.ts`                                      | Chỉnh sửa        | Bổ sung test tích hợp chứng minh `acceptsRecurring = false` không xóa booking cũ và chặn tạo recurring mới              |
+| `OwnerUiAccessibilityTest.kt`                                                         | Tạo mới          | Viết bộ kiểm thử tự động rà soát 12 layout file về Touch Target $\ge 48$dp, nhãn TalkBack và bố cục tablet `w600dp`     |
+| `specs/111-owner-venue-setup/quickstart.md`                                           | Chỉnh sửa        | Bổ sung kết quả kiểm thử trợ năng và tài liệu hóa giao thức đo SLA hiệu năng trên thiết bị thật mạng 4G                 |
+| `specs/111-owner-venue-setup/tasks.md`                                                | Chỉnh sửa        | Đánh dấu hoàn thành `T034` và `T038`, hoàn thành toàn bộ 39/39 tasks của Feature 111                                    |
+| Recurring Booking Engine                                                              | Không triển khai | Tuân thủ nghiêm ngặt ranh giới nghiệp vụ; engine đặt lịch định kỳ thuộc phạm vi riêng của Feature 041                   |
 
 ### Cách kiểm chứng
 
@@ -2253,3 +2252,56 @@ Không commit hoặc push.
   Chạy vitest qua `firebase-tools@15 emulators:exec` trên 5 test suites (`owner-venue-authorization.test.ts`, `owner-courts.test.ts`, `owner-price-rules.test.ts`, `owner-public-availability.test.ts`, `owner-slot-blocks.test.ts`) -> **5 files, 25 tests passed** (100% pass).
 - Không commit hoặc push.
 
+---
+
+## Mục 25: Rà soát và chỉnh UI Android Feature 111 theo ảnh mẫu
+
+| Trường                   | Nội dung                                                                                                                                                                                                                       |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Ngày                     | 2026-11-05                                                                                                                                                                                                                     |
+| Người thực hiện          | Minh Nhựt                                                                                                                                                                                                                      |
+| Nhóm tính năng liên quan | 11 – Thiết lập cơ sở chủ sân (spec `specs/111-owner-venue-setup`)                                                                                                                                                              |
+| Công cụ AI               | Codex (GPT-6), skill `$speckit-implement`                                                                                                                                                                                      |
+| Mục đích                 | Mở và đối chiếu trực tiếp 5 ảnh UI chuẩn của Feature 111 với giao diện Android; tinh chỉnh component, spacing, thẻ, lưới khóa giờ và cấu hình `w600dp`, đồng thời giữ nguyên business logic và hỗ trợ accessibility/dark mode. |
+
+### Prompt đã dùng
+
+```text
+$speckit-implement Rà soát và chỉnh sửa UI của Feature 111 để khớp chính xác với UI mẫu của nhóm.
+
+Nguồn thiết kế chuẩn nằm trong specs/111-owner-venue-setup/ui/. Mở và xem trực tiếp toàn bộ ảnh, đối chiếu 5 màn hình Android: Cơ sở của tôi, Sửa cơ sở, Danh sách sân, Bảng giá và Khóa giờ. Chỉnh UI để bám sát thiết kế, giữ nguyên business logic và hỗ trợ light/dark mode, phone, w600dp cùng accessibility. Chạy build và UI tests liên quan; không commit hoặc push.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Mở và xem đủ 5 ảnh mẫu; xác nhận bộ thiết kế dùng nền bề mặt nhạt, tiêu đề lớn, thẻ viền mảnh, spacing rộng và nút dạng viên.
+- **Cơ sở của tôi:** tinh chỉnh tiêu đề, nút thêm và thẻ venue với viền, bo góc, padding và khoảng cách rõ hơn.
+- **Sửa cơ sở:** tăng chiều cao trường nhập và khoảng cách giữa các trường; làm rõ phân khu quản lý sân.
+- **Danh sách sân:** chuyển item sân thành thẻ phân tách, gom thông tin sân và thao tác để giảm cảm giác dàn hàng ngang chật.
+- **Bảng giá:** đổi card sang nền surface, viền nhẹ, góc bo và padding gần ảnh mẫu hơn.
+- **Khóa giờ:** đổi danh sách slot sang lưới 4 cột; bảo đảm khai báo vùng chạm của checkbox đạt 48dp.
+- Cập nhật các layout phone và `layout-w600dp`; sử dụng màu theo theme hiện tại để giữ hỗ trợ DayNight. Không thay đổi ViewModel, Repository, API, Firestore contract hoặc Security Rules.
+- Một số nội dung của ảnh mẫu (bản đồ/vị trí, tiện ích, ảnh cơ sở và lựa chọn chip ngày) chưa được mô hình/giao diện hiện tại hỗ trợ; không tự thêm luồng dữ liệu hoặc business logic trong lần chỉnh UI này.
+- Script prerequisite của Spec Kit trỏ tới `specs/111-owner-onboarding` trong khi tài liệu Feature 111 thực tế ở `specs/111-owner-venue-setup`; tiếp tục đối chiếu với thư mục Feature 111 đúng.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần                                                                                                                                | Quyết định      | Lý do                                                                                 |
+| ----------------------------------------------------------------------------------------------------------------------------------- | --------------- | ------------------------------------------------------------------------------------- |
+| `app/src/main/res/layout/item_owner_venue.xml`                                                                                      | Chỉnh sửa       | Thẻ venue theo hướng card trắng/viền mảnh, bo góc và khoảng đệm gần mẫu Cơ sở của tôi |
+| `app/src/main/res/layout/fragment_owner_venue_list.xml` và `layout-w600dp/fragment_owner_venue_list.xml`                            | Chỉnh sửa       | Cân lại padding, tiêu đề và nút thêm trên phone/tablet                                |
+| `app/src/main/res/layout/fragment_owner_venue_detail.xml` và `layout-w600dp/fragment_owner_venue_detail.xml`                        | Chỉnh sửa       | Tăng spacing/chiều cao trường nhập, làm rõ tiêu đề phần sân                           |
+| `app/src/main/res/layout/item_owner_court.xml`                                                                                      | Chỉnh sửa       | Tổ chức lại nội dung và thao tác mỗi sân trong card, tránh hàng ngang quá rộng        |
+| `app/src/main/res/layout/item_owner_price_rule.xml`, `fragment_owner_price_rule.xml`, `layout-w600dp/fragment_owner_price_rule.xml` | Chỉnh sửa       | Cải thiện card bảng giá và khoảng cách màn hình theo thiết kế                         |
+| `app/src/main/res/layout/item_owner_slot_grid.xml`, `fragment_owner_slot_block.xml`, `layout-w600dp/fragment_owner_slot_block.xml`  | Chỉnh sửa       | Tạo ô slot gọn theo lưới, duy trì màu theme và touch target accessibility             |
+| `OwnerSlotBlockFragment.kt`                                                                                                         | Chỉnh sửa       | Dùng `GridLayoutManager` 4 cột cho lưới slot                                          |
+| ViewModel, Repository, API, Firestore Rules/contract                                                                                | Không chỉnh sửa | Giữ nguyên ranh giới dữ liệu và nghiệp vụ theo yêu cầu                                |
+
+### Cách kiểm chứng
+
+- Android owner UI/accessibility và ViewModel tests:
+  `./gradlew.bat :app:testDebugUnitTest --tests com.example.booking_app.feature.owner.ui.OwnerUiAccessibilityTest --tests com.example.booking_app.feature.owner.ui.OwnerVenueViewModelTest --tests com.example.booking_app.feature.owner.ui.OwnerPriceRuleViewModelTest --tests com.example.booking_app.feature.owner.ui.OwnerSlotBlockViewModelTest` -> **BUILD SUCCESSFUL**, 23 tests passed.
+- Android debug build:
+  `./gradlew.bat :app:assembleDebug` -> **BUILD SUCCESSFUL**.
+- `git diff --check` -> không phát hiện lỗi whitespace.
+- Không commit hoặc push.
