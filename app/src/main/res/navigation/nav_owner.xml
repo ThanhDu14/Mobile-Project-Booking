@@ -36,7 +36,12 @@
         <argument android:name="venueId" app:argType="string" />
     </fragment>
 
-    <!-- Tab Hôm nay của OwnerNav, màn tạm tới khi spec 112 làm màn Hôm nay. Là màn đầu của graph theo thứ tự tab. -->
+    <fragment
+        android:id="@+id/ownerCalendarFragment"
+        android:name="com.example.booking_app.feature.owner.ui.calendar.OwnerCalendarFragment"
+        android:label="@string/owner_calendar_title" />
+
+    <!-- Tab Hôm nay của OwnerNav, entry point của Feature 112. -->
     <fragment
         android:id="@+id/ownerHomePlaceholderFragment"
         android:name="com.example.booking_app.feature.auth.ui.home.OwnerHomePlaceholderFragment"

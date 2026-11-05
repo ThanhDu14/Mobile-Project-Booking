@@ -93,6 +93,17 @@ class MainActivity : AppCompatActivity() {
                     openOwnerVenues()
                     true
                 }
+                R.id.tab_owner_schedule -> {
+                    navController.navigate(
+                        R.id.ownerCalendarFragment,
+                        null,
+                        navOptions {
+                            launchSingleTop = true
+                            popUpTo(R.id.ownerHomePlaceholderFragment)
+                        },
+                    )
+                    true
+                }
                 R.id.tab_account -> {
                     if (viewModel.sessionState.value is SessionState.SignedIn) {
                         navController.navigate(
@@ -146,6 +157,7 @@ class MainActivity : AppCompatActivity() {
         val tab = if (ownerMode) {
             when (destination.id) {
                 R.id.ownerHomePlaceholderFragment -> R.id.tab_owner_today
+                R.id.ownerCalendarFragment -> R.id.tab_owner_schedule
                 R.id.ownerVenueListFragment -> R.id.tab_owner_venues
                 // OwnerNav không có tab Tài khoản: giữ sáng tab đã mở trang này (avatar ở Hôm nay → Hôm nay).
                 R.id.accountFragment ->

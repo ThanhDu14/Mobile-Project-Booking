@@ -5,4 +5,22 @@
     <string name="launcher_loading">Đang tải</string>
     <!-- Dùng chung cho include_state_views.xml (core/ui/StateViews.kt). -->
     <string name="common_retry">Thử lại</string>
+    <string name="owner_calendar_title">Lịch sân</string>
+    <string name="owner_calendar_select_venue">Chọn cơ sở</string>
+    <string name="owner_calendar_day">Ngày</string>
+    <string name="owner_calendar_week">Tuần</string>
+    <string name="owner_calendar_previous">Khoảng thời gian trước</string>
+    <string name="owner_calendar_next">Khoảng thời gian tiếp theo</string>
+    <string name="owner_calendar_empty">Chưa có khung giờ trong khoảng thời gian này.</string>
+    <string name="owner_calendar_booked_count">Đã đặt %1$d</string>
+    <string name="owner_calendar_drop_in_count">Vãng lai %1$d</string>
+    <string name="owner_calendar_held_count">Đang giữ %1$d</string>
+    <string name="owner_calendar_no_busy_slots">Chưa có khung giờ bận</string>
+    <string name="owner_calendar_summary_separator"> · </string>
+    <string name="owner_calendar_week_day_summary">%1$s\n%2$s</string>
+    <string name="owner_calendar_week_day_accessibility">%1$s. %2$s. Mở lịch ngày</string>
+    <string name="owner_home_title">Vận hành cơ sở</string>
+    <string name="owner_home_empty_venue">Tài khoản chưa có cơ sở nào được liên kết. Hãy kiểm tra trạng thái hồ sơ chủ sân.</string>
+    <string name="owner_home_data_boundary_title">Lịch sân và quản lý cơ sở</string>
+    <string name="owner_home_data_boundary_body">Thông tin đặt sân và doanh thu sẽ chỉ hiển thị sau khi dịch vụ máy chủ cung cấp dữ liệu đã loại bỏ mã QR và được giới hạn theo cơ sở.</string>
 </resources>
