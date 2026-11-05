@@ -19,6 +19,9 @@ Tham chiếu schema đến [Database README](../../../docs/design/database/READM
 
 ## Open gates retained after audit
 
+- **Android owner booking work (T011/T014/T017–T019):** Feature 112 now has normalized owner booking domain types, a queue filter, deadline countdown, StateFlow ViewModel, Owner navigation, list/detail UI and an Android layout test. This is not a backend contract. `ContractPendingOwnerBookingRepository` returns an explicit error; no raw booking reads, guessed field mapper or client write is enabled. Approve/reject controls remain disabled until T005 supplies an owner-safe server projection and transaction endpoint.
+- **Booking check-in UI (T031/T033–T037):** Feature 112 now has manual/QR entry UI using Google Play Services Code Scanner, explicit owner payment confirmation input, ViewModel/repository abstraction and fail-closed repository. Database README 8a only names `checkin-booking`; it does not specify request/response fields. No client request mapping is frozen, and no check-in success is claimed until Feature 060/database owner publishes that contract.
+
 - **T004:** đã xác nhận ownership qua venue cha, trạng thái `LOCKED`/`ACTIVE`, `court.isActive` và kiểm tra lại trạng thái owner; chưa có quyết định riêng cho venue `HIDDEN` khi owner vận hành, hoặc mã lỗi/response không tiết lộ sự tồn tại của target. Không tự chọn hành vi hay thêm API error.
 - **T005:** chưa có hợp đồng duyệt/từ chối và hủy booking của owner, transaction boundary hoặc function owner; `checkin-booking` chỉ có tên và phạm vi trong README, chưa có implementation trong checkout.
 - **T006:** chưa có hợp đồng owner CRUD/check-in registration. Voucher có xung đột giữa spec 112 FR-013 (liệt kê `venueId` như field) và schema README §4.6 (đường dẫn venue làm context, field chung không liệt kê `venueId`); Feature 111 cũng gán việc tạo voucher cho chính nó. Cần Feature 111/050 và database owner xác nhận trước khi chọn.

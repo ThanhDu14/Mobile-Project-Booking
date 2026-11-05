@@ -32,6 +32,7 @@ turbine = "1.2.1"
 imageCropper = "4.7.0"
 # Tải ảnh đại diện (spec 011 T029, plan Complexity Tracking). Coil 3.4.0 là bản mới nhất còn biên dịch bằng Kotlin <= 2.3
 coil = "3.4.0"
+gmsCodeScanner = "16.1.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -71,6 +72,7 @@ turbine = { group = "app.cash.turbine", name = "turbine", version.ref = "turbine
 android-image-cropper = { group = "com.vanniktech", name = "android-image-cropper", version.ref = "imageCropper" }
 coil = { group = "io.coil-kt.coil3", name = "coil", version.ref = "coil" }
 coil-network-okhttp = { group = "io.coil-kt.coil3", name = "coil-network-okhttp", version.ref = "coil" }
+play-services-code-scanner = { group = "com.google.android.gms", name = "play-services-code-scanner", version.ref = "gmsCodeScanner" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

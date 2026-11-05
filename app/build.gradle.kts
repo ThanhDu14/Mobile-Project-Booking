@@ -83,6 +83,7 @@ dependencies {
     implementation(libs.android.image.cropper)
     implementation(libs.coil)
     implementation(libs.coil.network.okhttp)
+    implementation(libs.play.services.code.scanner)
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
     testImplementation(libs.turbine)

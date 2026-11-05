@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent"
+    android:background="?android:attr/colorBackground" android:orientation="vertical">
+    <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:accessibilityHeading="true" android:paddingHorizontal="@dimen/screen_gutter" android:paddingTop="@dimen/space_4" android:text="@string/owner_dropin_title" android:textAppearance="?attr/textAppearanceHeadlineSmall" android:textColor="?attr/colorOnSurface" />
+    <Spinner android:id="@+id/venueSpinner" android:layout_width="match_parent" android:layout_height="48dp" android:layout_marginHorizontal="@dimen/screen_gutter" android:contentDescription="@string/owner_calendar_select_venue" />
+    <com.google.android.material.button.MaterialButton android:id="@+id/refresh" style="@style/Widget.SmashNow.Button.Text" android:layout_width="wrap_content" android:layout_height="48dp" android:layout_gravity="end" android:layout_marginEnd="@dimen/screen_gutter" android:text="@string/common_retry" />
+    <ProgressBar android:id="@+id/loading" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center_horizontal" android:visibility="gone" />
+    <TextView android:id="@+id/errorText" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:padding="@dimen/space_4" android:textColor="?attr/colorError" android:visibility="gone" />
+    <TextView android:id="@+id/emptyText" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center" android:padding="@dimen/space_4" android:text="@string/owner_dropin_empty" android:textColor="?attr/colorOnSurfaceVariant" android:visibility="gone" />
+    <ScrollView android:id="@+id/sessionScroll" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:fillViewport="true" android:visibility="gone">
+        <LinearLayout android:id="@+id/sessionList" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:paddingHorizontal="@dimen/screen_gutter" android:paddingBottom="@dimen/space_4" />
+    </ScrollView>
+    <com.google.android.material.button.MaterialButton android:id="@+id/createSession" style="@style/Widget.SmashNow.Button" android:layout_width="match_parent" android:layout_height="48dp" android:layout_marginHorizontal="@dimen/screen_gutter" android:layout_marginBottom="@dimen/space_3" android:text="@string/owner_dropin_create" />
+</LinearLayout>

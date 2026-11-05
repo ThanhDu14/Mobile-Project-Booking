@@ -146,6 +146,30 @@
                         android:text="@string/owner_calendar_title" />
 
                     <com.google.android.material.button.MaterialButton
+                        android:id="@+id/dropInButton"
+                        style="@style/Widget.SmashNow.Button.Outlined"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:layout_marginTop="@dimen/space_2"
+                        android:text="@string/owner_dropin_title" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/vouchersButton"
+                        style="@style/Widget.SmashNow.Button.Outlined"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:layout_marginTop="@dimen/space_2"
+                        android:text="@string/owner_voucher_title" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/statisticsButton"
+                        style="@style/Widget.SmashNow.Button.Outlined"
+                        android:layout_width="match_parent"
+                        android:layout_height="48dp"
+                        android:layout_marginTop="@dimen/space_2"
+                        android:text="@string/owner_statistics_title" />
+
+                    <com.google.android.material.button.MaterialButton
                         android:id="@+id/venuesButton"
                         style="@style/Widget.SmashNow.Button.Outlined"
                         android:layout_width="match_parent"

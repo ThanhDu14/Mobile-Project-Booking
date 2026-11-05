@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginVertical="@dimen/space_2"
+    app:cardBackgroundColor="?attr/colorSurface"
+    app:cardCornerRadius="@dimen/radius_md"
+    app:cardElevation="0dp"
+    app:strokeColor="@color/sn_line"
+    app:strokeWidth="1dp">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/space_4">
+        <TextView android:id="@+id/customer" android:layout_width="match_parent" android:layout_height="wrap_content" android:textAppearance="?attr/textAppearanceTitleMedium" android:textColor="?attr/colorOnSurface" android:textStyle="bold" />
+        <TextView android:id="@+id/time" android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingTop="@dimen/space_1" android:textAppearance="?attr/textAppearanceBodyMedium" android:textColor="?attr/colorOnSurface" />
+        <TextView android:id="@+id/courts" android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingTop="@dimen/space_1" android:textAppearance="?attr/textAppearanceBodyMedium" android:textColor="?attr/colorOnSurfaceVariant" />
+        <TextView android:id="@+id/amount" android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingTop="@dimen/space_1" android:textAppearance="?attr/textAppearanceBodyMedium" android:textColor="?attr/colorOnSurface" />
+        <TextView android:id="@+id/status" android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingTop="@dimen/space_1" android:textAppearance="?attr/textAppearanceLabelLarge" android:textColor="?attr/colorPrimary" />
+        <TextView android:id="@+id/deadline" android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingTop="@dimen/space_1" android:textAppearance="?attr/textAppearanceBodySmall" android:textColor="?attr/colorError" />
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/details"
+            style="@style/Widget.SmashNow.Button.Outlined"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:contentDescription="@string/owner_bookings_details"
+            android:text="@string/owner_bookings_details" />
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/checkIn"
+            style="@style/Widget.SmashNow.Button.Outlined"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:contentDescription="@string/owner_booking_checkin_title"
+            android:text="@string/owner_booking_checkin_title"
+            android:visibility="gone" />
+        <LinearLayout android:id="@+id/pendingActions" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:visibility="gone">
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/approve"
+                style="@style/Widget.SmashNow.Button"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:contentDescription="@string/owner_bookings_approve"
+                android:text="@string/owner_bookings_approve" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/reject"
+                style="@style/Widget.SmashNow.Button.Outlined"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_marginStart="@dimen/space_2"
+                android:layout_weight="1"
+                android:contentDescription="@string/owner_bookings_reject"
+                android:text="@string/owner_bookings_reject" />
+        </LinearLayout>
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

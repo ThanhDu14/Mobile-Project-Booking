@@ -36,6 +36,7 @@ Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 | 30  | 2026-11-05 | Hoàn thiện và xác minh các phần còn mở Feature 110: Storage thật, tải tài liệu signed URL, Android tests/build/lint và cập nhật task/evidence                        | 11   |
 | 31  | 2026-11-05 | Audit và tiếp tục triển khai Feature 112 Owner Operations; bổ sung drop-in validation, tests và ghi nhận contract blockers                                           | 11   |
 | 32  | 2026-11-05 | Implement Feature 112 thực tế: dashboard/lịch ngày-tuần realtime, kiểm thử Android/Firestore Rules, phân loại task và handoff cho dependency liên-feature              | 11   |
+| 33  | 2026-11-05 | Tiếp tục Feature 112: booking queue/detail/navigation, QR check-in UI, StateFlow/domain adapters fail-closed, test và handoff đúng ownership                                          | 11   |
 
 ---
 
@@ -3305,5 +3306,270 @@ Không được:
 - `firestore-tests npm test`: PASS, Firestore Emulator 17 files/151 tests, including owner authorization/isolation tests.
 - `:app:compileDebugAndroidTestKotlin`: PASS. `:app:connectedDebugAndroidTest`: BLOCKED, no connected device. `:app:lintDebug`: FAIL, one existing Feature 040 `DiffUtilEquals` error and 357 warnings; the Feature 112 `SetTextI18n` warning was fixed with string resources.
 - Edge Function tests remain unverified because Feature 112/owned cross-feature function paths and the contract test harness are absent. `git diff --check`: PASS after final edits (only LF-to-CRLF normalization notices). Không commit/push.
+
+---
+
+## Mục 33: Tiếp tục implement Feature 112 — booking, check-in, drop-in, voucher và statistics
+
+| Trường                   | Nội dung                                                                                                                                                     |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-11-05                                                                                                                                                  |
+| Người thực hiện          | Minh Nhựt                                                                                                                                                   |
+| Nhóm tính năng liên quan | 11 – Vận hành chủ sân (spec `specs/112-owner-operations`)                                                                                                   |
+| Công cụ AI               | Codex (GPT-6), skill `$speckit-implement`                                                                                                                    |
+| Mục đích                 | Triển khai các màn hình và domain Android độc lập của Feature 112; giữ adapter fail-closed khi contract server/ownership chưa được xác nhận.                   |
+
+### Prompt đã dùng
+
+```text
+$speckit-implement # FEATURE 112 — REAL IMPLEMENTATION, CROSS-FEATURE COORDINATION
+
+Làm việc trực tiếp trên project:
+
+`F:/CSC_HCMUS/Mobile/datcau`
+
+Đọc `specs/112-owner-operations/tasks.md` phiên bản mới nhất và toàn bộ tài liệu Feature 112.
+
+Mục tiêu: biến Feature 112 từ tài liệu đặc tả thành một tính năng Android thực sự có UI, domain, repository, backend integration và tests.
+
+**Không tiếp tục audit rồi dừng. Không chỉ tạo tài liệu. Không lấy dependency làm lý do trì hoãn những phần có thể implement độc lập.**
+
+## 1. Nguyên tắc phân chia công việc
+
+Phân loại các task còn mở:
+
+- READY: Có đủ thông tin, implement ngay.
+- WAITING_FOR_MY_DECISION: Cần tôi duyệt quyết định nghiệp vụ, schema hoặc contract.
+- WAITING_FOR_OTHER_FEATURE: Cần team Feature khác cung cấp implementation hoặc xác nhận contract.
+- BLOCKED_ENVIRONMENT: Chỉ dùng khi thực sự không thể chạy do môi trường.
+
+Một task phụ thuộc không được làm dừng các task độc lập khác.
+
+Không tự thay đổi schema hoặc contract chưa được phê duyệt.
+
+## 2. Ưu tiên implement thực tế
+
+### US1 — Booking và Calendar
+
+Bắt đầu ngay với:
+
+- T011: Unit tests.
+- T014: Domain models và repository interfaces.
+- T015: Read repository và mapping.
+- T017: ViewModel.
+- T018: Calendar và booking queue UI.
+- T019: Android UI tests.
+
+Tạo đầy đủ màn hình theo ảnh mẫu, navigation và trạng thái loading/content/empty/error/offline/retry.
+
+Đối với approve/reject/cancel:
+- Chuẩn bị UI, request models và client adapters.
+- Chỉ kết nối write operation sau khi T005 được xác nhận.
+- Không giả lập transaction bằng client-side Firestore write.
+
+### US5 — Booking Check-in
+
+Implement phần độc lập:
+
+- T031: Domain/ViewModel tests.
+- T033: Domain interface và request mapping.
+- T034: Client adapter theo contract đã có.
+- T036: Check-in UI, QR scanner và nhập mã thủ công.
+- T037: UI/accessibility/theme tests.
+
+Gửi yêu cầu cụ thể cho Feature 060/database owner về `checkin-booking`, gồm function contract, authorization, thời gian check-in, replay protection và xác nhận thu tiền.
+
+Không sửa function thuộc Feature 060.
+
+### US2 — Drop-in
+
+Implement các thành phần độc lập:
+
+- Domain models và input validation.
+- Session form.
+- Roster UI.
+- QR scanner UI.
+- ViewModels.
+- Repository interfaces.
+- Unit/UI tests.
+
+Chờ contract Feature 080/081 cho transaction, registration, waitlist, cancellation và check-in trước khi implement các write operation.
+
+Không tự thêm status hoặc field vào schema.
+
+### US3 — Voucher
+
+Chuẩn bị:
+- Voucher UI theo ảnh mẫu.
+- Domain input models.
+- Validation dựa trên schema hiện tại.
+- ViewModel và trạng thái giao diện.
+- Unit/UI tests cho những quy tắc đã được xác nhận.
+
+Đồng thời yêu cầu Feature 111/050 và database owner thống nhất:
+- Ai sở hữu voucher CRUD?
+- `venueId` là field hay path context?
+- Quy tắc uniqueness toàn hệ thống.
+- Quyền chỉnh sửa `usedCount` và redemption.
+
+Không tạo voucher backend trước khi ownership được xác nhận.
+
+### US4 — Statistics
+
+Chuẩn bị:
+- Statistics screen.
+- Chart components.
+- Filter theo ngày/tuần/khoảng thời gian.
+- Loading/empty/error/stale-data states.
+- Domain interfaces và tests cho các công thức đã được chốt.
+
+Gửi tôi các quyết định cần thiết trong T007:
+- Revenue calculation.
+- Occupancy denominator.
+- BLOCKED slots.
+- Multiple court/slot allocation.
+- Timezone và bucket 60 phút.
+- Data freshness và nguồn dữ liệu.
+
+Không hardcode số liệu hoặc tự tạo `dailyStats`.
+
+## 3. Xử lý dependency
+
+Phải chủ động phối hợp với các Feature:
+
+| Feature | Nội dung cần phối hợp |
+|---|---|
+| 040/050/060 | Booking transaction, payment, refund, check-in |
+| 080/081 | Drop-in lifecycle, registration, waitlist |
+| 100 | Notification, payload, retry, idempotency |
+| 111 | Venue/court state, voucher ownership, LOCKED venue |
+| 120 | Admin lock và Owner authorization |
+
+Với mỗi dependency:
+
+1. Đọc contract hiện tại.
+2. Xác định chính xác phần thiếu.
+3. Tạo handoff document trong `specs/112-owner-operations/handoffs/`.
+4. Viết prompt riêng để tôi gửi cho Codex của Feature sở hữu.
+5. Nêu rõ files, API, schema, acceptance criteria và tests team đó cần thực hiện.
+6. Tiếp tục implement các phần độc lập của Feature 112.
+
+**Không tự sửa source code của Feature khác. Không tự ý thay đổi ownership.**
+
+## 4. Những quyết định phải hỏi tôi
+
+Gom các vấn đề thành một báo cáo duy nhất, không hỏi từng câu nhỏ.
+
+Mỗi quyết định phải có:
+
+- Vấn đề.
+- Phương án A.
+- Phương án B.
+- Ưu/nhược điểm.
+- Phương án đề xuất.
+- Feature và files bị ảnh hưởng.
+
+Các quyết định cần tập trung vào:
+- T004: Venue HIDDEN/LOCKED và quyền owner bị thu hồi.
+- T005: Booking approve/reject/cancel.
+- T006/T008: Drop-in và voucher ownership/contracts.
+- T007: Statistics calculation và data source.
+- T035: Booking check-in integration.
+
+Không hỏi lại quyết định đã có trong tài liệu hoặc đã được tôi approve.
+
+Sau khi tôi chọn phương án, cập nhật contract và tiếp tục implement phần còn lại.
+
+## 5. UI là yêu cầu bắt buộc
+
+- Kiểm tra trực tiếp toàn bộ 10 ảnh UI mẫu.
+- Implement đúng thiết kế.
+- Không tự redesign.
+- Tích hợp vào Android Navigation hiện tại.
+- Hỗ trợ light/dark, phone, w600dp, accessibility và 48dp touch targets.
+- Tất cả màn hình phải có loading, empty, error và retry states phù hợp.
+
+## 6. Kiểm thử và xác minh
+
+Viết và chạy tests theo implementation thực tế.
+
+Chạy:
+
+- `:app:assembleDebug`
+- `:app:testDebugUnitTest`
+- `:app:connectedDebugAndroidTest`
+- `:app:lintDebug`
+- Firestore Emulator tests.
+- Backend/Edge Function tests theo harness thực tế.
+
+Không báo PASS nếu chưa chạy. Phân biệt lỗi mới, lỗi baseline và lỗi môi trường.
+
+## 7. Cập nhật task và tài liệu
+
+Mỗi task chỉ đánh dấu `[X]` khi implementation và bằng chứng thực tế đã có.
+
+Cập nhật:
+- `tasks.md`
+- `implementation-mapping.md`
+- `quickstart.md`
+- `contracts/owner-operations-boundaries.md`
+- Handoff documents.
+- AI log.
+
+Không chỉnh sửa các quyết định đã được approve nếu chưa hỏi tôi.
+
+## 8. Kết quả cần đạt
+
+Trong lượt làm việc này:
+
+1. Implement tối đa các task READY.
+2. Có Android UI và source code thực tế, không chỉ domain validation.
+3. Có navigation và các màn hình có thể chạy.
+4. Có repository/ViewModel và integration adapters.
+5. Có unit/UI tests.
+6. Tạo handoff và prompt cho các Feature phụ thuộc.
+7. Gửi tôi danh sách quyết định cần duyệt.
+
+Sau khi tôi duyệt, tiếp tục implement phần còn lại.
+
+**Không commit, không push. Không dừng ở audit. Không đánh dấu hoàn thành giả.**
+```
+
+### Tóm tắt phản hồi của AI
+
+- Đọc tasks/artifacts Feature 112, đối chiếu UI references đã mở ở lượt trước, Rules/schema contracts, navigation và cách tích hợp Owner hiện tại. Không sửa file source của Feature khác.
+- Thêm domain `OwnerBooking`/status/filter/detail/commands, `OwnerBookingRepository`, queue sorting theo approval deadline và countdown; test cho pending order, upcoming/past filter và clamp countdown. Không đưa `qrToken` vào model.
+- Thêm fail-closed booking repository vì Firestore Rules không cho owner đọc booking và raw booking document có QR secret; không đoán DTO hay endpoint. Nối Owner booking Fragment vào bottom navigation với chọn venue, filter, detail, loading/error/empty/retry và deadline countdown. Approve/reject hiện vô hiệu hóa đến khi T005 có server transaction contract.
+- Thêm booking check-in input/repository abstraction/ViewModel, Google Play Services Code Scanner UI và nhập mã thủ công, xác nhận thu tiền explicit. Repository báo unavailable đến khi Feature 060/database owner công bố payload/result của `checkin-booking`; không tạo client write.
+- Thêm drop-in session/registration domain types và validation; list, form, roster UI, QR/manual check-in entry, ViewModel, venue/court selectors và fail-closed repository. Không thêm schema/status hoặc gọi write chưa được Feature 080/081 xác nhận.
+- Thêm voucher draft/validation, list/form UI, active toggle, ViewModel và fail-closed repository. Draft không có `venueId`/`usedCount`; ownership/schema với Feature 050/111 còn mở.
+- Thêm statistics query/result interfaces, ViewModel, day/week/custom range theo `Asia/Ho_Chi_Minh`, chart và loading/empty/error/freshness UI. Giữ lựa chọn đã được người dùng duyệt: bounded live booking/slot queries, không tạo/ghi `dailyStats`; adapter fail-closed khi server projection chưa tồn tại.
+- Thêm navigation và phone/`w600dp` layouts; instrumentation layout assertions bao gồm dark theme/48dp. Sửa lỗi compile timezone trong statistics. Không sửa 10 ảnh UI mẫu.
+- Cập nhật `tasks.md`, implementation mapping, quickstart, boundary contract, handoff và Mục 33 trong AI log. Chỉ T014 được đóng; task ghép khác còn mở khi acceptance/contract/device evidence chưa đủ.
+- Các quyết định nhóm cần duyệt được tổng hợp ở báo cáo cuối; nguồn statistics đã được người dùng chọn trước đó là bounded live booking/slot queries, không thêm hoặc ghi `dailyStats`.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+| --- | --- | --- |
+| Booking domain/queue/navigation/UI và tests | Đã thêm | Chuẩn hóa domain không chứa QR token; read backend và decision writes vẫn khóa đến khi server contract đã được xác nhận. |
+| Booking check-in scanner/manual UI, ViewModel và fail-closed adapter | Đã thêm | Scanner thật dùng Google Play Services; không gọi function bằng payload tự suy diễn. |
+| Drop-in domain/UI/ViewModel/validation | Đã thêm | Có list/form/roster và QR/manual entry; repository chặn an toàn đến khi Feature 080/081 chốt contract. |
+| Voucher UI/domain/ViewModel/validation | Đã thêm | Có list/form/active toggle; không có CRUD persistence đến khi Feature 050/111/database owner chốt ownership/schema. |
+| Statistics UI/domain/ViewModel | Đã thêm | Có filter/chart/state và query theo timezone; không hiển thị số liệu giả, nguồn projection vẫn chờ server contract. |
+| Voucher draft và validator | Đã thêm | Bám field chung ở Database README, bỏ field server-only; chưa serialize hoặc CRUD vì Feature 050/111 chưa chốt schema/ownership. |
+| Source của booking/drop-in/voucher/statistics, server functions và Rules cross-feature | Chưa thay đổi | Thuộc feature owner khác hoặc còn quyết định cần người dùng/database owner xác nhận; handoffs chứa yêu cầu và prompt gửi được. |
+
+### Cách kiểm chứng
+
+- `:app:assembleDebug`: PASS sau khi sửa import QR scanner và timezone statistics; Android source, navigation, resources và DI compile.
+- Focused `:app:testDebugUnitTest`: PASS, 17 tests (OwnerUiAccessibilityTest 2, OwnerBookingQueueTest 3, BookingCheckInViewModelTest 3, OwnerVoucherValidationTest 3, OwnerDropInDraftValidationTest 4, OwnerStatisticsViewModelTest 2).
+- Full `:app:testDebugUnitTest`: 521 tests, 7 failures, 2 skipped; 7 failure hiện trong `FirebaseSessionManagerTest`, không có failure của Feature 112.
+- `:app:compileDebugAndroidTestKotlin`: PASS, gồm test layout booking/drop-in/voucher/statistics.
+- `:app:connectedDebugAndroidTest`: BLOCKED ở lần gần nhất vì `No connected devices!`; lượt này chỉ compile Android-test sources, không chạy trên thiết bị. `:app:lintDebug`: lượt chạy lại đã dừng theo yêu cầu; kết quả trước đó FAIL với một lỗi Feature 040 `DiffUtilEquals` tại `SlotMatrixRowAdapter.kt:203` và 362 warnings. Không ghi PASS cho lint.
+- Firestore Emulator tests: kết quả gần nhất từ lượt trước PASS 17 files/151 tests; lượt này không sửa Rules/backend và không chạy lại.
+- Không có backend/Edge Function test harness cho các endpoint booking/check-in của Feature 112; không báo PASS.
+- Tasks hiện có 58 mục: 10 `[X]`, 48 còn mở; chỉ T014 được đóng trong lượt implementation này.
+- `git diff --check` chưa chạy sau cập nhật cuối các tài liệu. Không commit/push.
 
 ---

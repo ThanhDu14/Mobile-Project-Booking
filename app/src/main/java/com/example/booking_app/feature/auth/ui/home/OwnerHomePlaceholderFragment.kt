@@ -33,6 +33,9 @@ class OwnerHomePlaceholderFragment : Fragment(R.layout.fragment_home_placeholder
         binding.avatar.setOnClickListener { findNavController().navigate(R.id.action_ownerHome_to_account) }
         binding.retry.setOnClickListener { viewModel.refresh() }
         binding.calendarButton.setOnClickListener { findNavController().navigate(R.id.ownerCalendarFragment) }
+        binding.dropInButton.setOnClickListener { findNavController().navigate(R.id.ownerDropInFragment) }
+        binding.vouchersButton.setOnClickListener { findNavController().navigate(R.id.ownerVouchersFragment) }
+        binding.statisticsButton.setOnClickListener { findNavController().navigate(R.id.ownerStatisticsFragment) }
         binding.venuesButton.setOnClickListener { findNavController().navigate(R.id.ownerVenueListFragment) }
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {

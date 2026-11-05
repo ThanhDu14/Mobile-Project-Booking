@@ -1,6 +1,11 @@
 package com.example.booking_app.feature.owner.di
 
 import com.example.booking_app.feature.owner.data.ManageSlotBlocksApi
+import com.example.booking_app.feature.owner.data.ContractPendingOwnerBookingRepository
+import com.example.booking_app.feature.owner.data.ContractPendingBookingCheckInRepository
+import com.example.booking_app.feature.owner.data.ContractPendingOwnerDropInRepository
+import com.example.booking_app.feature.owner.data.ContractPendingOwnerVoucherRepository
+import com.example.booking_app.feature.owner.data.ContractPendingOwnerStatisticsRepository
 import com.example.booking_app.feature.owner.data.OwnerOnboardingDataSource
 import com.example.booking_app.feature.owner.data.OwnerVenueRepositoryImpl
 import com.example.booking_app.feature.owner.data.FirestoreOwnerCalendarRepository
@@ -10,6 +15,11 @@ import com.example.booking_app.feature.owner.data.SyncVenuePriceApi
 import com.example.booking_app.feature.owner.domain.OwnerVenueRepository
 import com.example.booking_app.feature.owner.domain.calendar.OwnerCalendarRepository
 import com.example.booking_app.feature.owner.domain.OwnerOnboardingRepository
+import com.example.booking_app.feature.owner.domain.booking.OwnerBookingRepository
+import com.example.booking_app.feature.owner.domain.booking.BookingCheckInRepository
+import com.example.booking_app.feature.owner.domain.dropin.OwnerDropInRepository
+import com.example.booking_app.feature.owner.domain.voucher.OwnerVoucherRepository
+import com.example.booking_app.feature.owner.domain.statistics.OwnerStatisticsRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn
@@ -30,6 +40,26 @@ abstract class OwnerModule {
     @Binds
     @Singleton
     abstract fun bindOwnerCalendarRepository(impl: FirestoreOwnerCalendarRepository): OwnerCalendarRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindOwnerBookingRepository(impl: ContractPendingOwnerBookingRepository): OwnerBookingRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindBookingCheckInRepository(impl: ContractPendingBookingCheckInRepository): BookingCheckInRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindOwnerDropInRepository(impl: ContractPendingOwnerDropInRepository): OwnerDropInRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindOwnerVoucherRepository(impl: ContractPendingOwnerVoucherRepository): OwnerVoucherRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindOwnerStatisticsRepository(impl: ContractPendingOwnerStatisticsRepository): OwnerStatisticsRepository
 
     @Binds
     @Singleton
