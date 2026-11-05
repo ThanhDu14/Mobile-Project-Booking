@@ -32,6 +32,7 @@ Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 | 26  | 2026-11-05 | Khảo sát và triển khai phần validator độc lập của Feature 110; lập traceability mapping và kiểm tra unit test, build, lint, Emulator                                         | 11   |
 | 27  | 2026-11-05 | Ghi nhận quyết định bổ sung Feature 110 về venue identity, recovery, cleanup; map provider tạm hoãn                                                                          | 11   |
 | 28  | 2026-11-05 | Tiếp tục triển khai Feature 110 theo quyết định T001–T005; bổ sung Android onboarding, Edge Functions, Firestore Rules và kiểm chứng                                         | 11   |
+| 29  | 2026-11-05 | Tiếp tục hoàn thiện Feature 110: upload/retry và signed-document flow, kiểm thử lifecycle/idempotency, integration suite và cập nhật traceability                    | 11   |
 
 ---
 
@@ -2617,6 +2618,75 @@ Báo cáo:
 
 - Đối chiếu trực tiếp ba ảnh UI mẫu: form, review và pending status; ảnh mẫu không bị sửa.
 - Build Android đang chạy lại sau khi sửa lỗi compile; unit tests, Firestore Emulator tests, lint và Supabase local tests cần ghi kết quả sau khi thực chạy.
+- Không commit hoặc push.
+
+---
+
+## Mục 29: Tiếp tục hoàn thiện Feature 110 — Owner Onboarding
+
+**Ngày**: 2026-11-05
+
+### Prompt đã dùng
+
+```text
+$speckit-implement Tiếp tục hoàn thiện Feature 110 theo specs/110-owner-onboarding/tasks.md hiện tại và các quyết định T001–T005 đã được approve.
+
+Đọc lại toàn bộ tài liệu đồ án và code hiện tại trước khi sửa.
+
+### Ưu tiên implement:
+1. T012–T013: Hoàn thiện form UI và luồng chọn/upload tài liệu, tuân thủ chính xác 3 ảnh UI mẫu.
+2. T010: Supabase local Storage integration tests, xác minh signed URL, expiry, MIME/size và authorization thật.
+3. T017–T018: Hoàn thiện unit tests và Android UI tests cho luồng form → upload → review → submit.
+4. T022–T023: Hoàn thiện unit/UI tests cho NONE, PENDING, APPROVED, REJECTED.
+5. T028–T029: Hoàn thiện resubmit tests và kiểm thử xung đột.
+6. T033–T034: Implement luồng applicant xem/tải tài liệu bằng signed URL và kiểm thử quyền truy cập.
+7. T030–T032: Hoàn thiện account/navigation boundary, feature handoff và local integration verification.
+
+### Ràng buộc:
+- Tuân thủ UI mẫu trong `specs/110-owner-onboarding/ui/`, không tự thiết kế lại.
+- Tuân thủ spec, contracts, database README, Constitution và architecture hiện tại.
+- Không tự cấp OWNER/APPROVED hoặc tạo venue; Feature 120 sở hữu các thao tác này.
+- Không tự chọn map provider; giữ blocker Feature 021.
+- Không tự triển khai account deletion thay Feature 011.
+- Không mock Storage rồi tuyên bố integration thật đã PASS.
+- Không đánh dấu task hoàn thành nếu chưa có bằng chứng.
+
+Với T035, chuẩn bị kịch bản và biểu mẫu usability evaluation; chỉ đánh dấu hoàn thành sau khi có kết quả thử nghiệm thực tế với tối thiểu 10 người.
+
+Sau khi hoàn thành các phần có thể triển khai:
+- Cập nhật tasks.md, quickstart.md, implementation-mapping.md và AI log.
+- Chạy unit tests, UI tests, Firebase Emulator, Supabase local, assembleDebug và lintDebug.
+- Phân biệt lỗi tồn tại trước đó với lỗi mới.
+- Báo cáo task hoàn thành, task còn mở và dependency cần nhóm khác xử lý.
+
+Không commit hoặc push. Chủ động implement, không chỉ lập kế hoạch.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Sửa lifecycle khôi phục draft khi `ownerStatus=NONE`; nếu local ID đã trùng application cũ (ví dụ sau revoke), giữ nội dung nhưng cấp ID mới.
+- Bắt buộc làm mới trạng thái server trước submit; không mở Feature 111 khi status cache cũ, và Edge Function từ chối cặp role/status không nhất quán.
+- Bổ sung upload row cho từng tệp với trạng thái đang tải, lỗi, retry riêng; thêm Material time picker cho giờ mở/đóng.
+- Thêm luồng applicant xem trước và tải giấy tờ bằng signed URL ngắn hạn; URL mới được xin riêng cho mỗi lần xem/tải và không lưu trong draft.
+- Bổ sung ViewModel tests cho status, lifecycle, retry, submit duplicate, xung đột stale, timeout không rõ kết quả và signed URL delegation; thêm Android screen-inflation smoke test cho light/dark phone/w600dp.
+- Tạo Supabase local Storage integration suite dùng thật Auth/Firestore Emulator và Storage local; Deno type-check được, nhưng suite chưa được chạy do Docker Desktop daemon không chạy.
+- Chuẩn bị kịch bản/biểu mẫu usability tại `specs/110-owner-onboarding/usability-evaluation.md`; chưa có kết quả người dùng nên T035 vẫn mở.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+| --- | --- | --- |
+| Feature 110 Android form/status, ViewModel/repository tests, Edge Function status contract/tests, local Storage integration suite và tài liệu | Đã chỉnh sửa trong workspace | Hoàn thiện các phần có thể làm mà không thay schema, vượt quyền Feature 120/111 hoặc giả nhận bằng chứng integration. |
+| Map SDK/picker provider, review approval/venue promotion, account deletion và 30-day sweeper | Không triển khai tại đây | Map provider do Feature 021; approval/venue thuộc Feature 120; account deletion thuộc Feature 011; sweeper chưa có owner/contract implementation trong scope hiện tại. |
+| Usability results T035 | Chưa ghi | Cần ít nhất 10 người dùng mục tiêu thử thực tế; chưa có phiên đánh giá. |
+
+### Cách kiểm chứng
+
+- Đã xem lại ba ảnh UI mẫu gốc; không sửa ảnh tham chiếu.
+- Unit tests mục tiêu cho Owner ViewModel, validation và accessibility pass; `:app:compileDebugAndroidTestKotlin` pass. `:app:connectedDebugAndroidTest` không chạy test cases vì emulator chuyển sang OFFLINE và Gradle không tìm thấy thiết bị online.
+- `:app:testDebugUnitTest`: 506 tests, 7 failures, 2 skipped; cả 7 failures ở `FirebaseSessionManagerTest`, file không đổi trong lượt này. Chưa đối chiếu baseline commit nên chỉ ghi nhận là lỗi ngoài phạm vi thay đổi, không khẳng định lỗi có trước.
+- `:app:assembleDebug` pass. `:app:lintDebug` fail với 1 error và 350 warnings; error duy nhất nằm ở Feature 040 `SlotMatrixRowAdapter.kt:203` (`DiffUtilEquals`).
+- Firebase Auth/Firestore Emulator Edge Function tests pass 9/9 (8 application, 1 docs), gồm test role/status mismatch. Supabase local không chạy vì Docker daemon dừng. Storage suite đã được soạn; lần Deno type-check lại bị dừng vì không truy cập được npm registry, và lần type-check trước đó là trước thay đổi assertion cuối. Không tuyên bố signed URL/expiry/MIME/size integration đã pass.
 - Không commit hoặc push.
 
 ---

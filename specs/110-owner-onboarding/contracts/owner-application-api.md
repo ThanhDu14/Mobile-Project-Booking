@@ -33,7 +33,7 @@ Response is based on authoritative `users/{uid}.ownerStatus` and, when applicabl
 }
 ```
 
-`application` is null when no application exists. The handler rejects missing user records and inconsistent user/application states rather than infer a role from client state.
+`application` is null when no application exists. The handler rejects missing user records, inconsistent user/application states, and inconsistent role/status pairs (`OWNER` only with `APPROVED`; `PLAYER` with `NONE`, `PENDING` or `REJECTED`) rather than infer a role from client state.
 
 ### Submit or resubmit
 

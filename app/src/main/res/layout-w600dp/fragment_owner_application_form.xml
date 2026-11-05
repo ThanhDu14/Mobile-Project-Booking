@@ -28,8 +28,8 @@
             app:tint="?attr/colorOnSurface" />
 
         <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical" android:paddingStart="8dp">
-            <TextView android:layout_width="600dp" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:accessibilityHeading="true" android:text="@string/owner_apply_title" android:textAppearance="?attr/textAppearanceTitleLarge" android:textStyle="bold" />
-            <TextView android:layout_width="600dp" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:text="@string/owner_apply_step1" android:textAppearance="?attr/textAppearanceBodyLarge" android:textColor="@color/sn_ink_muted" />
+            <TextView android:layout_width="match_parent" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:accessibilityHeading="true" android:text="@string/owner_apply_title" android:textAppearance="?attr/textAppearanceTitleLarge" android:textStyle="bold" />
+            <TextView android:layout_width="match_parent" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:text="@string/owner_apply_step1" android:textAppearance="?attr/textAppearanceBodyLarge" android:textColor="@color/sn_ink_muted" />
         </LinearLayout>
     </LinearLayout>
 
@@ -46,11 +46,11 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/formHeader">
 
-        <LinearLayout android:layout_width="600dp" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:orientation="vertical" android:paddingBottom="12dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:orientation="vertical" android:paddingBottom="12dp">
             <com.google.android.material.card.MaterialCardView
-                android:layout_width="600dp" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:layout_marginTop="8dp"
+                android:layout_width="match_parent" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:layout_marginTop="8dp"
                 app:cardBackgroundColor="@color/sn_court_container" app:cardCornerRadius="16dp" app:strokeWidth="0dp">
-                <LinearLayout android:layout_width="600dp" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal" android:padding="16dp">
+                <LinearLayout android:layout_width="match_parent" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal" android:padding="16dp">
                     <ImageView android:layout_width="24dp" android:layout_height="24dp" android:contentDescription="@null" android:src="@drawable/ic_info_24" app:tint="@color/sn_on_court_container" />
                     <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginStart="12dp" android:layout_weight="1" android:text="@string/owner_apply_player_rights" android:textAppearance="?attr/textAppearanceBodyLarge" android:textColor="@color/sn_on_court_container" />
                 </LinearLayout>
@@ -58,60 +58,60 @@
 
             <TextView style="@style/OwnerApplicationSection" android:text="@string/owner_section_venue" />
             <com.google.android.material.textfield.TextInputLayout android:id="@+id/venueNameLayout" style="@style/OwnerApplicationInput" android:hint="@string/owner_venue_name">
-                <com.google.android.material.textfield.TextInputEditText android:id="@+id/venueName" android:layout_width="600dp" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:inputType="textCapWords" />
+                <com.google.android.material.textfield.TextInputEditText android:id="@+id/venueName" android:layout_width="match_parent" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:inputType="textCapWords" />
             </com.google.android.material.textfield.TextInputLayout>
             <com.google.android.material.textfield.TextInputLayout android:id="@+id/addressLayout" style="@style/OwnerApplicationInput" android:hint="@string/owner_address">
-                <com.google.android.material.textfield.TextInputEditText android:id="@+id/address" android:layout_width="600dp" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:inputType="textPostalAddress|textCapSentences" />
+                <com.google.android.material.textfield.TextInputEditText android:id="@+id/address" android:layout_width="match_parent" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:inputType="textPostalAddress|textCapSentences" />
             </com.google.android.material.textfield.TextInputLayout>
-            <LinearLayout android:layout_width="600dp" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:orientation="horizontal">
+            <LinearLayout android:layout_width="match_parent" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:orientation="horizontal">
                 <com.google.android.material.textfield.TextInputLayout android:id="@+id/districtLayout" style="@style/OwnerApplicationInput" android:layout_width="0dp" android:layout_weight="1" android:hint="@string/owner_district" app:endIconMode="dropdown_menu">
-                    <com.google.android.material.textfield.MaterialAutoCompleteTextView android:id="@+id/district" android:layout_width="600dp" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:inputType="none" />
+                    <com.google.android.material.textfield.MaterialAutoCompleteTextView android:id="@+id/district" android:layout_width="match_parent" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:inputType="none" />
                 </com.google.android.material.textfield.TextInputLayout>
                 <com.google.android.material.textfield.TextInputLayout android:id="@+id/venuePhoneLayout" style="@style/OwnerApplicationInput" android:layout_width="0dp" android:layout_marginStart="10dp" android:layout_weight="1" android:hint="@string/owner_venue_phone">
-                    <com.google.android.material.textfield.TextInputEditText android:id="@+id/venuePhone" android:layout_width="600dp" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:inputType="phone" />
+                    <com.google.android.material.textfield.TextInputEditText android:id="@+id/venuePhone" android:layout_width="match_parent" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:inputType="phone" />
                 </com.google.android.material.textfield.TextInputLayout>
             </LinearLayout>
-            <TextView android:layout_width="600dp" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:layout_marginTop="-2dp" android:text="@string/owner_venue_phone_hint" android:textAppearance="?attr/textAppearanceBodySmall" android:textColor="@color/sn_ink_muted" />
+            <TextView android:layout_width="match_parent" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:layout_marginTop="-2dp" android:text="@string/owner_venue_phone_hint" android:textAppearance="?attr/textAppearanceBodySmall" android:textColor="@color/sn_ink_muted" />
 
             <TextView style="@style/OwnerApplicationFieldLabel" android:text="@string/owner_map_location" />
-            <com.google.android.material.card.MaterialCardView android:id="@+id/mapPreview" android:layout_width="600dp" android:layout_gravity="center_horizontal" android:layout_height="144dp" android:layout_marginTop="8dp" app:cardBackgroundColor="@color/sn_surface_sunken" app:cardCornerRadius="14dp" app:strokeColor="@color/sn_line" app:strokeWidth="1dp">
-                <FrameLayout android:layout_width="600dp" android:layout_gravity="center_horizontal" android:layout_height="match_parent" android:background="@drawable/bg_owner_map_preview">
+            <com.google.android.material.card.MaterialCardView android:id="@+id/mapPreview" android:layout_width="match_parent" android:layout_gravity="center_horizontal" android:layout_height="144dp" android:layout_marginTop="8dp" app:cardBackgroundColor="@color/sn_surface_sunken" app:cardCornerRadius="14dp" app:strokeColor="@color/sn_line" app:strokeWidth="1dp">
+                <FrameLayout android:layout_width="match_parent" android:layout_gravity="center_horizontal" android:layout_height="match_parent" android:background="@drawable/bg_owner_map_preview">
                     <ImageView android:layout_width="32dp" android:layout_height="32dp" android:layout_gravity="center" android:contentDescription="@string/owner_map_pin" android:src="@drawable/ic_location_pin_24" app:tint="@color/sn_danger" />
                     <com.google.android.material.button.MaterialButton android:id="@+id/changePin" style="@style/Widget.Material3.Button.TonalButton" android:layout_width="wrap_content" android:layout_height="48dp" android:layout_gravity="bottom|end" android:layout_margin="10dp" android:text="@string/owner_change_pin" app:icon="@drawable/ic_location_24" />
                 </FrameLayout>
             </com.google.android.material.card.MaterialCardView>
-            <TextView android:id="@+id/locationValue" android:layout_width="600dp" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="@string/owner_location_not_selected" android:textAppearance="?attr/textAppearanceBodySmall" android:textColor="@color/sn_ink_muted" />
+            <TextView android:id="@+id/locationValue" android:layout_width="match_parent" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:layout_marginTop="6dp" android:text="@string/owner_location_not_selected" android:textAppearance="?attr/textAppearanceBodySmall" android:textColor="@color/sn_ink_muted" />
 
-            <LinearLayout android:layout_width="600dp" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:orientation="horizontal">
+            <LinearLayout android:layout_width="match_parent" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:layout_marginTop="16dp" android:orientation="horizontal">
                 <com.google.android.material.textfield.TextInputLayout android:id="@+id/courtCountLayout" style="@style/OwnerApplicationInput" android:layout_width="0dp" android:layout_weight="1" android:hint="@string/owner_court_count">
-                    <com.google.android.material.textfield.TextInputEditText android:id="@+id/courtCount" android:layout_width="600dp" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:inputType="number" />
+                    <com.google.android.material.textfield.TextInputEditText android:id="@+id/courtCount" android:layout_width="match_parent" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:inputType="number" />
                 </com.google.android.material.textfield.TextInputLayout>
                 <com.google.android.material.textfield.TextInputLayout android:id="@+id/openTimeLayout" style="@style/OwnerApplicationInput" android:layout_width="0dp" android:layout_marginStart="8dp" android:layout_weight="1" android:hint="@string/owner_apply_open_time">
-                    <com.google.android.material.textfield.TextInputEditText android:id="@+id/openTime" android:layout_width="600dp" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:inputType="time" android:text="05:30" />
+                    <com.google.android.material.textfield.TextInputEditText android:id="@+id/openTime" android:layout_width="match_parent" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:inputType="time" android:text="05:30" />
                 </com.google.android.material.textfield.TextInputLayout>
                 <com.google.android.material.textfield.TextInputLayout android:id="@+id/closeTimeLayout" style="@style/OwnerApplicationInput" android:layout_width="0dp" android:layout_marginStart="8dp" android:layout_weight="1" android:hint="@string/owner_apply_close_time">
-                    <com.google.android.material.textfield.TextInputEditText android:id="@+id/closeTime" android:layout_width="600dp" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:inputType="time" android:text="22:30" />
+                    <com.google.android.material.textfield.TextInputEditText android:id="@+id/closeTime" android:layout_width="match_parent" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:inputType="time" android:text="22:30" />
                 </com.google.android.material.textfield.TextInputLayout>
             </LinearLayout>
 
             <TextView style="@style/OwnerApplicationSection" android:text="@string/owner_section_representative" />
             <com.google.android.material.textfield.TextInputLayout android:id="@+id/representativeNameLayout" style="@style/OwnerApplicationInput" android:hint="@string/owner_representative_name">
-                <com.google.android.material.textfield.TextInputEditText android:id="@+id/representativeName" android:layout_width="600dp" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:inputType="textCapWords" />
+                <com.google.android.material.textfield.TextInputEditText android:id="@+id/representativeName" android:layout_width="match_parent" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:inputType="textCapWords" />
             </com.google.android.material.textfield.TextInputLayout>
             <com.google.android.material.textfield.TextInputLayout android:id="@+id/representativePhoneLayout" style="@style/OwnerApplicationInput" android:hint="@string/owner_representative_phone">
-                <com.google.android.material.textfield.TextInputEditText android:id="@+id/representativePhone" android:layout_width="600dp" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:inputType="phone" />
+                <com.google.android.material.textfield.TextInputEditText android:id="@+id/representativePhone" android:layout_width="match_parent" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:inputType="phone" />
             </com.google.android.material.textfield.TextInputLayout>
 
             <TextView style="@style/OwnerApplicationSection" android:text="@string/owner_section_photos" />
-            <LinearLayout android:id="@+id/photoList" android:layout_width="600dp" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:accessibilityLiveRegion="polite" android:orientation="vertical" />
+            <LinearLayout android:id="@+id/photoList" android:layout_width="match_parent" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:accessibilityLiveRegion="polite" android:orientation="vertical" />
             <com.google.android.material.button.MaterialButton android:id="@+id/addPhoto" style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="wrap_content" android:layout_height="48dp" android:layout_marginTop="8dp" android:text="@string/owner_add_photo" app:icon="@drawable/ic_add_photo_24" />
 
             <TextView style="@style/OwnerApplicationSection" android:text="@string/owner_section_documents" />
-            <TextView android:layout_width="600dp" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:text="@string/owner_document_hint" android:textAppearance="?attr/textAppearanceBodyMedium" android:textColor="@color/sn_ink_muted" />
-            <LinearLayout android:id="@+id/documentList" android:layout_width="600dp" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:accessibilityLiveRegion="polite" android:orientation="vertical" />
-            <com.google.android.material.button.MaterialButton android:id="@+id/addDocument" style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="600dp" android:layout_gravity="center_horizontal" android:layout_height="52dp" android:minHeight="48dp" android:layout_marginTop="10dp" android:text="@string/owner_add_document" app:icon="@drawable/ic_attachment_24" />
-            <TextView android:id="@+id/formMessage" android:layout_width="600dp" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:accessibilityLiveRegion="assertive" android:textColor="@color/sn_danger" android:visibility="gone" />
-            <com.google.android.material.progressindicator.LinearProgressIndicator android:id="@+id/uploadProgress" android:layout_width="600dp" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:indeterminate="true" android:visibility="gone" />
+            <TextView android:layout_width="match_parent" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:text="@string/owner_document_hint" android:textAppearance="?attr/textAppearanceBodyMedium" android:textColor="@color/sn_ink_muted" />
+            <LinearLayout android:id="@+id/documentList" android:layout_width="match_parent" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:accessibilityLiveRegion="polite" android:orientation="vertical" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/addDocument" style="@style/Widget.Material3.Button.OutlinedButton" android:layout_width="match_parent" android:layout_gravity="center_horizontal" android:layout_height="52dp" android:minHeight="48dp" android:layout_marginTop="10dp" android:text="@string/owner_add_document" app:icon="@drawable/ic_attachment_24" />
+            <TextView android:id="@+id/formMessage" android:layout_width="match_parent" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:layout_marginTop="8dp" android:accessibilityLiveRegion="assertive" android:textColor="@color/sn_danger" android:visibility="gone" />
+            <com.google.android.material.progressindicator.LinearProgressIndicator android:id="@+id/uploadProgress" android:layout_width="match_parent" android:layout_gravity="center_horizontal" android:layout_height="wrap_content" android:indeterminate="true" android:visibility="gone" />
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 

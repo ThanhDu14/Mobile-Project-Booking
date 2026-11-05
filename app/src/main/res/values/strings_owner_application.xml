@@ -69,4 +69,16 @@
     <string name="owner_location_invalid">Tọa độ không hợp lệ. Vĩ độ phải từ -90 đến 90, kinh độ từ -180 đến 180.</string>
     <string name="owner_submitted_at">Nộp lúc %1$s. %2$s</string>
     <string name="owner_timeline_submitted_at">Đã nộp hồ sơ\n%1$s</string>
+    <string name="owner_retry_upload">Thử lại</string>
+    <string name="owner_uploading_file">Đang tải %1$s</string>
+    <string name="owner_retry_upload_named">Thử tải lại %1$s</string>
+    <string name="owner_remove_file_named">Xóa tệp %1$s</string>
+    <string name="owner_view_document">Xem giấy tờ · %1$s</string>
+    <string name="owner_view_document_named">Xem giấy tờ %1$s</string>
+    <string name="owner_document_preview">Xem trước giấy tờ hồ sơ</string>
+    <string name="owner_download_document">Tải xuống</string>
+    <string name="owner_document_download_description">Giấy tờ hồ sơ đăng ký chủ sân</string>
+    <string name="owner_download_started">Đã bắt đầu tải tệp xuống thư mục Tải xuống.</string>
+    <string name="owner_document_load_error">Không tải được giấy tờ. Hãy mở lại để lấy liên kết an toàn mới.</string>
+    <string name="owner_status_stale">Chưa thể xác nhận trạng thái mới nhất: %1$s</string>
 </resources>

@@ -30,6 +30,7 @@
                     </LinearLayout>
                     <View android:layout_width="match_parent" android:layout_height="1dp" android:background="@color/sn_line" />
                     <TextView android:id="@+id/statusSummary" android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="18dp" android:lineSpacingExtra="6dp" android:textAppearance="?attr/textAppearanceBodyLarge" />
+                    <LinearLayout android:id="@+id/statusDocuments" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:paddingHorizontal="12dp" android:paddingBottom="8dp" android:visibility="gone" />
                     <TextView android:id="@+id/rejectReason" android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingHorizontal="18dp" android:paddingBottom="18dp" android:textColor="@color/sn_danger" android:visibility="gone" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>

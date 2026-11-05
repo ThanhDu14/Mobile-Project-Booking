@@ -2,6 +2,12 @@ package com.example.booking_app.feature.owner.ui
 
 import android.os.Bundle
 import android.view.View
+import android.view.ViewGroup
+import android.widget.ImageView
+import android.app.DownloadManager
+import android.content.Context
+import android.net.Uri
+import android.os.Environment
 import androidx.core.net.toUri
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
@@ -14,7 +20,12 @@ import com.example.booking_app.R
 import com.example.booking_app.databinding.FragmentOwnerApplicationStatusBinding
 import com.example.booking_app.feature.owner.domain.OwnerApplicationState
 import androidx.core.content.ContextCompat
+import coil3.load
+import coil3.request.crossfade
 import com.google.firebase.auth.FirebaseAuth
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
@@ -28,6 +39,7 @@ class OwnerApplicationStatusFragment : Fragment(R.layout.fragment_owner_applicat
     private val binding get() = checkNotNull(_binding)
     private val viewModel: OwnerApplicationViewModel by activityViewModels()
     private var state: OwnerApplicationState? = null
+    private var role: String? = null
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         _binding = FragmentOwnerApplicationStatusBinding.bind(view)
@@ -47,6 +59,7 @@ class OwnerApplicationStatusFragment : Fragment(R.layout.fragment_owner_applicat
         binding.statusProgress.isVisible = ui.loading
         val status = ui.status?.ownerStatus
         state = status
+        role = ui.status?.role
         if (ui.message != null && ui.status == null) {
             binding.statusMessage.text = "${ui.message}  ·  ${getString(R.string.owner_refresh)}"
             binding.statusMessage.setTextColor(ContextCompat.getColor(requireContext(), R.color.sn_danger))
@@ -59,6 +72,7 @@ class OwnerApplicationStatusFragment : Fragment(R.layout.fragment_owner_applicat
         binding.statusAction.setOnClickListener { continueForCurrentState() }
         val app = ui.status?.application
         binding.submittedCard.isVisible = status in setOf(OwnerApplicationState.PENDING, OwnerApplicationState.REJECTED, OwnerApplicationState.APPROVED) && app != null
+        renderDocuments(app?.applicationId, app?.draft?.documentPaths.orEmpty(), ui.statusFresh)
         when (status) {
             OwnerApplicationState.PENDING -> {
                 applyBannerColors(R.color.sn_lamp_container, R.color.sn_on_lamp_container)
@@ -104,6 +118,81 @@ class OwnerApplicationStatusFragment : Fragment(R.layout.fragment_owner_applicat
                 binding.timeline.isVisible = false
             }
         }
+        if (!ui.statusFresh) {
+            binding.statusAction.setText(R.string.owner_refresh)
+            binding.statusAction.setOnClickListener { viewModel.refreshStatus() }
+            if (ui.message != null) binding.statusMessage.text = getString(R.string.owner_status_stale, ui.message)
+        }
+    }
+
+    private fun renderDocuments(applicationId: String?, paths: List<String>, statusFresh: Boolean) {
+        binding.statusDocuments.removeAllViews()
+        binding.statusDocuments.isVisible = applicationId != null && paths.isNotEmpty()
+        paths.forEach { path ->
+            binding.statusDocuments.addView(MaterialButton(requireContext()).apply {
+                setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_BodyLarge)
+                setBackgroundColor(android.graphics.Color.TRANSPARENT)
+                text = getString(R.string.owner_view_document, path.substringAfterLast('/'))
+                contentDescription = getString(R.string.owner_view_document_named, path.substringAfterLast('/'))
+                minHeight = resources.getDimensionPixelSize(R.dimen.touch_target_min)
+                isEnabled = statusFresh
+                setOnClickListener { openDocument(applicationId.orEmpty(), path) }
+            })
+        }
+    }
+
+    private fun openDocument(applicationId: String, path: String) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            binding.statusProgress.isVisible = true
+            viewModel.signedDocumentUrl(applicationId, path).onSuccess { signedUrl ->
+                if (_binding == null) return@onSuccess
+                binding.statusProgress.isVisible = false
+                val image = ImageView(requireContext()).apply {
+                    contentDescription = getString(R.string.owner_document_preview)
+                    scaleType = ImageView.ScaleType.FIT_CENTER
+                    layoutParams = ViewGroup.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        resources.getDimensionPixelSize(R.dimen.owner_document_preview_height),
+                    )
+                    load(signedUrl) { crossfade(true) }
+                }
+                MaterialAlertDialogBuilder(requireContext())
+                    .setTitle(path.substringAfterLast('/'))
+                    .setView(image)
+                    .setNegativeButton(R.string.common_cancel, null)
+                    .setPositiveButton(R.string.owner_download_document) { _, _ -> downloadDocument(applicationId, path) }
+                    .show()
+            }.onFailure {
+                if (_binding == null) return@onFailure
+                binding.statusProgress.isVisible = false
+                Snackbar.make(binding.root, R.string.owner_document_load_error, Snackbar.LENGTH_LONG).show()
+            }
+        }
+    }
+
+    private fun downloadDocument(applicationId: String, path: String) {
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewModel.signedDocumentUrl(applicationId, path).onSuccess { signedUrl ->
+                if (_binding == null) return@onSuccess
+                val fileName = path.substringAfterLast('/').replace(Regex("[^A-Za-z0-9._-]"), "_")
+                val mimeType = when (fileName.substringAfterLast('.', "").lowercase()) {
+                    "png" -> "image/png"
+                    "webp" -> "image/webp"
+                    else -> "image/jpeg"
+                }
+                val request = DownloadManager.Request(Uri.parse(signedUrl))
+                    .setMimeType(mimeType)
+                    .setTitle(fileName)
+                    .setDescription(getString(R.string.owner_document_download_description))
+                    .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
+                    .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, fileName)
+                val manager = requireContext().getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
+                manager.enqueue(request)
+                Snackbar.make(binding.root, R.string.owner_download_started, Snackbar.LENGTH_LONG).show()
+            }.onFailure {
+                if (_binding != null) Snackbar.make(binding.root, R.string.owner_document_load_error, Snackbar.LENGTH_LONG).show()
+            }
+        }
     }
 
     private fun applyBannerColors(background: Int, foreground: Int) {
@@ -116,6 +205,17 @@ class OwnerApplicationStatusFragment : Fragment(R.layout.fragment_owner_applicat
     }
 
     private fun continueForCurrentState() {
+        if (_binding == null) return
+        if (!viewModel.uiState.value.statusFresh) {
+            viewModel.refreshStatus()
+            return
+        }
+        if ((state == OwnerApplicationState.APPROVED && role != "OWNER") ||
+            (state != null && state != OwnerApplicationState.APPROVED && role != "PLAYER")
+        ) {
+            viewModel.refreshStatus()
+            return
+        }
         when (state) {
             OwnerApplicationState.NONE, null -> findNavController().navigate(R.id.action_ownerApplicationStatus_to_form, Bundle().apply { putString("mode", "new") })
             OwnerApplicationState.REJECTED -> findNavController().navigate(R.id.action_ownerApplicationStatus_to_form, Bundle().apply { putString("mode", "resubmit") })

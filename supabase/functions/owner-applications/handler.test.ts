@@ -128,3 +128,11 @@ Deno.test("owner-applications serves authoritative current status", async () => 
   assertEquals(state.ownerStatus, "PENDING");
   assertEquals(state.application.applicationId, applicationId);
 });
+
+Deno.test("owner-applications refuses inconsistent ownerStatus and trusted role", async () => {
+  await seed();
+  await commit([updateWrite(`users/${uid}`, { ownerStatus: "APPROVED" })]);
+  const response = await handleOwnerApplications(request({ action: "STATUS" }), TEST_DEPS);
+  assertEquals(response.status, 409);
+  assertEquals((await response.json()).error.code, "OWNER_STATE_INVALID");
+});

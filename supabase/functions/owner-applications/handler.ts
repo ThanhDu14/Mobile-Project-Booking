@@ -46,6 +46,8 @@ async function readStatus(uid: string, firestore: OwnerApplicationDeps["firestor
   const ownerStatus = enumValue(user.ownerStatus, ["NONE", "PENDING", "APPROVED", "REJECTED"] as const);
   const role = enumValue(user.role, ["PLAYER", "OWNER"] as const);
   if (!ownerStatus || !role) throw new HttpError(409, "OWNER_STATE_INVALID", "Trạng thái tài khoản chưa nhất quán");
+  const expectedRole = ownerStatus === "APPROVED" ? "OWNER" : "PLAYER";
+  if (role !== expectedRole) throw new HttpError(409, "OWNER_STATE_INVALID", "Vai trò và trạng thái chủ sân chưa được đồng bộ");
   const app = await firestore.latestOwnerApplication(uid);
   if (app && app.uid !== uid) throw new HttpError(409, "OWNER_STATE_INVALID", "Hồ sơ không khớp tài khoản");
   const appStatus = app?.status;

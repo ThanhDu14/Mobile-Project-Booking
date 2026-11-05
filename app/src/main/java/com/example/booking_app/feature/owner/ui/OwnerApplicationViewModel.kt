@@ -22,15 +22,25 @@ import kotlinx.coroutines.launch
 import java.util.UUID
 import javax.inject.Inject
 
+data class OwnerPendingUpload(
+    val id: String,
+    val fileName: String,
+    val document: Boolean,
+    val failed: Boolean = false,
+    val error: String? = null,
+)
+
 data class OwnerApplicationUiState(
     val loading: Boolean = true,
     val status: OwnerApplicationStatus? = null,
+    val statusFresh: Boolean = false,
     val applicationId: String = UUID.randomUUID().toString(),
     val draft: OwnerApplicationDraft = emptyDraft(),
     val districts: List<District> = emptyList(),
     val errors: List<OwnerApplicationFieldError> = emptyList(),
     val message: String? = null,
     val busy: Boolean = false,
+    val uploads: List<OwnerPendingUpload> = emptyList(),
 ) {
     companion object {
         fun emptyDraft() = OwnerApplicationDraft(
@@ -51,12 +61,14 @@ class OwnerApplicationViewModel @Inject constructor(
     val uiState: StateFlow<OwnerApplicationUiState> = _uiState.asStateFlow()
     private var initialized = false
     private var originalPaths: Set<String> = emptySet()
+    private val retryableUploads = mutableMapOf<String, PendingUploadBytes>()
 
     fun initialize(resubmit: Boolean = false, forceNew: Boolean = false) {
         if (initialized) return
         initialized = true
         viewModelScope.launch {
-            val status = repository.refreshStatus().getOrNull()
+            val statusResult = repository.refreshStatus()
+            val status = statusResult.getOrNull()
             val districts = runCatching { districtRepository.activeDistricts() }.getOrDefault(emptyList())
             var applicationId = UUID.randomUUID().toString()
             var draft = OwnerApplicationUiState.emptyDraft()
@@ -66,10 +78,16 @@ class OwnerApplicationViewModel @Inject constructor(
                     draft = status.application.draft
                     originalPaths = draft.venue.photoPaths.toSet() + draft.documentPaths
                 }
-                status?.ownerStatus == OwnerApplicationState.NONE && !forceNew -> {
+                status?.ownerStatus == OwnerApplicationState.NONE -> {
                     val local = repository.loadLocalDraft().getOrNull()
-                    if (local != null && local.first != status.application?.applicationId) {
-                        applicationId = local.first
+                    if (local != null) {
+                        // A locally saved ID must not be reused once its lifecycle already exists
+                        // on the server (for example, an approved owner was later revoked).
+                        applicationId = if (local.first == status.application?.applicationId) {
+                            UUID.randomUUID().toString()
+                        } else {
+                            local.first
+                        }
                         draft = local.second
                     }
                 }
@@ -77,18 +95,28 @@ class OwnerApplicationViewModel @Inject constructor(
                 resubmit -> _uiState.update { it.copy(message = "Hồ sơ không còn ở trạng thái bị từ chối. Hãy làm mới.") }
             }
             _uiState.update {
-                it.copy(loading = false, status = status, applicationId = applicationId, draft = draft, districts = districts)
+                it.copy(
+                    loading = false,
+                    status = status,
+                    statusFresh = statusResult.isSuccess,
+                    applicationId = applicationId,
+                    draft = draft,
+                    districts = districts,
+                    message = if (statusResult.isFailure) {
+                        statusResult.exceptionOrNull()?.message ?: "Không thể tải trạng thái. Chạm để thử lại."
+                    } else null,
+                )
             }
             persistDraft()
         }
     }
 
     fun refreshStatus() = viewModelScope.launch {
-        _uiState.update { it.copy(loading = true, message = null) }
+        _uiState.update { it.copy(loading = true, statusFresh = false, message = null) }
         repository.refreshStatus().onSuccess { status ->
-            _uiState.update { it.copy(loading = false, status = status) }
+            _uiState.update { it.copy(loading = false, status = status, statusFresh = true) }
         }.onFailure { error ->
-            _uiState.update { it.copy(loading = false, message = error.message ?: "Không thể làm mới trạng thái") }
+            _uiState.update { it.copy(loading = false, statusFresh = false, message = error.message ?: "Không thể làm mới trạng thái") }
         }
     }
 
@@ -133,15 +161,55 @@ class OwnerApplicationViewModel @Inject constructor(
             _uiState.update { it.copy(errors = validation, message = validation.first().message) }
             return@launch
         }
-        _uiState.update { it.copy(busy = true, message = null) }
-        repository.upload(fileName, mime, bytes, current.applicationId).onSuccess { upload ->
+        val id = UUID.randomUUID().toString()
+        retryableUploads[id] = PendingUploadBytes(fileName, mime, bytes.copyOf(), document)
+        uploadPendingFile(id)
+    }
+
+    fun retryAttachment(id: String) = viewModelScope.launch {
+        if (_uiState.value.busy || id !in retryableUploads) return@launch
+        uploadPendingFile(id)
+    }
+
+    fun discardFailedAttachment(id: String) {
+        if (_uiState.value.uploads.none { it.id == id && it.failed }) return
+        retryableUploads.remove(id)
+        _uiState.update { state -> state.copy(uploads = state.uploads.filterNot { it.id == id }) }
+    }
+
+    private suspend fun uploadPendingFile(id: String) {
+        val pending = retryableUploads[id] ?: return
+        val applicationId = _uiState.value.applicationId
+        _uiState.update { state ->
+            state.copy(
+                busy = true,
+                message = null,
+                uploads = state.uploads.filterNot { it.id == id } + OwnerPendingUpload(id, pending.fileName, pending.document),
+            )
+        }
+        repository.upload(pending.fileName, pending.mime, pending.bytes, applicationId).onSuccess { upload ->
+            retryableUploads.remove(id)
             _uiState.update { state ->
-                val draft = if (document) state.draft.copy(documentPaths = state.draft.documentPaths + upload.path)
+                val draft = if (pending.document) state.draft.copy(documentPaths = state.draft.documentPaths + upload.path)
                 else state.draft.copy(venue = state.draft.venue.copy(photoPaths = state.draft.venue.photoPaths + upload.path))
-                state.copy(draft = draft, busy = false, errors = state.errors.filterNot { it.field == "evidence" })
+                state.copy(
+                    draft = draft,
+                    busy = false,
+                    uploads = state.uploads.filterNot { it.id == id },
+                    errors = state.errors.filterNot { it.field == "evidence" },
+                )
             }
             persistDraft()
-        }.onFailure { error -> _uiState.update { it.copy(busy = false, message = error.message ?: "Tải tệp thất bại. Hãy thử lại.") } }
+        }.onFailure { error ->
+            val message = error.message ?: "Tải tệp thất bại. Hãy thử lại."
+            _uiState.update { state ->
+                state.copy(
+                    busy = false,
+                    message = message,
+                    uploads = state.uploads.map { if (it.id == id) it.copy(failed = true, error = message) else it },
+                )
+            }
+        }
     }
 
     fun removeAttachment(path: String, document: Boolean) {
@@ -161,25 +229,67 @@ class OwnerApplicationViewModel @Inject constructor(
     }
 
     fun submit() = viewModelScope.launch {
+        if (_uiState.value.busy || _uiState.value.loading) return@launch
         val current = _uiState.value
         if (!validate()) return@launch
+        _uiState.update { it.copy(loading = true, statusFresh = false, message = null) }
+        val latestResult = repository.refreshStatus()
+        val latest = latestResult.getOrNull()
+        if (latest == null) {
+            _uiState.update { it.copy(loading = false, statusFresh = false, message = "Không thể xác minh trạng thái hồ sơ. Hãy thử lại trước khi nộp.") }
+            return@launch
+        }
+        val lifecycleAllowed = when (latest.ownerStatus) {
+            OwnerApplicationState.NONE -> latest.role == "PLAYER" && latest.application?.applicationId != current.applicationId
+            OwnerApplicationState.REJECTED -> latest.role == "PLAYER" && latest.application?.applicationId == current.applicationId
+            OwnerApplicationState.PENDING, OwnerApplicationState.APPROVED -> false
+        }
+        if (!lifecycleAllowed) {
+            val message = when (latest.ownerStatus) {
+                OwnerApplicationState.PENDING -> "Hồ sơ đang chờ duyệt và không thể sửa hoặc nộp thêm."
+                OwnerApplicationState.APPROVED -> "Tài khoản đã được duyệt chủ sân."
+                OwnerApplicationState.REJECTED -> "Hồ sơ đã thay đổi. Hãy làm mới trước khi nộp lại."
+                OwnerApplicationState.NONE -> "Trạng thái tài khoản chưa hợp lệ để nộp hồ sơ."
+            }
+            _uiState.update { it.copy(loading = false, status = latest, statusFresh = true, message = message) }
+            return@launch
+        }
+        _uiState.update { it.copy(loading = false, status = latest, statusFresh = true) }
+        val fresh = _uiState.value
         _uiState.update { it.copy(busy = true, message = null) }
-        repository.submit(current.applicationId, current.draft).onSuccess { status ->
-            val kept = current.draft.venue.photoPaths.toSet() + current.draft.documentPaths
+        repository.submit(fresh.applicationId, fresh.draft).onSuccess { status ->
+            val kept = fresh.draft.venue.photoPaths.toSet() + fresh.draft.documentPaths
             (originalPaths - kept).forEach { repository.deleteStaged(it) }
             originalPaths = kept
-            _uiState.update { it.copy(busy = false, status = status) }
+            _uiState.update { it.copy(busy = false, status = status, statusFresh = true) }
         }.onFailure { error ->
             // On an ambiguous response, read authoritative state before offering another submit.
             val latest = repository.refreshStatus().getOrNull()
-            _uiState.update { it.copy(busy = false, status = latest ?: it.status, message = error.message ?: "Chưa xác định được kết quả. Hãy làm mới trạng thái trước khi gửi lại.") }
+            _uiState.update {
+                it.copy(
+                    busy = false,
+                    status = latest ?: it.status,
+                    statusFresh = latest != null,
+                    message = error.message ?: "Chưa xác định được kết quả. Hãy làm mới trạng thái trước khi gửi lại.",
+                )
+            }
             persistDraft()
         }
     }
+
+    suspend fun signedDocumentUrl(applicationId: String, path: String): Result<String> =
+        repository.signedDocumentUrl(applicationId, path)
 
     private fun persistDraft() {
         val state = _uiState.value
         if (state.loading) return
         viewModelScope.launch { repository.saveLocalDraft(state.applicationId, state.draft) }
     }
+
+    private data class PendingUploadBytes(
+        val fileName: String,
+        val mime: String,
+        val bytes: ByteArray,
+        val document: Boolean,
+    )
 }

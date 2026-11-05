@@ -25,6 +25,8 @@ import com.example.booking_app.databinding.FragmentOwnerApplicationFormBinding
 import com.example.booking_app.feature.owner.domain.OwnerApplicationState
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.timepicker.MaterialTimePicker
+import com.google.android.material.timepicker.TimeFormat
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -46,6 +48,9 @@ class OwnerApplicationFormFragment : Fragment(R.layout.fragment_owner_applicatio
         wireTextFields()
         binding.backButton.setOnClickListener { findNavController().navigateUp() }
         binding.changePin.setOnClickListener { showCoordinateDialog() }
+        binding.formMessage.setOnClickListener { viewModel.refreshStatus() }
+        configureTimePicker(binding.openTime, "owner-open-time")
+        configureTimePicker(binding.closeTime, "owner-close-time")
         binding.addPhoto.setOnClickListener { photos.launch("image/*") }
         binding.addDocument.setOnClickListener { documents.launch("image/*") }
         binding.reviewButton.setOnClickListener {
@@ -96,6 +101,8 @@ class OwnerApplicationFormFragment : Fragment(R.layout.fragment_owner_applicatio
         binding.locationValue.text = draft.venue.location?.let { "${it.latitude}, ${it.longitude}" } ?: getString(R.string.owner_location_not_selected)
         renderAttachments(binding.photoList, draft.venue.photoPaths, document = false)
         renderAttachments(binding.documentList, draft.documentPaths, document = true)
+        renderUploadRows(binding.photoList, state.uploads.filterNot { it.document })
+        renderUploadRows(binding.documentList, state.uploads.filter { it.document })
         binding.venueNameLayout.error = state.errors.firstOrNull { it.field == "venueName" }?.message
         binding.addressLayout.error = state.errors.firstOrNull { it.field == "address" }?.message
         binding.districtLayout.error = state.errors.firstOrNull { it.field == "districtId" }?.message
@@ -110,7 +117,7 @@ class OwnerApplicationFormFragment : Fragment(R.layout.fragment_owner_applicatio
         if (!redirected && ownerStatus == OwnerApplicationState.PENDING) {
             redirected = true
             findNavController().navigate(R.id.action_ownerApplicationForm_to_status)
-        } else if (!redirected && ownerStatus == OwnerApplicationState.APPROVED) {
+        } else if (!redirected && ownerStatus == OwnerApplicationState.APPROVED && state.status?.role == "OWNER") {
             redirected = true
             findNavController().navigate("smashnow://owner/venues".toUri())
         }
@@ -138,9 +145,63 @@ class OwnerApplicationFormFragment : Fragment(R.layout.fragment_owner_applicatio
             row.addView(MaterialButton(requireContext()).apply {
                 text = getString(R.string.owner_remove_file)
                 minHeight = resources.getDimensionPixelSize(R.dimen.touch_target_min)
+                contentDescription = getString(R.string.owner_remove_file_named, path.substringAfterLast('/'))
                 setOnClickListener { viewModel.removeAttachment(path, document) }
             })
             container.addView(row)
+        }
+    }
+
+    private fun renderUploadRows(container: LinearLayout, uploads: List<OwnerPendingUpload>) {
+        uploads.forEach { upload ->
+            val row = LinearLayout(requireContext()).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = android.view.Gravity.CENTER_VERTICAL
+                minimumHeight = resources.getDimensionPixelSize(R.dimen.touch_target_min)
+                setPadding(resources.getDimensionPixelSize(R.dimen.space_3), 0, 0, 0)
+            }
+            row.addView(TextView(requireContext()).apply {
+                text = upload.fileName
+                setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_BodyMedium)
+                maxLines = 1
+                ellipsize = android.text.TextUtils.TruncateAt.MIDDLE
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            })
+            if (upload.failed) {
+                row.addView(MaterialButton(requireContext()).apply {
+                    text = getString(R.string.owner_retry_upload)
+                    minHeight = resources.getDimensionPixelSize(R.dimen.touch_target_min)
+                    contentDescription = getString(R.string.owner_retry_upload_named, upload.fileName)
+                    setOnClickListener { viewModel.retryAttachment(upload.id) }
+                })
+                row.addView(android.widget.ImageButton(requireContext()).apply {
+                    setImageResource(android.R.drawable.ic_menu_delete)
+                    contentDescription = getString(R.string.owner_remove_file_named, upload.fileName)
+                    minimumWidth = resources.getDimensionPixelSize(R.dimen.touch_target_min)
+                    minimumHeight = resources.getDimensionPixelSize(R.dimen.touch_target_min)
+                    background = requireContext().getDrawable(android.R.drawable.list_selector_background)
+                    setOnClickListener { viewModel.discardFailedAttachment(upload.id) }
+                })
+            } else {
+                row.addView(TextView(requireContext()).apply {
+                    text = getString(R.string.owner_uploading)
+                    setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_BodySmall)
+                    setPadding(resources.getDimensionPixelSize(R.dimen.space_2), 0, 0, 0)
+                    contentDescription = getString(R.string.owner_uploading_file, upload.fileName)
+                })
+            }
+            container.addView(row)
+            if (!upload.failed) {
+                val progress = com.google.android.material.progressindicator.LinearProgressIndicator(requireContext()).apply {
+                    isIndeterminate = true
+                    contentDescription = getString(R.string.owner_uploading_file, upload.fileName)
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        (4 * resources.displayMetrics.density).toInt(),
+                    )
+                }
+                container.addView(progress)
+            }
         }
     }
 
@@ -196,6 +257,24 @@ class OwnerApplicationFormFragment : Fragment(R.layout.fragment_owner_applicatio
                     Snackbar.make(binding.root, R.string.owner_location_invalid, Snackbar.LENGTH_LONG).show()
                 } else viewModel.updateLocation(latitude, longitude)
             }.show()
+    }
+
+    private fun configureTimePicker(field: com.google.android.material.textfield.TextInputEditText, tag: String) {
+        field.showSoftInputOnFocus = false
+        field.setOnClickListener {
+            val parts = field.text?.toString()?.split(":")
+            val picker = MaterialTimePicker.Builder()
+                .setTimeFormat(TimeFormat.CLOCK_24H)
+                .setHour(parts?.getOrNull(0)?.toIntOrNull() ?: 5)
+                .setMinute(parts?.getOrNull(1)?.toIntOrNull() ?: 30)
+                .setTitleText(field.hint)
+                .build()
+            picker.addOnPositiveButtonClickListener {
+                val value = "%02d:%02d".format(picker.hour, picker.minute)
+                field.setText(value)
+            }
+            picker.show(parentFragmentManager, tag)
+        }
     }
 
     override fun onDestroyView() { _binding = null; super.onDestroyView() }
