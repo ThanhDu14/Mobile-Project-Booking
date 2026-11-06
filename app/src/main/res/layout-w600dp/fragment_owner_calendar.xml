@@ -1,50 +1,57 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="?android:attr/colorBackground"
     android:orientation="vertical">
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:accessibilityHeading="true"
-        android:paddingHorizontal="@dimen/screen_gutter"
-        android:paddingTop="@dimen/space_4"
-        android:text="@string/owner_calendar_title"
-        android:textAppearance="?attr/textAppearanceHeadlineSmall"
-        android:textColor="?attr/colorOnSurface" />
-
-    <Spinner
-        android:id="@+id/venueSpinner"
-        android:layout_width="match_parent"
-        android:layout_height="@dimen/touch_min"
-        android:layout_marginHorizontal="@dimen/screen_gutter"
-        android:contentDescription="@string/owner_calendar_select_venue" />
-
+    <!-- Top Header: Title & Day/Week Toggle (Tablet) -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:paddingHorizontal="@dimen/screen_gutter">
+        android:paddingHorizontal="@dimen/space_8"
+        android:paddingTop="@dimen/space_6">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/dayMode"
-            style="@style/Widget.SmashNow.Button.Outlined"
+        <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="@string/owner_calendar_day" />
+            android:accessibilityHeading="true"
+            android:text="@string/owner_calendar_title"
+            android:textAppearance="?attr/textAppearanceHeadlineLarge"
+            android:textColor="?attr/colorOnSurface"
+            android:textStyle="bold" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/weekMode"
-            style="@style/Widget.SmashNow.Button.Outlined"
-            android:layout_width="0dp"
+        <LinearLayout
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="@dimen/space_2"
-            android:layout_weight="1"
-            android:text="@string/owner_calendar_week" />
+            android:background="@drawable/bg_pill_maintenance"
+            android:padding="2dp">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/dayMode"
+                style="@style/Widget.SmashNow.Button"
+                android:layout_width="wrap_content"
+                android:layout_height="44dp"
+                android:minHeight="44dp"
+                android:paddingHorizontal="@dimen/space_4"
+                android:text="@string/owner_calendar_day"
+                android:textAppearance="?attr/textAppearanceLabelLarge" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/weekMode"
+                style="@style/Widget.SmashNow.Button.Text"
+                android:layout_width="wrap_content"
+                android:layout_height="44dp"
+                android:minHeight="44dp"
+                android:paddingHorizontal="@dimen/space_4"
+                android:text="@string/owner_calendar_week"
+                android:textAppearance="?attr/textAppearanceLabelLarge"
+                android:textColor="?attr/colorOnSurface" />
+        </LinearLayout>
     </LinearLayout>
 
     <LinearLayout
@@ -52,7 +59,31 @@
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:paddingHorizontal="@dimen/space_2">
+        android:paddingHorizontal="@dimen/space_8">
+
+        <Spinner
+            android:id="@+id/venueSpinner"
+            android:layout_width="0dp"
+            android:layout_height="@dimen/touch_min"
+            android:layout_weight="1"
+            android:contentDescription="@string/owner_calendar_select_venue" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/refresh"
+            style="@style/Widget.SmashNow.Button.Text"
+            android:layout_width="wrap_content"
+            android:layout_height="@dimen/touch_min"
+            android:minHeight="@dimen/touch_min"
+            android:text="@string/common_retry" />
+    </LinearLayout>
+
+    <!-- Date Navigator: ‹ Thứ Sáu, 09/10 › -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="@dimen/space_6">
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/previousPeriod"
@@ -62,7 +93,8 @@
             android:contentDescription="@string/owner_calendar_previous"
             android:minHeight="@dimen/touch_min"
             android:text="‹"
-            android:textAppearance="?attr/textAppearanceHeadlineSmall" />
+            android:textAppearance="?attr/textAppearanceHeadlineSmall"
+            android:textColor="?attr/colorOnSurface" />
 
         <TextView
             android:id="@+id/periodLabel"
@@ -70,7 +102,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:gravity="center"
-            android:textAppearance="?attr/textAppearanceTitleMedium"
+            android:textAppearance="?attr/textAppearanceTitleLarge"
             android:textColor="?attr/colorOnSurface"
             android:textStyle="bold" />
 
@@ -82,18 +114,9 @@
             android:contentDescription="@string/owner_calendar_next"
             android:minHeight="@dimen/touch_min"
             android:text="›"
-            android:textAppearance="?attr/textAppearanceHeadlineSmall" />
+            android:textAppearance="?attr/textAppearanceHeadlineSmall"
+            android:textColor="?attr/colorOnSurface" />
     </LinearLayout>
-
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/refresh"
-        style="@style/Widget.SmashNow.Button.Text"
-        android:layout_width="wrap_content"
-        android:layout_height="@dimen/touch_min"
-        android:layout_gravity="end"
-        android:layout_marginEnd="@dimen/screen_gutter"
-        android:minHeight="@dimen/touch_min"
-        android:text="@string/common_retry" />
 
     <ProgressBar
         android:id="@+id/loading"
@@ -101,6 +124,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal"
+        android:layout_marginTop="@dimen/space_4"
         android:visibility="gone" />
 
     <TextView
@@ -124,6 +148,7 @@
         android:textColor="?attr/colorOnSurfaceVariant"
         android:visibility="gone" />
 
+    <!-- Calendar Matrix Grid Scroll -->
     <HorizontalScrollView
         android:id="@+id/calendarScroll"
         android:layout_width="match_parent"
@@ -138,7 +163,93 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingHorizontal="@dimen/space_3"
+            android:paddingHorizontal="@dimen/space_6"
             android:paddingBottom="@dimen/space_4" />
+    </HorizontalScrollView>
+
+    <!-- Legend Footer -->
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/colorSurface"
+        android:paddingVertical="@dimen/space_3"
+        android:paddingHorizontal="@dimen/space_8"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <View
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:background="@drawable/bg_pill_confirmed" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_1"
+                android:layout_marginEnd="@dimen/space_4"
+                android:text="@string/owner_calendar_legend_confirmed"
+                android:textAppearance="?attr/textAppearanceLabelMedium"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+
+            <View
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:background="@drawable/bg_pill_dropin" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_1"
+                android:layout_marginEnd="@dimen/space_4"
+                android:text="@string/owner_calendar_legend_pending"
+                android:textAppearance="?attr/textAppearanceLabelMedium"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+
+            <View
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:background="@drawable/bg_stat_card_mint" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_1"
+                android:layout_marginEnd="@dimen/space_4"
+                android:text="@string/owner_calendar_legend_dropin"
+                android:textAppearance="?attr/textAppearanceLabelMedium"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+
+            <View
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:background="@drawable/bg_pill_maintenance" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_1"
+                android:layout_marginEnd="@dimen/space_4"
+                android:text="@string/owner_calendar_legend_blocked"
+                android:textAppearance="?attr/textAppearanceLabelMedium"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+
+            <View
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:background="@drawable/bg_preview_dashed_card" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_1"
+                android:text="@string/owner_calendar_legend_hold"
+                android:textAppearance="?attr/textAppearanceLabelMedium"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+        </LinearLayout>
     </HorizontalScrollView>
 </LinearLayout>

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginVertical="@dimen/space_2"
@@ -9,33 +10,123 @@
     app:cardElevation="0dp"
     app:strokeColor="@color/sn_line"
     app:strokeWidth="1dp">
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:padding="@dimen/space_4">
-        <TextView android:id="@+id/customer" android:layout_width="match_parent" android:layout_height="wrap_content" android:textAppearance="?attr/textAppearanceTitleMedium" android:textColor="?attr/colorOnSurface" android:textStyle="bold" />
-        <TextView android:id="@+id/time" android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingTop="@dimen/space_1" android:textAppearance="?attr/textAppearanceBodyMedium" android:textColor="?attr/colorOnSurface" />
-        <TextView android:id="@+id/courts" android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingTop="@dimen/space_1" android:textAppearance="?attr/textAppearanceBodyMedium" android:textColor="?attr/colorOnSurfaceVariant" />
-        <TextView android:id="@+id/amount" android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingTop="@dimen/space_1" android:textAppearance="?attr/textAppearanceBodyMedium" android:textColor="?attr/colorOnSurface" />
-        <TextView android:id="@+id/status" android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingTop="@dimen/space_1" android:textAppearance="?attr/textAppearanceLabelLarge" android:textColor="?attr/colorPrimary" />
-        <TextView android:id="@+id/deadline" android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingTop="@dimen/space_1" android:textAppearance="?attr/textAppearanceBodySmall" android:textColor="?attr/colorError" />
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/details"
-            style="@style/Widget.SmashNow.Button.Outlined"
+
+        <!-- Row 1: Tên khách hàng & Giá tiền (Tablet) -->
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:contentDescription="@string/owner_bookings_details"
-            android:text="@string/owner_bookings_details" />
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/checkIn"
-            style="@style/Widget.SmashNow.Button.Outlined"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/customer"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textAppearance="?attr/textAppearanceTitleLarge"
+                android:textColor="?attr/colorOnSurface"
+                android:textStyle="bold"
+                tools:text="Đỗ Quang Huy" />
+
+            <TextView
+                android:id="@+id/amount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceTitleLarge"
+                android:textColor="?attr/colorOnSurface"
+                android:textStyle="bold"
+                tools:text="240.000 đ" />
+        </LinearLayout>
+
+        <!-- Row 2: Khung giờ & Deadline đếm ngược -->
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="48dp"
-            android:contentDescription="@string/owner_booking_checkin_title"
-            android:text="@string/owner_booking_checkin_title"
-            android:visibility="gone" />
-        <LinearLayout android:id="@+id/pendingActions" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:visibility="gone">
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_1"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/time"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textAppearance="?attr/textAppearanceBodyLarge"
+                android:textColor="?attr/colorOnSurface"
+                tools:text="T6 09/10 · 18:00 - 20:00" />
+
+            <TextView
+                android:id="@+id/deadline"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_pill_countdown"
+                android:drawableStart="@drawable/ic_timer_24"
+                android:drawablePadding="@dimen/space_1"
+                android:drawableTint="@color/sn_danger"
+                android:gravity="center_vertical"
+                android:paddingHorizontal="@dimen/space_3"
+                android:paddingVertical="@dimen/space_1"
+                android:textAppearance="?attr/textAppearanceLabelMedium"
+                android:textColor="@color/sn_danger"
+                android:textStyle="bold"
+                tools:text="Còn 12 phút" />
+        </LinearLayout>
+
+        <!-- Row 3: Sân con & Trạng thái thanh toán -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_1"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/courts"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                tools:text="Sân 2 · Đã cọc 30%" />
+
+            <TextView
+                android:id="@+id/status"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceLabelLarge"
+                android:textColor="?attr/colorPrimary"
+                android:textStyle="bold"
+                tools:text="Chờ duyệt" />
+        </LinearLayout>
+
+        <!-- Actions Row: Từ chối / Duyệt -->
+        <LinearLayout
+            android:id="@+id/pendingActions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_3"
+            android:orientation="horizontal"
+            android:visibility="gone">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/reject"
+                style="@style/Widget.SmashNow.Button.Outlined"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_marginEnd="@dimen/space_2"
+                android:layout_weight="1"
+                android:contentDescription="@string/owner_bookings_reject"
+                android:minHeight="48dp"
+                android:text="@string/owner_bookings_reject"
+                android:textColor="@color/sn_danger"
+                app:strokeColor="@color/sn_danger" />
+
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/approve"
                 style="@style/Widget.SmashNow.Button"
@@ -43,16 +134,29 @@
                 android:layout_height="48dp"
                 android:layout_weight="1"
                 android:contentDescription="@string/owner_bookings_approve"
+                android:minHeight="48dp"
                 android:text="@string/owner_bookings_approve" />
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/reject"
-                style="@style/Widget.SmashNow.Button.Outlined"
-                android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:layout_marginStart="@dimen/space_2"
-                android:layout_weight="1"
-                android:contentDescription="@string/owner_bookings_reject"
-                android:text="@string/owner_bookings_reject" />
         </LinearLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/checkIn"
+            style="@style/Widget.SmashNow.Button"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="@dimen/space_3"
+            android:contentDescription="@string/owner_booking_checkin_title"
+            android:minHeight="48dp"
+            android:text="@string/owner_booking_checkin_title"
+            android:visibility="gone" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/details"
+            style="@style/Widget.SmashNow.Button.Text"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="@dimen/space_1"
+            android:contentDescription="@string/owner_bookings_details"
+            android:minHeight="48dp"
+            android:text="@string/owner_bookings_details" />
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

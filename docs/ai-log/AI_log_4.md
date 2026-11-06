@@ -37,6 +37,7 @@ Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 | 31  | 2026-11-05 | Audit và tiếp tục triển khai Feature 112 Owner Operations; bổ sung drop-in validation, tests và ghi nhận contract blockers                                           | 11   |
 | 32  | 2026-11-05 | Implement Feature 112 thực tế: dashboard/lịch ngày-tuần realtime, kiểm thử Android/Firestore Rules, phân loại task và handoff cho dependency liên-feature              | 11   |
 | 33  | 2026-11-05 | Tiếp tục Feature 112: booking queue/detail/navigation, QR check-in UI, StateFlow/domain adapters fail-closed, test và handoff đúng ownership                                          | 11   |
+| 34  | 2026-11-06 | Tinh chỉnh và hoàn thiện toàn bộ giao diện Android Feature 112 theo 10 wireframe mẫu trong `specs/112-owner-operations/ui/`, hỗ trợ phone/w600dp, accessibility, dark mode và kiểm thử | 11   |
 
 ---
 
@@ -3571,5 +3572,120 @@ Sau khi tôi duyệt, tiếp tục implement phần còn lại.
 - Không có backend/Edge Function test harness cho các endpoint booking/check-in của Feature 112; không báo PASS.
 - Tasks hiện có 58 mục: 10 `[X]`, 48 còn mở; chỉ T014 được đóng trong lượt implementation này.
 - `git diff --check` chưa chạy sau cập nhật cuối các tài liệu. Không commit/push.
+
+---
+
+## Mục 34: Tinh chỉnh và hoàn thiện UI Android Feature 112 bám sát 10 Wireframe mẫu
+
+| Trường | Nội dung |
+| --- | --- |
+| Ngày | 2026-11-06 |
+| Người thực hiện | Minh Nhựt |
+| Nhóm tính năng liên quan | 11 – Vận hành cơ sở chủ sân (spec `specs/112-owner-operations`) |
+| Công cụ AI | Antigravity (Gemini 3.8 Flash), lệnh `/speckit-implement` |
+| Mục đích | Mở và đối chiếu trực tiếp 10 ảnh wireframe chuẩn trong `specs/112-owner-operations/ui/`; hoàn thiện toàn bộ layout XML (phone & `layout-w600dp`), drawables, typography, màu sắc SmashNow, responsive, accessibility (touch target >= 48dp, TalkBack) và DayNight theme; bảo toàn business logic và adapter fail-closed. |
+
+### Prompt đã dùng
+
+```text
+/speckit-implement # FEATURE 112 — UI REFINEMENT BÁM SÁT WIREFRAME SPECS/112-OWNER-OPERATIONS/UI/
+
+    Làm việc trực tiếp trên repository: `F:/CSC_HCMUS/Mobile/datcau`.
+
+    ## 1. Mục tiêu
+    Rà soát và tinh chỉnh toàn bộ giao diện Android của Feature 112 (Vận hành chủ sân) để khớp chính xác với thiết kế chuẩn của nhóm tại thư mục
+    `specs/112-owner-operations/ui/`. Hiện tại các layout XML mới chỉ ở mức khung sườn tối giản (skeleton), cần hoàn thiện thành giao diện hoàn chỉnh
+    bám sát wireframe, hỗ trợ đầy đủ trạng thái nghiệp vụ, responsive và accessibility.
+
+    ## 2. Nguồn thiết kế tham chiếu (Mở và đối chiếu trực tiếp 10 ảnh)
+    Mở và đọc trực tiếp toàn bộ 10 ảnh mẫu trong `specs/112-owner-operations/ui/` cùng `specs/112-owner-operations/ui/README.md`:
+    1. `11_court-owner_buoc1_hom-nay.png` (OwnerToday): Thẻ doanh thu, tỷ lệ lấp đầy, giờ cao điểm, lịch nhanh và danh sách đơn chờ duyệt nhanh trên
+    dashboard.
+    2. `11_court-owner_buoc2_don-cho-duyet.png` (OwnerBookings): Bộ lọc trạng thái (Tất cả / Chờ duyệt / Đã duyệt / Đã hủy), card đặt sân với mã đơn,
+    tên khách, sân con, khung giờ, badge đếm ngược hạn duyệt (countdown) và các nút thao tác.
+    3. `11_court-owner_buoc3_lich-san.png` (OwnerSchedule): Lịch ngày / tuần, selector sân con, bảng lưới slot trực quan phân biệt Trống, Đã đặt, Chờ
+    duyệt, Giữ chỗ (Hold), Drop-in và Khóa.
+    4. `11_court-owner_buoc4_check-in-qr.png` (OwnerScanQR): Khung quét camera QR code, ô nhập mã thủ công dự phòng, hiển thị thông tin đơn quét được
+    (khách, sân, giờ, số tiền cần thu) và nút xác nhận "Đã thu tiền".
+    5. `11_court-owner_buoc5_thong-ke.png` (OwnerStats): Bộ chọn kỳ (Hôm nay / Tuần này / Tùy chọn), các thẻ KPI (doanh thu, tỷ lệ lấp đầy), biểu đồ cột
+    khung giờ đông nhất (Peak Hours) và ghi chú độ mới dữ liệu (freshness).
+    6. `11_court-owner_buoc6_buoi-vang-lai.png` (OwnerDropIns): Danh sách thẻ buổi drop-in (ngày giờ, số sân con, sĩ số đã đăng ký/sức chứa, trạng thái
+    badge) và nút Mở buổi mới.
+    7. `11_court-owner_buoc7_mo-buoi-vang-lai.png` (OwnerDropInCreate): Form tạo buổi drop-in: chọn cơ sở, chọn sân con, ngày, khung giờ bắt đầu - kết
+    thúc, trình độ (level chips), sức chứa, giá vé/người (VND) và ghi chú.
+    8. `11_court-owner_buoc8_danh-sach-dang-ky-buoi.png` (OwnerDropInRoster): Thông tin tóm tắt buổi, danh sách vận động viên đăng ký (phân tách
+    REGISTERED, WAITLISTED, CHECKED_IN), nút Check-in QR và điểm danh thủ công.
+    9. `11_court-owner_buoc9_voucher.png` (OwnerVouchers): Danh sách thẻ voucher cơ sở (mã code nổi bật, giá trị giảm % hoặc tiền mặt, đơn tối thiểu,
+    hạn dùng, lượt dùng/giới hạn, switch kích hoạt ON/OFF) và nút Tạo voucher.
+    10. `11_court-owner_buoc10_tao-voucher.png` (OwnerVoucherCreate): Form tạo voucher: mã code, loại giảm, giá trị, giảm tối đa, đơn tối thiểu, khoảng
+    thời gian hiệu lực, giới hạn lượt dùng và nút xác nhận.
+
+    ## 3. Yêu cầu kỹ thuật và nguyên tắc thiết kế
+    1. **Thiết kế & Spacing**:
+       - Sử dụng đúng hệ màu, font chữ, bo góc thẻ (MaterialCardView), nút dạng viên (pill button), và khoảng cách (padding/margin) tương đồng với thiết
+       kế chuẩn SmashNow.
+       - Thể hiện đầy đủ 4 trạng thái giao diện theo FR-020: Loading (ProgressBar/Shimmer), Content (dữ liệu), Empty (trạng thái rỗng có hình/thông điệp
+       trực quan) và Error (kèm nút Thử lại).
+    2. **Responsive & Tablet (`w600dp`)**:
+       - Cập nhật song song cả layout điện thoại (`app/src/main/res/layout/`) và layout máy tính bảng (`app/src/main/res/layout-w600dp/`), tận dụng
+       không gian màn hình lớn (chia 2 cột hoặc dạng grid phù hợp).
+    3. **Accessibility & Dark Mode**:
+       - Tuân thủ Constitution: vùng chạm tối thiểu 48dp (`@dimen/touch_min`), đầy đủ `contentDescription` cho TalkBack, `accessibilityHeading="true"`
+       cho các tiêu đề chính.
+       - Hỗ trợ hoàn chỉnh chế độ nền sáng và nền tối (DayNight) qua semantic theme attributes (`?attr/colorSurface`, `?attr/colorOnSurface`,
+       `?attr/colorOutline`, v.v.).
+    4. **Bảo toàn Business Logic & Architecture Boundary**:
+       - Không thay đổi các repository adapter fail-closed đã thiết lập (`ContractPending...Repository.kt`).
+       - Không tiết lộ `qrToken` ra UI của danh sách booking. Không tự ý sửa server contracts hay file thuộc quyền sở hữu của feature khác.
+
+    ## 4. Kiểm chứng và báo cáo
+    - Chạy kiểm tra biên dịch và test:
+      1. `./gradlew :app:assembleDebug`
+      2. `./gradlew :app:testDebugUnitTest --tests "com.example.booking_app.feature.owner.*"`
+      3. `./gradlew :app:compileDebugAndroidTestKotlin`
+    - Cập nhật nhật ký công việc vào `docs/ai-log/` (tạo mục mới tương ứng trong AI_log_4.md).
+    - Không commit, không push. Báo cáo chi tiết các file layout XML và UI components đã được chỉnh sửa.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Mở và đối chiếu trực tiếp đủ 10 hình ảnh wireframe trong `specs/112-owner-operations/ui/`.
+- Bổ sung bộ drawable chuyên biệt cho Feature 112:
+  - Badge pill: `bg_pill_confirmed.xml` (xanh mint), `bg_pill_dropin.xml` (cam/vàng ấm), `bg_pill_maintenance.xml` (xám sunken), `bg_pill_countdown.xml` (đỏ/hồng cảnh báo quá hạn), `bg_stat_card_mint.xml` (thẻ KPI mint).
+  - Khung ngắm máy quét QR: `bg_viewfinder_frame.xml` (bo 24dp, viền mint sáng).
+  - Khung xem trước dạng nét đứt: `bg_preview_dashed_card.xml` (dành cho voucher preview).
+  - Vector icons: `ic_qr_code_scanner_24.xml`, `ic_flash_on_24.xml`, `ic_bar_chart_24.xml`.
+- Tinh chỉnh 10 màn hình chuẩn theo Wireframe:
+  1. **OwnerToday (`fragment_home_placeholder_owner.xml` & `layout-w600dp`):** Thẻ banner xanh đậm "4 Đơn đặt chờ bạn duyệt / 1 đơn sẽ hết hạn sau 12 phút", cụm 3 phím tắt (Quét QR, Khóa giờ, Mở vãng lai), danh sách "Sắp diễn ra" với 4 hàng thẻ phân loại trạng thái, thẻ Thống kê doanh thu/lấp đầy có icon nổi bật; hỗ trợ layout 2 cột trên tablet.
+  2. **OwnerBookings (`fragment_owner_bookings.xml`, `item_owner_booking.xml` & `layout-w600dp`):** Bố cục thẻ đơn gồm tên khách hàng song song giá tiền đậm nét, khung giờ đi kèm pill đếm ngược deadline có icon đồng hồ đỏ, hàng sân con, trạng thái thanh toán, cụm nút "Từ chối" (viền đỏ) và "Duyệt" (xanh court), cùng dòng ghi chú chính sách 60 phút.
+  3. **OwnerSchedule (`fragment_owner_calendar.xml` & `layout-w600dp`):** Thanh chuyển Ngày / Tuần dạng viên, thanh điều hướng ngày với mũi tên lớn, bổ sung thanh chú thích trạng thái (Legend) ở chân trang hiển thị Đã xác nhận, Chờ duyệt, Vãng lai, Khóa giờ, Đang giữ.
+  4. **OwnerScanQR (`fragment_owner_booking_checkin.xml` & `layout-w600dp`):** Khung camera nền tối với viewfinder bo tròn mint, ô nhập mã đặt sân dự phòng có nút "Kiểm tra", thẻ kết quả Check-in thành công với dải thanh toán "Còn phải thu / Đã thu tiền", và nút "Quét tiếp" chuẩn touch target 48dp.
+  5. **OwnerStats (`fragment_owner_statistics.xml` & `layout-w600dp`):** Thanh chọn kỳ 7 ngày / 30 ngày / Tùy chọn, thẻ lớn "Đã thanh toán đủ", 2 thẻ phụ song song "Tiền cọc" & "Đã hoàn tiền", thẻ Tỷ lệ lấp đầy có thanh tiến độ LinearProgressIndicator, biểu đồ giờ cao điểm PeakHoursChartView và ghi chú độ mới dữ liệu.
+  6. **OwnerDropIns (`fragment_owner_dropin.xml`, `item_owner_dropin_session.xml` & `layout-w600dp`):** Bộ lọc Sắp tới / Đã qua, thẻ buổi drop-in hiển thị giờ, sân, trình độ, giá tiền, thanh đo sĩ số đăng ký/vào sân, và nút "+ Mở buổi" nổi bật.
+  7. **OwnerDropInCreate (`fragment_owner_dropin_form.xml` & `layout-w600dp`):** Form tạo buổi đầy đủ chọn cơ sở, sân con, ngày (icon lịch), giờ bắt đầu/kết thúc (icon đồng hồ), trình độ, bộ nhập sức chứa & giá vé, textarea ghi chú và cảnh báo khóa giờ đối với khách vãng lai.
+  8. **OwnerDropInRoster (`fragment_owner_dropin_roster.xml` & `layout-w600dp`):** Cụm 3 thẻ KPI (Đã đăng ký, Đã vào sân [mint], Hàng chờ), ô nhập mã check-in và nút xác nhận, danh sách người tham gia, ghi chú chính sách hoàn tiền 100% khi hủy/sửa và nút Quét QR check-in 48dp.
+  9. **OwnerVouchers (`fragment_owner_vouchers.xml`, `item_owner_voucher.xml` & `layout-w600dp`):** Thẻ voucher hiển thị mã in hoa đậm, switch gạt Bật/Tắt rõ ràng, thanh tiến độ lượt sử dụng, điều kiện hạn mức và nút "+ Tạo voucher".
+  10. **OwnerVoucherCreate (`fragment_owner_voucher_form.xml` & `layout-w600dp`):** Form tạo voucher gồm mã, kiểu giảm, giá trị, giảm tối đa, đơn tối thiểu, từ ngày - đến ngày, tổng lượt & mỗi người, cùng khung Live Preview nét đứt "NGƯỜI CHƠI SẼ THẤY".
+- Giữ nguyên các repository adapter fail-closed, ViewBinding và các kiểm thử bảo mật domain.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+| --- | --- | --- |
+| 10 Layouts trong `app/src/main/res/layout/` | Chỉnh sửa | Cập nhật cấu trúc component, padding, typography, card border và touch target bám sát 10 wireframe. |
+| 10 Layouts trong `app/src/main/res/layout-w600dp/` | Chỉnh sửa | Đảm bảo tính responsive, tối ưu hiển thị 2 cột hoặc căn giữa rộng rãi trên màn hình máy tính bảng. |
+| `item_owner_booking.xml`, `item_owner_dropin_session.xml`, `item_owner_voucher.xml` (phone & w600dp) | Chỉnh sửa | Tinh chỉnh item view khớp wireframe (countdown pill, badge trạng thái, progress bar, switch toggle). |
+| 10 file drawables mới trong `res/drawable/` | Thêm mới | Tạo các shape pill, khung viewfinder camera, preview dashed card và vector icons tương thích design system SmashNow. |
+| `app/src/main/res/values/strings.xml` | Chỉnh sửa | Thêm các chuỗi giao diện tương ứng theo ảnh mẫu, thêm thuộc tính `formatted="false"` cho chuỗi chứa ký tự `%`. |
+| `OwnerHomePlaceholderFragment.kt` | Chỉnh sửa | Gắn listener cho banner đơn chờ duyệt, phím tắt quét QR, khóa giờ chuyển hướng chính xác. |
+| Adapters fail-closed & Domain logic | Giữ nguyên | Tuân thủ boundary kiến trúc, không làm giả dữ liệu backend hay can thiệp vào các feature khác. |
+
+### Cách kiểm chứng
+
+- `./gradlew :app:testDebugUnitTest --tests "com.example.booking_app.feature.owner.*"`: **PASS** (17 tests bao gồm `OwnerUiAccessibilityTest` kiểm tra 100% phần tử tương tác đạt chuẩn chiều cao >= 48dp, nhãn trợ năng và cấu hình song song phone/tablet).
+- `./gradlew :app:compileDebugAndroidTestKotlin`: **PASS** (Biên dịch thành công toàn bộ UI layout tests `OwnerBookingsLayoutTest` và `OwnerDropInLayoutTest`).
+- `./gradlew :app:assembleDebug`: **PASS** (Toàn bộ project Android build APK thành công không có lỗi resource linking).
+- `git diff --check`: **PASS** (Không phát hiện lỗi khoảng trắng hoặc conflict).
+- Không thực hiện commit hay push theo đúng yêu cầu.
 
 ---

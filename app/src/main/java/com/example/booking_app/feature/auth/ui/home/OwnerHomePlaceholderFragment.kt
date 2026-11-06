@@ -32,6 +32,9 @@ class OwnerHomePlaceholderFragment : Fragment(R.layout.fragment_home_placeholder
         binding.date.text = LocalDate.now().format(DATE_FORMAT).replaceFirstChar { it.uppercase() }
         binding.avatar.setOnClickListener { findNavController().navigate(R.id.action_ownerHome_to_account) }
         binding.retry.setOnClickListener { viewModel.refresh() }
+        binding.pendingBannerCard.setOnClickListener { findNavController().navigate(R.id.ownerBookingsFragment) }
+        binding.actionScanQrCard.setOnClickListener { findNavController().navigate(R.id.ownerBookingCheckInFragment) }
+        binding.actionLockHoursCard.setOnClickListener { findNavController().navigate(R.id.ownerCalendarFragment) }
         binding.calendarButton.setOnClickListener { findNavController().navigate(R.id.ownerCalendarFragment) }
         binding.dropInButton.setOnClickListener { findNavController().navigate(R.id.ownerDropInFragment) }
         binding.vouchersButton.setOnClickListener { findNavController().navigate(R.id.ownerVouchersFragment) }
