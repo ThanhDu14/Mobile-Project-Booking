@@ -29,6 +29,14 @@ class OwnerVoucherValidationTest {
         assertEquals(5, errors.size)
     }
 
+    @Test fun rejectsPercentageValueOver100AndPerUserLimitExceedingUsageLimit() {
+        val percentErrors = OwnerVoucherValidation.validate(draft(value = 101L))
+        assertTrue(percentErrors.any { it.contains("100%") })
+
+        val limitErrors = OwnerVoucherValidation.validate(draft(usageLimit = 5, perUserLimit = 10))
+        assertTrue(limitErrors.any { it.contains("lớn hơn tổng giới hạn") })
+    }
+
     private fun draft(
         code: String = "SPRING26",
         value: Long = 10,

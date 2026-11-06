@@ -47,15 +47,25 @@ class OwnerBookingsViewModel @Inject constructor(
     private val _uiState = MutableStateFlow(OwnerBookingsUiState(isLoading = true))
     val uiState: StateFlow<OwnerBookingsUiState> = _uiState.asStateFlow()
     private var observationJob: Job? = null
+    private var tickerJob: Job? = null
 
     init {
         loadVenues()
-        viewModelScope.launch {
+    }
+
+    fun startCountdownTicker() {
+        if (tickerJob?.isActive == true) return
+        tickerJob = viewModelScope.launch {
             while (isActive) {
                 delay(1_000)
                 _uiState.value = _uiState.value.copy(now = Instant.now(Clock.systemUTC())).withFilteredBookings()
             }
         }
+    }
+
+    fun stopCountdownTicker() {
+        tickerJob?.cancel()
+        tickerJob = null
     }
 
     fun refresh() {

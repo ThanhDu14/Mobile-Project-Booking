@@ -48,10 +48,14 @@ object OwnerVoucherValidation {
         if (draft.code.isBlank()) add("Mã voucher không được để trống")
         if (draft.code != draft.code.uppercase(Locale.ROOT)) add("Mã voucher phải viết hoa")
         if (draft.value <= 0L) add("Giá trị voucher phải lớn hơn 0")
+        if (draft.type == OwnerVoucherType.PERCENT && draft.value > 100L) add("Voucher phần trăm không được vượt quá 100%")
         if (draft.maxDiscountVnd < 0L) add("Mức giảm tối đa không được âm")
         if (draft.minOrderTotalVnd < 0L) add("Giá trị đơn tối thiểu không được âm")
         if (draft.validFrom.isAfter(draft.validTo)) add("Ngày bắt đầu không được sau ngày kết thúc")
         if (draft.usageLimit != null && draft.usageLimit <= 0) add("Giới hạn sử dụng phải là số nguyên dương")
         if (draft.perUserLimit != null && draft.perUserLimit <= 0) add("Giới hạn mỗi người phải là số nguyên dương")
+        if (draft.usageLimit != null && draft.perUserLimit != null && draft.perUserLimit > draft.usageLimit) {
+            add("Giới hạn mỗi người không được lớn hơn tổng giới hạn sử dụng")
+        }
     }
 }

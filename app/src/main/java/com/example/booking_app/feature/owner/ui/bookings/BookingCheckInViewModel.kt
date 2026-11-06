@@ -14,6 +14,7 @@ data class BookingCheckInUiState(
     val isSubmitting: Boolean = false,
     val error: String? = null,
     val result: String? = null,
+    val checkInResult: com.example.booking_app.feature.owner.domain.booking.BookingCheckInResult? = null,
 )
 
 @HiltViewModel
@@ -32,7 +33,7 @@ class BookingCheckInViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = BookingCheckInUiState(isSubmitting = true)
             repository.checkIn(input)
-                .onSuccess { checked -> _uiState.value = BookingCheckInUiState(result = checked.bookingId) }
+                .onSuccess { checked -> _uiState.value = BookingCheckInUiState(result = checked.bookingId, checkInResult = checked) }
                 .onFailure { failure -> _uiState.value = BookingCheckInUiState(error = failure.message ?: "Không thể check-in") }
         }
     }
