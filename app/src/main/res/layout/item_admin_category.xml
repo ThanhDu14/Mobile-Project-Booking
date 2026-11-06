@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:clickable="true"
+    android:focusable="true"
+    android:gravity="center_vertical"
+    android:minHeight="56dp"
+    android:orientation="horizontal"
+    android:paddingHorizontal="16dp"
+    android:paddingVertical="12dp">
+
+    <!-- Category Name -->
+    <TextView
+        android:id="@+id/textCategoryName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="Quận 10"
+        android:textAppearance="?attr/textAppearanceBodyLarge"
+        android:textStyle="bold" />
+
+    <!-- Venues Count -->
+    <TextView
+        android:id="@+id/textCategoryVenueCount"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="12dp"
+        android:text="6 cơ sở"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorOnSurfaceVariant" />
+
+    <!-- Edit Pencil Icon -->
+    <ImageView
+        android:id="@+id/imageEditCategory"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:contentDescription="@string/admin_cancel"
+        android:src="@drawable/ic_admin_edit"
+        app:tint="?attr/colorOnSurfaceVariant" />
+
+</LinearLayout>

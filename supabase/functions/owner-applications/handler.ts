@@ -225,14 +225,44 @@ async function verifyStagedObjects(paths: string[]): Promise<boolean> {
   if (!base || !key) throw new Error("Thiếu cấu hình Supabase Storage server");
   for (const path of paths) {
     const encoded = path.split("/").map(encodeURIComponent).join("/");
-    const response = await fetch(`${base}/storage/v1/object/info/owner-docs/${encoded}`, {
+    // Supabase storage-api route is /object/info/authenticated/{bucket}/* or /object/info/{bucket}/*
+    let response = await fetch(`${base}/storage/v1/object/info/authenticated/owner-docs/${encoded}`, {
       headers: { Authorization: `Bearer ${key}`, apikey: key },
     });
-    if (!response.ok) return false;
-    const info = await response.json() as { metadata?: { size?: number; mimetype?: string; contentType?: string } };
-    const size = Number(info.metadata?.size ?? 0);
-    const mime = String(info.metadata?.mimetype ?? info.metadata?.contentType ?? "").toLowerCase();
-    if (!ALLOWED_MIME.has(mime) || size <= 0 || size > MAX_BYTES) return false;
+    if (!response.ok) {
+      response = await fetch(`${base}/storage/v1/object/info/owner-docs/${encoded}`, {
+        headers: { Authorization: `Bearer ${key}`, apikey: key },
+      });
+    }
+    if (!response.ok) {
+      // Fallback: check HEAD on authenticated object route
+      const head = await fetch(`${base}/storage/v1/object/authenticated/owner-docs/${encoded}`, {
+        method: "HEAD",
+        headers: { Authorization: `Bearer ${key}`, apikey: key },
+      });
+      if (!head.ok) {
+        console.error(`[verifyStagedObjects] failed for ${path}: infoStatus=${response.status}, headStatus=${head.status}`);
+        return false;
+      }
+      const headSize = Number(head.headers.get("content-length") ?? 0);
+      const headMime = String(head.headers.get("content-type") ?? "").toLowerCase();
+      if (!ALLOWED_MIME.has(headMime) || headSize <= 0 || headSize > MAX_BYTES) {
+        console.error(`[verifyStagedObjects] invalid head metadata for ${path}: mime=${headMime}, size=${headSize}`);
+        return false;
+      }
+      continue;
+    }
+    const info = await response.json() as {
+      size?: number;
+      content_type?: string;
+      metadata?: { size?: number; mimetype?: string; contentType?: string };
+    };
+    const size = Number(info.size ?? info.metadata?.size ?? 0);
+    const mime = String(info.content_type ?? info.metadata?.mimetype ?? info.metadata?.contentType ?? "").toLowerCase();
+    if (!ALLOWED_MIME.has(mime) || size <= 0 || size > MAX_BYTES) {
+      console.error(`[verifyStagedObjects] invalid info metadata for ${path}: mime=${mime}, size=${size}`);
+      return false;
+    }
   }
   return true;
 }

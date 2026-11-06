@@ -76,44 +76,40 @@ class OwnerApplicationStatusFragment : Fragment(R.layout.fragment_owner_applicat
         renderDocuments(app?.applicationId, app?.draft?.documentPaths.orEmpty(), ui.statusFresh)
         when (status) {
             OwnerApplicationState.PENDING -> {
-                applyBannerColors(R.color.sn_lamp_container, R.color.sn_on_lamp_container)
+                applyBannerColors(R.color.sn_lamp_container, R.color.sn_on_lamp_container, R.drawable.ic_hourglass_24)
                 binding.statusTitle.setText(R.string.owner_status_pending)
                 binding.statusSubtitle.text = app?.submittedAt?.let { getString(R.string.owner_submitted_at, formatDate(it), getString(R.string.owner_status_pending_message)) } ?: getString(R.string.owner_status_pending_message)
-                binding.statusIcon.text = "⌛"
                 binding.statusAction.setText(R.string.owner_continue_player)
                 binding.rejectReason.isVisible = false
                 binding.timeline.isVisible = true
-                binding.statusSummary.text = app?.let { summary(it.draft) }.orEmpty()
-                binding.timelineSubmitted.text = app?.submittedAt?.let { getString(R.string.owner_timeline_submitted_at, formatDate(it)) } ?: getString(R.string.owner_timeline_submitted)
+                bindSubmittedInfo(app?.draft)
+                binding.timelineSubmitted.text = app?.submittedAt?.let { formatTimelineDate(it) } ?: ""
                 binding.timelineReview.text = getString(R.string.owner_timeline_review_hint)
                 binding.timelineResult.text = getString(R.string.owner_timeline_result)
             }
             OwnerApplicationState.REJECTED -> {
-                applyBannerColors(R.color.sn_danger, R.color.sn_on_danger)
+                applyBannerColors(R.color.sn_danger, R.color.sn_on_danger, R.drawable.ic_error_24)
                 binding.statusTitle.setText(R.string.owner_status_rejected)
                 binding.statusSubtitle.setText(R.string.owner_status_rejected_message)
-                binding.statusIcon.text = "!"
                 binding.statusAction.setText(R.string.owner_resubmit)
                 binding.rejectReason.isVisible = app?.rejectReason != null
                 binding.rejectReason.text = app?.rejectReason
                 binding.timeline.isVisible = false
-                binding.statusSummary.text = app?.let { summary(it.draft) }.orEmpty()
+                bindSubmittedInfo(app?.draft)
             }
             OwnerApplicationState.APPROVED -> {
-                applyBannerColors(R.color.sn_court_container, R.color.sn_on_court_container)
+                applyBannerColors(R.color.sn_court_container, R.color.sn_on_court_container, R.drawable.ic_check_20)
                 binding.statusTitle.setText(R.string.owner_status_approved)
                 binding.statusSubtitle.setText(R.string.owner_status_approved_message)
-                binding.statusIcon.text = "✓"
                 binding.statusAction.setText(R.string.owner_continue_management)
                 binding.rejectReason.isVisible = false
                 binding.timeline.isVisible = false
-                binding.statusSummary.text = app?.let { summary(it.draft) }.orEmpty()
+                bindSubmittedInfo(app?.draft)
             }
             OwnerApplicationState.NONE, null -> {
-                applyBannerColors(R.color.sn_surface_sunken, R.color.sn_ink)
+                applyBannerColors(R.color.sn_surface_sunken, R.color.sn_ink, R.drawable.ic_info_24)
                 binding.statusTitle.setText(R.string.owner_status_none)
                 binding.statusSubtitle.text = ""
-                binding.statusIcon.text = "i"
                 binding.statusAction.setText(R.string.owner_apply_new)
                 binding.submittedCard.isVisible = false
                 binding.timeline.isVisible = false
@@ -130,12 +126,14 @@ class OwnerApplicationStatusFragment : Fragment(R.layout.fragment_owner_applicat
         binding.statusDocuments.removeAllViews()
         binding.statusDocuments.isVisible = applicationId != null && paths.isNotEmpty()
         paths.forEach { path ->
-            binding.statusDocuments.addView(MaterialButton(requireContext()).apply {
-                setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_BodyLarge)
-                setBackgroundColor(android.graphics.Color.TRANSPARENT)
+            binding.statusDocuments.addView(MaterialButton(requireContext(), null, android.R.attr.borderlessButtonStyle).apply {
+                setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_BodyMedium)
+                setTextColor(ContextCompat.getColor(requireContext(), R.color.sn_court))
                 text = getString(R.string.owner_view_document, path.substringAfterLast('/'))
                 contentDescription = getString(R.string.owner_view_document_named, path.substringAfterLast('/'))
                 minHeight = resources.getDimensionPixelSize(R.dimen.touch_target_min)
+                icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_description_24)
+                iconTint = ContextCompat.getColorStateList(requireContext(), R.color.sn_court)
                 isEnabled = statusFresh
                 setOnClickListener { openDocument(applicationId.orEmpty(), path) }
             })
@@ -218,14 +216,50 @@ class OwnerApplicationStatusFragment : Fragment(R.layout.fragment_owner_applicat
         }
     }
 
-    private fun applyBannerColors(background: Int, foreground: Int) {
+    private fun applyBannerColors(background: Int, foreground: Int, iconRes: Int) {
         binding.statusBanner.setCardBackgroundColor(ContextCompat.getColor(requireContext(), background))
         val color = ContextCompat.getColor(requireContext(), foreground)
         binding.statusTitle.setTextColor(color)
         binding.statusSubtitle.setTextColor(color)
-        binding.statusIcon.setTextColor(color)
-        binding.statusIcon.backgroundTintList = android.content.res.ColorStateList.valueOf(ContextCompat.getColor(requireContext(), background))
+        binding.statusIcon.setImageResource(iconRes)
+        binding.statusIcon.imageTintList = android.content.res.ColorStateList.valueOf(color)
+        val iconBgColor = when (background) {
+            R.color.sn_lamp_container -> ContextCompat.getColor(requireContext(), R.color.sn_lamp)
+            R.color.sn_court_container -> ContextCompat.getColor(requireContext(), R.color.sn_court)
+            else -> ContextCompat.getColor(requireContext(), background)
+        }
+        binding.statusIcon.backgroundTintList = android.content.res.ColorStateList.valueOf(iconBgColor)
     }
+
+    private fun bindSubmittedInfo(draft: com.example.booking_app.feature.owner.domain.OwnerApplicationDraft?) {
+        if (draft == null) return
+        binding.submittedVenueName.text = draft.venue.name
+        val district = viewModel.uiState.value.districts.firstOrNull { it.id == draft.venue.districtId }?.name ?: draft.venue.districtId
+        binding.submittedVenueAddress.text = if (district.isNotBlank() && !draft.venue.address.contains(district)) {
+            "${draft.venue.address}, $district"
+        } else {
+            draft.venue.address
+        }
+        binding.submittedCourtCount.text = draft.venue.courtCount?.toString() ?: ""
+        val open = formatTime(draft.venue.openTime)
+        val close = formatTime(draft.venue.closeTime)
+        binding.submittedOpeningHours.text = "$open – $close"
+        binding.submittedDocCount.text = "${draft.documentPaths.size} tệp"
+        binding.statusSummary.text = summary(draft)
+    }
+
+    private fun formatTime(time: String): String {
+        val trimmed = time.trim()
+        return if (trimmed.length == 4 && !trimmed.contains(":")) {
+            "${trimmed.substring(0, 2)}:${trimmed.substring(2)}"
+        } else {
+            trimmed
+        }
+    }
+
+    private fun formatTimelineDate(value: String): String = runCatching {
+        DateTimeFormatter.ofPattern("dd/MM · HH:mm").withZone(ZoneId.systemDefault()).format(Instant.parse(value))
+    }.getOrDefault(value)
 
     private fun continueForCurrentState() {
         if (_binding == null) return

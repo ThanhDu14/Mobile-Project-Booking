@@ -15,7 +15,18 @@ private const val CODE_RATE_LIMITED = "RATE_LIMITED"
 private const val CODE_ACCOUNT_DELETING = "ACCOUNT_DELETING"
 
 /** Lỗi HTTP của Edge Function, tách khỏi kiểu của supabase-kt để đọc body và test được. */
-class FunctionHttpException(val status: Int, val body: String?) : Exception("Edge Function HTTP $status")
+class FunctionHttpException(val status: Int, val body: String?) : Exception(
+    parseFunctionErrorMessage(body) ?: "Edge Function HTTP $status"
+)
+
+/** Đọc `error.message` trong body `{ "error": { "code", "message" } }`. */
+fun parseFunctionErrorMessage(body: String?): String? {
+    if (body.isNullOrBlank()) return null
+    return runCatching {
+        val error = Json.parseToJsonElement(body).jsonObject["error"] as? JsonObject
+        error?.get("message")?.jsonPrimitive?.content
+    }.getOrNull()
+}
 
 /** Đọc `error.code` trong body `{ "error": { "code", "message" } }` (contract `_shared/errors.ts`). */
 fun parseFunctionErrorCode(body: String?): String? {
@@ -45,6 +56,7 @@ class FunctionErrors @Inject constructor(
         } catch (e: Exception) {
             if (e is CancellationException) throw e
             val failure = e.toFunctionHttpException() ?: throw e.toAppError()
+            android.util.Log.e("EdgeFunction", "Failure status=${failure.status}, body=${failure.body}")
             if (failure.status != 401) throw map(failure)
         }
         idTokenProvider.getToken(forceRefresh = true)
@@ -53,6 +65,7 @@ class FunctionErrors @Inject constructor(
         } catch (e: Exception) {
             if (e is CancellationException) throw e
             val failure = e.toFunctionHttpException() ?: throw e.toAppError()
+            android.util.Log.e("EdgeFunction", "Failure after retry status=${failure.status}, body=${failure.body}")
             throw if (failure.status == 401) AppError.NotSignedIn else map(failure)
         }
     }

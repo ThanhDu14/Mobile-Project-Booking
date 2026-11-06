@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Navigation Tabs -->
+    <string name="admin_nav_home">Tổng quan</string>
+    <string name="admin_nav_applications">Hồ sơ</string>
+    <string name="admin_nav_reports">Báo cáo</string>
+    <string name="admin_nav_users">Người dùng</string>
+    <string name="admin_nav_tools">Công cụ</string>
+
+    <!-- Artboard 1: AdminHome (Bước 1) -->
+    <string name="admin_home_title">Tổng quan</string>
+    <string name="admin_home_role_badge">Quản trị viên · Quản trị hệ thống</string>
+    <string name="admin_home_todo_header">Cần xử lý</string>
+    <string name="admin_home_pending_applications_title">Hồ sơ chủ sân chờ duyệt</string>
+    <string name="admin_home_pending_applications_sub">Hồ sơ cũ nhất đã chờ 2 ngày</string>
+    <string name="admin_home_open_reports_title">Báo cáo đang mở</string>
+    <string name="admin_home_open_reports_sub">2 báo cáo cùng trỏ tới một bài đăng</string>
+    <string name="admin_home_daily_stats_header">Số liệu ngày %s</string>
+    <string name="admin_home_daily_stats_select_date">Chọn ngày</string>
+    <string name="admin_home_stat_new_users">Người dùng mới</string>
+    <string name="admin_home_stat_bookings">Đơn đặt sân</string>
+    <string name="admin_home_stat_active_venues">Cơ sở đang hoạt động</string>
+    <string name="admin_home_stat_dropins">Buổi vãng lai</string>
+    <string name="admin_home_stats_footnote">Nguồn: thống kê hệ thống, cộng dồn lúc 00:15. Không phải số liệu thời gian thực.</string>
+    <string name="admin_home_recent_actions_header">Bạn đã xử lý gần đây</string>
+    <string name="admin_home_recent_item_1">Duyệt hồ sơ Sân Thủ Đức Arena</string>
+    <string name="admin_home_recent_time_1">08/10 · 16:20</string>
+    <string name="admin_home_recent_item_2">Ẩn bài đăng trong nhóm Cầu lông Quận 10</string>
+    <string name="admin_home_recent_time_2">08/10 · 10:05</string>
+    <string name="admin_home_recent_item_3">Từ chối hồ sơ Sân cầu lông Nam Phát</string>
+    <string name="admin_home_recent_time_3">03/10 · 09:41</string>
+
+    <!-- Artboard 2: AdminApplications (Bước 2) -->
+    <string name="admin_queue_title">Hồ sơ chủ sân</string>
+    <string name="admin_queue_subtitle">Sắp theo thời điểm nộp, hồ sơ chờ lâu nhất ở trên</string>
+    <string name="admin_queue_empty">Không có hồ sơ nào</string>
+    <string name="admin_queue_loading">Đang tải danh sách hồ sơ...</string>
+    <string name="admin_queue_retry">Thử lại</string>
+    <string name="admin_filter_pending">Chờ duyệt %d</string>
+    <string name="admin_filter_pending_simple">Chờ duyệt</string>
+    <string name="admin_filter_approved">Đã duyệt</string>
+    <string name="admin_filter_rejected">Bị từ chối</string>
+    <string name="admin_tag_resubmitted">Nộp lại lần %d</string>
+    <string name="admin_docs_count">%d giấy tờ</string>
+    <string name="admin_submitted_at">Nộp %s</string>
+    <string name="admin_status_pending">Chờ duyệt</string>
+    <string name="admin_status_approved">Đã duyệt</string>
+    <string name="admin_status_rejected">Bị từ chối</string>
+
+    <!-- Artboard 3: AdminApplicationDetail (Bước 3) -->
+    <string name="admin_application_detail_title">Hồ sơ chủ sân</string>
+    <string name="admin_submitted_wait_time">Nộp lúc %1$s, đã chờ %2$s</string>
+    <string name="admin_previous_review_rejected">▶ Lần xét trước · Từ chối %s</string>
+    <string name="admin_applicant_info_header">Người đại diện</string>
+    <string name="admin_applicant_name_label">Họ tên</string>
+    <string name="admin_applicant_phone_label">Điện thoại</string>
+    <string name="admin_applicant_email_label">Tài khoản</string>
+    <string name="admin_venue_info_header">Cơ sở đăng ký</string>
+    <string name="admin_venue_name_label">Tên</string>
+    <string name="admin_venue_address_label">Địa chỉ</string>
+    <string name="admin_venue_district_label">Quận/huyện</string>
+    <string name="admin_venue_phone_label">SĐT cơ sở</string>
+    <string name="admin_venue_coordinates_label">Tọa độ</string>
+    <string name="admin_venue_view_map">Xem bản đồ</string>
+    <string name="admin_court_count_label">Số sân</string>
+    <string name="admin_operating_hours_label">Giờ mở cửa</string>
+    <string name="admin_documents_header">Giấy tờ chứng minh</string>
+    <string name="admin_documents_confidential_notice">Chỉ admin và người nộp</string>
+    <string name="admin_doc_business_license">Giấy phép kinh doanh</string>
+    <string name="admin_doc_signage_photo">Ảnh biển hiệu</string>
+    <string name="admin_documents_footnote">Mỗi link xem chỉ dùng được trong thời gian ngắn. Giấy tờ không lưu lại trên máy.</string>
+    <string name="admin_approval_notice">Duyệt sẽ cấp quyền chủ sân cho tài khoản này, tạo cơ sở từ thông tin trên và báo cho người nộp.</string>
+    <string name="admin_reject_button">Từ chối</string>
+    <string name="admin_approve_button">✓ Duyệt hồ sơ</string>
+    <string name="admin_view_document">Xem tài liệu</string>
+    <string name="admin_submitting_decision">Đang gửi quyết định...</string>
+
+    <!-- Artboard 4: AdminReject (Bước 4) -->
+    <string name="admin_reject_dialog_title">Từ chối hồ sơ</string>
+    <string name="admin_reject_dialog_description">%s. Người nộp sẽ thấy nguyên văn lý do này và có thể sửa hồ sơ rồi nộp lại.</string>
+    <string name="admin_reject_quick_add_header">Thêm nhanh</string>
+    <string name="admin_reject_quick_blurry_doc">Giấy tờ mờ</string>
+    <string name="admin_reject_quick_missing_doc">Thiếu giấy tờ</string>
+    <string name="admin_reject_quick_address_mismatch">Địa chỉ không khớp</string>
+    <string name="admin_reject_reason_label">Lý do từ chối *</string>
+    <string name="admin_reject_reason_required_note">Bắt buộc, không để trống</string>
+    <string name="admin_reject_dialog_message">Vui lòng nhập lý do từ chối để người đăng ký có thể sửa và nộp lại.</string>
+    <string name="admin_reject_reason_hint">Nhập lý do từ chối cụ thể</string>
+    <string name="admin_confirm_reject">Xác nhận từ chối</string>
+    <string name="admin_cancel">Hủy</string>
+
+    <!-- Artboard 5: AdminReports (Bước 5) -->
+    <string name="admin_report_queue_title">Báo cáo</string>
+    <string name="admin_report_tab_open">Đang mở</string>
+    <string name="admin_report_tab_closed">Đã đóng</string>
+    <string name="admin_report_filter_all">Tất cả</string>
+    <string name="admin_report_filter_post">Bài đăng</string>
+    <string name="admin_report_filter_message">Tin nhắn</string>
+    <string name="admin_report_filter_review">Đánh giá</string>
+    <string name="admin_report_filter_venue">Cơ sở</string>
+    <string name="admin_report_filter_user">Người dùng</string>
+    <string name="admin_report_empty">Không có báo cáo nào đang mở</string>
+    <string name="admin_report_same_target_badge">%d báo cáo cùng đối tượng này</string>
+    <string name="admin_report_same_post_badge">%d báo cáo cùng bài này</string>
+
+    <!-- Artboard 6: AdminReportDetail (Bước 6) -->
+    <string name="admin_report_detail_title">Xử lý báo cáo</string>
+    <string name="admin_report_reporter_format">Người báo cáo: %1$s · %2$s</string>
+    <string name="admin_report_target_section_header">Đối tượng bị báo cáo</string>
+    <string name="admin_report_conclusion_header">Kết luận</string>
+    <string name="admin_report_action_hide_post">Ẩn bài đăng</string>
+    <string name="admin_report_action_hide_post_desc">Bài bị ẩn khỏi nhóm, người đăng vẫn xem được. Không xóa vĩnh viễn.</string>
+    <string name="admin_report_action_dismiss_report">Bỏ qua báo cáo</string>
+    <string name="admin_report_action_dismiss_report_desc">Không vi phạm hoặc không cần hành động. Đối tượng giữ nguyên.</string>
+    <string name="admin_report_action_lock_venue">Khóa cơ sở</string>
+    <string name="admin_report_action_lock_venue_desc">Cơ sở bị chuyển sang LOCKED, tạm dừng nhận đặt sân.</string>
+    <string name="admin_report_action_lock_user">Khóa tài khoản</string>
+    <string name="admin_report_action_lock_user_desc">Tài khoản bị chuyển sang LOCKED, không thể đăng nhập.</string>
+    <string name="admin_report_action_hide_content">Ẩn nội dung</string>
+    <string name="admin_report_action_dismiss">Bỏ qua báo cáo</string>
+    <string name="admin_report_single_close_notice">Đóng báo cáo này không tự đóng các báo cáo khác cùng đối tượng.</string>
+    <string name="admin_report_submit_hide_and_close">Ẩn và đóng báo cáo</string>
+    <string name="admin_report_submit_lock_and_close">Khóa và đóng báo cáo</string>
+    <string name="admin_report_submit_dismiss_and_close">Bỏ qua và đóng báo cáo</string>
+    <string name="admin_report_target_type_label">Đối tượng:</string>
+    <string name="admin_report_reason_label">Lý do:</string>
+    <string name="admin_report_detail_label">Chi tiết:</string>
+    <string name="admin_report_target_info_header">Thông tin đối tượng</string>
+    <string name="admin_report_confirm_action_title">Xác nhận xử lý vi phạm</string>
+    <string name="admin_report_confirm_action_message">Bạn có chắc chắn muốn thực thi hành động này đối với đối tượng bị báo cáo?</string>
+
+    <!-- Artboard 7: AdminUsers (Bước 7) -->
+    <string name="admin_user_management_title">Người dùng</string>
+    <string name="admin_user_search_hint">Tên, email hoặc số điện thoại</string>
+    <string name="admin_user_filter_all">Tất cả</string>
+    <string name="admin_user_filter_owners">Chủ sân</string>
+    <string name="admin_user_filter_locked">Đang khóa</string>
+    <string name="admin_user_tag_owner">Chủ sân</string>
+    <string name="admin_user_tag_locked">Đã khóa</string>
+
+    <!-- Artboard 8: AdminUserDetail (Bước 8) -->
+    <string name="admin_user_detail_title">Chi tiết người dùng</string>
+    <string name="admin_user_card_title">Thông tin tài khoản</string>
+    <string name="admin_user_fullname_label">Họ và tên:</string>
+    <string name="admin_user_phone_label">Số điện thoại:</string>
+    <string name="admin_user_uid_label">UID:</string>
+    <string name="admin_user_role_label">Vai trò:</string>
+    <string name="admin_user_owner_status_label">Trạng thái chủ sân:</string>
+    <string name="admin_user_account_status_label">Trạng thái tài khoản:</string>
+    <string name="admin_user_revoked_reason_label">Lý do thu hồi trước đây:</string>
+    <string name="admin_user_lock_button">Khóa tài khoản</string>
+    <string name="admin_user_unlock_button">Mở khóa tài khoản</string>
+    <string name="admin_user_revoke_owner_button">Thu hồi quyền chủ sân</string>
+    <string name="admin_revoke_dialog_title">Thu hồi quyền chủ sân</string>
+    <string name="admin_revoke_dialog_message">Vai trò của tài khoản sẽ được chuyển về PLAYER và trạng thái chủ sân về NONE. Hồ sơ đăng ký đã duyệt và các cơ sở hiện có sẽ được giữ nguyên.</string>
+    <string name="admin_revoke_reason_hint">Lý do thu hồi (bắt buộc)</string>
+    <string name="admin_confirm_revoke">Xác nhận thu hồi</string>
+    <string name="admin_user_search_button">Tra cứu</string>
+    <string name="admin_not_found_user">Không tìm thấy người dùng phù hợp</string>
+
+    <!-- Artboard 9: AdminVenueUnlock (Bước 9) -->
+    <string name="admin_venue_unlock_dialog_title">Mở khóa cơ sở</string>
+    <string name="admin_venue_unlock_post_status_header">Sau khi mở khóa, cơ sở sẽ</string>
+    <string name="admin_venue_unlock_option_active">Hoạt động</string>
+    <string name="admin_venue_unlock_option_active_desc">Hiện lại với người chơi, nhận đặt sân ngay.</string>
+    <string name="admin_venue_unlock_option_hidden">Ẩn</string>
+    <string name="admin_venue_unlock_option_hidden_desc">Chủ sân sửa lại thông tin rồi tự bật hiển thị.</string>
+    <string name="admin_venue_unlock_admin_only_note">Chỉ admin mở khóa được. Chủ sân sẽ nhận thông báo.</string>
+    <string name="admin_venue_unlock_button">Mở khóa</string>
+    <string name="admin_venue_management_title">Quản lý cơ sở</string>
+    <string name="admin_venue_search_hint">Nhập mã cơ sở (Venue ID)</string>
+    <string name="admin_venue_card_title">Thông tin cơ sở</string>
+    <string name="admin_venue_lock_button">Khóa cơ sở (LOCKED)</string>
+    <string name="admin_venue_unlock_active_button">Mở khóa (ACTIVE)</string>
+    <string name="admin_venue_unlock_hidden_button">Mở khóa (HIDDEN)</string>
+    <string name="admin_venue_owner_id_label">Mã chủ sân (Owner ID):</string>
+    <string name="admin_venue_status_label">Trạng thái hiện tại:</string>
+    <string name="admin_not_found_venue">Không tìm thấy cơ sở phù hợp</string>
+
+    <!-- Artboard 10: AdminTools (Bước 10) -->
+    <string name="admin_tools_dashboard_title">Công cụ</string>
+    <string name="admin_tools_section_header">Công cụ</string>
+    <string name="admin_tools_broadcast_title">Gửi thông báo hệ thống</string>
+    <string name="admin_tools_broadcast_desc">Tới mọi tài khoản đang hoạt động. Lần gần nhất 01/10.</string>
+    <string name="admin_tools_vouchers_title">Voucher toàn hệ thống</string>
+    <string name="admin_tools_vouchers_desc">Áp dụng cho mọi cơ sở. %d đang bật.</string>
+    <string name="admin_tools_categories_header">Danh mục</string>
+    <string name="admin_tools_categories_sub">Dùng cho bộ lọc tìm sân và khi chủ sân khai báo cơ sở</string>
+    <string name="admin_tools_category_tab_districts">Khu vực</string>
+    <string name="admin_tools_category_tab_amenities">Tiện ích</string>
+    <string name="admin_tools_category_add_hint">Thêm khu vực mới</string>
+    <string name="admin_tools_category_add_amenity_hint">Thêm tiện ích mới</string>
+    <string name="admin_tools_category_add_button">+ Thêm</string>
+    <string name="admin_tools_category_venues_count">%d cơ sở</string>
+
+    <!-- Artboard 11: AdminBroadcast (Bước 11) -->
+    <string name="admin_broadcast_title">Thông báo hệ thống</string>
+    <string name="admin_broadcast_audience_banner">Gửi tới tất cả tài khoản đang hoạt động. Tài khoản bị khóa không nhận.</string>
+    <string name="admin_broadcast_title_label">Tiêu đề</string>
+    <string name="admin_broadcast_title_hint">Bảo trì hệ thống tối 12/10</string>
+    <string name="admin_broadcast_body_label">Nội dung</string>
+    <string name="admin_broadcast_body_hint">Nhập nội dung thông báo hệ thống...</string>
+    <string name="admin_broadcast_preview_header">Người nhận sẽ thấy trong hộp thư</string>
+    <string name="admin_broadcast_preview_time_now">Vừa xong</string>
+    <string name="admin_broadcast_immutable_warning">Đã gửi thì không thu hồi được.</string>
+    <string name="admin_broadcast_send_button">Gửi thông báo</string>
+    <string name="admin_confirm_broadcast_title">Xác nhận gửi thông báo</string>
+    <string name="admin_confirm_broadcast_message">Thông báo này sẽ được phát tới tất cả tài khoản đang hoạt động. Bạn có chắc chắn muốn gửi?</string>
+
+    <!-- Artboard 12: AdminVouchers (Bước 12) -->
+    <string name="admin_vouchers_title">Voucher toàn hệ thống</string>
+    <string name="admin_vouchers_subtitle">Áp dụng cho mọi cơ sở</string>
+    <string name="admin_vouchers_empty">Chưa có voucher toàn hệ thống nào</string>
+    <string name="admin_voucher_status_active">Đang bật</string>
+    <string name="admin_voucher_status_inactive">Đã tắt</string>
+    <string name="admin_voucher_used_count_format">Đã dùng %1$d/%2$d</string>
+    <string name="admin_voucher_create_section_header">Tạo voucher mới</string>
+    <string name="admin_voucher_code_label">Mã voucher</string>
+    <string name="admin_voucher_code_hint">Nhập mã voucher (vd: HE2026)</string>
+    <string name="admin_voucher_code_duplicate_error">Mã này đã được sử dụng. Mã phải khác mọi voucher trên hệ thống.</string>
+    <string name="admin_voucher_discount_label">Giảm</string>
+    <string name="admin_voucher_discount_hint">30.000 đ</string>
+    <string name="admin_voucher_min_order_label">Đơn tối thiểu</string>
+    <string name="admin_voucher_min_order_hint">200.000 đ</string>
+    <string name="admin_voucher_system_count_note">Số lượt đã dùng do hệ thống đếm, admin không chỉnh được.</string>
+    <string name="admin_voucher_create_button">Tạo voucher</string>
+
+    <!-- System Stats -->
+    <string name="admin_stats_header">Thống kê hệ thống</string>
+    <string name="admin_stats_empty">Chưa có dữ liệu thống kê hệ thống</string>
+    <string name="admin_stats_total_users">Tổng người dùng:</string>
+    <string name="admin_stats_total_venues">Tổng cơ sở:</string>
+    <string name="admin_stats_total_bookings">Tổng lượt đặt sân:</string>
+    <string name="admin_stats_total_revenue">Tổng doanh thu:</string>
+    <string name="admin_confirm">Xác nhận</string>
+    <string name="admin_venue_confirm_lock">Bạn có chắc chắn muốn khóa cơ sở này không?</string>
+    <string name="admin_venue_confirm_status_title">Xác nhận thay đổi trạng thái</string>
+</resources>

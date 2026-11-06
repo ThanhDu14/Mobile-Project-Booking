@@ -1,0 +1,22 @@
+package com.example.booking_app.feature.admin.domain.model
+
+data class AdminOwnerApplication(
+    val id: String,
+    val applicantId: String,
+    val applicantName: String,
+    val applicantPhone: String,
+    val venueName: String,
+    val venueAddress: String,
+    val districtId: String,
+    val courtCount: Int,
+    val openTime: String,
+    val closeTime: String,
+    val venuePhone: String,
+    val photoPaths: List<String> = emptyList(),
+    val documentPaths: List<String> = emptyList(),
+    val status: String,
+    val submittedAt: Long = 0L,
+    val rejectReason: String? = null,
+    val reviewedBy: String? = null,
+    val reviewedAt: Long? = null,
+)

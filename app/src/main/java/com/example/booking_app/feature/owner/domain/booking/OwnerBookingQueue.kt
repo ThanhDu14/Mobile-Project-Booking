@@ -24,7 +24,7 @@ class OwnerBookingQueue {
                     OwnerBookingStatus.EXPIRED,
                     OwnerBookingStatus.COMPLETED,
                     OwnerBookingStatus.NO_SHOW,
-                ) || it.endAt <= now
+                ) || (it.status == OwnerBookingStatus.CONFIRMED && it.endAt <= now)
             }
             .sortedByDescending { it.startAt }
     }

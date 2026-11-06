@@ -59,8 +59,9 @@ export function errorResponse(
 /** `HttpError` thành response tương ứng; lỗi khác thành `500 INTERNAL` và ghi log. */
 export function toErrorResponse(e: unknown): Response {
   if (e instanceof HttpError) return errorResponse(e.status, e.code, e.message, e.extra);
-  console.error(e);
-  return errorResponse(500, "INTERNAL", "Lỗi máy chủ, vui lòng thử lại");
+  console.error("[toErrorResponse]", e);
+  const detail = e instanceof Error ? `${e.name}: ${e.message}` : String(e);
+  return errorResponse(500, "INTERNAL", `Lỗi máy chủ: ${detail}`);
 }
 
 const JWKS_URL = "https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com";

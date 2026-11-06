@@ -40,16 +40,18 @@ class OwnerBookingQueueTest {
         val ended = booking("ended", OwnerBookingStatus.CONFIRMED, start = "2026-11-04T10:00:00Z")
         val cancelled = booking("cancelled", OwnerBookingStatus.CANCELLED, start = "2026-11-06T10:00:00Z")
         val pending = booking("pending", OwnerBookingStatus.PENDING, start = "2026-11-06T10:00:00Z")
+        val endedPending = booking("endedPending", OwnerBookingStatus.PENDING, start = "2026-11-04T10:00:00Z")
         val rejected = booking("rejected", OwnerBookingStatus.REJECTED, start = "2026-11-06T10:00:00Z")
         val expired = booking("expired", OwnerBookingStatus.EXPIRED, start = "2026-11-06T10:00:00Z")
         val completed = booking("completed", OwnerBookingStatus.COMPLETED, start = "2026-11-06T10:00:00Z")
         val noShow = booking("no_show", OwnerBookingStatus.NO_SHOW, start = "2026-11-06T10:00:00Z")
 
         assertEquals(listOf("future"), queue.filter(listOf(ended, pending, cancelled, upcoming), OwnerBookingFilter.UPCOMING, now).map { it.bookingId })
-        val pastResult = queue.filter(listOf(ended, pending, cancelled, rejected, expired, completed, noShow, upcoming), OwnerBookingFilter.PAST, now).map { it.bookingId }
+        val pastResult = queue.filter(listOf(ended, pending, endedPending, cancelled, rejected, expired, completed, noShow, upcoming), OwnerBookingFilter.PAST, now).map { it.bookingId }
         assertTrue(pastResult.containsAll(listOf("cancelled", "rejected", "expired", "completed", "no_show", "ended")))
         assertFalse(pastResult.contains("future"))
         assertFalse(pastResult.contains("pending"))
+        assertFalse(pastResult.contains("endedPending"))
     }
 
     @Test
