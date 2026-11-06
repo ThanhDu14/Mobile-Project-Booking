@@ -34,7 +34,7 @@
 
 ### Session 2026-11-06 (thay đổi thiết kế điều hướng)
 
-- Q: Người chơi mở trang Tài khoản từ đâu? → A: Không còn tab "Tài khoản" ở thanh dưới. Thanh dưới có 5 tab Trang chủ · Tìm kiếm · Vãng lai · Lịch đặt · Cộng đồng (spec 020 FR-028). Trang Tài khoản mở từ nút avatar tròn ở góc phải trên header của mọi tab chính, giống màn chủ sân.
+- Q: Người chơi mở trang Tài khoản từ đâu? → A: Không còn tab "Tài khoản" ở thanh dưới. Thanh dưới có 5 tab Trang chủ · Tìm kiếm · Lịch đặt · Vãng lai · Cộng đồng (spec 020 FR-028). Trang Tài khoản mở từ nút avatar tròn ở góc phải trên header của mọi tab chính, giống màn chủ sân.
 - Q: Avatar hiển thị gì? → A: Ảnh đại diện nếu có; không có ảnh (hoặc ảnh tải lỗi) thì chữ cái đầu của họ tên; khách chưa đăng nhập thấy icon người.
 - Q: Khách bấm avatar thì sao? → A: Mở màn hình đăng nhập (spec 010) chồng lên tab đang xem; đăng nhập xong quay về đúng tab đó, avatar đổi sang ảnh hoặc chữ cái đầu của người dùng.
 - Q: Ai vẽ avatar trên mỗi tab? → A: Spec này cung cấp một header dùng chung (tiêu đề tab + avatar). Các tab của spec 020, 060, 080, 090 đặt header này lên màn gốc của tab, không tự vẽ avatar hay tự xử lý bấm avatar.
@@ -62,7 +62,7 @@ Người dùng đã đăng nhập mở trang "Tài khoản", xem ảnh đại di
 
 ### User Story 8 - Mở trang Tài khoản từ avatar ở góc phải trên (Priority: P1) *(thêm 2026-11-06)*
 
-Ở bất kỳ tab chính nào (Trang chủ, Tìm kiếm, Vãng lai, Lịch đặt, Cộng đồng), người chơi thấy một avatar tròn ở góc phải trên header. Avatar là ảnh đại diện hoặc chữ cái đầu tên; bấm vào thì mở trang "Tài khoản". Khách chưa đăng nhập thấy icon người; bấm vào thì được mời đăng nhập.
+Ở bất kỳ tab chính nào (Trang chủ, Tìm kiếm, Lịch đặt, Vãng lai, Cộng đồng), người chơi thấy một avatar tròn ở góc phải trên header. Avatar là ảnh đại diện hoặc chữ cái đầu tên; bấm vào thì mở trang "Tài khoản". Khách chưa đăng nhập thấy icon người; bấm vào thì được mời đăng nhập.
 
 **Why this priority**: Đây là lối vào duy nhất của trang "Tài khoản" ở giao diện người chơi sau khi bỏ tab "Tài khoản". Không có nó thì mọi User Story khác của spec này không tới được.
 
