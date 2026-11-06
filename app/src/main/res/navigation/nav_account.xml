@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Graph lồng của spec 011 (A), include vào nav_player và nav_owner (contracts/ui-screens.md §1, research R14).
-     Destination của US6, US7 còn là Fragment khung, chưa có deep link nên mục tương ứng trên trang Tài khoản bị ẩn. -->
+     Mỗi màn hình có deep link smashnow://account/... để trang Tài khoản biết mục đã làm (accountEntries). -->
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/nav_account"
@@ -22,6 +22,32 @@
         <action
             android:id="@+id/action_account_to_deleteAccount"
             app:destination="@id/deleteAccountFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/ownerApplicationFormFragment"
+        android:name="com.example.booking_app.feature.owner.ui.OwnerApplicationFormFragment"
+        android:label="@string/owner_apply_title">
+        <argument android:name="mode" app:argType="string" android:defaultValue="new" />
+        <deepLink app:uri="smashnow://owner/apply?mode={mode}" />
+        <action android:id="@+id/action_ownerApplicationForm_to_review" app:destination="@id/ownerApplicationReviewFragment" />
+        <action android:id="@+id/action_ownerApplicationForm_to_status" app:destination="@id/ownerApplicationStatusFragment" app:popUpTo="@id/ownerApplicationFormFragment" app:popUpToInclusive="true" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/ownerApplicationReviewFragment"
+        android:name="com.example.booking_app.feature.owner.ui.OwnerApplicationReviewFragment"
+        android:label="@string/owner_review_title">
+        <action android:id="@+id/action_ownerApplicationReview_to_form" app:destination="@id/ownerApplicationFormFragment" app:popUpTo="@id/ownerApplicationFormFragment" />
+        <action android:id="@+id/action_ownerApplicationReview_to_status" app:destination="@id/ownerApplicationStatusFragment" app:popUpTo="@id/ownerApplicationFormFragment" app:popUpToInclusive="true" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/ownerApplicationStatusFragment"
+        android:name="com.example.booking_app.feature.owner.ui.OwnerApplicationStatusFragment"
+        android:label="@string/owner_status_title">
+        <deepLink app:uri="smashnow://owner/application" />
+        <action android:id="@+id/action_ownerApplicationStatus_to_form" app:destination="@id/ownerApplicationFormFragment" />
     </fragment>
 
     <fragment
@@ -70,17 +96,20 @@
         <deepLink app:uri="smashnow://account/password" />
     </fragment>
 
-    <!-- Khung của US7, US6 (chưa làm). Story nào xong thì thêm deep link smashnow://account/{email|delete}. -->
-
+    <!-- US7. -->
     <fragment
         android:id="@+id/changeEmailFragment"
         android:name="com.example.booking_app.feature.account.ui.email.ChangeEmailFragment"
-        android:label="@string/account_entry_change_email" />
+        android:label="@string/account_entry_change_email">
+        <deepLink app:uri="smashnow://account/email" />
+    </fragment>
 
+    <!-- US6. -->
     <fragment
         android:id="@+id/deleteAccountFragment"
         android:name="com.example.booking_app.feature.account.ui.delete.DeleteAccountFragment"
         android:label="@string/account_delete_title">
+        <deepLink app:uri="smashnow://account/delete" />
         <action
             android:id="@+id/action_deleteAccount_to_reauth"
             app:destination="@id/reauthDialog" />

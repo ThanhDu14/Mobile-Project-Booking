@@ -9,6 +9,7 @@ import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.booking_app.R
 import com.example.booking_app.databinding.FragmentOwnerSlotBlockBinding
@@ -34,7 +35,7 @@ class OwnerSlotBlockFragment : Fragment(R.layout.fragment_owner_slot_block) {
             viewModel.toggleSlotSelection(item.slotId)
         }
         binding.slotGrid.apply {
-            layoutManager = LinearLayoutManager(requireContext())
+            layoutManager = GridLayoutManager(requireContext(), 4)
             adapter = gridAdapter
         }
 

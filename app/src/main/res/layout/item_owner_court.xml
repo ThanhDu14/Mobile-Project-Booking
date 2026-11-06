@@ -1,10 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:padding="8dp">
-    <TextView android:id="@+id/name" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" />
-    <TextView android:id="@+id/surface" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingHorizontal="8dp" />
-    <TextView android:id="@+id/active" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingHorizontal="8dp" />
-    <com.google.android.material.button.MaterialButton android:id="@+id/edit" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/edit" android:minHeight="48dp" />
-    <com.google.android.material.button.MaterialButton android:id="@+id/up" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/owner_court_up" android:minHeight="48dp" />
-    <com.google.android.material.button.MaterialButton android:id="@+id/down" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/owner_court_down" android:minHeight="48dp" />
-    <com.google.android.material.button.MaterialButton android:id="@+id/deactivate" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/owner_court_deactivate" android:minHeight="48dp" />
-</LinearLayout>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginBottom="1dp"
+    app:cardBackgroundColor="?attr/colorSurfaceContainerLow" app:cardCornerRadius="0dp" app:cardElevation="0dp"
+    app:strokeColor="?attr/colorOutlineVariant" app:strokeWidth="1dp">
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="12dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
+            <LinearLayout android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:orientation="vertical">
+                <TextView android:id="@+id/name" android:layout_width="match_parent" android:layout_height="wrap_content" android:textAppearance="?attr/textAppearanceTitleMedium" android:textStyle="bold" />
+                <TextView android:id="@+id/surface" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="2dp" android:textAppearance="?attr/textAppearanceBodyMedium" android:textColor="?attr/colorOnSurfaceVariant" />
+            </LinearLayout>
+            <TextView android:id="@+id/active" android:layout_width="wrap_content" android:layout_height="wrap_content" android:paddingHorizontal="8dp" android:textAppearance="?attr/textAppearanceLabelLarge" />
+        </LinearLayout>
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal" android:layout_marginTop="8dp">
+            <com.google.android.material.button.MaterialButton android:id="@+id/up" style="?attr/materialButtonOutlinedStyle" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/owner_court_up" android:minHeight="48dp" android:contentDescription="@string/owner_court_up" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/down" style="?attr/materialButtonOutlinedStyle" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="4dp" android:text="@string/owner_court_down" android:minHeight="48dp" android:contentDescription="@string/owner_court_down" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/edit" style="?attr/materialButtonOutlinedStyle" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="4dp" android:text="@string/edit" android:minHeight="48dp" />
+            <com.google.android.material.button.MaterialButton android:id="@+id/deactivate" style="?attr/materialButtonOutlinedStyle" android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:layout_marginStart="4dp" android:text="@string/owner_court_deactivate" android:minHeight="48dp" />
+        </LinearLayout>
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

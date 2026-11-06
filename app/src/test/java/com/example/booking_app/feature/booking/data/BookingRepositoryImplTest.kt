@@ -1,11 +1,15 @@
 package com.example.booking_app.feature.booking.data
 
 import com.example.booking_app.core.network.AppError
+import com.example.booking_app.core.util.SystemAppClock
+import com.example.booking_app.feature.booking.data.cache.VenueMetadataCache
 import com.example.booking_app.feature.booking.data.datasource.BookingRemoteDataSource
+import com.example.booking_app.feature.booking.data.model.BusySlotsUpdateDto
 import com.example.booking_app.feature.booking.data.model.CourtDto
 import com.example.booking_app.feature.booking.data.model.PriceRuleDto
 import com.example.booking_app.feature.booking.data.model.SlotDto
 import com.example.booking_app.feature.booking.data.repository.BookingRepositoryImpl
+import com.example.booking_app.feature.booking.data.time.ServerTimeOffsetProvider
 import com.example.booking_app.feature.booking.domain.model.HoldResult
 import com.google.firebase.firestore.FirebaseFirestoreException
 import io.mockk.coEvery
@@ -23,13 +27,14 @@ import java.io.IOException
 class BookingRepositoryImplTest {
 
     private val remoteDataSource: BookingRemoteDataSource = mockk()
+    private val serverTimeOffsetProvider: ServerTimeOffsetProvider = mockk(relaxed = true)
     private lateinit var repository: BookingRepositoryImpl
 
     private val venueId = "demo-venue-01"
 
     @Before
     fun setUp() {
-        repository = BookingRepositoryImpl(remoteDataSource)
+        repository = BookingRepositoryImpl(remoteDataSource, VenueMetadataCache(SystemAppClock()), serverTimeOffsetProvider)
     }
 
     @Test
@@ -79,12 +84,18 @@ class BookingRepositoryImplTest {
         val slotDtos = listOf(
             SlotDto(id = "c1_20261027_0600", courtId = "c1", date = "20261027", startTime = "0600", endTime = "0630", status = "BOOKED")
         )
-        coEvery { remoteDataSource.getBusySlotsRealtime(venueId, "20261027") } returns flowOf(slotDtos)
+        val updateDto = BusySlotsUpdateDto(
+            allSlots = slotDtos,
+            isInitial = true,
+            changes = emptyList()
+        )
+        coEvery { remoteDataSource.getBusySlotsRealtime(venueId, "20261027") } returns flowOf(updateDto)
 
-        val slots = repository.getBusySlotsRealtime(venueId, "20261027").first()
+        val update = repository.getBusySlotsRealtime(venueId, "20261027").first()
 
-        assertEquals(1, slots.size)
-        assertEquals("c1_20261027_0600", slots[0].slotId)
+        assertEquals(1, update.allBusySlots.size)
+        assertEquals("c1_20261027_0600", update.allBusySlots[0].slotId)
+        assertTrue(update.isInitial)
     }
 
     @Test
@@ -99,6 +110,7 @@ class BookingRepositoryImplTest {
 
         assertTrue(result.isSuccess)
         assertEquals(holdSuccess, result.getOrNull())
+        coVerify(exactly = 1) { serverTimeOffsetProvider.ensureSynced() }
     }
 
     @Test
@@ -123,7 +135,18 @@ class BookingRepositoryImplTest {
     }
 
     @Test
-    fun errorMapping_permissionDenied_mapsToAppErrorNotSignedIn() = runTest {
+    fun errorMapping_unauthenticated_mapsToAppErrorNotSignedIn() = runTest {
+        val firestoreEx = FirebaseFirestoreException("Unauthenticated", FirebaseFirestoreException.Code.UNAUTHENTICATED)
+        coEvery { remoteDataSource.getVenueOperatingHours(venueId) } throws firestoreEx
+
+        val result = repository.getVenueOperatingHours(venueId)
+
+        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull() is AppError.NotSignedIn)
+    }
+
+    @Test
+    fun errorMapping_permissionDenied_whenNotSignedIn_mapsToAppErrorNotSignedIn() = runTest {
         val firestoreEx = FirebaseFirestoreException("Permission denied", FirebaseFirestoreException.Code.PERMISSION_DENIED)
         coEvery { remoteDataSource.getVenueOperatingHours(venueId) } throws firestoreEx
 

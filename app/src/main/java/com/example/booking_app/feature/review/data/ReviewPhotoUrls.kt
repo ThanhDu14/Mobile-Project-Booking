@@ -14,6 +14,10 @@ object ReviewPhotoUrls {
     fun venuePhoto(path: String?, baseUrl: String = BuildConfig.SUPABASE_URL): String? =
         path?.takeIf { it.isNotBlank() }?.let { publicUrl(baseUrl, BUCKET_VENUE_PHOTOS, it) }
 
+    /** Ảnh đại diện trong `userSnapshot.avatarPath` (bucket `avatars`, spec 011). */
+    fun avatar(path: String, baseUrl: String = BuildConfig.SUPABASE_URL): String =
+        publicUrl(baseUrl, BUCKET_AVATARS, path)
+
     private fun publicUrl(baseUrl: String, bucket: String, path: String): String =
         if (path.startsWith("http://") || path.startsWith("https://")) {
             path
@@ -23,4 +27,5 @@ object ReviewPhotoUrls {
 
     private const val BUCKET_REVIEW_PHOTOS = "review-photos"
     private const val BUCKET_VENUE_PHOTOS = "venue-photos"
+    private const val BUCKET_AVATARS = "avatars"
 }

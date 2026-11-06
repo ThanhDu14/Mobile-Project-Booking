@@ -85,6 +85,7 @@ dependencies {
     implementation(libs.coil.network.okhttp)
     implementation(libs.osmdroid.android)
     implementation(libs.androidx.viewpager2)
+    implementation(libs.play.services.code.scanner)
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
     testImplementation(libs.turbine)

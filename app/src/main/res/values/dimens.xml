@@ -7,6 +7,7 @@
     <dimen name="space_6">24dp</dimen>
     <dimen name="space_8">32dp</dimen>
     <dimen name="touch_min">48dp</dimen>
+    <dimen name="owner_document_preview_height">320dp</dimen>
 
     <!-- Bo góc -->
     <dimen name="radius_sm">8dp</dimen>

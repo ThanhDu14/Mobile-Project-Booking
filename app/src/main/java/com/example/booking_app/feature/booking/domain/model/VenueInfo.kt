@@ -8,5 +8,6 @@ data class VenueInfo(
     val openTime: String,
     val closeTime: String,
     val photoUrl: String? = null,
-    val status: String? = null
+    val status: String? = null,
+    val acceptsRecurring: Boolean = true
 )

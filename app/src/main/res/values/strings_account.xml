@@ -149,6 +149,37 @@
     <string name="account_error_delete_too_large">Tài khoản có quá nhiều đơn sắp tới để xóa tự động. Vui lòng hủy bớt hoặc liên hệ hỗ trợ</string>
     <string name="account_error_delete_failed">Chưa xóa được tài khoản. Tài khoản vẫn dùng bình thường, vui lòng thử lại</string>
     <string name="account_error_delete_unknown_result">Chưa rõ kết quả, vui lòng kiểm tra kết nối rồi thử lại</string>
+    <string name="account_delete_warning">Thao tác này không hoàn tác được. Đọc kỹ những gì sẽ xảy ra trước khi xác nhận.</string>
+    <plurals name="account_delete_bookings_title">
+        <item quantity="other">%d đơn sắp tới sẽ bị hủy</item>
+    </plurals>
+    <string name="account_delete_nothing_upcoming">Không có đơn đặt sân hay lượt vãng lai sắp tới</string>
+    <string name="account_delete_booking_unpaid">%1$s · %2$s · %3$s</string>
+    <string name="account_delete_booking_paid">%1$s · %2$s · %3$s · đã trả %4$s đ, hoàn %5$s đ</string>
+    <string name="account_delete_dropin">Vãng lai: %1$s · %2$s · đã trả %3$s đ, hoàn %4$s đ</string>
+    <plurals name="account_delete_waitlist">
+        <item quantity="other">Rời %d hàng chờ vãng lai</item>
+    </plurals>
+    <string name="account_booking_status_hold">đang giữ chỗ</string>
+    <string name="account_booking_status_pending">chờ duyệt</string>
+    <string name="account_booking_status_confirmed">đã xác nhận</string>
+    <string name="account_delete_owner_card">%1$d cơ sở sẽ bị ẩn. %2$d đơn và %3$d lượt vãng lai sắp tới của khách sẽ bị hủy; %4$d khách được hoàn tiền toàn bộ và nhận thông báo.</string>
+    <string name="account_delete_removed_title">Sẽ bị xóa vĩnh viễn</string>
+    <string name="account_delete_removed_profile">Hồ sơ: họ tên, email, ảnh đại diện, trình độ, khu vực</string>
+    <string name="account_delete_removed_history">Lịch sử tìm kiếm và danh sách sân yêu thích</string>
+    <string name="account_delete_removed_notifications">Thông báo, cài đặt thông báo và lượt dùng trợ lý AI</string>
+    <string name="account_delete_removed_wallet">Số dư ví giả lập (không quy đổi được)</string>
+    <string name="account_delete_removed_owner">Hồ sơ chủ sân và ảnh giấy tờ (nếu có)</string>
+    <string name="account_delete_kept_title">Được giữ lại ở dạng ẩn danh</string>
+    <string name="account_delete_kept_body">Đơn đặt sân đã qua, đánh giá, tin nhắn và bài đăng, hiện là "Người dùng đã xóa"</string>
+    <string name="account_delete_password_label">Nhập mật khẩu để xác nhận</string>
+    <string name="account_delete_identity_label">Xác nhận danh tính</string>
+    <string name="account_delete_identity_done">Đã xác nhận danh tính</string>
+    <string name="account_delete_ack">Tôi hiểu tài khoản và dữ liệu trên sẽ bị xóa.</string>
+    <plurals name="account_delete_ack_bookings">
+        <item quantity="other">Tôi hiểu tài khoản và dữ liệu trên sẽ bị xóa, %d đơn sắp tới sẽ bị hủy.</item>
+    </plurals>
+    <string name="account_delete_loading_error">Chưa tải được thông tin xóa tài khoản</string>
 
     <!-- Lỗi chung -->
     <string name="account_session_revoked">Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại</string>
