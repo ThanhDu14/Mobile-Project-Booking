@@ -2,9 +2,11 @@ package com.example.booking_app.feature.admin.di
 
 import com.example.booking_app.feature.admin.data.AdminApplicationRepositoryImpl
 import com.example.booking_app.feature.admin.data.AdminReportRepositoryImpl
+import com.example.booking_app.feature.admin.data.AdminToolsRepositoryImpl
 import com.example.booking_app.feature.admin.data.AdminUserVenueRepositoryImpl
 import com.example.booking_app.feature.admin.domain.repository.AdminApplicationRepository
 import com.example.booking_app.feature.admin.domain.repository.AdminReportRepository
+import com.example.booking_app.feature.admin.domain.repository.AdminToolsRepository
 import com.example.booking_app.feature.admin.domain.repository.AdminUserVenueRepository
 import dagger.Binds
 import dagger.Module
@@ -33,4 +35,10 @@ abstract class AdminModule {
     abstract fun bindAdminUserVenueRepository(
         impl: AdminUserVenueRepositoryImpl,
     ): AdminUserVenueRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindAdminToolsRepository(
+        impl: AdminToolsRepositoryImpl,
+    ): AdminToolsRepository
 }

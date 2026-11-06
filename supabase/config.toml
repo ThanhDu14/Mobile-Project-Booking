@@ -469,3 +469,9 @@ verify_jwt = false
 
 [functions.admin-manage-venue]
 verify_jwt = false
+
+[functions.admin-broadcast-notification]
+verify_jwt = false
+
+[functions.admin-manage-voucher]
+verify_jwt = false

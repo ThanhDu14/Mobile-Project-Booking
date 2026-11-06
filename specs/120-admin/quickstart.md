@@ -89,3 +89,18 @@ Run only the relevant local test suites with Emulator/local services running. No
     * `supabase/functions/admin-manage-venue/` (`index.ts`, `handler.ts`, `handler.test.ts`).
   - Rules Tests: `firestore-tests/test/user-venue-management.test.ts` (kiểm tra allow/deny tra cứu tài khoản, cấm client tự ý sửa trường quản trị, owner không được tự mở khóa venue LOCKED và không được tự đặt venue thành LOCKED).
 
+## Kết quả nghiệm thu thực tế — Phase 6 (US4 - Theo dõi tình hình và công cụ quản trị P3)
+
+- **Unit Tests**:
+  - Lệnh: `./gradlew :app:testDebugUnitTest --tests "com.example.booking_app.feature.admin.*"`
+  - Kết quả: `BUILD SUCCESSFUL in 40s`. 100% tests PASS (`AdminToolsViewModelTest`, `SystemVoucherValidationTest`, `AdminUserVenueViewModelTest`, `OwnerRevocationValidationTest`, `AdminReportsViewModelTest`, `AdminReportValidationTest`, `AdminApplicationsViewModelTest`, `AdminApplicationValidationTest`).
+- **Connected UI Tests trên thiết bị vật lý**:
+  - Thiết bị: `10ADBY2GH30038C` (Vivo V2247, Android 15).
+  - Lệnh: `./gradlew :app:connectedDebugAndroidTest "-Pandroid.testInstrumentationRunnerArguments.class=com.example.booking_app.feature.admin.AdminToolsScreensUiTest"`
+  - Kết quả: `BUILD SUCCESSFUL in 1m 5s`. 100% PASS (1/1 test class, 0 failures, 0 skipped), xác thực màn hình dashboard công cụ (`fragment_admin_tools_dashboard`), danh sách voucher hệ thống (`fragment_admin_system_vouchers`), item voucher (`item_admin_system_voucher`) và form broadcast notification (`fragment_admin_broadcast`) trên phone (360dp) và tablet (600dp) ở cả 2 chế độ Day/Night.
+- **Backend Edge Functions & Rules Tests**:
+  - Edge Functions:
+    * `supabase/functions/admin-broadcast-notification/` (`index.ts`, `handler.ts`, `handler.test.ts`).
+    * `supabase/functions/admin-manage-voucher/` (`index.ts`, `handler.ts`, `handler.test.ts`).
+  - Rules Tests: `firestore-tests/test/admin-tools.test.ts` (kiểm thử đọc systemStats chỉ dành cho Admin, cấm client ghi usedCount của voucher, cấm non-admin sửa districts và amenities).
+

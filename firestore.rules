@@ -141,6 +141,12 @@ service cloud.firestore {
       allow write: if isAdmin();                      // spec 120 làm màn hình quản lý
     }
 
+    // ---------- amenities (D, spec 120) ----------
+    match /amenities/{id} {
+      allow get, list: if isInitialized();
+      allow write: if isAdmin();                      // spec 120 làm màn hình quản lý
+    }
+
     // ---------- accountDeletions (A, spec 011; contracts/security-rules.md §3) ----------
     // Chỉ delete-account và delete-account-sweeper (service account) đọc/ghi.
     match /accountDeletions/{uid} {

@@ -73,4 +73,28 @@
     <string name="admin_venue_status_label">Trạng thái hiện tại:</string>
     <string name="admin_not_found_user">Không tìm thấy người dùng phù hợp</string>
     <string name="admin_not_found_venue">Không tìm thấy cơ sở phù hợp</string>
+
+    <!-- Admin Dashboard & Tools (US4) -->
+    <string name="admin_tools_dashboard_title">Bảng điều khiển &amp; Công cụ</string>
+    <string name="admin_stats_header">Thống kê hệ thống</string>
+    <string name="admin_stats_empty">Chưa có dữ liệu thống kê hệ thống</string>
+    <string name="admin_stats_total_users">Tổng người dùng:</string>
+    <string name="admin_stats_total_venues">Tổng cơ sở:</string>
+    <string name="admin_stats_total_bookings">Tổng lượt đặt sân:</string>
+    <string name="admin_stats_total_revenue">Tổng doanh thu:</string>
+    <string name="admin_tools_header">Công cụ quản trị</string>
+    <string name="admin_nav_system_vouchers">Voucher toàn hệ thống</string>
+    <string name="admin_nav_system_vouchers_desc">Tạo, bật/tắt voucher khuyến mãi hệ thống</string>
+    <string name="admin_nav_broadcast">Thông báo hệ thống</string>
+    <string name="admin_nav_broadcast_desc">Gửi thông báo broadcast tới toàn bộ tài khoản active</string>
+    <string name="admin_vouchers_title">Voucher hệ thống</string>
+    <string name="admin_vouchers_empty">Chưa có voucher hệ thống nào</string>
+    <string name="admin_create_voucher_button">Tạo voucher mới</string>
+    <string name="admin_broadcast_title">Phát thông báo hệ thống</string>
+    <string name="admin_broadcast_title_hint">Tiêu đề thông báo (bắt buộc)</string>
+    <string name="admin_broadcast_body_hint">Nội dung thông báo (bắt buộc)</string>
+    <string name="admin_broadcast_send_button">Gửi thông báo hệ thống</string>
+    <string name="admin_broadcast_audience_chip">Đối tượng: Tất cả tài khoản ACTIVE</string>
+    <string name="admin_confirm_broadcast_title">Xác nhận gửi thông báo</string>
+    <string name="admin_confirm_broadcast_message">Thông báo này sẽ được gửi tới tất cả người dùng đang hoạt động trong hệ thống. Bạn có chắc chắn muốn gửi?</string>
 </resources>

@@ -52,4 +52,32 @@
         android:name="com.example.booking_app.feature.admin.ui.AdminVenueManagementFragment"
         android:label="@string/admin_venue_management_title" />
 
+    <fragment
+        android:id="@+id/adminToolsDashboardFragment"
+        android:name="com.example.booking_app.feature.admin.ui.AdminToolsDashboardFragment"
+        android:label="@string/admin_tools_dashboard_title">
+        <action
+            android:id="@+id/action_dashboard_to_vouchers"
+            app:destination="@id/adminSystemVouchersFragment" />
+        <action
+            android:id="@+id/action_dashboard_to_broadcast"
+            app:destination="@id/adminBroadcastFragment" />
+        <action
+            android:id="@+id/action_dashboard_to_user_mgmt"
+            app:destination="@id/adminUserManagementFragment" />
+        <action
+            android:id="@+id/action_dashboard_to_venue_mgmt"
+            app:destination="@id/adminVenueManagementFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/adminSystemVouchersFragment"
+        android:name="com.example.booking_app.feature.admin.ui.AdminSystemVouchersFragment"
+        android:label="@string/admin_vouchers_title" />
+
+    <fragment
+        android:id="@+id/adminBroadcastFragment"
+        android:name="com.example.booking_app.feature.admin.ui.AdminBroadcastFragment"
+        android:label="@string/admin_broadcast_title" />
+
 </navigation>

@@ -84,15 +84,15 @@
 
 **Independent Test**: Admin chỉ thấy dữ liệu thực có; empty khi thiếu; voucher obeys Feature 050/global uniqueness; SYSTEM broadcast tới mọi account active theo Feature 100; category CRUD tuân hợp đồng đã duyệt.
 
-- [ ] T042 [US4] Sau T004, triển khai read-only stats từ `systemStats` và `venues/{venueId}/dailyStats`; chỉ render field tồn tại, nguồn/thời điểm nếu schema có, không tự tính metric, trong `supabase/functions/` và `app/src/main/java/com/example/booking_app/feature/admin/data/`.
-- [ ] T043 [US4] Sau T004, triển khai danh mục trên đúng `districts`/`amenities` với schema/validation/CRUD đã được owners chốt; không đổi logic sử dụng của Feature 020/022 trong `supabase/functions/`.
-- [ ] T044 [US4] Sau T006, triển khai tạo/sửa/tắt `systemVouchers/{code}` theo cùng schema và validation Feature 050; kiểm tra mã trùng toàn hệ thống trước ghi; không cho Admin ghi `usedCount`/`redemptions` trong `supabase/functions/`.
-- [ ] T045 [US4] Sau T004/T006, phát `SYSTEM` qua server path của Feature 100 tới toàn bộ tài khoản active; không fan-out từ client, không tạo schema notification mới và không hiện thành công trước xác nhận trong `supabase/functions/`.
-- [ ] T046 [P] [US4] Tạo ViewModel/repository states cho stats, categories, system vouchers và broadcast gồm loading/empty/error/retry/permission-denied/offline; khóa thao động trong lúc gửi và tránh optimistic success trong `app/src/main/java/com/example/booking_app/feature/admin/`.
-- [ ] T047 [US4] Tạo XML dashboard/tools dùng resources, accessibility 48dp, DayNight, responsive phone/`w600dp`; chỉ render thao tác đã được gate/schema chốt trong `app/src/main/res/layout/`, `values/` và `values-night/`.
-- [ ] T048 [P] [US4] Viết unit/repository tests cho stats empty/source, validation voucher theo Feature 050, uniqueness conflict, category contract và broadcast error/retry trong `app/src/test/java/com/example/booking_app/feature/admin/`.
-- [ ] T049 [US4] Viết Emulator/Edge Function tests cho stats read privacy, voucher fields/uniqueness/client protected usage fields, category allow/deny sau khi chốt schema và SYSTEM recipient/fan-out/retry theo Feature 100 contract trong `firestore-tests/test/`.
-- [ ] T050 [US4] Viết Espresso checks cho stats empty/content, category/voucher forms và broadcast success/error, accessibility, DayNight, phone/`w600dp` trong `app/src/androidTest/java/com/example/booking_app/feature/admin/`.
+- [X] T042 [US4] Sau T004, triển khai read-only stats từ `systemStats` và `venues/{venueId}/dailyStats`; chỉ render field tồn tại, nguồn/thời điểm nếu schema có, không tự tính metric, trong `supabase/functions/` và `app/src/main/java/com/example/booking_app/feature/admin/data/`.
+- [X] T043 [US4] Sau T004, triển khai danh mục trên đúng `districts`/`amenities` với schema/validation/CRUD đã được owners chốt; không đổi logic sử dụng của Feature 020/022 trong `supabase/functions/`.
+- [X] T044 [US4] Sau T006, triển khai tạo/sửa/tắt `systemVouchers/{code}` theo cùng schema và validation Feature 050; kiểm tra mã trùng toàn hệ thống trước ghi; không cho Admin ghi `usedCount`/`redemptions` trong `supabase/functions/`.
+- [X] T045 [US4] Sau T004/T006, phát `SYSTEM` qua server path của Feature 100 tới toàn bộ tài khoản active; không fan-out từ client, không tạo schema notification mới và không hiện thành công trước xác nhận trong `supabase/functions/`.
+- [X] T046 [P] [US4] Tạo ViewModel/repository states cho stats, categories, system vouchers và broadcast gồm loading/empty/error/retry/permission-denied/offline; khóa thao động trong lúc gửi và tránh optimistic success trong `app/src/main/java/com/example/booking_app/feature/admin/`.
+- [X] T047 [US4] Tạo XML dashboard/tools dùng resources, accessibility 48dp, DayNight, responsive phone/`w600dp`; chỉ render thao tác đã được gate/schema chốt trong `app/src/main/res/layout/`, `values/` và `values-night/`.
+- [X] T048 [P] [US4] Viết unit/repository tests cho stats empty/source, validation voucher theo Feature 050, uniqueness conflict, category contract và broadcast error/retry trong `app/src/test/java/com/example/booking_app/feature/admin/`.
+- [X] T049 [US4] Viết Emulator/Edge Function tests cho stats read privacy, voucher fields/uniqueness/client protected usage fields, category allow/deny sau khi chốt schema và SYSTEM recipient/fan-out/retry theo Feature 100 contract trong `firestore-tests/test/`.
+- [X] T050 [US4] Viết Espresso checks cho stats empty/content, category/voucher forms và broadcast success/error, accessibility, DayNight, phone/`w600dp` trong `app/src/androidTest/java/com/example/booking_app/feature/admin/`.
 
 ## Phase 7: Polish và cross-cutting
 
