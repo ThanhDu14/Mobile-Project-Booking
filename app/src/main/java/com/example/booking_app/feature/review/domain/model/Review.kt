@@ -15,4 +15,6 @@ data class Review(
     val isEdited: Boolean,
     val createdAt: Instant,
     val canEditUntil: Instant,
+    /** Path trong bucket `review-photos`, cùng thứ tự [photoUrls]; dùng khi sửa đánh giá (US5). */
+    val photoPaths: List<String> = emptyList(),
 )

@@ -49,4 +49,7 @@
     <!-- Trang Tài khoản của spec 011 (research R14). -->
     <include app:graph="@navigation/nav_account" />
 
+    <!-- "Đánh giá của khách" của spec 070 US4 (C); menu quản lý sân mở bằng smashnow://review/owner. -->
+    <include app:graph="@navigation/nav_review_owner" />
+
 </navigation>

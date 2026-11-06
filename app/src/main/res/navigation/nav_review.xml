@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Nav graph lồng của spec 070 (contracts/ui-screens.md §1), được include vào nav_player.
-    Có "Sân yêu thích" (US3) và "Viết đánh giá" (US1); các màn hình còn lại thêm khi làm US2, US4, US6.
+    Nav graph lồng của spec 070 phía người chơi (contracts/ui-screens.md §1), được include vào nav_player:
+    "Sân yêu thích" (US3), "Viết/sửa đánh giá" (US1, US2, US5), "Tất cả đánh giá" (US6), xem ảnh (US2).
+    Màn "Đánh giá của khách" của chủ sân (US4) nằm ở nav_review_owner (include vào nav_owner).
 -->
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -36,6 +37,38 @@
             android:defaultValue="CREATE"
             app:argType="com.example.booking_app.feature.review.ui.write.WriteReviewMode" />
         <deepLink app:uri="smashnow://review/write/{bookingId}" />
+    </fragment>
+
+    <!--
+        Tất cả đánh giá của một sân (US6). Nút "Xem tất cả" ở chi tiết sân (spec 030) mở bằng
+        app:destination="@id/venueReviewsFragment"; thông báo REVIEW_REPLY (spec 100) dùng deep link.
+    -->
+    <fragment
+        android:id="@+id/venueReviewsFragment"
+        android:name="com.example.booking_app.feature.review.ui.list.VenueReviewsFragment"
+        android:label="@string/review_list_title">
+        <argument
+            android:name="venueId"
+            app:argType="string" />
+        <argument
+            android:name="venueName"
+            android:defaultValue=""
+            app:argType="string" />
+        <deepLink app:uri="smashnow://review/venue/{venueId}" />
+    </fragment>
+
+    <!-- Xem ảnh đánh giá (US2, T046), mở từ lưới ảnh của item_review. -->
+    <fragment
+        android:id="@+id/reviewPhotoViewerFragment"
+        android:name="com.example.booking_app.feature.review.ui.photo.PhotoViewerFragment"
+        android:label="@string/review_photos_label">
+        <argument
+            android:name="photoUrls"
+            app:argType="string[]" />
+        <argument
+            android:name="startIndex"
+            android:defaultValue="0"
+            app:argType="integer" />
     </fragment>
 
 </navigation>

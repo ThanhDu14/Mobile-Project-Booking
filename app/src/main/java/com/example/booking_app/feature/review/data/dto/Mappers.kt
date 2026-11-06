@@ -71,6 +71,7 @@ fun ReviewDto.toDomain(
         createdAt = created,
         // Dữ liệu cũ thiếu completedAt: tính từ createdAt, server vẫn là nơi quyết định.
         canEditUntil = ReviewEligibility.canEditUntil(completedAt ?: created),
+        photoPaths = photoPaths,
     )
 }
 

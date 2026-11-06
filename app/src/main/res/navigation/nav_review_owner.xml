@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Nav graph lồng của spec 070 phía chủ sân (US4), include vào nav_owner. Menu quản lý sân (spec 111/112)
+    mở bằng app:destination="@id/nav_review_owner" hoặc deep link smashnow://review/owner.
+-->
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_review_owner"
+    app:startDestination="@id/ownerReviewsFragment">
+
+    <fragment
+        android:id="@+id/ownerReviewsFragment"
+        android:name="com.example.booking_app.feature.review.ui.owner.OwnerReviewsFragment"
+        android:label="@string/review_owner_title">
+        <deepLink app:uri="smashnow://review/owner" />
+    </fragment>
+
+    <!-- Xem ảnh đánh giá (US2, T046); id riêng vì nav_review đã có reviewPhotoViewerFragment. -->
+    <fragment
+        android:id="@+id/ownerReviewPhotoViewerFragment"
+        android:name="com.example.booking_app.feature.review.ui.photo.PhotoViewerFragment"
+        android:label="@string/review_photos_label">
+        <argument
+            android:name="photoUrls"
+            app:argType="string[]" />
+        <argument
+            android:name="startIndex"
+            android:defaultValue="0"
+            app:argType="integer" />
+    </fragment>
+</navigation>
