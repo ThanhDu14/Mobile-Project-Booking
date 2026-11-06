@@ -32,6 +32,7 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 26 | 2026-10-30 | Triển khai US3 sân yêu thích (Phase 1–2 phần chung + Phase 5) của spec 070 bằng `/speckit-implement` | 07 |
 | 27 | 2026-10-30 | Kiểm tra tiến độ tuần 4, soạn tài liệu PDF hướng dẫn test trên emulator và giải thích code | 07 |
 | 28 | 2026-10-30 | Làm trước phần nền US1 của spec 070: Rules `reviews`, index, mã lỗi và DTO Edge Function | 07 |
+| 29 | 2026-11-06 | Triển khai US1 viết đánh giá sân của spec 070 (Edge Function review + màn hình Android) bằng `/speckit-implement` | 07 |
 
 ---
 
@@ -1650,3 +1651,73 @@ không thêm dòng attribution AI vào commit.
 
 - `cd firestore-tests && npm test`: 52/52 test qua.
 - `./gradlew testDebugUnitTest --tests "com.example.booking_app.feature.review.*" assembleDebug`: 24/24 test qua, build được.
+
+---
+
+## Mục 29: Triển khai US1 viết đánh giá sân của spec 070
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-06 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 07 – Đánh giá và yêu thích (spec 070, task T018–T021, T026–T037; làm dở T011, T012, T014, T016) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5) |
+| Mục đích | Hoàn thành US1 (P1): người chơi đánh giá sân sau khi chơi, gồm backend, Rules, Android và test |
+| Nhánh Git | `feature/070-review-us1` |
+
+### Prompt đã dùng
+
+```
+Bối cảnh: mình là thành viên C, phụ trách spec 070 (đánh giá sân và sân yêu thích). US3 và phần
+nền US1 (Rules reviews, index, ReviewError, DTO) đã xong. Một phiên Claude Code khác đang làm dở
+backend US1 trên nhánh feature/070-review-us1.
+
+Mục tiêu: hoàn thành US1 "Đánh giá sân sau khi chơi" theo specs/070-review-favorite/tasks.md.
+
+Yêu cầu:
+1. Kiểm tra xem có phiên AI nào khác đang làm trên repo không. Nếu có thì dừng phiên đó, lấy lại
+   tiến độ và chỉ làm tiếp ở phiên này, để hai phiên không cùng sửa một file.
+2. Kiểm chứng lại phần backend đã làm (Edge Function review action create, _shared/reviews.ts)
+   bằng test trên Firebase Emulator trước khi tick task.
+3. Làm phần Android theo TDD (viết test trước, sau đó mới cài đặt):
+   ReviewEligibility (T027/T031), SubmitReviewUseCase (T033),
+   WriteReviewViewModel (T028/T034), ReviewRepository + FirestoreReviewRepository + mapper,
+   layout và Fragment theo wireframe 07_review-favorite_buoc1 (T035/T036),
+   nav + deep link smashnow://review/write/{bookingId}, README điểm nối cho spec 060 (T037).
+4. Dùng lại hạ tầng có sẵn của nhóm (FunctionErrors.invokeWithAuthRetry, AppClock, StateViews,
+   SessionManager), không tạo lại.
+
+Ràng buộc: tầng ui không import data; mọi thao tác ghi reviews đi qua Edge Function; kiểm tra phía
+client phải khớp server (hạn 7 ngày, làm tròn điểm tổng 1 chữ số, bình luận tối đa 1000 ký tự);
+không thêm dòng attribution AI vào commit.
+
+Kết quả mong muốn: test Deno, test Rules và unit test Android đều qua, assembleDebug build được,
+tasks.md được tick đúng, có 1 commit cho US1.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Tìm thấy một phiên khác đang làm trên repo. AI nhắn cho phiên đó dừng lại, nhận bàn giao tiến độ, rồi chạy lại test backend trên bản code hiện có: 22/22 qua.
+- Viết test Rules để kiểm tra một nghi ngờ, và test xác nhận đúng là lỗi: `get reviews/{bookingId}` khi đơn chưa có đánh giá bị `PERMISSION_DENIED` (Rules đọc `resource.data` khi `resource == null`). Hệ quả là nút "Đánh giá" bên spec 060 sẽ không hiện được. AI tách `get`/`list` và cho `get` khi `resource == null`.
+- Android:
+  - domain: `ReviewRepository`, `ReviewEligibility`, `SubmitReviewUseCase`;
+  - data: `ReviewDto` kèm mapper, `FirestoreReviewRepository`, `SupabaseReviewApi`;
+  - ui: `WriteReviewViewModel`, `WriteReviewFragment`;
+  - 30 unit test mới.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Sửa Rules `reviews` cho phép `get` document chưa tồn tại | Dùng, cập nhật `contracts/security-rules.md` dòng R3 | Test tái hiện được lỗi; client chỉ biết "chưa có đánh giá", không đọc được dữ liệu của người khác |
+| Thêm `getReviewTarget` (đọc `bookings`) vào `ReviewRepository` | Dùng | Wireframe cần tên sân, giờ chơi, tên sân con; chỉ đọc document, không import code của nhóm B |
+| Đổi tên DTO mới thành `VenueRatingFieldsDto` | Sửa | Tên `VenueRatingDto` đã có trong `ReviewFunctionDtos.kt` |
+| Đơn đã có đánh giá thì màn hình chỉ cho xem | Dùng tạm | Chức năng sửa đánh giá thuộc US5 (`mode = EDIT`) |
+| Phần interface cho US2, US4–US6 (`update`, `delete`, `reply`, danh sách) | Chưa làm | Ngoài phạm vi US1, ghi chú ở T011 và T014 |
+
+### Cách kiểm chứng
+
+- `deno test -A _shared/reviews.test.ts review/` (Firebase Emulator): 22/22 test qua, trong đó có SC-005 với 10 lời gọi song song.
+- `cd firestore-tests && npx vitest run`: 145/145 test qua (có thêm test R3 cho đánh giá chưa tồn tại).
+- `./gradlew assembleDebug testDebugUnitTest`: build được; 519/520 test qua. Test hỏng duy nhất là `OwnerSlotBlockViewModelTest` của nhóm D: test cố định ngày `20261030` nên hỏng từ khi qua ngày đó, không liên quan đến thay đổi lần này.
+- Chưa chạy màn hình trên máy ảo hoặc thiết bị thật.

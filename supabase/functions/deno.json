@@ -1,0 +1,5 @@
+{
+  "tasks": {
+    "test:flaky": "FLAKY_REPEAT=10 deno test -A delete-account/handler.test.ts --filter \"/^X(7|10):/\""
+  }
+}

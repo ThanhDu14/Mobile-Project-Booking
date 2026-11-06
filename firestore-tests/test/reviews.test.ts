@@ -90,6 +90,11 @@ describe('reviews', () => {
     await assertSucceeds(getDocs(query(collection(db, 'reviews'), where('userId', '==', 'player1'))));
   });
 
+  it('R3: đơn chưa có đánh giá: get reviews/{bookingId} trả "không tồn tại", không bị chặn (observeMyReview)', async () => {
+    await assertSucceeds(getDoc(doc(player('player1'), 'reviews/b-not-reviewed')));
+    await assertFails(getDoc(doc(guest(), 'reviews/b-not-reviewed')));
+  });
+
   it('R4: admin đọc được đánh giá HIDDEN', async () => {
     await assertSucceeds(getDoc(doc(admin(), 'reviews/b-hidden')));
     await assertSucceeds(getDocs(query(collection(admin(), 'reviews'), where('status', '==', 'HIDDEN'))));
