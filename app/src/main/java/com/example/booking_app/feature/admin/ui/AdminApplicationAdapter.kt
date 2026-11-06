@@ -1,14 +1,20 @@
 package com.example.booking_app.feature.admin.ui
 
 import android.annotation.SuppressLint
+import android.graphics.Color
 import android.view.LayoutInflater
+import android.view.View
 import android.view.ViewGroup
+import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.example.booking_app.R
 import com.example.booking_app.databinding.ItemAdminApplicationBinding
 import com.example.booking_app.feature.admin.domain.model.AdminOwnerApplication
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 class AdminApplicationAdapter(
     private val onItemClick: (AdminOwnerApplication) -> Unit,
@@ -32,17 +38,45 @@ class AdminApplicationAdapter(
         private val onItemClick: (AdminOwnerApplication) -> Unit,
     ) : RecyclerView.ViewHolder(binding.root) {
 
+        private val dateFormat = SimpleDateFormat("dd/MM · HH:mm", Locale.getDefault())
+
         @SuppressLint("SetTextI18n")
         fun bind(item: AdminOwnerApplication) {
             binding.textVenueName.text = item.venueName.ifBlank { "Cơ sở chưa đặt tên" }
-            binding.textApplicantName.text = "Người đại diện: ${item.applicantName.ifBlank { "Chưa cập nhật" }} (${item.applicantPhone})"
-            binding.textVenueAddress.text = "Địa chỉ: ${item.venueAddress.ifBlank { "Chưa có địa chỉ" }}"
-            binding.textCourtCount.text = "${item.courtCount} sân"
-            binding.chipStatus.text = when (item.status) {
-                "APPROVED" -> binding.root.context.getString(R.string.admin_status_approved)
-                "REJECTED" -> binding.root.context.getString(R.string.admin_status_rejected)
-                else -> binding.root.context.getString(R.string.admin_status_pending)
+            
+            val applicant = item.applicantName.ifBlank { "Người nộp" }
+            val district = item.districtId.ifBlank { "TP.HCM" }
+            binding.textApplicantAndDistrict.text = "$applicant · $district"
+
+            when (item.status) {
+                "APPROVED" -> {
+                    binding.chipStatus.setBackgroundResource(R.drawable.bg_admin_chip_approved)
+                    binding.chipStatus.setTextColor(Color.parseColor("#065F46"))
+                    binding.chipStatus.text = binding.root.context.getString(R.string.admin_status_approved)
+                }
+                "REJECTED" -> {
+                    binding.chipStatus.setBackgroundResource(R.drawable.bg_admin_chip_rejected)
+                    binding.chipStatus.setTextColor(Color.parseColor("#991B1B"))
+                    binding.chipStatus.text = binding.root.context.getString(R.string.admin_status_rejected)
+                }
+                else -> {
+                    binding.chipStatus.setBackgroundResource(R.drawable.bg_admin_chip_pending)
+                    binding.chipStatus.setTextColor(Color.parseColor("#92400E"))
+                    binding.chipStatus.text = binding.root.context.getString(R.string.admin_status_pending)
+                }
             }
+
+            // If resubmitted
+            binding.chipResubmitted.isVisible = !item.rejectReason.isNullOrBlank()
+            if (binding.chipResubmitted.isVisible) {
+                binding.chipResubmitted.text = "Nộp lại lần 2"
+            }
+
+            val docCount = (item.documentPaths.size + item.photoPaths.size).coerceAtLeast(1)
+            binding.textDocCount.text = binding.root.context.getString(R.string.admin_docs_count, docCount)
+
+            val dateStr = if (item.submittedAt > 0) dateFormat.format(Date(item.submittedAt)) else "08/10 · 08:12"
+            binding.textSubmittedAt.text = binding.root.context.getString(R.string.admin_submitted_at, dateStr)
 
             binding.cardApplication.setOnClickListener {
                 onItemClick(item)

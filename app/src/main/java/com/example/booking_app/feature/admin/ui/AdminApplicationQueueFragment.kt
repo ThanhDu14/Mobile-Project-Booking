@@ -12,6 +12,7 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.booking_app.R
 import com.example.booking_app.databinding.FragmentAdminApplicationQueueBinding
+import com.example.booking_app.feature.admin.domain.model.AdminOwnerApplication
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -23,6 +24,7 @@ class AdminApplicationQueueFragment : Fragment(R.layout.fragment_admin_applicati
 
     val viewModel: AdminApplicationsViewModel by activityViewModels()
     private lateinit var adapter: AdminApplicationAdapter
+    private var allApplications: List<AdminOwnerApplication> = emptyList()
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -42,6 +44,10 @@ class AdminApplicationQueueFragment : Fragment(R.layout.fragment_admin_applicati
             viewModel.loadQueue()
         }
 
+        binding.chipGroupStatus.setOnCheckedStateChangeListener { _, checkedIds ->
+            filterList(checkedIds.firstOrNull())
+        }
+
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.queueState.collect(::renderState)
@@ -59,7 +65,14 @@ class AdminApplicationQueueFragment : Fragment(R.layout.fragment_admin_applicati
 
         when (state) {
             is AdminQueueState.Content -> {
-                adapter.submitList(state.applications)
+                allApplications = state.applications
+                val pendingCount = allApplications.count { it.status == "PENDING" }
+                if (pendingCount > 0) {
+                    currentBinding.chipPending.text = getString(R.string.admin_filter_pending, pendingCount)
+                } else {
+                    currentBinding.chipPending.text = getString(R.string.admin_filter_pending_simple)
+                }
+                filterList(currentBinding.chipGroupStatus.checkedChipId)
             }
             is AdminQueueState.Error -> {
                 currentBinding.textErrorMessage.text = state.message
@@ -67,6 +80,16 @@ class AdminApplicationQueueFragment : Fragment(R.layout.fragment_admin_applicati
             }
             else -> Unit
         }
+    }
+
+    private fun filterList(checkedChipId: Int?) {
+        val filtered = when (checkedChipId) {
+            R.id.chipApproved -> allApplications.filter { it.status == "APPROVED" }
+            R.id.chipRejected -> allApplications.filter { it.status == "REJECTED" }
+            else -> allApplications.filter { it.status == "PENDING" || it.status.isBlank() }
+        }
+        adapter.submitList(filtered)
+        _binding?.layoutEmpty?.isVisible = filtered.isEmpty() && allApplications.isNotEmpty()
     }
 
     override fun onDestroyView() {

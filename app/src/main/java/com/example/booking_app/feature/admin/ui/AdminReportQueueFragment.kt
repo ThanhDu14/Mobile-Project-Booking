@@ -12,6 +12,9 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.booking_app.R
 import com.example.booking_app.databinding.FragmentAdminReportQueueBinding
+import com.example.booking_app.feature.admin.domain.model.AdminReport
+import com.example.booking_app.feature.admin.domain.model.ReportStatus
+import com.example.booking_app.feature.admin.domain.model.ReportTargetType
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -23,6 +26,7 @@ class AdminReportQueueFragment : Fragment(R.layout.fragment_admin_report_queue) 
 
     val viewModel: AdminReportsViewModel by activityViewModels()
     private lateinit var adapter: AdminReportAdapter
+    private var allReports: List<AdminReport> = emptyList()
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -42,6 +46,16 @@ class AdminReportQueueFragment : Fragment(R.layout.fragment_admin_report_queue) 
             viewModel.loadReports()
         }
 
+        binding.toggleGroupStatus.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (isChecked) {
+                filterReports()
+            }
+        }
+
+        binding.chipGroupCategory.setOnCheckedStateChangeListener { _, _ ->
+            filterReports()
+        }
+
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.queueState.collect(::renderState)
@@ -59,7 +73,9 @@ class AdminReportQueueFragment : Fragment(R.layout.fragment_admin_report_queue) 
 
         when (state) {
             is AdminReportQueueState.Content -> {
-                adapter.submitList(state.reports)
+                allReports = state.reports
+                adapter.updateTargetCounts(allReports)
+                filterReports()
             }
             is AdminReportQueueState.Error -> {
                 currentBinding.textErrorMessage.text = state.message
@@ -67,6 +83,29 @@ class AdminReportQueueFragment : Fragment(R.layout.fragment_admin_report_queue) 
             }
             else -> Unit
         }
+    }
+
+    private fun filterReports() {
+        val currentBinding = _binding ?: return
+
+        val isOpenTab = currentBinding.toggleGroupStatus.checkedButtonId != R.id.buttonTabClosed
+        val targetType = when (currentBinding.chipGroupCategory.checkedChipId) {
+            R.id.chipFilterPost -> ReportTargetType.POST
+            R.id.chipFilterMessage -> ReportTargetType.MESSAGE
+            R.id.chipFilterReview -> ReportTargetType.REVIEW
+            R.id.chipFilterVenue -> ReportTargetType.VENUE
+            R.id.chipFilterUser -> ReportTargetType.USER
+            else -> null
+        }
+
+        val filtered = allReports.filter { report ->
+            val matchStatus = if (isOpenTab) report.status == ReportStatus.OPEN else report.status != ReportStatus.OPEN
+            val matchType = targetType == null || report.targetType == targetType
+            matchStatus && matchType
+        }
+
+        adapter.submitList(filtered)
+        currentBinding.layoutEmpty.isVisible = filtered.isEmpty() && allReports.isNotEmpty()
     }
 
     override fun onDestroyView() {

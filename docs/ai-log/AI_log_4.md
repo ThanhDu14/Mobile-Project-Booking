@@ -47,6 +47,7 @@ Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 | 41  | 2026-11-06 | Triển khai Phase 5 (US3 - P2) Feature 120 Admin: quản lý user, khóa/mở khóa tài khoản, thu hồi quyền chủ sân, quản lý venue vi phạm và test bằng `$speckit-implement`                  | 12   |
 | 42  | 2026-11-06 | Triển khai Phase 6 (US4 - P3) Feature 120 Admin: dashboard thống kê, voucher hệ thống, broadcast thông báo, danh mục và test bằng `$speckit-implement`                                 | 12   |
 | 43  | 2026-11-06 | Hoàn thiện toàn diện, bảo mật, đối chiếu ranh giới hợp đồng và đo lường SLA SC-006 (Phase 7, Tasks T051–T054) Feature 120 bằng `$speckit-implement`                                     | 12   |
+| 44  | 2026-11-06 | Tái cấu trúc UI Admin theo 12 wireframe artboards `specs/120-admin/ui/`, thiết lập 5 tab Bottom Navigation, loại bỏ hoàn toàn mock data và nối dữ liệu thực với Firestore & Supabase | 12   |
 
 ---
 
@@ -4467,5 +4468,111 @@ Triển khai toàn bộ Phase 7 (Polish và Cross-cutting, Tasks T051–T054) th
 - Tiến độ hoàn thành: **54/54 tasks (100%)** trong `specs/120-admin/tasks.md`.
 - Tiêu chuẩn SLA SC-006: Duyệt hồ sơ (0.125s) và Từ chối hồ sơ (0.066s) đều hoàn tất trong $\le 120$s $\rightarrow$ **ĐẠT (PASS)**.
 - Tuyệt đối không commit, không push.
+
+---
+
+## Mục 44: Tái cấu trúc UI Admin theo 12 wireframe artboards `specs/120-admin/ui/`, thiết lập 5 tab Bottom Navigation, loại bỏ 100% mock data và nối dữ liệu thực với Firestore & Supabase
+
+| Trường | Nội dung |
+| --- | --- |
+| Ngày | 2026-11-06 |
+| Người thực hiện | Minh Nhựt |
+| Nhóm tính năng liên quan | 12 – Quản trị và kiểm duyệt (spec `specs/120-admin`) |
+| Công cụ AI | Antigravity CLI (Agent Mode) |
+| Mục đích | Đối chiếu 12 wireframe artboards trong `specs/120-admin/ui/`, tái cấu trúc toàn diện layout XML và Fragments, cấu hình Bottom Navigation 5 tab chuẩn wireframe, giải quyết triệt để lỗi tài nguyên/ViewBinding và loại bỏ hoàn toàn mock data để nối dữ liệu thực với Firestore và Supabase Functions |
+| Nhánh Git | `feature/120-admin-implement` |
+
+### Prompt đã dùng
+
+**Prompt 1 (Yêu cầu tái cấu trúc UI theo 12 wireframes)**:
+```
+/speckit-implement Hãy đọc tài liệu đặc tả và toàn bộ wireframe trong `specs/120-admin/ui/` (gồm 12 ảnh wireframe và README.md), đối chiếu với source code hiện tại tại `app/src/main/res/layout/` và `app/src/main/java/com/example/booking_app/feature/admin/`.
+
+Yêu cầu:
+1. Thiết lập cấu trúc Bottom Navigation cho Admin gồm 5 tab chính chuẩn wireframe:
+   - Tổng quan (Dashboard/Home)
+   - Hồ sơ (Applications - có badge số lượng chờ duyệt)
+   - Báo cáo (Reports - có badge số lượng đang mở)
+   - Người dùng (User Management)
+   - Công cụ (Tools & Categories)
+2. Cập nhật và tái cấu trúc toàn bộ layout XML và Fragment tương ứng để khớp 100% về bố cục, thành phần giao diện, các chip bộ lọc, modal bottom sheet và trạng thái (loading/empty/error).
+3. Tuân thủ tiêu chuẩn:
+   - Material Design 3, màu sắc và typography theo theme chung của SmashNow.
+   - Không hardcode strings (toàn bộ đưa vào `strings_admin.xml`).
+   - Đảm bảo touch target tối thiểu 48dp, contentDescription cho accessibility.
+   - Hỗ trợ cả Light/Dark Mode (DayNight) và màn hình lớn (`layout-w600dp`).
+
+Hãy liệt kê các file cần tạo/chỉnh sửa và triển khai lần lượt từng bước.
+```
+
+**Prompt 2 (Truy vấn về mock data và yêu cầu chuẩn hóa)**:
+```
+Tai sao lai mock data
+```
+
+### Tóm tắt phản hồi của AI
+
+- **Phân tích đối chiếu 12 Wireframe Artboards**:
+  - Đọc và phân tích toàn bộ 12 ảnh wireframe (`01-admin-home.png` $\rightarrow$ `12-admin-vouchers.png`) và tài liệu `specs/120-admin/ui/README.md`.
+  - Đối chiếu với các file Fragment, Layout XML (điện thoại và tablet `w600dp`), Drawables và Navigation graph `nav_admin.xml`.
+- **Cấu hình Bottom Navigation 5 Tab Chuẩn Wireframe**:
+  - Tạo `menu_admin_bottom_nav.xml` với 5 mục: `tab_admin_home` (Tổng quan), `tab_admin_applications` (Hồ sơ), `tab_admin_reports` (Báo cáo), `tab_admin_users` (Người dùng), `tab_admin_tools` (Công cụ).
+  - Cập nhật `MainActivity.kt`: điều hướng tab, inflate menu admin khi ở `nav_admin`, quản lý popBackStack về destination gốc.
+  - Tạo các icon vector drawable riêng biệt: `ic_nav_admin_home.xml`, `ic_nav_admin_applications.xml`, `ic_nav_admin_reports.xml`, `ic_nav_admin_users.xml`, `ic_nav_admin_tools.xml`.
+- **Tái Cấu Trúc Toàn Diện 12 Màn Hình & Responsive `w600dp`**:
+  - **Artboard 1 (Tổng quan)**: Tạo `fragment_admin_home.xml`, layout tablet `layout-w600dp/`, `AdminHomeFragment.kt`. Hiển thị thẻ thống kê nhanh, 2 card hành động chờ duyệt (Hồ sơ & Báo cáo), các nút chuyển nhanh.
+  - **Artboards 2, 3, 4 (Hồ sơ & Chi tiết & BottomSheet từ chối)**: Cập nhật `fragment_admin_application_queue.xml`, `item_admin_application.xml`, `fragment_admin_application_detail.xml` (cả phone và `w600dp`), `dialog_admin_reject_application.xml` (BottomSheet kèm các chip thêm nhanh lý do: giấy tờ mờ, thiếu ảnh biển hiệu, địa chỉ không khớp).
+  - **Artboards 5, 6 (Báo cáo vi phạm & Chi tiết xử lý)**: Cập nhật `fragment_admin_report_queue.xml`, `item_admin_report.xml`, `fragment_admin_report_detail.xml` (cả phone và `w600dp`) với RadioGroup kết luận vi phạm (Không vi phạm / Khóa cơ sở / Khóa tài khoản / Ẩn nội dung) và dialog xác nhận.
+  - **Artboards 7, 8, 9 (Người dùng, Thu hồi Owner & Mở khóa Venue)**: Cập nhật `fragment_admin_user_management.xml` (phone & `w600dp`), `item_admin_user.xml`, `AdminUserAdapter.kt`, `dialog_admin_unlock_venue.xml` (BottomSheet mở khóa cơ sở với tùy chọn Hoạt động / Ẩn).
+  - **Artboards 10, 11, 12 (Công cụ, Thông báo Broadcast & Voucher hệ thống)**: Cập nhật `fragment_admin_tools_dashboard.xml`, `item_admin_category.xml`, `AdminCategoryAdapter.kt`, `fragment_admin_broadcast.xml`, `fragment_admin_system_vouchers.xml`, `item_admin_system_voucher.xml` (phone & `w600dp`).
+- **Khắc phục Lỗi Biên dịch & ViewBinding**:
+  - Thay thế thuộc tính style không tồn tại `?attr/chipActionStyle` và `?attr/chipChoiceStyle` bằng `@style/Widget.Material3.Chip.Assist` và `@style/Widget.Material3.Chip.Filter`.
+  - Thay thế `@color/teal_200` bằng `?attr/colorPrimaryContainer`.
+  - Đồng bộ danh sách View ID giữa phone và layout `layout-w600dp` (`detailCourtCount`, `detailCoordinates`, `textLinkMap`) để ViewBinding không bị nullable và compile an toàn.
+  - Sửa các phương thức gọi ViewModel cho khớp với API hiện có: `submitDecision`, `submitModeration`, `toggleAccountLock`, `revokeOwner`.
+- **Rà soát & Loại Bỏ Triệt Để 100% Mock / Sample Data**:
+  - Giải thích rõ nguyên nhân có mock data: phát sinh trong quá trình dựng layout thị giác ban đầu theo 12 wireframe artboards để preview giao diện trước khi nối API.
+  - Xóa bỏ toàn bộ `sampleUsers` trong `AdminUserManagementFragment.kt`: chuyển sang tra cứu trực tiếp bằng Supabase Edge Function `admin-manage-user` qua `viewModel.searchUser()` và render từ `UserLookupUiState`.
+  - Xóa bỏ `sampleVouchers` trong `AdminSystemVouchersFragment.kt`: kết nối trực tiếp Firestore qua `viewModel.loadVouchers()` và lắng nghe `vouchersState` (xử lý đầy đủ `Loading`, `Content`, `Empty`, `Error`).
+  - Xóa bỏ `defaultDistricts` và `defaultAmenities` trong `AdminToolsDashboardFragment.kt`: tải trực tiếp danh mục từ Firestore qua `viewModel.loadDistricts()`.
+  - Xóa bỏ badge số lượng gán cứng (`3` và `5`) trong `MainActivity.kt`: chuyển sang quan sát StateFlow `appsViewModel.queueState` và `reportsViewModel.queueState` để tính toán số lượng hồ sơ `PENDING`/`RESUBMITTED` và báo cáo `OPEN` thực tế. Tự động ẩn badge khi số lượng bằng 0.
+  - Xóa bỏ email, tọa độ hardcode trong `AdminApplicationDetailFragment.kt`, tính toán thời gian chờ động theo khoảng cách giờ từ `submittedAt`.
+- **Kiểm Thử & Biên Dịch Xác Thực**:
+  - Biên dịch debug: `./gradlew compileDebugSources --no-daemon` đạt **BUILD SUCCESSFUL**.
+  - Toàn bộ unit tests admin: `./gradlew testDebugUnitTest --tests "com.example.booking_app.feature.admin.*" --no-daemon` đạt **BUILD SUCCESSFUL in 42s** (100% PASS, 0 failure).
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+| --- | --- | --- |
+| `app/src/main/res/menu/menu_admin_bottom_nav.xml` | Tạo mới | Định nghĩa cấu trúc 5 tab chuẩn wireframe cho Bottom Navigation của Admin. |
+| `app/src/main/res/drawable/ic_nav_admin_*.xml` | Tạo mới | Bộ icon điều hướng vector Material 3 cho 5 tab Admin. |
+| `app/src/main/res/drawable/bg_admin_chip_*.xml` | Tạo mới | Background bo góc cho các trạng thái hồ sơ (pending, approved, rejected, resubmitted). |
+| `app/src/main/res/drawable/ic_admin_*.xml` | Tạo mới | Các icon hành động: approved, rejected, hidden, paperclip, lock, edit, megaphone, voucher ticket. |
+| `app/src/main/res/layout/fragment_admin_home.xml` & `layout-w600dp/` | Tạo mới | Màn hình Tổng quan (Artboard 1) hiển thị các chỉ số và phím tắt điều hướng. |
+| `app/src/main/res/layout/item_admin_category.xml` | Tạo mới | Layout item hiển thị danh mục quận/huyện và tiện ích (Artboard 10). |
+| `app/src/main/res/layout/item_admin_user.xml` | Tạo mới | Layout item danh sách người dùng kèm role tags và trạng thái khóa (Artboard 7). |
+| `app/src/main/res/layout/dialog_admin_unlock_venue.xml` | Tạo mới | BottomSheet Modal mở khóa cơ sở (Artboard 9) với tùy chọn Hoạt động / Ẩn. |
+| `app/src/main/res/layout/dialog_admin_reject_application.xml` | Chỉnh sửa | Bổ sung các chip gợi ý lý do từ chối nhanh (Artboard 4). |
+| `app/src/main/res/layout/` & `layout-w600dp/` (các màn hình Admin) | Chỉnh sửa | Đồng bộ giao diện 12 wireframes, chuẩn hóa M3 Chip Filter/Assist, ViewBinding ID. |
+| `app/src/main/java/com/example/booking_app/MainActivity.kt` | Chỉnh sửa | Tích hợp BottomNav cho Admin, quan sát StateFlow cập nhật badge động theo dữ liệu Firestore thực. |
+| `app/src/main/java/com/example/booking_app/feature/admin/ui/AdminHomeFragment.kt` | Tạo mới | Fragment quản lý màn hình Tổng quan, tải và quan sát dữ liệu thống kê & hàng đợi thực tế. |
+| `app/src/main/java/com/example/booking_app/feature/admin/ui/AdminCategoryAdapter.kt` | Tạo mới | Adapter hiển thị danh mục khu vực/tiện ích từ Firestore. |
+| `app/src/main/java/com/example/booking_app/feature/admin/ui/AdminUserAdapter.kt` | Tạo mới | Adapter danh sách người dùng cho màn hình Quản lý người dùng. |
+| `app/src/main/java/com/example/booking_app/feature/admin/ui/AdminUserManagementFragment.kt` | Chỉnh sửa | **Xóa bỏ 100% mock data `sampleUsers`**, kết nối Supabase Function tra cứu người dùng thực. |
+| `app/src/main/java/com/example/booking_app/feature/admin/ui/AdminSystemVouchersFragment.kt` | Chỉnh sửa | **Xóa bỏ 100% mock data `sampleVouchers`**, kết nối Firestore tải và kiểm tra voucher thực. |
+| `app/src/main/java/com/example/booking_app/feature/admin/ui/AdminToolsDashboardFragment.kt` | Chỉnh sửa | **Xóa bỏ 100% mock data `defaultDistricts`**, kết nối Firestore tải danh mục thực. |
+| `app/src/main/java/com/example/booking_app/feature/admin/ui/AdminApplicationDetailFragment.kt` | Chỉnh sửa | Xóa hardcode email, tọa độ; tính toán thời gian chờ tự động từ timestamp nộp hồ sơ. |
+| `app/src/main/java/com/example/booking_app/feature/admin/ui/AdminVenueManagementFragment.kt` | Chỉnh sửa | Chuẩn hóa ViewBinding và kết nối dialog xác nhận trạng thái cơ sở. |
+| `app/src/main/res/values/strings_admin.xml` | Chỉnh sửa | Bổ sung chuỗi ngôn ngữ tiếng Việt cho toàn bộ 12 wireframes, đảm bảo 0% hardcoded strings. |
+| `app/src/main/res/navigation/nav_admin.xml` | Chỉnh sửa | Cập nhật startDestination sang `adminHomeFragment` và bổ sung actions điều hướng đầy đủ. |
+
+### Cách kiểm chứng
+
+- **Biên dịch mã nguồn**: `./gradlew compileDebugSources --no-daemon`: **BUILD SUCCESSFUL**. Không còn lỗi tài nguyên, thiếu ID hay style M3.
+- **Kiểm thử đơn vị**: `./gradlew testDebugUnitTest --tests "com.example.booking_app.feature.admin.*" --no-daemon`: **BUILD SUCCESSFUL in 42s** (100% PASS trên tất cả các test suite của Feature 120).
+- **Rà soát Mock Data**: Quét toàn bộ codebase `app/src/main/java/com/example/booking_app/feature/admin/` không còn bất kỳ biến hoặc danh sách `mock`, `sample`, `dummy` nào; dữ liệu 100% đến từ ViewModels / Repositories.
+- **Kiểm tra Chuỗi & Khả năng tiếp cận**: 100% chuỗi nằm trong `strings_admin.xml`, touch targets $\ge 48\text{dp}$, `contentDescription` đầy đủ trên các icon và nút hành động.
+- **Tuân thủ cam kết**: Tuyệt đối không commit, không push.
 
 ---

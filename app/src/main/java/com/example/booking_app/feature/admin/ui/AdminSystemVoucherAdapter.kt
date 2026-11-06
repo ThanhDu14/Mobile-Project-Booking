@@ -1,10 +1,12 @@
 package com.example.booking_app.feature.admin.ui
 
+import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.example.booking_app.R
 import com.example.booking_app.databinding.ItemAdminSystemVoucherBinding
 import com.example.booking_app.feature.admin.domain.model.AdminSystemVoucher
 import java.text.NumberFormat
@@ -35,17 +37,33 @@ class AdminSystemVoucherAdapter(
             val numberFormat = NumberFormat.getInstance(Locale.forLanguageTag("vi-VN"))
             binding.textVoucherCode.text = voucher.code
 
-            val discountText = if (voucher.type.equals("PERCENTAGE", ignoreCase = true)) {
-                "Giảm ${voucher.value}% (Tối đa ${numberFormat.format(voucher.maxDiscount)} đ)"
+            if (voucher.isActive) {
+                binding.textVoucherStatusTag.setBackgroundResource(R.drawable.bg_admin_chip_approved)
+                binding.textVoucherStatusTag.setTextColor(Color.parseColor("#065F46"))
+                binding.textVoucherStatusTag.text = binding.root.context.getString(R.string.admin_voucher_status_active)
+            } else {
+                binding.textVoucherStatusTag.setBackgroundResource(R.drawable.bg_admin_chip_pending)
+                binding.textVoucherStatusTag.setTextColor(Color.parseColor("#5F6368"))
+                binding.textVoucherStatusTag.text = binding.root.context.getString(R.string.admin_voucher_status_inactive)
+            }
+
+            val discountPart = if (voucher.type.equals("PERCENTAGE", ignoreCase = true)) {
+                "Giảm ${voucher.value}%, tối đa ${numberFormat.format(voucher.maxDiscount)} đ"
             } else {
                 "Giảm ${numberFormat.format(voucher.value)} đ"
             }
-            binding.textVoucherDiscount.text = discountText
+            val minOrderPart = "đơn từ ${numberFormat.format(voucher.minOrderTotal)} đ"
+            val perUserPart = "mỗi người ${voucher.perUserLimit} lần"
+            binding.textVoucherDetail.text = "$discountPart · $minOrderPart · $perUserPart"
 
             val from = if (voucher.validFrom.length >= 10) voucher.validFrom.take(10) else voucher.validFrom
             val to = if (voucher.validTo.length >= 10) voucher.validTo.take(10) else voucher.validTo
-            binding.textVoucherValidity.text = "Hiệu lực: $from - $to"
-            binding.textVoucherUsage.text = "Lượt dùng: ${voucher.usedCount} / ${voucher.usageLimit}"
+            binding.textVoucherValidity.text = "$from – $to"
+            binding.textVoucherUsage.text = binding.root.context.getString(
+                R.string.admin_voucher_used_count_format,
+                voucher.usedCount,
+                voucher.usageLimit
+            )
 
             binding.switchVoucherActive.setOnCheckedChangeListener(null)
             binding.switchVoucherActive.isChecked = voucher.isActive

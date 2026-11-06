@@ -3,17 +3,46 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:background="?attr/colorSurface"
     android:orientation="vertical"
-    android:padding="24dp">
+    android:padding="20dp">
 
-    <TextView
-        android:id="@+id/textDialogTitle"
+    <!-- Drag Handle -->
+    <View
+        android:layout_width="36dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginBottom="16dp"
+        android:background="@drawable/bg_admin_chip_pending" />
+
+    <!-- Title Row -->
+    <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/admin_reject_dialog_title"
-        android:textAppearance="?attr/textAppearanceTitleLarge"
-        android:textStyle="bold" />
+        android:layout_height="wrap_content">
 
+        <TextView
+            android:id="@+id/textDialogTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true"
+            android:text="@string/admin_reject_dialog_title"
+            android:textAppearance="?attr/textAppearanceTitleLarge"
+            android:textStyle="bold" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonCloseDialog"
+            style="?attr/materialIconButtonStyle"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:contentDescription="@string/admin_cancel"
+            app:icon="@drawable/ic_admin_action_rejected"
+            app:iconTint="?attr/colorOnSurface" />
+    </RelativeLayout>
+
+    <!-- Message Description -->
     <TextView
         android:id="@+id/textDialogMessage"
         android:layout_width="match_parent"
@@ -23,49 +52,105 @@
         android:textAppearance="?attr/textAppearanceBodyMedium"
         android:textColor="?attr/colorOnSurfaceVariant" />
 
+    <!-- Thêm nhanh Chips Header -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="@string/admin_reject_quick_add_header"
+        android:textAppearance="?attr/textAppearanceLabelMedium"
+        android:textColor="?attr/colorOnSurfaceVariant" />
+
+    <!-- Thêm nhanh Chips -->
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipBlurryDoc"
+                style="@style/Widget.Material3.Chip.Assist"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:text="@string/admin_reject_quick_blurry_doc" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipMissingDoc"
+                style="@style/Widget.Material3.Chip.Assist"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:minHeight="48dp"
+                android:text="@string/admin_reject_quick_missing_doc" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipAddressMismatch"
+                style="@style/Widget.Material3.Chip.Assist"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:minHeight="48dp"
+                android:text="@string/admin_reject_quick_address_mismatch" />
+        </LinearLayout>
+    </HorizontalScrollView>
+
+    <!-- Label Lý do từ chối -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:text="@string/admin_reject_reason_label"
+        android:textAppearance="?attr/textAppearanceTitleSmall"
+        android:textStyle="bold" />
+
+    <!-- Multiline Input Box -->
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/layoutRejectReason"
         style="?attr/textInputOutlinedStyle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:hint="@string/admin_reject_reason_hint"
+        android:layout_marginTop="8dp"
         app:counterEnabled="true"
-        app:counterMaxLength="300">
+        app:counterMaxLength="500">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/inputRejectReason"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="top|start"
+            android:hint="@string/admin_reject_reason_hint"
             android:inputType="textMultiLine"
-            android:lines="3"
-            android:maxLines="5"
+            android:lines="4"
+            android:maxLines="6"
             android:minHeight="48dp" />
     </com.google.android.material.textfield.TextInputLayout>
 
-    <LinearLayout
+    <!-- Subtext requirement note -->
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="@string/admin_reject_reason_required_note"
+        android:textAppearance="?attr/textAppearanceLabelSmall"
+        android:textColor="?attr/colorOnSurfaceVariant" />
+
+    <!-- Confirm Reject Full Width Button -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/buttonConfirmReject"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="24dp"
-        android:gravity="end"
-        android:orientation="horizontal">
+        android:layout_marginTop="20dp"
+        android:backgroundTint="#B91C1C"
+        android:minHeight="48dp"
+        android:text="@string/admin_confirm_reject"
+        android:textColor="@android:color/white"
+        app:cornerRadius="12dp" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/buttonCancelReject"
-            style="?attr/materialButtonOutlinedStyle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="12dp"
-            android:minHeight="48dp"
-            android:text="@string/admin_cancel" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/buttonConfirmReject"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:backgroundTint="?attr/colorError"
-            android:minHeight="48dp"
-            android:text="@string/admin_confirm_reject" />
-    </LinearLayout>
 </LinearLayout>

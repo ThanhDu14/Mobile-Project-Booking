@@ -14,8 +14,10 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.example.booking_app.R
+import com.example.booking_app.databinding.DialogAdminUnlockVenueBinding
 import com.example.booking_app.databinding.FragmentAdminVenueManagementBinding
 import com.example.booking_app.feature.admin.domain.model.AdminVenueItem
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -65,12 +67,12 @@ class AdminVenueManagementFragment : Fragment() {
 
         binding.buttonUnlockActive.setOnClickListener {
             val venue = currentVenue ?: return@setOnClickListener
-            confirmStatusChange(venue, "ACTIVE", getString(R.string.admin_venue_confirm_unlock_active))
+            showUnlockBottomSheet(venue)
         }
 
         binding.buttonUnlockHidden.setOnClickListener {
             val venue = currentVenue ?: return@setOnClickListener
-            confirmStatusChange(venue, "HIDDEN", getString(R.string.admin_venue_confirm_unlock_hidden))
+            showUnlockBottomSheet(venue)
         }
 
         observeViewModel()
@@ -102,49 +104,47 @@ class AdminVenueManagementFragment : Fragment() {
         when (state) {
             VenueLookupUiState.Idle -> {
                 binding.progressVenueLoading.isVisible = false
+                binding.cardVenueResult.isVisible = false
                 binding.textVenueNotFound.isVisible = false
                 binding.textVenueError.isVisible = false
-                binding.cardVenueResult.isVisible = false
-                currentVenue = null
             }
             VenueLookupUiState.Loading -> {
                 binding.progressVenueLoading.isVisible = true
+                binding.cardVenueResult.isVisible = false
                 binding.textVenueNotFound.isVisible = false
                 binding.textVenueError.isVisible = false
-                binding.cardVenueResult.isVisible = false
+            }
+            is VenueLookupUiState.Success -> {
+                binding.progressVenueLoading.isVisible = false
+                binding.cardVenueResult.isVisible = true
+                binding.textVenueNotFound.isVisible = false
+                binding.textVenueError.isVisible = false
+                currentVenue = state.venue
+                renderVenue(state.venue)
             }
             VenueLookupUiState.NotFound -> {
                 binding.progressVenueLoading.isVisible = false
+                binding.cardVenueResult.isVisible = false
                 binding.textVenueNotFound.isVisible = true
                 binding.textVenueError.isVisible = false
-                binding.cardVenueResult.isVisible = false
                 currentVenue = null
             }
             is VenueLookupUiState.Error -> {
                 binding.progressVenueLoading.isVisible = false
-                binding.textVenueNotFound.isVisible = false
-                binding.textVenueError.isVisible = true
-                binding.textVenueError.text = state.message
                 binding.cardVenueResult.isVisible = false
-                currentVenue = null
-            }
-            is VenueLookupUiState.Success -> {
-                binding.progressVenueLoading.isVisible = false
                 binding.textVenueNotFound.isVisible = false
-                binding.textVenueError.isVisible = false
-                binding.cardVenueResult.isVisible = true
-                bindVenueCard(state.venue)
+                binding.textVenueError.text = state.message
+                binding.textVenueError.isVisible = true
+                currentVenue = null
             }
         }
     }
 
-    private fun bindVenueCard(venue: AdminVenueItem) {
-        currentVenue = venue
-        binding.textVenueName.text = venue.name.ifBlank { "Chưa đặt tên" }
-        binding.textVenueAddress.text = venue.address.ifBlank { "Chưa có địa chỉ" }
+    private fun renderVenue(venue: AdminVenueItem) {
+        binding.textVenueName.text = venue.name
+        binding.textVenueAddress.text = venue.address.ifBlank { "Chưa cập nhật địa chỉ" }
         binding.textVenueOwnerId.text = venue.ownerId
-
-        binding.chipVenueStatus.text = "Trạng thái: ${venue.status}"
+        binding.chipVenueStatus.text = venue.status
 
         if (venue.isLocked) {
             binding.buttonLockVenue.isVisible = false
@@ -153,6 +153,27 @@ class AdminVenueManagementFragment : Fragment() {
             binding.buttonLockVenue.isVisible = true
             binding.layoutUnlockOptions.isVisible = false
         }
+    }
+
+    private fun showUnlockBottomSheet(venue: AdminVenueItem) {
+        val dialog = BottomSheetDialog(requireContext())
+        val dialogBinding = DialogAdminUnlockVenueBinding.inflate(layoutInflater)
+        dialog.setContentView(dialogBinding.root)
+
+        dialogBinding.textVenueUnlockName.text = venue.name
+        dialogBinding.textVenueUnlockReason.text = "Cơ sở đang ở trạng thái LOCKED."
+
+        dialogBinding.buttonCloseUnlock.setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialogBinding.buttonConfirmUnlock.setOnClickListener {
+            val targetStatus = if (dialogBinding.radioOptionActive.isChecked) "ACTIVE" else "HIDDEN"
+            dialog.dismiss()
+            viewModel.setVenueStatus(venue.venueId, targetStatus)
+        }
+
+        dialog.show()
     }
 
     private fun renderActionState(state: AdminActionUiState) {

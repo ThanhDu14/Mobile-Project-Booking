@@ -37,6 +37,8 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private val viewModel: MainViewModel by viewModels()
+    private val adminAppsViewModel: com.example.booking_app.feature.admin.ui.AdminApplicationsViewModel by viewModels()
+    private val adminReportsViewModel: com.example.booking_app.feature.admin.ui.AdminReportsViewModel by viewModels()
 
     private val navController: NavController by lazy {
         (supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment).navController
@@ -60,6 +62,39 @@ class MainActivity : AppCompatActivity() {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 // Chế độ chủ sân đổi cũng phát lại trạng thái để điều hướng sang graph mới.
                 combine(viewModel.sessionState, viewModel.mode) { state, _ -> state }.collect { route(it) }
+            }
+        }
+
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    adminAppsViewModel.queueState.collect { state ->
+                        if (viewModel.lastRootGraph == R.id.nav_admin) {
+                            val count = if (state is com.example.booking_app.feature.admin.ui.AdminQueueState.Content) {
+                                state.applications.count { it.status == "PENDING" || it.status == "RESUBMITTED" }
+                            } else 0
+                            runCatching {
+                                val badge = binding.bottomNav.getOrCreateBadge(R.id.tab_admin_applications)
+                                badge.isVisible = count > 0
+                                badge.number = count
+                            }
+                        }
+                    }
+                }
+                launch {
+                    adminReportsViewModel.queueState.collect { state ->
+                        if (viewModel.lastRootGraph == R.id.nav_admin) {
+                            val count = if (state is com.example.booking_app.feature.admin.ui.AdminReportQueueState.Content) {
+                                state.reports.count { it.status == com.example.booking_app.feature.admin.domain.model.ReportStatus.OPEN }
+                            } else 0
+                            runCatching {
+                                val badge = binding.bottomNav.getOrCreateBadge(R.id.tab_admin_reports)
+                                badge.isVisible = count > 0
+                                badge.number = count
+                            }
+                        }
+                    }
+                }
             }
         }
         setUpBottomNav()
@@ -132,6 +167,54 @@ class MainActivity : AppCompatActivity() {
                         false
                     }
                 }
+                R.id.tab_admin_home -> {
+                    navController.popBackStack(R.id.adminHomeFragment, false)
+                    true
+                }
+                R.id.tab_admin_applications -> {
+                    navController.navigate(
+                        R.id.adminApplicationQueueFragment,
+                        null,
+                        navOptions {
+                            launchSingleTop = true
+                            popUpTo(R.id.adminHomeFragment)
+                        },
+                    )
+                    true
+                }
+                R.id.tab_admin_reports -> {
+                    navController.navigate(
+                        R.id.adminReportQueueFragment,
+                        null,
+                        navOptions {
+                            launchSingleTop = true
+                            popUpTo(R.id.adminHomeFragment)
+                        },
+                    )
+                    true
+                }
+                R.id.tab_admin_users -> {
+                    navController.navigate(
+                        R.id.adminUserManagementFragment,
+                        null,
+                        navOptions {
+                            launchSingleTop = true
+                            popUpTo(R.id.adminHomeFragment)
+                        },
+                    )
+                    true
+                }
+                R.id.tab_admin_tools -> {
+                    navController.navigate(
+                        R.id.adminToolsDashboardFragment,
+                        null,
+                        navOptions {
+                            launchSingleTop = true
+                            popUpTo(R.id.adminHomeFragment)
+                        },
+                    )
+                    true
+                }
                 else -> {
                     Snackbar.make(binding.root, getString(R.string.nav_tab_coming_soon, item.title), Snackbar.LENGTH_SHORT)
                         .setAnchorView(binding.bottomNavContainer)
@@ -165,8 +248,17 @@ class MainActivity : AppCompatActivity() {
     private fun updateBottomNav(destination: NavDestination) {
         // Graph gốc quyết định menu; khách (lastRootGraph = null) dùng graph người chơi.
         val ownerMode = viewModel.lastRootGraph == R.id.nav_owner
-        val tab = if (ownerMode) {
-            when (destination.id) {
+        val adminMode = viewModel.lastRootGraph == R.id.nav_admin
+        val tab = when {
+            adminMode -> when (destination.id) {
+                R.id.adminHomeFragment -> R.id.tab_admin_home
+                R.id.adminApplicationQueueFragment -> R.id.tab_admin_applications
+                R.id.adminReportQueueFragment -> R.id.tab_admin_reports
+                R.id.adminUserManagementFragment -> R.id.tab_admin_users
+                R.id.adminToolsDashboardFragment -> R.id.tab_admin_tools
+                else -> null
+            }
+            ownerMode -> when (destination.id) {
                 R.id.ownerHomePlaceholderFragment -> R.id.tab_owner_today
                 R.id.ownerCalendarFragment -> R.id.tab_owner_schedule
                 R.id.ownerBookingsFragment -> R.id.tab_owner_bookings
@@ -180,23 +272,35 @@ class MainActivity : AppCompatActivity() {
                     }
                 else -> null
             }
-        } else {
-            when (destination.id) {
+            else -> when (destination.id) {
                 R.id.playerHomePlaceholderFragment -> R.id.tab_home
                 R.id.accountFragment -> R.id.tab_account
                 else -> null
             }
         }
-        val visible = tab != null && hasBackStackEntry(if (ownerMode) R.id.nav_owner else R.id.nav_player)
+        val currentRootId = when {
+            adminMode -> R.id.nav_admin
+            ownerMode -> R.id.nav_owner
+            else -> R.id.nav_player
+        }
+        val visible = tab != null && hasBackStackEntry(currentRootId)
         binding.bottomNavContainer.isVisible = visible
         if (!visible) return
-        val menuRes = if (ownerMode) R.menu.menu_owner_bottom_nav else R.menu.menu_player_bottom_nav
+        val menuRes = when {
+            adminMode -> R.menu.menu_admin_bottom_nav
+            ownerMode -> R.menu.menu_owner_bottom_nav
+            else -> R.menu.menu_player_bottom_nav
+        }
         if (bottomNavMenu != menuRes) {
             binding.bottomNav.menu.clear()
             binding.bottomNav.inflateMenu(menuRes)
             bottomNavMenu = menuRes
         }
         binding.bottomNav.menu.findItem(tab!!).isChecked = true
+        if (adminMode) {
+            adminAppsViewModel.loadQueue()
+            adminReportsViewModel.loadReports()
+        }
     }
 
     private suspend fun route(state: SessionState) {

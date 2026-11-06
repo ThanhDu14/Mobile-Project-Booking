@@ -1,17 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Placeholder của spec 010; D thay bằng màn hình thật (spec 120). -->
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/nav_admin"
-    app:startDestination="@id/adminToolsDashboardFragment">
+    app:startDestination="@id/adminHomeFragment">
 
     <fragment
-        android:id="@+id/adminHomePlaceholderFragment"
-        android:name="com.example.booking_app.feature.auth.ui.home.AdminHomePlaceholderFragment"
-        android:label="@string/app_name">
+        android:id="@+id/adminHomeFragment"
+        android:name="com.example.booking_app.feature.admin.ui.AdminHomeFragment"
+        android:label="@string/admin_home_title">
         <action
-            android:id="@+id/action_placeholder_to_queue"
+            android:id="@+id/action_home_to_applications"
             app:destination="@id/adminApplicationQueueFragment" />
+        <action
+            android:id="@+id/action_home_to_reports"
+            app:destination="@id/adminReportQueueFragment" />
+        <action
+            android:id="@+id/action_home_to_broadcast"
+            app:destination="@id/adminBroadcastFragment" />
     </fragment>
 
     <fragment

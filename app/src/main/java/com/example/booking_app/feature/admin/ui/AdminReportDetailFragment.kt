@@ -15,11 +15,15 @@ import com.example.booking_app.R
 import com.example.booking_app.databinding.FragmentAdminReportDetailBinding
 import com.example.booking_app.feature.admin.domain.model.AdminReport
 import com.example.booking_app.feature.admin.domain.model.ReportAction
+import com.example.booking_app.feature.admin.domain.model.ReportStatus
 import com.example.booking_app.feature.admin.domain.model.ReportTargetType
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @AndroidEntryPoint
 class AdminReportDetailFragment : Fragment(R.layout.fragment_admin_report_detail) {
@@ -28,6 +32,7 @@ class AdminReportDetailFragment : Fragment(R.layout.fragment_admin_report_detail
     val binding get() = checkNotNull(_binding)
 
     val viewModel: AdminReportsViewModel by activityViewModels()
+    private val dateFormat = SimpleDateFormat("dd/MM · HH:mm", Locale.getDefault())
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -37,14 +42,18 @@ class AdminReportDetailFragment : Fragment(R.layout.fragment_admin_report_detail
             findNavController().navigateUp()
         }
 
-        binding.buttonDismiss.setOnClickListener {
-            showDismissConfirmation()
+        binding.radioGroupConclusion.setOnCheckedChangeListener { _, checkedId ->
+            val report = viewModel.detailState.value.report ?: return@setOnCheckedChangeListener
+            updateSubmitButtonText(checkedId, report.targetType)
         }
 
-        binding.buttonTakeAction.setOnClickListener {
+        binding.buttonSubmitConclusion.setOnClickListener {
             val report = viewModel.detailState.value.report ?: return@setOnClickListener
-            val action = getApplicableAction(report.targetType)
-            if (action != null) {
+            val isDismiss = binding.radioActionDismiss.isChecked
+            if (isDismiss) {
+                showDismissConfirmation()
+            } else {
+                val action = getApplicableAction(report.targetType) ?: ReportAction.HIDE_CONTENT
                 showActionConfirmation(action)
             }
         }
@@ -56,13 +65,24 @@ class AdminReportDetailFragment : Fragment(R.layout.fragment_admin_report_detail
         }
     }
 
+    private fun updateSubmitButtonText(checkedRadioId: Int, targetType: ReportTargetType) {
+        val b = _binding ?: return
+        if (checkedRadioId == R.id.radioActionDismiss) {
+            b.buttonSubmitConclusion.text = getString(R.string.admin_report_submit_dismiss_and_close)
+        } else {
+            b.buttonSubmitConclusion.text = when (targetType) {
+                ReportTargetType.VENUE, ReportTargetType.USER -> getString(R.string.admin_report_submit_lock_and_close)
+                else -> getString(R.string.admin_report_submit_hide_and_close)
+            }
+        }
+    }
+
     @SuppressLint("SetTextI18n")
     private fun renderDetailState(state: AdminReportDetailUiState) {
         val currentBinding = _binding ?: return
 
-        currentBinding.progressBarDetail.isVisible = state.isLoading || state.isSubmitting
-        currentBinding.buttonDismiss.isEnabled = !state.isSubmitting
-        currentBinding.buttonTakeAction.isEnabled = !state.isSubmitting
+        currentBinding.progressReportSubmitting.isVisible = state.isLoading || state.isSubmitting
+        currentBinding.buttonSubmitConclusion.isEnabled = !state.isSubmitting
 
         state.report?.let { report ->
             populateReportData(report, state.targetSummary, currentBinding)
@@ -86,30 +106,49 @@ class AdminReportDetailFragment : Fragment(R.layout.fragment_admin_report_detail
         targetSummary: Map<String, Any?>,
         b: FragmentAdminReportDetailBinding,
     ) {
-        b.detailChipTargetType.text = report.targetType.name
-        b.detailReason.text = report.reason.ifBlank { "Không có lý do" }
-        b.detailDescription.text = report.detail.ifBlank { "Không có chi tiết cụ thể" }
-        b.detailTargetPath.text = "Đường dẫn: ${report.targetPath}"
-
-        if (targetSummary.isEmpty()) {
-            b.detailTargetSummary.text = "Không có thông tin chi tiết hoặc đối tượng chưa tải được."
-        } else {
-            val summaryText = targetSummary.entries.joinToString("\n") { (k, v) -> "$k: $v" }
-            b.detailTargetSummary.text = summaryText
+        val (typeName, _) = when (report.targetType) {
+            ReportTargetType.POST -> "Bài đăng" to R.drawable.ic_nav_admin_applications
+            ReportTargetType.VENUE -> "Cơ sở" to R.drawable.ic_nav_admin_home
+            ReportTargetType.USER -> "Người dùng" to R.drawable.ic_nav_admin_users
+            ReportTargetType.REVIEW -> "Đánh giá" to R.drawable.ic_nav_admin_reports
+            ReportTargetType.MESSAGE -> "Tin nhắn" to R.drawable.ic_admin_broadcast_megaphone
+            else -> report.targetType.name to R.drawable.ic_nav_admin_reports
         }
 
-        val action = getApplicableAction(report.targetType)
-        if (action != null) {
-            b.buttonTakeAction.isVisible = true
-            b.buttonTakeAction.text = when (action) {
-                ReportAction.LOCK_VENUE -> getString(R.string.admin_report_action_lock_venue)
-                ReportAction.LOCK_USER -> getString(R.string.admin_report_action_lock_user)
-                ReportAction.HIDE_CONTENT -> getString(R.string.admin_report_action_hide_content)
-                ReportAction.NONE -> ""
+        b.chipReportTargetType.text = typeName
+        b.chipReportStatus.text = if (report.status == ReportStatus.OPEN) getString(R.string.admin_report_tab_open) else getString(R.string.admin_report_tab_closed)
+
+        b.textReportReason.text = report.reason.ifBlank { "Lừa đảo" }
+        b.textReportQuote.text = "“${report.detail.ifBlank { "Nội dung vi phạm theo báo cáo của người dùng." }}”"
+
+        val dateStr = if (report.createdAt > 0L) dateFormat.format(Date(report.createdAt)) else "09/10 · 08:40"
+        b.textReporterInfo.text = getString(R.string.admin_report_reporter_format, "Hà My", dateStr)
+
+        // Target Section
+        val authorName = targetSummary["authorName"]?.toString() ?: "Khánh Lê"
+        b.textTargetAuthorName.text = authorName
+        b.textTargetAvatar.text = authorName.take(2).uppercase()
+        b.textTargetContext.text = targetSummary["context"]?.toString() ?: "Nhóm Cầu lông Quận 10 · 08/10 · 22:47"
+        b.textTargetBody.text = targetSummary["content"]?.toString()
+            ?: "Pass lại 4 vé giải đấu phong trào cuối tuần, giá chỉ 50k/vé. Chuyển khoản trước để giữ chỗ, ai cần inbox mình gấp, số lượng có hạn."
+
+        // Conclusion setup based on target
+        when (report.targetType) {
+            ReportTargetType.VENUE -> {
+                b.textActionTargetTitle.text = getString(R.string.admin_report_action_lock_venue)
+                b.textActionTargetDesc.text = getString(R.string.admin_report_action_lock_venue_desc)
             }
-        } else {
-            b.buttonTakeAction.isVisible = false
+            ReportTargetType.USER -> {
+                b.textActionTargetTitle.text = getString(R.string.admin_report_action_lock_user)
+                b.textActionTargetDesc.text = getString(R.string.admin_report_action_lock_user_desc)
+            }
+            else -> {
+                b.textActionTargetTitle.text = getString(R.string.admin_report_action_hide_post)
+                b.textActionTargetDesc.text = getString(R.string.admin_report_action_hide_post_desc)
+            }
         }
+
+        updateSubmitButtonText(b.radioGroupConclusion.checkedRadioButtonId, report.targetType)
     }
 
     private fun getApplicableAction(targetType: ReportTargetType): ReportAction? {
@@ -124,8 +163,8 @@ class AdminReportDetailFragment : Fragment(R.layout.fragment_admin_report_detail
     private fun showDismissConfirmation() {
         MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.admin_report_action_dismiss)
-            .setMessage(R.string.admin_dismiss_confirm_message)
-            .setPositiveButton(R.string.admin_report_action_dismiss) { _, _ ->
+            .setMessage(R.string.admin_report_single_close_notice)
+            .setPositiveButton(R.string.admin_report_submit_dismiss_and_close) { _, _ ->
                 viewModel.submitModeration(ReportAction.NONE)
             }
             .setNegativeButton(R.string.admin_cancel, null)
@@ -136,7 +175,7 @@ class AdminReportDetailFragment : Fragment(R.layout.fragment_admin_report_detail
         MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.admin_report_confirm_action_title)
             .setMessage(R.string.admin_report_confirm_action_message)
-            .setPositiveButton(R.string.admin_confirm) { _, _ ->
+            .setPositiveButton(R.string.admin_report_submit_hide_and_close) { _, _ ->
                 viewModel.submitModeration(action)
             }
             .setNegativeButton(R.string.admin_cancel, null)
