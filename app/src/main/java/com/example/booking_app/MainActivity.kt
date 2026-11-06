@@ -85,7 +85,7 @@ class MainActivity : AppCompatActivity() {
         binding.bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.tab_home -> {
-                    navController.popBackStack(R.id.playerHomePlaceholderFragment, false)
+                    navController.popBackStack(R.id.homeFragment, false)
                     true
                 }
                 R.id.tab_owner_today -> {
@@ -109,7 +109,7 @@ class MainActivity : AppCompatActivity() {
         binding.bottomNav.setOnItemReselectedListener { item ->
             if (navController.currentDestination?.id != R.id.accountFragment) return@setOnItemReselectedListener
             when (item.itemId) {
-                R.id.tab_home -> navController.popBackStack(R.id.playerHomePlaceholderFragment, false)
+                R.id.tab_home -> navController.popBackStack(R.id.homeFragment, false)
                 R.id.tab_owner_today -> navController.popBackStack(R.id.ownerHomePlaceholderFragment, false)
                 R.id.tab_owner_venues -> openOwnerVenues()
             }
@@ -146,7 +146,7 @@ class MainActivity : AppCompatActivity() {
             }
         } else {
             when (destination.id) {
-                R.id.playerHomePlaceholderFragment -> R.id.tab_home
+                R.id.homeFragment -> R.id.tab_home
                 // Không có tab Tài khoản (spec 011 FR-026): giữ sáng tab đã mở trang này. Tab khác của người chơi
                 // (020/060/080/090) thêm nhánh ở đây khi có màn gốc; mặc định Trang chủ.
                 R.id.accountFragment -> R.id.tab_home

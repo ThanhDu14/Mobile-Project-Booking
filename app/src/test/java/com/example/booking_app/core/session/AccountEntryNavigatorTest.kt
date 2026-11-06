@@ -29,7 +29,7 @@ class AccountEntryNavigatorTest {
 
     @Test
     fun `khach bam avatar thi mo dang nhap, khong returnTo`() {
-        at(R.id.playerHomePlaceholderFragment)
+        at(R.id.homeFragment)
         navigator.open(navController)
         verify(exactly = 1) { authNavigator.openLogin(navController, null as Uri?) }
         verify(exactly = 0) { navController.navigate(R.id.action_global_account, any(), any()) }
@@ -38,7 +38,7 @@ class AccountEntryNavigatorTest {
     @Test
     fun `da dang nhap bam avatar thi mo trang Tai khoan`() {
         session.sessionState.value = SessionState.SignedIn("u1", AppRole.PLAYER, emailVerified = true)
-        at(R.id.playerHomePlaceholderFragment)
+        at(R.id.homeFragment)
         navigator.open(navController)
         verify(exactly = 1) { navController.navigate(R.id.action_global_account, null, any()) }
         verify(exactly = 0) { authNavigator.openLogin(any(), any()) }
