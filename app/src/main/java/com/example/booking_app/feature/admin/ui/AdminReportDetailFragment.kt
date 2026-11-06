@@ -124,7 +124,7 @@ class AdminReportDetailFragment : Fragment(R.layout.fragment_admin_report_detail
     private fun showDismissConfirmation() {
         MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.admin_report_action_dismiss)
-            .setMessage("Bỏ qua báo cáo này mà không áp dụng hình thức xử lý lên đối tượng?")
+            .setMessage(R.string.admin_dismiss_confirm_message)
             .setPositiveButton(R.string.admin_report_action_dismiss) { _, _ ->
                 viewModel.submitModeration(ReportAction.NONE)
             }
@@ -136,7 +136,7 @@ class AdminReportDetailFragment : Fragment(R.layout.fragment_admin_report_detail
         MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.admin_report_confirm_action_title)
             .setMessage(R.string.admin_report_confirm_action_message)
-            .setPositiveButton("Xác nhận") { _, _ ->
+            .setPositiveButton(R.string.admin_confirm) { _, _ ->
                 viewModel.submitModeration(action)
             }
             .setNegativeButton(R.string.admin_cancel, null)

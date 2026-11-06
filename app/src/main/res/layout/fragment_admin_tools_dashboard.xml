@@ -275,7 +275,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
-                        android:text="Tra cứu người dùng, khóa/mở khóa tài khoản, thu hồi quyền chủ sân"
+                        android:text="@string/admin_nav_user_management_desc"
                         android:textAppearance="?attr/textAppearanceBodySmall"
                         android:textColor="?attr/colorOnSurfaceVariant" />
                 </LinearLayout>
@@ -310,7 +310,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
-                        android:text="Tra cứu cơ sở, khóa cơ sở vi phạm, mở khóa về ACTIVE hoặc HIDDEN"
+                        android:text="@string/admin_nav_venue_management_desc"
                         android:textAppearance="?attr/textAppearanceBodySmall"
                         android:textColor="?attr/colorOnSurfaceVariant" />
                 </LinearLayout>

@@ -87,6 +87,8 @@
     <string name="admin_nav_system_vouchers_desc">Tạo, bật/tắt voucher khuyến mãi hệ thống</string>
     <string name="admin_nav_broadcast">Thông báo hệ thống</string>
     <string name="admin_nav_broadcast_desc">Gửi thông báo broadcast tới toàn bộ tài khoản active</string>
+    <string name="admin_nav_user_management_desc">Tra cứu người dùng, khóa/mở khóa tài khoản, thu hồi quyền chủ sân</string>
+    <string name="admin_nav_venue_management_desc">Tra cứu cơ sở, khóa cơ sở vi phạm, mở khóa về ACTIVE hoặc HIDDEN</string>
     <string name="admin_vouchers_title">Voucher hệ thống</string>
     <string name="admin_vouchers_empty">Chưa có voucher hệ thống nào</string>
     <string name="admin_create_voucher_button">Tạo voucher mới</string>
@@ -97,4 +99,23 @@
     <string name="admin_broadcast_audience_chip">Đối tượng: Tất cả tài khoản ACTIVE</string>
     <string name="admin_confirm_broadcast_title">Xác nhận gửi thông báo</string>
     <string name="admin_confirm_broadcast_message">Thông báo này sẽ được gửi tới tất cả người dùng đang hoạt động trong hệ thống. Bạn có chắc chắn muốn gửi?</string>
+
+    <!-- General Admin Actions & Dialogs -->
+    <string name="admin_confirm">Xác nhận</string>
+    <string name="admin_unnamed">Chưa đặt tên</string>
+    <string name="admin_no_address">Chưa có địa chỉ</string>
+    <string name="admin_not_updated">Chưa cập nhật</string>
+    <string name="admin_generating_signed_url">Đang tạo đường dẫn bảo mật…</string>
+    <string name="admin_cannot_open_browser">Không thể mở trình duyệt xem tệp</string>
+    <string name="admin_approve_confirm_message">Bạn có chắc chắn muốn phê duyệt hồ sơ đăng ký chủ sân này?</string>
+    <string name="admin_dismiss_confirm_message">Bỏ qua báo cáo này mà không áp dụng hình thức xử lý lên đối tượng?</string>
+    <string name="admin_venue_confirm_status_title">Xác nhận đổi trạng thái cơ sở</string>
+    <string name="admin_confirm_unlock_title">Xác nhận mở khóa</string>
+    <string name="admin_confirm_lock_title">Xác nhận khóa</string>
+    <string name="admin_confirm_unlock_user_format">Bạn có chắc muốn mở khóa tài khoản %1$s?</string>
+    <string name="admin_confirm_lock_user_format">Bạn có chắc muốn khóa tài khoản %1$s? Người dùng sẽ không thể đăng nhập cho đến khi được mở khóa.</string>
+    <string name="admin_venue_confirm_lock">Bạn có chắc chắn muốn khóa cơ sở này?</string>
+    <string name="admin_venue_confirm_unlock_active">Mở khóa cơ sở và chuyển trạng thái về ACTIVE?</string>
+    <string name="admin_venue_confirm_unlock_hidden">Mở khóa cơ sở và chuyển trạng thái về HIDDEN?</string>
+    <string name="admin_status_format">Trạng thái: %1$s</string>
 </resources>

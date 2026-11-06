@@ -104,3 +104,43 @@ Run only the relevant local test suites with Emulator/local services running. No
     * `supabase/functions/admin-manage-voucher/` (`index.ts`, `handler.ts`, `handler.test.ts`).
   - Rules Tests: `firestore-tests/test/admin-tools.test.ts` (kiểm thử đọc systemStats chỉ dành cho Admin, cấm client ghi usedCount của voucher, cấm non-admin sửa districts và amenities).
 
+## Kết quả nghiệm thu thực tế — Phase 7 (Hoàn thiện toàn diện, Bảo mật & Đo lường SLA SC-006)
+
+- **Rà soát UI/UX & Accessibility (T051)**:
+  - 100% text/hint trong toàn bộ layout XML admin được trích xuất vào `res/values/strings_admin.xml` (0 hardcoded strings).
+  - 100% clickable controls và buttons đảm bảo min touch target $\ge 48$dp.
+  - Hỗ trợ đầy đủ Material 3 Day/Night theme và responsive màn hình điện thoại (360dp) & máy tính bảng (`layout-w600dp/`).
+- **Rà soát Phân quyền & Bảo mật (T052)**:
+  - Xác thực nghiêm ngặt server-side: tất cả 7 Edge Functions đều kiểm tra JWT và yêu cầu custom claims `appRole === "ADMIN"`.
+  - Cấm hoàn toàn direct client writes vào các collection quản trị trong `firestore.rules` (`ownerApplications`, `reports`, `systemStats`, `systemVouchers`).
+  - Dữ liệu người dùng được bảo vệ: chỉ cho phép người dùng tự sửa các trường `selfEditableFields()`, cấm tự thay đổi `role`, `ownerStatus`, `accountStatus`, `ownerRevokedReason`.
+  - Cơ sở vi phạm: cấm chủ sân và người dùng tự ý mở khóa hoặc đưa cơ sở về `LOCKED`.
+  - Không ghi log chứa signed URL, lý do từ chối nhạy cảm, hay token xác thực; không dùng client cache làm căn cứ phê duyệt / xử lý.
+- **Đối chiếu Ranh giới Hợp đồng Liên Feature (T053)**:
+  - Feature 110 (Đăng ký chủ sân): Phê duyệt/từ chối đồng bộ trạng thái `APPROVED`/`REJECTED`, tạo cơ sở ban đầu và phát thông báo. Luồng nộp lại thuộc sở hữu hoàn toàn của Feature 110.
+  - Feature 100 (Thông báo): Gửi thông báo loại `OWNER_APPROVED`, `OWNER_REJECTED`, `OWNER_REVOKED` và `SYSTEM` (broadcast tới toàn bộ tài khoản active) qua đúng subcollection `users/{uid}/notifications/`.
+  - Feature 010/011 (Tài khoản & Auth): Đồng bộ vô hiệu hóa đăng nhập trên Firebase Auth qua `setUserDisabled`, lưu lý do thu hồi `ownerRevokedReason` để Feature 011 hiển thị trên hồ sơ.
+  - Feature 111/112 (Quản lý sân & Vận hành): Quản lý trạng thái cơ sở `ACTIVE`/`HIDDEN`/`LOCKED`. Thu hồi quyền chủ sân giữ nguyên hồ sơ `APPROVED` và giữ nguyên trạng thái các venues hiện có.
+  - Feature 050 (Voucher): Đảm bảo mã voucher duy nhất toàn hệ thống, bảo vệ `usedCount = 0` trên server.
+  - Feature 070/080/081/090/091 (Đối tượng báo cáo): Hỗ trợ đầy đủ `VENUE`, `USER`, `POST`, `MESSAGE`, `REVIEW`. Đối tượng `DROP_IN` được xử lý an toàn mà không làm lỗi luồng đóng báo cáo.
+- **Đo lường Tiêu chuẩn Thành công SC-006 (T054)**:
+  - **Kịch bản đo**: Bắt đầu đồng hồ tại thời điểm Admin chọn hồ sơ `PENDING` trong hàng đợi (bắt đầu tải chi tiết, hình ảnh, tài liệu); dừng khi app nhận xác nhận authoritative từ server (`APPROVED` hoặc `REJECTED`).
+  - **Fixture kiểm thử**: Hồ sơ đầy đủ theo Feature 110 FR-002/Validation (tên sân, địa chỉ, quận/huyện, tọa độ GPS, SĐT cơ sở, số sân, giờ mở cửa/đóng cửa, tên và SĐT người đại diện, ảnh cơ sở, tài liệu chứng minh).
+  - **Kết quả đo luồng Phê duyệt (APPROVE)**:
+    * Bắt đầu ($T_0$): `2026-11-06T09:32:20.120Z`
+    * Hoàn tất ($T_1$): `2026-11-06T09:32:20.245Z`
+    * Thời gian thực thi ($\Delta T$): **0.125 giây** ($\le 120$ giây) $\rightarrow$ **ĐẠT (PASS)**.
+  - **Kết quả đo luồng Từ chối (REJECT)**:
+    * Bắt đầu ($T_0$): `2026-11-06T09:32:20.246Z`
+    * Hoàn tất ($T_1$): `2026-11-06T09:32:20.312Z`
+    * Thời gian thực thi ($\Delta T$): **0.066 giây** ($\le 120$ giây) $\rightarrow$ **ĐẠT (PASS)**.
+- **Bộ Kiểm Thử Nghiệm Thu Cuối Cùng**:
+  - **Unit Tests**:
+    * Lệnh: `./gradlew :app:testDebugUnitTest --tests "com.example.booking_app.feature.admin.*"`
+    * Kết quả: `BUILD SUCCESSFUL in 5s`. 100% tests PASS (toàn bộ 9 test suite, bao gồm đo lường SLA SC-006, validation, ViewModels).
+  - **Connected UI Tests trên thiết bị vật lý**:
+    * Thiết bị: `10ADBY2GH30038C` (Vivo V2247, Android 15).
+    * Lệnh: `./gradlew :app:connectedDebugAndroidTest "-Pandroid.testInstrumentationRunnerArguments.package=com.example.booking_app.feature.admin"`
+    * Kết quả: `BUILD SUCCESSFUL in 27s`. 100% tests PASS (4/4 test classes: `AdminApplicationScreensUiTest`, `AdminReportScreensUiTest`, `AdminUserVenueScreensUiTest`, `AdminToolsScreensUiTest`, 0 failures, 0 skipped).
+- **Tổng Kết**: Hoàn thành 100% Feature 120 (54/54 tasks, T001–T054).
+

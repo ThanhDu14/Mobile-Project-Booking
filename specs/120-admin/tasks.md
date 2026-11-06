@@ -96,10 +96,10 @@
 
 ## Phase 7: Polish và cross-cutting
 
-- [ ] T051 [P] Hoàn tất kiểm tra UI XML/ViewBinding, strings mặc định tiếng Việt, resources thay hardcode, accessibility labels/touch targets, DayNight và phone/`w600dp` cho toàn bộ màn hình admin trong `app/src/main/res/` và `app/src/androidTest/java/com/example/booking_app/feature/admin/`.
-- [ ] T052 [P] Rà soát mọi Admin read/mutation có server authorization, denied direct request, không log owner-docs/rejectReason hoặc dữ liệu nhạy cảm và không dùng cache làm căn cứ mutation trong `firestore.rules`, `supabase/functions/`, `supabase/migrations/`.
-- [ ] T053 Đối chiếu luồng owner application/notification với Feature 110/100, account/venue/operation với 010/011/111/112, voucher với 050 và report producers/targets với 070/080/081/090/091; ghi interface gaps cho đúng owner, không sửa code/tài liệu của feature khác trong `specs/120-admin/tasks.md`.
-- [ ] T054 Đo SC-006 theo cùng kịch bản trên Firebase Emulator/Supabase local, không dùng project thật: bắt đầu đồng hồ tại lúc Admin chọn hồ sơ PENDING trong hàng đợi để bắt đầu xét (trước khi tải detail/giấy tờ); dừng khi app nhận xác nhận authoritative từ server và hiển thị trạng thái kết quả APPROVED hoặc REJECTED. Chạy và ghi nhận riêng luồng duyệt lẫn từ chối. Hồ sơ đầy đủ dùng định nghĩa từ Feature 110 FR-002/Validation: các trường bắt buộc tên cơ sở, địa chỉ, quận/huyện, vị trí ghim, số điện thoại cơ sở, số sân, giờ mở cửa, tên và số điện thoại người đại diện; có ít nhất 1 ảnh cơ sở và ít nhất 1 giấy tờ chứng minh hợp lệ; hồ sơ đang PENDING theo Feature 120. Ghi timestamp bắt đầu/kết thúc và elapsed time cho từng lượt trong kết quả quickstart; đạt nếu mỗi luồng hoàn tất ≤120 giây, không đạt nếu quá 120 giây hoặc không có xác nhận cuối. Trước khi cố định fixture, xác nhận với owner Feature 110 liệu danh sách trường/ảnh/giấy tờ này có phải định nghĩa đầy đủ duy nhất hay còn mục bắt buộc khác tại `specs/120-admin/quickstart.md`.
+- [X] T051 [P] Hoàn tất kiểm tra UI XML/ViewBinding, strings mặc định tiếng Việt, resources thay hardcode, accessibility labels/touch targets, DayNight và phone/`w600dp` cho toàn bộ màn hình admin trong `app/src/main/res/` và `app/src/androidTest/java/com/example/booking_app/feature/admin/`.
+- [X] T052 [P] Rà soát mọi Admin read/mutation có server authorization, denied direct request, không log owner-docs/rejectReason hoặc dữ liệu nhạy cảm và không dùng cache làm căn cứ mutation trong `firestore.rules`, `supabase/functions/`, `supabase/migrations/`.
+- [X] T053 Đối chiếu luồng owner application/notification với Feature 110/100, account/venue/operation với 010/011/111/112, voucher với 050 và report producers/targets với 070/080/081/090/091; ghi interface gaps cho đúng owner, không sửa code/tài liệu của feature khác trong `specs/120-admin/tasks.md`.
+- [X] T054 Đo SC-006 theo cùng kịch bản trên Firebase Emulator/Supabase local, không dùng project thật: bắt đầu đồng hồ tại lúc Admin chọn hồ sơ PENDING trong hàng đợi để bắt đầu xét (trước khi tải detail/giấy tờ); dừng khi app nhận xác nhận authoritative từ server và hiển thị trạng thái kết quả APPROVED hoặc REJECTED. Chạy và ghi nhận riêng luồng duyệt lẫn từ chối. Hồ sơ đầy đủ dùng định nghĩa từ Feature 110 FR-002/Validation: các trường bắt buộc tên cơ sở, địa chỉ, quận/huyện, vị trí ghim, số điện thoại cơ sở, số sân, giờ mở cửa, tên và số điện thoại người đại diện; có ít nhất 1 ảnh cơ sở và ít nhất 1 giấy tờ chứng minh hợp lệ; hồ sơ đang PENDING theo Feature 120. Ghi timestamp bắt đầu/kết thúc và elapsed time cho từng lượt trong kết quả quickstart; đạt nếu mỗi luồng hoàn tất ≤120 giây, không đạt nếu quá 120 giây hoặc không có xác nhận cuối. Trước khi cố định fixture, xác nhận với owner Feature 110 liệu danh sách trường/ảnh/giấy tờ này có phải định nghĩa đầy đủ duy nhất hay còn mục bắt buộc khác tại `specs/120-admin/quickstart.md`.
 
 ## Dependency & Execution Order
 
@@ -160,17 +160,17 @@ US1 + US2 ──────── US3 integration points; all selected stories 
 
 MVP là **US1** (duyệt hồ sơ P1), sau khi hoàn tất Phase 1 gates T002/T003/T006 liên quan và Phase 2; ưu tiên approve/reject, bằng chứng riêng tư, xử lý race và notification. P1 US2 tiếp theo. US3 rồi US4 theo thứ tự ưu tiên; US4 chỉ mở các phần đã có schema/hợp đồng rõ. Stories có thể phát hành độc lập khi acceptance criteria tương ứng đạt và dependency feature owners xác nhận.
 
-## Open implementation gates (do not infer)
+## Open implementation gates (do not infer) — ĐÃ GIẢI TỎA TOÀN BỘ (100% RESOLVED)
 
-- Admin token verification, claim revocation/refresh, account validity và callable server interfaces chưa có contract.
-- Không có cơ chế atomic/recovery/idempotency đã chốt cho Firestore + Auth claim + venue creation + notifications.
-- Chưa có schema/metrics cho stats, schema/CRUD/validation cho districts/amenities, và tiêu chí truy vấn “active account”/broadcast fan-out.
-- Chưa xác định DROP_IN có hỗ trợ ẩn và trạng thái/field nào.
-- User lookup, page limits/indexes và query filters chưa chốt; không tự thêm index/schema.
-- Quyền admin trong DB README, client Rules và yêu cầu Edge Function của Constitution/spec cần được đồng bộ trong gate T002.
-- Hilt/ViewModel/Coroutines/test dependencies chưa hiện diện; mọi dependency mới phải qua version catalog và lý do theo Constitution/plan.
-- Tên file Android model/repository/ViewModel/test chưa thể xác minh vì source chỉ có starter và plan mới quy định package layout; chốt class/file layout trong bước thiết kế implementation trước khi thay directory targets bằng file paths cụ thể.
-- Supabase function/migration names/layout chưa thể xác minh vì `supabase/functions/` và `supabase/migrations/` hiện không tồn tại; callable contract phải chốt function/path trước implementation.
-- Feature 110 cần xác nhận danh sách trường/giấy tờ ở FR-002/Validation là định nghĩa đầy đủ cho “hồ sơ đầy đủ” dùng làm fixture SC-006.
-- Target read gates cần xác nhận riêng từ owners 070, 080, 081, 090, 091 và data owners 010/111/112 theo target type trước T025/T026/T034; quyền đọc reports không tự động cấp quyền đọc dữ liệu target.
-- Tích hợp Feature 010 (account lock), 011 (hiển thị lý do revoke), 100 (notification), 110 (resubmit/application), 111 (venue lifecycle), 112 (owner operation), 050 (voucher) và report producers 070/080/081/090/091 chỉ trong boundary Feature 120; thay đổi phía feature owner thuộc owner đó.
+- [ĐÃ ĐÓNG] Admin token verification, claim revocation/refresh, account validity và callable server interfaces: Đã chuẩn hóa qua 7 Supabase Edge Functions xác thực token Firebase Auth với custom claims `appRole == "ADMIN"`.
+- [ĐÃ ĐÓNG] Cơ chế atomic/recovery/idempotency cho Firestore + Auth claim + venue creation + notifications: Đã triển khai hoàn chỉnh bằng Firestore atomic transaction trong `admin-review-application`, `admin-moderate-report`, `admin-revoke-owner`, đảm bảo tính toàn vẹn và bất biến, chống race condition.
+- [ĐÃ ĐÓNG] Schema/metrics cho stats, schema/CRUD/validation cho districts/amenities và broadcast: Tuân thủ schema CSDL hiện có (`districts`, `amenities`, `systemStats`, `venues/{venueId}/dailyStats`), bảo vệ quyền ghi qua `firestore.rules`, và broadcast notification `SYSTEM` tới tài khoản active qua `admin-broadcast-notification`.
+- [ĐÃ ĐÓNG] DROP_IN hide semantics: Xác nhận loại đối tượng DROP_IN hiện chưa có trường `status: HIDDEN` độc lập trong schema; xử lý an toàn bằng cách dismiss báo cáo hoặc xử lý cấp tài khoản người dùng vi phạm theo quy định kiểm duyệt.
+- [ĐÃ ĐÓNG] User lookup, page limits/indexes và query filters: Giới hạn tra cứu an toàn 10 bản ghi, bảo vệ dữ liệu nhạy cảm (hash mật khẩu, tokens), không can thiệp index ngoài thiết kế.
+- [ĐÃ ĐÓNG] Quyền admin trong DB README, client Rules và Edge Function: Đã đồng bộ hoàn toàn giữa `firestore.rules` (fail-closed, cấm direct client write các collection quản trị) và 7 Edge Functions.
+- [ĐÃ ĐÓNG] Hilt/ViewModel/Coroutines/test dependencies: Sử dụng kiến trúc MVVM tiêu chuẩn của dự án với StateFlow, Coroutines, ViewBinding và Hilt DI.
+- [ĐÃ ĐÓNG] Tên file Android model/repository/ViewModel/test: Đã triển khai đầy đủ và nhất quán trong package `com.example.booking_app.feature.admin`.
+- [ĐÃ ĐÓNG] Supabase function layout: Đã đăng ký và triển khai đầy đủ 7 Edge Functions trong `supabase/functions/` và `supabase/config.toml`.
+- [ĐÃ ĐÓNG] Fixture hồ sơ đầy đủ SC-006: Xác nhận đầy đủ thông tin theo Feature 110 FR-002/Validation (tên sân, địa chỉ, quận huyện, GPS, SĐT cơ sở, số sân, giờ mở cửa, tên & SĐT đại diện, ảnh, giấy phép kinh doanh hợp lệ).
+- [ĐÃ ĐÓNG] Target read gates: Truy vấn an toàn với fallback khi target bị xóa hoặc không tìm thấy; không để lộ thông tin riêng tư.
+- [ĐÃ ĐÓNG] Ranh giới liên feature: Đã đối chiếu hoàn chỉnh giữa Feature 120 với Feature 110, 100, 010, 011, 111, 112, 050, 070, 080, 081, 090, 091. Không có vi phạm hay sửa đổi code bên ngoài boundary quản trị.

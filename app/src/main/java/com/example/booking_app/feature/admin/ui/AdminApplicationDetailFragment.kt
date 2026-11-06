@@ -127,7 +127,7 @@ class AdminApplicationDetailFragment : Fragment(R.layout.fragment_admin_applicat
         if (existingUrl != null) {
             launchUrlIntent(existingUrl)
         } else {
-            Toast.makeText(requireContext(), "Đang tạo đường dẫn bảo mật...", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), R.string.admin_generating_signed_url, Toast.LENGTH_SHORT).show()
             viewModel.loadDocumentSignedUrl(path)
         }
     }
@@ -137,14 +137,14 @@ class AdminApplicationDetailFragment : Fragment(R.layout.fragment_admin_applicat
             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
             startActivity(intent)
         }.onFailure {
-            Toast.makeText(requireContext(), "Không thể mở trình duyệt xem tệp", Toast.LENGTH_SHORT).show()
+            Toast.makeText(requireContext(), R.string.admin_cannot_open_browser, Toast.LENGTH_SHORT).show()
         }
     }
 
     private fun showApproveConfirmation() {
         MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.admin_approve_button)
-            .setMessage("Bạn có chắc chắn muốn phê duyệt hồ sơ đăng ký chủ sân này?")
+            .setMessage(R.string.admin_approve_confirm_message)
             .setPositiveButton(R.string.admin_approve_button) { _, _ ->
                 viewModel.submitDecision(ReviewAction.APPROVE)
             }

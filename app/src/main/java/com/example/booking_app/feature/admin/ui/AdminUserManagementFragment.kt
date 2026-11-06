@@ -187,17 +187,21 @@ class AdminUserManagementFragment : Fragment() {
     }
 
     private fun confirmToggleLock(user: AdminUserLookup) {
-        val title = if (user.isLocked) "Xác nhận mở khóa" else "Xác nhận khóa"
-        val message = if (user.isLocked) {
-            "Bạn có chắc muốn mở khóa tài khoản ${user.fullName}?"
+        val title = if (user.isLocked) {
+            getString(R.string.admin_confirm_unlock_title)
         } else {
-            "Bạn có chắc muốn khóa tài khoản ${user.fullName}? Người dùng sẽ không thể đăng nhập cho đến khi được mở khóa."
+            getString(R.string.admin_confirm_lock_title)
+        }
+        val message = if (user.isLocked) {
+            getString(R.string.admin_confirm_unlock_user_format, user.fullName)
+        } else {
+            getString(R.string.admin_confirm_lock_user_format, user.fullName)
         }
 
         MaterialAlertDialogBuilder(requireContext())
             .setTitle(title)
             .setMessage(message)
-            .setPositiveButton("Xác nhận") { _, _ ->
+            .setPositiveButton(R.string.admin_confirm) { _, _ ->
                 viewModel.toggleAccountLock(user)
             }
             .setNegativeButton(R.string.admin_cancel, null)

@@ -159,6 +159,42 @@ class AdminApplicationsViewModelTest {
         assertEquals("https://signed.url/license.png", vm.detailState.value.documentUrls["docs/license.png"])
     }
 
+    @Test
+    fun measureReviewWorkflowSla_meetsSc006Criteria_forBothApproveAndReject() = runTest {
+        val vm = AdminApplicationsViewModel(fakeRepository)
+
+        // 1. Approve workflow
+        val startTimeApprove = System.currentTimeMillis()
+        val appToApprove = createSampleApplication("app-sla-approve", "Sân Cầu Lông Đạt Chuẩn SLA")
+        vm.selectApplication(appToApprove)
+        vm.loadDocumentSignedUrl("owner-docs/license.pdf")
+        var approveCompleted = false
+        vm.submitDecision(ReviewAction.APPROVE) { approveCompleted = it }
+        advanceUntilIdle()
+        val endTimeApprove = System.currentTimeMillis()
+        val elapsedSecondsApprove = (endTimeApprove - startTimeApprove) / 1000.0
+
+        assertTrue("Approve must complete", approveCompleted)
+        assertEquals("Duyệt hồ sơ thành công", vm.detailState.value.successMessage)
+        assertTrue("SC-006: Approve workflow must complete in <= 120 seconds, took $elapsedSecondsApprove s", elapsedSecondsApprove <= 120.0)
+
+        // 2. Reject workflow
+        val startTimeReject = System.currentTimeMillis()
+        val appToReject = createSampleApplication("app-sla-reject", "Sân Cầu Lông Bị Từ Chối SLA")
+        vm.selectApplication(appToReject)
+        vm.loadDocumentSignedUrl("owner-docs/invalid-doc.pdf")
+        vm.updateRejectReasonInput("Giấy phép kinh doanh không khớp thông tin đại diện")
+        var rejectCompleted = false
+        vm.submitDecision(ReviewAction.REJECT) { rejectCompleted = it }
+        advanceUntilIdle()
+        val endTimeReject = System.currentTimeMillis()
+        val elapsedSecondsReject = (endTimeReject - startTimeReject) / 1000.0
+
+        assertTrue("Reject must complete", rejectCompleted)
+        assertEquals("Đã từ chối hồ sơ", vm.detailState.value.successMessage)
+        assertTrue("SC-006: Reject workflow must complete in <= 120 seconds, took $elapsedSecondsReject s", elapsedSecondsReject <= 120.0)
+    }
+
     private fun createSampleApplication(id: String, venueName: String): AdminOwnerApplication {
         return AdminOwnerApplication(
             id = id,

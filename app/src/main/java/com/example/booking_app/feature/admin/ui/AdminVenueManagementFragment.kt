@@ -60,17 +60,17 @@ class AdminVenueManagementFragment : Fragment() {
 
         binding.buttonLockVenue.setOnClickListener {
             val venue = currentVenue ?: return@setOnClickListener
-            confirmStatusChange(venue, "LOCKED", "Bạn có chắc chắn muốn khóa cơ sở này?")
+            confirmStatusChange(venue, "LOCKED", getString(R.string.admin_venue_confirm_lock))
         }
 
         binding.buttonUnlockActive.setOnClickListener {
             val venue = currentVenue ?: return@setOnClickListener
-            confirmStatusChange(venue, "ACTIVE", "Mở khóa cơ sở và chuyển trạng thái về ACTIVE?")
+            confirmStatusChange(venue, "ACTIVE", getString(R.string.admin_venue_confirm_unlock_active))
         }
 
         binding.buttonUnlockHidden.setOnClickListener {
             val venue = currentVenue ?: return@setOnClickListener
-            confirmStatusChange(venue, "HIDDEN", "Mở khóa cơ sở và chuyển trạng thái về HIDDEN?")
+            confirmStatusChange(venue, "HIDDEN", getString(R.string.admin_venue_confirm_unlock_hidden))
         }
 
         observeViewModel()
@@ -186,9 +186,9 @@ class AdminVenueManagementFragment : Fragment() {
 
     private fun confirmStatusChange(venue: AdminVenueItem, targetStatus: String, message: String) {
         MaterialAlertDialogBuilder(requireContext())
-            .setTitle("Xác nhận đổi trạng thái cơ sở")
+            .setTitle(R.string.admin_venue_confirm_status_title)
             .setMessage(message)
-            .setPositiveButton("Xác nhận") { _, _ ->
+            .setPositiveButton(R.string.admin_confirm) { _, _ ->
                 viewModel.setVenueStatus(venue.venueId, targetStatus)
             }
             .setNegativeButton(R.string.admin_cancel, null)
