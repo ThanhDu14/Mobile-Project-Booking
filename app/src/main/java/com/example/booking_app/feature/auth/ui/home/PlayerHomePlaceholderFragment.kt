@@ -9,16 +9,20 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.example.booking_app.R
+import com.example.booking_app.core.session.AccountAvatarSource
+import com.example.booking_app.core.session.AccountEntryNavigator
+import com.example.booking_app.core.ui.header.MainTabHeader
 import com.example.booking_app.core.ui.VerifyEmailBannerEvent
 import com.example.booking_app.core.ui.VerifyEmailBannerViewModel
 import com.example.booking_app.databinding.FragmentHomePlaceholderBinding
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /**
- * Trang chủ người chơi tạm thời, có banner xác minh email. Spec sở hữu màn hình chính (020/060…) thay bằng
- * màn hình thật và giữ banner.
+ * Trang chủ người chơi tạm thời, có header dùng chung (avatar mở trang Tài khoản, spec 011 US8) và banner xác
+ * minh email. Spec sở hữu màn hình chính (020/060…) thay bằng màn hình thật và giữ header, banner.
  */
 @AndroidEntryPoint
 class PlayerHomePlaceholderFragment : Fragment(R.layout.fragment_home_placeholder) {
@@ -26,9 +30,15 @@ class PlayerHomePlaceholderFragment : Fragment(R.layout.fragment_home_placeholde
     private val viewModel: HomePlaceholderViewModel by viewModels()
     private val bannerViewModel: VerifyEmailBannerViewModel by viewModels()
 
+    @Inject lateinit var avatarSource: AccountAvatarSource
+
+    @Inject lateinit var accountEntryNavigator: AccountEntryNavigator
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val binding = FragmentHomePlaceholderBinding.bind(view)
+        binding.header.tabTitle.setText(R.string.nav_tab_home)
+        MainTabHeader.bind(this, binding.header, avatarSource, accountEntryNavigator)
         binding.title.setText(R.string.auth_home_placeholder_player)
         binding.verifyEmailBanner.onResendClick = bannerViewModel::onResend
 

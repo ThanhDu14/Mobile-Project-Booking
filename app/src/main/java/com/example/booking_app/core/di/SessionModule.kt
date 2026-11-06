@@ -2,9 +2,13 @@ package com.example.booking_app.core.di
 
 import com.example.booking_app.core.network.FirebaseIdTokenProvider
 import com.example.booking_app.core.network.IdTokenProvider
+import com.example.booking_app.core.session.AccountAvatarSource
+import com.example.booking_app.core.session.AccountEntryNavigator
 import com.example.booking_app.core.session.AppModeController
 import com.example.booking_app.core.session.AuthNavigator
 import com.example.booking_app.core.session.DataStoreSessionPrefs
+import com.example.booking_app.core.session.DefaultAccountAvatarSource
+import com.example.booking_app.core.session.DefaultAccountEntryNavigator
 import com.example.booking_app.core.session.DefaultAppModeController
 import com.example.booking_app.core.session.DeepLinkAuthNavigator
 import com.example.booking_app.core.session.FcmSignOutHook
@@ -49,6 +53,13 @@ abstract class SessionModule {
 
     @Binds
     abstract fun bindAuthNavigator(impl: DeepLinkAuthNavigator): AuthNavigator
+
+    // [011] US8: header dùng chung của các tab chính
+    @Binds
+    abstract fun bindAccountAvatarSource(impl: DefaultAccountAvatarSource): AccountAvatarSource
+
+    @Binds
+    abstract fun bindAccountEntryNavigator(impl: DefaultAccountEntryNavigator): AccountEntryNavigator
 
     // [011] research R7
     @Binds

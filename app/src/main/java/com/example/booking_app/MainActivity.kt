@@ -74,9 +74,10 @@ class MainActivity : AppCompatActivity() {
 
     /**
      * Một BottomNav cho cả hai chế độ, đổi menu theo graph gốc: BottomNav người chơi trong `nav_player`, OwnerNav
-     * trong `nav_owner`. Chỉ hiện ở màn gốc của tab. Người chơi mới nối Trang chủ và Tài khoản (Vãng lai, Lịch đặt,
-     * Cộng đồng chờ spec 080/060/090); chủ sân mới nối Hôm nay (màn tạm) và Cơ sở (Đơn đặt, Lịch sân, Tin nhắn chờ
-     * spec 112). Tab chưa có màn hình báo "đang phát triển".
+     * trong `nav_owner`. Chỉ hiện ở màn gốc của tab và ở trang Tài khoản. Người chơi mới nối Trang chủ (Tìm kiếm,
+     * Vãng lai, Lịch đặt, Cộng đồng chờ spec 020/080/060/090); chủ sân mới nối Hôm nay (màn tạm) và Cơ sở (Đơn đặt,
+     * Lịch sân, Tin nhắn chờ spec 112). Tab chưa có màn hình báo "đang phát triển". Không có tab Tài khoản: trang
+     * Tài khoản mở từ avatar ở header dùng chung (spec 011 US8) và giữ sáng tab đã mở nó.
      */
     private fun setUpBottomNav() {
         // Root đã chừa chỗ cho thanh hệ thống; không để BottomNav cộng thêm lần nữa.
@@ -95,23 +96,6 @@ class MainActivity : AppCompatActivity() {
                     openOwnerVenues()
                     true
                 }
-                R.id.tab_account -> {
-                    if (viewModel.sessionState.value is SessionState.SignedIn) {
-                        navController.navigate(
-                            R.id.nav_account,
-                            null,
-                            navOptions {
-                                launchSingleTop = true
-                                popUpTo(R.id.playerHomePlaceholderFragment)
-                            },
-                        )
-                        true
-                    } else {
-                        // Khách chưa có trang Tài khoản: mở đăng nhập, tab vẫn ở Trang chủ.
-                        navController.navigate(LOGIN)
-                        false
-                    }
-                }
                 else -> {
                     Snackbar.make(binding.root, getString(R.string.nav_tab_coming_soon, item.title), Snackbar.LENGTH_SHORT)
                         .setAnchorView(binding.bottomNavContainer)
@@ -120,10 +104,12 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
-        // Bấm lại tab đang chọn: không tạo lại màn hình. Chủ sân đang ở trang Tài khoản (mở từ tab đó) thì về màn gốc của tab.
+        // Bấm lại tab đang chọn: không tạo lại màn hình. Đang ở trang Tài khoản (mở từ avatar của tab đó) thì về màn
+        // gốc của tab (spec 011 FR-029).
         binding.bottomNav.setOnItemReselectedListener { item ->
             if (navController.currentDestination?.id != R.id.accountFragment) return@setOnItemReselectedListener
             when (item.itemId) {
+                R.id.tab_home -> navController.popBackStack(R.id.playerHomePlaceholderFragment, false)
                 R.id.tab_owner_today -> navController.popBackStack(R.id.ownerHomePlaceholderFragment, false)
                 R.id.tab_owner_venues -> openOwnerVenues()
             }
@@ -149,7 +135,7 @@ class MainActivity : AppCompatActivity() {
             when (destination.id) {
                 R.id.ownerHomePlaceholderFragment -> R.id.tab_owner_today
                 R.id.ownerVenueListFragment -> R.id.tab_owner_venues
-                // OwnerNav không có tab Tài khoản: giữ sáng tab đã mở trang này (avatar ở Hôm nay → Hôm nay).
+                // Không có tab Tài khoản: giữ sáng tab đã mở trang này (avatar ở Hôm nay → Hôm nay).
                 R.id.accountFragment ->
                     if (navController.previousBackStackEntry?.destination?.id == R.id.ownerVenueListFragment) {
                         R.id.tab_owner_venues
@@ -161,7 +147,9 @@ class MainActivity : AppCompatActivity() {
         } else {
             when (destination.id) {
                 R.id.playerHomePlaceholderFragment -> R.id.tab_home
-                R.id.accountFragment -> R.id.tab_account
+                // Không có tab Tài khoản (spec 011 FR-026): giữ sáng tab đã mở trang này. Tab khác của người chơi
+                // (020/060/080/090) thêm nhánh ở đây khi có màn gốc; mặc định Trang chủ.
+                R.id.accountFragment -> R.id.tab_home
                 else -> null
             }
         }

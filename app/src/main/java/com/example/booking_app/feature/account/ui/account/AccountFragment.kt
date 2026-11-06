@@ -19,6 +19,7 @@ import androidx.navigation.fragment.findNavController
 import coil3.load
 import com.example.booking_app.R
 import com.example.booking_app.core.session.AppMode
+import com.example.booking_app.core.session.initialsOf
 import com.example.booking_app.core.media.StorageUrls
 import com.example.booking_app.core.ui.VerifyEmailBannerEvent
 import com.example.booking_app.core.ui.VerifyEmailBannerViewModel

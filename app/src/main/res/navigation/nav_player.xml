@@ -33,8 +33,13 @@
             app:argType="com.example.booking_app.feature.booking.ui.HoldToPaymentArgs" />
     </fragment>
 
-    <!-- Trang Tài khoản của spec 011 (research R14). -->
+    <!-- Trang Tài khoản của spec 011 (research R14). Mở từ avatar ở header dùng chung của mọi tab (US8),
+         qua AccountEntryNavigator; không còn tab Tài khoản. -->
     <include app:graph="@navigation/nav_account" />
+
+    <action
+        android:id="@+id/action_global_account"
+        app:destination="@id/nav_account" />
 
     <include app:graph="@navigation/nav_review" />
 
