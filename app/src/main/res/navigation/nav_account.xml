@@ -25,6 +25,32 @@
     </fragment>
 
     <fragment
+        android:id="@+id/ownerApplicationFormFragment"
+        android:name="com.example.booking_app.feature.owner.ui.OwnerApplicationFormFragment"
+        android:label="@string/owner_apply_title">
+        <argument android:name="mode" app:argType="string" android:defaultValue="new" />
+        <deepLink app:uri="smashnow://owner/apply?mode={mode}" />
+        <action android:id="@+id/action_ownerApplicationForm_to_review" app:destination="@id/ownerApplicationReviewFragment" />
+        <action android:id="@+id/action_ownerApplicationForm_to_status" app:destination="@id/ownerApplicationStatusFragment" app:popUpTo="@id/ownerApplicationFormFragment" app:popUpToInclusive="true" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/ownerApplicationReviewFragment"
+        android:name="com.example.booking_app.feature.owner.ui.OwnerApplicationReviewFragment"
+        android:label="@string/owner_review_title">
+        <action android:id="@+id/action_ownerApplicationReview_to_form" app:destination="@id/ownerApplicationFormFragment" app:popUpTo="@id/ownerApplicationFormFragment" />
+        <action android:id="@+id/action_ownerApplicationReview_to_status" app:destination="@id/ownerApplicationStatusFragment" app:popUpTo="@id/ownerApplicationFormFragment" app:popUpToInclusive="true" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/ownerApplicationStatusFragment"
+        android:name="com.example.booking_app.feature.owner.ui.OwnerApplicationStatusFragment"
+        android:label="@string/owner_status_title">
+        <deepLink app:uri="smashnow://owner/application" />
+        <action android:id="@+id/action_ownerApplicationStatus_to_form" app:destination="@id/ownerApplicationFormFragment" />
+    </fragment>
+
+    <fragment
         android:id="@+id/editProfileFragment"
         android:name="com.example.booking_app.feature.account.ui.edit.EditProfileFragment"
         android:label="@string/account_edit_title">

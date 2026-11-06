@@ -110,6 +110,7 @@ class OwnerSlotBlockViewModelTest {
         )
 
         val viewModel = vm(fakeRepo)
+        viewModel.selectDate("20261030")
         testDispatcher.scheduler.advanceUntilIdle()
 
         val grid = viewModel.uiState.value.gridSlots
@@ -135,6 +136,7 @@ class OwnerSlotBlockViewModelTest {
     fun toggleSlotSelectionUpdatesSelectionState() = runTest(testDispatcher) {
         val fakeRepo = FakeOwnerVenueRepository()
         val viewModel = vm(fakeRepo)
+        viewModel.selectDate("20261030")
         testDispatcher.scheduler.advanceUntilIdle()
 
         val slotId = "court-1_20261030_0800"
@@ -149,6 +151,7 @@ class OwnerSlotBlockViewModelTest {
     fun lockSelectedSlotsCallsRepositoryAndClearsSelection() = runTest(testDispatcher) {
         val fakeRepo = FakeOwnerVenueRepository()
         val viewModel = vm(fakeRepo)
+        viewModel.selectDate("20261030")
         testDispatcher.scheduler.advanceUntilIdle()
 
         val slotId = "court-1_20261030_0800"
@@ -167,6 +170,7 @@ class OwnerSlotBlockViewModelTest {
     fun unlockSelectedSlotsCallsRepositoryAndClearsSelection() = runTest(testDispatcher) {
         val fakeRepo = FakeOwnerVenueRepository()
         val viewModel = vm(fakeRepo)
+        viewModel.selectDate("20261030")
         testDispatcher.scheduler.advanceUntilIdle()
 
         val slotId = "court-1_20261030_0830"
@@ -183,6 +187,7 @@ class OwnerSlotBlockViewModelTest {
     fun lockFailurePreservesSelectionAndDisplaysError() = runTest(testDispatcher) {
         val fakeRepo = FakeOwnerVenueRepository(shouldFailLock = true)
         val viewModel = vm(fakeRepo)
+        viewModel.selectDate("20261030")
         testDispatcher.scheduler.advanceUntilIdle()
 
         val slotId = "court-1_20261030_0900"

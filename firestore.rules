@@ -165,6 +165,16 @@ service cloud.firestore {
       allow write: if false;
     }
 
+    // ---------- ownerApplications (D, spec 110/120) ----------
+    // Submit/re-submit and all server-controlled status changes go through
+    // owner-applications Edge Function + Firestore transaction. Clients may
+    // only read their own application; Admin review reads remain privileged.
+    match /ownerApplications/{applicationId} {
+      allow get: if isAdmin() || (isSignedIn() && resource.data.uid == request.auth.uid);
+      allow list: if isAdmin() || (isSignedIn() && resource.data.uid == request.auth.uid);
+      allow create, update, delete: if false;
+    }
+
     // ---------- users/{uid}/favorites (C, spec 070; contracts/security-rules.md §1) ----------
     // Client ghi trực tiếp (research R7). ID document = venueId nên lưu hai lần không tạo bản trùng.
     // Không có rule cho collection group `favorites`: chỉ Edge Function của D (service account) truy vấn.

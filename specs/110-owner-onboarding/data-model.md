@@ -68,9 +68,12 @@ Giá trị lưu của `ownerApplications.status` viết hoa (`PENDING`, `APPROVE
 - README CSDL đã liệt kê index ghép `ownerApplications.status`, `submittedAt` cho hàng đợi hồ sơ admin. Chưa quy định index truy vấn hồ sơ hiện hành theo applicant.
 - Kế hoạch không đề xuất collection, trường, enum hay index mới. Trước khi thêm index, xác nhận liệu truy vấn hiện có có thể xác định hồ sơ hiện hành sau nộp lại/thu hồi quyền hay không.
 
-## Câu hỏi mô hình dữ liệu còn bỏ ngỏ
+## Quyết định mô hình được duyệt
 
-1. Ứng dụng xác định hồ sơ hiện hành theo UID thế nào khi vẫn lưu hồ sơ `APPROVED` cũ và người dùng được nộp mới sau thu hồi quyền?
-2. Nộp lại cập nhật document bị từ chối hay tạo document cho lần nộp mới? Lịch sử xét duyệt được giữ ra sao?
-3. Xóa tài khoản có xóa mọi hồ sơ và object Storage liên quan, kể cả lịch sử đã duyệt không? Nếu chỉ xóa được một phần thì xử lý thế nào?
-4. Thao tác tin cậy nào nhận hồ sơ mới/nộp lại và cập nhật trường được bảo vệ? Schema chưa định nghĩa request ID, version hay hợp đồng ghi idempotent/xử lý đồng thời.
+- Mỗi lifecycle có một `ownerApplications/{applicationId}` document. ID sinh một lần và giữ trong draft cục bộ để retry; sau revoke, chu kỳ mới nhận ID mới. Resubmit cập nhật document `REJECTED` hiện tại.
+- Trạng thái hiện hành lấy từ server-owned `users.ownerStatus`; application liên quan được query theo `uid ASC, submittedAt DESC` qua index hiện có. Các application `APPROVED` của chu kỳ cũ được giữ.
+- Submit/resubmit đi qua Edge Function xác minh Firebase token và Firestore transaction. Không thêm schema field, collection, enum hay index; client không ghi trường được bảo vệ.
+- Xóa tài khoản tiếp tục theo Feature 011, gồm ownerApplications của UID và `owner-docs/{uid}/`. Orphan object được server sweeper xóa sau 30 ngày; draft biểu mẫu lưu cục bộ đến khi user xóa/logout/account deletion.
+- Feature 120 tạo venue đầu tiên với ID bằng application ID khi duyệt. Sau revoke và lifecycle mới, venue mới được tạo; không nối ngầm venue cũ.
+
+Map provider chưa được chọn; tọa độ vẫn thuộc `venueDraft`, nhưng interactive marker bị hoãn tới khi Feature 021 xác nhận provider.
