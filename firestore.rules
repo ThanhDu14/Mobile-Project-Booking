@@ -152,7 +152,13 @@ service cloud.firestore {
     // khi bị ẩn; admin đọc tất cả. Truy vấn list phải lọc `status == VISIBLE` hoặc `userId == uid`.
     // Mọi ghi đi qua Edge Function `review` (service account bỏ qua Rules).
     match /reviews/{reviewId} {
-      allow get, list: if isSignedIn() && (
+      // resource == null: đơn chưa có đánh giá, `observeMyReview` cần nhận "không tồn tại" thay vì lỗi quyền.
+      allow get: if isSignedIn() && (
+          resource == null
+          || resource.data.status == 'VISIBLE'
+          || resource.data.userId == request.auth.uid
+          || isAdmin());
+      allow list: if isSignedIn() && (
           resource.data.status == 'VISIBLE'
           || resource.data.userId == request.auth.uid
           || isAdmin());

@@ -37,7 +37,7 @@ Truy vấn của chủ sân ("Đánh giá của khách") chỉ đọc đánh gi�
 |---|---|---|
 | R1 | Người chơi đọc đánh giá `VISIBLE` của sân bất kỳ | Được phép |
 | R2 | Người chơi đọc đánh giá `HIDDEN` của người khác | Bị chặn |
-| R3 | Người viết đọc đánh giá `HIDDEN` của chính mình | Được phép |
+| R3 | Người viết đọc đánh giá `HIDDEN` của chính mình; `get` một đánh giá chưa tồn tại (đơn chưa đánh giá, `observeMyReview`) | Được phép |
 | R4 | Admin đọc đánh giá `HIDDEN` | Được phép |
 | R5 | Người chơi tạo `reviews/{id}` trực tiếp (kể cả đơn `COMPLETED`) | Bị chặn |
 | R6 | Người viết sửa `ratings` hoặc xóa đánh giá của mình trực tiếp | Bị chặn |
