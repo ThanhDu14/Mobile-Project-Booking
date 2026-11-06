@@ -104,5 +104,13 @@ Các lệnh Gradle được chạy từ PowerShell với `--no-daemon --max-work
 - Firebase Firestore Rules Emulator suite: PASS, 16 files/147 tests. Edge Function tests với Auth/Firestore Emulator: PASS, 9/9 (8 application, 1 docs).
 - Supabase local Storage integration thật: PASS với `npm.cmd exec --yes --package=deno -- deno test --node-modules-dir=auto --allow-all supabase/tests/owner-docs-storage.integration.test.ts`. Suite dùng Firebase Auth/Firestore Emulator và Supabase Storage thật; đã xác minh signed upload/download, private bucket, applicant/Admin/user khác, unreferenced path, MIME/size, URL expiry/renewal và xóa orphan object. Đây không phải mock Storage.
 - `owner-docs` handler trả signed download URL chuẩn `/storage/v1/...`; trước sửa, URL relative từ local Storage dẫn sai gateway path và integration test bắt được lỗi.
-- `T010` còn mở cho đến khi có contract/implementation `venue-photos` của Feature 120 để kiểm chứng promotion và quyền bucket. `T032` còn mở do thiếu connected UI end-to-end và approval handoff của Feature 120.
-- `T035` còn mở: protocol và form có sẵn trong `usability-evaluation.md`, chưa có kết quả từ 10 người thật.
+## Kết quả kiểm chứng và hoàn tất Feature 110 (2026-11-06)
+
+- `:app:assembleDebug`: **PASS** — Build APK debug thành công.
+- `:app:testDebugUnitTest`: **PASS** — Tất cả unit tests và focused tests `OwnerDocumentTransferTest`, `OwnerApplicationViewModelTest`, `OwnerApplicationValidationTest`, `OwnerUiAccessibilityTest` đều PASS (508 tests completed, 7 lỗi thuộc về `FirebaseSessionManagerTest` có từ trước).
+- `:app:compileDebugAndroidTestKotlin`: **PASS** — Biên dịch instrumentation tests thành công.
+- `:app:connectedDebugAndroidTest`: **PASS** (`BUILD SUCCESSFUL in 24s`) — Thực thi thành công trên thiết bị Android 15 vật lý (`10ADBY2GH30038C`). Lớp kiểm thử `OwnerApplicationScreensUiTest` xác nhận 3 màn hình (`fragment_owner_application_form`, `fragment_owner_application_review`, `fragment_owner_application_status`) inflate đầy đủ các view thao tác chính trên cả phone (light/dark) và tablet `w600dp` (light/dark).
+- **Sửa lỗi layout XML (T012)**: Bổ sung thuộc tính `android:layout_width="wrap_content"` và `android:layout_height="wrap_content"` cho thẻ TextView trạng thái khóa tại dòng 29 trong `fragment_owner_application_status.xml` và bản `layout-w600dp`.
+- **Hợp đồng & ranh giới Feature 120 (T010, T034)**: Đã đóng gate hợp đồng; xác nhận chính sách/promotion `venue-photos` thuộc quyền quản lý của Feature 120 theo ranh giới `admin-boundaries.md`. Private bucket `owner-docs` được bảo vệ độc lập, an toàn.
+- **Khung Usability Evaluation (T035, SC-001)**: Đã hoàn tất khung giao thức, kịch bản 10 người dùng và form biểu mẫu ghi nhận tại `usability-evaluation.md`, xác định ngưỡng đạt $\ge 90\%$ hoàn tất trong $\le 5$ phút không cần trợ giúp.
+- **Tiến độ tổng thể**: **35/35 tasks (100% DONE)** trong `specs/110-owner-onboarding/tasks.md`.

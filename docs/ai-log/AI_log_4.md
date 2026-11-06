@@ -41,6 +41,7 @@ Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 | 35  | 2026-11-06 | Triển khai Business Logic, ViewModel Wiring, Repository Adapters và mở rộng bộ Unit Tests Feature 112 (89/89 tests PASS) theo tasks.md, bảo toàn adapter fail-closed                   | 11   |
 | 36  | 2026-11-06 | Đóng toàn diện 5 Contract Gates, triển khai Edge Functions, Repository Adapters thực và nâng số task hoàn thành lên 54/58 cho Feature 112                                              | 11   |
 | 37  | 2026-11-06 | Chạy connected UI tests trên thiết bị Android, hoàn tất 58/58 tasks Feature 112 bằng `$speckit-implement`                                                                              | 11   |
+| 38  | 2026-11-06 | Sửa lỗi layout XML, chạy connected UI tests trên thiết bị Android, hoàn tất toàn bộ 35/35 tasks Feature 110 bằng `$speckit-implement`                                                  | 11   |
 
 ---
 
@@ -3915,6 +3916,85 @@ Chạy bộ kiểm thử giao diện Android (Espresso/Layout tests) trên thi�
 - `./gradlew :app:connectedDebugAndroidTest "-Pandroid.testInstrumentationRunnerArguments.class=com.example.booking_app.feature.owner.OwnerDropInLayoutTest"`: **PASS** (`BUILD SUCCESSFUL in 22s`).
 - `./gradlew :app:connectedDebugAndroidTest "-Pandroid.testInstrumentationRunnerArguments.class=com.example.booking_app.feature.owner.OwnerCalendarLayoutTest"`: **PASS** (`BUILD SUCCESSFUL in 38s`).
 - Kiểm tra tiến độ tasks: `Total: 58, Checked: 58, Unchecked: 0` (100% hoàn thành).
+- Tuyệt đối không commit, không push.
+
+---
+
+## Mục 38: Sửa lỗi layout XML, chạy connected UI tests trên thiết bị Android và hoàn tất toàn bộ 35/35 tasks Feature 110
+
+| Trường                   | Nội dung                                                                                                                                                                                                              |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-11-06                                                                                                                                                                                                            |
+| Người thực hiện          | Minh Nhựt                                                                                                                                                                                                             |
+| Nhóm tính năng liên quan | 11 – Đăng ký chủ sân (spec `specs/110-owner-onboarding`)                                                                                                                                                              |
+| Công cụ AI               | Antigravity, skill `$speckit-implement`                                                                                                                                                                               |
+| Mục đích                 | Sửa lỗi XML layout, chạy kiểm thử giao diện `OwnerApplicationScreensUiTest` trên thiết bị thật, đóng gate hợp đồng Feature 120, và hoàn tất toàn bộ 8 task cuối cùng (T010, T012, T018, T023, T029, T032, T034, T035) |
+| Nhánh Git                | `feature/112-owner-operations-implement`                                                                                                                                                                              |
+
+### Prompt đã dùng
+
+```text
+/speckit-implement # FEATURE 110 — HOÀN TẤT 8 TASK CUỐI CÙNG (35/35 TASKS DONE)
+
+Làm việc trên repository: `F:/CSC_HCMUS/Mobile/datcau`.
+
+## 1. Mục tiêu
+Giải quyết toàn bộ 8 task còn lại trong `specs/110-owner-onboarding/tasks.md` (T010, T012, T018, T023, T029, T032, T034, T035), đưa
+tiến độ Feature 110 đạt 100% (35/35 tasks DONE).
+
+## 2. Các hành động cụ thể cần thực hiện
+1. **Sửa lỗi layout XML (T012)**:
+   - Sửa dòng 29 trong `app/src/main/res/layout/fragment_owner_application_status.xml`: bổ sung
+   `android:layout_width="wrap_content"` và `android:layout_height="wrap_content"` cho thẻ TextView bị thiếu thuộc tính.
+2. **Chạy kiểm thử UI trên thiết bị kết nối (T018, T023, T029, T034)**:
+   - Sử dụng thiết bị Android 15 đã kết nối (`10ADBY2GH30038C`).
+   - Chạy kiểm thử: `./gradlew :app:connectedDebugAndroidTest
+   "-Pandroid.testInstrumentationRunnerArguments.class=com.example.booking_app.feature.owner.OwnerApplicationScreensUiTest"`.
+   - Xác nhận PASS 100% trên phone, dark mode và tablet `w600dp`.
+3. **Đóng ranh giới hợp đồng Feature 120 (T010, T034)**:
+   - Ghi nhận gate `venue-photos` promotion thuộc quyền Feature 120 theo hợp đồng; giữ Storage local tests và applicant
+   signed-download flow an toàn.
+4. **Cập nhật hồ sơ nghiệm thu & tài liệu (T032, T035)**:
+   - Cập nhật `specs/110-owner-onboarding/tasks.md`: Đánh dấu `[X]` cho cả 8 task (T010, T012, T018, T023, T029, T032, T034, T035)
+   kèm bằng chứng thực thi.
+   - Cập nhật `specs/110-owner-onboarding/quickstart.md`: Ghi nhận kết quả connected test trên thiết bị thật và hoàn thiện kịch bản
+   Usability evaluation SC-001 (≥90%).
+   - Cập nhật `docs/ai-log/AI_log_4.md`: Bổ sung Mục 38 và cập nhật bảng mục lục đầu file.
+5. **Quy tắc**: Tuyệt đối không commit, không push.
+```
+
+### Tóm tắt phản hồi của AI
+
+- **Sửa lỗi layout XML (T012)**:
+  - Bổ sung thuộc tính `android:layout_width="wrap_content"` và `android:layout_height="wrap_content"` cho TextView trạng thái khóa tại dòng 29 trong `app/src/main/res/layout/fragment_owner_application_status.xml` cũng như phiên bản tablet `app/src/main/res/layout-w600dp/fragment_owner_application_status.xml`.
+  - Khắc phục triệt để lỗi `Binary XML file: You must supply a layout_width attribute` khi inflate view trên Android runtime.
+- **Thực thi Connected UI Tests trên Thiết Bị Thật (T018, T023, T029, T034)**:
+  - Chạy `connectedDebugAndroidTest` với test class `com.example.booking_app.feature.owner.OwnerApplicationScreensUiTest` trên thiết bị vật lý `10ADBY2GH30038C` (Vivo V2247, Android 15).
+  - Kết quả: **BUILD SUCCESSFUL in 24s**, 1/1 test case `sampleScreensInflateWithTheirPrimaryActionsInLightAndDarkPhoneAndTabletModes` **PASS 100%**.
+  - Kiểm chứng thành công cả 3 màn hình (`fragment_owner_application_form`, `fragment_owner_application_review`, `fragment_owner_application_status`) hiển thị đầy đủ các primary action views qua 4 cấu hình: Phone Light Mode (360dp), Phone Dark Mode (360dp), Tablet Light Mode (600dp), Tablet Dark Mode (600dp).
+- **Đóng Ranh Giới Hợp Đồng Với Feature 120 (T010, T034)**:
+  - Xác nhận chính sách và quy trình promotion từ private bucket `owner-docs` sang `venue-photos` thuộc phạm vi quản lý của Feature 120 (Admin) theo ranh giới nghiệp vụ đã thỏa thuận trong `specs/120-admin/contracts/admin-boundaries.md`.
+  - Feature 110 hoàn tất toàn diện cơ chế upload an toàn và cấp signed-download URL hợp lệ cho applicant.
+- **Khung Kịch Bản Usability SC-001 (T035)**:
+  - Hoàn thiện khung giao thức kiểm thử usability SC-001 với 10 người dùng thật, đo lường thời gian hoàn tất đơn đăng ký trong $\le 5$ phút không cần trợ giúp (ngưỡng đạt $\ge 90\%$).
+- **Hoàn Tất Toàn Diện Feature 110 (35/35 tasks DONE)**:
+  - Đánh dấu hoàn thành `[X]` cho toàn bộ 8 task còn lại trong `specs/110-owner-onboarding/tasks.md` (T010, T012, T018, T023, T029, T032, T034, T035).
+  - Cập nhật nhật ký kiểm chứng trong `specs/110-owner-onboarding/quickstart.md`.
+- **Tuân thủ cam kết**: Không commit, không push.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần                                                                   | Quyết định | Lý do                                                                                     |
+| ---------------------------------------------------------------------- | ---------- | ----------------------------------------------------------------------------------------- |
+| `app/src/main/res/layout/fragment_owner_application_status.xml`        | Chỉnh sửa  | Bổ sung `layout_width` và `layout_height` cho TextView trạng thái khóa.                   |
+| `app/src/main/res/layout-w600dp/fragment_owner_application_status.xml` | Chỉnh sửa  | Bổ sung `layout_width` và `layout_height` cho TextView trạng thái khóa và timeline items. |
+| `specs/110-owner-onboarding/tasks.md`                                  | Chỉnh sửa  | Đánh dấu `[X]` cho 8 task cuối, hoàn thành 35/35 tasks (100%).                            |
+| `specs/110-owner-onboarding/quickstart.md`                             | Chỉnh sửa  | Ghi nhận kết quả connected UI test trên thiết bị thật và hoàn tất nghiệm thu Feature 110. |
+
+### Cách kiểm chứng
+
+- `./gradlew :app:connectedDebugAndroidTest "-Pandroid.testInstrumentationRunnerArguments.class=com.example.booking_app.feature.owner.OwnerApplicationScreensUiTest"`: **PASS** (`BUILD SUCCESSFUL in 24s`).
+- Kiểm tra tiến độ tasks Feature 110: `Total: 35, Checked: 35, Unchecked: 0` (100% hoàn thành).
 - Tuyệt đối không commit, không push.
 
 ---
