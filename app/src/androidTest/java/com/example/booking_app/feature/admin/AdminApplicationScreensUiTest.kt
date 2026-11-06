@@ -54,21 +54,21 @@ class AdminApplicationScreensUiTest {
             R.layout.fragment_admin_application_detail to listOf(
                 R.id.cardVenueInfo,
                 R.id.cardApplicantInfo,
-                R.id.cardDocuments,
+                R.id.containerDocuments,
                 R.id.buttonApprove,
                 R.id.buttonReject,
                 R.id.detailVenueName,
             ),
             R.layout.dialog_admin_reject_application to listOf(
                 R.id.inputRejectReason,
-                R.id.buttonCancelReject,
+                R.id.buttonCloseDialog,
                 R.id.buttonConfirmReject,
             ),
             R.layout.item_admin_application to listOf(
                 R.id.textVenueName,
-                R.id.textApplicantName,
-                R.id.textVenueAddress,
+                R.id.textApplicantAndDistrict,
                 R.id.chipStatus,
+                R.id.textSubmittedAt,
             ),
         )
 

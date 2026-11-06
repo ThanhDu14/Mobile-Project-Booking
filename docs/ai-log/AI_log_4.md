@@ -1,53 +1,54 @@
-# Nhật ký sử dụng AI – Thành viên 4 (Minh Nhựt)
+﻿# Nhật ký sử dụng AI – Thành viên 4 (Minh Nhựt)
 
 Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 
-| \#  | Ngày       | Nội dung                                                                                                                                                                               | Nhóm |
-| --- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---- |
-| 1   | 2026-10-06 | Viết và làm rõ spec 100 (thông báo) bằng AI và `$speckit-clarify`                                                                                                                      | 10   |
-| 2   | 2026-10-07 | Viết spec 110 (đăng ký chủ sân) bằng `$speckit-specify` và làm rõ bằng `$speckit-clarify`                                                                                              | 11   |
-| 3   | 2026-10-08 | Viết và làm rõ spec 111 (quản lý cơ sở, sân con, bảng giá và khóa giờ) bằng AI, `$speckit-clarify` và `$speckit-checklist`                                                             | 11   |
-| 4   | 2026-10-08 | Viết và làm rõ spec 112 (vận hành cơ sở chủ sân) bằng AI và `$speckit-clarify`                                                                                                         | 11   |
-| 5   | 2026-10-08 | Viết và làm rõ spec 120 (quản trị, hồ sơ chủ sân và báo cáo) bằng `$speckit-specify` và `$speckit-clarify`                                                                             | 12   |
-| 6   | 2026-10-15 | Lập implementation plan cho Feature 100 (thông báo) bằng `$speckit-plan`                                                                                                               | 10   |
-| 7   | 2026-10-15 | Lập implementation plan cho Feature 110 (đăng ký chủ sân) bằng `$speckit-plan` và viết lại tài liệu bằng tiếng Việt                                                                    | 11   |
-| 8   | 2026-10-16 | Lập implementation plan cho Feature 111 (thiết lập cơ sở chủ sân) bằng `$speckit-plan`                                                                                                 | 11   |
-| 9   | 2026-10-16 | Lập implementation plan cho Feature 112 (vận hành chủ sân) bằng `$speckit-plan`                                                                                                        | 11   |
-| 10  | 2026-10-16 | Lập implementation plan cho Feature 120 (quản trị và kiểm duyệt) bằng `$speckit-plan`                                                                                                  | 12   |
-| 11  | 2026-10-19 | Tạo Tasks Feature 100 bằng `$speckit-tasks`, phân tích bằng `$speckit-analyze` và cập nhật Tasks theo kết quả phân tích                                                                | 10   |
-| 12  | 2026-10-19 | Tạo Tasks Feature 110 bằng `$speckit-tasks`, rà soát bằng `$speckit-analyze` và cập nhật Tasks theo kết quả phân tích                                                                  | 11   |
-| 13  | 2026-10-19 | Tạo Tasks Feature 111 bằng `$speckit-tasks`, phân tích bằng `$speckit-analyze` và cập nhật Tasks theo báo cáo                                                                          | 11   |
-| 14  | 2026-10-19 | Tạo Tasks Feature 112 bằng `$speckit-tasks`, phân tích bằng `$speckit-analyze` và cập nhật Tasks theo các findings                                                                     | 11   |
-| 15  | 2026-10-19 | Tạo Tasks Feature 120 bằng `$speckit-tasks`, phân tích bằng `$speckit-analyze` và cập nhật Tasks theo findings U1–U3                                                                   | 12   |
-| 16  | 2026-10-29 | Implement Feature 111: validator, Firestore Rules, unit test và Emulator test bằng `$speckit-implement`                                                                                | 11   |
-| 17  | 2026-10-29 | Tiếp tục implement Feature 111: repository, venue management, court management, UI và test bằng `$speckit-implement`                                                                   | 11   |
-| 18  | 2026-10-29 | Tiếp tục implement Feature 111: price coverage, slot UI shell, public availability assertions và kiểm thử cross-feature bằng `$speckit-implement`                                      | 11   |
-| 19  | 2026-10-29 | Tiếp tục implement Feature 111: price-rules Emulator tests, error/offline/conflict review, UI polish, boundary traceability và kiểm thử build/lint bằng `$speckit-implement`           | 11   |
-| 20  | 2026-10-29 | Tiếp tục implement Feature 111: hoàn thiện error/retry/conflict/cache freshness, responsive/accessibility review và kiểm chứng T034/T038 bằng `$speckit-implement`                     | 11   |
-| 21  | 2026-10-29 | Tiếp tục implement Feature 111: chốt typed write-gate cho T007, giữ an toàn T008/T011, hoàn thiện T037 và kiểm chứng Emulator/build/lint                                               | 11   |
-| 22  | 2026-10-30 | Kiểm toán kỹ thuật & giải tỏa blocker Feature 111: chốt quyết định 1A, 2A, 3A, 4A, hoàn thiện Bảng giá (CRUD, UI, sync minPricePerHour) và điều hướng thêm venue                       | 11   |
-| 23  | 2026-10-30 | Triển khai Phase 3 Feature 111: Edge Function manage-slot-blocks, Calendar Grid UI, và Emulator race condition tests                                                                   | 11   |
-| 24  | 2026-10-30 | Hoàn thiện T034 (Hợp đồng tích hợp Recurring Feature 041) và T038 (Rà soát UI Accessibility, Touch Target & Performance SLA)                                                           | 11   |
-| 25  | 2026-11-05 | Rà soát và chỉnh UI Android Feature 111 theo 5 ảnh mẫu, cải thiện bố cục responsive và accessibility; chạy test và build                                                               | 11   |
-| 26  | 2026-11-05 | Khảo sát và triển khai phần validator độc lập của Feature 110; lập traceability mapping và kiểm tra unit test, build, lint, Emulator                                                   | 11   |
-| 27  | 2026-11-05 | Ghi nhận quyết định bổ sung Feature 110 về venue identity, recovery, cleanup; map provider tạm hoãn                                                                                    | 11   |
-| 28  | 2026-11-05 | Tiếp tục triển khai Feature 110 theo quyết định T001–T005; bổ sung Android onboarding, Edge Functions, Firestore Rules và kiểm chứng                                                   | 11   |
-| 29  | 2026-11-05 | Tiếp tục hoàn thiện Feature 110: upload/retry và signed-document flow, kiểm thử lifecycle/idempotency, integration suite và cập nhật traceability                                      | 11   |
-| 30  | 2026-11-05 | Hoàn thiện và xác minh các phần còn mở Feature 110: Storage thật, tải tài liệu signed URL, Android tests/build/lint và cập nhật task/evidence                                          | 11   |
-| 31  | 2026-11-05 | Audit và tiếp tục triển khai Feature 112 Owner Operations; bổ sung drop-in validation, tests và ghi nhận contract blockers                                                             | 11   |
-| 32  | 2026-11-05 | Implement Feature 112 thực tế: dashboard/lịch ngày-tuần realtime, kiểm thử Android/Firestore Rules, phân loại task và handoff cho dependency liên-feature                              | 11   |
-| 33  | 2026-11-05 | Tiếp tục Feature 112: booking queue/detail/navigation, QR check-in UI, StateFlow/domain adapters fail-closed, test và handoff đúng ownership                                           | 11   |
-| 34  | 2026-11-06 | Tinh chỉnh và hoàn thiện toàn bộ giao diện Android Feature 112 theo 10 wireframe mẫu trong `specs/112-owner-operations/ui/`, hỗ trợ phone/w600dp, accessibility, dark mode và kiểm thử | 11   |
-| 35  | 2026-11-06 | Triển khai Business Logic, ViewModel Wiring, Repository Adapters và mở rộng bộ Unit Tests Feature 112 (89/89 tests PASS) theo tasks.md, bảo toàn adapter fail-closed                   | 11   |
-| 36  | 2026-11-06 | Đóng toàn diện 5 Contract Gates, triển khai Edge Functions, Repository Adapters thực và nâng số task hoàn thành lên 54/58 cho Feature 112                                              | 11   |
-| 37  | 2026-11-06 | Chạy connected UI tests trên thiết bị Android, hoàn tất 58/58 tasks Feature 112 bằng `$speckit-implement`                                                                              | 11   |
-| 38  | 2026-11-06 | Sửa lỗi layout XML, chạy connected UI tests trên thiết bị Android, hoàn tất toàn bộ 35/35 tasks Feature 110 bằng `$speckit-implement`                                                  | 11   |
-| 39  | 2026-11-06 | Triển khai Phase 1, Phase 2 và Phase 3 (US1 - MVP P1) Feature 120 Admin: kiến trúc MVVM, Edge Function admin-review-application, Security Rules, UI và test bằng `$speckit-implement`  | 12   |
-| 40  | 2026-11-06 | Triển khai Phase 4 (US2 - P1) Feature 120 Admin: kiểm duyệt báo cáo vi phạm, Edge Function admin-moderate-report, UI và test bằng `$speckit-implement`                                 | 12   |
-| 41  | 2026-11-06 | Triển khai Phase 5 (US3 - P2) Feature 120 Admin: quản lý user, khóa/mở khóa tài khoản, thu hồi quyền chủ sân, quản lý venue vi phạm và test bằng `$speckit-implement`                  | 12   |
-| 42  | 2026-11-06 | Triển khai Phase 6 (US4 - P3) Feature 120 Admin: dashboard thống kê, voucher hệ thống, broadcast thông báo, danh mục và test bằng `$speckit-implement`                                 | 12   |
-| 43  | 2026-11-06 | Hoàn thiện toàn diện, bảo mật, đối chiếu ranh giới hợp đồng và đo lường SLA SC-006 (Phase 7, Tasks T051–T054) Feature 120 bằng `$speckit-implement`                                     | 12   |
-| 44  | 2026-11-06 | Tái cấu trúc UI Admin theo 12 wireframe artboards `specs/120-admin/ui/`, thiết lập 5 tab Bottom Navigation, loại bỏ hoàn toàn mock data và nối dữ liệu thực với Firestore & Supabase | 12   |
+| \#  | Ngày       | Nội dung                                                                                                                                                                                                         | Nhóm   |
+| --- | ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ |
+| 1   | 2026-10-06 | Viết và làm rõ spec 100 (thông báo) bằng AI và `$speckit-clarify`                                                                                                                                                | 10     |
+| 2   | 2026-10-07 | Viết spec 110 (đăng ký chủ sân) bằng `$speckit-specify` và làm rõ bằng `$speckit-clarify`                                                                                                                        | 11     |
+| 3   | 2026-10-08 | Viết và làm rõ spec 111 (quản lý cơ sở, sân con, bảng giá và khóa giờ) bằng AI, `$speckit-clarify` và `$speckit-checklist`                                                                                       | 11     |
+| 4   | 2026-10-08 | Viết và làm rõ spec 112 (vận hành cơ sở chủ sân) bằng AI và `$speckit-clarify`                                                                                                                                   | 11     |
+| 5   | 2026-10-08 | Viết và làm rõ spec 120 (quản trị, hồ sơ chủ sân và báo cáo) bằng `$speckit-specify` và `$speckit-clarify`                                                                                                       | 12     |
+| 6   | 2026-10-15 | Lập implementation plan cho Feature 100 (thông báo) bằng `$speckit-plan`                                                                                                                                         | 10     |
+| 7   | 2026-10-15 | Lập implementation plan cho Feature 110 (đăng ký chủ sân) bằng `$speckit-plan` và viết lại tài liệu bằng tiếng Việt                                                                                              | 11     |
+| 8   | 2026-10-16 | Lập implementation plan cho Feature 111 (thiết lập cơ sở chủ sân) bằng `$speckit-plan`                                                                                                                           | 11     |
+| 9   | 2026-10-16 | Lập implementation plan cho Feature 112 (vận hành chủ sân) bằng `$speckit-plan`                                                                                                                                  | 11     |
+| 10  | 2026-10-16 | Lập implementation plan cho Feature 120 (quản trị và kiểm duyệt) bằng `$speckit-plan`                                                                                                                            | 12     |
+| 11  | 2026-10-19 | Tạo Tasks Feature 100 bằng `$speckit-tasks`, phân tích bằng `$speckit-analyze` và cập nhật Tasks theo kết quả phân tích                                                                                          | 10     |
+| 12  | 2026-10-19 | Tạo Tasks Feature 110 bằng `$speckit-tasks`, rà soát bằng `$speckit-analyze` và cập nhật Tasks theo kết quả phân tích                                                                                            | 11     |
+| 13  | 2026-10-19 | Tạo Tasks Feature 111 bằng `$speckit-tasks`, phân tích bằng `$speckit-analyze` và cập nhật Tasks theo báo cáo                                                                                                    | 11     |
+| 14  | 2026-10-19 | Tạo Tasks Feature 112 bằng `$speckit-tasks`, phân tích bằng `$speckit-analyze` và cập nhật Tasks theo các findings                                                                                               | 11     |
+| 15  | 2026-10-19 | Tạo Tasks Feature 120 bằng `$speckit-tasks`, phân tích bằng `$speckit-analyze` và cập nhật Tasks theo findings U1–U3                                                                                             | 12     |
+| 16  | 2026-10-29 | Implement Feature 111: validator, Firestore Rules, unit test và Emulator test bằng `$speckit-implement`                                                                                                          | 11     |
+| 17  | 2026-10-29 | Tiếp tục implement Feature 111: repository, venue management, court management, UI và test bằng `$speckit-implement`                                                                                             | 11     |
+| 18  | 2026-10-29 | Tiếp tục implement Feature 111: price coverage, slot UI shell, public availability assertions và kiểm thử cross-feature bằng `$speckit-implement`                                                                | 11     |
+| 19  | 2026-10-29 | Tiếp tục implement Feature 111: price-rules Emulator tests, error/offline/conflict review, UI polish, boundary traceability và kiểm thử build/lint bằng `$speckit-implement`                                     | 11     |
+| 20  | 2026-10-29 | Tiếp tục implement Feature 111: hoàn thiện error/retry/conflict/cache freshness, responsive/accessibility review và kiểm chứng T034/T038 bằng `$speckit-implement`                                               | 11     |
+| 21  | 2026-10-29 | Tiếp tục implement Feature 111: chốt typed write-gate cho T007, giữ an toàn T008/T011, hoàn thiện T037 và kiểm chứng Emulator/build/lint                                                                         | 11     |
+| 22  | 2026-10-30 | Kiểm toán kỹ thuật & giải tỏa blocker Feature 111: chốt quyết định 1A, 2A, 3A, 4A, hoàn thiện Bảng giá (CRUD, UI, sync minPricePerHour) và điều hướng thêm venue                                                 | 11     |
+| 23  | 2026-10-30 | Triển khai Phase 3 Feature 111: Edge Function manage-slot-blocks, Calendar Grid UI, và Emulator race condition tests                                                                                             | 11     |
+| 24  | 2026-10-30 | Hoàn thiện T034 (Hợp đồng tích hợp Recurring Feature 041) và T038 (Rà soát UI Accessibility, Touch Target & Performance SLA)                                                                                     | 11     |
+| 25  | 2026-11-05 | Rà soát và chỉnh UI Android Feature 111 theo 5 ảnh mẫu, cải thiện bố cục responsive và accessibility; chạy test và build                                                                                         | 11     |
+| 26  | 2026-11-05 | Khảo sát và triển khai phần validator độc lập của Feature 110; lập traceability mapping và kiểm tra unit test, build, lint, Emulator                                                                             | 11     |
+| 27  | 2026-11-05 | Ghi nhận quyết định bổ sung Feature 110 về venue identity, recovery, cleanup; map provider tạm hoãn                                                                                                              | 11     |
+| 28  | 2026-11-05 | Tiếp tục triển khai Feature 110 theo quyết định T001–T005; bổ sung Android onboarding, Edge Functions, Firestore Rules và kiểm chứng                                                                             | 11     |
+| 29  | 2026-11-05 | Tiếp tục hoàn thiện Feature 110: upload/retry và signed-document flow, kiểm thử lifecycle/idempotency, integration suite và cập nhật traceability                                                                | 11     |
+| 30  | 2026-11-05 | Hoàn thiện và xác minh các phần còn mở Feature 110: Storage thật, tải tài liệu signed URL, Android tests/build/lint và cập nhật task/evidence                                                                    | 11     |
+| 31  | 2026-11-05 | Audit và tiếp tục triển khai Feature 112 Owner Operations; bổ sung drop-in validation, tests và ghi nhận contract blockers                                                                                       | 11     |
+| 32  | 2026-11-05 | Implement Feature 112 thực tế: dashboard/lịch ngày-tuần realtime, kiểm thử Android/Firestore Rules, phân loại task và handoff cho dependency liên-feature                                                        | 11     |
+| 33  | 2026-11-05 | Tiếp tục Feature 112: booking queue/detail/navigation, QR check-in UI, StateFlow/domain adapters fail-closed, test và handoff đúng ownership                                                                     | 11     |
+| 34  | 2026-11-06 | Tinh chỉnh và hoàn thiện toàn bộ giao diện Android Feature 112 theo 10 wireframe mẫu trong `specs/112-owner-operations/ui/`, hỗ trợ phone/w600dp, accessibility, dark mode và kiểm thử                           | 11     |
+| 35  | 2026-11-06 | Triển khai Business Logic, ViewModel Wiring, Repository Adapters và mở rộng bộ Unit Tests Feature 112 (89/89 tests PASS) theo tasks.md, bảo toàn adapter fail-closed                                             | 11     |
+| 36  | 2026-11-06 | Đóng toàn diện 5 Contract Gates, triển khai Edge Functions, Repository Adapters thực và nâng số task hoàn thành lên 54/58 cho Feature 112                                                                        | 11     |
+| 37  | 2026-11-06 | Chạy connected UI tests trên thiết bị Android, hoàn tất 58/58 tasks Feature 112 bằng `$speckit-implement`                                                                                                        | 11     |
+| 38  | 2026-11-06 | Sửa lỗi layout XML, chạy connected UI tests trên thiết bị Android, hoàn tất toàn bộ 35/35 tasks Feature 110 bằng `$speckit-implement`                                                                            | 11     |
+| 39  | 2026-11-06 | Triển khai Phase 1, Phase 2 và Phase 3 (US1 - MVP P1) Feature 120 Admin: kiến trúc MVVM, Edge Function admin-review-application, Security Rules, UI và test bằng `$speckit-implement`                            | 12     |
+| 40  | 2026-11-06 | Triển khai Phase 4 (US2 - P1) Feature 120 Admin: kiểm duyệt báo cáo vi phạm, Edge Function admin-moderate-report, UI và test bằng `$speckit-implement`                                                           | 12     |
+| 41  | 2026-11-06 | Triển khai Phase 5 (US3 - P2) Feature 120 Admin: quản lý user, khóa/mở khóa tài khoản, thu hồi quyền chủ sân, quản lý venue vi phạm và test bằng `$speckit-implement`                                            | 12     |
+| 42  | 2026-11-06 | Triển khai Phase 6 (US4 - P3) Feature 120 Admin: dashboard thống kê, voucher hệ thống, broadcast thông báo, danh mục và test bằng `$speckit-implement`                                                           | 12     |
+| 43  | 2026-11-06 | Hoàn thiện toàn diện, bảo mật, đối chiếu ranh giới hợp đồng và đo lường SLA SC-006 (Phase 7, Tasks T051–T054) Feature 120 bằng `$speckit-implement`                                                              | 12     |
+| 44  | 2026-11-06 | Tái cấu trúc UI Admin theo 12 wireframe artboards `specs/120-admin/ui/`, thiết lập 5 tab Bottom Navigation, loại bỏ hoàn toàn mock data và nối dữ liệu thực với Firestore & Supabase                             | 12     |
+| 45  | 2026-11-06 | Kiểm thử toàn diện và sửa lỗi Feature 110, 111, 112, 120; nộp hồ sơ chủ sân thực tế trên thiết bị; chuẩn hóa UI Đang chờ duyệt theo wireframe `specs/110-owner-onboarding/ui/11_court-owner_buoc3_cho-duyet.png` | 11, 12 |
 
 ---
 
@@ -4398,14 +4399,14 @@ Triển khai toàn bộ Phase 6 (User Story 4: Theo dõi tình hình và công c
 
 ## Mục 43: Hoàn thiện toàn diện, bảo mật, đối chiếu ranh giới hợp đồng và đo lường SLA SC-006 (Phase 7, Tasks T051–T054) Feature 120
 
-| Trường                   | Nội dung                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Ngày                     | 2026-11-06                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
-| Người thực hiện          | Minh Nhựt                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| Nhóm tính năng liên quan | 12 – Quản trị và kiểm duyệt (spec `specs/120-admin`)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| Công cụ AI               | Claude 3.7 Sonnet, skill `$speckit-implement`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| Mục đích                 | Hoàn tất Phase 7 (Tasks T051–T054) theo `specs/120-admin/tasks.md` để hoàn thành 100% Feature 120: rà soát UI/UX XML và accessibility 48dp, audit bảo mật và phân quyền server-side (chặn client write, không log dữ liệu nhạy cảm), đối chiếu hợp đồng liên feature (Feature 110, 100, 010/011, 111/112, 050, 070–091), đo lường thời gian quy trình xét duyệt hồ sơ đầy đủ đạt SLA SC-006 (<= 120 giây), chạy toàn bộ unit tests và connected UI tests trên thiết bị thật.                                                                                                                   |
-| Nhánh Git                | `feature/120-admin-implement`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| Trường                   | Nội dung                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-11-06                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| Người thực hiện          | Minh Nhựt                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| Nhóm tính năng liên quan | 12 – Quản trị và kiểm duyệt (spec `specs/120-admin`)                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Công cụ AI               | Claude 3.7 Sonnet, skill `$speckit-implement`                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| Mục đích                 | Hoàn tất Phase 7 (Tasks T051–T054) theo `specs/120-admin/tasks.md` để hoàn thành 100% Feature 120: rà soát UI/UX XML và accessibility 48dp, audit bảo mật và phân quyền server-side (chặn client write, không log dữ liệu nhạy cảm), đối chiếu hợp đồng liên feature (Feature 110, 100, 010/011, 111/112, 050, 070–091), đo lường thời gian quy trình xét duyệt hồ sơ đầy đủ đạt SLA SC-006 (<= 120 giây), chạy toàn bộ unit tests và connected UI tests trên thiết bị thật. |
+| Nhánh Git                | `feature/120-admin-implement`                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 
 ### Prompt
 
@@ -4451,15 +4452,15 @@ Triển khai toàn bộ Phase 7 (Polish và Cross-cutting, Tasks T051–T054) th
 
 ### Phần đã sử dụng / chỉnh sửa / bỏ
 
-| Phần                                                               | Quyết định | Lý do                                                                                                |
-| ------------------------------------------------------------------ | ---------- | ---------------------------------------------------------------------------------------------------- |
-| `app/src/main/res/values/strings_admin.xml`                        | Chỉnh sửa  | Bổ sung toàn bộ tài nguyên chuỗi tiếng Việt phục vụ dialog và xóa bỏ 100% hardcoded text.             |
-| `app/src/main/res/layout/fragment_admin_tools_dashboard.xml`       | Chỉnh sửa  | Thay thế hardcoded text bằng resource `@string/admin_nav_*_desc`.                                    |
-| `app/src/main/res/layout-w600dp/fragment_admin_tools_dashboard.xml` | Chỉnh sửa  | Thay thế hardcoded text bằng resource trên layout tablet.                                            |
-| `app/src/main/java/com/example/booking_app/feature/admin/ui/`      | Chỉnh sửa  | Cập nhật các Fragment dùng chuỗi resource cho dialog và thông báo Toast/Snackbar.                     |
-| `app/src/test/java/com/example/booking_app/feature/admin/`         | Chỉnh sửa  | Bổ sung test đo lường thời gian quy trình xét duyệt SLA SC-006 trong `AdminApplicationsViewModelTest`.|
-| `specs/120-admin/tasks.md`                                         | Chỉnh sửa  | Đánh dấu hoàn thành 4 tasks T051–T054, đóng toàn bộ Open implementation gates (54/54 tasks, 100%).   |
-| `specs/120-admin/quickstart.md`                                    | Chỉnh sửa  | Ghi nhận kết quả đo lường SLA SC-006 và kết quả kiểm thử unit tests / connected UI tests Phase 7.     |
+| Phần                                                                | Quyết định | Lý do                                                                                                  |
+| ------------------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------ |
+| `app/src/main/res/values/strings_admin.xml`                         | Chỉnh sửa  | Bổ sung toàn bộ tài nguyên chuỗi tiếng Việt phục vụ dialog và xóa bỏ 100% hardcoded text.              |
+| `app/src/main/res/layout/fragment_admin_tools_dashboard.xml`        | Chỉnh sửa  | Thay thế hardcoded text bằng resource `@string/admin_nav_*_desc`.                                      |
+| `app/src/main/res/layout-w600dp/fragment_admin_tools_dashboard.xml` | Chỉnh sửa  | Thay thế hardcoded text bằng resource trên layout tablet.                                              |
+| `app/src/main/java/com/example/booking_app/feature/admin/ui/`       | Chỉnh sửa  | Cập nhật các Fragment dùng chuỗi resource cho dialog và thông báo Toast/Snackbar.                      |
+| `app/src/test/java/com/example/booking_app/feature/admin/`          | Chỉnh sửa  | Bổ sung test đo lường thời gian quy trình xét duyệt SLA SC-006 trong `AdminApplicationsViewModelTest`. |
+| `specs/120-admin/tasks.md`                                          | Chỉnh sửa  | Đánh dấu hoàn thành 4 tasks T051–T054, đóng toàn bộ Open implementation gates (54/54 tasks, 100%).     |
+| `specs/120-admin/quickstart.md`                                     | Chỉnh sửa  | Ghi nhận kết quả đo lường SLA SC-006 và kết quả kiểm thử unit tests / connected UI tests Phase 7.      |
 
 ### Cách kiểm chứng
 
@@ -4473,18 +4474,19 @@ Triển khai toàn bộ Phase 7 (Polish và Cross-cutting, Tasks T051–T054) th
 
 ## Mục 44: Tái cấu trúc UI Admin theo 12 wireframe artboards `specs/120-admin/ui/`, thiết lập 5 tab Bottom Navigation, loại bỏ 100% mock data và nối dữ liệu thực với Firestore & Supabase
 
-| Trường | Nội dung |
-| --- | --- |
-| Ngày | 2026-11-06 |
-| Người thực hiện | Minh Nhựt |
-| Nhóm tính năng liên quan | 12 – Quản trị và kiểm duyệt (spec `specs/120-admin`) |
-| Công cụ AI | Antigravity CLI (Agent Mode) |
-| Mục đích | Đối chiếu 12 wireframe artboards trong `specs/120-admin/ui/`, tái cấu trúc toàn diện layout XML và Fragments, cấu hình Bottom Navigation 5 tab chuẩn wireframe, giải quyết triệt để lỗi tài nguyên/ViewBinding và loại bỏ hoàn toàn mock data để nối dữ liệu thực với Firestore và Supabase Functions |
-| Nhánh Git | `feature/120-admin-implement` |
+| Trường                   | Nội dung                                                                                                                                                                                                                                                                                              |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-11-06                                                                                                                                                                                                                                                                                            |
+| Người thực hiện          | Minh Nhựt                                                                                                                                                                                                                                                                                             |
+| Nhóm tính năng liên quan | 12 – Quản trị và kiểm duyệt (spec `specs/120-admin`)                                                                                                                                                                                                                                                  |
+| Công cụ AI               | Antigravity CLI (Agent Mode)                                                                                                                                                                                                                                                                          |
+| Mục đích                 | Đối chiếu 12 wireframe artboards trong `specs/120-admin/ui/`, tái cấu trúc toàn diện layout XML và Fragments, cấu hình Bottom Navigation 5 tab chuẩn wireframe, giải quyết triệt để lỗi tài nguyên/ViewBinding và loại bỏ hoàn toàn mock data để nối dữ liệu thực với Firestore và Supabase Functions |
+| Nhánh Git                | `feature/120-admin-implement`                                                                                                                                                                                                                                                                         |
 
 ### Prompt đã dùng
 
 **Prompt 1 (Yêu cầu tái cấu trúc UI theo 12 wireframes)**:
+
 ```
 /speckit-implement Hãy đọc tài liệu đặc tả và toàn bộ wireframe trong `specs/120-admin/ui/` (gồm 12 ảnh wireframe và README.md), đối chiếu với source code hiện tại tại `app/src/main/res/layout/` và `app/src/main/java/com/example/booking_app/feature/admin/`.
 
@@ -4506,6 +4508,7 @@ Hãy liệt kê các file cần tạo/chỉnh sửa và triển khai lần lư�
 ```
 
 **Prompt 2 (Truy vấn về mock data và yêu cầu chuẩn hóa)**:
+
 ```
 Tai sao lai mock data
 ```
@@ -4543,29 +4546,29 @@ Tai sao lai mock data
 
 ### Phần đã sử dụng / chỉnh sửa / bỏ
 
-| Phần | Quyết định | Lý do |
-| --- | --- | --- |
-| `app/src/main/res/menu/menu_admin_bottom_nav.xml` | Tạo mới | Định nghĩa cấu trúc 5 tab chuẩn wireframe cho Bottom Navigation của Admin. |
-| `app/src/main/res/drawable/ic_nav_admin_*.xml` | Tạo mới | Bộ icon điều hướng vector Material 3 cho 5 tab Admin. |
-| `app/src/main/res/drawable/bg_admin_chip_*.xml` | Tạo mới | Background bo góc cho các trạng thái hồ sơ (pending, approved, rejected, resubmitted). |
-| `app/src/main/res/drawable/ic_admin_*.xml` | Tạo mới | Các icon hành động: approved, rejected, hidden, paperclip, lock, edit, megaphone, voucher ticket. |
-| `app/src/main/res/layout/fragment_admin_home.xml` & `layout-w600dp/` | Tạo mới | Màn hình Tổng quan (Artboard 1) hiển thị các chỉ số và phím tắt điều hướng. |
-| `app/src/main/res/layout/item_admin_category.xml` | Tạo mới | Layout item hiển thị danh mục quận/huyện và tiện ích (Artboard 10). |
-| `app/src/main/res/layout/item_admin_user.xml` | Tạo mới | Layout item danh sách người dùng kèm role tags và trạng thái khóa (Artboard 7). |
-| `app/src/main/res/layout/dialog_admin_unlock_venue.xml` | Tạo mới | BottomSheet Modal mở khóa cơ sở (Artboard 9) với tùy chọn Hoạt động / Ẩn. |
-| `app/src/main/res/layout/dialog_admin_reject_application.xml` | Chỉnh sửa | Bổ sung các chip gợi ý lý do từ chối nhanh (Artboard 4). |
-| `app/src/main/res/layout/` & `layout-w600dp/` (các màn hình Admin) | Chỉnh sửa | Đồng bộ giao diện 12 wireframes, chuẩn hóa M3 Chip Filter/Assist, ViewBinding ID. |
-| `app/src/main/java/com/example/booking_app/MainActivity.kt` | Chỉnh sửa | Tích hợp BottomNav cho Admin, quan sát StateFlow cập nhật badge động theo dữ liệu Firestore thực. |
-| `app/src/main/java/com/example/booking_app/feature/admin/ui/AdminHomeFragment.kt` | Tạo mới | Fragment quản lý màn hình Tổng quan, tải và quan sát dữ liệu thống kê & hàng đợi thực tế. |
-| `app/src/main/java/com/example/booking_app/feature/admin/ui/AdminCategoryAdapter.kt` | Tạo mới | Adapter hiển thị danh mục khu vực/tiện ích từ Firestore. |
-| `app/src/main/java/com/example/booking_app/feature/admin/ui/AdminUserAdapter.kt` | Tạo mới | Adapter danh sách người dùng cho màn hình Quản lý người dùng. |
-| `app/src/main/java/com/example/booking_app/feature/admin/ui/AdminUserManagementFragment.kt` | Chỉnh sửa | **Xóa bỏ 100% mock data `sampleUsers`**, kết nối Supabase Function tra cứu người dùng thực. |
-| `app/src/main/java/com/example/booking_app/feature/admin/ui/AdminSystemVouchersFragment.kt` | Chỉnh sửa | **Xóa bỏ 100% mock data `sampleVouchers`**, kết nối Firestore tải và kiểm tra voucher thực. |
-| `app/src/main/java/com/example/booking_app/feature/admin/ui/AdminToolsDashboardFragment.kt` | Chỉnh sửa | **Xóa bỏ 100% mock data `defaultDistricts`**, kết nối Firestore tải danh mục thực. |
-| `app/src/main/java/com/example/booking_app/feature/admin/ui/AdminApplicationDetailFragment.kt` | Chỉnh sửa | Xóa hardcode email, tọa độ; tính toán thời gian chờ tự động từ timestamp nộp hồ sơ. |
-| `app/src/main/java/com/example/booking_app/feature/admin/ui/AdminVenueManagementFragment.kt` | Chỉnh sửa | Chuẩn hóa ViewBinding và kết nối dialog xác nhận trạng thái cơ sở. |
-| `app/src/main/res/values/strings_admin.xml` | Chỉnh sửa | Bổ sung chuỗi ngôn ngữ tiếng Việt cho toàn bộ 12 wireframes, đảm bảo 0% hardcoded strings. |
-| `app/src/main/res/navigation/nav_admin.xml` | Chỉnh sửa | Cập nhật startDestination sang `adminHomeFragment` và bổ sung actions điều hướng đầy đủ. |
+| Phần                                                                                           | Quyết định | Lý do                                                                                             |
+| ---------------------------------------------------------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------- |
+| `app/src/main/res/menu/menu_admin_bottom_nav.xml`                                              | Tạo mới    | Định nghĩa cấu trúc 5 tab chuẩn wireframe cho Bottom Navigation của Admin.                        |
+| `app/src/main/res/drawable/ic_nav_admin_*.xml`                                                 | Tạo mới    | Bộ icon điều hướng vector Material 3 cho 5 tab Admin.                                             |
+| `app/src/main/res/drawable/bg_admin_chip_*.xml`                                                | Tạo mới    | Background bo góc cho các trạng thái hồ sơ (pending, approved, rejected, resubmitted).            |
+| `app/src/main/res/drawable/ic_admin_*.xml`                                                     | Tạo mới    | Các icon hành động: approved, rejected, hidden, paperclip, lock, edit, megaphone, voucher ticket. |
+| `app/src/main/res/layout/fragment_admin_home.xml` & `layout-w600dp/`                           | Tạo mới    | Màn hình Tổng quan (Artboard 1) hiển thị các chỉ số và phím tắt điều hướng.                       |
+| `app/src/main/res/layout/item_admin_category.xml`                                              | Tạo mới    | Layout item hiển thị danh mục quận/huyện và tiện ích (Artboard 10).                               |
+| `app/src/main/res/layout/item_admin_user.xml`                                                  | Tạo mới    | Layout item danh sách người dùng kèm role tags và trạng thái khóa (Artboard 7).                   |
+| `app/src/main/res/layout/dialog_admin_unlock_venue.xml`                                        | Tạo mới    | BottomSheet Modal mở khóa cơ sở (Artboard 9) với tùy chọn Hoạt động / Ẩn.                         |
+| `app/src/main/res/layout/dialog_admin_reject_application.xml`                                  | Chỉnh sửa  | Bổ sung các chip gợi ý lý do từ chối nhanh (Artboard 4).                                          |
+| `app/src/main/res/layout/` & `layout-w600dp/` (các màn hình Admin)                             | Chỉnh sửa  | Đồng bộ giao diện 12 wireframes, chuẩn hóa M3 Chip Filter/Assist, ViewBinding ID.                 |
+| `app/src/main/java/com/example/booking_app/MainActivity.kt`                                    | Chỉnh sửa  | Tích hợp BottomNav cho Admin, quan sát StateFlow cập nhật badge động theo dữ liệu Firestore thực. |
+| `app/src/main/java/com/example/booking_app/feature/admin/ui/AdminHomeFragment.kt`              | Tạo mới    | Fragment quản lý màn hình Tổng quan, tải và quan sát dữ liệu thống kê & hàng đợi thực tế.         |
+| `app/src/main/java/com/example/booking_app/feature/admin/ui/AdminCategoryAdapter.kt`           | Tạo mới    | Adapter hiển thị danh mục khu vực/tiện ích từ Firestore.                                          |
+| `app/src/main/java/com/example/booking_app/feature/admin/ui/AdminUserAdapter.kt`               | Tạo mới    | Adapter danh sách người dùng cho màn hình Quản lý người dùng.                                     |
+| `app/src/main/java/com/example/booking_app/feature/admin/ui/AdminUserManagementFragment.kt`    | Chỉnh sửa  | **Xóa bỏ 100% mock data `sampleUsers`**, kết nối Supabase Function tra cứu người dùng thực.       |
+| `app/src/main/java/com/example/booking_app/feature/admin/ui/AdminSystemVouchersFragment.kt`    | Chỉnh sửa  | **Xóa bỏ 100% mock data `sampleVouchers`**, kết nối Firestore tải và kiểm tra voucher thực.       |
+| `app/src/main/java/com/example/booking_app/feature/admin/ui/AdminToolsDashboardFragment.kt`    | Chỉnh sửa  | **Xóa bỏ 100% mock data `defaultDistricts`**, kết nối Firestore tải danh mục thực.                |
+| `app/src/main/java/com/example/booking_app/feature/admin/ui/AdminApplicationDetailFragment.kt` | Chỉnh sửa  | Xóa hardcode email, tọa độ; tính toán thời gian chờ tự động từ timestamp nộp hồ sơ.               |
+| `app/src/main/java/com/example/booking_app/feature/admin/ui/AdminVenueManagementFragment.kt`   | Chỉnh sửa  | Chuẩn hóa ViewBinding và kết nối dialog xác nhận trạng thái cơ sở.                                |
+| `app/src/main/res/values/strings_admin.xml`                                                    | Chỉnh sửa  | Bổ sung chuỗi ngôn ngữ tiếng Việt cho toàn bộ 12 wireframes, đảm bảo 0% hardcoded strings.        |
+| `app/src/main/res/navigation/nav_admin.xml`                                                    | Chỉnh sửa  | Cập nhật startDestination sang `adminHomeFragment` và bổ sung actions điều hướng đầy đủ.          |
 
 ### Cách kiểm chứng
 
@@ -4573,6 +4576,98 @@ Tai sao lai mock data
 - **Kiểm thử đơn vị**: `./gradlew testDebugUnitTest --tests "com.example.booking_app.feature.admin.*" --no-daemon`: **BUILD SUCCESSFUL in 42s** (100% PASS trên tất cả các test suite của Feature 120).
 - **Rà soát Mock Data**: Quét toàn bộ codebase `app/src/main/java/com/example/booking_app/feature/admin/` không còn bất kỳ biến hoặc danh sách `mock`, `sample`, `dummy` nào; dữ liệu 100% đến từ ViewModels / Repositories.
 - **Kiểm tra Chuỗi & Khả năng tiếp cận**: 100% chuỗi nằm trong `strings_admin.xml`, touch targets $\ge 48\text{dp}$, `contentDescription` đầy đủ trên các icon và nút hành động.
+- **Tuân thủ cam kết**: Tuyệt đối không commit, không push.
+
+---
+
+## Mục 45: Kiểm thử toàn diện và sửa lỗi Feature 110, 111, 112, 120; nộp hồ sơ chủ sân thực tế trên thiết bị; chuẩn hóa UI Đang chờ duyệt theo wireframe specs/110-owner-onboarding/ui/
+
+| Trường                   | Nội dung                                                                                                                                                                                                                                                                                                                                                                                   |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Ngày                     | 2026-11-06                                                                                                                                                                                                                                                                                                                                                                                 |
+| Người thực hiện          | Minh Nhựt                                                                                                                                                                                                                                                                                                                                                                                  |
+| Nhóm tính năng liên quan | 11 – Đăng ký & Vận hành chủ sân (spec `specs/110-owner-onboarding`, `specs/111-owner-venue-setup`, `specs/112-owner-operations`), 12 – Quản trị viên (spec `specs/120-admin`)                                                                                                                                                                                                              |
+| Công cụ AI               | Antigravity CLI (Agent Mode)                                                                                                                                                                                                                                                                                                                                                               |
+| Mục đích                 | Thực thi kiểm thử tự động toàn diện các Feature 110, 111, 112, 120; sửa lỗi hàng đợi booking quá khứ, View ID UI test admin và môi trường JDK 21+ cho Firestore Emulator; nộp hồ sơ chủ sân thực tế trên thiết bị vật lý; sửa lỗi Edge Function xác thực storage metadata; tái thiết kế giao diện Đang chờ duyệt (OwnerPending) chuẩn theo wireframe `11_court-owner_buoc3_cho-duyet.png`. |
+| Nhánh Git                | `feature/120-admin-implement`                                                                                                                                                                                                                                                                                                                                                              |
+
+### Prompt đã dùng
+
+```text
+Kiểm thử toàn diện lại các tính năng thuộc Feature 110, 111, 112 và 120; rà soát và khắc phục ngay tất cả các lỗi phát sinh (bao gồm logic hàng đợi quá khứ, đồng bộ View ID cho bộ UI Test của Admin và nâng cấp cấu hình JDK 21+ cho Firestore Emulator). Sau đó, tiến hành build và chạy ứng dụng trên thiết bị thật, thực hiện luồng đăng ký chủ sân thực tế với tài khoản đang đăng nhập để kiểm chứng end-to-end. Đồng thời, tái cấu trúc giao diện màn hình Đang chờ duyệt (OwnerPending) theo đúng wireframe đặc tả tại specs/110-owner-onboarding/ui/11_court-owner_buoc3_cho-duyet.png, đảm bảo chuẩn Material 3 DayNight, responsive phone/tablet.
+```
+
+### Tóm tắt phản hồi của AI
+
+- **Kiểm thử toàn diện và khắc phục lỗi Feature 110, 111, 112, 120**:
+  - **Lỗi logic hàng đợi đặt sân quá khứ (`OwnerBookingQueue`)**: Khi chạy `OwnerBookingsViewModelTest`, phát hiện `AssertionError: expected:<[b3]> but was:<[b1, b3]>`. Nguyên nhân do điều kiện lọc tab "Quá khứ" (`PAST`) chưa bao quát đầy đủ trạng thái `CONFIRMED` có `endAt <= now`. Đã cập nhật `OwnerBookingQueue.kt` để điều kiện lọc quá khứ nhận diện chính xác các đơn đã qua giờ, và cập nhật `OwnerBookingQueueTest.kt`.
+  - **Lỗi View ID trong các bộ UI Test của Admin (`compileDebugAndroidTestKotlin`)**: Sau đợt tái cấu trúc UI Admin theo 12 wireframes ở Mục 44, các bộ test UI (`AdminApplicationScreensUiTest.kt`, `AdminReportScreensUiTest.kt`, `AdminToolsScreensUiTest.kt`, `AdminUserVenueScreensUiTest.kt`) còn tham chiếu đến các ID cũ (như `cardDocuments`, `textApplicantName`, `buttonUnlockVenue`). Đã cập nhật toàn bộ sang các View ID chuẩn Material 3 mới.
+  - **Lỗi môi trường Java phiên bản cũ trên Firebase Emulator (`firebase-tools@15`)**: Firebase CLI 15 yêu cầu tối thiểu Java 21+. Đã cấu hình `JAVA_HOME` chuyển sang OpenJDK 25.0.3 (Android Studio JBR), giúp chạy thông suốt toàn bộ 176 bài kiểm thử bảo mật Firestore Rules.
+  - **Kết quả kiểm thử tự động**: 151/151 unit tests đạt **100% PASS** (`testDebugUnitTest` cho cả 4 feature 110, 111, 112, 120); 176/176 tests security rules đạt **100% PASS** (`npm --prefix firestore-tests test`).
+
+- **Thực hiện nộp hồ sơ chủ sân thực tế trên thiết bị vật lý (`10ADBY2GH30038C`)**:
+  - Chuẩn bị tài nguyên nộp hồ sơ thật (ảnh chụp cơ sở sân cầu lông định dạng JPEG tối ưu ~6 KB và file PDF giấy phép đăng ký kinh doanh).
+  - Tải tài nguyên lên Supabase Storage bucket `owner-docs` dưới đường dẫn người dùng thật: `6GXTRepzvlbHeboyqZdBP5HIqSK2/ba363170-09de-4a5c-83f9-529cd03f82e9/`.
+  - **Phát hiện và vá lỗi Supabase Edge Function `owner-applications`**: Khi gọi endpoint đăng ký, API trả về lỗi `UPLOADED_FILES_REQUIRED` (HTTP 400 - "Ảnh hoặc giấy tờ chưa tải lên đầy đủ"). Truy vết mã nguồn Edge Function phát hiện Supabase Storage API endpoint `/object/info/authenticated/{bucket}/*` trả về trường `size` và `content_type` ở cấp JSON gốc, trong khi `metadata` rỗng (`{}`). Mã nguồn cũ đọc `info.metadata?.size` nên luôn nhận `undefined/0` và đánh rớt kiểm tra. Đã sửa lại `verifyStagedObjects` trong `supabase/functions/owner-applications/handler.ts` để đọc fallback `info.size ?? info.metadata?.size`, đồng thời hỗ trợ truy vấn `HEAD` kiểm tra tồn tại. Triển khai lại hàm lên Supabase Hosted project (`smashnow`) bằng `npx supabase functions deploy owner-applications --no-verify-jwt --yes`.
+  - Điền form đăng ký chủ sân và kích hoạt submit thành công trực tiếp trên thiết bị vật lý. Ứng dụng ghi nhận hồ sơ chuyển sang trạng thái `PENDING` (Đang chờ duyệt).
+
+- **Tái thiết kế UI Đang chờ duyệt (`OwnerApplicationStatusFragment`) chuẩn Wireframe `11_court-owner_buoc3_cho-duyet.png`**:
+  - Phân tích chi tiết wireframe mẫu `specs/110-owner-onboarding/ui/11_court-owner_buoc3_cho-duyet.png` và đối chiếu với layout hiện hành.
+  - Tạo mới các Drawable vector và shape:
+    - `bg_timeline_dot_completed.xml`: Hình tròn oval đặc màu xanh sân đấu `@color/sn_court` (14dp) biểu thị bước đã hoàn tất.
+    - `bg_timeline_dot_active.xml`: Vòng tròn rỗng viền xanh đậm 2.5dp `@color/sn_court` (14dp) biểu thị bước hiện tại đang xử lý.
+    - `bg_timeline_dot_inactive.xml`: Vòng tròn rỗng viền nét xám 2dp `@color/sn_outline` (14dp) biểu thị bước trong tương lai.
+    - `ic_hourglass_24.xml`: Icon vector đồng hồ cát màu vàng hổ phách `@color/sn_on_lamp`.
+  - Cập nhật toàn diện layout điện thoại `fragment_owner_application_status.xml` và tablet `layout-w600dp/`:
+    - **Header & Banner**: Card cảnh báo trạng thái với nền màu hổ phách dịu (`@color/sn_lamp_container`), bo góc 16dp, chứa huy hiệu hình tròn 48dp với icon đồng hồ cát trung tâm, tiêu đề "Hồ sơ của bạn đang được xét duyệt" và nội dung giải thích thời gian xử lý (dự kiến trong vòng 24–48 giờ làm việc).
+    - **Tiến trình xét duyệt (Vertical Stepper)**: Bố cục timeline 3 bước dọc: (1) Nộp hồ sơ (chấm xanh đặc, đường nối xanh `@color/sn_court`), (2) Đang xét duyệt (chấm rỗng viền xanh, đường nối xám `@color/sn_line`), (3) Kích hoạt tài khoản (chấm xám rỗng).
+    - **Bảng tóm tắt thông tin đã nộp**: Cấu trúc Card hiển thị 5 trường dữ liệu định dạng 2 cột theo bảng: Cơ sở, Địa chỉ, Số sân, Giờ mở cửa, Giấy tờ đính kèm; kèm hàng ghi chú khóa chỉnh sửa với icon ổ khóa `ic_lock_16`.
+    - **Nút hành động dưới đáy**: Thiết kế dạng Outlined Pill Button bo cong tròn 28dp (`Widget.Material3.Button.OutlinedButton`) viền `@color/sn_court` cho hành động "Liên hệ hỗ trợ".
+  - Bổ sung cấu hình deep link vào `app/src/main/AndroidManifest.xml`: Thêm `<nav-graph android:value="@navigation/nav_main" />` cho `MainActivity` để hệ thống tự động nhận diện và kích hoạt deep link `smashnow://owner/application`.
+  - Cập nhật logic `OwnerApplicationStatusFragment.kt`:
+    - Bổ sung định dạng hiển thị giờ mở cửa chuyên nghiệp (`08:00 – 22:00`), định dạng ngày nộp (`06/11 · 21:30`).
+    - Nối các trường thông tin từ dữ liệu `OwnerApplicationDraft` vào bảng tóm tắt 5 dòng.
+    - Xử lý mở tài liệu đính kèm trực tiếp khi người dùng chạm vào liên kết giấy phép kinh doanh.
+
+- **Kiểm thử giao diện & xác minh chất lượng**:
+  - Chạy `OwnerUiAccessibilityTest`: **100% PASS** (kiểm chứng touch target $\ge 48\text{dp}$, nhãn `contentDescription` đầy đủ, tỷ lệ tương phản đạt chuẩn WCAG AA, hoạt động hoàn hảo trên cả điện thoại và tablet `w600dp`).
+  - Chạy `OwnerApplicationScreensUiTest` trên thiết bị vật lý: **100% PASS**.
+  - Biên dịch `assembleDebug` và cài đặt `installDebug` thành công, kiểm tra trực quan màn hình trên điện thoại hiển thị đúng từng chi tiết so với wireframe mẫu.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần                                                                                              | Quyết định | Lý do                                                                                                                                                                                  |
+| ------------------------------------------------------------------------------------------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `app/src/main/res/drawable/bg_timeline_dot_completed.xml`                                         | Tạo mới    | Shape tròn màu `@color/sn_court` cho bước đã hoàn thành trong stepper timeline.                                                                                                        |
+| `app/src/main/res/drawable/bg_timeline_dot_active.xml`                                            | Tạo mới    | Shape tròn viền 2.5dp `@color/sn_court` cho bước đang xử lý trong stepper timeline.                                                                                                    |
+| `app/src/main/res/drawable/bg_timeline_dot_inactive.xml`                                          | Tạo mới    | Shape tròn viền 2dp `@color/sn_outline` cho bước chưa đến trong stepper timeline.                                                                                                      |
+| `app/src/main/res/drawable/ic_hourglass_24.xml`                                                   | Tạo mới    | Vector icon đồng hồ cát màu vàng hổ phách hiển thị trên banner trạng thái chờ duyệt.                                                                                                   |
+| `app/src/main/res/layout/fragment_owner_application_status.xml`                                   | Chỉnh sửa  | Tái cấu trúc layout màn hình chờ duyệt: banner hổ phách 16dp, stepper 3 bước dọc, bảng thông tin 5 dòng và nút Outlined pill 28dp theo wireframe `11_court-owner_buoc3_cho-duyet.png`. |
+| `app/src/main/res/layout-w600dp/fragment_owner_application_status.xml`                            | Chỉnh sửa  | Tái cấu trúc layout tương đương cho màn hình tablet `w600dp` căn giữa với độ rộng tối đa 600dp.                                                                                        |
+| `app/src/main/java/com/example/booking_app/feature/owner/ui/OwnerApplicationStatusFragment.kt`    | Chỉnh sửa  | Cập nhật logic binding bảng thông tin 5 trường, format giờ `HH:mm – HH:mm`, format ngày nộp, gán icon và sự kiện mở xem tài liệu đã nộp.                                               |
+| `app/src/main/AndroidManifest.xml`                                                                | Chỉnh sửa  | Bổ sung `<nav-graph android:value="@navigation/nav_main" />` vào `MainActivity` để deep link `smashnow://owner/application` được đăng ký chính xác với hệ điều hành.                   |
+| `supabase/functions/owner-applications/handler.ts`                                                | Chỉnh sửa  | Sửa lỗi đọc metadata kích thước file (`info.size ?? info.metadata?.size`) trong Supabase Storage API, khắc phục triệt để mã lỗi `UPLOADED_FILES_REQUIRED` (400) khi nộp hồ sơ.         |
+| `app/src/main/java/com/example/booking_app/feature/owner/domain/booking/OwnerBookingQueue.kt`     | Chỉnh sửa  | Sửa điều kiện phân loại hàng đợi đặt sân quá khứ (`PAST`) bao hàm các đơn `CONFIRMED` có `endAt <= now`.                                                                               |
+| `app/src/test/java/com/example/booking_app/feature/owner/domain/booking/OwnerBookingQueueTest.kt` | Chỉnh sửa  | Cập nhật test case kiểm thử phân loại hàng đợi đặt sân quá khứ cho đơn `CONFIRMED` quá hạn.                                                                                            |
+| `app/src/androidTest/java/com/example/booking_app/feature/admin/AdminApplicationScreensUiTest.kt` | Chỉnh sửa  | Đồng bộ các View ID sau tái cấu trúc UI Admin (thay `cardDocuments`, `textApplicantName`...).                                                                                          |
+| `app/src/androidTest/java/com/example/booking_app/feature/admin/AdminReportScreensUiTest.kt`      | Chỉnh sửa  | Đồng bộ View ID cho màn hình kiểm duyệt báo cáo Admin.                                                                                                                                 |
+| `app/src/androidTest/java/com/example/booking_app/feature/admin/AdminToolsScreensUiTest.kt`       | Chỉnh sửa  | Đồng bộ View ID cho màn hình công cụ Admin.                                                                                                                                            |
+| `app/src/androidTest/java/com/example/booking_app/feature/admin/AdminUserVenueScreensUiTest.kt`   | Chỉnh sửa  | Đồng bộ View ID cho màn hình quản lý người dùng và cơ sở vi phạm Admin.                                                                                                                |
+
+### Cách kiểm chứng
+
+- **Kiểm thử đơn vị (Unit Tests)**:
+  - `./gradlew testDebugUnitTest --tests "com.example.booking_app.feature.owner.*" --tests "com.example.booking_app.feature.admin.*"`: **BUILD SUCCESSFUL** (151/151 tests PASS trên toàn bộ Feature 110, 111, 112, 120).
+- **Kiểm thử bảo mật Firestore Rules**:
+  - `npm --prefix firestore-tests test`: **PASS** (176/176 test cases đạt 100% với môi trường Java 21+).
+- **Kiểm thử tiếp cận và tương thích giao diện (Accessibility Tests)**:
+  - `./gradlew testDebugUnitTest --tests "com.example.booking_app.feature.owner.ui.OwnerUiAccessibilityTest"`: **BUILD SUCCESSFUL** (100% PASS, kiểm chứng toàn bộ touch target $\ge 48\text{dp}$, contentDescription và hỗ trợ cả layout phone lẫn tablet `layout-w600dp`).
+- **Kiểm thử giao diện trên thiết bị thật (Connected UI Tests)**:
+  - Chạy `OwnerApplicationScreensUiTest` trên thiết bị vật lý `10ADBY2GH30038C` (Vivo V2247, Android 15): **PASS**.
+- **Đăng ký thực tế và kiểm tra trực quan trên thiết bị**:
+  - Tải ảnh và tài liệu PDF thật lên Supabase Storage thành công.
+  - Gửi biểu mẫu đăng ký chủ sân qua Edge Function thành công, nhận phản hồi trạng thái `PENDING`.
+  - Màn hình `OwnerApplicationStatusFragment` hiển thị trực tiếp trên thiết bị khớp 100% về mặt thị giác với wireframe mẫu `11_court-owner_buoc3_cho-duyet.png`.
 - **Tuân thủ cam kết**: Tuyệt đối không commit, không push.
 
 ---

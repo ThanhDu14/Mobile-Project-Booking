@@ -51,17 +51,19 @@ class AdminReportScreensUiTest {
                 R.id.buttonRetry,
             ),
             R.layout.fragment_admin_report_detail to listOf(
-                R.id.cardReportInfo,
-                R.id.cardTargetInfo,
-                R.id.buttonDismiss,
-                R.id.buttonTakeAction,
-                R.id.detailReason,
+                R.id.cardReportOverview,
+                R.id.cardTargetContent,
+                R.id.chipReportStatus,
+                R.id.chipReportTargetType,
+                R.id.textReportReason,
+                R.id.radioGroupConclusion,
+                R.id.buttonSubmitConclusion,
             ),
             R.layout.item_admin_report to listOf(
-                R.id.chipTargetType,
+                R.id.cardReport,
+                R.id.textTargetTypeHeader,
                 R.id.textReason,
                 R.id.textDetail,
-                R.id.textTargetPath,
             ),
         )
 
