@@ -8,6 +8,38 @@
     <fragment
         android:id="@+id/adminHomePlaceholderFragment"
         android:name="com.example.booking_app.feature.auth.ui.home.AdminHomePlaceholderFragment"
-        android:label="@string/app_name" />
+        android:label="@string/app_name">
+        <action
+            android:id="@+id/action_placeholder_to_queue"
+            app:destination="@id/adminApplicationQueueFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/adminApplicationQueueFragment"
+        android:name="com.example.booking_app.feature.admin.ui.AdminApplicationQueueFragment"
+        android:label="@string/admin_queue_title">
+        <action
+            android:id="@+id/action_queue_to_detail"
+            app:destination="@id/adminApplicationDetailFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/adminApplicationDetailFragment"
+        android:name="com.example.booking_app.feature.admin.ui.AdminApplicationDetailFragment"
+        android:label="@string/admin_application_detail_title" />
+
+    <fragment
+        android:id="@+id/adminReportQueueFragment"
+        android:name="com.example.booking_app.feature.admin.ui.AdminReportQueueFragment"
+        android:label="@string/admin_report_queue_title">
+        <action
+            android:id="@+id/action_report_queue_to_detail"
+            app:destination="@id/adminReportDetailFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/adminReportDetailFragment"
+        android:name="com.example.booking_app.feature.admin.ui.AdminReportDetailFragment"
+        android:label="@string/admin_report_detail_title" />
 
 </navigation>

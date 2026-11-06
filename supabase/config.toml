@@ -454,3 +454,9 @@ verify_jwt = false
 
 [functions.owner-create-voucher]
 verify_jwt = false
+
+[functions.admin-review-application]
+verify_jwt = false
+
+[functions.admin-moderate-report]
+verify_jwt = false

@@ -46,3 +46,30 @@ Run only the relevant local test suites with Emulator/local services running. No
 - [Admin boundaries](contracts/admin-boundaries.md) — authorization and integration limits.
 - [Research](research.md) — decisions, evidence and blockers.
 - [Feature spec](spec.md) — acceptance scenarios and success criteria.
+
+## Kết quả nghiệm thu thực tế — Phase 1, 2, 3 (US1 - MVP P1)
+
+- **Unit Tests**:
+  - Lệnh: `./gradlew :app:testDebugUnitTest --tests "com.example.booking_app.feature.admin.*"`
+  - Kết quả: `BUILD SUCCESSFUL in 1m 24s`. 100% tests PASS (`AdminApplicationsViewModelTest`, `AdminApplicationValidationTest`).
+- **Connected UI Tests trên thiết bị vật lý**:
+  - Thiết bị: `10ADBY2GH30038C` (Vivo V2247, Android 15).
+  - Lệnh: `./gradlew :app:connectedDebugAndroidTest "-Pandroid.testInstrumentationRunnerArguments.class=com.example.booking_app.feature.admin.AdminApplicationScreensUiTest"`
+  - Kết quả: `BUILD SUCCESSFUL in 1m 5s`. 100% PASS (1/1 test class, 0 failures, 0 skipped), xác thực toàn bộ các màn hình Admin trên phone (360dp) và tablet (600dp) ở cả 2 chế độ Day/Night.
+- **Backend Edge Function & Rules Tests**:
+  - Edge Function: `supabase/functions/admin-review-application/` (`index.ts`, `handler.ts`, `handler.test.ts`).
+  - Rules Tests: `firestore-tests/test/admin-authorization.test.ts`, `firestore-tests/test/owner-application-review.test.ts`, `firestore-tests/test/owner-docs-access.test.ts`.
+
+## Kết quả nghiệm thu thực tế — Phase 4 (US2 - Reports Moderation P1)
+
+- **Unit Tests**:
+  - Lệnh: `./gradlew :app:testDebugUnitTest --tests "com.example.booking_app.feature.admin.*"`
+  - Kết quả: `BUILD SUCCESSFUL in 56s`. 100% tests PASS (`AdminReportsViewModelTest`, `AdminReportValidationTest`, `AdminApplicationsViewModelTest`, `AdminApplicationValidationTest`).
+- **Connected UI Tests trên thiết bị vật lý**:
+  - Thiết bị: `10ADBY2GH30038C` (Vivo V2247, Android 15).
+  - Lệnh: `./gradlew :app:connectedDebugAndroidTest "-Pandroid.testInstrumentationRunnerArguments.class=com.example.booking_app.feature.admin.AdminReportScreensUiTest"`
+  - Kết quả: `BUILD SUCCESSFUL in 53s`. 100% PASS (1/1 test class, 0 failures, 0 skipped), xác thực màn hình hàng đợi báo cáo (`fragment_admin_report_queue`), chi tiết báo cáo (`fragment_admin_report_detail`) và card item trên phone (360dp) và tablet (600dp) ở cả 2 chế độ Day/Night.
+- **Backend Edge Function & Rules Tests**:
+  - Edge Function: `supabase/functions/admin-moderate-report/` (`index.ts`, `handler.ts`, `handler.test.ts`).
+  - Rules Tests: `firestore-tests/test/report-moderation.test.ts`.
+

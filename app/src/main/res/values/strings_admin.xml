@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="admin_queue_title">Duyệt hồ sơ chủ sân</string>
+    <string name="admin_queue_empty">Không có hồ sơ nào đang chờ duyệt</string>
+    <string name="admin_queue_loading">Đang tải danh sách hồ sơ...</string>
+    <string name="admin_queue_retry">Thử lại</string>
+    <string name="admin_application_detail_title">Chi tiết hồ sơ đăng ký</string>
+    <string name="admin_approve_button">Phê duyệt</string>
+    <string name="admin_reject_button">Từ chối</string>
+    <string name="admin_reject_dialog_title">Từ chối hồ sơ đăng ký</string>
+    <string name="admin_reject_dialog_message">Vui lòng nhập lý do từ chối để người đăng ký có thể sửa và nộp lại.</string>
+    <string name="admin_reject_reason_hint">Nhập lý do từ chối (bắt buộc)</string>
+    <string name="admin_confirm_reject">Xác nhận từ chối</string>
+    <string name="admin_cancel">Hủy</string>
+    <string name="admin_venue_info_header">Thông tin cơ sở</string>
+    <string name="admin_applicant_info_header">Người đại diện</string>
+    <string name="admin_documents_header">Giấy tờ chứng minh</string>
+    <string name="admin_view_document">Xem tài liệu</string>
+    <string name="admin_venue_name_label">Tên cơ sở:</string>
+    <string name="admin_venue_address_label">Địa chỉ:</string>
+    <string name="admin_court_count_label">Số sân:</string>
+    <string name="admin_operating_hours_label">Giờ hoạt động:</string>
+    <string name="admin_venue_phone_label">SĐT cơ sở:</string>
+    <string name="admin_applicant_name_label">Họ tên:</string>
+    <string name="admin_applicant_phone_label">Số điện thoại:</string>
+    <string name="admin_submitting_decision">Đang gửi quyết định...</string>
+    <string name="admin_filter_all">Tất cả</string>
+    <string name="admin_status_pending">Đang chờ duyệt</string>
+    <string name="admin_status_approved">Đã phê duyệt</string>
+    <string name="admin_status_rejected">Bị từ chối</string>
+
+    <!-- Report Moderation (US2) -->
+    <string name="admin_report_queue_title">Kiểm duyệt báo cáo</string>
+    <string name="admin_report_empty">Không có báo cáo nào đang chờ xử lý</string>
+    <string name="admin_report_detail_title">Chi tiết báo cáo vi phạm</string>
+    <string name="admin_report_target_type_label">Đối tượng:</string>
+    <string name="admin_report_reason_label">Lý do:</string>
+    <string name="admin_report_detail_label">Chi tiết báo cáo:</string>
+    <string name="admin_report_target_info_header">Thông tin đối tượng</string>
+    <string name="admin_report_action_lock_venue">Khóa cơ sở</string>
+    <string name="admin_report_action_lock_user">Khóa tài khoản</string>
+    <string name="admin_report_action_hide_content">Ẩn nội dung</string>
+    <string name="admin_report_action_dismiss">Bỏ qua báo cáo</string>
+    <string name="admin_report_confirm_action_title">Xác nhận xử lý vi phạm</string>
+    <string name="admin_report_confirm_action_message">Bạn có chắc chắn muốn thực thi hành động này đối với đối tượng bị báo cáo?</string>
+</resources>

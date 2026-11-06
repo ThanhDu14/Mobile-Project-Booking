@@ -290,5 +290,23 @@ service cloud.firestore {
           && request.resource.data.status in ['CONFIRMED', 'CANCELLED', 'EXPIRED'];
       allow delete: if false;
     }
+
+    // ---------- reports (D, spec 120) ----------
+    match /reports/{reportId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // ---------- systemStats (D, spec 120) ----------
+    match /systemStats/{date} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // ---------- systemVouchers (D, spec 120 / Feature 050) ----------
+    match /systemVouchers/{code} {
+      allow read: if isSignedIn();
+      allow write: if false;
+    }
   }
 }

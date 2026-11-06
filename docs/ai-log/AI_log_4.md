@@ -1,4 +1,4 @@
-﻿# Nhật ký sử dụng AI – Thành viên 4 (Minh Nhựt)
+# Nhật ký sử dụng AI – Thành viên 4 (Minh Nhựt)
 
 Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 
@@ -42,6 +42,8 @@ Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 | 36  | 2026-11-06 | Đóng toàn diện 5 Contract Gates, triển khai Edge Functions, Repository Adapters thực và nâng số task hoàn thành lên 54/58 cho Feature 112                                              | 11   |
 | 37  | 2026-11-06 | Chạy connected UI tests trên thiết bị Android, hoàn tất 58/58 tasks Feature 112 bằng `$speckit-implement`                                                                              | 11   |
 | 38  | 2026-11-06 | Sửa lỗi layout XML, chạy connected UI tests trên thiết bị Android, hoàn tất toàn bộ 35/35 tasks Feature 110 bằng `$speckit-implement`                                                  | 11   |
+| 39  | 2026-11-06 | Triển khai Phase 1, Phase 2 và Phase 3 (US1 - MVP P1) Feature 120 Admin: kiến trúc MVVM, Edge Function admin-review-application, Security Rules, UI và test bằng `$speckit-implement` | 12   |
+| 40  | 2026-11-06 | Triển khai Phase 4 (US2 - P1) Feature 120 Admin: kiểm duyệt báo cáo vi phạm, Edge Function admin-moderate-report, UI và test bằng `$speckit-implement` | 12   |
 
 ---
 
@@ -3995,6 +3997,210 @@ tiến độ Feature 110 đạt 100% (35/35 tasks DONE).
 
 - `./gradlew :app:connectedDebugAndroidTest "-Pandroid.testInstrumentationRunnerArguments.class=com.example.booking_app.feature.owner.OwnerApplicationScreensUiTest"`: **PASS** (`BUILD SUCCESSFUL in 24s`).
 - Kiểm tra tiến độ tasks Feature 110: `Total: 35, Checked: 35, Unchecked: 0` (100% hoàn thành).
+- Tuyệt đối không commit, không push.
+
+---
+
+## Mục 39: Triển khai Phase 1, Phase 2 và Phase 3 (US1 - MVP P1) Feature 120 Admin
+
+| Trường                   | Nội dung                                                                                                                                           |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-11-06                                                                                                                                         |
+| Người thực hiện          | Minh Nhựt                                                                                                                                          |
+| Nhóm tính năng liên quan | 12 – Quản trị và kiểm duyệt (spec `specs/120-admin`)                                                                                               |
+| Công cụ AI               | Antigravity, skill `$speckit-implement`                                                                                                            |
+| Mục đích                 | Triển khai nền tảng Admin, Firestore Security Rules, Edge Function `admin-review-application`, UI hàng chờ/chi tiết duyệt hồ sơ chủ sân và kiểm thử |
+| Nhánh Git                | `feature/120-admin-implement`                                                                                                                      |
+
+### Prompt đã dùng
+
+```text
+/speckit-implement # FEATURE 120 — GIAI ĐOẠN 1: NỀN TẢNG ADMIN & DUYỆT HỒ SƠ CHỦ SÂN (US1 - MVP P1)
+
+Làm việc trên repository: F:/CSC_HCMUS/Mobile/datcau.
+
+## 1. Mục tiêu
+Triển khai Phase 1, Phase 2 và Phase 3 (User Story 1 - P1) theo specs/120-admin/tasks.md (từ T001 đến T023):
+- Thiết lập cấu trúc package com.example.booking_app.feature.admin theo MVVM, Hilt, StateFlow.
+- Thiết lập Firestore Security Rules cho quyền đọc/ghi của Admin (firestore.rules).
+- Xây dựng Edge Function xử lý duyệt (APPROVE) và từ chối (REJECT) hồ sơ đăng ký chủ sân nguyên tử.
+- Xây dựng giao diện danh sách hàng chờ duyệt hồ sơ PENDING, xem giấy tờ qua Signed URL (5 phút), và form quyết định (chấp thuận / từ chối kèm lý do).
+- Bổ sung unit tests cho domain logic, ViewModel và server handler tests.
+
+## 2. Nguồn tham chiếu bắt buộc
+1. specs/120-admin/spec.md
+2. specs/120-admin/plan.md
+3. specs/120-admin/contracts/admin-boundaries.md
+4. docs/design/database/README.md
+
+## 3. Các nhiệm vụ chi tiết cần triển khai
+A. Kiến trúc Nền tảng & Security Rules (T001–T012)
+B. Backend Edge Functions cho US1 (T014, T018, T019)
+C. Domain & UI Android (T013, T016, T017, T020)
+D. Kiểm thử & Đánh dấu Task (T021, T022, T023)
+Quy tắc: Tuyệt đối không commit, không push.
+```
+
+### Tóm tắt phản hồi của AI
+
+- **Kiến trúc Nền tảng & Phân tầng MVVM (T001, T007, T013, T016)**:
+  - Thiết lập cấu trúc package chuẩn: `com.example.booking_app.feature.admin.{ui,data,domain,di}`.
+  - Xây dựng Domain models: `AdminOwnerApplication`, `ApplicationReviewDecision` (hỗ trợ kiểm tra validate, trim reject reason, ranh giới quyết định).
+  - Định nghĩa `AdminApplicationRepository` và triển khai `AdminApplicationRepositoryImpl` với Firestore realtime flow (`observePendingApplications`) kết hợp Supabase Edge Functions.
+  - Thiết lập `AdminModule` DI Hilt binding repository singleton.
+  - Xây dựng `AdminApplicationsViewModel` hỗ trợ 4 trạng thái UI chuẩn (`Loading`, `Content`, `Empty`, `Error(retryable)`), lưu giữ nội dung `rejectReasonInput` khi xảy ra lỗi mạng/xung đột và khóa thao tác gửi lặp.
+- **Firestore Security Rules & Backend Auth (T002, T008, T009, T010, T011, T022)**:
+  - Cập nhật `firestore.rules`: cấp quyền đọc các collection `reports`, `systemStats` chỉ cho tài khoản có claim `appRole == "ADMIN"`, cho phép người dùng đăng nhập đọc `systemVouchers`, và tuyệt đối cấm client ghi đè dữ liệu trực tiếp.
+  - Tạo các bộ kiểm thử Rules & Authorization trong `firestore-tests/test/admin-authorization.test.ts`, `firestore-tests/test/owner-application-review.test.ts`, và `firestore-tests/test/owner-docs-access.test.ts`.
+- **Backend Edge Function `admin-review-application` (T014, T018, T019)**:
+  - Tạo `supabase/functions/admin-review-application/index.ts`, `handler.ts`, `handler.test.ts` và đăng ký trong `supabase/config.toml` (`verify_jwt = false`).
+  - Kiểm tra xác thực `requireUser(req)` và `requireRole(user, "ADMIN")`.
+  - Thực thi Firestore REST transaction nguyên tử:
+    - Khi `APPROVE`: cập nhật `ownerApplications.status = "APPROVED"`, `users.role = "OWNER"`, `users.ownerStatus = "APPROVED"`, tự động khởi tạo cơ sở mới `venues/{applicationId}` từ `venueDraft` (với `nameKeywords`, `geohash`, `status = "ACTIVE"`), cấp custom claim Firebase Auth `appRole = "OWNER"` qua `mergeClaims`, và tạo thông báo `OWNER_APPROVED`.
+    - Khi `REJECT`: kiểm tra lý do không rỗng (`rejectReason.trim().isNotEmpty()`), cập nhật `ownerApplications.status = "REJECTED"`, `users.ownerStatus = "REJECTED"`, giữ vai trò `PLAYER`, và tạo thông báo `OWNER_REJECTED`.
+    - Xử lý xung đột đồng thời (concurrency conflict) và duplicate request an toàn không gây hiệu ứng phụ lặp.
+- **Tích hợp Xem Giấy Tờ Qua Signed URL (T015)**:
+  - Tích hợp gọi Edge Function `owner-docs` action `SIGN_DOWNLOAD` cấp signed URL có thời hạn 5 phút (300 giây) bảo mật cho Admin xem giấy tờ chứng minh từ private bucket `owner-docs`.
+- **Giao Diện Android XML & ViewBinding (T017, T020)**:
+  - `fragment_admin_application_queue.xml` và `layout-w600dp/`: danh sách hàng đợi trực quan, trạng thái rỗng, trạng thái lỗi kèm nút thử lại.
+  - `item_admin_application.xml`: item card bo góc Material 3, touch target $\ge 48$dp, hiển thị thông tin cơ sở, người đại diện và chip trạng thái.
+  - `fragment_admin_application_detail.xml` và `layout-w600dp/`: chi tiết cơ sở, thông tin liên hệ người đại diện, danh sách giấy tờ chứng minh, và sticky action bar chứa nút Phê duyệt / Từ chối ($\ge 48$dp).
+  - `dialog_admin_reject_application.xml`: dialog nhập lý do từ chối có counter ký tự và validation.
+  - Điều hướng Navigation: cập nhật `app/src/main/res/navigation/nav_admin.xml` với `adminApplicationQueueFragment` và `adminApplicationDetailFragment`.
+  - Tài nguyên chuỗi: `app/src/main/res/values/strings_admin.xml`.
+- **Kiểm Thử Toàn Diện (T021, T023)**:
+  - Unit tests: `AdminApplicationValidationTest` và `AdminApplicationsViewModelTest` chạy qua `./gradlew :app:testDebugUnitTest --tests "com.example.booking_app.feature.admin.*"` đạt **BUILD SUCCESSFUL in 1m 24s** (100% PASS).
+  - Connected UI test: `AdminApplicationScreensUiTest` chạy trên thiết bị vật lý `10ADBY2GH30038C` (Vivo V2247, Android 15) qua `./gradlew :app:connectedDebugAndroidTest "-Pandroid.testInstrumentationRunnerArguments.class=com.example.booking_app.feature.admin.AdminApplicationScreensUiTest"` đạt **BUILD SUCCESSFUL in 1m 5s** (100% PASS, 0 failures, 0 skipped trên cả phone và tablet w600dp ở 2 chế độ Day/Night).
+- **Cập nhật Hồ Sơ Nghiệm Thu**:
+  - Đánh dấu hoàn thành `[X]` cho 23/23 tasks (T001–T023) trong `specs/120-admin/tasks.md`.
+  - Cập nhật nhật ký kiểm chứng trong `specs/120-admin/quickstart.md`.
+- **Tuân thủ cam kết**: Tuyệt đối không commit, không push.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+| --- | --- | --- |
+| `firestore.rules` | Chỉnh sửa | Bổ sung match cho `reports`, `systemStats`, `systemVouchers` với quyền đọc Admin và deny client write. |
+| `supabase/functions/admin-review-application/` | Tạo mới | Triển khai Edge Function xử lý duyệt/từ chối hồ sơ chủ sân nguyên tử, đồng bộ Auth claims và phát notification. |
+| `supabase/config.toml` | Chỉnh sửa | Đăng ký function `admin-review-application` với `verify_jwt = false`. |
+| `app/src/main/java/com/example/booking_app/feature/admin/` | Tạo mới | Cấu trúc phân tầng MVVM: domain models, repository, data impl, Hilt module, ViewModel, Adapter, Queue và Detail Fragments. |
+| `app/src/main/res/layout/` & `layout-w600dp/` | Tạo mới | XML layout cho hàng đợi, chi tiết đơn, card item, dialog từ chối theo Material 3 và responsive tablet. |
+| `app/src/main/res/values/strings_admin.xml` | Tạo mới | Khai báo toàn bộ chuỗi giao diện tiếng Việt cho tính năng Admin. |
+| `app/src/main/res/navigation/nav_admin.xml` | Chỉnh sửa | Bổ sung destinations và actions cho queue và detail của Admin. |
+| `app/src/test/java/com/example/booking_app/feature/admin/` | Tạo mới | Unit tests cho logic validation và ViewModel StateFlow transitions. |
+| `app/src/androidTest/java/com/example/booking_app/feature/admin/` | Tạo mới | Connected layout UI tests trên Android 15 device (Phone, Tablet w600dp, Dark mode). |
+| `firestore-tests/test/` | Tạo mới | Các test cases kiểm thử authorization, review rules và storage access. |
+| `specs/120-admin/tasks.md` | Chỉnh sửa | Đánh dấu `[X]` cho toàn bộ 23 task từ T001 đến T023 (Phase 1, 2, 3 - US1). |
+| `specs/120-admin/quickstart.md` | Chỉnh sửa | Ghi nhận bằng chứng thực thi unit tests và connected UI tests trên thiết bị thật. |
+
+### Cách kiểm chứng
+
+- Chạy Unit Tests: `./gradlew :app:testDebugUnitTest --tests "com.example.booking_app.feature.admin.*"`: **PASS** (`BUILD SUCCESSFUL in 1m 24s`).
+- Chạy Connected UI Tests trên thiết bị thật: `./gradlew :app:connectedDebugAndroidTest "-Pandroid.testInstrumentationRunnerArguments.class=com.example.booking_app.feature.admin.AdminApplicationScreensUiTest"`: **PASS** (`BUILD SUCCESSFUL in 1m 5s`).
+- Kiểm tra tiến độ tasks Feature 120: 23 tasks T001–T023 đã đánh dấu hoàn thành.
+- Tuyệt đối không commit, không push.
+
+---
+
+## Mục 40: Triển khai Phase 4 (US2 - P1) Feature 120 Admin: Kiểm duyệt báo cáo vi phạm
+
+| Trường                   | Nội dung                                                                                                                                              |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-11-06                                                                                                                                            |
+| Người thực hiện          | Minh Nhựt                                                                                                                                             |
+| Nhóm tính năng liên quan | 12 – Quản trị và kiểm duyệt (spec `specs/120-admin`)                                                                                                  |
+| Công cụ AI               | Antigravity, skill `$speckit-implement`                                                                                                               |
+| Mục đích                 | Triển khai User Story 2 (P1): kiểm duyệt báo cáo vi phạm, Edge Function `admin-moderate-report`, giao diện hàng đợi & chi tiết xử lý vi phạm, và test |
+| Nhánh Git                | `feature/120-admin-implement`                                                                                                                         |
+
+### Prompt đã dùng
+
+```text
+/speckit-implement # FEATURE 120 — GIAI ĐOẠN 2: KIỂM DUYỆT BÁO CÁO VI PHẠM (US2 - P1, TASKS T024–T032)
+
+Làm việc trên repository: F:/CSC_HCMUS/Mobile/datcau.
+
+## 1. Mục tiêu
+Triển khai toàn bộ Phase 4 (User Story 2: Xử lý báo cáo và vi phạm - Priority P1) theo specs/120-admin/tasks.md (từ T024 đến T032):
+- Xây dựng Domain model và Repository cho reports theo schema CSDL hiện có.
+- Tạo Edge Function supabase/functions/admin-moderate-report/ xử lý đóng báo cáo nguyên tử với action phù hợp:
+  * VENUE -> LOCK_VENUE (đặt venues/{id}.status = "LOCKED").
+  * USER -> LOCK_USER (đặt users/{id}.accountStatus = "LOCKED", gọi setUserDisabled).
+  * POST, MESSAGE, REVIEW -> HIDE_CONTENT.
+  * Bỏ qua báo cáo -> DISMISSED với action = "NONE".
+  * Ghi nhận handledBy = user.uid, handledAt = serverTimestamp. Xử lý an toàn khi target đã mất hoặc báo cáo đã xử lý.
+- Xây dựng giao diện danh sách báo cáo OPEN, màn hình chi tiết đối tượng bị báo cáo và các nút hành động tương thích (hỗ trợ Dark Mode, responsive tablet w600dp, touch target ≥ 48dp).
+- Bổ sung Unit tests, Emulator Rules tests (firestore-tests/test/report-moderation.test.ts), và chạy connected UI test trên thiết bị thật (10ADBY2GH30038C).
+
+## 2. Nguồn tham chiếu bắt buộc
+1. specs/120-admin/spec.md
+2. specs/120-admin/data-model.md
+3. specs/120-admin/contracts/admin-boundaries.md
+4. docs/design/database/README.md
+
+## 3. Các nhiệm vụ cụ thể cần triển khai
+1. Domain & Data Layer (T024, T025)
+2. Backend Edge Function (T026, T027)
+3. UI Android & ViewBinding (T028, T029)
+4. Kiểm thử & Nghiệm thu (T030, T031, T032)
+5. Quy tắc: Tuyệt đối không commit, không push.
+```
+
+### Tóm tắt phản hồi của AI
+
+- **Domain & Data Layer (T024, T025)**:
+  - Tạo models: `AdminReport`, `ReportTargetType` (`VENUE`, `USER`, `POST`, `MESSAGE`, `REVIEW`, `DROP_IN`), `ReportStatus` (`OPEN`, `RESOLVED`, `DISMISSED`), `ReportAction` (`NONE`, `HIDE_CONTENT`, `LOCK_USER`, `LOCK_VENUE`), `ModerateReportDecision` (kèm validation ánh xạ nghiêm ngặt theo loại đối tượng).
+  - Tạo `AdminReportRepository` và `AdminReportRepositoryImpl`: realtime flow lắng nghe các báo cáo có `status == "OPEN"`, lấy chi tiết tóm tắt đối tượng qua `targetPath`.
+  - Cập nhật DI `AdminModule` để bind `AdminReportRepository`.
+- **Backend Edge Function `admin-moderate-report` (T026, T027)**:
+  - Tạo `supabase/functions/admin-moderate-report/index.ts`, `handler.ts`, `handler.test.ts` và đăng ký trong `config.toml` (`verify_jwt = false`).
+  - Kiểm tra xác thực Admin (`appRole == "ADMIN"`).
+  - Thực thi Firestore REST transaction nguyên tử:
+    - Khi `action == "NONE"`: cập nhật `reports/{reportId}` thành `status = "DISMISSED"`, `action = "NONE"`.
+    - Khi `action != "NONE"`: xác thực hành động phải tương thích với `targetType`:
+      * `VENUE` -> `LOCK_VENUE`: cập nhật `venues/{venueId}.status = "LOCKED"`.
+      * `USER` -> `LOCK_USER`: cập nhật `users/{userId}.accountStatus = "LOCKED"` và gọi `setUserDisabled(userId, true)` trong Firebase Auth.
+      * `POST`/`MESSAGE`/`REVIEW` -> `HIDE_CONTENT`: cập nhật `status = "HIDDEN"`.
+      * `DROP_IN`: chặn không cho phép áp dụng theo đúng ranh giới hợp đồng (T027).
+      * Cập nhật `reports/{reportId}` thành `status = "RESOLVED"`, `action = action`, `handledBy = user.uid`, `handledAt = nowIso`.
+    - An toàn trước xung đột đồng thời (`ABORTED`) và idempotent đối với yêu cầu gửi lặp.
+- **Rules Tests & Firestore Emulator (T031)**:
+  - Tạo `firestore-tests/test/report-moderation.test.ts`: kiểm chứng Admin đọc được hàng đợi và chi tiết report; người dùng thường và chủ sân bị chặn hoàn toàn (403); cấm client ghi đè trực tiếp trạng thái report.
+- **Giao Diện Android XML & ViewBinding (T028, T029)**:
+  - `fragment_admin_report_queue.xml` và `layout-w600dp/`: danh sách báo cáo đang mở, hiển thị chip loại đối tượng, lý do, đường dẫn đối tượng, layout rỗng và lỗi có retry.
+  - `item_admin_report.xml`: card item bo góc Material 3, touch target $\ge 48$dp, định dạng thời gian và chip loại đối tượng.
+  - `fragment_admin_report_detail.xml` và `layout-w600dp/`: thẻ chi tiết nội dung báo cáo, thẻ tóm tắt thông tin đối tượng, và action bar linh hoạt hiển thị nút hành động tương thích (Khóa cơ sở / Khóa tài khoản / Ẩn nội dung) và nút Bỏ qua báo cáo ($\ge 48$dp).
+  - Fragment & ViewModel: `AdminReportsViewModel.kt`, `AdminReportAdapter.kt`, `AdminReportQueueFragment.kt`, `AdminReportDetailFragment.kt`.
+  - Khai báo tài nguyên chuỗi `strings_admin.xml` và điểm đến trong `nav_admin.xml`.
+- **Kiểm Thử Toàn Diện (T030, T032)**:
+  - Unit tests: `AdminReportValidationTest` và `AdminReportsViewModelTest` chạy qua `./gradlew :app:testDebugUnitTest --tests "com.example.booking_app.feature.admin.*"` đạt **BUILD SUCCESSFUL in 56s** (100% PASS).
+  - Connected UI test: `AdminReportScreensUiTest` chạy trên thiết bị vật lý `10ADBY2GH30038C` (Vivo V2247, Android 15) qua `./gradlew :app:connectedDebugAndroidTest "-Pandroid.testInstrumentationRunnerArguments.class=com.example.booking_app.feature.admin.AdminReportScreensUiTest"` đạt **BUILD SUCCESSFUL in 53s** (100% PASS, 0 failures, 0 skipped trên cả phone và tablet w600dp ở 2 chế độ Day/Night).
+- **Cập nhật Hồ Sơ Nghiệm Thu**:
+  - Đánh dấu hoàn thành `[X]` cho 9/9 tasks (T024–T032) trong `specs/120-admin/tasks.md`.
+  - Cập nhật nhật ký kiểm chứng trong `specs/120-admin/quickstart.md`.
+- **Tuân thủ cam kết**: Tuyệt đối không commit, không push.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+| --- | --- | --- |
+| `supabase/functions/admin-moderate-report/` | Tạo mới | Triển khai Edge Function xử lý kiểm duyệt báo cáo vi phạm nguyên tử theo đúng targetType. |
+| `supabase/config.toml` | Chỉnh sửa | Đăng ký function `admin-moderate-report` với `verify_jwt = false`. |
+| `app/src/main/java/com/example/booking_app/feature/admin/` | Tạo mới | Domain models (`AdminReport`, `ModerateReportDecision`), Repository, ViewModel, Adapter, Queue và Detail Fragments cho Report Moderation. |
+| `app/src/main/res/layout/` & `layout-w600dp/` | Tạo mới | XML layout cho report queue, report detail, card item theo Material 3 và responsive tablet. |
+| `app/src/main/res/values/strings_admin.xml` | Chỉnh sửa | Khai báo các chuỗi giao diện tiếng Việt cho kiểm duyệt báo cáo vi phạm. |
+| `app/src/main/res/navigation/nav_admin.xml` | Chỉnh sửa | Bổ sung navigation destinations và actions cho report queue và report detail. |
+| `app/src/test/java/com/example/booking_app/feature/admin/` | Tạo mới | Unit tests cho logic validation và StateFlow transitions của Reports ViewModel. |
+| `app/src/androidTest/java/com/example/booking_app/feature/admin/` | Tạo mới | Connected layout UI tests cho các màn hình kiểm duyệt report trên Android 15 device. |
+| `firestore-tests/test/report-moderation.test.ts` | Tạo mới | Kiểm thử Firestore Rules bảo vệ collection reports khỏi truy cập trái phép. |
+| `specs/120-admin/tasks.md` | Chỉnh sửa | Đánh dấu `[X]` cho 9 task từ T024 đến T032 (Phase 4 - US2). |
+| `specs/120-admin/quickstart.md` | Chỉnh sửa | Ghi nhận bằng chứng thực thi unit tests và connected UI tests cho US2. |
+
+### Cách kiểm chứng
+
+- Chạy Unit Tests: `./gradlew :app:testDebugUnitTest --tests "com.example.booking_app.feature.admin.*"`: **PASS** (`BUILD SUCCESSFUL in 56s`).
+- Chạy Connected UI Tests trên thiết bị thật: `./gradlew :app:connectedDebugAndroidTest "-Pandroid.testInstrumentationRunnerArguments.class=com.example.booking_app.feature.admin.AdminReportScreensUiTest"`: **PASS** (`BUILD SUCCESSFUL in 53s`).
+- Kiểm tra tiến độ tasks Feature 120: Toàn bộ 32 tasks từ T001 đến T032 đã hoàn thành.
 - Tuyệt đối không commit, không push.
 
 ---
