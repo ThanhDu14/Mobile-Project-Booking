@@ -453,4 +453,11 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.owner-create-voucher]
+[functions.sync-account-email]
+verify_jwt = false
+
+[functions.delete-account]
+verify_jwt = false
+
+[functions.delete-account-sweeper]
 verify_jwt = false

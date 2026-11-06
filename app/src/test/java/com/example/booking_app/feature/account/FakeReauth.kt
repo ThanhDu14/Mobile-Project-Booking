@@ -4,7 +4,7 @@ import com.example.booking_app.core.network.IdTokenProvider
 import com.example.booking_app.feature.account.data.ReauthAccount
 import com.example.booking_app.feature.account.data.ReauthDataSource
 
-/** Ghi lại lời gọi dạng `"password:<mk>"`, `"google:<token>"`, `"phone:<vid>:<code>"`, `"update:<mk>"`. */
+/** Ghi lại lời gọi dạng `"password:<mk>"`, `"google:<token>"`, `"phone:<vid>:<code>"`, `"update:<mk>"`, `"verifyEmail:<email>"`. */
 class FakeReauthDataSource : ReauthDataSource {
     var account: ReauthAccount? = ReauthAccount(providers = setOf("password"), email = "a@b.vn", phoneE164 = null)
     val calls = mutableListOf<String>()
@@ -18,6 +18,9 @@ class FakeReauthDataSource : ReauthDataSource {
     /** Đặt để treo `updatePassword` tới khi test cho chạy tiếp. */
     var updateGate: kotlinx.coroutines.CompletableDeferred<Unit>? = null
 
+    /** Đặt để treo `verifyBeforeUpdateEmail` tới khi test cho chạy tiếp. */
+    var verifyEmailGate: kotlinx.coroutines.CompletableDeferred<Unit>? = null
+
     override fun currentAccount(): ReauthAccount? = account
 
     override suspend fun reauthWithPassword(password: String) = record("password:$password")
@@ -30,6 +33,11 @@ class FakeReauthDataSource : ReauthDataSource {
         calls += "update:$newPassword"
         updateGate?.await()
         updateFailure?.let { throw it }
+    }
+
+    override suspend fun verifyBeforeUpdateEmail(newEmail: String) {
+        calls += "verifyEmail:$newEmail"
+        verifyEmailGate?.await()
     }
 
     private fun record(call: String) {
