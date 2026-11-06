@@ -43,6 +43,14 @@ class AdminToolsDashboardFragment : Fragment() {
             findNavController().navigateUp()
         }
 
+        binding.cardNavApplications?.setOnClickListener {
+            findNavController().navigate(R.id.action_dashboard_to_applications)
+        }
+
+        binding.cardNavReports?.setOnClickListener {
+            findNavController().navigate(R.id.action_dashboard_to_reports)
+        }
+
         binding.cardNavVouchers.setOnClickListener {
             findNavController().navigate(R.id.action_dashboard_to_vouchers)
         }

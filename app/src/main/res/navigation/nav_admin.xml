@@ -3,7 +3,7 @@
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/nav_admin"
-    app:startDestination="@id/adminHomePlaceholderFragment">
+    app:startDestination="@id/adminToolsDashboardFragment">
 
     <fragment
         android:id="@+id/adminHomePlaceholderFragment"
@@ -56,6 +56,12 @@
         android:id="@+id/adminToolsDashboardFragment"
         android:name="com.example.booking_app.feature.admin.ui.AdminToolsDashboardFragment"
         android:label="@string/admin_tools_dashboard_title">
+        <action
+            android:id="@+id/action_dashboard_to_applications"
+            app:destination="@id/adminApplicationQueueFragment" />
+        <action
+            android:id="@+id/action_dashboard_to_reports"
+            app:destination="@id/adminReportQueueFragment" />
         <action
             android:id="@+id/action_dashboard_to_vouchers"
             app:destination="@id/adminSystemVouchersFragment" />
