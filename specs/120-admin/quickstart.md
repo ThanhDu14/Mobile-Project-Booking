@@ -73,3 +73,19 @@ Run only the relevant local test suites with Emulator/local services running. No
   - Edge Function: `supabase/functions/admin-moderate-report/` (`index.ts`, `handler.ts`, `handler.test.ts`).
   - Rules Tests: `firestore-tests/test/report-moderation.test.ts`.
 
+## Kết quả nghiệm thu thực tế — Phase 5 (US3 - Quản lý tài khoản và venue vi phạm P2)
+
+- **Unit Tests**:
+  - Lệnh: `./gradlew :app:testDebugUnitTest --tests "com.example.booking_app.feature.admin.*"`
+  - Kết quả: `BUILD SUCCESSFUL in 50s`. 100% tests PASS (`AdminUserVenueViewModelTest`, `OwnerRevocationValidationTest`, `AdminReportsViewModelTest`, `AdminReportValidationTest`, `AdminApplicationsViewModelTest`, `AdminApplicationValidationTest`).
+- **Connected UI Tests trên thiết bị vật lý**:
+  - Thiết bị: `10ADBY2GH30038C` (Vivo V2247, Android 15).
+  - Lệnh: `./gradlew :app:connectedDebugAndroidTest "-Pandroid.testInstrumentationRunnerArguments.class=com.example.booking_app.feature.admin.AdminUserVenueScreensUiTest"`
+  - Kết quả: `BUILD SUCCESSFUL in 58s`. 100% PASS (1/1 test class, 0 failures, 0 skipped), xác thực màn hình quản lý user (`fragment_admin_user_management`), dialog thu hồi chủ sân (`dialog_admin_revoke_owner`) và màn hình quản lý cơ sở (`fragment_admin_venue_management`) trên phone (360dp) và tablet (600dp) ở cả 2 chế độ Day/Night.
+- **Backend Edge Functions & Rules Tests**:
+  - Edge Functions:
+    * `supabase/functions/admin-manage-user/` (`index.ts`, `handler.ts`, `handler.test.ts`).
+    * `supabase/functions/admin-revoke-owner/` (`index.ts`, `handler.ts`, `handler.test.ts`).
+    * `supabase/functions/admin-manage-venue/` (`index.ts`, `handler.ts`, `handler.test.ts`).
+  - Rules Tests: `firestore-tests/test/user-venue-management.test.ts` (kiểm tra allow/deny tra cứu tài khoản, cấm client tự ý sửa trường quản trị, owner không được tự mở khóa venue LOCKED và không được tự đặt venue thành LOCKED).
+

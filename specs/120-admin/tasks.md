@@ -68,15 +68,15 @@
 
 **Independent Test**: Chỉ Admin hợp lệ đổi được trạng thái; account ACTIVE↔LOCKED; venue LOCKED mở về ACTIVE/HIDDEN; revoke lưu reason, giữ application APPROVED và giữ nguyên venue status.
 
-- [ ] T033 [P] [US3] Tạo model/repository tra cứu user và đọc trạng thái venue dùng field hiện có, không hiển thị dữ liệu cá nhân ngoài schema/need-to-know trong `app/src/main/java/com/example/booking_app/feature/admin/data/`.
-- [ ] T034 [US3] Sau T002/T005 đối với target USER, triển khai server-side user lookup và accountStatus ACTIVE/LOCKED mutation, xác minh Admin và hiện trạng trước ghi; chỉ đọc field user được phép theo Feature 010/database README. Tên file/function chờ callable contract và cấu trúc server được xác nhận.
-- [ ] T035 [US3] Sau T003/T006, triển khai owner revocation với lý do trim không rỗng; đặt `role=PLAYER`, `ownerStatus=NONE`, lưu `ownerRevokedReason`, giữ application APPROVED và mọi venue status, phát `OWNER_REVOKED` qua Feature 100 trong `supabase/functions/`.
-- [ ] T036 [US3] Triển khai server lock venue và Admin-only unlock về lựa chọn ACTIVE hoặc HIDDEN; không thay đổi court/price rules/bookings hoặc owner operations trong `supabase/functions/`.
-- [ ] T037 [P] [US3] Tạo ViewModel/UI state cho lookup, confirm lock/unlock/revoke, validation, permission-denied, conflict, timeout reload và offline disabled trong `app/src/main/java/com/example/booking_app/feature/admin/ui/`.
-- [ ] T038 [US3] Tạo XML quản lý user/venue với lý do thu hồi bắt buộc, xác nhận thao tác nhạy cảm, trạng thái rõ ràng, strings/resources, accessibility 48dp, DayNight, phone/`w600dp` trong `app/src/main/res/layout/` và `values/`.
-- [ ] T039 [P] [US3] Viết unit tests cho account/venue transitions, revoke reason validation, timeout/conflict refresh và form state trong `app/src/test/java/com/example/booking_app/feature/admin/`.
-- [ ] T040 [US3] Viết Emulator/Edge Function tests cho allow/deny account và venue mutations, owner không tự unlock LOCKED venue, revoke bảo toàn APPROVED/venue state, và bảo vệ khỏi client sửa field quản trị trong `firestore-tests/test/`.
-- [ ] T041 [US3] Viết integration checks với Feature 010/011/112/100 owners để xác nhận account LOCKED chặn auth/session, owner revocation cập nhật trải nghiệm/lý do và mất quyền operation, notification OWNER_REVOKED được nhận; chỉ sửa file Feature 120 nếu phát hiện thiếu, ghi dependency cho owner kia trong `app/src/androidTest/java/com/example/booking_app/feature/admin/`.
+- [X] T033 [P] [US3] Tạo model/repository tra cứu user và đọc trạng thái venue dùng field hiện có, không hiển thị dữ liệu cá nhân ngoài schema/need-to-know trong `app/src/main/java/com/example/booking_app/feature/admin/data/`.
+- [X] T034 [US3] Sau T002/T005 đối với target USER, triển khai server-side user lookup và accountStatus ACTIVE/LOCKED mutation, xác minh Admin và hiện trạng trước ghi; chỉ đọc field user được phép theo Feature 010/database README. Tên file/function chờ callable contract và cấu trúc server được xác nhận.
+- [X] T035 [US3] Sau T003/T006, triển khai owner revocation với lý do trim không rỗng; đặt `role=PLAYER`, `ownerStatus=NONE`, lưu `ownerRevokedReason`, giữ application APPROVED và mọi venue status, phát `OWNER_REVOKED` qua Feature 100 trong `supabase/functions/`.
+- [X] T036 [US3] Triển khai server lock venue và Admin-only unlock về lựa chọn ACTIVE hoặc HIDDEN; không thay đổi court/price rules/bookings hoặc owner operations trong `supabase/functions/`.
+- [X] T037 [P] [US3] Tạo ViewModel/UI state cho lookup, confirm lock/unlock/revoke, validation, permission-denied, conflict, timeout reload và offline disabled trong `app/src/main/java/com/example/booking_app/feature/admin/ui/`.
+- [X] T038 [US3] Tạo XML quản lý user/venue với lý do thu hồi bắt buộc, xác nhận thao tác nhạy cảm, trạng thái rõ ràng, strings/resources, accessibility 48dp, DayNight, phone/`w600dp` trong `app/src/main/res/layout/` và `values/`.
+- [X] T039 [P] [US3] Viết unit tests cho account/venue transitions, revoke reason validation, timeout/conflict refresh và form state trong `app/src/test/java/com/example/booking_app/feature/admin/`.
+- [X] T040 [US3] Viết Emulator/Edge Function tests cho allow/deny account và venue mutations, owner không tự unlock LOCKED venue, revoke bảo toàn APPROVED/venue state, và bảo vệ khỏi client sửa field quản trị trong `firestore-tests/test/`.
+- [X] T041 [US3] Viết integration checks với Feature 010/011/112/100 owners để xác nhận account LOCKED chặn auth/session, owner revocation cập nhật trải nghiệm/lý do và mất quyền operation, notification OWNER_REVOKED được nhận; chỉ sửa file Feature 120 nếu phát hiện thiếu, ghi dependency cho owner kia trong `app/src/androidTest/java/com/example/booking_app/feature/admin/`.
 
 ## Phase 6: User Story 4 - Theo dõi tình hình và công cụ quản trị (Priority: P3)
 

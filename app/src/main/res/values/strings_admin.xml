@@ -43,4 +43,34 @@
     <string name="admin_report_action_dismiss">Bỏ qua báo cáo</string>
     <string name="admin_report_confirm_action_title">Xác nhận xử lý vi phạm</string>
     <string name="admin_report_confirm_action_message">Bạn có chắc chắn muốn thực thi hành động này đối với đối tượng bị báo cáo?</string>
+
+    <!-- User & Venue Management (US3) -->
+    <string name="admin_user_management_title">Quản lý người dùng</string>
+    <string name="admin_venue_management_title">Quản lý cơ sở</string>
+    <string name="admin_user_search_hint">Nhập SĐT hoặc mã người dùng (UID)</string>
+    <string name="admin_user_search_button">Tra cứu</string>
+    <string name="admin_user_card_title">Thông tin tài khoản</string>
+    <string name="admin_user_fullname_label">Họ và tên:</string>
+    <string name="admin_user_phone_label">Số điện thoại:</string>
+    <string name="admin_user_uid_label">UID:</string>
+    <string name="admin_user_role_label">Vai trò:</string>
+    <string name="admin_user_owner_status_label">Trạng thái chủ sân:</string>
+    <string name="admin_user_account_status_label">Trạng thái tài khoản:</string>
+    <string name="admin_user_revoked_reason_label">Lý do thu hồi trước đây:</string>
+    <string name="admin_user_lock_button">Khóa tài khoản</string>
+    <string name="admin_user_unlock_button">Mở khóa tài khoản</string>
+    <string name="admin_user_revoke_owner_button">Thu hồi quyền chủ sân</string>
+    <string name="admin_revoke_dialog_title">Thu hồi quyền chủ sân</string>
+    <string name="admin_revoke_dialog_message">Vai trò của tài khoản sẽ được chuyển về PLAYER và trạng thái chủ sân về NONE. Hồ sơ đăng ký đã duyệt và các cơ sở hiện có sẽ được giữ nguyên.</string>
+    <string name="admin_revoke_reason_hint">Lý do thu hồi (bắt buộc)</string>
+    <string name="admin_confirm_revoke">Xác nhận thu hồi</string>
+    <string name="admin_venue_search_hint">Nhập mã cơ sở (Venue ID)</string>
+    <string name="admin_venue_card_title">Thông tin cơ sở</string>
+    <string name="admin_venue_lock_button">Khóa cơ sở (LOCKED)</string>
+    <string name="admin_venue_unlock_active_button">Mở khóa (ACTIVE)</string>
+    <string name="admin_venue_unlock_hidden_button">Mở khóa (HIDDEN)</string>
+    <string name="admin_venue_owner_id_label">Mã chủ sân (Owner ID):</string>
+    <string name="admin_venue_status_label">Trạng thái hiện tại:</string>
+    <string name="admin_not_found_user">Không tìm thấy người dùng phù hợp</string>
+    <string name="admin_not_found_venue">Không tìm thấy cơ sở phù hợp</string>
 </resources>

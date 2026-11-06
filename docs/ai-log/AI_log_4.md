@@ -44,6 +44,7 @@ Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 | 38  | 2026-11-06 | Sửa lỗi layout XML, chạy connected UI tests trên thiết bị Android, hoàn tất toàn bộ 35/35 tasks Feature 110 bằng `$speckit-implement`                                                  | 11   |
 | 39  | 2026-11-06 | Triển khai Phase 1, Phase 2 và Phase 3 (US1 - MVP P1) Feature 120 Admin: kiến trúc MVVM, Edge Function admin-review-application, Security Rules, UI và test bằng `$speckit-implement` | 12   |
 | 40  | 2026-11-06 | Triển khai Phase 4 (US2 - P1) Feature 120 Admin: kiểm duyệt báo cáo vi phạm, Edge Function admin-moderate-report, UI và test bằng `$speckit-implement` | 12   |
+| 41  | 2026-11-06 | Triển khai Phase 5 (US3 - P2) Feature 120 Admin: quản lý user, khóa/mở khóa tài khoản, thu hồi quyền chủ sân, quản lý venue vi phạm và test bằng `$speckit-implement` | 12   |
 
 ---
 
@@ -4201,6 +4202,102 @@ Triển khai toàn bộ Phase 4 (User Story 2: Xử lý báo cáo và vi phạm 
 - Chạy Unit Tests: `./gradlew :app:testDebugUnitTest --tests "com.example.booking_app.feature.admin.*"`: **PASS** (`BUILD SUCCESSFUL in 56s`).
 - Chạy Connected UI Tests trên thiết bị thật: `./gradlew :app:connectedDebugAndroidTest "-Pandroid.testInstrumentationRunnerArguments.class=com.example.booking_app.feature.admin.AdminReportScreensUiTest"`: **PASS** (`BUILD SUCCESSFUL in 53s`).
 - Kiểm tra tiến độ tasks Feature 120: Toàn bộ 32 tasks từ T001 đến T032 đã hoàn thành.
+- Tuyệt đối không commit, không push.
+
+---
+
+## Mục 41: Triển khai Phase 5 (US3 - P2) Feature 120 Admin: quản lý user, khóa/mở khóa tài khoản, thu hồi quyền chủ sân, quản lý venue vi phạm và test
+
+| Trường | Nội dung |
+| --- | --- |
+| Ngày | 2026-11-06 |
+| Người thực hiện | Minh Nhựt |
+| Nhóm tính năng liên quan | 12 – Quản trị và kiểm duyệt (spec `specs/120-admin`) |
+| Công cụ AI | Claude 3.7 Sonnet, skill `$speckit-implement` |
+| Mục đích | Triển khai Phase 5 (User Story 3 - P2, Tasks T033–T041) theo `specs/120-admin/tasks.md`: tra cứu người dùng, khóa/mở khóa tài khoản (đồng bộ Firebase Auth disableUser), thu hồi quyền chủ sân nguyên tử (kèm lý do bắt buộc, bảo toàn hồ sơ APPROVED và trạng thái venues, gửi thông báo OWNER_REVOKED), khóa/mở khóa cơ sở độc quyền bởi Admin về ACTIVE hoặc HIDDEN, giao diện XML Material 3 DayNight responsive phone & tablet w600dp, touch target >= 48dp, Unit tests, Emulator test và Connected UI tests trên thiết bị thật. |
+| Nhánh Git | `feature/120-admin-implement` |
+
+### Lệnh / Prompt
+
+```text
+/speckit-implement # FEATURE 120 — GIAI ĐOẠN 3: QUẢN LÝ TÀI KHOẢN VÀ VENUE VI PHẠM (US3 - P2, TASKS T033–T041)
+
+Làm việc trên repository: `F:/CSC_HCMUS/Mobile/datcau`.
+
+## 1. Mục tiêu
+Triển khai toàn bộ Phase 5 (User Story 3: Quản lý tài khoản và venue vi phạm - Priority P2) theo `specs/120-admin/tasks.md` (từ T033 đến T041):
+- Xây dựng Domain model và Repository cho tra cứu user (users) và quản lý trạng thái cơ sở (venues).
+- Xây dựng Backend Edge Functions:
+  * admin-manage-user: Tra cứu user (bảo vệ thông tin nhạy cảm), toggle trạng thái tài khoản accountStatus (ACTIVE <-> LOCKED), đồng bộ vô hiệu hóa tài khoản Firebase Auth qua setUserDisabled.
+  * admin-revoke-owner: Thu hồi quyền chủ sân với lý do bắt buộc (ownerRevokedReason.trim() != ""), cập nhật role = "PLAYER", ownerStatus = "NONE", claim appRole = "PLAYER", giữ nguyên hồ sơ APPROVED và giữ nguyên trạng thái các venues, phát notification OWNER_REVOKED qua Feature 100.
+  * admin-manage-venue: Khóa venue (venues.status = "LOCKED") và mở khóa venue độc quyền bởi Admin về ACTIVE hoặc HIDDEN (owner không thể tự mở khóa).
+- Xây dựng giao diện Android (Material 3 DayNight, touch target >= 48dp, responsive tablet layout-w600dp):
+  * Màn hình tra cứu user, hiển thị thông tin trạng thái tài khoản, dialog xác nhận khóa/mở khóa.
+  * Dialog thu hồi quyền chủ sân với form nhập lý do bắt buộc.
+  * Màn hình / dialog khóa & mở khóa venue (chọn giữa ACTIVE hoặc HIDDEN).
+- Bổ sung Unit tests, Emulator test (firestore-tests/test/user-venue-management.test.ts), và chạy connected UI test trên thiết bị thật (10ADBY2GH30038C).
+```
+
+### Tóm tắt phản hồi của AI
+
+- **Domain & Data Layer (T033, T034)**:
+  - Tạo models: `AdminUserLookup`, `UserAccountStatus` (`ACTIVE`, `LOCKED`), `OwnerRevocationDecision` (validation lý do không rỗng sau khi trim), `AdminVenueItem`.
+  - Tạo interface `AdminUserVenueRepository` và implementation `AdminUserVenueRepositoryImpl` giao tiếp với Edge Functions qua `FunctionErrors.invokeWithAuthRetry`.
+  - Cập nhật DI `AdminModule` để bind `AdminUserVenueRepository`.
+- **Backend Edge Functions (T034, T035, T036)**:
+  - Tạo `supabase/functions/admin-manage-user/` (`index.ts`, `handler.ts`, `handler.test.ts`):
+    * Tra cứu user theo phone hoặc UID, lọc bỏ các trường nhạy cảm/nội bộ chỉ trả về: `uid`, `fullName`, `phone`, `role`, `ownerStatus`, `accountStatus`, `ownerRevokedReason`, `createdAt`.
+    * Cập nhật `accountStatus` (`ACTIVE` <-> `LOCKED`), cấm Admin tự khóa tài khoản của chính mình.
+    * Gọi `setUserDisabled(uid, disabled)` trên Firebase Auth Identity Toolkit để chặn phiên đăng nhập hoặc làm mới token tức thì.
+  - Tạo `supabase/functions/admin-revoke-owner/` (`index.ts`, `handler.ts`, `handler.test.ts`):
+    * Xác thực Admin, kiểm tra `ownerRevokedReason` không rỗng sau khi trim.
+    * Chạy transaction Firestore: cập nhật `role = "PLAYER"`, `ownerStatus = "NONE"`, lưu `ownerRevokedReason`.
+    * Cập nhật custom claim `appRole: "PLAYER"` qua Identity Toolkit REST.
+    * Gửi thông báo loại `OWNER_REVOKED` vào `users/{uid}/notifications/{notificationId}`.
+    * Bảo toàn hồ sơ `ownerApplications.status = "APPROVED"` và giữ nguyên trạng thái các cơ sở `venues` theo đúng FR-009 / US3 AC5.
+  - Tạo `supabase/functions/admin-manage-venue/` (`index.ts`, `handler.ts`, `handler.test.ts`):
+    * Xác thực Admin, cho phép khóa `venues/{venueId}.status = "LOCKED"`.
+    * Cho phép Admin mở khóa về `ACTIVE` hoặc `HIDDEN`; bảo toàn courts, price rules và bookings.
+  - Đăng ký cả 3 functions trong `supabase/config.toml` (`verify_jwt = false`).
+- **Rules Tests & Firestore Emulator (T040)**:
+  - Tạo `firestore-tests/test/user-venue-management.test.ts`: kiểm chứng Admin đọc được danh sách users; người dùng thường và owner bị chặn list users; cấm client tự ý sửa đổi các trường bảo vệ (`role`, `ownerStatus`, `accountStatus`, `ownerRevokedReason`); owner không thể tự mở khóa cơ sở `LOCKED` và không thể tự đặt cơ sở thành `LOCKED`; cấm client trực tiếp sửa trạng thái hồ sơ `ownerApplications`.
+- **Giao Diện Android XML & ViewBinding (T037, T038)**:
+  - `fragment_admin_user_management.xml` và `layout-w600dp/`: thanh tìm kiếm SĐT/UID, thẻ thông tin người dùng hiển thị họ tên, SĐT, UID, các chip trạng thái vai trò/chủ sân/tài khoản, nút Khóa/Mở khóa tài khoản, nút Thu hồi quyền chủ sân (chỉ hiện khi là chủ sân).
+  - `dialog_admin_revoke_owner.xml`: dialog cảnh báo kèm ô nhập lý do bắt buộc (min touch target >= 48dp).
+  - `fragment_admin_venue_management.xml` và `layout-w600dp/`: thanh tra cứu venueId, thẻ thông tin cơ sở hiển thị tên, địa chỉ, ownerId, chip trạng thái; nút Khóa cơ sở (khi ACTIVE/HIDDEN); lựa chọn mở khóa thành ACTIVE hoặc HIDDEN (khi LOCKED).
+  - Fragment & ViewModel: `AdminUserVenueViewModel.kt`, `AdminUserManagementFragment.kt`, `AdminVenueManagementFragment.kt`.
+  - Khai báo tài nguyên chuỗi `strings_admin.xml` và các destinations trong `nav_admin.xml`.
+- **Kiểm Thử Toàn Diện (T039, T041)**:
+  - Unit tests: `OwnerRevocationValidationTest` và `AdminUserVenueViewModelTest` chạy qua `./gradlew :app:testDebugUnitTest --tests "com.example.booking_app.feature.admin.*"` đạt **BUILD SUCCESSFUL in 50s** (100% PASS).
+  - Connected UI test: `AdminUserVenueScreensUiTest` chạy trên thiết bị vật lý `10ADBY2GH30038C` (Vivo V2247, Android 15) qua `./gradlew :app:connectedDebugAndroidTest "-Pandroid.testInstrumentationRunnerArguments.class=com.example.booking_app.feature.admin.AdminUserVenueScreensUiTest"` đạt **BUILD SUCCESSFUL in 58s** (100% PASS, 0 failures, 0 skipped trên cả phone 360dp và tablet 600dp ở 2 chế độ Day/Night).
+- **Cập nhật Hồ Sơ Nghiệm Thu**:
+  - Đánh dấu hoàn thành `[X]` cho 9/9 tasks (T033–T041) trong `specs/120-admin/tasks.md`. Nâng tổng số task hoàn thành của Feature 120 lên 41/54 tasks.
+  - Cập nhật nhật ký kiểm chứng trong `specs/120-admin/quickstart.md`.
+- **Tuân thủ cam kết**: Tuyệt đối không commit, không push.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+| --- | --- | --- |
+| `supabase/functions/admin-manage-user/` | Tạo mới | Triển khai Edge Function tra cứu user an toàn và cập nhật accountStatus kèm vô hiệu hóa auth. |
+| `supabase/functions/admin-revoke-owner/` | Tạo mới | Triển khai Edge Function thu hồi quyền chủ sân nguyên tử, đồng bộ role PLAYER, claim, gửi thông báo OWNER_REVOKED. |
+| `supabase/functions/admin-manage-venue/` | Tạo mới | Triển khai Edge Function khóa cơ sở và Admin mở khóa cơ sở về ACTIVE/HIDDEN. |
+| `supabase/config.toml` | Chỉnh sửa | Đăng ký 3 functions mới với `verify_jwt = false`. |
+| `app/src/main/java/com/example/booking_app/feature/admin/` | Tạo mới | Domain models, Repository, ViewModel, User Management Fragment, Venue Management Fragment. |
+| `app/src/main/res/layout/` & `layout-w600dp/` | Tạo mới | Layout XML cho user management, venue management và dialog thu hồi chủ sân theo Material 3 DayNight. |
+| `app/src/main/res/values/strings_admin.xml` | Chỉnh sửa | Bổ sung chuỗi ngôn ngữ tiếng Việt phục vụ quản lý user và cơ sở vi phạm. |
+| `app/src/main/res/navigation/nav_admin.xml` | Chỉnh sửa | Bổ sung navigation destinations cho user management và venue management. |
+| `app/src/test/java/com/example/booking_app/feature/admin/` | Tạo mới | Unit tests cho logic validation thu hồi quyền và StateFlow transitions của AdminUserVenueViewModel. |
+| `app/src/androidTest/java/com/example/booking_app/feature/admin/` | Tạo mới | Connected layout UI tests cho các màn hình quản lý user/venue trên thiết bị Android 15. |
+| `firestore-tests/test/user-venue-management.test.ts` | Tạo mới | Kiểm thử Firestore Rules bảo vệ trường quản trị user và cấm owner tự mở khóa venue LOCKED. |
+| `specs/120-admin/tasks.md` | Chỉnh sửa | Đánh dấu `[X]` cho 9 task từ T033 đến T041 (Phase 5 - US3). |
+| `specs/120-admin/quickstart.md` | Chỉnh sửa | Ghi nhận bằng chứng thực thi unit tests và connected UI tests cho US3. |
+
+### Cách kiểm chứng
+
+- Chạy Unit Tests: `./gradlew :app:testDebugUnitTest --tests "com.example.booking_app.feature.admin.*"`: **PASS** (`BUILD SUCCESSFUL in 50s`).
+- Chạy Connected UI Tests trên thiết bị thật: `./gradlew :app:connectedDebugAndroidTest "-Pandroid.testInstrumentationRunnerArguments.class=com.example.booking_app.feature.admin.AdminUserVenueScreensUiTest"`: **PASS** (`BUILD SUCCESSFUL in 58s`).
+- Kiểm tra tiến độ tasks Feature 120: 41/54 tasks (T001 đến T041) đã hoàn thành.
 - Tuyệt đối không commit, không push.
 
 ---

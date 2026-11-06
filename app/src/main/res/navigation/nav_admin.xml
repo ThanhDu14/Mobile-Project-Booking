@@ -42,4 +42,14 @@
         android:name="com.example.booking_app.feature.admin.ui.AdminReportDetailFragment"
         android:label="@string/admin_report_detail_title" />
 
+    <fragment
+        android:id="@+id/adminUserManagementFragment"
+        android:name="com.example.booking_app.feature.admin.ui.AdminUserManagementFragment"
+        android:label="@string/admin_user_management_title" />
+
+    <fragment
+        android:id="@+id/adminVenueManagementFragment"
+        android:name="com.example.booking_app.feature.admin.ui.AdminVenueManagementFragment"
+        android:label="@string/admin_venue_management_title" />
+
 </navigation>
