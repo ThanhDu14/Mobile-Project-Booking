@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- BottomNav người chơi theo design system SmashNow (wireframe 02_court-search_buoc1_trang-chu.png).
-     Vãng lai, Lịch đặt, Cộng đồng chưa có màn hình: spec 080/060/090 nối vào khi làm. -->
+     Vãng lai, Lịch đặt, Cộng đồng chưa có màn hình: spec 080/060/090 nối vào khi làm. Không có tab Tài khoản:
+     trang Tài khoản mở từ avatar ở header dùng chung (spec 011 US8, FR-026). Tab Tìm kiếm do spec 020 thêm (FR-028). -->
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
         android:id="@+id/tab_home"
@@ -18,8 +19,4 @@
         android:id="@+id/tab_community"
         android:icon="@drawable/ic_chat_24"
         android:title="@string/nav_tab_community" />
-    <item
-        android:id="@+id/tab_account"
-        android:icon="@drawable/ic_person_outline_24"
-        android:title="@string/nav_tab_account" />
 </menu>

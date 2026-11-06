@@ -40,13 +40,14 @@
     <fragment
         android:id="@+id/ownerHomePlaceholderFragment"
         android:name="com.example.booking_app.feature.auth.ui.home.OwnerHomePlaceholderFragment"
-        android:label="@string/app_name">
-        <action
-            android:id="@+id/action_ownerHome_to_account"
-            app:destination="@id/nav_account" />
-    </fragment>
+        android:label="@string/app_name" />
 
-    <!-- Trang Tài khoản của spec 011 (research R14). -->
+    <!-- Trang Tài khoản của spec 011 (research R14). Mở từ avatar ở header dùng chung (US8); cùng id action với
+         nav_player để AccountEntryNavigator dùng chung. -->
     <include app:graph="@navigation/nav_account" />
+
+    <action
+        android:id="@+id/action_global_account"
+        app:destination="@id/nav_account" />
 
 </navigation>
