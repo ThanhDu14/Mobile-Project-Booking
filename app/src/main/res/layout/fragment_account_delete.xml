@@ -1,0 +1,310 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Xóa tài khoản (spec 011 US6, FR-018–FR-022, wireframe ui/01_account_buoc5_xoa-tai-khoan.png,
+     contracts/ui-screens.md §2). Ba trạng thái: đang tải bản xem trước, lỗi + "Thử lại", có dữ liệu. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?android:attr/colorBackground"
+    android:orientation="vertical">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        app:navigationContentDescription="@string/account_back"
+        app:navigationIcon="@drawable/ic_arrow_back_24"
+        app:title="@string/account_delete_title"
+        app:titleTextAppearance="?attr/textAppearanceTitleLarge" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <com.google.android.material.progressindicator.CircularProgressIndicator
+            android:id="@+id/loading"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:indeterminate="true" />
+
+        <LinearLayout
+            android:id="@+id/errorGroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:padding="@dimen/space_6"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/errorText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:textAppearance="?attr/textAppearanceBodyLarge"
+                tools:text="@string/account_delete_loading_error" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/retryButton"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_4"
+                android:minHeight="@dimen/touch_min"
+                android:text="@string/account_retry" />
+        </LinearLayout>
+
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/content"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone">
+
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingHorizontal="@dimen/screen_gutter"
+                    android:paddingBottom="@dimen/space_6"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:layout_constraintWidth_max="@dimen/auth_form_max_width">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_2"
+                        android:text="@string/account_delete_warning"
+                        android:textAppearance="?attr/textAppearanceBodyLarge" />
+
+                    <!-- Thẻ vàng: đơn, lượt vãng lai, lượt chờ sắp tới sẽ bị hủy. -->
+                    <LinearLayout
+                        android:id="@+id/impactCard"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_4"
+                        android:background="@drawable/bg_info_box"
+                        android:backgroundTint="@color/sn_lamp_container"
+                        android:orientation="vertical"
+                        android:padding="@dimen/space_4">
+
+                        <TextView
+                            android:id="@+id/impactTitle"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:accessibilityHeading="true"
+                            android:drawablePadding="@dimen/space_3"
+                            android:gravity="center_vertical"
+                            android:textAppearance="?attr/textAppearanceTitleSmall"
+                            android:textColor="@color/sn_on_lamp_container"
+                            app:drawableStartCompat="@drawable/ic_event_24"
+                            app:drawableTint="@color/sn_on_lamp_container"
+                            tools:text="2 đơn sắp tới sẽ bị hủy" />
+
+                        <LinearLayout
+                            android:id="@+id/impactItems"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical" />
+                    </LinearLayout>
+
+                    <!-- Thẻ đỏ cho chủ sân. -->
+                    <TextView
+                        android:id="@+id/ownerCard"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_3"
+                        android:background="@drawable/bg_info_box"
+                        android:backgroundTint="?attr/colorErrorContainer"
+                        android:drawablePadding="@dimen/space_3"
+                        android:padding="@dimen/space_4"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorOnErrorContainer"
+                        android:visibility="gone"
+                        app:drawableStartCompat="@drawable/ic_store_24"
+                        app:drawableTint="?attr/colorOnErrorContainer"
+                        tools:text="@string/account_delete_owner_card"
+                        tools:visibility="visible" />
+
+                    <TextView
+                        android:id="@+id/walletNotice"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_3"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        tools:text="@string/account_delete_wallet_notice" />
+
+                    <TextView
+                        style="@style/Widget.SmashNow.DeleteSectionTitle"
+                        android:text="@string/account_delete_removed_title" />
+
+                    <TextView
+                        style="@style/Widget.SmashNow.DeleteRemovedRow"
+                        android:text="@string/account_delete_removed_profile" />
+
+                    <TextView
+                        style="@style/Widget.SmashNow.DeleteRemovedRow"
+                        android:text="@string/account_delete_removed_history" />
+
+                    <TextView
+                        style="@style/Widget.SmashNow.DeleteRemovedRow"
+                        android:text="@string/account_delete_removed_notifications" />
+
+                    <TextView
+                        style="@style/Widget.SmashNow.DeleteRemovedRow"
+                        android:text="@string/account_delete_removed_wallet" />
+
+                    <TextView
+                        style="@style/Widget.SmashNow.DeleteRemovedRow"
+                        android:text="@string/account_delete_removed_owner" />
+
+                    <TextView
+                        style="@style/Widget.SmashNow.DeleteSectionTitle"
+                        android:text="@string/account_delete_kept_title" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:drawablePadding="@dimen/space_3"
+                        android:text="@string/account_delete_kept_body"
+                        android:textAppearance="?attr/textAppearanceBodyLarge"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        app:drawableStartCompat="@drawable/ic_visibility_off_24"
+                        app:drawableTint="?attr/colorOnSurfaceVariant" />
+
+                    <!-- Xác nhận danh tính: ô mật khẩu (provider password) hoặc nút mở ReauthDialog. -->
+                    <TextView
+                        android:id="@+id/identityLabel"
+                        style="@style/Widget.SmashNow.FieldLabel"
+                        android:layout_marginTop="@dimen/space_6"
+                        android:labelFor="@id/passwordInput"
+                        android:text="@string/account_delete_password_label" />
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/passwordLayout"
+                        style="@style/Widget.SmashNow.TextInputLayout"
+                        android:hint="@string/account_password_current"
+                        app:endIconContentDescription="@string/auth_password_toggle"
+                        app:endIconMode="password_toggle"
+                        app:hintEnabled="false">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/passwordInput"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:autofillHints="password"
+                            android:hint="@string/account_password_current"
+                            android:imeOptions="actionNext"
+                            android:inputType="textPassword"
+                            android:saveEnabled="false" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/reauthButton"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:minHeight="@dimen/touch_min"
+                        android:visibility="gone"
+                        tools:text="@string/account_reauth_google" />
+
+                    <TextView
+                        android:id="@+id/identityDone"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:drawablePadding="@dimen/space_2"
+                        android:gravity="center_vertical"
+                        android:minHeight="@dimen/touch_min"
+                        android:text="@string/account_delete_identity_done"
+                        android:textAppearance="?attr/textAppearanceBodyLarge"
+                        android:textColor="?attr/colorPrimary"
+                        android:visibility="gone"
+                        app:drawableStartCompat="@drawable/ic_check_20"
+                        app:drawableTint="?attr/colorPrimary" />
+
+                    <TextView
+                        style="@style/Widget.SmashNow.FieldLabel"
+                        android:labelFor="@id/confirmInput"
+                        android:text="@string/account_delete_confirm_label" />
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/confirmLayout"
+                        style="@style/Widget.SmashNow.TextInputLayout">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/confirmInput"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:hint="@string/account_delete_confirm_word"
+                            android:imeOptions="actionDone"
+                            android:importantForAutofill="no"
+                            android:inputType="textCapCharacters|textNoSuggestions" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.checkbox.MaterialCheckBox
+                        android:id="@+id/ackCheck"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_4"
+                        android:minHeight="@dimen/touch_min"
+                        android:textAppearance="?attr/textAppearanceBodyLarge"
+                        tools:text="@string/account_delete_ack" />
+                </LinearLayout>
+            </androidx.constraintlayout.widget.ConstraintLayout>
+        </androidx.core.widget.NestedScrollView>
+    </FrameLayout>
+
+    <!-- Nút cố định ở cuối màn hình như wireframe. -->
+    <LinearLayout
+        android:id="@+id/actions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_horizontal"
+        android:orientation="vertical"
+        android:paddingHorizontal="@dimen/screen_gutter"
+        android:paddingVertical="@dimen/space_3">
+
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:maxWidth="@dimen/auth_form_max_width">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/deleteButton"
+                style="@style/Widget.SmashNow.Button.Danger"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:enabled="false"
+                android:minHeight="@dimen/touch_min"
+                android:text="@string/account_delete_submit" />
+
+            <com.google.android.material.progressindicator.CircularProgressIndicator
+                android:id="@+id/deleteProgress"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:indeterminate="true"
+                android:visibility="gone"
+                app:indicatorColor="?attr/colorOnError"
+                app:indicatorSize="24dp" />
+        </FrameLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/keepButton"
+            style="?attr/borderlessButtonStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="@dimen/touch_min"
+            android:text="@string/account_delete_keep" />
+    </LinearLayout>
+</LinearLayout>

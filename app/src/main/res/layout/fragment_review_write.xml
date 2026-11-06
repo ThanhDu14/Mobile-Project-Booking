@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Viết đánh giá (spec 070 US1, wireframe 07_review-favorite_buoc1_viet-danh-gia).
+    Vùng ảnh (US2) thêm vào khối photoSection khi làm T045.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?android:attr/colorBackground"
+    android:orientation="vertical">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        app:navigationContentDescription="@string/review_close"
+        app:navigationIcon="@drawable/ic_close_24"
+        app:title="@string/review_write_title"
+        app:titleTextAppearance="?attr/textAppearanceTitleLarge" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/content"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingHorizontal="@dimen/screen_gutter"
+                android:paddingBottom="@dimen/space_6">
+
+                <!-- Thẻ thông tin đơn -->
+                <com.google.android.material.card.MaterialCardView
+                    style="?attr/materialCardViewOutlinedStyle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_2"
+                    app:cardBackgroundColor="?attr/colorSurfaceContainerLowest">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal"
+                        android:padding="@dimen/space_3">
+
+                        <com.google.android.material.imageview.ShapeableImageView
+                            android:id="@+id/venuePhoto"
+                            android:layout_width="56dp"
+                            android:layout_height="56dp"
+                            android:background="@drawable/bg_venue_placeholder"
+                            android:importantForAccessibility="no"
+                            android:scaleType="centerCrop"
+                            app:shapeAppearance="?attr/shapeAppearanceCornerSmall" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/space_3"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:id="@+id/venueName"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:ellipsize="end"
+                                android:maxLines="2"
+                                android:textAppearance="?attr/textAppearanceTitleMedium"
+                                android:textColor="?attr/colorOnSurface"
+                                tools:text="Sân Phú Thọ" />
+
+                            <TextView
+                                android:id="@+id/bookingTime"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:textAppearance="?attr/textAppearanceBodySmall"
+                                android:textColor="?attr/colorOnSurfaceVariant"
+                                tools:text="CN, 04/10 · 07:00 – 09:00 · Sân 2" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Trạng thái chỉ xem: đã đánh giá, hết hạn, đơn chưa hoàn thành -->
+                <TextView
+                    android:id="@+id/statusBanner"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_4"
+                    android:background="@drawable/bg_info_box"
+                    android:padding="@dimen/space_3"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="?attr/colorOnSurface"
+                    android:visibility="gone"
+                    tools:text="@string/review_already_submitted"
+                    tools:visibility="visible" />
+
+                <!-- 3 tiêu chí -->
+                <LinearLayout
+                    android:id="@+id/rowCourt"
+                    style="@style/Widget.SmashNow.ReviewCriterionRow"
+                    android:layout_marginTop="@dimen/space_4">
+
+                    <TextView
+                        style="@style/Widget.SmashNow.ReviewCriterionLabel"
+                        android:labelFor="@id/ratingCourt"
+                        android:text="@string/review_criterion_court" />
+
+                    <RatingBar
+                        android:id="@+id/ratingCourt"
+                        style="@style/Widget.SmashNow.ReviewRatingBar" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/rowCleanliness"
+                    style="@style/Widget.SmashNow.ReviewCriterionRow">
+
+                    <TextView
+                        style="@style/Widget.SmashNow.ReviewCriterionLabel"
+                        android:labelFor="@id/ratingCleanliness"
+                        android:text="@string/review_criterion_cleanliness" />
+
+                    <RatingBar
+                        android:id="@+id/ratingCleanliness"
+                        style="@style/Widget.SmashNow.ReviewRatingBar" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/rowService"
+                    style="@style/Widget.SmashNow.ReviewCriterionRow">
+
+                    <TextView
+                        style="@style/Widget.SmashNow.ReviewCriterionLabel"
+                        android:labelFor="@id/ratingService"
+                        android:text="@string/review_criterion_service" />
+
+                    <RatingBar
+                        android:id="@+id/ratingService"
+                        style="@style/Widget.SmashNow.ReviewRatingBar" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/missingCriteria"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_2"
+                    android:accessibilityLiveRegion="polite"
+                    android:drawablePadding="@dimen/space_2"
+                    android:gravity="center_vertical"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="?attr/colorError"
+                    android:visibility="gone"
+                    app:drawableStartCompat="@drawable/ic_error_24"
+                    app:drawableTint="?attr/colorError"
+                    tools:text="Chấm &quot;Thái độ phục vụ&quot; để gửi đánh giá"
+                    tools:visibility="visible" />
+
+                <!-- Bình luận -->
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_6"
+                    android:text="@string/review_comment_label"
+                    android:textAppearance="?attr/textAppearanceTitleSmall"
+                    android:textColor="?attr/colorOnSurface" />
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/commentLayout"
+                    style="?attr/textInputOutlinedStyle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_2"
+                    app:counterEnabled="true"
+                    app:counterMaxLength="1000">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/commentInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="top|start"
+                        android:hint="@string/review_comment_hint"
+                        android:inputType="textCapSentences|textMultiLine"
+                        android:minLines="4" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Vùng ảnh (US2, T045) -->
+                <LinearLayout
+                    android:id="@+id/photoSection"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:id="@+id/publicNotice"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_4"
+                    android:textAppearance="?attr/textAppearanceBodySmall"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    tools:text="Đánh giá hiện công khai với tên và ảnh đại diện của bạn. Bạn sửa được đến hết 11/10, xóa được bất cứ lúc nào." />
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+
+        <include
+            android:id="@+id/stateViews"
+            layout="@layout/include_state_views" />
+    </FrameLayout>
+
+    <!-- Thanh dưới: điểm tổng + nút gửi -->
+    <!-- Chỉ hiện khi còn viết được (CAN_WRITE). -->
+    <LinearLayout
+        android:id="@+id/bottomBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_review_bottom_bar"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="@dimen/screen_gutter"
+        android:paddingVertical="@dimen/space_3"
+        android:visibility="gone"
+        tools:visibility="visible">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/review_overall_label"
+                android:textAppearance="?attr/textAppearanceLabelMedium"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+
+            <TextView
+                android:id="@+id/overallValue"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
+                android:textColor="?attr/colorOnSurface"
+                tools:text="@string/review_overall_empty" />
+        </LinearLayout>
+
+        <FrameLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/submitButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:text="@string/review_submit" />
+
+            <com.google.android.material.progressindicator.CircularProgressIndicator
+                android:id="@+id/submitProgress"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:indeterminate="true"
+                android:visibility="gone"
+                app:indicatorSize="24dp" />
+        </FrameLayout>
+    </LinearLayout>
+</LinearLayout>

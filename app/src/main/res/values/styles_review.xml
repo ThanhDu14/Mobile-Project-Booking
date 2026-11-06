@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Style riêng của spec 070 (đánh giá sân). -->
+<resources>
+    <!-- Một dòng tiêu chí: nhãn trái, 5 sao phải. -->
+    <style name="Widget.SmashNow.ReviewCriterionRow" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:minHeight">56dp</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:orientation">horizontal</item>
+    </style>
+
+    <style name="Widget.SmashNow.ReviewCriterionLabel" parent="">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:textAppearance">?attr/textAppearanceBodyLarge</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+    </style>
+
+    <!-- Bước 1 sao, màu đèn sân (sn_lamp) như wireframe; mỗi sao đủ vùng chạm 48dp. -->
+    <style name="Widget.SmashNow.ReviewRatingBar" parent="Widget.AppCompat.RatingBar">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:numStars">5</item>
+        <item name="android:stepSize">1</item>
+        <item name="android:rating">0</item>
+        <item name="android:isIndicator">false</item>
+        <item name="android:progressTint">@color/sn_lamp</item>
+        <item name="android:secondaryProgressTint">@color/sn_lamp</item>
+        <item name="android:progressBackgroundTint">?attr/colorOutline</item>
+    </style>
+</resources>
