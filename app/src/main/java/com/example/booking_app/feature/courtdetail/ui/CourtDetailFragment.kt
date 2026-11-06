@@ -1,12 +1,21 @@
 package com.example.booking_app.feature.courtdetail.ui
 
+import android.content.ActivityNotFoundException
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.DrawableRes
+import androidx.core.content.getSystemService
+import androidx.core.net.toUri
 import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
+import androidx.core.widget.NestedScrollView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -18,8 +27,12 @@ import com.example.booking_app.R
 import com.example.booking_app.core.catalog.Amenity
 import com.example.booking_app.core.network.AppError
 import com.example.booking_app.databinding.FragmentCourtDetailBinding
+import com.example.booking_app.databinding.ViewCourtDetailCriteriaBinding
+import com.example.booking_app.databinding.ViewCourtDetailMapBinding
 import com.example.booking_app.databinding.ViewCourtDetailSectionErrorBinding
+import com.example.booking_app.feature.courtdetail.domain.model.LatLng
 import com.example.booking_app.feature.courtdetail.domain.model.OpeningStatus
+import com.example.booking_app.feature.courtdetail.domain.model.PhoneDisplay
 import com.google.android.material.chip.Chip
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
@@ -40,8 +53,14 @@ class CourtDetailFragment : Fragment() {
 
     private lateinit var galleryAdapter: PhotoGalleryAdapter
     private val priceAdapter = PriceTableAdapter()
+    private val reviewAdapter = ReviewPreviewAdapter(onPhotoClick = { id, index -> viewModel.onReviewPhotoClicked(id, index) })
     private var galleryRestored = false
     private var venueName: String = ""
+
+    /** Bản đồ chỉ tạo khi mục "Vị trí" gần vùng nhìn thấy (R7); lỗi tile thì ẩn đến hết vòng đời view. */
+    private var mapController: VenueMapController? = null
+    private var mapPoint: LatLng? = null
+    private var mapFailed = false
 
     private val pageCallback = object : ViewPager2.OnPageChangeCallback() {
         override fun onPageSelected(position: Int) {
@@ -68,6 +87,12 @@ class CourtDetailFragment : Fragment() {
         binding.fullScreenRetry.setOnClickListener { viewModel.onRetry(SectionId.HEADER) }
         binding.priceList.adapter = priceAdapter
         binding.pricesError.retryButton.setOnClickListener { viewModel.onRetry(SectionId.PRICES) }
+        binding.reviewList.adapter = reviewAdapter
+        binding.reviewsError.retryButton.setOnClickListener { viewModel.onRetry(SectionId.REVIEWS) }
+        binding.seeAllReviewsButton.setOnClickListener { viewModel.onSeeAllReviewsClicked() }
+        binding.criteriaCourt.criteriaLabel.setText(R.string.court_detail_criteria_court)
+        binding.criteriaCleanliness.criteriaLabel.setText(R.string.court_detail_criteria_cleanliness)
+        binding.criteriaService.criteriaLabel.setText(R.string.court_detail_criteria_service)
         binding.amenitiesError.retryButton.setOnClickListener { viewModel.onRetry(SectionId.AMENITIES) }
         binding.courtsCard.root.setOnClickListener {
             if (viewModel.uiState.value.courts is Section.Error) viewModel.onRetry(SectionId.COURTS)
@@ -76,11 +101,21 @@ class CourtDetailFragment : Fragment() {
         // TODO(C): mở smashnow://chat/direct khi 091 có deep link (research R7); US5 nối vào ViewModel.
         binding.chatButton.setOnClickListener { showMessage(CourtDetailMessage.COMING_SOON) }
 
-        // Chưa có US3: ẩn thẻ khoảng cách và số điện thoại.
-        binding.distanceCard.root.isVisible = false
-        binding.distanceCardSpace.isVisible = false
-        binding.phoneCard.root.isVisible = false
-        binding.phoneCardSpace.isVisible = false
+        mapController = null
+        mapPoint = null
+        mapFailed = false
+        binding.directionsButton.setOnClickListener { viewModel.onDirectionsClicked() }
+        binding.distanceCard.root.setOnClickListener { viewModel.onDirectionsClicked() }
+        binding.distanceCard.icon.setImageResource(R.drawable.ic_directions_24)
+        binding.phoneCard.icon.setImageResource(R.drawable.ic_call_24)
+        listOf(binding.phoneCard.root, binding.pricesEmpty).forEach { view ->
+            view.setOnClickListener { viewModel.onPhoneClicked() }
+            view.setOnLongClickListener {
+                viewModel.onPhoneLongClicked()
+                true
+            }
+        }
+        binding.scrollView.setOnScrollChangeListener(NestedScrollView.OnScrollChangeListener { _, _, _, _, _ -> maybeShowMap() })
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -91,9 +126,13 @@ class CourtDetailFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        // MapView.onDetach đã chạy ở ON_DESTROY của viewLifecycleOwner (VenueMapController).
+        mapController = null
+        binding.scrollView.setOnScrollChangeListener(null as NestedScrollView.OnScrollChangeListener?)
         binding.photoPager.unregisterOnPageChangeCallback(pageCallback)
         binding.photoPager.adapter = null
         binding.priceList.adapter = null
+        binding.reviewList.adapter = null
         _binding = null
         super.onDestroyView()
     }
@@ -113,8 +152,12 @@ class CourtDetailFragment : Fragment() {
         binding.offlineBanner.isVisible = state.isOffline
         if (header is Section.Content) renderHeader(header.data, state.photoIndex)
         renderCourts(state)
+        renderDistanceCard(state)
+        renderPhoneCard(state.phone)
         renderAmenities(state.amenities)
-        renderPrices(state.prices)
+        renderPrices(state.prices, state.phone)
+        renderLocation(state)
+        renderReviews(state)
         renderBottomBar(state)
     }
 
@@ -230,11 +273,15 @@ class CourtDetailFragment : Fragment() {
         }
     }
 
-    private fun renderPrices(section: Section<PriceContent>) {
+    private fun renderPrices(section: Section<PriceContent>, phone: PhoneDisplay?) {
         binding.pricesLoading.isVisible = section is Section.Loading
         binding.priceList.isVisible = section is Section.Content
-        // TODO(US3): "Liên hệ" kèm số điện thoại khi có PhoneDisplay; chưa có số thì "Liên hệ chủ sân" (Edge case).
+        // Rỗng → "Liên hệ" + số (bấm gọi như thẻ số điện thoại, R9); không có số → "Liên hệ chủ sân".
         binding.pricesEmpty.isVisible = section is Section.Empty
+        binding.pricesEmpty.text = phone?.let { getString(R.string.court_detail_contact_phone, it.text) }
+            ?: getString(R.string.court_detail_contact_owner)
+        binding.pricesEmpty.isClickable = phone is PhoneDisplay.Dialable
+        binding.pricesEmpty.isLongClickable = phone != null
         showSectionError(binding.pricesError, section)
         val content = (section as? Section.Content)?.data
         priceAdapter.submitGroups(content?.groups.orEmpty())
@@ -246,6 +293,122 @@ class CourtDetailFragment : Fragment() {
                 ?.let { getString(R.string.court_detail_price_per_hour, CourtDetailFormat.vnd(it)) }
                 ?: getString(R.string.court_detail_contact)
         }
+    }
+
+    /** Mục 7 (FR-014, FR-015): rỗng → "Sân chưa có đánh giá", ẩn "Xem tất cả"; lỗi chỉ ở mục này → "Thử lại". */
+    private fun renderReviews(state: CourtDetailUiState) {
+        val section = state.reviews
+        binding.reviewsSection.isVisible = state.header is Section.Content
+        binding.reviewsLoading.isVisible = section is Section.Loading
+        binding.reviewsEmpty.isVisible = section is Section.Empty
+        showSectionError(binding.reviewsError, section)
+        val content = (section as? Section.Content)?.data
+        binding.reviewsSummary.isVisible = content != null
+        binding.reviewList.isVisible = content != null && content.reviews.isNotEmpty()
+        binding.seeAllReviewsButton.isVisible = content != null
+        reviewAdapter.submitList(content?.reviews.orEmpty())
+        if (content == null) return
+
+        val summary = content.summary
+        val score = CourtDetailFormat.rating(summary.average)
+        val count = resources.getQuantityString(R.plurals.court_detail_review_count, summary.count, summary.count)
+        binding.reviewsScoreText.text = score
+        binding.reviewsStars.rating = summary.average.toFloat()
+        binding.reviewsCountText.text = count
+        binding.reviewsScoreBlock.contentDescription = "${getString(R.string.court_detail_cd_rating, score)}, $count"
+        renderCriteria(binding.criteriaCourt, R.string.court_detail_criteria_court, summary.courtAvg)
+        renderCriteria(binding.criteriaCleanliness, R.string.court_detail_criteria_cleanliness, summary.cleanlinessAvg)
+        renderCriteria(binding.criteriaService, R.string.court_detail_criteria_service, summary.serviceAvg)
+        binding.seeAllReviewsButton.text = getString(R.string.court_detail_reviews_see_all, summary.count)
+    }
+
+    private fun renderCriteria(view: ViewCourtDetailCriteriaBinding, label: Int, value: Double?) {
+        view.root.isVisible = value != null
+        if (value == null) return
+        val text = CourtDetailFormat.rating(value)
+        view.criteriaValue.text = text
+        view.criteriaBar.setProgressCompat((value * 10).toInt().coerceIn(0, view.criteriaBar.max), false)
+        view.root.contentDescription = getString(R.string.court_detail_cd_criteria, getString(label), text)
+    }
+
+    /** Thẻ (b): "1,2 km / Từ vị trí của bạn" khi có quyền vị trí, ngược lại "Chỉ đường"; ẩn khi không có tọa độ. */
+    private fun renderDistanceCard(state: CourtDetailUiState) {
+        val visible = state.map is Section.Content
+        binding.distanceCard.root.isVisible = visible
+        binding.distanceCardSpace.isVisible = visible
+        if (!visible) return
+        val card = binding.distanceCard
+        val distance = state.distanceText
+        val directions = getString(R.string.court_detail_directions)
+        if (distance != null) {
+            val from = getString(R.string.court_detail_distance_from_you)
+            card.value.text = distance
+            card.sub.text = from
+            card.sub.isVisible = true
+            card.root.contentDescription = "$distance $from. $directions"
+        } else {
+            card.value.text = directions
+            card.sub.isVisible = false
+            card.root.contentDescription = directions
+        }
+    }
+
+    /** Thẻ (c): ẩn khi không có số; `DisplayOnly` bỏ "Bấm để gọi" và chỉ nhấn giữ để sao chép (R9). */
+    private fun renderPhoneCard(phone: PhoneDisplay?) {
+        binding.phoneCard.root.isVisible = phone != null
+        binding.phoneCardSpace.isVisible = phone != null
+        if (phone == null) return
+        val card = binding.phoneCard
+        val dialable = phone is PhoneDisplay.Dialable
+        card.value.text = phone.text
+        card.sub.isVisible = dialable
+        card.sub.setText(R.string.court_detail_tap_to_call)
+        card.root.isClickable = dialable
+        card.root.isLongClickable = true
+        card.root.contentDescription = if (dialable) {
+            "${phone.text}. ${getString(R.string.court_detail_tap_to_call)}"
+        } else {
+            phone.text
+        }
+    }
+
+    /** Mục 6: không có tọa độ → ẩn bản đồ và "Chỉ đường", vẫn hiện địa chỉ (Edge case R7). */
+    private fun renderLocation(state: CourtDetailUiState) {
+        val header = (state.header as? Section.Content)?.data
+        binding.locationSection.isVisible = header != null
+        if (header == null) return
+        binding.locationAddressText.text = listOfNotNull(header.address, header.districtName).joinToString(", ")
+        val point = (state.map as? Section.Content)?.data
+        binding.directionsButton.isVisible = point != null
+        mapPoint = point
+        val map = mapController
+        when {
+            point == null || mapFailed -> mapCard()?.isVisible = false
+            map != null -> {
+                mapCard()?.isVisible = true
+                map.show(point, header.name)
+            }
+            // Lần vẽ đầu chưa có kích thước: đợi layout xong rồi xét lại.
+            else -> binding.scrollView.post { maybeShowMap() }
+        }
+    }
+
+    private fun mapCard(): View? = _binding?.root?.findViewById(R.id.mapCard)
+
+    /** Inflate bản đồ khi mục "Vị trí" cách cạnh dưới vùng nhìn thấy dưới một chiều cao màn hình (FR-024). */
+    private fun maybeShowMap() {
+        val b = _binding ?: return
+        val point = mapPoint ?: return
+        if (mapController != null || mapFailed || !b.locationSection.isVisible) return
+        val viewport = b.scrollView.height
+        if (viewport == 0) return
+        val visibleBottom = b.scrollView.scrollY + viewport
+        if (b.locationSection.top - visibleBottom >= viewport) return
+        val mapBinding = ViewCourtDetailMapBinding.bind(b.mapStub.inflate())
+        mapController = VenueMapController(mapBinding, viewLifecycleOwner) {
+            mapFailed = true
+            mapCard()?.isVisible = false
+        }.also { it.show(point, venueName) }
     }
 
     private fun renderBottomBar(state: CourtDetailUiState) {
@@ -297,7 +460,58 @@ class CourtDetailFragment : Fragment() {
                 bundleOf("photoUrls" to effect.urls.toTypedArray(), "startIndex" to effect.index),
             )
             is CourtDetailEffect.Snackbar -> showMessage(effect.message)
-            else -> Unit // Các sự kiện của US3–US5 nối vào khi làm các story đó.
+            is CourtDetailEffect.Dial -> dial(effect.e164)
+            is CourtDetailEffect.CopyPhone -> copyPhone(effect.text)
+            is CourtDetailEffect.OpenDirections -> openDirections(effect)
+            is CourtDetailEffect.OpenReviews -> openReviews(effect.venueId)
+            else -> Unit // Các sự kiện của US4–US5 nối vào khi làm các story đó.
+        }
+    }
+
+    /** Danh sách đánh giá đầy đủ của 070 qua deep link (research R3). */
+    private fun openReviews(venueId: String) {
+        try {
+            findNavController().navigate("smashnow://review/venue/${Uri.encode(venueId)}".toUri())
+        } catch (_: IllegalArgumentException) {
+            // TODO(C): bỏ nhánh này khi 070 khai báo deep link smashnow://review/venue/{venueId} trong nav graph.
+            showMessage(CourtDetailMessage.COMING_SOON)
+        }
+    }
+
+    /** `ACTION_DIAL` không cần quyền; máy không nghe gọi được thì sao chép số (R9). */
+    private fun dial(e164: String) {
+        val fallback = viewModel.uiState.value.phone?.text ?: e164
+        if (!requireContext().packageManager.hasSystemFeature(PackageManager.FEATURE_TELEPHONY)) {
+            copyPhone(fallback)
+            return
+        }
+        try {
+            startActivity(Intent(Intent.ACTION_DIAL, "tel:$e164".toUri()))
+        } catch (_: ActivityNotFoundException) {
+            copyPhone(fallback)
+        }
+    }
+
+    private fun copyPhone(text: String) {
+        val clipboard = requireContext().getSystemService<ClipboardManager>() ?: return
+        clipboard.setPrimaryClip(ClipData.newPlainText(getString(R.string.court_detail_phone_copied), text))
+        showMessage(CourtDetailMessage.PHONE_COPIED)
+    }
+
+    /** Ứng dụng bản đồ qua `geo:`, không có thì trình duyệt. Dùng try/catch nên không khai báo `<queries>` (R7). */
+    private fun openDirections(effect: CourtDetailEffect.OpenDirections) {
+        val lat = effect.lat
+        val lng = effect.lng
+        val geo = "geo:$lat,$lng?q=$lat,$lng(${Uri.encode(effect.name)})".toUri()
+        try {
+            startActivity(Intent(Intent.ACTION_VIEW, geo))
+        } catch (_: ActivityNotFoundException) {
+            val web = "https://www.google.com/maps/dir/?api=1&destination=$lat,$lng".toUri()
+            try {
+                startActivity(Intent(Intent.ACTION_VIEW, web))
+            } catch (_: ActivityNotFoundException) {
+                // Máy không có cả ứng dụng bản đồ lẫn trình duyệt: không còn cách mở, bỏ qua.
+            }
         }
     }
 

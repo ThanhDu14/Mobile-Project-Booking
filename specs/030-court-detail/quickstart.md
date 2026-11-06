@@ -85,3 +85,15 @@ Các ca này nằm trong `app/src/test/resources/pricing/window-price-vectors.js
 | Q26 | 5 người ngoài nhóm tìm giá cao điểm, giờ đóng cửa, số điện thoại của `demo-k3` | ≥ 4/5 người xong dưới 30 giây | SC-003, T078 |
 
 Lưu ảnh chụp Q1, Q11, Q13, Q17 vào `docs/features/03-court-detail/screenshots/` theo tên `03_court-detail_buocX_mo-ta.png`. Mỗi ảnh dùng dữ liệu seed phải kèm ghi chú "Dữ liệu demo lấy từ datlich.alobo.vn, chỉ dùng cho mục đích học tập" (quyết định C1).
+
+## 5. Kết quả chạy thật
+
+### 2026-11-06 – US4 (T053–T058), máy ảo Android 16, Firebase Emulator (project `mobile-22e6c`, seed `seed.mjs` + `seed-reviews-030.mjs`)
+
+| Mục | Người dùng | Kết quả | Ghi chú |
+|---|---|---|---|
+| Q11 | Người chơi đăng nhập (tài khoản thử trên Auth Emulator) | **Đạt một phần** | Điểm "4,2", "11 đánh giá"; tiêu chí 4,4 / 4,2 / 4,2 khớp `ratingSums` (48, 46, 46 / 11). 3 đánh giá mới nhất 30/10, 28/10, 27/10, không có đánh giá `HIDDEN` (29/10). Đánh giá `authorDeleted` hiện "Người dùng đã xóa" + ảnh mặc định; có khối "Phản hồi của chủ sân". "Xem tất cả (11)" hiện "Tính năng sắp có" vì 070 chưa khai báo deep link `smashnow://review/venue/{venueId}` (`TODO(C)`), chưa mở được danh sách 070. Ảnh đánh giá seed là path không có trên Supabase nên hiện ảnh mặc định. |
+| Q11 | Khách | **Chờ C** | Mục "Đánh giá" báo "Không tải được mục này" + "Thử lại"; các mục khác bình thường, điểm ở phần đầu vẫn hiện "4,2 (11 đánh giá)". Do Rules `reviews` còn yêu cầu `isSignedIn()` (research R10, đề xuất cho C). |
+| Q12 | Người chơi đăng nhập (`demo-truong-chinh-909`) | **Đạt** | "Sân chưa có đánh giá", không có "Xem tất cả"; không đọc `reviews` (`ratingCount == 0`). |
+
+Phát hiện khi chạy (2026-11-06, ngoài US4): trên Firestore thật `amenities` không có khối `match` trong `firestore.rules` nên mục "Tiện ích" báo lỗi với mọi người; `districts` chỉ cho người đã đăng nhập. Đề xuất cho D (T074).

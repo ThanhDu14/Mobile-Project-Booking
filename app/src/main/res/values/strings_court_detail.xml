@@ -32,6 +32,7 @@
     <string name="court_detail_selected_window_detail">%1$s · %2$s – %3$s</string>
     <string name="court_detail_contact">Liên hệ</string>
     <string name="court_detail_contact_owner">Liên hệ chủ sân</string>
+    <string name="court_detail_contact_phone">Liên hệ %1$s</string>
     <string name="court_detail_label_normal">Giờ thường</string>
     <string name="court_detail_label_peak">Giờ cao điểm</string>
     <string name="court_detail_label_weekend">Cuối tuần</string>
@@ -67,6 +68,9 @@
     <string name="court_detail_criteria_service">Phục vụ</string>
     <string name="court_detail_rating_value">%1$s</string>
     <string name="court_detail_rating_with_count">★ %1$s (%2$s)</string>
+    <string name="court_detail_cd_review">%1$s, %2$d trên 5 sao, ngày %3$s</string>
+    <string name="court_detail_cd_review_photo">Ảnh %1$d của đánh giá</string>
+    <string name="court_detail_cd_criteria">%1$s: %2$s trên 5</string>
     <plurals name="court_detail_review_count">
         <item quantity="one">%1$d đánh giá</item>
         <item quantity="other">%1$d đánh giá</item>

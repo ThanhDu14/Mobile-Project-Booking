@@ -357,7 +357,7 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
 
 ### Tests cho User Story 3 ⚠️ viết trước, phải fail
 
-- [ ] T047 [P] [US3] Unit test `TEST/feature/courtdetail/domain/PhoneDisplayTest.kt`:
+- [x] T047 [P] [US3] Unit test `TEST/feature/courtdetail/domain/PhoneDisplayTest.kt`:
   - `"0901 234 567"`, `"0901.234.567"` → `Dialable("+84901234567", "0901 234 567")`;
   - số bàn 11 chữ số `"028 3812 3456"` → `Dialable("+842838123456", …)` (sửa sau `/speckit-analyze` I2);
   - quá ngắn hoặc quá dài (`"090123"`, `"090123456789"`) → `DisplayOnly`;
@@ -365,7 +365,7 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
   - chuỗi rỗng hoặc `null` → `null`.
 
   Regex `^(0|\+84)\d{9,10}$` sau khi bỏ khoảng trắng và dấu chấm ([R9](research.md#r9-số-điện-thoại-fr-012)).
-- [ ] T048 [P] [US3] Unit test `TEST/feature/courtdetail/ui/CourtDetailViewModelUs3Test.kt`:
+- [x] T048 [P] [US3] Unit test `TEST/feature/courtdetail/ui/CourtDetailViewModelUs3Test.kt`:
   - `Dialable` + bấm → effect `Dial(e164)`; `DisplayOnly` + bấm → không có effect, nhấn giữ → `CopyPhone`;
   - không có `phone` → thẻ số điện thoại ẩn;
   - `location == null` → `map = Empty`;
@@ -374,9 +374,9 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
 
 ### Implementation cho User Story 3
 
-- [ ] T049 [P] [US3] Cài `CD/domain/PhoneDisplay.kt`. Cho T047 xanh
-- [ ] T050 [US3] Cài `CD/ui/VenueMapController.kt` bọc osmdroid `MapView` theo [R7](research.md#r7-bản-đồ-nhúng-và-chỉ-đường-fr-010-fr-011-fr-013):
-  - `Configuration.getInstance().userAgentValue = BuildConfig.APPLICATION_ID`; `osmdroidBasePath`, `osmdroidTileCache` trong `context.cacheDir/osmdroid` (không cần quyền bộ nhớ);
+- [x] T049 [P] [US3] Cài `CD/domain/PhoneDisplay.kt`. Cho T047 xanh
+- [x] T050 [US3] Cài `CD/ui/VenueMapController.kt` bọc osmdroid `MapView` theo [R7](research.md#r7-bản-đồ-nhúng-và-chỉ-đường-fr-010-fr-011-fr-013):
+  - `Configuration.getInstance().userAgentValue` riêng dạng `"SmashNow/{versionName} (Android; +{repo URL})"` (tên gói `com.example.*` bị OSM chặn, phát hiện khi chạy máy ảo); `osmdroidBasePath`, `osmdroidTileCache` trong `context.cacheDir/osmdroid` (không cần quyền bộ nhớ);
   - tắt multi-touch, cuộn và xoay; zoom 16; marker `ic_marker_shuttlecock` ở giữa;
   - chế độ tối dùng `TilesOverlay.INVERT_COLORS`;
   - ghi nguồn "© OpenStreetMap contributors" bằng `CopyrightOverlay` (hoặc `TextView` chồng lên góc bản đồ, chữ ≥ 10sp, đọc được ở cả hai chế độ), bắt buộc theo giấy phép ODbL và chính sách tile của OSM (sửa sau `/speckit-analyze` C3);
@@ -384,8 +384,8 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
   - tile lỗi (`TileLoadFailed` / `MapListener`) → callback để Fragment ẩn bản đồ, giữ địa chỉ và nút.
 
   Bản đồ nằm trong `ViewStub` và chỉ inflate khi mục "Vị trí" cách vùng nhìn thấy dưới một chiều cao màn hình (lắng nghe `NestedScrollView.setOnScrollChangeListener`)
-- [ ] T051 [US3] Thêm mục `map`, thẻ số điện thoại, thẻ khoảng cách vào `CD/ui/CourtDetailViewModel.kt` (khoảng cách qua `LocationProvider` + `GeoDistance` + `DistanceFormatter` của `core/location`). Cho T048 xanh
-- [ ] T052 [US3] Trong `CD/ui/CourtDetailFragment.kt` xử lý các effect:
+- [x] T051 [US3] Thêm mục `map`, thẻ số điện thoại, thẻ khoảng cách vào `CD/ui/CourtDetailViewModel.kt` (khoảng cách qua `LocationProvider` + `GeoDistance` + `DistanceFormatter` của `core/location`). Cho T048 xanh
+- [x] T052 [US3] Trong `CD/ui/CourtDetailFragment.kt` xử lý các effect:
   - `OpenDirections`: thử `Intent(ACTION_VIEW, Uri.parse("geo:$lat,$lng?q=$lat,$lng(${Uri.encode(name)})"))`, gặp `ActivityNotFoundException` thì mở `https://www.google.com/maps/dir/?api=1&destination=$lat,$lng`; **không** khai báo `<queries>`;
   - `Dial`: kiểm tra `PackageManager.FEATURE_TELEPHONY`; không có, hoặc gặp `ActivityNotFoundException`, thì sao chép vào clipboard và hiện snackbar "Đã sao chép số điện thoại";
   - `CopyPhone`: sao chép.
@@ -406,13 +406,13 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
 
 ### Tests cho User Story 4 ⚠️ viết trước, phải fail
 
-- [ ] T053 [P] [US4] Unit test `TEST/feature/courtdetail/domain/usecase/LoadLatestReviewsUseCaseTest.kt` với `LatestReviewsSource` giả:
+- [x] T053 [P] [US4] Unit test `TEST/feature/courtdetail/domain/usecase/LoadLatestReviewsUseCaseTest.kt` với `LatestReviewsSource` giả:
   - trả tối đa 3 `ReviewPreview` theo thứ tự `createdAt` giảm dần;
   - `authorDeleted == true` hoặc `userSnapshot.displayName == null` → `authorName = null` (UI hiện "Người dùng đã xóa", ảnh mặc định);
   - bình luận giữ nguyên (UI tự rút gọn 3 dòng);
   - có `ownerReply` → `reply` khác `null`;
   - lỗi → `AppError` tương ứng.
-- [ ] T054 [P] [US4] Unit test `TEST/feature/courtdetail/ui/CourtDetailViewModelUs4Test.kt`:
+- [x] T054 [P] [US4] Unit test `TEST/feature/courtdetail/ui/CourtDetailViewModelUs4Test.kt`:
   - `reviews` chỉ bắt đầu tải **sau** khi `header = Content` (FR-024);
   - `ratingCount == 0` → `reviews = Empty`, không gọi `LatestReviewsSource`;
   - "Xem tất cả" mang `N = ratingCount` → effect `OpenReviews(venueId, name)`;
@@ -421,14 +421,14 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
 
 ### Implementation cho User Story 4
 
-- [ ] T055 [US4] Tạo `CD/domain/LatestReviewsSource.kt` (interface `suspend fun latest(venueId, limit = 3): List<ReviewPreview>`). Bản cài đặt:
+- [x] T055 [US4] Tạo `CD/domain/LatestReviewsSource.kt` (interface `suspend fun latest(venueId, limit = 3): List<ReviewPreview>`). Bản cài đặt:
   - **khi 070 đã có `ReviewRepository.latestVisible`**: `CD/data/ReviewRepositoryLatestReviewsSource.kt` gọi interface của 070 (chỉ import `feature/review/domain`, constitution I);
   - **chưa có**: `CD/data/FirestoreLatestReviewsSource.kt` truy vấn `reviews` where `venueId == X`, `status == "VISIBLE"` order by `createdAt desc` limit 3 (`awaitWithTimeout`), kèm `// TODO(C): thay bằng ReviewRepository.latestVisible (research R3)`.
 
   Bind trong `CD/di/CourtDetailModule.kt`
-- [ ] T056 [US4] Cài `CD/domain/usecase/LoadLatestReviewsUseCase.kt`. Cho T053 xanh
-- [ ] T057 [US4] Thêm mục `reviews` vào `CD/ui/CourtDetailViewModel.kt`. Cho T054 xanh
-- [ ] T058 [US4] Cài `RES/layout/item_court_detail_review.xml` + `CD/ui/ReviewPreviewAdapter.kt` và khối tổng quan trong `fragment_court_detail.xml`:
+- [x] T056 [US4] Cài `CD/domain/usecase/LoadLatestReviewsUseCase.kt`. Cho T053 xanh
+- [x] T057 [US4] Thêm mục `reviews` vào `CD/ui/CourtDetailViewModel.kt`. Cho T054 xanh
+- [x] T058 [US4] Cài `RES/layout/item_court_detail_review.xml` + `CD/ui/ReviewPreviewAdapter.kt` và khối tổng quan trong `fragment_court_detail.xml`:
   - khối tổng quan: điểm lớn, `RatingBar` chỉ đọc, "N đánh giá", ba `LinearProgressIndicator` cho tiêu chí (ẩn tiêu chí `null`);
   - thẻ đánh giá: avatar Coil hoặc chữ cái đầu, tên hoặc "Người dùng đã xóa", ngày `dd/MM`, số sao, bình luận `maxLines = 3`, ảnh thu nhỏ (chạm mở `action_global_photoViewer`), khối "Phản hồi của chủ sân".
 

@@ -349,7 +349,7 @@
                     layout="@layout/view_court_detail_section_error" />
             </LinearLayout>
 
-            <!-- 6. Vị trí (US3) -->
+            <!-- 6. Vị trí (FR-010, FR-011, FR-013): bản đồ 180dp không tương tác, địa chỉ, "Chỉ đường" -->
             <LinearLayout
                 android:id="@+id/locationSection"
                 android:layout_width="match_parent"
@@ -357,7 +357,46 @@
                 android:layout_marginTop="@dimen/court_detail_section_gap"
                 android:orientation="vertical"
                 android:paddingHorizontal="@dimen/screen_gutter"
-                android:visibility="gone" />
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:accessibilityHeading="true"
+                    android:text="@string/court_detail_location_title"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    android:textColor="?attr/colorOnSurface" />
+
+                <!-- Chỉ inflate khi mục cách vùng nhìn thấy dưới một chiều cao màn hình (FR-024) -->
+                <ViewStub
+                    android:id="@+id/mapStub"
+                    android:layout_width="match_parent"
+                    android:layout_height="@dimen/court_detail_map_height"
+                    android:layout_marginTop="@dimen/space_3"
+                    android:inflatedId="@+id/mapCard"
+                    android:layout="@layout/view_court_detail_map" />
+
+                <TextView
+                    android:id="@+id/locationAddressText"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_3"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textIsSelectable="true"
+                    tools:text="909 Trường Chinh, Phường Tây Thạnh, Quận Tân Phú" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/directionsButton"
+                    style="@style/Widget.Material3.Button.OutlinedButton.Icon"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_2"
+                    android:minHeight="48dp"
+                    android:text="@string/court_detail_directions"
+                    app:icon="@drawable/ic_directions_24" />
+            </LinearLayout>
 
             <!-- 7. Đánh giá (US4) -->
             <LinearLayout
@@ -367,7 +406,132 @@
                 android:layout_marginTop="@dimen/court_detail_section_gap"
                 android:orientation="vertical"
                 android:paddingHorizontal="@dimen/screen_gutter"
-                android:visibility="gone" />
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:accessibilityHeading="true"
+                    android:text="@string/court_detail_reviews_title"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    android:textColor="?attr/colorOnSurface" />
+
+                <com.google.android.material.progressindicator.LinearProgressIndicator
+                    android:id="@+id/reviewsLoading"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_3"
+                    android:indeterminate="true" />
+
+                <!-- Khối tổng quan: điểm lớn, sao, số lượt; ba thanh tiêu chí (ẩn tiêu chí null) -->
+                <LinearLayout
+                    android:id="@+id/reviewsSummary"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_3"
+                    android:baselineAligned="false"
+                    android:orientation="horizontal"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <LinearLayout
+                        android:id="@+id/reviewsScoreBlock"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:focusable="true"
+                        android:gravity="center_horizontal"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/reviewsScoreText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:importantForAccessibility="no"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textSize="@dimen/court_detail_rating_big"
+                            android:textStyle="bold"
+                            tools:text="4,6" />
+
+                        <RatingBar
+                            android:id="@+id/reviewsStars"
+                            style="?android:attr/ratingBarStyleSmall"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:importantForAccessibility="no"
+                            android:isIndicator="true"
+                            android:numStars="5"
+                            android:progressTint="?attr/colorTertiary"
+                            android:stepSize="0.1"
+                            tools:rating="4.6" />
+
+                        <TextView
+                            android:id="@+id/reviewsCountText"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_1"
+                            android:importantForAccessibility="no"
+                            android:textAppearance="?attr/textAppearanceBodySmall"
+                            android:textColor="?attr/colorOnSurfaceVariant"
+                            tools:text="128 đánh giá" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical"
+                        android:layout_marginStart="@dimen/space_4"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <include
+                            android:id="@+id/criteriaCourt"
+                            layout="@layout/view_court_detail_criteria" />
+
+                        <include
+                            android:id="@+id/criteriaCleanliness"
+                            layout="@layout/view_court_detail_criteria" />
+
+                        <include
+                            android:id="@+id/criteriaService"
+                            layout="@layout/view_court_detail_criteria" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/reviewList"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_2"
+                    android:nestedScrollingEnabled="false"
+                    android:overScrollMode="never"
+                    android:visibility="gone"
+                    app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/seeAllReviewsButton"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minHeight="48dp"
+                    android:visibility="gone"
+                    tools:text="Xem tất cả (128)"
+                    tools:visibility="visible" />
+
+                <TextView
+                    android:id="@+id/reviewsEmpty"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_2"
+                    android:text="@string/court_detail_reviews_empty"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:visibility="gone" />
+
+                <include
+                    android:id="@+id/reviewsError"
+                    layout="@layout/view_court_detail_section_error" />
+            </LinearLayout>
 
             <Space
                 android:layout_width="match_parent"

@@ -6,9 +6,12 @@ import com.example.booking_app.core.session.FakeSessionManager
 import com.example.booking_app.core.session.SessionState
 import com.example.booking_app.core.testing.FakeClock
 import com.example.booking_app.feature.courtdetail.FakeCatalogRepository
+import com.example.booking_app.feature.courtdetail.FakeLatestReviewsSource
+import com.example.booking_app.feature.courtdetail.FakeLocationProvider
 import com.example.booking_app.feature.courtdetail.FakeVenueDetailRepository
 import com.example.booking_app.feature.courtdetail.domain.usecase.CheckVenueBookableUseCase
 import com.example.booking_app.feature.courtdetail.domain.usecase.LoadCourtSummaryUseCase
+import com.example.booking_app.feature.courtdetail.domain.usecase.LoadLatestReviewsUseCase
 import com.example.booking_app.feature.courtdetail.domain.usecase.LoadPriceTableUseCase
 import com.example.booking_app.feature.courtdetail.domain.usecase.ObserveVenueDetailUseCase
 import com.example.booking_app.feature.courtdetail.vnMillis
@@ -29,6 +32,8 @@ class CourtDetailHarness(
 ) {
     val repository = FakeVenueDetailRepository()
     val catalog = FakeCatalogRepository()
+    val location = FakeLocationProvider()
+    val reviews = FakeLatestReviewsSource()
     val session = FakeSessionManager(session)
     val clock = FakeClock { startMillis + scope.testScheduler.currentTime }
     val handle = SavedStateHandle(
@@ -41,7 +46,9 @@ class CourtDetailHarness(
         loadCourtSummary = LoadCourtSummaryUseCase(repository),
         loadPriceTable = LoadPriceTableUseCase(repository),
         checkVenueBookable = CheckVenueBookableUseCase(repository),
+        loadLatestReviews = LoadLatestReviewsUseCase(reviews),
         sessionManager = session,
+        locationProvider = location,
         clock = clock,
     )
 

@@ -3,6 +3,9 @@ package com.example.booking_app.feature.courtdetail.ui
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.booking_app.core.location.DistanceFormatter
+import com.example.booking_app.core.location.GeoDistance
+import com.example.booking_app.core.location.LocationProvider
 import com.example.booking_app.core.network.AppError
 import com.example.booking_app.core.pricing.PriceRule
 import com.example.booking_app.core.network.toAppError
@@ -15,12 +18,15 @@ import com.example.booking_app.feature.courtdetail.domain.OpeningTicker
 import com.example.booking_app.feature.courtdetail.domain.SearchWindowArgs
 import com.example.booking_app.feature.courtdetail.domain.model.CourtSummary
 import com.example.booking_app.feature.courtdetail.domain.model.PendingAction
+import com.example.booking_app.feature.courtdetail.domain.model.PhoneDisplay
+import com.example.booking_app.feature.courtdetail.domain.model.ReviewPreview
 import com.example.booking_app.feature.courtdetail.domain.model.SearchWindow
 import com.example.booking_app.feature.courtdetail.domain.model.VenueAvailability
 import com.example.booking_app.feature.courtdetail.domain.model.VenueDetail
 import com.example.booking_app.feature.courtdetail.domain.usecase.Bookable
 import com.example.booking_app.feature.courtdetail.domain.usecase.CheckVenueBookableUseCase
 import com.example.booking_app.feature.courtdetail.domain.usecase.LoadCourtSummaryUseCase
+import com.example.booking_app.feature.courtdetail.domain.usecase.LoadLatestReviewsUseCase
 import com.example.booking_app.feature.courtdetail.domain.usecase.LoadPriceTableUseCase
 import com.example.booking_app.feature.courtdetail.domain.usecase.ObserveVenueDetailUseCase
 import com.example.booking_app.feature.courtdetail.domain.usecase.VenueView
@@ -61,7 +67,9 @@ class CourtDetailViewModel @Inject constructor(
     private val loadCourtSummary: LoadCourtSummaryUseCase,
     private val loadPriceTable: LoadPriceTableUseCase,
     private val checkVenueBookable: CheckVenueBookableUseCase,
+    private val loadLatestReviews: LoadLatestReviewsUseCase,
     private val sessionManager: SessionManager,
+    private val locationProvider: LocationProvider,
     private val clock: AppClock,
 ) : ViewModel() {
 
@@ -83,6 +91,9 @@ class CourtDetailViewModel @Inject constructor(
         val priceRules: Section<List<PriceRule>> = Section.Loading,
         val availabilityOverride: VenueAvailability? = null,
         val photoIndex: Int = 0,
+        val distanceText: String? = null,
+        /** 3 đánh giá mới nhất; điểm và tiêu chí lấy từ venue khi dựng [ReviewsContent] (research R3). */
+        val latestReviews: Section<List<ReviewPreview>> = Section.Loading,
     )
 
     private val sections = MutableStateFlow(Sections(photoIndex = savedStateHandle[KEY_PHOTO_INDEX] ?: 0))
@@ -91,6 +102,8 @@ class CourtDetailViewModel @Inject constructor(
     private var latestView: VenueView? = null
     private var loadsStarted = false
     private var bookingInFlight = false
+    private var distanceRequested = false
+    private var reviewsRequested = false
 
     private val effectChannel = Channel<CourtDetailEffect>(Channel.BUFFERED)
     val effects: Flow<CourtDetailEffect> = effectChannel.receiveAsFlow()
@@ -121,7 +134,7 @@ class CourtDetailViewModel @Inject constructor(
             SectionId.HEADER, SectionId.AMENITIES -> venueReload.update { it + 1 }
             SectionId.COURTS -> loadCourts()
             SectionId.PRICES -> loadPrices()
-            SectionId.REVIEWS -> Unit
+            SectionId.REVIEWS -> loadReviews()
         }
     }
 
@@ -140,7 +153,56 @@ class CourtDetailViewModel @Inject constructor(
         sections.update { it.copy(photoIndex = index) }
     }
 
+    /** Số hợp lệ → mở trình gọi; số không hợp lệ thì bấm không làm gì (chỉ nhấn giữ để sao chép). */
+    fun onPhoneClicked() {
+        val phone = PhoneDisplay.of(latestVenue?.phone) as? PhoneDisplay.Dialable ?: return
+        send(CourtDetailEffect.Dial(phone.e164))
+    }
+
+    fun onPhoneLongClicked() {
+        val phone = PhoneDisplay.of(latestVenue?.phone) ?: return
+        send(CourtDetailEffect.CopyPhone(phone.text))
+    }
+
+    /** "Xem tất cả (N)" mở danh sách đánh giá của 070 (FR-015). */
+    fun onSeeAllReviewsClicked() {
+        val venue = latestVenue ?: return
+        send(CourtDetailEffect.OpenReviews(venueId, venue.name))
+    }
+
+    fun onReviewPhotoClicked(reviewId: String, index: Int) {
+        val reviews = (sections.value.latestReviews as? Section.Content)?.data ?: return
+        val urls = reviews.firstOrNull { it.id == reviewId }?.photoUrls.orEmpty()
+        if (urls.isEmpty()) return
+        send(CourtDetailEffect.OpenPhotoViewer(urls, index.coerceIn(0, urls.lastIndex)))
+    }
+
+    fun onDirectionsClicked() {
+        val venue = latestVenue ?: return
+        val location = venue.location ?: return
+        send(CourtDetailEffect.OpenDirections(location.lat, location.lng, venue.name))
+    }
+
     // ---------- nội bộ ----------
+
+    /** Khoảng cách chỉ khi đã có quyền vị trí từ trước (020 xin quyền); 030 không xin quyền (research R7). */
+    private fun loadDistance(venue: VenueDetail) {
+        if (distanceRequested) return
+        val target = venue.location ?: return
+        distanceRequested = true
+        if (!locationProvider.hasPermission()) return
+        viewModelScope.launch {
+            val me = try {
+                locationProvider.current()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                null
+            } ?: return@launch
+            val meters = GeoDistance.meters(me, com.google.firebase.firestore.GeoPoint(target.lat, target.lng))
+            sections.update { it.copy(distanceText = DistanceFormatter.format(meters)) }
+        }
+    }
 
     private suspend fun book() {
         val venue = latestVenue ?: return
@@ -185,6 +247,9 @@ class CourtDetailViewModel @Inject constructor(
             // Listener báo lại ACTIVE thì bỏ trạng thái ghi đè từ lần kiểm tra server trước.
             if (venue.availability != latestVenue?.availability) sections.update { it.copy(availabilityOverride = null) }
             latestVenue = venue
+            loadDistance(venue)
+            // Đánh giá tải sau phần đầu (FR-024); chưa có đánh giá thì không đọc `reviews` (R3).
+            if (!reviewsRequested && venue.rating.count > 0) loadReviews()
             if (!loadsStarted) startLoads()
         }
     }
@@ -225,6 +290,32 @@ class CourtDetailViewModel @Inject constructor(
                     else -> BottomPrice.Contact
                 }
                 section to bottom
+            }
+        }
+
+    private fun loadReviews() {
+        reviewsRequested = true
+        sections.update { it.copy(latestReviews = Section.Loading) }
+        viewModelScope.launch {
+            val section = try {
+                Section.Content(loadLatestReviews(venueId))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Section.Error(e.toAppError())
+            }
+            sections.update { it.copy(latestReviews = section) }
+        }
+    }
+
+    private fun reviews(venue: VenueDetail, latest: Section<List<ReviewPreview>>): Section<ReviewsContent> =
+        if (venue.rating.count == 0) {
+            Section.Empty
+        } else {
+            when (latest) {
+                Section.Loading, Section.Empty -> Section.Loading
+                is Section.Error -> latest
+                is Section.Content -> Section.Content(ReviewsContent(venue.rating, latest.data))
             }
         }
 
@@ -276,6 +367,10 @@ class CourtDetailViewModel @Inject constructor(
                         else -> if (list.isEmpty()) Section.Empty else Section.Content(list)
                     },
                     isOffline = venue.isFromCache,
+                    map = venue.location?.let { Section.Content(it) } ?: Section.Empty,
+                    phone = PhoneDisplay.of(venue.phone),
+                    distanceText = s.distanceText,
+                    reviews = reviews(venue, s.latestReviews),
                     bottomBar = if (suspended) BottomBarState.Suspended else BottomBarState.Book(bottomPrice),
                 )
             }
