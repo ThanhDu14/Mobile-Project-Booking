@@ -7,6 +7,7 @@ import android.view.LayoutInflater
 import android.view.View
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import com.example.booking_app.R
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -34,13 +35,17 @@ class OwnerCalendarLayoutTest {
 
         variants.forEach { configuration ->
             val variantContext = ContextThemeWrapper(application.createConfigurationContext(configuration), R.style.Theme_Bookingapp)
-            val calendar = LayoutInflater.from(variantContext).inflate(R.layout.fragment_owner_calendar, null, false)
-            val home = LayoutInflater.from(variantContext).inflate(R.layout.fragment_home_placeholder_owner, null, false)
-            assertNotNull(calendar.findViewById<View>(R.id.calendarScroll))
-            assertNotNull(calendar.findViewById<View>(R.id.venueSpinner))
-            assertNotNull(home.findViewById<View>(R.id.calendarButton))
-            assertTrue(calendar.findViewById<View>(R.id.previousPeriod).minimumHeight >= dp(variantContext, 48))
-            assertTrue(calendar.findViewById<View>(R.id.nextPeriod).minimumHeight >= dp(variantContext, 48))
+            var calendar: View? = null
+            var home: View? = null
+            InstrumentationRegistry.getInstrumentation().runOnMainSync {
+                calendar = LayoutInflater.from(variantContext).inflate(R.layout.fragment_owner_calendar, null, false)
+                home = LayoutInflater.from(variantContext).inflate(R.layout.fragment_home_placeholder_owner, null, false)
+            }
+            assertNotNull(calendar!!.findViewById<View>(R.id.calendarScroll))
+            assertNotNull(calendar!!.findViewById<View>(R.id.venueSpinner))
+            assertNotNull(home!!.findViewById<View>(R.id.calendarButton))
+            assertTrue(calendar!!.findViewById<View>(R.id.previousPeriod).minimumHeight >= dp(variantContext, 48))
+            assertTrue(calendar!!.findViewById<View>(R.id.nextPeriod).minimumHeight >= dp(variantContext, 48))
         }
     }
 
