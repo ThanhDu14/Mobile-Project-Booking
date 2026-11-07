@@ -86,6 +86,7 @@ dependencies {
     implementation(libs.osmdroid.android)
     implementation(libs.androidx.viewpager2)
     implementation(libs.play.services.code.scanner)
+    implementation("com.google.zxing:core:3.5.3")
     testImplementation(libs.junit)
     testImplementation(libs.mockk)
     testImplementation(libs.turbine)
