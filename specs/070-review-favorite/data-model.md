@@ -112,7 +112,7 @@ Giới hạn bucket: ≤ 2 MB, MIME `image/jpeg`, `image/png`, `image/webp` (đ�
 | `reviews` | `venueId`, `status`, `createdAt desc` | Danh sách đánh giá (đã có ở mục 6) |
 | `reviews` | `venueId`, `status`, `starBucket`, `createdAt desc` **[MỚI]** | Lọc theo sao (FR-013) |
 | `reviews` | `venueId`, `status`, `hasPhotos`, `createdAt desc` **[MỚI]** | Lọc "Có ảnh" (FR-013) |
-| `reviews` | `venueId`, `hasOwnerReply`, `createdAt desc` **[MỚI]** | "Đánh giá của khách", lọc chưa phản hồi (FR-020) |
+| `reviews` | `venueId`, `status`, `hasOwnerReply`, `createdAt desc` **[MỚI]** | "Đánh giá của khách", lọc chưa phản hồi (FR-020); có `status` vì truy vấn T058 lọc `status == VISIBLE` |
 | `reviews` | `userId`, `createdAt desc` **[MỚI]** | Người viết xem đánh giá của mình kể cả bị ẩn; `delete-account` tìm đánh giá cần ẩn danh |
 | `favorites` (collection group) | `venueId` **[MỚI]** | D tìm người theo dõi cơ sở để gửi khuyến mãi |
 

@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Một sân trong "Sân yêu thích" (spec 070 US3, wireframe 07_review-favorite_buoc3). -->
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    style="?attr/materialCardViewOutlinedStyle"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="@dimen/screen_gutter"
+    android:layout_marginVertical="@dimen/space_1"
+    app:cardBackgroundColor="?attr/colorSurfaceContainerLow">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingVertical="@dimen/space_3"
+        android:paddingStart="@dimen/space_3"
+        android:paddingEnd="@dimen/space_1">
+
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/venuePhoto"
+            android:layout_width="72dp"
+            android:layout_height="72dp"
+            android:background="@drawable/bg_venue_placeholder"
+            android:importantForAccessibility="no"
+            android:scaleType="centerCrop"
+            app:shapeAppearance="?attr/shapeAppearanceCornerSmall" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/space_3"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/venueName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="2"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
+                android:textColor="?attr/colorOnSurface"
+                tools:text="CLB Cầu Lông Trường Chinh 909" />
+
+            <TextView
+                android:id="@+id/venueAddress"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                tools:text="909/6 Trường Chinh, Quận Tân Phú" />
+
+            <TextView
+                android:id="@+id/venueRating"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_1"
+                android:drawablePadding="@dimen/space_1"
+                android:gravity="center_vertical"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="?attr/colorOnSurface"
+                app:drawableStartCompat="@drawable/ic_star_16"
+                app:drawableTint="?attr/colorTertiary"
+                tools:text="4,5" />
+
+            <TextView
+                android:id="@+id/venueStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_1"
+                android:background="@drawable/bg_info_box"
+                android:paddingHorizontal="@dimen/space_2"
+                android:paddingVertical="2dp"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="?attr/colorError"
+                android:visibility="gone"
+                tools:text="@string/favorite_venue_suspended"
+                tools:visibility="visible" />
+        </LinearLayout>
+
+        <com.example.booking_app.feature.review.ui.favorite.FavoriteToggleButton
+            android:id="@+id/favoriteButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

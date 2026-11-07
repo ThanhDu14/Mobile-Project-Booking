@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Chuỗi của spec 070 (đánh giá sân, sân yêu thích); contracts/ui-screens.md mục 3. -->
+<resources>
+    <!-- Đánh giá -->
+    <string name="review_criterion_court">Chất lượng sân</string>
+    <string name="review_criterion_cleanliness">Vệ sinh</string>
+    <string name="review_criterion_service">Thái độ phục vụ</string>
+    <string name="review_error_missing_criteria">Vui lòng chấm đủ 3 tiêu chí</string>
+    <string name="review_photo_limit">Tối đa 3 ảnh</string>
+    <string name="review_edited_label">Đã chỉnh sửa</string>
+    <string name="review_hidden_label">Đánh giá đã bị ẩn</string>
+    <string name="review_deleted_user">Người dùng đã xóa</string>
+    <string name="review_owner_reply_label">Phản hồi của chủ sân</string>
+    <string name="review_window_closed">Đã hết hạn đánh giá</string>
+    <string name="review_discard_title">Bỏ đánh giá đang viết?</string>
+    <string name="review_empty_venue">Sân chưa có đánh giá</string>
+
+    <!-- Sân yêu thích -->
+    <string name="favorite_title">Sân yêu thích</string>
+    <string name="favorite_added">Đã thêm vào yêu thích</string>
+    <string name="favorite_removed">Đã bỏ khỏi yêu thích</string>
+    <string name="favorite_sync_failed">Chưa lưu được thay đổi yêu thích, vui lòng thử lại</string>
+    <string name="favorite_load_failed">Không tải được danh sách sân yêu thích</string>
+    <string name="favorite_venue_suspended">Sân tạm ngừng hoạt động</string>
+    <string name="favorite_venue_gone">Sân không còn tồn tại</string>
+    <string name="favorite_empty">Bạn chưa lưu sân nào</string>
+    <string name="favorite_empty_action">Tìm sân</string>
+    <string name="favorite_add_description">Thêm vào yêu thích</string>
+    <string name="favorite_remove_description">Bỏ yêu thích</string>
+    <string name="favorite_no_rating">Chưa có đánh giá</string>
+    <string name="favorite_back">Quay lại</string>
+    <string name="favorite_login_required">Đăng nhập để lưu sân yêu thích</string>
+    <!-- Nút tạm ở trang chủ placeholder để demo; mục chính thức nằm ở trang Tài khoản (spec 011). -->
+    <string name="favorite_open_list">Sân yêu thích (Feature 070)</string>
+</resources>
