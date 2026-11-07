@@ -1,5 +1,9 @@
 # Kế hoạch triển khai: Đăng ký làm chủ sân
 
+## Cập nhật quyết định được duyệt (2026-11-05)
+
+Các mục quyết định còn bỏ ngỏ bên dưới phản ánh ảnh chụp tại thời điểm lập plan và được supersede bởi `contracts/owner-onboarding-boundaries.md`. Repo đã có Hilt, Coroutines/Flow, Navigation, Material, Firebase Auth/Firestore, Supabase Functions/Storage, Ktor và test libraries; Feature 110 không thêm dependency. Implementation dùng Edge Function xác thực Firebase token và Firestore REST transaction, private `owner-docs` staging, application ID ổn định trong mỗi lifecycle, orphan cleanup sau 30 ngày và thứ tự recovery trong `contracts/owner-application-api.md`. Map provider tạm hoãn; interactive marker chờ Feature 021 xác nhận.
+
 **Nhánh**: `feature/110-owner-onboarding-plan` | **Ngày**: 2026-10-15 | **Đặc tả**: [spec.md](spec.md)
 
 **Đầu vào**: Đặc tả tính năng tại `specs/110-owner-onboarding/spec.md`
@@ -40,9 +44,9 @@ Lập kế hoạch cho luồng người chơi đã đăng nhập tạo hoặc n�
 | Quyền riêng tư/thu thập tối thiểu | Đáp ứng, còn thiếu chính sách lưu trữ | Chỉ thu thập trường trong spec. Xóa tài khoản phải xóa hồ sơ và giấy tờ theo spec 011/CSDL; cần xác nhận việc lưu hoặc xóa hồ sơ lịch sử. |
 | YAGNI/không tự đặt schema | Đáp ứng | Chỉ dùng `users`, `ownerApplications` và bucket/function đã có. Không đề xuất collection, trường, endpoint hay enum mới. |
 
-**Cổng trước thiết kế**: Chưa thấy vi phạm hiến chương. Hai quyết định tích hợp/schema còn bỏ ngỏ (định danh hồ sơ qua các lần nộp lại/thu hồi quyền và cách ứng dụng gọi Supabase) được ghi là điều kiện cần chốt trước khi triển khai, không tự suy đoán.
+**Cổng trước thiết kế (historical)**: Lifecycle và Supabase integration còn mở tại thời điểm lập plan; chủ dự án đã chốt các lựa chọn này ngày 2026-11-05.
 
-**Cổng sau thiết kế**: Đáp ứng, vẫn giữ nguyên hai điểm cần làm rõ. Ranh giới đề xuất không đổi schema và không mở rộng phạm vi admin/quản lý cơ sở.
+**Cổng sau thiết kế (historical)**: Thiết kế không đổi schema hoặc mở rộng sở hữu admin/quản lý venue. API contract bổ sung payload cho Edge Functions nhưng giữ nguyên ranh giới đó.
 
 ## Cấu trúc dự án
 
@@ -116,6 +120,8 @@ app/src/androidTest/       # Kiểm thử giao diện
 **Thứ tự**: (1) làm rõ định danh/lịch sử hồ sơ và hợp đồng tải/gửi; (2) thống nhất Firestore Rules, Storage RLS và kiểm thử cục bộ; (3) triển khai repository và tải tệp; (4) triển khai ViewModel, màn hình và điều hướng; (5) chạy kiểm thử đơn vị, emulator, Supabase local và UI. Không đưa phần duyệt admin hay thiết lập venue vào làm điều kiện ngầm của tính năng này.
 
 ## Rủi ro và quyết định còn bỏ ngỏ
+
+Các blocker quyết định ban đầu bên dưới đã được giải quyết bởi lựa chọn được duyệt. Dependency tích hợp còn lại: Feature 120 phải áp dụng/reconcile cùng thứ tự approval recovery; Feature 021 phải chọn map provider trước khi hoàn thiện marker picker.
 
 1. **Mâu thuẫn về định danh/lịch sử hồ sơ (chặn triển khai)**: README CSDL quy định chung ID Firestore tự sinh; spec giả định mỗi người có một hồ sơ đang hiệu lực và nộp lại tiếp tục chuỗi xét duyệt; FR-018 lại cho phép nộp mới sau khi bị thu hồi quyền, đồng thời giữ hồ sơ `APPROVED` cũ. Chưa có quy tắc xác định hồ sơ hiện hành hoặc tránh trùng khi nộp mới. Cần chốt cách truy vấn hồ sơ hiện hành, cách chọn ID, ý nghĩa cập nhật khi nộp lại và nhu cầu index; không tự thêm con trỏ hay ID tất định.
 2. **Tích hợp ứng dụng với Supabase (chặn triển khai)**: Hiến chương yêu cầu dùng Firebase Auth token làm xác thực bên thứ ba cho Supabase và dùng Edge Function cho thao tác nhạy cảm. README có tên hàm ký URL nhưng chưa định nghĩa hợp đồng upload-create/submit hoặc cách ứng dụng Android gọi. Cần chọn REST/SDK hay ranh giới máy chủ khác, đồng thời chốt truyền và làm mới token.

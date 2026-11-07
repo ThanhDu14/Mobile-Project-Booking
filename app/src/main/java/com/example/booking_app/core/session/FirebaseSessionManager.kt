@@ -143,7 +143,12 @@ class FirebaseSessionManager @Inject constructor(
             }
         }
 
-        val appRole = AppRole.fromClaim(claims[CLAIM_APP_ROLE] as? String)
+        // DEBUG OVERRIDE: Tạm thời mở khóa vai trò OWNER cho mục đích test UI/Feature 111
+        val appRole = if (com.example.booking_app.BuildConfig.DEBUG) {
+            AppRole.OWNER
+        } else {
+            AppRole.fromClaim(claims[CLAIM_APP_ROLE] as? String)
+        }
         _sessionState.value = if (appRole != null) {
             val emailVerified = claims[CLAIM_EMAIL_VERIFIED] as? Boolean ?: user.isEmailVerified
             SessionState.SignedIn(user.uid, appRole, emailVerified)

@@ -1,31 +1,108 @@
 # Hướng dẫn kiểm chứng: Feature 110
 
-Tài liệu này mô tả các tình huống cần kiểm chứng sau khi triển khai. Repo hiện chưa có Feature 110, Edge Function hay migration Supabase nên chưa thể chạy các tình huống này. Cần chốt hợp đồng tích hợp trong [ranh giới tích hợp](contracts/owner-onboarding-boundaries.md) trước khi triển khai. Không chạy kiểm thử với dự án Firebase/Supabase production.
+Tài liệu này hướng dẫn kiểm chứng implementation hiện có trên emulator/local. Không chạy với Firebase hoặc Supabase production. Xem `contracts/owner-application-api.md` cho giao thức app–Edge Function và `contracts/owner-onboarding-boundaries.md` cho các quyết định đã duyệt.
 
 ## Điều kiện chuẩn bị
 
-- Cấu hình Android dùng Firebase Emulator Suite và Supabase local.
-- Tài khoản kiểm thử: player đã đăng nhập có `ownerStatus=NONE`; player `PENDING`; player `REJECTED` kèm lý do; owner đã duyệt; người dùng không liên quan; tài khoản admin phục vụ kiểm tra policy.
-- Policy Storage/hàm cục bộ và fixture Rules Emulator khớp [mô hình dữ liệu](data-model.md).
-- Tệp ảnh hợp lệ JPEG, PNG, WebP; tệp MIME không hợp lệ, hỏng, quá lớn (>2 MB) và upload bị ngắt.
-- Khi bổ sung phụ thuộc/lệnh kiểm thử, ghi lại lệnh đã xác nhận trong hướng dẫn này; tài liệu Plan không tự đặt tên tác vụ Gradle chưa kiểm chứng.
+- Android: `local.properties`, Firebase Emulator configuration và Supabase URL/key local theo cấu hình dự án.
+- Firebase Auth + Firestore Emulator có fixtures cho PLAYER với `ownerStatus` là `NONE`, `PENDING`, `REJECTED`, `APPROVED`, admin và user khác.
+- Supabase local project đã áp dụng migrations, gồm bucket private `owner-docs`.
+- Edge Functions `owner-applications`/`owner-docs` được serve local với Firebase project/emulator configuration phù hợp. Functions xác minh Firebase ID token; `verify_jwt=false` ở Supabase chỉ để việc xác minh Firebase diễn ra trong shared verifier.
+- Tệp JPEG/PNG/WebP nhỏ hơn/equal 2 MB, cùng fixture sai MIME và vượt quá giới hạn.
 
-## Các tình huống kiểm chứng
+## Lệnh kiểm chứng Android
 
-1. **Nộp hồ sơ mới**: Dùng `PLAYER` có `NONE`, nhập đủ trường, chọn vị trí, thêm một ảnh venue và một giấy tờ, xem lại rồi gửi. Kỳ vọng: hồ sơ được máy chủ xác nhận đúng một lần, `users.ownerStatus=PENDING`, `role=PLAYER`, giao diện hiện đang chờ và không có quyền quản lý venue.
-2. **Lỗi xác thực và thử tải lại**: Bỏ trống trường bắt buộc hoặc chọn giấy tờ sai định dạng/quá lớn/bị hỏng. Kỳ vọng: lỗi đúng trường/tệp, không tạo hồ sơ đã gửi. Ngắt một lượt tải, tải lại riêng tệp đó và xác nhận dữ liệu biểu mẫu được giữ.
-3. **Gửi trùng/mất phản hồi**: Bấm gửi nhanh hai lần, sau đó giả lập timeout sau khi máy chủ có thể đã ghi. Mở lại/làm mới rồi thử tiếp. Kỳ vọng: tối đa một hồ sơ đang hiệu lực và không báo thành công `PENDING` trước xác nhận của máy chủ.
-4. **Không sửa hồ sơ đang chờ**: Mở hồ sơ `PENDING`, thử sửa/nộp lại qua UI và request trực tiếp trái phép. Kỳ vọng: dữ liệu không đổi; chức năng player vẫn dùng được và máy chủ từ chối quyền quản lý owner.
-5. **Đồng bộ trạng thái**: Tải lần lượt `NONE`, `PENDING`, `APPROVED`, `REJECTED`. Kiểm tra nhãn Việt hóa, vai trò tương ứng và khả năng thử lại. Với `REJECTED`, hiển thị lý do máy chủ cùng dữ liệu cũ; với `APPROVED`, điều hướng tới lối vào owner hiện có nhưng không triển khai màn hình quản lý ở đây.
-6. **Nộp lại**: Sửa hồ sơ bị từ chối và gửi lại. Kỳ vọng: trạng thái về `PENDING`, role vẫn là `PLAYER`, lý do cũ không còn được hiển thị như quyết định hiện hành. Kiểm tra cách lưu document/lịch sử sau khi đã chốt định danh hồ sơ.
-7. **Trạng thái thay đổi đồng thời**: Khi biểu mẫu mở, thay trạng thái trong emulator thành `PENDING`/`APPROVED` hoặc giả lập thiết bị khác vừa nộp lại. Gửi từ biểu mẫu cũ. Kỳ vọng: máy chủ trả xung đột/từ chối quyền, không ghi dở dang, tải trạng thái mới và giữ dữ liệu bản nháp.
-8. **Quyền truy cập giấy tờ**: Người nộp mở giấy tờ của mình bằng signed URL còn hạn; player khác thử đọc bằng cách đoán object path. Kỳ vọng: chủ hồ sơ được phép, người khác bị từ chối. URL hết hạn phải thất bại; muốn tải lại cần xin URL mới có xác thực. Kiểm tra policy trên Supabase local.
-9. **Mất mạng**: Tắt mạng khi đọc trạng thái, tải tệp và gửi hồ sơ. Kỳ vọng: dữ liệu cũ được đánh dấu, có thể tải lại tệp mà không nhập lại biểu mẫu, không báo gửi thành công sai và không cấp quyền owner từ cache.
-10. **Dọn dữ liệu khi xóa tài khoản**: Dùng hợp đồng xóa đã thống nhất để xóa hồ sơ và các tệp riêng tư liên quan; giả lập xóa dở và xác minh cơ chế thử lại/kết quả được định nghĩa trước khi phát hành.
+Từ repo root (Windows):
 
-## Các tầng kiểm thử
+```powershell
+.\gradlew.bat :app:testDebugUnitTest
+.\gradlew.bat :app:assembleDebug
+.\gradlew.bat :app:lintDebug
+```
 
-- **Unit**: kiểm tra dữ liệu biểu mẫu, ánh xạ trạng thái sang UI, điều kiện gửi, xử lý phản hồi cũ và thử lại bằng repository giả.
-- **Firebase Emulator**: kiểm tra được phép/bị chặn khi đọc/ghi hồ sơ của mình/người khác và trường được bảo vệ; kiểm tra gửi đồng thời/trạng thái cũ.
-- **Supabase local**: kiểm tra `owner-docs` private RLS, quyền của người nộp/admin/người khác, MIME/kích thước và hạn signed URL; kiểm tra policy upload ảnh venue cho người nộp sau khi được xác định.
-- **UI**: luồng gửi mới và nộp lại hồ sơ bị từ chối, trạng thái tải/rỗng/lỗi, tiến trình upload, thử lại và accessibility.
+## Lệnh kiểm chứng Firestore Rules
+
+```powershell
+Push-Location firestore-tests
+npm.cmd test -- --run test/owner-applications.test.ts
+Pop-Location
+```
+
+Emulator cần được khởi chạy theo `firestore-tests` configuration trước khi test. Test kiểm tra applicant/admin đọc đúng phạm vi và mọi client write vào `ownerApplications` bị từ chối; submit được thực hiện qua server function.
+
+## Kiểm thử Edge Function handlers
+
+Khởi chạy Auth và Firestore Emulator bằng Firebase CLI, sau đó ở terminal khác từ repo root:
+
+```powershell
+$env:FIREBASE_PROJECT_ID = "demo-smashnow"
+$env:FIRESTORE_EMULATOR_HOST = "127.0.0.1:8080"
+$env:FIREBASE_AUTH_EMULATOR_HOST = "127.0.0.1:9099"
+deno test --node-modules-dir=auto --allow-all `
+  supabase/functions/owner-applications/handler.test.ts `
+  supabase/functions/owner-docs/handler.test.ts
+```
+
+Handler tests verify Firebase token parsing against the emulator mode, Firestore transaction/idempotency behavior, application ownership, Admin's current Firestore role, client-write trust boundaries, and mocked Storage signing/deletion responses. They do not replace Supabase local Storage integration tests.
+
+## Kiểm thử Supabase Storage local thật
+
+Yêu cầu Docker Desktop đang chạy, Supabase CLI, Deno, và Firebase Auth + Firestore Emulator. Không chạy các bước này với project production.
+
+Terminal 1 — khởi động local services:
+
+```powershell
+firebase emulators:start --project demo-smashnow --only auth,firestore
+```
+
+Terminal 2 — từ repo root:
+
+```powershell
+npx.cmd supabase start
+npx.cmd supabase db reset
+$status = npx.cmd supabase status --output env
+$env:SUPABASE_URL = (($status | Where-Object { $_ -match '^API_URL=' }) -replace '^API_URL=', '').Trim('"')
+$env:SUPABASE_SERVICE_ROLE_KEY = (($status | Where-Object { $_ -match '^SERVICE_ROLE_KEY=' }) -replace '^SERVICE_ROLE_KEY=', '').Trim('"')
+$env:FIREBASE_PROJECT_ID = "demo-smashnow"
+$env:FIREBASE_AUTH_EMULATOR_HOST = "127.0.0.1:9099"
+$env:FIRESTORE_EMULATOR_HOST = "127.0.0.1:8080"
+npm.cmd exec --yes --package=deno -- deno test --node-modules-dir=auto --allow-all supabase/tests/owner-docs-storage.integration.test.ts
+```
+
+Test gọi handler `owner-docs` thật với Firebase Auth/Firestore Emulator và Storage local; nó tạo user/test objects riêng, xác minh upload/download signed URL, private bucket, quyền applicant/Admin/user khác, đường dẫn không được tham chiếu, MIME/kích thước và URL hết hạn. `handler.test.ts` vẫn là bộ test nhanh dùng mock Storage và không được dùng thay cho test này. Nếu muốn thử qua HTTP gateway từ Android, chạy riêng `supabase functions serve owner-docs --env-file supabase/.env` ở terminal thứ ba.
+
+## Luồng kiểm chứng thủ công
+
+1. Với `PLAYER/NONE`, mở hồ sơ, nhập dữ liệu hợp lệ, tải ảnh và giấy tờ vào `owner-docs`, xem lại rồi gửi. Xác nhận server tạo application một lần, user vẫn `PLAYER` và trạng thái `PENDING`.
+2. Gửi lại cùng `applicationId` và cùng payload sau khi giả lập mất phản hồi. Xác nhận kết quả idempotent; payload khác hoặc ID cạnh tranh trả conflict và giữ dữ liệu local.
+3. Thử người chưa xác thực, path UID khác, application không thuộc user, MIME không cho phép, file quá 2 MB, hồ sơ `PENDING`/`APPROVED` và request client có role/status giả. Xác nhận bị từ chối hoặc bỏ qua trường không đáng tin cậy.
+4. Với `REJECTED`, sửa form và gửi lại cùng application document. Xác nhận `rejectReason` bị xóa, `submittedAt` cập nhật và trạng thái về `PENDING`.
+5. Lấy signed download cho evidence đang được application tham chiếu. Applicant sở hữu hồ sơ và admin được phép; user khác, path không tham chiếu và URL hết hạn bị từ chối.
+6. Kiểm tra upload staging orphan, xóa best-effort và quy trình account deletion theo Feature 011; sweeper 30 ngày và promotion ảnh/venue sau approval cần được kiểm chứng cùng các function của Feature 120.
+7. Kiểm tra NONE/PENDING/REJECTED/APPROVED trên UI và deep link sang Feature 111 chỉ khi trạng thái authoritative là APPROVED.
+8. Đối chiếu các màn hình với ba ảnh trong `ui/`: form, review, pending status. Map provider đang tạm hoãn; UI hiện có vị trí xem trước và nhập tọa độ thủ công, không phải map picker tương tác.
+
+## Phạm vi kiểm chứng phụ thuộc dịch vụ/nhóm khác
+
+- Test Storage integration thật phải được chạy với Docker/Supabase local và Firebase Auth/Firestore Emulator đang hoạt động; không được coi Deno handler tests có mock Storage là bằng chứng.
+- Review/approval, claim, notification, promotion từ `owner-docs` sang `venue-photos`, venue creation/recovery thuộc Feature 120. `venueId=applicationId` là quyết định được duyệt nhưng chưa được thực hiện bởi Feature 110.
+- Sweeper orphan 30 ngày và account deletion xóa application/object prefix thuộc lifecycle của backend Feature 011/120; Feature 110 hiện chỉ có local draft và endpoint xóa object staging chưa tham chiếu.
+- Map picker phụ thuộc quyết định provider của Feature 021; không thêm SDK bản đồ khi chưa được chọn.
+- Usability SC-001 cần phiên thử với ít nhất 10 người dùng mục tiêu và không thể thay bằng automated test.
+- Kịch bản và biểu mẫu ghi kết quả usability có tại `usability-evaluation.md`; T035 chỉ hoàn thành sau khi có dữ liệu từ ít nhất 10 người thực tế.
+
+## Kết quả kiểm chứng lần triển khai 2026-11-05
+
+Các lệnh Gradle được chạy từ PowerShell với `--no-daemon --max-workers=1` và giới hạn heap/processor để giữ môi trường local ổn định.
+
+- `:app:assembleDebug`: PASS.
+- `:app:compileDebugAndroidTestKotlin`: PASS; instrumentation source biên dịch, nhưng không thay thế chạy trên thiết bị.
+- Focused tests `OwnerDocumentTransferTest`, `OwnerApplicationViewModelTest`, `OwnerApplicationValidationTest`, `OwnerUiAccessibilityTest`: PASS.
+- `:app:testDebugUnitTest`: 508 tests, 7 failures, 2 skipped. Cả 7 lỗi nằm trong `FirebaseSessionManagerTest`; test/source đó không đổi trong lượt này, nhưng chưa đối chiếu baseline nên không khẳng định lỗi có trước.
+- `:app:lintDebug`: FAIL với 1 error và 350 warnings. Error nằm ngoài Feature 110 tại `feature/booking/ui/adapter/SlotMatrixRowAdapter.kt:203` (`DiffUtilEquals`, dùng `===`).
+- `:app:connectedDebugAndroidTest`: chưa chạy được trên thiết bị; `adb devices -l` không liệt kê thiết bị online. AVD `Pixel_6_Pro` đã dừng do báo không đủ dung lượng để khởi động. Không có UI test runtime evidence.
+- Firebase Firestore Rules Emulator suite: PASS, 16 files/147 tests. Edge Function tests với Auth/Firestore Emulator: PASS, 9/9 (8 application, 1 docs).
+- Supabase local Storage integration thật: PASS với `npm.cmd exec --yes --package=deno -- deno test --node-modules-dir=auto --allow-all supabase/tests/owner-docs-storage.integration.test.ts`. Suite dùng Firebase Auth/Firestore Emulator và Supabase Storage thật; đã xác minh signed upload/download, private bucket, applicant/Admin/user khác, unreferenced path, MIME/size, URL expiry/renewal và xóa orphan object. Đây không phải mock Storage.
+- `owner-docs` handler trả signed download URL chuẩn `/storage/v1/...`; trước sửa, URL relative từ local Storage dẫn sai gateway path và integration test bắt được lỗi.
+- `T010` còn mở cho đến khi có contract/implementation `venue-photos` của Feature 120 để kiểm chứng promotion và quyền bucket. `T032` còn mở do thiếu connected UI end-to-end và approval handoff của Feature 120.
+- `T035` còn mở: protocol và form có sẵn trong `usability-evaluation.md`, chưa có kết quả từ 10 người thật.

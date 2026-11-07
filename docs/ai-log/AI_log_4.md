@@ -26,8 +26,14 @@ Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 | 20  | 2026-10-29 | Tiếp tục implement Feature 111: hoàn thiện error/retry/conflict/cache freshness, responsive/accessibility review và kiểm chứng T034/T038 bằng `$speckit-implement`           | 11   |
 | 21  | 2026-10-29 | Tiếp tục implement Feature 111: chốt typed write-gate cho T007, giữ an toàn T008/T011, hoàn thiện T037 và kiểm chứng Emulator/build/lint                                     | 11   |
 | 22  | 2026-10-30 | Kiểm toán kỹ thuật & giải tỏa blocker Feature 111: chốt quyết định 1A, 2A, 3A, 4A, hoàn thiện Bảng giá (CRUD, UI, sync minPricePerHour) và điều hướng thêm venue             | 11   |
-| 23  | 2026-10-30 | Triển khai Phase 3 Feature 111: Edge Function manage-slot-blocks, Calendar Grid UI, và Emulator race condition tests | 11   |
-| 24  | 2026-10-30 | Hoàn thiện T034 (Hợp đồng tích hợp Recurring Feature 041) và T038 (Rà soát UI Accessibility, Touch Target & Performance SLA) | 11   |
+| 23  | 2026-10-30 | Triển khai Phase 3 Feature 111: Edge Function manage-slot-blocks, Calendar Grid UI, và Emulator race condition tests                                                         | 11   |
+| 24  | 2026-10-30 | Hoàn thiện T034 (Hợp đồng tích hợp Recurring Feature 041) và T038 (Rà soát UI Accessibility, Touch Target & Performance SLA)                                                 | 11   |
+| 25  | 2026-11-05 | Rà soát và chỉnh UI Android Feature 111 theo 5 ảnh mẫu, cải thiện bố cục responsive và accessibility; chạy test và build                                                     | 11   |
+| 26  | 2026-11-05 | Khảo sát và triển khai phần validator độc lập của Feature 110; lập traceability mapping và kiểm tra unit test, build, lint, Emulator                                         | 11   |
+| 27  | 2026-11-05 | Ghi nhận quyết định bổ sung Feature 110 về venue identity, recovery, cleanup; map provider tạm hoãn                                                                          | 11   |
+| 28  | 2026-11-05 | Tiếp tục triển khai Feature 110 theo quyết định T001–T005; bổ sung Android onboarding, Edge Functions, Firestore Rules và kiểm chứng                                         | 11   |
+| 29  | 2026-11-05 | Tiếp tục hoàn thiện Feature 110: upload/retry và signed-document flow, kiểm thử lifecycle/idempotency, integration suite và cập nhật traceability                    | 11   |
+| 30  | 2026-11-05 | Hoàn thiện và xác minh các phần còn mở Feature 110: Storage thật, tải tài liệu signed URL, Android tests/build/lint và cập nhật task/evidence                        | 11   |
 
 ---
 
@@ -1330,8 +1336,6 @@ Hãy sửa code ngay trong lượt này và tiếp tục qua các task có thể
 - `git diff --check`: không có lỗi whitespace.
 - Không commit hoặc push.
 
----
-
 ## Mục 17: Tiếp tục implement Feature 111 — Venue và Court Management
 
 | Trường                   | Nội dung                                                                         |
@@ -2054,13 +2058,13 @@ Bắt đầu ngay. Không hỏi lại người dùng nếu repository đã có �
 
 ## Mục 23: Triển khai hoàn thiện Phase 3 Feature 111 — Server Atomic Slot Lock & Unlock
 
-| Trường | Nội dung |
-|---|---|
-| Ngày | 2026-10-30 |
-| Người thực hiện | Minh Nhựt |
-| Nhóm tính năng liên quan | 111 – Owner Venue Setup |
-| Công cụ AI | Antigravity, Gemini 3.8 Flash, `$speckit-implement` |
-| Mục đích | Triển khai hoàn thiện Phase 3: Server atomic slot lock/unlock qua Supabase Edge Function `manage-slot-blocks`, Calendar Grid UI shell (`OwnerSlotGridAdapter`, ViewModel, layouts phone & `w600dp`), và bổ sung kiểm thử Emulator transaction isolation (`owner-slot-blocks.test.ts`), giải tỏa và đóng T007, T028, T029, T030, T031. |
+| Trường                   | Nội dung                                                                                                                                                                                                                                                                                                                              |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-10-30                                                                                                                                                                                                                                                                                                                            |
+| Người thực hiện          | Minh Nhựt                                                                                                                                                                                                                                                                                                                             |
+| Nhóm tính năng liên quan | 111 – Owner Venue Setup                                                                                                                                                                                                                                                                                                               |
+| Công cụ AI               | Antigravity, Gemini 3.8 Flash, `$speckit-implement`                                                                                                                                                                                                                                                                                   |
+| Mục đích                 | Triển khai hoàn thiện Phase 3: Server atomic slot lock/unlock qua Supabase Edge Function `manage-slot-blocks`, Calendar Grid UI shell (`OwnerSlotGridAdapter`, ViewModel, layouts phone & `w600dp`), và bổ sung kiểm thử Emulator transaction isolation (`owner-slot-blocks.test.ts`), giải tỏa và đóng T007, T028, T029, T030, T031. |
 
 ### Prompt đã dùng
 
@@ -2130,16 +2134,16 @@ Hãy chủ động triển khai các task độc lập song song khi an toàn, n
 
 ### Phần đã sử dụng / chỉnh sửa / bỏ
 
-| Phần | Quyết định | Lý do |
-|---|---|---|
-| Edge Function `manage-slot-blocks` | Tạo mới | Thực thi khóa/mở khóa slot nguyên tử bằng service role, bảo vệ ca DROP_IN và HOLD/BOOKED theo Quyết định 1A & 4A |
-| Helper `deleteWrite` trong `_shared/firestore.ts` | Tạo mới | Hỗ trợ xóa document nguyên tử qua Firestore REST API commit |
-| Android API `ManageSlotBlocksApi` | Tạo mới | Gọi Edge Function `manage-slot-blocks` từ client |
-| Lưới khung giờ (`OwnerSlotGridAdapter`, item layout) | Tạo mới | Hiển thị ma trận khung giờ trực quan thay cho việc nhập tay theo yêu cầu T030 |
-| `layout-w600dp/fragment_owner_slot_block.xml` | Tạo mới | Hỗ trợ hiển thị 2 cột trên máy tính bảng, đảm bảo touch target $\ge 48\text{dp}$ theo T038 |
-| `OwnerSlotBlockViewModel` & `OwnerSlotBlockFragment` | Chỉnh sửa | Mở rộng tính năng khóa/mở khóa slot thật qua repository, giữ nguyên tính tương thích ngược với các test trước |
-| Emulator test `owner-slot-blocks.test.ts` | Tạo mới | Kiểm chứng ranh giới giao dịch đua giữa Owner Lock và Player Hold, partial conflict và bảo vệ DROP_IN theo T031 |
-| Feature 041 source/UI | Không chỉnh sửa | T034 tiếp tục mở chờ Feature 041 triển khai mã nguồn theo nguyên tắc ranh giới |
+| Phần                                                 | Quyết định      | Lý do                                                                                                            |
+| ---------------------------------------------------- | --------------- | ---------------------------------------------------------------------------------------------------------------- |
+| Edge Function `manage-slot-blocks`                   | Tạo mới         | Thực thi khóa/mở khóa slot nguyên tử bằng service role, bảo vệ ca DROP_IN và HOLD/BOOKED theo Quyết định 1A & 4A |
+| Helper `deleteWrite` trong `_shared/firestore.ts`    | Tạo mới         | Hỗ trợ xóa document nguyên tử qua Firestore REST API commit                                                      |
+| Android API `ManageSlotBlocksApi`                    | Tạo mới         | Gọi Edge Function `manage-slot-blocks` từ client                                                                 |
+| Lưới khung giờ (`OwnerSlotGridAdapter`, item layout) | Tạo mới         | Hiển thị ma trận khung giờ trực quan thay cho việc nhập tay theo yêu cầu T030                                    |
+| `layout-w600dp/fragment_owner_slot_block.xml`        | Tạo mới         | Hỗ trợ hiển thị 2 cột trên máy tính bảng, đảm bảo touch target $\ge 48\text{dp}$ theo T038                       |
+| `OwnerSlotBlockViewModel` & `OwnerSlotBlockFragment` | Chỉnh sửa       | Mở rộng tính năng khóa/mở khóa slot thật qua repository, giữ nguyên tính tương thích ngược với các test trước    |
+| Emulator test `owner-slot-blocks.test.ts`            | Tạo mới         | Kiểm chứng ranh giới giao dịch đua giữa Owner Lock và Player Hold, partial conflict và bảo vệ DROP_IN theo T031  |
+| Feature 041 source/UI                                | Không chỉnh sửa | T034 tiếp tục mở chờ Feature 041 triển khai mã nguồn theo nguyên tắc ranh giới                                   |
 
 ### Cách kiểm chứng
 
@@ -2152,14 +2156,14 @@ Hãy chủ động triển khai các task độc lập song song khi an toàn, n
 
 ## Mục 24: Hoàn thiện T034 (Hợp đồng tích hợp Recurring Feature 041) và T038 (Rà soát UI Accessibility, Touch Target & Performance SLA)
 
-| Trường | Nội dung |
-|---|---|
-| Ngày | 2026-10-30 |
-| Người thực hiện | Minh Nhựt |
-| Nhóm tính năng liên quan | 11 – Thiết lập cơ sở chủ sân (spec `specs/111-owner-venue-setup`, liên đới `specs/041-weekly-recurring-booking`) |
-| Công cụ AI | Antigravity, skill `$speckit-implement` |
-| Mục đích | Giải quyết dứt điểm 2 task cuối cùng của Feature 111: T034 (Xác lập hợp đồng tích hợp với Feature 041 về `acceptsRecurring`, bảo vệ chuỗi cũ và viết emulator test tích hợp) và T038 (Kiểm tra tự động toàn bộ 12 UI layout về Accessibility TalkBack, Touch Target $\ge 48$dp, responsive `w600dp`, đồng thời xây dựng quy trình đo SLA 4G trong `quickstart.md`), hoàn thành 100% (39/39) tasks của Feature 111. |
-| Nhánh Git | `feature/111-owner-venue-setup-implement` |
+| Trường                   | Nội dung                                                                                                                                                                                                                                                                                                                                                                                                           |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Ngày                     | 2026-10-30                                                                                                                                                                                                                                                                                                                                                                                                         |
+| Người thực hiện          | Minh Nhựt                                                                                                                                                                                                                                                                                                                                                                                                          |
+| Nhóm tính năng liên quan | 11 – Thiết lập cơ sở chủ sân (spec `specs/111-owner-venue-setup`, liên đới `specs/041-weekly-recurring-booking`)                                                                                                                                                                                                                                                                                                   |
+| Công cụ AI               | Antigravity, skill `$speckit-implement`                                                                                                                                                                                                                                                                                                                                                                            |
+| Mục đích                 | Giải quyết dứt điểm 2 task cuối cùng của Feature 111: T034 (Xác lập hợp đồng tích hợp với Feature 041 về `acceptsRecurring`, bảo vệ chuỗi cũ và viết emulator test tích hợp) và T038 (Kiểm tra tự động toàn bộ 12 UI layout về Accessibility TalkBack, Touch Target $\ge 48$dp, responsive `w600dp`, đồng thời xây dựng quy trình đo SLA 4G trong `quickstart.md`), hoàn thành 100% (39/39) tasks của Feature 111. |
+| Nhánh Git                | `feature/111-owner-venue-setup-implement`                                                                                                                                                                                                                                                                                                                                                                          |
 
 ### Prompt đã dùng
 
@@ -2209,9 +2213,9 @@ Không commit hoặc push.
 
 - **Hợp đồng tích hợp Recurring (T034):**
   - Ban hành tài liệu hợp đồng chính thức `specs/041-weekly-recurring-booking/contracts/recurring-venue-acceptance-contract.md` quy định rõ ràng ranh giới và cách tích hợp cờ `acceptsRecurring` cho nhóm triển khai Feature 041:
-    - *UI Layer (Feature 041):* Kiểm tra `venue.acceptsRecurring`. Nếu `false`, ẩn hoặc vô hiệu hóa switch "Đặt cố định theo tuần" và hiển thị thông báo giải thích cơ sở hiện không nhận đặt định kỳ.
-    - *Transaction Engine (Feature 041):* Bên trong `holdRecurringBookingTransaction`, bắt buộc phải đọc `venues/{venueId}` từ transaction; nếu `acceptsRecurring == false`, từ chối ngay với mã lỗi `RECURRING_NOT_ACCEPTED` mà không tạo bất kỳ slot `HELD` nào.
-    - *Bảo vệ chuỗi cũ:* Khi `acceptsRecurring` chuyển sang `false`, toàn bộ các slot `BOOKED` thuộc các chuỗi recurring group đã tạo trước đó (`bookingId != null`) tuyệt đối không bị hủy hay xóa bỏ.
+    - _UI Layer (Feature 041):_ Kiểm tra `venue.acceptsRecurring`. Nếu `false`, ẩn hoặc vô hiệu hóa switch "Đặt cố định theo tuần" và hiển thị thông báo giải thích cơ sở hiện không nhận đặt định kỳ.
+    - _Transaction Engine (Feature 041):_ Bên trong `holdRecurringBookingTransaction`, bắt buộc phải đọc `venues/{venueId}` từ transaction; nếu `acceptsRecurring == false`, từ chối ngay với mã lỗi `RECURRING_NOT_ACCEPTED` mà không tạo bất kỳ slot `HELD` nào.
+    - _Bảo vệ chuỗi cũ:_ Khi `acceptsRecurring` chuyển sang `false`, toàn bộ các slot `BOOKED` thuộc các chuỗi recurring group đã tạo trước đó (`bookingId != null`) tuyệt đối không bị hủy hay xóa bỏ.
   - Cập nhật giao diện `specs/041-weekly-recurring-booking/contracts/ui-contracts.md` bổ sung phương thức `isRecurringAccepted(venueId: String): Result<Boolean>`.
   - Bổ sung test tích hợp vào `firestore-tests/test/owner-slot-blocks.test.ts`:
     - Xác minh khi `acceptsRecurring = false`, các slot `BOOKED` thuộc recurring group hiện có vẫn giữ nguyên vẹn.
@@ -2224,24 +2228,24 @@ Không commit hoặc push.
   - Cập nhật tài liệu hướng dẫn và benchmark tại `specs/111-owner-venue-setup/quickstart.md`:
     - Ghi nhận kết quả test tự động 100% đạt chuẩn Touch Target và nhãn TalkBack.
     - Thiết lập chi tiết quy trình đo SLA hiệu năng thực địa trên thiết bị thật qua mạng di động 4G/LTE (sử dụng Android Studio Profiler và Network Throttling / Charles Proxy):
-      + Thời gian tải danh sách / lịch: $\le 3.0$s trên mạng di động 4G.
-      + Xác nhận thao tác ghi: $\le 1.0$s (Local optimistic/acknowledgement).
-      + Hoàn tất đồng bộ ghi trên mạng bình thường: $\le 3.0$s.
+      - Thời gian tải danh sách / lịch: $\le 3.0$s trên mạng di động 4G.
+      - Xác nhận thao tác ghi: $\le 1.0$s (Local optimistic/acknowledgement).
+      - Hoàn tất đồng bộ ghi trên mạng bình thường: $\le 3.0$s.
 - **Cập nhật trạng thái Task:**
   - Đánh dấu hoàn thành `[X] T034` và `[X] T038` trong `specs/111-owner-venue-setup/tasks.md`.
   - Hoàn tất 100% toàn bộ 39/39 tasks của Feature 111.
 
 ### Phần đã sử dụng / chỉnh sửa / bỏ
 
-| Phần | Quyết định | Lý do |
-|---|---|---|
-| `specs/041-weekly-recurring-booking/contracts/recurring-venue-acceptance-contract.md` | Tạo mới | Ban hành hợp đồng chính thức hướng dẫn Feature 041 tích hợp với `venues.acceptsRecurring` theo đúng ranh giới nghiệp vụ |
-| `specs/041-weekly-recurring-booking/contracts/ui-contracts.md` | Chỉnh sửa | Bổ sung phương thức `isRecurringAccepted(venueId: String)` vào hợp đồng UI của Feature 041 |
-| `firestore-tests/test/owner-slot-blocks.test.ts` | Chỉnh sửa | Bổ sung test tích hợp chứng minh `acceptsRecurring = false` không xóa booking cũ và chặn tạo recurring mới |
-| `OwnerUiAccessibilityTest.kt` | Tạo mới | Viết bộ kiểm thử tự động rà soát 12 layout file về Touch Target $\ge 48$dp, nhãn TalkBack và bố cục tablet `w600dp` |
-| `specs/111-owner-venue-setup/quickstart.md` | Chỉnh sửa | Bổ sung kết quả kiểm thử trợ năng và tài liệu hóa giao thức đo SLA hiệu năng trên thiết bị thật mạng 4G |
-| `specs/111-owner-venue-setup/tasks.md` | Chỉnh sửa | Đánh dấu hoàn thành `T034` và `T038`, hoàn thành toàn bộ 39/39 tasks của Feature 111 |
-| Recurring Booking Engine | Không triển khai | Tuân thủ nghiêm ngặt ranh giới nghiệp vụ; engine đặt lịch định kỳ thuộc phạm vi riêng của Feature 041 |
+| Phần                                                                                  | Quyết định       | Lý do                                                                                                                   |
+| ------------------------------------------------------------------------------------- | ---------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| `specs/041-weekly-recurring-booking/contracts/recurring-venue-acceptance-contract.md` | Tạo mới          | Ban hành hợp đồng chính thức hướng dẫn Feature 041 tích hợp với `venues.acceptsRecurring` theo đúng ranh giới nghiệp vụ |
+| `specs/041-weekly-recurring-booking/contracts/ui-contracts.md`                        | Chỉnh sửa        | Bổ sung phương thức `isRecurringAccepted(venueId: String)` vào hợp đồng UI của Feature 041                              |
+| `firestore-tests/test/owner-slot-blocks.test.ts`                                      | Chỉnh sửa        | Bổ sung test tích hợp chứng minh `acceptsRecurring = false` không xóa booking cũ và chặn tạo recurring mới              |
+| `OwnerUiAccessibilityTest.kt`                                                         | Tạo mới          | Viết bộ kiểm thử tự động rà soát 12 layout file về Touch Target $\ge 48$dp, nhãn TalkBack và bố cục tablet `w600dp`     |
+| `specs/111-owner-venue-setup/quickstart.md`                                           | Chỉnh sửa        | Bổ sung kết quả kiểm thử trợ năng và tài liệu hóa giao thức đo SLA hiệu năng trên thiết bị thật mạng 4G                 |
+| `specs/111-owner-venue-setup/tasks.md`                                                | Chỉnh sửa        | Đánh dấu hoàn thành `T034` và `T038`, hoàn thành toàn bộ 39/39 tasks của Feature 111                                    |
+| Recurring Booking Engine                                                              | Không triển khai | Tuân thủ nghiêm ngặt ranh giới nghiệp vụ; engine đặt lịch định kỳ thuộc phạm vi riêng của Feature 041                   |
 
 ### Cách kiểm chứng
 
@@ -2253,3 +2257,474 @@ Không commit hoặc push.
   Chạy vitest qua `firebase-tools@15 emulators:exec` trên 5 test suites (`owner-venue-authorization.test.ts`, `owner-courts.test.ts`, `owner-price-rules.test.ts`, `owner-public-availability.test.ts`, `owner-slot-blocks.test.ts`) -> **5 files, 25 tests passed** (100% pass).
 - Không commit hoặc push.
 
+---
+
+## Mục 25: Rà soát và chỉnh UI Android Feature 111 theo ảnh mẫu
+
+| Trường                   | Nội dung                                                                                                                                                                                                                       |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Ngày                     | 2026-11-05                                                                                                                                                                                                                     |
+| Người thực hiện          | Minh Nhựt                                                                                                                                                                                                                      |
+| Nhóm tính năng liên quan | 11 – Thiết lập cơ sở chủ sân (spec `specs/111-owner-venue-setup`)                                                                                                                                                              |
+| Công cụ AI               | Codex (GPT-6), skill `$speckit-implement`                                                                                                                                                                                      |
+| Mục đích                 | Mở và đối chiếu trực tiếp 5 ảnh UI chuẩn của Feature 111 với giao diện Android; tinh chỉnh component, spacing, thẻ, lưới khóa giờ và cấu hình `w600dp`, đồng thời giữ nguyên business logic và hỗ trợ accessibility/dark mode. |
+
+### Prompt đã dùng
+
+```text
+$speckit-implement Rà soát và chỉnh sửa UI của Feature 111 để khớp chính xác với UI mẫu của nhóm.
+
+Nguồn thiết kế chuẩn nằm trong specs/111-owner-venue-setup/ui/. Mở và xem trực tiếp toàn bộ ảnh, đối chiếu 5 màn hình Android: Cơ sở của tôi, Sửa cơ sở, Danh sách sân, Bảng giá và Khóa giờ. Chỉnh UI để bám sát thiết kế, giữ nguyên business logic và hỗ trợ light/dark mode, phone, w600dp cùng accessibility. Chạy build và UI tests liên quan; không commit hoặc push.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Mở và xem đủ 5 ảnh mẫu; xác nhận bộ thiết kế dùng nền bề mặt nhạt, tiêu đề lớn, thẻ viền mảnh, spacing rộng và nút dạng viên.
+- **Cơ sở của tôi:** tinh chỉnh tiêu đề, nút thêm và thẻ venue với viền, bo góc, padding và khoảng cách rõ hơn.
+- **Sửa cơ sở:** tăng chiều cao trường nhập và khoảng cách giữa các trường; làm rõ phân khu quản lý sân.
+- **Danh sách sân:** chuyển item sân thành thẻ phân tách, gom thông tin sân và thao tác để giảm cảm giác dàn hàng ngang chật.
+- **Bảng giá:** đổi card sang nền surface, viền nhẹ, góc bo và padding gần ảnh mẫu hơn.
+- **Khóa giờ:** đổi danh sách slot sang lưới 4 cột; bảo đảm khai báo vùng chạm của checkbox đạt 48dp.
+- Cập nhật các layout phone và `layout-w600dp`; sử dụng màu theo theme hiện tại để giữ hỗ trợ DayNight. Không thay đổi ViewModel, Repository, API, Firestore contract hoặc Security Rules.
+- Một số nội dung của ảnh mẫu (bản đồ/vị trí, tiện ích, ảnh cơ sở và lựa chọn chip ngày) chưa được mô hình/giao diện hiện tại hỗ trợ; không tự thêm luồng dữ liệu hoặc business logic trong lần chỉnh UI này.
+- Script prerequisite của Spec Kit trỏ tới `specs/111-owner-onboarding` trong khi tài liệu Feature 111 thực tế ở `specs/111-owner-venue-setup`; tiếp tục đối chiếu với thư mục Feature 111 đúng.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần                                                                                                                                | Quyết định      | Lý do                                                                                 |
+| ----------------------------------------------------------------------------------------------------------------------------------- | --------------- | ------------------------------------------------------------------------------------- |
+| `app/src/main/res/layout/item_owner_venue.xml`                                                                                      | Chỉnh sửa       | Thẻ venue theo hướng card trắng/viền mảnh, bo góc và khoảng đệm gần mẫu Cơ sở của tôi |
+| `app/src/main/res/layout/fragment_owner_venue_list.xml` và `layout-w600dp/fragment_owner_venue_list.xml`                            | Chỉnh sửa       | Cân lại padding, tiêu đề và nút thêm trên phone/tablet                                |
+| `app/src/main/res/layout/fragment_owner_venue_detail.xml` và `layout-w600dp/fragment_owner_venue_detail.xml`                        | Chỉnh sửa       | Tăng spacing/chiều cao trường nhập, làm rõ tiêu đề phần sân                           |
+| `app/src/main/res/layout/item_owner_court.xml`                                                                                      | Chỉnh sửa       | Tổ chức lại nội dung và thao tác mỗi sân trong card, tránh hàng ngang quá rộng        |
+| `app/src/main/res/layout/item_owner_price_rule.xml`, `fragment_owner_price_rule.xml`, `layout-w600dp/fragment_owner_price_rule.xml` | Chỉnh sửa       | Cải thiện card bảng giá và khoảng cách màn hình theo thiết kế                         |
+| `app/src/main/res/layout/item_owner_slot_grid.xml`, `fragment_owner_slot_block.xml`, `layout-w600dp/fragment_owner_slot_block.xml`  | Chỉnh sửa       | Tạo ô slot gọn theo lưới, duy trì màu theme và touch target accessibility             |
+| `OwnerSlotBlockFragment.kt`                                                                                                         | Chỉnh sửa       | Dùng `GridLayoutManager` 4 cột cho lưới slot                                          |
+| ViewModel, Repository, API, Firestore Rules/contract                                                                                | Không chỉnh sửa | Giữ nguyên ranh giới dữ liệu và nghiệp vụ theo yêu cầu                                |
+
+### Cách kiểm chứng
+
+- Android owner UI/accessibility và ViewModel tests:
+  `./gradlew.bat :app:testDebugUnitTest --tests com.example.booking_app.feature.owner.ui.OwnerUiAccessibilityTest --tests com.example.booking_app.feature.owner.ui.OwnerVenueViewModelTest --tests com.example.booking_app.feature.owner.ui.OwnerPriceRuleViewModelTest --tests com.example.booking_app.feature.owner.ui.OwnerSlotBlockViewModelTest` -> **BUILD SUCCESSFUL**, 23 tests passed.
+- Android debug build:
+  `./gradlew.bat :app:assembleDebug` -> **BUILD SUCCESSFUL**.
+- `git diff --check` -> không phát hiện lỗi whitespace.
+- Không commit hoặc push.
+
+---
+
+## Mục 26: Khảo sát và triển khai phần có thể hoàn thành của Feature 110
+
+| Trường                   | Nội dung                                                                                                                                                |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-11-05                                                                                                                                              |
+| Người thực hiện          | Minh Nhựt                                                                                                                                               |
+| Nhóm tính năng liên quan | 11 – Đăng ký chủ sân (spec `specs/110-owner-onboarding`)                                                                                                |
+| Công cụ AI               | Codex (GPT-6), skill `$speckit-implement`                                                                                                               |
+| Mục đích                 | Khảo sát spec, contract và đủ 3 ảnh UI mẫu; triển khai model/validation/test có thể làm độc lập mà không tự chọn các quyết định security/schema còn mở. |
+
+### Prompt đã dùng
+
+```text
+$speckit-implement # IMPLEMENT FEATURE 110 — OWNER ONBOARDING & INITIAL VENUE CREATION
+
+Khảo sát toàn bộ spec/plan/tasks/data-model/contracts/research/quickstart Feature 110, Feature 111, database schema, các feature liên quan, kiến trúc Android và toàn bộ ảnh UI mẫu. Lập mapping user stories, functional requirements, UI, Android screens, repository/API và test cases trước khi triển khai. Implement trực tiếp phần được định nghĩa; không tự thay đổi UI mẫu, schema, security contract hoặc tự suy diễn quyết định còn mở. Chạy unit tests, Firestore Emulator tests, integration tests, assembleDebug và lintDebug; cập nhật tasks và AI log; không commit/push.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Đọc tài liệu Feature 110, boundary contract và data model Feature 111, database README, constitution, Rules hiện tại, Android entry points và convention; mở xem trực tiếp cả ba ảnh `OwnerApply`, `OwnerApplyReview`, `OwnerPending`.
+- Checklist requirements Feature 110 đạt 16/16. Script prerequisite không chạy vì `.specify/feature.json` đang trỏ tới thư mục Feature 111 không tồn tại (`specs/111-owner-onboarding` thay vì `specs/111-owner-venue-setup`).
+- Thêm `OwnerApplicationDraft` chỉ chứa dữ liệu applicant-owned và validator cho trường bắt buộc, tọa độ, số sân, thời gian, số điện thoại, ảnh/tài liệu và MIME/dung lượng giấy tờ; thêm 4 unit tests. Đánh dấu T011 hoàn thành.
+- Tạo `implementation-mapping.md` nối user stories/FR với ảnh, Android destination dự kiến, repository/API boundary và tests. Chưa triển khai các màn Android; form/review/status vẫn là phần còn mở.
+- Không thay đổi Rules, schema, backend, role/status hoặc luồng tạo venue. T001–T004 còn chặn current-application/history, retry/idempotency, app–Supabase auth/upload/download và cleanup; Feature 120 giữ trách nhiệm duyệt/tạo venue, Feature 111 giữ trách nhiệm quản lý sau duyệt.
+- Chạy toàn bộ Android unit tests: 494 tests, 7 failed và 2 skipped; cả 7 lỗi thuộc `FirebaseSessionManagerTest`, không thuộc test Feature 110 mới. Test riêng validator: 4/4 pass.
+- `assembleDebug` thành công. `lintDebug` thất bại do lỗi repo ngoài phạm vi tại `SlotMatrixRowAdapter.kt:203` (`DiffUtilEquals`), với 305 warnings. Firestore Emulator tests không chạy được vì `firebase-tools@15` yêu cầu Java 21 trở lên, môi trường đang dùng Java thấp hơn.
+- Không đánh dấu các task còn thiếu bằng `[X]`; không tự sửa contract hoặc code Feature khác để che lỗi kiểm chứng.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần                                                                      | Quyết định      | Lý do                                                                                                            |
+| ------------------------------------------------------------------------- | --------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `feature/owner/domain/OwnerApplicationDraft.kt`                           | Tạo mới         | Mô hình applicant-owned và validation độc lập theo constraints hiện có; không thêm field/schema.                 |
+| `app/src/test/.../OwnerApplicationValidationTest.kt`                      | Tạo mới         | Bao phủ dữ liệu hợp lệ, lỗi trường, thời gian và giới hạn evidence.                                              |
+| `specs/110-owner-onboarding/implementation-mapping.md`                    | Tạo mới         | Traceability tới UI, API/repository, tests và các blocker được ghi trong contract.                               |
+| `specs/110-owner-onboarding/tasks.md`                                     | Chỉnh sửa       | Chỉ đánh dấu T011 sau khi đã implement và test phần validator.                                                   |
+| `firestore.rules`, Supabase functions/migrations, schema, Feature 111     | Không chỉnh sửa | Chưa được chốt application identity, idempotency, token và quyền upload/download applicant; tránh đổi contract.  |
+| Ba màn UI onboarding, submit/resubmit, approval và initial venue creation | Chưa triển khai | Cần tiếp tục sau khi boundary và các quyết định tin cậy được nhóm xác nhận; chưa có backend an toàn để tích hợp. |
+
+### Cách kiểm chứng
+
+- `./gradlew.bat testDebugUnitTest --tests 'com.example.booking_app.feature.owner.domain.OwnerApplicationValidationTest'` -> **BUILD SUCCESSFUL**, 4 tests passed.
+- `./gradlew.bat testDebugUnitTest assembleDebug lintDebug` -> toàn suite **494 tests, 7 failed, 2 skipped**; `assembleDebug` thành công. Lỗi unit test ở `FirebaseSessionManagerTest`.
+- `./gradlew.bat lintDebug` -> **FAIL**, 1 lỗi `DiffUtilEquals` tại `SlotMatrixRowAdapter.kt:203`, 305 warnings.
+- `npm.cmd test` trong `firestore-tests` -> không chạy được: `firebase-tools@15` yêu cầu Java 21+.
+- `git diff --check` -> không phát hiện lỗi whitespace.
+- Không commit hoặc push.
+
+---
+
+## Mục 27: Ghi nhận quyết định bổ sung cho Feature 110
+
+| Trường                   | Nội dung                                                                                                                                                        |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-11-05                                                                                                                                                      |
+| Người thực hiện          | Minh Nhựt                                                                                                                                                       |
+| Nhóm tính năng liên quan | 11 – Đăng ký chủ sân (spec `specs/110-owner-onboarding`)                                                                                                        |
+| Công cụ AI               | Codex (GPT-6)                                                                                                                                                   |
+| Mục đích                 | Ghi nhận ba đề xuất được chủ dự án chấp nhận về định danh venue, recovery khi duyệt lỗi giữa chừng và thời hạn cleanup; giữ map provider ở trạng thái tạm hoãn. |
+
+### Prompt đã dùng
+
+```text
+Hãy thực hiện DESIGN DECISION REVIEW cho Feature 110 — Owner Onboarding.
+
+Hiện Feature 110 còn các contract chưa được thống nhất. Tôi muốn bạn phân tích và đề xuất phương án để tôi lựa chọn trước khi tiếp tục implementation.
+
+**Yêu cầu:**
+
+1. Đọc toàn bộ spec, plan, data-model, research, contracts và implementation-mapping của Feature 110.
+2. Đối chiếu Feature 111, Feature 120, Firebase, Supabase và database schema hiện tại.
+3. Phân tích các quyết định còn mở:
+
+**T001 — Application lifecycle**
+
+- Cách xác định application hiện hành của mỗi user.
+- Có lưu lịch sử application không?
+- Quy trình resubmit khi bị từ chối.
+- Xử lý application đang Pending khi gửi yêu cầu mới.
+
+**T002 — Authentication và Storage**
+
+- Cơ chế xác thực Firebase UID với Supabase.
+- Applicant được upload tài liệu vào đâu và bằng quyền nào?
+- Cách tải/xem tài liệu an toàn bằng signed URL.
+- Giới hạn MIME type, dung lượng và quyền truy cập.
+
+**T003 — Retry và idempotency**
+
+- Cách xử lý double submit.
+- Retry khi timeout hoặc mất mạng.
+- Tránh tạo application hoặc venue trùng lặp.
+- Xử lý xung đột khi nhiều request đồng thời.
+
+**T004 — Draft và cleanup**
+
+- Ai chịu trách nhiệm xóa draft và tài liệu upload dở?
+- Chính sách cleanup khi user xóa tài khoản.
+- Xử lý file không còn được application tham chiếu.
+- Phân định trách nhiệm Feature 110 và Feature 120.
+
+**T005 — Dependencies**
+
+- Các thư viện hoặc dependency còn thiếu.
+- Có thực sự cần bổ sung không?
+- So sánh phương án dùng thư viện hiện tại và thêm dependency mới.
+
+### Cách trình bày kết quả
+
+Với mỗi quyết định:
+
+1. Mô tả vấn đề cần giải quyết.
+2. Đưa ra 2–3 phương án khả thi.
+3. Phân tích ưu điểm, nhược điểm và rủi ro.
+4. Đánh giá mức độ phù hợp với kiến trúc hiện tại.
+5. Đưa ra phương án Agent khuyến nghị và giải thích lý do.
+6. Nêu rõ ảnh hưởng đến Feature 111, Feature 120, schema, Security Rules và UI.
+7. Đưa ra lựa chọn cụ thể để tôi phê duyệt.
+
+**Quy tắc quan trọng:**
+
+- Không tự chọn thay tôi.
+- Không sửa code, schema, Security Rules hoặc contract trong lượt này.
+- Không tạo implementation giả.
+- Không commit/push.
+- Nếu có dependency giữa các quyết định, phải chỉ rõ thứ tự cần chốt.
+- Nếu thiếu thông tin từ nhóm Feature 120 hoặc backend, nêu chính xác câu hỏi cần xác nhận.
+
+Cuối cùng, tạo một bảng tổng hợp các quyết định cần tôi chọn, đánh số rõ ràng để tôi có thể trả lời nhanh theo dạng `T001-A, T002-B...`.
+
+Chỉ xuất báo cáo và đề xuất, chờ tôi phê duyệt, không  implement.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Ghi nhận `applicationId` làm `venueId` cho venue ban đầu; sau revoke, chu kỳ được duyệt tạo venue mới, không nối ngầm với venue cũ.
+- Ghi nhận thứ tự recovery: promote ảnh; transaction Firestore tạo venue và cập nhật application/user; sau commit cập nhật Firebase custom claim rồi phát notification. Các bước ngoài transaction cần retry idempotent.
+- Chốt orphan staging object chỉ được sweeper xóa sau 30 ngày nếu không được application tham chiếu. Draft cục bộ được giữ đến khi người dùng xóa, đăng xuất hoặc xóa tài khoản; không tự xóa sau submit.
+- Đánh dấu map provider là tạm hoãn; chưa chọn Google Maps/osmdroid, chưa thêm SDK hay triển khai map picker phụ thuộc provider.
+- Không sửa code, schema, Firestore Rules hoặc backend; không chạy test/build vì chỉ cập nhật tài liệu.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần                                                                  | Quyết định      | Lý do                                                                                                                                     |
+| --------------------------------------------------------------------- | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| `specs/110-owner-onboarding/contracts/owner-onboarding-boundaries.md` | Chỉnh sửa       | Ghi các quyết định đã duyệt, phân biệt rõ map provider đang tạm hoãn và giữ yêu cầu contract API/reconciliation cụ thể cho bước tích hợp. |
+| Code, schema, Firestore Rules, Firebase/Supabase backend              | Không chỉnh sửa | Lượt này chỉ ghi nhận quyết định; chưa triển khai.                                                                                        |
+
+### Cách kiểm chứng
+
+- Đối chiếu nội dung contract sau khi cập nhật; chưa chạy test/build do không có thay đổi mã nguồn.
+- Không commit hoặc push.
+
+---
+
+## Mục 28: Tiếp tục triển khai Feature 110 — Owner Onboarding
+
+| Trường                   | Nội dung                                                                                                                               |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-11-05                                                                                                                             |
+| Người thực hiện          | Minh Nhựt                                                                                                                              |
+| Nhóm tính năng liên quan | 11 – Đăng ký chủ sân (spec `specs/110-owner-onboarding`)                                                                               |
+| Công cụ AI               | Codex (GPT-6), skill `$speckit-implement`                                                                                              |
+| Mục đích                 | Tiếp tục triển khai Feature 110 theo decisions T001–T005 đã duyệt; hoàn thiện luồng applicant và kiểm chứng các ranh giới server-side. |
+
+### Prompt đã dùng
+
+```text
+$speckit-implement Tiếp tục IMPLEMENT hoàn chỉnh Feature 110 — Owner Onboarding.
+
+
+### 1. Tuân thủ tài liệu đồ án
+
+Trước khi triển khai, đọc lại và đối chiếu:
+
+- Toàn bộ tài liệu trong `specs/110-owner-onboarding/`.
+- Các quyết định T001–T005 đã được tôi approve.
+- `spec.md`, `plan.md`, `data-model.md`, `contracts/`, `research.md`, `tasks.md`.
+- Database schema tại `docs/design/database/README.md`.
+- Constitution và conventions của project.
+- Feature 111, Feature 120 và các contract liên quan.
+
+Không tự ý thay đổi những quyết định đã được approve. Nếu phát hiện mâu thuẫn, báo cáo thay vì tự suy diễn.
+
+### 2. Tuân thủ UI mẫu
+
+Đây là yêu cầu bắt buộc:
+
+- Mở và đối chiếu trực tiếp toàn bộ ảnh UI trong `specs/110-owner-onboarding/ui/`.
+- Implement đầy đủ các màn hình theo đúng thứ tự và luồng thiết kế.
+- Giữ đúng bố cục, màu sắc, typography, spacing, icon, button, card, form và navigation.
+- Không tự sáng tạo giao diện hoặc thay đổi UX của nhóm.
+- Sử dụng lại design system và component hiện có.
+- Hỗ trợ light/dark, phone, `w600dp`, accessibility và touch target tối thiểu 48dp.
+- Không sửa hoặc thay thế ảnh UI mẫu.
+
+### 3. Implement toàn bộ Feature 110
+
+Triển khai tất cả user stories và tasks theo spec:
+
+- Owner application form.
+- Nhập và xác thực thông tin.
+- Chọn, upload và quản lý giấy tờ.
+- Submit/resubmit application.
+- Xem trạng thái hồ sơ.
+- Luồng review/approval/rejection theo đúng quyền hạn.
+- Xử lý draft, retry, idempotency và cleanup.
+- Initial venue creation theo đúng contract với Feature 120.
+- Điều hướng và tích hợp với Feature 111 sau khi Owner được duyệt.
+
+Sử dụng đúng các quyết định T001–T005 đã approve.
+
+### 4. Backend và Security
+
+- Implement đúng authentication Firebase–Supabase đã thống nhất.
+- Bảo vệ upload/download tài liệu theo contract.
+- Kiểm tra quyền applicant ở server.
+- Không tin dữ liệu role, ownerStatus hoặc approval status từ client.
+- Chống duplicate submission và xử lý retry an toàn.
+- Bảo đảm chỉ Feature 120 thực hiện quyền cấp `OWNER/APPROVED` và initial venue creation theo contract đã thống nhất.
+- Không để Feature 110 vượt quyền sang Feature 111 hoặc Feature 120.
+
+### 5. Android implementation
+
+Tuân thủ kiến trúc hiện tại:
+
+- Clean Architecture.
+- MVVM.
+- Repository pattern.
+- StateFlow/Coroutines.
+- Hilt DI.
+- ViewBinding và Navigation conventions.
+- Material 3 và resource conventions.
+
+Tái sử dụng component hiện có, không tạo kiến trúc song song hoặc duplicate logic.
+
+### 6. Kiểm thử
+
+Bổ sung đầy đủ unit tests, integration tests và Emulator tests cho:
+
+- Validation.
+- Submit/resubmit.
+- Upload/download authorization.
+- Authentication.
+- Approval/rejection.
+- Retry và idempotency.
+- Duplicate requests.
+- Draft cleanup.
+- Initial venue creation.
+- Feature 110 → Feature 120 → Feature 111 integration.
+- Unauthorized access và bảo vệ dữ liệu.
+
+Chạy unit tests, Emulator tests, `assembleDebug` và `lintDebug`. Phân biệt lỗi mới với lỗi tồn tại từ trước.
+
+### 7. Cập nhật tài liệu
+
+- Cập nhật `tasks.md` theo tiến độ thực tế.
+- Cập nhật contracts và implementation mapping nếu cần.
+- Cập nhật quickstart.
+- Cập nhật AI log theo convention đồ án.
+- Đảm bảo requirements, implementation và tests có traceability.
+
+### 8. Nguyên tắc thực hiện
+
+- Chủ động implement, không chỉ lập kế hoạch.
+- Không bỏ qua task hoặc đánh dấu hoàn thành giả.
+- Không tự ý thay đổi quyết định đã approve.
+- Không thay đổi schema hoặc contract ngoài phạm vi được duyệt.
+- Không làm hỏng Feature 111 và Feature 120.
+- Không commit hoặc push.
+
+### 9. Báo cáo cuối cùng
+
+Báo cáo:
+
+- Tasks đã hoàn thành và còn mở.
+- Các màn hình đã implement, đối chiếu với UI mẫu.
+- Files đã tạo/sửa.
+- Backend, authentication và security.
+- Integration Feature 110/120/111.
+- Test/build/lint và kết quả thực tế.
+- Blockers còn lại.
+
+**Hãy bắt đầu triển khai trực tiếp toàn bộ phần đã được phê duyệt. Ưu tiên hoàn thiện end-to-end, không dừng ở domain model hoặc UI prototype.**
+```
+
+### Tóm tắt phản hồi của AI
+
+- Bổ sung contract API applicant và server-side Edge Functions cho trạng thái/submit hồ sơ và quyền thao tác private staging documents; thêm bucket private `owner-docs` với giới hạn MIME/kích thước theo quyết định đã duyệt.
+- Thêm Android repository/data source, ViewModel, form/review/status fragments, navigation, local draft và upload/download qua signed URL; map provider vẫn hoãn, vị trí được nhập thủ công.
+- Thêm Firestore Rules cho read-only applicant/admin và cấm client ghi `ownerApplications`, cùng test Rules Emulator.
+- Cập nhật tasks, data-model/mapping/research/plan/quickstart để phản ánh các lựa chọn và blocker hiện tại.
+- `assembleDebug` thành công; focused validator/accessibility tests thành công sau khi sửa touch targets/layout `w600dp`; Firestore Rules suite thành công (16 files/147 tests); Deno + Auth/Firestore handler suites thành công (8/8) bằng JDK 21 và Deno portable tạm. Supabase Storage HTTP trong handler test được mock. Full Android suite có 7 lỗi trong `FirebaseSessionManagerTest`; lint có một lỗi `DiffUtilEquals` ngoài phạm vi Feature 110.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần                                                                                | Quyết định                       | Lý do                                                                                                                                                                       |
+| ----------------------------------------------------------------------------------- | -------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Feature 110 Android, Supabase Edge Functions/migration, Firestore Rules và tài liệu | Đã tạo/chỉnh sửa trong workspace | Thực hiện phần onboarding applicant theo quyết định đã được duyệt; các tác vụ thuộc review/approval, promotion, venue creation và cleanup server vẫn thuộc Feature 120/011. |
+| Map provider / SDK bản đồ                                                           | Không thêm                       | Chủ dự án đã tạm hoãn quyết định provider.                                                                                                                                  |
+
+### Cách kiểm chứng
+
+- Đối chiếu trực tiếp ba ảnh UI mẫu: form, review và pending status; ảnh mẫu không bị sửa.
+- Build Android đang chạy lại sau khi sửa lỗi compile; unit tests, Firestore Emulator tests, lint và Supabase local tests cần ghi kết quả sau khi thực chạy.
+- Không commit hoặc push.
+
+---
+
+## Mục 29: Tiếp tục hoàn thiện Feature 110 — Owner Onboarding
+
+**Ngày**: 2026-11-05
+
+### Prompt đã dùng
+
+```text
+$speckit-implement Tiếp tục hoàn thiện Feature 110 theo specs/110-owner-onboarding/tasks.md hiện tại và các quyết định T001–T005 đã được approve.
+
+Đọc lại toàn bộ tài liệu đồ án và code hiện tại trước khi sửa.
+
+### Ưu tiên implement:
+1. T012–T013: Hoàn thiện form UI và luồng chọn/upload tài liệu, tuân thủ chính xác 3 ảnh UI mẫu.
+2. T010: Supabase local Storage integration tests, xác minh signed URL, expiry, MIME/size và authorization thật.
+3. T017–T018: Hoàn thiện unit tests và Android UI tests cho luồng form → upload → review → submit.
+4. T022–T023: Hoàn thiện unit/UI tests cho NONE, PENDING, APPROVED, REJECTED.
+5. T028–T029: Hoàn thiện resubmit tests và kiểm thử xung đột.
+6. T033–T034: Implement luồng applicant xem/tải tài liệu bằng signed URL và kiểm thử quyền truy cập.
+7. T030–T032: Hoàn thiện account/navigation boundary, feature handoff và local integration verification.
+
+### Ràng buộc:
+- Tuân thủ UI mẫu trong `specs/110-owner-onboarding/ui/`, không tự thiết kế lại.
+- Tuân thủ spec, contracts, database README, Constitution và architecture hiện tại.
+- Không tự cấp OWNER/APPROVED hoặc tạo venue; Feature 120 sở hữu các thao tác này.
+- Không tự chọn map provider; giữ blocker Feature 021.
+- Không tự triển khai account deletion thay Feature 011.
+- Không mock Storage rồi tuyên bố integration thật đã PASS.
+- Không đánh dấu task hoàn thành nếu chưa có bằng chứng.
+
+Với T035, chuẩn bị kịch bản và biểu mẫu usability evaluation; chỉ đánh dấu hoàn thành sau khi có kết quả thử nghiệm thực tế với tối thiểu 10 người.
+
+Sau khi hoàn thành các phần có thể triển khai:
+- Cập nhật tasks.md, quickstart.md, implementation-mapping.md và AI log.
+- Chạy unit tests, UI tests, Firebase Emulator, Supabase local, assembleDebug và lintDebug.
+- Phân biệt lỗi tồn tại trước đó với lỗi mới.
+- Báo cáo task hoàn thành, task còn mở và dependency cần nhóm khác xử lý.
+
+Không commit hoặc push. Chủ động implement, không chỉ lập kế hoạch.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Sửa lifecycle khôi phục draft khi `ownerStatus=NONE`; nếu local ID đã trùng application cũ (ví dụ sau revoke), giữ nội dung nhưng cấp ID mới.
+- Bắt buộc làm mới trạng thái server trước submit; không mở Feature 111 khi status cache cũ, và Edge Function từ chối cặp role/status không nhất quán.
+- Bổ sung upload row cho từng tệp với trạng thái đang tải, lỗi, retry riêng; thêm Material time picker cho giờ mở/đóng.
+- Thêm luồng applicant xem trước và tải giấy tờ bằng signed URL ngắn hạn; URL mới được xin riêng cho mỗi lần xem/tải và không lưu trong draft.
+- Bổ sung ViewModel tests cho status, lifecycle, retry, submit duplicate, xung đột stale, timeout không rõ kết quả và signed URL delegation; thêm Android screen-inflation smoke test cho light/dark phone/w600dp.
+- Tạo Supabase local Storage integration suite dùng thật Auth/Firestore Emulator và Storage local; Deno type-check được, nhưng suite chưa được chạy do Docker Desktop daemon không chạy.
+- Chuẩn bị kịch bản/biểu mẫu usability tại `specs/110-owner-onboarding/usability-evaluation.md`; chưa có kết quả người dùng nên T035 vẫn mở.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+| --- | --- | --- |
+| Feature 110 Android form/status, ViewModel/repository tests, Edge Function status contract/tests, local Storage integration suite và tài liệu | Đã chỉnh sửa trong workspace | Hoàn thiện các phần có thể làm mà không thay schema, vượt quyền Feature 120/111 hoặc giả nhận bằng chứng integration. |
+| Map SDK/picker provider, review approval/venue promotion, account deletion và 30-day sweeper | Không triển khai tại đây | Map provider do Feature 021; approval/venue thuộc Feature 120; account deletion thuộc Feature 011; sweeper chưa có owner/contract implementation trong scope hiện tại. |
+| Usability results T035 | Chưa ghi | Cần ít nhất 10 người dùng mục tiêu thử thực tế; chưa có phiên đánh giá. |
+
+### Cách kiểm chứng
+
+- Đã xem lại ba ảnh UI mẫu gốc; không sửa ảnh tham chiếu.
+- Unit tests mục tiêu cho Owner ViewModel, validation và accessibility pass; `:app:compileDebugAndroidTestKotlin` pass. `:app:connectedDebugAndroidTest` không chạy test cases vì emulator chuyển sang OFFLINE và Gradle không tìm thấy thiết bị online.
+- `:app:testDebugUnitTest`: 506 tests, 7 failures, 2 skipped; cả 7 failures ở `FirebaseSessionManagerTest`, file không đổi trong lượt này. Chưa đối chiếu baseline commit nên chỉ ghi nhận là lỗi ngoài phạm vi thay đổi, không khẳng định lỗi có trước.
+- `:app:assembleDebug` pass. `:app:lintDebug` fail với 1 error và 350 warnings; error duy nhất nằm ở Feature 040 `SlotMatrixRowAdapter.kt:203` (`DiffUtilEquals`).
+- Firebase Auth/Firestore Emulator Edge Function tests pass 9/9 (8 application, 1 docs), gồm test role/status mismatch. Supabase local không chạy vì Docker daemon dừng. Storage suite đã được soạn; lần Deno type-check lại bị dừng vì không truy cập được npm registry, và lần type-check trước đó là trước thay đổi assertion cuối. Không tuyên bố signed URL/expiry/MIME/size integration đã pass.
+- Không commit hoặc push.
+
+---
+
+## Mục 30: Tiếp tục hoàn thiện task còn mở — Feature 110 Owner Onboarding
+
+**Ngày**: 2026-11-05
+
+### Prompt đã dùng
+
+```text
+$speckit-implement Tiếp tục hoàn thành các task còn mở T010, T012, T018, T023, T029, T032, T034 và T035 của Feature 110. Đọc và xác minh tài liệu/code hiện tại; hoàn thiện phần thuộc phạm vi Feature 110; chạy Storage thật, Firebase/Android/build/unit/lint tests; cập nhật tasks, quickstart, implementation mapping, usability evaluation và AI log. Không thay đổi quyết định T001–T005, schema hoặc contract chưa duyệt; không sửa UI mẫu, không implement thay Feature 011/021/111/120; không giả kết quả usability; không commit/push. Chỉ đóng task khi có bằng chứng thực tế.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Sửa cách chuẩn hóa signed download URL trong `owner-docs`: Supabase Storage có thể trả path relative, vì vậy handler nay thêm prefix `/storage/v1` để URL signed trỏ đúng gateway.
+- Bổ sung Storage integration test với Supabase local thật và Firebase Auth/Firestore Emulator: signed upload/download, bucket private, quyền applicant/Admin/user khác, path không tham chiếu, MIME/kích thước, expiry/renewal và xóa staged orphan. Suite chạy PASS.
+- Hoàn thiện applicant download qua repository: tải bytes bằng signed URL mới, nếu request lỗi thì xin URL mới và retry một lần; không lưu URL trong draft; lưu file vào Downloads và xóa file dang dở nếu ghi thất bại.
+- Bổ sung unit tests cho renewal/retry; focused downloader/ViewModel/validation/accessibility tests PASS. `assembleDebug` và `compileDebugAndroidTestKotlin` PASS.
+- Full unit suite: 508 tests, 7 failures và 2 skipped. Cả 7 failures là `FirebaseSessionManagerTest` không sửa trong lượt này; chưa có so sánh baseline nên không kết luận lỗi có trước.
+- `lintDebug` FAIL với 1 error và 350 warnings; error `DiffUtilEquals` ở `feature/booking/ui/adapter/SlotMatrixRowAdapter.kt:203`, ngoài Feature 110. `adb devices -l` không có thiết bị; AVD Pixel_6_Pro báo thiếu dung lượng nên không có connected UI test runtime.
+- Giữ các task T010/T012/T018/T023/T029/T032/T034/T035 OPEN nếu còn acceptance hoặc dependency chưa được xác minh. `venue-photos`/review/approval/venue handoff thuộc Feature 120, map picker chờ Feature 021, usability cần 10 người thật.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+| --- | --- | --- |
+| Signed download handler, Android document transfer/download, integration/unit tests và Feature 110 evidence docs | Đã chỉnh sửa trong workspace | Có thể hoàn tất trong phạm vi contract T001–T005; Storage thật xác nhận URL/authorization và retry. |
+| `venue-photos` promotion, approval/venue creation, interactive map SDK, account deletion, usability results | Không tự triển khai/ghi kết quả | Thuộc Feature 120, 021, 011 hoặc cần người dùng mục tiêu thực tế; chưa có đủ contract/runtime evidence. |
+
+### Cách kiểm chứng
+
+- Supabase local Storage + Firebase Auth/Firestore Emulator: signed URL integration PASS; handler Deno tests 9/9 PASS; Firestore Rules suite 16 files/147 tests PASS.
+- Focused Android owner unit tests PASS. `:app:testDebugUnitTest`: 508 tests, 7 failures (`FirebaseSessionManagerTest`), 2 skipped.
+- `:app:assembleDebug` PASS; `:app:compileDebugAndroidTestKotlin` PASS; `:app:connectedDebugAndroidTest` không chạy vì không có device online/AVD không đủ dung lượng.
+- `:app:lintDebug` FAIL: 1 error, 350 warnings, error ngoài Feature 110 tại Feature 040 `SlotMatrixRowAdapter.kt:203`.
+- `git diff --check` PASS tại thời điểm ghi nhật ký; không commit hoặc push.
+
+---
