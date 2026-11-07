@@ -23,6 +23,14 @@
 - **Sắp xếp:** HOLD và PENDING theo `createdAt` giảm dần; CONFIRMED theo `startAt` tăng dần; COMPLETED/NO_SHOW theo `startAt` giảm dần; CANCELLED/REJECTED theo `updatedAt` giảm dần.
 - **QR offline:** chỉ hiển thị dữ liệu cache khi tài khoản hiện tại khớp chủ đơn. Khi offline không khẳng định QR chắc chắn còn hiệu lực; server check-in vẫn kiểm tra trạng thái và quyền.
 
+### Đối chiếu triển khai — 2026-11-08
+
+- Writer 041 hiện lưu từng buổi bằng `slotIds` và `price`, đồng thời slot ghi `bookingId` bằng mã nhóm; không được suy diễn đây là cấu trúc `items` có giá từng slot hoặc tự chia đều giá. Cần hợp đồng chuyển đổi và đối chiếu dữ liệu được lưu trước khi triển khai xử lý chuỗi có thẩm quyền.
+- Writer 040/041 sử dụng trạng thái slot `HELD` và có luồng trả slot về `AVAILABLE`, khác mô tả `HOLD`/xóa slot trong schema chung. Không áp dụng máy móc thao tác nhả slot cho tới khi hợp đồng lưu trữ được xác nhận.
+- Chưa tìm thấy implementation thanh toán/redemption 050 trong phạm vi code đã khảo sát; đường dẫn và khóa redemption của nhóm, cũng như việc hoàn lượt, **chưa được xác nhận**. Không tự khôi phục voucher chuỗi dựa trên giả định.
+- Các hàm hủy/từ chối chủ sân hiện được khảo sát chưa chứng minh transaction hoàn ví, lịch sử, slot và voucher nguyên tử. Timeout PENDING, chuyển COMPLETED/NO_SHOW và nguồn giờ hiện tại có thẩm quyền chưa được xác minh đầy đủ; không coi các phụ thuộc đó đã hoạt động.
+- `HoldToPaymentArgs` có hạn HOLD ban đầu và 040 nhận `venueId`, nhưng phần thanh toán 050 còn TODO; deep link viết review 070 có tồn tại. Không suy diễn có màn thanh toán hoạt động hoặc có thể khôi phục đầy đủ arguments từ dữ liệu chưa xác minh.
+
 ### Session 2026-10-06
 
 - Q: Mốc thời gian hủy đơn để được hoàn 100% tiền cọc/ví là áp dụng cố định hay cấu hình theo cơ sở? → A: Áp dụng cố định **4 tiếng (240 phút)** trên toàn hệ thống trước giờ bắt đầu của buổi chơi cho mọi cơ sở sân (đồng nhất, dễ nhớ cho người chơi).

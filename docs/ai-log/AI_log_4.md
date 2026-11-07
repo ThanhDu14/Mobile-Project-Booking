@@ -42,6 +42,7 @@ Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 | 36  | 2026-11-06 | Đóng toàn diện 5 Contract Gates, triển khai Edge Functions, Repository Adapters thực và nâng số task hoàn thành lên 54/58 cho Feature 112                                              | 11   |
 | 37  | 2026-11-06 | Chạy connected UI tests trên thiết bị Android, hoàn tất 58/58 tasks Feature 112 bằng `$speckit-implement`                                                                              | 11   |
 | 38  | 2026-11-06 | Sửa lỗi layout XML, chạy connected UI tests trên thiết bị Android, hoàn tất toàn bộ 35/35 tasks Feature 110 bằng `$speckit-implement`                                                  | 11   |
+| 39  | 2026-11-08 | Khởi động Feature 060: kiểm tra baseline unit test và khảo sát phụ thuộc | 06 |
 
 ---
 
@@ -3998,3 +3999,14 @@ tiến độ Feature 110 đạt 100% (35/35 tasks DONE).
 - Tuyệt đối không commit, không push.
 
 ---
+
+## Mục 39: Khởi động Feature 060 – baseline
+
+- Ngày: 2026-11-08; nhánh `060-my-bookings`. Đã đọc spec, tasks và bốn mockup. Khảo sát schema, hợp đồng voucher, server và điều hướng đang thực hiện; chưa nghiệm thu task nào.
+- Baseline trước thay đổi 060 lần này: `JAVA_HOME=/opt/android-studio/jbr ./gradlew :app:testDebugUnitTest --max-workers=1 -Dkotlin.compiler.execution.strategy=in-process`: **786 test, 784 pass, 2 fail**. Các lỗi: `GenerateDailySlotsUseCaseTest.generateDailySlots_assignsPastStatus_forElapsedSlotsToday` và `OwnerBookingsViewModelTest.emitsBookingsAndFiltersByPendingUpcomingPast`; xuất hiện trước thay đổi lần này, nguyên nhân chưa được xác minh. Suite không xanh.
+- Đối chiếu code (không kiểm tra dữ liệu production): 041 ghi từng buổi bằng `slotIds`/`price` và gắn slot với mã nhóm (`FirestoreRecurringBookingRemoteDataSource.kt:173–205`); 040/041 dùng `HELD`/`AVAILABLE`, khác schema chung. Không tự suy diễn giá slot hay chủ sở hữu slot của buổi.
+- **BỊ CHẶN T046/T021:** chưa tìm thấy implementation redemption 050 trong phạm vi khảo sát, chưa xác nhận khóa redemption nhóm hoặc cách hoàn lượt. **BỊ CHẶN T047:** owner-cancel/owner-reject đã khảo sát chưa chứng minh transaction hoàn ví, lịch sử và voucher cùng nhả slot; timeout và chuyển COMPLETED/NO_SHOW chưa được xác minh. Không đưa thao tác tài chính chưa xác minh vào production.
+- **T048 chưa nghiệm thu:** provider thời gian hiện có tính offset từ token `iat`, chưa chứng minh đồng hồ server hiện tại; 040 có `venueId` và `HoldToPaymentArgs` chứa hạn HOLD, nhưng màn xác nhận còn TODO 050; 070 khai báo deep link review và handler yêu cầu COMPLETED. Chưa kiểm tra index đã deploy hoặc cursor thực tế.
+- T001/T002 đang chuẩn bị: khai báo bốn composite index theo khóa trạng thái/thời gian và ID; thêm fixtures Kotlin thuần mang tính giả lập cho kiểm thử. `python3 -m json.tool firestore.indexes.json` và kiểm tra bốn cấu hình index: đạt. Chưa triển khai index, chưa kiểm thử truy vấn/cursor; writer 041 hiện chưa ghi các trường thời gian đó nên T001 vẫn bị chặn, không tích checkbox. Fixtures không xác nhận hợp đồng thanh toán.
+- `JAVA_HOME=/opt/android-studio/jbr ./gradlew :app:compileDebugUnitTestKotlin --max-workers=1 -Dkotlin.compiler.execution.strategy=in-process`: BUILD SUCCESSFUL, fixture biên dịch được; không phải test thực thi. Không tick T002 khi chưa kiểm chứng đầy đủ fixtures với schema thực tế.
+- Thời gian/tỉ lệ nghiệm thu chức năng 060: chưa đo. Rules, integration, Espresso và so sánh ảnh máy thật: chưa chạy. Không push, không PR, không deploy.
