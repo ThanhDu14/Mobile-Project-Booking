@@ -65,11 +65,6 @@ class MainActivity : AppCompatActivity() {
         setUpBottomNav()
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        com.example.booking_app.feature.booking.ui.BookingSlotGridFragment.clearViewCache()
-    }
-
     /**
      * Một BottomNav cho cả hai chế độ, đổi menu theo graph gốc: BottomNav người chơi trong `nav_player`, OwnerNav
      * trong `nav_owner`. Chỉ hiện ở màn gốc của tab. Người chơi mới nối Trang chủ và Tài khoản (Vãng lai, Lịch đặt,

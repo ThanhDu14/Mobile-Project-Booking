@@ -8,15 +8,13 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="24dp"
-        android:background="?attr/colorSurface">
+        android:padding="16dp">
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/owner_prices_title"
-            android:textAppearance="?attr/textAppearanceHeadlineSmall"
-            android:textStyle="bold" />
+            android:textAppearance="?attr/textAppearanceHeadlineSmall" />
 
         <ProgressBar
             android:id="@+id/progress"

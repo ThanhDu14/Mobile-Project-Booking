@@ -1,16 +1,11 @@
 package com.example.booking_app.feature.booking.data.datasource
 
-import com.example.booking_app.feature.booking.data.model.BusySlotsUpdateDto
 import com.example.booking_app.feature.booking.data.model.CourtDto
 import com.example.booking_app.feature.booking.data.model.PriceRuleDto
-import com.example.booking_app.feature.booking.data.model.SlotChangeDto
-import com.example.booking_app.feature.booking.data.model.SlotChangeTypeDto
 import com.example.booking_app.feature.booking.data.model.SlotDto
-import com.example.booking_app.feature.booking.data.time.ServerTimeOffsetProvider
 import com.example.booking_app.feature.booking.domain.model.HoldResult
 import com.example.booking_app.feature.booking.domain.model.VenueInfo
 import com.google.firebase.Timestamp
-import com.google.firebase.firestore.DocumentChange
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.channels.awaitClose
@@ -24,8 +19,7 @@ import java.util.Locale
 import javax.inject.Inject
 
 class FirestoreBookingRemoteDataSource @Inject constructor(
-    private val firestore: FirebaseFirestore,
-    private val serverTimeOffsetProvider: ServerTimeOffsetProvider
+    private val firestore: FirebaseFirestore
 ) : BookingRemoteDataSource {
 
     override suspend fun getVenueOperatingHours(venueId: String): Pair<String, String> {
@@ -63,9 +57,6 @@ class FirestoreBookingRemoteDataSource @Inject constructor(
         val status = snapshot.getString("status")
         val photoPaths = snapshot.get("photoPaths") as? List<*>
         val photoUrl = photoPaths?.firstOrNull()?.toString()?.takeIf { it.startsWith("http") }
-        val acceptsRecurring = snapshot.getBoolean("acceptsRecurring")
-            ?: snapshot.getBoolean("isRecurringAccepted")
-            ?: true
 
         val districtName = DISTRICT_NAMES[districtId] ?: parseDistrictFromAddress(address) ?: districtId
 
@@ -77,8 +68,7 @@ class FirestoreBookingRemoteDataSource @Inject constructor(
             openTime = openTime,
             closeTime = closeTime,
             photoUrl = photoUrl,
-            status = status,
-            acceptsRecurring = acceptsRecurring
+            status = status
         )
     }
 
@@ -107,13 +97,10 @@ class FirestoreBookingRemoteDataSource @Inject constructor(
         }
     }
 
-    override fun getBusySlotsRealtime(venueId: String, date: String): Flow<BusySlotsUpdateDto> = callbackFlow {
+    override fun getBusySlotsRealtime(venueId: String, date: String): Flow<List<SlotDto>> = callbackFlow {
         val query = firestore.collection(COLLECTION_SLOTS)
             .whereEqualTo("venueId", venueId)
             .whereEqualTo("date", date)
-            .whereIn("status", listOf("BOOKED", "BLOCKED", "HELD"))
-
-        var isInitial = true
 
         val registration = query.addSnapshotListener { snapshot, error ->
             if (error != null) {
@@ -125,29 +112,7 @@ class FirestoreBookingRemoteDataSource @Inject constructor(
                 val slots = snapshot.documents.mapNotNull { doc ->
                     doc.toObject(SlotDto::class.java)?.copy(id = doc.id)
                 }
-
-                val changes = if (isInitial) {
-                    emptyList()
-                } else {
-                    snapshot.documentChanges.map { dc ->
-                        val changeType = when (dc.type) {
-                            DocumentChange.Type.ADDED -> SlotChangeTypeDto.ADDED
-                            DocumentChange.Type.MODIFIED -> SlotChangeTypeDto.MODIFIED
-                            DocumentChange.Type.REMOVED -> SlotChangeTypeDto.REMOVED
-                        }
-                        val slot = dc.document.toObject(SlotDto::class.java).copy(id = dc.document.id)
-                        SlotChangeDto(changeType, slot)
-                    }
-                }
-
-                trySend(
-                    BusySlotsUpdateDto(
-                        allSlots = slots,
-                        isInitial = isInitial,
-                        changes = changes
-                    )
-                )
-                isInitial = false
+                trySend(slots)
             }
         }
 
@@ -164,11 +129,10 @@ class FirestoreBookingRemoteDataSource @Inject constructor(
         userId: String,
         requestId: String
     ): HoldResult {
-        serverTimeOffsetProvider.ensureSynced()
         return firestore.runTransaction { transaction ->
             // --- Phase 1: ALL READS ---
-            val nowMillis = serverTimeOffsetProvider.now()
-            val now = Timestamp(Date(nowMillis))
+            val now = Timestamp.now()
+            val nowMillis = now.toDate().time
             val snapshots = mutableMapOf<String, DocumentSnapshot>()
             val conflicts = mutableListOf<String>()
 
@@ -213,7 +177,7 @@ class FirestoreBookingRemoteDataSource @Inject constructor(
             }
 
             // --- Phase 2: ALL WRITES ---
-            val holdExpiresAtMillis = serverTimeOffsetProvider.now() + HOLD_DURATION_MILLIS
+            val holdExpiresAtMillis = System.currentTimeMillis() + HOLD_DURATION_MILLIS
             val holdExpiresAtTimestamp = Timestamp(Date(holdExpiresAtMillis))
 
             for (slotId in slotIds) {

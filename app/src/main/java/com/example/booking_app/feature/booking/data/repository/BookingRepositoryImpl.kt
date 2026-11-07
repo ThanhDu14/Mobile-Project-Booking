@@ -1,12 +1,8 @@
 package com.example.booking_app.feature.booking.data.repository
 
 import com.example.booking_app.core.network.AppError
-import com.example.booking_app.core.util.SystemAppClock
-import com.example.booking_app.feature.booking.data.cache.VenueMetadataCache
 import com.example.booking_app.feature.booking.data.datasource.BookingRemoteDataSource
 import com.example.booking_app.feature.booking.data.mapper.BookingSlotMapper
-import com.example.booking_app.feature.booking.data.time.ServerTimeOffsetProvider
-import com.example.booking_app.feature.booking.domain.model.BusySlotsUpdate
 import com.example.booking_app.feature.booking.domain.model.Court
 import com.example.booking_app.feature.booking.domain.model.HoldResult
 import com.example.booking_app.feature.booking.domain.model.PriceRule
@@ -22,9 +18,7 @@ import java.util.concurrent.TimeoutException
 import javax.inject.Inject
 
 class BookingRepositoryImpl @Inject constructor(
-    private val remoteDataSource: BookingRemoteDataSource,
-    private val venueMetadataCache: VenueMetadataCache,
-    private val serverTimeOffsetProvider: ServerTimeOffsetProvider
+    private val remoteDataSource: BookingRemoteDataSource
 ) : BookingRepository {
 
     override suspend fun getVenueOperatingHours(venueId: String): Result<Pair<String, String>> {
@@ -33,46 +27,28 @@ class BookingRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getVenueInfo(venueId: String, forceRefresh: Boolean): Result<VenueInfo> {
-        val cached = venueMetadataCache.getVenueInfo(venueId, forceRefresh)
-        if (cached != null) {
-            return Result.success(cached)
-        }
+    override suspend fun getVenueInfo(venueId: String): Result<VenueInfo> {
         return safeApiCall {
-            val remoteInfo = remoteDataSource.getVenueInfo(venueId)
-            venueMetadataCache.putVenueInfo(venueId, remoteInfo)
-            remoteInfo
+            remoteDataSource.getVenueInfo(venueId)
         }
     }
 
-    override suspend fun getActiveCourts(venueId: String, forceRefresh: Boolean): Result<List<Court>> {
-        val cached = venueMetadataCache.getCourts(venueId, forceRefresh)
-        if (cached != null) {
-            return Result.success(cached)
-        }
+    override suspend fun getActiveCourts(venueId: String): Result<List<Court>> {
         return safeApiCall {
-            val courts = remoteDataSource.getActiveCourts(venueId).map { BookingSlotMapper.toDomain(it) }
-            venueMetadataCache.putCourts(venueId, courts)
-            courts
+            remoteDataSource.getActiveCourts(venueId).map { BookingSlotMapper.toDomain(it) }
         }
     }
 
-    override suspend fun getPriceRules(venueId: String, forceRefresh: Boolean): Result<List<PriceRule>> {
-        val cached = venueMetadataCache.getPriceRules(venueId, forceRefresh)
-        if (cached != null) {
-            return Result.success(cached)
-        }
+    override suspend fun getPriceRules(venueId: String): Result<List<PriceRule>> {
         return safeApiCall {
-            val rules = remoteDataSource.getPriceRules(venueId).map { BookingSlotMapper.toDomain(it) }
-            venueMetadataCache.putPriceRules(venueId, rules)
-            rules
+            remoteDataSource.getPriceRules(venueId).map { BookingSlotMapper.toDomain(it) }
         }
     }
 
-    override fun getBusySlotsRealtime(venueId: String, date: String): Flow<BusySlotsUpdate> {
+    override fun getBusySlotsRealtime(venueId: String, date: String): Flow<List<TimeSlot>> {
         return remoteDataSource.getBusySlotsRealtime(venueId, date)
-            .map { dto ->
-                BookingSlotMapper.toDomain(dto)
+            .map { dtos ->
+                dtos.map { BookingSlotMapper.toDomain(it) }
             }
             .catch { e ->
                 throw mapToAppError(e)
@@ -87,7 +63,6 @@ class BookingRepositoryImpl @Inject constructor(
         userId: String,
         requestId: String
     ): Result<HoldResult> {
-        serverTimeOffsetProvider.ensureSynced()
         return safeApiCall {
             remoteDataSource.holdSlotsAtomic(
                 venueId = venueId,
@@ -131,17 +106,8 @@ class BookingRepositoryImpl @Inject constructor(
                     FirebaseFirestoreException.Code.DEADLINE_EXCEEDED -> AppError.Timeout
                     FirebaseFirestoreException.Code.RESOURCE_EXHAUSTED -> AppError.RateLimited
                     FirebaseFirestoreException.Code.ABORTED -> AppError.Conflict
+                    FirebaseFirestoreException.Code.PERMISSION_DENIED,
                     FirebaseFirestoreException.Code.UNAUTHENTICATED -> AppError.NotSignedIn
-                    FirebaseFirestoreException.Code.PERMISSION_DENIED -> {
-                        val isSignedIn = runCatching {
-                            com.google.firebase.auth.FirebaseAuth.getInstance().currentUser != null
-                        }.getOrDefault(false)
-                        if (!isSignedIn) {
-                            AppError.NotSignedIn
-                        } else {
-                            AppError.Unknown(SecurityException("Quyền truy cập bị từ chối hoặc vi phạm quy tắc: ${throwable.message}", throwable))
-                        }
-                    }
                     else -> AppError.Unknown(throwable)
                 }
             }

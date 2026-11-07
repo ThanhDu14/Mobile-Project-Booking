@@ -1,6 +1,5 @@
 package com.example.booking_app.feature.booking.ui.adapter
 
-import android.content.Context
 import android.graphics.Paint
 import android.view.LayoutInflater
 import android.view.ViewGroup
@@ -17,42 +16,10 @@ import com.example.booking_app.feature.booking.domain.model.TimeSlot
 import com.example.booking_app.feature.booking.ui.SlotMatrixRow
 
 class SlotMatrixRowAdapter(
-    private var onSlotClick: (TimeSlot) -> Unit
+    private val onSlotClick: (TimeSlot) -> Unit
 ) : ListAdapter<SlotMatrixRow, SlotMatrixRowAdapter.RowViewHolder>(RowDiffCallback) {
 
-    fun setOnSlotClickListener(listener: (TimeSlot) -> Unit) {
-        this.onSlotClick = listener
-    }
-
-    private var colorHolder: ColorHolder? = null
-
-    private class ColorHolder(context: Context) {
-        val availableBg = ContextCompat.getColor(context, R.color.booking_slot_available_bg)
-        val availableStroke = ContextCompat.getColor(context, R.color.booking_slot_available_stroke)
-        val availableText = ContextCompat.getColor(context, R.color.booking_slot_available_text)
-
-        val selectedBg = ContextCompat.getColor(context, R.color.booking_slot_selected_bg)
-        val selectedText = ContextCompat.getColor(context, R.color.booking_slot_selected_text)
-
-        val heldBg = ContextCompat.getColor(context, R.color.booking_slot_held_bg)
-        val heldStroke = ContextCompat.getColor(context, R.color.booking_slot_held_stroke)
-        val heldText = ContextCompat.getColor(context, R.color.booking_slot_held_text)
-
-        val bookedBg = ContextCompat.getColor(context, R.color.booking_slot_booked_bg)
-        val bookedText = ContextCompat.getColor(context, R.color.booking_slot_booked_text)
-
-        val blockedBg = ContextCompat.getColor(context, R.color.booking_slot_blocked_bg)
-        val blockedStroke = ContextCompat.getColor(context, R.color.booking_slot_blocked_stroke)
-        val blockedText = ContextCompat.getColor(context, R.color.booking_slot_blocked_text)
-
-        val pastBg = ContextCompat.getColor(context, R.color.booking_slot_past_bg)
-        val pastText = ContextCompat.getColor(context, R.color.booking_slot_past_text)
-    }
-
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RowViewHolder {
-        if (colorHolder == null) {
-            colorHolder = ColorHolder(parent.context.applicationContext)
-        }
         val binding = ItemSlotMatrixRowBinding.inflate(
             LayoutInflater.from(parent.context),
             parent,
@@ -65,41 +32,28 @@ class SlotMatrixRowAdapter(
         holder.bind(getItem(position))
     }
 
-    override fun onBindViewHolder(holder: RowViewHolder, position: Int, payloads: MutableList<Any>) {
-        if (payloads.isNotEmpty()) {
-            holder.bind(getItem(position))
-        } else {
-            super.onBindViewHolder(holder, position, payloads)
-        }
-    }
-
     inner class RowViewHolder(
         private val binding: ItemSlotMatrixRowBinding
     ) : RecyclerView.ViewHolder(binding.root) {
 
-        private val cellBindings = ArrayList<ItemSlotMatrixCellBinding>()
-
         fun bind(row: SlotMatrixRow) {
             val layout = binding.layoutRowCells
             val context = itemView.context
-            val colors = colorHolder ?: ColorHolder(context.applicationContext).also { colorHolder = it }
             val inflater = LayoutInflater.from(context)
 
             // Tái sử dụng hoặc tạo mới các cell view tương ứng với các sân con
-            while (cellBindings.size < row.slots.size) {
+            while (layout.childCount < row.slots.size) {
                 val cellBinding = ItemSlotMatrixCellBinding.inflate(inflater, layout, false)
                 layout.addView(cellBinding.root)
-                cellBindings.add(cellBinding)
             }
-            while (cellBindings.size > row.slots.size) {
-                val lastIdx = cellBindings.size - 1
-                layout.removeViewAt(lastIdx)
-                cellBindings.removeAt(lastIdx)
+            while (layout.childCount > row.slots.size) {
+                layout.removeViewAt(layout.childCount - 1)
             }
 
             for (i in row.slots.indices) {
                 val slot = row.slots[i]
-                val cellBinding = cellBindings[i]
+                val cellView = layout.getChildAt(i)
+                val cellBinding = ItemSlotMatrixCellBinding.bind(cellView)
 
                 // Định dạng giờ bắt đầu (vd "17:00")
                 val formattedTime = if (slot.startTime.length >= 4) {
@@ -107,84 +61,106 @@ class SlotMatrixRowAdapter(
                 } else {
                     slot.startTime
                 }
+                cellBinding.tvCellTime.text = formattedTime
 
-                val prevStatus = cellBinding.root.tag as? SlotStatus
-                val isDropIn = slot.blockReason == "DROP_IN"
+                // Reset các hiệu ứng mặc định
+                cellBinding.tvCellTime.paintFlags = cellBinding.tvCellTime.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
+                cellBinding.root.alpha = 1.0f
 
-                // Chỉ cập nhật styling khi status hoặc drop-in thay đổi (tránh setCardBackgroundColor / strokeColor dư thừa)
-                if (prevStatus != slot.status || (slot.status == SlotStatus.BLOCKED && cellBinding.tvCellDropInBadge.isVisible != isDropIn)) {
-                    cellBinding.root.tag = slot.status
-
-                    // Reset các hiệu ứng mặc định
-                    cellBinding.tvCellTime.paintFlags = cellBinding.tvCellTime.paintFlags and Paint.STRIKE_THRU_TEXT_FLAG.inv()
-                    cellBinding.root.alpha = 1.0f
-
-                    when (slot.status) {
-                        SlotStatus.AVAILABLE -> {
-                            cellBinding.cardSlotCell.setCardBackgroundColor(colors.availableBg)
-                            cellBinding.cardSlotCell.strokeWidth = 2
-                            cellBinding.cardSlotCell.strokeColor = colors.availableStroke
-                            cellBinding.tvCellTime.setTextColor(colors.availableText)
-                            cellBinding.ivCellIcon.isVisible = false
-                            cellBinding.tvCellDropInBadge.isVisible = false
-                        }
-
-                        SlotStatus.SELECTED -> {
-                            cellBinding.cardSlotCell.setCardBackgroundColor(colors.selectedBg)
-                            cellBinding.cardSlotCell.strokeWidth = 0
-                            cellBinding.tvCellTime.setTextColor(colors.selectedText)
-                            cellBinding.ivCellIcon.isVisible = true
-                            cellBinding.ivCellIcon.setImageResource(R.drawable.ic_check_20)
-                            cellBinding.ivCellIcon.setColorFilter(colors.selectedText)
-                            cellBinding.tvCellDropInBadge.isVisible = false
-                        }
-
-                        SlotStatus.HELD -> {
-                            cellBinding.cardSlotCell.setCardBackgroundColor(colors.heldBg)
-                            cellBinding.cardSlotCell.strokeWidth = 2
-                            cellBinding.cardSlotCell.strokeColor = colors.heldStroke
-                            cellBinding.tvCellTime.setTextColor(colors.heldText)
-                            cellBinding.ivCellIcon.isVisible = true
-                            cellBinding.ivCellIcon.setImageResource(R.drawable.ic_timer_24)
-                            cellBinding.ivCellIcon.setColorFilter(colors.heldText)
-                            cellBinding.tvCellDropInBadge.isVisible = false
-                        }
-
-                        SlotStatus.BOOKED -> {
-                            cellBinding.cardSlotCell.setCardBackgroundColor(colors.bookedBg)
-                            cellBinding.cardSlotCell.strokeWidth = 0
-                            cellBinding.tvCellTime.setTextColor(colors.bookedText)
-                            cellBinding.ivCellIcon.isVisible = false
-                            cellBinding.tvCellDropInBadge.isVisible = false
-                            cellBinding.root.alpha = 1.0f
-                        }
-
-                        SlotStatus.BLOCKED -> {
-                            cellBinding.cardSlotCell.setCardBackgroundColor(colors.blockedBg)
-                            cellBinding.cardSlotCell.strokeWidth = 2
-                            cellBinding.cardSlotCell.strokeColor = colors.blockedStroke
-                            cellBinding.tvCellTime.setTextColor(colors.blockedText)
-                            cellBinding.ivCellIcon.isVisible = true
-                            cellBinding.ivCellIcon.setImageResource(R.drawable.ic_lock_16)
-                            cellBinding.ivCellIcon.setColorFilter(colors.blockedText)
-                            cellBinding.tvCellDropInBadge.isVisible = isDropIn
-                            cellBinding.root.alpha = 0.9f
-                        }
-
-                        SlotStatus.PAST -> {
-                            cellBinding.cardSlotCell.setCardBackgroundColor(colors.pastBg)
-                            cellBinding.cardSlotCell.strokeWidth = 0
-                            cellBinding.tvCellTime.setTextColor(colors.pastText)
-                            cellBinding.tvCellTime.paintFlags = cellBinding.tvCellTime.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
-                            cellBinding.ivCellIcon.isVisible = false
-                            cellBinding.tvCellDropInBadge.isVisible = false
-                            cellBinding.root.alpha = 0.35f
-                        }
+                when (slot.status) {
+                    SlotStatus.AVAILABLE -> {
+                        cellBinding.cardSlotCell.setCardBackgroundColor(
+                            ContextCompat.getColor(context, R.color.booking_slot_available_bg)
+                        )
+                        cellBinding.cardSlotCell.strokeWidth = 2
+                        cellBinding.cardSlotCell.strokeColor = ContextCompat.getColor(context, R.color.booking_slot_available_stroke)
+                        cellBinding.tvCellTime.setTextColor(
+                            ContextCompat.getColor(context, R.color.booking_slot_available_text)
+                        )
+                        cellBinding.ivCellIcon.isVisible = false
+                        cellBinding.tvCellDropInBadge.isVisible = false
                     }
-                }
 
-                if (cellBinding.tvCellTime.text != formattedTime) {
-                    cellBinding.tvCellTime.text = formattedTime
+                    SlotStatus.SELECTED -> {
+                        cellBinding.cardSlotCell.setCardBackgroundColor(
+                            ContextCompat.getColor(context, R.color.booking_slot_selected_bg)
+                        )
+                        cellBinding.cardSlotCell.strokeWidth = 0
+                        cellBinding.tvCellTime.setTextColor(
+                            ContextCompat.getColor(context, R.color.booking_slot_selected_text)
+                        )
+                        cellBinding.ivCellIcon.isVisible = true
+                        cellBinding.ivCellIcon.setImageResource(R.drawable.ic_check_20)
+                        cellBinding.ivCellIcon.setColorFilter(
+                            ContextCompat.getColor(context, R.color.booking_slot_selected_text)
+                        )
+                        cellBinding.tvCellDropInBadge.isVisible = false
+                    }
+
+                    SlotStatus.HELD -> {
+                        cellBinding.cardSlotCell.setCardBackgroundColor(
+                            ContextCompat.getColor(context, R.color.booking_slot_held_bg)
+                        )
+                        cellBinding.cardSlotCell.strokeWidth = 2
+                        cellBinding.cardSlotCell.strokeColor = ContextCompat.getColor(context, R.color.booking_slot_held_stroke)
+                        cellBinding.tvCellTime.setTextColor(
+                            ContextCompat.getColor(context, R.color.booking_slot_held_text)
+                        )
+                        cellBinding.ivCellIcon.isVisible = true
+                        cellBinding.ivCellIcon.setImageResource(R.drawable.ic_timer_24)
+                        cellBinding.ivCellIcon.setColorFilter(
+                            ContextCompat.getColor(context, R.color.booking_slot_held_text)
+                        )
+                        cellBinding.tvCellDropInBadge.isVisible = false
+                    }
+
+                    SlotStatus.BOOKED -> {
+                        cellBinding.cardSlotCell.setCardBackgroundColor(
+                            ContextCompat.getColor(context, R.color.booking_slot_booked_bg)
+                        )
+                        cellBinding.cardSlotCell.strokeWidth = 0
+                        cellBinding.tvCellTime.setTextColor(
+                            ContextCompat.getColor(context, R.color.booking_slot_booked_text)
+                        )
+                        // 1i: BOOKED là xám nhạt, KHÔNG gạch ngang
+                        cellBinding.ivCellIcon.isVisible = false
+                        cellBinding.tvCellDropInBadge.isVisible = false
+                        cellBinding.root.alpha = 1.0f
+                    }
+
+                    SlotStatus.BLOCKED -> {
+                        cellBinding.cardSlotCell.setCardBackgroundColor(
+                            ContextCompat.getColor(context, R.color.booking_slot_blocked_bg)
+                        )
+                        cellBinding.cardSlotCell.strokeWidth = 2
+                        cellBinding.cardSlotCell.strokeColor = ContextCompat.getColor(context, R.color.booking_slot_blocked_stroke)
+                        cellBinding.tvCellTime.setTextColor(
+                            ContextCompat.getColor(context, R.color.booking_slot_blocked_text)
+                        )
+                        cellBinding.ivCellIcon.isVisible = true
+                        cellBinding.ivCellIcon.setImageResource(R.drawable.ic_lock_16)
+                        cellBinding.ivCellIcon.setColorFilter(
+                            ContextCompat.getColor(context, R.color.booking_slot_blocked_text)
+                        )
+                        // 1e: Ô BLOCKED dạng giao hữu hiển thị chip nhỏ dòng 2; ô BLOCKED thường ẩn chip
+                        cellBinding.tvCellDropInBadge.isVisible = (slot.blockReason == "DROP_IN")
+                        cellBinding.root.alpha = 0.9f
+                    }
+
+                    SlotStatus.PAST -> {
+                        cellBinding.cardSlotCell.setCardBackgroundColor(
+                            ContextCompat.getColor(context, R.color.booking_slot_past_bg)
+                        )
+                        cellBinding.cardSlotCell.strokeWidth = 0
+                        cellBinding.tvCellTime.setTextColor(
+                            ContextCompat.getColor(context, R.color.booking_slot_past_text)
+                        )
+                        // 1i: PAST giữ mờ ~0.35 + gạch ngang, phân biệt rõ với BOOKED
+                        cellBinding.tvCellTime.paintFlags = cellBinding.tvCellTime.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
+                        cellBinding.ivCellIcon.isVisible = false
+                        cellBinding.tvCellDropInBadge.isVisible = false
+                        cellBinding.root.alpha = 0.35f
+                    }
                 }
 
                 cellBinding.root.setOnClickListener {
@@ -200,7 +176,6 @@ class SlotMatrixRowAdapter(
         }
 
         override fun areContentsTheSame(oldItem: SlotMatrixRow, newItem: SlotMatrixRow): Boolean {
-            if (oldItem === newItem) return true
             if (oldItem.slots.size != newItem.slots.size) return false
             for (i in oldItem.slots.indices) {
                 val s1 = oldItem.slots[i]
@@ -215,13 +190,5 @@ class SlotMatrixRowAdapter(
             }
             return true
         }
-
-        override fun getChangePayload(oldItem: SlotMatrixRow, newItem: SlotMatrixRow): Any? {
-            return PAYLOAD_UPDATE
-        }
-    }
-
-    companion object {
-        private const val PAYLOAD_UPDATE = 1
     }
 }

@@ -146,93 +146,13 @@ export interface Write {
  * Ghi nguyên tử nhiều thao tác. Precondition `exists = false` không đạt thì ném
  * `FirestoreError` với `code == "ALREADY_EXISTS"`; tranh chấp ghi thì `code == "ABORTED"` (thử lại được).
  */
-export async function commit(writes: Write[], transaction?: string): Promise<void> {
+export async function commit(writes: Write[]): Promise<void> {
   const res = await request(`${apiBase()}/${databaseRoot()}/documents:commit`, {
     method: "POST",
-    body: JSON.stringify({ writes, ...(transaction ? { transaction } : {}) }),
+    body: JSON.stringify({ writes }),
   });
   if (!res.ok) throw await toError(res);
   await res.body?.cancel();
-}
-
-export interface FirestoreTransaction {
-  readonly id: string;
-  get(path: string): Promise<Record<string, unknown> | null>;
-  write(write: Write): void;
-}
-
-/** Run a Firestore REST read/write transaction, retrying only server ABORTED conflicts. */
-export async function runTransaction<T>(
-  operation: (transaction: FirestoreTransaction) => Promise<T>,
-  maxAttempts = 5,
-): Promise<T> {
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    const begin = await request(`${apiBase()}/${databaseRoot()}/documents:beginTransaction`, {
-      method: "POST",
-      body: JSON.stringify({ options: { readWrite: {} } }),
-    });
-    if (!begin.ok) throw await toError(begin);
-    const { transaction: id } = await begin.json() as { transaction: string };
-    const writes: Write[] = [];
-    let writeStarted = false;
-    const tx: FirestoreTransaction = {
-      id,
-      get: async (path) => {
-        if (writeStarted) throw new Error("Firestore transaction cannot read after a write");
-        const res = await request(`${apiBase()}/${databaseRoot()}/documents:batchGet`, {
-          method: "POST",
-          body: JSON.stringify({ documents: [documentName(path)], transaction: id }),
-        });
-        if (!res.ok) throw await toError(res);
-        const rows = await res.json() as { found?: { fields?: Record<string, FirestoreValue> }; missing?: unknown }[];
-        const found = rows.find((row) => row.found)?.found;
-        return found ? decodeFields(found.fields ?? {}) : null;
-      },
-      write: (write) => {
-        writeStarted = true;
-        writes.push(write);
-      },
-    };
-    try {
-      const result = await operation(tx);
-      if (writes.length > 0) await commit(writes, id);
-      else await rollbackTransaction(id);
-      return result;
-    } catch (error) {
-      await rollbackTransaction(id).catch(() => undefined);
-      if (error instanceof FirestoreError && error.code === "ABORTED" && attempt < maxAttempts) continue;
-      throw error;
-    }
-  }
-  throw new Error("Firestore transaction retry limit exceeded");
-}
-
-async function rollbackTransaction(transaction: string): Promise<void> {
-  const res = await request(`${apiBase()}/${databaseRoot()}/documents:rollback`, {
-    method: "POST",
-    body: JSON.stringify({ transaction }),
-  });
-  if (!res.ok) throw await toError(res);
-  await res.body?.cancel();
-}
-
-/** Fetches the latest application for a UID using the approved composite index. */
-export async function latestOwnerApplication(uid: string): Promise<Record<string, unknown> | null> {
-  const res = await request(`${apiBase()}/${databaseRoot()}/documents:runQuery`, {
-    method: "POST",
-    body: JSON.stringify({
-      structuredQuery: {
-        from: [{ collectionId: "ownerApplications" }],
-        where: { fieldFilter: { field: { fieldPath: "uid" }, op: "EQUAL", value: { stringValue: uid } } },
-        orderBy: [{ field: { fieldPath: "submittedAt" }, direction: "DESCENDING" }],
-        limit: 1,
-      },
-    }),
-  });
-  if (!res.ok) throw await toError(res);
-  const rows = await res.json() as { document?: { name: string; fields?: Record<string, FirestoreValue> } }[];
-  const doc = rows.find((row) => row.document)?.document;
-  return doc ? { ...decodeFields(doc.fields ?? {}), __documentId: doc.name.split("/").pop() } : null;
 }
 
 /** Tạo document mới; đã có thì `commit` ném `ALREADY_EXISTS`. */

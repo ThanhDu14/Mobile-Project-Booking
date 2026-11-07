@@ -119,7 +119,7 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
 **Purpose**: `nav_account` và khung `AccountFragment` để mỗi story gắn phần của mình ([contracts/ui-screens.md §1](contracts/ui-screens.md#1-nav-graph-nav_account-a), [R14](research.md#r14-trang-tài-khoản-trong-điều-hướng-và-lối-sang-tính-năng-khác)).
 
 - [x] T027 [P] Unit test `TEST/feature/account/ui/account/AccountEntriesTest.kt` cho hàm thuần `accountEntries(providers, appRole, availableDeepLinks)`: không có provider `password` → không có `CHANGE_PASSWORD`, `CHANGE_EMAIL` (FR-015); `ADMIN` → không có `DELETE_ACCOUNT` (FR-018); deep link chưa có destination → mục bị ẩn (R14)
-- [x] T028 Tạo `RES/navigation/nav_account.xml` (graph lồng, start `AccountFragment`, đủ destination và Safe Args theo bảng [ui-screens §1](contracts/ui-screens.md#1-nav-graph-nav_account-a): `DistrictPickerBottomSheet(selectedIds: String[])`, `AvatarCropFragment(sourceUri: String)`, `ReauthDialog(purpose)`); thêm `<deepLink app:uri="smashnow://legal/{doc}"/>` cho destination `legal` trong `RES/navigation/nav_auth.xml` (010); `include` vào `RES/navigation/nav_player.xml` (tab "Tài khoản") và `RES/navigation/nav_owner.xml` (mục tài khoản); destination chưa làm thì để Fragment khung — *Implement:* `nav_player`/`nav_owner` có action `action_{playerHome|ownerHome}_to_account` và nút "Tài khoản" trên màn hình tạm của 010 (chưa có thanh điều hướng dưới); US5–US7 là Fragment khung không layout, chưa khai báo deep link
+- [x] T028 Tạo `RES/navigation/nav_account.xml` (graph lồng, start `AccountFragment`, đủ destination và Safe Args theo bảng [ui-screens §1](contracts/ui-screens.md#1-nav-graph-nav_account-a): `DistrictPickerBottomSheet(selectedIds: String[])`, `AvatarCropFragment(sourceUri: String)`, `ReauthDialog(purpose)`); thêm `<deepLink app:uri="smashnow://legal/{doc}"/>` cho destination `legal` trong `RES/navigation/nav_auth.xml` (010); `include` vào `RES/navigation/nav_player.xml` (tab "Tài khoản"; từ 2026-11-06 mở bằng avatar, xem Phase 11) và `RES/navigation/nav_owner.xml` (mục tài khoản); destination chưa làm thì để Fragment khung — *Implement:* `nav_player`/`nav_owner` có action `action_{playerHome|ownerHome}_to_account` và nút "Tài khoản" trên màn hình tạm của 010 (chưa có thanh điều hướng dưới); US5–US7 là Fragment khung không layout, chưa khai báo deep link
 - [x] T029 Tạo `ACC/ui/account/AccountEntry.kt` + `accountEntries(...)` (bảng deep link R14: `smashnow://bookings/mine`, `smashnow://dropin/mine`, `smashnow://favorites`, `smashnow://notifications/settings`, `smashnow://owner/apply?mode=new|resubmit`, `smashnow://owner/application`, `smashnow://owner/venues`, `smashnow://chat/owner`, `smashnow://wallet/topup`, `smashnow://legal/{doc}`; kiểm tra bằng `navController.graph.hasDeepLink`); `ACC/ui/account/AccountFragment.kt` + `RES/layout/fragment_account.xml` khung: đầu trang (ảnh hoặc chữ cái đầu qua `StorageUrls` + Coil, họ tên, email hoặc số điện thoại), danh sách mục, mục "Điều khoản và quyền riêng tư" mở bằng deep link `smashnow://legal/TERMS` (**không** import `LegalDocumentFragment` ở `feature/auth/ui`, constitution I), dòng "SmashNow · Phiên bản học tập"; trạng thái đang tải (skeleton), có dữ liệu, lỗi + "Thử lại" (FR-025); `w600dp` giới hạn rộng 480dp (`auth_form_max_width` của 010). Cho T027 xanh — *Implement:* thêm Coil 3.4.0 (`coil` + `coil-network-okhttp`, ghi ở Complexity Tracking). Màn hình trong `nav_account` cũng có deep link `smashnow://account/{password|email|delete}` chỉ để kiểm tra "đã làm chưa"; bấm vẫn đi bằng action vì `nav_account` được include hai lần
 - [x] T030 Tạo `ACC/ui/account/AccountViewModel.kt` khung: `StateFlow<AccountUiState>` (`Loading` · `Error(AppError)` · `Content(profile, entries, ...)`) từ `UserProfileReader.observeMyProfile()` và `SessionManager.sessionState`; kênh sự kiện một lần (`Channel`) cho điều hướng deep link; các story bổ sung trường `districtNames`, `ownerSection`, `mode`, `canDelete`, `showVerifyBanner` — *Implement:* listener `users/{uid}` không báo lỗi (mất mạng chỉ chờ) nên quá 15 giây chưa có hồ sơ thì `Error(Timeout)`; Fragment truyền tập deep link có destination vào `setAvailableDeepLinks`. Test: `AccountViewModelTest`
 
@@ -356,6 +356,31 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
 - [ ] T103 Chạy toàn bộ kịch bản thủ công **Q1–Q28** của [quickstart.md §5](quickstart.md#5-kịch-bản-thủ-công-trên-máy) trên môi trường cục bộ của T005 (Android Emulator hoặc máy thật trỏ `10.0.2.2`, Firebase Emulator, Supabase local; **không** chạy trên project thật, constitution IV), tài khoản thử tạo theo quickstart §0 trên Emulator; Q5, Q8, Q9 chỉ chạy khi T005 xác nhận Supabase local nhận token Emulator hoặc nhóm đã chốt cách khác; lưu ảnh hoặc video Q1, Q5, Q13, Q15, Q23, Q25 vào `docs/features/01-account/screenshots/`; Q5 đo 20 lần (≥ 19 lần < 5 giây, SC-002); Q22 ghi kết quả thật
 - [ ] T104 Thử với 5 người chưa dùng app (SC-009): mỗi người tự tìm và mở "Đăng ký làm chủ sân" từ màn hình chính, không được hướng dẫn; đạt khi ≥ 4/5 người làm được; ghi kết quả vào `docs/features/01-account/usability-sc009.md` (không ghi tên người thử)
 - [ ] T105 Chạy `./gradlew lint testDebugUnitTest assembleDebug`, `npm test` trong `firestore-tests/`, `npx supabase test db`, `deno test -A delete-account/ delete-account-sweeper/ sync-account-email/ _shared/` (với Emulator) và `deno task test:flaky`; không còn cảnh báo Lint mức Error; kiểm tra `git status` không có `google-services.json`, `local.properties`, `supabase/.env`, service account
+
+---
+
+## Phase 11: User Story 8 – Mở trang Tài khoản từ avatar ở góc phải trên (Priority: P1, thêm 2026-11-06)
+
+**Goal**: bỏ tab "Tài khoản" khỏi thanh dưới người chơi; header dùng chung có avatar ở màn gốc các tab chính (FR-026 → FR-031, [ui-screens §5–§6](contracts/ui-screens.md#5-header-dùng-chung-và-avatar-2026-11-06-us8-fr-026--fr-031)).
+
+**Independent Test**: kịch bản Independent Test của US8 trong spec.
+
+### Tests for User Story 8 (viết trước, phải fail)
+
+- [x] T106 [P] [US8] `TEST/core/session/DefaultAccountAvatarSourceTest.kt`: khách → `Guest`; đã đăng nhập chưa có hồ sơ → `Pending`; có/không ảnh; đổi tên, đổi ảnh, đăng xuất phát trạng thái mới; họ tên rỗng → `SignedIn("")`; `initialsOf`
+- [x] T107 [P] [US8] `TEST/core/session/AccountEntryNavigatorTest.kt`: khách → `AuthNavigator.openLogin(_, null)`; đã đăng nhập → `action_global_account`; đang ở `accountFragment` hoặc `nav_auth` thì không mở chồng
+
+### Implementation for User Story 8
+
+- [x] T108 [US8] Chuyển `initialsOf` từ `feature/account/ui/account/AccountFormat.kt` sang `core/session/Initials.kt`, sửa import (`AccountFragment`, `EditProfileFragment`, test)
+- [x] T109 [US8] `core/session/{AccountAvatarState, AccountAvatarSource, AccountEntryNavigator}.kt` + `@Binds` trong `SessionModule`
+- [x] T110 [US8] `core/ui/header/{AccountAvatarView, MainTabHeader}.kt`, `RES/layout/{view_account_avatar, view_main_tab_header}.xml`, dimen `account_header_avatar_size`, chuỗi `account_avatar_cd_signed_in`/`_guest`
+- [x] T111 [US8] `nav_player.xml`, `nav_owner.xml`: global action `action_global_account` (bỏ `action_ownerHome_to_account`); `menu_player_bottom_nav.xml` bỏ `tab_account`, `strings_nav.xml` bỏ `nav_tab_account`; `MainActivity` bỏ nhánh `tab_account`, ở `accountFragment` giữ sáng tab đã mở, bấm lại tab về màn gốc
+- [x] T112 [US8] Màn tạm `OwnerHomePlaceholderFragment` (bỏ `OwnerHomePlaceholderViewModel`, hết import chéo `feature/auth` → `feature/account/ui`) và `PlayerHomePlaceholderFragment` dùng header dùng chung
+- [ ] T113 [US8] Báo B (060), C (080, 090), D (112) theo [ui-screens §6.2](contracts/ui-screens.md#62-spec-của-người-khác-cần-báo-không-sửa-ở-đây); sửa `research.md` R14 và vẽ lại lối vào trên canvas
+- [ ] T114 [US8] Chạy `./gradlew lint testDebugUnitTest assembleDebug`; thử trên máy ảo: khách bấm avatar → đăng nhập → về Trang chủ; đã đăng nhập bấm avatar → Tài khoản, tab Trang chủ vẫn sáng, bấm lại tab về Trang chủ; chủ sân bấm avatar ở Hôm nay
+
+**Checkpoint 11**: thanh dưới người chơi không còn tab Tài khoản; mở được trang Tài khoản từ avatar ở Trang chủ và Hôm nay.
 
 ---
 

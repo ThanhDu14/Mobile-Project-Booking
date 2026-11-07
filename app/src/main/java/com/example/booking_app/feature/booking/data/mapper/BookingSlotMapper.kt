@@ -2,15 +2,9 @@ package com.example.booking_app.feature.booking.data.mapper
 
 import com.example.booking_app.feature.booking.data.model.CourtDto
 import com.example.booking_app.feature.booking.data.model.PriceRuleDto
-import com.example.booking_app.feature.booking.data.model.SlotChangeDto
-import com.example.booking_app.feature.booking.data.model.SlotChangeTypeDto
 import com.example.booking_app.feature.booking.data.model.SlotDto
-import com.example.booking_app.feature.booking.data.model.BusySlotsUpdateDto
-import com.example.booking_app.feature.booking.domain.model.BusySlotsUpdate
 import com.example.booking_app.feature.booking.domain.model.Court
 import com.example.booking_app.feature.booking.domain.model.PriceRule
-import com.example.booking_app.feature.booking.domain.model.SlotChange
-import com.example.booking_app.feature.booking.domain.model.SlotChangeType
 import com.example.booking_app.feature.booking.domain.model.SlotStatus
 import com.example.booking_app.feature.booking.domain.model.TimeSlot
 import com.google.firebase.Timestamp
@@ -79,21 +73,6 @@ object BookingSlotMapper {
         holdExpiresAt = domain.holdExpiresAtMillis?.let { Timestamp(Date(it)) },
         holdBy = holdBy,
         bookingId = bookingId
-    )
-
-    fun toDomain(dto: BusySlotsUpdateDto): BusySlotsUpdate = BusySlotsUpdate(
-        allBusySlots = dto.allSlots.map { toDomain(it) },
-        isInitial = dto.isInitial,
-        changes = dto.changes.map { changeDto ->
-            SlotChange(
-                type = when (changeDto.type) {
-                    SlotChangeTypeDto.ADDED -> SlotChangeType.ADDED
-                    SlotChangeTypeDto.MODIFIED -> SlotChangeType.MODIFIED
-                    SlotChangeTypeDto.REMOVED -> SlotChangeType.REMOVED
-                },
-                slot = toDomain(changeDto.slot)
-            )
-        }
     )
 
     private fun parseStatus(statusStr: String?, holdExpiresAt: Timestamp?): SlotStatus {

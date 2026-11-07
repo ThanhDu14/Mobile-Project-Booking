@@ -16,7 +16,6 @@ import com.example.booking_app.R
 import com.example.booking_app.core.session.SessionManager
 import com.example.booking_app.databinding.FragmentBookingConfirmBinding
 import com.example.booking_app.databinding.ItemConfirmCourtSlotsBinding
-import com.example.booking_app.feature.booking.data.time.ServerTimeOffsetProvider
 import com.example.booking_app.feature.booking.domain.usecase.ReleaseHoldUseCase
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
@@ -41,9 +40,6 @@ class BookingConfirmFragment : Fragment() {
 
     @Inject
     lateinit var releaseHoldUseCase: ReleaseHoldUseCase
-
-    @Inject
-    lateinit var serverTimeOffsetProvider: ServerTimeOffsetProvider
 
     private var countDownTimer: CountDownTimer? = null
     private var holdArgs: HoldToPaymentArgs? = null
@@ -103,10 +99,7 @@ class BookingConfirmFragment : Fragment() {
             viewLifecycleOwner.lifecycleScope.launch {
                 try {
                     val bitmap = withContext(Dispatchers.IO) {
-                        val connection = java.net.URL(args.photoUrl).openConnection()
-                        connection.connectTimeout = 3000
-                        connection.readTimeout = 3000
-                        connection.getInputStream().use { stream ->
+                        java.net.URL(args.photoUrl).openStream().use { stream ->
                             BitmapFactory.decodeStream(stream)
                         }
                     }
@@ -316,7 +309,7 @@ class BookingConfirmFragment : Fragment() {
 
     private fun startCountdown(holdExpiresAtMillis: Long) {
         countDownTimer?.cancel()
-        val remainingMillis = holdExpiresAtMillis - serverTimeOffsetProvider.now()
+        val remainingMillis = holdExpiresAtMillis - System.currentTimeMillis()
 
         if (remainingMillis <= 0) {
             onCountdownTimeout()
@@ -365,7 +358,7 @@ class BookingConfirmFragment : Fragment() {
         val args = holdArgs
         val userId = sessionManager.currentUid() ?: ""
         if (args != null && userId.isNotEmpty()) {
-            lifecycleScope.launch {
+            viewLifecycleOwner.lifecycleScope.launch {
                 releaseHoldUseCase(
                     venueId = args.venueId,
                     slotIds = args.slotIds.toList(),
@@ -380,7 +373,7 @@ class BookingConfirmFragment : Fragment() {
         val args = holdArgs ?: return
         val userId = sessionManager.currentUid() ?: ""
         if (userId.isNotEmpty()) {
-            lifecycleScope.launch {
+            viewLifecycleOwner.lifecycleScope.launch {
                 releaseHoldUseCase(
                     venueId = args.venueId,
                     slotIds = args.slotIds.toList(),

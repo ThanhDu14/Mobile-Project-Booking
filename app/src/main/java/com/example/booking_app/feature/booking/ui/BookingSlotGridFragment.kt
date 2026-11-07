@@ -50,84 +50,20 @@ class BookingSlotGridFragment : Fragment() {
     private lateinit var matrixAdapter: SlotMatrixRowAdapter
     private var renderedCourts: List<Court> = emptyList()
 
-    companion object {
-        private var globalCachedView: View? = null
-        private var globalBinding: FragmentBookingSlotGridBinding? = null
-        private var cachedVenueId: String? = null
-        private var isViewInitialized = false
-
-        fun prewarm(context: android.content.Context, venueId: String) {
-            if (globalCachedView != null && cachedVenueId == venueId) return
-            try {
-                val inflater = LayoutInflater.from(context)
-                val binding = FragmentBookingSlotGridBinding.inflate(inflater, null, false)
-                globalBinding = binding
-                globalCachedView = binding.root
-                cachedVenueId = venueId
-            } catch (_: Exception) {
-                // Prewarm thất bại không ảnh hưởng luồng chính
-            }
-        }
-
-        fun clearViewCache() {
-            (globalCachedView?.parent as? ViewGroup)?.removeView(globalCachedView)
-            globalCachedView = null
-            globalBinding = null
-            cachedVenueId = null
-            isViewInitialized = false
-        }
-    }
-
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View {
-        val currentVenueId = arguments?.getString("venueId") ?: ""
-        if (cachedVenueId != null && cachedVenueId != currentVenueId) {
-            clearViewCache()
-        }
-
-        val existing = globalCachedView
-        if (existing != null) {
-            (existing.parent as? ViewGroup)?.removeView(existing)
-            _binding = globalBinding
-            return existing
-        }
-
-        val binding = FragmentBookingSlotGridBinding.inflate(inflater, container, false)
-        _binding = binding
-        globalBinding = binding
-        globalCachedView = binding.root
-        cachedVenueId = currentVenueId
+        _binding = FragmentBookingSlotGridBinding.inflate(inflater, container, false)
         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        renderedCourts = emptyList()
 
-        val existingMatrixAdapter = binding.rvSlotMatrixRows.adapter as? SlotMatrixRowAdapter
-        val existingDateAdapter = binding.rvDateSelector.adapter as? DateSelectorAdapter
-
-        if (existingMatrixAdapter == null || existingDateAdapter == null || !isViewInitialized) {
-            renderedCourts = emptyList()
-            setupRecyclerViews()
-            isViewInitialized = true
-        } else {
-            matrixAdapter = existingMatrixAdapter
-            dateAdapter = existingDateAdapter
-            matrixAdapter.setOnSlotClickListener { clickedSlot ->
-                viewModel.onSlotClicked(clickedSlot)
-            }
-            dateAdapter.setOnDateClickListener { selectedDate ->
-                if (viewModel.hasSelectedSlots()) {
-                    showChangeDateDialog(selectedDate)
-                } else {
-                    viewModel.selectDate(selectedDate)
-                }
-            }
-        }
-
+        setupRecyclerViews()
         setupListeners()
         observeUiState()
         observeUiEffects()
@@ -138,12 +74,6 @@ class BookingSlotGridFragment : Fragment() {
         super.onResume()
         // Q10: Kiểm tra và khôi phục lựa chọn nếu người dùng vừa quay lại sau khi đăng nhập
         viewModel.checkAndRestorePendingSelection()
-        viewModel.startPeriodicExpiryCheck()
-    }
-
-    override fun onPause() {
-        super.onPause()
-        viewModel.stopPeriodicExpiryCheck()
     }
 
     private fun setupRecyclerViews() {
@@ -158,7 +88,6 @@ class BookingSlotGridFragment : Fragment() {
         binding.rvDateSelector.apply {
             layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.HORIZONTAL, false)
             adapter = dateAdapter
-            itemAnimator = null
         }
 
         // 2. Adapter lưới ma trận (Q3: Danh sách các hàng giờ 30 phút)
@@ -168,7 +97,6 @@ class BookingSlotGridFragment : Fragment() {
         binding.rvSlotMatrixRows.apply {
             layoutManager = LinearLayoutManager(requireContext(), LinearLayoutManager.VERTICAL, false)
             adapter = matrixAdapter
-            itemAnimator = null
         }
     }
 
@@ -273,16 +201,8 @@ class BookingSlotGridFragment : Fragment() {
             renderCourtHeaders(state.courts)
         }
 
-        // 7. Lưới slot ma trận - Progressive chunked render trên cold start để tránh freeze
-        if (binding.rvSlotMatrixRows.childCount == 0 && state.matrixRows.size > 12) {
-            matrixAdapter.submitList(state.matrixRows.take(12)) {
-                binding.rvSlotMatrixRows.post {
-                    matrixAdapter.submitList(state.matrixRows)
-                }
-            }
-        } else {
-            matrixAdapter.submitList(state.matrixRows)
-        }
+        // 7. Lưới slot ma trận
+        matrixAdapter.submitList(state.matrixRows)
 
         // 8. Trạng thái rỗng / Đóng cửa
         val showEmpty = state.isClosed || (state.courts.isEmpty() && !state.isLoading)
@@ -384,25 +304,6 @@ class BookingSlotGridFragment : Fragment() {
                                 bundle
                             )
                         }
-
-                        is BookingSlotUiEffect.ShowGapResolutionDialog -> {
-                            val builder = com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
-                                .setTitle("Khoảng trống không hợp lệ")
-                                .setMessage("${effect.courtName} đang trống lẻ 1 khung ${effect.gapInfo.formattedRange()} giữa 2 khối đã chọn. Khung này không thể bán cho người khác.")
-                                .setNegativeButton("Quay lại tự sửa", null)
-
-                            if (effect.canAddSlot && effect.gapSlotToAdd != null) {
-                                builder.setPositiveButton("Thêm ${effect.gapInfo.formattedRange()} để nối liền") { _, _ ->
-                                    viewModel.onAddGapSlot(effect.gapSlotToAdd)
-                                }
-                            }
-                            if (effect.trailingBlockSlotsToRemove.isNotEmpty()) {
-                                builder.setNeutralButton("Bỏ khối ${effect.trailingBlockRange}") { _, _ ->
-                                    viewModel.onRemoveTrailingBlock(effect.trailingBlockSlotsToRemove)
-                                }
-                            }
-                            builder.show()
-                        }
                     }
                 }
             }
@@ -445,13 +346,7 @@ class BookingSlotGridFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        // Tháo view khỏi ViewGroup cha để có thể tái gắn vào container ở lần hiển thị kế tiếp
-        (globalCachedView?.parent as? ViewGroup)?.removeView(globalCachedView)
-        _binding = null
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
         renderedCourts = emptyList()
+        _binding = null
     }
 }

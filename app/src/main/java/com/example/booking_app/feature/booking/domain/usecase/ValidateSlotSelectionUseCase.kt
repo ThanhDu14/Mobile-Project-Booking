@@ -5,27 +5,6 @@ import com.example.booking_app.feature.booking.domain.model.SlotStatus
 import com.example.booking_app.feature.booking.domain.model.TimeSlot
 import javax.inject.Inject
 
-data class GapInfo(
-    val courtId: String,
-    val gapStartTime: String,
-    val gapEndTime: String,
-    val gapSlotsCount: Int = 1
-) {
-    fun formattedRange(): String {
-        val startFormatted = formatTime(gapStartTime)
-        val endFormatted = formatTime(gapEndTime)
-        return "$startFormatted–$endFormatted"
-    }
-
-    private fun formatTime(time: String): String {
-        return if (time.length >= 4) {
-            "${time.substring(0, 2)}:${time.substring(2, 4)}"
-        } else {
-            time
-        }
-    }
-}
-
 class ValidateSlotSelectionUseCase @Inject constructor(
     private val calculateTotalPriceUseCase: CalculateTotalPriceUseCase
 ) {
@@ -49,8 +28,14 @@ class ValidateSlotSelectionUseCase @Inject constructor(
         val otherCourtsSlots = currentList.filter { it.courtId != targetCourtId }
 
         if (isAlreadySelected) {
-            // Deselection flow: Tách khối thành các mảnh và giữ nguyên mọi mảnh còn lại (kể cả mảnh 1 khung)
-            val newCourtSlots = targetCourtSlots.filterNot { it.slotId == clickedSlot.slotId }
+            // Deselection flow trên sân mục tiêu (không ảnh hưởng sân khác)
+            val clickedIndex = targetCourtSlots.indexOfFirst { it.slotId == clickedSlot.slotId }
+            val newCourtSlots = when (clickedIndex) {
+                0 -> targetCourtSlots.drop(1)
+                targetCourtSlots.size - 1 -> targetCourtSlots.dropLast(1)
+                else -> targetCourtSlots.subList(0, clickedIndex) // Cắt từ giữa về cuối dãy trên sân này
+            }
+
             return updateStateWithSlots(otherCourtsSlots + newCourtSlots)
         } else {
             // Selection flow: Cap tối đa 8 khung tính theo TỪNG SÂN (FR-026)
@@ -60,17 +45,41 @@ class ValidateSlotSelectionUseCase @Inject constructor(
                 )
             }
 
-            // Bấm ô không liền kề trên cùng sân -> KHÔNG reset chuỗi nữa; mở khối mới trên sân đó
-            val selectedSlot = clickedSlot.copy(status = SlotStatus.SELECTED)
-            val newCourtSlots = (targetCourtSlots + selectedSlot).sortedBy { it.startTime }
-            return updateStateWithSlots(otherCourtsSlots + newCourtSlots)
+            if (targetCourtSlots.isEmpty()) {
+                val newSlot = clickedSlot.copy(status = SlotStatus.SELECTED)
+                return updateStateWithSlots(otherCourtsSlots + listOf(newSlot))
+            }
+
+            val head = targetCourtSlots.first()
+            val tail = targetCourtSlots.last()
+
+            val isPrepended = clickedSlot.endTime == head.startTime
+            val isAppended = clickedSlot.startTime == tail.endTime
+
+            if (isPrepended || isAppended) {
+                // Continuous selection trên sân mục tiêu
+                val selectedSlot = clickedSlot.copy(status = SlotStatus.SELECTED)
+                val newCourtSlots = if (isPrepended) {
+                    listOf(selectedSlot) + targetCourtSlots
+                } else {
+                    targetCourtSlots + selectedSlot
+                }
+
+                return updateStateWithSlots(otherCourtsSlots + newCourtSlots)
+            } else {
+                // Không liền kề trên cùng sân -> reset chuỗi sân này, giữ nguyên sân khác, thêm nhắc nhở (Q9)
+                val newSlot = clickedSlot.copy(status = SlotStatus.SELECTED)
+                val updatedState = updateStateWithSlots(otherCourtsSlots + listOf(newSlot))
+                return updatedState.copy(
+                    errorMessage = "Vui lòng chọn các khung giờ liên tiếp trên cùng sân"
+                )
+            }
         }
     }
 
     /**
      * Kiểm tra điều kiện hợp lệ để giữ chỗ:
-     * - MỖI sân có trong lựa chọn phải có từ 2 đến 8 khung giờ (1h đến 4h).
-     * - Khoảng trống giữa 2 khối trên cùng sân: >= 2 khung (>= 1 giờ) thì được; đúng 1 khung (30 phút) thì CẤM.
+     * MỖI sân có trong lựa chọn phải có từ 2 đến 8 khung giờ liên tiếp (1h đến 4h).
      */
     fun validateForProceed(
         state: SlotSelectionState,
@@ -95,11 +104,9 @@ class ValidateSlotSelectionUseCase @Inject constructor(
                     IllegalArgumentException("$courtName đã vượt quá $MAX_SLOTS_PER_COURT khung giờ (4 giờ)")
                 )
             }
-            val invalidGaps = findSingleSlotGaps(courtSlots)
-            if (invalidGaps.isNotEmpty()) {
-                val gap = invalidGaps.first()
+            if (!isContinuousChain(courtSlots)) {
                 return Result.failure(
-                    IllegalArgumentException("$courtName đang trống lẻ 1 khung ${gap.formattedRange()} giữa 2 khối đã chọn. Khung này không thể bán cho người khác.")
+                    IllegalArgumentException("Khung giờ trên $courtName không liên tiếp")
                 )
             }
         }
@@ -114,15 +121,12 @@ class ValidateSlotSelectionUseCase @Inject constructor(
         if (slots.isEmpty()) return false
         val courtGroups = slots.groupBy { it.courtId }
         return courtGroups.values.all { courtSlots ->
-            courtSlots.size in MIN_SLOTS_PER_COURT..MAX_SLOTS_PER_COURT &&
-                findSingleSlotGaps(courtSlots).isEmpty()
+            courtSlots.size in MIN_SLOTS_PER_COURT..MAX_SLOTS_PER_COURT && isContinuousChain(courtSlots)
         }
     }
 
     /**
-     * Tìm sân đầu tiên có vấn đề để hiển thị gợi ý trên UI:
-     * 1. Ưu tiên cảnh báo khoảng trống lẻ 1 khung.
-     * 2. Cảnh báo chưa đủ 2 khung tối thiểu.
+     * Tìm sân đầu tiên chưa đủ điều kiện tối thiểu 2 khung để hiển thị gợi ý trên UI
      */
     fun findIncompleteCourt(
         slots: List<TimeSlot>,
@@ -130,18 +134,6 @@ class ValidateSlotSelectionUseCase @Inject constructor(
     ): String? {
         if (slots.isEmpty()) return null
         val courtGroups = slots.groupBy { it.courtId }
-
-        // Kiểm tra khoảng trống lẻ 1 khung trước
-        for ((courtId, courtSlots) in courtGroups) {
-            val invalidGaps = findSingleSlotGaps(courtSlots)
-            if (invalidGaps.isNotEmpty()) {
-                val name = courtNames[courtId] ?: "Sân"
-                val gap = invalidGaps.first()
-                return "Đang trống lẻ ${gap.formattedRange()} trên $name — khung này sẽ không ai đặt được. Thêm khung đó để nối liền, hoặc bỏ khối tiếp theo."
-            }
-        }
-
-        // Kiểm tra chưa đủ tối thiểu 2 khung
         for ((courtId, courtSlots) in courtGroups) {
             if (courtSlots.size < MIN_SLOTS_PER_COURT) {
                 val name = courtNames[courtId] ?: "Sân"
@@ -151,38 +143,15 @@ class ValidateSlotSelectionUseCase @Inject constructor(
         return null
     }
 
-    /**
-     * Tìm tất cả các khoảng trống lẻ đúng 1 khung (30 phút) trên một sân
-     */
-    fun findSingleSlotGaps(courtSlots: List<TimeSlot>): List<GapInfo> {
-        if (courtSlots.size < 2) return emptyList()
+    private fun isContinuousChain(courtSlots: List<TimeSlot>): Boolean {
+        if (courtSlots.size <= 1) return true
         val sorted = courtSlots.sortedBy { it.startTime }
-        val gaps = mutableListOf<GapInfo>()
         for (i in 0 until sorted.size - 1) {
-            val curr = sorted[i]
-            val next = sorted[i + 1]
-            if (curr.endTime != next.startTime) {
-                val gapMinutes = timeToMinutes(next.startTime) - timeToMinutes(curr.endTime)
-                if (gapMinutes == 30) {
-                    gaps.add(
-                        GapInfo(
-                            courtId = curr.courtId,
-                            gapStartTime = curr.endTime,
-                            gapEndTime = next.startTime,
-                            gapSlotsCount = 1
-                        )
-                    )
-                }
+            if (sorted[i].endTime != sorted[i + 1].startTime) {
+                return false
             }
         }
-        return gaps
-    }
-
-    private fun timeToMinutes(time: String): Int {
-        if (time.length < 4) return 0
-        val hour = time.substring(0, 2).toIntOrNull() ?: 0
-        val minute = time.substring(2, 4).toIntOrNull() ?: 0
-        return hour * 60 + minute
+        return true
     }
 
     private fun updateStateWithSlots(slots: List<TimeSlot>): SlotSelectionState {
