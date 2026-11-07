@@ -174,6 +174,9 @@ App gọi `getIdToken(true)` sau khi function trả `200`. Chi tiết ở [contr
   - đăng nhập sai trả `INVALID_LOGIN_CREDENTIALS`, không phân biệt email sai hay mật khẩu sai (đúng FR-011);
   - `sendPasswordResetEmail` không báo lỗi khi email chưa đăng ký (đúng FR-018);
   - đăng ký vẫn trả `EMAIL_EXISTS` (cần cho US1-3).
+- **Kết quả chạy thật trên `mobile-22e6c` (T076, 2026-10-20):**
+  - M17: đặt mật khẩu `abcdefgh` qua `accounts:resetPassword` (API mà trang của Firebase gọi) và qua đăng ký đều bị từ chối `PASSWORD_DOES_NOT_MEET_REQUIREMENTS` ("Password must contain a numeric character"). Đúng dự đoán.
+  - M20: tài khoản bị tắt nhập **sai** mật khẩu vẫn nhận `USER_DISABLED`, giống khi nhập đúng; email chưa đăng ký nhận `INVALID_LOGIN_CREDENTIALS`. App hiện "Tài khoản bị khóa" ở cả hai trường hợp đúng/sai mật khẩu. **Khác FR-011**: ai biết email có thể dò ra email đó tồn tại và đang bị khóa. Firebase không cho đổi hành vi này; nhóm cần chọn giữ thông báo khóa (FR-014) hay gộp vào thông báo sai thông tin.
 - Hạn mức gói Spark mỗi ngày: **150 email đặt lại mật khẩu**, **1000 email xác minh**.
 - Password policy hỗ trợ độ dài tối thiểu 6–30 và yêu cầu chữ số, chữ thường, chữ hoa. **Không có lựa chọn "có ít nhất một chữ cái bất kỳ".**
 

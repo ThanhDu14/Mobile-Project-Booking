@@ -110,7 +110,7 @@ Khách chưa đăng nhập xem được toàn bộ thông tin. Khi bấm "Đặt
 4. **Given** khách bấm trái tim rồi đăng nhập thành công, **When** quay lại màn hình chi tiết, **Then** cơ sở đã được lưu vào yêu thích (trừ khi đã có sẵn trong danh sách của tài khoản đó).
 5. **Given** khách bấm "Chat với chủ sân" rồi đăng nhập thành công, **When** quay lại, **Then** hội thoại với chủ sân của cơ sở này (spec 091) được mở.
 6. **Given** khách hủy hoặc thoát giữa chừng màn hình đăng nhập, **When** quay lại, **Then** ở lại màn hình chi tiết, không có thao tác nào được thực hiện.
-7. **Given** tài khoản vừa đăng nhập là chủ sở hữu cơ sở đang xem, **When** app tiếp tục thao tác "Đặt sân" hoặc "Chat với chủ sân", **Then** app báo "Đây là cơ sở của bạn" và không thực hiện thao tác đó.
+7. **Given** chủ sân đang ở chế độ người chơi xem cơ sở của chính mình, **When** bấm "Đặt sân" hoặc "Chat với chủ sân", **Then** app báo "Đây là cơ sở của bạn" và không thực hiện thao tác đó. (Tài khoản chủ sân đăng nhập từ chế độ khách được đưa sang giao diện chủ sân theo spec 010, nên không quay lại màn hình chi tiết.)
 
 ---
 
@@ -162,7 +162,7 @@ Khi người chơi mở một cơ sở đã bị chủ sân ẩn hoặc bị adm
 
 - **FR-003**: Màn hình PHẢI hiển thị tên, địa chỉ, quận/huyện, điểm trung bình (1 chữ số thập phân) kèm số lượt đánh giá; cơ sở chưa có đánh giá hiện "Chưa có đánh giá".
 - **FR-004**: Thư viện ảnh PHẢI cho vuốt ngang qua các ảnh theo thứ tự chủ sân sắp xếp, hiện chỉ báo vị trí, bấm để xem toàn màn hình, phóng to/thu nhỏ và vuốt sang ảnh khác ở chế độ toàn màn hình. Cơ sở không có ảnh hoặc ảnh tải lỗi hiện ảnh mặc định.
-- **FR-005**: Màn hình PHẢI hiển thị các tiện ích của cơ sở với tên và biểu tượng lấy từ danh mục chung; tiện ích không còn trong danh mục thì không hiển thị.
+- **FR-005**: Màn hình PHẢI hiển thị các tiện ích của cơ sở với tên và biểu tượng lấy từ danh mục chung; tiện ích không còn trong danh mục thì không hiển thị. Cơ sở chưa có tiện ích nào thì hiện "Chưa có thông tin tiện ích".
 - **FR-006**: Màn hình PHẢI hiển thị số sân con đang hoạt động và loại mặt sân (Gỗ, PU, Thảm) kèm số lượng mỗi loại khi có nhiều loại; sân con tạm ngưng không được tính.
 - **FR-007**: Màn hình PHẢI hiển thị giờ mở cửa và trạng thái "Đang mở cửa" / "Đã đóng cửa · Mở lại HH:mm" tính theo giờ Việt Nam tại thời điểm xem, xử lý đúng giờ mở qua nửa đêm và mở cả ngày.
 

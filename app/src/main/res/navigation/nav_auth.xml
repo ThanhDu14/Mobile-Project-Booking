@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Đăng ký / đăng nhập (spec 010). Các user story thêm destination (login, register, otp...).
-    Deep link mở nav_auth chồng lên màn hình hiện tại cho chế độ khách (research R15).
-    Tạm gắn vào graph; US1 (T047) và US2 (T052) chuyển sang registerFragment, loginFragment.
+    Đăng ký / đăng nhập (spec 010). Deep link mở nav_auth chồng lên màn hình hiện tại cho chế độ khách
+    (research R15).
 -->
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -15,12 +14,146 @@
         app:argType="string"
         app:nullable="true" />
 
-    <deepLink app:uri="smashnow://auth/login?returnTo={returnTo}" />
-    <deepLink app:uri="smashnow://auth/register?returnTo={returnTo}" />
-
     <fragment
         android:id="@+id/welcomeFragment"
         android:name="com.example.booking_app.feature.auth.ui.welcome.WelcomeFragment"
-        android:label="@string/app_name" />
+        android:label="@string/app_name">
+        <action
+            android:id="@+id/action_welcome_to_login"
+            app:destination="@id/loginFragment" />
+        <action
+            android:id="@+id/action_welcome_to_register"
+            app:destination="@id/registerFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/loginFragment"
+        android:name="com.example.booking_app.feature.auth.ui.login.LoginFragment"
+        android:label="@string/auth_login_title">
+        <!-- URI deep link để mở lại sau khi đăng nhập (FR-026). MainActivity đọc từ back stack entry. -->
+        <argument
+            android:name="returnTo"
+            android:defaultValue="@null"
+            app:argType="string"
+            app:nullable="true" />
+        <argument
+            android:name="lockedNotice"
+            android:defaultValue="false"
+            app:argType="boolean" />
+        <!-- Điền sẵn email khi đi từ lỗi "Email đã được sử dụng" (US1-3). LoginViewModel đọc qua SavedStateHandle. -->
+        <argument
+            android:name="email"
+            android:defaultValue="@null"
+            app:argType="string"
+            app:nullable="true" />
+        <deepLink app:uri="smashnow://auth/login?returnTo={returnTo}&amp;lockedNotice={lockedNotice}" />
+        <action
+            android:id="@+id/action_login_to_register"
+            app:destination="@id/registerFragment"
+            app:popUpTo="@id/loginFragment"
+            app:popUpToInclusive="true" />
+        <action
+            android:id="@+id/action_login_to_forgot"
+            app:destination="@id/forgotPasswordFragment" />
+        <action
+            android:id="@+id/action_login_to_phone"
+            app:destination="@id/phoneLoginFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/registerFragment"
+        android:name="com.example.booking_app.feature.auth.ui.register.RegisterFragment"
+        android:label="@string/auth_register_title">
+        <argument
+            android:name="returnTo"
+            android:defaultValue="@null"
+            app:argType="string"
+            app:nullable="true" />
+        <deepLink app:uri="smashnow://auth/register?returnTo={returnTo}" />
+        <action
+            android:id="@+id/action_register_to_login"
+            app:destination="@id/loginFragment"
+            app:popUpTo="@id/registerFragment"
+            app:popUpToInclusive="true" />
+        <action
+            android:id="@+id/action_register_to_forgot"
+            app:destination="@id/forgotPasswordFragment" />
+        <action
+            android:id="@+id/action_register_to_phone"
+            app:destination="@id/phoneLoginFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/phoneLoginFragment"
+        android:name="com.example.booking_app.feature.auth.ui.phone.PhoneLoginFragment"
+        android:label="@string/auth_phone_title">
+        <action
+            android:id="@+id/action_phone_to_otp"
+            app:destination="@id/otpVerifyFragment" />
+        <action
+            android:id="@+id/action_phone_to_login"
+            app:destination="@id/loginFragment"
+            app:popUpTo="@id/phoneLoginFragment"
+            app:popUpToInclusive="true" />
+    </fragment>
+
+    <!-- Phiên OTP truyền qua argument; resendToken (ForceResendingToken) đi kèm trong bundle, không khai báo ở đây. -->
+    <fragment
+        android:id="@+id/otpVerifyFragment"
+        android:name="com.example.booking_app.feature.auth.ui.otp.OtpVerifyFragment"
+        android:label="@string/auth_otp_title">
+        <argument
+            android:name="phoneE164"
+            app:argType="string" />
+        <argument
+            android:name="verificationId"
+            app:argType="string" />
+        <argument
+            android:name="sentAtElapsed"
+            app:argType="long" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/forgotPasswordFragment"
+        android:name="com.example.booking_app.feature.auth.ui.forgot.ForgotPasswordFragment"
+        android:label="@string/auth_forgot_title">
+        <!-- Điền sẵn từ màn hình đăng nhập hoặc lỗi "Email đã được sử dụng" ở màn hình đăng ký. -->
+        <argument
+            android:name="email"
+            android:defaultValue="@null"
+            app:argType="string"
+            app:nullable="true" />
+        <action
+            android:id="@+id/action_forgot_to_login"
+            app:destination="@id/loginFragment"
+            app:popUpTo="@id/registerFragment"
+            app:popUpToInclusive="true" />
+    </fragment>
+
+    <!-- Initializing / InitFailed (FR-006). MainActivity mở bằng deep link, xóa back stack. -->
+    <fragment
+        android:id="@+id/accountSetupFragment"
+        android:name="com.example.booking_app.feature.auth.ui.setup.AccountSetupFragment"
+        android:label="@string/auth_setup_loading">
+        <deepLink app:uri="smashnow://auth/setup" />
+    </fragment>
+
+    <!-- Google/OTP lần đầu (SessionState.NeedsConsent). MainActivity mở bằng deep link khi nav_auth chưa có. -->
+    <fragment
+        android:id="@+id/termsConsentFragment"
+        android:name="com.example.booking_app.feature.auth.ui.consent.TermsConsentFragment"
+        android:label="@string/auth_consent_title">
+        <deepLink app:uri="smashnow://auth/consent" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/legalDocumentFragment"
+        android:name="com.example.booking_app.feature.auth.ui.legal.LegalDocumentFragment"
+        android:label="@string/auth_legal_terms_title">
+        <argument
+            android:name="doc"
+            android:defaultValue="TERMS"
+            app:argType="string" />
+    </fragment>
 
 </navigation>

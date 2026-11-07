@@ -92,4 +92,13 @@
         <item name="android:textSize">24sp</item>
         <item name="lineHeight">28sp</item>
     </style>
+
+    <!-- Nhãn nhỏ viết hoa phía trên tiêu đề ("BƯỚC CUỐI") -->
+    <style name="TextAppearance.SmashNow.Eyebrow" parent="TextAppearance.SmashNow.NumDisplay">
+        <item name="android:fontFeatureSettings">normal</item>
+        <item name="android:textSize">15sp</item>
+        <item name="lineHeight">20sp</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:letterSpacing">0.04</item>
+    </style>
 </resources>

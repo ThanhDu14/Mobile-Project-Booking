@@ -88,6 +88,85 @@
         <item name="android:insetBottom">0dp</item>
     </style>
 
+    <!-- Link dạng chữ đậm màu court nằm trong câu ("Chưa có tài khoản? Đăng ký") -->
+    <style name="Widget.SmashNow.Button.Link" parent="Widget.SmashNow.Button.Text">
+        <item name="android:paddingStart">@dimen/space_1</item>
+        <item name="android:paddingEnd">@dimen/space_1</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:textAppearance">@style/TextAppearance.SmashNow.Title</item>
+    </style>
+
+    <!-- Ô nhập: nhãn đặt phía trên (FieldLabel), trong ô chỉ có placeholder như wireframe -->
+    <style name="Widget.SmashNow.FieldLabel" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">@dimen/space_4</item>
+        <item name="android:layout_marginBottom">@dimen/space_2</item>
+        <item name="android:textAppearance">@style/TextAppearance.SmashNow.Label</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+    </style>
+
+    <style name="Widget.SmashNow.TextInputLayout" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="hintEnabled">false</item>
+        <item name="boxBackgroundColor">@color/sn_surface_raised</item>
+        <item name="errorIconDrawable">@drawable/ic_error_24</item>
+    </style>
+
+    <!-- Lỗi chung của form, không gắn với ô nào (FR-011) -->
+    <style name="Widget.SmashNow.FormError" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">@dimen/space_2</item>
+        <item name="android:drawablePadding">@dimen/space_2</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:textColor">?attr/colorError</item>
+        <item name="android:accessibilityLiveRegion">polite</item>
+        <item name="drawableStartCompat">@drawable/ic_error_24</item>
+        <item name="drawableTint">?attr/colorError</item>
+    </style>
+
+    <!-- Dòng có dấu tích trong hộp tóm tắt điều khoản -->
+    <style name="Widget.SmashNow.CheckRow" parent="">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginTop">@dimen/space_3</item>
+        <item name="android:drawablePadding">@dimen/space_3</item>
+        <item name="android:textAppearance">@style/TextAppearance.SmashNow.BodyLarge</item>
+        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
+        <item name="drawableStartCompat">@drawable/ic_check_20</item>
+        <item name="drawableTint">?attr/colorOnSurfaceVariant</item>
+    </style>
+
+    <!-- Vòng xoay thay chữ trên nút khi đang gửi (FR-022) -->
+    <style name="Widget.SmashNow.ButtonProgress" parent="">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_gravity">center</item>
+        <item name="android:indeterminate">true</item>
+        <item name="indicatorSize">@dimen/auth_button_progress_size</item>
+        <item name="indicatorColor">?attr/colorOnPrimary</item>
+        <item name="trackThickness">3dp</item>
+        <item name="android:elevation">4dp</item>
+    </style>
+
+    <style name="Widget.SmashNow.ButtonProgress.OnSurface">
+        <item name="indicatorColor">?attr/colorOnSurface</item>
+    </style>
+
+    <!-- Một ô chữ số của mã OTP (6 ô, wireframe buoc5). contentDescription đặt trong OtpVerifyFragment. -->
+    <style name="Widget.SmashNow.OtpDigit" parent="">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">56dp</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:background">@drawable/bg_otp_box</item>
+        <item name="android:gravity">center</item>
+        <item name="android:inputType">number</item>
+        <item name="android:textAppearance">@style/TextAppearance.SmashNow.NumLarge</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+    </style>
+
     <style name="ShapeAppearance.SmashNow.Small" parent="">
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">@dimen/radius_sm</item>

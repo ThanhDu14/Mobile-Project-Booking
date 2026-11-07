@@ -1,0 +1,32 @@
+{
+  "districts": [
+    { "id": "q1", "name": "Quận 1", "sortOrder": 1 },
+    { "id": "q3", "name": "Quận 3", "sortOrder": 2 },
+    { "id": "q4", "name": "Quận 4", "sortOrder": 3 },
+    { "id": "q5", "name": "Quận 5", "sortOrder": 4 },
+    { "id": "q6", "name": "Quận 6", "sortOrder": 5 },
+    { "id": "q7", "name": "Quận 7", "sortOrder": 6 },
+    { "id": "q8", "name": "Quận 8", "sortOrder": 7 },
+    { "id": "q10", "name": "Quận 10", "sortOrder": 8 },
+    { "id": "q11", "name": "Quận 11", "sortOrder": 9 },
+    { "id": "q12", "name": "Quận 12", "sortOrder": 10 },
+    { "id": "binh-tan", "name": "Bình Tân", "sortOrder": 11 },
+    { "id": "binh-thanh", "name": "Bình Thạnh", "sortOrder": 12 },
+    { "id": "go-vap", "name": "Gò Vấp", "sortOrder": 13 },
+    { "id": "phu-nhuan", "name": "Phú Nhuận", "sortOrder": 14 },
+    { "id": "tan-binh", "name": "Tân Bình", "sortOrder": 15 },
+    { "id": "tan-phu", "name": "Tân Phú", "sortOrder": 16 },
+    { "id": "thu-duc", "name": "TP. Thủ Đức", "sortOrder": 17 },
+    { "id": "binh-chanh", "name": "Bình Chánh", "sortOrder": 18 },
+    { "id": "can-gio", "name": "Cần Giờ", "sortOrder": 19 },
+    { "id": "cu-chi", "name": "Củ Chi", "sortOrder": 20 },
+    { "id": "hoc-mon", "name": "Hóc Môn", "sortOrder": 21 },
+    { "id": "nha-be", "name": "Nhà Bè", "sortOrder": 22 }
+  ],
+  "amenities": [
+    { "id": "parking", "name": "Gửi xe", "iconKey": "parking", "sortOrder": 1 },
+    { "id": "drinks", "name": "Nước uống", "iconKey": "drinks", "sortOrder": 2 },
+    { "id": "shower", "name": "Phòng tắm", "iconKey": "shower", "sortOrder": 3 },
+    { "id": "racket-rental", "name": "Cho thuê vợt", "iconKey": "racket-rental", "sortOrder": 4 }
+  ]
+}

@@ -1,5 +1,6 @@
 package com.example.booking_app
 
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
@@ -10,6 +11,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.NavController
+import androidx.navigation.NavDeepLinkRequest
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.navOptions
 import com.example.booking_app.core.session.AppRole
@@ -70,12 +72,18 @@ class MainActivity : AppCompatActivity() {
                 previous !is SessionState.SignedIn -> onSignedIn(state.appRole)
                 previous.appRole != state.appRole -> execute(RouteDecision.ResetTo(state.appRole))
             }
-            is SessionState.SignedOut -> if (previous !is SessionState.SignedOut) {
+            is SessionState.SignedOut -> when {
+                previous is SessionState.SignedOut -> Unit
+                // "Dùng tài khoản khác" ở bước Hoàn tất tài khoản: về màn hình đăng nhập.
+                previous is SessionState.NeedsConsent && state.reason == null -> backToLogin()
                 // Đăng xuất (spec 011) hoặc bị khóa: về trang chủ ở chế độ khách, không về màn hình chào.
-                execute(RouteDecision.PlayerGuest(showLockedLogin = state.reason == SignOutReason.LOCKED))
+                else -> execute(RouteDecision.PlayerGuest(showLockedLogin = state.reason == SignOutReason.LOCKED))
             }
-            // TODO(US1 T047, US4 T066): Initializing / InitFailed → accountSetup, NeedsConsent → termsConsent.
-            SessionState.Initializing, is SessionState.InitFailed, is SessionState.NeedsConsent -> Unit
+            is SessionState.NeedsConsent -> openConsent()
+            // Vừa bấm "Đăng ký": RegisterFragment đang gọi on-signup và tự báo lỗi, không chuyển màn hình.
+            SessionState.Initializing ->
+                if (navController.currentDestination?.id != R.id.registerFragment) openAccountSetup()
+            is SessionState.InitFailed -> openAccountSetup()
             SessionState.Loading -> Unit
         }
     }
@@ -84,8 +92,10 @@ class MainActivity : AppCompatActivity() {
         val authOnStack = hasBackStackEntry(R.id.nav_auth)
         val playerOnStack = hasBackStackEntry(R.id.nav_player)
         if (!authOnStack && appRole == AppRole.PLAYER && playerOnStack) return
-        // TODO(US2 T053): truyền `returnTo` của LoginFragment.
-        execute(SessionRouter.afterSignIn(appRole, hasPlayerGraphBelowAuth = authOnStack && playerOnStack, returnTo = null))
+        val returnTo = listOf(R.id.loginFragment, R.id.registerFragment).firstNotNullOfOrNull { id ->
+            runCatching { navController.getBackStackEntry(id) }.getOrNull()?.arguments?.getString(ARG_RETURN_TO)
+        }?.let(Uri::parse)
+        execute(SessionRouter.afterSignIn(appRole, hasPlayerGraphBelowAuth = authOnStack && playerOnStack, returnTo))
     }
 
     private fun execute(decision: RouteDecision) {
@@ -93,7 +103,8 @@ class MainActivity : AppCompatActivity() {
             RouteDecision.Welcome -> resetTo(R.id.nav_auth)
             is RouteDecision.PlayerGuest -> {
                 resetTo(R.id.nav_player)
-                // TODO(US2 T053): showLockedLogin → mở LoginFragment(lockedNotice = true) chồng lên.
+                // Bị khóa: trang chủ khách ở dưới, màn hình đăng nhập kèm thông báo khóa ở trên (research R15).
+                if (decision.showLockedLogin) navController.navigate(LOCKED_LOGIN)
             }
             is RouteDecision.RoleHome -> resetTo(graphFor(decision.appRole))
             is RouteDecision.ResetTo -> resetTo(graphFor(decision.appRole))
@@ -101,8 +112,34 @@ class MainActivity : AppCompatActivity() {
                 navController.popBackStack(R.id.nav_auth, inclusive = true)
                 decision.returnTo?.let { navController.navigate(it) }
             }
-            // TODO(US1 T047, US4 T066): accountSetup, termsConsent chưa có; giữ màn hình khởi động.
-            RouteDecision.AccountSetup, RouteDecision.Consent -> Unit
+            RouteDecision.Consent -> openConsent()
+            RouteDecision.AccountSetup -> openAccountSetup()
+        }
+    }
+
+    /** Chờ `on-signup` (FR-006): xóa back stack, chưa xong thì không vào được màn hình chính. */
+    private fun openAccountSetup() {
+        if (navController.currentDestination?.id == R.id.accountSetupFragment) return
+        navController.navigate(ACCOUNT_SETUP, navOptions { popUpTo(R.id.nav_main) { inclusive = true } })
+    }
+
+    /**
+     * Bước Hoàn tất tài khoản. Đi từ màn hình đăng nhập/đăng ký thì mở chồng lên (Back = dùng tài khoản khác);
+     * mở app lại khi chưa xong bước này thì xóa back stack (Edge Case đóng app ở bước đồng ý).
+     */
+    private fun openConsent() {
+        if (navController.currentDestination?.id == R.id.termsConsentFragment) return
+        if (hasBackStackEntry(R.id.loginFragment) || hasBackStackEntry(R.id.registerFragment)) {
+            navController.navigate(R.id.termsConsentFragment)
+        } else {
+            navController.navigate(CONSENT, navOptions { popUpTo(R.id.nav_main) { inclusive = true } })
+        }
+    }
+
+    private fun backToLogin() {
+        if (!navController.popBackStack(R.id.loginFragment, false)) {
+            resetTo(R.id.nav_player)
+            navController.navigate(LOGIN)
         }
     }
 
@@ -117,5 +154,15 @@ class MainActivity : AppCompatActivity() {
         AppRole.PLAYER -> R.id.nav_player
         AppRole.OWNER -> R.id.nav_owner
         AppRole.ADMIN -> R.id.nav_admin
+    }
+
+    private companion object {
+        const val ARG_RETURN_TO = "returnTo"
+        val LOGIN: NavDeepLinkRequest = deepLink("smashnow://auth/login")
+        val LOCKED_LOGIN: NavDeepLinkRequest = deepLink("smashnow://auth/login?lockedNotice=true")
+        val CONSENT: NavDeepLinkRequest = deepLink("smashnow://auth/consent")
+        val ACCOUNT_SETUP: NavDeepLinkRequest = deepLink("smashnow://auth/setup")
+
+        fun deepLink(uri: String): NavDeepLinkRequest = NavDeepLinkRequest.Builder.fromUri(Uri.parse(uri)).build()
     }
 }

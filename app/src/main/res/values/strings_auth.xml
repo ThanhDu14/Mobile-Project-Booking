@@ -1,5 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Dùng chung -->
+    <string name="auth_or">hoặc</string>
+    <string name="auth_back">Quay lại</string>
+    <string name="auth_retry">Thử lại</string>
+    <string name="auth_sign_out">Đăng xuất</string>
+    <string name="auth_close">Đóng</string>
+    <string name="auth_password_toggle">Hiện hoặc ẩn mật khẩu</string>
+    <string name="auth_study_footer">Phiên bản học tập. Không thu tiền thật.</string>
+    <string name="auth_terms_link">Điều khoản sử dụng</string>
+    <string name="auth_privacy_link">Chính sách quyền riêng tư</string>
+
     <!-- Màn hình chào (wireframe buoc1_man-chao) -->
     <string name="auth_welcome_headline">Đặt sân cầu lông,\ngặp người cùng chơi</string>
     <string name="auth_welcome_feature_find">Tìm sân gần bạn, xem giờ trống và giá</string>
@@ -7,8 +18,146 @@
     <string name="auth_welcome_feature_social">Chơi vãng lai, vào nhóm, chat với chủ sân</string>
     <string name="auth_welcome_create_account">Tạo tài khoản</string>
     <string name="auth_welcome_login">Đăng nhập</string>
-    <!-- Tạm thời cho tới khi có màn hình đăng ký (US1 T043) và đăng nhập (US2 T052) -->
-    <string name="auth_welcome_coming_soon">Màn hình này đang được làm</string>
+
+    <!-- Đăng nhập (buoc2_dang-nhap) -->
+    <string name="auth_login_title">Đăng nhập</string>
+    <string name="auth_login_subtitle">Đặt sân, tìm buổi vãng lai và trò chuyện với người cùng chơi.</string>
+    <string name="auth_field_email">Email</string>
+    <string name="auth_field_email_hint">ten@email.com</string>
+    <string name="auth_field_password">Mật khẩu</string>
+    <string name="auth_field_password_hint">Ít nhất 8 ký tự, có chữ và số</string>
+    <string name="auth_login_forgot">Quên mật khẩu?</string>
+    <string name="auth_login_submit">Đăng nhập</string>
+    <string name="auth_continue_google">Tiếp tục với Google</string>
+    <string name="auth_use_phone">Dùng số điện thoại</string>
+    <string name="auth_login_no_account">Chưa có tài khoản?</string>
+    <string name="auth_login_register_link">Đăng ký</string>
+
+    <!-- Đăng ký (buoc3_dang-ky-email) -->
+    <string name="auth_register_title">Tạo tài khoản</string>
+    <string name="auth_register_subtitle">Mọi tài khoản bắt đầu là người chơi. Muốn đưa sân lên SmashNow thì đăng ký chủ sân trong trang Tài khoản sau.</string>
+    <string name="auth_field_name">Họ và tên</string>
+    <string name="auth_field_confirm_password">Nhập lại mật khẩu</string>
+    <string name="auth_password_check_len8">Ít nhất 8 ký tự</string>
+    <string name="auth_password_check_letter_digit">Có chữ và số</string>
+    <!-- %1$s và %2$s là hai link Điều khoản sử dụng, Chính sách quyền riêng tư -->
+    <string name="auth_register_terms">Tôi đồng ý với %1$s và %2$s của SmashNow (phiên bản học tập).</string>
+    <string name="auth_register_submit">Đăng ký</string>
+    <string name="auth_register_google">Google</string>
+    <string name="auth_register_phone">Số điện thoại</string>
+    <string name="auth_register_have_account">Đã có tài khoản?</string>
+    <string name="auth_register_login_link">Đăng nhập</string>
+    <!-- Lỗi email đã dùng có hai link (US1-3) -->
+    <string name="auth_register_email_in_use">Email đã được sử dụng. %1$s hoặc %2$s?</string>
+    <string name="auth_register_email_in_use_login">Đăng nhập</string>
+    <string name="auth_register_email_in_use_forgot">quên mật khẩu</string>
+
+    <!-- Số điện thoại (buoc4_dang-nhap-so-dien-thoai) -->
+    <string name="auth_phone_title">Dùng số điện thoại</string>
+    <string name="auth_phone_subtitle">Chúng tôi gửi mã 6 số qua SMS. Số chưa có tài khoản sẽ được tạo tài khoản mới.</string>
+    <string name="auth_field_phone">Số điện thoại</string>
+    <string name="auth_phone_prefix">+84</string>
+    <string name="auth_phone_helper">Nhập dạng 0901 234 567 hoặc +84 901 234 567</string>
+    <string name="auth_phone_study_note">Phiên bản học tập chỉ gửi mã tới các số thử nghiệm nhóm đã khai báo. Số khác vui lòng dùng email hoặc Google.</string>
+    <string name="auth_phone_submit">Gửi mã</string>
+    <string name="auth_phone_use_email">Dùng email thay thế?</string>
+    <string name="auth_phone_use_email_link">Đăng nhập bằng email</string>
+
+    <!-- Nhập mã OTP (buoc5_nhap-otp-sai-ma) -->
+    <string name="auth_otp_title">Nhập mã xác thực</string>
+    <!-- %1$s: số đã che, ví dụ +84 901 *** 567 -->
+    <string name="auth_otp_subtitle">Mã 6 số đã gửi tới %1$s.</string>
+    <string name="auth_otp_change_number">Đổi số</string>
+    <string name="auth_otp_digit_description">Chữ số thứ %1$d của mã</string>
+    <string name="auth_otp_submit">Xác nhận</string>
+    <string name="auth_otp_resend">Gửi lại mã</string>
+    <!-- %1$s: thời gian còn lại dạng 0:42 -->
+    <string name="auth_otp_resend_in">Gửi lại mã sau %1$s</string>
+    <string name="auth_otp_footer">Mã hết hạn hoặc nhập sai nhiều lần thì bấm “Gửi lại mã” để nhận mã mới.</string>
+    <plurals name="auth_otp_wrong_remaining">
+        <item quantity="other">Mã không đúng. Kiểm tra lại tin nhắn và nhập lại. Còn %1$d lần thử.</item>
+    </plurals>
+    <string name="auth_otp_must_resend">Bạn đã nhập sai 5 lần. Bấm “Gửi lại mã” để nhận mã mới.</string>
+
+    <!-- Hoàn tất tài khoản (buoc6_hoan-tat-tai-khoan) -->
+    <string name="auth_consent_eyebrow">BƯỚC CUỐI</string>
+    <string name="auth_consent_title">Hoàn tất tài khoản</string>
+    <string name="auth_consent_subtitle">Đây là lần đầu bạn dùng tài khoản này với SmashNow.</string>
+    <string name="auth_consent_verified_google">Đã xác thực bằng Google</string>
+    <string name="auth_consent_verified_phone">Đã xác thực bằng số điện thoại</string>
+    <string name="auth_consent_verified_email">Đã xác thực bằng email</string>
+    <string name="auth_field_display_name">Họ và tên hiển thị</string>
+    <string name="auth_consent_name_helper_google">Lấy từ tài khoản Google, bạn sửa được.</string>
+    <string name="auth_consent_summary_title">Tóm tắt điều khoản</string>
+    <string name="auth_consent_summary_data">Chỉ thu thập họ tên, email hoặc số điện thoại, và vị trí khi bạn cho phép.</string>
+    <string name="auth_consent_summary_delete">Bạn xóa được tài khoản và dữ liệu bất cứ lúc nào.</string>
+    <string name="auth_consent_summary_study">Phiên bản học tập: thanh toán chỉ là giả lập.</string>
+    <string name="auth_consent_terms">Tôi đồng ý với %1$s và %2$s.</string>
+    <string name="auth_consent_submit">Bắt đầu dùng SmashNow</string>
+    <string name="auth_consent_check_to_continue">Đánh dấu đồng ý để tiếp tục</string>
+    <string name="auth_consent_other_account">Dùng tài khoản khác</string>
+    <string name="auth_consent_name_helper">Bạn sửa được họ tên này sau trong trang Tài khoản.</string>
+
+    <!-- Chờ khởi tạo tài khoản (Edge Case "khởi tạo lỗi", FR-006) -->
+    <string name="auth_setup_loading">Đang chuẩn bị tài khoản…</string>
+    <string name="auth_setup_failed">Chưa chuẩn bị xong tài khoản. Kiểm tra kết nối rồi thử lại.</string>
+
+    <!-- Quên mật khẩu (buoc7_quen-mat-khau) -->
+    <string name="auth_forgot_title">Quên mật khẩu</string>
+    <string name="auth_forgot_subtitle">Nhập email đã đăng ký, chúng tôi gửi liên kết để bạn đặt mật khẩu mới.</string>
+    <string name="auth_forgot_submit">Gửi</string>
+    <string name="auth_forgot_sent_title">Đã gửi yêu cầu</string>
+    <string name="auth_forgot_sent_body">Nếu email đã đăng ký, bạn sẽ nhận được hướng dẫn đặt lại mật khẩu trong vài phút.</string>
+    <string name="auth_forgot_spam_tip">Không thấy thư? Kiểm tra mục Thư rác hoặc Quảng cáo.</string>
+    <string name="auth_forgot_password_tip">Mật khẩu mới cần ít nhất 8 ký tự, có chữ và số.</string>
+    <string name="auth_forgot_resend">Gửi lại</string>
+    <string name="auth_forgot_resend_in">Gửi lại sau %1$s</string>
+    <string name="auth_forgot_back_to_login">Quay lại đăng nhập</string>
+
+    <!-- Banner xác minh email (FR-009) -->
+    <string name="auth_verify_banner_text">Hãy xác minh email để bảo vệ tài khoản. Kiểm tra hộp thư của bạn.</string>
+    <string name="auth_verify_banner_resend">Gửi lại email</string>
+    <string name="auth_verify_banner_resend_in">Gửi lại sau %1$s</string>
+    <string name="auth_verify_banner_sent">Đã gửi lại email</string>
+
+    <!-- Điều khoản (LegalDocumentFragment) -->
+    <string name="auth_legal_terms_title">Điều khoản sử dụng</string>
+    <string name="auth_legal_privacy_title">Chính sách quyền riêng tư</string>
+    <string name="auth_terms_checkbox_description">Đồng ý Điều khoản sử dụng và Chính sách quyền riêng tư</string>
+
+    <!-- Liên kết tài khoản (FR-012, research R7) -->
+    <string name="auth_link_title">Liên kết tài khoản</string>
+    <string name="auth_link_message">Email %1$s đã có tài khoản SmashNow dùng mật khẩu. Nhập mật khẩu để liên kết với Google, lần sau đăng nhập cách nào cũng được.</string>
+    <string name="auth_link_submit">Liên kết</string>
+    <string name="auth_link_cancel">Để sau</string>
+    <string name="auth_link_done">Đã liên kết Google với tài khoản của bạn</string>
+
+    <!-- Tài khoản bị khóa -->
+    <string name="auth_locked_title">Tài khoản bị khóa</string>
+    <!-- %1$s: email hỗ trợ (support_email) -->
+    <string name="auth_locked_message">Tài khoản của bạn đã bị khóa. Nếu cho rằng đây là nhầm lẫn, hãy liên hệ %1$s.</string>
+
+    <!-- Lỗi kiểm tra ô nhập (ValidationError.key) -->
+    <string name="auth_error_name_length">Họ tên cần từ 2 đến 50 ký tự</string>
+    <string name="auth_error_email_format">Email không đúng định dạng</string>
+    <string name="auth_error_password_rule">Mật khẩu cần ít nhất 8 ký tự, có chữ và số</string>
+    <string name="auth_error_password_mismatch">Mật khẩu nhập lại không khớp</string>
+    <string name="auth_error_phone_format">Số điện thoại không hợp lệ</string>
+    <string name="auth_error_otp_format">Mã gồm 6 chữ số</string>
+    <string name="auth_error_password_required">Nhập mật khẩu</string>
+    <string name="auth_error_terms_required">Bạn cần đồng ý điều khoản để tiếp tục</string>
+
+    <!-- Thông báo theo AuthError -->
+    <string name="auth_error_invalid_credentials">Email hoặc mật khẩu không đúng</string>
+    <string name="auth_error_email_in_use">Email đã được sử dụng</string>
+    <string name="auth_error_account_locked">Tài khoản của bạn đã bị khóa</string>
+    <string name="auth_error_invalid_code">Mã không đúng. Kiểm tra lại tin nhắn và nhập lại.</string>
+    <string name="auth_error_code_expired">Mã đã hết hạn. Bấm “Gửi lại mã” để nhận mã mới.</string>
+    <string name="auth_error_too_many_attempts">Bạn đã thử quá nhiều lần, vui lòng thử lại sau</string>
+    <string name="auth_error_phone_not_supported">Không gửi được mã tới số này. Hãy dùng email hoặc Google</string>
+    <string name="auth_error_no_google_account">Không tìm thấy tài khoản Google trên máy</string>
+    <string name="auth_error_network">Không có kết nối mạng</string>
+    <string name="auth_error_unknown">Đã có lỗi xảy ra, vui lòng thử lại</string>
 
     <!-- Chế độ khách (research R15) -->
     <string name="auth_guest_browse">Xem sân trước, đăng nhập sau</string>

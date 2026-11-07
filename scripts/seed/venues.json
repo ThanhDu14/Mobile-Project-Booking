@@ -1,0 +1,257 @@
+{
+  "_note": "10 sân cầu lông lấy từ datlich.alobo.vn ngày 24/10/2026, chỉ dùng cho mục đích học tập. pricePerHour = giá vãng lai, recurringPricePerHour = giá cố định (chưa ghi lên Firestore, chờ nhóm chốt schema). Tọa độ gần đúng (approx). Xem README.md.",
+  "venues": [
+    {
+      "id": "demo-truong-chinh-909",
+      "name": "CLB Cầu Lông Trường Chinh 909",
+      "address": "909/6 Trường Chinh, Phường Tây Thạnh, Quận Tân Phú, TP. Hồ Chí Minh",
+      "districtId": "tan-phu",
+      "location": { "lat": 10.8128, "lng": 106.6283, "approx": true },
+      "openTime": "0500",
+      "closeTime": "2400",
+      "phone": "0944xxx486",
+      "photoUrls": [
+        "https://m-files.alobo.vn/branch/sport_truong_chinh_909_cn1/main/cover-1753289605643.jpg",
+        "https://m-files.alobo.vn/branch/sport_truong_chinh_909_cn1/main/avatar-1753289602504.jpg",
+        "https://m-files.alobo.vn/branch/sport_truong_chinh_909_cn1/main/yardDiagram-1753289609689.jpg"
+      ],
+      "courts": ["Sân 1", "Sân 2", "Sân 3", "Sân 4", "Sân 5", "Sân 6", "Sân 7", "Sân 8", "Sân 9", "Sân 10"],
+      "priceRules": [
+        { "days": "T2-T6", "start": "0500", "end": "1600", "pricePerHour": 50000, "recurringPricePerHour": 45000 },
+        { "days": "T2-T6", "start": "1600", "end": "1800", "pricePerHour": 90000, "recurringPricePerHour": 80000 },
+        { "days": "T2-T6", "start": "1800", "end": "2400", "pricePerHour": 130000, "recurringPricePerHour": 120000 },
+        { "days": "T7-CN", "start": "0500", "end": "2400", "pricePerHour": 100000, "recurringPricePerHour": 90000 }
+      ],
+      "source": "https://datlich.alobo.vn/san/sport_truong_chinh_909_cn1"
+    },
+    {
+      "id": "demo-pam-badminton",
+      "name": "PAM Badminton",
+      "address": "1/42 Nguyễn Văn Quá, Phường Đông Hưng Thuận, Quận 12, TP. Hồ Chí Minh",
+      "districtId": "q12",
+      "location": { "lat": 10.8299, "lng": 106.6271, "approx": true },
+      "openTime": "0600",
+      "closeTime": "2400",
+      "phone": "0388xxx238",
+      "photoUrls": [
+        "https://m-files.alobo.vn/branch/sport_pam_badminton/main/cover-1753290527988.jpg",
+        "https://m-files.alobo.vn/branch/sport_pam_badminton/main/avatar-1753290526264.jpg",
+        "https://m-files.alobo.vn/branch/sport_pam_badminton/main/yardDiagram-1753290529361.jpg"
+      ],
+      "courts": ["Sân 1", "Sân 2", "Sân 3", "Sân 4", "Sân 5", "Sân 6"],
+      "priceRules": [
+        { "days": "T2-T6", "start": "0600", "end": "0900", "pricePerHour": 70000, "recurringPricePerHour": 60000 },
+        { "days": "T2-T6", "start": "0900", "end": "1600", "pricePerHour": 50000, "recurringPricePerHour": 40000 },
+        { "days": "T2-T6", "start": "1600", "end": "1800", "pricePerHour": 100000, "recurringPricePerHour": 90000 },
+        { "days": "T2-T6", "start": "1800", "end": "2200", "pricePerHour": 110000, "recurringPricePerHour": 100000 },
+        { "days": "T2-T6", "start": "2200", "end": "2400", "pricePerHour": 100000, "recurringPricePerHour": 90000 },
+        { "days": "T7-CN", "start": "0600", "end": "1200", "pricePerHour": 90000, "recurringPricePerHour": 80000 },
+        { "days": "T7-CN", "start": "1200", "end": "2400", "pricePerHour": 100000, "recurringPricePerHour": 90000 }
+      ],
+      "source": "https://datlich.alobo.vn/san/sport_pam_badminton"
+    },
+    {
+      "id": "demo-quang-vinh",
+      "name": "CLB Cầu Lông Quang Vinh",
+      "address": "109 Đông Hưng Thuận 10B, Phường Đông Hưng Thuận, Quận 12, TP. Hồ Chí Minh",
+      "districtId": "q12",
+      "location": { "lat": 10.8431, "lng": 106.6259, "approx": true },
+      "openTime": "0500",
+      "closeTime": "2300",
+      "phone": "0939xxx819",
+      "photoUrls": [
+        "https://m-files.alobo.vn/branch/sport_quang_vinh_badminton/main/cover-1753290478277.jpg",
+        "https://m-files.alobo.vn/branch/sport_quang_vinh_badminton/main/avatar-1753290476788.jpg",
+        "https://m-files.alobo.vn/branch/sport_quang_vinh_badminton/image/img-jmzxbb-1753290480382-thumb.jpg",
+        "https://m-files.alobo.vn/branch/sport_quang_vinh_badminton/image/img-4ml1c5-1753290483557-thumb.jpg"
+      ],
+      "courts": ["Sân 1", "Sân 2", "Sân 3", "Sân 4", "Sân 5", "Sân 6", "Sân 7", "Sân 8", "Sân 9", "Sân 10"],
+      "priceRules": [
+        { "days": "T2-T6", "start": "0500", "end": "0800", "pricePerHour": 70000, "recurringPricePerHour": 60000 },
+        { "days": "T2-T6", "start": "0800", "end": "1600", "pricePerHour": 50000, "recurringPricePerHour": 50000 },
+        { "days": "T2", "start": "1600", "end": "2300", "pricePerHour": 80000, "recurringPricePerHour": 80000 },
+        { "days": "T3-T6", "start": "1600", "end": "2300", "pricePerHour": 90000, "recurringPricePerHour": 90000 },
+        { "days": "T7-CN", "start": "0500", "end": "1400", "pricePerHour": 80000, "recurringPricePerHour": 80000 },
+        { "days": "T7-CN", "start": "1400", "end": "2300", "pricePerHour": 90000, "recurringPricePerHour": 90000 }
+      ],
+      "source": "https://datlich.alobo.vn/san/sport_quang_vinh_badminton"
+    },
+    {
+      "id": "demo-minh-tam-cn1",
+      "name": "Sân Cầu Lông Minh Tâm CN1 - Nguyễn Văn Quá",
+      "address": "412/17 Nguyễn Văn Quá, Phường Đông Hưng Thuận, Quận 12, TP. Hồ Chí Minh",
+      "districtId": "q12",
+      "location": { "lat": 10.8335, "lng": 106.629, "approx": true },
+      "openTime": "0500",
+      "closeTime": "2300",
+      "phone": "0986xxx011",
+      "photoUrls": [
+        "https://m-files.alobo.vn/branch/sport_san_cau_long_minh_tam_nguyen_van_qua/main/cover-1772108352531.jpg",
+        "https://m-files.alobo.vn/branch/sport_san_cau_long_minh_tam_nguyen_van_qua/main/avatar-1770365319992.jpg"
+      ],
+      "courts": ["Sân 1", "Sân 2", "Sân 3"],
+      "priceRules": [
+        { "days": "T2-T6", "start": "0500", "end": "1000", "pricePerHour": 60000, "recurringPricePerHour": 55000 },
+        { "days": "T2-T6", "start": "1000", "end": "1600", "pricePerHour": 40000, "recurringPricePerHour": 35000 },
+        { "days": "T2-T6", "start": "1600", "end": "1800", "pricePerHour": 65000, "recurringPricePerHour": 55000 },
+        { "days": "T2-T6", "start": "1800", "end": "2300", "pricePerHour": 75000, "recurringPricePerHour": 65000 },
+        { "days": "T7-CN", "start": "0500", "end": "1600", "pricePerHour": 65000, "recurringPricePerHour": 55000 },
+        { "days": "T7-CN", "start": "1600", "end": "2300", "pricePerHour": 75000, "recurringPricePerHour": 65000 }
+      ],
+      "source": "https://datlich.alobo.vn/san/sport_san_cau_long_minh_tam_nguyen_van_qua"
+    },
+    {
+      "id": "demo-tan-thoi-nhat",
+      "name": "Sân Cầu Lông Tân Thới Nhất Sport",
+      "address": "84/7 Phan Văn Hớn (Minh Phụng), Phường Tân Thới Nhất, Quận 12, TP. Hồ Chí Minh",
+      "districtId": "q12",
+      "location": { "lat": 10.829, "lng": 106.6172, "approx": true },
+      "openTime": "0500",
+      "closeTime": "2400",
+      "phone": "0855xxx779",
+      "photoUrls": [
+        "https://m-files.alobo.vn/branch/sport_scl_tan_thoi_nhat/main/cover-1762417778820.jpg",
+        "https://m-files.alobo.vn/branch/sport_scl_tan_thoi_nhat/main/avatar-1762417777848.jpg",
+        "https://m-files.alobo.vn/branch/sport_scl_tan_thoi_nhat/image/img-yldne2-1762418864981-thumb.jpg"
+      ],
+      "courts": ["Sân B1", "Sân B2", "Sân B3", "Sân B4", "Sân B5"],
+      "priceRules": [
+        { "days": "T2-T6", "start": "0500", "end": "0800", "pricePerHour": 70000, "recurringPricePerHour": 60000 },
+        { "days": "T2-T6", "start": "0800", "end": "1600", "pricePerHour": 60000, "recurringPricePerHour": 50000 },
+        { "days": "T2-T6", "start": "1600", "end": "2400", "pricePerHour": 100000, "recurringPricePerHour": 90000 },
+        { "days": "T7-CN", "start": "0500", "end": "2400", "pricePerHour": 100000, "recurringPricePerHour": 90000 }
+      ],
+      "source": "https://datlich.alobo.vn/san/sport_scl_tan_thoi_nhat"
+    },
+    {
+      "id": "demo-k3",
+      "name": "Sân cầu lông K3",
+      "address": "147 Nguyễn Đức Thuận, Phường 13, Quận Tân Bình, TP. Hồ Chí Minh",
+      "districtId": "tan-binh",
+      "location": { "lat": 10.8057, "lng": 106.6412, "approx": true },
+      "openTime": "0400",
+      "closeTime": "2400",
+      "phone": "0916xxx188",
+      "photoUrls": [
+        "https://m-files.alobo.vn/branch/sport_san_cau_long_k3/main/cover-1782574106072.jpg",
+        "https://m-files.alobo.vn/branch/sport_san_cau_long_k3/main/avatar-1753254699980.jpg",
+        "https://m-files.alobo.vn/branch/sport_san_cau_long_k3/image/img-rgx0yl-1753936812653-thumb.jpg",
+        "https://m-files.alobo.vn/branch/sport_san_cau_long_k3/image/img-fnobmp-1756298198831-thumb.jpg"
+      ],
+      "courts": ["Sân 1", "Sân 2", "Sân 3", "Sân 4", "Sân 5", "Sân 6", "Sân 7", "Sân 8", "Sân 9", "Sân 10", "Sân 11", "Sân 12"],
+      "priceRules": [
+        { "days": "T2-T6", "start": "0400", "end": "0600", "pricePerHour": 100000, "recurringPricePerHour": 80000 },
+        { "days": "T2-T6", "start": "0600", "end": "1600", "pricePerHour": 50000, "recurringPricePerHour": 40000 },
+        { "days": "T2-T6", "start": "1600", "end": "1700", "pricePerHour": 70000, "recurringPricePerHour": 60000 },
+        { "days": "T2-T6", "start": "1700", "end": "1800", "pricePerHour": 90000, "recurringPricePerHour": 70000 },
+        { "days": "T2-T6", "start": "1800", "end": "2200", "pricePerHour": 130000, "recurringPricePerHour": 120000 },
+        { "days": "T2-T6", "start": "2200", "end": "2400", "pricePerHour": 90000, "recurringPricePerHour": 90000 },
+        { "days": "T7-CN", "start": "0400", "end": "1200", "pricePerHour": 110000, "recurringPricePerHour": 100000 },
+        { "days": "T7-CN", "start": "1200", "end": "1400", "pricePerHour": 40000, "recurringPricePerHour": 40000 },
+        { "days": "T7-CN", "start": "1400", "end": "2400", "pricePerHour": 110000, "recurringPricePerHour": 100000 }
+      ],
+      "source": "https://datlich.alobo.vn/san/sport_san_cau_long_k3"
+    },
+    {
+      "id": "demo-gia-han",
+      "name": "CLB Cầu Lông Gia Hân",
+      "address": "299 Phan Văn Hớn, Phường Đông Hưng Thuận, Quận 12, TP. Hồ Chí Minh",
+      "districtId": "q12",
+      "location": { "lat": 10.8305, "lng": 106.6215, "approx": true },
+      "openTime": "0500",
+      "closeTime": "2400",
+      "phone": "0797xxx799",
+      "photoUrls": [
+        "https://m-files.alobo.vn/branch/sport_cau_long_gia_han/main/avatar-1753290875386.jpg",
+        "https://m-files.alobo.vn/branch/sport_cau_long_gia_han/image/img-ns9zde-1753290877193-thumb.jpg",
+        "https://m-files.alobo.vn/branch/sport_cau_long_gia_han/image/img-u9kgvb-1753290881974-thumb.jpg"
+      ],
+      "courts": ["Sân 3", "Sân 4", "Sân 5", "Sân 6", "Sân 7", "Sân 8"],
+      "priceRules": [
+        { "days": "T2-T6", "start": "0500", "end": "1600", "pricePerHour": 60000, "recurringPricePerHour": 50000 },
+        { "days": "T2-T6", "start": "1600", "end": "2400", "pricePerHour": 90000, "recurringPricePerHour": 80000 },
+        { "days": "T7-CN", "start": "0500", "end": "2400", "pricePerHour": 90000, "recurringPricePerHour": 80000 }
+      ],
+      "source": "https://datlich.alobo.vn/san/sport_cau_long_gia_han"
+    },
+    {
+      "id": "demo-son-ta",
+      "name": "Sân Cầu Lông Sơn Tạ",
+      "address": "313/7 Phan Huy Ích, Phường 14, Quận Gò Vấp, TP. Hồ Chí Minh",
+      "districtId": "go-vap",
+      "location": { "lat": 10.8419, "lng": 106.6373, "approx": true },
+      "openTime": "0000",
+      "closeTime": "2400",
+      "phone": "0848xxx439",
+      "photoUrls": [
+        "https://m-files.alobo.vn/branch/sport_son_ta/main/cover-1753290604151.jpg",
+        "https://m-files.alobo.vn/branch/sport_son_ta/main/avatar-1753290602203.jpg",
+        "https://m-files.alobo.vn/branch/sport_son_ta/main/yardDiagram-1753290606095.jpg",
+        "https://m-files.alobo.vn/branch/sport_son_ta/image/img-9qepo4-1753290607875-thumb.jpg"
+      ],
+      "courts": ["Sân 1", "Sân 2", "Sân 3", "Sân 4", "Sân 5", "Sân 6", "Sân 7", "Sân 8", "Sân 9", "Sân 10"],
+      "priceRules": [
+        { "days": "T2-T6", "start": "0000", "end": "0500", "pricePerHour": 80000, "recurringPricePerHour": 80000 },
+        { "days": "T2-T6", "start": "0500", "end": "1600", "pricePerHour": 40000, "recurringPricePerHour": 40000 },
+        { "days": "T2-T6", "start": "1600", "end": "1800", "pricePerHour": 80000, "recurringPricePerHour": 80000 },
+        { "days": "T2-T6", "start": "1800", "end": "2200", "pricePerHour": 100000, "recurringPricePerHour": 90000 },
+        { "days": "T2-T6", "start": "2200", "end": "2400", "pricePerHour": 80000, "recurringPricePerHour": 80000 },
+        { "days": "T7", "start": "0000", "end": "0500", "pricePerHour": 80000, "recurringPricePerHour": 80000 },
+        { "days": "T7", "start": "0500", "end": "1600", "pricePerHour": 70000, "recurringPricePerHour": 70000 },
+        { "days": "T7", "start": "1600", "end": "2400", "pricePerHour": 90000, "recurringPricePerHour": 80000 },
+        { "days": "CN", "start": "0000", "end": "2400", "pricePerHour": 90000, "recurringPricePerHour": 80000 }
+      ],
+      "source": "https://datlich.alobo.vn/san/sport_son_ta"
+    },
+    {
+      "id": "demo-nu-cuoi",
+      "name": "Sân cầu lông Nụ Cười",
+      "address": "08 Nguyễn Đức Thuận, Phường Tân Bình, Quận Tân Bình, TP. Hồ Chí Minh",
+      "districtId": "tan-binh",
+      "location": { "lat": 10.802, "lng": 106.644, "approx": true },
+      "openTime": "0500",
+      "closeTime": "2400",
+      "phone": "0963xxx798",
+      "photoUrls": [
+        "https://m-files.alobo.vn/branch/sport_nu_cuoi_badminton/main/cover-1770709924913.jpg",
+        "https://m-files.alobo.vn/branch/sport_nu_cuoi_badminton/main/avatar-1770709981884.jpg",
+        "https://m-files.alobo.vn/branch/sport_nu_cuoi_badminton/image/img-b5icec-1770023374189-thumb.jpg"
+      ],
+      "courts": ["Sân 1", "Sân 2", "Sân 3", "Sân 4", "Sân 5", "Sân 6", "Sân 7", "Sân 8", "Sân 9", "Sân 10", "Sân 11", "Sân 12"],
+      "priceRules": [
+        { "days": "T2-T6", "start": "0500", "end": "0800", "pricePerHour": 70000, "recurringPricePerHour": 60000 },
+        { "days": "T2-T6", "start": "0800", "end": "1700", "pricePerHour": 60000, "recurringPricePerHour": 50000 },
+        { "days": "T2-T6", "start": "1700", "end": "2200", "pricePerHour": 130000, "recurringPricePerHour": 120000 },
+        { "days": "T2-T6", "start": "2200", "end": "2400", "pricePerHour": 100000, "recurringPricePerHour": 80000 },
+        { "days": "T7-CN", "start": "0500", "end": "1200", "pricePerHour": 110000, "recurringPricePerHour": 100000 },
+        { "days": "T7-CN", "start": "1200", "end": "1400", "pricePerHour": 90000, "recurringPricePerHour": 80000 },
+        { "days": "T7-CN", "start": "1400", "end": "2400", "pricePerHour": 110000, "recurringPricePerHour": 100000 }
+      ],
+      "source": "https://datlich.alobo.vn/san/sport_nu_cuoi_badminton"
+    },
+    {
+      "id": "demo-minh-tam-cn2",
+      "name": "Sân Cầu Lông Minh Tâm CN2 - Phạm Văn Chiêu",
+      "address": "214/1 Phạm Văn Chiêu, Phường 8, Quận Gò Vấp, TP. Hồ Chí Minh",
+      "districtId": "go-vap",
+      "location": { "lat": 10.8509, "lng": 106.6535, "approx": true },
+      "openTime": "0600",
+      "closeTime": "2400",
+      "phone": "0986xxx011",
+      "photoUrls": [
+        "https://m-files.alobo.vn/branch/sport_san_cau_long_minh_tam/main/cover-1772025417202-thumb.jpg",
+        "https://m-files.alobo.vn/branch/sport_san_cau_long_minh_tam/main/avatar-1753246886051-thumb.jpg"
+      ],
+      "courts": ["Sân 1", "Sân 2", "Sân 3", "Sân 4", "Sân 5", "Sân 6"],
+      "priceRules": [
+        { "days": "T2-T6", "start": "0600", "end": "1800", "pricePerHour": 40000, "recurringPricePerHour": 29000 },
+        { "days": "T2-T6", "start": "1800", "end": "2200", "pricePerHour": 85000, "recurringPricePerHour": 75000 },
+        { "days": "T2-T6", "start": "2200", "end": "2400", "pricePerHour": 40000, "recurringPricePerHour": 29000 },
+        { "days": "T7-CN", "start": "0600", "end": "1600", "pricePerHour": 75000, "recurringPricePerHour": 65000 },
+        { "days": "T7-CN", "start": "1600", "end": "2200", "pricePerHour": 85000, "recurringPricePerHour": 75000 },
+        { "days": "T7-CN", "start": "2200", "end": "2400", "pricePerHour": 50000, "recurringPricePerHour": 40000 }
+      ],
+      "source": "https://datlich.alobo.vn/san/sport_san_cau_long_minh_tam"
+    }
+  ]
+}
