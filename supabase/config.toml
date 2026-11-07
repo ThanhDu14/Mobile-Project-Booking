@@ -424,12 +424,3 @@ verify_jwt = false
 
 [functions.manage-slot-blocks]
 verify_jwt = false
-
-[functions.sync-account-email]
-verify_jwt = false
-
-[functions.delete-account]
-verify_jwt = false
-
-[functions.delete-account-sweeper]
-verify_jwt = false

@@ -36,9 +36,7 @@ Deno.test("Emulator: token của Auth Emulator được chấp nhận, trả đ�
       phone: null,
       name: "Lê Hoàng Nam",
       signInProvider: "password",
-      authTime: t.authTime,
     } satisfies VerifiedToken);
-    assert((t.authTime ?? 0) > 0, "authTime lấy từ auth_time của Emulator");
   } finally {
     console.warn = original;
   }
@@ -165,7 +163,6 @@ const player: VerifiedToken = {
   phone: null,
   name: null,
   signInProvider: "password",
-  authTime: 0,
 };
 
 Deno.test("requireRole: PLAYER gọi chức năng ADMIN → 403 FORBIDDEN", () => {
@@ -189,45 +186,4 @@ Deno.test("errorResponse: đúng dạng { error: { code, message, ...extra } }",
   assertEquals(res.status, 429);
   assertEquals(res.headers.get("Content-Type"), "application/json");
   assertEquals(await res.json(), { error: { code: "RATE_LIMITED", message: "Thử lại sau", retryAfter: 30 } });
-});
-
-// ---------- Spec 011 (T072): ACCOUNT_DELETING, allowDeleting, authTime ----------
-
-Deno.test("requireUser: users/{uid}.deletionRequestedAt có giá trị → 403 ACCOUNT_DELETING", async () => {
-  await clearEmulators();
-  await commit([
-    createWrite("users/u-del", { accountStatus: "ACTIVE", role: "PLAYER", deletionRequestedAt: new Date() }),
-  ]);
-  await assertHttpError(
-    requireUser(bearer(emulatorToken({ sub: "u-del", appRole: "PLAYER" }))),
-    403,
-    "ACCOUNT_DELETING",
-  );
-});
-
-Deno.test("requireUser(allowDeleting): đang xóa vẫn trả người dùng kèm profile", async () => {
-  await clearEmulators();
-  await commit([
-    createWrite("users/u-del2", { accountStatus: "ACTIVE", role: "PLAYER", deletionRequestedAt: new Date() }),
-  ]);
-  const u = await requireUser(bearer(emulatorToken({ sub: "u-del2", appRole: "PLAYER" })), { allowDeleting: true });
-  assertEquals(u.uid, "u-del2");
-  assert(u.profile?.deletionRequestedAt instanceof Date);
-});
-
-Deno.test("requireUser(allowDeleting): users/{uid} đã bị xóa → profile = null, không lỗi", async () => {
-  await clearEmulators();
-  const u = await requireUser(bearer(emulatorToken({ sub: "u-gone", appRole: "PLAYER" })), { allowDeleting: true });
-  assertEquals([u.uid, u.profile], ["u-gone", null]);
-});
-
-Deno.test("requireUser: lời gọi cũ không có users/{uid} vẫn trả người dùng như 010", async () => {
-  await clearEmulators();
-  const u = await requireUser(bearer(emulatorToken({ sub: "u-nodoc", appRole: "PLAYER" })));
-  assertEquals([u.uid, u.appRole], ["u-nodoc", "PLAYER"]);
-});
-
-Deno.test("verifyIdToken: authTime lấy từ claim auth_time (giây)", async () => {
-  const t = await verifyIdToken(bearer(emulatorToken({ sub: "u-time", auth_time: 1_700_000_000 })));
-  assertEquals(t.authTime, 1_700_000_000);
 });

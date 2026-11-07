@@ -24,10 +24,4 @@ interface ReauthDataSource {
 
     /** Gọi ngay sau `reauthWithPassword` (US5). */
     suspend fun updatePassword(newPassword: String)
-
-    /**
-     * Gửi link xác minh tới [newEmail]; email đăng nhập chỉ đổi khi bấm link (US7, research R10). Email đã thuộc
-     * tài khoản khác thì không báo lỗi, để không lộ email nào đã đăng ký (US7-2).
-     */
-    suspend fun verifyBeforeUpdateEmail(newEmail: String)
 }

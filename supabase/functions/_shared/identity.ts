@@ -12,15 +12,13 @@ function emulatorHost(): string | undefined {
   return Deno.env.get("FIREBASE_AUTH_EMULATOR_HOST") || undefined;
 }
 
-type AccountsMethod = "lookup" | "update" | "delete";
-
-function accountsUrl(method: AccountsMethod): string {
+function accountsUrl(method: "lookup" | "update"): string {
   const host = emulatorHost();
   const base = host ? `http://${host}/identitytoolkit.googleapis.com` : "https://identitytoolkit.googleapis.com";
   return `${base}/v1/projects/${projectId()}/accounts:${method}`;
 }
 
-async function call<T>(method: AccountsMethod, body: Record<string, unknown>): Promise<T> {
+async function call<T>(method: "lookup" | "update", body: Record<string, unknown>): Promise<T> {
   const token = emulatorHost() ? "owner" : await getAccessToken([SCOPE_IDENTITY_TOOLKIT, SCOPE_CLOUD_PLATFORM]);
   const res = await fetch(accountsUrl(method), {
     method: "POST",
@@ -56,17 +54,4 @@ export async function mergeClaims(uid: string, patch: Record<string, unknown>): 
 /** Bật/tắt cờ disabled: tài khoản bị tắt không đăng nhập hay làm mới token được. */
 export async function setUserDisabled(uid: string, disabled: boolean): Promise<void> {
   await call("update", { localId: uid, disableUser: disabled });
-}
-
-/**
- * [011] Xóa hẳn người dùng khỏi Firebase Auth (`accounts:delete`), bước cuối của `delete-account`. Người dùng đã
- * không còn (`USER_NOT_FOUND`) thì coi như xong để bước này chạy lại được.
- */
-export async function deleteUser(uid: string): Promise<void> {
-  try {
-    await call("delete", { localId: uid });
-  } catch (e) {
-    if (e instanceof Error && e.message.includes("USER_NOT_FOUND")) return;
-    throw e;
-  }
 }

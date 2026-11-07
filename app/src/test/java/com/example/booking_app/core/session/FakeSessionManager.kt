@@ -7,8 +7,6 @@ class FakeSessionManager(initial: SessionState = SessionState.SignedOut(null)) :
     override val isGuest = MutableStateFlow(initial is SessionState.SignedOut)
     val refreshCalls = mutableListOf<Boolean>()
     var signOutCalls = 0
-    /** Lý do của mỗi lần gọi `signOut(reason)` (spec 011). */
-    val signOutReasons = mutableListOf<SignOutReason?>()
 
     /** Việc làm khi `refresh` (đổi vai trò, ném lỗi, treo). Mặc định không làm gì. */
     var onRefresh: suspend () -> Unit = {}
@@ -20,10 +18,6 @@ class FakeSessionManager(initial: SessionState = SessionState.SignedOut(null)) :
     override suspend fun signOut() {
         signOutCalls++
         sessionState.value = SessionState.SignedOut(null)
-    }
-    override suspend fun signOut(reason: SignOutReason?) {
-        signOutReasons += reason
-        signOut()
     }
     override fun currentUid(): String? = (sessionState.value as? SessionState.SignedIn)?.uid
     override fun currentAppRole(): AppRole? = (sessionState.value as? SessionState.SignedIn)?.appRole

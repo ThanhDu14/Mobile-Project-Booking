@@ -1,6 +1,6 @@
 // T022: chạy trên Auth Emulator (quickstart §2).
 import { assertEquals, assertRejects } from "jsr:@std/assert@1.0.19";
-import { deleteUser, getCustomClaims, mergeClaims, setCustomClaims, setUserDisabled } from "./identity.ts";
+import { getCustomClaims, mergeClaims, setCustomClaims, setUserDisabled } from "./identity.ts";
 import { clearEmulators, signInEmail, signUpEmail } from "./testing.ts";
 
 Deno.test("getCustomClaims: người dùng mới chưa có claim → {}", async () => {
@@ -44,16 +44,4 @@ Deno.test("setUserDisabled: true thì đăng nhập trả USER_DISABLED, false t
   const ok = await signInEmail("lock@example.com");
   assertEquals(ok.status, 200);
   await ok.body?.cancel();
-});
-
-// T073 (spec 011): xóa người dùng trên Auth Emulator.
-Deno.test("deleteUser: người dùng không còn trên Auth; gọi lần 2 (USER_NOT_FOUND) coi như xong", async () => {
-  await clearEmulators();
-  const { uid } = await signUpEmail("xoa@example.com");
-  await deleteUser(uid);
-  await assertRejects(() => getCustomClaims(uid), Error, "Không tìm thấy");
-  const res = await signInEmail("xoa@example.com");
-  assertEquals(res.status, 400);
-  await res.body?.cancel();
-  await deleteUser(uid);
 });

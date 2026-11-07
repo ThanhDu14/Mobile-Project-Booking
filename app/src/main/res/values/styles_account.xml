@@ -49,33 +49,4 @@
         <item name="cornerFamily">rounded</item>
         <item name="cornerSize">50%</item>
     </style>
-
-    <!-- Màn hình Xóa tài khoản (US6, wireframe buoc5) -->
-    <style name="Widget.SmashNow.DeleteSectionTitle" parent="">
-        <item name="android:layout_width">match_parent</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:layout_marginTop">@dimen/space_6</item>
-        <item name="android:layout_marginBottom">@dimen/space_2</item>
-        <item name="android:textAppearance">?attr/textAppearanceTitleMedium</item>
-        <item name="android:textColor">?attr/colorOnSurface</item>
-        <item name="android:accessibilityHeading">true</item>
-    </style>
-
-    <!-- Một dòng "Sẽ bị xóa vĩnh viễn": icon thùng rác màu đỏ, icon chỉ để trang trí. -->
-    <style name="Widget.SmashNow.DeleteRemovedRow" parent="">
-        <item name="android:layout_width">match_parent</item>
-        <item name="android:layout_height">wrap_content</item>
-        <item name="android:layout_marginTop">@dimen/space_2</item>
-        <item name="android:drawablePadding">@dimen/space_3</item>
-        <item name="android:textAppearance">?attr/textAppearanceBodyLarge</item>
-        <item name="android:textColor">?attr/colorOnSurface</item>
-        <item name="drawableStartCompat">@drawable/ic_delete_24</item>
-        <item name="drawableTint">?attr/colorError</item>
-    </style>
-
-    <!-- Nút "Xóa vĩnh viễn tài khoản": nền màu lỗi. -->
-    <style name="Widget.SmashNow.Button.Danger" parent="Widget.SmashNow.Button">
-        <item name="backgroundTint">@color/button_danger_bg</item>
-        <item name="android:textColor">@color/button_danger_text</item>
-    </style>
 </resources>

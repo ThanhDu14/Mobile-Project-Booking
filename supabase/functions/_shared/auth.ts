@@ -16,20 +16,6 @@ export interface VerifiedToken {
   phone: string | null;
   name: string | null;
   signInProvider: string;
-  /**
-   * [011] Thời điểm đăng nhập hoặc xác nhận lại danh tính gần nhất (claim `auth_time`, giây). Để tùy chọn cho code
-   * cũ tự tạo `VerifiedToken` vẫn biên dịch; `verifyIdToken` luôn điền (thiếu claim thì 0).
-   */
-  authTime?: number;
-}
-
-/** [011] Tùy chọn của `requireUser`. */
-export interface RequireUserOptions {
-  /**
-   * Chỉ `delete-account` (`confirm`) dùng: bỏ kiểm tra `deletionRequestedAt` và cho phép `users/{uid}` không còn,
-   * để lần gọi lặp sau khi chốt vẫn trả kết quả idempotent.
-   */
-  allowDeleting?: boolean;
 }
 
 export class HttpError extends Error {
@@ -138,34 +124,21 @@ export async function verifyIdToken(req: Request): Promise<VerifiedToken> {
     phone: str(p.phone_number),
     name: str(p.name),
     signInProvider: firebase.sign_in_provider ?? "unknown",
-    authTime: typeof p.auth_time === "number" ? p.auth_time : 0,
   };
 }
 
 /**
  * Dùng cho mọi function trừ `on-signup`: token hợp lệ, đã có `appRole` (403 NOT_INITIALIZED),
- * `users/{uid}.accountStatus` không phải `LOCKED` (403 ACCOUNT_LOCKED), và tài khoản không đang bị xóa
- * (`deletionRequestedAt` có giá trị → 403 ACCOUNT_DELETING, spec 011 R11). Trả kèm `profile` = `users/{uid}`
- * đã đọc (`null` khi chưa có document) để function khỏi đọc lại.
+ * và `users/{uid}.accountStatus` không phải `LOCKED` (403 ACCOUNT_LOCKED).
  */
-export async function requireUser(
-  req: Request,
-  opts: RequireUserOptions = {},
-): Promise<VerifiedToken & { appRole: AppRole; profile: Record<string, unknown> | null }> {
+export async function requireUser(req: Request): Promise<VerifiedToken & { appRole: AppRole }> {
   const token = await verifyIdToken(req);
   if (!token.appRole) throw new HttpError(403, "NOT_INITIALIZED", "Tài khoản chưa hoàn tất đăng ký");
   const user = await firestore.get(`users/${token.uid}`);
   if (user?.accountStatus === "LOCKED") {
     throw new HttpError(403, "ACCOUNT_LOCKED", "Tài khoản của bạn đã bị khóa");
   }
-  if (!opts.allowDeleting) {
-    // `users/{uid}` đã bị xóa ở bước dọn dẹp nhưng ID token cũ còn hạn: dựa vào `accountDeletions/{uid}`.
-    const deleting = user
-      ? user.deletionRequestedAt != null
-      : (await firestore.get(`accountDeletions/${token.uid}`)) != null;
-    if (deleting) throw new HttpError(403, "ACCOUNT_DELETING", "Tài khoản đã được xóa");
-  }
-  return { ...token, appRole: token.appRole, profile: user };
+  return { ...token, appRole: token.appRole };
 }
 
 /** Ném `403 FORBIDDEN` khi vai trò không nằm trong `roles`. */

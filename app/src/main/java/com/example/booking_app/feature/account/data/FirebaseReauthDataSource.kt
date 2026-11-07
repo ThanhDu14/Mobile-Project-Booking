@@ -5,7 +5,6 @@ import com.example.booking_app.core.network.awaitWithTimeout
 import com.google.firebase.auth.AuthCredential
 import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import com.google.firebase.auth.FirebaseUser
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.PhoneAuthProvider
@@ -41,14 +40,6 @@ class FirebaseReauthDataSource @Inject constructor(
 
     override suspend fun updatePassword(newPassword: String) {
         requireUser().updatePassword(newPassword).awaitWithTimeout()
-    }
-
-    override suspend fun verifyBeforeUpdateEmail(newEmail: String) {
-        try {
-            requireUser().verifyBeforeUpdateEmail(newEmail).awaitWithTimeout()
-        } catch (_: FirebaseAuthUserCollisionException) {
-            // Project chưa bật chống dò email thì Firebase báo email đã dùng: coi như đã gửi (US7-2).
-        }
     }
 
     private suspend fun reauth(user: FirebaseUser, credential: AuthCredential) {

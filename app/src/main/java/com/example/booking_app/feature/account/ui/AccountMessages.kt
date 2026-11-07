@@ -5,7 +5,7 @@ import com.example.booking_app.R
 import com.example.booking_app.core.network.AppError
 import com.example.booking_app.feature.account.domain.model.AccountError
 
-/** Chuỗi hiển thị cho lỗi của `feature/account` (FR-023).  */
+/** Chuỗi hiển thị cho lỗi của `feature/account` (FR-023). Lỗi riêng của US6, US7 thêm ở story tương ứng. */
 @StringRes
 fun accountErrorMessage(error: Throwable): Int = when (error) {
     AccountError.Network, AppError.Network, AppError.Timeout -> R.string.account_error_network
@@ -19,11 +19,6 @@ fun accountErrorMessage(error: Throwable): Int = when (error) {
     AccountError.OtpExpired -> R.string.account_error_otp_expired
     AppError.RateLimited -> R.string.account_error_too_many_attempts
     AppError.SessionRevoked -> R.string.account_session_revoked
-    AccountError.SameEmail -> R.string.account_error_same_email
-    AccountError.DeleteConfirmMismatch -> R.string.account_error_delete_confirm
-    AccountError.AdminSelfDelete -> R.string.account_error_admin_self_delete
-    AccountError.DeleteTooLarge -> R.string.account_error_delete_too_large
-    AccountError.DeleteResultUnknown -> R.string.account_error_delete_unknown_result
     else -> R.string.account_error_generic
 }
 

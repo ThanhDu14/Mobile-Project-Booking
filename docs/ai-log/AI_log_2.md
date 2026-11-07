@@ -1527,3 +1527,85 @@ Sau đợt kiểm thử trên thiết bị thật và đối chiếu kỹ lưỡ
    - Chọn slot, bấm "Giữ chỗ" → Tạo document giữ chỗ `HELD` thời gian thực trên Firestore, chuyển sang màn Xác nhận, countdown 5 phút chạy chuẩn xác.
    - Chuyển đổi qua lại 3 radio phương thức thanh toán: Bottom bar cập nhật tương ứng `0 đ` / `30%` / `toàn bộ`, breakdown giữ nguyên.
    - Bấm nút quay lại (Back) → Màn Chọn khung giờ hiển thị lại đầy đủ danh sách header các cột sân (Sân 1 PU, Sân 2 PU...), căn chỉnh thẳng hàng với các ô slot bên dưới.
+
+
+---
+
+## 13. Triển khai Toàn diện Feature 041 — Đặt Sân Cố Định Theo Tuần (02/11/2026)
+
+**Thành viên phụ trách**: Lê Quốc Hưng (`LqHung06`) — Phụ trách nhóm 04 Đặt sân (040/041/050/060)  
+**Phạm vi thực hiện**: Tasks T001 – T044 trong `specs/041-weekly-recurring-booking/tasks.md` theo phương pháp Test-Driven Development (TDD).
+
+### Chi tiết các công việc đã triển khai
+
+#### 1. Setup & Data Infrastructure (Phase 1: T001 – T003)
+- Xác nhận các thư viện bất đồng bộ: Kotlin Coroutines (`async/awaitAll`), Material 3, Turbine, MockK.
+- Xác nhận Composite Index trong `Mobile-Project-Booking/firestore.indexes.json` cho collection `slots` (`venueId`, `date`, `startTime`).
+- Tạo bộ test fixtures `app/src/test/java/com/example/booking_app/feature/booking/fixture/RecurringBookingFixtures.kt` hỗ trợ sinh dữ liệu chu kỳ 4–12 tuần, các loại mặt sân (`WOOD`, `MAT`, `PU`) và slot bận giả lập.
+
+#### 2. Domain Layer & Core Business Logic (Phase 2: T004 – T017)
+- **Domain Models & Repository Interface (2A: T004 – T005)**:
+  - `RecurringConfig.kt`, `RecurringSession.kt`, `RecurringSessionStatus.kt`, `RecurringConflict.kt`, `RecurringSummary.kt`, `RecurringHoldResult.kt`.
+  - `RecurringBookingRepository.kt` với 6 phương thức suspend chuẩn hóa.
+- **TDD RED Phase (2B: T006 – T011)**:
+  - Viết 6 file Unit Test (19 tests) phủ toàn bộ UseCases nghiệp vụ: `GenerateRecurringSessionsUseCaseTest`, `CheckRecurringAvailabilityUseCaseTest`, `ResolveRecurringConflictUseCaseTest`, `CalculateRecurringPriceUseCaseTest`, `CreateRecurringHoldTransactionUseCaseTest`, `ReleaseRecurringHoldUseCaseTest`.
+  - Chạy kiểm chứng toàn bộ 19 test báo đỏ (RED - `NotImplementedError`).
+- **TDD GREEN Phase (2C: T012 – T017)**:
+  - Cài đặt hoàn chỉnh 6 UseCases tầng domain:
+    - `GenerateRecurringSessionsUseCase`: Sinh danh sách ngày chu kỳ 4–12 tuần, tự động bỏ qua ngày/ca quá khứ trong tuần hiện tại hoặc bắt đầu từ tuần sau theo múi giờ `Asia/Ho_Chi_Minh`.
+    - `CheckRecurringAvailabilityUseCase`: Quét slot bận và tìm sân con thay thế cùng `surfaceType`.
+    - `ResolveRecurringConflictUseCase`: Xử lý đổi sân hoặc bỏ buổi, kiểm soát chặt chẽ điều kiện $\ge 4$ buổi.
+    - `CalculateRecurringPriceUseCase`: Tính tổng tiền Long VND và tiền cọc 30% làm tròn nghìn theo công thức `((rawDeposit + 500) / 1000) * 1000`.
+    - `CreateRecurringHoldTransactionUseCase`: Điều phối transaction giữ chỗ All-or-Nothing.
+    - `ReleaseRecurringHoldUseCase`: Giải phóng tài nguyên đã giữ chỗ.
+  - Chạy lại kiểm thử: **19/19 tests domain PASS (100%)**.
+
+#### 3. Data Layer & Firestore Transaction (Phase 3: T018 – T023)
+- Tạo DTOs: `RecurringGroupDto.kt`, `BookingSessionDto.kt`.
+- Cài đặt `RecurringBookingMapper.kt` chuyển đổi chuẩn xác giữa Firestore DTOs và Domain Entities.
+- Cài đặt truy vấn song song trong `FirestoreRecurringBookingRemoteDataSource.kt`:
+  - Phân tách `dates.chunked(30)` kết hợp Coroutines `async/awaitAll` để vượt giới hạn 30 phần tử của Firestore `whereIn`, phản hồi dưới 2 giây trên 4G.
+  - Giao dịch Firestore Transaction All-or-Nothing: Đọc toàn bộ các slot (Phase 1) trước khi ghi toàn bộ các slot `HELD`, đơn con `bookings` và nhóm đơn `recurringGroups` (Phase 2), kiểm soát tổng số operations luôn dưới trần 500 ops.
+  - Tích hợp điều kiện kiểm tra `acceptsRecurring` theo Hợp đồng Feature 111.
+- Triển khai `RecurringBookingRepositoryImpl.kt` và DI Hilt `RecurringBookingModule.kt`.
+
+#### 4. UI Layer & ViewModels (Phase 4: T024 – T037)
+- **Layouts XML** (Bám sát wireframe mockup `04_booking_buoc1_dat-co-dinh-theo-tuan.png`):
+  - `item_day_of_week_chip.xml`: Chip chọn thứ T2..CN kèm dot indicator xanh khi active.
+  - `fragment_booking_recurring_config.xml`: Màn hình cấu hình tuần, giờ chơi (2–6 slot 30 phút), sân ưu tiên, thời gian áp dụng (4/8/12 tuần), bắt đầu tuần này/sau, thẻ inline hiển thị kết quả kiểm tra khả dụng, card tóm tắt tài chính và cảnh báo dưới 4 buổi.
+  - `item_recurring_conflict.xml`: Thẻ giải quyết xung đột với 2 radio (Đổi sang sân cùng loại mặt sân / Bỏ qua buổi).
+  - `bottom_sheet_recurring_conflict.xml`: Layout hỗ trợ bottom sheet giải quyết xung đột.
+  - `item_recurring_session_summary.xml`: Dòng tóm tắt buổi chơi (Thứ, Ngày, Giờ, Tên sân, Đơn giá).
+  - `fragment_booking_recurring_confirm.xml`: Màn hình xác nhận chu kỳ với banner đếm ngược 5 phút, danh sách các buổi và thẻ tổng kết cọc 30%.
+  - Bổ sung tài nguyên chuỗi tiếng Việt `strings_recurring.xml`.
+- **Adapters**:
+  - `DayOfWeekChipAdapter.kt`: Quản lý chọn nhiều thứ trong tuần.
+  - `ConflictResolutionAdapter.kt`: Xử lý tương tác đổi sân hoặc bỏ buổi.
+  - `RecurringSessionSummaryAdapter.kt`: Hiển thị danh sách các buổi đặt cố định.
+- **State & ViewModel**:
+  - `BookingRecurringUiState.kt` và `BookingRecurringUiEffect.kt`.
+  - `BookingRecurringViewModel.kt`: Quản lý cấu hình chu kỳ, kích hoạt UseCases, quản lý bộ đếm ngược 5 phút (Ticker Coroutines), tự động giải phóng giữ chỗ khi timeout hoặc hủy.
+- **Controllers**:
+  - `BookingRecurringConfigFragment.kt`: Ráp nối toàn bộ luồng cấu hình và hiển thị kết quả khả dụng inline.
+  - `BookingRecurringConfirmFragment.kt`: Quan sát đếm ngược 5 phút, hiển thị danh sách các buổi đã giữ và bàn giao thanh toán.
+
+#### 5. Navigation, Integration & Edge Cases (Phase 5: T038 – T040)
+- Bổ sung SafeArgs và destinations `bookingRecurringConfigFragment`, `bookingRecurringConfirmFragment` vào `nav_player.xml`.
+- Cập nhật `HoldToPaymentArgs.kt` bổ sung thuộc tính `depositAmount: Long = 0L` mà không làm phá vỡ các luồng của Feature 040.
+- Cài đặt `OnBackPressedCallback` trên màn hình xác nhận: Bắt sự kiện Back / nút Hủy để chủ động giải phóng các slot đang giữ bằng `ReleaseRecurringHoldUseCase`, chống treo slot ảo.
+- Sử dụng UUID `requestId` đảm bảo tính Idempotency khi submit chu kỳ.
+
+#### 6. Kết quả Kiểm thử & Quality Gates (Full Pass)
+1. **Unit Tests Feature 041 (`./gradlew testDebugUnitTest --tests "*Recurring*"`)**:
+   - **26/26 tests PASS (100%)**:
+     - `CheckRecurringAvailabilityUseCaseTest`: 3/3 PASS
+     - `CreateRecurringHoldTransactionUseCaseTest`: 2/2 PASS
+     - `ReleaseRecurringHoldUseCaseTest`: 2/2 PASS
+     - `CalculateRecurringPriceUseCaseTest`: 4/4 PASS
+     - `GenerateRecurringSessionsUseCaseTest`: 5/5 PASS
+     - `ResolveRecurringConflictUseCaseTest`: 3/3 PASS
+     - `BookingRecurringViewModelTest`: 7/7 PASS
+2. **Toàn bộ Test Suite Feature Booking (`./gradlew testDebugUnitTest --tests "com.example.booking_app.feature.booking.*"`)**:
+   - **77/77 tests PASS (100%)** (Bao gồm 51 tests của Feature 040 và 26 tests của Feature 041, 0 errors, 0 failures).
+3. **Android Compilation (`./gradlew compileDebugKotlin`)**:
+   - **BUILD SUCCESSFUL**, 0 compile errors.
