@@ -39,6 +39,7 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 33 | 2026-11-04 | Tối ưu UI phản hồi chậm ở lưới 040 (P1-2 + P1-3 + P1-1) | 04 |
 | 34 | 2026-11-04 | Tối ưu độ trễ chuyển cảnh Trang chủ ↔ Đặt sân theo giờ (View Cache & Pre-warm) | 04 |
 | 35 | 2026-11-07 | Khảo sát context, làm rõ yêu cầu và cập nhật tài liệu chuẩn bị triển khai spec 060 | 06 |
+| 36 | 2026-11-07 | Đối soát tài liệu và bắt đầu triển khai spec 060; ghi rõ phần còn chặn | 06 |
 
 
 
@@ -1889,3 +1890,13 @@ Sau đợt kiểm thử trên thiết bị thật và đối chiếu kỹ lưỡ
 - Chưa quyết định quy tắc làm tròn ở nửa đồng và thời điểm hoàn lượt voucher khi chỉ hủy một phần chuỗi cố định.
 - Chưa viết lại toàn bộ plan/tasks theo quyết định mới; cần đối soát trước khi thực thi `/speckit-implement`.
 - Không chạy build/test vì lần này chỉ đọc context và cập nhật tài liệu; chưa xác minh các luồng nghiệp vụ bằng thực thi. Việc triển khai và kết quả kiểm thử sẽ ghi ở mục sau khi thực hiện thực tế.
+
+---
+
+## Mục 36: Bắt đầu triển khai spec 060
+
+- Ngày 2026-11-07, OpenCode cùng các subagent đối chiếu spec, mã hiện có và bốn wireframe. Người dùng xác nhận phạt ví 30% thực trả, làm tròn xuống bội 1.000đ; voucher chuỗi chỉ hoàn lượt khi tất cả buổi đã hủy và từng buổi đủ hoàn 100%.
+- Đồng bộ spec, plan, tasks và UI contract; tạo bốn XML sơ bộ, nhãn và logic quote Kotlin cùng unit test. Quote chỉ mang tính tham khảo, không phải thao tác hủy hoặc hoàn tiền server.
+- `JAVA_HOME=/opt/android-studio/jbr ./gradlew :app:testDebugUnitTest --tests '*RefundPolicyTest' --max-workers=1 -Dkotlin.compiler.execution.strategy=in-process`: thành công, 7 test, 0 lỗi, 0 bỏ qua. XML được parse cú pháp; chưa kiểm tra giao diện runtime do không có thiết bị/emulator.
+- Quality gate chạy đầu tiên hết thời gian; lần sau lỗi đọc `R.jar` và bị SIGKILL khi có build đồng thời. Chưa xác định nguyên nhân gốc. Quality gate tuần tự đang chạy tại thời điểm ghi mục này.
+- Review và sk-verifier xác định feature chưa hoàn thành: layout chưa nối dữ liệu/navigation; chưa có endpoint hủy người chơi, transaction hoàn tiền/slot/voucher, QR cache, kiểm thử race/rules hoặc kiểm tra bốn ảnh runtime. Rules hiện cho phép một số cập nhật trạng thái trực tiếp cần đối soát an toàn. Phụ thuộc 040/050/112 và dữ liệu chuỗi/voucher chưa hoàn chỉnh hoặc chưa xác minh. Không kiểm thử trên Firebase/Supabase thật; không push.

@@ -1,2 +1,242 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="match_parent" android:background="?android:attr/colorBackground" android:orientation="vertical"><LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:paddingHorizontal="16dp"><com.google.android.material.button.MaterialButton android:id="@+id/buttonBack" style="@style/Widget.SmashNow.Button.Outlined" android:layout_width="wrap_content" android:layout_height="wrap_content" android:minHeight="48dp" android:text="@android:string/cancel"/><TextView android:id="@+id/textDetailTitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:textAppearance="?attr/textAppearanceHeadlineSmall" /><TextView android:id="@+id/textBookingSubtitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:textAppearance="?attr/textAppearanceBodyMedium" /></LinearLayout><androidx.core.widget.NestedScrollView android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:fillViewport="true"><LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp"><com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp" app:cardBackgroundColor="?attr/colorSurface" app:strokeColor="?attr/colorOutline" app:strokeWidth="1dp" android:id="@+id/cardQr" android:visibility="gone"><LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp"><TextView android:id="@+id/textDetailStatus" android:layout_width="match_parent" android:layout_height="wrap_content" android:textAppearance="?attr/textAppearanceLabelLarge" /><ImageView android:id="@+id/imageBookingQr" android:layout_width="240dp" android:layout_height="240dp" android:layout_gravity="center" android:layout_margin="16dp" android:background="@android:color/white" android:padding="12dp" android:contentDescription="@null" android:importantForAccessibility="no" /><TextView android:id="@+id/textQrCode" android:layout_width="match_parent" android:layout_height="wrap_content" android:textAppearance="?attr/textAppearanceHeadlineSmall" android:gravity="center"/><TextView android:id="@+id/textQrInstructions" android:layout_width="match_parent" android:layout_height="wrap_content" android:textAppearance="?attr/textAppearanceBodyMedium" android:gravity="center"/><com.google.android.material.button.MaterialButton android:id="@+id/buttonIncreaseBrightness" style="@style/Widget.SmashNow.Button.Outlined" android:layout_width="wrap_content" android:layout_height="wrap_content" android:minHeight="48dp" /></LinearLayout></com.google.android.material.card.MaterialCardView><com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp" app:cardBackgroundColor="?attr/colorSurface" app:strokeColor="?attr/colorOutline" app:strokeWidth="1dp" android:id="@+id/cardCheckedIn" android:visibility="gone"><LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp"><TextView android:id="@+id/textCheckedInTitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:textAppearance="?attr/textAppearanceTitleLarge" android:gravity="center"/><TextView android:id="@+id/textCheckedInMessage" android:layout_width="match_parent" android:layout_height="wrap_content" android:textAppearance="?attr/textAppearanceBodyMedium" android:gravity="center"/></LinearLayout></com.google.android.material.card.MaterialCardView><TextView android:id="@+id/textDetailVenue" android:layout_width="match_parent" android:layout_height="wrap_content" android:textAppearance="?attr/textAppearanceTitleLarge" android:layout_marginTop="16dp"/><TextView android:id="@+id/textDetailTime" android:layout_width="match_parent" android:layout_height="wrap_content" android:textAppearance="?attr/textAppearanceTitleMedium" /><TextView android:id="@+id/textDetailCourt" android:layout_width="match_parent" android:layout_height="wrap_content" android:textAppearance="?attr/textAppearanceBodyMedium" /><TextView android:id="@+id/textDetailAddress" android:layout_width="match_parent" android:layout_height="wrap_content" android:textAppearance="?attr/textAppearanceBodyMedium" /><TextView android:id="@+id/textDetailPhone" android:layout_width="match_parent" android:layout_height="wrap_content" android:textAppearance="?attr/textAppearanceBodyMedium" /><TextView android:id="@+id/textRecurringGroup" android:layout_width="match_parent" android:layout_height="wrap_content" android:textAppearance="?attr/textAppearanceBodyMedium" /><com.google.android.material.button.MaterialButton android:id="@+id/buttonDirections" style="@style/Widget.SmashNow.Button.Outlined" android:layout_width="wrap_content" android:layout_height="wrap_content" android:minHeight="48dp" /><com.google.android.material.button.MaterialButton android:id="@+id/buttonCallVenue" style="@style/Widget.SmashNow.Button.Outlined" android:layout_width="wrap_content" android:layout_height="wrap_content" android:minHeight="48dp" /><TextView android:id="@+id/textBookingSlots" android:layout_width="match_parent" android:layout_height="wrap_content" android:textAppearance="?attr/textAppearanceBodyMedium" /><com.google.android.material.card.MaterialCardView android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="16dp" app:cardBackgroundColor="?attr/colorSurface" app:strokeColor="?attr/colorOutline" app:strokeWidth="1dp" ><LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="16dp"><TextView android:id="@+id/textPaymentTitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:textAppearance="?attr/textAppearanceTitleMedium" /><TextView android:id="@+id/textSubtotal" android:layout_width="match_parent" android:layout_height="wrap_content" android:textAppearance="?attr/textAppearanceBodyMedium" /><TextView android:id="@+id/textDiscount" android:layout_width="match_parent" android:layout_height="wrap_content" android:textAppearance="?attr/textAppearanceBodyMedium" /><TextView android:id="@+id/textPaidAmount" android:layout_width="match_parent" android:layout_height="wrap_content" android:textAppearance="?attr/textAppearanceBodyMedium" /><TextView android:id="@+id/textRemainingAmount" android:layout_width="match_parent" android:layout_height="wrap_content" android:textAppearance="?attr/textAppearanceTitleMedium" /><TextView android:id="@+id/textPaymentMethod" android:layout_width="match_parent" android:layout_height="wrap_content" android:textAppearance="?attr/textAppearanceBodyMedium" /><TextView android:id="@+id/textCreatedAt" android:layout_width="match_parent" android:layout_height="wrap_content" android:textAppearance="?attr/textAppearanceBodyMedium" /><com.google.android.material.button.MaterialButton android:id="@+id/buttonReceipt" style="@style/Widget.SmashNow.Button.Outlined" android:layout_width="wrap_content" android:layout_height="wrap_content" android:minHeight="48dp" /></LinearLayout></com.google.android.material.card.MaterialCardView><TextView android:id="@+id/textCancellationPolicy" android:layout_width="match_parent" android:layout_height="wrap_content" android:textAppearance="?attr/textAppearanceBodyMedium" android:layout_marginTop="16dp"/><com.google.android.material.button.MaterialButton android:id="@+id/buttonCancelBooking" style="@style/Widget.SmashNow.Button.Outlined" android:layout_width="wrap_content" android:layout_height="wrap_content" android:minHeight="48dp" /></LinearLayout></androidx.core.widget.NestedScrollView></LinearLayout>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?android:attr/colorBackground"
+    android:orientation="vertical">
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingHorizontal="16dp">
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/buttonBack"
+            style="@style/Widget.SmashNow.Button.Outlined"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            android:text="@string/my_bookings_060_back" />
+        <TextView
+            android:id="@+id/textDetailTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAppearance="?attr/textAppearanceHeadlineSmall"
+            android:text="@string/my_bookings_060_detail_title" />
+        <TextView
+            android:id="@+id/textBookingSubtitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAppearance="?attr/textAppearanceBodyMedium" />
+    </LinearLayout>
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                app:cardBackgroundColor="?attr/colorSurface"
+                app:strokeColor="?attr/colorOutline"
+                app:strokeWidth="1dp"
+                android:id="@+id/cardQr"
+                android:visibility="gone">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+                    <TextView
+                        android:id="@+id/textDetailStatus"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="?attr/textAppearanceLabelLarge" />
+                    <ImageView
+                        android:id="@+id/imageBookingQr"
+                        android:layout_width="240dp"
+                        android:layout_height="240dp"
+                        android:layout_gravity="center"
+                        android:layout_margin="16dp"
+                        android:background="@android:color/white"
+                        android:padding="12dp"
+                        android:contentDescription="@string/my_bookings_060_qr_description" />
+                    <TextView
+                        android:id="@+id/textQrCode"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="?attr/textAppearanceHeadlineSmall"
+                        android:gravity="center" />
+                    <TextView
+                        android:id="@+id/textQrInstructions"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:gravity="center" />
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/buttonIncreaseBrightness"
+                        style="@style/Widget.SmashNow.Button.Outlined"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:minHeight="48dp"
+                        android:text="@string/my_bookings_060_brightness" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                app:cardBackgroundColor="?attr/colorSurface"
+                app:strokeColor="?attr/colorOutline"
+                app:strokeWidth="1dp"
+                android:id="@+id/cardCheckedIn"
+                android:visibility="gone">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+                    <TextView
+                        android:id="@+id/textCheckedInTitle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="?attr/textAppearanceTitleLarge"
+                        android:gravity="center" />
+                    <TextView
+                        android:id="@+id/textCheckedInMessage"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:gravity="center" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+            <TextView
+                android:id="@+id/textDetailVenue"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceTitleLarge"
+                android:layout_marginTop="16dp" />
+            <TextView
+                android:id="@+id/textDetailTime"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceTitleMedium" />
+            <TextView
+                android:id="@+id/textDetailCourt"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceBodyMedium" />
+            <TextView
+                android:id="@+id/textDetailAddress"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceBodyMedium" />
+            <TextView
+                android:id="@+id/textDetailPhone"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceBodyMedium" />
+            <TextView
+                android:id="@+id/textRecurringGroup"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceBodyMedium" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonDirections"
+                style="@style/Widget.SmashNow.Button.Outlined"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:text="@string/my_bookings_060_directions" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonCallVenue"
+                style="@style/Widget.SmashNow.Button.Outlined"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:text="@string/my_bookings_060_call" />
+            <TextView
+                android:id="@+id/textBookingSlots"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceBodyMedium" />
+            <com.google.android.material.card.MaterialCardView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                app:cardBackgroundColor="?attr/colorSurface"
+                app:strokeColor="?attr/colorOutline"
+                app:strokeWidth="1dp">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="16dp">
+                    <TextView
+                        android:id="@+id/textPaymentTitle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="?attr/textAppearanceTitleMedium"
+                        android:text="@string/my_bookings_060_payment_title" />
+                    <TextView
+                        android:id="@+id/textSubtotal"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="?attr/textAppearanceBodyMedium" />
+                    <TextView
+                        android:id="@+id/textDiscount"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="?attr/textAppearanceBodyMedium" />
+                    <TextView
+                        android:id="@+id/textPaidAmount"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="?attr/textAppearanceBodyMedium" />
+                    <TextView
+                        android:id="@+id/textRemainingAmount"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="?attr/textAppearanceTitleMedium" />
+                    <TextView
+                        android:id="@+id/textPaymentMethod"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="?attr/textAppearanceBodyMedium" />
+                    <TextView
+                        android:id="@+id/textCreatedAt"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:textAppearance="?attr/textAppearanceBodyMedium" />
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/buttonReceipt"
+                        style="@style/Widget.SmashNow.Button.Outlined"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:minHeight="48dp"
+                        android:text="@string/my_bookings_060_receipt" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+            <TextView
+                android:id="@+id/textCancellationPolicy"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:layout_marginTop="16dp" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonCancelBooking"
+                style="@style/Widget.SmashNow.Button.Outlined"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:text="@string/my_bookings_060_cancel_booking" />
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+</LinearLayout>

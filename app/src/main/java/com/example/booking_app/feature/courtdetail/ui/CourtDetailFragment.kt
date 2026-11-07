@@ -26,6 +26,7 @@ import androidx.viewpager2.widget.ViewPager2
 import com.example.booking_app.R
 import com.example.booking_app.core.catalog.Amenity
 import com.example.booking_app.core.network.AppError
+import com.example.booking_app.core.session.AuthNavigator
 import com.example.booking_app.databinding.FragmentCourtDetailBinding
 import com.example.booking_app.databinding.ViewCourtDetailCriteriaBinding
 import com.example.booking_app.databinding.ViewCourtDetailMapBinding
@@ -34,9 +35,11 @@ import com.example.booking_app.feature.courtdetail.domain.model.LatLng
 import com.example.booking_app.feature.courtdetail.domain.model.OpeningStatus
 import com.example.booking_app.feature.courtdetail.domain.model.PhoneDisplay
 import com.google.android.material.chip.Chip
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 /**
  * Chi tiết sân (spec 030, contracts/ui-screens.md §2). Mở bằng deep link `smashnow://venue/{venueId}` hoặc action
@@ -45,6 +48,8 @@ import kotlinx.coroutines.launch
  */
 @AndroidEntryPoint
 class CourtDetailFragment : Fragment() {
+
+    @Inject lateinit var authNavigator: AuthNavigator
 
     private val viewModel: CourtDetailViewModel by viewModels()
 
@@ -448,6 +453,13 @@ class CourtDetailFragment : Fragment() {
 
     private fun handle(effect: CourtDetailEffect) {
         when (effect) {
+            is CourtDetailEffect.ShowLoginPrompt -> MaterialAlertDialogBuilder(requireContext())
+                .setMessage(R.string.court_detail_booking_login_required)
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton(R.string.court_detail_booking_login) { _, _ ->
+                    authNavigator.openLogin(findNavController())
+                }
+                .show()
             is CourtDetailEffect.OpenBookingGrid -> {
                 // TODO(B): truyền date/startTime/endTime khi 040 có tham số (research R1).
                 findNavController().navigate(
