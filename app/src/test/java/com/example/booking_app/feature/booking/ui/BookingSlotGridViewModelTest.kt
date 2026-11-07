@@ -285,40 +285,4 @@ class BookingSlotGridViewModelTest {
             assertTrue(vm.uiState.value.selectedSlotIds.contains(row3Slot.slotId))
         }
     }
-
-    @Test
-    fun onProceedClicked_singleSlotGap_emitsShowGapResolutionDialog() = runTest {
-        sessionManager.sessionState.value = SessionState.SignedIn(
-            uid = "u1",
-            appRole = com.example.booking_app.core.session.AppRole.PLAYER,
-            emailVerified = true
-        )
-        val vm = createViewModel()
-        testScheduler.advanceUntilIdle()
-
-        vm.selectDate(vm.uiState.value.dates[1])
-        testScheduler.advanceUntilIdle()
-
-        val slot0 = vm.uiState.value.matrixRows[0].slots[0]
-        val slot1 = vm.uiState.value.matrixRows[1].slots[0]
-        val slot3 = vm.uiState.value.matrixRows[3].slots[0]
-        val slot4 = vm.uiState.value.matrixRows[4].slots[0]
-
-        vm.onSlotClicked(slot0)
-        vm.onSlotClicked(slot1)
-        vm.onSlotClicked(slot3)
-        vm.onSlotClicked(slot4)
-        assertEquals(4, vm.uiState.value.selectedSlotsCount)
-
-        vm.uiEffect.test {
-            vm.onProceedClicked()
-            val effect = awaitItem()
-            assertTrue(effect is BookingSlotUiEffect.ShowGapResolutionDialog)
-            val dialogEffect = effect as BookingSlotUiEffect.ShowGapResolutionDialog
-            assertEquals("Sân 1", dialogEffect.courtName)
-            assertTrue(dialogEffect.canAddSlot)
-            assertNotNull(dialogEffect.gapSlotToAdd)
-            assertEquals(2, dialogEffect.trailingBlockSlotsToRemove.size)
-        }
-    }
 }

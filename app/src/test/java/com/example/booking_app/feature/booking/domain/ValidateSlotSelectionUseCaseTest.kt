@@ -28,8 +28,6 @@ class ValidateSlotSelectionUseCaseTest {
             status = status
         )
 
-    private val slot0500 = createSlot("0500", "0530")
-    private val slot0530 = createSlot("0530", "0600")
     private val slot0600 = createSlot("0600", "0630")
     private val slot0630 = createSlot("0630", "0700")
     private val slot0700 = createSlot("0700", "0730")
@@ -41,7 +39,6 @@ class ValidateSlotSelectionUseCaseTest {
     private val slot1000 = createSlot("1000", "1030")
 
     private val allSlots = listOf(
-        slot0500, slot0530,
         slot0600, slot0630, slot0700, slot0730,
         slot0800, slot0830, slot0900, slot0930, slot1000
     )
@@ -72,18 +69,15 @@ class ValidateSlotSelectionUseCaseTest {
     }
 
     @Test
-    fun selectNonAdjacentSlot_doesNotResetChain_createsNewBlock() {
+    fun selectNonAdjacentSlot_resetsChainAndStartsNewSelection() {
         val state1 = useCase(SlotSelectionState(), slot0600, allSlots)
         val state2 = useCase(state1, slot0630, allSlots)
         assertEquals(2, state2.selectedSlots.size)
 
         // Click non-adjacent slot 0800
         val state3 = useCase(state2, slot0800, allSlots)
-        assertEquals(3, state3.selectedSlots.size)
-        val ids = state3.selectedSlots.map { it.slotId }
-        assertTrue(ids.contains(slot0600.slotId))
-        assertTrue(ids.contains(slot0630.slotId))
-        assertTrue(ids.contains(slot0800.slotId))
+        assertEquals(1, state3.selectedSlots.size)
+        assertEquals(slot0800.slotId, state3.selectedSlots.first().slotId)
     }
 
     @Test
@@ -115,7 +109,7 @@ class ValidateSlotSelectionUseCaseTest {
     }
 
     @Test
-    fun deselectMiddleOfChain_splitsIntoTwoBlocks_keepsBoth() {
+    fun deselectMiddleOfChain_truncatesFromMiddleToEnd() {
         var state = SlotSelectionState()
         state = useCase(state, slot0600, allSlots)
         state = useCase(state, slot0630, allSlots)
@@ -123,13 +117,10 @@ class ValidateSlotSelectionUseCaseTest {
         state = useCase(state, slot0730, allSlots)
         assertEquals(4, state.selectedSlots.size)
 
-        // Deselect middle slot (0630) -> splits into [0600] and [0700, 0730]
+        // Deselect middle slot (0630) -> cuts off 0630, 0700, 0730
         val afterDeselect = useCase(state, slot0630, allSlots)
-        assertEquals(3, afterDeselect.selectedSlots.size)
-        val ids = afterDeselect.selectedSlots.map { it.slotId }
-        assertTrue(ids.contains(slot0600.slotId))
-        assertTrue(ids.contains(slot0700.slotId))
-        assertTrue(ids.contains(slot0730.slotId))
+        assertEquals(1, afterDeselect.selectedSlots.size)
+        assertEquals(listOf(slot0600.slotId), afterDeselect.selectedSlots.map { it.slotId })
     }
 
     @Test
@@ -198,7 +189,8 @@ class ValidateSlotSelectionUseCaseTest {
     }
 
     @Test
-    fun nonAdjacentClickOnOneCourt_addsBlockOnThatCourtAndKeepsOtherCourts() {
+    fun nonAdjacentClickOnOneCourt_resetsOnlyThatCourtAndKeepsOtherCourts() {
+        // Q1 & Q9: Bấm không liền kề trên sân A reset sân A, giữ nguyên sân B và báo lỗi
         val court2Id = "court-02"
         val court2Slot0600 = slot0600.copy(courtId = court2Id, slotId = "${court2Id}_${date}_0600")
         val court2Slot0630 = slot0630.copy(courtId = court2Id, slotId = "${court2Id}_${date}_0630")
@@ -214,14 +206,18 @@ class ValidateSlotSelectionUseCaseTest {
         // Bấm slot không liền kề trên Court 1 (0800)
         val afterNonAdjacent = useCase(state, slot0800, allMultiCourtSlots)
 
-        // Court 1 có 3 slots (0600, 0630, 0800)
+        // Court 1 chỉ còn 1 slot mới (0800)
         val court1Slots = afterNonAdjacent.selectedSlots.filter { it.courtId == courtId }
-        assertEquals(3, court1Slots.size)
+        assertEquals(1, court1Slots.size)
+        assertEquals(slot0800.slotId, court1Slots.first().slotId)
 
         // Court 2 vẫn giữ nguyên 2 slot
         val court2Slots = afterNonAdjacent.selectedSlots.filter { it.courtId == court2Id }
         assertEquals(2, court2Slots.size)
-        assertEquals(5, afterNonAdjacent.selectedSlots.size)
+        assertEquals(3, afterNonAdjacent.selectedSlots.size)
+
+        // Báo lỗi Q9
+        assertEquals("Vui lòng chọn các khung giờ liên tiếp trên cùng sân", afterNonAdjacent.errorMessage)
     }
 
     @Test
@@ -338,69 +334,5 @@ class ValidateSlotSelectionUseCaseTest {
         // All courts complete (>= 2 slots) -> null
         val court2Slot0630 = slot0630.copy(courtId = court2Id, slotId = "${court2Id}_${date}_0630")
         assertEquals(null, useCase.findIncompleteCourt(listOf(slot0600, slot0630, court2Slot0600, court2Slot0630), courtNames))
-    }
-
-    @Test
-    fun validateForProceed_gap1Slot_failsWithFormattedGap() {
-        // A: 0500-0600 (slot0500, slot0530)
-        // B: 0630-0730 (slot0630, slot0700)
-        // Gap is 0600-0630 (1 slot = 30m) -> CẤM
-        val courtNames = mapOf(courtId to "Sân 1")
-        val selected = listOf(slot0500, slot0530, slot0630, slot0700)
-        val state = SlotSelectionState(selectedSlots = selected)
-
-        assertFalse(useCase.isSelectionValid(selected))
-        val result = useCase.validateForProceed(state, courtNames)
-        assertTrue(result.isFailure)
-        val message = result.exceptionOrNull()?.message ?: ""
-        assertTrue("Message should mention gap: $message", message.contains("06:00–06:30") || message.contains("6:00–6:30") || message.contains("06:00-06:30"))
-        assertTrue("Message should mention Sân 1: $message", message.contains("Sân 1"))
-    }
-
-    @Test
-    fun validateForProceed_gap2Slots_passes() {
-        // A: 0500-0600 (slot0500, slot0530)
-        // B: 0700-0800 (slot0700, slot0730)
-        // Gap is 0600-0700 (2 slots = 1 hour) -> ALLOWED
-        val courtNames = mapOf(courtId to "Sân 1")
-        val selected = listOf(slot0500, slot0530, slot0700, slot0730)
-        val state = SlotSelectionState(selectedSlots = selected)
-
-        assertTrue(useCase.isSelectionValid(selected))
-        val result = useCase.validateForProceed(state, courtNames)
-        assertTrue(result.isSuccess)
-    }
-
-    @Test
-    fun validateForProceed_singleSlotBlockWith2Gap_passes() {
-        // A: 0500-0600 (slot0500, slot0530) - 2 slots
-        // B: 0700-0730 (slot0700) - 1 slot
-        // Total = 3 slots (>= 2). Gap = 0600-0700 (2 slots >= 2) -> ALLOWED
-        val courtNames = mapOf(courtId to "Sân 1")
-        val selected = listOf(slot0500, slot0530, slot0700)
-        val state = SlotSelectionState(selectedSlots = selected)
-
-        assertTrue(useCase.isSelectionValid(selected))
-        val result = useCase.validateForProceed(state, courtNames)
-        assertTrue(result.isSuccess)
-    }
-
-    @Test
-    fun gapOnCourt1_doesNotAffectCourt2() {
-        val court2Id = "court-02"
-        val courtNames = mapOf(courtId to "Sân 1", court2Id to "Sân 2")
-        val court2Slot0600 = slot0600.copy(courtId = court2Id, slotId = "${court2Id}_${date}_0600")
-        val court2Slot0630 = slot0630.copy(courtId = court2Id, slotId = "${court2Id}_${date}_0630")
-
-        // Court 1 has gap 1 slot (0500-0600 and 0630-0730)
-        // Court 2 has continuous 2 slots
-        val selected = listOf(slot0500, slot0530, slot0630, slot0700, court2Slot0600, court2Slot0630)
-        val state = SlotSelectionState(selectedSlots = selected)
-
-        val result = useCase.validateForProceed(state, courtNames)
-        assertTrue(result.isFailure)
-        val message = result.exceptionOrNull()?.message ?: ""
-        assertTrue(message.contains("Sân 1"))
-        assertFalse(message.contains("Sân 2"))
     }
 }

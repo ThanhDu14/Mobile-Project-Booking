@@ -304,25 +304,6 @@ class BookingSlotGridFragment : Fragment() {
                                 bundle
                             )
                         }
-
-                        is BookingSlotUiEffect.ShowGapResolutionDialog -> {
-                            val builder = com.google.android.material.dialog.MaterialAlertDialogBuilder(requireContext())
-                                .setTitle("Khoảng trống không hợp lệ")
-                                .setMessage("${effect.courtName} đang trống lẻ 1 khung ${effect.gapInfo.formattedRange()} giữa 2 khối đã chọn. Khung này không thể bán cho người khác.")
-                                .setNegativeButton("Quay lại tự sửa", null)
-
-                            if (effect.canAddSlot && effect.gapSlotToAdd != null) {
-                                builder.setPositiveButton("Thêm ${effect.gapInfo.formattedRange()} để nối liền") { _, _ ->
-                                    viewModel.onAddGapSlot(effect.gapSlotToAdd)
-                                }
-                            }
-                            if (effect.trailingBlockSlotsToRemove.isNotEmpty()) {
-                                builder.setNeutralButton("Bỏ khối ${effect.trailingBlockRange}") { _, _ ->
-                                    viewModel.onRemoveTrailingBlock(effect.trailingBlockSlotsToRemove)
-                                }
-                            }
-                            builder.show()
-                        }
                     }
                 }
             }

@@ -2,14 +2,12 @@ package com.example.booking_app.feature.auth.ui.home
 
 import android.os.Bundle
 import android.view.View
-import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.navigation.fragment.findNavController
 import com.example.booking_app.R
 import com.example.booking_app.core.ui.VerifyEmailBannerEvent
 import com.example.booking_app.core.ui.VerifyEmailBannerViewModel
@@ -32,15 +30,6 @@ class PlayerHomePlaceholderFragment : Fragment(R.layout.fragment_home_placeholde
         super.onViewCreated(view, savedInstanceState)
         val binding = FragmentHomePlaceholderBinding.bind(view)
         binding.title.setText(R.string.auth_home_placeholder_player)
-
-        // TODO(030): xem ghi chú ở layout.
-        binding.btnTempBookingGrid.setOnClickListener {
-            findNavController().navigate(
-                R.id.bookingSlotGridFragment,
-                bundleOf("venueId" to "demo-truong-chinh-909")
-            )
-        }
-
         binding.verifyEmailBanner.onResendClick = bannerViewModel::onResend
 
         viewLifecycleOwner.lifecycleScope.launch {

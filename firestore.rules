@@ -1,9 +1,8 @@
 // BẢN GỘP DRAFT — chưa deploy. Cách gộp: lấy file rules đang chạy trên Firestore
-// (bản paste từ Console) làm nền, giữ nguyên khối users bản 011 + districts +
+// (bản Đại ca paste từ Console) làm nền, giữ nguyên khối users bản 011 + districts +
 // accountDeletions, rồi thêm khối venues/courts/priceRules + slots từ repo.
-// LƯU Ý: bản deploy đã paste kết thúc bằng dấu phẩy thừa — hãy xác nhận không còn
+// LƯU Ý: bản deploy Đại ca paste kết thúc bằng dấu phẩy thừa — hãy xác nhận không còn
 // match nào khác phía dưới accountDeletions trước khi dùng bản này để deploy.
-// 03/11/2026: thêm khối recurringGroups + bookings (B, spec 041).
 rules_version = '2';
 
 // Rules nền dùng chung. Quyền chi tiết của từng collection do người phụ trách
@@ -248,37 +247,6 @@ service cloud.firestore {
                     );
 
       allow delete: if isAdmin() || (isSignedIn() && resource.data.holdBy == request.auth.uid);
-    }
-
-    // ---------- recurringGroups + bookings (B, spec 041) ----------
-    // Giữ chỗ 041 ghi 3 collection trong 1 transaction: slots + recurringGroups
-    // + bookings. slots đã có rule; 2 collection này trước đây chưa có match nên
-    // transaction luôn bị chặn (PERMISSION_DENIED).
-    match /recurringGroups/{groupId} {
-      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow create: if isPlayer()
-          && request.resource.data.userId == request.auth.uid
-          && request.resource.data.status == 'HOLD'
-          && request.resource.data.holdExpiresAt is timestamp
-          && request.resource.data.holdExpiresAt <= request.time + duration.value(5, 'm')
-          && request.resource.data.holdExpiresAt > request.time;
-      // Hủy / hết hạn bởi chính người giữ. CONFIRMED chưa mở ở đây — spec 050
-      // (thanh toán) sẽ mở rộng khi làm, không tự mở trước.
-      allow update: if isPlayer() && resource.data.userId == request.auth.uid
-          && onlyChanges(['status'])
-          && request.resource.data.status in ['CANCELLED', 'EXPIRED'];
-      allow delete: if false;
-    }
-
-    match /bookings/{bookingId} {
-      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
-      allow create: if isPlayer()
-          && request.resource.data.userId == request.auth.uid
-          && request.resource.data.status == 'HOLD';
-      allow update: if isPlayer() && resource.data.userId == request.auth.uid
-          && onlyChanges(['status'])
-          && request.resource.data.status in ['CONFIRMED', 'CANCELLED', 'EXPIRED'];
-      allow delete: if false;
     }
   }
 }

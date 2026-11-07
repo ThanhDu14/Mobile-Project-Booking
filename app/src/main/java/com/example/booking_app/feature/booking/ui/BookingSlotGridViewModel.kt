@@ -290,56 +290,12 @@ class BookingSlotGridViewModel @Inject constructor(
             return
         }
 
-        // 2. Kiểm tra khoảng trống lẻ 1 khung (bám sát luật §5)
-        val allCurrentSlots = _uiState.value.matrixRows.flatMap { it.slots }
-        val courtGroups = selectionState.selectedSlots.groupBy { it.courtId }
+        // 2. Kiểm tra điều kiện tối thiểu 2 slots và tối đa 8 slots theo từng sân (FR-026)
         val courtNameMap = activeCourts.associate { it.id to it.name }
-
-        for ((courtId, courtSlots) in courtGroups) {
-            val invalidGaps = validateSlotSelectionUseCase.findSingleSlotGaps(courtSlots)
-            if (invalidGaps.isNotEmpty()) {
-                val gap = invalidGaps.first()
-                val courtName = courtNameMap[courtId] ?: "Sân"
-
-                // Tìm ô trống lẻ trong ma trận
-                val gapSlot = allCurrentSlots.find {
-                    it.courtId == courtId && it.startTime == gap.gapStartTime && it.endTime == gap.gapEndTime
-                }
-                val canAdd = gapSlot != null &&
-                    gapSlot.status == SlotStatus.AVAILABLE &&
-                    courtSlots.size + 1 <= ValidateSlotSelectionUseCase.MAX_SLOTS_PER_COURT
-
-                // Khối phía sau khoảng trống lẻ
-                val trailingSlots = courtSlots.filter { it.startTime >= gap.gapEndTime }.sortedBy { it.startTime }
-                val trailingRange = if (trailingSlots.isNotEmpty()) {
-                    val start = formatHourMinute(trailingSlots.first().startTime)
-                    val end = formatHourMinute(trailingSlots.last().endTime)
-                    "$start–$end"
-                } else {
-                    ""
-                }
-
-                viewModelScope.launch {
-                    _uiEffect.send(
-                        BookingSlotUiEffect.ShowGapResolutionDialog(
-                            courtName = courtName,
-                            gapInfo = gap,
-                            canAddSlot = canAdd,
-                            gapSlotToAdd = gapSlot,
-                            trailingBlockSlotsToRemove = trailingSlots,
-                            trailingBlockRange = trailingRange
-                        )
-                    )
-                }
-                return
-            }
-        }
-
-        // 3. Kiểm tra điều kiện tối thiểu 2 slots và tối đa 8 slots theo từng sân (FR-026)
         val validationResult = validateSlotSelectionUseCase.validateForProceed(selectionState, courtNameMap)
         if (validationResult.isFailure) {
             val msg = validationResult.exceptionOrNull()?.message
-                ?: "Vui lòng chọn tối thiểu 2 khung giờ cho mỗi sân"
+                ?: "Vui lòng chọn tối thiểu 2 khung giờ liên tiếp cho mỗi sân"
             viewModelScope.launch {
                 _uiEffect.send(BookingSlotUiEffect.ShowErrorSnackbar(msg))
             }
@@ -455,55 +411,6 @@ class BookingSlotGridViewModel @Inject constructor(
 
         viewModelScope.launch {
             _uiEffect.send(BookingSlotUiEffect.ShowConflictWarning(message))
-        }
-    }
-
-    fun onAddGapSlot(slot: TimeSlot) {
-        onSlotClicked(slot)
-    }
-
-    fun onRemoveTrailingBlock(slotsToRemove: List<TimeSlot>) {
-        val remainingSlots = selectionState.selectedSlots.filterNot { selected ->
-            slotsToRemove.any { it.slotId == selected.slotId }
-        }
-        applyUpdatedSlots(remainingSlots)
-    }
-
-    private fun applyUpdatedSlots(slots: List<TimeSlot>) {
-        val selectedIds = slots.map { it.slotId }.toSet()
-        val (total, deposit) = calculateTotalPriceUseCase(slots)
-        selectionState = selectionState.copy(
-            selectedSlots = slots,
-            totalPrice = total,
-            depositAmount = deposit,
-            isValid = validateSlotSelectionUseCase.isSelectionValid(slots)
-        )
-
-        val updatedMatrixRows = _uiState.value.matrixRows.map { row ->
-            val updatedSlots = row.slots.map { slot ->
-                when {
-                    selectedIds.contains(slot.slotId) -> slot.copy(status = SlotStatus.SELECTED)
-                    slot.status == SlotStatus.SELECTED -> slot.copy(status = SlotStatus.AVAILABLE)
-                    else -> slot
-                }
-            }
-            row.copy(slots = updatedSlots)
-        }
-
-        val courtNameMap = activeCourts.associate { it.id to it.name }
-        val incompleteHint = validateSlotSelectionUseCase.findIncompleteCourt(slots, courtNameMap)
-        val summaryText = incompleteHint ?: formatSelectionSummary(slots)
-
-        _uiState.update {
-            it.copy(
-                matrixRows = updatedMatrixRows,
-                selectedSlots = slots,
-                selectedSlotIds = selectedIds,
-                totalPrice = total,
-                depositAmount = deposit,
-                canProceed = selectionState.isValid,
-                selectionDetailSummary = summaryText
-            )
         }
     }
 
