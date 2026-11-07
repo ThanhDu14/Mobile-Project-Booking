@@ -40,6 +40,8 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 34 | 2026-11-04 | Tối ưu độ trễ chuyển cảnh Trang chủ ↔ Đặt sân theo giờ (View Cache & Pre-warm) | 04 |
 | 35 | 2026-11-07 | Khảo sát context, làm rõ yêu cầu và cập nhật tài liệu chuẩn bị triển khai spec 060 | 06 |
 | 36 | 2026-11-07 | Đối soát tài liệu và bắt đầu triển khai spec 060; ghi rõ phần còn chặn | 06 |
+| 37 | 2026-11-07 | Kiểm tra và sửa thông báo đăng nhập khi đặt sân từ chi tiết sân | 04 |
+| 38 | 2026-11-07 | Nối tab Lịch đặt đến màn placeholder 060 và kiểm tra trên thiết bị | 06 |
 
 
 
@@ -1900,3 +1902,22 @@ Sau đợt kiểm thử trên thiết bị thật và đối chiếu kỹ lưỡ
 - `JAVA_HOME=/opt/android-studio/jbr ./gradlew :app:testDebugUnitTest --tests '*RefundPolicyTest' --max-workers=1 -Dkotlin.compiler.execution.strategy=in-process`: thành công, 7 test, 0 lỗi, 0 bỏ qua. XML được parse cú pháp; chưa kiểm tra giao diện runtime do không có thiết bị/emulator.
 - Quality gate chạy đầu tiên hết thời gian; lần sau lỗi đọc `R.jar` và bị SIGKILL khi có build đồng thời. Chưa xác định nguyên nhân gốc. Quality gate tuần tự đang chạy tại thời điểm ghi mục này.
 - Review và sk-verifier xác định feature chưa hoàn thành: layout chưa nối dữ liệu/navigation; chưa có endpoint hủy người chơi, transaction hoàn tiền/slot/voucher, QR cache, kiểm thử race/rules hoặc kiểm tra bốn ảnh runtime. Rules hiện cho phép một số cập nhật trạng thái trực tiếp cần đối soát an toàn. Phụ thuộc 040/050/112 và dữ liệu chuỗi/voucher chưa hoàn chỉnh hoặc chưa xác minh. Không kiểm thử trên Firebase/Supabase thật; không push.
+
+---
+
+## Mục 37: Kiểm tra nút đặt sân từ chi tiết sân
+
+- Người dùng báo bấm Đặt sân không phản hồi. Logcat chẩn đoán trên thiết bị cho thấy phiên tại lần bấm là `SignedOut`, effect yêu cầu đăng nhập được phát nhưng Fragment bỏ qua.
+- Thêm hộp thoại nhắc đăng nhập và sử dụng AuthNavigator; bỏ log chẩn đoán. Build và cài debug thành công bằng `JAVA_HOME=/opt/android-studio/jbr ./gradlew :app:installDebug --max-workers=1`.
+- Kiểm tra trên điện thoại: khi đăng xuất hiện đúng thông báo và hai lựa chọn; sau đó trở về chi tiết và bấm Đặt sân, màn 040 hiển thị tên CLB Cầu Lông Gia Hân. Không chọn slot hoặc tạo đơn. Không ghi thông tin tài khoản, token hay mã sân trong log.
+- `JAVA_HOME=/opt/android-studio/jbr ./gradlew :app:testDebugUnitTest --tests '*CourtDetailViewModelUs1Test' --tests '*CheckVenueBookableUseCaseTest' --max-workers=1`: thành công, 15 test, 0 lỗi, 0 bỏ qua. Chưa kiểm tra đầy đủ các tài khoản, lỗi mạng hay khả năng bảo toàn khung tìm kiếm từ 030 sang 040; 040 hiện chỉ nhận `venueId`.
+
+---
+
+## Mục 38: Kết nối tab Lịch đặt tới placeholder 060
+
+- Thêm `myBookingsFragment` vào `nav_player`, deep link `smashnow://bookings/mine`, route chọn tab và mapping selected tab trong `MainActivity`; Account giữ sáng tab Lịch đặt nếu được mở từ màn này.
+- Tạo `MyBookingsFragment` dùng layout danh sách 060, khóa filter, ẩn RecyclerView và hiện “Tính năng đang phát triển”, không giả dữ liệu booking. Phiên SignedOut được nhắc đăng nhập.
+- Build/test command `JAVA_HOME=/opt/android-studio/jbr ./gradlew :app:testDebugUnitTest :app:assembleDebug --max-workers=1`: assembleDebug không chạy tới vì unit test thất bại. Kết quả toàn bộ: 786 test, 2 failure ở `GenerateDailySlotsUseCaseTest.generateDailySlots_assignsPastStatus_forElapsedSlotsToday` và `OwnerBookingsViewModelTest.emitsBookingsAndFiltersByPendingUpcomingPast`. Không có bằng chứng hai lỗi do thay đổi này. Có cảnh báo nav_account được include nhiều lần trong manifest debug.
+- Sau đó `JAVA_HOME=/opt/android-studio/jbr ./gradlew :app:installDebug --max-workers=1` thành công. Kiểm tra Android SM-A546E: tab mở tiêu đề “Lịch đặt của tôi”, placeholder “Tính năng đang phát triển”, tab Lịch đặt được chọn; chuyển Home rồi quay lại Lịch đặt thành công. Không test tài khoản riêng bằng dữ liệu thật.
+- Chưa có truy vấn danh sách, filter hoạt động, chi tiết, hủy, QR hay server integration; đây chỉ là điểm vào UI placeholder. Không push.

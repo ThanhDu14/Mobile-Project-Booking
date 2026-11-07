@@ -14,6 +14,13 @@
             android:id="@+id/action_home_to_courtDetail"
             app:destination="@id/nav_court_detail" />
     </fragment>
+    <fragment
+        android:id="@+id/myBookingsFragment"
+        android:name="com.example.booking_app.feature.booking_management.ui.MyBookingsFragment"
+        android:label="@string/my_bookings_060_title">
+        <deepLink app:uri="smashnow://bookings/mine" />
+    </fragment>
+
     <!-- Lưới đặt sân (040): Trang chủ → chi tiết sân (030) → nút "Đặt sân". -->
 
     <fragment
