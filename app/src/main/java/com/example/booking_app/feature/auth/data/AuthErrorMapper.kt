@@ -27,6 +27,7 @@ object AuthErrorMapper {
         AppError.Network, AppError.Timeout -> AuthError.Network
         AppError.Locked -> AuthError.AccountLocked
         AppError.RateLimited -> AuthError.TooManyAttempts
+        AppError.Conflict -> AuthError.Unknown(error)
         is AppError.Unknown -> error.cause?.let(::map) ?: AuthError.Unknown(error)
         is FirebaseTooManyRequestsException -> AuthError.TooManyAttempts
         is FirebaseAuthException -> mapAuthException(error)
