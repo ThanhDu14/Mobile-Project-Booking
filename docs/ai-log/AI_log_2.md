@@ -34,6 +34,10 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 28 | 2026-10-27 | Kết nối Feature 040 với data seed của Duy & Gỡ toàn bộ data ảo trong production | 04 |
 | 29 | 2026-10-27 | Gộp và kiểm chứng Firestore Rules, kiểm tra triển khai và dữ liệu Seed | 04 |
 | 30 | 2026-10-27 | Cập nhật Bottom Bar màn Xác nhận 040 hiển thị "Thanh toán ngay" theo Radio | 04, 05 |
+| 31 | 2026-11-04 | Tối ưu load 040/041 + chống đụng độ và lỗi đúng đắn (P0-1 đến P0-7) | 04 |
+| 32 | 2026-11-04 | Kích hoạt đồng bộ offset giờ server P0-7, check đụng độ & countdown | 04 |
+| 33 | 2026-11-04 | Tối ưu UI phản hồi chậm ở lưới 040 (P1-2 + P1-3 + P1-1) | 04 |
+| 34 | 2026-11-04 | Tối ưu độ trễ chuyển cảnh Trang chủ ↔ Đặt sân theo giờ (View Cache & Pre-warm) | 04 |
 
 
 
@@ -1455,7 +1459,7 @@ Sau đợt kiểm thử trên thiết bị thật và đối chiếu kỹ lưỡ
   - Tìm kiếm giá hardcode: `grep -rn "50_000\|130_000\|court-01\|rule-01"` $\rightarrow$ **0 kết quả**.
   - Tìm kiếm mock slot: `grep -rn "defaultMock"` $\rightarrow$ **0 kết quả**.
 
-#### 3. Kết quả Kiểm thử & Quality Gates (Full Pass)
+### 3. Kết quả Kiểm thử & Quality Gates (Full Pass)
 1. **Unit Tests (`./gradlew testDebugUnitTest`)**:
    - **226/226 tests PASS (100%)**.
 2. **Build Package Debug (`./gradlew assembleDebug`)**:
@@ -1609,3 +1613,252 @@ Sau đợt kiểm thử trên thiết bị thật và đối chiếu kỹ lưỡ
    - **77/77 tests PASS (100%)** (Bao gồm 51 tests của Feature 040 và 26 tests của Feature 041, 0 errors, 0 failures).
 3. **Android Compilation (`./gradlew compileDebugKotlin`)**:
    - **BUILD SUCCESSFUL**, 0 compile errors.
+
+---
+
+## 14. Tối ưu load 040/041 + chống đụng độ và xử lý lỗi đúng đắn (P0) (04/11/2026)
+
+**Thành viên phụ trách**: Lê Quốc Hưng (`LqHung06`) — Phụ trách nhóm 04 Đặt sân (040/041/050/060)  
+**Phạm vi thực hiện**: Giải quyết 3 điểm nghẽn hiệu năng (waterfall load ban đầu, tải thừa slot AVAILABLE, sequential reads) và 4 lỗi đúng đắn (trùng recurringGroups, zombie HELD hết hạn, thiếu cache TTL, lệch giờ máy client) theo 7 task P0: P0-2 → P0-5 → P0-1 → P0-3 → P0-4 → P0-6 → P0-7.
+
+### Chi tiết các công việc đã triển khai
+
+#### 1. P0-2: Song song hoá và Cache in-memory TTL (5 phút) cho lượt đọc ban đầu
+- **Xây dựng Cache**: Tạo `VenueMetadataCache.kt` singleton (Hilt) quản lý in-memory metadata: `venue (name, openTime, closeTime, status, acceptsRecurring)`, `courts`, `priceRules`. TTL = 5 phút (300.000 ms), hỗ trợ injectable clock (`AppClock`) và cờ `forceRefresh: Boolean = false`.
+- **Tích hợp Cache vào Repository**:
+  - `BookingRepositoryImpl.getVenueInfo`, `getActiveCourts`, `getPriceRules`: ưu tiên đọc cache, miss/hết hạn mới gọi remote data source và ghi cache.
+  - `RecurringBookingRepositoryImpl`: inject `VenueMetadataCache`, tái sử dụng dữ liệu sân và bảng giá đã lưu từ màn 040.
+- **Song song hoá ViewModels**:
+  - `BookingSlotGridViewModel.loadVenueAndSlots`: đọc song song `getVenueInfo`, `getPriceRules`, `getActiveCourts` qua `async/awaitAll` thay cho luồng tuần tự (waterfall 3 bước). Khi danh sách sân sẵn sàng mới gắn listener realtime cho slots.
+  - `BookingRecurringViewModel.loadData`: đọc song song `isRecurringAccepted`, `courts`, `priceRules` và lấy `venueName` trực tiếp từ cache đưa vào `uiState.venueName`.
+
+#### 2. P0-5: Bỏ lượt đọc Venue thừa trong Transaction giữ chỗ 041
+- `RecurringBookingRepositoryImpl.holdRecurringBookingTransaction` lấy `venueName` trực tiếp từ `VenueMetadataCache` (hoặc state) thay vì gọi `remoteDataSource.getVenueName(venueId)` gây thêm 1 network roundtrip.
+- Xóa bỏ hoàn toàn hàm `getVenueName` trong `RecurringBookingRemoteDataSource` và `FirestoreRecurringBookingRemoteDataSource` do không còn nơi nào trong codebase sử dụng.
+
+#### 3. P0-1: Lọc slot bận trên server (041 + 040)
+- **041 (`FirestoreRecurringBookingRemoteDataSource.getBusySlotsForDates`)**:
+  - Thay vì tải toàn bộ slot của các ngày (kể cả AVAILABLE ~6.000 docs), thực hiện deduplicate `dates` và query song song theo từng ngày: `.whereEqualTo("venueId", venueId).whereEqualTo("date", date).whereIn("status", listOf("BOOKED", "BLOCKED", "HELD"))`.
+- **040 (`FirestoreBookingRemoteDataSource.getBusySlotsRealtime`)**:
+  - Bổ sung filter `.whereIn("status", listOf("BOOKED", "BLOCKED", "HELD"))` vào `SnapshotListener` realtime, chỉ tải các slot bận/khóa/giữ thay vì tải toàn bộ ~380 slot/ngày.
+- **Composite Index**:
+  - Khai báo composite index collection `slots` trong `firestore.indexes.json`: `venueId ASC, date ASC, status ASC`.
+
+#### 4. P0-3: Stable `requestId` và Idempotent giữ chỗ
+- **040 (`BookingSlotGridViewModel`)**:
+  - Duy trì `currentRequestId` ổn định khi ViewModel khởi tạo.
+  - Chỉ sinh lại `currentRequestId` mới khi: (a) tập `selectedSlots` thay đổi (thêm/bớt slot); (b) người dùng đổi ngày hoặc xóa lựa chọn (`clearSelection()`).
+  - Retry hoặc bấm nhiều lần gửi cùng `requestId` (đã được `FirestoreBookingRemoteDataSource.holdSlotsAtomic` hỗ trợ kiểm tra `isSameUserAndRequest`).
+- **041 (`BookingRecurringViewModel` & Repository)**:
+  - Duy trì `currentRequestId` ổn định, chỉ sinh lại khi người dùng thay đổi cấu hình chu kỳ (`onDaysSelected`, `onTimeRangeSelected`, `onPreferredCourtSelected`, `onDurationWeeksSelected`, `onStartNextWeekSelected`).
+  - Gán deterministic ID: `recurringGroupId = requestId`, `bookingId = "$requestId-$date-$startTime"`.
+  - `FirestoreRecurringBookingRemoteDataSource.holdRecurringBookingTransaction`: Kiểm tra document `recurringGroups/{recurringGroupId}` ở đầu Phase 1 (Reads). Nếu đã tồn tại với cùng `userId` và `status == "HOLD"` thì coi như transaction đã thành công từ lượt gọi trước và trả về kết quả thành công mà không ghi đè hoặc sinh duplicate booking docs; nếu khác `userId` hoặc khác trạng thái thì ném `AppError.Conflict`.
+
+#### 5. P0-4: Xử lý slot HELD đã hết hạn trên lưới 040 (Chống Zombie HELD)
+- **`GenerateDailySlotsUseCase`**:
+  - Khi so khớp `busySlots`: nếu slot có `status == SlotStatus.HELD` nhưng `holdExpiresAtMillis != null && holdExpiresAtMillis <= currentTimeMillis` thì tự động giải phóng coi như `SlotStatus.AVAILABLE` (hoặc `SlotStatus.PAST` nếu giờ bắt đầu ca đã qua).
+- **`BookingSlotGridViewModel`**:
+  - `onSlotClicked`: nếu slot là `HELD` nhưng đã hết hạn (`holdExpiresAtMillis <= now`), không chặn thông báo lỗi, cho phép người dùng chọn bình thường.
+  - Bổ sung cơ chế làm mới định kỳ (`startPeriodicExpiryCheck()` chạy mỗi 30 giây trong `onResume()` / dừng trong `onPause()`) tự động gọi lại `processBusySlots` với local `latestBusySlots` và `now` mới để giải phóng hiển thị các slot HELD đã hết hạn mà Firestore server chưa kịp xóa.
+
+#### 6. P0-6: Guard giới hạn 500 writes của Firestore Transaction trong 041
+- Trong `CreateRecurringHoldTransactionUseCase`: tính toán trước tổng số writes sẽ thực thi: `totalWrites = 1 + validSessions.size + validSessions.sumOf { it.slotIds.size }`.
+- Nếu `totalWrites > 500`: trả về `Result.failure(IllegalArgumentException("Số khung giờ đặt vượt quá giới hạn 500 của hệ thống, vui lòng giảm số tuần hoặc số thứ"))`, chặn request từ tầng usecase trước khi gửi lên Firestore.
+- Bổ sung Unit Tests kiểm tra biên chặt chẽ: kịch bản 500 writes pass, kịch bản 501 writes bị chặn đúng quy tắc.
+
+#### 7. P0-7: Đồng bộ offset giờ server cho `holdExpiresAt` và phân tách lỗi PERMISSION_DENIED
+- **Đồng bộ Clock Drift (Lựa chọn a - không đụng Rules)**:
+  - Tạo `ServerTimeOffsetProvider.kt` singleton tính `serverTimeOffsetMillis = serverTime - localTime` từ `iat` claim / `issuedAtTimestamp` của Firebase Auth token.
+  - Sử dụng `serverTimeOffsetProvider.now()` khi tính `holdExpiresAtMillis = now + 5 phút` trong cả 040 (`FirestoreBookingRemoteDataSource.holdSlotsAtomic`) và 041 (`RecurringBookingRepositoryImpl.holdRecurringBookingTransaction`), đảm bảo không bị Security Rules từ chối do đồng hồ client chạy nhanh.
+- **Phân tách `PERMISSION_DENIED`**:
+  - Trong `BookingRepositoryImpl.mapToAppError` và `RecurringBookingRepositoryImpl.mapToAppError`:
+    - `UNAUTHENTICATED -> AppError.NotSignedIn`.
+    - `PERMISSION_DENIED ->` nếu user đã đăng nhập trả về `AppError.Unknown(SecurityException(...))`, không gộp vào `NotSignedIn` để tránh kích hoạt luồng đăng xuất tài khoản khi bị Rules từ chối do vi phạm quy tắc nghiệp vụ / clock drift.
+
+### Kết quả Kiểm thử & Đo đạc
+
+1. **Unit Tests Android (`./gradlew testDebugUnitTest --tests "com.example.booking_app.feature.booking.*"`)**:
+   - **99/99 tests PASS (100%)** trên 18 test suites:
+     - Thêm mới `VenueMetadataCacheTest` (5 tests): TTL 5 phút, force refresh, cache hit/miss, clear.
+     - Thêm mới `ServerTimeOffsetProviderTest` (4 tests): clock offset, token sync.
+     - Bổ sung `CreateRecurringHoldTransactionUseCaseTest`: kiểm tra biên 500 và 501 writes.
+     - Bổ sung `GenerateDailySlotsUseCaseTest`: slot HELD hết hạn chuyển thành AVAILABLE.
+     - Bổ sung `BookingRepositoryImplTest`: phân tách UNAUTHENTICATED và PERMISSION_DENIED.
+2. **Firestore Emulator Rules Test Suite (`cd firestore-tests && npm test`)**:
+   - **15/15 test files PASS (100%)**, **144/144 tests PASS (100%)**.
+   - Bao gồm toàn bộ suite `recurringHoldTransaction.test.ts` (T042 E2E).
+3. **Đo đạc Document Count đọc trước và sau P0-1**:
+   - **Lưới 040 (1 ngày, cơ sở 12 sân, 32 ca/sân/ngày = 384 slot/ngày)**:
+     - Trước P0-1: Đọc toàn bộ slot trong ngày $\to$ **384 documents/lần mở**.
+     - Sau P0-1 (giả sử có 15 slot bận BOOKED/BLOCKED/HELD): Đọc với filter `status in ["BOOKED", "BLOCKED", "HELD"]` $\to$ **15 documents**.
+     - Giảm tải: **~96.1% số document đọc**.
+   - **Cố định 041 (16 buổi chu kỳ 16 tuần, cơ sở 12 sân = 384 slot/ngày $\times$ 16 ngày = 6.144 slot)**:
+     - Trước P0-1: Query mọi slot trong 16 ngày $\to$ **~6.144 documents/lần kiểm tra**.
+     - Sau P0-1 (giả sử trung bình 5 slot bận/ngày trên toàn cơ sở): Query 16 ngày song song $\to$ $16 \times 5 =$ **~80 documents**.
+     - Giảm tải: **~98.7% số document đọc**.
+
+
+---
+
+## 15. Kích hoạt đồng bộ offset giờ server (Fix P0-7 hoàn chỉnh) (04/11/2026)
+
+**Thành viên phụ trách**: Lê Quốc Hưng (`LqHung06`) — Phụ trách nhóm 04 Đặt sân (040/041/050/060)  
+**Phạm vi thực hiện**: Kích hoạt mạch đồng bộ offset giờ server thực tế cho `ServerTimeOffsetProvider`, chuyển đổi toàn bộ logic check đụng độ trong transaction và bộ đếm ngược trên các màn hình xác nhận sang giờ server.
+
+### Chi tiết các công việc đã triển khai
+
+#### 1. Kích hoạt `ensureSynced()` trong `ServerTimeOffsetProvider`
+- Bổ sung `ensureSynced(forceRefresh: Boolean = false)` với khoảng cách tối thiểu 1 giờ (`SYNC_INTERVAL_MS = 3.600.000 ms`). Chỉ gọi mạng đồng bộ offset khi chưa từng sync hoặc lần sync cuối đã quá 1 giờ; nếu xảy ra ngoại lệ giữ nguyên offset hiện tại, không crash app và không gián đoạn luồng đặt sân.
+- Dùng `Mutex` chống gọi đồng thời nhiều request lấy token Firebase Auth.
+- Gọi kích hoạt ở 2 nơi:
+  - **(a) Eager tại thời điểm đăng nhập**: Trong `MainViewModel`, theo dõi `sessionState` và gọi `serverTimeOffsetProvider.ensureSynced()` ngay khi phát hiện trạng thái `SessionState.SignedIn`.
+  - **(b) Lazy trước khi giữ chỗ**: Tại đầu `BookingRepositoryImpl.holdSlotsAtomic` (040), `FirestoreBookingRemoteDataSource.holdSlotsAtomic`, `RecurringBookingRepositoryImpl.holdRecurringBookingTransaction` (041), và `FirestoreRecurringBookingRemoteDataSource.holdRecurringBookingTransaction`.
+
+#### 2. Dùng giờ server kiểm tra đụng độ trong Firestore Transaction
+- **040 (`FirestoreBookingRemoteDataSource.holdSlotsAtomic`)**: Thay thế `Timestamp.now()` bằng `val nowMillis = serverTimeOffsetProvider.now()` và `val now = Timestamp(Date(nowMillis))`. Cả việc so khớp ca quá khứ (`slotStartMillis <= nowMillis`) và kiểm tra slot `HELD` còn hiệu lực (`holdExpiresAt > now`) đều dùng giờ chuẩn server.
+- **041 (`FirestoreRecurringBookingRemoteDataSource.holdRecurringBookingTransaction`)**: Inject `ServerTimeOffsetProvider`, thay thế `Timestamp.now()` bằng `serverTimeOffsetProvider.now()`. Kiểm tra slot quá khứ và so sánh hạn giữ chỗ chu kỳ hoàn toàn độc lập với đồng hồ máy khách.
+
+#### 3. Đồng bộ đếm ngược tại 2 màn hình xác nhận giữ chỗ
+- **Màn 040 (`BookingConfirmFragment`)**: Inject `ServerTimeOffsetProvider`, tính thời gian đếm ngược còn lại: `remainingMillis = holdExpiresAtMillis - serverTimeOffsetProvider.now()`.
+- **Màn 041 (`BookingRecurringConfirmFragment`)**: Inject `ServerTimeOffsetProvider`, tính thời gian đếm ngược: `millisRemaining = (args.holdExpiresAtMillis - serverTimeOffsetProvider.now()).coerceAtLeast(0L)`.
+- Nhờ `holdExpiresAtMillis` và `now()` đều theo giờ server, bộ đếm ngược hiển thị chính xác ~5:00 dù đồng hồ máy người dùng có bị chỉnh nhanh hay chậm.
+
+### Kết quả Kiểm thử
+
+1. **Android Unit Tests (`./gradlew testDebugUnitTest --tests "com.example.booking_app.feature.booking.*"`)**:
+   - **105/105 tests PASS (100%)** trên 18 test suite (0 failure, 0 error).
+   - `ServerTimeOffsetProviderTest` (9/9 PASS): kiểm tra sync 1 lần khi gọi liên tiếp, tự động resync sau 1 giờ, bảo toàn offset khi lỗi mạng, force refresh.
+   - `RecurringHoldTransactionTest` (4/4 PASS): kiểm tra giữ chỗ với clock drift (máy chậm 2 phút) vẫn ghi đúng hạn giữ chỗ theo giờ server.
+   - `BookingRepositoryImplTest` (12/12 PASS): kiểm tra `ensureSynced` được gọi khi giữ chỗ.
+2. **Firestore Emulator Rules Test Suite (`npm test`)**:
+   - **15/15 test files PASS (100%)**, **144/144 tests PASS (100%)**.
+
+---
+
+## 16. Tối ưu UI phản hồi chậm ở lưới 040 (P1-2 + P1-3 + P1-1) (04/11/2026)
+
+**Thành viên phụ trách**: Lê Quốc Hưng (`LqHung06`) — Phụ trách nhóm 04 Đặt sân (040/041/050/060)  
+**Phạm vi thực hiện**: Xử lý triệt để hiện tượng đơ UI, giật lag, rớt khung hình (Choreographer skipped frames, OpenGLRenderer Davey!) trên màn hình lưới chọn khung giờ đặt sân (Feature 040).
+
+### 1. Số đo trước khi tối ưu (Benchmark JVM & Logcat)
+- **Logcat thực tế trước tối ưu (build sau P0)**: Mở lưới nhảy `Skipped 122 frames!`, `Davey! duration=2228ms`; mỗi lần click chọn slot nhảy `Skipped 78–107 frames`, `Davey! 1.3–1.9s`; đổi ngày đơ 1–2 giây.
+- **Đo thời gian build vs bind/layout**:
+  - `GenerateDailySlotsUseCase` (10 sân × 38 slot, 61 price rules): ~5.76 ms (trên CPU Core i5 Desktop), tương đương 100–200 ms trên CPU ARM di động khi chạy tuần tự trên Main thread.
+  - Quét tuyến tính bảng giá `firstOrNull`: 61 rules × 380 slot = ~23.000 so sánh mỗi lần rebuild ma trận.
+  - Khâu ghép ma trận (stitching) tìm slot theo `find { it.startTime == timeRaw }`: 38 × 10 = 380 lần tìm kiếm trên danh sách 38 phần tử = 14.440 so sánh, mất ~2.67 ms.
+  - Tái tạo toàn bộ 38 `SlotMatrixRow` mới mỗi lần bấm ô khiến `ListAdapter` / `DiffUtil` phải quét so sánh toàn bộ các hàng và cell, ép RecyclerView rebind nhiều hàng.
+
+### 2. Chi tiết các công việc đã triển khai
+
+#### A. P1-2: Index Price Rules + Chuyển build ma trận & tính toán sang background thread
+- **`GenerateDailySlotsUseCase`**:
+  - Tạo cấu trúc `IndexedPriceRules` index sẵn theo `(dayOfWeek, 48 slot 30 phút) -> PriceRule?`.
+  - Giữ nguyên 100% ngữ nghĩa matching của `firstOrNull`: `daysOfWeek` rỗng = mọi ngày; slot nằm trọn trong `[startTime, endTime]`; rule đầu tiên trong list thắng khi chồng lấn; không rule nào khớp thì slot thành `BLOCKED` với lý do `NO_PRICE_RULE`.
+  - Giúp tra cứu giá mỗi slot đạt $O(1)$ thay vì quét tuyến tính toàn bộ danh sách quy tắc.
+  - Bổ sung test golden `goldenTest_indexedRulesMatchesFirstOrNullExactSemantics` khóa chặt tính tương đương.
+- **`BookingSlotGridViewModel`**:
+  - Inject `@param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default`.
+  - Đưa toàn bộ tác vụ nặng (`buildMatrix`, xử lý `latestBusySlots`, áp delta) sang `withContext(defaultDispatcher)`.
+  - Thay thế thuật toán ghép hàng từ `find` sang truy cập theo chỉ mục $O(1)$ (`courtSlotsMap[court.id]?.getOrNull(slotIdx)`), triệt tiêu hoàn toàn 14.440 so sánh khi ghép hàng.
+  - Tối ưu DiffUtil: trong `onSlotClicked`, `applyUpdatedSlots`, `clearSelection`, `handleHoldConflict`, chỉ tạo đối tượng mới cho các hàng có slot thay đổi (`row.timeRaw in affectedStartTimes`). Các hàng không đổi giữ nguyên tham chiếu đối tượng (`row`), cho phép `DiffUtil` (`oldItem === newItem`) bỏ qua tức thì trong 0ms.
+
+#### B. P1-3: Mở màn: Bẻ gãy waterfall + Render lạc quan + Sửa `isLoading`
+- **Bẻ gãy waterfall**: Khởi chạy `observeRealtimeSlots(_uiState.value.selectedDate)` ngay tại $t = 0$ song song với 3 lời gọi metadata (`getVenueInfo`, `getPriceRules`, `getActiveCourts`).
+- **Xử lý race condition**: Nếu Firestore snapshot về trước khi metadata hoàn tất, lưu snapshot vào `latestBusySlotsUpdate`. Khi metadata tải xong trong `courtsResult.onSuccess`, tự động đọc snapshot này để dựng ma trận mà không làm thất thoát dữ liệu.
+- **Render lạc quan lúc mở màn**: Nếu metadata về trước khi có snapshot từ Firestore, lập tức dựng và hiển thị ma trận toàn bộ slot `AVAILABLE` kèm đầy đủ giá trên `defaultDispatcher` trong ~1ms và tắt loading. Khi snapshot về sẽ cập nhật đè các slot bận lên.
+- **Render lạc quan lúc đổi ngày (`selectDate`)**: Khi người dùng chuyển ngày, lập tức render ma trận lạc quan ngày mới với trạng thái AVAILABLE, xóa lựa chọn cũ và gắn listener mới. Người dùng thấy ngay lưới ngày mới mà không bị khựng đơ hay hiển thị màn hình trắng.
+- **Sửa `isLoading`**: Chỉ chuyển `isLoading = false` khi ma trận đầu tiên (lạc quan hoặc thật) đã hoàn tất và gán vào `_uiState.value.matrixRows`. Tuyệt đối không còn tình trạng header hiện trước, lưới trắng trơn rồi slot mới nhảy ra sau.
+
+#### C. P1-1: Cập nhật ma trận theo delta (`DocumentChange`)
+- **Tầng Remote Data Source (`FirestoreBookingRemoteDataSource`)**:
+  - Lắng nghe `snapshot.documentChanges` và phát hiện các loại thay đổi `ADDED`, `MODIFIED`, `REMOVED`.
+  - Đóng gói thành `BusySlotsUpdateDto(allSlots, isInitial, changes)`. Lần phát đầu tiên (`isInitial = true`) chứa toàn bộ slot bận; các lần phát sau (`isInitial = false`) chỉ chứa các thay đổi delta.
+- **Tầng Repository & Domain**:
+  - Định nghĩa model `BusySlotsUpdate`, `SlotChange`, `SlotChangeType` và mapper tương ứng.
+- **Tầng UI (`BookingSlotGridViewModel`)**:
+  - Khi nhận delta update: chỉ định vị đúng hàng chứa slot thay đổi theo `startTime`, cập nhật trạng thái ô và giữ nguyên tham chiếu các hàng khác.
+  - **Xử lý `REMOVED`**: Khi slot `HELD` hết hạn hoặc bị hủy đặt (rời khỏi query `[BOOKED, BLOCKED, HELD]`), xử lý `REMOVED` đưa slot về lại `AVAILABLE` (hoặc `PAST`/`BLOCKED` nếu quá giờ/thiếu rule).
+  - **Phát hiện đụng độ Realtime**: Nếu slot người dùng đang chọn bị người khác giữ hoặc đặt (`MODIFIED`/`ADDED` sang `HELD`/`BOOKED`), tự động gỡ khỏi danh sách chọn và phát `ShowConflictWarning`.
+  - Cập nhật liên tục `latestBusySlots = update.allBusySlots` để tính năng tự động dọn HELD hết hạn định kỳ 30s (P0-4) tiếp tục hoạt động chính xác.
+
+#### D. Khắc phục triệt để đơ UI khi đổi ngày (Zero-allocation View Binding & Single Atomic State Emission)
+- **Chuẩn đoán từ Logcat máy ảo / thiết bị thật**: Dù logic đã chuyển sang background, khi đổi ngày UI vẫn ghi nhận `Skipped 84–92 frames! Davey! duration=1594–1638ms`.
+- **Nguyên nhân cốt lõi**:
+  - `selectDate` phát sinh 4 lần emit state dồn dập (`clearSelection` mang ngày cũ -> `selectedDate` -> `optimisticRows` -> Firestore initial snapshot).
+  - `SlotMatrixRowAdapter.bind` gọi `ItemSlotMatrixCellBinding.bind(cellView)` cho 380 ô (38 hàng × 10 sân) $\to$ 1.520 lần gọi `findViewById` và 1.140 lần `ContextCompat.getColor` trên Main thread.
+  - `DefaultItemAnimator` của RecyclerView khi nhận 38 hàng thay đổi chạy cross-fade đồng thời, giữ cùng lúc cả view cũ và mới (76 hàng = 760 `MaterialCardView`).
+  - Liên tục mutate drawable trên 380 card bo góc 8dp dù trạng thái ô vẫn là `AVAILABLE`.
+- **Giải pháp xử lý**:
+  - **`BookingSlotGridViewModel.selectDate`**: Tính ma trận lạc quan đồng bộ (~0,2ms qua `IndexedPriceRules`) và cập nhật StateFlow đúng 1 lần nguyên tử duy nhất (ngày mới + ma trận lạc quan mới + reset selection). Trong `onBusySlotsUpdate`, bỏ qua re-render thừa nếu Firestore trả về 0 slot bận.
+  - **`SlotMatrixRowAdapter`**:
+    - Cache trực tiếp `cellBindings: ArrayList<ItemSlotMatrixCellBinding>` trong `RowViewHolder` $\to$ giảm 1.520 lần `findViewById` về **0 lần**.
+    - Pre-resolve màu trạng thái một lần duy nhất qua `ColorHolder` $\to$ giảm 1.140 lần `ContextCompat.getColor` về **0 lần**.
+    - Bỏ qua re-styling đối với ô giữ nguyên trạng thái `AVAILABLE` (chiếm ~90% tổng số ô) $\to$ tránh mutate drawable không cần thiết.
+    - Hỗ trợ `PAYLOAD_UPDATE` trong `RowDiffCallback` & `onBindViewHolder(..., payloads)` để DiffUtil rebind in-place.
+  - **`BookingSlotGridFragment`**:
+    - Tắt `itemAnimator = null` cho cả `rvSlotMatrixRows` và `rvDateSelector`, triệt tiêu hoàn toàn hiện tượng lag máy ảo do cross-fade hàng loạt view.
+    - **Áp dụng Fragment View Caching (`cachedView`)**: Giữ lại view hierarchy đã inflate khi màn hình nằm trên Back Stack (`onDestroyView`). Khi người dùng bấm Back từ màn Xác nhận (040) hoặc Đặt cố định (041), `onCreateView` trả về `cachedView` trong **0ms**, loại bỏ hoàn toàn việc parse lại XML và inflate 380 ô ma trận, xóa sổ độ trễ 1–2 giây khi quay về. View chỉ được giải phóng khi Fragment thực sự bị destroy (`onDestroy`).
+  - **`PlayerHomePlaceholderFragment`**:
+    - Prefetch ngầm thông tin cơ sở, bảng giá, danh sách sân vào `VenueMetadataCache` qua background IO ngay khi người chơi vào Trang chủ. Khi người dùng bấm "Đặt sân theo giờ", toàn bộ metadata đã có sẵn trong RAM cache, mở lưới và render lạc quan ngay lập tức mà không phải chờ mạng.
+  - **`BookingSlotGridViewModel`**:
+    - Gộp kết quả tải ban đầu (`loadVenueAndSlots`) thành 1 lần cập nhật StateFlow nguyên tử duy nhất, thay thế chuỗi 4 lần emit dồn dập.
+    - Trì hoãn việc set `isHolding = false` đến đúng thời điểm điều hướng, tránh re-render toàn bộ lưới slot ngay trước khi chuyển màn hình Xác nhận.
+  - **`BookingConfirmFragment`**:
+    - Bổ sung timeout 3.000ms cho kết nối tải ảnh cơ sở, tránh nghẽn thread.
+    - Chuyển lệnh gọi `releaseHoldUseCase` sang `lifecycleScope` của Fragment để đảm bảo tác vụ nhả slot luôn hoàn tất ngay cả khi View đã bị pop khỏi màn hình.
+
+### 3. Kết quả Kiểm thử
+1. **Android Unit Tests (`./gradlew testDebugUnitTest --tests "com.example.booking_app.feature.booking.*"`)**:
+   - **112/112 tests PASS (100%)** trên 18 test suite files (0 failure, 0 error).
+   - Bổ sung 6 test cases mới cho P1:
+     - `p1_2_matrixBuiltOnDefaultDispatcher_hasExpectedRowsAndSlots`: kiểm tra ma trận 38 hàng, 2 sân con được dựng chính xác trên background dispatcher.
+     - `p1_3_raceCondition_snapshotArrivesBeforeMetadata_matrixBuiltSuccessfully`: kiểm tra snapshot Firestore về trước metadata không làm rớt dữ liệu.
+     - `p1_3_optimisticRender_showsAvailableSlotsBeforeSnapshotArrives`: kiểm tra ma trận lạc quan hiển thị trước khi snapshot về và được patch chính xác sau đó.
+     - `p1_3_selectDate_rendersOptimisticMatrixImmediately`: kiểm tra đổi ngày render ngay lập tức ma trận ngày mới.
+     - `p1_1_applyDelta_addedModifiedRemoved`: kiểm tra áp delta ADDED, MODIFIED và REMOVED phục hồi slot về AVAILABLE.
+     - `p1_1_applyDelta_realtimeConflict_removesSelectedSlotAndWarns`: kiểm tra đụng độ realtime tự động loại slot đang chọn và cảnh báo người dùng.
+   - Golden test `goldenTest_indexedRulesMatchesFirstOrNullExactSemantics` trong `GenerateDailySlotsUseCaseTest` đạt 100% độ chuẩn xác.
+2. **Firestore Emulator Rules Test Suite (`npm test`)**:
+   - **15/15 test files PASS (100%)**, **144/144 tests PASS (100%)**.
+
+---
+
+## Mục 34: Tối ưu triệt để độ trễ chuyển cảnh Trang chủ ↔ Đặt sân theo giờ (View Cache & Pre-warm)
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-04 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 04 – Đặt sân (spec `specs/040-booking-slot-grid`) |
+| Công cụ AI | Antigravity |
+| Mục đích | Loại bỏ hoàn toàn độ trễ 1–2 giây khi người chơi từ Trang chủ bấm "Đặt sân theo giờ", và khi quay về Trang chủ rồi vào lại |
+| Nhánh Git | `feature/041-weekly-recurring-booking` |
+
+### 1. Vấn đề và Nguyên nhân Gốc rễ
+- **Hiện tượng**: Sau khi tối ưu các thao tác bên trong màn 040 và chuyển sang 041/Xác nhận (đổi ngày, chọn slot, back từ Xác nhận/Đặt cố định), người dùng phản hồi vẫn còn độ trễ 1–2 giây khi từ Trang chủ bấm vào "Đặt sân theo giờ", và đặc biệt khi quay về Trang chủ rồi bấm vào lại vẫn bị delay 1–2 giây.
+- **Phân tích Logcat & Chuẩn đoán mã nguồn**:
+  1. Khi người dùng từ màn Lưới bấm Back về Trang chủ, Jetpack Navigation pop `BookingSlotGridFragment` khỏi Back Stack $\to$ Fragment instance bị hủy hoàn toàn (`onDestroyView` và `onDestroy`).
+  2. Ở các phiên bản trước, `cachedView` chỉ là thuộc tính cá thể (instance property) nên bị giải phóng trong `onDestroy`. Khi người chơi bấm lại "Đặt sân theo giờ", một Fragment instance mới toanh được tạo ra với `cachedView = null`.
+  3. Lưới ma trận `rvSlotMatrixRows` nằm trong `NestedScrollView` với `layout_height="wrap_content"`, ép Android phải đo đạc toàn bộ chiều cao ảo (~1900dp) và đồng bộ inflate 380 ô ma trận (`ItemSlotMatrixCellBinding`) từ file XML thông qua `LayoutInflater` reflection trên Main thread, gây nghẽn CPU mất 1,2–1,6 giây (`Skipped 81–84 frames! Davey! duration=1542–1606ms`).
+  4. Lần đầu vào màn hình từ Trang chủ cũng phải chịu thời gian parse layout XML `fragment_booking_slot_grid.xml` (gần 500 dòng XML) ngay khi người dùng chạm nút.
+
+### 2. Các Giải pháp Đã Triển khai
+1. **Global View Cache liên-Fragment (`globalCachedView` trong companion object)**:
+   - Lưu trữ `globalCachedView`, `globalBinding`, `cachedVenueId` và cờ `isViewInitialized` trong `BookingSlotGridFragment.companion object`.
+   - Trong `onDestroyView()`, chỉ tháo `globalCachedView` ra khỏi ViewGroup cha (`(globalCachedView?.parent as? ViewGroup)?.removeView(globalCachedView)`) và gán `_binding = null`, tuyệt đối **không** giải phóng cây view trong `onDestroy()`.
+   - Khi người chơi từ Trang chủ bấm lại "Đặt sân theo giờ", `onCreateView` nhận diện `cachedVenueId == currentVenueId` và trả về `globalCachedView` ngay lập tức (**0ms**), bỏ qua hoàn toàn việc parse XML và inflate 380 ô ma trận.
+2. **Tái gắn Listener mượt mà không cấp phát lại (`onViewCreated`)**:
+   - Khi tái sử dụng view cache, `onViewCreated` nhận diện adapters và layout managers đã sẵn sàng.
+   - Gọi `matrixAdapter.setOnSlotClickListener` và `dateAdapter.setOnDateClickListener` để bind lại các lambda callback trỏ vào ViewModel và Fragment instance mới mà không cần cấp phát lại Adapter hay reset data.
+3. **Pre-warm View Hierarchy tại thời điểm Idle của Trang chủ**:
+   - Trong `PlayerHomePlaceholderFragment.onViewCreated`, đăng ký một `IdleHandler` trên Main Looper (`Looper.myQueue().addIdleHandler`).
+   - Khi CPU và Main thread hoàn tất vẽ Trang chủ và rơi vào trạng thái rảnh rỗi (idle), `BookingSlotGridFragment.prewarm()` tự động inflate layout màn lưới ngầm và nạp vào `globalCachedView`.
+   - Nhờ đó, ngay cả **lần đầu tiên bấm** "Đặt sân theo giờ", màn hình cũng đã có sẵn cây view và mở lên tức thì.
+4. **Quản lý Vòng đời & Chống rò rỉ bộ nhớ (Zero Memory Leak)**:
+   - Trong `MainActivity.onDestroy()`, gọi `BookingSlotGridFragment.clearViewCache()` để dọn dẹp view cache khi Activity chính bị hủy.
+   - Nếu người chơi chọn cơ sở khác (`cachedVenueId != currentVenueId`), `clearViewCache()` tự động hủy view cũ để nạp layout cho cơ sở mới.
+
+### 3. Kết quả Kiểm chứng
+- **Compile Kotlin**: `./gradlew :app:compileDebugKotlin` thành công 100% (`BUILD SUCCESSFUL`).
+- **Android Unit Tests**: `./gradlew :app:testDebugUnitTest --tests "com.example.booking_app.feature.booking.*"` đạt **112/112 tests PASS (100%)** trên 18 files.
+- **Build APK Debug**: `./gradlew :app:assembleDebug` thành công 100% (`BUILD SUCCESSFUL in 1m 24s`).

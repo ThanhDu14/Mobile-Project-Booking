@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.booking_app.core.session.SessionManager
+import com.example.booking_app.feature.booking.data.cache.VenueMetadataCache
 import com.example.booking_app.feature.booking.domain.model.Court
 import com.example.booking_app.feature.booking.domain.model.PriceRule
 import com.example.booking_app.feature.booking.domain.model.RecurringConfig
@@ -23,6 +24,7 @@ import com.example.booking_app.feature.booking.ui.state.BookingRecurringUiEffect
 import com.example.booking_app.feature.booking.ui.state.BookingRecurringUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -44,7 +46,8 @@ class BookingRecurringViewModel @Inject constructor(
     private val resolveRecurringConflictUseCase: ResolveRecurringConflictUseCase,
     private val calculateRecurringPriceUseCase: CalculateRecurringPriceUseCase,
     private val createRecurringHoldTransactionUseCase: CreateRecurringHoldTransactionUseCase,
-    private val releaseRecurringHoldUseCase: ReleaseRecurringHoldUseCase
+    private val releaseRecurringHoldUseCase: ReleaseRecurringHoldUseCase,
+    private val venueMetadataCache: VenueMetadataCache? = null
 ) : ViewModel() {
 
     val venueId: String = savedStateHandle["venueId"] ?: ""
@@ -64,12 +67,17 @@ class BookingRecurringViewModel @Inject constructor(
     private var selectedCourtId: String = ""
     private var selectedDurationWeeks: Int = 8
     private var isStartNextWeek: Boolean = false
+    private var currentRequestId: String = UUID.randomUUID().toString()
 
     init {
         loadInitialData()
     }
 
     fun loadInitialData() {
+        loadData()
+    }
+
+    fun loadData(forceRefresh: Boolean = false) {
         if (venueId.isEmpty()) {
             _uiState.update { it.copy(errorMessage = "Không tìm thấy mã cơ sở") }
             return
@@ -78,8 +86,16 @@ class BookingRecurringViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
 
+            val isAcceptedDeferred = async { repository.isRecurringAccepted(venueId, forceRefresh) }
+            val courtsDeferred = async { repository.getActiveCourts(venueId, forceRefresh) }
+            val priceRulesDeferred = async { repository.getPriceRules(venueId, forceRefresh) }
+
+            val isAcceptedResult = isAcceptedDeferred.await()
+            val courtsResult = courtsDeferred.await()
+            val priceRulesResult = priceRulesDeferred.await()
+            val venueName = venueMetadataCache?.getVenueInfo(venueId, forceRefresh)?.name.orEmpty()
+
             // 1. Kiểm tra cơ sở có chấp nhận đặt cố định không (Hợp đồng Feature 111)
-            val isAcceptedResult = repository.isRecurringAccepted(venueId)
             val isAccepted = isAcceptedResult.getOrDefault(true)
             if (!isAccepted) {
                 _uiState.update { it.copy(isLoading = false) }
@@ -89,19 +105,18 @@ class BookingRecurringViewModel @Inject constructor(
             }
 
             // 2. Lấy danh sách sân hoạt động
-            val courtsResult = repository.getActiveCourts(venueId)
             val courts = courtsResult.getOrElse { emptyList() }
             if (courts.isNotEmpty() && selectedCourtId.isEmpty()) {
                 selectedCourtId = courts.first().id
             }
 
-            // 3. Lấy bảng giá
-            val priceRulesResult = repository.getPriceRules(venueId)
+            // 3. Lấy bảng giá & tên cơ sở
             val priceRules = priceRulesResult.getOrElse { emptyList() }
 
             _uiState.update {
                 it.copy(
                     isLoading = false,
+                    venueName = if (venueName.isNotEmpty()) venueName else it.venueName,
                     availableCourts = courts,
                     priceRules = priceRules
                 )
@@ -110,24 +125,39 @@ class BookingRecurringViewModel @Inject constructor(
     }
 
     fun onDaysSelected(days: List<Int>) {
-        selectedDays = days
+        if (selectedDays != days) {
+            selectedDays = days
+            currentRequestId = UUID.randomUUID().toString()
+        }
     }
 
     fun onTimeRangeSelected(startTime: String, endTime: String) {
-        selectedStartTime = startTime
-        selectedEndTime = endTime
+        if (selectedStartTime != startTime || selectedEndTime != endTime) {
+            selectedStartTime = startTime
+            selectedEndTime = endTime
+            currentRequestId = UUID.randomUUID().toString()
+        }
     }
 
     fun onPreferredCourtSelected(courtId: String) {
-        selectedCourtId = courtId
+        if (selectedCourtId != courtId) {
+            selectedCourtId = courtId
+            currentRequestId = UUID.randomUUID().toString()
+        }
     }
 
     fun onDurationWeeksSelected(weeks: Int) {
-        selectedDurationWeeks = weeks
+        if (selectedDurationWeeks != weeks) {
+            selectedDurationWeeks = weeks
+            currentRequestId = UUID.randomUUID().toString()
+        }
     }
 
     fun onStartNextWeekSelected(startNextWeek: Boolean) {
-        isStartNextWeek = startNextWeek
+        if (isStartNextWeek != startNextWeek) {
+            isStartNextWeek = startNextWeek
+            currentRequestId = UUID.randomUUID().toString()
+        }
     }
 
     fun checkAvailability() {
@@ -275,7 +305,7 @@ class BookingRecurringViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isHolding = true) }
 
-            val requestId = UUID.randomUUID().toString()
+            val requestId = currentRequestId
             val holdResult = createRecurringHoldTransactionUseCase(
                 venueId = venueId,
                 config = config,

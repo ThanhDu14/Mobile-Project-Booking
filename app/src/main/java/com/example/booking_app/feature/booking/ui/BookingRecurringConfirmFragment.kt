@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.booking_app.R
 import com.example.booking_app.core.session.SessionManager
 import com.example.booking_app.databinding.FragmentBookingRecurringConfirmBinding
+import com.example.booking_app.feature.booking.data.time.ServerTimeOffsetProvider
 import com.example.booking_app.feature.booking.domain.model.RecurringSession
 import com.example.booking_app.feature.booking.domain.model.RecurringSessionStatus
 import com.example.booking_app.feature.booking.domain.usecase.ReleaseRecurringHoldUseCase
@@ -39,6 +40,9 @@ class BookingRecurringConfirmFragment : Fragment() {
 
     @Inject
     lateinit var releaseRecurringHoldUseCase: ReleaseRecurringHoldUseCase
+
+    @Inject
+    lateinit var serverTimeOffsetProvider: ServerTimeOffsetProvider
 
     private var countDownTimer: CountDownTimer? = null
     private var holdArgs: HoldToPaymentArgs? = null
@@ -181,7 +185,7 @@ class BookingRecurringConfirmFragment : Fragment() {
     }
 
     private fun startCountdown(args: HoldToPaymentArgs) {
-        val millisRemaining = (args.holdExpiresAtMillis - System.currentTimeMillis()).coerceAtLeast(0L)
+        val millisRemaining = (args.holdExpiresAtMillis - serverTimeOffsetProvider.now()).coerceAtLeast(0L)
 
         countDownTimer?.cancel()
         countDownTimer = object : CountDownTimer(millisRemaining, 1000L) {

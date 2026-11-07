@@ -19,8 +19,12 @@ data class DateItem(
 )
 
 class DateSelectorAdapter(
-    private val onDateClick: (LocalDate) -> Unit
+    private var onDateClick: (LocalDate) -> Unit
 ) : ListAdapter<DateItem, DateSelectorAdapter.DateViewHolder>(DateDiffCallback) {
+
+    fun setOnDateClickListener(listener: (LocalDate) -> Unit) {
+        this.onDateClick = listener
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): DateViewHolder {
         val binding = ItemDateSelectorBinding.inflate(

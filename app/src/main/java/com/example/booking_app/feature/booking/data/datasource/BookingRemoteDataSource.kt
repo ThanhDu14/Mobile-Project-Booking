@@ -1,5 +1,6 @@
 package com.example.booking_app.feature.booking.data.datasource
 
+import com.example.booking_app.feature.booking.data.model.BusySlotsUpdateDto
 import com.example.booking_app.feature.booking.data.model.CourtDto
 import com.example.booking_app.feature.booking.data.model.PriceRuleDto
 import com.example.booking_app.feature.booking.data.model.SlotDto
@@ -16,7 +17,7 @@ interface BookingRemoteDataSource {
 
     suspend fun getPriceRules(venueId: String): List<PriceRuleDto>
 
-    fun getBusySlotsRealtime(venueId: String, date: String): Flow<List<SlotDto>>
+    fun getBusySlotsRealtime(venueId: String, date: String): Flow<BusySlotsUpdateDto>
 
     suspend fun holdSlotsAtomic(
         venueId: String,

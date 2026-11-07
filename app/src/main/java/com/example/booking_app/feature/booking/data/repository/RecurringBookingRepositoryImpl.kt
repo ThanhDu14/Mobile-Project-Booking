@@ -86,6 +86,7 @@ class RecurringBookingRepositoryImpl @Inject constructor(
         userId: String,
         requestId: String
     ): Result<RecurringHoldResult> {
+        serverTimeOffsetProvider.ensureSynced()
         return safeApiCall {
             val validSessions = sessions.filter { !it.isExcluded && it.status != RecurringSessionStatus.MUST_SKIP }
             val subtotal = validSessions.sumOf { it.price }
