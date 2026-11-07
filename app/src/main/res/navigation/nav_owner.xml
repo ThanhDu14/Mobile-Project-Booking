@@ -1,13 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Placeholder của spec 010; D thay bằng màn hình thật (spec 111/112). -->
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/nav_owner"
-    app:startDestination="@id/ownerHomePlaceholderFragment">
+    app:startDestination="@id/ownerVenueListFragment">
 
     <fragment
-        android:id="@+id/ownerHomePlaceholderFragment"
-        android:name="com.example.booking_app.feature.auth.ui.home.OwnerHomePlaceholderFragment"
-        android:label="@string/app_name" />
+        android:id="@+id/ownerVenueListFragment"
+        android:name="com.example.booking_app.feature.owner.ui.OwnerVenueListFragment"
+        android:label="@string/owner_venues_title">
+        <action
+            android:id="@+id/action_ownerVenueList_to_detail"
+            app:destination="@id/ownerVenueDetailFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/ownerVenueDetailFragment"
+        android:name="com.example.booking_app.feature.owner.ui.OwnerVenueDetailFragment"
+        android:label="@string/owner_name">
+        <argument android:name="venueId" app:argType="string" />
+        <action android:id="@+id/action_ownerVenueDetail_to_slotBlock" app:destination="@id/ownerSlotBlockFragment" />
+        <action android:id="@+id/action_ownerVenueDetail_to_priceRule" app:destination="@id/ownerPriceRuleFragment" />
+    </fragment>
+
+    <fragment android:id="@+id/ownerSlotBlockFragment" android:name="com.example.booking_app.feature.owner.ui.OwnerSlotBlockFragment" android:label="@string/owner_slot_block_title">
+        <argument android:name="venueId" app:argType="string" />
+        <argument android:name="courtId" app:argType="string" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/ownerPriceRuleFragment"
+        android:name="com.example.booking_app.feature.owner.ui.OwnerPriceRuleFragment"
+        android:label="@string/owner_prices_title">
+        <argument android:name="venueId" app:argType="string" />
+    </fragment>
 
 </navigation>

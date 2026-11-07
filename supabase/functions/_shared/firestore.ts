@@ -121,6 +121,18 @@ export async function get(path: string): Promise<Record<string, unknown> | null>
   return decodeFields(doc.fields ?? {});
 }
 
+/** Đọc danh sách document trong collection hoặc subcollection. */
+export async function list(collectionPath: string): Promise<Record<string, unknown>[]> {
+  const res = await request(`${apiBase()}/${documentName(collectionPath)}`, { method: "GET" });
+  if (res.status === 404) {
+    await res.body?.cancel();
+    return [];
+  }
+  if (!res.ok) throw await toError(res);
+  const data = await res.json() as { documents?: { fields?: Record<string, FirestoreValue> }[] };
+  return (data.documents ?? []).map((d) => decodeFields(d.fields ?? {}));
+}
+
 /** Một thao tác ghi theo REST API (`Write`). Dùng `createWrite` / `updateWrite` để tạo. */
 export interface Write {
   update: { name: string; fields: Record<string, FirestoreValue> };

@@ -24,4 +24,39 @@ Tài liệu này mô tả các tình huống kiểm tra sau khi triển khai. Ch
 
 Đạt khi các tình huống trên đúng và đạt tiêu chí đo lường trong Feature 111: danh sách/lịch dưới 3 giây trên 4G; thao tác ghi phản hồi trong 1 giây và hoàn tất trong 3 giây khi mạng bình thường. Chỉ bổ sung câu lệnh kiểm thử cụ thể sau khi xác minh task Gradle và cấu hình Emulator; không tự đặt lệnh chưa được hỗ trợ.
 
+## Lệnh đã chạy và bằng chứng hiện tại (2026-10-29)
+
+- Android owner unit tests: `./gradlew.bat --no-daemon testDebugUnitTest --tests 'com.example.booking_app.feature.owner.*'` — **BUILD SUCCESSFUL**, 37 test cases.
+- Firestore Emulator: `npx.cmd -y firebase-tools@15 emulators:exec --config ../firebase.json --project demo-smashnow --only firestore "vitest run"` — **6 files, 46 tests passed**.
+- Price preview dùng `pricePerHour / 2`, phát hiện các mốc 30 phút thiếu rule và cảnh báo gap nếu xóa rule; không ghi `minPricePerHour` và không sửa snapshot `bookings.items[].price`.
+- Slot UI hiện chỉ preview/mapping range, có stale/offline/loading/error và giữ form; nút ghi bị khóa ở boundary T007, không dùng read-then-write.
+
+T007 (atomic lock/unlock server contract), T008 (trusted authority cập nhật `minPricePerHour`) và lifecycle tạo venue đầu tiên của T110/T120 vẫn là blocker đã biết. T034 chỉ có thể xác minh preservation của recurring group hiện có; việc không tạo chain mới thuộc Feature 041 và chưa có API test boundary trong Feature 111.
+
+## Bổ sung kiểm chứng lượt 2026-10-29
+
+- `./gradlew.bat --no-daemon testDebugUnitTest --tests 'com.example.booking_app.feature.owner.*'`: **BUILD SUCCESSFUL**.
+- `./gradlew.bat --no-daemon assembleDebug lintDebug`: **BUILD SUCCESSFUL**; lint report được tạo tại `app/build/reports/lint-results-debug.html`.
+- Firebase Emulator: **7 test files, 50 tests passed**, gồm `owner-price-rules.test.ts`.
+- Đã kiểm thử permission-vs-empty, retained draft sau lỗi, duplicate submit và bảo vệ schema/booking snapshot. Chưa đo SLA 3 giây/1 giây trên thiết bị hoặc mạng 4G thật, nên không tuyên bố đạt performance SLA.
+- T034 vẫn mở vì boundary Feature 041 hiện không cung cấp API/test để chứng minh việc `acceptsRecurring = false` ngăn tạo chain mới; chỉ chứng minh chain cũ không bị hủy.
+
+## Bổ sung kiểm chứng lượt 2026-10-29 — T037/T038/T034
+
+- Owner unit tests: `./gradlew.bat --no-daemon testDebugUnitTest --tests 'com.example.booking_app.feature.owner.*'` — **BUILD SUCCESSFUL**.
+- Build/lint: `./gradlew.bat --no-daemon assembleDebug lintDebug` — **BUILD SUCCESSFUL**; lint report tại `app/build/reports/lint-results-debug.html`.
+- Firebase Emulator: **7 test files, 50 tests passed**.
+- T037 đã được kiểm thử thêm cho permission/network/conflict classification, authoritative read-back khi conflict, giữ draft, retry read-only và không retry mutation timeout. Ứng dụng hiện không có cache repository; `isFresh` chỉ báo dữ liệu vừa được xác nhận từ server, không coi dữ liệu cũ là quyền hiện tại.
+- Chưa đo SLA list/calendar dưới 3 giây hoặc mutation acknowledgement trên thiết bị/mạng 4G thật; T038 không được đánh dấu hoàn thành chỉ dựa trên build/lint.
+- T034 chưa được đánh dấu: Feature 041 hiện chỉ mô tả `acceptsRecurring` và transaction recurring ở spec/plan, chưa cung cấp boundary/API test cho điều kiện “không tạo chain mới”.
+
+## Bổ sung kiểm chứng decision gates và T037 (2026-10-29)
+
+- T007: UI submit trả typed gate `SLOT_ATOMIC_SERVER_CONTRACT`; Emulator assertion xác nhận client owner không thể tự ghi slot `BLOCKED`. Chưa có server transaction boundary nên không triển khai lock/unlock write.
+- T008: `minPricePerHour` vẫn bị chặn ở client; `pricePerHour / 2` và booking snapshot đã có test, nhưng chưa có authority/no-rule policy để mở mutation.
+- T011: nút tạo venue chỉ hiển thị lifecycle message; không có client create/bypass approval.
+- T037: đã kiểm thử error classification, permission-vs-empty, conflict authoritative read-back, retained draft, no-blind-retry và freshness state. Ứng dụng không có cache repository; `isFresh` chỉ biểu thị server-confirmed data.
+- T038: Vietnamese resources, accessibility content description, 48dp controls, phone/`w600dp`, light/dark-compatible resources và lint/build đã kiểm tra. Chưa đo SLA trên thiết bị/mạng 4G thật, nên T038 vẫn mở.
+- T034: Feature 041 chưa cung cấp boundary/API cho việc chứng minh `acceptsRecurring = false` chặn recurring-chain creation; chỉ có thể giữ nguyên chain cũ.
+
 Xem [data-model.md](data-model.md) và [contracts/firestore-boundary.md](contracts/firestore-boundary.md) về trường dữ liệu và ranh giới phân quyền.
