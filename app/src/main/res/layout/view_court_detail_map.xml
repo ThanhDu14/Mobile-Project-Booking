@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Bản đồ mục "Vị trí" (spec 030 FR-010, research R7). Inflate từ ViewStub `mapStub` khi mục gần vùng nhìn thấy.
+    MapView của osmdroid được tạo trong code (VenueMapController) sau khi cấu hình osmdroid xong.
+    `mapShield` nuốt chạm để bản đồ không tương tác; NestedScrollView vẫn chặn được thao tác kéo để cuộn.
+-->
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/mapCard"
+    style="@style/Widget.Material3.CardView.Filled"
+    android:layout_width="match_parent"
+    android:layout_height="@dimen/court_detail_map_height"
+    android:focusable="true"
+    android:importantForAccessibility="yes"
+    app:cardBackgroundColor="?attr/colorSurfaceContainer">
+
+    <FrameLayout
+        android:id="@+id/mapHost"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:importantForAccessibility="noHideDescendants" />
+
+    <View
+        android:id="@+id/mapShield"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:importantForAccessibility="no" />
+
+    <!-- Bắt buộc theo giấy phép ODbL và chính sách tile của OSM (R7) -->
+    <TextView
+        android:id="@+id/mapAttribution"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:background="?attr/colorSurface"
+        android:importantForAccessibility="no"
+        android:paddingHorizontal="@dimen/space_1"
+        android:text="@string/court_detail_osm_attribution"
+        android:textColor="?attr/colorOnSurface"
+        android:textSize="11sp" />
+</com.google.android.material.card.MaterialCardView>

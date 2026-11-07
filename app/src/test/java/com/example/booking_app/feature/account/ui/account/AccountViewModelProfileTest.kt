@@ -8,6 +8,7 @@ import com.example.booking_app.core.session.FakeSessionManager
 import com.example.booking_app.core.session.MyProfile
 import com.example.booking_app.core.session.SessionState
 import com.example.booking_app.core.session.UserProfileReader
+import com.example.booking_app.core.session.initialsOf
 import com.example.booking_app.core.testing.MainDispatcherRule
 import com.example.booking_app.feature.account.accountViewModel
 import com.example.booking_app.feature.account.domain.model.PlayerLevel

@@ -8,7 +8,9 @@
 
 **Input**: User description: "Người dùng đã đăng nhập quản lý tài khoản của mình. Xem và sửa hồ sơ: ảnh đại diện (bucket avatars của Supabase), tên, trình độ, khu vực hay chơi. Đổi mật khẩu, đăng xuất, xóa tài khoản và dữ liệu cá nhân (Edge Function delete-account, theo Nghị định 13/2023). Chủ sân đã được duyệt (appRole=OWNER) chuyển qua lại giữa chế độ "Người chơi" và "Quản lý sân". Người đã nộp hồ sơ chủ sân xem trạng thái: chờ duyệt, đã duyệt, bị từ chối kèm lý do, và nút nộp lại. Không bao gồm: màn hình nộp hồ sơ chủ sân (spec 110), màn hình quản lý sân (spec 111). Dữ liệu: users, ownerApplications theo docs/design/database/README.md."
 
-**Nhóm tính năng**: [01 — Tài khoản](../../docs/features/01-account/README.md) · **Phụ trách**: A · **Liên quan**: [spec 010](../010-account-auth/spec.md) (đăng ký, đăng nhập, điều hướng theo vai trò)
+**Cập nhật 2026-11-06 (thay đổi thiết kế)**: "Bỏ tab "Tài khoản" khỏi thanh dưới của người chơi; trang Tài khoản mở từ nút avatar tròn ở góc phải trên header của mọi tab chính, giống màn chủ sân. Avatar dùng ảnh đại diện hoặc chữ cái đầu; khách thấy icon người, bấm vào mời đăng nhập. Header dùng chung để các tab (020, 060, 080, 090) không tự vẽ avatar."
+
+**Nhóm tính năng**: [01 — Tài khoản](../../docs/features/01-account/README.md) · **Phụ trách**: A · **Liên quan**: [spec 010](../010-account-auth/spec.md) (đăng ký, đăng nhập, điều hướng theo vai trò), [spec 020](../020-court-search/spec.md) (thanh dưới 5 tab, FR-028)
 
 ## Clarifications
 
@@ -30,6 +32,14 @@
 - Q: Khi nào phải xác nhận lại danh tính? → A: Luôn luôn, cho cả 3 thao tác đổi mật khẩu, đổi email, xóa tài khoản (FR-017).
 - Q: Admin có tự xóa tài khoản được không? → A: Không. Admin không có nút "Xóa tài khoản"; tài khoản admin do nhóm xóa thủ công bằng script.
 
+### Session 2026-11-06 (thay đổi thiết kế điều hướng)
+
+- Q: Người chơi mở trang Tài khoản từ đâu? → A: Không còn tab "Tài khoản" ở thanh dưới. Thanh dưới có 5 tab Trang chủ · Tìm kiếm · Lịch đặt · Vãng lai · Cộng đồng (spec 020 FR-028). Trang Tài khoản mở từ nút avatar tròn ở góc phải trên header của mọi tab chính, giống màn chủ sân.
+- Q: Avatar hiển thị gì? → A: Ảnh đại diện nếu có; không có ảnh (hoặc ảnh tải lỗi) thì chữ cái đầu của họ tên; khách chưa đăng nhập thấy icon người.
+- Q: Khách bấm avatar thì sao? → A: Mở màn hình đăng nhập (spec 010) chồng lên tab đang xem; đăng nhập xong quay về đúng tab đó, avatar đổi sang ảnh hoặc chữ cái đầu của người dùng.
+- Q: Ai vẽ avatar trên mỗi tab? → A: Spec này cung cấp một header dùng chung (tiêu đề tab + avatar). Các tab của spec 020, 060, 080, 090 đặt header này lên màn gốc của tab, không tự vẽ avatar hay tự xử lý bấm avatar.
+- Q: Khi đang ở trang Tài khoản, thanh dưới thế nào? → A: Vẫn hiện, giữ sáng tab đã mở trang Tài khoản; bấm lại tab đó thì về màn gốc của tab; quay lại thì về tab đó. Cách này giống hệt chế độ chủ sân hiện có.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Xem và sửa hồ sơ cá nhân (Priority: P1)
@@ -50,13 +60,33 @@ Người dùng đã đăng nhập mở trang "Tài khoản", xem ảnh đại di
 
 ---
 
+### User Story 8 - Mở trang Tài khoản từ avatar ở góc phải trên (Priority: P1) *(thêm 2026-11-06)*
+
+Ở bất kỳ tab chính nào (Trang chủ, Tìm kiếm, Lịch đặt, Vãng lai, Cộng đồng), người chơi thấy một avatar tròn ở góc phải trên header. Avatar là ảnh đại diện hoặc chữ cái đầu tên; bấm vào thì mở trang "Tài khoản". Khách chưa đăng nhập thấy icon người; bấm vào thì được mời đăng nhập.
+
+**Why this priority**: Đây là lối vào duy nhất của trang "Tài khoản" ở giao diện người chơi sau khi bỏ tab "Tài khoản". Không có nó thì mọi User Story khác của spec này không tới được.
+
+**Independent Test**: Đăng nhập tài khoản có ảnh đại diện, lần lượt mở 5 tab chính, ở mỗi tab bấm avatar và thấy trang "Tài khoản"; đăng xuất, bấm avatar ở một tab bất kỳ và thấy màn hình đăng nhập; đăng nhập xong quay lại đúng tab đó.
+
+**Acceptance Scenarios**:
+
+1. **Given** người chơi đã đăng nhập, **When** mở bất kỳ tab chính nào, **Then** thấy avatar tròn ở cùng một vị trí (góc phải trên header), và thanh dưới chỉ có 5 tab, không có tab "Tài khoản".
+2. **Given** người chơi có ảnh đại diện, **When** xem header, **Then** avatar là ảnh đó; nếu chưa có ảnh hoặc ảnh tải lỗi thì avatar là chữ cái đầu của họ tên trên nền màu.
+3. **Given** người chơi đã đăng nhập, **When** bấm avatar, **Then** trang "Tài khoản" mở ra, thanh dưới vẫn sáng tab vừa đứng; bấm quay lại hoặc bấm lại tab đó thì về màn gốc của tab, giữ nguyên trạng thái trước đó của tab.
+4. **Given** người dùng chưa đăng nhập, **When** xem header, **Then** avatar là icon người kèm nhãn trợ năng "Đăng nhập"; **When** bấm vào, **Then** màn hình đăng nhập mở ra, đăng nhập xong quay về đúng tab đang xem và avatar đổi sang ảnh hoặc chữ cái đầu của người đó.
+5. **Given** người chơi vừa đổi ảnh đại diện hoặc họ tên (User Story 1), **When** quay về một tab chính, **Then** avatar ở header đã là ảnh hoặc chữ cái đầu mới, không cần mở lại app.
+6. **Given** người dùng vừa đăng xuất (User Story 2), **When** về Trang chủ ở chế độ khách, **Then** avatar là icon người.
+7. **Given** chủ sân đã duyệt, **When** xem màn "Hôm nay" ở chế độ "Quản lý sân" và màn gốc các tab ở chế độ "Người chơi", **Then** avatar trông và hoạt động giống nhau (cùng header dùng chung), bấm vào đều mở trang "Tài khoản" có nút chuyển chế độ.
+
+---
+
 ### User Story 2 - Đăng xuất (Priority: P1)
 
 Người dùng bấm "Đăng xuất" ở trang "Tài khoản", xác nhận, và được đưa về Trang chủ ở chế độ khách (spec 010 FR-025).
 
 **Why this priority**: Bắt buộc để dùng chung máy hoặc đổi tài khoản, và là điều kiện để kiểm thử mọi luồng đăng nhập của spec 010.
 
-**Independent Test**: Đăng nhập, đăng xuất, mở lại app thì vào Trang chủ ở chế độ khách (tab Tài khoản hiện lời mời đăng nhập); không còn thông báo đẩy của tài khoản cũ trên máy đó.
+**Independent Test**: Đăng nhập, đăng xuất, mở lại app thì vào Trang chủ ở chế độ khách (avatar ở góc phải trên là icon người, bấm vào mời đăng nhập); không còn thông báo đẩy của tài khoản cũ trên máy đó.
 
 **Acceptance Scenarios**:
 
@@ -166,6 +196,11 @@ Người dùng đăng ký bằng email nhưng gõ nhầm hoặc muốn đổi em
 - **Đang có đơn ở trạng thái giữ chỗ hoặc đang thanh toán** khi xóa tài khoản: đơn đó bị hủy như đơn sắp tới, khung giờ được nhả ngay.
 - **Khách của chủ sân bị xóa đang mở màn hình chi tiết đơn**: lần làm mới tiếp theo thấy đơn "Đã hủy" với lý do "Cơ sở ngừng hoạt động".
 - **Người dùng là admin**: trang tài khoản không có mục đăng ký chủ sân, không có nút chuyển chế độ và không có nút "Xóa tài khoản". Tài khoản admin do nhóm xóa thủ công bằng script; máy chủ từ chối yêu cầu admin tự xóa.
+- **Avatar khi hồ sơ chưa tải xong hoặc mất mạng** *(2026-11-06)*: avatar hiện vòng tròn trung tính (không chữ), vẫn bấm được và vẫn mở trang "Tài khoản" (trang đó tự có trạng thái đang tải và lỗi, FR-025). Có hồ sơ đã lưu trên máy thì dùng ngay.
+- **Họ tên rỗng hoặc chỉ có ký tự đặc biệt** *(2026-11-06)*: avatar hiện icon người như khách nhưng bấm vẫn mở trang "Tài khoản".
+- **Bấm avatar nhiều lần liên tiếp** *(2026-11-06)*: chỉ mở một trang "Tài khoản", không chồng nhiều trang.
+- **Mở trang Tài khoản từ thông báo hoặc liên kết khi đang là khách** *(2026-11-06)*: mở màn hình đăng nhập như khi bấm avatar.
+- **Màn hình con của một tab (chi tiết sân, chi tiết đơn, chi tiết nhóm…)** *(2026-11-06)*: không bắt buộc có avatar; avatar chỉ bắt buộc ở màn gốc của 5 tab chính.
 
 ## Requirements *(mandatory)*
 
@@ -227,6 +262,15 @@ Người dùng đăng ký bằng email nhưng gõ nhầm hoặc muốn đổi em
 - **FR-024**: Quyền camera và truy cập ảnh PHẢI chỉ được xin khi người dùng bấm đổi ảnh; từ chối quyền không làm hỏng các chức năng khác.
 - **FR-025**: Các màn hình PHẢI có đủ trạng thái đang tải, có dữ liệu và lỗi kèm thử lại; hiển thị đúng ở chế độ sáng/tối, trên điện thoại và máy tính bảng; ảnh và nút có nhãn cho trình đọc màn hình.
 
+**Lối vào trang Tài khoản** *(thêm 2026-11-06)*
+
+- **FR-026**: Thanh điều hướng dưới của người chơi KHÔNG ĐƯỢC có tab "Tài khoản". Danh sách và thứ tự tab theo spec 020 FR-028.
+- **FR-027**: Màn gốc của cả 5 tab chính của người chơi PHẢI có một header dùng chung với avatar tròn ở góc phải trên, cùng kích thước và vị trí ở mọi tab; đây là lối vào duy nhất của trang "Tài khoản" ở giao diện người chơi. Ở giao diện quản lý sân, màn "Hôm nay" PHẢI dùng cùng header này (thay cho avatar đang vẽ riêng). Các tab do spec khác sở hữu PHẢI dùng header này, KHÔNG ĐƯỢC tự vẽ avatar hay tự xử lý bấm avatar.
+- **FR-028**: Avatar PHẢI hiển thị theo thứ tự ưu tiên: (1) ảnh đại diện của người dùng; (2) chữ cái đầu của họ tên khi không có ảnh hoặc ảnh tải lỗi; (3) icon người khi là khách hoặc họ tên không cho ra chữ cái nào. Avatar PHẢI cập nhật ngay khi ảnh, họ tên hoặc trạng thái đăng nhập thay đổi.
+- **FR-029**: Người đã đăng nhập bấm avatar PHẢI mở trang "Tài khoản" ngay (không gọi mạng trước khi chuyển màn hình). Thanh dưới vẫn hiện và giữ sáng tab đã mở trang; quay lại hoặc bấm lại tab đó PHẢI về màn gốc của tab mà không mất trạng thái của tab.
+- **FR-030**: Khách bấm avatar PHẢI mở màn hình đăng nhập của spec 010 chồng lên tab hiện tại; đăng nhập xong PHẢI quay về đúng tab đó (chủ sân thì theo điều hướng theo vai trò của spec 010).
+- **FR-031**: Avatar PHẢI có vùng chạm ít nhất 48dp và nhãn trợ năng: "Tài khoản" khi đã đăng nhập, "Đăng nhập" khi là khách.
+
 ### Key Entities *(include if feature involves data)*
 
 - **Người dùng (User)**: hồ sơ của một tài khoản. Trường người dùng sửa được: họ tên, ảnh đại diện, trình độ, khu vực hay chơi. Trường chỉ xem: email, số điện thoại, trạng thái xác minh email, vai trò, trạng thái chủ sân, trạng thái tài khoản, số dư ví giả lập. Chi tiết theo [đặc tả CSDL, mục 4.1](../../docs/design/database/README.md#41-usersuid--a).
@@ -248,6 +292,9 @@ Người dùng đăng ký bằng email nhưng gõ nhầm hoặc muốn đổi em
 - **SC-007**: Trong kiểm thử mất mạng ở mọi thao tác ghi, app không crash và không để dữ liệu ở trạng thái nửa vời.
 - **SC-008**: Sau khi xóa tài khoản chủ sân trong kiểm thử, 100% khách có đơn hoặc lượt vãng lai sắp tới tại cơ sở đó nhận thông báo hủy, và 0 khung giờ của các đơn bị hủy còn bị chiếm.
 - **SC-009**: Ít nhất 4/5 người thử tự tìm được và dùng được chức năng "Đăng ký làm chủ sân" mà không cần hướng dẫn.
+- **SC-010** *(2026-11-06)*: Từ màn gốc của bất kỳ tab chính nào, người đã đăng nhập mở được trang "Tài khoản" bằng đúng 1 lần chạm, và khách tới màn hình đăng nhập bằng đúng 1 lần chạm; kiểm thử trên cả 5 tab người chơi đạt 100%.
+- **SC-011** *(2026-11-06)*: Ít nhất 4/5 người thử tìm được trang "Tài khoản" trong vòng 10 giây mà không cần hướng dẫn.
+- **SC-012** *(2026-11-06)*: Sau khi đổi ảnh đại diện, avatar ở header của mọi tab chính hiện ảnh mới ngay lần đầu quay lại tab, ở 100% số lần thử.
 
 ## Assumptions
 
@@ -258,4 +305,6 @@ Người dùng đăng ký bằng email nhưng gõ nhầm hoặc muốn đổi em
 - Việc hủy đơn khi xóa tài khoản dùng lại chính sách hủy của spec 060 (B), cách ẩn cơ sở của spec 111 (D), hủy buổi vãng lai của spec 080/112 (C, D) và loại thông báo `BOOKING_CANCELLED`, `DROPIN_CHANGED` của spec 100 (D). Nhóm A cần thống nhất với B, C, D trước khi chạy `/speckit-plan`.
 - Đổi số điện thoại không nằm trong phạm vi phiên bản này (đăng nhập bằng số điện thoại chỉ dùng số thử nghiệm).
 - Thời gian giữ dữ liệu ẩn danh sau khi xóa tài khoản: giữ cho tới khi dữ liệu đó bị xóa theo nghiệp vụ của tính năng sở hữu nó.
+- *(2026-11-06)* Header dùng chung (tiêu đề tab + avatar) thuộc spec này (A). Spec 020 (Trang chủ, Tìm kiếm), 060 (Lịch đặt, B), 080 (Vãng lai, C), 090 (Cộng đồng, C) và 112 (màn Hôm nay của chủ sân, D) đặt header này lên màn gốc tab của mình; nội dung bên dưới header vẫn thuộc spec đó. Các spec của B, C, D chưa được sửa theo thiết kế này; danh sách cần báo nằm ở [contracts/ui-screens.md §6](contracts/ui-screens.md#6-ảnh-hưởng-tới-code-và-spec-khác-2026-11-06).
+- *(2026-11-06)* Wireframe `01_account_*` vẽ trang Tài khoản như một tab; nội dung trang không đổi, chỉ lối vào đổi. Ảnh sẽ xuất lại sau khi vẽ lại trên canvas.
 - Cách lưu ảnh, cách xóa dữ liệu phía máy chủ và cách kiểm tra quyền tuân theo constitution v1.1.0 và [đặc tả CSDL](../../docs/design/database/README.md) (mục 4.1, 4.2, 8, 8a); chi tiết để `/speckit-plan` quyết định.

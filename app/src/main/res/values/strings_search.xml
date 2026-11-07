@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Spec 020: Trang chủ và tìm kiếm (contracts/ui-screens.md §4), tiền tố search_ / home_. -->
+<resources>
+    <string name="home_all_venues_title">Tất cả sân · %d</string>
+    <string name="home_empty">Chưa có sân nào đang hoạt động</string>
+    <string name="search_sort_title">Sắp xếp theo</string>
+    <string name="search_sort_rating">Đánh giá cao nhất</string>
+    <string name="search_sort_price">Giá thấp đến cao</string>
+    <string name="search_price_from">từ %1$s đ/giờ</string>
+    <string name="search_price_contact">Liên hệ</string>
+    <string name="search_rating">★ %1$s (%2$d)</string>
+    <string name="search_no_rating">Chưa có đánh giá</string>
+    <string name="search_error_network">Không có kết nối mạng</string>
+    <string name="search_error_generic">Không tải được danh sách sân</string>
+    <!-- Thứ tự đọc của trình đọc màn hình: tên → quận → giá → điểm (ui-screens §2). -->
+    <string name="search_card_description">%1$s, %2$s, %3$s, %4$s</string>
+    <string name="search_card_description_no_district">%1$s, %2$s, %3$s</string>
+</resources>

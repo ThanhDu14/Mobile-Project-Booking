@@ -10,6 +10,14 @@
         android:name="android.hardware.camera"
         android:required="false" />
 
+    <!-- Bản đồ osmdroid ở chi tiết sân kiểm tra mạng trước khi tải tile (spec 030 R7). INTERNET đã có qua Firebase. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- core/location (spec 020 T014): tìm kiếm xin quyền khi người dùng chọn "Gần nhất". Chi tiết sân (030) không xin,
+         chỉ dùng khi quyền đã được cấp từ trước (research R7). -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+
     <application
         android:name=".SmashNowApp"
         android:allowBackup="true"
@@ -33,6 +41,9 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <!-- Deep link smashnow://... mở được từ ngoài app (thông báo, adb), ví dụ smashnow://venue/{id} của spec 030.
+                 smashnow://auth/... cũng mở được từ ngoài; returnTo chỉ được điều hướng khi là URI smashnow:// (MainActivity). -->
+            <nav-graph android:value="@navigation/nav_main" />
         </activity>
 
         <!-- Ảnh chụp từ camera ghi vào cache/avatar/ rồi đưa sang màn hình cắt (spec 011 R4).

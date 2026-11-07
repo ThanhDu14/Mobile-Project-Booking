@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Nền chỉ báo "2/5" chồng lên ảnh (thư viện ảnh chi tiết sân, màn hình xem ảnh). -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+    <corners android:radius="999dp" />
+    <solid android:color="@color/photo_viewer_scrim" />
+</shape>

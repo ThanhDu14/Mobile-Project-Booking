@@ -229,6 +229,23 @@ Theo bảng "Phối hợp với nhóm" của [plan.md](plan.md#phối-hợp-vớ
 
 ---
 
+## Phase 6b: User Story 5 – Trang chủ: danh sách mọi sân (thêm 2026-11-06)
+
+**Goal**: tab Trang chủ hiện "Tất cả sân · N", nút sắp xếp và thẻ sân; bấm thẻ mở chi tiết sân (030), từ đó "Đặt sân" mở lưới đặt sân (040) (FR-015, FR-016, FR-017, FR-019, FR-029).
+
+**Lệch so với research (ghi lại để `/speckit-plan` lần sau chốt):**
+- Trang chủ đọc một lần mọi `venues` có `status == ACTIVE` (tối đa 150), sắp xếp và chia trang 20 trên máy (chiến lược S2 của R3) cho cả "Đánh giá" và "Giá", thay vì S1 có `orderBy` + `startAfter`. Lý do: chỉ cần index một trường, chạy ngay trên project thật không phải deploy index V1, V9; quy mô đồ án ≤ 150 cơ sở. Đổi sang S1 khi tab Tìm kiếm làm `VenueSearchEngine`.
+- Chưa có "Gần nhất" (FR-011 đến FR-014): làm cùng US3.
+- Chưa có banner dữ liệu cũ khi mất mạng (`search_offline_stale`) và bấm lại tab để cuộn về đầu.
+
+- [x] T200 [P] [US5] Test `TEST/feature/search/domain/HomeVenueSorterTest.kt`, `TEST/feature/search/data/HomeVenueMapperTest.kt`, `TEST/feature/search/ui/HomeViewModelTest.kt` (20 sân đầu, tải thêm, đổi sắp xếp không đọc lại, rỗng, lỗi + thử lại)
+- [x] T201 [US5] `feature/search/domain/{model/HomeVenue, HomeVenueSorter, HomeVenueRepository}.kt`, `feature/search/data/{HomeVenueMapper, FirestoreHomeVenueRepository}.kt`, `feature/search/di/SearchModule.kt`
+- [x] T202 [US5] `HomeViewModel`, `HomeFragment` (header dùng chung của 011, banner xác minh email, hộp chọn sắp xếp), `VenueCardAdapter`, `RES/layout/{fragment_home, item_search_venue}.xml`, `RES/values/strings_search.xml`, `ic_sort_24`
+- [x] T203 [US5] `nav_player.xml`: `homeFragment` là màn đầu thay `playerHomePlaceholderFragment` (xóa `PlayerHomePlaceholderFragment`, `HomePlaceholderViewModel`), action `action_home_to_courtDetail` → `nav_court_detail`; `MainActivity` đổi id màn gốc tab Trang chủ
+- [ ] T204 [US5] Thử trên máy với dữ liệu thật: 10 sân demo hiện đủ, đổi sắp xếp, bấm thẻ → chi tiết sân → "Đặt sân" → lưới đặt sân; khách cũng xem được
+
+---
+
 ## Phase 7: Polish & Cross-Cutting
 
 - [ ] T093 [P] Lưới 2 cột cho `w600dp`: `RES/values-w600dp/integers.xml` (`search_grid_span = 2`) và `GridLayoutManager` trong `SEARCH/ui/SearchFragment.kt`; kiểm tra bảng lọc trên máy tính bảng
