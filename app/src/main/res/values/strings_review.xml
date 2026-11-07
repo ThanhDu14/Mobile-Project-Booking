@@ -15,6 +15,29 @@
     <string name="review_discard_title">Bỏ đánh giá đang viết?</string>
     <string name="review_empty_venue">Sân chưa có đánh giá</string>
 
+    <!-- Màn hình viết đánh giá (US1, wireframe 07_review-favorite_buoc1) -->
+    <string name="review_write_title">Đánh giá sân</string>
+    <string name="review_close">Đóng</string>
+    <string name="review_booking_time">%1$s · %2$s – %3$s</string>
+    <string name="review_comment_label">Bình luận (không bắt buộc)</string>
+    <string name="review_comment_hint">Chia sẻ trải nghiệm của bạn về sân</string>
+    <string name="review_comment_too_long">Bình luận tối đa 1000 ký tự</string>
+    <string name="review_missing_named">Chấm %1$s để gửi đánh giá</string>
+    <string name="review_overall_label">Điểm tổng</string>
+    <string name="review_overall_value">%1$s / 5</string>
+    <string name="review_overall_empty">— / 5</string>
+    <string name="review_submit">Gửi đánh giá</string>
+    <string name="review_public_notice">Đánh giá hiện công khai với tên và ảnh đại diện của bạn. Bạn sửa được đến hết %1$s, xóa được bất cứ lúc nào.</string>
+    <string name="review_submitted">Đã gửi đánh giá (%1$s / 5)</string>
+    <string name="review_already_submitted">Bạn đã đánh giá lượt chơi này</string>
+    <string name="review_retry">Thử lại</string>
+    <string name="review_discard_message">Nội dung bạn đã nhập sẽ không được lưu.</string>
+    <string name="review_discard_confirm">Bỏ</string>
+    <string name="review_discard_keep">Viết tiếp</string>
+    <string name="review_load_failed">Không tải được thông tin lượt đặt</string>
+    <string name="review_rating_description">%1$s: %2$d trên 5 sao</string>
+    <string name="review_rating_none">%1$s: chưa chấm</string>
+
     <!-- Thông báo theo ReviewError (contracts/edge-function-review.md, bảng mã lỗi) -->
     <string name="review_error_invalid_argument">Thông tin đánh giá chưa hợp lệ, vui lòng kiểm tra lại</string>
     <string name="review_error_unauthenticated">Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại</string>

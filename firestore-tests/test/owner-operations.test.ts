@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest';
 import { assertFails, assertSucceeds, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { createTestEnv } from './setup';
 
 let env: RulesTestEnvironment;
@@ -22,6 +22,12 @@ beforeEach(async () => {
     });
     await fs.doc('venues/venue-b/courts/court-2').set({
       name: 'Sân 2', surfaceType: 'PU', isActive: true, sortOrder: 1,
+    });
+    await fs.doc('bookings/booking-1').set({
+      venueId: 'venue-a',
+      userId: 'player-1',
+      status: 'PENDING',
+      qrToken: 'sensitive-token-never-leak-to-client',
     });
   });
 });
@@ -51,5 +57,10 @@ describe('Feature 112 owner access prerequisites', () => {
     const fs = env.authenticatedContext('owner-a', { appRole: 'OWNER' }).firestore();
     await assertFails(updateDoc(doc(fs, 'venues/venue-locked'), { name: 'Unlock by client' }));
     await assertFails(updateDoc(doc(fs, 'venues/venue-locked/courts/court-1'), { isActive: false }));
+  });
+
+  it('denies owner from directly reading client booking documents (T012: preserves qrToken isolation)', async () => {
+    const fs = env.authenticatedContext('owner-a', { appRole: 'OWNER' }).firestore();
+    await assertFails(getDoc(doc(fs, 'bookings/booking-1')));
   });
 });

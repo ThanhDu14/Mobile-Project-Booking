@@ -25,7 +25,7 @@ Trên màn hình tìm kiếm, người chơi chuyển sang chế độ "Bản đ
 
 **Why this priority**: Người chơi thường chọn sân theo vị trí (gần nhà, gần chỗ làm); nhìn trên bản đồ nhanh hơn đọc địa chỉ từng thẻ. Riêng story này đã là một MVP của spec bản đồ.
 
-**Independent Test**: Với dữ liệu demo có 10 cơ sở ở 3 quận, chuyển sang bản đồ thấy đủ 10 marker đúng vị trí; chạm một marker thấy thẻ của đúng cơ sở đó; chạm thẻ mở đúng chi tiết sân.
+**Independent Test**: Với dữ liệu demo có 10 cơ sở ở 4 quận, chuyển sang bản đồ thấy đủ 10 marker đúng vị trí; chạm một marker thấy thẻ của đúng cơ sở đó; chạm thẻ mở đúng chi tiết sân.
 
 **Acceptance Scenarios**:
 
@@ -88,7 +88,7 @@ Ngay bên dưới thanh tìm kiếm của màn hình tìm kiếm (spec 020), ng�
 
 **Acceptance Scenarios**:
 
-1. **Given** người chơi chưa cho quyền vị trí, **When** mở "Sân gần bạn" lần đầu, **Then** app giải thích ngắn rồi xin quyền vị trí.
+1. **Given** người chơi chưa cho quyền vị trí, **When** mục "Sân gần bạn" hiện ra lần đầu, **Then** mục hiện lời giải thích ngắn kèm nút "Bật vị trí" và app chưa tự xin quyền; **When** người chơi bấm "Bật vị trí", **Then** hộp xin quyền vị trí của hệ thống hiện ra.
 2. **Given** có vị trí, **When** mục "Sân gần bạn" hiện ra, **Then** thấy tối đa 10 cơ sở đang hoạt động trong bán kính 5 km, xếp theo khoảng cách tăng dần, mỗi cơ sở có ảnh, tên, khoảng cách, giá "từ X đ/giờ" và điểm đánh giá.
 3. **Given** người chơi bấm một cơ sở trong mục, **When** màn hình chuyển, **Then** chi tiết sân (spec 030) của cơ sở đó mở ra.
 4. **Given** người chơi bấm "Xem tất cả trên bản đồ", **When** màn hình chuyển, **Then** chế độ bản đồ mở quanh vị trí hiện tại với chấm vị trí và các cơ sở xung quanh, không mang theo bộ lọc nào.
@@ -112,7 +112,7 @@ Ngay bên dưới thanh tìm kiếm của màn hình tìm kiếm (spec 020), ng�
 - **Vị trí của người chơi nằm ngoài vùng có dữ liệu** (ví dụ ở tỉnh khác): "Sân gần bạn" hiện trạng thái không có sân trong bán kính; bản đồ vẫn về vị trí đó khi bấm "Vị trí của tôi".
 - **Vị trí thay đổi khi đang mở bản đồ** (người chơi đang di chuyển): chấm vị trí cập nhật, nhưng bản đồ không tự di theo và danh sách không tự tải lại.
 - **Xoay màn hình hoặc chuyển sáng/tối**: giữ vùng đang xem, mức phóng, cơ sở đang chọn và bộ lọc.
-- **Máy tính bảng**: danh sách và bản đồ hiện cạnh nhau; chọn một cơ sở ở bên này thì bên kia làm nổi bật cùng cơ sở.
+- **Máy tính bảng**: danh sách và bản đồ hiện cạnh nhau; chọn một cơ sở ở bên này thì bên kia làm nổi bật cùng cơ sở. Trên máy tính bảng, chạm thẻ trong danh sách là **chọn** cơ sở (marker nổi bật, bản đồ di tới, hiện thẻ tóm tắt); chạm thẻ tóm tắt mới mở chi tiết sân.
 
 ## Requirements *(mandatory)*
 
@@ -137,7 +137,7 @@ Ngay bên dưới thanh tìm kiếm của màn hình tìm kiếm (spec 020), ng�
 **Vị trí**
 
 - **FR-011**: Nút "Vị trí của tôi" PHẢI đưa bản đồ về vị trí hiện tại, hiện chấm vị trí và tải các cơ sở khớp bộ lọc quanh đó.
-- **FR-012**: App PHẢI chỉ xin quyền vị trí khi người chơi bấm "Vị trí của tôi" hoặc mở "Sân gần bạn" lần đầu, kèm giải thích ngắn trước hộp xin quyền; chấp nhận cả vị trí gần đúng. Mở bản đồ KHÔNG ĐƯỢC tự xin quyền.
+- **FR-012**: App PHẢI chỉ xin quyền vị trí khi người chơi bấm "Vị trí của tôi" hoặc bấm "Bật vị trí" ở mục "Sân gần bạn" lần đầu, kèm giải thích ngắn trước hộp xin quyền; chấp nhận cả vị trí gần đúng. Mở bản đồ hay mở màn hình tìm kiếm KHÔNG ĐƯỢC tự xin quyền.
 - **FR-013**: Khi không có vị trí (từ chối quyền, định vị tắt, không lấy được trong 10 giây), bản đồ PHẢI mở ở khu vực mặc định, không hiện khoảng cách, có thông báo kèm lối vào cài đặt, và mọi chức năng khác vẫn hoạt động. Khu vực mặc định là trung tâm TP.HCM với mức phóng thấy được vài quận, giống nhau cho mọi người chơi.
 - **FR-014**: Khoảng cách PHẢI là khoảng cách đường chim bay, hiển thị theo cùng quy tắc với spec 020.
 - **FR-015**: Vị trí của người chơi KHÔNG ĐƯỢC lưu lên máy chủ hay vào lịch sử tìm kiếm; chỉ dùng trên thiết bị để hiển thị, tính khoảng cách và chọn vùng tải.
@@ -188,3 +188,5 @@ Ngay bên dưới thanh tìm kiếm của màn hình tìm kiếm (spec 020), ng�
 - Khu vực mặc định cố định ở trung tâm TP.HCM (đã chốt ở Clarifications), nên không cần thêm tọa độ tâm cho từng quận vào dữ liệu danh mục.
 - Mục "Sân gần bạn" thuộc màn hình tìm kiếm của spec 020 (đã chốt ở Clarifications); spec 020 cần chừa vị trí ngay dưới thanh tìm kiếm cho mục này. Trang chủ không thuộc phạm vi spec này.
 - Buổi vãng lai không hiện trên bản đồ ở phiên bản này (thuộc spec 080 nếu làm sau).
+- Vào bản đồ khi bộ lọc có quận/huyện thì bản đồ hiện toàn bộ sân của quận đó và đưa vùng xem bao các sân; tìm theo vùng chỉ bắt đầu khi người chơi bấm "Tìm ở khu vực này" (khi đó bỏ bộ lọc quận theo FR-005), hoặc khi đổi bộ lọc khác quận.
+- "Vùng quá rộng" là khi nửa đường chéo vùng đang xem lớn hơn 15 km (khoảng mức phóng 11 trở xuống trên điện thoại). Khu vực mặc định mở ở mức phóng 12 (rộng khoảng 13 km trên điện thoại).

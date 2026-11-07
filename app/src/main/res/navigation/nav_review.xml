@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     Nav graph lồng của spec 070 (contracts/ui-screens.md §1), được include vào nav_player.
-    Mới có màn hình "Sân yêu thích" (US3); các màn hình đánh giá thêm vào khi làm US1, US2, US4, US6.
+    Có "Sân yêu thích" (US3) và "Viết đánh giá" (US1); các màn hình còn lại thêm khi làm US2, US4, US6.
 -->
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -18,6 +18,24 @@
         <action
             android:id="@+id/action_favoriteVenues_to_bookingSlotGrid"
             app:destination="@id/bookingSlotGridFragment" />
+    </fragment>
+
+    <!--
+        Viết / xem đánh giá của một đơn (US1). Chi tiết đơn (spec 060) mở bằng
+        app:destination="@id/writeReviewFragment" hoặc deep link; thông báo REVIEW_REMINDER (spec 100) dùng deep link.
+    -->
+    <fragment
+        android:id="@+id/writeReviewFragment"
+        android:name="com.example.booking_app.feature.review.ui.write.WriteReviewFragment"
+        android:label="@string/review_write_title">
+        <argument
+            android:name="bookingId"
+            app:argType="string" />
+        <argument
+            android:name="mode"
+            android:defaultValue="CREATE"
+            app:argType="com.example.booking_app.feature.review.ui.write.WriteReviewMode" />
+        <deepLink app:uri="smashnow://review/write/{bookingId}" />
     </fragment>
 
 </navigation>

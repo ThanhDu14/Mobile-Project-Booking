@@ -7,6 +7,7 @@ import android.view.LayoutInflater
 import android.view.View
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import com.example.booking_app.R
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -32,18 +33,23 @@ class OwnerBookingsLayoutTest {
 
         variants.forEach { configuration ->
             val themed = ContextThemeWrapper(application.createConfigurationContext(configuration), R.style.Theme_Bookingapp)
-            val screen = LayoutInflater.from(themed).inflate(R.layout.fragment_owner_bookings, null, false)
-            val checkIn = LayoutInflater.from(themed).inflate(R.layout.fragment_owner_booking_checkin, null, false)
-            val row = LayoutInflater.from(themed).inflate(R.layout.item_owner_booking, null, false)
-            assertNotNull(screen.findViewById<View>(R.id.bookingScroll))
-            assertNotNull(screen.findViewById<View>(R.id.venueSpinner))
-            assertTrue(screen.findViewById<View>(R.id.refresh).minimumHeight >= dp(themed, 48))
-            assertTrue(row.findViewById<View>(R.id.approve).minimumHeight >= dp(themed, 48))
-            assertTrue(row.findViewById<View>(R.id.reject).minimumHeight >= dp(themed, 48))
-            assertNotNull(row.findViewById<View>(R.id.details).contentDescription)
-            assertTrue(checkIn.findViewById<View>(R.id.scanQr).minimumHeight >= dp(themed, 48))
-            assertTrue(checkIn.findViewById<View>(R.id.submitCheckIn).minimumHeight >= dp(themed, 48))
-            assertNotNull(checkIn.findViewById<View>(R.id.bookingCode))
+            var screen: View? = null
+            var checkIn: View? = null
+            var row: View? = null
+            InstrumentationRegistry.getInstrumentation().runOnMainSync {
+                screen = LayoutInflater.from(themed).inflate(R.layout.fragment_owner_bookings, null, false)
+                checkIn = LayoutInflater.from(themed).inflate(R.layout.fragment_owner_booking_checkin, null, false)
+                row = LayoutInflater.from(themed).inflate(R.layout.item_owner_booking, null, false)
+            }
+            assertNotNull(screen!!.findViewById<View>(R.id.bookingScroll))
+            assertNotNull(screen!!.findViewById<View>(R.id.venueSpinner))
+            assertTrue(screen!!.findViewById<View>(R.id.refresh).minimumHeight >= dp(themed, 48))
+            assertTrue(row!!.findViewById<View>(R.id.approve).minimumHeight >= dp(themed, 48))
+            assertTrue(row!!.findViewById<View>(R.id.reject).minimumHeight >= dp(themed, 48))
+            assertNotNull(row!!.findViewById<View>(R.id.details).contentDescription)
+            assertTrue(checkIn!!.findViewById<View>(R.id.scanQr).minimumHeight >= dp(themed, 48))
+            assertTrue(checkIn!!.findViewById<View>(R.id.submitCheckIn).minimumHeight >= dp(themed, 48))
+            assertNotNull(checkIn!!.findViewById<View>(R.id.bookingCode))
         }
     }
 

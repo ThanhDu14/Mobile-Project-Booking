@@ -36,7 +36,17 @@ class BookingCheckInViewModelTest {
 
         assertEquals(BookingCheckInInput("BK-123", ownerConfirmedPaymentCollected = true), repository.lastInput)
         assertEquals("booking-123", viewModel.uiState.value.result)
+        assertEquals("booking-123", viewModel.uiState.value.checkInResult?.bookingId)
         assertFalse(viewModel.uiState.value.isSubmitting)
+    }
+
+    @Test fun passesPaymentCollectedFalseWhenUnchecked() = runTest {
+        val viewModel = BookingCheckInViewModel(repository)
+        viewModel.submit("BK-456", paymentCollected = false)
+        advanceUntilIdle()
+
+        assertEquals(BookingCheckInInput("BK-456", ownerConfirmedPaymentCollected = false), repository.lastInput)
+        assertEquals("booking-123", viewModel.uiState.value.result)
     }
 
     @Test fun rejectsBlankCredentialWithoutCallingRepository() = runTest {

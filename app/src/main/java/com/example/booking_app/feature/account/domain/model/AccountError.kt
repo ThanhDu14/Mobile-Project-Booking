@@ -28,6 +28,12 @@ sealed class AccountError(message: String? = null, cause: Throwable? = null) : E
 
     data object AdminSelfDelete : AccountError("Admin cannot delete self")
 
+    /** Ô "Gõ XÓA để xác nhận" sai (FR-018). */
+    data object DeleteConfirmMismatch : AccountError("Confirm text mismatch")
+
+    /** `confirm` hết giờ hoặc mất mạng cả 2 lần: server có thể đã xóa, không khẳng định tài khoản còn dùng được. */
+    data object DeleteResultUnknown : AccountError("Delete result unknown")
+
     data object ImageTooLarge : AccountError("Image too large")
 
     data object UnsupportedImage : AccountError("Unsupported image type")

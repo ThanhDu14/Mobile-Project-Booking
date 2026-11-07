@@ -7,6 +7,7 @@ import android.view.LayoutInflater
 import android.view.View
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import com.example.booking_app.R
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -30,22 +31,30 @@ class OwnerDropInLayoutTest {
         )
         configurations.forEach { configuration ->
             val themed = ContextThemeWrapper(application.createConfigurationContext(configuration), R.style.Theme_Bookingapp)
-            val list = LayoutInflater.from(themed).inflate(R.layout.fragment_owner_dropin, null, false)
-            val form = LayoutInflater.from(themed).inflate(R.layout.fragment_owner_dropin_form, null, false)
-            val roster = LayoutInflater.from(themed).inflate(R.layout.fragment_owner_dropin_roster, null, false)
-            val vouchers = LayoutInflater.from(themed).inflate(R.layout.fragment_owner_vouchers, null, false)
-            val voucherForm = LayoutInflater.from(themed).inflate(R.layout.fragment_owner_voucher_form, null, false)
-            val statistics = LayoutInflater.from(themed).inflate(R.layout.fragment_owner_statistics, null, false)
-            assertNotNull(list.findViewById<View>(R.id.sessionList))
-            assertTrue(list.findViewById<View>(R.id.createSession).minimumHeight >= dp(themed, 48))
-            assertNotNull(form.findViewById<View>(R.id.levelSpinner))
-            assertTrue(form.findViewById<View>(R.id.save).minimumHeight >= dp(themed, 48))
-            assertTrue(roster.findViewById<View>(R.id.scanQr).minimumHeight >= dp(themed, 48))
-            assertTrue(roster.findViewById<View>(R.id.checkIn).minimumHeight >= dp(themed, 48))
-            assertTrue(vouchers.findViewById<View>(R.id.createVoucher).minimumHeight >= dp(themed, 48))
-            assertTrue(voucherForm.findViewById<View>(R.id.save).minimumHeight >= dp(themed, 48))
-            assertTrue(statistics.findViewById<View>(R.id.refresh).minimumHeight >= dp(themed, 48))
-            assertNotNull(statistics.findViewById<View>(R.id.peakChart))
+            var list: View? = null
+            var form: View? = null
+            var roster: View? = null
+            var vouchers: View? = null
+            var voucherForm: View? = null
+            var statistics: View? = null
+            InstrumentationRegistry.getInstrumentation().runOnMainSync {
+                list = LayoutInflater.from(themed).inflate(R.layout.fragment_owner_dropin, null, false)
+                form = LayoutInflater.from(themed).inflate(R.layout.fragment_owner_dropin_form, null, false)
+                roster = LayoutInflater.from(themed).inflate(R.layout.fragment_owner_dropin_roster, null, false)
+                vouchers = LayoutInflater.from(themed).inflate(R.layout.fragment_owner_vouchers, null, false)
+                voucherForm = LayoutInflater.from(themed).inflate(R.layout.fragment_owner_voucher_form, null, false)
+                statistics = LayoutInflater.from(themed).inflate(R.layout.fragment_owner_statistics, null, false)
+            }
+            assertNotNull(list!!.findViewById<View>(R.id.sessionList))
+            assertTrue(list!!.findViewById<View>(R.id.createSession).minimumHeight >= dp(themed, 48))
+            assertNotNull(form!!.findViewById<View>(R.id.levelSpinner))
+            assertTrue(form!!.findViewById<View>(R.id.save).minimumHeight >= dp(themed, 48))
+            assertTrue(roster!!.findViewById<View>(R.id.scanQr).minimumHeight >= dp(themed, 48))
+            assertTrue(roster!!.findViewById<View>(R.id.checkIn).minimumHeight >= dp(themed, 48))
+            assertTrue(vouchers!!.findViewById<View>(R.id.createVoucher).minimumHeight >= dp(themed, 48))
+            assertTrue(voucherForm!!.findViewById<View>(R.id.save).minimumHeight >= dp(themed, 48))
+            assertTrue(statistics!!.findViewById<View>(R.id.refresh).minimumHeight >= dp(themed, 48))
+            assertNotNull(statistics!!.findViewById<View>(R.id.peakChart))
         }
     }
 

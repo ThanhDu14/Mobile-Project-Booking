@@ -49,8 +49,22 @@ class OwnerBookingCheckInFragment : Fragment(R.layout.fragment_owner_booking_che
                     binding.submitCheckIn.isEnabled = !state.isSubmitting
                     binding.errorText.isVisible = state.error != null
                     binding.errorText.text = state.error
+                    binding.successCard.isVisible = state.result != null
                     binding.successText.isVisible = state.result != null
-                    binding.successText.text = state.result?.let { getString(R.string.owner_booking_checkin_success, it) }
+                    state.result?.let { bookingId ->
+                        binding.successText.text = getString(R.string.owner_booking_checkin_success, bookingId)
+                        val isPaid = state.checkInResult?.paymentStatus == "PAID"
+                        if (isPaid) {
+                            binding.remainingAmountText.text = "0 đ"
+                            binding.confirmPaymentButton.isEnabled = false
+                        } else {
+                            binding.confirmPaymentButton.isEnabled = true
+                            binding.confirmPaymentButton.setOnClickListener {
+                                binding.paymentCollected.isChecked = true
+                                viewModel.submit(binding.bookingCode.text?.toString().orEmpty(), paymentCollected = true)
+                            }
+                        }
+                    }
                 }
             }
         }

@@ -430,3 +430,34 @@ verify_jwt = false
 
 [functions.owner-docs]
 verify_jwt = false
+
+[functions.owner-approve-booking]
+verify_jwt = false
+
+[functions.owner-reject-booking]
+verify_jwt = false
+
+[functions.owner-cancel-booking]
+verify_jwt = false
+
+[functions.owner-create-session]
+verify_jwt = false
+
+[functions.owner-cancel-session]
+verify_jwt = false
+
+[functions.owner-checkin-dropin-registration]
+verify_jwt = false
+
+[functions.checkin-booking]
+verify_jwt = false
+
+[functions.owner-create-voucher]
+[functions.sync-account-email]
+verify_jwt = false
+
+[functions.delete-account]
+verify_jwt = false
+
+[functions.delete-account-sweeper]
+verify_jwt = false

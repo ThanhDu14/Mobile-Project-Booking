@@ -1,11 +1,11 @@
 package com.example.booking_app.feature.owner.di
 
 import com.example.booking_app.feature.owner.data.ManageSlotBlocksApi
-import com.example.booking_app.feature.owner.data.ContractPendingOwnerBookingRepository
-import com.example.booking_app.feature.owner.data.ContractPendingBookingCheckInRepository
-import com.example.booking_app.feature.owner.data.ContractPendingOwnerDropInRepository
+import com.example.booking_app.feature.owner.data.OwnerBookingRepositoryImpl
+import com.example.booking_app.feature.owner.data.BookingCheckInRepositoryImpl
+import com.example.booking_app.feature.owner.data.OwnerDropInRepositoryImpl
 import com.example.booking_app.feature.owner.data.ContractPendingOwnerVoucherRepository
-import com.example.booking_app.feature.owner.data.ContractPendingOwnerStatisticsRepository
+import com.example.booking_app.feature.owner.data.FirestoreOwnerStatisticsRepository
 import com.example.booking_app.feature.owner.data.OwnerOnboardingDataSource
 import com.example.booking_app.feature.owner.data.OwnerVenueRepositoryImpl
 import com.example.booking_app.feature.owner.data.FirestoreOwnerCalendarRepository
@@ -43,15 +43,15 @@ abstract class OwnerModule {
 
     @Binds
     @Singleton
-    abstract fun bindOwnerBookingRepository(impl: ContractPendingOwnerBookingRepository): OwnerBookingRepository
+    abstract fun bindOwnerBookingRepository(impl: OwnerBookingRepositoryImpl): OwnerBookingRepository
 
     @Binds
     @Singleton
-    abstract fun bindBookingCheckInRepository(impl: ContractPendingBookingCheckInRepository): BookingCheckInRepository
+    abstract fun bindBookingCheckInRepository(impl: BookingCheckInRepositoryImpl): BookingCheckInRepository
 
     @Binds
     @Singleton
-    abstract fun bindOwnerDropInRepository(impl: ContractPendingOwnerDropInRepository): OwnerDropInRepository
+    abstract fun bindOwnerDropInRepository(impl: OwnerDropInRepositoryImpl): OwnerDropInRepository
 
     @Binds
     @Singleton
@@ -59,7 +59,7 @@ abstract class OwnerModule {
 
     @Binds
     @Singleton
-    abstract fun bindOwnerStatisticsRepository(impl: ContractPendingOwnerStatisticsRepository): OwnerStatisticsRepository
+    abstract fun bindOwnerStatisticsRepository(impl: FirestoreOwnerStatisticsRepository): OwnerStatisticsRepository
 
     @Binds
     @Singleton

@@ -59,9 +59,19 @@ class OwnerBookingsFragment : Fragment(R.layout.fragment_owner_bookings) {
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        viewModel.startCountdownTicker()
+    }
+
     override fun onResume() {
         super.onResume()
         if (_binding != null) viewModel.refresh()
+    }
+
+    override fun onStop() {
+        viewModel.stopCountdownTicker()
+        super.onStop()
     }
 
     override fun onDestroyView() {
