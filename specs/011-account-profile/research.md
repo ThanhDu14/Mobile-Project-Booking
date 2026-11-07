@@ -297,7 +297,7 @@ Các hàm ẩn danh chạy theo lô (tối đa 400 thao tác ghi mỗi batch), i
 ## R14. Trang tài khoản trong điều hướng và lối sang tính năng khác
 
 **Quyết định:**
-- `RES/navigation/nav_account.xml` (graph lồng, A) gồm: `AccountFragment` (start), `EditProfileFragment`, `DistrictPickerBottomSheet`, `AvatarCropFragment`, `ChangePasswordFragment`, `ChangeEmailFragment`, `DeleteAccountFragment`, `ReauthDialog`. `nav_player` và `nav_owner` đều `include` graph này. *(2026-11-06)* Không còn tab "Tài khoản": cả hai graph mở `nav_account` bằng global action `action_global_account` từ avatar ở header dùng chung (US8, [ui-screens §5](contracts/ui-screens.md#5-header-dùng-chung-và-avatar-2026-11-06-us8-fr-026--fr-031)).
+- `RES/navigation/nav_account.xml` (graph lồng, A) gồm: `AccountFragment` (start), `EditProfileFragment`, `DistrictPickerBottomSheet`, `AvatarCropFragment`, `ChangePasswordFragment`, `ChangeEmailFragment`, `DeleteAccountFragment`, `ReauthDialog`. `nav_player` và `nav_owner` đều `include` graph này, ở tab "Tài khoản" / "Cơ sở" theo wireframe.
 - Mục dẫn sang tính năng khác dùng **deep link** để không import `ui/` của tính năng khác (constitution I):
 
 | Mục | Deep link | Chủ |

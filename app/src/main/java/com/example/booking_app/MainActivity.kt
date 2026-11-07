@@ -65,6 +65,11 @@ class MainActivity : AppCompatActivity() {
         setUpBottomNav()
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        com.example.booking_app.feature.booking.ui.BookingSlotGridFragment.clearViewCache()
+    }
+
     /**
      * Một BottomNav cho cả hai chế độ, đổi menu theo graph gốc: BottomNav người chơi trong `nav_player`, OwnerNav
      * trong `nav_owner`. Chỉ hiện ở màn gốc của tab. Người chơi mới nối Trang chủ và Tài khoản (Vãng lai, Lịch đặt,
@@ -86,6 +91,28 @@ class MainActivity : AppCompatActivity() {
                 }
                 R.id.tab_owner_venues -> {
                     openOwnerVenues()
+                    true
+                }
+                R.id.tab_owner_schedule -> {
+                    navController.navigate(
+                        R.id.ownerCalendarFragment,
+                        null,
+                        navOptions {
+                            launchSingleTop = true
+                            popUpTo(R.id.ownerHomePlaceholderFragment)
+                        },
+                    )
+                    true
+                }
+                R.id.tab_owner_bookings -> {
+                    navController.navigate(
+                        R.id.ownerBookingsFragment,
+                        null,
+                        navOptions {
+                            launchSingleTop = true
+                            popUpTo(R.id.ownerHomePlaceholderFragment)
+                        },
+                    )
                     true
                 }
                 R.id.tab_account -> {
@@ -141,6 +168,8 @@ class MainActivity : AppCompatActivity() {
         val tab = if (ownerMode) {
             when (destination.id) {
                 R.id.ownerHomePlaceholderFragment -> R.id.tab_owner_today
+                R.id.ownerCalendarFragment -> R.id.tab_owner_schedule
+                R.id.ownerBookingsFragment -> R.id.tab_owner_bookings
                 R.id.ownerVenueListFragment -> R.id.tab_owner_venues
                 // OwnerNav không có tab Tài khoản: giữ sáng tab đã mở trang này (avatar ở Hôm nay → Hôm nay).
                 R.id.accountFragment ->

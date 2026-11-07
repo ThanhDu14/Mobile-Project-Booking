@@ -424,3 +424,9 @@ verify_jwt = false
 
 [functions.manage-slot-blocks]
 verify_jwt = false
+
+[functions.owner-applications]
+verify_jwt = false
+
+[functions.owner-docs]
+verify_jwt = false
