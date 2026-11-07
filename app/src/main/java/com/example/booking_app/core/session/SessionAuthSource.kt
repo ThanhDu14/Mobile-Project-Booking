@@ -20,7 +20,6 @@ data class AuthUser(
 interface SessionAuthSource {
     val authState: Flow<AuthUser?>
     suspend fun getClaims(forceRefresh: Boolean): Map<String, Any?>
-    /** Đọc lại người dùng từ server (ví dụ vừa xác minh email); trả bản mới nhất. */
-    suspend fun reload(): AuthUser?
+    suspend fun reload()
     suspend fun signOut()
 }

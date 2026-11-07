@@ -14,6 +14,7 @@ import androidx.navigation.navOptions
 import com.example.booking_app.R
 import com.example.booking_app.databinding.FragmentAuthWelcomeBinding
 import com.example.booking_app.databinding.ItemWelcomeFeatureBinding
+import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -43,8 +44,8 @@ class WelcomeFragment : Fragment(R.layout.fragment_auth_welcome) {
                             null,
                             navOptions { popUpTo(R.id.nav_main) { inclusive = true } },
                         )
-                        WelcomeEvent.OpenLogin -> findNavController().navigate(R.id.action_welcome_to_login)
-                        WelcomeEvent.OpenRegister -> findNavController().navigate(R.id.action_welcome_to_register)
+                        WelcomeEvent.NotReady ->
+                            Snackbar.make(view, R.string.auth_welcome_coming_soon, Snackbar.LENGTH_SHORT).show()
                     }
                 }
             }

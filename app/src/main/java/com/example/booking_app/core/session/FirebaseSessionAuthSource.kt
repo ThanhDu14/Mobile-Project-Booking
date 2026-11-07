@@ -27,10 +27,9 @@ class FirebaseSessionAuthSource @Inject constructor(
         return user.getIdToken(forceRefresh).awaitWithTimeout().claims
     }
 
-    override suspend fun reload(): AuthUser? {
+    override suspend fun reload() {
         val user = auth.currentUser ?: throw AppError.NotSignedIn
         user.reload().awaitWithTimeout()
-        return auth.currentUser?.toAuthUser()
     }
 
     override suspend fun signOut() {
