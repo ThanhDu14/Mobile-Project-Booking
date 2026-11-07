@@ -38,6 +38,7 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 32 | 2026-11-04 | Kích hoạt đồng bộ offset giờ server P0-7, check đụng độ & countdown | 04 |
 | 33 | 2026-11-04 | Tối ưu UI phản hồi chậm ở lưới 040 (P1-2 + P1-3 + P1-1) | 04 |
 | 34 | 2026-11-04 | Tối ưu độ trễ chuyển cảnh Trang chủ ↔ Đặt sân theo giờ (View Cache & Pre-warm) | 04 |
+| 35 | 2026-11-07 | Khảo sát context, làm rõ yêu cầu và cập nhật tài liệu chuẩn bị triển khai spec 060 | 06 |
 
 
 
@@ -1862,3 +1863,29 @@ Sau đợt kiểm thử trên thiết bị thật và đối chiếu kỹ lưỡ
 - **Compile Kotlin**: `./gradlew :app:compileDebugKotlin` thành công 100% (`BUILD SUCCESSFUL`).
 - **Android Unit Tests**: `./gradlew :app:testDebugUnitTest --tests "com.example.booking_app.feature.booking.*"` đạt **112/112 tests PASS (100%)** trên 18 files.
 - **Build APK Debug**: `./gradlew :app:assembleDebug` thành công 100% (`BUILD SUCCESSFUL in 1m 24s`).
+
+---
+
+## Mục 35: Khảo sát và chuẩn bị triển khai spec 060
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-07 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 06 – Quản lý lịch đặt (`specs/060-my-bookings/`) |
+| Công cụ AI | OpenCode, có sử dụng subagent đọc và đối chiếu tài liệu/mã nguồn |
+| Mục đích | Thu thập context, đối chiếu thiết kế, phát hiện mâu thuẫn và ghi lại quyết định trước khi triển khai |
+| Nhánh Git | `060-my-bookings` |
+
+### Yêu cầu và kết quả
+
+- Người dùng yêu cầu đọc context dự án, sau đó tập trung vào feature 060, xem đủ bốn ảnh wireframe trong `specs/060-my-bookings/ui/` và đề xuất quy trình triển khai bằng Spec Kit; chưa triển khai mã nguồn.
+- AI đối chiếu spec, plan, tasks, data model, contracts, constitution, schema chung và các điểm tích hợp 040/041/050/070/112 với mã nguồn hiện tại; phát hiện các mâu thuẫn về tiền hoàn, schema, giao diện hủy và ranh giới client/server. AI đã đính chính nhận định ban đầu về việc repo chỉ có mã template sau khi kiểm tra lại trạng thái hiện tại.
+- Người dùng chọn tính phạt hủy trễ bằng ví trên số tiền thực trả sau voucher; áp dụng chính sách cho từng buổi trong chuỗi; dùng màn hình hủy riêng theo ảnh; giới hạn phạm vi 060 và tích hợp tối thiểu; ưu tiên schema chung; đồng ý thứ tự tab và bảo vệ QR cache theo chủ tài khoản.
+- Cập nhật spec, plan, tasks, research, data-model, UI contract, quickstart, README wireframe và README nhóm 06; các nội dung kế hoạch cũ mâu thuẫn được đánh dấu cần đối chiếu lại trước implement. Các thay đổi tài liệu đã commit cục bộ, không push.
+
+### Cần làm rõ và kiểm chứng
+
+- Chưa quyết định quy tắc làm tròn ở nửa đồng và thời điểm hoàn lượt voucher khi chỉ hủy một phần chuỗi cố định.
+- Chưa viết lại toàn bộ plan/tasks theo quyết định mới; cần đối soát trước khi thực thi `/speckit-implement`.
+- Không chạy build/test vì lần này chỉ đọc context và cập nhật tài liệu; chưa xác minh các luồng nghiệp vụ bằng thực thi. Việc triển khai và kết quả kiểm thử sẽ ghi ở mục sau khi thực hiện thực tế.

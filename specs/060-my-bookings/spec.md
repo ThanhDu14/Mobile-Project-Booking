@@ -14,9 +14,9 @@
 
 ### Quyết định chuẩn bị triển khai — 2026-11-07
 
-- **Hoàn tiền khi hủy trễ bằng ví:** phạt 30% trên số tiền thực trả sau voucher, hoàn 70% còn lại. Tính bằng VND nguyên; làm tròn phần phạt đến đồng nguyên, bảo đảm `penaltyAmount + refundAmount == paidAmount`. Quy tắc làm tròn chính xác tại nửa đồng phải được thống nhất trong plan và test trước khi implement.
+- **Hoàn tiền khi hủy trễ bằng ví:** tính 30% số tiền thực trả sau voucher, làm tròn tiền phạt xuống bội số 1.000 VND; tiền hoàn bằng số thực trả trừ tiền phạt. Ví dụ đã trả 111.111đ thì phạt 33.000đ, hoàn 78.111đ. Dùng số nguyên và bảo đảm `penaltyAmount + refundAmount == paidAmount`.
 - **Chuỗi cố định:** áp dụng chính sách hủy của đơn lẻ độc lập cho phần tiền đã phân bổ của từng buổi; hủy trễ buổi trả bằng ví hoàn 70%, còn buổi đặt cọc mất phần cọc của buổi đó.
-- **Voucher của chuỗi:** thời điểm hoàn lượt voucher khi chỉ hủy một phần chuỗi chưa được quyết định; cần làm rõ trước khi implement hành vi này. Quy tắc hoàn lượt cho đơn được hoàn 100% vẫn áp dụng theo FR-027.
+- **Voucher của chuỗi:** chỉ hoàn lượt voucher dùng chung khi tất cả các buổi liên quan đã hủy và từng buổi đều đủ điều kiện hoàn 100%; hủy một phần chuỗi không hoàn lượt. Việc xác định redemption của nhóm phải dựa trên hợp đồng dữ liệu 050 thực tế, không tự giả định.
 - **Giao diện hủy:** dùng màn hình riêng theo `ui/06_booking-management_buoc3_huy-dat-san.png`, có thông tin hoàn/phạt, lựa chọn lý do và nút xác nhận; bốn ảnh trong `ui/` là tham chiếu chính về thiết kế.
 - **Phạm vi tích hợp:** tập trung feature 060 và chỉ sửa phần tối thiểu cần thiết ở các feature liên quan; không coi chức năng chưa có là đã hoàn thiện và phải báo rõ phần bị chặn.
 - **Schema:** ưu tiên đặc tả CSDL dùng chung tại `docs/design/database/README.md`, đối chiếu dữ liệu và hợp đồng thực tế của các feature liên quan; không tự chia đều giá slot khi đã có giá trong `items`.
