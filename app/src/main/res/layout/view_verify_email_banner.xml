@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Banner nhắc xác minh email (FR-009). Gốc là VerifyEmailBannerView (MaterialCardView). -->
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:parentTag="com.google.android.material.card.MaterialCardView">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/space_4">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:accessibilityLiveRegion="polite"
+            android:drawablePadding="@dimen/space_3"
+            android:gravity="center_vertical"
+            android:text="@string/auth_verify_banner_text"
+            android:textAppearance="?attr/textAppearanceBodyLarge"
+            android:textColor="@color/sn_on_lamp_container"
+            app:drawableStartCompat="@drawable/ic_verified_user_24"
+            app:drawableTint="@color/sn_on_lamp_container" />
+
+        <FrameLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="end"
+            android:layout_marginTop="@dimen/space_2">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/resendButton"
+                style="@style/Widget.SmashNow.Button.Text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/auth_verify_banner_resend"
+                android:textColor="@color/sn_on_lamp_container" />
+
+            <com.google.android.material.progressindicator.CircularProgressIndicator
+                android:id="@+id/resendProgress"
+                style="@style/Widget.SmashNow.ButtonProgress.OnSurface"
+                android:visibility="gone" />
+        </FrameLayout>
+    </LinearLayout>
+</merge>

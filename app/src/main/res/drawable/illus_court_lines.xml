@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Vạch sân cầu lông nhìn từ trên xuống, dùng trên nền court ở màn hình chào (wireframe buoc1_man-chao). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="300dp"
+    android:height="280dp"
+    android:viewportWidth="300"
+    android:viewportHeight="280">
+    <path
+        android:pathData="M4,4H296V276H4Z M4,140H296"
+        android:strokeWidth="7"
+        android:strokeAlpha="0.6"
+        android:strokeColor="@color/sn_on_court" />
+</vector>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Token màu SmashNow, chế độ tối. Nguồn: design system SmashNow (tokens.json). Không sửa tay riêng lẻ. -->
+<resources>
+    <color name="sn_surface">#0F1411</color>
+    <color name="sn_surface_raised">#171D19</color>
+    <color name="sn_surface_sunken">#0A0E0C</color>
+    <color name="sn_line">#2B3530</color>
+    <color name="sn_outline">#7C8B83</color>
+    <color name="sn_ink">#E4EBE6</color>
+    <color name="sn_ink_muted">#A1AEA6</color>
+    <color name="sn_court">#7FD0AA</color>
+    <color name="sn_on_court">#06291C</color>
+    <color name="sn_court_container">#1B3D30</color>
+    <color name="sn_on_court_container">#BFE8D3</color>
+    <color name="sn_lamp">#F4C063</color>
+    <color name="sn_on_lamp">#2B1D00</color>
+    <color name="sn_lamp_container">#4A3612</color>
+    <color name="sn_on_lamp_container">#FCE3B0</color>
+    <color name="sn_slot_booked">#252D29</color>
+    <color name="sn_on_slot_booked">#9AA8A0</color>
+    <color name="sn_danger">#F2B8B5</color>
+    <color name="sn_on_danger">#5C0F0B</color>
+    <color name="sn_focus">#A9C2FF</color>
+</resources>

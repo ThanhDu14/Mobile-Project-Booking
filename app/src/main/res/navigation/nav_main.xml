@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Graph gốc. LauncherFragment chờ SessionState rồi MainActivity chọn graph con (contracts/ui-screens.md §1). -->
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_main"
+    app:startDestination="@id/launcherFragment">
+
+    <fragment
+        android:id="@+id/launcherFragment"
+        android:name="com.example.booking_app.core.ui.LauncherFragment"
+        android:label="@string/app_name" />
+
+    <include app:graph="@navigation/nav_auth" />
+    <include app:graph="@navigation/nav_player" />
+    <include app:graph="@navigation/nav_owner" />
+    <include app:graph="@navigation/nav_admin" />
+
+</navigation>

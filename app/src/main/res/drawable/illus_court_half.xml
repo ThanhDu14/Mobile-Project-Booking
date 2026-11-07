@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Vạch sân cầu lông nằm ngang, dùng trên khối sân của màn hình đăng nhập. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="216dp"
+    android:height="160dp"
+    android:viewportWidth="432"
+    android:viewportHeight="320">
+    <path
+        android:pathData="M2,2H430V318H2Z M2,96H430 M2,160H430 M2,224H430 M216,2V96 M216,224V318"
+        android:strokeWidth="4"
+        android:strokeAlpha="0.6"
+        android:strokeColor="@color/sn_on_court" />
+</vector>
