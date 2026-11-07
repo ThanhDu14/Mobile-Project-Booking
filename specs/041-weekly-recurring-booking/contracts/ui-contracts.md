@@ -23,13 +23,14 @@ Tài liệu này xác lập các hợp đồng giao tiếp giữa các tầng ki
 Khi giữ chỗ toàn chu kỳ thành công trong Transaction, ViewModel phát ra `BookingRecurringUiEffect.NavigateToPayment`:
 ```kotlin
 @Parcelize
-data class RecurringToPaymentArgs(
-    val recurringGroupId: String,         // Mã nhóm UUID
+data class HoldToPaymentArgs(
+    val bookingId: String,                // Mã nhóm recurringGroupId
     val venueId: String,
     val venueName: String,
+    val isRecurring: Boolean = true,
     val totalSessions: Int,               // Số lượng buổi hợp lệ (>= 4)
-    val subtotalAmount: Long,             // Tổng tiền trước voucher
-    val depositAmount: Long,              // Tiền cọc tối thiểu 30% (subtotalAmount * 30 / 100)
+    val subtotalAmount: Long,             // Tổng tiền toàn chu kỳ trước voucher
+    val slotIds: Array<String>,           // Danh sách tất cả slotIds của các buổi hợp lệ
     val holdExpiresAtMillis: Long         // Mốc hết hạn 5 phút tính theo epoch millis
 ) : Parcelable
 ```

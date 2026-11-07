@@ -153,7 +153,7 @@ supabase/functions/
 
 firestore.rules                            # phần dropInSessions, registrations
 firestore.indexes.json                     # index ở data-model mục 5
-firestore-tests/dropin.test.ts
+firestore-tests/test/dropInSessions.test.ts
 scripts/seed/080-dropin.ts                 # dữ liệu demo cho quickstart
 ```
 

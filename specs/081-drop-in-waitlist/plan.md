@@ -117,7 +117,7 @@ supabase/functions/
 supabase/migrations/<timestamp>_dropin_close_cron.sql   # lịch pg_cron gọi dropin-close
 
 firestore.indexes.json                            # registrations(status, waitlistTicket), dropInSessions(status, endAt)
-firestore-tests/dropin.test.ts                    # W1, W2
+firestore-tests/test/dropInSessions.test.ts                 # W1, W2
 scripts/seed/081-waitlist.ts
 ```
 

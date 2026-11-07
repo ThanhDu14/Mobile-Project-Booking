@@ -121,7 +121,7 @@ supabase/
 
 firestore.rules                                # phần reviews, favorites
 firestore.indexes.json                         # 5 index mới
-firestore-tests/reviews.test.ts, favorites.test.ts
+firestore-tests/test/reviews.test.ts, test/favorites.test.ts
 scripts/seed/070-review.ts                     # dữ liệu demo cho quickstart
 ```
 

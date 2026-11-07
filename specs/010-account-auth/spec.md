@@ -19,6 +19,10 @@
 - Q: Khi đăng ký có cho người dùng chọn "Tôi muốn đặt sân" / "Tôi là chủ sân" không, và sau đăng nhập đưa người dùng đi đâu? → A: Không có bước chọn mục đích. Mọi tài khoản mới đều là người chơi. Sau khi đăng nhập, app điều hướng theo vai trò: chủ sân đã được duyệt vào giao diện chủ sân, người chơi vào giao diện người chơi (admin vào giao diện quản trị). Muốn làm chủ sân thì đăng ký trong trang hồ sơ sau khi đăng nhập, bằng thông tin người dùng cung cấp, và chờ admin duyệt.
 - Q: Người đăng ký bằng email có phải xác minh email không, và xác minh trước hay sau khi dùng app? → A: Gửi email xác minh ngay sau đăng ký, cho dùng app ngay, hiện banner nhắc cho tới khi xác minh xong.
 
+### Session 2026-10-19
+
+- Q: Người chưa đăng nhập có phải đăng nhập ngay khi mở app không? → A: Không. Có chế độ khách: lần đầu mở app thấy màn hình chào có thêm lựa chọn "Xem sân trước"; các lần sau, chưa đăng nhập thì vào thẳng Trang chủ ở chế độ khách. Khách tìm sân và xem chi tiết sân được (spec 020, 030); thao tác cần tài khoản thì mời đăng nhập, đăng nhập xong quay lại đúng chỗ đang xem. Đăng xuất cũng về chế độ khách. (Phát hiện khi `/speckit-analyze` spec 020, mục G1.)
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Đăng ký bằng email và mật khẩu (Priority: P1)
@@ -125,6 +129,9 @@ Người dùng chọn "Dùng số điện thoại", nhập số điện thoại 
 - **Tài khoản admin**: đăng nhập như người dùng khác ở màn hình này, không có lựa chọn đăng ký làm admin.
 - **Vai trò thay đổi khi đang đăng nhập** (admin vừa duyệt hoặc vừa thu hồi quyền chủ sân): app áp dụng vai trò mới ở lần mở app hoặc lần làm mới phiên kế tiếp và điều hướng lại cho đúng giao diện; người bị thu hồi quyền không còn vào được giao diện chủ sân.
 - **Người dùng đã đăng nhập mở màn hình đăng nhập** (qua nút quay lại): không thể quay về màn hình đăng nhập/đăng ký khi đang đăng nhập.
+- **Khách mở màn hình đăng nhập rồi bấm quay lại**: trở về đúng màn hình đang xem ở chế độ khách, không thoát app.
+- **Khách đăng nhập bằng tài khoản chủ sân hoặc admin**: app chuyển sang giao diện của vai trò đó (FR-015); những gì đang xem ở chế độ khách không cần giữ.
+- **Khách đăng ký tài khoản mới** từ lời mời đăng nhập: sau khi đăng ký và khởi tạo xong, quay lại đúng màn hình đang xem như khi đăng nhập (FR-026).
 
 ## Requirements *(mandatory)*
 
@@ -168,6 +175,8 @@ Người dùng chọn "Dùng số điện thoại", nhập số điện thoại 
 - **FR-022**: Trong lúc một yêu cầu đăng ký/đăng nhập đang xử lý, nút gửi PHẢI bị khóa để không phát sinh yêu cầu trùng.
 - **FR-023**: Các màn hình PHẢI hiển thị đúng ở chế độ sáng, chế độ tối, trên điện thoại và máy tính bảng; ô nhập và nút có nhãn cho trình đọc màn hình.
 - **FR-024**: App KHÔNG ĐƯỢC lưu mật khẩu ở dạng đọc được trên thiết bị.
+- **FR-025**: Người chưa đăng nhập PHẢI dùng được app ở **chế độ khách**: lần đầu mở app thấy màn hình chào có lựa chọn "Xem sân trước" bên cạnh "Đăng ký", "Đăng nhập"; các lần sau vào thẳng Trang chủ của người chơi. Khách dùng được các chức năng chỉ đọc mà spec tương ứng cho phép (tìm sân ở spec 020, chi tiết sân ở spec 030); màn hình hoặc thao tác cần tài khoản hiện lời mời đăng nhập thay vì nội dung. Đăng xuất (spec 011) và bị khóa tài khoản (FR-014) đưa người dùng về chế độ khách.
+- **FR-026**: Khi khách mở đăng nhập hoặc đăng ký từ một màn hình trong app, sau khi đăng nhập (hoặc đăng ký và khởi tạo) xong với vai trò người chơi, app PHẢI quay lại đúng màn hình đó và giữ nguyên trạng thái đang xem (ví dụ từ khóa và bộ lọc tìm kiếm của spec 020). Bấm quay lại ở màn hình đăng nhập thì trở về màn hình đó ở chế độ khách.
 
 ### Key Entities *(include if feature involves data)*
 
@@ -193,6 +202,7 @@ Người dùng chọn "Dùng số điện thoại", nhập số điện thoại 
 - Đây là phiên bản học tập: đăng nhập bằng số điện thoại chỉ hoạt động với các số và mã thử nghiệm do nhóm khai báo trước; người dùng thật được hướng tới email hoặc Google.
 - Đăng ký làm chủ sân nằm trong trang hồ sơ (spec 011, 110); quyền chủ sân chỉ có sau khi admin duyệt (spec 120). Giao diện chủ sân, người chơi và quản trị thuộc các spec khác; spec này chỉ quy định điều hướng tới đó.
 - Tài khoản admin do nhóm cấp thủ công; spec này không có màn hình tạo admin.
+- Chế độ khách chỉ quy định khung điều hướng và lời mời đăng nhập dùng chung; mỗi spec tự quyết màn hình nào của mình khách được xem (mặc định: cần đăng nhập).
 - Màn hình hồ sơ, đổi mật khẩu, đăng xuất, xóa tài khoản và chuyển chế độ thuộc spec 011. 
 - Yêu cầu mật khẩu (8 ký tự, có chữ và số), thời hạn OTP 5 phút, chờ 60 giây giữa hai lần gửi lại và giới hạn 5 lần sai là mặc định theo thông lệ, nhóm có thể chỉnh trong `/speckit-clarify`.
 - Dịch vụ xác thực ở gói miễn phí giới hạn khoảng 150 email đặt lại mật khẩu và 1000 email xác minh mỗi ngày cho cả project; vượt hạn mức thì email không được gửi trong ngày đó, đủ cho quy mô đồ án (FR-018).

@@ -8,7 +8,8 @@ Tài liệu này xác lập các hợp đồng giao tiếp giữa các tầng ki
 
 ## 1. Hợp đồng Điều hướng (Navigation Safe Args)
 
-### 1.1. Tiếp nhận dữ liệu đầu vào (Từ `040` hoặc `041`)
+### 1.1. Tiếp nhận dữ liệu đầu vào (Từ `040`, `041`, hoặc `060` - Tab Chờ thanh toán)
+Thống nhất sử dụng chung lớp Safe Args `HoldToPaymentArgs` cho mọi luồng chuyển tới màn hình thanh toán (đơn ngày lẻ từ `[040]`, đơn chu kỳ từ `[041]`, hoặc bấm "Thanh toán tiếp" từ `[060]` theo FR-027):
 ```kotlin
 @Parcelize
 data class HoldToPaymentArgs(

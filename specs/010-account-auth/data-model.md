@@ -75,6 +75,7 @@ Spec 010 chỉ tạo trạng thái ban đầu và đọc các trạng thái này
 | `pending_signup_terms_at` | Long | Thời điểm bấm "Đăng ký" (chỉ để biết người dùng đã đồng ý; server vẫn ghi giờ của server) | như trên |
 | `last_verification_email_at` | Long | Mốc để tính 60 giây chờ gửi lại email xác minh | đăng xuất |
 | `last_password_reset_at` | Long | Mốc để tính 60 giây chờ gửi lại email đặt lại mật khẩu | sau 60 giây |
+| `welcome_seen` | Boolean | Đã qua màn hình chào lần đầu ("Xem sân trước", "Đăng ký" hoặc "Đăng nhập"); `true` thì khách vào thẳng Trang chủ (research R15) | Không xóa khi đăng xuất |
 
 Không lưu mật khẩu, OTP hay token (FR-024). Firebase SDK tự giữ phiên đăng nhập trong bộ nhớ riêng của app.
 
@@ -83,7 +84,7 @@ Không lưu mật khẩu, OTP hay token (FR-024). Firebase SDK tự giữ phiên
 | Lớp | Trường hoặc giá trị | Ghi chú |
 |---|---|---|
 | `AppRole` | `PLAYER`, `OWNER`, `ADMIN` | Đọc từ claim. Giá trị lạ thì coi là `PLAYER` |
-| `SessionState` | `Loading` · `SignedOut(reason: SignOutReason?)` · `NeedsConsent(prefill: ConsentPrefill)` · `Initializing` · `InitFailed(error: AppError)` · `SignedIn(uid, appRole, emailVerified)` | `SignOutReason.LOCKED` để màn hình đăng nhập hiện thông báo khóa |
+| `SessionState` | `Loading` · `SignedOut(reason: SignOutReason?)` · `NeedsConsent(prefill: ConsentPrefill)` · `Initializing` · `InitFailed(error: AppError)` · `SignedIn(uid, appRole, emailVerified)` | `SignOutReason.LOCKED` để màn hình đăng nhập hiện thông báo khóa. `SignedOut` đồng thời là **chế độ khách** (research R15) |
 | `ConsentPrefill` | `provider: GOOGLE \| PHONE \| PASSWORD`, `email: String?`, `phone: String?`, `displayName: String?` | Hiện "Đã xác thực bằng Google / số điện thoại" |
 | `OtpSession` | `phoneE164`, `verificationId`, `resendToken`, `sentAtElapsed`, `wrongCount` | Hết 5 phút (`sentAtElapsed + 300_000`) hoặc `wrongCount >= 5` thì `isUsable = false` |
 | `AuthError` | `InvalidCredentials`, `EmailInUse`, `AccountLocked`, `InvalidCode`, `CodeExpired`, `TooManyAttempts`, `PhoneNotSupported`, `GoogleCancelled`, `NoGoogleAccount`, `NeedsLinking(email, pendingCredential)`, `Network`, `Unknown` | Mỗi lỗi có chuỗi tiếng Việt trong `strings_auth.xml` |

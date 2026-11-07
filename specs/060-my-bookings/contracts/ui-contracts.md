@@ -25,10 +25,10 @@ data class ReceiptToMyBookingsArgs(
 ```
 
 ### 1.2. Tiếp tục thanh toán đơn giữ chỗ (`HOLD`) sang `050-payment-voucher`
-Khi người dùng bấm "Thanh toán tiếp" từ Tab 1 (Chờ thanh toán) trước khi hết hạn 5 phút:
+Khi người dùng bấm "Thanh toán tiếp" từ Tab 1 (Chờ thanh toán) trước khi hết hạn 5 phút, sử dụng chung lớp Safe Args `HoldToPaymentArgs`:
 ```kotlin
 @Parcelize
-data class ContinuePaymentArgs(
+data class HoldToPaymentArgs(
     val bookingId: String,
     val venueId: String,
     val venueName: String,

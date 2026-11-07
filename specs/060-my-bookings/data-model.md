@@ -18,7 +18,7 @@ Lưu trữ toàn bộ thông tin đơn đặt sân (cả đơn lẻ và từng b
 - `courtName`: `String` - Tên sân con (ví dụ: "Sân 1", "Sân Pickleball VIP")
 - `surfaceType`: `String` - Loại mặt sân (ví dụ: `HARD`, `INDOOR_VINYL`, `CARPET`)
 - `date`: `String` - Ngày diễn ra buổi chơi theo định dạng `yyyy-MM-dd`
-- `slotIds`: `List<String>` - Danh sách ID các slot 30 phút thuộc đơn (`{courtId}_{yyyyMMdd}_{HHmm}`)
+- `slotIds`: `List<String>` - Danh sách ID các slot 30 phút thuộc đơn (`{courtId}_{yyyyMMdd}_{HHmm}`). Lưu trữ dạng mảng ID gọn nhẹ trên Firestore; tầng Data Mapper (`BookingManagementMapper`) phân giải (hydrate) thành danh sách chi tiết các khung giờ `items: List<BookingSlotItem>` cho Domain và UI.
 - `startAt`: `Timestamp` - Thời điểm bắt đầu buổi chơi (chuẩn server)
 - `endAt`: `Timestamp` - Thời điểm kết thúc buổi chơi (chuẩn server)
 - `status`: `String` - Trạng thái đơn: `"HOLD"`, `"PENDING"`, `"CONFIRMED"`, `"COMPLETED"`, `"CANCELLED"`, `"REJECTED"`, `"NO_SHOW"`
@@ -41,7 +41,7 @@ Lưu trữ toàn bộ thông tin đơn đặt sân (cả đơn lẻ và từng b
 - `refundAmount`: `Long?` - Số tiền đã hoàn vào ví giả lập khi hủy (VND)
 - `penaltyAmount`: `Long?` - Số tiền bị khấu trừ/phạt theo chính sách mốc 240 phút (VND)
 - `holdExpiresAt`: `Timestamp?` - Hạn chót giữ chỗ (đối với đơn `HOLD` 5 phút)
-- `pendingExpiresAt`: `Timestamp?` - Hạn chót chủ sân duyệt đơn (đối với đơn `PENDING` 60 phút - Phương án 2.A)
+- `approvalDeadline`: `Timestamp?` - Hạn chót chủ sân duyệt đơn (đối với đơn `PENDING` 60 phút - Phương án 2.A)
 - `hasReviewed`: `Boolean` - Người chơi đã đánh giá đơn này chưa (mặc định `false`)
 - `createdAt`: `Timestamp` - Thời điểm tạo đơn
 - `updatedAt`: `Timestamp` - Thời điểm cập nhật cuối cùng
@@ -122,7 +122,7 @@ data class BookingDto(
     val refundAmount: Long? = null,
     val penaltyAmount: Long? = null,
     val holdExpiresAt: Timestamp? = null,
-    val pendingExpiresAt: Timestamp? = null,
+    val approvalDeadline: Timestamp? = null,
     val hasReviewed: Boolean = false,
     val createdAt: Timestamp? = null,
     val updatedAt: Timestamp? = null
@@ -241,10 +241,24 @@ data class BookingSummaryItem(
     val isRecurring: Boolean,
     val sessionProgress: String?,          // "Buổi 2/8" (nếu là cố định tuần)
     val holdExpiresAtMillis: Long?,
-    val pendingExpiresAtMillis: Long?,
+    val approvalDeadlineMillis: Long?,
     val hasReviewed: Boolean,
     val cancelReason: String?,
     val refundAmount: Long?
+)
+
+/**
+ * Chi tiết từng khung giờ đặt sân (Slot Item) trong đơn.
+ * Được ánh xạ và phân giải (hydrate) từ `slotIds` của BookingDto.
+ */
+data class BookingSlotItem(
+    val slotId: String,
+    val courtId: String,
+    val courtName: String,
+    val date: String,
+    val startAt: String,                  // "18:00"
+    val endAt: String,                    // "18:30"
+    val price: Long                       // VND (Long, cấm âm)
 )
 
 /**
@@ -255,12 +269,15 @@ data class BookingDetail(
     val userId: String,
     val venueId: String,
     val venueName: String,
+    val venueAddress: String = "",
+    val venuePhone: String = "",
     val courtId: String,
     val courtName: String,
     val surfaceType: String,
     val date: String,
     val timeRange: String,
     val slotIds: List<String>,
+    val items: List<BookingSlotItem> = emptyList(),
     val startAtMillis: Long,
     val endAtMillis: Long,
     val status: BookingStatus,
@@ -283,7 +300,7 @@ data class BookingDetail(
     val refundAmount: Long?,
     val penaltyAmount: Long?,
     val holdExpiresAtMillis: Long?,
-    val pendingExpiresAtMillis: Long?,
+    val approvalDeadlineMillis: Long?,
     val hasReviewed: Boolean,
     val createdAtMillis: Long
 )
@@ -407,3 +424,34 @@ data class ReceiptToMyBookingsArgs(
     val initialTab: String = "PENDING"
 ) : Parcelable
 ```
+
+---
+
+## 5. Quy tắc Ánh xạ & Phân giải Dữ liệu (`BookingManagementMapper`)
+
+Quy chuẩn chuyển đổi giữa tầng Data (`BookingDto`) và tầng Domain (`BookingSummaryItem`, `BookingDetail`):
+
+### 5.1. Phân giải `slotIds` thành `items: List<BookingSlotItem>`
+- **Định dạng `slotId`**: `{courtId}_{yyyyMMdd}_{HHmm}` (ví dụ: `court_vip1_20261025_1800`).
+- **Logic phân giải (Hydration)**:
+  - `courtId`: Trích xuất từ phần đầu của `slotId` (hoặc `dto.courtId`).
+  - `courtName`: Kế thừa từ `dto.courtName`.
+  - `date`: `dto.date` (định dạng `yyyy-MM-dd`).
+  - `startAt`: Trích xuất từ 4 ký tự cuối của `slotId` và format `HH:mm` (ví dụ `1800` $\rightarrow$ `"18:00"`).
+  - `endAt`: Tính toán `startAt + 30 phút` (ví dụ `"18:30"`).
+  - `price`: Phân bổ đều `dto.subtotalAmount / dto.slotIds.size` (hoặc khớp theo giá từng khung giờ).
+- Đảm bảo danh sách `items` được sắp xếp theo thời gian tăng dần (`startAt`).
+
+### 5.2. Chuẩn hóa Timestamp sang Milliseconds
+- `approvalDeadlineMillis = dto.approvalDeadline?.toDate()?.time` (thay thế cho `pendingExpiresAt`).
+- `holdExpiresAtMillis = dto.holdExpiresAt?.toDate()?.time`.
+- `startAtMillis = dto.startAt?.toDate()?.time ?: 0L`.
+- `endAtMillis = dto.endAt?.toDate()?.time ?: 0L`.
+- `checkedInAtMillis = dto.checkedInAt?.toDate()?.time`.
+- `cancelledAtMillis = dto.cancelledAt?.toDate()?.time`.
+- `createdAtMillis = dto.createdAt?.toDate()?.time ?: 0L`.
+
+### 5.3. Ánh xạ Enum an toàn
+- `status`: Chuyển chuỗi Firestore sang `BookingStatus` enum tương ứng (`HOLD`, `PENDING`, `CONFIRMED`, `COMPLETED`, `CANCELLED`, `REJECTED`, `NO_SHOW`). Fallback an toàn nếu có giá trị ngoài danh mục.
+- `paymentMethod`: Chuyển sang `PaymentMethodDomain` enum (`AT_VENUE`, `DEPOSIT`, `MOCK_WALLET`, `FREE`).
+
