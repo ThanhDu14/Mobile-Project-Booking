@@ -23,14 +23,13 @@ Tài liệu này xác lập các hợp đồng giao tiếp giữa các tầng ki
 Khi giữ chỗ toàn chu kỳ thành công trong Transaction, ViewModel phát ra `BookingRecurringUiEffect.NavigateToPayment`:
 ```kotlin
 @Parcelize
-data class HoldToPaymentArgs(
-    val bookingId: String,                // Mã nhóm recurringGroupId
+data class RecurringToPaymentArgs(
+    val recurringGroupId: String,         // Mã nhóm UUID
     val venueId: String,
     val venueName: String,
-    val isRecurring: Boolean = true,
     val totalSessions: Int,               // Số lượng buổi hợp lệ (>= 4)
-    val subtotalAmount: Long,             // Tổng tiền toàn chu kỳ trước voucher
-    val slotIds: Array<String>,           // Danh sách tất cả slotIds của các buổi hợp lệ
+    val subtotalAmount: Long,             // Tổng tiền trước voucher
+    val depositAmount: Long,              // Tiền cọc tối thiểu 30% (subtotalAmount * 30 / 100)
     val holdExpiresAtMillis: Long         // Mốc hết hạn 5 phút tính theo epoch millis
 ) : Parcelable
 ```
@@ -54,11 +53,6 @@ import com.example.booking_app.feature.booking.domain.model.Court
 import com.example.booking_app.feature.booking.domain.model.PriceRule
 
 interface RecurringBookingRepository {
-    /**
-     * Kiểm tra trạng thái chấp nhận đặt cố định của cơ sở từ venues/{venueId}.acceptsRecurring (Hợp đồng tích hợp Feature 111)
-     */
-    suspend fun isRecurringAccepted(venueId: String): Result<Boolean>
-
     /**
      * Lấy danh sách sân con đang hoạt động của cơ sở
      */

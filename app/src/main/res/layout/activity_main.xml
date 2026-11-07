@@ -1,48 +1,34 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/root"
+    android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
+    android:fitsSystemWindows="true"
     tools:context=".MainActivity">
 
-    <androidx.fragment.app.FragmentContainerView
-        android:id="@+id/nav_host_fragment"
-        android:name="androidx.navigation.fragment.NavHostFragment"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        app:defaultNavHost="true"
-        app:navGraph="@navigation/nav_main" />
-
-    <!-- BottomNav người chơi: chỉ hiện ở màn gốc của tab (MainActivity.updateBottomNav). -->
-    <LinearLayout
-        android:id="@+id/bottomNavContainer"
+    <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:visibility="gone"
-        tools:visibility="visible">
+        android:fitsSystemWindows="true">
 
-        <View
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbar"
             android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:background="?attr/colorOutlineVariant" />
+            android:layout_height="?attr/actionBarSize" />
 
-        <com.google.android.material.bottomnavigation.BottomNavigationView
-            android:id="@+id/bottomNav"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@color/sn_surface_raised"
-            app:itemActiveIndicatorStyle="@style/Widget.SmashNow.BottomNav.ActiveIndicator"
-            app:itemIconTint="@color/sn_bottom_nav_item"
-            app:itemTextColor="@color/sn_bottom_nav_item"
-            app:itemTextAppearanceActive="@style/TextAppearance.SmashNow.BottomNav.Active"
-            app:itemTextAppearanceInactive="@style/TextAppearance.SmashNow.BottomNav"
-            app:labelVisibilityMode="labeled"
-            app:menu="@menu/menu_player_bottom_nav" />
-    </LinearLayout>
+    </com.google.android.material.appbar.AppBarLayout>
 
-</LinearLayout>
+    <include layout="@layout/content_main" />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="@dimen/fab_margin"
+        android:layout_marginBottom="16dp"
+        app:srcCompat="@android:drawable/ic_dialog_email" />
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

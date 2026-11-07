@@ -19,9 +19,8 @@ Trạng thái: 🟨 Bản nháp, chốt tại buổi họp 16/10/2026 (mốc M1)
 | Xóa | Ưu tiên xóa mềm bằng trường `status` (`HIDDEN`, `LOCKED`, `DELETED`) cho dữ liệu có liên kết |
 | Phi chuẩn hóa | Được phép sao chép trường hiển thị (tên sân, ảnh đại diện) để tránh đọc thêm. Bản sao ghi rõ là `*Snapshot` hoặc nêu trong bảng trường |
 | Trường chỉ server ghi | Đánh dấu 🔒 trong bảng. Client không được ghi, Rules phải chặn |
-| Dữ liệu cá nhân | Trường chứa dữ liệu cá nhân (`users`) chỉ chủ tài khoản và admin đọc; tính năng khác cần tên/ảnh dùng snapshot |
 
-Các trường 🔒 do Edge Functions ghi qua Firestore REST API bằng service account (bỏ qua Rules). Mã truy cập Firestore dùng chung đặt ở `supabase/functions/_shared/firestore.ts` (B phụ trách). Xác thực Firebase ID token (`verifyIdToken`, `requireUser`, `requireRole`, `errorResponse`) ở `_shared/auth.ts` và thao tác Identity Toolkit (custom claims, khóa tài khoản) ở `_shared/identity.ts` (A phụ trách, spec 010).
+Các trường 🔒 do Edge Functions ghi qua Firestore REST API bằng service account (bỏ qua Rules). Mã truy cập Firestore dùng chung đặt ở `supabase/functions/_shared/firestore.ts` (B phụ trách).
 
 ## 2. Danh sách collection và người phụ trách
 
@@ -33,8 +32,7 @@ Người phụ trách viết bảng trường chi tiết, index, Rules và test 
 | `users/{uid}/searchHistory/{id}` | Lịch sử tìm kiếm | **A** | 02 |
 | `users/{uid}/aiUsage/{yyyyMMdd}` | Số lượt dùng AI Assistant trong ngày, số câu lạc đề liên tiếp 🔒 | **A** | 02 (AI) |
 | `aiSearchCache/{hash}` | Kết quả phân tích của câu đã chuẩn hóa, hết hạn trong ngày 🔒 | **A** | 02 (AI) |
-| `districts/{id}`, `amenities/{id}` | Danh mục khu vực, tiện ích. Bảng trường `districts`: [data-model 011 §3](../../../specs/011-account-profile/data-model.md#3-firestore-districtsid-a) (`name`, `cityName`, `sortOrder`, `isActive`, `createdAt`, `updatedAt`) | **A** | 02, 03, 11 đọc; 12 ghi |
-| `accountDeletions/{uid}` | Tiến trình xóa tài khoản (`state`, `steps`, `notify`…), không chứa thông tin cá nhân 🔒 | **A** | Chỉ server (spec 011) |
+| `districts/{id}`, `amenities/{id}` | Danh mục khu vực, tiện ích | **A** | 02, 03, 11 đọc; 12 ghi |
 | `ownerApplications/{id}` | Hồ sơ đăng ký chủ sân | **D** | 01 đọc, 11 tạo, 12 duyệt |
 | `venues/{venueId}` | Cơ sở (cụm sân) | **D** | 11 ghi; 02, 03 đọc |
 | `venues/{venueId}/courts/{courtId}` | Sân con | **D** | 11 ghi; 03, 04 đọc |
@@ -94,9 +92,9 @@ Các bảng dưới đây là bản khởi đầu. Người phụ trách hoàn t
 | Trường | Kiểu | Ghi chú |
 |---|---|---|
 | `displayName` | String | |
-| `email`, `phone` | String? | Ít nhất một trong hai. Lấy từ Firebase ID token khi tạo (`email` viết thường); đổi email hoặc số điện thoại theo spec 011 |
-| `avatarPath` | String? | Bucket `avatars`, object `{uid}/avatar_{epochMillis}.jpg` (mỗi lần đổi ảnh là object mới, tránh cache; spec 011) |
-| `level` | String? | `BEGINNER`, `INTERMEDIATE`, `ADVANCED`. Khởi tạo `null` (chưa chọn) |
+| `email`, `phone` | String? | Ít nhất một trong hai |
+| `avatarPath` | String? | Bucket `avatars`, object `{uid}/avatar.jpg` |
+| `level` | String | `BEGINNER`, `INTERMEDIATE`, `ADVANCED` |
 | `favoriteDistrictIds` | Array\<String> | Khu vực hay chơi |
 | `role` 🔒 | String | `PLAYER`, `OWNER`, `ADMIN`. Bản sao của custom claim `appRole` |
 | `ownerStatus` 🔒 | String | `NONE`, `PENDING`, `APPROVED`, `REJECTED`. Bị admin thu hồi quyền thì về `NONE` (spec 120) |
@@ -105,12 +103,9 @@ Các bảng dưới đây là bản khởi đầu. Người phụ trách hoàn t
 | `fcmTokens` | Array\<String> | Chỉ chủ tài khoản ghi |
 | `notificationPrefs` | Map\<String, Boolean> | Theo loại thông báo ở [4.13](#413-usersuidnotificationsid--d) |
 | `walletBalance` 🔒 | Long | Số dư ví giả lập (VND), khởi tạo 0 khi đăng ký. Chỉ Edge Function ghi (nạp ví giả lập, thanh toán, hoàn tiền); không bao giờ âm (spec 050) |
-| `termsAcceptedAt` 🔒 | Timestamp | Bắt buộc khi đăng ký. Chỉ `on-signup` ghi, bằng giờ server |
-| `deletionRequestedAt` 🔒 | Timestamp? | Ghi khi `delete-account` chốt xóa tài khoản. Có giá trị thì `requireUser()` trả `403 ACCOUNT_DELETING` (spec 011) |
+| `termsAcceptedAt` | Timestamp | Bắt buộc khi đăng ký |
 
-**Custom claims** (Firebase Auth): `role = "authenticated"` (Supabase Third-party Auth cần) và `appRole` (`PLAYER`, `OWNER`, `ADMIN`). Token chưa có `appRole` nghĩa là tài khoản chưa khởi tạo xong (spec 010). Mọi Edge Function ghi claim phải **gộp** vào claim cũ (`_shared/identity.ts` `mergeClaims`) và ghi claim **trước** khi ghi `users.role`, để app làm mới token là thấy vai trò mới.
-
-Xóa tài khoản (spec 011): Edge Function `delete-account` chạy 2 giai đoạn. (1) **Chốt** trong một transaction: hủy đơn và lượt vãng lai sắp tới (hoàn tiền theo chính sách), rời hàng chờ; với chủ sân thì ẩn cơ sở, hủy đơn và buổi của khách và hoàn 100%; ghi `deletionRequestedAt`, tạo `accountDeletions/{uid}`. Lỗi thì không có gì đổi. (2) **Dọn dẹp** idempotent 10 bước: tắt Auth, báo khách, ẩn danh đánh giá, cộng đồng, đơn đã qua, xóa hồ sơ chủ sân, subcollection, ảnh, `users/{uid}` và cuối cùng là người dùng Auth; chưa xong thì `delete-account-sweeper` làm tiếp. Chi tiết: [contract `delete-account`](../../../specs/011-account-profile/contracts/edge-functions-account.md).
+Xóa tài khoản: Edge Function `delete-account` xóa document, ảnh, lịch sử tìm kiếm, yêu thích; ẩn danh hóa `userId` trong đơn đặt và đánh giá cũ.
 
 **AI Assistant (spec 022):**
 - `users/{uid}/aiUsage/{yyyyMMdd}` 🔒: `count` (Int, số lượt trong ngày), `offTopicStreak` (Int), `lockedUntil` (Timestamp?, tạm khóa sau 3 câu lạc đề liên tiếp). Chỉ Edge Function ghi; chủ tài khoản được đọc để hiển thị số lượt còn lại.
@@ -141,7 +136,6 @@ Duyệt hồ sơ chạy bằng Edge Function `review-owner-application`: set cus
 | `ratingAvg` 🔒, `ratingCount` 🔒 | Double, Int | Cập nhật khi có đánh giá mới |
 | `acceptsRecurring` | Boolean | Cơ sở có nhận đặt cố định theo tuần không (spec 041). Mặc định `true`, chủ sân bật/tắt ở spec 111 |
 | `status` | String | `ACTIVE`, `HIDDEN` (chủ sân ẩn), `LOCKED` 🔒 (admin khóa) |
-| `hiddenReason` 🔒 | String? | `OWNER_DELETED`: chủ sân đã xóa tài khoản, không ai mở lại được (spec 011). **Chờ D xác nhận** |
 
 **Sân con `courts/{courtId}`:** `name`, `surfaceType` (`WOOD`, `PU`, `MAT`), `isActive`, `sortOrder`.
 
@@ -188,7 +182,6 @@ Một document cho mỗi khung giờ **đang bị chiếm**. Không có document
 | `pendingAt`, `approvalDeadline` 🔒 | Timestamp? | Ghi khi đơn sang `PENDING`. `approvalDeadline = min(pendingAt + 60 phút, startAt)` |
 | `cancelReason`, `cancelledBy` | String? | `cancelledBy`: `USER`, `OWNER`, `SYSTEM`. Đơn quá hạn duyệt: `REJECTED`, `cancelledBy = SYSTEM`, `cancelReason = "Quá hạn duyệt"` |
 | `cancelledAt`, `refundAmount` 🔒 | Timestamp?, Long? | Thời điểm hủy/từ chối và số tiền đã hoàn vào ví giả lập |
-| `userDeleted` 🔒 | Boolean? | `true` khi người đặt đã xóa tài khoản; thông tin liên hệ của người đặt bị xóa (`anonymizeBookings`, spec 011). **Chờ B xác nhận** |
 | `rescheduleRequest` | Map? | `newItems`, `status` (`PENDING`, `ACCEPTED`, `DECLINED`) |
 
 **Máy trạng thái đơn:**
@@ -301,11 +294,6 @@ Người phụ trách bổ sung vào `firestore.indexes.json` khi viết `plan.m
 | `chats` | `memberIds` (array-contains), `updatedAt desc` | Danh sách hội thoại (09) |
 | `reports` | `status`, `createdAt` | Hàng đợi xử lý (12) |
 | `ownerApplications` | `status`, `submittedAt` | Hồ sơ chờ duyệt (12) |
-| `districts` | `isActive`, `sortOrder` | Danh sách khu vực (011, 02) |
-| `ownerApplications` | `uid`, `submittedAt desc` | Hồ sơ gần nhất của người dùng (011) |
-| `accountDeletions` | `state`, `requestedAt` | `delete-account-sweeper` (011) |
-| `bookings` | `userId`, `status` / `venueId`, `status` | Tác động khi xóa tài khoản (011); `venues.ownerId` là index đơn trường, tự có |
-| `registrations` (collection group) | `userId`, `status` | Lượt vãng lai, lượt chờ của người xóa tài khoản (011) |
 
 ## 7. Phân quyền (tóm tắt Security Rules)
 
@@ -313,10 +301,8 @@ Ký hiệu: R đọc, C tạo, U sửa, D xóa. "Chủ" = người sở hữu do
 
 | Collection | Người chơi | Owner sân | Admin | Server (Edge Functions) |
 |---|---|---|---|---|
-| `users` | R **của mình**, U của mình trừ 🔒; không C/D | như người chơi | R; khóa/mở khóa qua Edge Function `set-account-status` | Tạo document (`on-signup`), ghi 🔒 |
+| `users` | R mọi người (trường công khai), CU của mình trừ 🔒 | như người chơi | R, U `accountStatus` | Ghi 🔒 |
 | `aiUsage`, `aiSearchCache` | R `aiUsage` của mình; không ghi | như người chơi | R | Ghi toàn bộ |
-| `districts` | R (đã khởi tạo) | như người chơi | R; ghi | — |
-| `accountDeletions` | Không | Không | Không | Chỉ server (`delete-account`, `delete-account-sweeper`) |
 | `ownerApplications` | C, R của mình; U khi `REJECTED` (nộp lại) | R của mình | R, duyệt qua Edge Function | Ghi 🔒 |
 | `venues`, `courts`, `priceRules` | R khi `ACTIVE` | CRUD cơ sở của mình (trừ 🔒) | R, khóa | Ghi 🔒 |
 | `slots` | R; C/U chỉ trong transaction đặt sân với `holdBy == uid` | C/D `BLOCKED` cho sân của mình | R | Dọn slot hết hạn |
@@ -337,7 +323,7 @@ Mỗi dòng trên cần ít nhất một test Emulator "được phép" và mộ
 
 | Bucket | Loại | Object | Ai được ghi | Ai được đọc | Phụ trách |
 |---|---|---|---|---|---|
-| `avatars` | public | `{uid}/avatar_{epochMillis}.jpg` | Chủ (`sub == uid`) và token có `appRole`; không cho `UPDATE` (mỗi lần đổi là object mới); `delete-account` xóa cả thư mục bằng service role | Mọi người | A |
+| `avatars` | public | `{uid}/avatar.jpg` | Chủ (`sub == uid`) | Mọi người | A |
 | `venue-photos` | public | `{venueId}/{tên file}` | Owner sân (kiểm tra qua Edge Function `sign-upload`) | Mọi người | D |
 | `review-photos` | public | `{reviewId}/{tên file}` | Người viết | Mọi người | C |
 | `owner-docs` | **private** | `{uid}/{applicationId}/{tên file}` | Chủ | **Chỉ chủ và `appRole == ADMIN`**, qua signed URL hết hạn sau 5 phút | D |
@@ -353,11 +339,8 @@ Mỗi dòng trên cần ít nhất một test Emulator "được phép" và mộ
 
 | Function | Việc | Phụ trách |
 |---|---|---|
-| `on-signup` | App gọi sau khi tạo tài khoản và đồng ý điều khoản (Spark không có trigger Auth). Idempotent; tạo `users/{uid}` rồi gộp claim `role: "authenticated"`, `appRole: "PLAYER"` | A |
-| `set-account-status` | Khóa/mở khóa: ghi `accountStatus` và cờ `disabled` của Firebase Auth | D |
-| `delete-account` | `preview` (chỉ đọc, tác động của việc xóa) và `confirm` (chốt trong một transaction, rồi dọn dẹp idempotent) — xem mục 4.1 | A |
-| `delete-account-sweeper` (pg_cron mỗi 5 phút) | Làm tiếp các `accountDeletions` chưa xong, lượt quét cuối sau 65 phút; header `x-cron-secret` | A |
-| `sync-account-email` | Chép email đã xác minh trong token vào `users.email` sau khi đổi email | A |
+| `on-signup` | Gán claim `role: "authenticated"`, `appRole: "PLAYER"`; tạo `users/{uid}` | A |
+| `delete-account` | Xóa dữ liệu và ảnh của người dùng | A |
 | `ai-search-parse` | AI Assistant: kiểm tra lượt dùng và cache, gọi LLM, kiểm tra JSON theo schema, trả bộ lọc (xem [AI-feature.md](../../proposal/AI-feature.md)) | A |
 | `create-booking`, `cancel-booking` | Transaction giữ chỗ/đặt/hủy, tính tiền, áp voucher | B |
 | `expire-holds` (pg_cron mỗi phút) | Chuyển đơn `HOLD` quá hạn sang `EXPIRED`, xóa slot | B |

@@ -31,17 +31,17 @@ description: "Danh sách task triển khai spec 070 – Đánh giá sân và sâ
 
 ## Phase 1: Setup (hạ tầng dùng chung)
 
-**Purpose**: Thư viện và cấu hình chung. Phần nền app do [tasks 010](../010-account-auth/tasks.md) (A) làm, cấu hình Firebase/Supabase đã có trên main (PR #22, #23). **Spec 070 chỉ kiểm tra và bổ sung phần riêng, không tạo lại file đã có** (research R12).
+**Purpose**: Thư viện và cấu hình chung. **Nếu PR `chore(core)` của nhóm đã có phần nào thì đánh dấu xong và dùng lại, không làm trùng** (research R12).
 
-- [X] T001 Kiểm tra 010-T001 đã thêm vào `gradle/libs.versions.toml`: Hilt (+ KSP), Firebase BoM, `supabase-kt` (`functions-kt`), `ktor-client-okhttp`, `kotlinx-serialization-json`, lifecycle, coroutines, Safe Args; test: MockK, Turbine, `kotlinx-coroutines-test`. Spec 070 **chỉ thêm** những gì 010 chưa có: `storage-kt` (ảnh đánh giá), Coil
-- [X] T002 Kiểm tra 010-T002 đã áp dụng plugin (Hilt, KSP, kotlin serialization, Safe Args, Secrets Gradle Plugin, google-services); chỉ khai báo thêm dependency `storage-kt`, Coil trong `app/build.gradle.kts`
-- [X] T003 Kiểm tra 010-T004 đã tạo `APP/SmashNowApp.kt` (`@HiltAndroidApp`) và gắn `@AndroidEntryPoint` cho `APP/MainActivity.kt`; không tạo lại
-- [X] T004 [P] Dùng `APP/core/di/FirebaseModule.kt` của 010-T015 (Emulator khi `BuildConfig.USE_EMULATOR == "true"`). Nếu module chưa bật offline cache của Firestore thì **chỉ thêm** cấu hình đó, không đổi chữ ký
-- [X] T005 [P] Dùng `APP/core/di/SupabaseModule.kt` của 010-T015 (`SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` từ `local.properties` qua Secrets Gradle Plugin; `accessToken = { idTokenProvider.getToken(false) }`). **Chỉ thêm** plugin `Storage` vào `SupabaseClient` (010 mới cài `Functions`)
-- [X] T006 [P] Tạo `APP/core/ui/UiState.kt` (`Loading`, `Content<T>`, `Empty`, `Error(message, retry)`) và `APP/core/ui/StateViews.kt` (helper hiển thị 4 trạng thái cho layout có `include_state_views.xml`) + `RES/layout/include_state_views.xml`
-- [X] T007 [P] Tạo `APP/core/model/VenueSummary.kt` (`venueId`, `name`, `photoPath`, `address`)
-- [X] T008 [P] Kiểm tra `firebase.json`, `.firebaserc`, `firestore.rules` (Rules nền), `firestore.indexes.json` và `firestore-tests/` (Vitest + `@firebase/rules-unit-testing`, `test/setup.ts`) đã có trên main từ PR #22; `cd firestore-tests && npm install && npm test` chạy được. Không tạo lại
-- [ ] T009 [P] Kiểm tra `supabase/config.toml` (Third-party Auth Firebase) đã có trên main từ PR #23 và 010-T003 đã xử lý `.gitignore`, file `.example` cho secrets; `npx supabase start` chạy được (xem `docs/guides/supabase-setup.md`). Không chạy `supabase init` lại — *30/10: `supabase/config.toml` đã có; chưa chạy được `npx supabase start` vì máy chưa có WSL2/Docker.*
+- [ ] T001 Thêm vào `gradle/libs.versions.toml` các phiên bản và thư viện: Hilt (+ KSP), Firebase BoM (`firebase-auth`, `firebase-firestore`), `supabase-kt` (`storage-kt`, `functions-kt`), `ktor-client-okhttp`, `kotlinx-serialization-json`, Coil, `lifecycle-viewmodel-ktx`, `lifecycle-runtime-ktx`, `kotlinx-coroutines-android`, plugin Navigation Safe Args; test: MockK, Turbine, `kotlinx-coroutines-test`
+- [ ] T002 Áp dụng plugin (Hilt, KSP, kotlin serialization, Safe Args, google-services) và khai báo dependency trong `app/build.gradle.kts` và `build.gradle.kts`
+- [ ] T003 Tạo `APP/SmashNowApp.kt` (`@HiltAndroidApp`), khai báo trong `app/src/main/AndroidManifest.xml`; gắn `@AndroidEntryPoint` cho `APP/MainActivity.kt`
+- [ ] T004 [P] Tạo `APP/core/di/FirebaseModule.kt` cung cấp `FirebaseAuth`, `FirebaseFirestore` (build debug trỏ Emulator `10.0.2.2:9099/8080`, bật offline cache)
+- [ ] T005 [P] Tạo `APP/core/di/SupabaseModule.kt` cung cấp `SupabaseClient` (Storage, Functions) với `SUPABASE_URL`, `SUPABASE_ANON_KEY` đọc từ `local.properties` qua `BuildConfig`; `accessToken` = Firebase ID token (`getIdToken(false)`)
+- [ ] T006 [P] Tạo `APP/core/ui/UiState.kt` (`Loading`, `Content<T>`, `Empty`, `Error(message, retry)`) và `APP/core/ui/StateViews.kt` (helper hiển thị 4 trạng thái cho layout có `include_state_views.xml`) + `RES/layout/include_state_views.xml`
+- [ ] T007 [P] Tạo `APP/core/model/VenueSummary.kt` (`venueId`, `name`, `photoPath`, `address`)
+- [ ] T008 [P] Khởi tạo `firebase.json` (emulator auth 9099, firestore 8080), `firestore.rules`, `firestore.indexes.json` nếu chưa có; khởi tạo thư mục `firestore-tests/` (Node 20, `@firebase/rules-unit-testing`, `vitest`) với `firestore-tests/package.json`
+- [ ] T009 [P] Khởi tạo Supabase local (`supabase init` → `supabase/config.toml`), thêm `supabase/.env.local.example` (FIREBASE_PROJECT_ID, FIREBASE_SERVICE_ACCOUNT_JSON giả) và đảm bảo `.gitignore` chặn `supabase/.env.local`, `local.properties`
 
 **Checkpoint**: `./gradlew assembleDebug` chạy được; `firebase emulators:start` và `supabase start` chạy được.
 
@@ -55,27 +55,27 @@ description: "Danh sách task triển khai spec 070 – Đánh giá sân và sâ
 
 ### Domain và data dùng chung
 
-- [X] T010 [P] Tạo model domain trong `REV/domain/model/`: `Review.kt`, `ReviewAuthor.kt`, `Ratings.kt` (mỗi tiêu chí `Int` 1–5), `OwnerReply.kt`, `VenueRatingSummary.kt`, `FavoriteVenue.kt` (`availability`: `ACTIVE`, `SUSPENDED`, `GONE`), `ReviewDraft.kt`, `DraftPhoto.kt` (`state`: `PENDING`, `UPLOADING`, `UPLOADED`, `FAILED`) đúng bảng mục 6 của [data-model.md](data-model.md)
-- [ ] T011 [P] Tạo interface `REV/domain/ReviewRepository.kt` (`observeSummary`, `observeMyReview`, `observeVenueReviews`, `observeOwnerReviews`, `create`, `update`, `delete`, `reply`, `discardPhotos`) và `REV/domain/FavoriteRepository.kt` (`observeIsFavorite`, `observeFavorites`, `setFavorite`) theo [contracts/ui-screens.md](contracts/ui-screens.md) — *30/10: xong `FavoriteRepository`; 06/11: `ReviewRepository` có `observeSummary`, `observeMyReview`, `getReviewTarget`, `create`; `update`, `delete`, `reply`, `discardPhotos`, `observeVenueReviews`, `observeOwnerReviews` thêm khi làm US2, US4–US6.*
-- [ ] T012 [P] Tạo `REV/data/dto/ReviewDto.kt`, `FavoriteDto.kt` và mapper sang domain trong `REV/data/dto/Mappers.kt`: `authorDeleted == true` → `ReviewAuthor.isDeleted`; `editedAt != null` → `isEdited`; `photoPaths` → URL public bằng `REV/data/ReviewPhotoUrls.kt` (`{SUPABASE_URL}/storage/v1/object/public/review-photos/{path}`) — *30/10: xong `FavoriteDto`, mapper favorite, `ReviewPhotoUrls`; 06/11: xong `ReviewDto`, `VenueRatingFieldsDto`, `ReviewBookingDto` và mapper (`ReviewMapperTest`).*
-- [X] T013 [P] Tạo `REV/data/dto/ReviewFunctionDtos.kt` (`@Serializable` request/response cho 5 action và body lỗi `{ error: { code, message } }`) và `REV/domain/ReviewError.kt` ánh xạ mã lỗi: `INVALID_ARGUMENT`, `UNAUTHENTICATED`, `NOT_OWNER`, `OWN_VENUE`, `ACCOUNT_LOCKED`, `NOT_FOUND`, `BOOKING_NOT_COMPLETED`, `REVIEW_WINDOW_CLOSED`, `ALREADY_REVIEWED`, `PHOTO_MISSING`, `INTERNAL`, `NETWORK` — *30/10: thêm `ReviewException`, `data/ReviewErrors.kt` (`Throwable.toReviewError()`), chuỗi `review_error_*` và `ui/common/ReviewErrorMessages.kt`.*
-- [ ] T014 Tạo khung `REV/data/FirestoreReviewRepository.kt` (đọc Firestore bằng `callbackFlow`, gọi `supabase.functions.invoke("review")`; khi `401` làm mới token `getIdToken(true)` và thử lại 1 lần) và `REV/data/FirestoreFavoriteRepository.kt`; bind trong `REV/data/di/ReviewModule.kt` (Hilt) — *06/11: xong `FirestoreReviewRepository` (đọc `reviews`, `venues`, `bookings`) + `ReviewApi`/`SupabaseReviewApi` (dùng `FunctionErrors.invokeWithAuthRetry` có sẵn cho 401); bind trong `ReviewModule`. Còn các action ghi của US2, US4–US6.*
-- [X] T015 [P] Tạo `RES/values/strings_review.xml` với toàn bộ key ở mục 3 của [contracts/ui-screens.md](contracts/ui-screens.md) và thông báo cho từng mã lỗi ở T013
-- [ ] T016 [P] Tạo `RES/navigation/nav_review.xml` (nested graph) với 6 destination và argument Safe Args theo [contracts/ui-screens.md](contracts/ui-screens.md) mục 1, deep link `smashnow://review/write/{bookingId}`, `smashnow://review/venue/{venueId}`; `include` vào graph chính `RES/navigation/nav_graph.xml` — *30/10: đã tạo `nav_review.xml` (include trong `nav_player`) với `FavoriteVenuesFragment`; 06/11: thêm `WriteReviewFragment` (args `bookingId`, `mode`; deep link `smashnow://review/write/{bookingId}`); 4 destination còn lại thêm khi làm US2, US4, US6.*
+- [ ] T010 [P] Tạo model domain trong `REV/domain/model/`: `Review.kt`, `ReviewAuthor.kt`, `Ratings.kt` (mỗi tiêu chí `Int` 1–5), `OwnerReply.kt`, `VenueRatingSummary.kt`, `FavoriteVenue.kt` (`availability`: `ACTIVE`, `SUSPENDED`, `GONE`), `ReviewDraft.kt`, `DraftPhoto.kt` (`state`: `PENDING`, `UPLOADING`, `UPLOADED`, `FAILED`) đúng bảng mục 6 của [data-model.md](data-model.md)
+- [ ] T011 [P] Tạo interface `REV/domain/ReviewRepository.kt` (`observeSummary`, `observeMyReview`, `observeVenueReviews`, `observeOwnerReviews`, `create`, `update`, `delete`, `reply`, `discardPhotos`) và `REV/domain/FavoriteRepository.kt` (`observeIsFavorite`, `observeFavorites`, `setFavorite`) theo [contracts/ui-screens.md](contracts/ui-screens.md)
+- [ ] T012 [P] Tạo `REV/data/dto/ReviewDto.kt`, `FavoriteDto.kt` và mapper sang domain trong `REV/data/dto/Mappers.kt`: `authorDeleted == true` → `ReviewAuthor.isDeleted`; `editedAt != null` → `isEdited`; `photoPaths` → URL public bằng `REV/data/ReviewPhotoUrls.kt` (`{SUPABASE_URL}/storage/v1/object/public/review-photos/{path}`)
+- [ ] T013 [P] Tạo `REV/data/dto/ReviewFunctionDtos.kt` (`@Serializable` request/response cho 5 action và body lỗi `{ error: { code, message } }`) và `REV/domain/ReviewError.kt` ánh xạ mã lỗi: `INVALID_ARGUMENT`, `UNAUTHENTICATED`, `NOT_OWNER`, `OWN_VENUE`, `ACCOUNT_LOCKED`, `NOT_FOUND`, `BOOKING_NOT_COMPLETED`, `REVIEW_WINDOW_CLOSED`, `ALREADY_REVIEWED`, `PHOTO_MISSING`, `INTERNAL`, `NETWORK`
+- [ ] T014 Tạo khung `REV/data/FirestoreReviewRepository.kt` (đọc Firestore bằng `callbackFlow`, gọi `supabase.functions.invoke("review")`; khi `401` làm mới token `getIdToken(true)` và thử lại 1 lần) và `REV/data/FirestoreFavoriteRepository.kt`; bind trong `REV/data/di/ReviewModule.kt` (Hilt)
+- [ ] T015 [P] Tạo `RES/values/strings_review.xml` với toàn bộ key ở mục 3 của [contracts/ui-screens.md](contracts/ui-screens.md) và thông báo cho từng mã lỗi ở T013
+- [ ] T016 [P] Tạo `RES/navigation/nav_review.xml` (nested graph) với 6 destination và argument Safe Args theo [contracts/ui-screens.md](contracts/ui-screens.md) mục 1, deep link `smashnow://review/write/{bookingId}`, `smashnow://review/venue/{venueId}`; `include` vào graph chính `RES/navigation/nav_graph.xml`
 - [ ] T017 [P] Tạo `RES/layout/item_review.xml` (avatar, tên, điểm tổng + 3 tiêu chí, bình luận, lưới ảnh, ngày, nhãn "Đã chỉnh sửa", nhãn "Đánh giá đã bị ẩn", khối "Phản hồi của chủ sân") và `REV/ui/common/ReviewAdapter.kt` (`ListAdapter` + `DiffUtil`; tác giả đã xóa → `review_deleted_user` + ảnh mặc định; `contentDescription` đọc số sao)
 
 ### Server dùng chung
 
-- [X] T018 [P] Viết test `FN/_shared/reviews.test.ts` cho hàm tính tổng điểm: create/update/delete/ẩn/hiện theo bảng "Ảnh hưởng tới tổng điểm" trong [data-model.md](data-model.md); `overall` = trung bình 3 tiêu chí làm tròn 1 chữ số; `ratingAvg = ratingSums.overall10 / 10 / ratingCount`; `ratingCount == 0` → `ratingAvg = 0`
-- [X] T019 Cài đặt `FN/_shared/reviews.ts`: `computeOverall()`, `starBucket()`, `applyDelta(venue, oldReview?, newReview?)` để T018 qua
-- [X] T020 [P] Dùng `FN/_shared/auth.ts` của 010-T021 (A; xác thực Firebase ID token, trả `{ uid, appRole }`). Nếu chưa merge thì viết bản tối thiểu đúng chữ ký ở [contract 010 §4](../010-account-auth/contracts/edge-function-on-signup.md#4-_sharedauthts-dùng-chung-cả-nhóm) rồi báo A; dùng `FN/_shared/firestore.ts` của B cho REST/transaction (nếu chưa có thì tạo bản tối thiểu `beginTransaction`, `get`, `commit`, thử lại 5 lần khi `ABORTED`, và báo B)
-- [X] T021 Tạo khung `FN/review/index.ts`: parse `action`, gọi `auth.ts`, kiểm `users/{uid}.accountStatus == ACTIVE` (`403 ACCOUNT_LOCKED`), router tới các handler trống, chuẩn hóa body lỗi theo [contracts/edge-function-review.md](contracts/edge-function-review.md)
+- [ ] T018 [P] Viết test `FN/_shared/reviews.test.ts` cho hàm tính tổng điểm: create/update/delete/ẩn/hiện theo bảng "Ảnh hưởng tới tổng điểm" trong [data-model.md](data-model.md); `overall` = trung bình 3 tiêu chí làm tròn 1 chữ số; `ratingAvg = ratingSums.overall10 / 10 / ratingCount`; `ratingCount == 0` → `ratingAvg = 0`
+- [ ] T019 Cài đặt `FN/_shared/reviews.ts`: `computeOverall()`, `starBucket()`, `applyDelta(venue, oldReview?, newReview?)` để T018 qua
+- [ ] T020 [P] Tạo `FN/_shared/auth.ts`: xác thực Firebase ID token (JWKS của Google, kiểm `aud`, `iss`, `exp`), trả `{ uid, appRole }`; dùng `FN/_shared/firestore.ts` của B cho REST/transaction (nếu chưa có thì tạo bản tối thiểu `beginTransaction`, `get`, `commit`, thử lại 5 lần khi `ABORTED`, và báo B)
+- [ ] T021 Tạo khung `FN/review/index.ts`: parse `action`, gọi `auth.ts`, kiểm `users/{uid}.accountStatus == ACTIVE` (`403 ACCOUNT_LOCKED`), router tới các handler trống, chuẩn hóa body lỗi theo [contracts/edge-function-review.md](contracts/edge-function-review.md)
 
 ### Quyền truy cập và index
 
-- [X] T022 [P] Viết test Rules `firestore-tests/test/reviews.test.ts` (R1–R9) và `firestore-tests/test/favorites.test.ts` (F1–F4) theo [contracts/security-rules.md](contracts/security-rules.md), cấu trúc giống `firestore-tests/test/base.test.ts` (`createTestEnv()`, vai trò qua claim `appRole`); mỗi dòng phân quyền có ít nhất một `assertSucceeds` và một `assertFails`; chạy thấy fail — *30/10: xong `favorites.test.ts` (F1–F4) và `reviews.test.ts` (R1–R9); cả bộ 52 test qua.*
-- [X] T023 Thêm Rules cho `reviews` và `users/{uid}/favorites` vào `firestore.rules` đúng [contracts/security-rules.md](contracts/security-rules.md) để T022 qua
-- [X] T024 [P] Thêm 5 index mới vào `firestore.indexes.json` theo mục 5 của [data-model.md](data-model.md) (`reviews`: `starBucket`, `hasPhotos`, `hasOwnerReply`, `userId`; collection group `favorites.venueId`) — *30/10: thêm 6 index (5 index mới + `venueId, status, createdAt desc` cho danh sách đánh giá); index lọc "Chưa phản hồi" có thêm `status` cho khớp truy vấn T058.*
+- [ ] T022 [P] Viết test Rules `firestore-tests/reviews.test.ts` (R1–R9) và `firestore-tests/favorites.test.ts` (F1–F4) theo [contracts/security-rules.md](contracts/security-rules.md); chạy thấy fail
+- [ ] T023 Thêm Rules cho `reviews` và `users/{uid}/favorites` vào `firestore.rules` đúng [contracts/security-rules.md](contracts/security-rules.md) để T022 qua
+- [ ] T024 [P] Thêm 5 index mới vào `firestore.indexes.json` theo mục 5 của [data-model.md](data-model.md) (`reviews`: `starBucket`, `hasPhotos`, `hasOwnerReply`, `userId`; collection group `favorites.venueId`)
 - [ ] T025 [P] Tạo script dữ liệu demo `scripts/seed/070-review.ts` (player1, player2, owner1, owner2, admin1; venueA ACTIVE với 25 đánh giá, venueB HIDDEN; đơn `b-done`, `b-old`, `b-confirmed`, `b-own`) theo [quickstart.md](quickstart.md) mục 1
 
 **Checkpoint**: Rules test qua; `deno test FN/_shared` qua; app build được với nav graph mới.
@@ -90,21 +90,21 @@ description: "Danh sách task triển khai spec 070 – Đánh giá sân và sâ
 
 ### Tests cho US1 ⚠️
 
-- [X] T026 [P] [US1] Viết `FN/review/create.test.ts`: thành công (201, tổng điểm +1); đơn không phải của mình → `403 NOT_OWNER`; đơn `CONFIRMED` → `409 BOOKING_NOT_COMPLETED`; `completedAt` 8 ngày trước → `409 REVIEW_WINDOW_CLOSED`; chủ sân đánh giá cơ sở của mình → `403 OWN_VENUE`; thiếu tiêu chí / sao ngoài 1–5 / bình luận > 1000 ký tự → `400 INVALID_ARGUMENT`; gửi lại cùng nội dung → `200` không tạo thêm; gửi lại khác nội dung → `409 ALREADY_REVIEWED`; **10 lời gọi song song cho 10 đơn của cùng venue → `ratingCount` +10 và `ratingSums` đúng tổng** (SC-005)
-- [X] T027 [P] [US1] Viết `TEST/domain/ReviewEligibilityTest.kt`: `COMPLETED` + chưa đánh giá + ≤ 7 ngày → `CAN_WRITE`; đã có đánh giá → `CAN_VIEW`; quá 7 ngày chưa đánh giá → `EXPIRED`; trạng thái khác → `NOT_ELIGIBLE`
-- [X] T028 [P] [US1] Viết `TEST/ui/write/WriteReviewViewModelTest.kt` (Turbine, fake repository): thiếu tiêu chí → lỗi chỉ rõ tiêu chí, không gọi repository; gửi thành công → sự kiện điều hướng + điểm tổng 4,0 cho 5/4/3; lỗi `NETWORK` → giữ nguyên bản nháp, hiện "Thử lại"; bấm "Gửi" 3 lần liên tiếp → chỉ 1 lời gọi `create`
+- [ ] T026 [P] [US1] Viết `FN/review/create.test.ts`: thành công (201, tổng điểm +1); đơn không phải của mình → `403 NOT_OWNER`; đơn `CONFIRMED` → `409 BOOKING_NOT_COMPLETED`; `completedAt` 8 ngày trước → `409 REVIEW_WINDOW_CLOSED`; chủ sân đánh giá cơ sở của mình → `403 OWN_VENUE`; thiếu tiêu chí / sao ngoài 1–5 / bình luận > 1000 ký tự → `400 INVALID_ARGUMENT`; gửi lại cùng nội dung → `200` không tạo thêm; gửi lại khác nội dung → `409 ALREADY_REVIEWED`; **10 lời gọi song song cho 10 đơn của cùng venue → `ratingCount` +10 và `ratingSums` đúng tổng** (SC-005)
+- [ ] T027 [P] [US1] Viết `TEST/domain/ReviewEligibilityTest.kt`: `COMPLETED` + chưa đánh giá + ≤ 7 ngày → `CAN_WRITE`; đã có đánh giá → `CAN_VIEW`; quá 7 ngày chưa đánh giá → `EXPIRED`; trạng thái khác → `NOT_ELIGIBLE`
+- [ ] T028 [P] [US1] Viết `TEST/ui/write/WriteReviewViewModelTest.kt` (Turbine, fake repository): thiếu tiêu chí → lỗi chỉ rõ tiêu chí, không gọi repository; gửi thành công → sự kiện điều hướng + điểm tổng 4,0 cho 5/4/3; lỗi `NETWORK` → giữ nguyên bản nháp, hiện "Thử lại"; bấm "Gửi" 3 lần liên tiếp → chỉ 1 lời gọi `create`
 
 ### Implementation cho US1
 
-- [X] T029 [US1] Cài đặt handler `create` trong `FN/review/index.ts` (gọi `FN/_shared/reviews.ts`): transaction đọc `bookings/{bookingId}`, `venues/{venueId}`, `reviews/{bookingId}`; kiểm tra theo bảng "Quy tắc kiểm tra" trong [data-model.md](data-model.md); ghi review (`status = VISIBLE`, `starBucket`, `hasPhotos`, `hasOwnerReply = false`, `completedAt` sao chép từ đơn, `userSnapshot` từ `users/{uid}`); cập nhật `venues.ratingSums`, `ratingCount`, `ratingAvg`; trả `canEditUntil = completedAt + 7 ngày` → T026 qua
-- [X] T030 [US1] Sau commit trong handler `create`, gọi `send-notification` loại `REVIEW_NEW` tới `venues.ownerId`; lỗi chỉ ghi log, không trả lỗi cho client (research R8) trong `FN/review/index.ts`
-- [X] T031 [P] [US1] Cài đặt `REV/domain/ReviewEligibility.kt` (`of(bookingStatus, completedAt, existingReview, now)`) → T027 qua
-- [X] T032 [US1] Cài đặt `create`, `observeMyReview(bookingId)` (listener `reviews/{bookingId}`) và `observeSummary(venueId)` (listener `venues/{venueId}`: `ratingAvg`, `ratingCount`, trung bình từng tiêu chí = `ratingSums.<tiêu chí> / ratingCount`) trong `REV/data/FirestoreReviewRepository.kt`
-- [X] T033 [P] [US1] Cài đặt `REV/domain/usecase/SubmitReviewUseCase.kt` (kiểm tra ở client: đủ 3 tiêu chí 1–5, bình luận ≤ 1000 ký tự sau khi trim)
-- [X] T034 [US1] Cài đặt `REV/ui/write/WriteReviewViewModel.kt` (`StateFlow<WriteReviewUiState>`, sự kiện một lần qua `Channel`, chặn gửi trùng khi đang gửi) → T028 qua
-- [X] T035 [P] [US1] Tạo `RES/layout/fragment_review_write.xml`: 3 `RatingBar` (bước 1, có nhãn tiêu chí), `TextInputLayout` bình luận có bộ đếm 1000, nút "Gửi", vùng ảnh (để trống cho US2), `include_state_views`
-- [X] T036 [US1] Cài đặt `REV/ui/write/WriteReviewFragment.kt` (ViewBinding, `repeatOnLifecycle(STARTED)`, hộp thoại "Bỏ đánh giá đang viết?" khi bấm quay lại lúc có thay đổi, snackbar lỗi theo `ReviewError`)
-- [X] T037 [US1] Cung cấp điểm nối cho spec 060: ghi chú cách dùng `ReviewEligibility` + `observeMyReview` + action tới `WriteReviewFragment(bookingId, mode = CREATE)` trong `REV/README.md` (để B gắn nút "Đánh giá"/"Xem đánh giá của bạn")
+- [ ] T029 [US1] Cài đặt handler `create` trong `FN/review/index.ts` (gọi `FN/_shared/reviews.ts`): transaction đọc `bookings/{bookingId}`, `venues/{venueId}`, `reviews/{bookingId}`; kiểm tra theo bảng "Quy tắc kiểm tra" trong [data-model.md](data-model.md); ghi review (`status = VISIBLE`, `starBucket`, `hasPhotos`, `hasOwnerReply = false`, `completedAt` sao chép từ đơn, `userSnapshot` từ `users/{uid}`); cập nhật `venues.ratingSums`, `ratingCount`, `ratingAvg`; trả `canEditUntil = completedAt + 7 ngày` → T026 qua
+- [ ] T030 [US1] Sau commit trong handler `create`, gọi `send-notification` loại `REVIEW_NEW` tới `venues.ownerId`; lỗi chỉ ghi log, không trả lỗi cho client (research R8) trong `FN/review/index.ts`
+- [ ] T031 [P] [US1] Cài đặt `REV/domain/ReviewEligibility.kt` (`of(bookingStatus, completedAt, existingReview, now)`) → T027 qua
+- [ ] T032 [US1] Cài đặt `create`, `observeMyReview(bookingId)` (listener `reviews/{bookingId}`) và `observeSummary(venueId)` (listener `venues/{venueId}`: `ratingAvg`, `ratingCount`, trung bình từng tiêu chí = `ratingSums.<tiêu chí> / ratingCount`) trong `REV/data/FirestoreReviewRepository.kt`
+- [ ] T033 [P] [US1] Cài đặt `REV/domain/usecase/SubmitReviewUseCase.kt` (kiểm tra ở client: đủ 3 tiêu chí 1–5, bình luận ≤ 1000 ký tự sau khi trim)
+- [ ] T034 [US1] Cài đặt `REV/ui/write/WriteReviewViewModel.kt` (`StateFlow<WriteReviewUiState>`, sự kiện một lần qua `Channel`, chặn gửi trùng khi đang gửi) → T028 qua
+- [ ] T035 [P] [US1] Tạo `RES/layout/fragment_review_write.xml`: 3 `RatingBar` (bước 1, có nhãn tiêu chí), `TextInputLayout` bình luận có bộ đếm 1000, nút "Gửi", vùng ảnh (để trống cho US2), `include_state_views`
+- [ ] T036 [US1] Cài đặt `REV/ui/write/WriteReviewFragment.kt` (ViewBinding, `repeatOnLifecycle(STARTED)`, hộp thoại "Bỏ đánh giá đang viết?" khi bấm quay lại lúc có thay đổi, snackbar lỗi theo `ReviewError`)
+- [ ] T037 [US1] Cung cấp điểm nối cho spec 060: ghi chú cách dùng `ReviewEligibility` + `observeMyReview` + action tới `WriteReviewFragment(bookingId, mode = CREATE)` trong `REV/README.md` (để B gắn nút "Đánh giá"/"Xem đánh giá của bạn")
 
 **Checkpoint**: Chạy kịch bản 1, 2, 3, 8 của quickstart; US1 dùng được độc lập (MVP).
 
@@ -143,17 +143,17 @@ description: "Danh sách task triển khai spec 070 – Đánh giá sân và sâ
 
 ### Tests cho US3 ⚠️
 
-- [X] T047 [P] [US3] Viết `TEST/ui/favorite/FavoriteVenuesViewModelTest.kt`: danh sách rỗng → `Empty`; venue `HIDDEN`/`LOCKED`/`DELETED` → `SUSPENDED`; venue không tồn tại → `GONE`; bỏ yêu thích xóa khỏi danh sách
-- [X] T048 [P] [US3] Viết `TEST/domain/ToggleFavoriteUseCaseTest.kt`: trạng thái đổi ngay (lạc quan); repository trả lỗi → trả về trạng thái cũ và phát sự kiện snackbar (FR-021)
+- [ ] T047 [P] [US3] Viết `TEST/ui/favorite/FavoriteVenuesViewModelTest.kt`: danh sách rỗng → `Empty`; venue `HIDDEN`/`LOCKED`/`DELETED` → `SUSPENDED`; venue không tồn tại → `GONE`; bỏ yêu thích xóa khỏi danh sách
+- [ ] T048 [P] [US3] Viết `TEST/domain/ToggleFavoriteUseCaseTest.kt`: trạng thái đổi ngay (lạc quan); repository trả lỗi → trả về trạng thái cũ và phát sự kiện snackbar (FR-021)
 
 ### Implementation cho US3
 
-- [X] T049 [US3] Cài đặt `REV/data/FirestoreFavoriteRepository.kt`: `setFavorite` ghi `users/{uid}/favorites/{venueId}` với `venueId`, `venueSnapshot` (`name`, `photoPath`, `address`), `createdAt = serverTimestamp()` hoặc xóa; `observeIsFavorite` (listener 1 document); `observeFavorites` (order `createdAt desc`, trang 20) + `get venues/{venueId}` từng sân để ra `availability` (research R6)
-- [X] T050 [P] [US3] Cài đặt `REV/domain/usecase/ToggleFavoriteUseCase.kt` → T048 qua
-- [X] T051 [US3] Cài đặt `REV/ui/favorite/FavoriteVenuesViewModel.kt` (phân trang khi cuộn cuối) → T047 qua
-- [X] T052 [P] [US3] Tạo `RES/layout/fragment_favorite_list.xml`, `RES/layout/item_favorite_venue.xml` (ảnh, tên, địa chỉ, điểm; nhãn `favorite_venue_suspended`/`favorite_venue_gone`; nút trái tim bỏ yêu thích) và `REV/ui/favorite/FavoriteVenueAdapter.kt`
-- [X] T053 [US3] Cài đặt `REV/ui/favorite/FavoriteVenuesFragment.kt` (bấm sân `ACTIVE` → chi tiết sân spec 030; sân `SUSPENDED`/`GONE` không mở đặt sân; trạng thái rỗng có nút "Tìm sân")
-- [X] T054 [P] [US3] Tạo view dùng lại `REV/ui/favorite/FavoriteToggleButton.kt` (+ `RES/drawable/ic_favorite_*.xml`, `contentDescription` "Thêm/Bỏ yêu thích", vùng chạm 48dp) và ghi hướng dẫn gắn vào chi tiết sân (spec 030) và mục "Sân yêu thích" (spec 011) trong `REV/README.md`
+- [ ] T049 [US3] Cài đặt `REV/data/FirestoreFavoriteRepository.kt`: `setFavorite` ghi `users/{uid}/favorites/{venueId}` với `venueId`, `venueSnapshot` (`name`, `photoPath`, `address`), `createdAt = serverTimestamp()` hoặc xóa; `observeIsFavorite` (listener 1 document); `observeFavorites` (order `createdAt desc`, trang 20) + `get venues/{venueId}` từng sân để ra `availability` (research R6)
+- [ ] T050 [P] [US3] Cài đặt `REV/domain/usecase/ToggleFavoriteUseCase.kt` → T048 qua
+- [ ] T051 [US3] Cài đặt `REV/ui/favorite/FavoriteVenuesViewModel.kt` (phân trang khi cuộn cuối) → T047 qua
+- [ ] T052 [P] [US3] Tạo `RES/layout/fragment_favorite_list.xml`, `RES/layout/item_favorite_venue.xml` (ảnh, tên, địa chỉ, điểm; nhãn `favorite_venue_suspended`/`favorite_venue_gone`; nút trái tim bỏ yêu thích) và `REV/ui/favorite/FavoriteVenueAdapter.kt`
+- [ ] T053 [US3] Cài đặt `REV/ui/favorite/FavoriteVenuesFragment.kt` (bấm sân `ACTIVE` → chi tiết sân spec 030; sân `SUSPENDED`/`GONE` không mở đặt sân; trạng thái rỗng có nút "Tìm sân")
+- [ ] T054 [P] [US3] Tạo view dùng lại `REV/ui/favorite/FavoriteToggleButton.kt` (+ `RES/drawable/ic_favorite_*.xml`, `contentDescription` "Thêm/Bỏ yêu thích", vùng chạm 48dp) và ghi hướng dẫn gắn vào chi tiết sân (spec 030) và mục "Sân yêu thích" (spec 011) trong `REV/README.md`
 
 **Checkpoint**: Kịch bản 9–11 qua; Rules F1–F4 vẫn qua.
 

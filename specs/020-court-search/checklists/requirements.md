@@ -33,5 +33,4 @@
 
 - Đã giải quyết 2 marker ở Clarifications (Session 2026-10-05): Q1 lọc theo giá của đúng khung giờ khi có bộ lọc khung giờ (FR-005, FR-005a); Q2 khách chưa đăng nhập được tìm sân (FR-026, FR-027).
 - Spec có nhắc tên các spec liên quan (021, 022, 030, 040, 111) và độ dài khung 30 phút theo đặc tả CSDL; đây là ranh giới phạm vi, không phải chi tiết cài đặt.
-- Cập nhật 2026-11-06 (thay đổi thiết kế điều hướng): kiểm lại toàn bộ mục trên sau khi thêm Clarifications Session 2026-11-06, US5, FR-028 → FR-033, SC-008; vẫn đạt. Không thêm marker [NEEDS CLARIFICATION]: vị trí cuối của "Sân gần bạn" (021) và ô AI (022) được ghi rõ là để 021/022 quyết định trong tab Tìm kiếm (FR-032), không chặn 020.
 - Items marked incomplete require spec updates before `/speckit-clarify` or `/speckit-plan`

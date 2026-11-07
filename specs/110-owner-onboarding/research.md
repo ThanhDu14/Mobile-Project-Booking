@@ -1,16 +1,5 @@
 # Nghiên cứu: Feature 110 — Đăng ký làm chủ sân
 
-## Cập nhật quyết định được duyệt (2026-11-05)
-
-Các quyết định trong phần này supersede mục “Quyết định chủ động để ngỏ” bên dưới:
-
-- Lifecycle: một Firestore document cho mỗi chu kỳ; resubmit `REJECTED` cập nhật cùng document; sau revoke dùng application ID mới. `users.ownerStatus` là trạng thái authoritative; application hiện hành lấy theo `uid ASC, submittedAt DESC` bằng index đã có.
-- Tích hợp: Firebase ID token được xác minh trong Supabase Edge Function. Android dùng Supabase Kotlin SDK hiện tại; Edge Function mới ký upload/download cho private `owner-docs`. Ảnh venue cũng staging ở bucket đó và Feature 120 promote khi duyệt.
-- Submit: Firestore REST transaction phía server đồng bộ application/user. Application ID UUID được giữ qua retry/resubmit; không thêm field/index/collection.
-- Cleanup: draft app-private; upload mồ côi được sweeper dọn sau 30 ngày; account deletion vẫn do Feature 011 xử lý.
-- Dependencies: không thêm dependency lõi; map provider bị tạm hoãn, không thêm SDK bản đồ.
-- Approval recovery: promote ảnh trước, Firestore transaction tạo venue với ID application và cập nhật application/user; sau đó sync Firebase custom claim rồi notification, các bước retry idempotent. Feature 120/100 phải tích hợp theo thứ tự này.
-
 ## Quyết định dựa trên tài liệu dự án
 
 ### Quyết định: Firestore lưu trạng thái nghiệp vụ, Supabase Storage lưu hình ảnh
@@ -38,24 +27,24 @@ Các quyết định trong phần này supersede mục “Quyết định chủ 
 - **Căn cứ**: Spec cấm sửa hồ sơ `PENDING`, chỉ cho nộp lại từ `REJECTED`, không cho tạo hồ sơ mới khi `APPROVED`, và nêu trường hợp nhiều thiết bị/admin thay đổi đồng thời. Client cần làm mới dữ liệu để có trải nghiệm đúng; Firestore Rules/máy chủ vẫn là nơi thực thi quyền.
 - **Phương án đã cân nhắc**: Tin trạng thái cache hoặc chỉ khóa nút. Hai cách này không xử lý được dữ liệu cũ hay request trực tiếp.
 
-## Quyết định chủ động để ngỏ (bản ghi lịch sử, đã được supersede ở trên)
+## Quyết định chủ động để ngỏ
 
 ### Định danh và lịch sử hồ sơ
 
 - **Phát hiện**: Quy tắc chung của CSDL dùng ID Firestore tự sinh. Spec 110 giả định một hồ sơ đang hiệu lực và nộp lại trong cùng chuỗi xét duyệt; FR-018 cho phép nộp mới sau khi thu hồi quyền nhưng vẫn giữ hồ sơ `APPROVED` cũ. Chưa quy định cách tìm hồ sơ hiện hành, chọn ID hay lưu lịch sử.
-- **Quyết định tại thời điểm lập research**: Chưa chọn phương án. Đã được chủ dự án thay thế bằng lựa chọn T001/T003 bên trên; không còn là blocker quyết định.
+- **Quyết định**: Chưa chọn phương án. Không tự đặt document theo UID, trường con trỏ, ID tất định hay schema mới. Cần thống nhất trước khi triển khai.
 - **Phương án đang cân nhắc**: Dùng lại hồ sơ bị từ chối; tạo document mới cho mỗi lần nộp; hoặc chỉ tạo document mới sau khi bị thu hồi quyền. Các phương án dẫn đến lịch sử xét duyệt khác nhau nên không thể tự chọn dựa trên tài liệu hiện có.
 
 ### Tích hợp Android với Supabase và tải ảnh venue trước khi được duyệt
 
 - **Phát hiện**: Hiến chương quy định Firebase Auth làm xác thực bên thứ ba cho Supabase. README có tên `sign-upload` và `sign-download` nhưng chưa có request/response hoặc cách gọi từ ứng dụng Android. README mô tả tải `venue-photos` cho owner đã duyệt, trong khi Feature 110 cần tải ảnh venue trước khi được duyệt.
-- **Quyết định tại thời điểm lập research**: Chưa chọn phương án. Đã được chủ dự án thay thế bằng T002-B và API contract trong `contracts/owner-application-api.md`; không còn là blocker lựa chọn kiến trúc.
+- **Quyết định**: Chưa chọn phương án. Cần thống nhất truyền token, cơ chế ký/tải lên và quyền upload riêng cho người nộp trước khi chọn phụ thuộc hoặc viết endpoint. Không tự mở rộng quyền upload hiện tại.
 - **Phương án đang cân nhắc**: Supabase Android SDK/Storage API, gọi REST trực tiếp, hoặc quy trình upload riêng do máy chủ cấp quyền. Tài liệu dự án chưa chọn cách nào.
 
 ### Vòng đời bản nháp và tệp mồ côi
 
 - **Phát hiện**: Biểu mẫu phải giữ được dữ liệu khi gặp lỗi có thể khôi phục; spec 011 yêu cầu xóa hồ sơ khi xóa tài khoản, nhưng chưa quy định thời gian lưu bản nháp, dọn upload dở hay cách thử lại.
-- **Quyết định tại thời điểm lập research**: Chỉ giữ trong phiên và chưa có retention. Đã được chủ dự án thay thế bằng T004-B và thời hạn 30 ngày bên trên.
+- **Quyết định**: Giữ dữ liệu trong phiên chỉnh sửa hiện tại và cho tải lại từng tệp lỗi. Chưa cam kết lưu bền vững hay chính sách xóa trước khi được làm rõ.
 - **Phương án đang cân nhắc**: Chỉ giữ trong bộ nhớ, lưu trạng thái instance, lưu cục bộ bền vững; dọn tệp ngay hoặc theo lịch. Mỗi phương án có đánh đổi riêng về riêng tư và trải nghiệm.
 
 ## Tài liệu đã đối chiếu

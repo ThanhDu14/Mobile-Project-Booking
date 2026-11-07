@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Nền khối "Phản hồi của chủ sân" trong thẻ đánh giá (spec 030 FR-014). Màu theo theme nên đổi theo chế độ tối. -->
-<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
-    <solid android:color="?attr/colorSurfaceContainer" />
-    <corners android:radius="8dp" />
-</shape>

@@ -2,24 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Chụp ảnh đại diện (spec 011 FR-003, FR-024): xin lúc bấm "Chụp ảnh". Chọn từ thư viện dùng
-         Photo Picker nên không khai báo READ_MEDIA_IMAGES. -->
-    <uses-permission android:name="android.permission.CAMERA" />
-
-    <uses-feature
-        android:name="android.hardware.camera"
-        android:required="false" />
-
-    <!-- Bản đồ osmdroid ở chi tiết sân kiểm tra mạng trước khi tải tile (spec 030 R7). INTERNET đã có qua Firebase. -->
-    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
-
-    <!-- core/location (spec 020 T014): tìm kiếm xin quyền khi người dùng chọn "Gần nhất". Chi tiết sân (030) không xin,
-         chỉ dùng khi quyền đã được cấp từ trước (research R7). -->
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-
     <application
-        android:name=".SmashNowApp"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -28,9 +11,6 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Bookingapp">
-        <meta-data
-            android:name="com.google.mlkit.vision.DEPENDENCIES"
-            android:value="barcode" />
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -41,22 +21,7 @@
 
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <!-- Deep link smashnow://... mở được từ ngoài app (thông báo, adb), ví dụ smashnow://venue/{id} của spec 030.
-                 smashnow://auth/... cũng mở được từ ngoài; returnTo chỉ được điều hướng khi là URI smashnow:// (MainActivity). -->
-            <nav-graph android:value="@navigation/nav_main" />
         </activity>
-
-        <!-- Ảnh chụp từ camera ghi vào cache/avatar/ rồi đưa sang màn hình cắt (spec 011 R4).
-             CropImageActivity do thư viện cắt ảnh tự khai báo; app dùng CropImageView trong Fragment. -->
-        <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.fileprovider"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/file_paths" />
-        </provider>
     </application>
 
 </manifest>

@@ -13,9 +13,9 @@
   - Đang tạm giữ chờ thanh toán (`HELD`)
   - Khóa sân / Buổi vãng lai (`BLOCKED` với lý do `DROP_IN` hoặc bảo trì)
   - Đã qua giờ (`PAST` - Client tự động tính toán so với thời gian hiện tại nếu chọn ngày hôm nay).
-- **Luồng tương tác**: Người dùng chọn 1 hoặc nhiều slot 30 phút **liên tiếp nhau trên từng sân con** (tối đa 8 slot = 4 giờ trên nhiều sân) $\rightarrow$ Hệ thống tính tổng tiền realtime theo cấu hình `priceRules` của cơ sở $\rightarrow$ Bấm "Giữ chỗ" (Q6) để giữ chỗ 5 phút và chuyển sang màn hình xác nhận [040] (Q4).
+- **Luồng tương tác**: Người dùng chọn 1 hoặc nhiều slot 30 phút **liên tiếp nhau trên cùng 1 sân con** (tối đa 8 slot = 4 giờ) $\rightarrow$ Hệ thống tính tổng tiền realtime theo cấu hình `priceRules` của cơ sở $\rightarrow$ Bấm "Tiếp tục" để truyền dữ liệu sang màn hình tóm tắt đặt sân `[041]`.
 - **Giải pháp kỹ thuật cốt lõi**:
-  - **UI Layer**: Sử dụng lưới ma trận 2 chiều (cột = sân con cuộn ngang, hàng = ca 30 phút cuộn dọc; bỏ CourtTabAdapter theo Q3/M3) thông qua `ViewBinding` và `ListAdapter`/`DiffUtil`.
+  - **UI Layer**: Sử dụng `RecyclerView` kết hợp `GridLayoutManager` (cho lưới ca chơi 30 phút) và `CourtTabAdapter` (chuyển đổi sân con) thông qua `ViewBinding` và `ListAdapter`/`DiffUtil`.
   - **Tối ưu Quota Firestore gói Spark (Sparse Storage)**: 
     - Client tự sinh danh sách các ca 30 phút mặc định `AVAILABLE` dựa theo `openTime` và `closeTime` của `venues`.
     - Firestore chỉ lưu và lắng nghe (`SnapshotListener`) trên collection gốc `slots` các ca có trạng thái bận (`BOOKED`, `HELD`, `BLOCKED`) trong ngày đang chọn với điều kiện `venueId == currentVenueId` và `date == yyyyMMdd`.
@@ -91,9 +91,9 @@ com.example.booking_app.feature.booking/
     ├── BookingSlotGridViewModel.kt
     ├── BookingSlotUiState.kt        # UiState (StateFlow) & UiEffect (SharedFlow báo lỗi/chuyển màn)
     └── adapter/
-        ├── DateSelectorAdapter.kt   # Thanh chọn ngày (30 ngày tới)
-        └── SlotMatrixRowAdapter.kt  # Lưới ma trận đa sân và ca 30 phút (bỏ CourtTabAdapter theo Q3/M3)
-    ├── BookingConfirmFragment.kt    # Màn hình xác nhận đơn giữ chỗ 5 phút (Q4/M4)
+        ├── DateSelectorAdapter.kt   # Thanh chọn ngày (7-14 ngày tới)
+        ├── CourtTabAdapter.kt       # Chọn sân con (Sân 1, Sân 2...)
+        └── SlotGridAdapter.kt       # Lưới ca chơi 30 phút
 ```
 
 ## 5. Quy tắc thuật toán & Hợp đồng giao tiếp (Core Rules & Contracts)
@@ -111,19 +111,17 @@ com.example.booking_app.feature.booking/
 ### 5.2. Xử lý xung đột Realtime (Race Condition)
 - Khi `SnapshotListener` bắn dữ liệu các slot bận mới: Nếu có bất kỳ slot nào người dùng đang chọn (`SELECTED`) bị chuyển sang `HELD`, `BOOKED`, hoặc `BLOCKED` $\rightarrow$ Tự động xóa slot đó khỏi danh sách chọn, tính lại tổng tiền và bắn `UiEffect.ShowConflictWarning("Ca chơi vừa có người đặt/giữ chỗ")` hiển thị Snackbar.
 
-### 5.3. Hợp đồng chuyển màn hình sang thanh toán `[050]` (Navigation Safe Args Contract)
-Khi người dùng bấm "Tiếp tục" và giữ chỗ 5 phút thành công, Fragment điều hướng sang màn hình thanh toán `[050]` kèm theo Bundle Safe Args `HoldToPaymentArgs`:
+### 5.3. Hợp đồng chuyển màn hình sang `[041]` (Navigation Safe Args Contract)
+Khi người dùng bấm "Tiếp tục", Fragment điều hướng sang `BookingSummaryFragment` (`[041]`) kèm theo Bundle Safe Args:
 ```kotlin
-data class HoldToPaymentArgs(
-    val bookingId: String,
+data class BookingSlotToSummaryArgs(
     val venueId: String,
-    val venueName: String,
-    val isRecurring: Boolean = false,
-    val totalSessions: Int = 1,
-    val subtotalAmount: Long,
-    val slotIds: Array<String>,
-    val holdExpiresAtMillis: Long
-) : Parcelable
+    val courtId: String,
+    val courtName: String,
+    val date: String,                      // Định dạng yyyyMMdd
+    val selectedSlotTimes: Array<String>,  // Danh sách giờ bắt đầu: ["1800", "1830", "1900"]
+    val subtotalAmount: Long               // Tổng tiền tạm tính trước khi áp dụng voucher
+)
 ```
 
 ## 6. Implementation Phases (Các giai đoạn triển khai)
