@@ -46,3 +46,16 @@ Chạy lại nhiều lần không tạo bản ghi trùng: ID cố định (`demo
 | Loại mặt sân không có trên trang | Tất cả `surfaceType = "PU"` | — |
 | Tiện ích, chủ sân | `amenityIds = []`, `ownerId = "demo-owner-1"` (chưa có tài khoản thật) | D |
 | `nameKeywords` | Sinh theo [contract spec 020](../../specs/020-court-search/contracts/keyword-normalization.md). Thay bằng `_shared/search-keywords.ts` khi A làm xong T017 | A |
+
+## Đánh giá demo cho chi tiết sân (spec 030)
+
+Tạm thời, cho tới khi seed đánh giá của spec 070 (T025) có. **Chỉ chạy trên Emulator**: thiếu `--emulator` thì script thoát, và `FIRESTORE_EMULATOR_HOST` phải trỏ về máy này.
+
+```bash
+cd scripts/seed
+node seed.mjs --emulator                                   # cần venues/demo-k3 trước
+node seed-reviews-030.mjs --emulator                       # project demo-smashnow
+node seed-reviews-030.mjs --emulator --project-id=mobile-22e6c   # khi Emulator chạy với projectId của app
+```
+
+Ghi 12 đánh giá `demo-k3-review-01…12` cho `demo-k3` (1 `HIDDEN`, 1 của người đã xóa tài khoản, 1 có phản hồi của chủ sân, 2 có ảnh; mới nhất 30/10/2026, mỗi bài cách nhau 1 ngày) và cập nhật `ratingAvg`, `ratingCount`, `ratingSums` theo 11 đánh giá `VISIBLE`. Ảnh đánh giá chỉ là path, chưa có file trên Storage nên app hiện ảnh mặc định.

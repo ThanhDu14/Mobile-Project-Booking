@@ -4,6 +4,8 @@ description: "Danh sách task triển khai spec 060 – Quản lý lịch đặt
 
 # Tasks: Quản lý lịch đặt của tôi (Spec 060)
 
+> **Lưu ý trước khi implement — 2026-11-07:** Các task bên dưới là danh sách lịch sử, chưa được cập nhật đầy đủ theo quyết định mới trong `spec.md` (Clarifications ngày 2026-11-07). Không thực thi máy móc các task mâu thuẫn: T020/T021/T023 phải thiết kế lại theo Edge Function và transaction phía server; T011/T005 theo 30% số tiền thực trả sau voucher; T029/T036 theo màn hình hủy riêng trong `ui/`; T001 theo thứ tự từng tab đã chốt; DTO/mapper theo schema CSDL chung, không chia đều giá slot. QR cache phải kiểm tra tài khoản hiện tại và không khẳng định hiệu lực khi offline. Chỉ tích hợp tối thiểu với feature khác, báo rõ phần chưa hoàn thiện. Cần chốt cách làm tròn nửa đồng và hoàn lượt voucher khi hủy một phần chuỗi, sau đó cập nhật task và kiểm thử trước khi implement.
+
 **Input**: Tài liệu thiết kế trong `specs/060-my-bookings/`: [plan.md](plan.md), [spec.md](spec.md), [research.md](research.md), [data-model.md](data-model.md), [contracts/ui-contracts.md](contracts/ui-contracts.md), [quickstart.md](quickstart.md).
 
 **Tests & Architecture Guidelines**:

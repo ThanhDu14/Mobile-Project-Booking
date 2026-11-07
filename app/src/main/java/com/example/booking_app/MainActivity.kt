@@ -1,5 +1,6 @@
 package com.example.booking_app
 
+import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
@@ -70,11 +71,18 @@ class MainActivity : AppCompatActivity() {
         com.example.booking_app.feature.booking.ui.BookingSlotGridFragment.clearViewCache()
     }
 
+    /** Deep link `smashnow://...` tới khi app đang mở (thông báo, adb): điều hướng như lúc khởi động (spec 030 T005). */
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        if (intent.data?.scheme == "smashnow") navController.handleDeepLink(intent)
+    }
+
     /**
      * Một BottomNav cho cả hai chế độ, đổi menu theo graph gốc: BottomNav người chơi trong `nav_player`, OwnerNav
-     * trong `nav_owner`. Chỉ hiện ở màn gốc của tab. Người chơi mới nối Trang chủ và Tài khoản (Vãng lai, Lịch đặt,
-     * Cộng đồng chờ spec 080/060/090); chủ sân mới nối Hôm nay (màn tạm) và Cơ sở (Đơn đặt, Lịch sân, Tin nhắn chờ
-     * spec 112). Tab chưa có màn hình báo "đang phát triển".
+     * trong `nav_owner`. Chỉ hiện ở màn gốc của tab và ở trang Tài khoản. Người chơi mới nối Trang chủ (Tìm kiếm,
+     * Vãng lai, Lịch đặt, Cộng đồng chờ spec 020/080/060/090); chủ sân mới nối Hôm nay (màn tạm) và Cơ sở (Đơn đặt,
+     * Lịch sân, Tin nhắn chờ spec 112). Tab chưa có màn hình báo "đang phát triển". Không có tab Tài khoản: trang
+     * Tài khoản mở từ avatar ở header dùng chung (spec 011 US8) và giữ sáng tab đã mở nó.
      */
     private fun setUpBottomNav() {
         // Root đã chừa chỗ cho thanh hệ thống; không để BottomNav cộng thêm lần nữa.
@@ -82,7 +90,7 @@ class MainActivity : AppCompatActivity() {
         binding.bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.tab_home -> {
-                    navController.popBackStack(R.id.playerHomePlaceholderFragment, false)
+                    navController.popBackStack(R.id.homeFragment, false)
                     true
                 }
                 R.id.tab_owner_today -> {
@@ -115,23 +123,6 @@ class MainActivity : AppCompatActivity() {
                     )
                     true
                 }
-                R.id.tab_account -> {
-                    if (viewModel.sessionState.value is SessionState.SignedIn) {
-                        navController.navigate(
-                            R.id.nav_account,
-                            null,
-                            navOptions {
-                                launchSingleTop = true
-                                popUpTo(R.id.playerHomePlaceholderFragment)
-                            },
-                        )
-                        true
-                    } else {
-                        // Khách chưa có trang Tài khoản: mở đăng nhập, tab vẫn ở Trang chủ.
-                        navController.navigate(LOGIN)
-                        false
-                    }
-                }
                 else -> {
                     Snackbar.make(binding.root, getString(R.string.nav_tab_coming_soon, item.title), Snackbar.LENGTH_SHORT)
                         .setAnchorView(binding.bottomNavContainer)
@@ -140,10 +131,12 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
-        // Bấm lại tab đang chọn: không tạo lại màn hình. Chủ sân đang ở trang Tài khoản (mở từ tab đó) thì về màn gốc của tab.
+        // Bấm lại tab đang chọn: không tạo lại màn hình. Đang ở trang Tài khoản (mở từ avatar của tab đó) thì về màn
+        // gốc của tab (spec 011 FR-029).
         binding.bottomNav.setOnItemReselectedListener { item ->
             if (navController.currentDestination?.id != R.id.accountFragment) return@setOnItemReselectedListener
             when (item.itemId) {
+                R.id.tab_home -> navController.popBackStack(R.id.homeFragment, false)
                 R.id.tab_owner_today -> navController.popBackStack(R.id.ownerHomePlaceholderFragment, false)
                 R.id.tab_owner_venues -> openOwnerVenues()
             }
@@ -171,7 +164,7 @@ class MainActivity : AppCompatActivity() {
                 R.id.ownerCalendarFragment -> R.id.tab_owner_schedule
                 R.id.ownerBookingsFragment -> R.id.tab_owner_bookings
                 R.id.ownerVenueListFragment -> R.id.tab_owner_venues
-                // OwnerNav không có tab Tài khoản: giữ sáng tab đã mở trang này (avatar ở Hôm nay → Hôm nay).
+                // Không có tab Tài khoản: giữ sáng tab đã mở trang này (avatar ở Hôm nay → Hôm nay).
                 R.id.accountFragment ->
                     if (navController.previousBackStackEntry?.destination?.id == R.id.ownerVenueListFragment) {
                         R.id.tab_owner_venues
@@ -182,8 +175,10 @@ class MainActivity : AppCompatActivity() {
             }
         } else {
             when (destination.id) {
-                R.id.playerHomePlaceholderFragment -> R.id.tab_home
-                R.id.accountFragment -> R.id.tab_account
+                R.id.homeFragment -> R.id.tab_home
+                // Không có tab Tài khoản (spec 011 FR-026): giữ sáng tab đã mở trang này. Tab khác của người chơi
+                // (020/060/080/090) thêm nhánh ở đây khi có màn gốc; mặc định Trang chủ.
+                R.id.accountFragment -> R.id.tab_home
                 else -> null
             }
         }
@@ -274,7 +269,10 @@ class MainActivity : AppCompatActivity() {
             is RouteDecision.ResetTo -> resetToRoleGraph(decision.appRole)
             is RouteDecision.PopAuth -> {
                 navController.popBackStack(R.id.nav_auth, inclusive = true)
-                decision.returnTo?.let { navController.navigate(it) }
+                // returnTo có thể đến từ deep link ngoài app (spec 030 T005): chỉ nhận URI smashnow:// có trong graph.
+                decision.returnTo?.takeIf { it.scheme == "smashnow" }?.let { uri ->
+                    runCatching { navController.navigate(uri) }
+                }
             }
             RouteDecision.Consent -> openConsent()
             RouteDecision.AccountSetup -> openAccountSetup()

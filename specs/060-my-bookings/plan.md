@@ -4,6 +4,16 @@
 
 **Input**: Feature specification from `specs/060-my-bookings/spec.md`
 
+## Quyết định ưu tiên khi triển khai — 2026-11-07
+
+Các quyết định trong `spec.md`, mục Clarifications ngày 2026-11-07, thay thế mọi mô tả mâu thuẫn ở phần kế hoạch lịch sử bên dưới. Kế hoạch chi tiết và `tasks.md` cần được điều chỉnh trước khi implement:
+
+- Hủy/hoàn tiền và nhả slot là thao tác nhạy cảm qua Supabase Edge Function với Firestore transaction phía server; client chỉ gửi yêu cầu và `requestId`, không quyết định tiền hay trực tiếp sửa ví/trạng thái.
+- Hủy trễ bằng ví: phạt 30% số tiền thực trả sau voucher, hoàn phần còn lại; từng buổi định kỳ dùng cùng chính sách trên phần được phân bổ. Quy tắc làm tròn nửa đồng cần làm rõ trước khi triển khai.
+- Màn hình hủy là màn hình riêng theo ảnh thứ tư; cả bốn ảnh `ui/` là tham chiếu chính. Ưu tiên schema chung `docs/design/database/README.md` và đối chiếu code thực tế, không tự chia đều giá slot.
+- Các tab sắp xếp theo Clarifications trong spec. QR offline chỉ hiện khi tài khoản hiện tại là chủ đơn; không khẳng định cache còn hiệu lực khi mất mạng.
+- Giới hạn phạm vi ở 060 và tích hợp tối thiểu; công bố các phụ thuộc chưa hoàn thiện. Chính sách hoàn lượt voucher khi hủy một phần chuỗi chưa chốt.
+
 ## 1. Summary (Tóm tắt giải pháp kỹ thuật)
 - **Quản lý danh sách lịch đặt theo 5 Tab trạng thái & Phân trang**:
   - Giao diện `TabLayout` + `ViewPager2` gồm 5 tab với `SwipeRefreshLayout` và phân trang `limit(10)` + `startAfterDocument`:

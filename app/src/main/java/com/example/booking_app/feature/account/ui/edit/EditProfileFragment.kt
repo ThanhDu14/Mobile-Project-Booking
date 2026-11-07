@@ -31,7 +31,7 @@ import com.example.booking_app.feature.account.domain.validation.AvatarImageRule
 import com.example.booking_app.feature.account.domain.validation.DistrictSelectionRule
 import com.example.booking_app.feature.account.ui.AccountResults
 import com.example.booking_app.feature.account.ui.accountErrorMessage
-import com.example.booking_app.feature.account.ui.account.initialsOf
+import com.example.booking_app.core.session.initialsOf
 import com.example.booking_app.feature.account.ui.isRetryable
 import com.google.android.material.chip.Chip
 import com.google.android.material.dialog.MaterialAlertDialogBuilder

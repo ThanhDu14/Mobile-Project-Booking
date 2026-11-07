@@ -7,6 +7,9 @@
     <string name="account_notifications">Thông báo</string>
     <string name="account_avatar_description">Ảnh đại diện của %1$s</string>
     <string name="account_avatar_change_description">Đổi ảnh đại diện</string>
+    <!-- Avatar ở header dùng chung của các tab chính (US8, FR-031) -->
+    <string name="account_avatar_cd_signed_in">Tài khoản</string>
+    <string name="account_avatar_cd_guest">Đăng nhập</string>
     <string name="account_edit_profile">Sửa hồ sơ</string>
     <string name="account_district_separator">" · "</string>
     <string name="account_wallet_label">Ví giả lập · không phải tiền thật</string>

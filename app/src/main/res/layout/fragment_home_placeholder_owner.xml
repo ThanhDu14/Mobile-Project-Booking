@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Tab Hôm nay của OwnerNav (spec 112). Header dùng chung (spec 011 US8): ngày, tên cơ sở và avatar mở trang
+     Tài khoản (nơi chuyển chế độ). -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -7,56 +9,13 @@
     android:background="?android:attr/colorBackground"
     android:orientation="vertical">
 
-    <!-- Top Header -->
-    <LinearLayout
+    <include
+        android:id="@+id/header"
+        layout="@layout/view_main_tab_header"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:orientation="horizontal"
-        android:paddingHorizontal="@dimen/screen_gutter"
-        android:paddingTop="@dimen/space_4"
-        android:paddingBottom="@dimen/space_2">
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical">
-
-            <TextView
-                android:id="@+id/date"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textAppearance="?attr/textAppearanceBodyMedium"
-                android:textColor="?attr/colorOnSurfaceVariant"
-                tools:text="Thứ Sáu, 09/10" />
-
-            <TextView
-                android:id="@+id/venueName"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:accessibilityHeading="true"
-                android:drawableEnd="@drawable/ic_chevron_right_20"
-                android:drawableTint="?attr/colorOnSurface"
-                android:gravity="center_vertical"
-                android:textAppearance="?attr/textAppearanceTitleLarge"
-                android:textColor="?attr/colorOnSurface"
-                android:textStyle="bold"
-                tools:text="Sân cầu lông Hòa Bình" />
-        </LinearLayout>
-
-        <TextView
-            android:id="@+id/avatar"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:background="@drawable/bg_account_avatar_initials"
-            android:contentDescription="@string/account_title"
-            android:foreground="?attr/selectableItemBackgroundBorderless"
-            android:gravity="center"
-            android:textAppearance="?attr/textAppearanceTitleMedium"
-            android:textColor="@color/sn_on_court_container"
-            tools:text="HĐ" />
-    </LinearLayout>
+        android:layout_marginHorizontal="@dimen/screen_gutter"
+        android:layout_marginBottom="@dimen/space_2" />
 
     <ProgressBar
         android:id="@+id/loading"
