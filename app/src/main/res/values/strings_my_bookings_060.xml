@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="my_bookings_060_title">Lịch đặt của tôi</string>
+    <string name="my_bookings_060_payment">Chờ thanh toán</string>
+    <string name="my_bookings_060_pending">Chờ xác nhận</string>
+    <string name="my_bookings_060_upcoming">Sắp diễn ra</string>
+    <string name="my_bookings_060_completed">Hoàn thành</string>
+    <string name="my_bookings_060_cancelled">Đã hủy</string>
+    <string name="my_bookings_060_explore">Khám phá sân</string>
+    <string name="my_bookings_060_retry">Thử lại</string>
+    <string name="my_bookings_060_back">Quay lại</string>
+    <string name="my_bookings_060_detail_title">Chi tiết đặt sân</string>
+    <string name="my_bookings_060_payment_title">Thông tin thanh toán</string>
+    <string name="my_bookings_060_brightness">Tăng độ sáng</string>
+    <string name="my_bookings_060_directions">Chỉ đường</string>
+    <string name="my_bookings_060_call">Gọi sân</string>
+    <string name="my_bookings_060_receipt">Xem hóa đơn</string>
+    <string name="my_bookings_060_cancel_booking">Hủy đặt sân</string>
+    <string name="my_bookings_060_reason_title">Lý do hủy</string>
+    <string name="my_bookings_060_reason_busy">Bận việc</string>
+    <string name="my_bookings_060_reason_weather">Thời tiết</string>
+    <string name="my_bookings_060_reason_players">Không đủ người chơi</string>
+    <string name="my_bookings_060_reason_wrong">Đặt nhầm</string>
+    <string name="my_bookings_060_reason_other">Lý do khác</string>
+    <string name="my_bookings_060_keep">Giữ lịch đặt</string>
+    <string name="my_bookings_060_confirm_cancel">Xác nhận hủy</string>
+    <string name="my_bookings_060_other_hint">Nhập lý do khác</string>
+    <string name="my_bookings_060_qr_description">Mã QR đặt sân</string>
+</resources>

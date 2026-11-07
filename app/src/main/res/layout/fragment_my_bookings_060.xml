@@ -1,2 +1,111 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="match_parent" android:background="?android:attr/colorBackground" android:orientation="vertical"><TextView android:id="@+id/textBookingsTitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:textAppearance="?attr/textAppearanceHeadlineMedium" android:accessibilityHeading="true"/><HorizontalScrollView android:layout_width="match_parent" android:layout_height="wrap_content" android:fillViewport="false" android:scrollbars="none"><com.google.android.material.button.MaterialButtonToggleGroup android:id="@+id/bookingFilterGroup" android:layout_width="wrap_content" android:layout_height="wrap_content" app:singleSelection="true" app:selectionRequired="true"><com.google.android.material.button.MaterialButton android:id="@+id/filterPayment" style="@style/Widget.SmashNow.Button.Outlined" android:layout_width="wrap_content" android:layout_height="wrap_content" android:minHeight="48dp" /><com.google.android.material.button.MaterialButton android:id="@+id/filterPending" style="@style/Widget.SmashNow.Button.Outlined" android:layout_width="wrap_content" android:layout_height="wrap_content" android:minHeight="48dp" /><com.google.android.material.button.MaterialButton android:id="@+id/filterUpcoming" style="@style/Widget.SmashNow.Button.Outlined" android:layout_width="wrap_content" android:layout_height="wrap_content" android:minHeight="48dp" /><com.google.android.material.button.MaterialButton android:id="@+id/filterCompleted" style="@style/Widget.SmashNow.Button.Outlined" android:layout_width="wrap_content" android:layout_height="wrap_content" android:minHeight="48dp" /><com.google.android.material.button.MaterialButton android:id="@+id/filterCancelled" style="@style/Widget.SmashNow.Button.Outlined" android:layout_width="wrap_content" android:layout_height="wrap_content" android:minHeight="48dp" /></com.google.android.material.button.MaterialButtonToggleGroup></HorizontalScrollView><androidx.recyclerview.widget.RecyclerView android:id="@+id/listBookings" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:clipToPadding="false" android:padding="16dp" /><TextView android:id="@+id/textBookingsPolicy" android:layout_width="match_parent" android:layout_height="wrap_content" android:textAppearance="?attr/textAppearanceBodySmall" android:padding="16dp"/><ProgressBar android:id="@+id/progressBookings" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:visibility="gone" /><TextView android:id="@+id/textBookingsEmpty" android:layout_width="match_parent" android:layout_height="wrap_content" android:textAppearance="?attr/textAppearanceBodyMedium" android:visibility="gone"/><com.google.android.material.button.MaterialButton android:id="@+id/buttonExplore" style="@style/Widget.SmashNow.Button.Outlined" android:layout_width="wrap_content" android:layout_height="wrap_content" android:minHeight="48dp" android:visibility="gone"/><TextView android:id="@+id/textBookingsError" android:layout_width="match_parent" android:layout_height="wrap_content" android:textAppearance="?attr/textAppearanceBodyMedium" android:visibility="gone"/><com.google.android.material.button.MaterialButton android:id="@+id/buttonRetry" style="@style/Widget.SmashNow.Button.Outlined" android:layout_width="wrap_content" android:layout_height="wrap_content" android:minHeight="48dp" android:text="@android:string/ok" android:visibility="gone"/></LinearLayout>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?android:attr/colorBackground"
+    android:orientation="vertical">
+    <TextView
+        android:id="@+id/textBookingsTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textAppearance="?attr/textAppearanceHeadlineMedium"
+        android:accessibilityHeading="true"
+        android:text="@string/my_bookings_060_title" />
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fillViewport="false"
+        android:scrollbars="none">
+        <com.google.android.material.button.MaterialButtonToggleGroup
+            android:id="@+id/bookingFilterGroup"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:singleSelection="true"
+            app:selectionRequired="true">
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/filterPayment"
+                style="@style/Widget.SmashNow.Button.Outlined"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:text="@string/my_bookings_060_payment" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/filterPending"
+                style="@style/Widget.SmashNow.Button.Outlined"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:text="@string/my_bookings_060_pending" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/filterUpcoming"
+                style="@style/Widget.SmashNow.Button.Outlined"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:text="@string/my_bookings_060_upcoming" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/filterCompleted"
+                style="@style/Widget.SmashNow.Button.Outlined"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:text="@string/my_bookings_060_completed" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/filterCancelled"
+                style="@style/Widget.SmashNow.Button.Outlined"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:text="@string/my_bookings_060_cancelled" />
+        </com.google.android.material.button.MaterialButtonToggleGroup>
+    </HorizontalScrollView>
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/listBookings"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:clipToPadding="false"
+        android:padding="16dp" />
+    <TextView
+        android:id="@+id/textBookingsPolicy"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textAppearance="?attr/textAppearanceBodySmall"
+        android:padding="16dp" />
+    <ProgressBar
+        android:id="@+id/progressBookings"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:visibility="gone" />
+    <TextView
+        android:id="@+id/textBookingsEmpty"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:visibility="gone" />
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/buttonExplore"
+        style="@style/Widget.SmashNow.Button.Outlined"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minHeight="48dp"
+        android:visibility="gone"
+        android:text="@string/my_bookings_060_explore" />
+    <TextView
+        android:id="@+id/textBookingsError"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:visibility="gone" />
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/buttonRetry"
+        style="@style/Widget.SmashNow.Button.Outlined"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minHeight="48dp"
+        android:text="@string/my_bookings_060_retry"
+        android:visibility="gone" />
+</LinearLayout>
