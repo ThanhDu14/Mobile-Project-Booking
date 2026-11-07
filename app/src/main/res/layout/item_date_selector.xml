@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/cardDate"
+    android:layout_width="60dp"
+    android:layout_height="76dp"
+    android:layout_marginEnd="8dp"
+    android:clickable="true"
+    android:focusable="true"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="0dp"
+    app:strokeColor="@color/booking_date_unselected_stroke"
+    app:strokeWidth="1dp"
+    app:cardBackgroundColor="@color/booking_date_unselected_bg">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:paddingVertical="8dp">
+
+        <TextView
+            android:id="@+id/tvDayOfWeek"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="@style/TextAppearance.SmashNow.Caption"
+            android:textColor="@color/booking_date_unselected_text"
+            android:textSize="12sp"
+            tools:text="T2" />
+
+        <TextView
+            android:id="@+id/tvDayOfMonth"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:textAppearance="@style/TextAppearance.SmashNow.Title"
+            android:textColor="@color/booking_date_unselected_text"
+            android:textSize="18sp"
+            tools:text="15" />
+
+        <View
+            android:id="@+id/vTodayDot"
+            android:layout_width="6dp"
+            android:layout_height="6dp"
+            android:layout_marginTop="4dp"
+            android:background="@drawable/bg_wordmark_pill"
+            android:backgroundTint="@color/booking_date_today_dot"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
+    </LinearLayout>
+
+</com.google.android.material.card.MaterialCardView>

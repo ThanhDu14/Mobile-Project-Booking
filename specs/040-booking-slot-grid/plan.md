@@ -13,9 +13,9 @@
   - Đang tạm giữ chờ thanh toán (`HELD`)
   - Khóa sân / Buổi vãng lai (`BLOCKED` với lý do `DROP_IN` hoặc bảo trì)
   - Đã qua giờ (`PAST` - Client tự động tính toán so với thời gian hiện tại nếu chọn ngày hôm nay).
-- **Luồng tương tác**: Người dùng chọn 1 hoặc nhiều slot 30 phút **liên tiếp nhau trên cùng 1 sân con** (tối đa 8 slot = 4 giờ) $\rightarrow$ Hệ thống tính tổng tiền realtime theo cấu hình `priceRules` của cơ sở $\rightarrow$ Bấm "Tiếp tục" để truyền dữ liệu sang màn hình tóm tắt đặt sân `[041]`.
+- **Luồng tương tác**: Người dùng chọn 1 hoặc nhiều slot 30 phút **liên tiếp nhau trên từng sân con** (tối đa 8 slot = 4 giờ trên nhiều sân) $\rightarrow$ Hệ thống tính tổng tiền realtime theo cấu hình `priceRules` của cơ sở $\rightarrow$ Bấm "Giữ chỗ" (Q6) để giữ chỗ 5 phút và chuyển sang màn hình xác nhận [040] (Q4).
 - **Giải pháp kỹ thuật cốt lõi**:
-  - **UI Layer**: Sử dụng `RecyclerView` kết hợp `GridLayoutManager` (cho lưới ca chơi 30 phút) và `CourtTabAdapter` (chuyển đổi sân con) thông qua `ViewBinding` và `ListAdapter`/`DiffUtil`.
+  - **UI Layer**: Sử dụng lưới ma trận 2 chiều (cột = sân con cuộn ngang, hàng = ca 30 phút cuộn dọc; bỏ CourtTabAdapter theo Q3/M3) thông qua `ViewBinding` và `ListAdapter`/`DiffUtil`.
   - **Tối ưu Quota Firestore gói Spark (Sparse Storage)**: 
     - Client tự sinh danh sách các ca 30 phút mặc định `AVAILABLE` dựa theo `openTime` và `closeTime` của `venues`.
     - Firestore chỉ lưu và lắng nghe (`SnapshotListener`) trên collection gốc `slots` các ca có trạng thái bận (`BOOKED`, `HELD`, `BLOCKED`) trong ngày đang chọn với điều kiện `venueId == currentVenueId` và `date == yyyyMMdd`.
@@ -91,9 +91,9 @@ com.example.booking_app.feature.booking/
     ├── BookingSlotGridViewModel.kt
     ├── BookingSlotUiState.kt        # UiState (StateFlow) & UiEffect (SharedFlow báo lỗi/chuyển màn)
     └── adapter/
-        ├── DateSelectorAdapter.kt   # Thanh chọn ngày (7-14 ngày tới)
-        ├── CourtTabAdapter.kt       # Chọn sân con (Sân 1, Sân 2...)
-        └── SlotGridAdapter.kt       # Lưới ca chơi 30 phút
+        ├── DateSelectorAdapter.kt   # Thanh chọn ngày (30 ngày tới)
+        └── SlotMatrixRowAdapter.kt  # Lưới ma trận đa sân và ca 30 phút (bỏ CourtTabAdapter theo Q3/M3)
+    ├── BookingConfirmFragment.kt    # Màn hình xác nhận đơn giữ chỗ 5 phút (Q4/M4)
 ```
 
 ## 5. Quy tắc thuật toán & Hợp đồng giao tiếp (Core Rules & Contracts)

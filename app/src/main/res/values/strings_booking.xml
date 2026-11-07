@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Chuỗi văn bản cho tính năng đặt sân theo khung giờ (Spec 040) -->
+<resources>
+    <string name="booking_title">Chọn khung giờ</string>
+    <string name="booking_select_date">Chọn ngày</string>
+    <string name="booking_select_court">Chọn sân thi đấu</string>
+    <string name="booking_select_slot">Khung giờ</string>
+    <string name="booking_recurring_button">Đặt cố định theo tuần</string>
+
+    <!-- Chú thích trạng thái (Legend) -->
+    <string name="booking_legend_available">Trống</string>
+    <string name="booking_legend_selected">Đang chọn</string>
+    <string name="booking_legend_held">Đang giữ</string>
+    <string name="booking_legend_booked">Đã đặt</string>
+    <string name="booking_legend_blocked">Bị khóa</string>
+    <string name="booking_legend_past">Đã qua</string>
+
+    <!-- Nhãn trạng thái hiển thị trên ô slot -->
+    <string name="booking_status_held_badge">Đang giữ</string>
+    <string name="booking_status_booked_badge">Đã đặt</string>
+    <string name="booking_status_drop_in_badge">Giao hữu</string>
+    <string name="booking_status_blocked_badge">Bị khóa</string>
+    <string name="booking_status_past_badge">Đã qua</string>
+    <string name="booking_legend_note">Mỗi ô là 30 phút. Chọn nhiều ô liền nhau trên cùng sân hoặc ở nhiều sân. Khung giờ được giữ 5 phút khi bạn bấm \'Giữ chỗ\'.</string>
+
+    <!-- Phản hồi khi bấm slot không khả dụng -->
+    <string name="booking_slot_booked_message">Slot này đã được đặt</string>
+    <string name="booking_slot_held_message">Slot này đang được giữ</string>
+    <string name="booking_slot_blocked_message">Slot này không khả dụng</string>
+    <string name="booking_slot_past_message">Slot này đã qua giờ</string>
+
+    <!-- Thanh tóm tắt đáy màn hình (Bottom Summary) -->
+    <string name="booking_summary_placeholder">Chưa chọn khung giờ nào</string>
+    <string name="booking_summary_selected_count">%1$d khung giờ (%2$s)</string>
+    <string name="booking_summary_total_label">Tạm tính</string>
+    <string name="booking_summary_deposit_label">Tiền cọc (30%)</string>
+    <string name="booking_summary_proceed_btn">Giữ chỗ</string>
+    <string name="booking_summary_holding">Đang giữ chỗ...</string>
+    <string name="booking_non_adjacent_message">Vui lòng chọn các khung giờ liên tiếp trên cùng sân</string>
+
+    <!-- Cảnh báo & Hộp thoại xác nhận -->
+    <string name="booking_conflict_warning">Khung giờ bạn chọn vừa có người đặt hoặc giữ chỗ. Vui lòng chọn lại.</string>
+    <string name="booking_refresh_action">Làm mới</string>
+    <string name="booking_change_court_dialog_title">Đổi sân thi đấu?</string>
+    <string name="booking_change_court_dialog_message">Lựa chọn khung giờ hiện tại sẽ bị xóa nếu bạn đổi sân. Bạn có chắc chắn muốn tiếp tục?</string>
+    <string name="booking_change_date_dialog_title">Đổi ngày đặt sân?</string>
+    <string name="booking_change_date_dialog_message">Lựa chọn khung giờ hiện tại sẽ bị xóa nếu bạn đổi ngày. Bạn có chắc chắn muốn tiếp tục?</string>
+    <string name="booking_dialog_confirm">Đồng ý</string>
+    <string name="booking_dialog_cancel">Hủy</string>
+
+    <!-- Trạng thái rỗng & Lỗi -->
+    <string name="booking_venue_closed_title">Cơ sở đóng cửa</string>
+    <string name="booking_venue_closed_message">Cơ sở không mở cửa vào ngày này hoặc đang bảo trì. Vui lòng chọn ngày khác.</string>
+    <string name="booking_no_courts_title">Không có sân khả dụng</string>
+    <string name="booking_no_courts_message">Cơ sở hiện không có sân nào đang hoạt động.</string>
+    <string name="booking_retry">Thử lại</string>
+    <string name="booking_login_required">Vui lòng đăng nhập để tiếp tục giữ chỗ đặt sân.</string>
+
+    <!-- Định dạng thứ và ngày -->
+    <string name="day_mon">T2</string>
+    <string name="day_tue">T3</string>
+    <string name="day_wed">T4</string>
+    <string name="day_thu">T5</string>
+    <string name="day_fri">T6</string>
+    <string name="day_sat">T7</string>
+    <string name="day_sun">CN</string>
+    <string name="day_today">Hôm nay</string>
+    <string name="day_tomorrow">Mai</string>
+
+    <!-- Màn hình xác nhận đặt sân (BookingConfirmFragment) -->
+    <string name="booking_confirm_title">Xác nhận đặt sân</string>
+    <string name="booking_confirm_countdown_badge">Giữ chỗ: %s</string>
+    <string name="booking_confirm_countdown_banner">Đang giữ chỗ cho bạn. Hoàn tất trước khi hết giờ. %s</string>
+    <string name="booking_confirm_change_slots">Đổi khung giờ</string>
+    <string name="booking_confirm_venue_label">Thông tin cơ sở</string>
+    <string name="booking_confirm_selected_slots">Khung giờ đã chọn</string>
+    <string name="booking_confirm_total_label">Tổng thanh toán</string>
+    <string name="booking_confirm_pay_btn">Thanh toán</string>
+    <string name="booking_confirm_cancel_btn">Hủy / Quay lại</string>
+    <string name="booking_confirm_timeout_title">Hết thời gian giữ chỗ</string>
+    <string name="booking_confirm_timeout_message">Thời gian giữ chỗ 5 phút đã kết thúc. Vui lòng quay lại và chọn lại khung giờ.</string>
+    <string name="booking_confirm_timeout_ok">Về danh sách khung giờ</string>
+
+    <!-- Mục thanh toán display-only (Spec 040 Mockup bước 2) -->
+    <string name="booking_payment_title">Thanh toán</string>
+    <string name="booking_payment_pay_at_venue_title">Trả tại sân</string>
+    <string name="booking_payment_pay_at_venue_desc">Trả khi đến sân. Chủ sân duyệt trong tối đa 60 phút</string>
+    <string name="booking_payment_deposit_title">Đặt cọc</string>
+    <string name="booking_payment_deposit_desc">Cọc 30%% (%1$s đ) bằng ví giả lập, phần còn lại trả tại sân</string>
+    <string name="booking_payment_wallet_title">Ví SmashNow (giả lập)</string>
+    <string name="booking_payment_wallet_desc">Trừ đủ %s đ từ ví, không phải tiền thật</string>
+    <string name="booking_wallet_balance_format">Số dư ví giả lập %s đ</string>
+    <string name="booking_wallet_top_up_action">Nạp ví giả lập</string>
+    <string name="booking_voucher_add_action">Thêm mã giảm giá</string>
+    <string name="booking_breakdown_subtotal_format">Tạm tính (%1$d × 30 phút)</string>
+    <string name="booking_breakdown_discount_label">Giảm giá</string>
+    <string name="booking_breakdown_total_label">Tổng cộng</string>
+    <string name="booking_cancel_policy_note" formatted="false">Bấm \"Xác nhận đặt\" là bạn đồng ý chính sách hủy: hủy trước giờ chơi từ 4 giờ trở lên được hoàn 100%; hủy trễ mất tiền cọc, hoặc phạt 30% nếu trả bằng ví. Giao dịch giả lập phục vụ học tập, không thu tiền thật.</string>
+    <string name="booking_confirm_action_btn">Xác nhận đặt</string>
+    <string name="booking_confirm_display_only_notice">Đã ghi nhận phương thức thanh toán. Thanh toán thật sẽ được tích hợp ở feature 050.</string>
+    <string name="booking_bottom_pay_now_label">Thanh toán ngay</string>
+    <string name="booking_bottom_pay_at_venue_subtext">• Trả tại sân</string>
+    <string name="booking_bottom_deposit_subtext">• Cọc 30%</string>
+    <string name="booking_bottom_wallet_subtext">• Ví SmashNow</string>
+</resources>

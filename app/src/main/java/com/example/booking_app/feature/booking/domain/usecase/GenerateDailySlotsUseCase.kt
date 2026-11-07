@@ -3,6 +3,7 @@ package com.example.booking_app.feature.booking.domain.usecase
 import com.example.booking_app.feature.booking.domain.model.PriceRule
 import com.example.booking_app.feature.booking.domain.model.SlotStatus
 import com.example.booking_app.feature.booking.domain.model.TimeSlot
+import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.util.Locale
@@ -24,6 +25,15 @@ class GenerateDailySlotsUseCase @Inject constructor() {
         val closeMinutes = toMinutes(closeTime)
         if (openMinutes >= closeMinutes) return emptyList()
 
+        val isoDayOfWeek = try {
+            val y = date.substring(0, 4).toInt()
+            val m = date.substring(4, 6).toInt()
+            val d = date.substring(6, 8).toInt()
+            LocalDate.of(y, m, d).dayOfWeek.value // 1 = Monday .. 7 = Sunday
+        } catch (e: Exception) {
+            1
+        }
+
         val busyMap = busySlots.associateBy { it.slotId }
         val slots = mutableListOf<TimeSlot>()
 
@@ -34,18 +44,22 @@ class GenerateDailySlotsUseCase @Inject constructor() {
             val endTime = formatTime(nextMin)
             val slotId = "${courtId}_${date}_$startTime"
 
-            // Determine slot price from PriceRules
+            // Determine slot price from PriceRules (Q11)
+            // TODO: Pending team consensus with D (currently using ISO convention: 1 = Monday .. 7 = Sunday)
             val matchedRule = priceRules.firstOrNull { rule ->
+                val dayMatch = rule.daysOfWeek.isEmpty() || rule.daysOfWeek.contains(isoDayOfWeek)
                 val ruleStart = toMinutes(rule.startTime)
                 val ruleEnd = toMinutes(rule.endTime)
-                currentMin >= ruleStart && nextMin <= ruleEnd
+                val timeMatch = currentMin >= ruleStart && nextMin <= ruleEnd
+                dayMatch && timeMatch
             }
+            val isOutOfPriceRule = matchedRule == null
             val price = matchedRule?.pricePerSlot ?: 0L
 
-            // Check busy slots or default to AVAILABLE
+            // Check busy slots or default to AVAILABLE (or BLOCKED if no rule matches)
             val busy = busyMap[slotId]
-            var status = busy?.status ?: SlotStatus.AVAILABLE
-            var blockReason = busy?.blockReason
+            var status = busy?.status ?: if (isOutOfPriceRule) SlotStatus.BLOCKED else SlotStatus.AVAILABLE
+            var blockReason = busy?.blockReason ?: if (isOutOfPriceRule) "NO_PRICE_RULE" else null
             var holdExpiresAtMillis = busy?.holdExpiresAtMillis
 
             // Check if user has this slot currently selected

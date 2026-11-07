@@ -138,42 +138,201 @@ class ValidateSlotSelectionUseCaseTest {
     }
 
     @Test
-    fun selectExceedingMax8Slots_isBlocked() {
+    fun selectExceedingMax8SlotsPerCourt_isBlockedOnSameCourt_allowedOnOtherCourt() {
         var state = SlotSelectionState()
-        val slots = listOf(
+        val slotsCourt1 = listOf(
             slot0600, slot0630, slot0700, slot0730,
             slot0800, slot0830, slot0900, slot0930
         )
-        // Select 8 continuous slots (4 hours)
-        for (slot in slots) {
+        // Select 8 continuous slots on Court 1 (4 hours)
+        for (slot in slotsCourt1) {
             state = useCase(state, slot, allSlots)
         }
         assertEquals(8, state.selectedSlots.size)
 
-        // Try selecting 9th slot (1000) -> should be blocked
+        // Try selecting 9th slot (1000) on Court 1 -> should be blocked
         val state9 = useCase(state, slot1000, allSlots)
         assertEquals(8, state9.selectedSlots.size)
-        assertEquals("Tối đa 8 khung giờ (4 tiếng) cho một lần đặt", state9.errorMessage)
+        assertEquals("Sân đã đủ 8 khung (4 giờ)", state9.errorMessage)
+
+        // Selecting 1st slot on Court 2 -> ALLOWED (cap 8 per court)
+        val court2Id = "court-02"
+        val court2Slot = slot0600.copy(courtId = court2Id, slotId = "${court2Id}_${date}_0600")
+        val stateWithCourt2 = useCase(state, court2Slot, allSlots + listOf(court2Slot))
+        assertEquals(9, stateWithCourt2.selectedSlots.size)
     }
 
     @Test
-    fun validateForProceed_requiresMinimum2Slots() {
-        val singleSlotState = SlotSelectionState(
-            selectedSlots = listOf(slot0600),
-            totalPrice = 40_000L,
-            depositAmount = 12_000L,
-            isValid = false
-        )
-        val result1 = useCase.validateForProceed(singleSlotState)
-        assertTrue(result1.isFailure)
+    fun multiCourtSelection_allowsIndependentChainsPerCourt() {
+        // Q1: Một đơn chứa nhiều chuỗi (nhiều sân, cùng ngày); tổng tối đa 8 slot
+        val court2Id = "court-02"
+        val court2Slot0600 = slot0600.copy(courtId = court2Id, slotId = "${court2Id}_${date}_0600")
+        val court2Slot0630 = slot0630.copy(courtId = court2Id, slotId = "${court2Id}_${date}_0630")
+        val allMultiCourtSlots = allSlots + listOf(court2Slot0600, court2Slot0630)
 
-        val twoSlotsState = SlotSelectionState(
-            selectedSlots = listOf(slot0600, slot0630),
-            totalPrice = 80_000L,
-            depositAmount = 24_000L,
-            isValid = true
+        var state = SlotSelectionState()
+        // Chọn 2 slot trên court 1
+        state = useCase(state, slot0600, allMultiCourtSlots)
+        state = useCase(state, slot0630, allMultiCourtSlots)
+        assertEquals(2, state.selectedSlots.size)
+
+        // Chọn thêm 2 slot trên court 2
+        state = useCase(state, court2Slot0600, allMultiCourtSlots)
+        state = useCase(state, court2Slot0630, allMultiCourtSlots)
+        assertEquals(4, state.selectedSlots.size)
+
+        val court1Slots = state.selectedSlots.filter { it.courtId == courtId }
+        val court2Slots = state.selectedSlots.filter { it.courtId == court2Id }
+        assertEquals(2, court1Slots.size)
+        assertEquals(2, court2Slots.size)
+        assertTrue(state.isValid)
+    }
+
+    @Test
+    fun nonAdjacentClickOnOneCourt_resetsOnlyThatCourtAndKeepsOtherCourts() {
+        // Q1 & Q9: Bấm không liền kề trên sân A reset sân A, giữ nguyên sân B và báo lỗi
+        val court2Id = "court-02"
+        val court2Slot0600 = slot0600.copy(courtId = court2Id, slotId = "${court2Id}_${date}_0600")
+        val court2Slot0630 = slot0630.copy(courtId = court2Id, slotId = "${court2Id}_${date}_0630")
+        val allMultiCourtSlots = allSlots + listOf(court2Slot0600, court2Slot0630)
+
+        var state = SlotSelectionState()
+        state = useCase(state, slot0600, allMultiCourtSlots)
+        state = useCase(state, slot0630, allMultiCourtSlots)
+        state = useCase(state, court2Slot0600, allMultiCourtSlots)
+        state = useCase(state, court2Slot0630, allMultiCourtSlots)
+        assertEquals(4, state.selectedSlots.size)
+
+        // Bấm slot không liền kề trên Court 1 (0800)
+        val afterNonAdjacent = useCase(state, slot0800, allMultiCourtSlots)
+
+        // Court 1 chỉ còn 1 slot mới (0800)
+        val court1Slots = afterNonAdjacent.selectedSlots.filter { it.courtId == courtId }
+        assertEquals(1, court1Slots.size)
+        assertEquals(slot0800.slotId, court1Slots.first().slotId)
+
+        // Court 2 vẫn giữ nguyên 2 slot
+        val court2Slots = afterNonAdjacent.selectedSlots.filter { it.courtId == court2Id }
+        assertEquals(2, court2Slots.size)
+        assertEquals(3, afterNonAdjacent.selectedSlots.size)
+
+        // Báo lỗi Q9
+        assertEquals("Vui lòng chọn các khung giờ liên tiếp trên cùng sân", afterNonAdjacent.errorMessage)
+    }
+
+    @Test
+    fun deselectOnOneCourt_doesNotAffectOtherCourts() {
+        val court2Id = "court-02"
+        val court2Slot0600 = slot0600.copy(courtId = court2Id, slotId = "${court2Id}_${date}_0600")
+        val court2Slot0630 = slot0630.copy(courtId = court2Id, slotId = "${court2Id}_${date}_0630")
+        val allMultiCourtSlots = allSlots + listOf(court2Slot0600, court2Slot0630)
+
+        var state = SlotSelectionState()
+        state = useCase(state, slot0600, allMultiCourtSlots)
+        state = useCase(state, slot0630, allMultiCourtSlots)
+        state = useCase(state, court2Slot0600, allMultiCourtSlots)
+        state = useCase(state, court2Slot0630, allMultiCourtSlots)
+        assertEquals(4, state.selectedSlots.size)
+
+        // Deselect slot0630 trên Court 1
+        state = useCase(state, slot0630, allMultiCourtSlots)
+        val court1Slots = state.selectedSlots.filter { it.courtId == courtId }
+        val court2Slots = state.selectedSlots.filter { it.courtId == court2Id }
+        assertEquals(1, court1Slots.size)
+        assertEquals(2, court2Slots.size)
+        assertEquals(3, state.selectedSlots.size)
+    }
+
+    @Test
+    fun validateForProceed_requiresMinimum2SlotsPerCourt() {
+        val court2Id = "court-02"
+        val courtNames = mapOf(courtId to "Sân 1", court2Id to "Sân 2")
+        val court2Slot0600 = slot0600.copy(courtId = court2Id, slotId = "${court2Id}_${date}_0600")
+        val court2Slot0630 = slot0630.copy(courtId = court2Id, slotId = "${court2Id}_${date}_0630")
+
+        // Case 1: 1 slot Sân 1
+        val state1 = SlotSelectionState(selectedSlots = listOf(slot0600))
+        assertFalse(useCase.isSelectionValid(state1.selectedSlots))
+        val result1 = useCase.validateForProceed(state1, courtNames)
+        assertTrue(result1.isFailure)
+        assertTrue(result1.exceptionOrNull()?.message?.contains("Sân 1") == true)
+
+        // Case 2: 1 slot Sân 1 + 1 slot Sân 2
+        val state2 = SlotSelectionState(selectedSlots = listOf(slot0600, court2Slot0600))
+        assertFalse(useCase.isSelectionValid(state2.selectedSlots))
+        val result2 = useCase.validateForProceed(state2, courtNames)
+        assertTrue(result2.isFailure)
+
+        // Case 3: 2 slot Sân 1 + 1 slot Sân 2
+        val state3 = SlotSelectionState(selectedSlots = listOf(slot0600, slot0630, court2Slot0600))
+        assertFalse(useCase.isSelectionValid(state3.selectedSlots))
+        val result3 = useCase.validateForProceed(state3, courtNames)
+        assertTrue(result3.isFailure)
+        assertTrue(result3.exceptionOrNull()?.message?.contains("Sân 2") == true)
+
+        // Case 4: 2 slot Sân 1 + 2 slot Sân 2 -> SUCCESS!
+        val state4 = SlotSelectionState(selectedSlots = listOf(slot0600, slot0630, court2Slot0600, court2Slot0630))
+        assertTrue(useCase.isSelectionValid(state4.selectedSlots))
+        val result4 = useCase.validateForProceed(state4, courtNames)
+        assertTrue(result4.isSuccess)
+    }
+
+    @Test
+    fun multiCourtValidation_8Plus8SlotsAllowed() {
+        val court2Id = "court-02"
+        val slotsCourt1 = listOf(
+            slot0600, slot0630, slot0700, slot0730,
+            slot0800, slot0830, slot0900, slot0930
         )
-        val result2 = useCase.validateForProceed(twoSlotsState)
-        assertTrue(result2.isSuccess)
+        val slotsCourt2 = slotsCourt1.map { it.copy(courtId = court2Id, slotId = "${court2Id}_${date}_${it.startTime}") }
+
+        val all16Slots = slotsCourt1 + slotsCourt2
+        assertEquals(16, all16Slots.size)
+        assertTrue(useCase.isSelectionValid(all16Slots))
+        val result = useCase.validateForProceed(SlotSelectionState(selectedSlots = all16Slots))
+        assertTrue(result.isSuccess)
+    }
+
+    @Test
+    fun multiCourtValidation_total9SlotsAcrossCourtsAllowed() {
+        // 2 slots Court 1 + 2 slots Court 2 + 2 slots Court 3 + 3 slots Court 4 = 9 slots total
+        val c1Slots = listOf(slot0600, slot0630)
+        val c2Slots = listOf(
+            slot0600.copy(courtId = "c2", slotId = "c2_${date}_0600"),
+            slot0630.copy(courtId = "c2", slotId = "c2_${date}_0630")
+        )
+        val c3Slots = listOf(
+            slot0600.copy(courtId = "c3", slotId = "c3_${date}_0600"),
+            slot0630.copy(courtId = "c3", slotId = "c3_${date}_0630")
+        )
+        val c4Slots = listOf(
+            slot0600.copy(courtId = "c4", slotId = "c4_${date}_0600"),
+            slot0630.copy(courtId = "c4", slotId = "c4_${date}_0630"),
+            slot0700.copy(courtId = "c4", slotId = "c4_${date}_0700")
+        )
+        val total9Slots = c1Slots + c2Slots + c3Slots + c4Slots
+        assertEquals(9, total9Slots.size)
+        assertTrue(useCase.isSelectionValid(total9Slots))
+        val result = useCase.validateForProceed(SlotSelectionState(selectedSlots = total9Slots))
+        assertTrue(result.isSuccess)
+    }
+
+    @Test
+    fun findIncompleteCourt_returnsHelpfulHintWhenUnder2Slots() {
+        val court2Id = "court-02"
+        val courtNames = mapOf(courtId to "Sân 1", court2Id to "Sân 2")
+        val court2Slot0600 = slot0600.copy(courtId = court2Id, slotId = "${court2Id}_${date}_0600")
+
+        // 2 slots Sân 1 + 1 slot Sân 2
+        val slots = listOf(slot0600, slot0630, court2Slot0600)
+        val hint = useCase.findIncompleteCourt(slots, courtNames)
+        assertEquals("Sân 2 cần thêm 1 khung giờ liên tiếp mới đặt được (mỗi sân tối thiểu 2 khung, tức 1 giờ).", hint)
+
+        // Empty slots -> null
+        assertEquals(null, useCase.findIncompleteCourt(emptyList(), courtNames))
+
+        // All courts complete (>= 2 slots) -> null
+        val court2Slot0630 = slot0630.copy(courtId = court2Id, slotId = "${court2Id}_${date}_0630")
+        assertEquals(null, useCase.findIncompleteCourt(listOf(slot0600, slot0630, court2Slot0600, court2Slot0630), courtNames))
     }
 }

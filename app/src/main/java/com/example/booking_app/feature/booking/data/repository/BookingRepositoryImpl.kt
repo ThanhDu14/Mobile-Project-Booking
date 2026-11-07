@@ -7,6 +7,7 @@ import com.example.booking_app.feature.booking.domain.model.Court
 import com.example.booking_app.feature.booking.domain.model.HoldResult
 import com.example.booking_app.feature.booking.domain.model.PriceRule
 import com.example.booking_app.feature.booking.domain.model.TimeSlot
+import com.example.booking_app.feature.booking.domain.model.VenueInfo
 import com.example.booking_app.feature.booking.domain.repository.BookingRepository
 import com.google.firebase.firestore.FirebaseFirestoreException
 import kotlinx.coroutines.flow.Flow
@@ -23,6 +24,12 @@ class BookingRepositoryImpl @Inject constructor(
     override suspend fun getVenueOperatingHours(venueId: String): Result<Pair<String, String>> {
         return safeApiCall {
             remoteDataSource.getVenueOperatingHours(venueId)
+        }
+    }
+
+    override suspend fun getVenueInfo(venueId: String): Result<VenueInfo> {
+        return safeApiCall {
+            remoteDataSource.getVenueInfo(venueId)
         }
     }
 

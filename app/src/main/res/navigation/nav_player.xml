@@ -8,6 +8,32 @@
     <fragment
         android:id="@+id/playerHomePlaceholderFragment"
         android:name="com.example.booking_app.feature.auth.ui.home.PlayerHomePlaceholderFragment"
-        android:label="@string/app_name" />
+        android:label="@string/app_name">
+        <action
+            android:id="@+id/action_playerHome_to_bookingSlotGrid"
+            app:destination="@id/bookingSlotGridFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/bookingSlotGridFragment"
+        android:name="com.example.booking_app.feature.booking.ui.BookingSlotGridFragment"
+        android:label="@string/booking_title">
+        <argument
+            android:name="venueId"
+            app:argType="string"
+            android:defaultValue="demo-truong-chinh-909" />
+        <action
+            android:id="@+id/action_bookingSlotGrid_to_bookingConfirm"
+            app:destination="@id/bookingConfirmFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/bookingConfirmFragment"
+        android:name="com.example.booking_app.feature.booking.ui.BookingConfirmFragment"
+        android:label="@string/booking_confirm_title">
+        <argument
+            android:name="args"
+            app:argType="com.example.booking_app.feature.booking.ui.HoldToPaymentArgs" />
+    </fragment>
 
 </navigation>

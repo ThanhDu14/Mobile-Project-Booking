@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Bảng màu cho tính năng đặt sân theo khung giờ (Spec 040) -->
+<resources>
+    <!-- Trạng thái slot (item_slot_grid) -->
+    <color name="booking_slot_available_bg">@color/sn_surface_raised</color>
+    <color name="booking_slot_available_stroke">@color/sn_line</color>
+    <color name="booking_slot_available_text">@color/sn_ink</color>
+
+    <!-- 1a: Màu đang chọn chuẩn Mockup: nền xanh đậm #1B5E45 chữ trắng + ✓ -->
+    <color name="booking_slot_selected_bg">#1B5E45</color>
+    <color name="booking_slot_selected_stroke">#1B5E45</color>
+    <color name="booking_slot_selected_text">#FFFFFF</color>
+
+    <color name="booking_slot_held_bg">@color/sn_lamp_container</color>
+    <color name="booking_slot_held_stroke">@color/sn_lamp</color>
+    <color name="booking_slot_held_text">@color/sn_on_lamp_container</color>
+
+    <color name="booking_slot_booked_bg">@color/sn_slot_booked</color>
+    <color name="booking_slot_booked_stroke">#D4DBD5</color>
+    <color name="booking_slot_booked_text">@color/sn_on_slot_booked</color>
+
+    <color name="booking_slot_blocked_bg">@color/sn_surface_sunken</color>
+    <color name="booking_slot_blocked_stroke">@color/sn_outline</color>
+    <color name="booking_slot_blocked_text">@color/sn_ink_muted</color>
+
+    <color name="booking_slot_past_bg">#EAEFEA</color>
+    <color name="booking_slot_past_stroke">#D9E0D9</color>
+    <color name="booking_slot_past_text">#8A9690</color>
+
+    <!-- 1a: Thẻ chọn ngày đang chọn: nền xanh đậm #1B5E45 chữ trắng -->
+    <color name="booking_date_selected_bg">#1B5E45</color>
+    <color name="booking_date_selected_text">#FFFFFF</color>
+    <color name="booking_date_unselected_bg">@color/sn_surface_raised</color>
+    <color name="booking_date_unselected_stroke">@color/sn_line</color>
+    <color name="booking_date_unselected_text">@color/sn_ink</color>
+    <color name="booking_date_today_dot">@color/sn_lamp</color>
+
+    <!-- 1e: Màu chip Giao hữu (amber nhạt + chữ tối ở cả 2 theme) -->
+    <color name="booking_chip_giao_huu_bg">#FCE8BF</color>
+    <color name="booking_chip_giao_huu_text">#3D2A00</color>
+
+    <!-- Chip tab sân (item_court_tab) -->
+    <color name="booking_court_tab_selected_bg">@color/sn_court_container</color>
+    <color name="booking_court_tab_selected_stroke">@color/sn_court</color>
+    <color name="booking_court_tab_selected_text">@color/sn_on_court_container</color>
+    <color name="booking_court_tab_unselected_bg">@color/sn_surface_raised</color>
+    <color name="booking_court_tab_unselected_stroke">@color/sn_line</color>
+    <color name="booking_court_tab_unselected_text">@color/sn_ink</color>
+</resources>

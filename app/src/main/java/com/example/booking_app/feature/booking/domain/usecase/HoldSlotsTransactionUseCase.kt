@@ -10,7 +10,7 @@ class HoldSlotsTransactionUseCase @Inject constructor(
 
     suspend operator fun invoke(
         venueId: String,
-        courtId: String,
+        courtId: String = "",
         date: String,
         slotIds: List<String>,
         userId: String,

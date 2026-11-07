@@ -52,6 +52,7 @@ beforeEach(async () => {
     await setDoc(doc(db, 'users/player1'), seedUser('player1'));
     await setDoc(doc(db, 'users/player2'), seedUser('player2'));
     await setDoc(doc(db, 'users/admin1'), seedUser('admin1', { role: 'ADMIN' }));
+    await setDoc(doc(db, 'districts/q1'), { name: 'Quận 1', isActive: true });
   });
 });
 
@@ -114,7 +115,7 @@ describe('users/{uid}: sửa', () => {
     await assertSucceeds(updateDoc(me(), {
       level: 'INTERMEDIATE',
       favoriteDistrictIds: ['q1'],
-      avatarPath: 'avatars/player1.jpg',
+      avatarPath: 'player1/avatar_1760000000000.jpg',
       fcmTokens: ['token'],
       notificationPrefs: { booking: false },
       updatedAt: serverTimestamp(),

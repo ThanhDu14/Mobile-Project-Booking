@@ -5,7 +5,7 @@ import com.google.firebase.firestore.DocumentId
 data class CourtDto(
     @DocumentId val id: String = "",
     val name: String = "",
-    val surfaceType: String = "MAT",
+    val surfaceType: String = "",
     val isActive: Boolean = true,
     val sortOrder: Int = 0
 )

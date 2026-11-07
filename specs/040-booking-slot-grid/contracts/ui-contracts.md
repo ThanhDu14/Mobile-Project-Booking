@@ -20,14 +20,16 @@ Màn hình chi tiết cơ sở (`CourtDetailFragment`) bấm "Đặt sân" sẽ 
 </action>
 ```
 
-### 1.2. Điều hướng sang Màn hình Thanh toán & Giữ chỗ (`050-payment-voucher`)
-Khi người dùng bấm "Tiếp tục" và giữ chỗ 5 phút thành công, ViewModel phát ra `BookingSlotUiEffect.NavigateToPayment`:
+### 1.2. Điều hướng sang Màn hình Xác nhận giữ chỗ [040] và Thanh toán [050]
+Khi người dùng bấm "Giữ chỗ" (Q6) và giữ chỗ 5 phút thành công, ViewModel phát ra `BookingSlotUiEffect.NavigateToBookingConfirm(args)` để chuyển sang Màn hình xác nhận giữ chỗ của spec 040 (Q4/FR-018). Từ màn hình xác nhận, khi người dùng bấm "Thanh toán" thì mới chuyển tiếp sang `050-payment-voucher`:
 ```kotlin
 @Parcelize
 data class HoldToPaymentArgs(
     val bookingId: String,               // Mã đơn giữ chỗ (requestId UUID)
     val venueId: String,
     val venueName: String,
+    val venueAddress: String = "",       // Địa chỉ cơ sở thật
+    val districtName: String = "",       // Quận/huyện
     val isRecurring: Boolean = false,
     val totalSessions: Int = 1,          // Đơn lẻ = 1 buổi
     val subtotalAmount: Long,            // Tổng tiền tạm tính
@@ -129,15 +131,15 @@ class CalculateTotalPriceUseCase {
 
 ---
 
-## 4. Đặc tả Giao diện & Mã màu trạng thái (Design System Tokens)
+## 4. Đặc tả Giao diện & Mã màu trạng thái (Design System Tokens theo Q7 & Mockup)
 
-Theo wireframe SmashNow (Spec 040), lưới slot sử dụng các mã màu Material 3 trực quan:
+Theo wireframe SmashNow (Spec 040 chuẩn thị giác Mockup M13/M14/M15), ô slot chỉ hiển thị giờ bắt đầu (không ghi giá, không khoảng giờ) và sử dụng các mã màu trực quan:
 
-| Trạng thái | Nền (Background) | Viền (Border) | Chữ (Text) | Hành vi tương tác |
+| Trạng thái | Nền (Background) | Viền (Border) | Chữ & Biểu tượng | Hành vi tương tác |
 |---|---|---|---|---|
-| **Còn trống (`AVAILABLE`)** | Trắng (`colorSurface`) | Xám nhạt (`colorOutlineVariant`) | Đen/Tối (`colorOnSurface`) | Bấm để chọn |
-| **Đang chọn (`SELECTED`)** | Xanh dương chính (`colorPrimary`) | Xanh dương đậm | Trắng (`colorOnPrimary`) | Bấm để bỏ chọn |
-| **Đang giữ (`HELD`)** | Vàng nhạt (`colorTertiaryContainer`) | Vàng cam (`colorTertiary`) | Nâu đất | Bị vô hiệu hóa, hiện nhãn "Đang giữ" |
-| **Đã đặt (`BOOKED`)** | Xám nhạt (`colorSurfaceVariant`) | Không | Xám tối (`colorOnSurfaceVariant`) | Bị vô hiệu hóa |
-| **Bị khóa (`BLOCKED` - `DROP_IN`)** | Xám trung tính (`colorOutlineVariant`) | Xám đậm | Xám đậm | Bị vô hiệu hóa, icon khóa $\theta$ hoặc nhãn "Vãng lai" |
-| **Đã qua giờ (`PAST`)** | Xám mờ (Alpha 38%) | Không | Xám mờ | Bị vô hiệu hóa |
+| **Còn trống (`AVAILABLE`)** | Trắng (`#FFFFFF` / `colorSurface`) | Xám nhạt (`#E0E0E0`) | Đen/Tối (`#1C1B1F`, vd `17:00`) | Bấm để chọn |
+| **Đang chọn (`SELECTED`)** | Xanh đậm (`#1B5E45`) | Không viền | Trắng (`#FFFFFF`) kèm `✓` (vd `✓ 19:00`) | Bấm để bỏ chọn |
+| **Đang giữ (`HELD`)** | Vàng nhạt (`#FFF8E1`) | Vàng cam (`#FFA000`) | Cam đậm (`#E65100`) kèm icon `⏱` (vd `⏱ 18:00`) | Bấm hiện Snackbar "Slot này đang được giữ" |
+| **Đã đặt (`BOOKED`)** | Xám nhạt (`#EEEEEE`) | Không viền | Xám gạch ngang (`#9E9E9E`, `~~17:30~~`) | Bấm hiện Snackbar "Slot này đã được đặt" |
+| **Bị khóa (`BLOCKED` - `DROP_IN`)** | Sọc chéo (Diagonal stripes) / xám | Xám (`#BDBDBD`) | Xám đậm kèm icon `🔒` (vd `🔒 17:00`, nhãn "Giao lưu" khi DROP_IN) | Bấm hiện Snackbar "Slot này không khả dụng" |
+| **Đã qua giờ (`PAST`)** | Mờ rõ rệt (Alpha ~0.35) | Không viền | Xám mờ (vd `17:00`) | Bấm hiện Snackbar "Slot này đã qua giờ" |

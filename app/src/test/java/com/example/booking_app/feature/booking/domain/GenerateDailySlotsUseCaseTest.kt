@@ -7,6 +7,7 @@ import com.example.booking_app.feature.booking.domain.usecase.GenerateDailySlots
 import com.example.booking_app.feature.booking.fixture.BookingSlotFixtures
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import java.time.LocalDate
@@ -164,5 +165,24 @@ class GenerateDailySlotsUseCaseTest {
         assertNotNull(slot1900)
         assertEquals(SlotStatus.BLOCKED, slot1900?.status)
         assertEquals("DROP_IN", slot1900?.blockReason)
+    }
+
+    @Test
+    fun generateDailySlots_whenNoPriceRuleMatches_assignsBlockedNoPriceRule() {
+        // Q11: Slot không khớp rule nào -> không bán, đánh dấu BLOCKED với NO_PRICE_RULE
+        // 2026-10-31 là Thứ Bảy (dayOfWeek = 6), trong khi priceRules chỉ áp dụng Mon-Fri (1..5)
+        val saturdayDate = "20261031"
+        val slots = useCase(
+            courtId = courtId,
+            date = saturdayDate,
+            openTime = "0600",
+            closeTime = "0800",
+            priceRules = priceRules, // Mon-Fri only
+            busySlots = emptyList(),
+            currentTimeMillis = 0L
+        )
+
+        assertEquals(4, slots.size)
+        assertTrue(slots.all { it.status == SlotStatus.BLOCKED && it.blockReason == "NO_PRICE_RULE" })
     }
 }

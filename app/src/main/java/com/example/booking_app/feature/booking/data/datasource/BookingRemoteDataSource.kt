@@ -4,10 +4,13 @@ import com.example.booking_app.feature.booking.data.model.CourtDto
 import com.example.booking_app.feature.booking.data.model.PriceRuleDto
 import com.example.booking_app.feature.booking.data.model.SlotDto
 import com.example.booking_app.feature.booking.domain.model.HoldResult
+import com.example.booking_app.feature.booking.domain.model.VenueInfo
 import kotlinx.coroutines.flow.Flow
 
 interface BookingRemoteDataSource {
     suspend fun getVenueOperatingHours(venueId: String): Pair<String, String>
+
+    suspend fun getVenueInfo(venueId: String): VenueInfo
 
     suspend fun getActiveCourts(venueId: String): List<CourtDto>
 
@@ -17,7 +20,7 @@ interface BookingRemoteDataSource {
 
     suspend fun holdSlotsAtomic(
         venueId: String,
-        courtId: String,
+        courtId: String = "",
         date: String,
         slotIds: List<String>,
         userId: String,
