@@ -39,6 +39,9 @@ data class LoginUiState(
 sealed interface LoginEvent {
     data object ShowLocked : LoginEvent
 
+    /** [011 T018] Phiên bị thu hồi: báo "Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại". */
+    data object ShowSessionRevoked : LoginEvent
+
     data object ShowNetworkError : LoginEvent
 
     data object ClearPassword : LoginEvent
@@ -81,6 +84,11 @@ class LoginViewModel @Inject constructor(
         if (lockedNotice && savedStateHandle.get<Boolean>(KEY_LOCKED_SHOWN) != true) {
             savedStateHandle[KEY_LOCKED_SHOWN] = true
             _events.trySend(LoginEvent.ShowLocked)
+        }
+        val revokedNotice = savedStateHandle.get<Boolean>(ARG_SESSION_REVOKED_NOTICE) == true
+        if (revokedNotice && savedStateHandle.get<Boolean>(KEY_REVOKED_SHOWN) != true) {
+            savedStateHandle[KEY_REVOKED_SHOWN] = true
+            _events.trySend(LoginEvent.ShowSessionRevoked)
         }
     }
 
@@ -170,6 +178,8 @@ class LoginViewModel @Inject constructor(
 
     companion object {
         const val ARG_LOCKED_NOTICE = "lockedNotice"
+        const val ARG_SESSION_REVOKED_NOTICE = "sessionRevokedNotice"
+        const val KEY_REVOKED_SHOWN = "session_revoked_shown"
         private const val KEY_EMAIL = "email"
         private const val KEY_LOCKED_SHOWN = "lockedShown"
     }

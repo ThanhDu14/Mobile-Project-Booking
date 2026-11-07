@@ -123,7 +123,7 @@ specs/010-account-auth/
 ```text
 app/src/main/java/com/example/booking_app/
 ├── SmashNowApp.kt                                  # @HiltAndroidApp
-├── MainActivity.kt                                 # thay FirstFragment/SecondFragment mẫu; thu thập sessionState
+├── MainActivity.kt                                 # thay FirstFragment/SecondFragment mẫu; thu thập sessionState (+ mode của AppModeController, sửa bởi 011 T018)
 ├── core/
 │   ├── di/FirebaseModule.kt, SupabaseModule.kt, DataStoreModule.kt, DispatchersModule.kt
 │   ├── network/AppError.kt, TaskAwait.kt (awaitWithTimeout 15s), IdTokenProvider.kt, FirebaseIdTokenProvider.kt

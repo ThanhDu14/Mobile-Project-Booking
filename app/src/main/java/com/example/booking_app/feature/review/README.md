@@ -63,4 +63,4 @@ Nút tạm "Sân yêu thích (Feature 070)" ở trang chủ placeholder dùng c�
 |---|---|---|
 | Bấm một sân trong danh sách | Mở lưới đặt sân (spec 040) | Đổi `action_favoriteVenues_to_bookingSlotGrid` sang chi tiết sân (spec 030) |
 | Nút "Tìm sân" ở trạng thái rỗng | Quay về trang trước | Mở tìm kiếm (spec 020) |
-| Sân bị ẩn/khóa | Đọc `venues/{id}` bằng `get` (Rules hiện cho đọc mọi cơ sở) | Giữ nguyên nếu D tách Rules `venues` thành `get` mọi trạng thái / `list` chỉ `ACTIVE` (research R6) |
+| Sân bị ẩn/khóa | Đọc `venues/{id}` bằng `get`. Rules chỉ cho người chơi đọc cơ sở `ACTIVE`, nên `PERMISSION_DENIED` được coi là "Sân tạm ngừng hoạt động" (sân đã xóa hẳn cũng hiện như vậy) | Nếu D tách Rules `venues` thành `get` mọi trạng thái / `list` chỉ `ACTIVE` (research R6) thì lại phân biệt được sân đã xóa |

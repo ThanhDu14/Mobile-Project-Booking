@@ -17,6 +17,14 @@ interface SessionManager {
 
     suspend fun signOut()
 
+    /**
+     * [011] Đăng xuất kèm lý do. Có thân mặc định để các fake `SessionManager` cũ vẫn biên dịch;
+     * `FirebaseSessionManager` override để chạy `SignOutHook` và gắn lý do vào `SignedOut`.
+     */
+    suspend fun signOut(reason: SignOutReason?) {
+        signOut()
+    }
+
     /** `null` khi chưa `SignedIn`. */
     fun currentUid(): String?
 

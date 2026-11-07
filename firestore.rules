@@ -175,7 +175,10 @@ service cloud.firestore {
     // Người chơi chỉ thấy dữ liệu công khai của venue ACTIVE. Owner đã duyệt
     // vẫn đọc được dữ liệu quản lý của venue mình.
     match /venues/{venueId} {
-      allow read: if isAdmin() || (resource.data.status == 'ACTIVE') || ownsVenue(venueId);
+      // So ownerId trên chính document (không get() lại venue) để query `where ownerId == uid`
+      // của màn "Cơ sở của tôi" chứng minh được quyền; ownsVenue(venueId) chỉ dùng được cho get.
+      allow read: if isAdmin() || (resource.data.status == 'ACTIVE')
+                  || (isApprovedOwner() && resource.data.ownerId == request.auth.uid);
       allow create: if isAdmin(); // venue đầu tiên do Feature 120 tạo; owner create chờ server boundary T003.
       allow update: if isAdmin()
                     || (ownsVenue(venueId)

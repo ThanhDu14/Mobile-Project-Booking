@@ -12,6 +12,8 @@
         android:id="@+id/favoriteVenuesFragment"
         android:name="com.example.booking_app.feature.review.ui.favorite.FavoriteVenuesFragment"
         android:label="@string/favorite_title">
+        <!-- Mục "Sân yêu thích" trên trang Tài khoản (spec 011, AccountEntry.FAVORITES) mở bằng deep link này. -->
+        <deepLink app:uri="smashnow://favorites" />
         <!-- Tạm mở lưới đặt sân (spec 040) cho đến khi có chi tiết sân (spec 030). -->
         <action
             android:id="@+id/action_favoriteVenues_to_bookingSlotGrid"

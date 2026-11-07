@@ -50,7 +50,7 @@ Chi tiết policy và test: [contracts/storage-avatars.md](contracts/storage-ava
 | Trường | Kiểu | Ghi chú |
 |---|---|---|
 | `name` | String | "Quận 10", "TP Thủ Đức" |
-| `city` | String | `HCM` (phạm vi demo) |
+| `cityName` | String | `TP. Hồ Chí Minh` (phạm vi demo). App không đọc trường này; tên trường theo seed của nhóm (`scripts/seed/seed.mjs`) |
 | `sortOrder` | Int | Thứ tự hiển thị |
 | `isActive` | Boolean | `false` thì không chọn mới được; người đã chọn vẫn giữ cho tới lần lưu sau |
 | `createdAt`, `updatedAt` | Timestamp | |
@@ -58,7 +58,7 @@ Chi tiết policy và test: [contracts/storage-avatars.md](contracts/storage-ava
 - ID tất định, chữ thường không dấu: `q1`, `q3`, `q10`, `thu-duc`, `binh-thanh`…
 - Rules: `isInitialized()` được `get`/`list`; chỉ admin ghi (spec 120).
 - Truy vấn: `where isActive == true order by sortOrder`. Cần index ghép `isActive` + `sortOrder`.
-- Dữ liệu mẫu: `scripts/seed/districts.ts` (22 quận/huyện TP.HCM).
+- Dữ liệu mẫu: seed chung của nhóm `scripts/seed/seed.mjs` + `catalog.json` (22 quận/huyện TP.HCM, ID như trên; sửa ở 011 T004, không viết `districts.ts` riêng). Bản ghi `q-cu` (`isActive = false`) chỉ có trong dữ liệu test (`firestore-tests`, unit test), không thêm vào seed.
 
 ## 4. Firestore `accountDeletions/{uid}` (A) **[MỚI]**
 
