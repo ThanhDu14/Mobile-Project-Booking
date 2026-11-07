@@ -1,5 +1,7 @@
 # Quickstart: Quản lý lịch đặt của tôi (spec 060)
 
+> **Cập nhật 2026-11-07:** Đây là hướng dẫn kiểm thử dự kiến, không chứng minh feature đã được triển khai hoặc các lệnh đã chạy thành công. Ví dụ hủy trễ có voucher bên dưới tính theo giá gốc đã bị thay thế: ví bị phạt 30% số tiền thực trả sau voucher và hoàn phần còn lại. Màn hủy là màn hình riêng theo wireframe; QR offline chỉ hiện cho chủ đơn đang đăng nhập và hiệu lực vẫn do server check-in xác minh. Tham khảo các quyết định và điểm chưa chốt trong `spec.md` trước khi xây dựng test.
+
 **Ngày**: 2026-10-15 · **Spec**: [spec.md](spec.md) · **Plan**: [plan.md](plan.md)
 
 Tài liệu này hướng dẫn cách chạy thử nghiệm, thực thi kiểm thử tự động (Unit Test / UI Test) và kiểm tra xác minh các kịch bản chính của tính năng `060-my-bookings`.

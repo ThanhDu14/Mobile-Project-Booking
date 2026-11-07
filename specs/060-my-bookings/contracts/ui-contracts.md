@@ -1,5 +1,7 @@
 # UI & Domain Contracts: Quản lý lịch đặt của tôi (spec 060)
 
+> **Cập nhật 2026-11-07:** Ví dụ interface và Security Rules bên dưới là bản lịch sử, chưa phải hợp đồng được phép triển khai. Không áp dụng mẫu client tự hủy, gửi quote có thẩm quyền, tự tạo giao dịch hoàn, hoặc quyền `role == VENUE_OWNER` cho mọi venue. Theo constitution và spec, thao tác nhạy cảm phải qua Edge Function, xác thực quyền và transaction phía server; request hủy phải có `requestId`. Màn hủy là màn hình riêng theo ảnh `ui/`; QR cache chỉ hiện cho chủ đơn hiện đang đăng nhập và không được khẳng định còn hiệu lực khi offline. Cần thiết kế lại contract phân trang, server time và tích hợp theo quyết định trong `spec.md` trước khi implement.
+
 **Ngày**: 2026-10-15 · **Spec**: [spec.md](../spec.md) · **Plan**: [plan.md](../plan.md)
 
 Tài liệu này xác lập các hợp đồng giao tiếp giữa các tầng kiến trúc trong tính năng `060-my-bookings` và điểm giao thoa điều hướng với các tính năng khác (`040`, `041`, `050`, `070`) cùng quy tắc bảo mật Firestore Security Rules.
