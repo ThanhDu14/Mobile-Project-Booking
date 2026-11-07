@@ -8,6 +8,12 @@
     android:gravity="center"
     android:orientation="vertical">
 
+    <com.example.booking_app.core.ui.SmashLoadingView
+        android:layout_width="96dp"
+        android:layout_height="96dp"
+        android:layout_marginBottom="@dimen/space_2"
+        android:importantForAccessibility="no" />
+
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

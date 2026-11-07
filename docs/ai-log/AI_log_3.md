@@ -29,6 +29,9 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 23 | 2026-10-16 | Lập kế hoạch kỹ thuật spec 091 bằng `/speckit-plan` | 09 |
 | 24 | 2026-10-16 | Chia task triển khai spec 091 bằng `/speckit-tasks` | 09 |
 | 25 | 2026-10-16 | Kiểm tra độ khớp spec/plan/tasks của spec 091 bằng `/speckit-analyze` và sửa theo kết quả | 09 |
+| 26 | 2026-10-30 | Triển khai US3 sân yêu thích (Phase 1–2 phần chung + Phase 5) của spec 070 bằng `/speckit-implement` | 07 |
+| 27 | 2026-10-30 | Kiểm tra tiến độ tuần 4, soạn tài liệu PDF hướng dẫn test trên emulator và giải thích code | 07 |
+| 28 | 2026-10-30 | Làm trước phần nền US1 của spec 070: Rules `reviews`, index, mã lỗi và DTO Edge Function | 07 |
 
 ---
 
@@ -1509,3 +1512,141 @@ Sau khi xem báo cáo, mình nhờ AI sửa luôn cả 5 mục.
 - Đọc lại 010, 070, 090 task được tham chiếu; 090-T060 đã gọi `purgeChat`.
 - Sau khi sửa, `grep` vẫn đếm được 59 task (091) và 75 task (090) đúng định dạng.
 - Việc tiếp theo: họp nhóm 16/10 để chốt các trường [MỚI] và quy ước với A, B, D; sau đó bắt đầu triển khai theo thứ tự 080 → 081 → 090 → 091 (070 song song).
+
+---
+
+## Mục 26: Triển khai US3 sân yêu thích của spec 070 bằng `/speckit-implement`
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-30 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 07 – Đánh giá và yêu thích (spec `specs/070-review-favorite`, User Story 3) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5), lệnh Spec Kit `/speckit-implement` |
+| Mục đích | Làm xong việc tuần 4 theo team contract: "07: yêu thích, danh sách sân yêu thích" |
+| Nhánh Git | `feature/070-review-favorite` |
+
+### Prompt đã dùng
+
+```
+Tuần 4 theo team contract, mình (C) phải làm nhóm 07 phần "yêu thích, danh sách sân yêu thích",
+tức User Story 3 của specs/070-review-favorite. Hãy triển khai theo tasks.md:
+- phần Setup/Foundational còn thiếu: Coil, UiState/StateViews, VenueSummary, model domain,
+  FavoriteRepository, DTO/mapper, chuỗi, nav graph nav_review;
+- rồi T047–T054.
+Làm theo TDD: viết test ViewModel/UseCase và test Rules F1–F4, chạy thấy fail rồi mới cài đặt.
+Ràng buộc:
+- không tạo lại file nhóm khác đã có trên main;
+- ghi trực tiếp Firestore users/{uid}/favorites/{venueId} với Rules chặt schema;
+- trái tim đổi ngay kể cả offline, ghi lỗi thì trả lại (FR-021);
+- sân bị ẩn/xóa hiện nhãn và không mở được đặt sân (FR-024).
+Gắn tạm nút trái tim vào lưới đặt sân (spec 040) và nút ở trang chủ để demo.
+Kết quả mong muốn: build qua, test qua, cập nhật tasks.md và README hướng dẫn nhóm khác gắn nút trái tim.
+```
+
+### Tóm tắt phản hồi của AI
+
+- 3 commit: `chore(core)` thêm Coil, `UiState`/`StateViews`, `VenueSummary`; `feat(review)` Rules `users/{uid}/favorites`, `FirestoreFavoriteRepository`, `ToggleFavoriteUseCase`, màn "Sân yêu thích", `FavoriteToggleButton`; `feat(review)` gắn trái tim vào header lưới đặt sân và nút tạm ở trang chủ.
+- Trái tim cập nhật lạc quan: đổi ngay, ghi lỗi thì trả lại và báo snackbar. Danh sách đọc thêm `venues/{id}` để biết sân `ACTIVE`/`SUSPENDED`/`GONE`.
+- Test: 16 unit test (`FavoriteMapperTest`, `ToggleFavoriteUseCaseTest`, `FavoriteVenuesViewModelTest`) và 8 test Rules F1–F4.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Ghi favorite trực tiếp từ client, Rules kiểm schema | Dùng | Dữ liệu riêng của người dùng, không cần Edge Function; đúng research R7 |
+| Tạm mở lưới đặt sân khi bấm một sân yêu thích | Dùng tạm | Chi tiết sân (spec 030) chưa có; ghi TODO và bảng "Việc còn chờ nhóm khác" trong README |
+| T009 `supabase start` | Chưa làm | Máy chưa có WSL2/Docker; phần yêu thích không dùng Supabase |
+
+### Cách kiểm chứng
+
+- `./gradlew testDebugUnitTest assembleDebug`: build qua, 16/16 unit test qua.
+- `cd firestore-tests && npm test`: test F1–F4 qua.
+- Đọc lại code từng tầng và chạy thử trên emulator.
+
+---
+
+## Mục 27: Kiểm tra tiến độ tuần 4 và soạn tài liệu hướng dẫn test, giải thích code
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-30 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 07 – Đánh giá và yêu thích (spec 070, US3) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5) |
+| Mục đích | Biết việc tuần 4 đã đủ chưa; có tài liệu để tự test trên emulator và đọc hiểu code |
+| Nhánh Git | `feature/070-review-favorite` |
+
+### Prompt đã dùng
+
+```
+Kiểm tra giúp mình việc tuần 4 theo team contract đã xong chưa: đối chiếu tasks.md spec 070,
+lịch sử commit, chạy lại build và unit test.
+Sau đó soạn vài file PDF đặt ở D:\HK1-26-27:
+(1) báo cáo tiến độ và việc còn thiếu;
+(2) hướng dẫn từng bước test tính năng Sân yêu thích trên emulator Android, gồm cách dùng
+    Firebase Emulator hay Firebase thật và các kịch bản quickstart 9–11;
+(3) giải thích code theo từng tầng, có trích code kèm chú thích tiếng Việt để mình đọc hiểu
+    cách nó hoạt động.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Kết luận: code tuần 4 (T047–T054) đã xong, build và 16 unit test qua. Việc còn lại: deploy Rules lên project thật (báo B trước), mở PR, demo, ảnh minh chứng, AI log, đủ 5 commit.
+- 3 file PDF: `01_Tien-do-tuan-4_Spec070.pdf`, `02_Huong-dan-test-tren-may-ao.pdf`, `03_Giai-thich-code-San-yeu-thich.pdf`.
+- Lưu ý: app đang dùng Firebase thật (`USE_EMULATOR=false`), nếu project thật chưa có Rules `favorites` thì trái tim sẽ đổi rồi tự trở lại.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| 3 file PDF | Dùng, không đưa vào repo | Tài liệu học cá nhân |
+| Cách A (Firebase Emulator) để tự test | Dùng | Không đụng dữ liệu thật, dùng đúng Rules trên nhánh |
+
+### Cách kiểm chứng
+
+- Chạy lại `./gradlew testDebugUnitTest assembleDebug`, đọc kết quả từng file test.
+- Đối chiếu nội dung PDF với code thật (tên lớp, hàm, chuỗi giao diện).
+
+---
+
+## Mục 28: Làm trước phần nền US1 của spec 070 (Rules `reviews`, index, mã lỗi, DTO)
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-10-30 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 07 – Đánh giá và yêu thích (spec 070, task T013, T022, T023, T024) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5) |
+| Mục đích | Chuẩn bị nền cho US1 (đánh giá sân, tuần 5); đủ cam kết 5 commit có nội dung trong tuần |
+| Nhánh Git | `feature/070-review-favorite` |
+
+### Prompt đã dùng
+
+```
+Tuần này mình cần ít nhất 5 commit có nội dung. Hãy làm trước một số task nền của tuần 5
+(US1 đánh giá sân) trong specs/070-review-favorite/tasks.md có thể làm độc lập, không cần Supabase local:
+- T022/T023 phần reviews: viết test R1–R9 trước, chạy thấy fail, rồi mới thêm Rules;
+- T024: index Firestore;
+- T013: mã lỗi ReviewError và DTO cho Edge Function review, kèm unit test.
+Mỗi phần một commit đúng quy ước Git, không chia nhỏ giả tạo; cập nhật tasks.md;
+không thêm dòng attribution AI vào commit.
+```
+
+### Tóm tắt phản hồi của AI
+
+- `feat(review): Rules đọc reviews và test R1–R9`: đánh giá `VISIBLE` ai đăng nhập cũng đọc; người viết đọc bài của mình kể cả bị ẩn; admin đọc tất cả; client không ghi. Test viết trước, 4 test fail đúng dự kiến, sau khi thêm Rules cả bộ 52/52 qua.
+- `feat(review): thêm index Firestore`: 6 index `reviews` (danh sách, lọc sao, có ảnh, chưa phản hồi, của tôi) và index collection group `favorites.venueId`.
+- `feat(review): mã lỗi ReviewError và DTO`: request/response 5 action, `Throwable.toReviewError()`, chuỗi `review_error_*`, 8 unit test.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Index "Chưa phản hồi" thêm trường `status` | Dùng, sửa `data-model.md` mục 5 | Truy vấn T058 có lọc `status == VISIBLE`, thiếu trường này Firestore sẽ báo thiếu index |
+| Thêm chuỗi thông báo cho từng mã lỗi | Dùng | T015 yêu cầu nhưng bản trước còn thiếu |
+
+### Cách kiểm chứng
+
+- `cd firestore-tests && npm test`: 52/52 test qua.
+- `./gradlew testDebugUnitTest --tests "com.example.booking_app.feature.review.*" assembleDebug`: 24/24 test qua, build được.
