@@ -4033,3 +4033,34 @@ tiến độ Feature 110 đạt 100% (35/35 tasks DONE).
   - Kết quả: **BUILD SUCCESSFUL**, 53/53 tests **PASS 100%**, 0 fail, 0 skipped.
   - Test mới `observeTabCounts_filtersOutMalformed041SessionsAndExpiredHolds` kiểm chứng thành công: doc 041 thiếu trường và doc HOLD hết hạn/null expiry đều không bị đếm vào tab "Chờ thanh toán".
 - **Tuân thủ cam kết:** Commit local đúng mẫu; không push, không mở PR, không deploy.
+
+---
+
+## Mục 41: Feature 060 (Commit 2) — Nối dây hủy phía server, rules và điều hướng
+
+- **Ngày:** 2026-11-09; nhánh `060-my-bookings`.
+- **Commit:** `feat(060): wire player cancel, rules and navigation (T020-T021, T023, T038, T007-T010, T013-T016)`
+- **Nội dung thực hiện:**
+  - **T020 (Edge Function hủy đơn):** Cài đặt hoàn thiện giao dịch server nguyên tử trong `supabase/functions/player-cancel-booking/handler.ts`:
+    - Xác thực ID token, kiểm tra role `PLAYER`/`ADMIN`.
+    - Kiểm tra trạng thái đơn hợp lệ (`PENDING` hoặc `CONFIRMED`), chưa check-in và giờ bắt đầu chưa diễn ra.
+    - Idempotency bảo đảm qua document `refunds/refund_${bookingId}` với `requestId`, ngăn chặn hoàn tiền lặp lại.
+    - Đánh giá thời gian và tính toán hoàn/phạt theo giờ server: PENDING hoàn 100%; CONFIRMED sớm ($\ge 240$ phút) hoàn 100%; CONFIRMED trễ ($< 240$ phút) phạt 30% làm tròn xuống bội 1.000đ và hoàn 70% còn lại cho ví giả lập, cọc mất cọc, tại sân không hoàn.
+    - Thực thi transaction nguyên tử gồm: cập nhật booking CANCELLED, nhả toàn bộ slot liên quan trong `slots/`, cộng tiền hoàn vào `users/{uid}/walletBalance`, tạo bản ghi idempotency `refunds/refund_${bookingId}`. Trạng thái: Chưa deploy (chờ Đại ca deploy).
+  - **T021 (Hủy chuỗi cố định):** BỊ CHẶN hợp đồng voucher chuỗi (T045/T046), tiếp tục giữ fail-closed an toàn cho việc hủy nhóm recurring.
+  - **T023 (Firestore Rules):** Xác nhận `firestore.rules`: client chỉ được đọc đơn của chính mình, cấm xóa, cấm trực tiếp đổi sang CANCELLED hoặc can thiệp số dư ví / giải phóng slots để vượt qua Edge Function.
+  - **T038 (Điều hướng liên feature 040/050/070):**
+    - Tạo `ReceiptToMyBookingsArgs` (Parcelable); `MyBookingsFragment` nhận args từ 050 mở đúng tab Chờ duyệt (`PENDING`).
+    - Thẻ đơn tab HOLD có nút "Thanh toán tiếp" mở `bookingConfirmFragment` kèm `HoldToPaymentArgs` kế thừa `holdExpiresAtMillis`, không reset hạn 5 phút.
+    - Thẻ đơn tab Hoàn thành / Hủy có nút "Đặt lại sân này" mở `bookingSlotGridFragment` kèm `venueId`.
+    - Thẻ đơn và chi tiết khóa/ẩn hoàn toàn quyền đánh giá review đối với đơn `NO_SHOW`.
+  - **T007–T010, T013–T016 (Data & Use Cases):**
+    - `FirestoreBookingManagementRepository.kt`: Nối `cancelBooking` gọi Edge Function `player-cancel-booking` qua `supabase.functions` bọc `FunctionErrors.invokeWithAuthRetry`.
+    - Cài đặt `estimateQuote` sử dụng giờ server đồng bộ từ `ServerTimeOffsetProvider.now()`.
+    - Cập nhật `CancelBookingViewModel` inject `ServerTimeOffsetProvider`.
+- **Kết quả kiểm thử:**
+  - Lệnh: `JAVA_HOME=/opt/android-studio/jbr ./gradlew :app:testDebugUnitTest --tests '*booking_management*' --max-workers=1 -Dkotlin.compiler.execution.strategy=in-process`
+  - Kết quả: **BUILD SUCCESSFUL**, 53/53 tests **PASS 100%**.
+  - Lệnh biên dịch: `JAVA_HOME=/opt/android-studio/jbr ./gradlew :app:assembleDebug --max-workers=1 -Dkotlin.compiler.execution.strategy=in-process`
+  - Kết quả: **BUILD SUCCESSFUL in 50s**.
+- **Tuân thủ cam kết:** Commit local đúng mẫu; không push, không mở PR, không deploy.

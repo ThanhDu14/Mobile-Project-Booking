@@ -1,5 +1,6 @@
 package com.example.booking_app.feature.booking_management.data
 
+import com.example.booking_app.core.network.FunctionErrors
 import com.example.booking_app.core.session.SessionManager
 import com.example.booking_app.feature.booking.data.time.ServerTimeOffsetProvider
 import com.example.booking_app.feature.booking_management.domain.*
@@ -9,6 +10,9 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.MetadataChanges
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.Source
+import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.functions.functions
+import io.ktor.client.statement.bodyAsText
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -18,14 +22,32 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import javax.inject.Inject
 import javax.inject.Singleton
+
+@Serializable
+private data class PlayerCancelBookingWire(
+    val bookingId: String,
+    val reason: String,
+    val requestId: String
+)
+
+@Serializable
+private data class PlayerCancelBookingResponse(
+    val refundAmount: Long = 0L,
+    val penaltyAmount: Long = 0L,
+    val success: Boolean = true
+)
 
 @Singleton
 class FirestoreBookingManagementRepository @Inject constructor(
     private val firestore: FirebaseFirestore,
     private val session: SessionManager,
-    private val serverTimeOffsetProvider: ServerTimeOffsetProvider
+    private val serverTimeOffsetProvider: ServerTimeOffsetProvider,
+    private val supabase: SupabaseClient,
+    private val functionErrors: FunctionErrors
 ) : BookingManagementRepository {
     private fun statuses(tab: BookingTab) = when (tab) {
         BookingTab.HOLD -> listOf("HOLD")
@@ -232,12 +254,75 @@ class FirestoreBookingManagementRepository @Inject constructor(
     override fun observeGroup(recurringGroupId: String): Flow<RecurringBookingGroup?> =
         throw UnsupportedOperationException("Recurring group reads require a complete, owner-verified group contract")
 
-    override suspend fun estimateQuote(bookingId: String): RefundPolicyQuote =
-        throw UnsupportedOperationException("A trustworthy server-time estimate is not available")
+    override suspend fun estimateQuote(bookingId: String): RefundPolicyQuote {
+        require(bookingId.isNotBlank())
+        val uid = requireNotNull(session.currentUid()) { "Sign in required" }
+        val doc = firestore.collection("bookings").document(bookingId).get(Source.SERVER).await()
+        check(isAuthoritativeSnapshot(doc.metadata.isFromCache, doc.metadata.hasPendingWrites())) {
+            "Booking data is not confirmed by the server"
+        }
+        val detail = BookingManagementMapper.map(doc.id, requireNotNull(doc.data), uid)
+        serverTimeOffsetProvider.ensureSynced()
+        val now = serverTimeOffsetProvider.now()
+        val minutesUntilStart = (detail.startAtMillis - now) / 60_000L
+        val isEarly = minutesUntilStart >= 240L
+        val isEligible = (detail.status == RefundPolicy.Status.PENDING || detail.status == RefundPolicy.Status.CONFIRMED) &&
+            detail.checkedInAtMillis == null &&
+            now < detail.startAtMillis
+        val result = if (isEligible) {
+            RefundPolicy.calculate(
+                status = detail.status,
+                paymentMethod = detail.finance.paymentMethod,
+                paidAmount = detail.finance.paidAmount,
+                nowMillis = now,
+                startMillis = detail.startAtMillis,
+                checkedIn = detail.checkedInAtMillis != null
+            )
+        } else null
 
-    override suspend fun cancelBooking(request: CancelBookingRequest): CancellationResult =
-        throw UnsupportedOperationException("Cancellation requires a trusted server endpoint")
+        val explanation = when {
+            !isEligible -> "Đơn đặt sân hiện tại không đủ điều kiện hủy."
+            detail.status == RefundPolicy.Status.PENDING -> "Đơn đang chờ duyệt: hoàn lại 100% số tiền đã trả."
+            isEarly -> "Hủy trước 4 giờ: hoàn lại 100% số tiền đã thanh toán vào ví giả lập."
+            detail.finance.paymentMethod == RefundPolicy.PaymentMethod.DEPOSIT -> "Hủy trễ (dưới 4 giờ): mất 100% số tiền đã cọc."
+            detail.finance.paymentMethod == RefundPolicy.PaymentMethod.MOCK_WALLET -> "Hủy trễ (dưới 4 giờ): phạt 30% số tiền đã trả, hoàn 70% còn lại vào ví giả lập."
+            else -> "Hủy trước giờ chơi: không phát sinh hoàn tiền."
+        }
+
+        return RefundPolicyQuote(
+            isEligibleForCancel = isEligible,
+            isEarlyCancel = isEarly,
+            minutesUntilStart = minutesUntilStart,
+            paidAmount = detail.finance.paidAmount,
+            penaltyAmount = result?.penaltyAmount ?: 0L,
+            refundAmount = result?.refundAmount ?: 0L,
+            policyExplanation = explanation
+        )
+    }
+
+    override suspend fun cancelBooking(request: CancelBookingRequest): CancellationResult {
+        require(request.bookingId.isNotBlank()) { "Mã đơn không được để trống" }
+        require(request.reason.isNotBlank()) { "Lý do hủy không được để trống" }
+        require(request.requestId.isNotBlank()) { "Mã yêu cầu không được để trống" }
+
+        return functionErrors.invokeWithAuthRetry {
+            val res = supabase.functions.invoke(
+                "player-cancel-booking",
+                body = PlayerCancelBookingWire(
+                    bookingId = request.bookingId,
+                    reason = request.reason,
+                    requestId = request.requestId
+                )
+            )
+            val responseText = res.bodyAsText()
+            val parsed = Json { ignoreUnknownKeys = true }.decodeFromString<PlayerCancelBookingResponse>(responseText)
+            CancellationResult(
+                refundAmount = parsed.refundAmount,
+                penaltyAmount = parsed.penaltyAmount
+            )
+        }
+    }
 
     override suspend fun cancelRemainingGroup(request: CancelGroupRequest): CancellationResult =
-        throw UnsupportedOperationException("Cancellation requires a trusted server endpoint")
+        throw UnsupportedOperationException("Cancellation of recurring groups requires confirmed group refund contract")
 }

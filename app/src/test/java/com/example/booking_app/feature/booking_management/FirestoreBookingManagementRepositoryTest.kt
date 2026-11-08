@@ -6,7 +6,7 @@ import com.example.booking_app.core.session.SessionState
 import com.example.booking_app.feature.booking.data.time.ServerTimeOffsetProvider
 import com.example.booking_app.feature.booking_management.data.BookingPageCursor
 import com.example.booking_app.feature.booking_management.data.FirestoreBookingManagementRepository
-import com.example.booking_app.feature.booking_management.domain.BookingTab
+import com.example.booking_app.feature.booking_management.domain.*
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.*
@@ -24,6 +24,8 @@ class FirestoreBookingManagementRepositoryTest {
     private val firestore: FirebaseFirestore = mockk()
     private val session: SessionManager = mockk()
     private val serverTimeOffsetProvider: ServerTimeOffsetProvider = mockk()
+    private val supabase: io.github.jan.supabase.SupabaseClient = mockk(relaxed = true)
+    private val functionErrors: com.example.booking_app.core.network.FunctionErrors = mockk(relaxed = true)
     private val collection: CollectionReference = mockk()
     private val userQuery: Query = mockk()
     private val query: Query = mockk()
@@ -81,7 +83,7 @@ class FirestoreBookingManagementRepositoryTest {
         every { serverTimeOffsetProvider.now() } returns 1000000L
         coEvery { serverTimeOffsetProvider.ensureSynced(any()) } returns 0L
 
-        repository = FirestoreBookingManagementRepository(firestore, session, serverTimeOffsetProvider)
+        repository = FirestoreBookingManagementRepository(firestore, session, serverTimeOffsetProvider, supabase, functionErrors)
     }
 
     @Test
@@ -282,13 +284,47 @@ class FirestoreBookingManagementRepositoryTest {
         job.cancel()
     }
 
-    @Test(expected = UnsupportedOperationException::class)
-    fun estimateQuote_unsupported(): Unit = runBlocking {
-        repository.estimateQuote("b1")
+    @Test
+    fun estimateQuote_calculatesAccurateQuoteWithServerTime(): Unit = runBlocking {
+        val bookingStart = Timestamp(Date(1000000L + 5 * 3600_000L))
+        val bookingEnd = Timestamp(Date(1000000L + 6 * 3600_000L))
+        val data = validBookingData("b1").apply {
+            put("status", "CONFIRMED")
+            put("startAt", bookingStart)
+            put("endAt", bookingEnd)
+            put("items", listOf(
+                mapOf("slotId" to "slot_1", "courtId" to "court_1", "courtName" to "Sân 1", "startAt" to bookingStart, "endAt" to bookingEnd, "price" to 100_000L)
+            ))
+            put("paidAmount", 100_000L)
+            put("paymentMethod", "MOCK_WALLET")
+        }
+        val bookingDoc: DocumentSnapshot = mockk {
+            every { id } returns "b1"
+            every { this@mockk.data } returns data
+            every { metadata } returns this@FirestoreBookingManagementRepositoryTest.metadata
+        }
+        val docRef: DocumentReference = mockk()
+        every { collection.document("b1") } returns docRef
+        every { docRef.get(Source.SERVER) } returns Tasks.forResult(bookingDoc)
+
+        val quote = repository.estimateQuote("b1")
+        assertTrue(quote.isEligibleForCancel)
+        assertTrue(quote.isEarlyCancel)
+        assertEquals(100_000L, quote.refundAmount)
+        assertEquals(0L, quote.penaltyAmount)
     }
 
-    @Test(expected = UnsupportedOperationException::class)
-    fun cancelBooking_unsupported(): Unit = runBlocking {
-        repository.cancelBooking(mockk())
+    @Test
+    fun cancelBooking_invokesPlayerCancelEdgeFunction(): Unit = runBlocking {
+        coEvery { functionErrors.invokeWithAuthRetry<CancellationResult>(any()) } returns CancellationResult(
+            refundAmount = 100_000L,
+            penaltyAmount = 0L
+        )
+
+        val request = CancelBookingRequest(bookingId = "b1", reason = "Bận việc", requestId = "req-123")
+        val result = repository.cancelBooking(request)
+
+        assertEquals(100_000L, result.refundAmount)
+        assertEquals(0L, result.penaltyAmount)
     }
 }

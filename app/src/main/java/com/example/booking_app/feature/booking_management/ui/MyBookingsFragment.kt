@@ -18,6 +18,7 @@ import com.example.booking_app.core.session.SessionManager
 import com.example.booking_app.core.session.SessionState
 import com.example.booking_app.databinding.FragmentMyBookings060Binding
 import com.example.booking_app.feature.booking_management.domain.BookingTab
+import com.example.booking_app.feature.booking_management.domain.RefundPolicy
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -41,12 +42,43 @@ class MyBookingsFragment : Fragment(R.layout.fragment_my_bookings_060) {
                 }.show()
             return
         }
-        val adapter = MyBookingAdapter { booking ->
-            findNavController().navigate(
-                R.id.action_myBookings_to_detail,
-                bundleOf("bookingId" to booking.bookingId)
-            )
-        }
+        val adapter = MyBookingAdapter(
+            onClick = { booking ->
+                findNavController().navigate(
+                    R.id.action_myBookings_to_detail,
+                    bundleOf("bookingId" to booking.bookingId)
+                )
+            },
+            onContinuePayment = { booking ->
+                val args = com.example.booking_app.feature.booking.ui.HoldToPaymentArgs(
+                    bookingId = booking.bookingId,
+                    venueId = booking.venueId,
+                    venueName = booking.venueSnapshot.name,
+                    venueAddress = booking.venueSnapshot.address,
+                    subtotalAmount = booking.finance.subtotal,
+                    slotIds = booking.items.map { it.slotId }.toTypedArray(),
+                    holdExpiresAtMillis = booking.holdExpiresAtMillis ?: 0L,
+                    depositAmount = booking.finance.depositAmount,
+                    isRecurring = booking.recurringGroupId != null
+                )
+                findNavController().navigate(
+                    R.id.bookingConfirmFragment,
+                    bundleOf("args" to args)
+                )
+            },
+            onRebook = { booking ->
+                findNavController().navigate(
+                    R.id.bookingSlotGridFragment,
+                    bundleOf("venueId" to booking.venueId)
+                )
+            },
+            onReview = { booking ->
+                if (booking.status != RefundPolicy.Status.NO_SHOW) {
+                    val uri = Uri.parse("smashnow://review/write/${booking.bookingId}")
+                    findNavController().navigate(uri)
+                }
+            }
+        )
         binding.listBookings.layoutManager = LinearLayoutManager(requireContext())
         binding.listBookings.adapter = adapter
         val filterTabs = listOf(
@@ -70,7 +102,18 @@ class MyBookingsFragment : Fragment(R.layout.fragment_my_bookings_060) {
             }
         }
 
-        selectFilter(BookingTab.UPCOMING)
+        val receiptArgs = arguments?.getParcelable<com.example.booking_app.feature.booking_management.domain.ReceiptToMyBookingsArgs>("args")
+            ?: arguments?.getParcelable("ReceiptToMyBookingsArgs")
+        val initialTab = receiptArgs?.initialTab ?: arguments?.getString("initialTab")
+        val defaultTab = when (initialTab?.uppercase()) {
+            "PENDING" -> BookingTab.PENDING
+            "HOLD" -> BookingTab.HOLD
+            "CONFIRMED", "UPCOMING" -> BookingTab.UPCOMING
+            "COMPLETED" -> BookingTab.COMPLETED
+            "CANCELLED" -> BookingTab.CANCELLED
+            else -> BookingTab.UPCOMING
+        }
+        selectFilter(defaultTab)
         binding.buttonRetry.setOnClickListener { viewModel.loadFirstPage() }
         binding.buttonExplore.setOnClickListener {
             findNavController().navigate(R.id.homeFragment)

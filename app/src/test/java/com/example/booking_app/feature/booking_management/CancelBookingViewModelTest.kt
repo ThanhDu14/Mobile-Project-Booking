@@ -2,8 +2,11 @@ package com.example.booking_app.feature.booking_management
 
 import androidx.lifecycle.SavedStateHandle
 import com.example.booking_app.core.testing.MainDispatcherRule
+import com.example.booking_app.feature.booking.data.time.ServerTimeOffsetProvider
 import com.example.booking_app.feature.booking_management.domain.*
 import com.example.booking_app.feature.booking_management.ui.CancelBookingViewModel
+import io.mockk.every
+import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
@@ -17,6 +20,10 @@ import org.junit.Test
 class CancelBookingViewModelTest {
 
     @get:Rule val main = MainDispatcherRule()
+
+    private val timeProvider: ServerTimeOffsetProvider = mockk {
+        every { now() } returns 1_000_000L
+    }
 
     private class FakeRepo(
         private val bookingFlow: Flow<BookingDetail?>,
@@ -39,7 +46,7 @@ class CancelBookingViewModelTest {
     private fun sampleBooking(
         id: String = "b1",
         status: RefundPolicy.Status = RefundPolicy.Status.CONFIRMED,
-        startAtMillis: Long = System.currentTimeMillis() + 5 * 3600_000L, // 5 hours later
+        startAtMillis: Long = 1_000_000L + 5 * 3600_000L, // 5 hours later
         paidAmount: Long = 100_000L
     ) = BookingDetail(
         bookingId = id,
@@ -74,7 +81,7 @@ class CancelBookingViewModelTest {
         val calculateQuote = CalculateRefundQuoteUseCase()
         val cancelUseCase = CancelBookingUseCase(repo)
 
-        val vm = CancelBookingViewModel(handle, repo, calculateQuote, cancelUseCase)
+        val vm = CancelBookingViewModel(handle, repo, calculateQuote, cancelUseCase, timeProvider)
         advanceUntilIdle()
 
         val state = vm.uiState.value
@@ -92,7 +99,8 @@ class CancelBookingViewModelTest {
             SavedStateHandle(mapOf("bookingId" to "b1")),
             repo,
             CalculateRefundQuoteUseCase(),
-            CancelBookingUseCase(repo)
+            CancelBookingUseCase(repo),
+            timeProvider
         )
         advanceUntilIdle()
 
@@ -107,7 +115,8 @@ class CancelBookingViewModelTest {
             SavedStateHandle(mapOf("bookingId" to "b1")),
             repo,
             CalculateRefundQuoteUseCase(),
-            CancelBookingUseCase(repo)
+            CancelBookingUseCase(repo),
+            timeProvider
         )
         advanceUntilIdle()
 
@@ -129,7 +138,8 @@ class CancelBookingViewModelTest {
             SavedStateHandle(mapOf("bookingId" to "b1")),
             repo,
             CalculateRefundQuoteUseCase(),
-            CancelBookingUseCase(repo)
+            CancelBookingUseCase(repo),
+            timeProvider
         )
         advanceUntilIdle()
 
@@ -155,7 +165,8 @@ class CancelBookingViewModelTest {
             SavedStateHandle(mapOf("bookingId" to "b1")),
             repo,
             CalculateRefundQuoteUseCase(),
-            CancelBookingUseCase(repo)
+            CancelBookingUseCase(repo),
+            timeProvider
         )
         advanceUntilIdle()
 

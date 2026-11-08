@@ -19,20 +19,37 @@ import java.util.Date
 import java.util.Locale
 
 class MyBookingAdapter(
-    private val onClick: (BookingDetail) -> Unit
+    private val onClick: (BookingDetail) -> Unit,
+    private val onContinuePayment: ((BookingDetail) -> Unit)? = null,
+    private val onRebook: ((BookingDetail) -> Unit)? = null,
+    private val onReview: ((BookingDetail) -> Unit)? = null
 ) : ListAdapter<BookingDetail, MyBookingAdapter.Holder>(Diff) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) = Holder(
         ItemMyBooking060Binding.inflate(LayoutInflater.from(parent.context), parent, false),
-        onClick
+        onClick,
+        onContinuePayment,
+        onRebook,
+        onReview
     )
 
     override fun onBindViewHolder(holder: Holder, position: Int) = holder.bind(getItem(position))
 
     class Holder(
         private val binding: ItemMyBooking060Binding,
-        private val onClick: (BookingDetail) -> Unit
+        private val onClick: (BookingDetail) -> Unit,
+        private val onContinuePayment: ((BookingDetail) -> Unit)? = null,
+        private val onRebook: ((BookingDetail) -> Unit)? = null,
+        private val onReview: ((BookingDetail) -> Unit)? = null
     ) : RecyclerView.ViewHolder(binding.root) {
+
+        private fun openDirections(item: BookingDetail) {
+            val uri = Uri.parse("geo:0,0?q=${Uri.encode(item.venueSnapshot.address)}")
+            val intent = Intent(Intent.ACTION_VIEW, uri)
+            try {
+                binding.root.context.startActivity(intent)
+            } catch (_: Exception) {}
+        }
 
         fun bind(item: BookingDetail) {
             val locale = Locale.forLanguageTag("vi-VN")
@@ -101,6 +118,7 @@ class MyBookingAdapter(
                 binding.buttonPrimaryAction.text = binding.root.context.getString(R.string.my_bookings_060_btn_view_detail)
                 binding.buttonPrimaryAction.setIconResource(0)
                 binding.buttonSecondaryAction.isVisible = false
+                binding.buttonPrimaryAction.setOnClickListener { onClick(item) }
             } else {
                 binding.iconStatusBadge.setImageResource(R.drawable.ic_check_20)
                 binding.textStatusBadge.text = when (item.status) {
@@ -109,23 +127,53 @@ class MyBookingAdapter(
                     RefundPolicy.Status.HOLD -> "Chờ thanh toán"
                     RefundPolicy.Status.COMPLETED -> "Hoàn thành"
                     RefundPolicy.Status.CANCELLED -> "Đã hủy"
+                    RefundPolicy.Status.REJECTED -> "Đã từ chối"
+                    RefundPolicy.Status.NO_SHOW -> "Vắng mặt / Chưa check-in"
                     else -> item.status.name
                 }
                 binding.textBookingExtra.isVisible = false
 
-                binding.buttonPrimaryAction.text = binding.root.context.getString(R.string.my_bookings_060_btn_checkin_code)
-                binding.buttonPrimaryAction.setIconResource(R.drawable.ic_qr_code_scanner_24)
-                binding.buttonSecondaryAction.isVisible = true
-            }
-
-            // Click Handlers
-            binding.buttonPrimaryAction.setOnClickListener { onClick(item) }
-            binding.buttonSecondaryAction.setOnClickListener {
-                val uri = Uri.parse("geo:0,0?q=${Uri.encode(item.venueSnapshot.address)}")
-                val intent = Intent(Intent.ACTION_VIEW, uri)
-                try {
-                    binding.root.context.startActivity(intent)
-                } catch (_: Exception) {}
+                when (item.status) {
+                    RefundPolicy.Status.HOLD -> {
+                        binding.buttonPrimaryAction.text = "Thanh toán tiếp"
+                        binding.buttonPrimaryAction.setIconResource(0)
+                        binding.buttonPrimaryAction.setOnClickListener { onContinuePayment?.invoke(item) ?: onClick(item) }
+                        binding.buttonSecondaryAction.isVisible = true
+                        binding.buttonSecondaryAction.text = binding.root.context.getString(R.string.my_bookings_060_directions)
+                        binding.buttonSecondaryAction.setIconResource(R.drawable.ic_directions_24)
+                        binding.buttonSecondaryAction.setOnClickListener { openDirections(item) }
+                    }
+                    RefundPolicy.Status.COMPLETED -> {
+                        binding.buttonPrimaryAction.text = "Đặt lại sân này"
+                        binding.buttonPrimaryAction.setIconResource(0)
+                        binding.buttonPrimaryAction.setOnClickListener { onRebook?.invoke(item) ?: onClick(item) }
+                        binding.buttonSecondaryAction.isVisible = true
+                        binding.buttonSecondaryAction.text = "Đánh giá"
+                        binding.buttonSecondaryAction.setIconResource(0)
+                        binding.buttonSecondaryAction.setOnClickListener { onReview?.invoke(item) ?: onClick(item) }
+                    }
+                    RefundPolicy.Status.NO_SHOW -> {
+                        binding.buttonPrimaryAction.text = "Đặt lại sân này"
+                        binding.buttonPrimaryAction.setIconResource(0)
+                        binding.buttonPrimaryAction.setOnClickListener { onRebook?.invoke(item) ?: onClick(item) }
+                        binding.buttonSecondaryAction.isVisible = false
+                    }
+                    RefundPolicy.Status.CANCELLED, RefundPolicy.Status.REJECTED -> {
+                        binding.buttonPrimaryAction.text = "Đặt lại sân này"
+                        binding.buttonPrimaryAction.setIconResource(0)
+                        binding.buttonPrimaryAction.setOnClickListener { onRebook?.invoke(item) ?: onClick(item) }
+                        binding.buttonSecondaryAction.isVisible = false
+                    }
+                    else -> {
+                        binding.buttonPrimaryAction.text = binding.root.context.getString(R.string.my_bookings_060_btn_checkin_code)
+                        binding.buttonPrimaryAction.setIconResource(R.drawable.ic_qr_code_scanner_24)
+                        binding.buttonPrimaryAction.setOnClickListener { onClick(item) }
+                        binding.buttonSecondaryAction.isVisible = true
+                        binding.buttonSecondaryAction.text = binding.root.context.getString(R.string.my_bookings_060_directions)
+                        binding.buttonSecondaryAction.setIconResource(R.drawable.ic_directions_24)
+                        binding.buttonSecondaryAction.setOnClickListener { openDirections(item) }
+                    }
+                }
             }
             binding.root.setOnClickListener { onClick(item) }
             binding.root.contentDescription = "${item.venueSnapshot.name}, ${binding.textStatusBadge.text}, ${binding.textBookingTime.text}"

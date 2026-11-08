@@ -3,6 +3,7 @@ package com.example.booking_app.feature.booking_management.ui
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.booking_app.feature.booking.data.time.ServerTimeOffsetProvider
 import com.example.booking_app.feature.booking_management.domain.*
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,7 +31,8 @@ class CancelBookingViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val repository: BookingManagementRepository,
     private val calculateQuote: CalculateRefundQuoteUseCase,
-    private val cancelBookingUseCase: CancelBookingUseCase
+    private val cancelBookingUseCase: CancelBookingUseCase,
+    private val serverTimeOffsetProvider: ServerTimeOffsetProvider
 ) : ViewModel() {
 
     private val bookingId: String = savedStateHandle["bookingId"] ?: ""
@@ -56,7 +58,7 @@ class CancelBookingViewModel @Inject constructor(
                     if (booking == null) {
                         _uiState.update { it.copy(isLoading = false, errorMessage = "Không tìm thấy đơn đặt sân") }
                     } else {
-                        val now = System.currentTimeMillis()
+                        val now = serverTimeOffsetProvider.now()
                         val quote = calculateQuote(
                             status = booking.status,
                             paymentMethod = booking.finance.paymentMethod,
