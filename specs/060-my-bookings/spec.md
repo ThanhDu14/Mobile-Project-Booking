@@ -31,6 +31,13 @@
 - Các hàm hủy/từ chối chủ sân hiện được khảo sát chưa chứng minh transaction hoàn ví, lịch sử, slot và voucher nguyên tử. Timeout PENDING, chuyển COMPLETED/NO_SHOW và nguồn giờ hiện tại có thẩm quyền chưa được xác minh đầy đủ; không coi các phụ thuộc đó đã hoạt động.
 - `HoldToPaymentArgs` có hạn HOLD ban đầu và 040 nhận `venueId`, nhưng phần thanh toán 050 còn TODO; deep link viết review 070 có tồn tại. Không suy diễn có màn thanh toán hoạt động hoặc có thể khôi phục đầy đủ arguments từ dữ liệu chưa xác minh.
 
+### Đồng bộ dữ liệu và giờ server — 2026-11-08
+
+- Không thể ánh xạ booking 041 hiện tại sang booking 060 đầy đủ: session 041 có `price` tổng buổi và giờ dạng chuỗi, nhưng thiếu giá từng slot, snapshot cơ sở, timestamp tuyệt đối và payment ledger; shared schema đánh dấu nhiều trường tài chính/timestamp là server-owned. Không tự tạo các trường này ở app hoặc migrate dữ liệu hiện hữu khi chưa có chủ sở hữu schema chấp thuận.
+- 040 ở bước HOLD chỉ ghi slot, không tạo booking. 041 tạo group/session/slot bằng client transaction; để 060 đọc đúng cần thống nhất writer/server conversion tại thời điểm thanh toán, bao gồm slot ownership và phân bổ tổng tiền theo buổi.
+- Nguồn giờ để hiển thị countdown/HOLD phải là timestamp từ endpoint xác thực + monotonic elapsed clock với giới hạn freshness; lỗi hoặc hết freshness thì ẩn/khóa hành động phụ thuộc thời gian. Lệnh hủy vẫn phải được server đánh giá bằng giờ server trong transaction, không dùng quote/client time.
+- Dữ liệu hiện tại và các trường tài chính không tự động được sửa hoặc lấp đầy; contract mới chỉ giúp bản ghi mới sau khi các writer và validator liên quan được cập nhật và triển khai có kiểm chứng.
+
 ### Session 2026-10-06
 
 - Q: Mốc thời gian hủy đơn để được hoàn 100% tiền cọc/ví là áp dụng cố định hay cấu hình theo cơ sở? → A: Áp dụng cố định **4 tiếng (240 phút)** trên toàn hệ thống trước giờ bắt đầu của buổi chơi cho mọi cơ sở sân (đồng nhất, dễ nhớ cho người chơi).
