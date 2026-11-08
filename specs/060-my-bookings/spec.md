@@ -12,6 +12,25 @@
 
 ## Clarifications
 
+### Quyết định schema và xử lý HOLD tồn đọng — 2026-11-09
+
+- **Xử lý doc HOLD hết hạn và tồn đọng (T045, T019):**
+  - Bằng chứng thực tế trên production (tài khoản test): tab "Chờ thanh toán" từng đếm 23 đơn nhưng mở danh sách ra rỗng. Nguyên nhân: writer 041 tạo 1 doc `bookings/{sessionId}` (hình `BookingSessionDto`) cho mỗi buổi trong chuỗi với `status = "HOLD"` và `holdExpiresAt = null`. Khi hủy/hết hạn, 041 chỉ nhả slot và hủy nhóm `recurringGroups`, không xóa hay chuyển trạng thái doc session, dẫn đến 23 doc HOLD cũ tồn đọng vĩnh viễn.
+  - Quyết định: Theo state machine tại `docs/design/database/README.md` §4.5, doc HOLD hết hạn được chuyển sang `EXPIRED`. Repository 060 (cả `observeTabCounts` và `getPage`) áp dụng quy tắc hiển thị nghiêm ngặt: chỉ đếm và chỉ hiển thị đơn HOLD khi có `holdExpiresAt != null && holdExpiresAt > serverTime` và cấu trúc dữ liệu hợp lệ được mapper chấp thuận (`BookingManagementMapper.map` thành công). Mọi doc HOLD thiếu `holdExpiresAt` hoặc đã quá hạn đều bị coi là hết hạn (không đếm, không hiển thị).
+- **Trách nhiệm writer và tương thích schema (T045):**
+  - 041 cần chuyển đổi writer sang schema chung `BookingDetail` (đầy đủ `venueSnapshot`, `items` có giá slot, timestamps và `holdExpiresAt`).
+  - Trong thời gian chuyển đổi, mapper 060 duy trì cơ chế fail-safe: từ chối các doc sai định dạng của 041 để tránh hiển thị sai lệch hoặc gây crash.
+- **Xử lý 23 doc HOLD cũ trên production (T045):**
+  - Thuộc thẩm quyền của Quản trị viên (Đại ca) xử lý thông qua bảo trì / script dọn dẹp hoặc cập nhật trạng thái `EXPIRED` qua rules (`firestore.rules` đã cho phép player cập nhật HOLD sang EXPIRED). Client 060 không tự tiện xóa hoặc ghi đè dữ liệu production ngoài phạm vi, mà bảo đảm tính nhất quán giao diện (số đếm tab luôn khớp 100% với số đơn hiển thị thực tế).
+- **Hợp đồng redemption 050 và voucher chuỗi (T046):**
+  - Tiếp tục xác định bị chặn do chưa có hợp đồng chính thức từ 050 về cấu trúc lưu trữ redemption cho nhóm recurring và cơ chế hoàn lượt voucher khi hủy một phần chuỗi. Tạm thời chặn hoàn voucher chuỗi cho đến khi có hợp đồng xác thực từ feature 050.
+- **Tích hợp server có thẩm quyền cho hủy/ví/slot/voucher (T047):**
+  - Edge Function `player-cancel-booking` được tích hợp kiểm tra quyền chủ đơn, trạng thái PENDING/CONFIRMED, thời gian bắt đầu và idempotency qua `requestId`.
+  - Các tác vụ server-side background gồm: timeout PENDING 60 phút chuyển REJECTED, cron chuyển COMPLETED/NO_SHOW sau giờ chơi và khóa quyền review 070 đối với đơn NO_SHOW.
+- **Nguồn giờ server và điều hướng (T048):**
+  - Nguồn giờ có thẩm quyền lấy từ `ServerTimeOffsetProvider` (offset từ token / endpoint).
+  - Điều hướng: "Thanh toán tiếp" truyền `HoldToPaymentArgs` kế thừa `holdExpiresAtMillis` (không reset hạn 5 phút); "Đặt lại sân này" điều hướng sang 040 kèm `venueId`; tiếp nhận `ReceiptToMyBookingsArgs` từ 050 mở đúng tab Chờ duyệt.
+
 ### Quyết định chuẩn bị triển khai — 2026-11-07
 
 - **Hoàn tiền khi hủy trễ bằng ví:** tính 30% số tiền thực trả sau voucher, làm tròn tiền phạt xuống bội số 1.000 VND; tiền hoàn bằng số thực trả trừ tiền phạt. Ví dụ đã trả 111.111đ thì phạt 33.000đ, hoàn 78.111đ. Dùng số nguyên và bảo đảm `penaltyAmount + refundAmount == paidAmount`.

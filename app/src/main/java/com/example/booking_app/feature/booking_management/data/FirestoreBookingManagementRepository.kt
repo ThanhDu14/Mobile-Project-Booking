@@ -61,8 +61,24 @@ class FirestoreBookingManagementRepository @Inject constructor(
                     .await()
                 val targetStatuses = statuses(tab)
                 val sort = bookingSort(tab)
+                if (tab == BookingTab.HOLD) {
+                    serverTimeOffsetProvider.ensureSynced()
+                }
+                val nowFallback = serverTimeOffsetProvider.now()
                 var filtered = fallbackRes.documents.filter { doc ->
-                    doc.getString("status") in targetStatuses
+                    val statusStr = doc.getString("status") ?: return@filter false
+                    if (statusStr !in targetStatuses) return@filter false
+                    val data = doc.data ?: return@filter false
+                    val detail = try {
+                        BookingManagementMapper.map(doc.id, data, uid)
+                    } catch (_: Exception) {
+                        null
+                    } ?: return@filter false
+                    if (tab == BookingTab.HOLD && detail.status == RefundPolicy.Status.HOLD) {
+                        val expires = detail.holdExpiresAtMillis
+                        if (expires == null || expires <= nowFallback) return@filter false
+                    }
+                    true
                 }.sortedWith(Comparator { d1, d2 ->
                     val t1 = d1.getTimestamp(sort.field)?.seconds ?: 0L
                     val t2 = d2.getTimestamp(sort.field)?.seconds ?: 0L
@@ -99,7 +115,7 @@ class FirestoreBookingManagementRepository @Inject constructor(
                 val detail = BookingManagementMapper.map(doc.id, requireNotNull(doc.data), uid)
                 if (tab == BookingTab.HOLD && detail.status == RefundPolicy.Status.HOLD) {
                     val expires = detail.holdExpiresAtMillis
-                    if (expires != null && expires <= now) null else detail
+                    if (expires == null || expires <= now) null else detail
                 } else detail
             } catch (_: Exception) {
                 null
@@ -154,18 +170,25 @@ class FirestoreBookingManagementRepository @Inject constructor(
                                 var cancelledCount = 0
 
                                 for (doc in snapshot.documents) {
-                                    val status = doc.getString("status") ?: continue
-                                    when (status) {
-                                        "HOLD" -> {
-                                            val expiresAt = doc.getTimestamp("holdExpiresAt")?.toDate()?.time
-                                            if (expiresAt == null || expiresAt > now) {
+                                    val data = doc.data ?: continue
+                                    val detail = try {
+                                        BookingManagementMapper.map(doc.id, data, uid)
+                                    } catch (_: Exception) {
+                                        null
+                                    } ?: continue
+
+                                    when (detail.status) {
+                                        RefundPolicy.Status.HOLD -> {
+                                            val expiresAt = detail.holdExpiresAtMillis
+                                            if (expiresAt != null && expiresAt > now) {
                                                 holdCount++
                                             }
                                         }
-                                        "PENDING" -> pendingCount++
-                                        "CONFIRMED" -> upcomingCount++
-                                        "COMPLETED", "NO_SHOW" -> completedCount++
-                                        "CANCELLED", "REJECTED" -> cancelledCount++
+                                        RefundPolicy.Status.PENDING -> pendingCount++
+                                        RefundPolicy.Status.CONFIRMED -> upcomingCount++
+                                        RefundPolicy.Status.COMPLETED, RefundPolicy.Status.NO_SHOW -> completedCount++
+                                        RefundPolicy.Status.CANCELLED, RefundPolicy.Status.REJECTED -> cancelledCount++
+                                        RefundPolicy.Status.EXPIRED -> Unit
                                     }
                                 }
                                 trySend(

@@ -1,6 +1,8 @@
 package com.example.booking_app.feature.booking_management
 
+import com.example.booking_app.core.session.AppRole
 import com.example.booking_app.core.session.SessionManager
+import com.example.booking_app.core.session.SessionState
 import com.example.booking_app.feature.booking.data.time.ServerTimeOffsetProvider
 import com.example.booking_app.feature.booking_management.data.BookingPageCursor
 import com.example.booking_app.feature.booking_management.data.FirestoreBookingManagementRepository
@@ -9,6 +11,8 @@ import com.google.android.gms.tasks.Tasks
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.*
 import io.mockk.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.*
 import org.junit.Before
@@ -57,6 +61,7 @@ class FirestoreBookingManagementRepositoryTest {
     @Before
     fun setUp() {
         every { session.currentUid() } returns testUid
+        every { session.sessionState } returns MutableStateFlow(SessionState.SignedIn(testUid, AppRole.PLAYER, true))
         every { firestore.collection("bookings") } returns collection
         every { collection.whereEqualTo("userId", testUid) } returns userQuery
         every { userQuery.whereIn("status", any()) } returns query
@@ -210,6 +215,71 @@ class FirestoreBookingManagementRepositoryTest {
         every { session.currentUid() } returns null
 
         repository.getPage(BookingTab.PENDING, null, 10)
+    }
+
+    @Test
+    fun observeTabCounts_filtersOutMalformed041SessionsAndExpiredHolds() = kotlinx.coroutines.test.runTest {
+        val listenerSlot = slot<EventListener<QuerySnapshot>>()
+        every { userQuery.addSnapshotListener(capture(listenerSlot)) } returns mockk(relaxed = true)
+
+        val activeHoldData = validBookingData("hold_active").apply {
+            put("status", "HOLD")
+            put("holdExpiresAt", Timestamp(Date(2000000))) // expires at 2_000_000 > now (1_000_000)
+        }
+        val expiredHoldData = validBookingData("hold_expired").apply {
+            put("status", "HOLD")
+            put("holdExpiresAt", Timestamp(Date(500000))) // expires at 500_000 <= now (1_000_000)
+        }
+        val stale041Data = mutableMapOf<String, Any?>(
+            "status" to "HOLD",
+            "userId" to testUid,
+            "price" to 100000L
+        )
+        val validPendingData = validBookingData("pending_1").apply {
+            put("status", "PENDING")
+        }
+
+        val d1: DocumentSnapshot = mockk {
+            every { id } returns "hold_active"
+            every { data } returns activeHoldData
+        }
+        val d2: DocumentSnapshot = mockk {
+            every { id } returns "hold_expired"
+            every { data } returns expiredHoldData
+        }
+        val d3: DocumentSnapshot = mockk {
+            every { id } returns "stale_041"
+            every { data } returns stale041Data
+        }
+        val d4: DocumentSnapshot = mockk {
+            every { id } returns "pending_1"
+            every { data } returns validPendingData
+        }
+
+        val snapshot: QuerySnapshot = mockk {
+            every { documents } returns listOf(d1, d2, d3, d4)
+        }
+
+        val flow = repository.observeTabCounts()
+        val values = mutableListOf<Map<BookingTab, Int>>()
+        val job = launch {
+            flow.collect { values.add(it) }
+        }
+        testScheduler.advanceUntilIdle()
+
+        assertTrue(listenerSlot.isCaptured)
+        listenerSlot.captured.onEvent(snapshot, null)
+        testScheduler.advanceUntilIdle()
+
+        assertEquals(1, values.size)
+        val counts = values[0]
+        assertEquals(1, counts[BookingTab.HOLD])
+        assertEquals(1, counts[BookingTab.PENDING])
+        assertEquals(0, counts[BookingTab.UPCOMING])
+        assertEquals(0, counts[BookingTab.COMPLETED])
+        assertEquals(0, counts[BookingTab.CANCELLED])
+
+        job.cancel()
     }
 
     @Test(expected = UnsupportedOperationException::class)

@@ -4012,3 +4012,24 @@ tiến độ Feature 110 đạt 100% (35/35 tasks DONE).
 - Phase 2 domain: bổ sung model, repository contract, quote dự kiến bọc RefundPolicy và sinh QR ZXing thuần Kotlin; realtime tab hiện chỉ là contract. `JAVA_HOME=/opt/android-studio/jbr ./gradlew :app:testDebugUnitTest --tests '*booking_management*' --max-workers=1 -Dkotlin.compiler.execution.strategy=in-process`: 10 test pass, 0 fail, 0 skipped, gồm 7 test RefundPolicy cũ. Chưa có server hủy, repository thực hoặc phân bổ chuỗi; quote chỉ là ước tính.
 - Phase 3: thêm use case ủy quyền repository cho hủy đơn/nhóm, danh sách phân trang, invalidation và chi tiết realtime. `JAVA_HOME=/opt/android-studio/jbr ./gradlew :app:testDebugUnitTest --tests '*booking_management*' --max-workers=1 -Dkotlin.compiler.execution.strategy=in-process`: 14 test pass, 0 fail, 0 skipped. Test fake chỉ xác minh chuyển tiếp request/result, không chứng minh T007–T010 về server, quyền, lọc, thứ tự hay đồng thời; các task đó chưa nghiệm thu. T014 phân bổ và voucher chuỗi vẫn bị chặn bởi hợp đồng/server chưa xác nhận.
 - Thời gian/tỉ lệ nghiệm thu chức năng 060: chưa đo. Rules, integration, Espresso và so sánh ảnh máy thật: chưa chạy. Không push, không PR, không deploy.
+
+---
+
+## Mục 40: Feature 060 (Commit 1) — Xác minh phụ thuộc, sửa lỗi đếm tab 23 và đồng bộ lọc HOLD tồn đọng
+
+- **Ngày:** 2026-11-09; nhánh `060-my-bookings`.
+- **Commit:** `fix(060): verify dependencies, fix tab counts and stale HOLD data (T045-T048, T001-T002, T019)`
+- **Nội dung thực hiện:**
+  - **T045 (Quyết định schema):** Ghi rõ vào `specs/060-my-bookings/spec.md` mục Clarifications 2026-11-09 về cơ chế xử lý HOLD tồn đọng. Xác nhận nguyên nhân tab "Chờ thanh toán" hiển thị 23 đơn nhưng mở ra rỗng: do writer 041 tạo `BookingSessionDto` với `status = "HOLD"` và `holdExpiresAt = null`, khi hủy chuỗi chỉ nhả slot và hủy nhóm `recurringGroups` mà không chuyển trạng thái doc session. Client 060 áp dụng quy tắc lọc nghiêm ngặt: chỉ đếm và hiển thị doc HOLD khi `holdExpiresAt != null && holdExpiresAt > serverTime` và qua được `BookingManagementMapper.map`. Dữ liệu 23 doc HOLD cũ trên production giữ nguyên chờ Quản trị viên/Đại ca dọn dẹp hoặc chuyển `EXPIRED` qua rules.
+  - **T046 (Hợp đồng redemption 050):** Ghi nhận BỊ CHẶN do chưa có hợp đồng voucher dùng chung cho recurring và cơ chế hoàn lượt. Chặn hoàn voucher chuỗi.
+  - **T047 (Tích hợp server hủy/ví/slot/voucher):** Ghi nhận trạng thái: Edge Function `player-cancel-booking` sẵn sàng với cơ chế fail-closed; các background cron xử lý timeout PENDING (60 phút) sang REJECTED và NO_SHOW do server đảm nhiệm.
+  - **T048 (Nguồn giờ và điều hướng):** Sử dụng `ServerTimeOffsetProvider` đồng bộ giờ server. "Thanh toán tiếp" kế thừa `holdExpiresAtMillis`, "Đặt lại sân này" điều hướng sang 040 kèm `venueId`.
+  - **T001 & T002:** 4 composite index cho `bookings` đã khai báo đầy đủ trong `firestore.indexes.json`. Fixtures unit test và seed script `seed-bookings-060.mjs` sẵn sàng.
+  - **T019 (Sửa lỗi đếm tab 23):** Cập nhật `FirestoreBookingManagementRepository.kt`:
+    1. `observeTabCounts`: Chạy qua `BookingManagementMapper.map` cho từng snapshot document để loại bỏ các doc malformed 041. Kiểm tra `detail.holdExpiresAtMillis != null && detail.holdExpiresAtMillis > now`. Thêm nhánh `RefundPolicy.Status.EXPIRED -> Unit`.
+    2. `getPage`: Fallback mode pre-filter các doc hợp lệ trước khi phân trang; loại bỏ doc HOLD có `holdExpiresAtMillis == null || holdExpiresAtMillis <= now`.
+- **Kết quả kiểm thử:**
+  - Lệnh: `JAVA_HOME=/opt/android-studio/jbr ./gradlew :app:testDebugUnitTest --tests '*booking_management*' --max-workers=1 -Dkotlin.compiler.execution.strategy=in-process`
+  - Kết quả: **BUILD SUCCESSFUL**, 53/53 tests **PASS 100%**, 0 fail, 0 skipped.
+  - Test mới `observeTabCounts_filtersOutMalformed041SessionsAndExpiredHolds` kiểm chứng thành công: doc 041 thiếu trường và doc HOLD hết hạn/null expiry đều không bị đếm vào tab "Chờ thanh toán".
+- **Tuân thủ cam kết:** Commit local đúng mẫu; không push, không mở PR, không deploy.
