@@ -101,21 +101,17 @@ describe('bookings collection (Spec 041)', () => {
       });
     });
 
-    it('owner can update status to CANCELLED', async () => {
+    it('owner cannot directly cancel a booking', async () => {
       const fs = player('player1');
-      await assertSucceeds(
-        updateDoc(doc(fs, 'bookings/booking-01'), { status: 'CANCELLED' })
-      );
+      await assertFails(updateDoc(doc(fs, 'bookings/booking-01'), { status: 'CANCELLED' }));
     });
 
-    it('owner can update status to CONFIRMED (open for spec 050)', async () => {
+    it('owner cannot directly confirm a booking', async () => {
       const fs = player('player1');
-      await assertSucceeds(
-        updateDoc(doc(fs, 'bookings/booking-01'), { status: 'CONFIRMED' })
-      );
+      await assertFails(updateDoc(doc(fs, 'bookings/booking-01'), { status: 'CONFIRMED' }));
     });
 
-    it('owner can update status to EXPIRED', async () => {
+    it('owner can expire their HOLD booking', async () => {
       const fs = player('player1');
       await assertSucceeds(
         updateDoc(doc(fs, 'bookings/booking-01'), { status: 'EXPIRED' })

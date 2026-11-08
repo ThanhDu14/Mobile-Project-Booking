@@ -278,11 +278,9 @@ service cloud.firestore {
           && request.resource.data.holdExpiresAt is timestamp
           && request.resource.data.holdExpiresAt <= request.time + duration.value(5, 'm')
           && request.resource.data.holdExpiresAt > request.time;
-      // Hủy / hết hạn bởi chính người giữ. CONFIRMED chưa mở ở đây — spec 050
-      // (thanh toán) sẽ mở rộng khi làm, không tự mở trước.
-      allow update: if isPlayer() && resource.data.userId == request.auth.uid
-          && onlyChanges(['status'])
-          && request.resource.data.status in ['CANCELLED', 'EXPIRED'];
+      // Status transitions are server-owned. In particular a client cannot
+      // cancel a group until the recurring-group refund contract is defined.
+      allow update: if false;
       allow delete: if false;
     }
 
@@ -291,9 +289,12 @@ service cloud.firestore {
       allow create: if isPlayer()
           && request.resource.data.userId == request.auth.uid
           && request.resource.data.status == 'HOLD';
+      // Confirmation/refund are server-owned. Clients may only expire their own
+      // unconfirmed HOLD; cancellation must use the server transaction.
       allow update: if isPlayer() && resource.data.userId == request.auth.uid
+          && resource.data.status == 'HOLD'
           && onlyChanges(['status'])
-          && request.resource.data.status in ['CONFIRMED', 'CANCELLED', 'EXPIRED'];
+          && request.resource.data.status == 'EXPIRED';
       allow delete: if false;
     }
   }
