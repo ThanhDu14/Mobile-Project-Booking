@@ -43,6 +43,9 @@ Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 | 37  | 2026-11-06 | Chạy connected UI tests trên thiết bị Android, hoàn tất 58/58 tasks Feature 112 bằng `$speckit-implement`                                                                              | 11   |
 | 38  | 2026-11-06 | Sửa lỗi layout XML, chạy connected UI tests trên thiết bị Android, hoàn tất toàn bộ 35/35 tasks Feature 110 bằng `$speckit-implement`                                                  | 11   |
 | 39  | 2026-11-08 | Khởi động Feature 060: kiểm tra baseline unit test và khảo sát phụ thuộc | 06 |
+| 40  | 2026-11-09 | Feature 060 (Commit 1): Kiểm chứng phụ thuộc, sửa số đếm tab và xử lý HOLD mồ côi 041 | 06 |
+| 41  | 2026-11-09 | Feature 060 (Commit 2): Nối dây hủy phía server, rules và điều hướng | 06 |
+| 42  | 2026-11-09 | Feature 060 (Commit 3): Nghiệm thu, Espresso UI tests và xác minh toàn diện | 06 |
 
 ---
 
@@ -4063,4 +4066,35 @@ tiến độ Feature 110 đạt 100% (35/35 tasks DONE).
   - Kết quả: **BUILD SUCCESSFUL**, 53/53 tests **PASS 100%**.
   - Lệnh biên dịch: `JAVA_HOME=/opt/android-studio/jbr ./gradlew :app:assembleDebug --max-workers=1 -Dkotlin.compiler.execution.strategy=in-process`
   - Kết quả: **BUILD SUCCESSFUL in 50s**.
+- **Tuân thủ cam kết:** Commit local đúng mẫu; không push, không mở PR, không deploy.
+
+---
+
+## Mục 42: Feature 060 (Commit 3) — Nghiệm thu, Espresso UI tests và xác minh toàn diện
+
+- **Ngày:** 2026-11-09; nhánh `060-my-bookings`.
+- **Commit:** `test(060): acceptance, Espresso and final verification (T039-T044)`
+- **Nội dung thực hiện:**
+  - **T043 (Espresso & Layout UI Tests):**
+    - Tạo `app/src/androidTest/java/com/example/booking_app/feature/booking_management/MyBookingsScreensUiTest.kt`.
+    - Kiểm thử inflate và kiểm tra sự hiện diện của các primary action view trên cả 4 cấu hình: Phone Light (360dp), Phone Dark (360dp), Tablet Light (600dp), Tablet Dark (600dp) cho 4 layout:
+      1. `fragment_my_bookings_060`: 5 filter pill tabs (`filterPayment`, `filterPending`, `filterUpcoming`, `filterCompleted`, `filterCancelled`), `listBookings`, `progressBookings`, empty/error layouts, accessibility touch target $\ge 48$dp cho `buttonRetry`.
+      2. `fragment_booking_detail_060`: `cardQr`, `imageBookingQr`, `cardCheckedIn`, venue info, policy, primary actions (`buttonCancelBooking`, `buttonDirections`, `buttonCallVenue`).
+      3. `fragment_cancel_booking_060`: `cardRefund`, nhóm lý do hủy (`groupCancelReasons`, các radio buttons, `inputOtherReason`), `buttonConfirmCancel`, `buttonKeepBooking`.
+      4. `item_my_booking_060`: `cardBooking`, `badgeStatusContainer`, `textStatusBadge`, `buttonPrimaryAction`, `buttonSecondaryAction`.
+  - **T039 & T040 (Offline QR & Idempotency):**
+    - Xác nhận `OwnerScopedDetailFlowTest` và `BookingDetailViewModelTest` bảo đảm QR chỉ render cho tài khoản khớp chủ đơn; khi đổi tài khoản hoặc đăng xuất, flow lập tức phát `null` và hủy callback trễ. Cảnh báo offline được hiển thị rõ ràng và server check-in giữ thẩm quyền kiểm tra.
+    - `requestId` được sinh và tái sử dụng khi retry, server idempotency bảo đảm qua `refunds/refund_{bookingId}`.
+  - **T044 (Đối chiếu FR-001–FR-029 & SC-001–SC-007):**
+    - Rà soát toàn bộ yêu cầu chức năng (FR) và tiêu chí thành công (SC).
+    - Các task bị chặn (T046, T047, T021, T028, T037, T042) được ghi nhận minh bạch kèm lý do phụ thuộc liên feature (chưa có hợp đồng redemption voucher chuỗi 050, chưa hoàn tất tích hợp timeout 050/112/070, chưa deploy function server lên production).
+- **Kết quả kiểm thử:**
+  - **Unit tests:** `JAVA_HOME=/opt/android-studio/jbr ./gradlew :app:testDebugUnitTest --tests '*booking_management*' --max-workers=1 -Dkotlin.compiler.execution.strategy=in-process`
+    - Kết quả: **BUILD SUCCESSFUL**, 53/53 tests **PASS 100%**, 0 failed, 0 skipped.
+  - **Firestore Security Rules:** `npx vitest run test/bookings.test.ts` (Firestore Emulator)
+    - Kết quả: 16/16 tests **PASS 100%** (create, read, update, delete gates).
+  - **AndroidTest Compilation:** `JAVA_HOME=/opt/android-studio/jbr ./gradlew :app:compileDebugAndroidTestKotlin :app:assembleDebugAndroidTest --max-workers=1 -Dkotlin.compiler.execution.strategy=in-process`
+    - Kết quả: **BUILD SUCCESSFUL**, test APK được tạo thành công không lỗi cú pháp hay tài nguyên.
+  - **Debug App Compilation:** `JAVA_HOME=/opt/android-studio/jbr ./gradlew :app:assembleDebug --max-workers=1 -Dkotlin.compiler.execution.strategy=in-process`
+    - Kết quả: **BUILD SUCCESSFUL**.
 - **Tuân thủ cam kết:** Commit local đúng mẫu; không push, không mở PR, không deploy.
