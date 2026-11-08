@@ -2,6 +2,9 @@
 <resources>
     <string name="my_bookings_060_title">Lịch đặt của tôi</string>
     <string name="my_bookings_060_in_development">Tính năng đang phát triển</string>
+    <string name="my_bookings_060_empty">Chưa có lịch đặt ở mục này.</string>
+    <string name="my_bookings_060_load_error">Không thể tải lịch đặt. Kiểm tra kết nối rồi thử lại.</string>
+    <string name="my_bookings_060_unsupported">Chưa thể hiển thị mục này vì dữ liệu hoặc giờ máy chủ có thẩm quyền chưa được xác nhận.</string>
     <string name="my_bookings_060_login_required">Bạn cần đăng nhập để xem lịch đặt của mình.</string>
     <string name="my_bookings_060_login">Đăng nhập</string>
     <string name="my_bookings_060_payment">Chờ thanh toán</string>
