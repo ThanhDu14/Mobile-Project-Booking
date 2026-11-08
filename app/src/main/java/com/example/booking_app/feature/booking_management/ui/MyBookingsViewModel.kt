@@ -26,16 +26,31 @@ class MyBookingsViewModel @Inject constructor(
 ) : ViewModel() {
     private val _state = MutableStateFlow<MyBookingsState>(MyBookingsState.Loading)
     val state: StateFlow<MyBookingsState> = _state.asStateFlow()
-    private var currentTab = BookingTab.HOLD
+
+    private val _tabCounts = MutableStateFlow<Map<BookingTab, Int>>(emptyMap())
+    val tabCounts: StateFlow<Map<BookingTab, Int>> = _tabCounts.asStateFlow()
+
+    private var currentTab = BookingTab.UPCOMING
     private var cursor: String? = null
     private var loaded = emptyList<BookingDetail>()
     private var loadJob: Job? = null
+    private var invalidationJob: Job? = null
+
+    init {
+        viewModelScope.launch {
+            try {
+                repository.observeTabCounts().collect { counts ->
+                    _tabCounts.value = counts
+                }
+            } catch (_: Exception) {}
+        }
+    }
 
     fun selectTab(tab: BookingTab) {
         currentTab = tab
         loadFirstPage()
-        if (tab == BookingTab.HOLD) return
-        viewModelScope.launch {
+        invalidationJob?.cancel()
+        invalidationJob = viewModelScope.launch {
             try {
                 repository.observeTabInvalidations(tab).collect {
                     if (currentTab == tab) loadFirstPage()
@@ -43,7 +58,7 @@ class MyBookingsViewModel @Inject constructor(
             } catch (_: UnsupportedOperationException) {
                 // Loading reports the unsupported repository contract to the user.
             } catch (_: Exception) {
-                if (currentTab == tab) _state.value = MyBookingsState.Error("", unsupported = false)
+                // Ignore transient listener issues without destroying successfully loaded state
             }
         }
     }

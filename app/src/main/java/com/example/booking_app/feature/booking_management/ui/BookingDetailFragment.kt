@@ -79,42 +79,79 @@ class BookingDetailFragment : Fragment(R.layout.fragment_booking_detail_060) {
         val locale = Locale.forLanguageTag("vi-VN")
         val currencyFormat = NumberFormat.getCurrencyInstance(locale)
         val timeFormat = SimpleDateFormat("HH:mm", locale)
-        val dateFormat = SimpleDateFormat("dd/MM/yyyy", locale)
-        val fullDateTimeFormat = SimpleDateFormat("dd/MM/yyyy HH:mm", locale)
+        val dateFormat = SimpleDateFormat("dd/MM", locale)
 
-        binding.textBookingSubtitle.text = "Mã đơn: #${booking.bookingId}"
+        val shortId = if (booking.bookingId.length >= 4) {
+            booking.bookingId.takeLast(4).uppercase()
+        } else {
+            booking.bookingId.uppercase()
+        }
+        binding.textBookingSubtitle.text = "#SN-$shortId"
 
-        // QR Card
-        if (qrBitmap != null) {
+        // QR Card (Mockup 2)
+        if (qrBitmap != null && booking.checkedInAtMillis == null) {
             binding.cardQr.isVisible = true
+            binding.cardCheckedIn.isVisible = false
             binding.imageBookingQr.setImageBitmap(qrBitmap)
-            binding.textDetailStatus.text = "SẮP TỚI • ĐÃ XÁC NHẬN"
-            binding.textQrCode.text = booking.bookingId
-            binding.textQrInstructions.text = "Đưa mã này cho nhân viên lễ tân khi đến sân"
+            binding.textDetailStatus.setText(R.string.my_bookings_060_badge_confirmed)
+            binding.textQrCode.text = "SN-$shortId"
+
+            val openCheckInTime = timeFormat.format(Date(booking.startAtMillis - 30 * 60 * 1000L))
+            binding.textQrInstructions.text = "Đưa mã cho chủ sân khi đến. Không quét được thì đọc mã chữ ở trên. Check-in mở từ $openCheckInTime, 30 phút trước giờ chơi."
+        } else if (booking.checkedInAtMillis != null) {
+            // Checked In Card (Mockup 2 Check-in)
+            binding.cardQr.isVisible = false
+            binding.cardCheckedIn.isVisible = true
+            binding.textCheckedInTitle.text = "Đã check-in lúc ${timeFormat.format(Date(booking.checkedInAtMillis))}"
+            binding.textCheckedInMessage.text = "Chúc bạn chơi vui. Đơn chuyển sang Đã hoàn thành sau ${timeFormat.format(Date(booking.endAtMillis))} và bạn đánh giá được trong 7 ngày."
         } else {
             binding.cardQr.isVisible = false
-        }
-
-        // Checked In Card
-        if (booking.checkedInAtMillis != null) {
-            binding.cardCheckedIn.isVisible = true
-            binding.textCheckedInTitle.text = "ĐÃ CHECK-IN TẠI SÂN"
-            binding.textCheckedInMessage.text = "Đã xác nhận lúc ${fullDateTimeFormat.format(Date(booking.checkedInAtMillis))}"
-        } else {
             binding.cardCheckedIn.isVisible = false
         }
 
         // Venue & time
         binding.textDetailVenue.text = booking.venueSnapshot.name
+        val startCal = java.util.Calendar.getInstance().apply { timeInMillis = booking.startAtMillis }
+        val nowCal = java.util.Calendar.getInstance()
+        val isToday = startCal.get(java.util.Calendar.YEAR) == nowCal.get(java.util.Calendar.YEAR) &&
+                startCal.get(java.util.Calendar.DAY_OF_YEAR) == nowCal.get(java.util.Calendar.DAY_OF_YEAR)
+
+        val dayPrefix = if (isToday) {
+            "Hôm nay"
+        } else {
+            val dow = when (startCal.get(java.util.Calendar.DAY_OF_WEEK)) {
+                java.util.Calendar.SUNDAY -> "CN"
+                java.util.Calendar.MONDAY -> "T2"
+                java.util.Calendar.TUESDAY -> "T3"
+                java.util.Calendar.WEDNESDAY -> "T4"
+                java.util.Calendar.THURSDAY -> "T5"
+                java.util.Calendar.FRIDAY -> "T6"
+                java.util.Calendar.SATURDAY -> "T7"
+                else -> ""
+            }
+            "$dow, ${dateFormat.format(Date(booking.startAtMillis))}"
+        }
         val startStr = timeFormat.format(Date(booking.startAtMillis))
         val endStr = timeFormat.format(Date(booking.endAtMillis))
-        val dateStr = dateFormat.format(Date(booking.startAtMillis))
-        binding.textDetailTime.text = "$startStr – $endStr • $dateStr"
+        binding.textDetailTime.text = "$dayPrefix • $startStr – $endStr"
 
-        val courtsStr = booking.items.map { it.courtName }.distinct().joinToString(", ")
-        binding.textDetailCourt.text = "Sân: $courtsStr"
-        binding.textDetailAddress.text = "Địa chỉ: ${booking.venueSnapshot.address}"
-        binding.textDetailPhone.text = "Hotline: ${booking.venueSnapshot.phone ?: "Chưa cập nhật"}"
+        val courtsStr = booking.items.map { it.courtName }.distinct().joinToString(", ").ifBlank { "Sân" }
+        val durationMinutes = ((booking.endAtMillis - booking.startAtMillis) / 60000).toInt()
+        val durationHours = durationMinutes / 60
+        val durationRemainMins = durationMinutes % 60
+        val durationStr = if (durationHours > 0) {
+            if (durationRemainMins > 0) "$durationHours giờ $durationRemainMins phút" else "$durationHours giờ"
+        } else {
+            "$durationRemainMins phút"
+        }
+        binding.textDetailCourt.text = "$courtsStr • Thảm • $durationStr"
+        binding.textDetailAddress.text = booking.venueSnapshot.address
+        if (!booking.venueSnapshot.phone.isNullOrBlank()) {
+            binding.textDetailPhone.isVisible = true
+            binding.textDetailPhone.text = "Hotline: ${booking.venueSnapshot.phone}"
+        } else {
+            binding.textDetailPhone.isVisible = false
+        }
 
         if (booking.recurringGroupId != null) {
             binding.textRecurringGroup.isVisible = true
@@ -149,21 +186,24 @@ class BookingDetailFragment : Fragment(R.layout.fragment_booking_detail_060) {
             }
         }
 
-        // Slots summary
-        binding.textBookingSlots.text = booking.items.joinToString("\n") { item ->
-            "• ${item.courtName}: ${timeFormat.format(Date(item.startAtMillis))} - ${timeFormat.format(Date(item.endAtMillis))} (${currencyFormat.format(item.price)})"
+        // Finance Breakdown (2 columns)
+        val slotsCount = booking.items.size
+        binding.labelSubtotal.text = "Tiền sân ($slotsCount × 30 phút)"
+        binding.textSubtotal.text = currencyFormat.format(booking.finance.subtotal)
+        binding.labelPaidAmount.text = if (booking.finance.depositAmount > 0) "Đã đặt cọc 30% (ví giả lập)" else "Đã thanh toán (ví giả lập)"
+        binding.textPaidAmount.text = "-${currencyFormat.format(booking.finance.paidAmount)}"
+        binding.textRemainingAmount.text = currencyFormat.format(booking.finance.remainingAmount)
+
+        if (booking.finance.discount > 0) {
+            binding.rowDiscount.isVisible = true
+            binding.textDiscount.text = "-${currencyFormat.format(booking.finance.discount)}"
+        } else {
+            binding.rowDiscount.isVisible = false
         }
 
-        // Finance
-        binding.textSubtotal.text = "Tiền gốc: ${currencyFormat.format(booking.finance.subtotal)}"
-        binding.textDiscount.text = "Giảm giá voucher: -${currencyFormat.format(booking.finance.discount)}"
-        binding.textPaidAmount.text = "Đã thanh toán: ${currencyFormat.format(booking.finance.paidAmount)}"
-        binding.textRemainingAmount.text = "Còn lại tại sân: ${currencyFormat.format(booking.finance.remainingAmount)}"
-        binding.textPaymentMethod.text = "Hình thức: ${booking.finance.paymentMethod} (${booking.finance.paymentStatus})"
-        binding.textCreatedAt.text = "Thời gian tạo: ${fullDateTimeFormat.format(Date(booking.createdAtMillis))}"
-
-        // Cancellation Policy
-        binding.textCancellationPolicy.text = "Chính sách hủy: Hủy trước 4 tiếng được hoàn 100% tiền vào ví giả lập. Hủy trong vòng 4 tiếng áp dụng phạt hủy trễ theo quy định."
+        // Cancellation Policy Text Box
+        val deadlineTime = timeFormat.format(Date(booking.startAtMillis - 240 * 60 * 1000L))
+        binding.textCancellationPolicy.text = "Chính sách hủy: hủy trước $deadlineTime hôm chơi (từ 4 giờ trở lên) được hoàn 100% tiền cọc. Hủy sau mốc đó mất tiền cọc. Đơn đã check-in không hủy được."
 
         // Cancel button
         val canCancel = (booking.status == RefundPolicy.Status.PENDING || booking.status == RefundPolicy.Status.CONFIRMED) &&

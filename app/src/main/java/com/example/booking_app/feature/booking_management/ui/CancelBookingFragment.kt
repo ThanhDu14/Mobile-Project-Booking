@@ -97,23 +97,56 @@ class CancelBookingFragment : Fragment(R.layout.fragment_cancel_booking_060) {
         val locale = Locale.forLanguageTag("vi-VN")
         val currencyFormat = NumberFormat.getCurrencyInstance(locale)
         val timeFormat = SimpleDateFormat("HH:mm", locale)
-        val dateFormat = SimpleDateFormat("dd/MM/yyyy", locale)
+        val dateFormat = SimpleDateFormat("dd/MM", locale)
 
-        binding.textBookingSubtitle.text = "Mã đơn: #${booking.bookingId}"
+        val shortId = if (booking.bookingId.length >= 4) {
+            booking.bookingId.takeLast(4).uppercase()
+        } else {
+            booking.bookingId.uppercase()
+        }
+        binding.textBookingSubtitle.text = "#SN-$shortId • ${booking.venueSnapshot.name}"
+
+        val startCal = java.util.Calendar.getInstance().apply { timeInMillis = booking.startAtMillis }
+        val nowCal = java.util.Calendar.getInstance()
+        val isToday = startCal.get(java.util.Calendar.YEAR) == nowCal.get(java.util.Calendar.YEAR) &&
+                startCal.get(java.util.Calendar.DAY_OF_YEAR) == nowCal.get(java.util.Calendar.DAY_OF_YEAR)
+
+        val dayPrefix = if (isToday) {
+            "Hôm nay"
+        } else {
+            val dow = when (startCal.get(java.util.Calendar.DAY_OF_WEEK)) {
+                java.util.Calendar.SUNDAY -> "CN"
+                java.util.Calendar.MONDAY -> "T2"
+                java.util.Calendar.TUESDAY -> "T3"
+                java.util.Calendar.WEDNESDAY -> "T4"
+                java.util.Calendar.THURSDAY -> "T5"
+                java.util.Calendar.FRIDAY -> "T6"
+                java.util.Calendar.SATURDAY -> "T7"
+                else -> ""
+            }
+            "$dow, ${dateFormat.format(Date(booking.startAtMillis))}"
+        }
         val startStr = timeFormat.format(Date(booking.startAtMillis))
         val endStr = timeFormat.format(Date(booking.endAtMillis))
-        val dateStr = dateFormat.format(Date(booking.startAtMillis))
-        binding.textCancelBookingTime.text = "$startStr – $endStr • $dateStr"
-        binding.textCancelBookingSummary.text = "${booking.venueSnapshot.name} • ${booking.items.map { it.courtName }.distinct().joinToString(", ")}"
+        binding.textCancelBookingTime.text = "$dayPrefix • $startStr – $endStr"
+
+        val courtsStr = booking.items.map { it.courtName }.distinct().joinToString(", ").ifBlank { "Sân" }
+        val paymentMethodStr = if (booking.finance.depositAmount > 0) "Đặt cọc 30% bằng ví giả lập" else "Thanh toán bằng ví giả lập"
+        binding.textCancelBookingSummary.text = "$courtsStr • $paymentMethodStr"
 
         if (quote != null) {
-            binding.textRefundAmount.text = "Dự kiến hoàn: ${currencyFormat.format(quote.refundAmount)}"
-            binding.textRefundExplanation.text = quote.policyExplanation
+            binding.textRefundAmount.text = "Bạn được hoàn  ${currencyFormat.format(quote.refundAmount)}"
+            val hoursLeft = (booking.startAtMillis - System.currentTimeMillis()) / 3600_000L
+            val daysLeft = (hoursLeft / 24).toInt()
+            val timeRemainingStr = if (daysLeft > 0) "Còn $daysLeft ngày tới giờ chơi" else "Còn $hoursLeft giờ tới giờ chơi"
+            binding.textRefundExplanation.text = if (quote.isEarlyCancel) {
+                "$timeRemainingStr, hủy từ 4 giờ trở lên được hoàn 100% tiền cọc vào ví giả lập. Khung giờ được mở lại cho người khác ngay."
+            } else {
+                "Hủy trong vòng 4 tiếng áp dụng phạt 30% phí hủy trễ theo quy định và hoàn 70% vào ví giả lập."
+            }
         } else {
             binding.textRefundAmount.text = "Đang ước tính..."
             binding.textRefundExplanation.text = "Số tiền hoàn thực tế do máy chủ quyết định theo mốc giờ thực tế nhận yêu cầu."
         }
-
-        binding.textCancelPolicy.text = "Lưu ý: Mọi giao dịch hoàn tiền là giả lập phục vụ mục đích học tập. Yêu cầu hủy được xử lý nguyên tử và slot sẽ được giải phóng ngay lập tức."
     }
 }

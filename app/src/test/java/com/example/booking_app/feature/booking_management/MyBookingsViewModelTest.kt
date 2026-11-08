@@ -24,6 +24,9 @@ class MyBookingsViewModelTest {
         }
         val invalidations = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
         var lastObservedTab: BookingTab? = null
+        var countsFlow: Flow<Map<BookingTab, Int>> = kotlinx.coroutines.flow.flowOf(emptyMap())
+
+        override fun observeTabCounts(): Flow<Map<BookingTab, Int>> = countsFlow
 
         override suspend fun getPage(tab: BookingTab, cursor: String?, pageSize: Int): BookingPage {
             return pageHandler(tab, cursor, pageSize)
@@ -160,5 +163,21 @@ class MyBookingsViewModelTest {
         repo.invalidations.tryEmit(Unit)
         advanceUntilIdle()
         assertEquals(2, callCount)
+    }
+
+    @Test
+    fun `tabCounts emits counts from repository`() = runTest {
+        val repo = FakeRepo().apply {
+            countsFlow = kotlinx.coroutines.flow.flowOf(
+                mapOf(BookingTab.HOLD to 1, BookingTab.PENDING to 2, BookingTab.UPCOMING to 3)
+            )
+        }
+        val vm = MyBookingsViewModel(repo)
+        advanceUntilIdle()
+
+        val counts = vm.tabCounts.value
+        assertEquals(1, counts[BookingTab.HOLD])
+        assertEquals(2, counts[BookingTab.PENDING])
+        assertEquals(3, counts[BookingTab.UPCOMING])
     }
 }

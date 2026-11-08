@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="my_bookings_060_title">Lịch đặt của tôi</string>
+    <string name="my_bookings_060_title">Lịch đặt</string>
     <string name="my_bookings_060_in_development">Tính năng đang phát triển</string>
     <string name="my_bookings_060_empty">Chưa có lịch đặt ở mục này.</string>
     <string name="my_bookings_060_load_error">Không thể tải lịch đặt. Kiểm tra kết nối rồi thử lại.</string>
@@ -8,28 +8,33 @@
     <string name="my_bookings_060_login_required">Bạn cần đăng nhập để xem lịch đặt của mình.</string>
     <string name="my_bookings_060_login">Đăng nhập</string>
     <string name="my_bookings_060_payment">Chờ thanh toán</string>
-    <string name="my_bookings_060_pending">Chờ xác nhận</string>
-    <string name="my_bookings_060_upcoming">Sắp diễn ra</string>
-    <string name="my_bookings_060_completed">Hoàn thành</string>
+    <string name="my_bookings_060_pending">Chờ duyệt</string>
+    <string name="my_bookings_060_upcoming">Sắp tới</string>
+    <string name="my_bookings_060_completed">Đã hoàn thành</string>
     <string name="my_bookings_060_cancelled">Đã hủy</string>
     <string name="my_bookings_060_explore">Khám phá sân</string>
     <string name="my_bookings_060_retry">Thử lại</string>
     <string name="my_bookings_060_back">Quay lại</string>
-    <string name="my_bookings_060_detail_title">Chi tiết đặt sân</string>
-    <string name="my_bookings_060_payment_title">Thông tin thanh toán</string>
-    <string name="my_bookings_060_brightness">Tăng độ sáng</string>
+    <string name="my_bookings_060_detail_title">Chi tiết đơn</string>
+    <string name="my_bookings_060_payment_title">Thanh toán</string>
+    <string name="my_bookings_060_brightness">Tăng độ sáng màn hình</string>
     <string name="my_bookings_060_directions">Chỉ đường</string>
     <string name="my_bookings_060_call">Gọi sân</string>
     <string name="my_bookings_060_receipt">Xem hóa đơn</string>
     <string name="my_bookings_060_cancel_booking">Hủy đặt sân</string>
     <string name="my_bookings_060_reason_title">Lý do hủy</string>
-    <string name="my_bookings_060_reason_busy">Bận việc</string>
-    <string name="my_bookings_060_reason_weather">Thời tiết</string>
-    <string name="my_bookings_060_reason_players">Không đủ người chơi</string>
-    <string name="my_bookings_060_reason_wrong">Đặt nhầm</string>
-    <string name="my_bookings_060_reason_other">Lý do khác</string>
-    <string name="my_bookings_060_keep">Giữ lịch đặt</string>
+    <string name="my_bookings_060_reason_busy">Bận việc đột xuất</string>
+    <string name="my_bookings_060_reason_weather">Thời tiết xấu</string>
+    <string name="my_bookings_060_reason_players">Thiếu người chơi</string>
+    <string name="my_bookings_060_reason_wrong">Đặt nhầm giờ hoặc sân</string>
+    <string name="my_bookings_060_reason_other">Khác</string>
+    <string name="my_bookings_060_keep">Giữ đơn</string>
     <string name="my_bookings_060_confirm_cancel">Xác nhận hủy</string>
     <string name="my_bookings_060_other_hint">Nhập lý do khác</string>
     <string name="my_bookings_060_qr_description">Mã QR đặt sân</string>
+    <string name="my_bookings_060_policy_footer" formatted="false">Hủy trước giờ chơi từ 4 giờ trở lên được hoàn 100%. Hủy trễ mất tiền cọc, hoặc phạt 30% nếu trả bằng ví. Giao dịch giả lập phục vụ học tập.</string>
+    <string name="my_bookings_060_btn_checkin_code">Mã check-in</string>
+    <string name="my_bookings_060_btn_view_detail">Xem chi tiết</string>
+    <string name="my_bookings_060_badge_confirmed">Đã xác nhận</string>
+    <string name="my_bookings_060_badge_playing">Đã check-in • Đang chơi</string>
 </resources>

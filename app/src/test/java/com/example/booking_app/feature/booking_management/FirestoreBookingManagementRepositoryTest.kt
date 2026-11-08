@@ -1,6 +1,7 @@
 package com.example.booking_app.feature.booking_management
 
 import com.example.booking_app.core.session.SessionManager
+import com.example.booking_app.feature.booking.data.time.ServerTimeOffsetProvider
 import com.example.booking_app.feature.booking_management.data.BookingPageCursor
 import com.example.booking_app.feature.booking_management.data.FirestoreBookingManagementRepository
 import com.example.booking_app.feature.booking_management.domain.BookingTab
@@ -18,7 +19,9 @@ class FirestoreBookingManagementRepositoryTest {
 
     private val firestore: FirebaseFirestore = mockk()
     private val session: SessionManager = mockk()
+    private val serverTimeOffsetProvider: ServerTimeOffsetProvider = mockk()
     private val collection: CollectionReference = mockk()
+    private val userQuery: Query = mockk()
     private val query: Query = mockk()
     private val querySnapshot: QuerySnapshot = mockk()
     private val metadata: SnapshotMetadata = mockk()
@@ -55,7 +58,10 @@ class FirestoreBookingManagementRepositoryTest {
     fun setUp() {
         every { session.currentUid() } returns testUid
         every { firestore.collection("bookings") } returns collection
-        every { collection.whereEqualTo("userId", testUid) } returns query
+        every { collection.whereEqualTo("userId", testUid) } returns userQuery
+        every { userQuery.whereIn("status", any()) } returns query
+        every { userQuery.get(Source.SERVER) } returns Tasks.forResult(querySnapshot)
+        every { userQuery.addSnapshotListener(any()) } returns mockk(relaxed = true)
         every { query.whereIn("status", any()) } returns query
         every { query.orderBy(any<String>(), any()) } returns query
         every { query.orderBy(any<FieldPath>(), any()) } returns query
@@ -67,7 +73,10 @@ class FirestoreBookingManagementRepositoryTest {
         every { querySnapshot.metadata } returns metadata
         every { query.get(Source.SERVER) } returns Tasks.forResult(querySnapshot)
 
-        repository = FirestoreBookingManagementRepository(firestore, session)
+        every { serverTimeOffsetProvider.now() } returns 1000000L
+        coEvery { serverTimeOffsetProvider.ensureSynced(any()) } returns 0L
+
+        repository = FirestoreBookingManagementRepository(firestore, session, serverTimeOffsetProvider)
     }
 
     @Test
@@ -138,9 +147,54 @@ class FirestoreBookingManagementRepositoryTest {
         verify { query.startAfter(start, "prev_id") }
     }
 
-    @Test(expected = UnsupportedOperationException::class)
-    fun getPage_holdTab_throwsUnsupported(): Unit = runBlocking {
-        repository.getPage(BookingTab.HOLD, null, 10)
+    @Test
+    fun getPage_holdTab_queriesSuccessfullyAndFiltersExpired(): Unit = runBlocking {
+        val activeHoldData = validBookingData("hold_active").apply {
+            put("status", "HOLD")
+            put("holdExpiresAt", Timestamp(Date(2000000))) // expires at 2_000_000 > now (1_000_000)
+        }
+        val expiredHoldData = validBookingData("hold_expired").apply {
+            put("status", "HOLD")
+            put("holdExpiresAt", Timestamp(Date(500000))) // expires at 500_000 <= now (1_000_000)
+        }
+        val activeDoc: DocumentSnapshot = mockk {
+            every { id } returns "hold_active"
+            every { data } returns activeHoldData
+            every { getTimestamp("createdAt") } returns start
+        }
+        val expiredDoc: DocumentSnapshot = mockk {
+            every { id } returns "hold_expired"
+            every { data } returns expiredHoldData
+            every { getTimestamp("createdAt") } returns start
+        }
+        every { querySnapshot.documents } returns listOf(activeDoc, expiredDoc)
+
+        val page = repository.getPage(BookingTab.HOLD, null, 10)
+
+        assertEquals(1, page.bookings.size)
+        assertEquals("hold_active", page.bookings[0].bookingId)
+    }
+
+    @Test
+    fun getPage_whenIndexMissing_fallsBackToInMemorySortAndFilter(): Unit = runBlocking {
+        val failedException = FirebaseFirestoreException("Index required", FirebaseFirestoreException.Code.FAILED_PRECONDITION)
+        every { query.get(Source.SERVER) } returns Tasks.forException(failedException)
+
+        val doc1: DocumentSnapshot = mockk {
+            every { id } returns "b1"
+            every { data } returns validBookingData("b1")
+            every { getString("status") } returns "PENDING"
+            every { getTimestamp("createdAt") } returns start
+        }
+        val fallbackSnapshot: QuerySnapshot = mockk()
+        every { fallbackSnapshot.metadata } returns this@FirestoreBookingManagementRepositoryTest.metadata
+        every { fallbackSnapshot.documents } returns listOf(doc1)
+        every { userQuery.get(Source.SERVER) } returns Tasks.forResult(fallbackSnapshot)
+
+        val page = repository.getPage(BookingTab.PENDING, null, 10)
+
+        assertEquals(1, page.bookings.size)
+        assertEquals("b1", page.bookings[0].bookingId)
     }
 
     @Test(expected = IllegalStateException::class)

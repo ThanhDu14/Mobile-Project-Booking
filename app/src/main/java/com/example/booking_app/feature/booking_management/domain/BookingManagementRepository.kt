@@ -15,4 +15,5 @@ interface BookingManagementRepository {
     suspend fun estimateQuote(bookingId: String): RefundPolicyQuote
     suspend fun cancelBooking(request: CancelBookingRequest): CancellationResult
     suspend fun cancelRemainingGroup(request: CancelGroupRequest): CancellationResult
+    fun observeTabCounts(): Flow<Map<BookingTab, Int>> = kotlinx.coroutines.flow.flowOf(emptyMap())
 }

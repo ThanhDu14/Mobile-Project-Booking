@@ -49,27 +49,32 @@ class MyBookingsFragment : Fragment(R.layout.fragment_my_bookings_060) {
         }
         binding.listBookings.layoutManager = LinearLayoutManager(requireContext())
         binding.listBookings.adapter = adapter
-        binding.bookingFilterGroup.addOnButtonCheckedListener { _, checkedId, checked ->
-            if (checked) viewModel.selectTab(when (checkedId) {
-                R.id.filterPending -> BookingTab.PENDING
-                R.id.filterUpcoming -> BookingTab.UPCOMING
-                R.id.filterCompleted -> BookingTab.COMPLETED
-                R.id.filterCancelled -> BookingTab.CANCELLED
-                else -> BookingTab.HOLD
-            })
+        val filterTabs = listOf(
+            binding.filterPayment to BookingTab.HOLD,
+            binding.filterPending to BookingTab.PENDING,
+            binding.filterUpcoming to BookingTab.UPCOMING,
+            binding.filterCompleted to BookingTab.COMPLETED,
+            binding.filterCancelled to BookingTab.CANCELLED
+        )
+
+        fun selectFilter(selectedTab: BookingTab) {
+            filterTabs.forEach { (button, tab) ->
+                button.isChecked = (tab == selectedTab)
+            }
+            viewModel.selectTab(selectedTab)
         }
-        if (binding.bookingFilterGroup.checkedButtonId == View.NO_ID) {
-            binding.bookingFilterGroup.check(R.id.filterPayment)
-        } else {
-            viewModel.selectTab(when (binding.bookingFilterGroup.checkedButtonId) {
-                R.id.filterPending -> BookingTab.PENDING
-                R.id.filterUpcoming -> BookingTab.UPCOMING
-                R.id.filterCompleted -> BookingTab.COMPLETED
-                R.id.filterCancelled -> BookingTab.CANCELLED
-                else -> BookingTab.HOLD
-            })
+
+        filterTabs.forEach { (button, tab) ->
+            button.setOnClickListener {
+                selectFilter(tab)
+            }
         }
+
+        selectFilter(BookingTab.UPCOMING)
         binding.buttonRetry.setOnClickListener { viewModel.loadFirstPage() }
+        binding.buttonExplore.setOnClickListener {
+            findNavController().navigate(R.id.homeFragment)
+        }
         binding.listBookings.addOnScrollListener(object : androidx.recyclerview.widget.RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: androidx.recyclerview.widget.RecyclerView, dx: Int, dy: Int) {
                 val manager = recyclerView.layoutManager as LinearLayoutManager
@@ -78,13 +83,27 @@ class MyBookingsFragment : Fragment(R.layout.fragment_my_bookings_060) {
         })
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.tabCounts.collect { counts ->
+                    fun formatTitle(baseResId: Int, count: Int?): String {
+                        val base = getString(baseResId)
+                        return if (count != null && count > 0) "$base $count" else base
+                    }
+                    binding.filterPayment.text = formatTitle(R.string.my_bookings_060_payment, counts[BookingTab.HOLD])
+                    binding.filterPending.text = formatTitle(R.string.my_bookings_060_pending, counts[BookingTab.PENDING])
+                    binding.filterUpcoming.text = formatTitle(R.string.my_bookings_060_upcoming, counts[BookingTab.UPCOMING])
+                    binding.filterCompleted.text = formatTitle(R.string.my_bookings_060_completed, counts[BookingTab.COMPLETED])
+                    binding.filterCancelled.text = formatTitle(R.string.my_bookings_060_cancelled, counts[BookingTab.CANCELLED])
+                }
+            }
+        }
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.state.collect { state ->
                     binding.progressBookings.isVisible = state is MyBookingsState.Loading
                     binding.listBookings.isVisible = state is MyBookingsState.Content
-                    binding.textBookingsEmpty.isVisible = state is MyBookingsState.Empty
-                    binding.buttonExplore.isVisible = state is MyBookingsState.Empty
-                    binding.textBookingsError.isVisible = state is MyBookingsState.Error
-                    binding.buttonRetry.isVisible = state is MyBookingsState.Error
+                    binding.layoutBookingsEmpty.isVisible = state is MyBookingsState.Empty
+                    binding.layoutBookingsError.isVisible = state is MyBookingsState.Error
                     when (state) {
                         is MyBookingsState.Content -> adapter.submitList(state.bookings)
                         MyBookingsState.Empty -> binding.textBookingsEmpty.setText(R.string.my_bookings_060_empty)
