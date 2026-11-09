@@ -46,6 +46,7 @@ Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 | 40  | 2026-11-09 | Feature 060 (Commit 1): Kiểm chứng phụ thuộc, sửa số đếm tab và xử lý HOLD mồ côi 041 | 06 |
 | 41  | 2026-11-09 | Feature 060 (Commit 2): Nối dây hủy phía server, rules và điều hướng | 06 |
 | 42  | 2026-11-09 | Feature 060 (Commit 3): Nghiệm thu, Espresso UI tests và xác minh toàn diện | 06 |
+| 43  | 2026-11-09 | Feature 040/050: Lát cắt xác nhận tạo đơn PENDING để test 060 bằng data real | 04 |
 
 ---
 
@@ -4097,4 +4098,40 @@ tiến độ Feature 110 đạt 100% (35/35 tasks DONE).
     - Kết quả: **BUILD SUCCESSFUL**, test APK được tạo thành công không lỗi cú pháp hay tài nguyên.
   - **Debug App Compilation:** `JAVA_HOME=/opt/android-studio/jbr ./gradlew :app:assembleDebug --max-workers=1 -Dkotlin.compiler.execution.strategy=in-process`
     - Kết quả: **BUILD SUCCESSFUL**.
+- **Tuân thủ cam kết:** Commit local đúng mẫu; không push, không mở PR, không deploy.
+
+---
+
+## Mục 43: Feature 040/050 — Lát cắt xác nhận tạo đơn PENDING để test 060 bằng data real
+
+- **Ngày:** 2026-11-09; nhánh `060-my-bookings`.
+- **Commits:**
+  1. `feat(040): create PENDING booking on confirm for real-data 060 testing` (`e8aa00d`)
+  2. `test(040): verify confirm-created booking passes 060 mapper and rules`
+- **Nội dung thực hiện:**
+  - **Mục đích:** Thay thế Toast display-only tại nút "Xác nhận đặt" ở màn 040 (`BookingConfirmFragment`) bằng giao dịch tạo đơn thật trạng thái `PENDING` vào collection `bookings/{bookingId}`, giúp kiểm thử end-to-end màn 060 My Bookings bằng dữ liệu thực tế thay vì mock/seed.
+  - **Cài đặt kỹ thuật:**
+    - Tạo `BookingDocumentBuilder`: chuyển đổi `HoldToPaymentArgs` thành Firestore document chuẩn theo `docs/design/database/README.md §4.5` và đảm bảo vượt qua `BookingManagementMapper` nguyên văn không chỉnh sửa mapper 060.
+    - Hỗ trợ đầy đủ 3 phương thức thanh toán: `AT_VENUE` (tiền trả = 0, còn lại = total, UNPAID), `DEPOSIT` (cọc 30% làm tròn lên bội 1.000đ, DEPOSITED), `MOCK_WALLET` (100%, PAID).
+    - Phân bổ giá slot theo `courtDetails`: chia đều cho các slot của từng sân và dồn phần dư vào slot cuối cùng của sân, bảo toàn tuyệt đối `sum(items.price) == subtotalAmount`.
+    - Tính hạn duyệt: `approvalDeadline = min(createdAt + 60 phút, startAt)`.
+    - Bảo đảm tính bất biến/idempotency trên `bookings/{bookingId}` bằng `requestId` từ bước giữ chỗ.
+    - Giao dịch nguyên tử trong `FirestoreBookingRemoteDataSource.confirmHoldToBooking`: đọc `bookings/{bookingId}` (nếu có thì coi như thành công), kiểm tra tất cả các slot còn `HELD` bởi chính user và `holdExpiresAt > now` (giờ server). Nếu hết hạn ném `HOLD_EXPIRED` để kích hoạt dialog timeout có sẵn; nếu `PERMISSION_DENIED` báo lỗi rõ ràng.
+    - Tại `BookingConfirmFragment`: khi xác nhận thành công, hủy countdown timer và điều hướng tới `myBookingsFragment` với `initialTab = "PENDING"`, tự động pop các màn 040 khỏi backstack.
+  - **Quyết định nới lỏng Rules tạm thời:**
+    - Cập nhật `firestore.rules` tại `match /bookings/{bookingId}`: cho phép `isPlayer()` tạo document của chính mình với `status == 'PENDING'` kèm kiểm tra hợp lệ các trường tài chính (`subtotal`, `discount`, `total == subtotal - discount`, `depositAmount`, `paidAmount`, `remainingAmount` $\ge 0$).
+    - *Ghi chú:* Đây là nới lỏng tạm thời cho lát cắt test client-side. Khi Feature 050 hoàn thiện cơ chế server confirmation thì rule này sẽ được thu hồi về server.
+  - **Phần Feature 050 còn lại chưa làm:**
+    - Tích hợp cổng thanh toán thật / API ngân hàng / QR VNPay / MoMo.
+    - Áp dụng mã giảm giá voucher và hoàn voucher khi hủy.
+    - Màn hình nạp tiền vào ví giả lập và trừ số dư ví thực tế.
+    - Server confirmation transaction cho thanh toán thật.
+- **Kết quả kiểm thử:**
+  - **Firestore Security Rules:** `npx vitest run test/bookings.test.ts` (Firestore Emulator)
+    - Kết quả: **23/23 tests PASS 100%** (bổ sung 7 test case cho PENDING: tạo thành công, từ chối khi lệch userId, từ chối khi status CONFIRMED, từ chối khi toán tử tiền sai lệch, từ chối non-player và unauthenticated).
+  - **Unit tests:**
+    - `BookingConfirmSliceTest`: 4/4 tests PASS 100% (kiểm thử case thật CLB Gia Hân 180.000đ, 6 slots Sân 4 · PU, AT_VENUE, DEPOSIT 54.000đ, WALLET 180.000đ, tính toán deadline và idempotency usecase).
+    - Toàn bộ tests nhóm booking & booking_management: PASS 100% (53/53 tests 060).
+  - **Biên dịch Debug:** `./gradlew :app:assembleDebug`
+    - Kết quả: **BUILD SUCCESSFUL in 48s**.
 - **Tuân thủ cam kết:** Commit local đúng mẫu; không push, không mở PR, không deploy.
