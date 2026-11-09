@@ -286,6 +286,7 @@ class FirestoreBookingRemoteDataSource @Inject constructor(
         userId: String
     ): com.example.booking_app.feature.booking.domain.model.ConfirmBookingResult {
         return try {
+            com.example.booking_app.feature.booking.data.mapper.BookingDocumentBuilder.validateSlotGaps(args.slotIds)
             val nowMillis = serverTimeOffsetProvider.now()
             val bookingRef = firestore.collection("bookings").document(args.bookingId)
             val venueRef = firestore.collection(COLLECTION_VENUES).document(args.venueId)
@@ -324,6 +325,17 @@ class FirestoreBookingRemoteDataSource @Inject constructor(
                     useServerTimestamp = true
                 )
                 transaction.set(bookingRef, bookingDocData)
+
+                for (slotRef in slotRefs) {
+                    transaction.update(
+                        slotRef,
+                        mapOf(
+                            "status" to "BOOKED",
+                            "holdExpiresAt" to null,
+                            "bookingId" to args.bookingId
+                        )
+                    )
+                }
 
                 com.example.booking_app.feature.booking.domain.model.ConfirmBookingResult.Success(args.bookingId)
             }.await()

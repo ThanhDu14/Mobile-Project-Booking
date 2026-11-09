@@ -261,6 +261,12 @@ service cloud.firestore {
                         request.resource.data.status == 'AVAILABLE'
                         && resource.data.holdBy == request.auth.uid
                       )
+                      // Xác nhận đặt sân: chuyển slot đang HELD của chính mình sang BOOKED
+                      || (
+                        request.resource.data.status == 'BOOKED'
+                        && resource.data.status == 'HELD'
+                        && resource.data.holdBy == request.auth.uid
+                      )
                     );
 
       allow delete: if isAdmin() || (isSignedIn() && resource.data.holdBy == request.auth.uid);
@@ -285,7 +291,7 @@ service cloud.firestore {
     }
 
     match /bookings/{bookingId} {
-      allow read: if isSignedIn() && (resource == null || resource.data.userId == request.auth.uid || isAdmin());
+      allow read: if isSignedIn() && (resource == null || resource.data.userId == request.auth.uid || isAdmin() || isApprovedOwner());
       // Lát cắt test 050: Cho phép player tạo đơn PENDING của chính mình để test 060 bằng data real.
       // Khi 050 có server confirmation thì phải thu hồi rule này về phía server.
       allow create: if isPlayer()

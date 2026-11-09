@@ -50,12 +50,13 @@ class BookingDetailViewModel @Inject constructor(
                     if (detail == null) {
                         _state.value = BookingDetailState.NotFound
                     } else {
+                        val tokenToUse = detail.qrToken?.takeIf { it.isNotBlank() } ?: detail.bookingId
                         val qrBitmap = if (detail.status == RefundPolicy.Status.CONFIRMED &&
                             detail.checkedInAtMillis == null &&
-                            !detail.qrToken.isNullOrBlank()
+                            tokenToUse.isNotBlank()
                         ) {
                             try {
-                                val matrix = generateQrCode(detail.qrToken)
+                                val matrix = generateQrCode(tokenToUse)
                                 QrBitmapRenderer.render(matrix)
                             } catch (_: Exception) {
                                 null

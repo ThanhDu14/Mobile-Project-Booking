@@ -164,9 +164,27 @@ class MyBookingAdapter(
                         binding.buttonPrimaryAction.setOnClickListener { onRebook?.invoke(item) ?: onClick(item) }
                         binding.buttonSecondaryAction.isVisible = false
                     }
-                    else -> {
+                    RefundPolicy.Status.PENDING -> {
+                        binding.buttonPrimaryAction.text = binding.root.context.getString(R.string.my_bookings_060_btn_view_detail)
+                        binding.buttonPrimaryAction.setIconResource(0)
+                        binding.buttonPrimaryAction.setOnClickListener { onClick(item) }
+                        binding.buttonSecondaryAction.isVisible = true
+                        binding.buttonSecondaryAction.text = binding.root.context.getString(R.string.my_bookings_060_directions)
+                        binding.buttonSecondaryAction.setIconResource(R.drawable.ic_directions_24)
+                        binding.buttonSecondaryAction.setOnClickListener { openDirections(item) }
+                    }
+                    RefundPolicy.Status.CONFIRMED -> {
                         binding.buttonPrimaryAction.text = binding.root.context.getString(R.string.my_bookings_060_btn_checkin_code)
                         binding.buttonPrimaryAction.setIconResource(R.drawable.ic_qr_code_scanner_24)
+                        binding.buttonPrimaryAction.setOnClickListener { onClick(item) }
+                        binding.buttonSecondaryAction.isVisible = true
+                        binding.buttonSecondaryAction.text = binding.root.context.getString(R.string.my_bookings_060_directions)
+                        binding.buttonSecondaryAction.setIconResource(R.drawable.ic_directions_24)
+                        binding.buttonSecondaryAction.setOnClickListener { openDirections(item) }
+                    }
+                    else -> {
+                        binding.buttonPrimaryAction.text = binding.root.context.getString(R.string.my_bookings_060_btn_view_detail)
+                        binding.buttonPrimaryAction.setIconResource(0)
                         binding.buttonPrimaryAction.setOnClickListener { onClick(item) }
                         binding.buttonSecondaryAction.isVisible = true
                         binding.buttonSecondaryAction.text = binding.root.context.getString(R.string.my_bookings_060_directions)

@@ -110,6 +110,24 @@ class BookingDetailViewModelTest {
     }
 
     @Test
+    fun `confirmed booking with null qrToken falls back to bookingId and generates QR bitmap`() = runTest {
+        mockkStatic(Bitmap::class)
+        val mockBitmap = mockk<Bitmap>(relaxed = true)
+        every { Bitmap.createBitmap(any<Int>(), any<Int>(), any<Bitmap.Config>()) } returns mockBitmap
+
+        val repo = FakeRepo(flowOf(sampleBooking(status = RefundPolicy.Status.CONFIRMED, qrToken = null)))
+        val handle = SavedStateHandle(mapOf("bookingId" to "b1"))
+        val vm = BookingDetailViewModel(handle, repo, GenerateQrCodeUseCase())
+        advanceUntilIdle()
+
+        val state = vm.state.value
+        assertTrue(state is BookingDetailState.Content)
+        val content = state as BookingDetailState.Content
+        assertNotNull(content.qrBitmap)
+        assertEquals("b1", content.booking.bookingId)
+    }
+
+    @Test
     fun `checked-in booking does not generate QR bitmap`() = runTest {
         val repo = FakeRepo(flowOf(sampleBooking(status = RefundPolicy.Status.CONFIRMED, checkedInAtMillis = 1500L)))
         val handle = SavedStateHandle(mapOf("bookingId" to "b1"))

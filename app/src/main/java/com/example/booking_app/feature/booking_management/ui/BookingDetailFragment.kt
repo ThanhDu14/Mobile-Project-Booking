@@ -15,6 +15,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.example.booking_app.R
 import com.example.booking_app.databinding.FragmentBookingDetail060Binding
+import com.example.booking_app.feature.booking_management.domain.BookingBlockCalculator
 import com.example.booking_app.feature.booking_management.domain.BookingDetail
 import com.example.booking_app.feature.booking_management.domain.RefundPolicy
 import com.google.android.material.snackbar.Snackbar
@@ -136,20 +137,36 @@ class BookingDetailFragment : Fragment(R.layout.fragment_booking_detail_060) {
             }
             "$dow, ${dateFormat.format(Date(booking.startAtMillis))}"
         }
-        val startStr = timeFormat.format(Date(booking.startAtMillis))
-        val endStr = timeFormat.format(Date(booking.endAtMillis))
-        binding.textDetailTime.text = "$dayPrefix • $startStr – $endStr"
+        val blockSummary = BookingBlockCalculator.calculateBlocks(booking.items)
+        val timeRangesStr = if (blockSummary.blocks.isNotEmpty()) {
+            blockSummary.formatTimeRanges(timeFormat)
+        } else {
+            val startStr = timeFormat.format(Date(booking.startAtMillis))
+            val endStr = timeFormat.format(Date(booking.endAtMillis))
+            "$startStr – $endStr"
+        }
+        binding.textDetailTime.text = "$dayPrefix • $timeRangesStr"
 
         val courtsStr = booking.items.map { it.courtName }.distinct().joinToString(", ").ifBlank { "Sân" }
-        val durationMinutes = ((booking.endAtMillis - booking.startAtMillis) / 60000).toInt()
-        val durationHours = durationMinutes / 60
-        val durationRemainMins = durationMinutes % 60
-        val durationStr = if (durationHours > 0) {
-            if (durationRemainMins > 0) "$durationHours giờ $durationRemainMins phút" else "$durationHours giờ"
+        val durationStr = if (blockSummary.blocks.isNotEmpty()) {
+            blockSummary.formatPlayingDuration()
         } else {
-            "$durationRemainMins phút"
+            val durationMinutes = ((booking.endAtMillis - booking.startAtMillis) / 60000).toInt()
+            val durationHours = durationMinutes / 60
+            val durationRemainMins = durationMinutes % 60
+            if (durationHours > 0) {
+                if (durationRemainMins > 0) "$durationHours giờ $durationRemainMins phút" else "$durationHours giờ"
+            } else {
+                "$durationRemainMins phút"
+            }
         }
-        binding.textDetailCourt.text = "$courtsStr • Thảm • $durationStr"
+        val gapNote = blockSummary.formatGapNote()
+        val courtDetailStr = if (gapNote != null) {
+            "$courtsStr • Thảm • $durationStr • $gapNote"
+        } else {
+            "$courtsStr • Thảm • $durationStr"
+        }
+        binding.textDetailCourt.text = courtDetailStr
         binding.textDetailAddress.text = booking.venueSnapshot.address
         if (!booking.venueSnapshot.phone.isNullOrBlank()) {
             binding.textDetailPhone.isVisible = true

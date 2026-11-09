@@ -1,19 +1,23 @@
-import { errorResponse, HttpError, verifyIdToken } from "../_shared/auth.ts";
+import { errorResponse, HttpError, VerifiedToken, verifyIdToken } from "../_shared/auth.ts";
 import * as defaultFirestore from "../_shared/firestore.ts";
 import { updateWrite, FirestoreError } from "../_shared/firestore.ts";
 
 export interface OwnerApproveBookingDeps {
-  firestore: Pick<typeof defaultFirestore, "get" | "commit">;
+  firestore?: Pick<typeof defaultFirestore, "get" | "commit">;
+  verifyToken?: (req: Request) => Promise<VerifiedToken>;
 }
 
 export async function handleOwnerApproveBooking(
   req: Request,
-  { firestore }: OwnerApproveBookingDeps = { firestore: defaultFirestore },
+  deps: OwnerApproveBookingDeps = {},
 ): Promise<Response> {
+  const firestore = deps.firestore ?? defaultFirestore;
+  const verifyToken = deps.verifyToken ?? verifyIdToken;
+
   if (req.method !== "POST") return errorResponse(405, "METHOD_NOT_ALLOWED", "Chỉ hỗ trợ POST");
 
   try {
-    const token = await verifyIdToken(req);
+    const token = await verifyToken(req);
     const body = await req.json().catch(() => ({}));
 
     const venueId = typeof body.venueId === "string" ? body.venueId.trim() : "";
@@ -67,11 +71,13 @@ export async function handleOwnerApproveBooking(
       }
     }
 
-    // 5. Atomic update: PENDING -> CONFIRMED
+    // 5. Atomic update: PENDING -> CONFIRMED, generate qrToken
     const nowIso = new Date().toISOString();
+    const qrToken = crypto.randomUUID();
     const writes: defaultFirestore.Write[] = [
       updateWrite(`bookings/${bookingId}`, {
         status: "CONFIRMED",
+        qrToken,
         confirmedAt: nowIso,
         updatedAt: nowIso,
       }),
@@ -91,6 +97,7 @@ export async function handleOwnerApproveBooking(
         success: true,
         bookingId,
         status: "CONFIRMED",
+        qrToken,
         confirmedAt: nowIso,
       }),
       { status: 200, headers: { "Content-Type": "application/json" } },

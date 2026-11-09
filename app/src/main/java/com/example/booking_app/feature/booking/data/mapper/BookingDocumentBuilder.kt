@@ -25,6 +25,7 @@ object BookingDocumentBuilder {
     ): Map<String, Any?> {
         require(userId.isNotBlank()) { "userId must not be blank" }
         require(args.slotIds.isNotEmpty()) { "slotIds must not be empty" }
+        validateSlotGaps(args.slotIds)
 
         val fullAddress = args.venueAddress.ifEmpty {
             if (args.districtName.isNotEmpty()) "Quận ${args.districtName}, TP. Hồ Chí Minh" else "TP. Hồ Chí Minh"
@@ -216,5 +217,41 @@ object BookingDocumentBuilder {
             year, month, day, hour, minute, 0, 0,
             ZONE_VIETNAM
         ).toInstant().toEpochMilli()
+    }
+
+    fun validateSlotGaps(slotIds: Array<String>) {
+        validateSlotGaps(slotIds.toList())
+    }
+
+    fun validateSlotGaps(slotIds: List<String>) {
+        if (slotIds.size < 2) return
+        val courtGroups = slotIds.groupBy { it.split("_")[0] }
+        for ((_, courtSlots) in courtGroups) {
+            val parsedSlots = courtSlots.mapNotNull { slotId ->
+                val parts = slotId.split("_")
+                if (parts.size >= 3) {
+                    val date = parts[1]
+                    val time = parts[2].padStart(4, '0')
+                    val hour = time.substring(0, 2).toIntOrNull() ?: return@mapNotNull null
+                    val minute = time.substring(2, 4).toIntOrNull() ?: return@mapNotNull null
+                    val startMinutes = hour * 60 + minute
+                    val endMinutes = startMinutes + 30
+                    Triple(date, startMinutes, endMinutes)
+                } else null
+            }.sortedWith(compareBy({ it.first }, { it.second }))
+
+            for (i in 0 until parsedSlots.size - 1) {
+                val curr = parsedSlots[i]
+                val next = parsedSlots[i + 1]
+                if (curr.first == next.first && curr.third != next.second) {
+                    val gap = next.second - curr.third
+                    if (gap == 30) {
+                        val gapStartH = String.format("%02d:%02d", curr.third / 60, curr.third % 60)
+                        val gapEndH = String.format("%02d:%02d", next.second / 60, next.second % 60)
+                        throw IllegalArgumentException("Khoảng cách giữa các khung giờ không được là 30 phút ($gapStartH – $gapEndH). Tối thiểu phải từ 1 giờ.")
+                    }
+                }
+            }
+        }
     }
 }
