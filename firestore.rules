@@ -286,9 +286,22 @@ service cloud.firestore {
 
     match /bookings/{bookingId} {
       allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      // Lát cắt test 050: Cho phép player tạo đơn PENDING của chính mình để test 060 bằng data real.
+      // Khi 050 có server confirmation thì phải thu hồi rule này về phía server.
       allow create: if isPlayer()
           && request.resource.data.userId == request.auth.uid
-          && request.resource.data.status == 'HOLD';
+          && (
+            request.resource.data.status == 'HOLD'
+            || (
+              request.resource.data.status == 'PENDING'
+              && request.resource.data.subtotal is number && request.resource.data.subtotal >= 0
+              && request.resource.data.discount is number && request.resource.data.discount >= 0
+              && request.resource.data.total is number && request.resource.data.total == request.resource.data.subtotal - request.resource.data.discount
+              && request.resource.data.depositAmount is number && request.resource.data.depositAmount >= 0
+              && request.resource.data.paidAmount is number && request.resource.data.paidAmount >= 0
+              && request.resource.data.remainingAmount is number && request.resource.data.remainingAmount >= 0
+            )
+          );
       // Confirmation/refund are server-owned. Clients may only expire their own
       // unconfirmed HOLD; cancellation must use the server transaction.
       allow update: if isPlayer() && resource.data.userId == request.auth.uid

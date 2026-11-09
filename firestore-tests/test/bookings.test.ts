@@ -24,6 +24,40 @@ function validBookingData(userId = 'player1', overrides: Record<string, unknown>
   };
 }
 
+function validPendingBookingData(userId = 'player1', overrides: Record<string, unknown> = {}) {
+  return {
+    userId,
+    venueId: 'demo-venue-01',
+    status: 'PENDING',
+    subtotal: 180000,
+    discount: 0,
+    total: 180000,
+    depositAmount: 0,
+    paidAmount: 0,
+    remainingAmount: 180000,
+    paymentMethod: 'AT_VENUE',
+    paymentStatus: 'UNPAID',
+    items: [
+      {
+        slotId: 'court-01_20261109_2000',
+        courtId: 'court-01',
+        courtName: 'Sân 4 · PU',
+        startAt: new Date(1731157200000),
+        endAt: new Date(1731159000000),
+        price: 30000,
+      },
+    ],
+    startAt: new Date(1731157200000),
+    endAt: new Date(1731159000000),
+    venueSnapshot: {
+      name: 'CLB Cầu Lông Gia Hân',
+      address: '123 Đào Duy Anh',
+      phone: '0901234567',
+    },
+    ...overrides,
+  };
+}
+
 beforeAll(async () => {
   env = await createTestEnv();
 });
@@ -63,6 +97,47 @@ describe('bookings collection (Spec 041)', () => {
     it('non-player cannot create booking', async () => {
       const fs = owner('owner1');
       await assertFails(setDoc(doc(fs, 'bookings/booking-01'), validBookingData('owner1')));
+    });
+
+    it('player can create booking with PENDING status and valid financial fields', async () => {
+      const fs = player('player1');
+      await assertSucceeds(setDoc(doc(fs, 'bookings/booking-pending-01'), validPendingBookingData('player1')));
+    });
+
+    it('create PENDING fails when userId does not match auth uid', async () => {
+      const fs = player('player1');
+      await assertFails(setDoc(doc(fs, 'bookings/booking-pending-01'), validPendingBookingData('player2')));
+    });
+
+    it('create PENDING fails when status is CONFIRMED', async () => {
+      const fs = player('player1');
+      await assertFails(
+        setDoc(doc(fs, 'bookings/booking-pending-01'), validPendingBookingData('player1', { status: 'CONFIRMED' }))
+      );
+    });
+
+    it('create PENDING fails when total != subtotal - discount', async () => {
+      const fs = player('player1');
+      await assertFails(
+        setDoc(doc(fs, 'bookings/booking-pending-01'), validPendingBookingData('player1', { total: 150000, subtotal: 180000, discount: 0 }))
+      );
+    });
+
+    it('create PENDING fails when negative amounts', async () => {
+      const fs = player('player1');
+      await assertFails(
+        setDoc(doc(fs, 'bookings/booking-pending-01'), validPendingBookingData('player1', { remainingAmount: -1 }))
+      );
+    });
+
+    it('non-player cannot create booking with PENDING status', async () => {
+      const fs = owner('owner1');
+      await assertFails(setDoc(doc(fs, 'bookings/booking-pending-01'), validPendingBookingData('owner1')));
+    });
+
+    it('unauthenticated user cannot create booking with PENDING status', async () => {
+      const fs = unauth();
+      await assertFails(setDoc(doc(fs, 'bookings/booking-pending-01'), validPendingBookingData('player1')));
     });
   });
 
