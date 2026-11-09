@@ -1994,3 +1994,16 @@ Sau đợt kiểm thử trên thiết bị thật và đối chiếu kỹ lưỡ
 - **Tuân thủ quy tắc làm việc:**
   - KHÔNG chạy bất kỳ lệnh `git push`, KHÔNG tạo PR, KHÔNG checkout/merge nhánh khác, KHÔNG deploy production.
   - Tất cả kết quả kiểm thử và số liệu đều được đo lường thực tế trong session này.
+
+---
+
+## Mục 41: Theo dõi hủy booking và dọn HOLD hết hạn
+
+- Ngày: 2026-11-10; nhánh làm việc `060-my-bookings` theo checkpoint. Yêu cầu: sửa trải nghiệm chờ/xác nhận hủy, xử lý lỗi release HOLD 041 và bổ sung server cleanup HOLD. Không commit, push hoặc deploy.
+- Thay đổi: nút hủy chuyển sang “Đang gửi yêu cầu…” trong lúc request chạy; ViewModel khóa gửi lặp; dialog thành công chỉ hiển thị sau kết quả server, chỉ hiển thị một lần và cả Đóng/hủy dialog đều điều hướng về danh sách. Sửa release 041 chỉ chạm slot do user giữ, không cập nhật `recurringGroups` từ app vì rules không cho phép.
+- Bổ sung Supabase Edge Function `expire-holds` có xác thực `x-cron-secret`, xử lý HOLD booking đơn, recurring group/session và slot HOLD 040 chưa có booking document. Các lần đọc lại trạng thái, expiry và chủ sở hữu slot nằm trong Firestore transaction; chỉ xóa slot HELD đúng booking/group + đúng user + còn quá hạn. Mỗi booking/group được commit nguyên tử, không vượt 500 writes; record bất thường bị bỏ qua. Migration pg_cron mỗi phút; cần quản trị viên cấu hình Vault `project_url` và `cron_secret` trước khi triển khai/chạy.
+- Kiểm chứng thực tế: `deno test -A supabase/functions/expire-holds/handler.test.ts` — 6/6 pass; `deno check supabase/functions/expire-holds/index.ts` — pass; `deno fmt --check` trên ba file function — pass; `git diff --check` — pass.
+- Android kiểm thử mục tiêu chưa chạy được: `./gradlew testDebugUnitTest --tests '*RecurringHoldTransactionTest' --tests '*CancelBookingViewModelTest'` dừng do môi trường không có `java`/`JAVA_HOME`. Vì vậy `assembleDebug` cũng chưa chạy trong lượt này. Chưa kiểm tra UI trên thiết bị; cải thiện loading không chứng minh giảm latency backend 1–2 giây.
+- Tối ưu bổ sung trong lượt tiếp theo: trong `player-cancel-booking`, đọc booking và refund idempotency độc lập bằng `Promise.all` thay vì hai round-trip Firestore tuần tự. Các ghi booking/slot/wallet/refund vẫn nằm trong cùng batch commit; không chuyển sang optimistic success hay bỏ kiểm tra nghiệp vụ.
+- Xác minh tối ưu: `deno test -A supabase/functions/player-cancel-booking/handler.test.ts` — 5/5 pass; `deno check .../player-cancel-booking/index.ts` và `deno fmt --check` pass. Android targeted tests và `assembleDebug` đã chạy pass với JDK 17 (chi tiết test được lưu trong Gradle reports); cảnh báo manifest `nav_account` include lặp vẫn hiện nhưng không liên quan.
+- Không commit, push, deploy hoặc sửa dữ liệu production. Các thay đổi giữ nguyên trong working tree.

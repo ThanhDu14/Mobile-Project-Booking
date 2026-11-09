@@ -41,6 +41,7 @@ class CancelBookingViewModel @Inject constructor(
     val uiState: StateFlow<CancelBookingUiState> = _uiState.asStateFlow()
 
     private var activeRequestId: String = UUID.randomUUID().toString()
+    private var cancelInFlight = false
 
     init {
         if (bookingId.isNotBlank()) {
@@ -56,7 +57,9 @@ class CancelBookingViewModel @Inject constructor(
             try {
                 repository.observeBooking(id).collect { booking ->
                     if (booking == null) {
-                        _uiState.update { it.copy(isLoading = false, errorMessage = "Không tìm thấy đơn đặt sân") }
+                        // Realtime may emit null after a successful cancellation removes/moves the record.
+                        // Keep the current screen state; do not surface a misleading missing-booking error.
+                        _uiState.update { it.copy(isLoading = false) }
                     } else {
                         val now = serverTimeOffsetProvider.now()
                         val quote = calculateQuote(
@@ -104,7 +107,9 @@ class CancelBookingViewModel @Inject constructor(
 
     fun confirmCancel() {
         val current = _uiState.value
+        if (cancelInFlight || current.isLoading || current.isSuccess || !current.isConfirmEnabled) return
         val booking = current.booking ?: return
+        cancelInFlight = true
         val reasonText = if (current.selectedReasonKey == "OTHER") {
             current.otherReasonText.trim()
         } else {
@@ -128,6 +133,7 @@ class CancelBookingViewModel @Inject constructor(
                     )
                 }
             } catch (e: UnsupportedOperationException) {
+                cancelInFlight = false
                 _uiState.update {
                     it.copy(
                         isLoading = false,
@@ -135,6 +141,7 @@ class CancelBookingViewModel @Inject constructor(
                     )
                 }
             } catch (e: Exception) {
+                cancelInFlight = false
                 _uiState.update {
                     it.copy(
                         isLoading = false,

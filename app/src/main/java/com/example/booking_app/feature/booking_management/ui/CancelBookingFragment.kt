@@ -27,6 +27,8 @@ import java.util.Locale
 class CancelBookingFragment : Fragment(R.layout.fragment_cancel_booking_060) {
 
     private val viewModel: CancelBookingViewModel by viewModels()
+    private var successDialog: androidx.appcompat.app.AlertDialog? = null
+    private var successDialogShown = false
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -58,13 +60,24 @@ class CancelBookingFragment : Fragment(R.layout.fragment_cancel_booking_060) {
         }
 
         binding.buttonConfirmCancel.setOnClickListener {
-            viewModel.confirmCancel()
+            if (!viewModel.uiState.value.isConfirmEnabled) {
+                Snackbar.make(binding.root, R.string.my_bookings_060_cancel_reason_required, Snackbar.LENGTH_SHORT).show()
+            } else {
+                viewModel.confirmCancel()
+            }
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
-                    binding.buttonConfirmCancel.isEnabled = state.isConfirmEnabled && !state.isLoading
+                    binding.buttonConfirmCancel.isEnabled = state.booking != null && !state.isLoading && !state.isSuccess
+                    binding.buttonKeepBooking.isEnabled = !state.isLoading && !state.isSuccess
+                    binding.buttonBack.isEnabled = !state.isLoading && !state.isSuccess
+                    binding.buttonConfirmCancel.text = if (state.isLoading) {
+                        getString(R.string.my_bookings_060_cancel_submitting)
+                    } else {
+                        getString(R.string.my_bookings_060_confirm_cancel)
+                    }
 
                     if (state.booking != null) {
                         bindBooking(binding, state.booking, state.quote)
@@ -74,19 +87,34 @@ class CancelBookingFragment : Fragment(R.layout.fragment_cancel_booking_060) {
                         Snackbar.make(binding.root, state.errorMessage, Snackbar.LENGTH_LONG).show()
                     }
 
-                    if (state.isSuccess) {
-                        MaterialAlertDialogBuilder(requireContext())
-                            .setTitle("Hủy đơn thành công")
-                            .setMessage(state.resultMessage ?: "Đơn đặt sân đã được hủy.")
-                            .setPositiveButton("Đóng") { _, _ ->
-                                findNavController().popBackStack(R.id.myBookingsFragment, false)
-                            }
-                            .setCancelable(false)
-                            .show()
+                    if (state.isSuccess && !successDialogShown && isAdded) {
+                        successDialogShown = true
+                        successDialog = MaterialAlertDialogBuilder(requireContext())
+                            .setTitle(R.string.my_bookings_060_cancel_success_title)
+                            .setMessage(state.resultMessage ?: getString(R.string.my_bookings_060_cancel_success_message))
+                            .setPositiveButton(R.string.my_bookings_060_close) { _, _ -> returnToBookings() }
+                            .setOnCancelListener { returnToBookings() }
+                            .create()
+                        successDialog?.show()
                     }
                 }
             }
         }
+    }
+
+    private fun returnToBookings() {
+        val navController = findNavController()
+        val popped = navController.popBackStack(R.id.myBookingsFragment, false)
+        if (!popped && navController.currentDestination?.id != R.id.myBookingsFragment) {
+            navController.navigate(R.id.myBookingsFragment)
+        }
+    }
+
+    override fun onDestroyView() {
+        successDialog?.setOnDismissListener(null)
+        successDialog?.dismiss()
+        successDialog = null
+        super.onDestroyView()
     }
 
     private fun bindBooking(

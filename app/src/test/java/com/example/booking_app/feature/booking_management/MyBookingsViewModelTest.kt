@@ -148,6 +148,22 @@ class MyBookingsViewModelTest {
     }
 
     @Test
+    fun `tab switch does not publish failure from canceled stale request`() = runTest {
+        val repo = FakeRepo()
+        repo.pageHandler = { tab, _, _ ->
+            if (tab == BookingTab.UPCOMING) throw kotlinx.coroutines.CancellationException("tab changed")
+            BookingPage(emptyList(), null)
+        }
+        val vm = MyBookingsViewModel(repo)
+        vm.selectTab(BookingTab.UPCOMING)
+        advanceUntilIdle()
+        vm.selectTab(BookingTab.PENDING)
+        advanceUntilIdle()
+
+        assertTrue(vm.state.value is MyBookingsState.Empty)
+    }
+
+    @Test
     fun `invalidation triggers page reload for active tab`() = runTest {
         val repo = FakeRepo()
         var callCount = 0

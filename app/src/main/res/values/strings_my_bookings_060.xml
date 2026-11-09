@@ -30,6 +30,11 @@
     <string name="my_bookings_060_reason_other">Khác</string>
     <string name="my_bookings_060_keep">Giữ đơn</string>
     <string name="my_bookings_060_confirm_cancel">Xác nhận hủy</string>
+    <string name="my_bookings_060_cancel_reason_required">Vui lòng chọn lý do hủy.</string>
+    <string name="my_bookings_060_cancel_submitting">Đang gửi yêu cầu…</string>
+    <string name="my_bookings_060_cancel_success_title">Hủy đơn thành công</string>
+    <string name="my_bookings_060_cancel_success_message">Đơn đặt sân đã được hủy.</string>
+    <string name="my_bookings_060_close">Đóng</string>
     <string name="my_bookings_060_other_hint">Nhập lý do khác</string>
     <string name="my_bookings_060_qr_description">Mã QR đặt sân</string>
     <string name="my_bookings_060_policy_footer" formatted="false">Hủy trước giờ chơi từ 4 giờ trở lên được hoàn 100%. Hủy trễ mất tiền cọc, hoặc phạt 30% nếu trả bằng ví. Giao dịch giả lập phục vụ học tập.</string>

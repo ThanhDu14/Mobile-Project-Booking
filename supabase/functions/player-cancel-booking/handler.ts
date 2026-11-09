@@ -29,13 +29,16 @@ export async function handlePlayerCancelBooking(
     if (!bookingId) throw new HttpError(400, "INVALID_BOOKING_ID", "Thiếu hoặc sai bookingId");
     if (!reason) throw new HttpError(400, "INVALID_REASON", "Lý do hủy bắt buộc không được để trống");
 
-    const booking = await firestore.get(`bookings/${bookingId}`);
+    // These independent reads avoid two sequential Firestore network round trips.
+    const [booking, existingRefund] = await Promise.all([
+      firestore.get(`bookings/${bookingId}`),
+      firestore.get(`refunds/refund_${bookingId}`),
+    ]);
     if (!booking || (booking.userId !== token.uid && token.appRole !== "ADMIN")) {
       throw new HttpError(404, "BOOKING_NOT_FOUND", "Không tìm thấy đơn đặt sân");
     }
 
-    // Idempotency: nếu đơn đã có bản ghi hoàn tiền với requestId tương ứng
-    const existingRefund = await firestore.get(`refunds/refund_${bookingId}`);
+    // Idempotency: nếu đơn đã có bản ghi hoàn tiền với requestId tương ứng.
     if (existingRefund) {
       return new Response(
         JSON.stringify({

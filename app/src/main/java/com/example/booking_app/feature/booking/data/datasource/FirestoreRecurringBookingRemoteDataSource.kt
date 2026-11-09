@@ -250,12 +250,10 @@ class FirestoreRecurringBookingRemoteDataSource @Inject constructor(
                 transaction.update(ref, updateData)
             }
 
-            // Update recurringGroup status to CANCELLED if exists
-            val groupRef = firestore.collection(COLLECTION_RECURRING_GROUPS).document(recurringGroupId)
-            val groupSnap = transaction.get(groupRef)
-            if (groupSnap.exists()) {
-                transaction.update(groupRef, "status", "CANCELLED")
-            }
+            // recurringGroups are server-owned after creation (`allow update: if false`).
+            // Do not write the group here: Firestore would reject the whole transaction,
+            // including the slot releases. Expiry is determined by holdExpiresAt; the
+            // group document is retained for audit and may be reconciled server-side.
         }.await()
     }
 

@@ -93,6 +93,22 @@ class CancelBookingViewModelTest {
     }
 
     @Test
+    fun `null booking emission does not show misleading not found error`() = runTest {
+        val repo = FakeRepo(kotlinx.coroutines.flow.flowOf(sampleBooking(), null))
+        val vm = CancelBookingViewModel(
+            SavedStateHandle(mapOf("bookingId" to "b1")),
+            repo,
+            CalculateRefundQuoteUseCase(),
+            CancelBookingUseCase(repo),
+            timeProvider
+        )
+        advanceUntilIdle()
+
+        assertNull(vm.uiState.value.errorMessage)
+        assertNotNull(vm.uiState.value.booking)
+    }
+
+    @Test
     fun `standard reason enables confirm`() = runTest {
         val repo = FakeRepo(flowOf(sampleBooking()))
         val vm = CancelBookingViewModel(
@@ -155,6 +171,27 @@ class CancelBookingViewModelTest {
         assertEquals("b1", sent.bookingId)
         assertEquals("Bận việc đột xuất", sent.reason)
         assertTrue(sent.requestId.isNotBlank())
+    }
+
+    @Test
+    fun `confirmCancel ignores duplicate taps while server request is in flight`() = runTest {
+        val repo = FakeRepo(flowOf(sampleBooking()))
+        var calls = 0
+        repo.cancelHandler = {
+            calls++
+            CancellationResult(100_000L, 0L)
+        }
+        val vm = CancelBookingViewModel(
+            SavedStateHandle(mapOf("bookingId" to "b1")), repo,
+            CalculateRefundQuoteUseCase(), CancelBookingUseCase(repo), timeProvider
+        )
+        advanceUntilIdle()
+        vm.onReasonSelected("Bận việc đột xuất")
+        vm.confirmCancel()
+        vm.confirmCancel()
+        advanceUntilIdle()
+        assertEquals(1, calls)
+        assertTrue(vm.uiState.value.isSuccess)
     }
 
     @Test

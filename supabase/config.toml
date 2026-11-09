@@ -465,5 +465,8 @@ verify_jwt = false
 [functions.complete-bookings]
 verify_jwt = false
 
+[functions.expire-holds]
+verify_jwt = false
+
 [functions.player-cancel-booking]
 verify_jwt = false

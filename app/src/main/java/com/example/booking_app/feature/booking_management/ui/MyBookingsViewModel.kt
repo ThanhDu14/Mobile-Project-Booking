@@ -7,6 +7,7 @@ import com.example.booking_app.feature.booking_management.domain.BookingManageme
 import com.example.booking_app.feature.booking_management.domain.BookingTab
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -92,10 +93,14 @@ class MyBookingsViewModel @Inject constructor(
                 loaded = if (replace) page.bookings else loaded + page.bookings
                 cursor = page.nextCursor
                 _state.value = if (loaded.isEmpty()) MyBookingsState.Empty else MyBookingsState.Content(loaded, cursor)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
             } catch (error: UnsupportedOperationException) {
                 _state.value = MyBookingsState.Error("", true)
             } catch (_: Exception) {
-                _state.value = MyBookingsState.Error("Không thể tải lịch đặt. Kiểm tra kết nối rồi thử lại.")
+                if (currentTab == tab) {
+                    _state.value = MyBookingsState.Error("Không thể tải lịch đặt. Kiểm tra kết nối rồi thử lại.")
+                }
             }
         }
     }
