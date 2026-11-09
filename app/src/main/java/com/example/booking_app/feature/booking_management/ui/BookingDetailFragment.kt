@@ -47,6 +47,7 @@ class BookingDetailFragment : Fragment(R.layout.fragment_booking_detail_060) {
             }
         }
 
+        var notFoundSnackbar: Snackbar? = null
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.state.collect { state ->
@@ -57,12 +58,16 @@ class BookingDetailFragment : Fragment(R.layout.fragment_booking_detail_060) {
                             binding.buttonCancelBooking.isVisible = false
                         }
                         is BookingDetailState.Content -> {
+                            notFoundSnackbar?.dismiss()
+                            notFoundSnackbar = null
                             bindDetail(binding, state.booking, state.qrBitmap)
                         }
                         is BookingDetailState.NotFound -> {
-                            Snackbar.make(binding.root, "Không tìm thấy thông tin đơn đặt sân", Snackbar.LENGTH_LONG).show()
+                            notFoundSnackbar?.dismiss()
+                            notFoundSnackbar = Snackbar.make(binding.root, "Không tìm thấy thông tin đơn đặt sân", Snackbar.LENGTH_LONG).also { it.show() }
                         }
                         is BookingDetailState.Error -> {
+                            notFoundSnackbar?.dismiss()
                             Snackbar.make(binding.root, state.message, Snackbar.LENGTH_LONG).show()
                         }
                     }

@@ -89,9 +89,20 @@ class MyBookingsFragment : Fragment(R.layout.fragment_my_bookings_060) {
             binding.filterCancelled to BookingTab.CANCELLED
         )
 
+        fun centerTab(button: View) {
+            binding.scrollFilterTabs.post {
+                val scrollX = (button.left + button.right) / 2 - binding.scrollFilterTabs.width / 2
+                binding.scrollFilterTabs.smoothScrollTo(scrollX.coerceAtLeast(0), 0)
+            }
+        }
+
         fun selectFilter(selectedTab: BookingTab) {
             filterTabs.forEach { (button, tab) ->
-                button.isChecked = (tab == selectedTab)
+                val isSelected = (tab == selectedTab)
+                button.isChecked = isSelected
+                if (isSelected) {
+                    centerTab(button)
+                }
             }
             viewModel.selectTab(selectedTab)
         }
@@ -105,15 +116,22 @@ class MyBookingsFragment : Fragment(R.layout.fragment_my_bookings_060) {
         val receiptArgs = arguments?.getParcelable<com.example.booking_app.feature.booking_management.domain.ReceiptToMyBookingsArgs>("args")
             ?: arguments?.getParcelable("ReceiptToMyBookingsArgs")
         val initialTab = receiptArgs?.initialTab ?: arguments?.getString("initialTab")
-        val defaultTab = when (initialTab?.uppercase()) {
-            "PENDING" -> BookingTab.PENDING
-            "HOLD" -> BookingTab.HOLD
-            "CONFIRMED", "UPCOMING" -> BookingTab.UPCOMING
-            "COMPLETED" -> BookingTab.COMPLETED
-            "CANCELLED" -> BookingTab.CANCELLED
-            else -> BookingTab.UPCOMING
+        val targetTab = if (initialTab != null) {
+            arguments?.remove("initialTab")
+            arguments?.remove("args")
+            arguments?.remove("ReceiptToMyBookingsArgs")
+            when (initialTab.uppercase()) {
+                "PENDING" -> BookingTab.PENDING
+                "HOLD" -> BookingTab.HOLD
+                "CONFIRMED", "UPCOMING" -> BookingTab.UPCOMING
+                "COMPLETED" -> BookingTab.COMPLETED
+                "CANCELLED" -> BookingTab.CANCELLED
+                else -> BookingTab.UPCOMING
+            }
+        } else {
+            viewModel.selectedTab.value
         }
-        selectFilter(defaultTab)
+        selectFilter(targetTab)
         binding.buttonRetry.setOnClickListener { viewModel.loadFirstPage() }
         binding.buttonExplore.setOnClickListener {
             findNavController().navigate(R.id.homeFragment)

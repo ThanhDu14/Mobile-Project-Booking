@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { assertFails, assertSucceeds, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
 import { deleteDoc, doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { createTestEnv } from './setup';
@@ -161,6 +161,12 @@ describe('bookings collection (Spec 041)', () => {
     it('admin can read any booking', async () => {
       const fs = admin();
       await assertSucceeds(getDoc(doc(fs, 'bookings/booking-01')));
+    });
+
+    it('signed in player can read non-existent booking (returns snapshot with exists == false)', async () => {
+      const fs = player('player1');
+      const snap = await getDoc(doc(fs, 'bookings/non-existent-booking-123'));
+      expect(snap.exists()).toBe(false);
     });
 
     it('unauthenticated user cannot read booking', async () => {

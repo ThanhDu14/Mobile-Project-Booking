@@ -230,20 +230,25 @@ class FirestoreBookingManagementRepository @Inject constructor(
         }
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     override fun observeBooking(bookingId: String): Flow<BookingDetail?> {
         require(bookingId.isNotBlank() && '/' !in bookingId)
-        return ownerScopedDetailFlow(session.sessionState.map { session.currentUid() }, session::currentUid) { uid ->
-            callbackFlow {
-                val registration = firestore.collection("bookings").document(bookingId).addSnapshotListener(MetadataChanges.INCLUDE) { snapshot, error ->
+        return session.sessionState.map { session.currentUid() }.distinctUntilChanged().flatMapLatest { uid ->
+            if (uid == null) flowOf(null) else callbackFlow {
+                val registration = firestore.collection("bookings").document(bookingId).addSnapshotListener { snapshot, error ->
                     if (session.currentUid() == uid) {
-                        if (error != null) close(error)
-                        // Clear previously displayed data immediately while offline or local writes are pending.
-                        else if (snapshot == null || !isAuthoritativeSnapshot(snapshot.metadata.isFromCache, snapshot.metadata.hasPendingWrites())) trySend(null)
-                        else if (!snapshot.exists()) trySend(null)
-                        else try {
-                            val detail = BookingManagementMapper.map(snapshot.id, requireNotNull(snapshot.data), uid)
-                            trySend(detail)
-                        } catch (_: Exception) { trySend(null) }
+                        if (error != null) {
+                            close(error)
+                        } else if (snapshot == null || !snapshot.exists()) {
+                            trySend(null)
+                        } else {
+                            try {
+                                val detail = BookingManagementMapper.map(snapshot.id, requireNotNull(snapshot.data), uid)
+                                trySend(detail)
+                            } catch (_: Exception) {
+                                trySend(null)
+                            }
+                        }
                     }
                 }
                 awaitClose { registration.remove() }

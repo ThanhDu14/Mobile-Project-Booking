@@ -30,6 +30,9 @@ class MyBookingsViewModel @Inject constructor(
     private val _tabCounts = MutableStateFlow<Map<BookingTab, Int>>(emptyMap())
     val tabCounts: StateFlow<Map<BookingTab, Int>> = _tabCounts.asStateFlow()
 
+    private val _selectedTab = MutableStateFlow(BookingTab.UPCOMING)
+    val selectedTab: StateFlow<BookingTab> = _selectedTab.asStateFlow()
+
     private var currentTab = BookingTab.UPCOMING
     private var cursor: String? = null
     private var loaded = emptyList<BookingDetail>()
@@ -46,8 +49,13 @@ class MyBookingsViewModel @Inject constructor(
         }
     }
 
-    fun selectTab(tab: BookingTab) {
+    fun selectTab(tab: BookingTab, forceReload: Boolean = false) {
+        val sameTab = (currentTab == tab)
         currentTab = tab
+        _selectedTab.value = tab
+        if (sameTab && !forceReload && _state.value is MyBookingsState.Content) {
+            return
+        }
         loadFirstPage()
         invalidationJob?.cancel()
         invalidationJob = viewModelScope.launch {

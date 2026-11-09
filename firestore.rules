@@ -271,7 +271,7 @@ service cloud.firestore {
     // + bookings. slots đã có rule; 2 collection này trước đây chưa có match nên
     // transaction luôn bị chặn (PERMISSION_DENIED).
     match /recurringGroups/{groupId} {
-      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow read: if isSignedIn() && (resource == null || resource.data.userId == request.auth.uid || isAdmin());
       allow create: if isPlayer()
           && request.resource.data.userId == request.auth.uid
           && request.resource.data.status == 'HOLD'
@@ -285,7 +285,7 @@ service cloud.firestore {
     }
 
     match /bookings/{bookingId} {
-      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow read: if isSignedIn() && (resource == null || resource.data.userId == request.auth.uid || isAdmin());
       // Lát cắt test 050: Cho phép player tạo đơn PENDING của chính mình để test 060 bằng data real.
       // Khi 050 có server confirmation thì phải thu hồi rule này về phía server.
       allow create: if isPlayer()
