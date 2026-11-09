@@ -47,6 +47,7 @@ Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 | 41  | 2026-11-09 | Feature 060 (Commit 2): Nối dây hủy phía server, rules và điều hướng | 06 |
 | 42  | 2026-11-09 | Feature 060 (Commit 3): Nghiệm thu, Espresso UI tests và xác minh toàn diện | 06 |
 | 43  | 2026-11-09 | Feature 040/050: Lát cắt xác nhận tạo đơn PENDING để test 060 bằng data real | 04 |
+| 44  | 2026-11-09 | Feature 060: qrToken khi duyệt + COMPLETED/NO_SHOW định kỳ + hiển thị đơn nhiều block theo block | 06 |
 
 ---
 
@@ -4135,3 +4136,41 @@ tiến độ Feature 110 đạt 100% (35/35 tasks DONE).
   - **Biên dịch Debug:** `./gradlew :app:assembleDebug`
     - Kết quả: **BUILD SUCCESSFUL in 48s**.
 - **Tuân thủ cam kết:** Commit local đúng mẫu; không push, không mở PR, không deploy.
+
+---
+
+## Mục 44: Feature 060 — qrToken khi duyệt + COMPLETED/NO_SHOW định kỳ + hiển thị đơn nhiều block theo block
+
+- **Ngày:** 2026-11-09; nhánh `060-my-bookings`.
+- **Commits:**
+  1. `fix(060): generate qrToken on approve and show multi-block bookings by block` (`2ab0397`)
+  2. `feat(060): schedule completion of bookings to COMPLETED/NO_SHOW`
+- **Nội dung thực hiện:**
+  - **Việc 1: Sinh `qrToken` khi chủ sân duyệt đơn:**
+    - Cập nhật Edge Function `owner-approve-booking`: khi chuyển đơn từ `PENDING` sang `CONFIRMED`, tự động sinh `const qrToken = crypto.randomUUID()`, ghi nguyên tử vào doc `bookings/{bookingId}` và trả về trong phản hồi JSON.
+    - Cập nhật `BookingCheckInRepositoryImpl`: bổ sung cơ chế tra cứu doc theo `qrToken == code` (hoặc docId) trong Firestore để lấy `bookingId` và `venueId` thực tế trước khi gửi yêu cầu tới server.
+    - Cập nhật Edge Function `checkin-booking`: bổ sung fallback tra cứu theo `qrToken` khi docId không khớp trực tiếp; giữ nguyên contract `{ venueId, bookingId, confirmPayment }`.
+    - Cập nhật `firestore.rules`: thêm `isApprovedOwner()` vào quyền đọc `bookings/{bookingId}` để chủ sân tra cứu được mã check-in.
+  - **Việc 2: Scheduled Function chuyển `COMPLETED` / `NO_SHOW`:**
+    - Tạo Edge Function `complete-bookings` (`index.ts`, `handler.ts`): quét các đơn `CONFIRMED` có `endAt <= now` (dùng giờ server). Đơn đã check-in (`checkedInAt != null`) chuyển thành `COMPLETED` và cập nhật `completedAt = nowIso`; đơn chưa check-in chuyển thành `NO_SHOW`.
+    - Đảm bảo tính idempotent: chạy lại không thay đổi gì (các đơn đã chuyển status không bị quét lại).
+    - Tạo migration `20261109203000_cron_complete_bookings.sql`: thiết lập `pg_cron` chạy mỗi 5 phút gọi tới `/functions/v1/complete-bookings` với header `x-cron-secret`.
+    - Thêm `[functions.complete-bookings]` vào `supabase/config.toml` với `verify_jwt = false`.
+    - Kiểm chứng 070: Đọc code `review/handler.ts` xác nhận đơn `COMPLETED` mở cửa sổ review trong 7 ngày tính từ `completedAt`. `complete-bookings` đáp ứng đầy đủ điều kiện này.
+  - **Việc 3: Hiển thị đơn nhiều block theo block và validation gap:**
+    - Tạo pure function `BookingBlockCalculator` trong domain của 060: sắp xếp `items` theo `startAt`, gom các slot liên tiếp thành từng khối, tính toán tổng thời gian chơi thực tế `totalPlayingMinutes` và thời gian nghỉ `totalGapMinutes`.
+    - Cập nhật `BookingDetailFragment.bindDetail`: hiển thị từng block trên dòng thời gian (ví dụ: "20:00–21:30, 22:30–23:30"), hiển thị tổng giờ chơi thật (ví dụ: "2 giờ 30 phút") và kèm ghi chú gap khi có nhiều hơn 1 block (ví dụ: "Nghỉ 1 giờ giữa giờ"). Dòng subtotal và banner check-in giữ nguyên theo thiết kế.
+    - Cập nhật `BookingDetailViewModel`: bổ sung fallback `tokenToUse = detail.qrToken ?: detail.bookingId` để đơn `CONFIRMED` luôn render mã QR check-in ngay cả khi test dữ liệu thủ công trên Firestore chưa có trường `qrToken`.
+    - Cập nhật `MyBookingAdapter`: phân định nút hành động thẻ đơn: `PENDING` hiển thị "Xem chi tiết", chỉ `CONFIRMED` mới hiển thị "Mã check-in" kèm biểu tượng quét QR.
+    - Bổ sung `validateSlotGaps` vào `BookingDocumentBuilder` và `confirmHoldToBooking`: từ chối tạo đơn nếu tồn tại khoảng trống lẻ đúng 1 slot (30 phút) giữa 2 khối trên cùng sân (ném `IllegalArgumentException`), trả về `ConfirmBookingResult.Error` rõ ràng, không gây crash app.
+- **Kết quả kiểm thử:**
+  - **Deno Edge Function tests:**
+    - `deno test -A supabase/functions/owner-approve-booking/handler.test.ts`: **5/5 tests PASS 100%**.
+    - `deno test -A supabase/functions/complete-bookings/handler.test.ts`: **5/5 tests PASS 100%**.
+    - `deno test -A supabase/functions/checkin-booking/handler.test.ts`: **2/2 tests PASS 100%**.
+  - **Android Gradle Unit tests:**
+    - `BookingBlockCalculatorTest`: **6/6 tests PASS 100%**.
+    - `BookingDocumentBuilderGapValidationTest`: **5/5 tests PASS 100%**.
+    - Toàn bộ test suite `feature/booking_management`: **53/53 tests PASS 100%**.
+    - `BookingConfirmSliceTest`: **4/4 tests PASS 100%**.
+- **Tuân thủ cam kết:** Commit local đúng quy ước; không push, không mở PR, không deploy tự động.

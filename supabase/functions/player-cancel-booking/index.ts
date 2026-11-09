@@ -1,3 +1,4 @@
 import { handlePlayerCancelBooking } from "./handler.ts";
 
-Deno.serve(handlePlayerCancelBooking);
+Deno.serve((req) => handlePlayerCancelBooking(req));
+

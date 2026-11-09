@@ -3,17 +3,20 @@ import * as defaultFirestore from "../_shared/firestore.ts";
 import { createWrite, deleteWrite, FirestoreError, updateWrite } from "../_shared/firestore.ts";
 
 export interface PlayerCancelBookingDeps {
-  firestore: Pick<typeof defaultFirestore, "get" | "commit">;
+  firestore?: Pick<typeof defaultFirestore, "get" | "commit">;
+  verifyToken?: (req: Request) => Promise<import("../_shared/auth.ts").VerifiedToken>;
 }
 
 export async function handlePlayerCancelBooking(
   req: Request,
-  { firestore }: PlayerCancelBookingDeps = { firestore: defaultFirestore },
+  deps: PlayerCancelBookingDeps = {},
 ): Promise<Response> {
+  const firestore = deps?.firestore ?? defaultFirestore;
+  const verifyToken = deps?.verifyToken ?? verifyIdToken;
   if (req.method !== "POST") return errorResponse(405, "METHOD_NOT_ALLOWED", "Chỉ hỗ trợ POST");
 
   try {
-    const token = await verifyIdToken(req);
+    const token = await verifyToken(req);
     if (token.appRole !== "PLAYER" && token.appRole !== "ADMIN") {
       throw new HttpError(403, "FORBIDDEN", "Chỉ người chơi mới có thể yêu cầu hủy đơn");
     }
@@ -112,18 +115,22 @@ export async function handlePlayerCancelBooking(
       }),
     ];
 
-    // Nhả slot
+    // Nhả slot (deduplicate để tránh Firestore commit lỗi "multiple writes to same document")
+    const slotIdSet = new Set<string>();
     const items = Array.isArray(booking.items) ? booking.items : [];
     for (const item of items) {
       if (item && typeof item === "object" && typeof item.slotId === "string" && item.slotId.trim()) {
-        writes.push(deleteWrite(`slots/${item.slotId.trim()}`, false));
+        slotIdSet.add(item.slotId.trim());
       }
     }
     const slotIds = Array.isArray(booking.slotIds) ? booking.slotIds : [];
     for (const sId of slotIds) {
       if (typeof sId === "string" && sId.trim()) {
-        writes.push(deleteWrite(`slots/${sId.trim()}`, false));
+        slotIdSet.add(sId.trim());
       }
+    }
+    for (const slotId of slotIdSet) {
+      writes.push(deleteWrite(`slots/${slotId}`, false));
     }
 
     // Hoàn tiền ví giả lập nếu có
@@ -172,6 +179,7 @@ export async function handlePlayerCancelBooking(
     );
   } catch (err) {
     if (err instanceof HttpError) return errorResponse(err.status, err.code, err.message);
+    console.error("player-cancel-booking unexpected error:", err);
     const message = err instanceof Error ? err.message : "Lỗi máy chủ không xác định";
     return errorResponse(500, "INTERNAL_ERROR", message);
   }
