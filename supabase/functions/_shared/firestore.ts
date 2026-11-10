@@ -322,7 +322,7 @@ async function rollbackTransaction(transaction: string): Promise<void> {
   await res.body?.cancel();
 }
 
-/** Fetches the latest application for a UID using the approved composite index. */
+/** Fetches the latest application for a UID without requiring a composite index. */
 export async function latestOwnerApplication(uid: string): Promise<Record<string, unknown> | null> {
   const res = await request(`${apiBase()}/${databaseRoot()}/documents:runQuery`, {
     method: "POST",
@@ -330,13 +330,18 @@ export async function latestOwnerApplication(uid: string): Promise<Record<string
       structuredQuery: {
         from: [{ collectionId: "ownerApplications" }],
         where: { fieldFilter: { field: { fieldPath: "uid" }, op: "EQUAL", value: { stringValue: uid } } },
-        orderBy: [{ field: { fieldPath: "submittedAt" }, direction: "DESCENDING" }],
-        limit: 1,
       },
     }),
   });
   if (!res.ok) throw await toError(res);
   const rows = await res.json() as { document?: { name: string; fields?: Record<string, FirestoreValue> } }[];
+  const docs = rows
+    .map((row) => row.document)
+    .filter((doc): doc is NonNullable<typeof doc> => !!doc)
+    .map((doc) => ({ ...decodeFields(doc.fields ?? {}), __documentId: doc.name.split("/").pop() }));
+  if (docs.length === 0) return null;
+  docs.sort((a, b) => String(b.submittedAt ?? "").localeCompare(String(a.submittedAt ?? "")));
+  return docs[0];
   const doc = rows.find((row) => row.document)?.document;
   return doc ? { ...decodeFields(doc.fields ?? {}), __documentId: doc.name.split("/").pop() } : null;
   throw new FirestoreError("ABORTED", 409, "Transaction bị tranh chấp sau nhiều lần thử");

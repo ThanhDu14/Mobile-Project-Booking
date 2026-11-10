@@ -1,13 +1,94 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Placeholder của spec 010; D thay bằng màn hình thật (spec 120). -->
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/nav_admin"
-    app:startDestination="@id/adminHomePlaceholderFragment">
+    app:startDestination="@id/adminHomeFragment">
 
     <fragment
-        android:id="@+id/adminHomePlaceholderFragment"
-        android:name="com.example.booking_app.feature.auth.ui.home.AdminHomePlaceholderFragment"
-        android:label="@string/app_name" />
+        android:id="@+id/adminHomeFragment"
+        android:name="com.example.booking_app.feature.admin.ui.AdminHomeFragment"
+        android:label="@string/admin_home_title">
+        <action
+            android:id="@+id/action_home_to_applications"
+            app:destination="@id/adminApplicationQueueFragment" />
+        <action
+            android:id="@+id/action_home_to_reports"
+            app:destination="@id/adminReportQueueFragment" />
+        <action
+            android:id="@+id/action_home_to_broadcast"
+            app:destination="@id/adminBroadcastFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/adminApplicationQueueFragment"
+        android:name="com.example.booking_app.feature.admin.ui.AdminApplicationQueueFragment"
+        android:label="@string/admin_queue_title">
+        <action
+            android:id="@+id/action_queue_to_detail"
+            app:destination="@id/adminApplicationDetailFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/adminApplicationDetailFragment"
+        android:name="com.example.booking_app.feature.admin.ui.AdminApplicationDetailFragment"
+        android:label="@string/admin_application_detail_title" />
+
+    <fragment
+        android:id="@+id/adminReportQueueFragment"
+        android:name="com.example.booking_app.feature.admin.ui.AdminReportQueueFragment"
+        android:label="@string/admin_report_queue_title">
+        <action
+            android:id="@+id/action_report_queue_to_detail"
+            app:destination="@id/adminReportDetailFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/adminReportDetailFragment"
+        android:name="com.example.booking_app.feature.admin.ui.AdminReportDetailFragment"
+        android:label="@string/admin_report_detail_title" />
+
+    <fragment
+        android:id="@+id/adminUserManagementFragment"
+        android:name="com.example.booking_app.feature.admin.ui.AdminUserManagementFragment"
+        android:label="@string/admin_user_management_title" />
+
+    <fragment
+        android:id="@+id/adminVenueManagementFragment"
+        android:name="com.example.booking_app.feature.admin.ui.AdminVenueManagementFragment"
+        android:label="@string/admin_venue_management_title" />
+
+    <fragment
+        android:id="@+id/adminToolsDashboardFragment"
+        android:name="com.example.booking_app.feature.admin.ui.AdminToolsDashboardFragment"
+        android:label="@string/admin_tools_dashboard_title">
+        <action
+            android:id="@+id/action_dashboard_to_applications"
+            app:destination="@id/adminApplicationQueueFragment" />
+        <action
+            android:id="@+id/action_dashboard_to_reports"
+            app:destination="@id/adminReportQueueFragment" />
+        <action
+            android:id="@+id/action_dashboard_to_vouchers"
+            app:destination="@id/adminSystemVouchersFragment" />
+        <action
+            android:id="@+id/action_dashboard_to_broadcast"
+            app:destination="@id/adminBroadcastFragment" />
+        <action
+            android:id="@+id/action_dashboard_to_user_mgmt"
+            app:destination="@id/adminUserManagementFragment" />
+        <action
+            android:id="@+id/action_dashboard_to_venue_mgmt"
+            app:destination="@id/adminVenueManagementFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/adminSystemVouchersFragment"
+        android:name="com.example.booking_app.feature.admin.ui.AdminSystemVouchersFragment"
+        android:label="@string/admin_vouchers_title" />
+
+    <fragment
+        android:id="@+id/adminBroadcastFragment"
+        android:name="com.example.booking_app.feature.admin.ui.AdminBroadcastFragment"
+        android:label="@string/admin_broadcast_title" />
 
 </navigation>

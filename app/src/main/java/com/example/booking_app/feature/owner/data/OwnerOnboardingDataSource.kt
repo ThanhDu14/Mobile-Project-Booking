@@ -163,8 +163,16 @@ class OwnerOnboardingDataSource @Inject constructor(
         }
         val path = requireNotNull(signed.path)
         val token = requireNotNull(signed.token)
-        supabase.storage.from(OWNER_DOCS_BUCKET).uploadToSignedUrl(path, token, bytes) {
-            this.contentType = ContentType.parse(contentType)
+        try {
+            supabase.storage.from(OWNER_DOCS_BUCKET).uploadToSignedUrl(path, token, bytes) {
+                this.contentType = ContentType.parse(contentType)
+            }
+        } catch (e: Exception) {
+            // supabase-kt 3.6.0 deserialization bug: expects 'id' in uploadToSignedUrl response,
+            // but Supabase Storage returns { "Key": "..." }. The upload itself succeeded.
+            if (e.message?.contains("Expected an id", ignoreCase = true) != true) {
+                throw e
+            }
         }
         UploadedOwnerFile(path, fileName, contentType)
     }

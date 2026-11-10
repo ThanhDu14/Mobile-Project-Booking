@@ -462,6 +462,25 @@ verify_jwt = false
 [functions.delete-account-sweeper]
 verify_jwt = false
 
+[functions.admin-review-application]
+verify_jwt = false
+
+[functions.admin-moderate-report]
+verify_jwt = false
+
+[functions.admin-manage-user]
+verify_jwt = false
+
+[functions.admin-revoke-owner]
+verify_jwt = false
+
+[functions.admin-manage-venue]
+verify_jwt = false
+
+[functions.admin-broadcast-notification]
+verify_jwt = false
+
+[functions.admin-manage-voucher]
 [functions.complete-bookings]
 verify_jwt = false
 

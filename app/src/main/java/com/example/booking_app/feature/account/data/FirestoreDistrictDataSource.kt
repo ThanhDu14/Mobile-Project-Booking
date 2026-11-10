@@ -13,11 +13,11 @@ class FirestoreDistrictDataSource @Inject constructor(
     override suspend fun listActive(): List<District> =
         firestore.collection(COLLECTION)
             .whereEqualTo("isActive", true)
-            .orderBy("sortOrder")
             .get()
             .awaitWithTimeout()
             .documents
             .mapNotNull { it.toDistrict() }
+            .sortedBy { it.sortOrder }
 
     override suspend fun get(id: String): District? =
         firestore.collection(COLLECTION).document(id).get().awaitWithTimeout().toDistrict()

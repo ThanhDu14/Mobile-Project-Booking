@@ -141,6 +141,12 @@ service cloud.firestore {
       allow write: if isAdmin();                      // spec 120 làm màn hình quản lý
     }
 
+    // ---------- amenities (D, spec 120) ----------
+    match /amenities/{id} {
+      allow get, list: if isInitialized();
+      allow write: if isAdmin();                      // spec 120 làm màn hình quản lý
+    }
+
     // ---------- accountDeletions (A, spec 011; contracts/security-rules.md §3) ----------
     // Chỉ delete-account và delete-account-sweeper (service account) đọc/ghi.
     match /accountDeletions/{uid} {
@@ -315,6 +321,24 @@ service cloud.firestore {
           && onlyChanges(['status'])
           && request.resource.data.status == 'EXPIRED';
       allow delete: if false;
+    }
+
+    // ---------- reports (D, spec 120) ----------
+    match /reports/{reportId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // ---------- systemStats (D, spec 120) ----------
+    match /systemStats/{date} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
+    // ---------- systemVouchers (D, spec 120 / Feature 050) ----------
+    match /systemVouchers/{code} {
+      allow read: if isSignedIn();
+      allow write: if false;
     }
   }
 }
