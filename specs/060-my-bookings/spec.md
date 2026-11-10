@@ -12,6 +12,51 @@
 
 ## Clarifications
 
+### Quyết định schema và xử lý HOLD tồn đọng — 2026-11-09
+
+- **Xử lý doc HOLD hết hạn và tồn đọng (T045, T019):**
+  - Bằng chứng thực tế trên production (tài khoản test): tab "Chờ thanh toán" từng đếm 23 đơn nhưng mở danh sách ra rỗng. Nguyên nhân: writer 041 tạo 1 doc `bookings/{sessionId}` (hình `BookingSessionDto`) cho mỗi buổi trong chuỗi với `status = "HOLD"` và `holdExpiresAt = null`. Khi hủy/hết hạn, 041 chỉ nhả slot và hủy nhóm `recurringGroups`, không xóa hay chuyển trạng thái doc session, dẫn đến 23 doc HOLD cũ tồn đọng vĩnh viễn.
+  - Quyết định: Theo state machine tại `docs/design/database/README.md` §4.5, doc HOLD hết hạn được chuyển sang `EXPIRED`. Repository 060 (cả `observeTabCounts` và `getPage`) áp dụng quy tắc hiển thị nghiêm ngặt: chỉ đếm và chỉ hiển thị đơn HOLD khi có `holdExpiresAt != null && holdExpiresAt > serverTime` và cấu trúc dữ liệu hợp lệ được mapper chấp thuận (`BookingManagementMapper.map` thành công). Mọi doc HOLD thiếu `holdExpiresAt` hoặc đã quá hạn đều bị coi là hết hạn (không đếm, không hiển thị).
+- **Trách nhiệm writer và tương thích schema (T045):**
+  - 041 cần chuyển đổi writer sang schema chung `BookingDetail` (đầy đủ `venueSnapshot`, `items` có giá slot, timestamps và `holdExpiresAt`).
+  - Trong thời gian chuyển đổi, mapper 060 duy trì cơ chế fail-safe: từ chối các doc sai định dạng của 041 để tránh hiển thị sai lệch hoặc gây crash.
+- **Xử lý 23 doc HOLD cũ trên production (T045):**
+  - Thuộc thẩm quyền của Quản trị viên (Đại ca) xử lý thông qua bảo trì / script dọn dẹp hoặc cập nhật trạng thái `EXPIRED` qua rules (`firestore.rules` đã cho phép player cập nhật HOLD sang EXPIRED). Client 060 không tự tiện xóa hoặc ghi đè dữ liệu production ngoài phạm vi, mà bảo đảm tính nhất quán giao diện (số đếm tab luôn khớp 100% với số đơn hiển thị thực tế).
+- **Hợp đồng redemption 050 và voucher chuỗi (T046):**
+  - Tiếp tục xác định bị chặn do chưa có hợp đồng chính thức từ 050 về cấu trúc lưu trữ redemption cho nhóm recurring và cơ chế hoàn lượt voucher khi hủy một phần chuỗi. Tạm thời chặn hoàn voucher chuỗi cho đến khi có hợp đồng xác thực từ feature 050.
+- **Tích hợp server có thẩm quyền cho hủy/ví/slot/voucher (T047):**
+  - Edge Function `player-cancel-booking` được tích hợp kiểm tra quyền chủ đơn, trạng thái PENDING/CONFIRMED, thời gian bắt đầu và idempotency qua `requestId`.
+  - Các tác vụ server-side background gồm: timeout PENDING 60 phút chuyển REJECTED, cron chuyển COMPLETED/NO_SHOW sau giờ chơi và khóa quyền review 070 đối với đơn NO_SHOW.
+- **Nguồn giờ server và điều hướng (T048):**
+  - Nguồn giờ có thẩm quyền lấy từ `ServerTimeOffsetProvider` (offset từ token / endpoint).
+  - Điều hướng: "Thanh toán tiếp" truyền `HoldToPaymentArgs` kế thừa `holdExpiresAtMillis` (không reset hạn 5 phút); "Đặt lại sân này" điều hướng sang 040 kèm `venueId`; tiếp nhận `ReceiptToMyBookingsArgs` từ 050 mở đúng tab Chờ duyệt.
+
+### Quyết định chuẩn bị triển khai — 2026-11-07
+
+- **Hoàn tiền khi hủy trễ bằng ví:** tính 30% số tiền thực trả sau voucher, làm tròn tiền phạt xuống bội số 1.000 VND; tiền hoàn bằng số thực trả trừ tiền phạt. Ví dụ đã trả 111.111đ thì phạt 33.000đ, hoàn 78.111đ. Dùng số nguyên và bảo đảm `penaltyAmount + refundAmount == paidAmount`.
+- **Chuỗi cố định:** áp dụng chính sách hủy của đơn lẻ độc lập cho phần tiền đã phân bổ của từng buổi; hủy trễ buổi trả bằng ví hoàn 70%, còn buổi đặt cọc mất phần cọc của buổi đó.
+- **Voucher của chuỗi:** chỉ hoàn lượt voucher dùng chung khi tất cả các buổi liên quan đã hủy và từng buổi đều đủ điều kiện hoàn 100%; hủy một phần chuỗi không hoàn lượt. Việc xác định redemption của nhóm phải dựa trên hợp đồng dữ liệu 050 thực tế, không tự giả định.
+- **Giao diện hủy:** dùng màn hình riêng theo `ui/06_booking-management_buoc3_huy-dat-san.png`, có thông tin hoàn/phạt, lựa chọn lý do và nút xác nhận; bốn ảnh trong `ui/` là tham chiếu chính về thiết kế.
+- **Phạm vi tích hợp:** tập trung feature 060 và chỉ sửa phần tối thiểu cần thiết ở các feature liên quan; không coi chức năng chưa có là đã hoàn thiện và phải báo rõ phần bị chặn.
+- **Schema:** ưu tiên đặc tả CSDL dùng chung tại `docs/design/database/README.md`, đối chiếu dữ liệu và hợp đồng thực tế của các feature liên quan; không tự chia đều giá slot khi đã có giá trong `items`.
+- **Sắp xếp:** HOLD và PENDING theo `createdAt` giảm dần; CONFIRMED theo `startAt` tăng dần; COMPLETED/NO_SHOW theo `startAt` giảm dần; CANCELLED/REJECTED theo `updatedAt` giảm dần.
+- **QR offline:** chỉ hiển thị dữ liệu cache khi tài khoản hiện tại khớp chủ đơn. Khi offline không khẳng định QR chắc chắn còn hiệu lực; server check-in vẫn kiểm tra trạng thái và quyền.
+
+### Đối chiếu triển khai — 2026-11-08
+
+- Writer 041 hiện lưu từng buổi bằng `slotIds` và `price`, đồng thời slot ghi `bookingId` bằng mã nhóm; không được suy diễn đây là cấu trúc `items` có giá từng slot hoặc tự chia đều giá. Cần hợp đồng chuyển đổi và đối chiếu dữ liệu được lưu trước khi triển khai xử lý chuỗi có thẩm quyền.
+- Writer 040/041 sử dụng trạng thái slot `HELD` và có luồng trả slot về `AVAILABLE`, khác mô tả `HOLD`/xóa slot trong schema chung. Không áp dụng máy móc thao tác nhả slot cho tới khi hợp đồng lưu trữ được xác nhận.
+- Chưa tìm thấy implementation thanh toán/redemption 050 trong phạm vi code đã khảo sát; đường dẫn và khóa redemption của nhóm, cũng như việc hoàn lượt, **chưa được xác nhận**. Không tự khôi phục voucher chuỗi dựa trên giả định.
+- Các hàm hủy/từ chối chủ sân hiện được khảo sát chưa chứng minh transaction hoàn ví, lịch sử, slot và voucher nguyên tử. Timeout PENDING, chuyển COMPLETED/NO_SHOW và nguồn giờ hiện tại có thẩm quyền chưa được xác minh đầy đủ; không coi các phụ thuộc đó đã hoạt động.
+- `HoldToPaymentArgs` có hạn HOLD ban đầu và 040 nhận `venueId`, nhưng phần thanh toán 050 còn TODO; deep link viết review 070 có tồn tại. Không suy diễn có màn thanh toán hoạt động hoặc có thể khôi phục đầy đủ arguments từ dữ liệu chưa xác minh.
+
+### Đồng bộ dữ liệu và giờ server — 2026-11-08
+
+- Không thể ánh xạ booking 041 hiện tại sang booking 060 đầy đủ: session 041 có `price` tổng buổi và giờ dạng chuỗi, nhưng thiếu giá từng slot, snapshot cơ sở, timestamp tuyệt đối và payment ledger; shared schema đánh dấu nhiều trường tài chính/timestamp là server-owned. Không tự tạo các trường này ở app hoặc migrate dữ liệu hiện hữu khi chưa có chủ sở hữu schema chấp thuận.
+- 040 ở bước HOLD chỉ ghi slot, không tạo booking. 041 tạo group/session/slot bằng client transaction; để 060 đọc đúng cần thống nhất writer/server conversion tại thời điểm thanh toán, bao gồm slot ownership và phân bổ tổng tiền theo buổi.
+- Nguồn giờ để hiển thị countdown/HOLD phải là timestamp từ endpoint xác thực + monotonic elapsed clock với giới hạn freshness; lỗi hoặc hết freshness thì ẩn/khóa hành động phụ thuộc thời gian. Lệnh hủy vẫn phải được server đánh giá bằng giờ server trong transaction, không dùng quote/client time.
+- Dữ liệu hiện tại và các trường tài chính không tự động được sửa hoặc lấp đầy; contract mới chỉ giúp bản ghi mới sau khi các writer và validator liên quan được cập nhật và triển khai có kiểm chứng.
+
 ### Session 2026-10-06
 
 - Q: Mốc thời gian hủy đơn để được hoàn 100% tiền cọc/ví là áp dụng cố định hay cấu hình theo cơ sở? → A: Áp dụng cố định **4 tiếng (240 phút)** trên toàn hệ thống trước giờ bắt đầu của buổi chơi cho mọi cơ sở sân (đồng nhất, dễ nhớ cho người chơi).
@@ -28,7 +73,7 @@
 
 ### User Story 1 - Xem danh sách lịch đặt theo các tab trạng thái và xem chi tiết đơn (Priority: P1)
 
-Người chơi đã đăng nhập mở màn hình "Lịch đặt của tôi" từ thanh điều hướng chính. Giao diện chia thành 5 tab trạng thái rõ ràng: (1) "Chờ thanh toán" (đơn `HOLD` còn hạn giữ chỗ, kèm đồng hồ đếm ngược và nút tiếp tục thanh toán), (2) "Chờ duyệt" (đơn `PENDING` kèm thời gian còn lại của hạn 60 phút chủ sân duyệt), (3) "Sắp tới" (đơn `CONFIRMED` sắp diễn ra hoặc đang diễn ra, sắp xếp theo giờ chơi gần nhất), (4) "Đã hoàn thành" (đơn `COMPLETED` đã check-in và đã qua giờ chơi, hoặc đơn `NO_SHOW` quá giờ không đến sân kèm nhãn cảnh báo), và (5) "Đã hủy" (đơn `CANCELLED` hoặc `REJECTED`, hiển thị lý do và số tiền đã hoàn). Mỗi thẻ đơn trong danh sách hiển thị tóm tắt: tên cơ sở, sân con, ngày, khung giờ chơi, tổng tiền, trạng thái thanh toán và nhãn "Đặt cố định" nếu thuộc chuỗi định kỳ. Danh sách được tải phân trang và sắp xếp đơn mới nhất lên đầu. Khi người chơi bấm vào thẻ đơn, ứng dụng mở màn hình "Chi tiết đơn đặt" với đầy đủ thông tin: mã đơn, mã nhóm (nếu có), tên và địa chỉ cơ sở kèm nút mở bản đồ chỉ đường, số điện thoại hotline, chi tiết các slot/buổi chơi, chi tiết tài chính (tiền gốc, giảm giá voucher, tiền đã cọc hoặc thanh toán ví, số tiền còn lại phải trả tại sân), phương thức thanh toán và thời gian tạo đơn.
+Người chơi đã đăng nhập mở màn hình "Lịch đặt của tôi" từ thanh điều hướng chính. Giao diện chia thành 5 tab trạng thái rõ ràng: (1) "Chờ thanh toán" (đơn `HOLD` còn hạn giữ chỗ, kèm đồng hồ đếm ngược và nút tiếp tục thanh toán), (2) "Chờ duyệt" (đơn `PENDING` kèm thời gian còn lại của hạn 60 phút chủ sân duyệt), (3) "Sắp tới" (đơn `CONFIRMED` sắp diễn ra hoặc đang diễn ra, sắp xếp theo giờ chơi gần nhất), (4) "Đã hoàn thành" (đơn `COMPLETED` đã check-in và đã qua giờ chơi, hoặc đơn `NO_SHOW` quá giờ không đến sân kèm nhãn cảnh báo), và (5) "Đã hủy" (đơn `CANCELLED` hoặc `REJECTED`, hiển thị lý do và số tiền đã hoàn). Mỗi thẻ đơn trong danh sách hiển thị tóm tắt: tên cơ sở, sân con, ngày, khung giờ chơi, tổng tiền, trạng thái thanh toán và nhãn "Đặt cố định" nếu thuộc chuỗi định kỳ. Danh sách được tải phân trang và sắp xếp theo quy tắc riêng của từng tab trong Clarifications. Khi người chơi bấm vào thẻ đơn, ứng dụng mở màn hình "Chi tiết đơn đặt" với đầy đủ thông tin: mã đơn, mã nhóm (nếu có), tên và địa chỉ cơ sở kèm nút mở bản đồ chỉ đường, số điện thoại hotline, chi tiết các slot/buổi chơi, chi tiết tài chính (tiền gốc, giảm giá voucher, tiền đã cọc hoặc thanh toán ví, số tiền còn lại phải trả tại sân), phương thức thanh toán và thời gian tạo đơn.
 
 **Why this priority**: Đây là điểm truy cập trung tâm của toàn bộ nhóm chức năng quản lý lịch đặt. Nếu người chơi không xem được danh sách và chi tiết các đơn của mình, họ không thể quản lý, theo dõi hay thực hiện các thao tác tiếp theo như check-in hay hủy đơn.
 
@@ -65,12 +110,12 @@ Với những đơn đặt sân ở trạng thái "Sắp tới" (`CONFIRMED`), m
 
 ### User Story 3 - Hủy đơn đặt sân và hoàn tiền ví giả lập theo chính sách (Priority: P1)
 
-Người chơi có thể thực hiện thao tác "Hủy đơn đặt sân" trực tiếp trên ứng dụng đối với các đơn ở trạng thái `PENDING` (đang chờ duyệt) hoặc `CONFIRMED` (đã xác nhận) trước thời điểm buổi chơi bắt đầu. Khi người chơi bấm nút "Hủy đơn", ứng dụng hiển thị hộp thoại xác nhận hủy nêu rõ chính sách hoàn tiền tương ứng với đơn và bắt buộc người chơi chọn một lý do hủy (từ danh sách lý do định sẵn hoặc chọn "Khác" để nhập lý do tự do). Chính sách hoàn tiền được hệ thống áp dụng căn cứ theo thời điểm hủy so với giờ bắt đầu chơi:
+Người chơi có thể thực hiện thao tác "Hủy đơn đặt sân" trực tiếp trên ứng dụng đối với các đơn ở trạng thái `PENDING` (đang chờ duyệt) hoặc `CONFIRMED` (đã xác nhận) trước thời điểm buổi chơi bắt đầu. Khi người chơi bấm nút "Hủy đơn", ứng dụng hiển thị màn hình xác nhận hủy nêu rõ chính sách hoàn tiền tương ứng với đơn và bắt buộc người chơi chọn một lý do hủy (từ danh sách lý do định sẵn hoặc chọn "Khác" để nhập lý do tự do). Chính sách hoàn tiền được hệ thống áp dụng căn cứ theo thời điểm hủy so với giờ bắt đầu chơi:
 - Đối với đơn `PENDING` (chưa được chủ sân duyệt): Người chơi hủy bất kỳ lúc nào cũng được hoàn trả **100% số tiền đã thanh toán** (cả tiền cọc hoặc tiền ví).
 - Đối với đơn `CONFIRMED` hủy sớm, từ **4 tiếng trở lên (≥ 240 phút)** trước giờ bắt đầu của buổi chơi đầu tiên: Hoàn trả **100% số tiền đã thanh toán** vào số dư ví giả lập.
 - Đối với đơn `CONFIRMED` hủy trễ, **dưới 4 tiếng (< 240 phút)** trước giờ bắt đầu: Áp dụng chính sách phạt hủy trễ nhằm bảo vệ quyền lợi chủ sân và đảm bảo công bằng giữa các phương thức:
   + Đơn chọn "Đặt cọc": Mất toàn bộ 100% tiền cọc (hoàn 0đ).
-  + Đơn chọn "Ví giả lập" (đã trả 100%): Phạt 30% giá trị đơn hàng (tương đương mức cọc), hệ thống tự động hoàn trả 70% còn lại vào số dư ví giả lập của người chơi.
+  + Đơn chọn "Ví giả lập" (đã trả 100%): Phạt 30% số tiền thực trả sau voucher, hệ thống tự động hoàn trả phần còn lại vào số dư ví giả lập của người chơi.
   + Đơn chọn "Thanh toán tại sân": Hủy đơn thành công, giải phóng slot và không phát sinh giao dịch hoàn tiền vì người chơi chưa trả trước.
 
 Toàn bộ thao tác hủy đơn, hoàn tiền vào ví giả lập và giải phóng các slot sân con tương ứng được thực thi trong cùng một giao dịch (transaction) an toàn ở phía máy chủ, đảm bảo tính duy nhất (idempotent), không trừ/hoàn tiền trùng lặp và slot được nhả ngay lập tức cho những người chơi khác trên toàn hệ thống.
@@ -83,9 +128,9 @@ Toàn bộ thao tác hủy đơn, hoàn tiền vào ví giả lập và giải p
 
 1. **Given** đơn ở trạng thái `PENDING` đã đặt cọc 60.000đ bằng ví giả lập, **When** người chơi bấm "Hủy đơn" và xác nhận lý do, **Then** hệ thống chuyển trạng thái đơn sang `CANCELLED`, cộng 60.000đ vào ví giả lập của người chơi, giải phóng các slot đang giữ, và hiển thị thông báo "Hủy đơn thành công, đã hoàn 60.000đ vào ví giả lập".
 2. **Given** đơn `CONFIRMED` bắt đầu lúc 18:00 hôm nay và người chơi bấm hủy lúc 13:00 cùng ngày (còn 5 tiếng, ≥ 240 phút), **When** xác nhận hủy đơn, **Then** hệ thống tính toán hủy sớm hợp lệ, hoàn 100% số tiền đã thanh toán vào ví giả lập, chuyển đơn sang tab "Đã hủy" và nhả các slot ngay lập tức.
-3. **Given** đơn `CONFIRMED` trả qua ví giả lập 200.000đ bắt đầu lúc 18:00 hôm nay và người chơi bấm hủy lúc 15:30 cùng ngày (còn 2.5 tiếng, < 240 phút), **When** mở hộp thoại hủy, **Then** hộp thoại hiển thị cảnh báo: "Đơn hủy trong vòng 4 tiếng trước giờ chơi sẽ bị phạt 30% phí hủy trễ (60.000đ) và hoàn lại 70% (140.000đ) vào ví giả lập"; khi người chơi bấm xác nhận hủy, hệ thống chuyển đơn sang `CANCELLED`, hoàn đúng 140.000đ vào ví giả lập và nhả slot ngay lập tức.
+3. **Given** đơn `CONFIRMED` trả qua ví giả lập 200.000đ bắt đầu lúc 18:00 hôm nay và người chơi bấm hủy lúc 15:30 cùng ngày (còn 2.5 tiếng, < 240 phút), **When** mở màn hình hủy, **Then** màn hình hiển thị cảnh báo: "Đơn hủy trong vòng 4 tiếng trước giờ chơi sẽ bị phạt 30% phí hủy trễ (60.000đ) và hoàn lại 70% (140.000đ) vào ví giả lập"; khi người chơi bấm xác nhận hủy, hệ thống chuyển đơn sang `CANCELLED`, hoàn đúng 140.000đ vào ví giả lập và nhả slot ngay lập tức.
 4. **Given** đơn chọn phương thức "Thanh toán tại sân" (`AT_VENUE`, chưa trả tiền), **When** người chơi bấm hủy đơn trước giờ chơi, **Then** hệ thống hủy đơn thành công, giải phóng slot và không phát sinh giao dịch hoàn tiền ví nào.
-5. **Given** người chơi mở hộp thoại hủy đơn, **When** chưa chọn hoặc chưa nhập lý do hủy, **Then** nút "Xác nhận hủy đơn" bị vô hiệu hóa (disabled).
+5. **Given** người chơi mở màn hình hủy đơn, **When** chưa chọn hoặc chưa nhập lý do hủy, **Then** nút "Xác nhận hủy đơn" bị vô hiệu hóa (disabled).
 6. **Given** người chơi bấm nút "Xác nhận hủy đơn" 3 lần liên tiếp do mạng chập chờn, **When** yêu cầu gửi đến máy chủ, **Then** hệ thống xử lý idempotent qua `requestId`: chỉ hủy đơn đúng 1 lần, cộng tiền hoàn vào ví đúng 1 lần duy nhất, không tạo ra giao dịch hoàn tiền trùng lặp.
 
 ---
@@ -104,7 +149,7 @@ Với các đơn đặt cố định theo tuần (từ spec 041) thuộc cùng m
 
 1. **Given** người chơi mở chi tiết đơn đặt cố định theo tuần gồm 8 buổi, **When** màn hình hiển thị, **Then** giao diện liệt kê danh sách toàn bộ 8 buổi theo thứ tự ngày, hiển thị rõ ngày, giờ, sân con và trạng thái riêng của từng buổi.
 2. **Given** người chơi chọn hủy một buổi cụ thể cách ngày chơi 3 ngày (≥ 240 phút), **When** xác nhận hủy buổi này, **Then** hệ thống chỉ chuyển buổi đó sang `CANCELLED`, hoàn đúng số tiền cọc/ví đã phân bổ của buổi đó vào ví giả lập, nhả slot buổi đó, trong khi tất cả các buổi còn lại trong chuỗi vẫn duy trì trạng thái `CONFIRMED`.
-3. **Given** người chơi chọn hủy một buổi cụ thể cách giờ chơi 2 tiếng (< 240 phút), **When** xác nhận hủy, **Then** buổi đó bị hủy và nhả slot, nhưng không được hoàn tiền phân bổ của buổi đó.
+3. **Given** người chơi chọn hủy một buổi `CONFIRMED` cách giờ chơi 2 tiếng (< 240 phút), **When** xác nhận hủy, **Then** buổi đó bị hủy và nhả slot; phần cọc phân bổ bị mất nếu thanh toán cọc, hoặc hoàn 70% phần tiền thực trả được phân bổ nếu thanh toán bằng ví, theo quy tắc làm tròn đã thống nhất.
 4. **Given** một chuỗi cố định có tổng tiền cọc sau làm tròn là 250.000đ chia cho 3 buổi (buổi 1: 83.000đ, buổi 2: 83.000đ, buổi 3: 84.000đ), **When** người chơi lần lượt hủy từng buổi sớm, **Then** tổng số tiền hoàn vào ví giả lập qua 3 lần hủy luôn bằng chính xác 250.000đ, không phát sinh sai lệch dù chỉ 1 đồng.
 5. **Given** người chơi bấm "Hủy toàn bộ chuỗi còn lại", **When** xác nhận, **Then** hệ thống duyệt qua tất cả các buổi chưa diễn ra, tính toán hoàn tiền cho từng buổi theo mốc 4 tiếng độc lập của buổi đó, và tổng hợp hoàn tiền 1 lần vào ví giả lập.
 
@@ -131,7 +176,7 @@ Từ danh sách lịch đặt, người chơi có các đường dẫn tắt ti�
 
 ### Edge Cases
 
-- **Chênh lệch thời gian khi hủy sát nút mốc 4 tiếng**: Người chơi mở hộp thoại hủy lúc 13:59:58 (hiển thị còn 4 tiếng 2 giây, báo được hoàn tiền), nhưng bấm xác nhận gửi lên máy chủ lúc 14:00:02 (còn 3 tiếng 59 phút 58 giây). Phía server là nơi đưa ra quyết định thẩm quyền cuối cùng căn cứ theo timestamp máy chủ. Nếu kết quả thực tế rơi vào hủy trễ không được hoàn tiền, máy chủ trả về kết quả hủy thành công kèm cảnh báo rõ ràng rằng mốc thời gian nhận diện tại máy chủ đã quá hạn hoàn tiền, và giao diện làm mới cập nhật số tiền hoàn là 0đ.
+- **Chênh lệch thời gian khi hủy sát nút mốc 4 tiếng**: Người chơi mở màn hình hủy lúc 13:59:58 (hiển thị còn 4 tiếng 2 giây, báo được hoàn tiền), nhưng bấm xác nhận gửi lên máy chủ lúc 14:00:02 (còn 3 tiếng 59 phút 58 giây). Phía server là nơi đưa ra quyết định thẩm quyền cuối cùng căn cứ theo timestamp máy chủ. Nếu kết quả thực tế rơi vào hủy trễ không được hoàn tiền, máy chủ trả về kết quả hủy thành công kèm cảnh báo rõ ràng rằng mốc thời gian nhận diện tại máy chủ đã quá hạn hoàn tiền, và giao diện làm mới cập nhật số tiền hoàn là 0đ.
 - **Tranh chấp đồng thời giữa người chơi và chủ sân**: Trong lúc người chơi đang mở màn hình chi tiết và bấm "Hủy đơn", chủ sân ở spec 112 cùng lúc bấm "Duyệt đơn", "Từ chối" hoặc "Quét mã check-in". Máy chủ thực hiện kiểm tra trạng thái trong transaction: trạng thái nào được ghi nhận trước sẽ có hiệu lực; nếu đơn đã bị chủ sân từ chối trước đó, yêu cầu hủy của người chơi sẽ nhận thông báo "Đơn đã được chủ sân xử lý từ chối và tự động hoàn tiền", ứng dụng làm mới dữ liệu về tab "Đã hủy".
 - **Hủy đơn đồng thời từ 2 thiết bị**: Người chơi đăng nhập cùng một tài khoản trên 2 thiết bị di động và bấm hủy cùng 1 đơn tại cùng một thời điểm. Giao dịch máy chủ sử dụng cơ chế khóa lạc quan (optimistic locking) hoặc Firestore Transaction đảm bảo chỉ có duy nhất 1 yêu cầu thành công, ví giả lập chỉ nhận tiền hoàn đúng 1 lần, yêu cầu thứ 2 nhận thông báo lỗi "Đơn đặt sân đã được hủy trước đó".
 - **Mất kết nối mạng khi đang thực hiện hủy đơn**: Yêu cầu hủy gửi đi nhưng bị timeout kết nối hoặc mất mạng trước khi nhận phản hồi từ máy chủ. Người chơi bấm "Thử lại", hệ thống tái sử dụng cùng `requestId` (UUID) đảm bảo tính duy nhất (idempotency), không thực hiện hoàn tiền lần thứ hai.
@@ -155,17 +200,17 @@ Từ danh sách lịch đặt, người chơi có các đường dẫn tắt ti�
 - **FR-006**: Hệ thống PHẢI hiển thị trong tab "Sắp tới" các đơn đặt ở trạng thái `CONFIRMED` chưa qua giờ kết thúc (gồm cả đơn đang diễn ra, đã check-in), sắp xếp theo thứ tự thời gian bắt đầu chơi gần nhất lên trước.
 - **FR-007**: Hệ thống PHẢI hiển thị trong tab "Đã hoàn thành" các đơn đặt ở trạng thái `COMPLETED` (đã check-in tại sân và đã qua giờ kết thúc buổi chơi) và các đơn `NO_SHOW` (quá giờ chơi không check-in, kèm nhãn cảnh báo "Vắng mặt / Chưa check-in" và bị khóa quyền đánh giá ở spec 070).
 - **FR-008**: Hệ thống PHẢI hiển thị trong tab "Đã hủy" các đơn đặt ở trạng thái `CANCELLED` (do người chơi hoặc chủ sân hủy) hoặc `REJECTED` (do chủ sân từ chối hoặc hết hạn 60 phút duyệt), hiển thị lý do hủy và số tiền đã hoàn trả.
-- **FR-009**: Hệ thống PHẢI hỗ trợ tải danh sách theo cơ chế phân trang (pagination / infinite scroll), hiển thị tối thiểu 10 đơn mỗi trang và sắp xếp đơn mới tạo lên đầu.
+- **FR-009**: Hệ thống PHẢI hỗ trợ tải danh sách theo cơ chế phân trang (pagination / infinite scroll), hiển thị tối thiểu 10 đơn mỗi trang và sắp xếp theo quyết định cho từng tab trong mục Clarifications.
 - **FR-010**: Trên mỗi thẻ đơn tóm tắt, hệ thống PHẢI hiển thị: tên cơ sở sân, danh sách sân con, ngày chơi, khung giờ chơi, tổng tiền đơn, trạng thái thanh toán (`UNPAID`, `DEPOSITED`, `PAID`, `REFUNDED`), và nhãn "Đặt cố định" nếu đơn có `recurringGroupId`.
 - **FR-011**: Khi người chơi bấm vào thẻ đơn, hệ thống PHẢI mở màn hình "Chi tiết đơn đặt" hiển thị: mã đơn (`bookingId`), mã nhóm cố định (nếu có), thông tin cơ sở (tên, địa chỉ, số hotline, nút mở bản đồ), danh sách các slot/buổi chơi, chi tiết tài chính (tiền gốc, giảm giá voucher, số tiền đã cọc/trả ví, số tiền còn lại phải trả tại sân), phương thức thanh toán, và thời gian tạo đơn.
 - **FR-012**: Đối với đơn ở trạng thái `CONFIRMED` chưa check-in, hệ thống PHẢI hiển thị khối Mã QR check-in sinh từ mã bí mật `qrToken` do máy chủ cấp phát, kèm mã đặt sân dạng chữ để chủ sân nhập tay khi không quét được. Khi đơn đã được check-in (`checkedInAt` có giá trị), khối QR PHẢI được thay bằng dòng "Đã check-in lúc HH:mm".
 - **FR-013**: Hệ thống PHẢI lưu bộ nhớ tạm (cache) cục bộ mã QR check-in của các đơn `CONFIRMED` đã tải để đảm bảo người chơi vẫn hiển thị được mã QR khi thiết bị mất kết nối Internet tại sân.
 - **FR-014**: Hệ thống PHẢI kiểm tra bảo mật: chỉ tài khoản sở hữu đơn (`uid == userId`) mới có quyền xem thông tin chi tiết và hiển thị mã QR check-in của đơn đó.
 - **FR-015**: Hệ thống PHẢI cho phép người chơi bấm "Hủy đơn" đối với các đơn ở trạng thái `PENDING` hoặc `CONFIRMED` có thời gian bắt đầu chơi chưa trôi qua và chưa được check-in.
-- **FR-016**: Khi bấm "Hủy đơn", hệ thống PHẢI hiển thị hộp thoại xác nhận hủy nêu rõ chính sách hoàn tiền tương ứng và bắt buộc người chơi chọn hoặc nhập lý do hủy trước khi cho phép xác nhận.
+- **FR-016**: Khi bấm "Hủy đơn", hệ thống PHẢI hiển thị màn hình xác nhận hủy nêu rõ chính sách hoàn tiền tương ứng và bắt buộc người chơi chọn hoặc nhập lý do hủy trước khi cho phép xác nhận.
 - **FR-017**: Đối với đơn `PENDING`, khi người chơi xác nhận hủy, hệ thống PHẢI hủy đơn và tự động hoàn trả 100% số tiền đã thanh toán (cọc hoặc ví) vào ví giả lập của người chơi.
 - **FR-018**: Đối với đơn `CONFIRMED` hủy sớm từ 4 tiếng trở lên (≥ 240 phút tính từ thời điểm máy chủ tiếp nhận yêu cầu đến giờ bắt đầu chơi), hệ thống PHẢI hủy đơn và hoàn trả 100% số tiền đã thanh toán vào số dư ví giả lập.
-- **FR-019**: Đối với đơn `CONFIRMED` hủy trễ dưới 4 tiếng (< 240 phút): đơn "Đặt cọc" mất 100% tiền cọc (hoàn 0đ); đơn "Ví giả lập" bị phạt 30% giá trị đơn hàng (tương đương mức cọc) và hệ thống PHẢI tự động hoàn trả 70% còn lại vào số dư ví giả lập của người chơi; đơn "Thanh toán tại sân" không phát sinh hoàn tiền.
+- **FR-019**: Đối với đơn `CONFIRMED` hủy trễ dưới 4 tiếng (< 240 phút): đơn "Đặt cọc" mất 100% tiền cọc (hoàn 0đ); đơn "Ví giả lập" bị phạt 30% số tiền thực trả sau voucher và hệ thống PHẢI hoàn 70% còn lại vào ví giả lập, với quy tắc làm tròn theo mục Clarifications; đơn "Thanh toán tại sân" không phát sinh hoàn tiền.
 - **FR-020**: Đối với đơn chọn phương thức "Thanh toán tại sân" (`AT_VENUE`), hệ thống PHẢI cho phép hủy đơn và giải phóng slot mà không phát sinh giao dịch hoàn tiền.
 - **FR-021**: Thao tác hủy đơn, hoàn tiền ví giả lập và giải phóng các slot sân con (`slots`) PHẢI được thực hiện trong cùng một giao dịch an toàn (transaction) ở phía máy chủ.
 - **FR-022**: Mọi yêu cầu hủy đơn PHẢI đi kèm mã định danh duy nhất (`requestId` UUID) để đảm bảo tính duy nhất (idempotency), ngăn chặn hoàn tiền lặp lại khi người dùng bấm liên tiếp hoặc thử lại mạng.
@@ -196,7 +241,7 @@ Từ danh sách lịch đặt, người chơi có các đường dẫn tắt ti�
 - **SC-002**: Thao tác hủy đơn, cập nhật số dư ví giả lập và giải phóng slot hoàn tất phản hồi trong vòng **dưới 1.5 giây**.
 - **SC-003**: Độ chính xác giải phóng tài nguyên: **100%** các đơn hủy thành công đều giải phóng toàn bộ các slot liên quan ngay trong cùng giao dịch phía máy chủ, hiển thị ngay trạng thái còn trống cho những người chơi khác.
 - **SC-004**: Tính toàn vẹn tài chính: **0%** xảy ra trường hợp hoàn tiền ví giả lập trùng lặp khi người dùng bấm liên tiếp hoặc thử lại do mất mạng; **0%** trường hợp số dư ví giả lập bị âm sau giao dịch hoàn tiền.
-- **SC-005**: Độ chính xác phân bổ đơn cố định: Tổng số tiền hoàn của tất cả các buổi khi hủy trong chuỗi định kỳ luôn bằng chính xác **100%** số tiền đã thanh toán của các buổi đó, không phát sinh sai lệch làm tròn dù chỉ 1 đồng VND.
+- **SC-005**: Độ chính xác phân bổ đơn cố định: Tổng số tiền phân bổ cho các buổi bằng chính xác số tiền đã thanh toán cho chuỗi; tổng tiền hoàn và tiền phạt của các buổi được hủy bằng tổng tiền đã phân bổ cho các buổi đó, không sai lệch dù chỉ 1 đồng VND. Chỉ hoàn 100% khi từng buổi đủ điều kiện hoàn đủ.
 - **SC-006**: Khả năng sẵn sàng của mã QR: **100%** các mã QR check-in đã từng tải thành công vào bộ nhớ tạm đều có thể hiển thị rõ nét trên màn hình khi thiết bị ngắt hoàn toàn kết nối mạng.
 - **SC-007**: Tính minh bạch giao dịch học tập: **100%** các thông báo hoàn tiền, lịch sử hủy đơn đều hiển thị kèm nhãn rõ ràng: "Giao dịch giả lập phục vụ học tập".
 

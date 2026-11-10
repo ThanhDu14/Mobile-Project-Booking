@@ -481,4 +481,11 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.admin-manage-voucher]
+[functions.complete-bookings]
+verify_jwt = false
+
+[functions.expire-holds]
+verify_jwt = false
+
+[functions.player-cancel-booking]
 verify_jwt = false

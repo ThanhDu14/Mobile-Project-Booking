@@ -45,6 +45,9 @@ class BookingConfirmFragment : Fragment() {
     @Inject
     lateinit var serverTimeOffsetProvider: ServerTimeOffsetProvider
 
+    @Inject
+    lateinit var confirmHoldToBookingUseCase: com.example.booking_app.feature.booking.domain.usecase.ConfirmHoldToBookingUseCase
+
     private var countDownTimer: CountDownTimer? = null
     private var holdArgs: HoldToPaymentArgs? = null
     private val currencyFormatter = DecimalFormat("#,###", java.text.DecimalFormatSymbols(Locale.GERMANY))
@@ -172,12 +175,54 @@ class BookingConfirmFragment : Fragment() {
 
         // 7. Bottom bar (3g)
         binding.btnConfirmBooking.setOnClickListener {
-            // TODO(050): Tạo đơn và gọi API thanh toán thật khi feature 050 hoàn thiện
-            Toast.makeText(
-                requireContext(),
-                R.string.booking_confirm_display_only_notice,
-                Toast.LENGTH_SHORT
-            ).show()
+            val args = holdArgs ?: return@setOnClickListener
+            if (args.isRecurring) {
+                Toast.makeText(requireContext(), "Đặt cố định chưa hỗ trợ tạo đơn lẻ", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            val userId = sessionManager.currentUid()
+            if (userId.isNullOrEmpty()) {
+                Toast.makeText(requireContext(), "Vui lòng đăng nhập để tiếp tục", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            binding.btnConfirmBooking.isEnabled = false
+            val methodStr = when (selectedPaymentOption) {
+                PaymentOption.PAY_AT_VENUE -> "AT_VENUE"
+                PaymentOption.DEPOSIT -> "DEPOSIT"
+                PaymentOption.WALLET -> "MOCK_WALLET"
+            }
+
+            viewLifecycleOwner.lifecycleScope.launch {
+                val result = confirmHoldToBookingUseCase(args, methodStr, userId)
+                when (result) {
+                    is com.example.booking_app.feature.booking.domain.model.ConfirmBookingResult.Success -> {
+                        countDownTimer?.cancel()
+                        val navOptions = androidx.navigation.NavOptions.Builder()
+                            .setPopUpTo(R.id.bookingSlotGridFragment, true)
+                            .build()
+                        val bundle = android.os.Bundle().apply { putString("initialTab", "PENDING") }
+                        findNavController().navigate(
+                            R.id.myBookingsFragment,
+                            bundle,
+                            navOptions
+                        )
+                    }
+                    is com.example.booking_app.feature.booking.domain.model.ConfirmBookingResult.Expired -> {
+                        if (_binding != null) {
+                            binding.btnConfirmBooking.isEnabled = true
+                        }
+                        onCountdownTimeout()
+                    }
+                    is com.example.booking_app.feature.booking.domain.model.ConfirmBookingResult.Error -> {
+                        if (_binding != null) {
+                            binding.btnConfirmBooking.isEnabled = true
+                        }
+                        Snackbar.make(binding.root, "Không thể xác nhận đặt sân: ${result.message}", Snackbar.LENGTH_LONG).show()
+                    }
+                }
+            }
         }
 
         // Mũi tên back trên top bar (US3: nhả slot khi rời màn hình)

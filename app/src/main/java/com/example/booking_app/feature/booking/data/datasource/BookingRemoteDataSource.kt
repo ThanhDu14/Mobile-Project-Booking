@@ -33,4 +33,10 @@ interface BookingRemoteDataSource {
         slotIds: List<String>,
         userId: String
     )
+
+    suspend fun confirmHoldToBooking(
+        args: com.example.booking_app.feature.booking.ui.HoldToPaymentArgs,
+        paymentMethod: String,
+        userId: String
+    ): com.example.booking_app.feature.booking.domain.model.ConfirmBookingResult
 }
