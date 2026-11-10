@@ -43,15 +43,17 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
 
 **Purpose**: thư viện và tài nguyên chung của spec 030.
 
-- [ ] T001 Kiểm tra nhánh làm việc đã có PR `chore(core)` của 010. **Đã có trên `main` (PR #35, #39):** `core/session`, `core/network`, `core/util/AppClock`, `core/ui/LoginPromptView`, `AuthNavigator`, `nav_player`. Kiểm tra PR `chore(core)` phần 2 của 020 ([tasks 020](../020-court-search/tasks.md) T003–T017: `core/pricing`, `core/schedule`, `core/catalog`, `core/location`):
+- [x] T001 Kiểm tra nhánh làm việc đã có PR `chore(core)` của 010. **Đã có trên `main` (PR #35, #39):** `core/session`, `core/network`, `core/util/AppClock`, `core/ui/LoginPromptView`, `AuthNavigator`, `nav_player`. Kiểm tra PR `chore(core)` phần 2 của 020 ([tasks 020](../020-court-search/tasks.md) T003–T017: `core/pricing`, `core/schedule`, `core/catalog`, `core/location`):
   - **ngày 2026-10-25 chưa có** trong `CORE/`, nên các task T012–T015 bên dưới phải làm;
   - nếu lúc làm 020 đã merge thì đánh dấu T012–T015 xong và chỉ thêm ca `"2400"` (T007) và `DayConvention`.
-- [ ] T002 Thêm thư viện vào `gradle/libs.versions.toml` và `app/build.gradle.kts`, mỗi dòng ghi lý do trong PR:
+  - **2026-11-04:** kiểm lại trên `main` (8db7e44): 020 vẫn chưa có `core/pricing`, `core/schedule`, `core/catalog`, `core/location` → đã làm T012–T015 theo contract 020.
+- [x] T002 Thêm thư viện vào `gradle/libs.versions.toml` và `app/build.gradle.kts`, mỗi dòng ghi lý do trong PR:
   - **Coil**: `io.coil-kt.coil3:coil` + `coil-network-okhttp`. Ngày 2026-10-25 **chưa có** trong catalog; nếu PR của 020/070 đã thêm thì dùng lại, không thêm trùng;
   - **osmdroid**: `org.osmdroid:osmdroid-android` (bản ổn định mới nhất), lý do theo [plan Complexity Tracking](plan.md#complexity-tracking): bản đồ nhúng khi không có tài khoản thanh toán Google Maps;
   - **ViewPager2**: `androidx.viewpager2:viewpager2`. Hiện chỉ có gián tiếp qua Material 1.14.0, nên khai báo trực tiếp vì code dùng thẳng;
   - chạy `./gradlew assembleDebug` qua với AGP 9.4. osmdroid không chạy được thì dừng lại báo nhóm, không tự đổi thư viện.
-- [ ] T003 [P] Tạo `RES/values/strings_court_detail.xml`: mọi chuỗi tiền tố `court_detail_` theo [contracts/ui-screens.md](contracts/ui-screens.md), gồm:
+  - **2026-11-04:** Coil 3.4.0 đã có (spec 011); thêm osmdroid 6.1.20 và ViewPager2 1.1.0, `assembleDebug` qua với AGP 9.4.1.
+- [x] T003 [P] Tạo `RES/values/strings_court_detail.xml`: mọi chuỗi tiền tố `court_detail_` theo [contracts/ui-screens.md](contracts/ui-screens.md), gồm:
   - trạng thái mở cửa: "Đang mở cửa", "Đã đóng cửa · Mở lại %1$s", "Mở cả ngày";
   - sân con: "%1$d sân · %2$s", "Tạm thời chưa có sân hoạt động";
   - tiện ích và bảng giá: "Chưa có thông tin tiện ích", "Khung bạn chọn", "Liên hệ", "Liên hệ chủ sân", "Giờ thường", "Giờ cao điểm", "Cuối tuần";
@@ -61,13 +63,13 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
   - liên hệ, chỉ đường, mạng: "Chỉ đường", "Bấm để gọi", "Đã sao chép số điện thoại", "Không có kết nối, thông tin có thể chưa cập nhật", "Tính năng sắp có";
   - ghi nguồn bản đồ: "© OpenStreetMap contributors";
   - plural "%1$d đánh giá" và các `contentDescription` ở [ui-screens §2](contracts/ui-screens.md#2-các-mục-theo-wireframe-từ-trên-xuống).
-- [ ] T004 [P] Tạo drawable vector:
+- [x] T004 [P] Tạo drawable vector:
   - `RES/drawable/ic_marker_shuttlecock.xml` (marker quả cầu lông, dùng chung với 021);
   - `RES/drawable/img_venue_placeholder.xml` (ảnh mặc định 16:9);
   - `RES/drawable/ic_amenity_parking.xml`, `ic_amenity_drinks.xml`, `ic_amenity_shower.xml`, `ic_amenity_racket_rental.xml`, `ic_amenity_default.xml`. Tên theo `iconKey` trong `scripts/seed/catalog.json`, dấu `-` đổi thành `_`; `iconKey` lạ dùng `ic_amenity_default`.
 
   Màu lấy từ theme attribute, có bản tối.
-- [ ] T005 [P] Trong `app/src/main/AndroidManifest.xml`:
+- [x] T005 [P] Trong `app/src/main/AndroidManifest.xml`:
   - thêm `<nav-graph android:value="@navigation/nav_main" />` vào `MainActivity` để deep link `smashnow://venue/...` mở được từ ngoài app (thông báo, `adb`). Ngày 2026-10-25 manifest chưa có, và deep link `smashnow://auth/...` của 010 chỉ dùng trong app. Lưu ý: sau khi thêm, `smashnow://auth/...` cũng mở được từ ngoài app; kiểm tra `nav_auth` chỉ nhận `returnTo`, `email`, `lockedNotice` và `returnTo` chỉ điều hướng tới URI `smashnow://`;
   - khai báo `ACCESS_NETWORK_STATE` cho osmdroid nếu manifest đã gộp chưa có (`INTERNET` đã có qua Firebase).
 
@@ -83,29 +85,30 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
 
 **Tests (viết trước, phải fail)**
 
-- [ ] T006 [P] Tạo `TRES/pricing/window-price-vectors.json` với 9 ca P1–P9 của [quickstart §3](quickstart.md#3-ca-giá-dùng-chung-sc-002).
+- [x] T006 [P] Tạo `TRES/pricing/window-price-vectors.json` với 9 ca P1–P9 của [quickstart §3](quickstart.md#3-ca-giá-dùng-chung-sc-002).
   - Mỗi ca có: `id`, `rules` (copy từ `scripts/seed/venues.json`, đổi `days` sang `daysOfWeek` **theo ISO** như `seed.mjs`), `date` (`yyyyMMdd`), `start`, `end`, `expectedTotal`, `expectedPerHour` (`null` cho P3) và `highlightedRuleIndexes`.
   - Ghi trường `dayConvention: "ISO"` ở đầu file. Nhóm chốt khác thì sửa file này cùng `DayConvention` (T013).
-- [ ] T007 [P] Viết `TEST/core/schedule/TimeOfDayTest.kt` (nếu 020 T005 đã có thì chỉ thêm ca):
+  - **2026-11-04:** P3 ghi `highlightedRuleIndexes = [0]` theo định nghĩa R4 (dòng 05:00–16:00 giao với 04:00–06:00), khác cột "—" ở quickstart §3; giá vẫn là "Liên hệ".
+- [x] T007 [P] Viết `TEST/core/schedule/TimeOfDayTest.kt` (nếu 020 T005 đã có thì chỉ thêm ca):
   - `"2400"` hợp lệ khi phân tích **giờ kết thúc** (= 1440 phút), không hợp lệ ở **giờ bắt đầu**;
   - `"0000"` → 0; định dạng in `"24:00"`;
   - khung `[2300, 2400)` liệt kê đúng 2 khung 30 phút.
-- [ ] T008 [P] Viết `TEST/core/pricing/SlotPricingVectorTest.kt` (bổ sung cho 020 T006):
+- [x] T008 [P] Viết `TEST/core/pricing/SlotPricingVectorTest.kt` (bổ sung cho 020 T006):
   - đọc `TRES/pricing/window-price-vectors.json` bằng `javaClass.classLoader.getResource`;
   - với mỗi ca, `SlotPricing.priceForWindow` khớp `expectedTotal` và `SlotPricing.perHour` khớp `expectedPerHour`;
   - P3 (khung có phần trước 05:00) → `null`.
 
   Viết thêm `TEST/core/pricing/DayConventionTest.kt`: ISO `1 → MONDAY … 7 → SUNDAY`; giá trị ngoài 1–7 → ném lỗi.
-- [ ] T009 [P] Viết `TEST/core/media/PhotoUrlResolverTest.kt`:
+- [x] T009 [P] Viết `TEST/core/media/PhotoUrlResolverTest.kt`:
   - `https://m-files.alobo.vn/...` và `http://...` → giữ nguyên;
   - `demo-k3/cover.jpg` → `"{SUPABASE_URL}/storage/v1/object/public/venue-photos/demo-k3/cover.jpg"` (`SUPABASE_URL` truyền vào constructor, không đọc `BuildConfig` trong test);
   - path rỗng hoặc chỉ khoảng trắng → `null`;
   - path có `/` ở đầu → không bị hai dấu `/`.
-- [ ] T010 [P] Viết `TEST/core/model/VenueRatingSummaryTest.kt`:
+- [x] T010 [P] Viết `TEST/core/model/VenueRatingSummaryTest.kt`:
   - `fromVenue(ratingAvg = 4.6, ratingCount = 128, ratingSums = {court: 602, cleanliness: 563, service: 589, overall10: …})` → `courtAvg = 4.7`, `cleanlinessAvg = 4.4`, `serviceAvg = 4.6` (làm tròn 1 chữ số thập phân, half-up);
   - `ratingCount == 0` → `count = 0`, các tiêu chí `null`;
   - thiếu `ratingSums` hoặc thiếu một khóa → tiêu chí đó `null`, `average` vẫn lấy `ratingAvg`.
-- [ ] T011 [P] Viết `TEST/core/ui/photo/ZoomMathTest.kt` cho hàm thuần `ZoomMath`:
+- [x] T011 [P] Viết `TEST/core/ui/photo/ZoomMathTest.kt` cho hàm thuần `ZoomMath`:
   - tỉ lệ kẹp trong `[1f, 4f]`;
   - phóng quanh tiêu điểm giữ đúng điểm dưới ngón tay;
   - kéo khi ảnh lớn hơn khung bị kẹp không lộ nền;
@@ -114,8 +117,8 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
 
 **Implementation**
 
-- [ ] T012 [P] **Chỉ khi 020 T011 chưa merge:** cài `CORE/schedule/TimeOfDay.kt`, `SlotMath.kt`, `BookingWindow.kt` (`ADVANCE_DAYS = 30`, `ZONE = ZoneId.of("Asia/Ho_Chi_Minh")`), `SlotId.kt` đúng [020 research R5](../020-court-search/research.md#r5-logic-giá-và-lưới-giờ-dùng-chung-với-spec-040-b), cùng test 020 T005. Đã có thì chỉ thêm hàm `TimeOfDay.parseEnd(hhmm)` chấp nhận `"2400"` và `format()` ra `"24:00"`. Cho T007 xanh
-- [ ] T013 **Chỉ khi 020 T012 chưa merge:** cài `CORE/pricing/PriceRule.kt`:
+- [x] T012 [P] **Chỉ khi 020 T011 chưa merge:** cài `CORE/schedule/TimeOfDay.kt`, `SlotMath.kt`, `BookingWindow.kt` (`ADVANCE_DAYS = 30`, `ZONE = ZoneId.of("Asia/Ho_Chi_Minh")`), `SlotId.kt` đúng [020 research R5](../020-court-search/research.md#r5-logic-giá-và-lưới-giờ-dùng-chung-với-spec-040-b), cùng test 020 T005. Đã có thì chỉ thêm hàm `TimeOfDay.parseEnd(hhmm)` chấp nhận `"2400"` và `format()` ra `"24:00"`. Cho T007 xanh
+- [x] T013 **Chỉ khi 020 T012 chưa merge:** cài `CORE/pricing/PriceRule.kt`:
   - trường `id`, `daysOfWeek: List<Int>`, `startTime`, `endTime`, `pricePerHour: Long`, `label`; `pricePerSlot = pricePerHour / 2`;
   - **không dùng `Double` cho tiền**.
 
@@ -124,28 +127,29 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
   - `CORE/pricing/PriceRuleMapper.kt` (`fromFirestore(id, Map<String, Any?>): PriceRule?`, bỏ qua bản ghi thiếu trường), để 020, 030, 040 không mỗi người một DTO.
 
   Cho T008 xanh
-- [ ] T014 [P] **Chỉ khi 020 T013–T015 chưa merge:** cài theo đúng 020:
+- [x] T014 [P] **Chỉ khi 020 T013–T015 chưa merge:** cài theo đúng 020:
   - `CORE/location/GeoDistance.kt`, `DistanceFormatter.kt`;
   - `LocationProvider.kt` (`hasPermission()`, `suspend fun current(): GeoPoint?`), `AndroidLocationProvider.kt`;
   - `CORE/catalog/District.kt`, `Amenity.kt`, `CatalogRepository.kt`, `CatalogDataSource.kt`, `FirestoreCatalogRepository.kt` (cache trong bộ nhớ, `awaitWithTimeout`).
 
   Kèm test 020 T007, T008
-- [ ] T015 **Chỉ khi 020 T016 chưa merge:** tạo `CORE/di/SearchCoreModule.kt` bind `LocationProvider`, `CatalogRepository`
-- [ ] T016 [P] Cài `CORE/media/PhotoUrlResolver.kt` (`@Singleton`, nhận `supabaseUrl` từ `BuildConfig.SUPABASE_URL` qua Hilt; `venuePhoto(path: String): String?`) và bind trong `CORE/di/MediaModule.kt`. Cho T009 xanh. **Báo 020, 070**: thẻ kết quả và mục yêu thích dùng hàm này
-- [ ] T017 [P] Cài `CORE/model/VenueRatingSummary.kt` (`average: Double`, `count: Int`, `courtAvg`, `cleanlinessAvg`, `serviceAvg: Double?`; `companion fun fromVenue(ratingAvg: Double?, ratingCount: Long?, ratingSums: Map<String, Long>?)`). Cho T010 xanh. **Báo C**: `ReviewRepository.observeSummary` của 070 dùng hàm này
-- [ ] T018 Cài `CORE/ui/photo/ZoomMath.kt` (thuần) và `CORE/ui/photo/ZoomableImageView.kt`:
+- [x] T015 **Chỉ khi 020 T016 chưa merge:** tạo `CORE/di/SearchCoreModule.kt` bind `LocationProvider`, `CatalogRepository`
+- [x] T016 [P] Cài `CORE/media/PhotoUrlResolver.kt` (`@Singleton`, nhận `supabaseUrl` từ `BuildConfig.SUPABASE_URL` qua Hilt; `venuePhoto(path: String): String?`) và bind trong `CORE/di/MediaModule.kt`. Cho T009 xanh. **Báo 020, 070**: thẻ kết quả và mục yêu thích dùng hàm này
+- [x] T017 [P] Cài `CORE/model/VenueRatingSummary.kt` (`average: Double`, `count: Int`, `courtAvg`, `cleanlinessAvg`, `serviceAvg: Double?`; `companion fun fromVenue(ratingAvg: Double?, ratingCount: Long?, ratingSums: Map<String, Long>?)`). Cho T010 xanh. **Báo C**: `ReviewRepository.observeSummary` của 070 dùng hàm này
+- [x] T018 Cài `CORE/ui/photo/ZoomMath.kt` (thuần) và `CORE/ui/photo/ZoomableImageView.kt`:
   - `AppCompatImageView` + `ScaleGestureDetector` + `GestureDetector`, `scaleType = MATRIX`;
   - khi tỉ lệ > 1× thì gọi `parent.requestDisallowInterceptTouchEvent(true)`;
   - `contentDescription` truyền từ ngoài.
 
   Cho T011 xanh
-- [ ] T019 Cài `CORE/ui/photo/PhotoViewerFragment.kt` + `PhotoPagerAdapter.kt` + `RES/layout/fragment_photo_viewer.xml` + `RES/layout/item_photo_viewer.xml`:
+- [x] T019 Cài `CORE/ui/photo/PhotoViewerFragment.kt` + `PhotoPagerAdapter.kt` + `RES/layout/fragment_photo_viewer.xml` + `RES/layout/item_photo_viewer.xml`:
   - Safe Args `photoUrls: string[]`, `startIndex: integer`;
   - `ViewPager2` + `ZoomableImageView`, tải bằng Coil, lỗi → `img_venue_placeholder`;
   - chỉ báo "2/5", nút đóng 48dp, nền tối ở cả hai chế độ lấy từ `RES/values/colors.xml` (`photo_viewer_background`), không hardcode;
   - khai báo destination và `action_global_photoViewer` trong `RES/navigation/nav_player.xml`.
 
   **Báo C**: 070 T046 dùng màn hình này thay vì viết `PhotoViewerFragment` riêng
+  - **2026-11-04:** màu nền đặt ở `values/colors_photo_viewer.xml` thay vì `colors.xml` vì `colors.xml` chỉ chứa token design system (ghi chú đầu file).
 
 **Checkpoint 2A**: T007–T011 xanh. Mở PR `chore(core)` phần 3, nhờ B (dùng `core/pricing`, file vector) và C (dùng `core/media`, `core/model`, `core/ui/photo`) review.
 
@@ -153,7 +157,7 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
 
 **Tests (viết trước, phải fail)**
 
-- [ ] T020 [P] Viết `TEST/feature/courtdetail/data/VenueDetailMapperTest.kt` cho hàm thuần `VenueDetailMapper.map(snapshotData, exists, isFromCache, catalog, resolver)`:
+- [x] T020 [P] Viết `TEST/feature/courtdetail/data/VenueDetailMapperTest.kt` cho hàm thuần `VenueDetailMapper.map(snapshotData, exists, isFromCache, catalog, resolver)`:
   - `status` `ACTIVE` → `VenueAvailability.ACTIVE`; `HIDDEN`, `LOCKED` → `SUSPENDED`; `DELETED` hoặc `exists == false` → `GONE`;
   - `photoPaths` giữ thứ tự, path rỗng bị bỏ, URL đầy đủ giữ nguyên;
   - `amenityIds` không có trong danh mục bị bỏ (FR-005);
@@ -165,18 +169,19 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
 
 **Implementation**
 
-- [ ] T021 [P] Tạo model trong `CD/domain/model/` đúng [data-model §2](data-model.md#2-mô-hình-phía-app):
+- [x] T021 [P] Tạo model trong `CD/domain/model/` đúng [data-model §2](data-model.md#2-mô-hình-phía-app):
   - `CourtDetailArgs`, `SearchWindow`;
   - `VenueDetail`, `VenueAvailability` (`ACTIVE`, `SUSPENDED`, `GONE`, `SUSPENDED_GUEST`), `OpeningStatus` (`AllDay`, `Open(closesAt)`, `Closed(reopensAt)`);
   - `CourtSummary`, `SurfaceType` (`WOOD`, `PU`, `MAT`, `OTHER`), `PhoneDisplay` (`Dialable(e164, display)`, `DisplayOnly(raw)`);
   - `PriceDayGroup`, `DayGroupTitle` (`Single`, `Pair`, `Range`), `PriceRow`, `PriceLabel` (`NORMAL`, `PEAK`, `WEEKEND`; giá trị lạ → `NORMAL`), `SelectedWindowPrice`;
   - `PendingAction` (`BOOK`, `FAVORITE`, `CHAT`), `PendingDecision` (`Run`, `RejectOwnVenue`, `Cancel`, `Wait`), `ReviewPreview`.
-- [ ] T022 [P] Tạo `CD/domain/VenueDetailRepository.kt` (interface):
+  - **2026-11-04:** `VenueDetail.phone` giữ chuỗi gốc, đổi sang `PhoneDisplay` ở ViewModel (US3); thêm `VenueCatalog` (danh mục truyền vào `observeVenue`), `coverPhotoPath` (cho `VenueSummary` khi lưu yêu thích), `PriceTable`.
+- [x] T022 [P] Tạo `CD/domain/VenueDetailRepository.kt` (interface):
   - `observeVenue(venueId): Flow<VenueResult>`, với `VenueResult` = `Found(VenueDetail)` | `Gone` | `PermissionDenied` | `Failed(AppError)`;
   - `suspend fun loadCourts(venueId): List<Court>`, `loadPriceRules(venueId): List<PriceRule>`, `fetchStatusFromServer(venueId): VenueAvailability?` (`null` khi mất mạng).
 
   Tạo bản giả `TEST/feature/courtdetail/FakeVenueDetailRepository.kt` (đẩy giá trị bằng `MutableSharedFlow`, đếm số lần gọi để kiểm tra "đọc lại một mục")
-- [ ] T023 Cài `CD/data/FirestoreVenueDetailRepository.kt`, `CD/data/VenueDetailMapper.kt`, `CD/data/VenueErrorMapper.kt`, `CD/data/dto/CourtDto.kt`, và `CD/di/CourtDetailModule.kt`:
+- [x] T023 Cài `CD/data/FirestoreVenueDetailRepository.kt`, `CD/data/VenueDetailMapper.kt`, `CD/data/VenueErrorMapper.kt`, `CD/data/dto/CourtDto.kt`, và `CD/di/CourtDetailModule.kt`:
   - `observeVenue` là `callbackFlow` trên `venues/{id}` với `MetadataChanges.INCLUDE`, dừng khi không còn người thu thập ([R2](research.md#r2-đọc-dữ-liệu-thứ-tự-tải-và-số-lượt-đọc-fr-024-fr-025-sc-001));
   - `loadCourts`, `loadPriceRules` dùng `get()` + `awaitWithTimeout`; `priceRules` qua `PriceRuleMapper`;
   - `fetchStatusFromServer` dùng `get(Source.SERVER)`.
@@ -190,25 +195,29 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
   - `FirestoreLatestReviewsSource` (T055, bản tạm): tối đa 3 đánh giá `VISIBLE`, mới nhất trước, không có đánh giá `HIDDEN`.
 
   Test tự bỏ qua khi `BuildConfig.USE_EMULATOR != "true"` như Espresso của 010
-- [ ] T024 Tạo `RES/navigation/nav_court_detail.xml` đúng [contracts/navigation.md §1.1](contracts/navigation.md#11-nav-graph-và-tham-số):
+  - **2026-11-04:** phần repository đã chạy trên máy ảo + Emulator: 7/7 xanh. Hai ca `..._BLOCKED_D` (đổi sang `LOCKED`, xóa document) hiện nhận `PERMISSION_DENIED` vì Rules `venues` chưa theo R10; test chấp nhận cả hai tới khi D sửa. Chưa đánh dấu xong: còn ca `FirestoreLatestReviewsSource` (làm cùng T055).
+- [x] T024 Tạo `RES/navigation/nav_court_detail.xml` đúng [contracts/navigation.md §1.1](contracts/navigation.md#11-nav-graph-và-tham-số):
   - `courtDetailFragment` với `venueId`, `date?`, `startTime?`, `endTime?` và deep link `smashnow://venue/{venueId}?date={date}&start={startTime}&end={endTime}`;
   - `include` vào `RES/navigation/nav_player.xml`;
   - tạo khung `CD/ui/CourtDetailFragment.kt` (`@AndroidEntryPoint`, ViewBinding) + `RES/layout/fragment_court_detail.xml` rỗng;
   - kiểm tra bằng `adb shell am start -d "smashnow://venue/demo-k3"`.
+  - **2026-11-04:** đã kiểm trên máy ảo API 35: `adb shell am start -d "smashnow://venue/demo-k3"` mở `courtDetailFragment` khi app tắt và khi app đang mở (thêm `onNewIntent` → `handleDeepLink` ở `MainActivity`).
 
 ### 2C. Test Rules và dữ liệu demo
 
-- [ ] T025 [P] Viết `FT/court-detail.test.ts` đủ **VD-1 → VD-10** của [contracts/security-rules.md §2](contracts/security-rules.md#2-bảng-test-firestore-teststestcourt-detailtestts). Dữ liệu `v-active`, `v-hidden`, `v-locked`, `v-deleted`, không có `v-missing`, kèm `courts`, `priceRules`, 2 `reviews`. Trong đó **VD-10** (khách `get venues/v-deleted` → ✅ để app hiện "Sân không còn tồn tại", FR-022) được thêm sau `/speckit-analyze` I1.
+- [x] T025 [P] Viết `FT/court-detail.test.ts` đủ **VD-1 → VD-10** của [contracts/security-rules.md §2](contracts/security-rules.md#2-bảng-test-firestore-teststestcourt-detailtestts). Dữ liệu `v-active`, `v-hidden`, `v-locked`, `v-deleted`, không có `v-missing`, kèm `courts`, `priceRules`, 2 `reviews`. Trong đó **VD-10** (khách `get venues/v-deleted` → ✅ để app hiện "Sân không còn tồn tại", FR-022) được thêm sau `/speckit-analyze` I1.
   - **Không sửa `firestore.rules`**: `venues` thuộc D, `reviews` thuộc C.
   - Chạy `npm test` trong `firestore-tests/` và ghi kết quả vào PR. Các test VD-1 → VD-4, VD-6, VD-7, VD-10 **sẽ đỏ cho tới khi D và C sửa Rules** theo contract; ghi rõ "[BLOCKED: D]" / "[BLOCKED: C]" trong tên test, không chuyển thành `it.todo`.
   - Test `users` của 010 và test nền vẫn phải xanh.
-- [ ] T026 [P] **Có điều kiện, chỉ khi seed đánh giá của 070 (T025 của 070) chưa có:** tạo `scripts/seed/seed-reviews-030.mjs`:
+  - **2026-11-04:** `npm test`: 114 xanh, 5 đỏ đúng dự kiến — VD-3, VD-4, VD-10 và VD-1b (courts/priceRules của cơ sở tạm ngừng, thêm để kiểm `read: if true` của R10) `[BLOCKED: D]`; VD-6 `[BLOCKED: C]`. VD-1, VD-2, VD-5, VD-7, VD-8, VD-9 đã xanh với Rules hiện tại; thêm VD-6b (người chơi đọc 3 đánh giá `VISIBLE`) xanh.
+- [x] T026 [P] **Có điều kiện, chỉ khi seed đánh giá của 070 (T025 của 070) chưa có:** tạo `scripts/seed/seed-reviews-030.mjs`:
   - chỉ chạy với `--emulator`, thiếu cờ thì thoát kèm thông báo;
   - ghi 12 `reviews` cho `demo-k3` theo [070 data-model](../070-review-favorite/data-model.md): 1 `HIDDEN`, 1 `authorDeleted = true` (`userId = null`, `userSnapshot = { displayName: null, avatarPath: null }`), 1 có `ownerReply`, 2 có `photoPaths`; `createdAt` cách nhau 1 ngày;
   - cập nhật `venues/demo-k3` với `ratingAvg`, `ratingCount = 11`, `ratingSums` tính từ 11 đánh giá `VISIBLE`;
   - ID tất định nên chạy lại không trùng; **không sửa `scripts/seed/seed.mjs`** của Duy.
 
   Ghi cách chạy vào `scripts/seed/README.md` (một mục mới, không sửa phần của Duy)
+  - **2026-11-04:** seed đánh giá của 070 chưa có → đã tạo. Thêm `--project-id` vì Emulator của app chạy với projectId `mobile-22e6c` (singleProjectMode); vẫn chỉ ghi vào Emulator.
 
 **Checkpoint**: nền xong, các user story bắt đầu được.
 
@@ -222,28 +231,28 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
 
 ### Tests cho User Story 1 ⚠️ viết trước, phải fail
 
-- [ ] T027 [P] [US1] Unit test `TEST/feature/courtdetail/domain/SearchWindowArgsTest.kt`:
+- [x] T027 [P] [US1] Unit test `TEST/feature/courtdetail/domain/SearchWindowArgsTest.kt`:
   - đủ 3 tham số hợp lệ → `SearchWindow`;
   - thiếu một tham số, sai định dạng, `start >= end`, không phải mốc `:00`/`:30` → `null`;
   - `end = "2400"` hợp lệ;
   - khung đã qua so với `now` (`date + start <= now` theo `Asia/Ho_Chi_Minh`) → `null`.
-- [ ] T028 [P] [US1] Unit test `TEST/feature/courtdetail/domain/OpeningHoursTest.kt` với `AppClock` giả:
+- [x] T028 [P] [US1] Unit test `TEST/feature/courtdetail/domain/OpeningHoursTest.kt` với `AppClock` giả:
   - `0500`–`2300`: 20:00 → `Open(23:00)`, 23:30 → `Closed(reopensAt = 05:00)` (US1-4);
   - `0500`–`0100` (qua nửa đêm): 00:30 → `Open`, 02:00 → `Closed(05:00)`;
   - `0500`–`2400`: 00:30 → `Closed(05:00)`, 23:59 → `Open`;
   - `0000`–`2400` hoặc `open == close` → `AllDay`;
   - tính theo `Asia/Ho_Chi_Minh` kể cả khi `AppClock` trả `Instant` UTC.
-- [ ] T029 [P] [US1] Unit test `TEST/feature/courtdetail/domain/CourtSummaryTest.kt`:
+- [x] T029 [P] [US1] Unit test `TEST/feature/courtdetail/domain/CourtSummaryTest.kt`:
   - 3 `MAT` hoạt động + 1 `MAT` tạm ngưng → `activeCount = 3`, `[MAT to 3]` (US1-3);
   - 2 `WOOD` + 1 `MAT` → sắp theo số lượng giảm dần `[WOOD to 2, MAT to 1]`;
   - 0 sân hoạt động → `activeCount = 0`;
   - `surfaceType` lạ → `OTHER`.
-- [ ] T030 [P] [US1] Unit test `TEST/feature/courtdetail/domain/usecase/CheckVenueBookableUseCaseTest.kt`:
+- [x] T030 [P] [US1] Unit test `TEST/feature/courtdetail/domain/usecase/CheckVenueBookableUseCaseTest.kt`:
   - server trả `ACTIVE` → `Bookable`;
   - `SUSPENDED`/`GONE` → `NotBookable(availability)`;
   - `fetchStatusFromServer` trả `null` (mất mạng) → dùng trạng thái mới nhất từ listener;
   - hết 15 s → coi như mất mạng.
-- [ ] T031 [P] [US1] Unit test `TEST/feature/courtdetail/ui/CourtDetailViewModelUs1Test.kt` (Turbine, `FakeVenueDetailRepository`, `SavedStateHandle` có tham số):
+- [x] T031 [P] [US1] Unit test `TEST/feature/courtdetail/ui/CourtDetailViewModelUs1Test.kt` (Turbine, `FakeVenueDetailRepository`, `SavedStateHandle` có tham số):
   - lần đầu `availability == null`, `header = Loading`; venue tới → `header = Content` mà **không chờ** `courts`/`priceRules`;
   - `courts` lỗi → chỉ `courts = Error`, `header` vẫn `Content`; `onRetry(COURTS)` chỉ gọi lại `loadCourts`;
   - `amenityIds = []` → `amenities = Empty`;
@@ -256,16 +265,16 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
 
 ### Implementation cho User Story 1
 
-- [ ] T032 [P] [US1] Cài `CD/domain/SearchWindowArgs.kt`. Cho T027 xanh
-- [ ] T033 [P] [US1] Cài `CD/domain/OpeningHours.kt` (`status(openTime, closeTime, now: ZonedDateTime): OpeningStatus`; dùng `TimeOfDay.parseEnd` cho `closeTime`) và `CD/domain/OpeningTicker.kt` (`Flow<ZonedDateTime>` phát mỗi phút từ `AppClock`). Cho T028 xanh
-- [ ] T034 [P] [US1] Cài `CD/domain/CourtSummary.kt` (`from(courts)`). Cho T029 xanh
-- [ ] T035 [US1] Cài trong `CD/domain/usecase/`:
+- [x] T032 [P] [US1] Cài `CD/domain/SearchWindowArgs.kt`. Cho T027 xanh
+- [x] T033 [P] [US1] Cài `CD/domain/OpeningHours.kt` (`status(openTime, closeTime, now: ZonedDateTime): OpeningStatus`; dùng `TimeOfDay.parseEnd` cho `closeTime`) và `CD/domain/OpeningTicker.kt` (`Flow<ZonedDateTime>` phát mỗi phút từ `AppClock`). Cho T028 xanh
+- [x] T034 [P] [US1] Cài `CD/domain/CourtSummary.kt` (`from(courts)`). Cho T029 xanh
+- [x] T035 [US1] Cài trong `CD/domain/usecase/`:
   - `ObserveVenueDetailUseCase.kt`: gộp `observeVenue` + `CatalogRepository`; **chỉ ở đây** đổi `PermissionDenied` thành `SUSPENDED_GUEST` khi `SessionManager.isGuest == true`, ngược lại thành `Failed(AppError.Unknown)`;
   - `LoadCourtSummaryUseCase.kt`;
   - `CheckVenueBookableUseCase.kt`.
 
   Cho T030 xanh
-- [ ] T036 [US1] Cài `CD/ui/CourtDetailUiState.kt` (đúng [data-model §2.5](data-model.md#25-trạng-thái-màn-hình), `Section<T> = Loading | Content | Empty | Error(AppError)`, `CourtDetailEffect`) và `CD/ui/CourtDetailViewModel.kt`:
+- [x] T036 [US1] Cài `CD/ui/CourtDetailUiState.kt` (đúng [data-model §2.5](data-model.md#25-trạng-thái-màn-hình), `Section<T> = Loading | Content | Empty | Error(AppError)`, `CourtDetailEffect`) và `CD/ui/CourtDetailViewModel.kt`:
   - phần US1: header, courts, amenities, `isOffline`, `bottomBar`;
   - các hàm `onRetry`, `onBookClicked`, `onPhotoClicked`, `onPhotoPageChanged`;
   - ba luồng venue/courts/priceRules chạy song song bằng `async`;
@@ -273,7 +282,7 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
   - khung giờ đưa vào `OpeningTicker`: qua giờ bắt đầu thì đặt `window = null`.
 
   Cho T031 xanh
-- [ ] T037 [US1] Viết `RES/layout/fragment_court_detail.xml` theo wireframe `03_court-detail_buoc1_chi-tiet-san.png`:
+- [x] T037 [US1] Viết `RES/layout/fragment_court_detail.xml` theo wireframe `03_court-detail_buoc1_chi-tiet-san.png`:
   - `CoordinatorLayout` + `NestedScrollView` (có `id` để tự lưu vị trí cuộn);
   - mục 1 là `ViewPager2` 16:9 kèm chỉ báo "1/5", nút quay lại và trái tim 48dp chồng lên;
   - mục 2 là tên, địa chỉ · quận, điểm, chip trạng thái mở cửa;
@@ -283,15 +292,18 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
   - banner offline; mỗi mục có `ProgressBar`/khung chờ và dòng lỗi kèm "Thử lại".
 
   Kèm `RES/layout/item_court_detail_photo.xml`; mọi màu và kích thước lấy từ resource
-- [ ] T038 [US1] Cài `CD/ui/CourtDetailFragment.kt` + `CD/ui/PhotoGalleryAdapter.kt` (`ListAdapter`, Coil, lỗi → `img_venue_placeholder`, `contentDescription` "Ảnh %1$d trên %2$d của %3$s"):
+  - 2026-11-04: mục 5–7 để LinearLayout trống, ViewStub bản đồ thêm ở US3 (T049). FlexboxLayout không có trong dự án nên hàng điểm + chip mở cửa dùng ChipGroup.
+- [x] T038 [US1] Cài `CD/ui/CourtDetailFragment.kt` + `CD/ui/PhotoGalleryAdapter.kt` (`ListAdapter`, Coil, lỗi → `img_venue_placeholder`, `contentDescription` "Ảnh %1$d trên %2$d của %3$s"):
   - thu thập state bằng `repeatOnLifecycle(STARTED)`;
   - chạm ảnh → `action_global_photoViewer`;
   - chip tiện ích dùng `ic_amenity_{iconKey}`;
   - thẻ sân con hiện "N sân · 2 Gỗ, 1 Thảm" hoặc "Tạm thời chưa có sân hoạt động".
-- [ ] T039 [US1] Thêm action `action_courtDetail_to_bookingSlotGrid` vào `RES/navigation/nav_court_detail.xml` theo [040 ui-contracts §1.1](../040-booking-slot-grid/contracts/ui-contracts.md):
+  - 2026-11-04: chạy trên emulator-5554 (Firebase Emulator, khách): deep link smashnow://venue/demo-truong-chinh-909?date=20261110&start=1900&end=2100 hiện ảnh 1/3, "10 sân · PU", "Đang mở cửa · 05:00–24:00", chạm ảnh mở trình xem ảnh. Khách không đọc được districts/amenities (firestore.rules chưa có match amenities, districts chỉ cho isInitialized) nên mục Tiện ích báo lỗi kèm "Thử lại" và không hiện tên quận: chờ spec 020 T019 (A) thêm Rules đọc danh mục cho khách.
+- [x] T039 [US1] Thêm action `action_courtDetail_to_bookingSlotGrid` vào `RES/navigation/nav_court_detail.xml` theo [040 ui-contracts §1.1](../040-booking-slot-grid/contracts/ui-contracts.md):
   - **phụ thuộc B**: truyền `venueId`, và `date`/`startTime`/`endTime` khi `bookingSlotGridFragment` đã có ba tham số này;
   - B chưa thêm thì chỉ truyền `venueId` và ghi `// TODO(B): truyền date/startTime/endTime khi 040 có tham số (research R1)`;
   - 040 chưa có màn hình thì action trỏ tạm `PlayerHomePlaceholderFragment`, kèm `TODO(B)` và snackbar "Tính năng sắp có".
+  - 2026-11-04: bookingSlotGridFragment mới nhận venueId nên chỉ truyền venueId, ghi TODO(B). Khách bấm "Đặt sân" thì mời đăng nhập (US5 T063), nên mở lưới trên máy mới kiểm qua unit test (OpenBookingGrid).
 
 **Checkpoint**: US1 chạy độc lập; quickstart Q1, Q2, Q3, Q6, Q7 đạt.
 
@@ -305,7 +317,7 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
 
 ### Tests cho User Story 2 ⚠️ viết trước, phải fail
 
-- [ ] T040 [P] [US2] Unit test `TEST/feature/courtdetail/domain/PriceTableBuilderTest.kt` (dữ liệu lấy từ `scripts/seed/venues.json`, `daysOfWeek` ISO):
+- [x] T040 [P] [US2] Unit test `TEST/feature/courtdetail/domain/PriceTableBuilderTest.kt` (dữ liệu lấy từ `scripts/seed/venues.json`, `daysOfWeek` ISO):
   - `demo-quang-vinh` → **3 nhóm** "Thứ 2" / "Thứ 3 – Thứ 6" / "Thứ 7, Chủ nhật";
   - `demo-son-ta` → "Thứ 2 – Thứ 6" / "Thứ 7" / "Chủ nhật";
   - `demo-truong-chinh-909` → 2 nhóm;
@@ -313,11 +325,11 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
   - `endTime = "2400"` in "24:00";
   - có `SearchWindow` T3 17:00–19:00 → `highlighted` đúng hai dòng (US2-3); không có `SearchWindow` → không dòng nào (US2-5);
   - không có rule → danh sách rỗng.
-- [ ] T041 [P] [US2] Unit test `TEST/feature/courtdetail/domain/usecase/LoadPriceTableUseCaseTest.kt`:
+- [x] T041 [P] [US2] Unit test `TEST/feature/courtdetail/domain/usecase/LoadPriceTableUseCaseTest.kt`:
   - đọc `TRES/pricing/window-price-vectors.json`, với mỗi ca P1–P9 `SelectedWindowPrice.perHour == expectedPerHour` và dòng tô khớp `highlightedRuleIndexes` (SC-002);
   - P3 → `perHour = null` ("Liên hệ");
   - `window == null` → không có `SelectedWindowPrice`.
-- [ ] T042 [P] [US2] Unit test `TEST/feature/courtdetail/ui/CourtDetailViewModelUs2Test.kt`:
+- [x] T042 [P] [US2] Unit test `TEST/feature/courtdetail/ui/CourtDetailViewModelUs2Test.kt`:
   - `prices` lỗi → chỉ mục giá lỗi, `onRetry(PRICES)` chỉ gọi `loadPriceRules`;
   - rỗng → `prices = Empty`;
   - thanh dưới: có khung → "120.000 đ/giờ" kèm "T3, 27/10 · 19:00 – 21:00"; không có khung → "từ 50.000 đ/giờ" (giá thấp nhất của các rule); không có rule → "Liên hệ";
@@ -325,12 +337,13 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
 
 ### Implementation cho User Story 2
 
-- [ ] T043 [P] [US2] Cài `CD/domain/PriceTableBuilder.kt` ([R4](research.md#r4-bảng-giá-nhóm-theo-ngày-và-giá-khung-bạn-chọn-fr-008-fr-009-sc-002)): dựng lịch giá từng ngày qua `DayConvention`, gộp ngày liền nhau có danh sách giống hệt, tạo `DayGroupTitle`. Cho T040 xanh
-- [ ] T044 [US2] Cài `CD/domain/usecase/LoadPriceTableUseCase.kt`: gọi `SlotPricing.priceForWindow` rồi `SlotPricing.perHour` của `core/pricing`, **không viết lại phép tính**. Cho T041 xanh
-- [ ] T045 [US2] Thêm mục `prices` và giá thanh dưới vào `CD/ui/CourtDetailViewModel.kt`. Cho T042 xanh
-- [ ] T046 [US2] Cài `RES/layout/item_court_detail_price_group.xml`, `item_court_detail_price_row.xml`, `CD/ui/PriceTableAdapter.kt` (nền tô từ theme attribute), và thẻ "Khung bạn chọn" trong `fragment_court_detail.xml`:
+- [x] T043 [P] [US2] Cài `CD/domain/PriceTableBuilder.kt` ([R4](research.md#r4-bảng-giá-nhóm-theo-ngày-và-giá-khung-bạn-chọn-fr-008-fr-009-sc-002)): dựng lịch giá từng ngày qua `DayConvention`, gộp ngày liền nhau có danh sách giống hệt, tạo `DayGroupTitle`. Cho T040 xanh
+- [x] T044 [US2] Cài `CD/domain/usecase/LoadPriceTableUseCase.kt`: gọi `SlotPricing.priceForWindow` rồi `SlotPricing.perHour` của `core/pricing`, **không viết lại phép tính**. Cho T041 xanh
+- [x] T045 [US2] Thêm mục `prices` và giá thanh dưới vào `CD/ui/CourtDetailViewModel.kt`. Cho T042 xanh
+- [x] T046 [US2] Cài `RES/layout/item_court_detail_price_group.xml`, `item_court_detail_price_row.xml`, `CD/ui/PriceTableAdapter.kt` (nền tô từ theme attribute), và thẻ "Khung bạn chọn" trong `fragment_court_detail.xml`:
   - định dạng tiền `NumberFormat` locale `vi-VN` + " đ/giờ";
   - mục rỗng hiện "Liên hệ" kèm số điện thoại (`PhoneDisplay`, nối ở US3), hoặc "Liên hệ chủ sân" kèm nút chat khi không có số (Edge case).
+  - 2026-11-04: tiền định dạng bằng CourtDetailFormat.vnd (nhóm 3 chữ số bằng dấu chấm, không phụ thuộc locale máy) thay NumberFormat vi-VN, kết quả giống nhau. Mục rỗng tạm hiện "Liên hệ chủ sân"; hiện số điện thoại nối ở US3. Kiểm trên emulator-5554: demo-truong-chinh-909 T3 10/11 17:00–19:00 → "Khung bạn chọn · 110.000 đ/giờ", tô 16:00–18:00 và 18:00–24:00; demo-quang-vinh không có khung → 3 nhóm, không dòng nào tô, thanh dưới "từ 50.000 đ/giờ".
 
 **Checkpoint**: US1 + US2 = MVP; quickstart Q4, Q5 và mọi ca P1–P9 đạt.
 
@@ -344,7 +357,7 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
 
 ### Tests cho User Story 3 ⚠️ viết trước, phải fail
 
-- [ ] T047 [P] [US3] Unit test `TEST/feature/courtdetail/domain/PhoneDisplayTest.kt`:
+- [x] T047 [P] [US3] Unit test `TEST/feature/courtdetail/domain/PhoneDisplayTest.kt`:
   - `"0901 234 567"`, `"0901.234.567"` → `Dialable("+84901234567", "0901 234 567")`;
   - số bàn 11 chữ số `"028 3812 3456"` → `Dialable("+842838123456", …)` (sửa sau `/speckit-analyze` I2);
   - quá ngắn hoặc quá dài (`"090123"`, `"090123456789"`) → `DisplayOnly`;
@@ -352,7 +365,7 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
   - chuỗi rỗng hoặc `null` → `null`.
 
   Regex `^(0|\+84)\d{9,10}$` sau khi bỏ khoảng trắng và dấu chấm ([R9](research.md#r9-số-điện-thoại-fr-012)).
-- [ ] T048 [P] [US3] Unit test `TEST/feature/courtdetail/ui/CourtDetailViewModelUs3Test.kt`:
+- [x] T048 [P] [US3] Unit test `TEST/feature/courtdetail/ui/CourtDetailViewModelUs3Test.kt`:
   - `Dialable` + bấm → effect `Dial(e164)`; `DisplayOnly` + bấm → không có effect, nhấn giữ → `CopyPhone`;
   - không có `phone` → thẻ số điện thoại ẩn;
   - `location == null` → `map = Empty`;
@@ -361,9 +374,9 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
 
 ### Implementation cho User Story 3
 
-- [ ] T049 [P] [US3] Cài `CD/domain/PhoneDisplay.kt`. Cho T047 xanh
-- [ ] T050 [US3] Cài `CD/ui/VenueMapController.kt` bọc osmdroid `MapView` theo [R7](research.md#r7-bản-đồ-nhúng-và-chỉ-đường-fr-010-fr-011-fr-013):
-  - `Configuration.getInstance().userAgentValue = BuildConfig.APPLICATION_ID`; `osmdroidBasePath`, `osmdroidTileCache` trong `context.cacheDir/osmdroid` (không cần quyền bộ nhớ);
+- [x] T049 [P] [US3] Cài `CD/domain/PhoneDisplay.kt`. Cho T047 xanh
+- [x] T050 [US3] Cài `CD/ui/VenueMapController.kt` bọc osmdroid `MapView` theo [R7](research.md#r7-bản-đồ-nhúng-và-chỉ-đường-fr-010-fr-011-fr-013):
+  - `Configuration.getInstance().userAgentValue` riêng dạng `"SmashNow/{versionName} (Android; +{repo URL})"` (tên gói `com.example.*` bị OSM chặn, phát hiện khi chạy máy ảo); `osmdroidBasePath`, `osmdroidTileCache` trong `context.cacheDir/osmdroid` (không cần quyền bộ nhớ);
   - tắt multi-touch, cuộn và xoay; zoom 16; marker `ic_marker_shuttlecock` ở giữa;
   - chế độ tối dùng `TilesOverlay.INVERT_COLORS`;
   - ghi nguồn "© OpenStreetMap contributors" bằng `CopyrightOverlay` (hoặc `TextView` chồng lên góc bản đồ, chữ ≥ 10sp, đọc được ở cả hai chế độ), bắt buộc theo giấy phép ODbL và chính sách tile của OSM (sửa sau `/speckit-analyze` C3);
@@ -371,8 +384,8 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
   - tile lỗi (`TileLoadFailed` / `MapListener`) → callback để Fragment ẩn bản đồ, giữ địa chỉ và nút.
 
   Bản đồ nằm trong `ViewStub` và chỉ inflate khi mục "Vị trí" cách vùng nhìn thấy dưới một chiều cao màn hình (lắng nghe `NestedScrollView.setOnScrollChangeListener`)
-- [ ] T051 [US3] Thêm mục `map`, thẻ số điện thoại, thẻ khoảng cách vào `CD/ui/CourtDetailViewModel.kt` (khoảng cách qua `LocationProvider` + `GeoDistance` + `DistanceFormatter` của `core/location`). Cho T048 xanh
-- [ ] T052 [US3] Trong `CD/ui/CourtDetailFragment.kt` xử lý các effect:
+- [x] T051 [US3] Thêm mục `map`, thẻ số điện thoại, thẻ khoảng cách vào `CD/ui/CourtDetailViewModel.kt` (khoảng cách qua `LocationProvider` + `GeoDistance` + `DistanceFormatter` của `core/location`). Cho T048 xanh
+- [x] T052 [US3] Trong `CD/ui/CourtDetailFragment.kt` xử lý các effect:
   - `OpenDirections`: thử `Intent(ACTION_VIEW, Uri.parse("geo:$lat,$lng?q=$lat,$lng(${Uri.encode(name)})"))`, gặp `ActivityNotFoundException` thì mở `https://www.google.com/maps/dir/?api=1&destination=$lat,$lng`; **không** khai báo `<queries>`;
   - `Dial`: kiểm tra `PackageManager.FEATURE_TELEPHONY`; không có, hoặc gặp `ActivityNotFoundException`, thì sao chép vào clipboard và hiện snackbar "Đã sao chép số điện thoại";
   - `CopyPhone`: sao chép.
@@ -393,13 +406,13 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
 
 ### Tests cho User Story 4 ⚠️ viết trước, phải fail
 
-- [ ] T053 [P] [US4] Unit test `TEST/feature/courtdetail/domain/usecase/LoadLatestReviewsUseCaseTest.kt` với `LatestReviewsSource` giả:
+- [x] T053 [P] [US4] Unit test `TEST/feature/courtdetail/domain/usecase/LoadLatestReviewsUseCaseTest.kt` với `LatestReviewsSource` giả:
   - trả tối đa 3 `ReviewPreview` theo thứ tự `createdAt` giảm dần;
   - `authorDeleted == true` hoặc `userSnapshot.displayName == null` → `authorName = null` (UI hiện "Người dùng đã xóa", ảnh mặc định);
   - bình luận giữ nguyên (UI tự rút gọn 3 dòng);
   - có `ownerReply` → `reply` khác `null`;
   - lỗi → `AppError` tương ứng.
-- [ ] T054 [P] [US4] Unit test `TEST/feature/courtdetail/ui/CourtDetailViewModelUs4Test.kt`:
+- [x] T054 [P] [US4] Unit test `TEST/feature/courtdetail/ui/CourtDetailViewModelUs4Test.kt`:
   - `reviews` chỉ bắt đầu tải **sau** khi `header = Content` (FR-024);
   - `ratingCount == 0` → `reviews = Empty`, không gọi `LatestReviewsSource`;
   - "Xem tất cả" mang `N = ratingCount` → effect `OpenReviews(venueId, name)`;
@@ -408,14 +421,14 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
 
 ### Implementation cho User Story 4
 
-- [ ] T055 [US4] Tạo `CD/domain/LatestReviewsSource.kt` (interface `suspend fun latest(venueId, limit = 3): List<ReviewPreview>`). Bản cài đặt:
+- [x] T055 [US4] Tạo `CD/domain/LatestReviewsSource.kt` (interface `suspend fun latest(venueId, limit = 3): List<ReviewPreview>`). Bản cài đặt:
   - **khi 070 đã có `ReviewRepository.latestVisible`**: `CD/data/ReviewRepositoryLatestReviewsSource.kt` gọi interface của 070 (chỉ import `feature/review/domain`, constitution I);
   - **chưa có**: `CD/data/FirestoreLatestReviewsSource.kt` truy vấn `reviews` where `venueId == X`, `status == "VISIBLE"` order by `createdAt desc` limit 3 (`awaitWithTimeout`), kèm `// TODO(C): thay bằng ReviewRepository.latestVisible (research R3)`.
 
   Bind trong `CD/di/CourtDetailModule.kt`
-- [ ] T056 [US4] Cài `CD/domain/usecase/LoadLatestReviewsUseCase.kt`. Cho T053 xanh
-- [ ] T057 [US4] Thêm mục `reviews` vào `CD/ui/CourtDetailViewModel.kt`. Cho T054 xanh
-- [ ] T058 [US4] Cài `RES/layout/item_court_detail_review.xml` + `CD/ui/ReviewPreviewAdapter.kt` và khối tổng quan trong `fragment_court_detail.xml`:
+- [x] T056 [US4] Cài `CD/domain/usecase/LoadLatestReviewsUseCase.kt`. Cho T053 xanh
+- [x] T057 [US4] Thêm mục `reviews` vào `CD/ui/CourtDetailViewModel.kt`. Cho T054 xanh
+- [x] T058 [US4] Cài `RES/layout/item_court_detail_review.xml` + `CD/ui/ReviewPreviewAdapter.kt` và khối tổng quan trong `fragment_court_detail.xml`:
   - khối tổng quan: điểm lớn, `RatingBar` chỉ đọc, "N đánh giá", ba `LinearProgressIndicator` cho tiêu chí (ẩn tiêu chí `null`);
   - thẻ đánh giá: avatar Coil hoặc chữ cái đầu, tên hoặc "Người dùng đã xóa", ngày `dd/MM`, số sao, bình luận `maxLines = 3`, ảnh thu nhỏ (chạm mở `action_global_photoViewer`), khối "Phản hồi của chủ sân".
 

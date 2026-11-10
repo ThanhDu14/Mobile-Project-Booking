@@ -3,7 +3,7 @@ package com.example.booking_app.feature.owner.ui.home
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.booking_app.core.session.UserProfileReader
-import com.example.booking_app.feature.account.ui.account.initialsOf
+import com.example.booking_app.core.session.initialsOf
 import com.example.booking_app.feature.owner.domain.OwnerVenueRepository
 import com.example.booking_app.feature.owner.domain.model.OwnerVenue
 import dagger.hilt.android.lifecycle.HiltViewModel

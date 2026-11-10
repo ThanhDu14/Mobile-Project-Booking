@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Tiêu đề nhóm ngày của bảng giá: "Thứ 2 – Thứ 6", "Thứ 7, Chủ nhật" (spec 030 FR-008). -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/groupTitle"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:accessibilityHeading="true"
+    android:paddingTop="@dimen/space_4"
+    android:paddingBottom="@dimen/space_2"
+    android:textAppearance="?attr/textAppearanceTitleSmall"
+    android:textColor="?attr/colorOnSurface"
+    tools:text="Thứ 2 – Thứ 6" />

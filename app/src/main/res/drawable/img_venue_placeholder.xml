@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Ảnh mặc định 16:9 khi cơ sở không có ảnh hoặc ảnh tải lỗi (spec 030 FR-004, research R8).
+    Màu lấy từ token sn_* nên có bản tối qua values-night/colors.xml.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="320dp"
+    android:height="180dp"
+    android:viewportWidth="160"
+    android:viewportHeight="90">
+    <path
+        android:fillColor="@color/sn_surface_sunken"
+        android:pathData="M0,0h160v90h-160z" />
+    <!-- Đường kẻ sân cầu lông -->
+    <path
+        android:strokeColor="@color/sn_line"
+        android:strokeWidth="1.5"
+        android:pathData="M50,20h60v50h-60zM80,20v50M50,30h60M50,60h60M56,20v50M104,20v50" />
+    <!-- Quả cầu -->
+    <path
+        android:fillColor="@color/sn_outline"
+        android:pathData="M74,37L86,37L83,46L77,46Z" />
+    <path
+        android:fillColor="@color/sn_outline"
+        android:pathData="M76.5,46L83.5,46A3.5,3.5 0,0 1,76.5 46Z" />
+</vector>

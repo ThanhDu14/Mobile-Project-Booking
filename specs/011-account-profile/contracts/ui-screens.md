@@ -4,7 +4,9 @@ Wireframe: [ui/README.md](../ui/README.md) (5 artboard, có chế độ tối).
 
 ## 1. Nav graph `nav_account` (A)
 
-`nav_account.xml` là graph lồng, được `include` vào `nav_player` (tab "Tài khoản") và `nav_owner` (tab "Cơ sở", mục tài khoản). Bộ khung `nav_main`, `nav_player`, `nav_owner` do spec 010 tạo.
+`nav_account.xml` là graph lồng, được `include` vào `nav_player` và `nav_owner`. Bộ khung `nav_main`, `nav_player`, `nav_owner` do spec 010 tạo.
+
+*(2026-11-06)* Không còn tab "Tài khoản" (`tab_account`). Cả hai graph mở `nav_account` bằng **global action** `action_global_account` (khai báo trong `nav_player` và `nav_owner`), gọi từ avatar của header dùng chung (§5). `AccountFragment` được đẩy lên back stack của tab đang đứng.
 
 | Fragment | Layout | Wireframe | Story / FR | Safe Args |
 |---|---|---|---|---|
@@ -108,3 +110,58 @@ object StorageUrls {                                 // [011] core/media
 - Hiển thị ảnh đại diện bằng `StorageUrls.publicUrl("avatars", path)`; `path == null` thì vẽ chữ cái đầu.
 - Spec 100 (D) đăng ký token FCM; khi đăng xuất, `FcmSignOutHook` của A gỡ token. D không cần viết thêm trừ khi có dữ liệu khác cần dọn khi đăng xuất (thêm `SignOutHook` riêng).
 - `MainActivity` (010) điều hướng theo `(appRole, mode)`.
+- *(2026-11-06)* Màn gốc của tab chính dùng header dùng chung ở §5, không tự vẽ avatar.
+
+## 5. Header dùng chung và avatar (2026-11-06, US8, FR-026 → FR-031)
+
+Đặt trong `core/ui/header/` (không ở `feature/account`) để mọi tính năng dùng được mà không import `ui/` của A (constitution I).
+
+| Thành phần | Vị trí | Vai trò |
+|---|---|---|
+| `view_main_tab_header.xml` | `RES/layout/` | Dùng bằng `<include>`. Trái: `tabTitle` (`textAppearanceHeadlineSmall`, `accessibilityHeading`) và `tabSubtitle` tùy chọn (ví dụ ngày ở màn Hôm nay). Giữa: `tabActions` (`LinearLayout` rỗng để tab tự thêm nút như sắp xếp, lọc). Phải: `accountAvatar` (`AccountAvatarView` 48dp). Id có tiền tố để không trùng id của màn include header. Bố cục lấy theo header của `fragment_home_placeholder_owner.xml` hiện có. |
+| `AccountAvatarView` | `core/ui/header/` | `FrameLayout` 48dp gồm ảnh tròn (Coil, `ShapeAppearance.SmashNow.Circle`) và chữ cái đầu trên nền `bg_account_avatar_initials`. `render(AccountAvatarState)`. Ảnh tải lỗi thì về chữ cái đầu. |
+| `AccountAvatarState` | `core/session/` | `Guest` (icon `ic_person_outline_24`, nhãn "Đăng nhập") · `Pending` (vòng tròn trống, nhãn "Tài khoản") · `SignedIn(initials, avatarPath?)` (có ảnh thì hiện ảnh, ảnh lỗi về chữ cái đầu; `initials` rỗng thì icon người). |
+| `AccountAvatarSource` | `core/session/` | `val state: Flow<AccountAvatarState>` gộp `SessionState` và `UserProfileReader.observeMyProfile()`. `AccountAvatarView` đổi `avatarPath` thành URL bằng `StorageUrls.publicUrl("avatars", path)`. Implementation `DefaultAccountAvatarSource` của A. |
+| `initialsOf(displayName)` | chuyển từ `feature/account/ui/account/AccountFormat.kt` sang `core/session/Initials.kt` | Dùng chung cho avatar header, `AccountFragment`, `EditProfileFragment`. Rỗng thì avatar hiện icon người nhưng vẫn bấm mở trang Tài khoản (Edge Case họ tên rỗng). |
+| `AccountEntryNavigator` | `core/session/` | `fun open(navController: NavController)`: đã đăng nhập → `navigate(R.id.action_global_account)` với `launchSingleTop`; khách → `AuthNavigator.openLogin(navController, returnTo = null)` (về đúng tab, FR-030). |
+| `MainTabHeader.bind(...)` | `core/ui/header/` | `bind(fragment: Fragment, header: ViewMainTabHeaderBinding, avatarSource: AccountAvatarSource, accountEntryNavigator: AccountEntryNavigator)`: thu `state` theo `repeatOnLifecycle(STARTED)`, gắn click có chống bấm liên tiếp (Edge Case). Tab chỉ gọi hàm này, không xử lý avatar. |
+
+**Quy ước cho tab của spec khác (020, 060, 080, 090, 112):**
+- Màn gốc của tab `<include android:id="@+id/header" layout="@layout/view_main_tab_header">`, đặt `header.tabTitle`, gọi `MainTabHeader.bind` trong `onViewCreated`; inject `AccountAvatarSource`, `AccountEntryNavigator` bằng Hilt.
+- Không vẽ avatar riêng, không navigate tới `nav_account` hay `accountFragment` trực tiếp.
+- Tab có `TabLayout` riêng (060: 5 tab trạng thái) đặt header ở trên `TabLayout`.
+- Màn con (chi tiết sân, chi tiết đơn…) dùng `MaterialToolbar` có nút quay lại như cũ, không cần header này.
+
+**`MainActivity` (BottomNav người chơi):** ở `accountFragment` thì giữ sáng tab của entry ngay dưới trong back stack (giống nhánh chủ sân đang có), BottomNav vẫn hiện; `setOnItemReselectedListener` ở `accountFragment` thì `popBackStack` về màn gốc của tab đó.
+
+**Chuỗi** (`strings_account.xml`): `account_avatar_cd_signed_in` = "Tài khoản", `account_avatar_cd_guest` = "Đăng nhập".
+
+**Test:** `DefaultAccountAvatarSourceTest` (các trạng thái; đổi ảnh, tên, đăng xuất phát trạng thái mới), `AccountEntryNavigatorTest` (khách → `AuthNavigator.openLogin`, đã đăng nhập → action, không mở chồng). Dự án chưa có Robolectric nên `AccountAvatarView` và `MainActivity` (giữ sáng `tab_home` khi ở trang Tài khoản) kiểm trên máy ảo.
+
+## 6. Ảnh hưởng tới code và spec khác (2026-11-06)
+
+### 6.1. Code cần sửa (A làm)
+
+| File | Hiện tại | Cần sửa |
+|---|---|---|
+| `RES/menu/menu_player_bottom_nav.xml` | Item `tab_account` cuối menu | Xóa item `tab_account`. (`tab_search` do spec 020 thêm theo FR-028.) |
+| `RES/values/strings_nav.xml` | `nav_tab_account` | Xóa khi không còn chỗ dùng. |
+| `MainActivity.kt` | `setOnItemSelectedListener` có nhánh `R.id.tab_account` (mở `nav_account` hoặc `LOGIN` cho khách); `updateBottomNav` map `R.id.accountFragment -> R.id.tab_account`; reselect chỉ xử lý tab chủ sân; KDoc `setUpBottomNav` ghi "Người chơi mới nối Trang chủ và Tài khoản" | Bỏ nhánh `tab_account` (khách đi qua `AccountEntryNavigator`). Trong nhánh người chơi của `updateBottomNav`, `accountFragment` → tab của `previousBackStackEntry` (mặc định `tab_home`). Mở rộng reselect cho `tab_home` (và các tab người chơi khi có). Sửa KDoc. |
+| `RES/navigation/nav_player.xml` | `include nav_account`, comment "Trang Tài khoản của spec 011" | Thêm `<action android:id="@+id/action_global_account" app:destination="@id/nav_account" />`. |
+| `RES/navigation/nav_owner.xml` | `action_ownerHome_to_account` trong `ownerHomePlaceholderFragment` | Đổi thành global action `action_global_account` (cùng id với `nav_player`) để `AccountEntryNavigator` dùng chung. |
+| `RES/layout/fragment_home_placeholder_owner.xml` | Header tự vẽ (`date`, tiêu đề, `TextView avatar`) | Thay bằng `<include layout="@layout/view_main_tab_header">` (`subtitle` = ngày). |
+| `feature/auth/ui/home/OwnerHomePlaceholderFragment.kt`, `OwnerHomePlaceholderViewModel.kt` | Tự gắn click `action_ownerHome_to_account`; ViewModel import `feature.account.ui.account.initialsOf` (import chéo `feature/auth` → `feature/account/ui`, trái constitution I) | Dùng `MainTabHeader.bind`; xóa `OwnerHomePlaceholderViewModel` nếu chỉ còn phục vụ avatar. |
+| `RES/layout/fragment_home_placeholder.xml`, `PlayerHomePlaceholderFragment.kt` | Màn tạm Trang chủ, không có avatar | Nếu spec 020 chưa thay bằng `HomeFragment` thật: thêm header dùng chung để người chơi vẫn vào được trang Tài khoản sau khi bỏ tab. |
+| `feature/account/ui/account/AccountFormat.kt` | `initialsOf` | Chuyển sang `core` (§5); sửa import ở `AccountFragment`, `EditProfileFragment`, `OwnerHomePlaceholderViewModel`. |
+| Mới | — | `core/ui/header/{AccountAvatarView, MainTabHeader}.kt`, `RES/layout/view_main_tab_header.xml`, `core/session/{AccountAvatarState, AccountAvatarSource, AccountEntryNavigator}.kt` + implementation và Hilt binding. |
+| Tài liệu của chính 011 | `research.md` R14 ("ở tab Tài khoản / Cơ sở"), `tasks.md` T028 và Checkpoint 2 ("vào tab Tài khoản"), `ui/README.md` và ảnh `01_account_*` | Cập nhật khi chạy `/speckit-plan` và `/speckit-tasks` cho thay đổi này; vẽ lại lối vào trên canvas. |
+
+### 6.2. Spec của người khác cần báo (không sửa ở đây)
+
+| Spec | Phụ trách | Chỗ nhắc | Cần báo |
+|---|---|---|---|
+| 060-my-bookings | B | `spec.md` US1 dòng 31: mở "Lịch đặt của tôi" "từ thanh điều hướng chính"; `contracts/ui-contracts.md`, `plan.md`, `tasks.md` T025–T029 chưa có header; wireframe `06_booking-management_buoc1_lich-dat-cua-toi.png` vẽ theo thanh dưới cũ | Màn gốc tab "Lịch đặt" đặt header dùng chung (§5) trên `TabLayout` 5 trạng thái; không tự vẽ avatar. Lối "Lịch đặt của tôi" trên trang Tài khoản (`smashnow://bookings/mine`, R14) giữ nguyên. |
+| 080-drop-in-session | C | `contracts/ui-screens.md` dòng 17 (`MyDropInsFragment`: "Tab "Lịch của tôi" / trang Tài khoản"); `tasks.md` T049 ("từ tab "Lịch của tôi" hoặc trang Tài khoản, thống nhất với A/B") | Màn gốc tab "Vãng lai" dùng header dùng chung. Lối vào "Lượt vãng lai của tôi": vẫn có mục trên trang Tài khoản (`smashnow://dropin/mine`), trang Tài khoản giờ mở từ avatar, không còn là tab. |
+| 090-community-group | C | Chưa nhắc header hay tab | Màn gốc tab "Cộng đồng" dùng header dùng chung. |
+| 112-owner-operations | D | Màn "Hôm nay" thay `fragment_home_placeholder_owner.xml` và "giữ header" | Header của màn Hôm nay giờ là `view_main_tab_header` (§5), `subtitle` = ngày; không vẽ avatar riêng. |
+| 020-court-search | A | Đã cập nhật 2026-11-06 (FR-028, `contracts/ui-screens.md` dòng 9 và 32) | Không cần báo; khi làm `HomeFragment` và tab Tìm kiếm thì dùng §5. |

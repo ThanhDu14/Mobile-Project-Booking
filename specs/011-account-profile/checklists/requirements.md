@@ -35,3 +35,4 @@
 - Còn 1 điểm cần làm rõ: User Story 6, kịch bản 5 (xóa tài khoản khi còn đơn sắp tới hoặc cơ sở đang hoạt động).
 - Đã thêm User Story 7 (đổi email) vì spec 010 ghi "sửa email thuộc spec 011".
 - Items marked incomplete require spec updates before `/speckit-clarify` or `/speckit-plan`
+- **2026-11-06 (cập nhật lối vào trang Tài khoản)**: kiểm tra lại toàn bộ mục trên sau khi thêm User Story 8, FR-026 → FR-031, SC-010 → SC-012, 5 Edge Case và Clarifications 2026-11-06. Vẫn đạt hết: phần nghiệp vụ chỉ nói "header dùng chung", "avatar", "màn hình đăng nhập"; tên file, class, navigation để ở `contracts/ui-screens.md` §5–§6. Không có [NEEDS CLARIFICATION] (hành vi sau đăng nhập, thanh dưới khi ở trang Tài khoản đã chọn theo cách chủ sân đang dùng và ghi ở Clarifications).
