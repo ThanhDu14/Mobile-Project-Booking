@@ -160,15 +160,6 @@ export async function commit(writes: Write[], transaction?: string): Promise<voi
   await res.body?.cancel();
 }
 
-export interface FirestoreTransaction {
-  readonly id: string;
-  get(path: string): Promise<Record<string, unknown> | null>;
-  write(write: Write): void;
-}
-
-/** Run a Firestore REST read/write transaction, retrying only server ABORTED conflicts. */
-export async function runTransaction<T>(
-  operation: (transaction: FirestoreTransaction) => Promise<T>,
 // ---------- Truy vấn và transaction ----------
 // Cùng chữ ký với bản của D (feature/110-owner-onboarding-implement) để merge không xung đột API; spec 011 thêm
 // tham số tùy chọn `opts` (`parent` cho subcollection, `allDescendants` cho collection group).
@@ -241,9 +232,11 @@ export function query(collectionId: string, filters: QueryFilter[], opts: QueryO
 }
 
 export interface FirestoreTransaction {
+  readonly id?: string;
   get(path: string): Promise<Record<string, unknown> | null>;
   query(collectionId: string, filters: QueryFilter[], opts?: QueryOptions): Promise<QueryDocument[]>;
-  commit(writes: Write[]): Promise<void>;
+  write(write: Write): void;
+  commit?(writes: Write[]): Promise<void>;
 }
 
 async function rollback(transaction: string): Promise<void> {
@@ -259,7 +252,7 @@ async function rollback(transaction: string): Promise<void> {
  * bị `ABORTED` (tranh chấp) thì chạy lại `operation`, nên `operation` không được có tác dụng phụ bên ngoài.
  */
 export async function runTransaction<T>(
-  operation: (transaction: FirestoreTransaction) => Promise<{ result: T; writes: Write[] }>,
+  operation: (transaction: FirestoreTransaction) => Promise<T | { result: T; writes: Write[] }>,
   maxAttempts = 5,
 ): Promise<T> {
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -268,51 +261,31 @@ export async function runTransaction<T>(
       body: JSON.stringify({ options: { readWrite: {} } }),
     });
     if (!begin.ok) throw await toError(begin);
-    const { transaction: id } = await begin.json() as { transaction: string };
+    const { transaction } = await begin.json() as { transaction: string };
     const writes: Write[] = [];
     let writeStarted = false;
     const tx: FirestoreTransaction = {
-      id,
+      id: transaction,
       get: async (path) => {
         if (writeStarted) throw new Error("Firestore transaction cannot read after a write");
         const res = await request(`${apiBase()}/${databaseRoot()}/documents:batchGet`, {
           method: "POST",
-          body: JSON.stringify({ documents: [documentName(path)], transaction: id }),
+          body: JSON.stringify({ documents: [documentName(path)], transaction }),
         });
         if (!res.ok) throw await toError(res);
         const rows = await res.json() as { found?: { fields?: Record<string, FirestoreValue> }; missing?: unknown }[];
         const found = rows.find((row) => row.found)?.found;
         return found ? decodeFields(found.fields ?? {}) : null;
       },
+      query: (collectionId, filters, opts = {}) => queryRequest(collectionId, filters, opts, transaction),
       write: (write) => {
         writeStarted = true;
         writes.push(write);
       },
-    };
-    try {
-      const result = await operation(tx);
-      if (writes.length > 0) await commit(writes, id);
-      else await rollbackTransaction(id);
-      return result;
-    } catch (error) {
-      await rollbackTransaction(id).catch(() => undefined);
-    const { transaction } = await begin.json() as { transaction: string };
-    const tx: FirestoreTransaction = {
-      // batchGet thay cho GET ?transaction=: Firestore Emulator treo với GET trong transaction.
-      async get(path) {
-        const res = await request(`${apiBase()}/${databaseRoot()}/documents:batchGet`, {
-          method: "POST",
-          body: JSON.stringify({ documents: [documentName(path)], transaction }),
-        });
-        if (!res.ok) throw await toError(res);
-        const [row] = await res.json() as { found?: { fields?: Record<string, FirestoreValue> } }[];
-        return row?.found ? decodeFields(row.found.fields ?? {}) : null;
-      },
-      query: (collectionId, filters, opts = {}) => queryRequest(collectionId, filters, opts, transaction),
-      async commit(writes) {
+      async commit(customWrites) {
         const res = await request(`${apiBase()}/${databaseRoot()}/documents:commit`, {
           method: "POST",
-          body: JSON.stringify({ writes, transaction }),
+          body: JSON.stringify({ writes: customWrites, transaction }),
         });
         if (!res.ok) throw await toError(res);
         await res.body?.cancel();
@@ -321,16 +294,23 @@ export async function runTransaction<T>(
 
     try {
       const outcome = await operation(tx);
-      if (outcome.writes.length > 0) await tx.commit(outcome.writes);
-      else await rollback(transaction);
-      return outcome.result;
+      const isWrapped = outcome !== null && typeof outcome === "object" && "writes" in outcome && Array.isArray((outcome as Record<string, unknown>).writes);
+      const writesToCommit = isWrapped ? (outcome as { writes: Write[] }).writes : writes;
+      if (writesToCommit.length > 0) {
+        await commit(writesToCommit, transaction);
+      } else {
+        await rollback(transaction);
+      }
+      return isWrapped && "result" in (outcome as Record<string, unknown>)
+        ? (outcome as { result: T }).result
+        : outcome as T;
     } catch (error) {
       await rollback(transaction);
       if (error instanceof FirestoreError && error.code === "ABORTED" && attempt < maxAttempts) continue;
       throw error;
     }
   }
-  throw new Error("Firestore transaction retry limit exceeded");
+  throw new FirestoreError("ABORTED", 409, "Transaction bị tranh chấp sau nhiều lần thử");
 }
 
 async function rollbackTransaction(transaction: string): Promise<void> {

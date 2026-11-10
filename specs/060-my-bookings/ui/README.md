@@ -2,6 +2,8 @@
 
 Ảnh xuất từ canvas thiết kế SmashNow ngày 13/10/2026, khớp spec sau commit `0c56d5c`. Bản gốc (có prototype bấm được, chế độ sáng/tối): [SmashNow Screens](https://claude.ai/artifact/9v89i3NEiUfw7mACk3zgq3).
 
+**Quyết định 2026-11-07:** Cả bốn ảnh là tham chiếu chính về thiết kế khi triển khai 060. Màn hủy là màn hình riêng theo ảnh `CancelBooking`, không phải dialog như kế hoạch cũ. Xây dựng giao diện XML có tương tác thực; những trạng thái chưa có ảnh vẫn phải nhất quán, hỗ trợ sáng/tối, accessibility và các trạng thái dữ liệu theo spec.
+
 | Ảnh | Artboard trên canvas |
 |---|---|
 | [`06_booking-management_buoc1_lich-dat-cua-toi.png`](06_booking-management_buoc1_lich-dat-cua-toi.png) | `MyBookings` |

@@ -4,6 +4,16 @@
 
 **Input**: Feature specification from `specs/060-my-bookings/spec.md`
 
+## Quyết định ưu tiên khi triển khai — 2026-11-07
+
+Các quyết định trong `spec.md`, mục Clarifications ngày 2026-11-07, thay thế mọi mô tả mâu thuẫn ở phần kế hoạch lịch sử bên dưới. Kế hoạch chi tiết và `tasks.md` cần được điều chỉnh trước khi implement:
+
+- Hủy/hoàn tiền và nhả slot là thao tác nhạy cảm qua Supabase Edge Function với Firestore transaction phía server; client chỉ gửi yêu cầu và `requestId`, không quyết định tiền hay trực tiếp sửa ví/trạng thái.
+- Hủy trễ bằng ví: phạt 30% số tiền thực trả sau voucher, làm tròn xuống bội số 1.000 VND, hoàn phần còn lại; từng buổi định kỳ dùng cùng chính sách trên phần được phân bổ.
+- Màn hình hủy là màn hình riêng theo ảnh thứ tư; cả bốn ảnh `ui/` là tham chiếu chính. Ưu tiên schema chung `docs/design/database/README.md` và đối chiếu code thực tế, không tự chia đều giá slot.
+- Các tab sắp xếp theo Clarifications trong spec. QR offline chỉ hiện khi tài khoản hiện tại là chủ đơn; không khẳng định cache còn hiệu lực khi mất mạng.
+- Giới hạn phạm vi ở 060 và tích hợp tối thiểu; công bố các phụ thuộc chưa hoàn thiện. Voucher chuỗi chỉ trả lượt khi toàn bộ các buổi đã hủy và mỗi buổi đủ điều kiện hoàn 100%; contract redemption của 050 cần đối chiếu thực tế.
+
 ## 1. Summary (Tóm tắt giải pháp kỹ thuật)
 - **Quản lý danh sách lịch đặt theo 5 Tab trạng thái & Phân trang**:
   - Giao diện `TabLayout` + `ViewPager2` gồm 5 tab với `SwipeRefreshLayout` và phân trang `limit(10)` + `startAfterDocument`:
@@ -22,14 +32,14 @@
   - Đơn `PENDING`: Hoàn **100%**.
   - Đơn `CONFIRMED` hủy sớm ($\ge 240$ phút = 4 tiếng trước giờ chơi): Hoàn **100%**.
   - Đơn `CONFIRMED` hủy trễ ($< 240$ phút):
-    + Trả qua ví giả lập (100%): Phạt 30% tiền cọc chuẩn hóa, hoàn **70%** còn lại. Kẹp biên an toàn chống âm khi có áp voucher: `penaltyAmount = minOf(booking.paidAmount, calculatedDepositPenalty)`, `refundAmount = maxOf(0L, booking.paidAmount - penaltyAmount)`.
+    + Trả qua ví giả lập: phạt 30% thực trả sau voucher, làm tròn xuống bội 1.000đ; hoàn thực trả trừ phạt. Báo giá client chỉ để tham khảo, server tính lại.
     + Đặt cọc 30%: Mất 100% tiền cọc (hoàn 0đ).
     + Trả tại sân (`AT_VENUE`): Hoàn 0đ.
 - **Firestore Transaction Hủy đơn & Nhả Slot Nguyên tử (`CancelBookingUseCase`)**:
   - Tuân thủ nghiêm ngặt quy tắc **All Reads Before All Writes**: Đọc `bookings/{bookingId}`, tính quote hoàn tiền, kiểm tra tính Idempotent qua document `users/{userId}/walletTransactions/refund_{bookingId}`, đọc `users/{userId}`.
-  - Thực thi ghi: Chuyển đơn sang `CANCELLED`, cộng tiền hoàn vào `walletBalance`, ghi log giao dịch `refund_{bookingId}`, và **xóa toàn bộ document `slots/{slotId}`** thuộc đơn để giải phóng sân ngay lập tức trên lưới `[040]`.
+  - Trên server, transaction kiểm tra quyền và trạng thái, cập nhật đơn, ví và giao dịch một lần; chỉ nhả slot sau khi xác minh slot vẫn thuộc booking. Không cho client quyết định tiền hoặc ghi các thay đổi nhạy cảm.
 - **Quản lý và Hủy chuỗi đơn cố định tuần (`recurringGroupId`)**:
-  - Cho phép hủy 1 buổi lẻ (`CancelRecurringSessionUseCase`) hoặc hủy toàn bộ các buổi chưa diễn ra còn lại bằng cách truy vấn danh sách `DocumentReference` bên ngoài rồi truyền vào Transaction xử lý nguyên tử.
+  - Dự kiến hỗ trợ hủy từng buổi hoặc các buổi còn lại, với kiểm tra thành viên nhóm và trạng thái phía server trong transaction; chưa triển khai khi hợp đồng phân bổ tiền/redemption thực tế chưa đủ rõ. Chỉ hoàn lượt voucher khi mọi buổi đã hủy và đều đủ điều kiện hoàn 100%.
 
 ## 2. Technical Context
 - **Language/Version**: Kotlin (JVM target 11 - đồng bộ `app/build.gradle.kts`), Android Gradle Plugin 9.4.1.
@@ -48,12 +58,12 @@
   - `users/{userId}/walletTransactions/refund_{bookingId}`: Document ID tất định chống hoàn tiền trùng lặp (Idempotent).
 - **Testing**:
   - Unit Test: JUnit4, MockK, Turbine, Kotlinx Coroutines Test (kiểm thử `CalculateRefundQuoteUseCase`, `CancelBookingUseCase`, `CancelRecurringSessionUseCase`, thuật toán sinh QR).
-  - UI Test: Espresso (kiểm thử chuyển 5 tab, hiển thị QR code, hộp thoại hủy đơn và khóa nút đánh giá đơn NO_SHOW).
+  - UI Test: Espresso (kiểm thử chuyển 5 tab, hiển thị QR code, màn hình hủy riêng và khóa nút đánh giá đơn NO_SHOW).
 
 ## 3. Constitution Check (Kiểm tra quy định dự án)
 - [x] **Constitution I (Clean Architecture)**: Tầng `domain` chỉ chứa pure Kotlin, model `QrBitMatrix` độc lập với `android.graphics.Bitmap`. UI render qua `QrBitmapRenderer.kt`.
-- [x] **Constitution II (Security & Server Validation)**: Security Rules đảm bảo chỉ chủ đơn mới đọc được `qrToken` và hủy đơn; sử dụng `request.time` trong `firestore.rules` chặn hành vi chỉnh lùi giờ điện thoại nhằm trục lợi hoàn tiền 100% khi hủy trễ.
-- [x] **Constitution III (Money, Time & Atomic Transaction)**: Mọi số tiền dùng kiểu `Long` VND (cấm `Double`/`Float`). Transaction hủy đơn tuân thủ All Reads Before All Writes, giải phóng `slots` và đảm bảo Idempotency qua ID `refund_{bookingId}`.
+- [ ] **Constitution II (Security & Server Validation)**: Cần xác minh rules và Edge Function bảo vệ QR, quyền sở hữu và thời gian server; chưa coi là đạt khi chưa có implementation và test.
+- [ ] **Constitution III (Money, Time & Atomic Transaction)**: Cần triển khai và kiểm thử transaction server, tiền nguyên, nhả đúng slot và idempotency; chưa coi là đạt.
 - [x] **Thỏa thuận liên thành viên**: Phương án 2.A (hiển thị đơn `REJECTED` khi quá 60m duyệt), Phương án 5.A (khóa quyền đánh giá đơn `NO_SHOW`).
 
 ## 4. Project Structure (Cấu trúc thư mục & mã nguồn)

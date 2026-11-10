@@ -14,6 +14,37 @@
             android:id="@+id/action_home_to_courtDetail"
             app:destination="@id/nav_court_detail" />
     </fragment>
+    <fragment
+        android:id="@+id/myBookingsFragment"
+        android:name="com.example.booking_app.feature.booking_management.ui.MyBookingsFragment"
+        android:label="@string/my_bookings_060_title">
+        <deepLink app:uri="smashnow://bookings/mine" />
+        <action
+            android:id="@+id/action_myBookings_to_detail"
+            app:destination="@id/bookingDetailFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/bookingDetailFragment"
+        android:name="com.example.booking_app.feature.booking_management.ui.BookingDetailFragment"
+        android:label="@string/my_bookings_060_detail_title">
+        <argument
+            android:name="bookingId"
+            app:argType="string" />
+        <action
+            android:id="@+id/action_detail_to_cancel"
+            app:destination="@id/cancelBookingFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/cancelBookingFragment"
+        android:name="com.example.booking_app.feature.booking_management.ui.CancelBookingFragment"
+        android:label="@string/my_bookings_060_cancel_booking">
+        <argument
+            android:name="bookingId"
+            app:argType="string" />
+    </fragment>
+
     <!-- Lưới đặt sân (040): Trang chủ → chi tiết sân (030) → nút "Đặt sân". -->
 
     <fragment

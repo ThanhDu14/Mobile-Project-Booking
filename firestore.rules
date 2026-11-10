@@ -261,6 +261,12 @@ service cloud.firestore {
                         request.resource.data.status == 'AVAILABLE'
                         && resource.data.holdBy == request.auth.uid
                       )
+                      // Xác nhận đặt sân: chuyển slot đang HELD của chính mình sang BOOKED
+                      || (
+                        request.resource.data.status == 'BOOKED'
+                        && resource.data.status == 'HELD'
+                        && resource.data.holdBy == request.auth.uid
+                      )
                     );
 
       allow delete: if isAdmin() || (isSignedIn() && resource.data.holdBy == request.auth.uid);
@@ -271,29 +277,43 @@ service cloud.firestore {
     // + bookings. slots đã có rule; 2 collection này trước đây chưa có match nên
     // transaction luôn bị chặn (PERMISSION_DENIED).
     match /recurringGroups/{groupId} {
-      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow read: if isSignedIn() && (resource == null || resource.data.userId == request.auth.uid || isAdmin());
       allow create: if isPlayer()
           && request.resource.data.userId == request.auth.uid
           && request.resource.data.status == 'HOLD'
           && request.resource.data.holdExpiresAt is timestamp
           && request.resource.data.holdExpiresAt <= request.time + duration.value(5, 'm')
           && request.resource.data.holdExpiresAt > request.time;
-      // Hủy / hết hạn bởi chính người giữ. CONFIRMED chưa mở ở đây — spec 050
-      // (thanh toán) sẽ mở rộng khi làm, không tự mở trước.
-      allow update: if isPlayer() && resource.data.userId == request.auth.uid
-          && onlyChanges(['status'])
-          && request.resource.data.status in ['CANCELLED', 'EXPIRED'];
+      // Status transitions are server-owned. In particular a client cannot
+      // cancel a group until the recurring-group refund contract is defined.
+      allow update: if false;
       allow delete: if false;
     }
 
     match /bookings/{bookingId} {
-      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow read: if isSignedIn() && (resource == null || resource.data.userId == request.auth.uid || isAdmin() || isApprovedOwner());
+      // Lát cắt test 050: Cho phép player tạo đơn PENDING của chính mình để test 060 bằng data real.
+      // Khi 050 có server confirmation thì phải thu hồi rule này về phía server.
       allow create: if isPlayer()
           && request.resource.data.userId == request.auth.uid
-          && request.resource.data.status == 'HOLD';
+          && (
+            request.resource.data.status == 'HOLD'
+            || (
+              request.resource.data.status == 'PENDING'
+              && request.resource.data.subtotal is number && request.resource.data.subtotal >= 0
+              && request.resource.data.discount is number && request.resource.data.discount >= 0
+              && request.resource.data.total is number && request.resource.data.total == request.resource.data.subtotal - request.resource.data.discount
+              && request.resource.data.depositAmount is number && request.resource.data.depositAmount >= 0
+              && request.resource.data.paidAmount is number && request.resource.data.paidAmount >= 0
+              && request.resource.data.remainingAmount is number && request.resource.data.remainingAmount >= 0
+            )
+          );
+      // Confirmation/refund are server-owned. Clients may only expire their own
+      // unconfirmed HOLD; cancellation must use the server transaction.
       allow update: if isPlayer() && resource.data.userId == request.auth.uid
+          && resource.data.status == 'HOLD'
           && onlyChanges(['status'])
-          && request.resource.data.status in ['CONFIRMED', 'CANCELLED', 'EXPIRED'];
+          && request.resource.data.status == 'EXPIRED';
       allow delete: if false;
     }
   }

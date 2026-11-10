@@ -3,7 +3,7 @@ import * as defaultFirestore from "../_shared/firestore.ts";
 import { updateWrite, FirestoreError } from "../_shared/firestore.ts";
 
 export interface CheckinBookingDeps {
-  firestore: Pick<typeof defaultFirestore, "get" | "commit">;
+  firestore: Pick<typeof defaultFirestore, "get" | "commit"> & Partial<Pick<typeof defaultFirestore, "query">>;
 }
 
 export async function handleCheckinBooking(
@@ -39,8 +39,18 @@ export async function handleCheckinBooking(
     if (venue.status === "LOCKED") throw new HttpError(403, "VENUE_LOCKED", "Cơ sở đang bị khóa");
     if (venue.status === "HIDDEN") throw new HttpError(403, "VENUE_HIDDEN", "Cơ sở đang ở trạng thái ẩn");
 
-    // 3. Verify booking
-    const booking = await firestore.get(`bookings/${bookingId}`);
+    // 3. Verify booking (support direct bookingId or fallback lookup by qrToken)
+    let booking = await firestore.get(`bookings/${bookingId}`);
+    let resolvedBookingId = bookingId;
+    if (!booking && typeof firestore.query === "function") {
+      const byToken = await firestore.query("bookings", [
+        { field: "qrToken", op: "EQUAL", value: bookingId },
+      ]);
+      if (byToken.length > 0) {
+        booking = byToken[0].data;
+        resolvedBookingId = byToken[0].id;
+      }
+    }
     if (!booking || booking.venueId !== venueId) {
       throw new HttpError(404, "BOOKING_NOT_FOUND", "Không tìm thấy đơn đặt sân");
     }
@@ -81,7 +91,7 @@ export async function handleCheckinBooking(
     }
 
     const writes: defaultFirestore.Write[] = [
-      updateWrite(`bookings/${bookingId}`, updateData),
+      updateWrite(`bookings/${resolvedBookingId}`, updateData),
     ];
 
     try {
@@ -96,7 +106,7 @@ export async function handleCheckinBooking(
     return new Response(
       JSON.stringify({
         success: true,
-        bookingId,
+        bookingId: resolvedBookingId,
         status: "CONFIRMED",
         checkedInAt: nowIso,
         paymentStatus: confirmPayment ? "PAID" : (booking.paymentStatus || "DEPOSITED"),

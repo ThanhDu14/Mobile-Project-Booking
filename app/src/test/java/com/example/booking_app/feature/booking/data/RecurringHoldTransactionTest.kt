@@ -257,7 +257,7 @@ class RecurringHoldTransactionTest {
     }
 
     @Test
-    fun releaseRecurringHold_updatesSlotsToAvailable_andGroupToCancelled() = runTest {
+    fun releaseRecurringHold_updatesOwnedSlots_withoutWritingServerOwnedGroup() = runTest {
         val slotId = "${courtId}_20261110_1800"
         val slotRef: DocumentReference = mockk()
         val slotSnap: DocumentSnapshot = mockk()
@@ -266,12 +266,6 @@ class RecurringHoldTransactionTest {
         every { transaction.get(slotRef) } returns slotSnap
         every { slotSnap.exists() } returns true
         every { slotSnap.getString("holdBy") } returns userId
-
-        val groupRef: DocumentReference = mockk()
-        val groupSnap: DocumentSnapshot = mockk()
-        every { groupsCollection.document("group-123") } returns groupRef
-        every { transaction.get(groupRef) } returns groupSnap
-        every { groupSnap.exists() } returns true
 
         dataSource.releaseRecurringHold(
             recurringGroupId = "group-123",
@@ -289,9 +283,9 @@ class RecurringHoldTransactionTest {
             )
         }
 
-        // Assert group status updated to CANCELLED
-        io.mockk.verify(exactly = 1) {
-            transaction.update(groupRef, "status", "CANCELLED")
+        // Group documents are server-owned; release must not attempt a group update.
+        io.mockk.verify(exactly = 0) {
+            transaction.update(any<DocumentReference>(), "status", "CANCELLED")
         }
     }
 

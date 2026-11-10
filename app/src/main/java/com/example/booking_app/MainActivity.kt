@@ -80,7 +80,7 @@ class MainActivity : AppCompatActivity() {
     /**
      * Một BottomNav cho cả hai chế độ, đổi menu theo graph gốc: BottomNav người chơi trong `nav_player`, OwnerNav
      * trong `nav_owner`. Chỉ hiện ở màn gốc của tab và ở trang Tài khoản. Người chơi mới nối Trang chủ (Tìm kiếm,
-     * Vãng lai, Lịch đặt, Cộng đồng chờ spec 020/080/060/090); chủ sân mới nối Hôm nay (màn tạm) và Cơ sở (Đơn đặt,
+     * Vãng lai, Cộng đồng chờ spec 020/080/090), Lịch đặt là màn tạm; chủ sân mới nối Hôm nay (màn tạm) và Cơ sở (Đơn đặt,
      * Lịch sân, Tin nhắn chờ spec 112). Tab chưa có màn hình báo "đang phát triển". Không có tab Tài khoản: trang
      * Tài khoản mở từ avatar ở header dùng chung (spec 011 US8) và giữ sáng tab đã mở nó.
      */
@@ -91,6 +91,10 @@ class MainActivity : AppCompatActivity() {
             when (item.itemId) {
                 R.id.tab_home -> {
                     navController.popBackStack(R.id.homeFragment, false)
+                    true
+                }
+                R.id.tab_bookings -> {
+                    openMyBookings()
                     true
                 }
                 R.id.tab_owner_today -> {
@@ -137,11 +141,23 @@ class MainActivity : AppCompatActivity() {
             if (navController.currentDestination?.id != R.id.accountFragment) return@setOnItemReselectedListener
             when (item.itemId) {
                 R.id.tab_home -> navController.popBackStack(R.id.homeFragment, false)
+                R.id.tab_bookings -> openMyBookings()
                 R.id.tab_owner_today -> navController.popBackStack(R.id.ownerHomePlaceholderFragment, false)
                 R.id.tab_owner_venues -> openOwnerVenues()
             }
         }
         navController.addOnDestinationChangedListener { _, destination, _ -> updateBottomNav(destination) }
+    }
+
+    private fun openMyBookings() {
+        navController.navigate(
+            R.id.myBookingsFragment,
+            null,
+            navOptions {
+                launchSingleTop = true
+                popUpTo(R.id.homeFragment)
+            },
+        )
     }
 
     private fun openOwnerVenues() {
@@ -176,9 +192,14 @@ class MainActivity : AppCompatActivity() {
         } else {
             when (destination.id) {
                 R.id.homeFragment -> R.id.tab_home
-                // Không có tab Tài khoản (spec 011 FR-026): giữ sáng tab đã mở trang này. Tab khác của người chơi
-                // (020/060/080/090) thêm nhánh ở đây khi có màn gốc; mặc định Trang chủ.
-                R.id.accountFragment -> R.id.tab_home
+                R.id.myBookingsFragment -> R.id.tab_bookings
+                // Giữ sáng tab đã mở trang Tài khoản.
+                R.id.accountFragment ->
+                    if (navController.previousBackStackEntry?.destination?.id == R.id.myBookingsFragment) {
+                        R.id.tab_bookings
+                    } else {
+                        R.id.tab_home
+                    }
                 else -> null
             }
         }

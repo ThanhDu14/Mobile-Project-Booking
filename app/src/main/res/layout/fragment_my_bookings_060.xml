@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?android:attr/colorBackground"
+    android:orientation="vertical">
+
+    <!-- Top Header Bar with Bell Icon per Mockup 1 -->
+    <RelativeLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="16dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="12dp">
+
+        <TextView
+            android:id="@+id/textBookingsTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentStart="true"
+            android:layout_centerVertical="true"
+            android:text="@string/my_bookings_060_title"
+            android:textAppearance="?attr/textAppearanceHeadlineMedium"
+            android:textStyle="bold" />
+
+        <ImageView
+            android:id="@+id/buttonNotifications"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Thông báo"
+            android:padding="12dp"
+            android:src="@drawable/ic_notifications_none_24"
+            app:tint="?attr/colorOnBackground" />
+    </RelativeLayout>
+
+    <!-- Horizontal Pill Filter Chips per Mockup 1 -->
+    <HorizontalScrollView
+        android:id="@+id/scrollFilterTabs"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:clipToPadding="false"
+        android:fillViewport="false"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="8dp"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:id="@+id/bookingFilterGroup"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/filterPayment"
+                style="@style/Widget.SmashNow.BookingFilterPill"
+                android:layout_marginEnd="8dp"
+                android:text="@string/my_bookings_060_payment" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/filterPending"
+                style="@style/Widget.SmashNow.BookingFilterPill"
+                android:layout_marginEnd="8dp"
+                android:text="@string/my_bookings_060_pending" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/filterUpcoming"
+                style="@style/Widget.SmashNow.BookingFilterPill"
+                android:layout_marginEnd="8dp"
+                android:text="@string/my_bookings_060_upcoming" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/filterCompleted"
+                style="@style/Widget.SmashNow.BookingFilterPill"
+                android:layout_marginEnd="8dp"
+                android:text="@string/my_bookings_060_completed" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/filterCancelled"
+                style="@style/Widget.SmashNow.BookingFilterPill"
+                android:text="@string/my_bookings_060_cancelled" />
+        </LinearLayout>
+    </HorizontalScrollView>
+
+    <!-- Main List & States Container -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/listBookings"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingHorizontal="16dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="16dp" />
+
+        <ProgressBar
+            android:id="@+id/progressBookings"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:id="@+id/layoutBookingsEmpty"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="24dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/textBookingsEmpty"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:text="@string/my_bookings_060_empty"
+                android:textAppearance="?attr/textAppearanceBodyLarge" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonExplore"
+                style="@style/Widget.SmashNow.Button.Outlined"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:minHeight="48dp"
+                android:text="@string/my_bookings_060_explore"
+                app:cornerRadius="24dp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/layoutBookingsError"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="24dp"
+            android:visibility="gone">
+
+            <TextView
+                android:id="@+id/textBookingsError"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textColor="?attr/colorError" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonRetry"
+                style="@style/Widget.SmashNow.Button.Outlined"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:minHeight="48dp"
+                android:text="@string/my_bookings_060_retry"
+                app:cornerRadius="24dp" />
+        </LinearLayout>
+    </FrameLayout>
+
+    <!-- Footer Policy Notice per Mockup 1 -->
+    <TextView
+        android:id="@+id/textBookingsPolicy"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:lineSpacingExtra="3dp"
+        android:paddingHorizontal="16dp"
+        android:paddingVertical="12dp"
+        android:text="@string/my_bookings_060_policy_footer"
+        android:textAppearance="?attr/textAppearanceBodySmall"
+        android:textColor="@color/sn_ink_muted" />
+</LinearLayout>

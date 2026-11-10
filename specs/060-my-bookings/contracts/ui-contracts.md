@@ -1,251 +1,52 @@
 # UI & Domain Contracts: Quản lý lịch đặt của tôi (spec 060)
 
-**Ngày**: 2026-10-15 · **Spec**: [spec.md](../spec.md) · **Plan**: [plan.md](../plan.md)
+**Nguồn quyết định**: [spec.md](../spec.md), đặc biệt Clarifications 2026-11-07. Bốn ảnh trong [ui/](../ui/) là tham chiếu chính. Đây là hợp đồng yêu cầu triển khai, không khẳng định API, endpoint hay tích hợp đã tồn tại; đối chiếu kiến trúc và hợp đồng thực tế trước khi cài đặt.
 
-Tài liệu này xác lập các hợp đồng giao tiếp giữa các tầng kiến trúc trong tính năng `060-my-bookings` và điểm giao thoa điều hướng với các tính năng khác (`040`, `041`, `050`, `070`) cùng quy tắc bảo mật Firestore Security Rules.
+## Danh sách, chi tiết và điều hướng
 
----
+- Năm tab: HOLD còn hạn; PENDING; CONFIRMED chưa qua giờ kết thúc; COMPLETED/NO_SHOW; CANCELLED/REJECTED. EXPIRED không xuất hiện. Trang ít nhất 10 đơn, phân trang ổn định cả khi khóa sắp xếp trùng.
+- Thứ tự: HOLD/PENDING theo `createdAt` giảm; CONFIRMED theo `startAt` tăng; COMPLETED/NO_SHOW theo `startAt` giảm; CANCELLED/REJECTED theo `updatedAt` giảm. Đồng hồ HOLD/PENDING dựa trên giờ server và deadline hiện hữu.
+- Thẻ và chi tiết hiển thị thông tin sân, slot, trạng thái, tiền và nhóm như FR-010/011. Dùng giá từng `items` theo schema thực tế, không tự chia đều giá slot. Có loading, dữ liệu, rỗng, lỗi và thử lại.
+- Thanh toán tiếp điều hướng 050 với đơn HOLD và hạn hiện tại, không tạo HOLD hay reset 5 phút. Đặt lại từ lịch sử sang 040 với cơ sở đã chọn; nếu venue ẩn, khóa hoặc tạm ngưng thì báo lỗi và ở lại. Review sang 070 chỉ cho đơn COMPLETED đủ điều kiện, không cho NO_SHOW. Tên args và cấu trúc điều hướng phải đối chiếu implementation thực tế, không giả định đã tồn tại.
 
-## 1. Hợp đồng Điều hướng (Navigation Safe Args)
+## QR và check-in
 
-### 1.1. Tiếp nhận điều hướng từ Hóa đơn điện tử (`050-payment-voucher`)
-Khi thanh toán xong, người chơi bấm "Xem lịch đặt của tôi":
-```kotlin
-package com.example.booking_app.feature.booking_management.ui
+Chỉ chủ đơn được server cho đọc chi tiết và QR. Đơn CONFIRMED chưa check-in hiển thị QR sinh từ token server; sau check-in thay bằng thời gian check-in và ẩn nút hủy. Chi tiết đã tải có thể hiển thị QR cache offline **chỉ khi tài khoản hiện tại khớp chủ đơn**. Cảnh báo ngoại tuyến không khẳng định QR còn hiệu lực; server check-in 112 vẫn kiểm tra trạng thái và quyền. Không cho tài khoản khác đọc cache chứa token.
 
-import android.os.Parcelable
-import kotlinx.parcelize.Parcelize
+## Màn hình hủy riêng
 
-@Parcelize
-data class ReceiptToMyBookingsArgs(
-    val bookingId: String,
-    val isRecurring: Boolean = false,
-    val initialTab: String = "PENDING"   // Mở ngay tab "Chờ duyệt"
-) : Parcelable
-```
+Từ đơn PENDING hoặc CONFIRMED chưa bắt đầu và chưa check-in, mở màn hình riêng theo `ui/06_booking-management_buoc3_huy-dat-san.png`, không thay bằng hộp thoại. Hiển thị số đã trả, hoàn, phạt, chính sách và lý do; bắt buộc chọn lý do có sẵn hoặc nhập nội dung cho mục Khác trước khi xác nhận. Quote phía client chỉ là dự kiến; thông báo kết quả và số tiền thực tế do server trả về, kể cả khi qua mốc 4 giờ trong lúc xác nhận. Giao dịch được gắn nhãn giả lập phục vụ học tập.
 
-### 1.2. Tiếp tục thanh toán đơn giữ chỗ (`HOLD`) sang `050-payment-voucher`
-Khi người dùng bấm "Thanh toán tiếp" từ Tab 1 (Chờ thanh toán) trước khi hết hạn 5 phút, sử dụng chung lớp Safe Args `HoldToPaymentArgs`:
-```kotlin
-@Parcelize
-data class HoldToPaymentArgs(
-    val bookingId: String,
-    val venueId: String,
-    val venueName: String,
-    val isRecurring: Boolean,
-    val totalSessions: Int,
-    val subtotalAmount: Long,
-    val slotIds: Array<String>,
-    val holdExpiresAtMillis: Long        // Kế thừa mốc thời gian còn lại, không reset 5 phút
-) : Parcelable
-```
+### Chính sách tiền
 
-### 1.3. Đặt lại sân này sang `040-booking-slot-grid`
-Khi người dùng bấm "Đặt lại sân này" từ đơn đã hoàn thành hoặc đã hủy:
-```kotlin
-@Parcelize
-data class RebookArgs(
-    val venueId: String
-) : Parcelable
-```
+Tính bằng số nguyên VND, dựa trên số tiền thực trả sau voucher và thời gian server:
 
-### 1.4. Viết đánh giá sang `070-reviews-ratings`
-Với các đơn `COMPLETED` (và chưa từng đánh giá `hasReviewed == false`), mở màn hình viết đánh giá:
-```kotlin
-@Parcelize
-data class BookingToReviewArgs(
-    val bookingId: String,
-    val venueId: String,
-    val venueName: String,
-    val courtName: String
-) : Parcelable
-```
-*Lưu ý: Đơn mang trạng thái `NO_SHOW` bị vô hiệu hóa hoàn toàn nút "Viết đánh giá" theo Phương án 5.A.*
+| Điều kiện | Phạt | Hoàn |
+|---|---:|---:|
+| PENDING hoặc CONFIRMED còn ít nhất 240 phút | 0 | 100% thực trả |
+| CONFIRMED trễ dưới 240 phút, ví giả lập | 30% thực trả, làm tròn xuống bội 1.000 VND | thực trả trừ phạt |
+| CONFIRMED trễ, đặt cọc | toàn bộ cọc đã trả | 0 |
+| Thanh toán tại sân, chưa trả | 0 | 0 |
 
----
+Luôn bảo đảm `penaltyAmount + refundAmount == paidAmount`. Ví dụ 111.111đ trả ví: phạt 33.000đ, hoàn 78.111đ. Không hiểu 70% là phép làm tròn độc lập.
 
-## 2. Hợp đồng Tầng Domain (Domain Repository Interface)
+### Chuỗi cố định và voucher
 
-Được định nghĩa thuần túy tại `com.example.booking_app.feature.booking_management.domain.repository.BookingManagementRepository`:
+Hiển thị từng buổi với trạng thái riêng; cho chọn hủy một/vài buổi hoặc tất cả buổi còn lại đủ điều kiện. Phân bổ cọc/voucher theo tỷ lệ giá trị thực của buổi trên tổng chuỗi, làm tròn đồng và dồn phần dư vào buổi cuối, bảo toàn tổng. Áp dụng chính sách hủy độc lập cho phần tiền đã phân bổ của từng buổi: ví trễ phạt theo quy tắc trên; cọc trễ mất phần cọc buổi đó. Tổng hợp số hoàn khi hủy các buổi còn lại.
 
-```kotlin
-package com.example.booking_app.feature.booking_management.domain.repository
+Voucher đơn chỉ hoàn lượt khi hủy đủ điều kiện hoàn 100%. Voucher dùng chung của chuỗi chỉ hoàn lượt khi **tất cả buổi liên quan đã hủy và từng buổi đều đủ điều kiện hoàn 100%**; hủy một phần không hoàn lượt. Việc xác định redemption nhóm phụ thuộc hợp đồng dữ liệu 050 thực tế, không tự giả định khóa hay đường dẫn.
 
-import com.example.booking_app.feature.booking_management.domain.model.BookingDetail
-import com.example.booking_app.feature.booking_management.domain.model.BookingSummaryItem
-import com.example.booking_app.feature.booking_management.domain.model.BookingTab
-import com.example.booking_app.feature.booking_management.domain.model.RecurringBookingGroupDetail
-import com.example.booking_app.feature.booking_management.domain.model.RefundPolicyQuote
-import kotlinx.coroutines.flow.Flow
+## Hợp đồng domain và server
 
-interface BookingManagementRepository {
+Repository cung cấp đọc danh sách phân trang, quan sát chi tiết realtime, đọc nhóm, lấy giờ server và gửi yêu cầu hủy. Domain có thể tính quote dự kiến thuần Kotlin, nhưng không dùng quote client làm thẩm quyền. Request hủy bao gồm định danh đơn hoặc các buổi cần hủy, lý do và `requestId` duy nhất; danh tính lấy từ phiên xác thực server. Retry sau timeout dùng lại cùng `requestId`. Phản hồi chứa trạng thái và số tiền hoàn/phạt thực tế hoặc lỗi xung đột/quyền; không coi API cụ thể đã tồn tại.
 
-    /**
-     * Lấy danh sách tóm tắt các đơn đặt sân theo từng Tab phân trang.
-     * @param userId ID người chơi hiện tại
-     * @param tab Tab cần truy vấn (HOLD, PENDING, UPCOMING, COMPLETED, CANCELLED)
-     * @param lastVisibleTimestamp Mốc phân trang của item cuối cùng ở trang trước
-     * @param pageSize Số lượng bản ghi mỗi trang (mặc định 10)
-     */
-    suspend fun getBookingsByTab(
-        userId: String,
-        tab: BookingTab,
-        lastVisibleTimestamp: Long?,
-        pageSize: Int = 10
-    ): Result<List<BookingSummaryItem>>
+Edge Function hoặc dịch vụ server có thẩm quyền thực hiện transaction nguyên tử: xác thực chủ đơn, kiểm tra trạng thái, chưa check-in, giờ bắt đầu theo giờ server và idempotency; đọc dữ liệu thanh toán/nhóm/voucher cần thiết, tính lại chính sách, cập nhật hủy, hoàn ví và lịch sử, nhả slot và hoàn voucher khi đủ điều kiện. Với chuỗi áp dụng độc lập cho từng buổi và quy tắc voucher nhóm trên. Race với duyệt/từ chối/check-in phải được kiểm tra trong transaction; retry không tạo hoàn tiền trùng. Không cho client tự ghi hủy, ví, giao dịch hoàn hoặc slot để thay thế transaction.
 
-    /**
-     * Lắng nghe realtime trạng thái chi tiết của 1 đơn hàng (kịp thời nhận biết khi chủ sân quét QR check-in).
-     */
-    fun observeBookingDetail(bookingId: String): Flow<Result<BookingDetail>>
+Security Rules giới hạn dữ liệu nhạy cảm cho chủ đơn và các quyền hợp lệ theo đúng cơ sở, không cấp mọi venue chỉ vì role chủ sân. Rules không thay thế tính toán hoặc transaction server; việc xác minh thời gian và số tiền cuối cùng thuộc server.
 
-    /**
-     * Lấy chi tiết chuỗi đơn đặt cố định theo tuần và danh sách các buổi con.
-     */
-    suspend fun getRecurringGroupDetail(groupId: String): Result<RecurringBookingGroupDetail>
+## Phụ thuộc và trạng thái
 
-    /**
-     * Thực thi Firestore Transaction hủy một đơn lẻ:
-     * - Kiểm tra điều kiện mốc 240 phút và tính toán quote
-     * - Chống trùng lặp (Idempotent) qua document `users/{userId}/walletTransactions/refund_{bookingId}`
-     * - Cập nhật trạng thái đơn sang CANCELLED
-     * - Hoàn tiền vào ví giả lập nếu có
-     * - Xóa toàn bộ các document trong `slots/{slotId}` để nhả sân ngay lập tức trên lưới 040
-     */
-    suspend fun cancelBooking(
-        userId: String,
-        bookingId: String,
-        reason: String,
-        quote: RefundPolicyQuote
-    ): Result<Unit>
-
-    /**
-     * Hủy riêng lẻ một buổi trong chuỗi cố định tuần.
-     */
-    suspend fun cancelRecurringSession(
-        userId: String,
-        recurringGroupId: String,
-        bookingId: String,
-        reason: String,
-        quote: RefundPolicyQuote
-    ): Result<Unit>
-
-    /**
-     * Lấy giờ chuẩn hiện tại từ Firebase Server để đồng bộ thời gian đếm ngược chính xác.
-     */
-    suspend fun getServerTimeMillis(): Result<Long>
-}
-```
-
----
-
-## 3. Hợp đồng các UseCase cốt lõi
-
-### 3.1. `GetMyBookingsByTabUseCase`
-```kotlin
-class GetMyBookingsByTabUseCase(private val repository: BookingManagementRepository) {
-    suspend operator fun invoke(
-        userId: String,
-        tab: BookingTab,
-        lastVisibleTimestamp: Long? = null
-    ): Result<List<BookingSummaryItem>>
-}
-```
-
-### 3.2. `GetBookingDetailUseCase`
-```kotlin
-class GetBookingDetailUseCase(private val repository: BookingManagementRepository) {
-    operator fun invoke(bookingId: String): Flow<Result<BookingDetail>>
-}
-```
-
-### 3.3. `CalculateRefundQuoteUseCase`
-Tính toán số tiền phạt và hoàn theo mốc 240 phút (Pure Kotlin, không gọi mạng):
-```kotlin
-class CalculateRefundQuoteUseCase {
-    operator fun invoke(
-        booking: BookingDetail,
-        serverNowMillis: Long
-    ): RefundPolicyQuote
-}
-```
-
-### 3.4. `CancelBookingUseCase`
-```kotlin
-class CancelBookingUseCase(
-    private val repository: BookingManagementRepository,
-    private val calculateRefundQuoteUseCase: CalculateRefundQuoteUseCase
-) {
-    suspend operator fun invoke(
-        userId: String,
-        booking: BookingDetail,
-        reason: String
-    ): Result<RefundPolicyQuote>
-}
-```
-
-### 3.5. `GenerateCheckInQrUseCase`
-Sinh dữ liệu ma trận bit thuần Kotlin từ chuỗi `qrToken` bằng thư viện ZXing Core:
-```kotlin
-class GenerateCheckInQrUseCase {
-    operator fun invoke(
-        qrToken: String,
-        width: Int = 512,
-        height: Int = 512
-    ): Result<QrBitMatrix>
-}
-```
-
----
-
-## 4. Hợp đồng Bảo mật Firestore Security Rules
-
-Tuân thủ nghiêm ngặt **Constitution II**: Ngăn chặn người dùng sửa giờ máy Client để gian lận tiền hoàn hủy trễ bằng cách ép sử dụng `request.time` (Server Time của Google Cloud):
-
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-
-    // Quy tắc cho collection bookings
-    match /bookings/{bookingId} {
-      // Chỉ chủ đơn hoặc chủ cơ sở mới được đọc dữ liệu chi tiết (bao gồm qrToken)
-      allow read: if request.auth != null && (
-        resource.data.userId == request.auth.uid ||
-        request.auth.token.role == "VENUE_OWNER"
-      );
-
-      // Cho phép hủy đơn phía Client thông qua Transaction nếu tuân thủ chặt chẽ các điều kiện:
-      allow update: if request.auth != null &&
-        resource.data.userId == request.auth.uid &&
-        // Chỉ được đổi trạng thái từ PENDING hoặc CONFIRMED sang CANCELLED
-        resource.data.status in ['PENDING', 'CONFIRMED'] &&
-        request.resource.data.status == 'CANCELLED' &&
-        // Chưa từng check-in
-        resource.data.checkedInAt == null &&
-        // Bắt buộc giờ chơi phải lớn hơn giờ chuẩn server Google lúc gửi request
-        resource.data.startAt > request.time &&
-        // Kiểm tra tiền hoàn theo mốc 240 phút dựa trên request.time:
-        (
-          // Trường hợp 1: Hủy sớm >= 240 phút trước giờ chơi -> Hoàn 100%
-          (resource.data.startAt.toMillis() - request.time.toMillis() >= 240 * 60 * 1000 &&
-           request.resource.data.refundAmount == resource.data.paidAmount)
-          ||
-          // Trường hợp 2: Hủy trễ < 240 phút -> Hoàn tối đa 70% nếu trả ví, hoặc 0đ nếu cọc/sân
-          (resource.data.startAt.toMillis() - request.time.toMillis() < 240 * 60 * 1000 &&
-           request.resource.data.refundAmount <= resource.data.paidAmount)
-        );
-    }
-
-    // Quy tắc hoàn tiền ví giả lập
-    match /users/{userId}/walletTransactions/{txId} {
-      // Document ID phải tuân theo định dạng tất định refund_{bookingId}
-      allow create: if request.auth != null &&
-        request.auth.uid == userId &&
-        txId.matches('refund_.*') &&
-        request.resource.data.type == 'REFUND';
-      allow read: if request.auth != null && request.auth.uid == userId;
-    }
-  }
-}
-```
+- Schema chung `docs/design/database/README.md` và dữ liệu thực tế 040/041/050 cần đối chiếu: giá `items`, cấu trúc nhóm, thanh toán, phân bổ và slot.
+- Hợp đồng redemption voucher nhóm 050, endpoint hủy và transaction ví/slot/voucher, nguồn giờ server và điều hướng thực tế cần được xác minh hoặc bổ sung. Chưa có bằng chứng hoàn tất thì để bị chặn; không coi code hủy cũ thiếu hoàn tiền là hoàn thiện.
+- Timeout/từ chối và hoàn tiền 050/112, check-in 112, chuyển COMPLETED/NO_SHOW phía server và khóa review 070 là các phụ thuộc cần xác minh tích hợp.
+- Danh sách công việc và kiểm thử chưa nghiệm thu xem [tasks.md](../tasks.md).
