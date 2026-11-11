@@ -4,6 +4,11 @@ import com.example.booking_app.core.network.awaitWithTimeout
 import com.example.booking_app.core.network.toAppError
 import com.example.booking_app.core.session.SessionManager
 import com.example.booking_app.feature.review.data.dto.CreateReviewRequest
+import com.example.booking_app.feature.review.data.dto.DeleteReviewRequest
+import com.example.booking_app.feature.review.data.dto.DiscardPhotosRequest
+import com.example.booking_app.feature.review.data.dto.ReplyReviewRequest
+import com.example.booking_app.feature.review.data.dto.UpdateReviewRequest
+import com.example.booking_app.feature.review.data.dto.ReviewWriteResponse
 import com.example.booking_app.feature.review.data.dto.RatingsDto
 import com.example.booking_app.feature.review.data.dto.ReviewBookingDto
 import com.example.booking_app.feature.review.data.dto.ReviewDto
@@ -14,6 +19,7 @@ import com.example.booking_app.feature.review.data.dto.toTarget
 import com.example.booking_app.feature.review.domain.ReviewError
 import com.example.booking_app.feature.review.domain.ReviewException
 import com.example.booking_app.feature.review.domain.ReviewRepository
+import com.example.booking_app.feature.review.domain.model.OwnerReply
 import com.example.booking_app.feature.review.domain.model.Ratings
 import com.example.booking_app.feature.review.domain.model.Review
 import com.example.booking_app.feature.review.domain.model.ReviewTarget
@@ -21,6 +27,7 @@ import com.example.booking_app.feature.review.domain.model.SubmittedReview
 import com.example.booking_app.feature.review.domain.model.VenueRatingSummary
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -72,6 +79,47 @@ class FirestoreReviewRepository @Inject constructor(
         }.distinctUntilChanged()
     }
 
+    override fun observeVenueReviews(
+        venueId: String,
+        stars: Int?,
+        withPhotos: Boolean,
+        limit: Int,
+    ): Flow<List<Review>> {
+        var query: Query = firestore.collection(COLLECTION_REVIEWS)
+            .whereEqualTo(FIELD_VENUE_ID, venueId)
+            .whereEqualTo(FIELD_STATUS, STATUS_VISIBLE)
+        if (stars != null) query = query.whereEqualTo(FIELD_STAR_BUCKET, stars)
+        if (withPhotos) query = query.whereEqualTo(FIELD_HAS_PHOTOS, true)
+        return observeList(query, limit)
+    }
+
+    override fun observeOwnerReviews(venueIds: List<String>, unrepliedOnly: Boolean, limit: Int): Flow<List<Review>> {
+        if (venueIds.isEmpty()) return flow { emit(emptyList()) }
+        var query: Query = firestore.collection(COLLECTION_REVIEWS)
+            .whereIn(FIELD_VENUE_ID, venueIds.distinct().take(ReviewRepository.MAX_OWNER_VENUES))
+            .whereEqualTo(FIELD_STATUS, STATUS_VISIBLE)
+        if (unrepliedOnly) query = query.whereEqualTo(FIELD_HAS_OWNER_REPLY, false)
+        return observeList(query, limit)
+    }
+
+    /**
+     * Listener cho một trang (mới nhất trước, [limit] tăng dần khi tải thêm). Listener được gỡ khi
+     * không còn ai thu thập (rời màn hình), tránh tốn lượt đọc của gói miễn phí.
+     */
+    private fun observeList(query: Query, limit: Int): Flow<List<Review>> = callbackFlow {
+        val registration = query
+            .orderBy(FIELD_CREATED_AT, Query.Direction.DESCENDING)
+            .limit(limit.toLong())
+            .addSnapshotListener { snapshot, error ->
+                if (error != null) {
+                    close(error.asReviewException())
+                } else if (snapshot != null) {
+                    trySend(snapshot.documents.map { it.toReviewDto().toDomain() })
+                }
+            }
+        awaitClose { registration.remove() }
+    }.distinctUntilChanged()
+
     override suspend fun getReviewTarget(bookingId: String): ReviewTarget {
         val doc = try {
             firestore.collection(COLLECTION_BOOKINGS).document(bookingId).get().awaitWithTimeout()
@@ -96,19 +144,51 @@ class FirestoreReviewRepository @Inject constructor(
             comment = comment,
             photoPaths = photoPaths,
         )
-        val response = try {
-            api.create(request)
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            throw e.asReviewException()
-        }
-        return SubmittedReview(
-            id = response.review.id,
-            overall = response.review.overall,
-            canEditUntil = Instant.parse(response.review.canEditUntil),
-        )
+        return call { api.create(request) }.toSubmitted()
     }
+
+    override suspend fun update(
+        reviewId: String,
+        ratings: Ratings,
+        comment: String,
+        photoPaths: List<String>,
+    ): SubmittedReview {
+        val request = UpdateReviewRequest(
+            reviewId = reviewId,
+            ratings = RatingsDto(ratings.court, ratings.cleanliness, ratings.service),
+            comment = comment,
+            photoPaths = photoPaths,
+        )
+        return call { api.update(request) }.toSubmitted()
+    }
+
+    override suspend fun delete(reviewId: String) {
+        call { api.delete(DeleteReviewRequest(reviewId)) }
+    }
+
+    override suspend fun reply(reviewId: String, text: String): OwnerReply {
+        val reply = call { api.reply(ReplyReviewRequest(reviewId, text)) }.ownerReply
+        return OwnerReply(reply.text, Instant.parse(reply.repliedAt), isEdited = reply.editedAt != null)
+    }
+
+    override suspend fun discardPhotos(bookingId: String, photoPaths: List<String>): Int {
+        if (photoPaths.isEmpty()) return 0
+        return call { api.discardPhotos(DiscardPhotosRequest(bookingId, photoPaths)) }.deleted
+    }
+
+    private suspend fun <T> call(block: suspend () -> T): T = try {
+        block()
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        throw e.asReviewException()
+    }
+
+    private fun ReviewWriteResponse.toSubmitted() = SubmittedReview(
+        id = review.id,
+        overall = review.overall,
+        canEditUntil = Instant.parse(review.canEditUntil),
+    )
 
     private fun Throwable.asReviewException(): ReviewException =
         this as? ReviewException ?: ReviewException(toAppError().toReviewError(), this)
@@ -173,5 +253,12 @@ class FirestoreReviewRepository @Inject constructor(
         const val COLLECTION_REVIEWS = "reviews"
         const val COLLECTION_VENUES = "venues"
         const val COLLECTION_BOOKINGS = "bookings"
+        const val FIELD_VENUE_ID = "venueId"
+        const val FIELD_STATUS = "status"
+        const val FIELD_STAR_BUCKET = "starBucket"
+        const val FIELD_HAS_PHOTOS = "hasPhotos"
+        const val FIELD_HAS_OWNER_REPLY = "hasOwnerReply"
+        const val FIELD_CREATED_AT = "createdAt"
+        const val STATUS_VISIBLE = "VISIBLE"
     }
 }

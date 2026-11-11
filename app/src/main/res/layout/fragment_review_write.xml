@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Viết đánh giá (spec 070 US1, wireframe 07_review-favorite_buoc1_viet-danh-gia).
-    Vùng ảnh (US2) thêm vào khối photoSection khi làm T045.
+    Viết đánh giá (spec 070 US1, wireframe 07_review-favorite_buoc1_viet-danh-gia), đính kèm ảnh (US2),
+    sửa và xóa đánh giá đã gửi (US5).
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -192,13 +192,70 @@
                         android:minLines="4" />
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- Vùng ảnh (US2, T045) -->
+                <!-- Vùng ảnh (US2, T045): tối đa 3 ảnh, chọn từ Photo Picker hoặc chụp -->
                 <LinearLayout
                     android:id="@+id/photoSection"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:visibility="gone" />
+                    android:layout_marginTop="@dimen/space_4"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/review_photos_label"
+                        android:textAppearance="?attr/textAppearanceTitleSmall"
+                        android:textColor="?attr/colorOnSurface" />
+
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/photoList"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_2"
+                        android:orientation="horizontal"
+                        android:overScrollMode="never"
+                        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+                        tools:itemCount="2"
+                        tools:listitem="@layout/item_review_draft_photo" />
+
+                    <LinearLayout
+                        android:id="@+id/photoActions"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_2"
+                        android:orientation="horizontal">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/addFromGalleryButton"
+                            style="?attr/materialButtonOutlinedStyle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:minHeight="48dp"
+                            android:text="@string/review_photo_add_gallery"
+                            app:icon="@drawable/ic_photo_library_24" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/takePhotoButton"
+                            style="?attr/materialButtonOutlinedStyle"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/space_2"
+                            android:minHeight="48dp"
+                            android:text="@string/review_photo_add_camera"
+                            app:icon="@drawable/ic_photo_camera_24" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/photoPending"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_1"
+                        android:accessibilityLiveRegion="polite"
+                        android:text="@string/review_photo_pending"
+                        android:textAppearance="?attr/textAppearanceBodySmall"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:visibility="gone" />
+                </LinearLayout>
 
                 <TextView
                     android:id="@+id/publicNotice"
@@ -208,6 +265,20 @@
                     android:textAppearance="?attr/textAppearanceBodySmall"
                     android:textColor="?attr/colorOnSurfaceVariant"
                     tools:text="Đánh giá hiện công khai với tên và ảnh đại diện của bạn. Bạn sửa được đến hết 11/10, xóa được bất cứ lúc nào." />
+
+                <!-- Xóa đánh giá (US5): hiện khi đã có đánh giá, kể cả quá hạn sửa -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/deleteButton"
+                    style="?attr/materialButtonOutlinedStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_4"
+                    android:minHeight="48dp"
+                    android:text="@string/review_delete"
+                    android:textColor="?attr/colorError"
+                    android:visibility="gone"
+                    app:strokeColor="?attr/colorError"
+                    tools:visibility="visible" />
             </LinearLayout>
         </androidx.core.widget.NestedScrollView>
 
@@ -217,7 +288,7 @@
     </FrameLayout>
 
     <!-- Thanh dưới: điểm tổng + nút gửi -->
-    <!-- Chỉ hiện khi còn viết được (CAN_WRITE). -->
+    <!-- Hiện khi còn viết được (CAN_WRITE), đang sửa, hoặc còn hạn sửa (nút thành "Sửa"). -->
     <LinearLayout
         android:id="@+id/bottomBar"
         android:layout_width="match_parent"

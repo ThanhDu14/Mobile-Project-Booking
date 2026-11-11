@@ -4,6 +4,8 @@
 // `venues.ratingSums` lưu tổng từng tiêu chí và `overall10` (= tổng điểm tổng × 10, số nguyên) để
 // cộng/trừ O(1) mà không bị sai số Double. Chỉ đánh giá `VISIBLE` được tính.
 
+import { updateWrite, type Write } from "./firestore.ts";
+
 export interface Ratings {
   court: number;
   cleanliness: number;
@@ -130,4 +132,49 @@ export function applyDelta(
   if (count <= 0) return { ...EMPTY_VENUE_RATING, ratingSums: { ...EMPTY_VENUE_RATING.ratingSums } };
   for (const key of [...CRITERIA, "overall10"] as const) sums[key] = Math.max(0, sums[key]);
   return { ratingSums: sums, ratingCount: count, ratingAvg: round1(sums.overall10 / 10 / count) };
+}
+
+// ---------- Ẩn/hiện đánh giá (spec 120, D; research R10) ----------
+
+/** Phần tối thiểu của transaction mà hàm cần, khớp `FirestoreTransaction` của `_shared/firestore.ts`. */
+export interface ReviewVisibilityTx {
+  get(path: string): Promise<Record<string, unknown> | null>;
+}
+
+/**
+ * Đổi `status` của `reviews/{reviewId}` giữa `VISIBLE`/`HIDDEN` và cộng/trừ tổng điểm của cơ sở.
+ *
+ * Khác chữ ký trong contract (`Promise<void>`): `runTransaction` của `_shared/firestore.ts` commit một lần
+ * từ danh sách `writes` mà `operation` trả về, nên hàm trả các `Write` để người gọi gộp vào đó:
+ *
+ * ```ts
+ * await runTransaction(async (tx) => ({ result: null, writes: [...await applyReviewVisibility(tx, id, false)] }));
+ * ```
+ *
+ * Trả mảng rỗng khi đánh giá không tồn tại hoặc trạng thái đã đúng.
+ */
+export async function applyReviewVisibility(
+  tx: ReviewVisibilityTx,
+  reviewId: string,
+  visible: boolean,
+): Promise<Write[]> {
+  const review = await tx.get(`reviews/${reviewId}`);
+  if (!review) return [];
+  const oldStatus = typeof review.status === "string" ? review.status : "VISIBLE";
+  const newStatus = visible ? "VISIBLE" : "HIDDEN";
+  if (oldStatus === newStatus) return [];
+
+  const writes: Write[] = [updateWrite(`reviews/${reviewId}`, { status: newStatus }, ["updatedAt"])];
+  const ratings = parseRatings(review.ratings);
+  const venueId = typeof review.venueId === "string" ? review.venueId : "";
+  const venue = venueId ? await tx.get(`venues/${venueId}`) : null;
+  if (ratings && venue) {
+    const rating = applyDelta(venue, { ratings, status: oldStatus }, { ratings, status: newStatus });
+    writes.push(updateWrite(`venues/${venueId}`, {
+      ratingSums: rating.ratingSums,
+      ratingCount: rating.ratingCount,
+      ratingAvg: rating.ratingAvg,
+    }));
+  }
+  return writes;
 }

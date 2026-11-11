@@ -1,7 +1,9 @@
 package com.example.booking_app.feature.review.ui.common
 
 import androidx.annotation.StringRes
+import androidx.fragment.app.Fragment
 import com.example.booking_app.R
+import com.example.booking_app.core.ui.UiState
 import com.example.booking_app.feature.review.domain.ReviewError
 
 /** Thông báo snackbar cho từng [ReviewError]; `when` không có `else` nên thêm mã mới là phải thêm chuỗi. */
@@ -19,4 +21,13 @@ fun ReviewError.messageRes(): Int = when (this) {
     ReviewError.PHOTO_MISSING -> R.string.review_error_photo_missing
     ReviewError.INTERNAL -> R.string.review_error_internal
     ReviewError.NETWORK -> R.string.review_error_network
+}
+
+/**
+ * Thông báo cho [UiState.Error] của các ViewModel review: `message` là tên [ReviewError] (ViewModel
+ * không giữ `Context`). Tên lạ thì dùng thông báo lỗi chung.
+ */
+fun Fragment.errorMessage(error: UiState.Error): String {
+    val code = ReviewError.entries.firstOrNull { it.name == error.message } ?: ReviewError.INTERNAL
+    return getString(code.messageRes())
 }

@@ -56,13 +56,13 @@ description: "Danh sách task triển khai spec 070 – Đánh giá sân và sâ
 ### Domain và data dùng chung
 
 - [X] T010 [P] Tạo model domain trong `REV/domain/model/`: `Review.kt`, `ReviewAuthor.kt`, `Ratings.kt` (mỗi tiêu chí `Int` 1–5), `OwnerReply.kt`, `VenueRatingSummary.kt`, `FavoriteVenue.kt` (`availability`: `ACTIVE`, `SUSPENDED`, `GONE`), `ReviewDraft.kt`, `DraftPhoto.kt` (`state`: `PENDING`, `UPLOADING`, `UPLOADED`, `FAILED`) đúng bảng mục 6 của [data-model.md](data-model.md)
-- [ ] T011 [P] Tạo interface `REV/domain/ReviewRepository.kt` (`observeSummary`, `observeMyReview`, `observeVenueReviews`, `observeOwnerReviews`, `create`, `update`, `delete`, `reply`, `discardPhotos`) và `REV/domain/FavoriteRepository.kt` (`observeIsFavorite`, `observeFavorites`, `setFavorite`) theo [contracts/ui-screens.md](contracts/ui-screens.md) — *30/10: xong `FavoriteRepository`; 06/11: `ReviewRepository` có `observeSummary`, `observeMyReview`, `getReviewTarget`, `create`; `update`, `delete`, `reply`, `discardPhotos`, `observeVenueReviews`, `observeOwnerReviews` thêm khi làm US2, US4–US6.*
-- [ ] T012 [P] Tạo `REV/data/dto/ReviewDto.kt`, `FavoriteDto.kt` và mapper sang domain trong `REV/data/dto/Mappers.kt`: `authorDeleted == true` → `ReviewAuthor.isDeleted`; `editedAt != null` → `isEdited`; `photoPaths` → URL public bằng `REV/data/ReviewPhotoUrls.kt` (`{SUPABASE_URL}/storage/v1/object/public/review-photos/{path}`) — *30/10: xong `FavoriteDto`, mapper favorite, `ReviewPhotoUrls`; 06/11: xong `ReviewDto`, `VenueRatingFieldsDto`, `ReviewBookingDto` và mapper (`ReviewMapperTest`).*
+- [X] T011 [P] Tạo interface `REV/domain/ReviewRepository.kt` (`observeSummary`, `observeMyReview`, `observeVenueReviews`, `observeOwnerReviews`, `create`, `update`, `delete`, `reply`, `discardPhotos`) và `REV/domain/FavoriteRepository.kt` (`observeIsFavorite`, `observeFavorites`, `setFavorite`) theo [contracts/ui-screens.md](contracts/ui-screens.md) — *30/10: xong `FavoriteRepository`; 06/11: `ReviewRepository` có `observeSummary`, `observeMyReview`, `getReviewTarget`, `create`; `update`, `delete`, `reply`, `discardPhotos`, `observeVenueReviews`, `observeOwnerReviews` thêm khi làm US2, US4–US6.* — *06/11: thêm đủ `observeVenueReviews`, `observeOwnerReviews`, `update`, `delete`, `reply`, `discardPhotos`.*
+- [X] T012 [P] Tạo `REV/data/dto/ReviewDto.kt`, `FavoriteDto.kt` và mapper sang domain trong `REV/data/dto/Mappers.kt`: `authorDeleted == true` → `ReviewAuthor.isDeleted`; `editedAt != null` → `isEdited`; `photoPaths` → URL public bằng `REV/data/ReviewPhotoUrls.kt` (`{SUPABASE_URL}/storage/v1/object/public/review-photos/{path}`) — *30/10: xong `FavoriteDto`, mapper favorite, `ReviewPhotoUrls`; 06/11: xong `ReviewDto`, `VenueRatingFieldsDto`, `ReviewBookingDto` và mapper (`ReviewMapperTest`).*
 - [X] T013 [P] Tạo `REV/data/dto/ReviewFunctionDtos.kt` (`@Serializable` request/response cho 5 action và body lỗi `{ error: { code, message } }`) và `REV/domain/ReviewError.kt` ánh xạ mã lỗi: `INVALID_ARGUMENT`, `UNAUTHENTICATED`, `NOT_OWNER`, `OWN_VENUE`, `ACCOUNT_LOCKED`, `NOT_FOUND`, `BOOKING_NOT_COMPLETED`, `REVIEW_WINDOW_CLOSED`, `ALREADY_REVIEWED`, `PHOTO_MISSING`, `INTERNAL`, `NETWORK` — *30/10: thêm `ReviewException`, `data/ReviewErrors.kt` (`Throwable.toReviewError()`), chuỗi `review_error_*` và `ui/common/ReviewErrorMessages.kt`.*
-- [ ] T014 Tạo khung `REV/data/FirestoreReviewRepository.kt` (đọc Firestore bằng `callbackFlow`, gọi `supabase.functions.invoke("review")`; khi `401` làm mới token `getIdToken(true)` và thử lại 1 lần) và `REV/data/FirestoreFavoriteRepository.kt`; bind trong `REV/data/di/ReviewModule.kt` (Hilt) — *06/11: xong `FirestoreReviewRepository` (đọc `reviews`, `venues`, `bookings`) + `ReviewApi`/`SupabaseReviewApi` (dùng `FunctionErrors.invokeWithAuthRetry` có sẵn cho 401); bind trong `ReviewModule`. Còn các action ghi của US2, US4–US6.*
+- [X] T014 Tạo khung `REV/data/FirestoreReviewRepository.kt` (đọc Firestore bằng `callbackFlow`, gọi `supabase.functions.invoke("review")`; khi `401` làm mới token `getIdToken(true)` và thử lại 1 lần) và `REV/data/FirestoreFavoriteRepository.kt`; bind trong `REV/data/di/ReviewModule.kt` (Hilt) — *06/11: xong `FirestoreReviewRepository` (đọc `reviews`, `venues`, `bookings`) + `ReviewApi`/`SupabaseReviewApi` (dùng `FunctionErrors.invokeWithAuthRetry` có sẵn cho 401); bind trong `ReviewModule`. Còn các action ghi của US2, US4–US6.* — *06/11: xong các action ghi `update`, `delete`, `reply`, `discardPhotos`.*
 - [X] T015 [P] Tạo `RES/values/strings_review.xml` với toàn bộ key ở mục 3 của [contracts/ui-screens.md](contracts/ui-screens.md) và thông báo cho từng mã lỗi ở T013
-- [ ] T016 [P] Tạo `RES/navigation/nav_review.xml` (nested graph) với 6 destination và argument Safe Args theo [contracts/ui-screens.md](contracts/ui-screens.md) mục 1, deep link `smashnow://review/write/{bookingId}`, `smashnow://review/venue/{venueId}`; `include` vào graph chính `RES/navigation/nav_graph.xml` — *30/10: đã tạo `nav_review.xml` (include trong `nav_player`) với `FavoriteVenuesFragment`; 06/11: thêm `WriteReviewFragment` (args `bookingId`, `mode`; deep link `smashnow://review/write/{bookingId}`); 4 destination còn lại thêm khi làm US2, US4, US6.*
-- [ ] T017 [P] Tạo `RES/layout/item_review.xml` (avatar, tên, điểm tổng + 3 tiêu chí, bình luận, lưới ảnh, ngày, nhãn "Đã chỉnh sửa", nhãn "Đánh giá đã bị ẩn", khối "Phản hồi của chủ sân") và `REV/ui/common/ReviewAdapter.kt` (`ListAdapter` + `DiffUtil`; tác giả đã xóa → `review_deleted_user` + ảnh mặc định; `contentDescription` đọc số sao)
+- [X] T016 [P] Tạo `RES/navigation/nav_review.xml` (nested graph) với 6 destination và argument Safe Args theo [contracts/ui-screens.md](contracts/ui-screens.md) mục 1, deep link `smashnow://review/write/{bookingId}`, `smashnow://review/venue/{venueId}`; `include` vào graph chính `RES/navigation/nav_graph.xml` — *30/10: đã tạo `nav_review.xml` (include trong `nav_player`) với `FavoriteVenuesFragment`; 06/11: thêm `WriteReviewFragment` (args `bookingId`, `mode`; deep link `smashnow://review/write/{bookingId}`); 4 destination còn lại thêm khi làm US2, US4, US6.* — *06/11: thêm `venueReviewsFragment` (deep link `smashnow://review/venue/{venueId}`), `reviewPhotoViewerFragment`; màn chủ sân ở graph riêng `nav_review_owner.xml` (deep link `smashnow://review/owner`) include trong `nav_owner`. `ReplyReviewBottomSheet` mở bằng `childFragmentManager` để dùng chung ViewModel với `OwnerReviewsFragment`, không thành destination.*
+- [X] T017 [P] Tạo `RES/layout/item_review.xml` (avatar, tên, điểm tổng + 3 tiêu chí, bình luận, lưới ảnh, ngày, nhãn "Đã chỉnh sửa", nhãn "Đánh giá đã bị ẩn", khối "Phản hồi của chủ sân") và `REV/ui/common/ReviewAdapter.kt` (`ListAdapter` + `DiffUtil`; tác giả đã xóa → `review_deleted_user` + ảnh mặc định; `contentDescription` đọc số sao)
 
 ### Server dùng chung
 
@@ -118,18 +118,18 @@ description: "Danh sách task triển khai spec 070 – Đánh giá sân và sâ
 
 ### Tests cho US2 ⚠️
 
-- [ ] T038 [P] [US2] Viết test RLS `supabase/tests/review_photos.test.sql` (S1–S6 trong [contracts/security-rules.md](contracts/security-rules.md)); chạy thấy fail
-- [ ] T039 [P] [US2] Bổ sung `FN/review/create.test.ts`: > 3 ảnh → `400`; path không có tiền tố `{uid}/{bookingId}/` → `400`; path chưa có trong Storage → `409 PHOTO_MISSING`; và `FN/review/discard.test.ts`: chỉ xóa path của mình chưa thuộc đánh giá đã lưu
-- [ ] T040 [P] [US2] Viết `TEST/ui/write/WriteReviewPhotosTest.kt`: chọn ảnh thứ 4 → lỗi `review_photo_limit`; ảnh `FAILED` → nút "Gửi" bị khóa cho tới khi thử lại thành công hoặc bỏ ảnh (FR-006); bỏ ảnh đã tải → gọi `discardPhotos`
+- [ ] T038 [P] [US2] Viết test RLS `supabase/tests/review_photos.test.sql` (S1–S6 trong [contracts/security-rules.md](contracts/security-rules.md)); chạy thấy fail — *06/11: đã viết `supabase/tests/storage_review_photos_test.sql`; chưa chạy được vì máy chưa có Docker (`npx supabase start`, xem T009).*
+- [X] T039 [P] [US2] Bổ sung `FN/review/create.test.ts`: > 3 ảnh → `400`; path không có tiền tố `{uid}/{bookingId}/` → `400`; path chưa có trong Storage → `409 PHOTO_MISSING`; và `FN/review/discard.test.ts`: chỉ xóa path của mình chưa thuộc đánh giá đã lưu
+- [X] T040 [P] [US2] Viết `TEST/ui/write/WriteReviewPhotosTest.kt`: chọn ảnh thứ 4 → lỗi `review_photo_limit`; ảnh `FAILED` → nút "Gửi" bị khóa cho tới khi thử lại thành công hoặc bỏ ảnh (FR-006); bỏ ảnh đã tải → gọi `discardPhotos`
 
 ### Implementation cho US2
 
-- [ ] T041 [US2] Tạo migration `supabase/migrations/<timestamp>_review_photos.sql` (bucket public, `file_size_limit` 2097152, MIME `image/jpeg`, `image/png`, `image/webp`, policy insert theo thư mục `sub`) → T038 qua
-- [ ] T042 [US2] Kiểm tra `photoPaths` trong handler `create` (≤ 3, tiền tố `{uid}/{bookingId}/`, object tồn tại) và cài đặt handler `discardPhotos` trong `FN/review/index.ts` → T039 qua
-- [ ] T043 [P] [US2] Cài đặt `REV/data/ReviewPhotoUploader.kt`: đọc `Uri`, thu nhỏ cạnh dài ≤ 1600 px, nén JPEG chất lượng 80; > 2 MB sau nén → lỗi cho ảnh đó; tải lên `review-photos/{uid}/{bookingId}/{uuid}.jpg`; trả `Flow` trạng thái từng ảnh
-- [ ] T044 [US2] Mở rộng `WriteReviewViewModel.kt` với danh sách `DraftPhoto` (thêm, bỏ, thử lại, tối đa 3) và chỉ gọi `create` khi mọi ảnh `UPLOADED` → T040 qua
-- [ ] T045 [US2] Thêm vào `fragment_review_write.xml` và `WriteReviewFragment.kt`: Photo Picker `PickMultipleVisualMedia(3 - số ảnh)`, chụp ảnh `TakePicture` + `FileProvider` (`RES/xml/file_paths.xml`, khai báo provider trong manifest), xin quyền `CAMERA` lúc bấm kèm giải thích khi bị từ chối; lưới ảnh có badge lỗi/nút thử lại; layout `RES/layout/item_review_draft_photo.xml`
-- [ ] T046 [P] [US2] Tạo `REV/ui/photo/PhotoViewerFragment.kt` + `RES/layout/fragment_review_photo_viewer.xml` (ViewPager2, Coil) và mở từ lưới ảnh trong `ReviewAdapter.kt`
+- [ ] T041 [US2] Tạo migration `supabase/migrations/<timestamp>_review_photos.sql` (bucket public, `file_size_limit` 2097152, MIME `image/jpeg`, `image/png`, `image/webp`, policy insert theo thư mục `sub`) → T038 qua — *06/11: đã tạo `supabase/migrations/20261106090000_review_photos_bucket.sql`; chờ chạy T038 trên Supabase local để xác nhận.*
+- [X] T042 [US2] Kiểm tra `photoPaths` trong handler `create` (≤ 3, tiền tố `{uid}/{bookingId}/`, object tồn tại) và cài đặt handler `discardPhotos` trong `FN/review/index.ts` → T039 qua
+- [X] T043 [P] [US2] Cài đặt `REV/data/ReviewPhotoUploader.kt`: đọc `Uri`, thu nhỏ cạnh dài ≤ 1600 px, nén JPEG chất lượng 80; > 2 MB sau nén → lỗi cho ảnh đó; tải lên `review-photos/{uid}/{bookingId}/{uuid}.jpg`; trả `Flow` trạng thái từng ảnh — *06/11: `SupabaseReviewPhotoUploader` (cài đặt interface `domain/ReviewPhotoUploader`); hàm `suspend` trả path, trạng thái từng ảnh do `WriteReviewViewModel` giữ.*
+- [X] T044 [US2] Mở rộng `WriteReviewViewModel.kt` với danh sách `DraftPhoto` (thêm, bỏ, thử lại, tối đa 3) và chỉ gọi `create` khi mọi ảnh `UPLOADED` → T040 qua
+- [X] T045 [US2] Thêm vào `fragment_review_write.xml` và `WriteReviewFragment.kt`: Photo Picker `PickMultipleVisualMedia(3 - số ảnh)`, chụp ảnh `TakePicture` + `FileProvider` (`RES/xml/file_paths.xml`, khai báo provider trong manifest), xin quyền `CAMERA` lúc bấm kèm giải thích khi bị từ chối; lưới ảnh có badge lỗi/nút thử lại; layout `RES/layout/item_review_draft_photo.xml`
+- [X] T046 [P] [US2] Tạo `REV/ui/photo/PhotoViewerFragment.kt` + `RES/layout/fragment_review_photo_viewer.xml` (ViewPager2, Coil) và mở từ lưới ảnh trong `ReviewAdapter.kt` — *06/11: dùng `ViewPager2` có sẵn qua Material (không thêm dependency).*
 
 **Checkpoint**: Kịch bản 4 qua; US1 vẫn chạy khi không chọn ảnh.
 
@@ -167,16 +167,16 @@ description: "Danh sách task triển khai spec 070 – Đánh giá sân và sâ
 
 ### Tests cho US4 ⚠️
 
-- [ ] T055 [P] [US4] Viết `FN/review/reply.test.ts`: chủ đúng cơ sở tạo phản hồi (`hasOwnerReply = true`, gửi `REVIEW_REPLY`); sửa lần 2 → `editedAt` có giá trị, không gửi thông báo lại; chủ cơ sở khác → `403 NOT_OWNER`; người chơi → `403 NOT_OWNER`; text rỗng hoặc > 500 ký tự → `400`; `ratingSums` không đổi
-- [ ] T056 [P] [US4] Viết `TEST/ui/owner/OwnerReviewsViewModelTest.kt`: lọc theo cơ sở và "Chưa phản hồi"; gửi phản hồi rỗng → lỗi, không gọi repository
+- [X] T055 [P] [US4] Viết `FN/review/reply.test.ts`: chủ đúng cơ sở tạo phản hồi (`hasOwnerReply = true`, gửi `REVIEW_REPLY`); sửa lần 2 → `editedAt` có giá trị, không gửi thông báo lại; chủ cơ sở khác → `403 NOT_OWNER`; người chơi → `403 NOT_OWNER`; text rỗng hoặc > 500 ký tự → `400`; `ratingSums` không đổi
+- [X] T056 [P] [US4] Viết `TEST/ui/owner/OwnerReviewsViewModelTest.kt`: lọc theo cơ sở và "Chưa phản hồi"; gửi phản hồi rỗng → lỗi, không gọi repository
 
 ### Implementation cho US4
 
-- [ ] T057 [US4] Cài đặt handler `reply` trong `FN/review/index.ts` (kiểm `appRole == OWNER`, `users.ownerStatus == APPROVED`, `venues.ownerId == uid`; text 1–500 ký tự; tạo `ownerReply.repliedAt` hoặc cập nhật `ownerReply.editedAt`; gửi `REVIEW_REPLY` lần đầu nếu `userId != null`) → T055 qua
-- [ ] T058 [US4] Cài đặt `observeOwnerReviews(venueIds, unrepliedOnly)` (`venueId in [≤ 30]`, `status == VISIBLE`, order `createdAt desc`, trang 20) và `reply` trong `REV/data/FirestoreReviewRepository.kt`
-- [ ] T059 [US4] Cài đặt `REV/ui/owner/OwnerReviewsViewModel.kt` (lấy danh sách cơ sở của chủ sân qua interface của spec 111, lọc theo cơ sở/"Chưa phản hồi") → T056 qua
-- [ ] T060 [P] [US4] Tạo `RES/layout/fragment_review_owner_list.xml` (chip lọc cơ sở, chip "Chưa phản hồi", danh sách dùng `ReviewAdapter` có nút "Phản hồi"/"Sửa phản hồi") và `RES/layout/bottom_sheet_review_reply.xml` (ô nhập có bộ đếm 500, không có nút xóa)
-- [ ] T061 [US4] Cài đặt `REV/ui/owner/OwnerReviewsFragment.kt` và `REV/ui/owner/ReplyReviewBottomSheet.kt`; ghi hướng dẫn gắn mục "Đánh giá của khách" vào menu chủ sân (spec 111/112) trong `REV/README.md`
+- [X] T057 [US4] Cài đặt handler `reply` trong `FN/review/index.ts` (kiểm `appRole == OWNER`, `users.ownerStatus == APPROVED`, `venues.ownerId == uid`; text 1–500 ký tự; tạo `ownerReply.repliedAt` hoặc cập nhật `ownerReply.editedAt`; gửi `REVIEW_REPLY` lần đầu nếu `userId != null`) → T055 qua
+- [X] T058 [US4] Cài đặt `observeOwnerReviews(venueIds, unrepliedOnly)` (`venueId in [≤ 30]`, `status == VISIBLE`, order `createdAt desc`, trang 20) và `reply` trong `REV/data/FirestoreReviewRepository.kt`
+- [X] T059 [US4] Cài đặt `REV/ui/owner/OwnerReviewsViewModel.kt` (lấy danh sách cơ sở của chủ sân qua interface của spec 111, lọc theo cơ sở/"Chưa phản hồi") → T056 qua — *06/11: lấy cơ sở qua `domain/OwnerVenuesProvider` → `data/OwnerVenuesAdapter` (bọc `OwnerVenueRepository.getOwnedVenues()` của spec 111).*
+- [X] T060 [P] [US4] Tạo `RES/layout/fragment_review_owner_list.xml` (chip lọc cơ sở, chip "Chưa phản hồi", danh sách dùng `ReviewAdapter` có nút "Phản hồi"/"Sửa phản hồi") và `RES/layout/bottom_sheet_review_reply.xml` (ô nhập có bộ đếm 500, không có nút xóa)
+- [X] T061 [US4] Cài đặt `REV/ui/owner/OwnerReviewsFragment.kt` và `REV/ui/owner/ReplyReviewBottomSheet.kt`; ghi hướng dẫn gắn mục "Đánh giá của khách" vào menu chủ sân (spec 111/112) trong `REV/README.md`
 
 **Checkpoint**: Kịch bản 6, 7 qua.
 
@@ -190,14 +190,14 @@ description: "Danh sách task triển khai spec 070 – Đánh giá sân và sâ
 
 ### Tests cho US5 ⚠️
 
-- [ ] T062 [P] [US5] Viết `FN/review/update-delete.test.ts`: sửa trong hạn → `editedAt` đặt, tổng điểm = − cũ + mới, `ownerReply` giữ nguyên; sửa quá hạn → `409 REVIEW_WINDOW_CLOSED`; người khác sửa/xóa → `403 NOT_OWNER`; xóa `VISIBLE` → `ratingCount` −1 và ảnh trong `{uid}/{reviewId}/` bị xóa; xóa `HIDDEN` → tổng điểm không đổi; xóa quá hạn vẫn được; sau khi xóa, tạo lại trong hạn được
-- [ ] T063 [P] [US5] Viết `TEST/ui/write/EditReviewViewModelTest.kt`: `mode = EDIT` nạp sẵn dữ liệu; quá hạn → chỉ còn "Xóa"; xóa cần xác nhận
+- [X] T062 [P] [US5] Viết `FN/review/update-delete.test.ts`: sửa trong hạn → `editedAt` đặt, tổng điểm = − cũ + mới, `ownerReply` giữ nguyên; sửa quá hạn → `409 REVIEW_WINDOW_CLOSED`; người khác sửa/xóa → `403 NOT_OWNER`; xóa `VISIBLE` → `ratingCount` −1 và ảnh trong `{uid}/{reviewId}/` bị xóa; xóa `HIDDEN` → tổng điểm không đổi; xóa quá hạn vẫn được; sau khi xóa, tạo lại trong hạn được
+- [X] T063 [P] [US5] Viết `TEST/ui/write/EditReviewViewModelTest.kt`: `mode = EDIT` nạp sẵn dữ liệu; quá hạn → chỉ còn "Xóa"; xóa cần xác nhận
 
 ### Implementation cho US5
 
-- [ ] T064 [US5] Cài đặt handler `update` và `delete` trong `FN/review/index.ts` theo [contracts/edge-function-review.md](contracts/edge-function-review.md) (ảnh bị bỏ khi sửa → xóa sau commit) → T062 qua
-- [ ] T065 [US5] Cài đặt `update`, `delete` trong `REV/data/FirestoreReviewRepository.kt` và `REV/domain/usecase/UpdateReviewUseCase.kt`, `DeleteReviewUseCase.kt`
-- [ ] T066 [US5] Mở rộng `WriteReviewViewModel.kt` và `WriteReviewFragment.kt` cho `mode = EDIT` (nạp đánh giá, nút "Lưu", nút "Xóa đánh giá" + hộp thoại xác nhận, ẩn nút sửa khi quá hạn) → T063 qua
+- [X] T064 [US5] Cài đặt handler `update` và `delete` trong `FN/review/index.ts` theo [contracts/edge-function-review.md](contracts/edge-function-review.md) (ảnh bị bỏ khi sửa → xóa sau commit) → T062 qua
+- [X] T065 [US5] Cài đặt `update`, `delete` trong `REV/data/FirestoreReviewRepository.kt` và `REV/domain/usecase/UpdateReviewUseCase.kt`, `DeleteReviewUseCase.kt`
+- [X] T066 [US5] Mở rộng `WriteReviewViewModel.kt` và `WriteReviewFragment.kt` cho `mode = EDIT` (nạp đánh giá, nút "Lưu", nút "Xóa đánh giá" + hộp thoại xác nhận, ẩn nút sửa khi quá hạn) → T063 qua
 
 **Checkpoint**: Kịch bản 5, 13 qua.
 
@@ -211,14 +211,14 @@ description: "Danh sách task triển khai spec 070 – Đánh giá sân và sâ
 
 ### Tests cho US6 ⚠️
 
-- [ ] T067 [P] [US6] Viết `TEST/ui/list/VenueReviewsViewModelTest.kt`: trang đầu 20, tải thêm khi cuộn cuối; lọc "4 sao" dùng `starBucket == 4`; lọc "Có ảnh"; sân chưa có đánh giá → `Empty`; lỗi → `Error` có thử lại
+- [X] T067 [P] [US6] Viết `TEST/ui/list/VenueReviewsViewModelTest.kt`: trang đầu 20, tải thêm khi cuộn cuối; lọc "4 sao" dùng `starBucket == 4`; lọc "Có ảnh"; sân chưa có đánh giá → `Empty`; lỗi → `Error` có thử lại
 
 ### Implementation cho US6
 
-- [ ] T068 [US6] Cài đặt `observeVenueReviews(venueId, starFilter?, withPhotos)` trong `REV/data/FirestoreReviewRepository.kt` (`status == VISIBLE`, order `createdAt desc`, phân trang bằng `startAfter`, limit 20; gỡ listener khi không còn thu thập)
-- [ ] T069 [US6] Cài đặt `REV/ui/list/VenueReviewsViewModel.kt` → T067 qua
-- [ ] T070 [P] [US6] Tạo `RES/layout/fragment_review_list.xml` (khối tổng quan: điểm trung bình, số lượt, 3 thanh điểm tiêu chí; chip lọc 1–5 sao, "Có ảnh"; `RecyclerView`; `include_state_views`)
-- [ ] T071 [US6] Cài đặt `REV/ui/list/VenueReviewsFragment.kt` (Safe Args `venueId`, `venueName`); ghi hướng dẫn gắn nút "Xem tất cả" ở chi tiết sân (spec 030) trong `REV/README.md`
+- [X] T068 [US6] Cài đặt `observeVenueReviews(venueId, starFilter?, withPhotos)` trong `REV/data/FirestoreReviewRepository.kt` (`status == VISIBLE`, order `createdAt desc`, phân trang bằng `startAfter`, limit 20; gỡ listener khi không còn thu thập)
+- [X] T069 [US6] Cài đặt `REV/ui/list/VenueReviewsViewModel.kt` → T067 qua
+- [X] T070 [P] [US6] Tạo `RES/layout/fragment_review_list.xml` (khối tổng quan: điểm trung bình, số lượt, 3 thanh điểm tiêu chí; chip lọc 1–5 sao, "Có ảnh"; `RecyclerView`; `include_state_views`)
+- [X] T071 [US6] Cài đặt `REV/ui/list/VenueReviewsFragment.kt` (Safe Args `venueId`, `venueName`); ghi hướng dẫn gắn nút "Xem tất cả" ở chi tiết sân (spec 030) trong `REV/README.md`
 
 **Checkpoint**: Mọi user story chạy độc lập.
 
@@ -226,7 +226,7 @@ description: "Danh sách task triển khai spec 070 – Đánh giá sân và sâ
 
 ## Phase 9: Polish & Cross-Cutting
 
-- [ ] T072 [P] Viết `FN/_shared/reviews.visibility.test.ts` và cài đặt `applyReviewVisibility(tx, reviewId, visible)` trong `FN/_shared/reviews.ts` cho spec 120 (D) (research R10)
+- [X] T072 [P] Viết `FN/_shared/reviews.visibility.test.ts` và cài đặt `applyReviewVisibility(tx, reviewId, visible)` trong `FN/_shared/reviews.ts` cho spec 120 (D) (research R10)
 - [ ] T073 [P] Cập nhật `docs/design/database/README.md` theo 9 mục ở cuối [data-model.md](data-model.md) (chỉ phần của C; ghi chú phần của B, D, A để họ xác nhận)
 - [ ] T074 [P] Gửi D danh sách loại thông báo `REVIEW_NEW`, `REVIEW_REPLY`, `REVIEW_REMINDER` và deep link (research R8) — ghi vào `docs/features/07-review-favorite/README.md` mục "Ghi chú thiết kế / quyết định"
 - [ ] T075 [P] Viết Espresso `ATEST/WriteReviewFlowTest.kt` cho luồng viết đánh giá (chấm sao → bình luận → gửi → thấy "Xem đánh giá của bạn") trên Emulator
