@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest';
 import { assertFails, assertSucceeds, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, updateDoc, where } from 'firebase/firestore';
 import { createTestEnv } from './setup';
 
 let env: RulesTestEnvironment;
@@ -28,6 +28,12 @@ beforeEach(async () => {
       userId: 'player-1',
       status: 'PENDING',
       qrToken: 'sensitive-token-never-leak-to-client',
+    });
+    await fs.doc('bookings/booking-2').set({
+      venueId: 'venue-b',
+      userId: 'player-2',
+      status: 'CONFIRMED',
+      qrToken: 'token-of-venue-b',
     });
   });
 });
@@ -59,8 +65,28 @@ describe('Feature 112 owner access prerequisites', () => {
     await assertFails(updateDoc(doc(fs, 'venues/venue-locked/courts/court-1'), { isActive: false }));
   });
 
-  it('denies owner from directly reading client booking documents (T012: preserves qrToken isolation)', async () => {
+  // T012: chủ sân đọc được đơn thuộc cơ sở của mình (màn danh sách đơn), không đọc được đơn
+  // của cơ sở khác. Tra theo qrToken cho check-in chạy ở Edge Function checkin-booking.
+  it('T012: approved owner reads bookings of an owned venue by ID and by venueId query', async () => {
     const fs = env.authenticatedContext('owner-a', { appRole: 'OWNER' }).firestore();
+    await assertSucceeds(getDoc(doc(fs, 'bookings/booking-1')));
+    await assertSucceeds(getDocs(query(collection(fs, 'bookings'), where('venueId', '==', 'venue-a'))));
+  });
+
+  it('T012: owner cannot read bookings of another owner venue', async () => {
+    const fs = env.authenticatedContext('owner-a', { appRole: 'OWNER' }).firestore();
+    await assertFails(getDoc(doc(fs, 'bookings/booking-2')));
+    await assertFails(getDocs(query(collection(fs, 'bookings'), where('venueId', '==', 'venue-b'))));
+  });
+
+  it('T012: owner cannot look up bookings by qrToken across venues', async () => {
+    const fs = env.authenticatedContext('owner-a', { appRole: 'OWNER' }).firestore();
+    await assertFails(getDocs(query(collection(fs, 'bookings'), where('qrToken', '==', 'token-of-venue-b'))));
+    await assertFails(getDocs(collection(fs, 'bookings')));
+  });
+
+  it('T012: pending owner with a stale OWNER claim cannot read bookings', async () => {
+    const fs = env.authenticatedContext('pending', { appRole: 'OWNER' }).firestore();
     await assertFails(getDoc(doc(fs, 'bookings/booking-1')));
   });
 });

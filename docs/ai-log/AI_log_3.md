@@ -1795,6 +1795,88 @@ tick đúng, ghi rõ phần chưa kiểm chứng được.
 - Chưa chạy test RLS Storage (T038) vì máy chưa có Docker.
 - Chưa chạy các màn hình mới trên máy ảo hoặc thiết bị thật.
 
+## Mục 31: Khôi phục repo sau sự cố màn hình xanh; dựng CI GitHub Actions và sửa các lỗi có sẵn trên main
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-11 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | Việc chung (vai trò Tích hợp tuần này): CI theo team contract tuần 3 và cổng chất lượng của constitution; sửa lỗi nhỏ trong code của nhóm 04 (B) và 11 (D) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5) |
+| Mục đích | Khôi phục repo Git bị hỏng; viết workflow CI; sửa các lỗi có sẵn làm CI đỏ; soạn nội dung nhắn thành viên khác |
+| Nhánh Git | `chore/ci-github-actions` (PR #58) |
+
+### Prompt đã dùng
+
+```
+Bối cảnh: mình là thành viên C, tuần này giữ vai trò Tích hợp. Phiên trước đã mở PR #57 (spec 070
+US2, US4, US5, US6) và vừa tách nhánh chore/ci-github-actions từ origin/main để viết CI thì máy bị
+màn hình xanh. Không bật máy ảo Android Studio vì tốn RAM; khi nào cần test trên máy ảo thì báo mình.
+
+Mục tiêu: làm tiếp phiên trước, dựng CI GitHub Actions cho repo.
+
+Yêu cầu:
+1. Kiểm tra repo sau sự cố: file Git (HEAD, config, ref nhánh) và file mã nguồn có bị hỏng không.
+   Khôi phục mà không mất thay đổi chưa commit; xác định phiên trước đang làm tới đâu.
+2. Viết CI theo team contract và constitution:
+   - Android: ./gradlew lint testDebugUnitTest assembleDebug (google-services.json không được commit).
+   - Edge Functions: deno test trên Firebase Emulator.
+   - Firestore Rules: npm test trong firestore-tests.
+   - Thêm job định kỳ giữ project Supabase không bị tạm dừng.
+3. Chạy thử đủ các bước như CI trên máy trước khi push.
+4. Lỗi có sẵn trên main làm CI đỏ: sửa luôn các lỗi nhỏ, rõ ràng (kể cả trong code của B, D) để
+   2 bạn đó không phải tự sửa. Lỗi cần quyết định thiết kế, bảo mật hoặc cần sửa cả luồng thì không
+   tự sửa: ghi vào PR và báo lại mình.
+5. Push, mở PR, xem kết quả CI trên GitHub, rồi cho biết việc tiếp theo.
+6. Soạn tin nhắn cho B (test còn đỏ) và cho A (việc cần quyền admin repo).
+
+Ràng buộc: không commit khóa bí mật; commit theo Conventional Commits; không thêm dòng attribution
+AI vào commit và PR.
+
+Kết quả mong muốn: PR CI chạy được trên GitHub, nêu rõ job nào xanh, job nào đỏ và vì sao.
+```
+
+### Tóm tắt phản hồi của AI
+
+- **Khôi phục repo:**
+  - Sự cố đã ghi đè byte 0 lên `.git/HEAD`, `.git/config`, ref và reflog của nhánh `chore/ci-github-actions`, cùng 2 file mã (`Review.kt`, `file_paths.xml`).
+  - AI dựng lại config từ URL remote trong `FETCH_HEAD`. AI tìm lại commit của nhánh trong `logs/HEAD` và các object mới tạo.
+  - 2 file mã được lấy lại từ git. Kích thước khác chỉ do CRLF, không mất thay đổi nào. `git fsck` sạch; quét toàn project không còn file hỏng.
+- **CI:**
+  - `ci.yml` gồm 3 job: Android (dùng `google-services.json` giả), Edge Functions (`deno check` + `deno test` trên Emulator Auth/Firestore), Firestore Rules.
+  - `supabase-keepalive.yml` gọi REST API vào thứ Hai và thứ Năm.
+- **Lỗi có sẵn trên main, AI đã sửa:**
+  - Lint `DiffUtilEquals` ở `SlotMatrixRowAdapter.kt` (B).
+  - Test `OwnerBookingsViewModelTest` ghi cứng ngày 06/11 (D).
+  - 4 lỗi TypeScript do còn sót code chết sau khi gộp nhánh ở `_shared/firestore.ts` (D).
+  - Test `recurringHoldTransaction` chưa cập nhật theo Rules mới của B.
+- **Không tự sửa:**
+  - T012: rule `bookings` cho mọi chủ sân đã duyệt đọc mọi đơn, kể cả `qrToken`. Sửa cần đổi luồng check-in.
+  - Các ca `[BLOCKED: X]`: CI tạm bỏ qua qua biến `SKIP_BLOCKED`.
+  - AI phát hiện `VD-6` (spec 030) mâu thuẫn với R9 (spec 070) về việc khách chưa đăng nhập đọc đánh giá.
+- AI soạn tin nhắn cho B (hướng sửa T012) và cho A (thêm secret, bật bắt buộc CI qua trong ruleset).
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Khôi phục ref nhánh về `d122066` theo reflog | Dùng | Nhánh vừa tách từ origin/main, chưa có commit riêng |
+| `google-services.json` giả tạo trong workflow | Dùng | File thật không được commit; plugin cần file này để sinh `default_web_client_id` |
+| Chạy `deno test --no-check`, kiểm tra kiểu ở bước `deno check` riêng | Dùng | Lỗi kiểu và lỗi test hiện thành 2 bước tách biệt, dễ đọc hơn |
+| Bỏ qua ca `[BLOCKED: X]` trên CI | Dùng | Đây là ca nhóm chủ động đánh dấu đang chờ người khác; chạy trên máy vẫn thấy |
+| Sửa test của D bằng giờ tương đối, không inject `Clock` | Dùng | Chỉ sửa test, không đổi constructor ViewModel và Hilt |
+| Tự sửa T012 | Bỏ | Đổi luồng check-in của B, cần B quyết định và test trên máy |
+| Bật bắt buộc job Rules ngay trong ruleset | Bỏ | Sẽ chặn merge PR của cả nhóm khi T012 còn đỏ |
+
+### Cách kiểm chứng
+
+- `git fsck --no-dangling` sạch; quét project không còn file toàn byte 0.
+- `./gradlew lint testDebugUnitTest assembleDebug` với `google-services.json` giả: xanh, lint 0 Error.
+- `deno check .` xanh; `firebase emulators:exec --only auth,firestore` + `deno test -A`: 164/164.
+- `SKIP_BLOCKED=1 npm test` (firestore-tests): 192 passed, 5 skipped, 1 failed (T012).
+- CI trên GitHub (PR #58): Android ✅ (6 phút 32 giây), Edge Functions ✅, Firestore Rules ❌ đúng 1 ca T012.
+- Chưa chạy app trên máy ảo (không cần cho thay đổi này).
+
 ## Mục 32: Hoàn thành tuần 6 spec 080 (US1 danh sách/chi tiết buổi, US2 đăng ký và vé QR), sửa lỗi tranh chấp khi nhiều người đăng ký cùng lúc
 
 | Trường | Nội dung |
@@ -1878,6 +1960,60 @@ UpcomingBookingsReader. Chưa push, chưa mở PR.
 - Chưa chạy androidTest T020 `FirestoreDropInSessionRepositoryTest` (cần máy ảo); chưa chạy màn hình trên máy ảo hoặc thiết bị thật.
 - Commit: `8c2f7c3`, `8384b90`, `2349d64`, `9326183`, `7280a17`. Chưa push.
 
+## Mục 33: Sửa T012 (quyền đọc đơn của chủ sân) và VD-6 (khách xem đánh giá) theo nhờ của B và A
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-11 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | Việc chung (CI); 11 – Quản lý sân (spec 112 T012, Edge Function `checkin-booking`); 07 – Đánh giá (spec 070 R9) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5) |
+| Mục đích | Sửa test Rules còn đỏ trên CI theo nhờ của B (T012) và A (VD-6) |
+| Nhánh Git | `chore/ci-github-actions` (PR #58) |
+
+### Prompt đã dùng
+
+```
+Bối cảnh: PR #58 (CI) còn đỏ 1 test Rules T012 trong owner-operations.test.ts: rule bookings cho mọi chủ
+sân đã duyệt (isApprovedOwner) đọc mọi đơn, kể cả qrToken của cơ sở khác. B (người viết rule) nhờ mình
+sửa luôn. A nhờ sửa ca VD-6: khách chưa đăng nhập phải xem được đánh giá VISIBLE như spec 030, trong khi
+spec 070 của mình (R9) đang chặn. A cũng muốn CI chạy khi merge vào main.
+
+Yêu cầu:
+1. Sửa T012 mà không làm hỏng màn danh sách đơn và check-in QR của chủ sân; đối chiếu mô tả task T012
+   trong specs/112-owner-operations/tasks.md.
+2. Sửa Rules reviews cho khách đọc đánh giá VISIBLE; HIDDEN và list thiếu điều kiện status vẫn bị chặn;
+   cập nhật contract và spec 070 cho khớp.
+3. Kiểm tra trigger CI khi merge vào main.
+4. Chạy test Rules, Deno, unit test owner trên máy; push và xem CI trên GitHub.
+
+Ràng buộc: session spec 080 đang chạy Emulator ở cổng 8080, không động vào; máy ít RAM nên Gradle
+giới hạn bộ nhớ; không thêm dòng attribution AI.
+```
+
+### Tóm tắt phản hồi của AI
+
+- AI phát hiện `OwnerBookingRepositoryImpl` (spec 112) cũng đọc `bookings` trực tiếp theo `venueId`. Vì vậy AI không chặn hẳn quyền đọc mà đổi sang `ownsVenue(resource.data.venueId)`, đúng với mô tả task T012.
+- `checkin-booking`: `venueId` không còn bắt buộc. Server tự tra đơn theo mã đơn hoặc `qrToken`, lấy `venueId` từ chính đơn rồi mới kiểm tra quyền. Đơn của cơ sở khác trả `BOOKING_NOT_FOUND`. App bỏ đoạn tự query `bookings`.
+- `reviews`: khách đọc được đánh giá `VISIBLE` (R9), các ca còn lại vẫn bị chặn (R9b). VD-6 bỏ nhãn `[BLOCKED: C]`.
+- CI đã có sẵn trigger `push: main`, không cần sửa.
+- AI chạy test Rules trên Emulator riêng ở cổng 8181 để tránh session 080.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Chặn hẳn chủ sân đọc `bookings` như test cũ | Bỏ | Làm hỏng màn danh sách đơn của D, trái với mô tả task T012 |
+| Server tra `qrToken`, `venueId` không bắt buộc | Dùng | App không có `venueId` lúc quét QR; không cần đổi domain |
+| Lỗi đơn của cơ sở khác trả cùng mã với "không tồn tại" | Dùng | Không lộ việc mã đơn có tồn tại |
+
+### Cách kiểm chứng
+
+- Rules: 198 qua, chỉ còn 4 ca `[BLOCKED: D]`.
+- `checkin-booking`: 7/7 test.
+- `compileDebugKotlin` và unit test owner xanh.
+- CI trên GitHub xanh cả 3 job.
+- Chưa test check-in QR trên thiết bị.
 
 ## Mục 34: Deploy lên project thật, test spec 080 trên máy ảo và sửa các lỗi phát hiện khi test
 

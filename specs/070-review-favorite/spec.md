@@ -233,4 +233,4 @@ Từ phần tổng quan đánh giá ở chi tiết sân (spec 030), người ch�
 - Nút trái tim nằm trên màn hình chi tiết sân của spec 030 (A); spec này định nghĩa hành vi của nút. Phần tổng quan đánh giá ở chi tiết sân (spec 030) mở danh sách đầy đủ của User Story 6.
 - Nút "Đánh giá" nằm trên chi tiết đơn của spec 060 (B); spec này định nghĩa màn hình đánh giá.
 - Loại thông báo ở FR-026 (`REVIEW_REMINDER`, `REVIEW_NEW`, `REVIEW_REPLIED`) đã có trong đặc tả CSDL mục 4.13 và spec 100.
-- Người dùng đã đăng nhập (spec 010); khách chưa đăng nhập không dùng được tính năng này.
+- Người dùng đã đăng nhập (spec 010); khách chưa đăng nhập không dùng được tính năng này, trừ việc xem đánh giá `VISIBLE` ở chi tiết sân (spec 030; Rules R9, cập nhật 2026-11-11).

@@ -12,6 +12,7 @@ import com.example.booking_app.feature.owner.fixture.OwnerFixtures
 import io.mockk.coEvery
 import io.mockk.mockk
 import java.time.Instant
+import java.time.temporal.ChronoUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -74,7 +75,9 @@ class OwnerBookingsViewModelTest {
         advanceUntilIdle()
 
         val pending = sampleBooking("b1", OwnerBookingStatus.PENDING)
-        val confirmed = sampleBooking("b2", OwnerBookingStatus.CONFIRMED, start = "2026-11-06T15:00:00Z")
+        // Luôn ở tương lai so với lúc chạy test; ngày ghi cứng sẽ thành "Đã qua" khi ngày đó tới.
+        val upcomingStart = Instant.now().plus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.SECONDS).toString()
+        val confirmed = sampleBooking("b2", OwnerBookingStatus.CONFIRMED, start = upcomingStart)
         val cancelled = sampleBooking("b3", OwnerBookingStatus.CANCELLED)
 
         bookingRepository.bookingsFlow.emit(listOf(pending, confirmed, cancelled))

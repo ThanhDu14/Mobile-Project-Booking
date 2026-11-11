@@ -146,7 +146,7 @@ describe('Chi tiết sân – quyền đọc (spec 030)', () => {
     await assertFails(getDocs(collection(player(), 'venues')));
   });
 
-  it('VD-6 [BLOCKED: C]: khách list 3 đánh giá VISIBLE mới nhất của v-active', async () => {
+  it('VD-6: khách list 3 đánh giá VISIBLE mới nhất của v-active', async () => {
     const snap = await assertSucceeds(getDocs(latestReviews(guest())));
     expect(snap.docs.map((d) => d.id)).toEqual(['rv-visible']);
   });
