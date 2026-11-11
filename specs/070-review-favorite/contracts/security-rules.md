@@ -6,12 +6,16 @@ Phần của spec 070 trong `firestore.rules` và `supabase/migrations/`. Mỗi 
 
 ```
 match /reviews/{reviewId} {
-  // Đọc: đánh giá đang hiển thị ai đăng nhập cũng đọc được;
-  // người viết đọc được đánh giá của mình kể cả khi bị ẩn; admin đọc tất cả.
-  allow get, list: if isSignedIn() && (
-      resource.data.status == 'VISIBLE'
-      || resource.data.userId == request.auth.uid
-      || request.auth.token.appRole == 'ADMIN');
+  // Đọc: đánh giá đang hiển thị là công khai, khách chưa đăng nhập cũng đọc được
+  // (chi tiết sân spec 030, VD-6); người viết đọc được đánh giá của mình kể cả khi bị ẩn;
+  // admin đọc tất cả; get một đánh giá chưa tồn tại chỉ cho người đã đăng nhập.
+  allow get: if (resource != null && resource.data.status == 'VISIBLE')
+      || (isSignedIn() && (resource == null
+          || resource.data.userId == request.auth.uid
+          || request.auth.token.appRole == 'ADMIN'));
+  allow list: if resource.data.status == 'VISIBLE'
+      || (isSignedIn() && (resource.data.userId == request.auth.uid
+          || request.auth.token.appRole == 'ADMIN'));
   // Mọi ghi đi qua Edge Function `review` (service account bỏ qua Rules).
   allow write: if false;
 }
@@ -43,7 +47,8 @@ Truy vấn của chủ sân ("Đánh giá của khách") chỉ đọc đánh gi�
 | R6 | Người viết sửa `ratings` hoặc xóa đánh giá của mình trực tiếp | Bị chặn |
 | R7 | Chủ sân ghi `ownerReply` trực tiếp | Bị chặn |
 | R8 | Người chơi ghi `venues/{id}.ratingAvg` | Bị chặn (Rules của D, test chung) |
-| R9 | Chưa đăng nhập đọc `reviews` | Bị chặn |
+| R9 | Chưa đăng nhập đọc đánh giá `VISIBLE` (get, list có `where status == VISIBLE`) | Được phép (2026-11-11, thống nhất với spec 030 VD-6) |
+| R9b | Chưa đăng nhập đọc đánh giá `HIDDEN`, get đánh giá chưa tồn tại, list thiếu điều kiện `status` | Bị chặn |
 | F1 | Chủ tài khoản tạo/xóa `users/{uid}/favorites/{venueId}` đúng schema | Được phép |
 | F2 | Người khác đọc/ghi favorites của `uid` | Bị chặn |
 | F3 | Tạo favorite có `venueId` khác ID document hoặc thêm trường lạ | Bị chặn |

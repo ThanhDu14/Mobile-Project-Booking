@@ -159,15 +159,16 @@ service cloud.firestore {
     // Mọi ghi đi qua Edge Function `review` (service account bỏ qua Rules).
     match /reviews/{reviewId} {
       // resource == null: đơn chưa có đánh giá, `observeMyReview` cần nhận "không tồn tại" thay vì lỗi quyền.
-      allow get: if isSignedIn() && (
-          resource == null
-          || resource.data.status == 'VISIBLE'
-          || resource.data.userId == request.auth.uid
-          || isAdmin());
-      allow list: if isSignedIn() && (
-          resource.data.status == 'VISIBLE'
-          || resource.data.userId == request.auth.uid
-          || isAdmin());
+      // Đánh giá VISIBLE công khai, khách chưa đăng nhập cũng đọc được (chi tiết sân spec 030 VD-6).
+      allow get: if (resource != null && resource.data.status == 'VISIBLE')
+          || (isSignedIn() && (
+              resource == null
+              || resource.data.userId == request.auth.uid
+              || isAdmin()));
+      allow list: if resource.data.status == 'VISIBLE'
+          || (isSignedIn() && (
+              resource.data.userId == request.auth.uid
+              || isAdmin()));
       allow write: if false;
     }
 
