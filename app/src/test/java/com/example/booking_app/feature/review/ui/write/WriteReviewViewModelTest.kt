@@ -11,7 +11,10 @@ import com.example.booking_app.feature.review.domain.ReviewError
 import com.example.booking_app.feature.review.domain.ReviewEligibility
 import com.example.booking_app.feature.review.domain.ReviewException
 import com.example.booking_app.feature.review.domain.model.ReviewCriterion
+import com.example.booking_app.feature.review.FakePhotoUploader
+import com.example.booking_app.feature.review.domain.usecase.DeleteReviewUseCase
 import com.example.booking_app.feature.review.domain.usecase.SubmitReviewUseCase
+import com.example.booking_app.feature.review.domain.usecase.UpdateReviewUseCase
 import com.example.booking_app.feature.review.review
 import com.example.booking_app.feature.review.reviewTarget
 import kotlinx.coroutines.CompletableDeferred
@@ -43,6 +46,9 @@ class WriteReviewViewModelTest {
         SavedStateHandle(mapOf("bookingId" to "b1", "mode" to WriteReviewMode.CREATE)),
         repository,
         SubmitReviewUseCase(repository),
+        UpdateReviewUseCase(repository),
+        DeleteReviewUseCase(repository),
+        FakePhotoUploader(),
         clock,
     )
 

@@ -4,57 +4,9 @@
 //   FIREBASE_PROJECT_ID=demo-smashnow FIRESTORE_EMULATOR_HOST=127.0.0.1:8080 \
 //   FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:9099 deno test -A review/
 import { assert, assertEquals, assertInstanceOf } from "jsr:@std/assert@1.0.19";
-import * as firestore from "../_shared/firestore.ts";
-import { commit, createWrite, get } from "../_shared/firestore.ts";
-import { bearer, clearEmulators, emulatorToken } from "../_shared/testing.ts";
-import { handleReview, type Notification, type ReviewDeps } from "./handler.ts";
-
-const DAY = 24 * 60 * 60 * 1000;
-const NOW = new Date("2026-11-06T10:00:00Z");
-const RATINGS = { court: 5, cleanliness: 4, service: 3 }; // overall 4.0
-
-const sent: Notification[] = [];
-const deps: ReviewDeps = {
-  firestore,
-  now: () => NOW,
-  notify: (n) => {
-    sent.push(n);
-    return Promise.resolve();
-  },
-};
-
-const tokenOf = (uid: string, appRole = "PLAYER") => emulatorToken({ sub: uid, user_id: uid, appRole });
-
-async function call(uid: string, body: unknown, appRole = "PLAYER", d: ReviewDeps = deps) {
-  const res = await handleReview(bearer(tokenOf(uid, appRole), { body: JSON.stringify(body) }), d);
-  return { status: res.status, body: await res.json() };
-}
-
-const create = (bookingId: string, extra: Record<string, unknown> = {}) => ({
-  action: "create",
-  bookingId,
-  ratings: RATINGS,
-  comment: "Sân sạch, đèn sáng",
-  photoPaths: [],
-  ...extra,
-});
-
-/** player1, owner1 (sở hữu venueA), venueA chưa có đánh giá; đơn của player1 theo `bookings`. */
-async function seed(bookings: Record<string, Record<string, unknown>> = {}) {
-  await clearEmulators();
-  sent.length = 0;
-  await commit([
-    createWrite("users/player1", { displayName: "Nam", avatarPath: "player1/a.jpg", accountStatus: "ACTIVE" }),
-    createWrite("users/owner1", { displayName: "Chủ A", avatarPath: null, accountStatus: "ACTIVE" }),
-    createWrite("users/locked1", { displayName: "Khóa", accountStatus: "LOCKED" }),
-    createWrite("venues/venueA", { name: "Sân A", ownerId: "owner1", status: "ACTIVE", ratingAvg: 0, ratingCount: 0 }),
-    ...Object.entries(bookings).map(([id, data]) =>
-      createWrite(`bookings/${id}`, { venueId: "venueA", userId: "player1", status: "COMPLETED", ...data })
-    ),
-  ]);
-}
-
-const done = (daysAgo = 1) => ({ completedAt: new Date(NOW.getTime() - daysAgo * DAY) });
+import { get } from "../_shared/firestore.ts";
+import { handleReview, type ReviewDeps } from "./handler.ts";
+import { call, createBody as create, DAY, deps, done, NOW, RATINGS, seed, sent, storage } from "./testing.ts";
 
 Deno.test("create thành công: 201, review đủ trường, tổng điểm +1, gửi REVIEW_NEW cho chủ sân", async () => {
   await seed({ "b-done": done(1) });
@@ -215,4 +167,34 @@ Deno.test("gửi thông báo lỗi → đánh giá vẫn được lưu, trả 20
   const r = await call("player1", create("b-done"), "PLAYER", failing);
   assertEquals(r.status, 201);
   assert(await get("reviews/b-done"));
+});
+
+// ---------- T039 (US2): ảnh đính kèm ----------
+
+Deno.test("create kèm 3 ảnh đã tải lên → 201, hasPhotos = true", async () => {
+  const photos = ["a", "b", "c"].map((n) => `player1/b-done/${n}.jpg`);
+  await seed({ "b-done": done(1) }, photos);
+  const r = await call("player1", create("b-done", { photoPaths: photos }));
+  assertEquals(r.status, 201, JSON.stringify(r.body));
+  const review = await get("reviews/b-done");
+  assertEquals([review?.photoPaths, review?.hasPhotos], [photos, true]);
+});
+
+Deno.test("create: > 3 ảnh hoặc path sai tiền tố → 400; path chưa có trong Storage → 409 PHOTO_MISSING", async () => {
+  const ok = "player1/b-done/a.jpg";
+  await seed({ "b-done": done(1) }, [ok, "player1/b-other/x.jpg"]);
+  const bad = [
+    ["a", "b", "c", "d"].map((n) => `player1/b-done/${n}.jpg`),
+    ["player1/b-other/x.jpg"],
+    ["player1/x.jpg"],
+    ["player1/b-done/../b-other/x.jpg"],
+  ];
+  for (const photoPaths of bad) {
+    const r = await call("player1", create("b-done", { photoPaths }));
+    assertEquals([r.status, r.body.error.code], [400, "INVALID_ARGUMENT"], photoPaths.join(","));
+  }
+  const missing = await call("player1", create("b-done", { photoPaths: [ok, "player1/b-done/missing.jpg"] }));
+  assertEquals([missing.status, missing.body.error.code], [409, "PHOTO_MISSING"]);
+  assertEquals(await get("reviews/b-done"), null);
+  assertEquals(storage.removed, []);
 });
