@@ -538,7 +538,7 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
   - ghi chú quyết định (osmdroid, dữ liệu seed, R13).
 
   Cập nhật dòng nhóm 03 ở cột *Trạng thái* và *Spec* trong `docs/features/README.md`. Ghi chú ảnh chụp: "Dữ liệu demo lấy từ datlich.alobo.vn, chỉ dùng cho mục đích học tập" (quyết định C1, [research R13](research.md#r13-dữ-liệu-seed-của-nhóm-scriptsseed-và-constitution-vi))
-- [ ] T074 **[SOẠN SẴN, gửi khi tạo PR]** [P] Gửi đề xuất sửa đặc tả CSDL ([data-model §4](data-model.md#4-thay-đổi-cần-đưa-vào-docsdesigndatabasereadmemd)) cho người phụ trách bằng comment trong PR. **Không tự sửa** `docs/design/database/README.md` ở các mục của D, C:
+- [x] T074 **[Đã gửi trong mô tả PR #56]** [P] Gửi đề xuất sửa đặc tả CSDL ([data-model §4](data-model.md#4-thay-đổi-cần-đưa-vào-docsdesigndatabasereadmemd)) cho người phụ trách bằng comment trong PR. **Không tự sửa** `docs/design/database/README.md` ở các mục của D, C:
   - D: `ratingSums`, `"2400"`, thứ tự `photoPaths`, `phone` công khai, `DELETED`, Rules `venues`;
   - B + D: `daysOfWeek`;
   - C: Rules `reviews`.
