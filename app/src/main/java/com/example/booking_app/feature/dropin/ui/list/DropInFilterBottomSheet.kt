@@ -22,6 +22,8 @@ import com.example.booking_app.feature.dropin.domain.model.FilterError
 import com.example.booking_app.feature.dropin.domain.model.Level
 import com.example.booking_app.feature.dropin.domain.model.TimeSlot
 import com.example.booking_app.feature.dropin.ui.common.DropInUiText
+import com.google.android.material.bottomsheet.BottomSheetBehavior
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.chip.Chip
 import com.google.android.material.datepicker.CalendarConstraints
@@ -99,6 +101,16 @@ class DropInFilterBottomSheet : BottomSheetDialogFragment() {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 districtsViewModel.state.collect(::renderDistricts)
             }
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        // Mở bung hết: nội dung cao hơn màn hình thì sheet mặc định thu gọn và đẩy "Xóa hết / Áp dụng" khuất dưới
+        // mép. Bung ra thì vùng chip cuộn bên trong, hai nút luôn nằm ở đáy.
+        (dialog as? BottomSheetDialog)?.behavior?.apply {
+            skipCollapsed = true
+            state = BottomSheetBehavior.STATE_EXPANDED
         }
     }
 

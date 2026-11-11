@@ -50,7 +50,8 @@ sealed interface DropInListEvent {
 
 /**
  * Danh sách buổi vãng lai (US1, T024). Bộ lọc ban đầu theo thứ tự ưu tiên: bộ lọc đã lưu trong [SavedStateHandle]
- * (xoay màn hình, process death) → Safe Args `filter` từ AI Assistant (AC 1.8) → bộ lọc mặc định từ hồ sơ (AC 1.2).
+ * (xoay màn hình, process death) → Safe Args `filter` từ AI Assistant (AC 1.8) → bộ lọc đã áp dụng trong phiên
+ * ([DropInFilterMemory], rời tab rồi quay lại) → bộ lọc mặc định từ hồ sơ (AC 1.2).
  * Mỗi trang [com.example.booking_app.feature.dropin.domain.model.Page.PAGE_SIZE] buổi.
  */
 @HiltViewModel
@@ -58,6 +59,7 @@ class DropInListViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val loadPage: LoadDropInPage,
     private val getDefaultFilter: GetDefaultDropInFilter,
+    private val memory: DropInFilterMemory,
 ) : ViewModel() {
 
     private val _filter = MutableStateFlow(DropInFilter())
@@ -77,6 +79,7 @@ class DropInListViewModel @Inject constructor(
         loadJob = viewModelScope.launch {
             val initial = savedStateHandle.get<DropInFilterArgs>(KEY_CURRENT_FILTER)?.toFilter()
                 ?: savedStateHandle.get<DropInFilterArgs>(ARG_FILTER)?.toFilter()
+                ?: memory.last
                 ?: defaultFilter()
             setFilter(initial)
             loadFirstPage()
@@ -174,6 +177,7 @@ class DropInListViewModel @Inject constructor(
     private fun setFilter(value: DropInFilter) {
         _filter.value = value
         savedStateHandle[KEY_CURRENT_FILTER] = DropInFilterArgs.from(value)
+        memory.last = value
     }
 
     companion object {

@@ -52,8 +52,11 @@ class DropInListViewModelTest {
         defaultFilter
     }
 
+    /** Bộ nhớ bộ lọc dùng chung trong phiên (singleton), mỗi test một bản mới. */
+    private val memory = DropInFilterMemory()
+
     private fun viewModel(handle: SavedStateHandle = SavedStateHandle()) =
-        DropInListViewModel(handle, loadPage, getDefaultFilter)
+        DropInListViewModel(handle, loadPage, getDefaultFilter, memory)
 
     private fun s(id: String, hoursFromNow: Long) = session(id = id, startAt = NOW.plusSeconds(hoursFromNow * 3600))
 
@@ -64,6 +67,7 @@ class DropInListViewModelTest {
             SavedStateHandle(),
             { _, _ -> gate.await() },
             getDefaultFilter,
+            memory,
         )
         runCurrent()
         assertEquals(DropInListUiState.Loading, vm.uiState.value)
@@ -128,6 +132,62 @@ class DropInListViewModelTest {
 
         assertEquals(Level.ADVANCED, second.filter.value.level)
         assertEquals(1, defaultFilterCalls)
+    }
+
+    @Test
+    fun `roi tab roi quay lai thi ViewModel moi dung lai bo loc da ap dung`() = runTest {
+        defaultFilter = DropInFilter(districtIds = setOf("q10"))
+        val first = viewModel()
+        advanceUntilIdle()
+        first.applyFilter(DropInFilterArgs(timeSlot = "NOON", level = "ADVANCED"))
+        advanceUntilIdle()
+
+        // Bấm tab khác rồi bấm lại "Vãng lai": back stack entry mới, SavedStateHandle rỗng.
+        val second = viewModel()
+        advanceUntilIdle()
+
+        assertEquals(DropInFilter(timeSlot = TimeSlot.NOON, level = Level.ADVANCED), second.filter.value)
+        assertEquals(second.filter.value, calls.last().first)
+        assertEquals(1, defaultFilterCalls)
+    }
+
+    @Test
+    fun `ap dung lan hai thay the bo loc lan dau`() = runTest {
+        val vm = viewModel()
+        advanceUntilIdle()
+        vm.applyFilter(DropInFilterArgs(level = "ADVANCED"))
+        advanceUntilIdle()
+        vm.applyFilter(DropInFilterArgs(timeSlot = "NOON", level = "ADVANCED"))
+        advanceUntilIdle()
+
+        assertEquals(DropInFilter(timeSlot = TimeSlot.NOON, level = Level.ADVANCED), calls.last().first)
+    }
+
+    @Test
+    fun `xoa het bo loc thi lan sau vao lai cung khong loc`() = runTest {
+        defaultFilter = DropInFilter(districtIds = setOf("q10"))
+        val first = viewModel()
+        advanceUntilIdle()
+        first.clearFilter()
+        advanceUntilIdle()
+
+        val second = viewModel()
+        advanceUntilIdle()
+
+        assertTrue(second.filter.value.isEmpty)
+    }
+
+    @Test
+    fun `bo loc tu AI uu tien hon bo loc da nho`() = runTest {
+        val first = viewModel()
+        advanceUntilIdle()
+        first.applyFilter(DropInFilterArgs(level = "BEGINNER"))
+        advanceUntilIdle()
+
+        val fromAi = viewModel(SavedStateHandle(mapOf(DropInListViewModel.ARG_FILTER to DropInFilterArgs(level = "ADVANCED"))))
+        advanceUntilIdle()
+
+        assertEquals(Level.ADVANCED, fromAi.filter.value.level)
     }
 
     @Test

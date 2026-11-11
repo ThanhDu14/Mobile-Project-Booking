@@ -155,7 +155,9 @@ class DropInListFragment : Fragment(R.layout.fragment_dropin_list) {
         entry.savedStateHandle.getLiveData<DropInFilterArgs>(DropInFilterBottomSheet.RESULT_KEY)
             .observe(viewLifecycleOwner) { args ->
                 if (args != null) {
-                    entry.savedStateHandle.remove<DropInFilterArgs>(DropInFilterBottomSheet.RESULT_KEY)
+                    // Đặt null thay vì remove(): remove() gỡ luôn LiveData này khỏi SavedStateHandle nên các lần
+                    // "Áp dụng" sau không tới được observer (lỗi chỉ lọc được lần đầu).
+                    entry.savedStateHandle[DropInFilterBottomSheet.RESULT_KEY] = null
                     viewModel.applyFilter(args)
                 }
             }
