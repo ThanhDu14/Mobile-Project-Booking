@@ -1721,3 +1721,85 @@ tasks.md được tick đúng, có 1 commit cho US1.
 - `cd firestore-tests && npx vitest run`: 145/145 test qua (có thêm test R3 cho đánh giá chưa tồn tại).
 - `./gradlew assembleDebug testDebugUnitTest`: build được; 519/520 test qua. Test hỏng duy nhất là `OwnerSlotBlockViewModelTest` của nhóm D: test cố định ngày `20261030` nên hỏng từ khi qua ngày đó, không liên quan đến thay đổi lần này.
 - Chưa chạy màn hình trên máy ảo hoặc thiết bị thật.
+
+## Mục 31: Khôi phục repo sau sự cố màn hình xanh; dựng CI GitHub Actions và sửa các lỗi có sẵn trên main
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-11 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | Việc chung (vai trò Tích hợp tuần này): CI theo team contract tuần 3 và cổng chất lượng của constitution; sửa lỗi nhỏ trong code của nhóm 04 (B) và 11 (D) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5) |
+| Mục đích | Khôi phục repo Git bị hỏng; viết workflow CI; sửa các lỗi có sẵn làm CI đỏ; soạn nội dung nhắn thành viên khác |
+| Nhánh Git | `chore/ci-github-actions` (PR #58) |
+
+### Prompt đã dùng
+
+```
+Bối cảnh: mình là thành viên C, tuần này giữ vai trò Tích hợp. Phiên trước đã mở PR #57 (spec 070
+US2, US4, US5, US6) và vừa tách nhánh chore/ci-github-actions từ origin/main để viết CI thì máy bị
+màn hình xanh. Không bật máy ảo Android Studio vì tốn RAM; khi nào cần test trên máy ảo thì báo mình.
+
+Mục tiêu: làm tiếp phiên trước, dựng CI GitHub Actions cho repo.
+
+Yêu cầu:
+1. Kiểm tra repo sau sự cố: file Git (HEAD, config, ref nhánh) và file mã nguồn có bị hỏng không.
+   Khôi phục mà không mất thay đổi chưa commit; xác định phiên trước đang làm tới đâu.
+2. Viết CI theo team contract và constitution:
+   - Android: ./gradlew lint testDebugUnitTest assembleDebug (google-services.json không được commit).
+   - Edge Functions: deno test trên Firebase Emulator.
+   - Firestore Rules: npm test trong firestore-tests.
+   - Thêm job định kỳ giữ project Supabase không bị tạm dừng.
+3. Chạy thử đủ các bước như CI trên máy trước khi push.
+4. Lỗi có sẵn trên main làm CI đỏ: sửa luôn các lỗi nhỏ, rõ ràng (kể cả trong code của B, D) để
+   2 bạn đó không phải tự sửa. Lỗi cần quyết định thiết kế, bảo mật hoặc cần sửa cả luồng thì không
+   tự sửa: ghi vào PR và báo lại mình.
+5. Push, mở PR, xem kết quả CI trên GitHub, rồi cho biết việc tiếp theo.
+6. Soạn tin nhắn cho B (test còn đỏ) và cho A (việc cần quyền admin repo).
+
+Ràng buộc: không commit khóa bí mật; commit theo Conventional Commits; không thêm dòng attribution
+AI vào commit và PR.
+
+Kết quả mong muốn: PR CI chạy được trên GitHub, nêu rõ job nào xanh, job nào đỏ và vì sao.
+```
+
+### Tóm tắt phản hồi của AI
+
+- **Khôi phục repo:**
+  - Sự cố đã ghi đè byte 0 lên `.git/HEAD`, `.git/config`, ref và reflog của nhánh `chore/ci-github-actions`, cùng 2 file mã (`Review.kt`, `file_paths.xml`).
+  - AI dựng lại config từ URL remote trong `FETCH_HEAD`. AI tìm lại commit của nhánh trong `logs/HEAD` và các object mới tạo.
+  - 2 file mã được lấy lại từ git. Kích thước khác chỉ do CRLF, không mất thay đổi nào. `git fsck` sạch; quét toàn project không còn file hỏng.
+- **CI:**
+  - `ci.yml` gồm 3 job: Android (dùng `google-services.json` giả), Edge Functions (`deno check` + `deno test` trên Emulator Auth/Firestore), Firestore Rules.
+  - `supabase-keepalive.yml` gọi REST API vào thứ Hai và thứ Năm.
+- **Lỗi có sẵn trên main, AI đã sửa:**
+  - Lint `DiffUtilEquals` ở `SlotMatrixRowAdapter.kt` (B).
+  - Test `OwnerBookingsViewModelTest` ghi cứng ngày 06/11 (D).
+  - 4 lỗi TypeScript do còn sót code chết sau khi gộp nhánh ở `_shared/firestore.ts` (D).
+  - Test `recurringHoldTransaction` chưa cập nhật theo Rules mới của B.
+- **Không tự sửa:**
+  - T012: rule `bookings` cho mọi chủ sân đã duyệt đọc mọi đơn, kể cả `qrToken`. Sửa cần đổi luồng check-in.
+  - Các ca `[BLOCKED: X]`: CI tạm bỏ qua qua biến `SKIP_BLOCKED`.
+  - AI phát hiện `VD-6` (spec 030) mâu thuẫn với R9 (spec 070) về việc khách chưa đăng nhập đọc đánh giá.
+- AI soạn tin nhắn cho B (hướng sửa T012) và cho A (thêm secret, bật bắt buộc CI qua trong ruleset).
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Khôi phục ref nhánh về `d122066` theo reflog | Dùng | Nhánh vừa tách từ origin/main, chưa có commit riêng |
+| `google-services.json` giả tạo trong workflow | Dùng | File thật không được commit; plugin cần file này để sinh `default_web_client_id` |
+| Chạy `deno test --no-check`, kiểm tra kiểu ở bước `deno check` riêng | Dùng | Lỗi kiểu và lỗi test hiện thành 2 bước tách biệt, dễ đọc hơn |
+| Bỏ qua ca `[BLOCKED: X]` trên CI | Dùng | Đây là ca nhóm chủ động đánh dấu đang chờ người khác; chạy trên máy vẫn thấy |
+| Sửa test của D bằng giờ tương đối, không inject `Clock` | Dùng | Chỉ sửa test, không đổi constructor ViewModel và Hilt |
+| Tự sửa T012 | Bỏ | Đổi luồng check-in của B, cần B quyết định và test trên máy |
+| Bật bắt buộc job Rules ngay trong ruleset | Bỏ | Sẽ chặn merge PR của cả nhóm khi T012 còn đỏ |
+
+### Cách kiểm chứng
+
+- `git fsck --no-dangling` sạch; quét project không còn file toàn byte 0.
+- `./gradlew lint testDebugUnitTest assembleDebug` với `google-services.json` giả: xanh, lint 0 Error.
+- `deno check .` xanh; `firebase emulators:exec --only auth,firestore` + `deno test -A`: 164/164.
+- `SKIP_BLOCKED=1 npm test` (firestore-tests): 192 passed, 5 skipped, 1 failed (T012).
+- CI trên GitHub (PR #58): Android ✅ (6 phút 32 giây), Edge Functions ✅, Firestore Rules ❌ đúng 1 ca T012.
+- Chưa chạy app trên máy ảo (không cần cho thay đổi này).
