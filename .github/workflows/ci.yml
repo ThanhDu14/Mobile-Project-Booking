@@ -1,0 +1,162 @@
+# Cổng chất lượng của PR theo constitution (mục "Quy trình phát triển và cổng chất lượng"):
+# - Android: ./gradlew lint testDebugUnitTest assembleDebug
+# - Edge Functions: deno test
+# - Firestore Rules: test trên Firebase Emulator
+name: CI
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main, develop]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  android:
+    name: Android (lint, unit test, assemble)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          # Chỉ nhánh main/develop ghi cache, PR chỉ đọc để cache không bị phình.
+          cache-read-only: ${{ github.ref != 'refs/heads/main' && github.ref != 'refs/heads/develop' }}
+
+      # google-services.json không được commit (xem .gitignore). CI dùng file giả, đủ để plugin
+      # google-services sinh tài nguyên (default_web_client_id, google_app_id...) và app biên dịch được.
+      - name: Tạo google-services.json giả
+        run: |
+          cat > app/google-services.json <<'EOF'
+          {
+            "project_info": {
+              "project_number": "000000000000",
+              "project_id": "demo-smashnow",
+              "storage_bucket": "demo-smashnow.appspot.com"
+            },
+            "client": [
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:000000000000:android:0000000000000000000000",
+                  "android_client_info": { "package_name": "com.example.booking_app" }
+                },
+                "oauth_client": [
+                  { "client_id": "000000000000-ci.apps.googleusercontent.com", "client_type": 3 }
+                ],
+                "api_key": [ { "current_key": "AIzaSyCI-DUMMY-KEY-000000000000000000" } ],
+                "services": {
+                  "appinvite_service": {
+                    "other_platform_oauth_client": [
+                      { "client_id": "000000000000-ci.apps.googleusercontent.com", "client_type": 3 }
+                    ]
+                  }
+                }
+              }
+            ],
+            "configuration_version": "1"
+          }
+          EOF
+
+      - name: Lint, unit test, assemble
+        run: ./gradlew lint testDebugUnitTest assembleDebug --stacktrace
+
+      - name: Lưu báo cáo test và lint
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-reports
+          path: |
+            app/build/reports/
+            app/build/test-results/
+          retention-days: 7
+          if-no-files-found: ignore
+
+  edge-functions:
+    name: Edge Functions (deno test trên Emulator)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      FIREBASE_AUTH_EMULATOR_HOST: 127.0.0.1:9099
+      FIRESTORE_EMULATOR_HOST: 127.0.0.1:8080
+      FIREBASE_PROJECT_ID: demo-smashnow
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      # Firebase Emulator cần Java và Node.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Cache Firebase Emulator
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/firebase/emulators
+          key: firebase-emulators-${{ runner.os }}-v15
+
+      - name: Kiểm tra kiểu TypeScript
+        working-directory: supabase/functions
+        run: deno check .
+
+      - name: deno test (Auth + Firestore Emulator)
+        run: >-
+          npx -y firebase-tools@15 emulators:exec
+          --config firebase.json --project demo-smashnow --only auth,firestore
+          "cd supabase/functions && deno test -A --no-check"
+
+  firestore-rules:
+    name: Firestore Rules (Emulator)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: firestore-tests
+    steps:
+      - uses: actions/checkout@v4
+
+      # Firebase Emulator cần Java.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: firestore-tests/package-lock.json
+
+      - name: Cache Firebase Emulator
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/firebase/emulators
+          key: firebase-emulators-${{ runner.os }}-v15
+
+      - run: npm ci
+
+      # Ca "[BLOCKED: X]" là ca đang chờ thành viên X sửa Rules, CI tạm bỏ qua (xem vitest.config.ts).
+      - name: Test Rules
+        env:
+          SKIP_BLOCKED: "1"
+        run: npm test

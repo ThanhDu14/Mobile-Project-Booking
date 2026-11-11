@@ -1,0 +1,34 @@
+# Project Supabase gói Free bị tạm dừng sau 7 ngày không có truy cập. Job này gọi REST API
+# 2 lần mỗi tuần để project luôn chạy. Cần 2 secret của repo (Settings → Secrets → Actions):
+#   SUPABASE_URL              ví dụ https://<ref>.supabase.co
+#   SUPABASE_PUBLISHABLE_KEY  khóa publishable (không dùng service role)
+name: Supabase keep-alive
+
+on:
+  schedule:
+    - cron: "0 1 * * 1,4" # 08:00 giờ VN thứ Hai và thứ Năm
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Gọi Supabase REST API
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_PUBLISHABLE_KEY" ]; then
+            echo "::error::Chưa cấu hình secret SUPABASE_URL hoặc SUPABASE_PUBLISHABLE_KEY"
+            exit 1
+          fi
+          # /rest/v1/ đọc schema từ Postgres nên được tính là có hoạt động trên database.
+          status=$(curl -sS -o /dev/null -w '%{http_code}' --retry 3 --retry-delay 10 \
+            -H "apikey: $SUPABASE_PUBLISHABLE_KEY" \
+            "$SUPABASE_URL/rest/v1/")
+          echo "HTTP $status"
+          if [ "$status" -ge 500 ] || [ "$status" = 000 ]; then exit 1; fi

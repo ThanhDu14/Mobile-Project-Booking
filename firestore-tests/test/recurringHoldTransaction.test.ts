@@ -109,7 +109,9 @@ describe('T042: Recurring Hold Transaction End-to-End on Firestore Emulator', ()
     );
   });
 
-  it('player can release hold by setting slots to AVAILABLE and group to CANCELLED', async () => {
+  // Từ commit 885b165 (spec 060) client không được tự đổi status của recurringGroups
+  // (xem recurringGroups.test.ts). Transaction nhả giữ chỗ bị chặn cả khối, slot vẫn HELD.
+  it('player cannot release hold by cancelling the recurringGroup directly (contract pending)', async () => {
     const fs = player('player1');
     const holdExpiresAt = Timestamp.fromMillis(Date.now() + 4 * 60 * 1000);
 
@@ -129,7 +131,7 @@ describe('T042: Recurring Hold Transaction End-to-End on Firestore Emulator', ()
     });
 
     // Release transaction
-    await assertSucceeds(
+    await assertFails(
       runTransaction(fs, async (transaction) => {
         transaction.update(doc(fs, 'slots/court-01_20261110_1900'), {
           status: 'AVAILABLE',
@@ -143,8 +145,8 @@ describe('T042: Recurring Hold Transaction End-to-End on Firestore Emulator', ()
 
     const groupSnap = await getDoc(doc(fs, 'recurringGroups/group-03'));
     const slotSnap = await getDoc(doc(fs, 'slots/court-01_20261110_1900'));
-    expect(groupSnap.data()?.status).toBe('CANCELLED');
-    expect(slotSnap.data()?.status).toBe('AVAILABLE');
+    expect(groupSnap.data()?.status).toBe('HOLD');
+    expect(slotSnap.data()?.status).toBe('HELD');
   });
 
   it('foreign player cannot cancel another player recurringGroup', async () => {
