@@ -168,13 +168,24 @@
     <string name="dropin_mine_write_review">Đánh giá buổi chơi</string>
     <string name="dropin_mine_view_review">Xem đánh giá của bạn</string>
 
-    <!-- Bottom sheet 2: hủy đăng ký (US4, tuần 7) -->
+    <!-- Bottom sheet 2: hủy đăng ký (US4) -->
     <string name="dropin_cancel_title">Hủy đăng ký</string>
-    <string name="dropin_cancel_refund_full">Bạn được hoàn 100% (%1$s)</string>
+    <string name="dropin_cancel_refund_full">Bạn được hoàn 100%% (%1$s)</string>
     <string name="dropin_cancel_free">Không mất phí</string>
+    <string name="dropin_cancel_no_refund_title">Không được hoàn tiền</string>
     <string name="dropin_cancel_no_refund">Hủy lúc này sẽ không được hoàn tiền.</string>
     <string name="dropin_cancel_confirm">Xác nhận hủy</string>
     <string name="dropin_cancel_keep">Giữ lượt</string>
+    <string name="dropin_cancel_policy">Hủy trước giờ bắt đầu từ 4 giờ trở lên được hoàn 100%. Hủy muộn hơn không được hoàn tiền.</string>
+    <string name="dropin_cancel_note_early">Số tiền được hoàn về phương thức thanh toán đã dùng.</string>
+    <string name="dropin_cancel_note_changed">Chủ sân đã thay đổi buổi nên bạn được hoàn đủ dù hủy muộn.</string>
+    <string name="dropin_cancel_note_late">Buổi bắt đầu sau chưa tới 4 giờ. Bạn vẫn có thể hủy để nhường chỗ cho người khác.</string>
+    <string name="dropin_cancel_note_free">Bạn chọn thanh toán tại sân nên hủy không mất phí.</string>
+    <string name="dropin_cancel_quoting">Đang tính số tiền hoàn…</string>
+    <string name="dropin_cancel_cancelling">Đang hủy…</string>
+    <string name="dropin_cancel_error_network">Không có kết nối mạng. Lượt của bạn chưa bị hủy, hãy thử lại.</string>
+    <string name="dropin_cancel_done">Đã hủy đăng ký</string>
+    <string name="dropin_cancel_done_refund">Đã hủy đăng ký. Hoàn %1$s</string>
 
     <!-- Mã lỗi (contracts/edge-functions-dropin.md mục 4) -->
     <string name="dropin_error_invalid_argument">Thông tin đăng ký không hợp lệ.</string>

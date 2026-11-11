@@ -42,7 +42,8 @@ import kotlinx.coroutines.launch
  * Vé vãng lai (US2 T040, US3 T048; wireframe `08_drop-in_buoc4`). QR vẽ bằng [QrRenderer] cạnh 240dp trên nền trắng,
  * mã vé chọn để sao chép được, trạng thái thanh toán (AC 2.3, 2.4). Độ sáng màn hình tăng tối đa khi vé hiện và trả
  * lại như cũ khi rời màn hình (contracts/ui-screens.md mục 1). Ngoại tuyến hiện vé đã lưu kèm dải thông báo (FR-015);
- * nút "Chỉ đường" (AC 3.2) và "Thêm người" (FR-008a, bottom sheet, không phải destination của nav graph).
+ * nút "Chỉ đường" (AC 3.2), "Thêm người" (FR-008a) và "Hủy đăng ký" (US4, [CancelDropInBottomSheet]); hai bottom sheet
+ * không phải destination của nav graph.
  */
 @AndroidEntryPoint
 class DropInTicketFragment : Fragment(R.layout.fragment_dropin_ticket) {
@@ -67,6 +68,14 @@ class DropInTicketFragment : Fragment(R.layout.fragment_dropin_ticket) {
         binding.copyCodeButton.setOnClickListener { copyTicketCode(binding.ticketCode.text?.toString()) }
         binding.directionsButton.setOnClickListener { viewModel.openDirections() }
         binding.addPartyButton.setOnClickListener { viewModel.startAddParty() }
+        binding.cancelButton.setOnClickListener {
+            CancelDropInBottomSheet.show(childFragmentManager, viewModel.sessionId)
+        }
+        childFragmentManager.setFragmentResultListener(CancelDropInBottomSheet.RESULT_KEY, viewLifecycleOwner) { _, result ->
+            result.getString(CancelDropInBottomSheet.RESULT_MESSAGE)?.let {
+                Snackbar.make(binding.root, it, Snackbar.LENGTH_LONG).show()
+            }
+        }
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -189,6 +198,8 @@ class DropInTicketFragment : Fragment(R.layout.fragment_dropin_ticket) {
         // Chỉ đường khi biết cơ sở; thêm người chỉ khi đang có mạng và đủ điều kiện (FR-008a).
         binding.directionsButton.isVisible = session != null
         binding.addPartyButton.isVisible = !offline && state.addParty != null
+        // Hủy cần mạng; ẩn khi buổi đã bắt đầu, đã hủy hoặc lượt không còn REGISTERED (AC 4.4).
+        binding.cancelButton.isVisible = !offline && state.canCancel
     }
 
     private fun renderLabels(binding: FragmentDropinTicketBinding, labels: List<TicketLabel>) {

@@ -396,7 +396,7 @@ Task chèn thêm sau khi chốt FR-008a; đánh số `T048a`… để không đ�
   - buổi `FULL`; 1 người hủy (`partySize = 2`) cùng lúc 3 người khác đăng ký (`partySize = 1`);
   - kỳ vọng: đúng 2 người đăng ký được; `registeredCount == capacity`; không vượt sức chứa;
   - chạy 10 lần.
-- [ ] T052 [P] [US4] Unit test `TEST/ui/ticket/CancelDropInViewModelTest.kt`:
+- [x] T052 [P] [US4] Unit test `TEST/ui/ticket/CancelDropInViewModelTest.kt`:
   - `Quoting → Quote` với từng `reason`; chuỗi "Bạn được hoàn 100% (X đ)" / "Không được hoàn tiền" / "Không mất phí";
   - xác nhận → `Cancelling → Done`;
   - mất mạng giữ sheet và cho thử lại cùng `requestId`.
@@ -411,8 +411,8 @@ Task chèn thêm sau khi chốt FR-008a; đánh số `T048a`… để không đ�
   - không gửi thông báo.
 
   Sau đó T050, T051 phải xanh
-- [ ] T054 [US4] Cài `quoteCancel` và `cancel` trong `DI/data/DropInRegistrationRepositoryImpl.kt`; UseCase `DI/domain/usecase/QuoteCancel.kt`, `CancelDropIn.kt`
-- [ ] T055 [US4] Cài `DI/ui/ticket/CancelDropInViewModel.kt`, `DI/ui/ticket/CancelDropInBottomSheet.kt` + `RES/layout/bottom_sheet_dropin_cancel.xml`:
+- [x] T054 [US4] Cài `quoteCancel` và `cancel` trong `DI/data/DropInRegistrationRepositoryImpl.kt`; UseCase `DI/domain/usecase/QuoteCancel.kt`, `CancelDropIn.kt`
+- [x] T055 [US4] Cài `DI/ui/ticket/CancelDropInViewModel.kt`, `DI/ui/ticket/CancelDropInBottomSheet.kt` + `RES/layout/bottom_sheet_dropin_cancel.xml`:
   - hiện chính sách hủy và số tiền hoàn;
   - nút xác nhận;
   - nối nút "Hủy đăng ký" trên màn hình vé (ẩn khi buổi đã bắt đầu).

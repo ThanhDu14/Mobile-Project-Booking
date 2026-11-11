@@ -6,9 +6,12 @@ import com.example.booking_app.core.session.SessionManager
 import com.example.booking_app.feature.dropin.data.dto.AddPartyRequest
 import com.example.booking_app.feature.dropin.data.dto.CancelDropInRequest
 import com.example.booking_app.feature.dropin.data.dto.CancelDropInResponse
+import com.example.booking_app.feature.dropin.data.dto.CancelQuoteDto
 import com.example.booking_app.feature.dropin.data.dto.RegisterDropInRequest
 import com.example.booking_app.feature.dropin.data.dto.RegisterDropInResponse
 import com.example.booking_app.feature.dropin.data.dto.RegistrationResultDto
+import com.example.booking_app.feature.dropin.domain.model.CancelQuote
+import com.example.booking_app.feature.dropin.domain.model.CancelReason
 import com.example.booking_app.feature.dropin.domain.model.DropInError
 import com.example.booking_app.feature.dropin.domain.model.PaymentMethod
 import com.example.booking_app.feature.dropin.domain.model.PaymentStatus
@@ -39,7 +42,12 @@ class DropInRegistrationRepositoryImplTest {
             addRequests += request
             return next()
         }
-        override suspend fun cancel(request: CancelDropInRequest): CancelDropInResponse = error("tuần 7")
+        val cancelRequests = mutableListOf<CancelDropInRequest>()
+        var nextCancel: () -> CancelDropInResponse = { error("chưa đặt") }
+        override suspend fun cancel(request: CancelDropInRequest): CancelDropInResponse {
+            cancelRequests += request
+            return nextCancel()
+        }
     }
 
     private val api = FakeApi()
@@ -123,8 +131,46 @@ class DropInRegistrationRepositoryImplTest {
     }
 
     @Test
-    fun `phan US4 tuan 7 - chua ho tro`() = runTest {
-        assertTrue(repo.quoteCancel("s1", "r").exceptionOrNull() is UnsupportedOperationException)
-        assertTrue(repo.cancel("s1", "r").exceptionOrNull() is UnsupportedOperationException)
+    fun `quoteCancel - gui dryRun true va map quote`() = runTest {
+        api.nextCancel = { CancelDropInResponse(quote = CancelQuoteDto(refundAmount = 120_000, reason = "EARLY")) }
+        val quote = repo.quoteCancel("s1", "r1").getOrThrow()
+        assertEquals(CancelDropInRequest("s1", "r1", dryRun = true), api.cancelRequests.single())
+        assertEquals(CancelQuote(120_000, CancelReason.EARLY), quote)
+    }
+
+    @Test
+    fun `cancel - gui dryRun false va map dang ky da huy`() = runTest {
+        api.nextCancel = {
+            CancelDropInResponse(
+                registration = RegistrationResultDto(
+                    sessionId = "s1", status = "CANCELLED", partySize = 2, paymentMethod = "MOCK_PAY",
+                    paymentStatus = "REFUNDED", amount = 120_000, refundAmount = 120_000,
+                ),
+                quote = CancelQuoteDto(refundAmount = 120_000, reason = "EARLY"),
+            )
+        }
+        val result = repo.cancel("s1", "r1").getOrThrow()
+        assertEquals(CancelDropInRequest("s1", "r1", dryRun = false), api.cancelRequests.single())
+        assertEquals(RegistrationStatus.CANCELLED, result.status)
+        assertEquals(PaymentStatus.REFUNDED, result.paymentStatus)
+        assertEquals(120_000L, result.refundAmount)
+    }
+
+    @Test
+    fun `cancel - loi nghiep vu va mat mang`() = runTest {
+        api.nextCancel = { throw AppError.Unknown(FunctionHttpException(409, """{"error":{"code":"NOT_CANCELLABLE"}}""")) }
+        assertTrue(repo.cancel("s1", "r1").exceptionOrNull() is DropInError.NotCancellable)
+        api.nextCancel = { throw AppError.Network }
+        assertTrue(repo.quoteCancel("s1", "r1").exceptionOrNull() is DropInError.Network)
+        api.nextCancel = { CancelDropInResponse() }
+        assertTrue(repo.cancel("s1", "r1").exceptionOrNull() is DropInError.Unknown)
+    }
+
+    @Test
+    fun `huy khi chua dang nhap - Unauthenticated, khong goi function`() = runTest {
+        every { session.currentUid() } returns null
+        assertTrue(repo.quoteCancel("s1", "r1").exceptionOrNull() is DropInError.Unauthenticated)
+        assertTrue(repo.cancel("s1", "r1").exceptionOrNull() is DropInError.Unauthenticated)
+        assertTrue(api.cancelRequests.isEmpty())
     }
 }

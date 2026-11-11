@@ -370,7 +370,7 @@
                         tools:visibility="visible" />
                 </LinearLayout>
 
-                <!-- Hủy đăng ký: bottom sheet làm ở US4; tạm ẩn cho tới khi có CancelDropInBottomSheet -->
+                <!-- Hủy đăng ký (US4): mở CancelDropInBottomSheet; chỉ hiện khi canCancel và đang có mạng -->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/cancelButton"
                     style="@style/Widget.SmashNow.Button.Text"

@@ -63,7 +63,7 @@ data class RegisterDropInResponse(
     val session: SessionCountDto? = null,
 )
 
-// ---------- cancel-drop-in (tuần 7, spec 080 US4) ----------
+// ---------- cancel-drop-in (spec 080 US4) ----------
 
 @Serializable
 data class CancelDropInRequest(

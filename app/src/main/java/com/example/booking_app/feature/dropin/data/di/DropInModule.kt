@@ -13,6 +13,8 @@ import com.example.booking_app.feature.dropin.domain.DropInSessionLookup
 import com.example.booking_app.feature.dropin.domain.DropInSessionRepository
 import com.example.booking_app.feature.dropin.domain.usecase.AddDropInParty
 import com.example.booking_app.feature.dropin.domain.usecase.AddDropInPartyImpl
+import com.example.booking_app.feature.dropin.domain.usecase.CancelDropIn
+import com.example.booking_app.feature.dropin.domain.usecase.CancelDropInImpl
 import com.example.booking_app.feature.dropin.domain.usecase.CheckDropInWarnings
 import com.example.booking_app.feature.dropin.domain.usecase.CheckDropInWarningsImpl
 import com.example.booking_app.feature.dropin.domain.usecase.GetDefaultDropInFilter
@@ -25,6 +27,8 @@ import com.example.booking_app.feature.dropin.domain.usecase.ObserveDropInSessio
 import com.example.booking_app.feature.dropin.domain.usecase.ObserveDropInSessionImpl
 import com.example.booking_app.feature.dropin.domain.usecase.ObserveMyDropInRegistration
 import com.example.booking_app.feature.dropin.domain.usecase.ObserveMyDropInRegistrationImpl
+import com.example.booking_app.feature.dropin.domain.usecase.QuoteCancel
+import com.example.booking_app.feature.dropin.domain.usecase.QuoteCancelImpl
 import com.example.booking_app.feature.dropin.domain.usecase.RegisterDropIn
 import com.example.booking_app.feature.dropin.domain.usecase.RegisterDropInImpl
 import dagger.Binds
@@ -80,6 +84,12 @@ abstract class DropInModule {
 
     @Binds
     abstract fun bindAddDropInParty(impl: AddDropInPartyImpl): AddDropInParty
+
+    @Binds
+    abstract fun bindQuoteCancel(impl: QuoteCancelImpl): QuoteCancel
+
+    @Binds
+    abstract fun bindCancelDropIn(impl: CancelDropInImpl): CancelDropIn
 
     @Binds
     abstract fun bindLoadMyDropIns(impl: LoadMyDropInsImpl): LoadMyDropIns

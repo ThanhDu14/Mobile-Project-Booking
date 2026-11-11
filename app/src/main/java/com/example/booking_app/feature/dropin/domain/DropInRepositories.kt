@@ -25,10 +25,10 @@ interface DropInRegistrationRepository {
     /** Thêm [additional] người vào đăng ký đang có (FR-008a); gửi lại cùng [requestId] không cộng hai lần. */
     suspend fun addParty(sessionId: String, additional: Int, requestId: String): Result<DropInRegistration>
 
-    /** US4, tuần 7. */
+    /** US4: số tiền được hoàn nếu hủy lúc này (`dryRun`, không ghi gì). */
     suspend fun quoteCancel(sessionId: String, requestId: String): Result<CancelQuote>
 
-    /** US4, tuần 7. */
+    /** US4: hủy lượt của mình; gửi lại cùng [requestId] không trả chỗ hai lần. */
     suspend fun cancel(sessionId: String, requestId: String): Result<DropInRegistration>
 
     /** Đăng ký của chính mình ở buổi này; `null` khi chưa có hoặc là khách. */

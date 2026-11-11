@@ -4,6 +4,7 @@ import com.example.booking_app.core.network.awaitWithTimeout
 import com.example.booking_app.core.network.toAppError
 import com.example.booking_app.core.session.SessionManager
 import com.example.booking_app.feature.dropin.data.dto.AddPartyRequest
+import com.example.booking_app.feature.dropin.data.dto.CancelDropInRequest
 import com.example.booking_app.feature.dropin.data.dto.RegisterDropInRequest
 import com.example.booking_app.feature.dropin.data.dto.RegistrationDto
 import com.example.booking_app.feature.dropin.data.dto.toDomain
@@ -35,7 +36,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Đăng ký/hủy qua Edge Function, đọc đăng ký của mình qua Firestore (T035). Lỗi trả
+ * Đăng ký/thêm người/hủy qua Edge Function, đọc đăng ký của mình qua Firestore (T035). Lỗi trả
  * `Result.failure(DropInError)`; mất mạng là [DropInError.Network] để ViewModel giữ lựa chọn và
  * cho thử lại cùng `requestId` (AC 2.8).
  */
@@ -77,13 +78,33 @@ class DropInRegistrationRepositoryImpl @Inject constructor(
         }
     }
 
-    // tuần 7, spec 080 US4
-    override suspend fun quoteCancel(sessionId: String, requestId: String): Result<CancelQuote> =
-        Result.failure(UnsupportedOperationException("quoteCancel: tuần 7, spec 080 US4"))
+    /** `cancel-drop-in` với `dryRun: true`: chỉ tính tiền hoàn, server không ghi gì (FR-017). */
+    override suspend fun quoteCancel(sessionId: String, requestId: String): Result<CancelQuote> {
+        if (sessionManager.currentUid() == null) return Result.failure(DropInError.Unauthenticated())
+        return try {
+            val response = api.cancel(CancelDropInRequest(sessionId = sessionId, requestId = requestId, dryRun = true))
+            response.quote?.toDomain()?.let { Result.success(it) }
+                ?: Result.failure(DropInError.Unknown("INVALID_RESPONSE"))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Result.failure(e.toDropInError())
+        }
+    }
 
-    // tuần 7, spec 080 US4
-    override suspend fun cancel(sessionId: String, requestId: String): Result<DropInRegistration> =
-        Result.failure(UnsupportedOperationException("cancel: tuần 7, spec 080 US4"))
+    /** Hủy thật; gửi lại cùng [requestId] trả kết quả cũ (FR-018). */
+    override suspend fun cancel(sessionId: String, requestId: String): Result<DropInRegistration> {
+        val uid = sessionManager.currentUid() ?: return Result.failure(DropInError.Unauthenticated())
+        return try {
+            val response = api.cancel(CancelDropInRequest(sessionId = sessionId, requestId = requestId, dryRun = false))
+            response.registration?.toDomain(fallbackSessionId = sessionId, uid = uid)?.let { Result.success(it) }
+                ?: Result.failure(DropInError.Unknown("INVALID_RESPONSE"))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Result.failure(e.toDropInError())
+        }
+    }
 
     /**
      * Nghe `dropInSessions/{id}/registrations/{uid}`. Khách → `flowOf(null)`. Bị Rules từ chối

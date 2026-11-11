@@ -166,7 +166,7 @@ fun RegistrationResultDto.toDomain(fallbackSessionId: String, uid: String): Drop
 private fun defaultPaymentStatus(method: PaymentMethod): PaymentStatus =
     if (method == PaymentMethod.MOCK_PAY) PaymentStatus.PAID else PaymentStatus.UNPAID
 
-/** Tuần 7 (US4). `reason` lạ → `null`. */
+/** US4. `reason` lạ → `null`. */
 fun CancelQuoteDto.toDomain(): CancelQuote? {
     val r = reason.toEnumOrNull<CancelReason>() ?: return null
     return CancelQuote(refundAmount = (refundAmount ?: 0L).coerceAtLeast(0L), reason = r)
