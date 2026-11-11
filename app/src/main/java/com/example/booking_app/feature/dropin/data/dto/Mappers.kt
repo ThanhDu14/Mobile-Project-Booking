@@ -175,7 +175,12 @@ fun CancelQuoteDto.toDomain(): CancelQuote? {
 // ---------- Lỗi ----------
 
 /** `error.code` của Edge Function (contract mục 4) → [DropInError]. */
-fun dropInErrorOf(code: String?, remaining: Int? = null, httpStatus: Int? = null): DropInError = when (code) {
+fun dropInErrorOf(
+    code: String?,
+    remaining: Int? = null,
+    httpStatus: Int? = null,
+    maxAdditional: Int? = null,
+): DropInError = when (code) {
     "SESSION_FULL" -> DropInError.SessionFull(remaining = (remaining ?: 0).coerceAtLeast(0))
     "SESSION_STARTED" -> DropInError.SessionStarted()
     "SESSION_CANCELLED" -> DropInError.SessionCancelled()
@@ -184,6 +189,8 @@ fun dropInErrorOf(code: String?, remaining: Int? = null, httpStatus: Int? = null
     "ALREADY_REGISTERED" -> DropInError.AlreadyRegistered()
     "ALREADY_WAITLISTED" -> DropInError.AlreadyWaitlisted()
     "NOT_CANCELLABLE" -> DropInError.NotCancellable()
+    "PARTY_LIMIT" -> DropInError.PartyLimit(maxAdditional = (maxAdditional ?: 0).coerceAtLeast(0))
+    "NOT_REGISTERED" -> DropInError.NotRegistered()
     "NOT_FOUND", "SESSION_NOT_FOUND" -> DropInError.NotFound()
     "ACCOUNT_LOCKED" -> DropInError.AccountLocked()
     "INVALID_ARGUMENT" -> DropInError.InvalidArgument()
@@ -216,5 +223,5 @@ fun Throwable.toDropInError(): DropInError = when (this) {
 
 private fun FunctionHttpException.toDropInError(): DropInError {
     val parsed = FunctionErrorBody.parse(body)
-    return dropInErrorOf(parsed?.code, parsed?.remaining, status)
+    return dropInErrorOf(parsed?.code, parsed?.remaining, status, parsed?.maxAdditional)
 }

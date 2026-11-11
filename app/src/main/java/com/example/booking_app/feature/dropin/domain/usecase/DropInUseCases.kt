@@ -40,6 +40,11 @@ fun interface RegisterDropIn {
     suspend operator fun invoke(req: RegisterRequest): Result<DropInRegistration>
 }
 
+/** FR-008a: thêm người vào lượt đang có (vé). Không tự thử lại; ViewModel giữ [requestId] để thử lại an toàn. */
+fun interface AddDropInParty {
+    suspend operator fun invoke(sessionId: String, additional: Int, requestId: String): Result<DropInRegistration>
+}
+
 /** T036: cảnh báo trùng giờ / lệch trình độ (FR-012). Lỗi đọc dữ liệu thì trả danh sách rỗng. */
 fun interface CheckDropInWarnings {
     suspend operator fun invoke(session: DropInSession): List<DropInWarning>

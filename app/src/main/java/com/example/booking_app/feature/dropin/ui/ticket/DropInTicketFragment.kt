@@ -1,8 +1,11 @@
 package com.example.booking_app.feature.dropin.ui.ticket
 
+import android.content.ActivityNotFoundException
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.content.Intent
 import android.graphics.Bitmap
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.view.View
@@ -22,18 +25,24 @@ import com.example.booking_app.core.format.TimeFormat
 import com.example.booking_app.core.ui.EmptyStateSpec
 import com.example.booking_app.core.ui.UiState
 import com.example.booking_app.core.ui.render
+import com.example.booking_app.databinding.BottomSheetDropinAddPartyBinding
 import com.example.booking_app.databinding.FragmentDropinTicketBinding
+import com.example.booking_app.feature.dropin.domain.model.DropInError
+import com.example.booking_app.feature.dropin.domain.model.PaymentMethod
 import com.example.booking_app.feature.dropin.domain.model.PaymentStatus
 import com.example.booking_app.feature.dropin.ui.common.DropInUiText
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.chip.Chip
 import com.google.android.material.color.MaterialColors
+import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
 /**
- * Vé vãng lai (US2, T040; wireframe `08_drop-in_buoc4`). QR vẽ bằng [QrRenderer] cạnh 240dp trên nền trắng, mã vé
- * chọn để sao chép được, trạng thái thanh toán (AC 2.3, 2.4). Độ sáng màn hình tăng tối đa khi vé hiện và trả lại như
- * cũ khi rời màn hình (contracts/ui-screens.md mục 1).
+ * Vé vãng lai (US2 T040, US3 T048; wireframe `08_drop-in_buoc4`). QR vẽ bằng [QrRenderer] cạnh 240dp trên nền trắng,
+ * mã vé chọn để sao chép được, trạng thái thanh toán (AC 2.3, 2.4). Độ sáng màn hình tăng tối đa khi vé hiện và trả
+ * lại như cũ khi rời màn hình (contracts/ui-screens.md mục 1). Ngoại tuyến hiện vé đã lưu kèm dải thông báo (FR-015);
+ * nút "Chỉ đường" (AC 3.2) và "Thêm người" (FR-008a, bottom sheet, không phải destination của nav graph).
  */
 @AndroidEntryPoint
 class DropInTicketFragment : Fragment(R.layout.fragment_dropin_ticket) {
@@ -46,6 +55,9 @@ class DropInTicketFragment : Fragment(R.layout.fragment_dropin_ticket) {
     /** Độ sáng của cửa sổ trước khi mở vé; `null` khi chưa ghi đè. */
     private var previousBrightness: Float? = null
 
+    private var addPartyDialog: BottomSheetDialog? = null
+    private var addPartyBinding: BottomSheetDropinAddPartyBinding? = null
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val binding = FragmentDropinTicketBinding.bind(view)
@@ -53,10 +65,14 @@ class DropInTicketFragment : Fragment(R.layout.fragment_dropin_ticket) {
         binding.toolbar.setNavigationOnClickListener { findNavController().navigateUp() }
         binding.successBanner.isVisible = viewModel.justRegistered
         binding.copyCodeButton.setOnClickListener { copyTicketCode(binding.ticketCode.text?.toString()) }
+        binding.directionsButton.setOnClickListener { viewModel.openDirections() }
+        binding.addPartyButton.setOnClickListener { viewModel.startAddParty() }
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.uiState.collect { render(binding, it) }
+                launch { viewModel.uiState.collect { render(binding, it) } }
+                launch { viewModel.addPartyForm.collect { renderAddParty(it) } }
+                launch { viewModel.events.collect { onEvent(binding, it) } }
             }
         }
     }
@@ -73,6 +89,10 @@ class DropInTicketFragment : Fragment(R.layout.fragment_dropin_ticket) {
 
     override fun onDestroyView() {
         restoreBrightness()
+        // dismiss() không gọi OnCancelListener nên form trong ViewModel còn nguyên, xoay màn hình mở lại được.
+        addPartyDialog?.dismiss()
+        addPartyDialog = null
+        addPartyBinding = null
         super.onDestroyView()
     }
 
@@ -82,20 +102,25 @@ class DropInTicketFragment : Fragment(R.layout.fragment_dropin_ticket) {
             DropInTicketUiState.NotFound -> UiState.Empty
             is DropInTicketUiState.Error ->
                 UiState.Error(DropInUiText.error(requireContext(), state.cause), viewModel::retry)
-            is DropInTicketUiState.Content -> UiState.Content(Unit)
+            is DropInTicketUiState.Content, is DropInTicketUiState.Offline -> UiState.Content(Unit)
         }
         binding.stateViews.render(
             coreState,
             binding.content,
             EmptyStateSpec(message = R.string.dropin_ticket_not_found, icon = R.drawable.ic_confirmation_number_20),
         )
-        if (state is DropInTicketUiState.Content) bindContent(binding, state)
+        when (state) {
+            is DropInTicketUiState.Content -> bindContent(binding, state, offline = false)
+            is DropInTicketUiState.Offline -> bindContent(binding, state.cached, offline = true)
+            else -> Unit
+        }
     }
 
-    private fun bindContent(binding: FragmentDropinTicketBinding, state: DropInTicketUiState.Content) {
+    private fun bindContent(binding: FragmentDropinTicketBinding, state: DropInTicketUiState.Content, offline: Boolean) {
         val registration = state.registration
         val session = state.session
 
+        binding.offlineBanner.isVisible = offline
         renderLabels(binding, state.labels)
 
         binding.venueName.isVisible = session != null
@@ -161,7 +186,11 @@ class DropInTicketFragment : Fragment(R.layout.fragment_dropin_ticket) {
         binding.locationGroup.isVisible = !location.isNullOrEmpty()
         binding.locationValue.text = location
 
-        binding.offlineHint.isVisible = token != null
+        binding.offlineHint.isVisible = token != null && !offline
+
+        // Chỉ đường khi biết cơ sở; thêm người chỉ khi đang có mạng và đủ điều kiện (FR-008a).
+        binding.directionsButton.isVisible = session != null
+        binding.addPartyButton.isVisible = !offline && state.addParty != null
     }
 
     private fun renderLabels(binding: FragmentDropinTicketBinding, labels: List<TicketLabel>) {
@@ -183,6 +212,125 @@ class DropInTicketFragment : Fragment(R.layout.fragment_dropin_ticket) {
                 },
             )
         }
+    }
+
+    // ---------- Thêm người (FR-008a) ----------
+
+    private fun renderAddParty(form: AddPartyForm?) {
+        if (form == null) {
+            addPartyDialog?.dismiss()
+            addPartyDialog = null
+            addPartyBinding = null
+            return
+        }
+        val sheet = addPartyBinding ?: createAddPartyDialog()
+        addPartyDialog?.setCancelable(!form.submitting)
+
+        sheet.addPartyHint.text = getString(R.string.dropin_add_party_hint, form.currentPartySize, form.maxAdditional)
+        sheet.addPartyValue.text = form.additional.toString()
+        sheet.addPartyDecrease.isEnabled = !form.submitting && form.additional > 1
+        sheet.addPartyIncrease.isEnabled = !form.submitting && form.additional < form.maxAdditional
+        sheet.addPartyAmount.text = MoneyFormat.vnd(form.extraAmount)
+        sheet.addPartyBreakdown.text =
+            getString(R.string.dropin_confirm_price_times, MoneyFormat.vnd(form.pricePerPerson), form.additional)
+        sheet.addPartyPaymentNote.setText(
+            when (form.paymentMethod) {
+                PaymentMethod.MOCK_PAY -> R.string.dropin_add_party_pay_mock
+                PaymentMethod.AT_VENUE -> R.string.dropin_add_party_pay_at_venue
+            },
+        )
+
+        val error = form.error
+        sheet.addPartyError.isVisible = error != null
+        sheet.addPartyError.text = error?.let { addPartyErrorText(it) }
+
+        sheet.addPartySubmit.isEnabled = !form.submitting
+        sheet.addPartySubmit.text = when {
+            form.submitting -> getString(R.string.dropin_add_party_submitting)
+            form.canRetry -> getString(R.string.dropin_retry)
+            else -> getString(R.string.dropin_add_party_submit, form.additional)
+        }
+    }
+
+    private fun createAddPartyDialog(): BottomSheetDropinAddPartyBinding {
+        val dialog = BottomSheetDialog(requireContext())
+        val sheet = BottomSheetDropinAddPartyBinding.inflate(layoutInflater)
+        dialog.setContentView(sheet.root)
+        sheet.addPartyDecrease.setOnClickListener { viewModel.decreaseAdditional() }
+        sheet.addPartyIncrease.setOnClickListener { viewModel.increaseAdditional() }
+        sheet.addPartySubmit.setOnClickListener { viewModel.submitAddParty() }
+        // Chỉ người dùng tự đóng (vuốt, bấm ngoài, nút Back) mới báo ViewModel.
+        dialog.setOnCancelListener { viewModel.dismissAddParty() }
+        dialog.show()
+        addPartyDialog = dialog
+        addPartyBinding = sheet
+        return sheet
+    }
+
+    private fun addPartyErrorText(error: Throwable): String = when (error) {
+        is DropInError.PartyLimit -> if (error.maxAdditional > 0) {
+            getString(R.string.dropin_add_party_error_limit, error.maxAdditional)
+        } else {
+            getString(R.string.dropin_add_party_error_limit_none)
+        }
+        is DropInError.SessionFull -> if (error.remaining > 0) {
+            getString(R.string.dropin_add_party_error_full, error.remaining)
+        } else {
+            getString(R.string.dropin_confirm_no_seat)
+        }
+        is DropInError.NotRegistered -> getString(R.string.dropin_add_party_error_not_registered)
+        is DropInError.Network -> getString(R.string.dropin_add_party_error_network)
+        is DropInError.Busy -> getString(R.string.dropin_add_party_error_busy)
+        else -> DropInUiText.error(requireContext(), error)
+    }
+
+    private fun onEvent(binding: FragmentDropinTicketBinding, event: DropInTicketEvent) {
+        when (event) {
+            is DropInTicketEvent.OpenDirections -> openDirections(binding, event)
+            is DropInTicketEvent.PartyAdded -> Snackbar.make(
+                binding.root,
+                getString(R.string.dropin_add_party_success, event.partySize),
+                Snackbar.LENGTH_SHORT,
+            ).show()
+            is DropInTicketEvent.AddPartyFailed ->
+                Snackbar.make(binding.root, addPartyErrorText(event.cause), Snackbar.LENGTH_LONG).show()
+        }
+    }
+
+    // ---------- Chỉ đường (AC 3.2) ----------
+
+    /**
+     * Ưu tiên Google Maps theo tọa độ cơ sở; không có Google Maps thì ứng dụng bản đồ bất kỳ qua `geo:`, sau cùng là
+     * trình duyệt. Chưa có tọa độ thì tìm theo địa chỉ. Dùng try/catch nên không cần khai báo `<queries>`.
+     */
+    private fun openDirections(binding: FragmentDropinTicketBinding, event: DropInTicketEvent.OpenDirections) {
+        val location = event.location
+        val geo: Uri
+        val web: Uri
+        if (location != null) {
+            val latLng = "${location.latitude},${location.longitude}"
+            geo = Uri.parse("geo:$latLng?q=$latLng(${Uri.encode(event.label)})")
+            web = Uri.parse("https://www.google.com/maps/dir/?api=1&destination=$latLng")
+        } else {
+            val query = event.address ?: event.label
+            if (query.isBlank()) return
+            geo = Uri.parse("geo:0,0?q=${Uri.encode(query)}")
+            web = Uri.parse("https://www.google.com/maps/search/?api=1&query=${Uri.encode(query)}")
+        }
+        val candidates = listOf(
+            Intent(Intent.ACTION_VIEW, geo).setPackage(GOOGLE_MAPS_PACKAGE),
+            Intent(Intent.ACTION_VIEW, geo),
+            Intent(Intent.ACTION_VIEW, web),
+        )
+        for (intent in candidates) {
+            try {
+                startActivity(intent)
+                return
+            } catch (_: ActivityNotFoundException) {
+                // Thử cách tiếp theo.
+            }
+        }
+        Snackbar.make(binding.root, R.string.dropin_detail_no_map_app, Snackbar.LENGTH_SHORT).show()
     }
 
     private fun qrBitmap(token: String): Bitmap {
@@ -221,5 +369,6 @@ class DropInTicketFragment : Fragment(R.layout.fragment_dropin_ticket) {
 
     private companion object {
         const val QR_SIZE_DP = 240
+        const val GOOGLE_MAPS_PACKAGE = "com.google.android.apps.maps"
     }
 }

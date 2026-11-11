@@ -46,6 +46,12 @@ sealed class DropInError(code: String) : Exception(code) {
     class AlreadyRegistered : DropInError("ALREADY_REGISTERED")
     class AlreadyWaitlisted : DropInError("ALREADY_WAITLISTED")
     class NotCancellable : DropInError("NOT_CANCELLABLE")
+
+    /** Thêm người vượt tối đa 4 người/lượt (FR-008a); [maxAdditional] là số người còn thêm được. */
+    data class PartyLimit(val maxAdditional: Int) : DropInError("PARTY_LIMIT")
+
+    /** Thêm người khi không còn lượt `REGISTERED` ở buổi đó (đã hủy, đã check-in, chưa đăng ký). */
+    class NotRegistered : DropInError("NOT_REGISTERED")
     class NotFound : DropInError("NOT_FOUND")
     class AccountLocked : DropInError("ACCOUNT_LOCKED")
     class InvalidArgument : DropInError("INVALID_ARGUMENT")

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Vé vãng lai: thêm người (FR-008a), offline và chỉ đường (US3, T048). Spec 080. -->
+<resources>
+    <string name="dropin_ticket_offline_banner">Bạn đang ngoại tuyến. Đây là vé đã lưu trên máy, mã QR vẫn dùng được.</string>
+    <string name="dropin_ticket_directions">Chỉ đường</string>
+    <string name="dropin_ticket_add_party">Thêm người</string>
+
+    <string name="dropin_add_party_title">Thêm người vào lượt</string>
+    <string name="dropin_add_party_hint">Bạn đang có %1$d người. Thêm được tối đa %2$d người nữa (mỗi lượt tối đa 4 người).</string>
+    <string name="dropin_add_party_extra_label">Phải trả thêm</string>
+    <string name="dropin_add_party_pay_mock">Thanh toán giả lập, không thu tiền thật. Vé giữ nguyên mã QR.</string>
+    <string name="dropin_add_party_pay_at_venue">Trả phần thêm cho chủ sân khi check-in. Vé giữ nguyên mã QR.</string>
+    <string name="dropin_add_party_minus" translatable="false">−</string>
+    <string name="dropin_add_party_plus" translatable="false">+</string>
+    <string name="dropin_add_party_error_busy">Hệ thống đang bận. Bấm “Thử lại”, vé sẽ không bị cộng hai lần.</string>
+    <string name="dropin_add_party_submit">Thêm %1$d người</string>
+    <string name="dropin_add_party_submitting">Đang thêm…</string>
+    <string name="dropin_add_party_success">Đã cập nhật vé: %1$d người.</string>
+    <string name="dropin_add_party_error_limit">Mỗi lượt tối đa 4 người. Bạn chỉ thêm được %1$d người nữa.</string>
+    <string name="dropin_add_party_error_limit_none">Lượt của bạn đã đủ 4 người.</string>
+    <string name="dropin_add_party_error_full">Buổi chỉ còn %1$d chỗ.</string>
+    <string name="dropin_add_party_error_not_registered">Lượt của bạn không còn hiệu lực nên không thêm người được.</string>
+    <string name="dropin_add_party_error_network">Không có kết nối mạng. Bấm “Thử lại”, vé sẽ không bị cộng hai lần.</string>
+</resources>

@@ -3,6 +3,7 @@ package com.example.booking_app.feature.dropin.data
 import com.example.booking_app.core.network.AppError
 import com.example.booking_app.core.network.DEFAULT_TIMEOUT_MS
 import com.example.booking_app.core.network.FunctionErrors
+import com.example.booking_app.feature.dropin.data.dto.AddPartyRequest
 import com.example.booking_app.feature.dropin.data.dto.CancelDropInRequest
 import com.example.booking_app.feature.dropin.data.dto.CancelDropInResponse
 import com.example.booking_app.feature.dropin.data.dto.DropInFunctionJson
@@ -23,6 +24,9 @@ import javax.inject.Inject
 interface DropInApi {
     suspend fun register(request: RegisterDropInRequest): RegisterDropInResponse
 
+    /** `register-drop-in` với `action: "ADD_PARTY"` (FR-008a). */
+    suspend fun addParty(request: AddPartyRequest): RegisterDropInResponse
+
     suspend fun cancel(request: CancelDropInRequest): CancelDropInResponse
 }
 
@@ -32,6 +36,16 @@ class SupabaseDropInApi @Inject constructor(
 ) : DropInApi {
 
     override suspend fun register(request: RegisterDropInRequest): RegisterDropInResponse =
+        functionErrors.invokeWithAuthRetry {
+            val response = try {
+                withTimeout(DEFAULT_TIMEOUT_MS) { supabase.functions.invoke(FN_REGISTER, body = request) }
+            } catch (e: TimeoutCancellationException) {
+                throw AppError.Timeout
+            }
+            DropInFunctionJson.decodeFromString<RegisterDropInResponse>(response.bodyAsText())
+        }
+
+    override suspend fun addParty(request: AddPartyRequest): RegisterDropInResponse =
         functionErrors.invokeWithAuthRetry {
             val response = try {
                 withTimeout(DEFAULT_TIMEOUT_MS) { supabase.functions.invoke(FN_REGISTER, body = request) }

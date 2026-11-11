@@ -79,6 +79,18 @@ class RegisterDropInImpl @Inject constructor(
     }
 }
 
+/** FR-008a: kiểm tra nhanh ở app (1–3 người, có sessionId/requestId); server kiểm tra tổng ≤ 4 và chỗ còn. */
+class AddDropInPartyImpl @Inject constructor(
+    private val repository: DropInRegistrationRepository,
+) : AddDropInParty {
+    override suspend fun invoke(sessionId: String, additional: Int, requestId: String): Result<DropInRegistration> {
+        if (additional !in 1 until RegisterDropInImpl.MAX_PARTY || sessionId.isBlank() || requestId.isBlank()) {
+            return Result.failure(DropInError.InvalidArgument())
+        }
+        return repository.addParty(sessionId, additional, requestId)
+    }
+}
+
 /**
  * T036 (FR-012, research R11): chỉ cảnh báo, không chặn. Mỗi nguồn lỗi hoặc quá hạn thì bỏ cảnh báo
  * của nguồn đó. Khách → rỗng.

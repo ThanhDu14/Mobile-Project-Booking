@@ -8,6 +8,7 @@ import com.example.booking_app.feature.dropin.domain.model.DropInFilter
 import com.example.booking_app.feature.dropin.domain.model.Page
 import com.example.booking_app.feature.dropin.domain.model.PaymentMethod
 import com.example.booking_app.feature.dropin.domain.model.RegisterRequest
+import com.example.booking_app.feature.dropin.domain.usecase.AddDropInPartyImpl
 import com.example.booking_app.feature.dropin.domain.usecase.GetDefaultDropInFilterImpl
 import com.example.booking_app.feature.dropin.domain.usecase.LoadDropInPageImpl
 import com.example.booking_app.feature.dropin.domain.usecase.RegisterDropInImpl
@@ -76,5 +77,20 @@ class DropInUseCasesTest {
         coEvery { repo.register(any()) } returns Result.failure(DropInError.Busy())
         assertTrue(useCase(RegisterRequest("s1", 4, PaymentMethod.AT_VENUE, "req")).exceptionOrNull() is DropInError.Busy)
         coVerify(exactly = 1) { repo.register(any()) }
+    }
+
+    @Test
+    fun `them nguoi - ngoai 1 den 3 bi tu choi o app, hop le thi goi repository`() = runTest {
+        val repo = mockk<DropInRegistrationRepository>()
+        val useCase = AddDropInPartyImpl(repo)
+        listOf(0, 4).forEach { n ->
+            assertTrue(useCase("s1", n, "req").exceptionOrNull() is DropInError.InvalidArgument)
+        }
+        assertTrue(useCase("", 1, "req").exceptionOrNull() is DropInError.InvalidArgument)
+        coVerify(exactly = 0) { repo.addParty(any(), any(), any()) }
+
+        coEvery { repo.addParty("s1", 2, "req") } returns Result.failure(DropInError.PartyLimit(1))
+        assertEquals(DropInError.PartyLimit(1), useCase("s1", 2, "req").exceptionOrNull())
+        coVerify(exactly = 1) { repo.addParty("s1", 2, "req") }
     }
 }

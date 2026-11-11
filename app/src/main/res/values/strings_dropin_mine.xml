@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Chuỗi bổ sung cho màn hình "Lượt vãng lai của tôi" (spec 080 US3, T047; wireframe ui/08_drop-in_buoc5).
+    Các chuỗi chung (tiêu đề, tên tab, nhãn kết quả, "Tìm buổi vãng lai") đã có trong strings_dropin.xml.
+-->
+<resources>
+    <string name="dropin_mine_tab_upcoming_count">Sắp tới (%1$d)</string>
+    <string name="dropin_mine_status_registered">Đã đăng ký · %1$d người</string>
+    <string name="dropin_mine_status_waitlisted">Đang chờ</string>
+    <string name="dropin_mine_party">%1$d người</string>
+    <string name="dropin_mine_paid_amount">Đã thanh toán %1$s</string>
+    <string name="dropin_mine_pay_at_venue_amount">Trả tại sân %1$s</string>
+    <string name="dropin_mine_refunded_amount">Đã hoàn %1$s</string>
+    <string name="dropin_mine_detail_line">%1$s · %2$s</string>
+    <string name="dropin_mine_view_ticket">Xem vé</string>
+    <string name="dropin_mine_unknown_session">Buổi vãng lai</string>
+    <string name="dropin_mine_unknown_time">Chưa rõ giờ</string>
+    <string name="dropin_mine_upcoming_empty">Bạn không có lượt vãng lai nào sắp tới.</string>
+    <string name="dropin_mine_past_empty">Chưa có lượt nào đã qua.</string>
+    <string name="dropin_mine_load_more_failed">Không tải thêm được lượt đã qua.</string>
+    <string name="dropin_mine_item_description">%1$s, %2$s, %3$s, %4$s</string>
+</resources>

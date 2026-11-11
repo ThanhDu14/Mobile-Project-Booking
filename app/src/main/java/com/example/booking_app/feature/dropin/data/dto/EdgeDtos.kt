@@ -24,6 +24,15 @@ data class RegisterDropInRequest(
     val requestId: String,
 )
 
+/** `action: "ADD_PARTY"` (FR-008a): thêm [additional] người vào đăng ký đang có; response như đăng ký. */
+@Serializable
+data class AddPartyRequest(
+    val sessionId: String,
+    val additional: Int,
+    val requestId: String,
+    @EncodeDefault val action: String = "ADD_PARTY",
+)
+
 /** `registration` trong response; không có `qrToken` (app đọc token qua Firestore). */
 @Serializable
 data class RegistrationResultDto(
@@ -75,7 +84,13 @@ data class CancelDropInResponse(
 
 // ---------- Body lỗi: { "error": { "code", "message", "remaining"? } } ----------
 
-data class FunctionErrorBody(val code: String?, val message: String?, val remaining: Int?) {
+data class FunctionErrorBody(
+    val code: String?,
+    val message: String?,
+    val remaining: Int?,
+    /** `PARTY_LIMIT` của ADD_PARTY. */
+    val maxAdditional: Int? = null,
+) {
     companion object {
         fun parse(body: String?): FunctionErrorBody? {
             if (body.isNullOrBlank()) return null
@@ -85,6 +100,7 @@ data class FunctionErrorBody(val code: String?, val message: String?, val remain
                     code = error["code"]?.jsonPrimitive?.content,
                     message = error["message"]?.jsonPrimitive?.content,
                     remaining = error["remaining"]?.jsonPrimitive?.longOrNull?.toInt(),
+                    maxAdditional = error["maxAdditional"]?.jsonPrimitive?.longOrNull?.toInt(),
                 )
             }.getOrNull()
         }

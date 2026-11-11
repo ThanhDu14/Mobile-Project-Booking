@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    "Lượt vãng lai của tôi" (spec 080 US3, T047; wireframe ui/08_drop-in_buoc5_luot-vang-lai-cua-toi.png).
+    Thanh tiêu đề có nút quay lại, 2 tab "Sắp tới (n)" / "Đã qua" dạng nút chọn một, danh sách lượt.
+    include_state_views chồng lên vùng danh sách cho loading, chưa có lượt nào (nút "Tìm buổi vãng lai"), lỗi (FR-024).
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?android:attr/colorBackground"
+    android:orientation="vertical">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        app:navigationContentDescription="@string/dropin_back"
+        app:navigationIcon="@drawable/ic_arrow_back_24"
+        app:title="@string/dropin_mine_title"
+        app:titleTextAppearance="?attr/textAppearanceTitleLarge" />
+
+    <com.google.android.material.button.MaterialButtonToggleGroup
+        android:id="@+id/tabGroup"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/screen_gutter"
+        android:layout_marginTop="@dimen/space_1"
+        android:contentDescription="@string/dropin_mine_title"
+        app:checkedButton="@+id/tabUpcoming"
+        app:selectionRequired="true"
+        app:singleSelection="true">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/tabUpcoming"
+            style="@style/Widget.SmashNow.Button.Outlined"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:minHeight="48dp"
+            android:text="@string/dropin_mine_upcoming"
+            tools:text="Sắp tới (3)" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/tabPast"
+            style="@style/Widget.SmashNow.Button.Outlined"
+            android:layout_width="0dp"
+            android:layout_height="48dp"
+            android:layout_weight="1"
+            android:minHeight="48dp"
+            android:text="@string/dropin_mine_past" />
+    </com.google.android.material.button.MaterialButtonToggleGroup>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <FrameLayout
+            android:id="@+id/content"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/registrationList"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:paddingHorizontal="@dimen/screen_gutter"
+                android:paddingTop="@dimen/space_3"
+                android:paddingBottom="@dimen/space_6"
+                tools:listitem="@layout/item_dropin_registration" />
+
+            <!-- Tab đang chọn chưa có lượt (tab kia vẫn có) -->
+            <TextView
+                android:id="@+id/tabEmpty"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:gravity="center"
+                android:padding="@dimen/space_6"
+                android:textAppearance="?attr/textAppearanceBodyLarge"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:visibility="gone"
+                tools:text="@string/dropin_mine_past_empty" />
+
+            <com.google.android.material.progressindicator.LinearProgressIndicator
+                android:id="@+id/loadingMore"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom"
+                android:indeterminate="true"
+                android:visibility="gone" />
+        </FrameLayout>
+
+        <include
+            android:id="@+id/stateViews"
+            layout="@layout/include_state_views" />
+    </FrameLayout>
+</LinearLayout>

@@ -3,6 +3,7 @@ package com.example.booking_app.feature.dropin.data
 import com.example.booking_app.core.network.AppError
 import com.example.booking_app.core.network.FunctionHttpException
 import com.example.booking_app.core.session.SessionManager
+import com.example.booking_app.feature.dropin.data.dto.AddPartyRequest
 import com.example.booking_app.feature.dropin.data.dto.CancelDropInRequest
 import com.example.booking_app.feature.dropin.data.dto.CancelDropInResponse
 import com.example.booking_app.feature.dropin.data.dto.RegisterDropInRequest
@@ -18,7 +19,6 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -32,6 +32,11 @@ class DropInRegistrationRepositoryImplTest {
         var next: () -> RegisterDropInResponse = { error("chưa đặt") }
         override suspend fun register(request: RegisterDropInRequest): RegisterDropInResponse {
             requests += request
+            return next()
+        }
+        val addRequests = mutableListOf<AddPartyRequest>()
+        override suspend fun addParty(request: AddPartyRequest): RegisterDropInResponse {
+            addRequests += request
             return next()
         }
         override suspend fun cancel(request: CancelDropInRequest): CancelDropInResponse = error("tuần 7")
@@ -61,6 +66,30 @@ class DropInRegistrationRepositoryImplTest {
         assertEquals(120_000L, result.amount)
         assertEquals("u1", result.userId)
         assertNull(result.qrToken)
+    }
+
+    @Test
+    fun `them nguoi - gui action ADD_PARTY va map loi PARTY_LIMIT`() = runTest {
+        api.next = {
+            RegisterDropInResponse(
+                RegistrationResultDto(
+                    sessionId = "s1", status = "REGISTERED", partySize = 3, paymentMethod = "MOCK_PAY",
+                    paymentStatus = "PAID", pricePerPerson = 60_000, amount = 180_000, ticketCode = "DI-7K3QXZ9M",
+                ),
+            )
+        }
+        val result = repo.addParty("s1", 1, req.requestId).getOrThrow()
+        assertEquals(AddPartyRequest("s1", 1, req.requestId), api.addRequests.single())
+        assertEquals("ADD_PARTY", api.addRequests.single().action)
+        assertEquals(3, result.partySize)
+        assertEquals(180_000L, result.amount)
+
+        api.next = {
+            throw AppError.Unknown(
+                FunctionHttpException(409, """{"error":{"code":"PARTY_LIMIT","message":"x","maxAdditional":1}}"""),
+            )
+        }
+        assertEquals(DropInError.PartyLimit(1), repo.addParty("s1", 2, req.requestId).exceptionOrNull())
     }
 
     @Test
@@ -94,10 +123,8 @@ class DropInRegistrationRepositoryImplTest {
     }
 
     @Test
-    fun `phan tuan 7 - chua ho tro`() = runTest {
+    fun `phan US4 tuan 7 - chua ho tro`() = runTest {
         assertTrue(repo.quoteCancel("s1", "r").exceptionOrNull() is UnsupportedOperationException)
         assertTrue(repo.cancel("s1", "r").exceptionOrNull() is UnsupportedOperationException)
-        assertTrue(repo.pagePast("u1", null).exceptionOrNull() is UnsupportedOperationException)
-        assertEquals(emptyList<Any>(), repo.observeUpcoming("u1").toList())
     }
 }

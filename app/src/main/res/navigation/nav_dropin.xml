@@ -93,4 +93,15 @@
         <deepLink app:uri="smashnow://dropin/ticket/{sessionId}" />
     </fragment>
 
+    <!-- Lượt vãng lai của tôi (US3, T047). Trang Tài khoản mở bằng deep link (AccountEntry.MY_DROPINS, T049). -->
+    <fragment
+        android:id="@+id/myDropInsFragment"
+        android:name="com.example.booking_app.feature.dropin.ui.mine.MyDropInsFragment"
+        android:label="@string/dropin_mine_title">
+        <deepLink app:uri="smashnow://dropin/mine" />
+        <action
+            android:id="@+id/action_myDropIns_to_ticket"
+            app:destination="@id/dropInTicketFragment" />
+    </fragment>
+
 </navigation>

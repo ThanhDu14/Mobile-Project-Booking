@@ -18,6 +18,16 @@ class DropInErrorMappingTest {
     }
 
     @Test
+    fun `ADD_PARTY - PARTY_LIMIT kem maxAdditional, NOT_REGISTERED`() {
+        assertEquals(
+            DropInError.PartyLimit(1),
+            http(409, "PARTY_LIMIT", """, "maxAdditional": 1""").toDropInError(),
+        )
+        assertEquals(DropInError.PartyLimit(0), http(409, "PARTY_LIMIT").toDropInError())
+        assertTrue(http(409, "NOT_REGISTERED").toDropInError() is DropInError.NotRegistered)
+    }
+
+    @Test
     fun `SESSION_FULL kem remaining`() {
         assertEquals(DropInError.SessionFull(1), http(409, "SESSION_FULL", """, "remaining": 1""").toDropInError())
         assertEquals(DropInError.SessionFull(0), http(409, "SESSION_FULL").toDropInError())

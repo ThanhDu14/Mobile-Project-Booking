@@ -73,6 +73,25 @@
                         android:textColor="?attr/colorOnPrimaryContainer" />
                 </LinearLayout>
 
+                <!-- Ngoại tuyến: đang hiện vé đã lưu trên máy (FR-015, T048) -->
+                <TextView
+                    android:id="@+id/offlineBanner"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="@dimen/space_3"
+                    android:accessibilityLiveRegion="polite"
+                    android:background="@drawable/bg_info_box"
+                    android:drawablePadding="@dimen/space_2"
+                    android:gravity="center_vertical"
+                    android:padding="@dimen/space_3"
+                    android:text="@string/dropin_ticket_offline_banner"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:visibility="gone"
+                    app:drawableStartCompat="@drawable/ic_wifi_off_24"
+                    app:drawableTint="?attr/colorOnSurfaceVariant"
+                    tools:visibility="visible" />
+
                 <!-- Nhãn: buổi đã thay đổi / bị hủy / cơ sở tạm ngừng (AC 3.5) -->
                 <com.google.android.material.chip.ChipGroup
                     android:id="@+id/labelChips"
@@ -329,6 +348,40 @@
                     android:textColor="?attr/colorOnSurfaceVariant"
                     app:drawableStartCompat="@drawable/ic_check_20"
                     app:drawableTint="?attr/colorOnSurfaceVariant" />
+
+                <!-- Chỉ đường (AC 3.2) · Thêm người (FR-008a) -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_4"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/directionsButton"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="@dimen/space_2"
+                        android:minHeight="@dimen/touch_min"
+                        android:text="@string/dropin_ticket_directions"
+                        android:visibility="gone"
+                        app:icon="@drawable/ic_directions_24"
+                        tools:visibility="visible" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/addPartyButton"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="@dimen/space_2"
+                        android:minHeight="@dimen/touch_min"
+                        android:text="@string/dropin_ticket_add_party"
+                        android:visibility="gone"
+                        app:icon="@drawable/ic_add_24"
+                        tools:visibility="visible" />
+                </LinearLayout>
 
                 <!-- Hủy đăng ký: bottom sheet làm ở US4; tạm ẩn cho tới khi có CancelDropInBottomSheet -->
                 <com.google.android.material.button.MaterialButton
