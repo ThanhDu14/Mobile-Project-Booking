@@ -6,6 +6,7 @@ import com.example.booking_app.core.session.FakeSessionManager
 import com.example.booking_app.core.session.SessionState
 import com.example.booking_app.core.testing.FakeClock
 import com.example.booking_app.feature.courtdetail.FakeCatalogRepository
+import com.example.booking_app.feature.courtdetail.FakeFavoriteGateway
 import com.example.booking_app.feature.courtdetail.FakeLatestReviewsSource
 import com.example.booking_app.feature.courtdetail.FakeLocationProvider
 import com.example.booking_app.feature.courtdetail.FakeVenueDetailRepository
@@ -34,6 +35,7 @@ class CourtDetailHarness(
     val catalog = FakeCatalogRepository()
     val location = FakeLocationProvider()
     val reviews = FakeLatestReviewsSource()
+    val favorites = FakeFavoriteGateway()
     val session = FakeSessionManager(session)
     val clock = FakeClock { startMillis + scope.testScheduler.currentTime }
     val handle = SavedStateHandle(
@@ -47,10 +49,17 @@ class CourtDetailHarness(
         loadPriceTable = LoadPriceTableUseCase(repository),
         checkVenueBookable = CheckVenueBookableUseCase(repository),
         loadLatestReviews = LoadLatestReviewsUseCase(reviews),
+        favoriteGateway = favorites,
         sessionManager = session,
         locationProvider = location,
         clock = clock,
     )
+
+    /** Đăng nhập xong: phiên đổi sang `SignedIn` như `SessionRouter` của 010 sau khi `nav_auth` đóng. */
+    fun signIn(uid: String = "player1") {
+        session.sessionState.value = SessionState.SignedIn(uid, AppRole.PLAYER, true)
+        session.isGuest.value = false
+    }
 
     /** Giữ một người thu thập `uiState` như Fragment ở `STARTED`. */
     fun CourtDetailViewModel.collectIn(): Job = scope.backgroundScope.launch { uiState.collect {} }

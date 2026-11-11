@@ -69,9 +69,8 @@ data class CourtDetailUiState(
     val map: Section<LatLng> = Section.Loading,
     val phone: PhoneDisplay? = null,
     val distanceText: String? = null,
-    /** `null` = khách, đang tải, hoặc chưa có tính năng yêu thích. */
+    /** `null` = khách hoặc đang tải. */
     val isFavorite: Boolean? = null,
-    val favoriteAvailable: Boolean = false,
     val isOffline: Boolean = false,
     val bottomBar: BottomBarState = BottomBarState.Hidden,
     val window: SearchWindow? = null,
