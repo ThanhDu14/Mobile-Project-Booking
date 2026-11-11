@@ -297,7 +297,11 @@ service cloud.firestore {
     }
 
     match /bookings/{bookingId} {
-      allow read: if isSignedIn() && (resource == null || resource.data.userId == request.auth.uid || isAdmin() || isApprovedOwner());
+      // Chủ sân chỉ đọc đơn thuộc cơ sở của mình (spec 112 T012): get theo ID, hoặc query có
+      // `where venueId == <cơ sở của mình>` (màn danh sách đơn). Tra đơn theo qrToken cho check-in
+      // chạy ở Edge Function `checkin-booking`, client không query qrToken trên toàn collection.
+      allow read: if isSignedIn() && (resource == null || resource.data.userId == request.auth.uid
+          || isAdmin() || ownsVenue(resource.data.venueId));
       // Lát cắt test 050: Cho phép player tạo đơn PENDING của chính mình để test 060 bằng data real.
       // Khi 050 có server confirmation thì phải thu hồi rule này về phía server.
       allow create: if isPlayer()
