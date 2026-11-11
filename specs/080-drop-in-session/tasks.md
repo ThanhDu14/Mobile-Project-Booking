@@ -435,18 +435,18 @@ Task chèn thêm sau khi chốt FR-008a; đánh số `T048a`… để không đ�
 
 ### Tests cho User Story 5 ⚠️ viết trước, phải fail
 
-- [ ] T056 [P] [US5] Bổ sung test vào `FN/review/index.test.ts` (spec 070):
+- [x] T056 [P] [US5] Bổ sung test vào `FN/review/index.test.ts` (spec 070):
   - **E14:** `create` với `sessionId` khi đăng ký `REGISTERED` → `409 NOT_CHECKED_IN`.
   - **E15:** lần 2 cho cùng lượt → `ALREADY_REVIEWED`.
   - Buổi chưa kết thúc → `NOT_CHECKED_IN`.
   - Quá 7 ngày sau `endAt` → `REVIEW_WINDOW_CLOSED`.
   - Chủ cơ sở tự đánh giá → `OWN_VENUE`.
   - Hợp lệ → `reviews/{sessionId}_{uid}` có `targetType = DROP_IN`, `completedAt = session.endAt`; `venues.ratingSums` và `ratingCount` được cộng.
-- [ ] T057 [P] [US5] Unit test `TEST/domain/DropInReviewEligibilityTest.kt`: `ReviewEligibility.ofDropIn(registration, session, now)` → `CAN_WRITE` / `CAN_VIEW` / `EXPIRED` / `NOT_ELIGIBLE` (AC 5.1, 5.3)
+- [x] T057 [P] [US5] Unit test `TEST/domain/DropInReviewEligibilityTest.kt`: `ReviewEligibility.ofDropIn(registration, session, now)` → `CAN_WRITE` / `CAN_VIEW` / `EXPIRED` / `NOT_ELIGIBLE` (AC 5.1, 5.3). Chữ ký thực tế `ofDropIn(registrationStatus, sessionEndAt, existingReview, now)` dùng kiểu nguyên thủy để `feature/review` không phụ thuộc kiểu của `feature/dropin`
 
 ### Implementation cho User Story 5
 
-- [ ] T058 [US5] Mở rộng `FN/review/index.ts` (spec 070) theo [contract mục 5](contracts/edge-functions-dropin.md#5-mở-rộng-edge-function-review-spec-070-cho-buổi-vãng-lai):
+- [x] T058 [US5] Mở rộng `FN/review/index.ts` (spec 070) theo [contract mục 5](contracts/edge-functions-dropin.md#5-mở-rộng-edge-function-review-spec-070-cho-buổi-vãng-lai):
   - nhánh `create` có `sessionId`: kiểm tra `registrations/{uid}.status == CHECKED_IN`, `session.endAt ≤ now ≤ session.endAt + 7 ngày`, người viết không phải chủ cơ sở;
   - `reviewId = {sessionId}_{uid}`;
   - ảnh có tiền tố `{uid}/{reviewId}/`;
@@ -454,14 +454,14 @@ Task chèn thêm sau khi chốt FR-008a; đánh số `T048a`… để không đ�
   - `update`, `delete`, `reply` dùng nguyên logic cũ.
 
   Sau đó T056 phải xanh
-- [ ] T059 [US5] Mở rộng spec 070 phía app:
+- [x] T059 [US5] Mở rộng spec 070 phía app:
   - `REV/domain/ReviewEligibility.kt` thêm `ofDropIn`;
   - Safe Args của `WriteReviewFragment` thêm `sessionId: String?` (thay `bookingId` khi đánh giá buổi);
   - `ReviewRepository.create` gửi `sessionId`;
   - `item_review.xml` hiện nhãn "Buổi vãng lai" khi `targetType == DROP_IN`.
 
   Với `REV/` = `app/src/main/java/com/example/booking_app/feature/review/`. Cho T057 xanh
-- [ ] T060 [US5] Ở `MyDropInsFragment` (tab "Đã qua"): hiện nút "Đánh giá buổi chơi" / "Xem đánh giá của bạn" theo `ofDropIn`, điều hướng tới `WriteReviewFragment(sessionId, mode)`
+- [x] T060 [US5] Ở `MyDropInsFragment` (tab "Đã qua"): hiện nút "Đánh giá buổi chơi" / "Xem đánh giá của bạn" theo `ofDropIn`, điều hướng tới `WriteReviewFragment(sessionId, mode)`
 
 **Checkpoint**: cả 5 user story chạy độc lập.
 
@@ -471,8 +471,8 @@ Task chèn thêm sau khi chốt FR-008a; đánh số `T048a`… để không đ�
 
 - [ ] T061 [P] Espresso `ATEST/RegisterDropInFlowTest.kt` (Emulator + dữ liệu demo): danh sách → chi tiết → xác nhận (2 người, thanh toán giả lập) → vé có QR; kiểm tra luồng không quá 4 màn hình (FR-025, SC-001)
 - [ ] T062 [P] Kiểm tra 4 trạng thái (loading, content, empty, error + "Thử lại") trên cả 5 màn hình và 2 bottom sheet; mất mạng không crash (FR-024); chế độ tối (QR vẫn nền trắng); bố cục `w600dp` (`RES/layout-w600dp/` nếu cần); `contentDescription` cho QR và icon, vùng chạm ≥ 48dp
-- [ ] T063 [P] Cập nhật `docs/design/database/README.md` theo [danh sách cuối data-model.md](data-model.md#danh-sách-thay-đổi-cần-đưa-vào-docsdesigndatabasereadmemd) (mục 4.7, 4.9, 6, 7, 8a), sau khi D đồng ý trường `timeSlot`, `venueSnapshot`
-- [ ] T064 [P] Cập nhật `docs/features/08-drop-in/README.md` (link spec, plan, tasks) và cột *Spec* nhóm 08 trong `docs/features/README.md`
+- [x] T063 [P] Cập nhật `docs/design/database/README.md` theo [danh sách cuối data-model.md](data-model.md#danh-sách-thay-đổi-cần-đưa-vào-docsdesigndatabasereadmemd) (mục 4.7, 4.9, 6, 7, 8a), sau khi D đồng ý trường `timeSlot`, `venueSnapshot`
+- [x] T064 [P] Cập nhật `docs/features/08-drop-in/README.md` (link spec, plan, tasks) và cột *Spec* nhóm 08 trong `docs/features/README.md`
 - [ ] T065 Chạy toàn bộ [quickstart.md](quickstart.md):
   - test tự động mục 2;
   - Q1–Q15 trên emulator;
