@@ -280,6 +280,79 @@ class FirestoreBookingRemoteDataSource @Inject constructor(
         }.await()
     }
 
+    override suspend fun confirmHoldToBooking(
+        args: com.example.booking_app.feature.booking.ui.HoldToPaymentArgs,
+        paymentMethod: String,
+        userId: String
+    ): com.example.booking_app.feature.booking.domain.model.ConfirmBookingResult {
+        return try {
+            com.example.booking_app.feature.booking.data.mapper.BookingDocumentBuilder.validateSlotGaps(args.slotIds)
+            val nowMillis = serverTimeOffsetProvider.now()
+            val bookingRef = firestore.collection("bookings").document(args.bookingId)
+            val venueRef = firestore.collection(COLLECTION_VENUES).document(args.venueId)
+            val slotRefs = args.slotIds.map { firestore.collection(COLLECTION_SLOTS).document(it) }
+
+            firestore.runTransaction { transaction ->
+                // Phase 1: ALL READS
+                val existingBooking = transaction.get(bookingRef)
+                if (existingBooking.exists()) {
+                    return@runTransaction com.example.booking_app.feature.booking.domain.model.ConfirmBookingResult.Success(args.bookingId)
+                }
+
+                for (slotRef in slotRefs) {
+                    val slotSnapshot = transaction.get(slotRef)
+                    if (!slotSnapshot.exists()) {
+                        throw IllegalStateException("HOLD_EXPIRED: Slot ${slotRef.id} not found")
+                    }
+                    val status = slotSnapshot.getString("status")
+                    val holdBy = slotSnapshot.getString("holdBy")
+                    val holdExpiresAt = slotSnapshot.getTimestamp("holdExpiresAt")?.toDate()?.time ?: 0L
+                    if (status != "HELD" || holdBy != userId || holdExpiresAt <= nowMillis) {
+                        throw IllegalStateException("HOLD_EXPIRED: Slot ${slotRef.id} status=$status holdBy=$holdBy expiresAt=$holdExpiresAt now=$nowMillis")
+                    }
+                }
+
+                val venueSnapshot = transaction.get(venueRef)
+                val venuePhone = if (venueSnapshot.exists()) venueSnapshot.getString("phone") else null
+
+                // Phase 2: ALL WRITES
+                val bookingDocData = com.example.booking_app.feature.booking.data.mapper.BookingDocumentBuilder.build(
+                    args = args,
+                    paymentMethod = paymentMethod,
+                    userId = userId,
+                    nowMillis = nowMillis,
+                    venuePhone = venuePhone,
+                    useServerTimestamp = true
+                )
+                transaction.set(bookingRef, bookingDocData)
+
+                for (slotRef in slotRefs) {
+                    transaction.update(
+                        slotRef,
+                        mapOf(
+                            "status" to "BOOKED",
+                            "holdExpiresAt" to null,
+                            "bookingId" to args.bookingId
+                        )
+                    )
+                }
+
+                com.example.booking_app.feature.booking.domain.model.ConfirmBookingResult.Success(args.bookingId)
+            }.await()
+        } catch (e: Exception) {
+            val message = e.message.orEmpty()
+            if (message.contains("HOLD_EXPIRED")) {
+                com.example.booking_app.feature.booking.domain.model.ConfirmBookingResult.Expired
+            } else if (e is com.google.firebase.firestore.FirebaseFirestoreException &&
+                e.code == com.google.firebase.firestore.FirebaseFirestoreException.Code.PERMISSION_DENIED
+            ) {
+                com.example.booking_app.feature.booking.domain.model.ConfirmBookingResult.Error("Quyền truy cập bị từ chối (PERMISSION_DENIED)", isPermissionDenied = true)
+            } else {
+                com.example.booking_app.feature.booking.domain.model.ConfirmBookingResult.Error(e.message ?: "Lỗi xác nhận đặt sân")
+            }
+        }
+    }
+
     private fun parseDistrictFromAddress(address: String): String? {
         val parts = address.split(",")
         for (part in parts.reversed()) {

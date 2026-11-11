@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/cardBooking"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="12dp"
+    android:clickable="true"
+    android:focusable="true"
+    app:cardBackgroundColor="?attr/colorSurface"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="0dp"
+    app:strokeColor="@color/sn_line"
+    app:strokeWidth="1dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <!-- Top Header Row: Status Badge (Left) & Short Booking ID (Right) -->
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:id="@+id/badgeStatusContainer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_centerVertical="true"
+                android:background="@drawable/bg_pill_confirmed"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="10dp"
+                android:paddingVertical="4dp">
+
+                <ImageView
+                    android:id="@+id/iconStatusBadge"
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:layout_marginEnd="6dp"
+                    android:src="@drawable/ic_check_20"
+                    app:tint="@color/sn_on_court_container" />
+
+                <TextView
+                    android:id="@+id/textStatusBadge"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/my_bookings_060_badge_confirmed"
+                    android:textAppearance="?attr/textAppearanceLabelMedium"
+                    android:textColor="@color/sn_on_court_container"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/textBookingCode"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentEnd="true"
+                android:layout_centerVertical="true"
+                android:text="#SN-41F7"
+                android:textAppearance="?attr/textAppearanceLabelMedium"
+                android:textColor="@color/sn_ink_muted"
+                android:textStyle="bold" />
+        </RelativeLayout>
+
+        <!-- Venue Name -->
+        <TextView
+            android:id="@+id/textVenue"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:textAppearance="?attr/textAppearanceTitleMedium"
+            android:textColor="?attr/colorOnSurface"
+            android:textStyle="bold" />
+
+        <!-- Date & Time Row (e.g. T5, 08/10 • 18:00 – 19:30) -->
+        <TextView
+            android:id="@+id/textBookingTime"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textAppearance="?attr/textAppearanceBodyLarge"
+            android:textColor="?attr/colorOnSurface"
+            android:textStyle="bold" />
+
+        <!-- Detailed Court & Payment Breakdown Row -->
+        <TextView
+            android:id="@+id/textBookingDetails"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="@color/sn_ink_muted" />
+
+        <!-- Extra Status Info (e.g. "Đơn chuyển sang Đã hoàn thành sau 19:00.") -->
+        <TextView
+            android:id="@+id/textBookingExtra"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:textColor="@color/sn_ink_muted"
+            android:visibility="gone" />
+
+        <!-- Action Buttons Row per Mockup 1 -->
+        <LinearLayout
+            android:id="@+id/layoutActions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonPrimaryAction"
+                style="@style/Widget.SmashNow.Button"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:layout_marginEnd="10dp"
+                android:backgroundTint="@color/sn_court_container"
+                android:minHeight="40dp"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="0dp"
+                android:text="@string/my_bookings_060_btn_checkin_code"
+                android:textAppearance="?attr/textAppearanceLabelLarge"
+                android:textColor="@color/sn_on_court_container"
+                app:cornerRadius="20dp"
+                app:icon="@drawable/ic_qr_code_scanner_24"
+                app:iconSize="18dp"
+                app:iconTint="@color/sn_on_court_container" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/buttonSecondaryAction"
+                style="@style/Widget.SmashNow.Button.Outlined"
+                android:layout_width="wrap_content"
+                android:layout_height="40dp"
+                android:minHeight="40dp"
+                android:paddingHorizontal="16dp"
+                android:paddingVertical="0dp"
+                android:text="@string/my_bookings_060_directions"
+                android:textAppearance="?attr/textAppearanceLabelLarge"
+                app:cornerRadius="20dp"
+                app:icon="@drawable/ic_directions_24"
+                app:iconSize="18dp" />
+        </LinearLayout>
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

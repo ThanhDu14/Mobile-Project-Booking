@@ -2,10 +2,10 @@
 <resources>
     <!-- BottomNav người chơi -->
     <string name="nav_tab_home">Trang chủ</string>
+    <string name="nav_tab_search">Tìm kiếm</string>
     <string name="nav_tab_drop_in">Vãng lai</string>
     <string name="nav_tab_bookings">Lịch đặt</string>
     <string name="nav_tab_community">Cộng đồng</string>
-    <string name="nav_tab_account">Tài khoản</string>
     <!-- OwnerNav chủ sân -->
     <string name="nav_owner_tab_today">Hôm nay</string>
     <string name="nav_owner_tab_bookings">Đơn đặt</string>

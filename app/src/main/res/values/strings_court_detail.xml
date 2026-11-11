@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Chuỗi của spec 030 – Chi tiết sân (contracts/ui-screens.md). Tiền tố court_detail_. -->
+<resources>
+    <string name="court_detail_title">Chi tiết sân</string>
+
+    <!-- Trạng thái mở cửa (FR-007, research R6) -->
+    <string name="court_detail_open_now">Đang mở cửa · %1$s–%2$s</string>
+    <string name="court_detail_closed_reopen">Đã đóng cửa · Mở lại %1$s</string>
+    <string name="court_detail_open_all_day">Mở cả ngày</string>
+
+    <!-- Sân con (FR-006) -->
+    <string name="court_detail_courts_summary">%1$d sân · %2$s</string>
+    <string name="court_detail_courts_none">Tạm thời chưa có sân hoạt động</string>
+    <string name="court_detail_courts_label">Sân con</string>
+    <plurals name="court_detail_court_count">
+        <item quantity="one">%1$d sân</item>
+        <item quantity="other">%1$d sân</item>
+    </plurals>
+    <string name="court_detail_surface_wood">Gỗ</string>
+    <string name="court_detail_surface_pu">PU</string>
+    <string name="court_detail_surface_mat">Thảm</string>
+    <string name="court_detail_surface_other">Khác</string>
+    <string name="court_detail_surface_count">%1$d %2$s</string>
+
+    <!-- Tiện ích (FR-005) -->
+    <string name="court_detail_amenities_title">Tiện ích</string>
+    <string name="court_detail_amenities_empty">Chưa có thông tin tiện ích</string>
+
+    <!-- Bảng giá (FR-008, FR-009) -->
+    <string name="court_detail_prices_title">Bảng giá</string>
+    <string name="court_detail_selected_window">Khung bạn chọn</string>
+    <string name="court_detail_selected_window_detail">%1$s · %2$s – %3$s</string>
+    <string name="court_detail_contact">Liên hệ</string>
+    <string name="court_detail_contact_owner">Liên hệ chủ sân</string>
+    <string name="court_detail_contact_phone">Liên hệ %1$s</string>
+    <string name="court_detail_label_normal">Giờ thường</string>
+    <string name="court_detail_label_peak">Giờ cao điểm</string>
+    <string name="court_detail_label_weekend">Cuối tuần</string>
+    <string name="court_detail_price_per_hour">%1$s đ/giờ</string>
+    <string name="court_detail_price_from">từ %1$s đ/giờ</string>
+    <string name="court_detail_time_range">%1$s – %2$s</string>
+    <string name="court_detail_day_monday">Thứ 2</string>
+    <string name="court_detail_day_tuesday">Thứ 3</string>
+    <string name="court_detail_day_wednesday">Thứ 4</string>
+    <string name="court_detail_day_thursday">Thứ 5</string>
+    <string name="court_detail_day_friday">Thứ 6</string>
+    <string name="court_detail_day_saturday">Thứ 7</string>
+    <string name="court_detail_day_sunday">Chủ nhật</string>
+    <string name="court_detail_day_short_monday">T2</string>
+    <string name="court_detail_day_short_tuesday">T3</string>
+    <string name="court_detail_day_short_wednesday">T4</string>
+    <string name="court_detail_day_short_thursday">T5</string>
+    <string name="court_detail_day_short_friday">T6</string>
+    <string name="court_detail_day_short_saturday">T7</string>
+    <string name="court_detail_day_short_sunday">CN</string>
+    <string name="court_detail_day_pair">%1$s, %2$s</string>
+    <string name="court_detail_day_range">%1$s – %2$s</string>
+
+    <!-- Đánh giá (FR-014, FR-015) -->
+    <string name="court_detail_reviews_title">Đánh giá</string>
+    <string name="court_detail_no_rating">Chưa có đánh giá</string>
+    <string name="court_detail_reviews_empty">Sân chưa có đánh giá</string>
+    <string name="court_detail_reviews_see_all">Xem tất cả (%1$d)</string>
+    <string name="court_detail_review_deleted_user">Người dùng đã xóa</string>
+    <string name="court_detail_owner_reply">Phản hồi của chủ sân</string>
+    <string name="court_detail_criteria_court">Chất lượng sân</string>
+    <string name="court_detail_criteria_cleanliness">Vệ sinh</string>
+    <string name="court_detail_criteria_service">Phục vụ</string>
+    <string name="court_detail_rating_value">%1$s</string>
+    <string name="court_detail_rating_with_count">★ %1$s (%2$s)</string>
+    <string name="court_detail_cd_review">%1$s, %2$d trên 5 sao, ngày %3$s</string>
+    <string name="court_detail_cd_review_photo">Ảnh %1$d của đánh giá</string>
+    <string name="court_detail_cd_criteria">%1$s: %2$s trên 5</string>
+    <plurals name="court_detail_review_count">
+        <item quantity="one">%1$d đánh giá</item>
+        <item quantity="other">%1$d đánh giá</item>
+    </plurals>
+
+    <!-- Trạng thái cơ sở (FR-021, FR-022) -->
+    <string name="court_detail_suspended">Sân tạm ngừng hoạt động</string>
+    <string name="court_detail_suspended_guest_message">Bạn cần đăng nhập để xem thông tin cơ sở đang tạm ngừng hoạt động.</string>
+    <string name="court_detail_gone">Sân không còn tồn tại</string>
+    <string name="court_detail_gone_message">Cơ sở này đã ngừng hoạt động hoặc đã bị xóa.</string>
+    <string name="court_detail_remove_favorite">Bỏ khỏi yêu thích</string>
+    <string name="court_detail_back">Quay lại</string>
+    <string name="court_detail_own_venue">Đây là cơ sở của bạn</string>
+
+    <!-- Mời đăng nhập (FR-020, research R11) -->
+    <string name="court_detail_login_to_book">Đăng nhập để đặt sân</string>
+    <string name="court_detail_login_to_favorite">Đăng nhập để lưu sân yêu thích</string>
+    <string name="court_detail_login_to_chat">Đăng nhập để nhắn tin cho chủ sân</string>
+    <string name="court_detail_login_prompt_message">Bạn vẫn xem được mọi thông tin của sân khi chưa đăng nhập.</string>
+    <string name="court_detail_login">Đăng nhập</string>
+    <string name="court_detail_later">Để sau</string>
+
+    <!-- Liên hệ, chỉ đường, mạng (FR-010 → FR-013, FR-026) -->
+    <string name="court_detail_location_title">Vị trí</string>
+    <string name="court_detail_directions">Chỉ đường</string>
+    <string name="court_detail_tap_to_call">Bấm để gọi</string>
+    <string name="court_detail_phone_copied">Đã sao chép số điện thoại</string>
+    <string name="court_detail_distance_from_you">Từ vị trí của bạn</string>
+    <string name="court_detail_offline_banner">Không có kết nối, thông tin có thể chưa cập nhật</string>
+    <string name="court_detail_coming_soon">Tính năng sắp có</string>
+    <string name="court_detail_osm_attribution">© OpenStreetMap contributors</string>
+    <string name="court_detail_book">Đặt sân</string>
+    <string name="court_detail_retry">Thử lại</string>
+    <string name="court_detail_error_generic">Không tải được thông tin. Vui lòng thử lại.</string>
+    <string name="court_detail_error_network">Không có kết nối mạng</string>
+    <string name="court_detail_error_section">Không tải được mục này</string>
+    <string name="court_detail_favorite_added">Đã thêm vào yêu thích</string>
+    <string name="court_detail_favorite_removed">Đã bỏ khỏi yêu thích</string>
+    <string name="court_detail_favorite_failed">Không lưu được yêu thích. Vui lòng thử lại.</string>
+
+    <!-- contentDescription (ui-screens §2) -->
+    <string name="court_detail_cd_photo">Ảnh %1$d trên %2$d của %3$s</string>
+    <string name="court_detail_cd_photo_indicator">Ảnh %1$d trên %2$d</string>
+    <string name="court_detail_cd_favorite_add">Thêm vào yêu thích</string>
+    <string name="court_detail_cd_favorite_remove">Bỏ khỏi yêu thích</string>
+    <string name="court_detail_cd_chat">Nhắn tin cho chủ sân</string>
+    <string name="court_detail_cd_map">Bản đồ vị trí %1$s</string>
+    <string name="court_detail_cd_back">Quay lại</string>
+    <string name="court_detail_cd_close">Đóng</string>
+    <string name="court_detail_cd_amenity">Tiện ích %1$s</string>
+    <string name="court_detail_cd_rating">Điểm %1$s trên 5</string>
+    <string name="court_detail_photo_indicator">%1$d/%2$d</string>
+    <string name="court_detail_booking_login_required">Bạn cần đăng nhập để đặt sân.</string>
+    <string name="court_detail_booking_login">Đăng nhập</string>
+</resources>

@@ -1,5 +1,7 @@
 # Data Model: Quản lý lịch đặt của tôi (spec 060)
 
+> **Cập nhật 2026-11-07:** Schema dùng chung tại `docs/design/database/README.md` được ưu tiên khi đối chiếu với mô hình lịch sử bên dưới. Đặc biệt `bookings` dùng `venueSnapshot`, `items` (gồm giá thực của từng slot), `subtotal`, `discount`, `total` và `paymentStatus`; không tự tính giá từng slot bằng cách chia đều. Không giả định các trường phẳng, `FREE`, trạng thái nhóm hoặc các trường bổ sung dưới đây đã tồn tại; cần đối chiếu code 040/041/050 và cập nhật contract trước khi implement. Các quyết định khác theo `spec.md`, mục Clarifications ngày 2026-11-07.
+
 **Ngày**: 2026-10-15 · **Spec**: [spec.md](spec.md) · **Plan**: [plan.md](plan.md)
 
 Tài liệu này định nghĩa chi tiết mô hình cơ sở dữ liệu Firestore, Kotlin Data Transfer Objects (DTOs), Domain Entities và UI State/Effect cho module Quản lý lịch đặt của tôi (`060-my-bookings`).

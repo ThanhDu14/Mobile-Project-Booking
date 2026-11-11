@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Nội dung của AccountAvatarView (spec 011 US8): vòng tròn chữ cái đầu, icon người cho khách, ảnh đại diện ở trên cùng. -->
+<merge xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:parentTag="android.widget.FrameLayout">
+
+    <TextView
+        android:id="@+id/avatarInitials"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@drawable/bg_account_avatar_initials"
+        android:gravity="center"
+        android:importantForAccessibility="no"
+        android:textAppearance="?attr/textAppearanceTitleMedium"
+        android:textColor="@color/sn_on_court_container"
+        tools:text="HN" />
+
+    <ImageView
+        android:id="@+id/avatarIcon"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:layout_gravity="center"
+        android:importantForAccessibility="no"
+        android:src="@drawable/ic_person_outline_24"
+        android:visibility="gone"
+        app:tint="@color/sn_on_court_container" />
+
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/avatarPhoto"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:importantForAccessibility="no"
+        android:scaleType="centerCrop"
+        android:visibility="gone"
+        app:shapeAppearanceOverlay="@style/ShapeAppearance.SmashNow.Circle" />
+</merge>

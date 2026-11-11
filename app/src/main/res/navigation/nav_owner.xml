@@ -36,20 +36,57 @@
         <argument android:name="venueId" app:argType="string" />
     </fragment>
 
-    <!-- Tab Hôm nay của OwnerNav, màn tạm tới khi spec 112 làm màn Hôm nay. Là màn đầu của graph theo thứ tự tab. -->
+    <fragment
+        android:id="@+id/ownerCalendarFragment"
+        android:name="com.example.booking_app.feature.owner.ui.calendar.OwnerCalendarFragment"
+        android:label="@string/owner_calendar_title" />
+
+    <fragment
+        android:id="@+id/ownerBookingsFragment"
+        android:name="com.example.booking_app.feature.owner.ui.bookings.OwnerBookingsFragment"
+        android:label="@string/owner_bookings_title">
+        <action android:id="@+id/action_ownerBookings_to_checkin" app:destination="@id/ownerBookingCheckInFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/ownerBookingCheckInFragment"
+        android:name="com.example.booking_app.feature.owner.ui.bookings.OwnerBookingCheckInFragment"
+        android:label="@string/owner_booking_checkin_title" />
+
+    <fragment android:id="@+id/ownerDropInFragment" android:name="com.example.booking_app.feature.owner.ui.dropin.OwnerDropInFragment" android:label="@string/owner_dropin_title">
+        <action android:id="@+id/action_ownerDropIn_to_form" app:destination="@id/ownerDropInFormFragment" />
+        <action android:id="@+id/action_ownerDropIn_to_roster" app:destination="@id/ownerDropInRosterFragment" />
+    </fragment>
+    <fragment android:id="@+id/ownerDropInFormFragment" android:name="com.example.booking_app.feature.owner.ui.dropin.OwnerDropInFormFragment" android:label="@string/owner_dropin_create" />
+    <fragment android:id="@+id/ownerDropInRosterFragment" android:name="com.example.booking_app.feature.owner.ui.dropin.OwnerDropInRosterFragment" android:label="@string/owner_dropin_roster">
+        <argument android:name="venueId" app:argType="string" />
+        <argument android:name="sessionId" app:argType="string" />
+    </fragment>
+
+    <fragment android:id="@+id/ownerVouchersFragment" android:name="com.example.booking_app.feature.owner.ui.vouchers.OwnerVouchersFragment" android:label="@string/owner_voucher_title">
+        <action android:id="@+id/action_ownerVouchers_to_form" app:destination="@id/ownerVoucherFormFragment" />
+    </fragment>
+    <fragment android:id="@+id/ownerVoucherFormFragment" android:name="com.example.booking_app.feature.owner.ui.vouchers.OwnerVoucherFormFragment" android:label="@string/owner_voucher_create">
+        <argument android:name="venueId" app:argType="string" />
+    </fragment>
+
+    <fragment android:id="@+id/ownerStatisticsFragment" android:name="com.example.booking_app.feature.owner.ui.statistics.OwnerStatisticsFragment" android:label="@string/owner_statistics_title" />
+
+    <!-- Tab Hôm nay của OwnerNav, entry point của Feature 112. -->
     <fragment
         android:id="@+id/ownerHomePlaceholderFragment"
         android:name="com.example.booking_app.feature.auth.ui.home.OwnerHomePlaceholderFragment"
-        android:label="@string/app_name">
-        <action
-            android:id="@+id/action_ownerHome_to_account"
-            app:destination="@id/nav_account" />
-    </fragment>
+        android:label="@string/app_name" />
 
-    <!-- Trang Tài khoản của spec 011 (research R14). -->
+    <!-- Trang Tài khoản của spec 011 (research R14). Mở từ avatar ở header dùng chung (US8); cùng id action với
+         nav_player để AccountEntryNavigator dùng chung. -->
     <include app:graph="@navigation/nav_account" />
 
     <!-- "Đánh giá của khách" của spec 070 US4 (C); menu quản lý sân mở bằng smashnow://review/owner. -->
     <include app:graph="@navigation/nav_review_owner" />
+
+    <action
+        android:id="@+id/action_global_account"
+        app:destination="@id/nav_account" />
 
 </navigation>

@@ -2,11 +2,13 @@
 
 **Feature Branch**: `feature/02-court-search`
 
-**Created**: 2026-10-05
+**Created**: 2026-10-05 · **Updated**: 2026-11-06 (thay đổi thiết kế điều hướng: Trang chủ và Tìm kiếm tách thành 2 tab)
 
 **Status**: Draft
 
 **Input**: User description: "Người chơi tìm cơ sở sân cầu lông để đặt. Màn hình tìm kiếm có ô tìm theo tên sân (gõ không dấu, viết hoa hay thường đều khớp, khớp theo phần đầu của từ) và chọn quận/huyện từ danh mục. Bộ lọc gồm: khoảng giá theo giờ; khung giờ còn trống (chọn ngày + giờ bắt đầu/kết thúc, chỉ hiện cơ sở có ít nhất một sân con trống trọn khung đó); tiện ích (gửi xe, nước uống, phòng tắm, cho thuê vợt; cơ sở phải có đủ mọi tiện ích đã chọn). Bộ lọc đang áp dụng hiện thành chip, bỏ từng chip hoặc xóa hết được. Sắp xếp theo: gần nhất, giá thấp đến cao, đánh giá cao nhất. Thẻ kết quả gồm ảnh, tên, quận, giá "từ X đ/giờ", điểm và số lượt đánh giá, khoảng cách (khi có vị trí); danh sách tải thêm khi cuộn; bấm thẻ mở chi tiết sân. Chỉ hiện cơ sở đang hoạt động. Lịch sử tìm kiếm: lưu các lần tìm gần đây của chính người dùng (từ khóa + bộ lọc), bấm để tìm lại, xóa từng mục hoặc xóa hết; người khác không xem được. Vị trí: xin quyền lúc người dùng chọn "gần nhất"; từ chối thì ẩn khoảng cách, không sắp xếp theo khoảng cách được, các chức năng khác vẫn dùng bình thường. Bộ lọc là đầu vào dùng chung: spec 022 (AI) điền vào đúng bộ lọc này rồi chạy cùng truy vấn. Có trạng thái đang tải, rỗng (gợi ý bỏ bớt bộ lọc), lỗi kèm thử lại; mất mạng không crash. Danh sách trang đầu tải dưới 3 giây trên 4G. Không bao gồm: bản đồ, marker và gợi ý sân gần vị trí hiện tại (spec 021); tìm bằng câu tự do hoặc giọng nói (spec 022); chi tiết sân (spec 030); lưới giờ và đặt sân (spec 040); tìm buổi vãng lai (spec 080). Dữ liệu: venues (nameKeywords, districtId, amenityIds, minPricePerHour, ratingAvg, geohash, status), slots để xét giờ trống, districts, amenities, users/{uid}/searchHistory theo docs/design/database/README.md."
+
+**Cập nhật 2026-11-06 (thay đổi thiết kế)**: "Tách Trang chủ và Tìm kiếm thành 2 tab riêng ở thanh dưới của người chơi (Trang chủ · Tìm kiếm · Lịch đặt · Vãng lai · Cộng đồng; tab Tài khoản thay bằng avatar góc phải trên, thuộc spec 011). Trang chủ chỉ hiển thị danh sách cơ sở ("Tất cả sân · N", sắp xếp, tải thêm khi cuộn, bấm mở chi tiết sân), không có ô tìm kiếm hay chip lọc. Tab Tìm kiếm là một màn hình duy nhất thay cho luồng 4 bước cũ: ô tìm theo tên có focus sẵn, hàng chip lọc nhanh "Quận", "Giờ trống", "Giá", "+"; chưa có điều kiện thì hiện "Tìm gần đây"; có từ khóa hoặc bộ lọc thì kết quả hiện ngay bên dưới. Các yêu cầu tìm kiếm, bộ lọc, sắp xếp, vị trí, lịch sử giữ nguyên."
 
 **Nhóm tính năng**: [02 — Tìm kiếm sân](../../docs/features/02-court-search/README.md) · **Phụ trách**: A · **Liên quan**: spec 021 (bản đồ), spec 022 (AI Assistant), spec 030 (chi tiết sân), spec 040 (đặt sân), spec 111 (cơ sở, bảng giá, tiện ích của chủ sân), [spec 011](../011-account-profile/spec.md) (xóa tài khoản)
 
@@ -17,11 +19,19 @@
 - Q: Khi người chơi lọc theo khung giờ, giá dùng để lọc là giá thấp nhất của cơ sở hay giá của đúng khung giờ đã chọn? → A: Khi có bộ lọc khung giờ, lọc, sắp xếp và hiển thị theo giá của đúng khung đó (quy ra đ/giờ). Khi không có khung giờ thì dùng giá thấp nhất mỗi giờ của cơ sở.
 - Q: Khách chưa đăng nhập có được tìm và xem danh sách sân không? → A: Có. Khách tìm, lọc, sắp xếp và mở chi tiết sân được; chỉ đặt sân và lịch sử tìm kiếm mới cần đăng nhập.
 
+### Session 2026-11-06 (thay đổi thiết kế điều hướng)
+
+- Q: Trang chủ và màn hình tìm kiếm có còn là một màn hình (Trang chủ = bước 1 của tìm kiếm) không? → A: Không. Thanh dưới của người chơi có 5 tab: Trang chủ · Tìm kiếm · Lịch đặt · Vãng lai · Cộng đồng. Trang chủ và Tìm kiếm là hai màn hình riêng. Tab Tài khoản bị bỏ, trang Tài khoản mở từ avatar góc phải trên (spec 011).
+- Q: Trang chủ hiển thị gì? → A: Chỉ danh sách mọi cơ sở đang hoạt động: tiêu đề "Tất cả sân · N", nút sắp xếp (mặc định "Đánh giá cao nhất"), thẻ sân tải thêm khi cuộn, bấm thẻ mở chi tiết sân. Không có ô tìm kiếm, không có chip lọc.
+- Q: Màn hình Tìm kiếm còn chia thành 4 bước (ô chỉ đọc → màn nhập + lịch sử → kết quả → bảng lọc) không? → A: Không. Tab Tìm kiếm là một màn hình: ô tìm có focus sẵn, hàng chip lọc nhanh "Quận", "Giờ trống", "Giá", "+" (mở bảng lọc đầy đủ); chưa có điều kiện thì hiện "Tìm gần đây"; có từ khóa hoặc bộ lọc thì kết quả và sắp xếp hiện ngay bên dưới. Bảng lọc đầy đủ vẫn là một bảng trượt lên trên màn hình đó.
+- Q: "Sân gần bạn" (spec 021) và ô AI (spec 022) nằm ở đâu? → A: Không còn ở Trang chủ. Tab Tìm kiếm chừa chỗ cho ô AI (ngay dưới ô tìm, khi chưa có điều kiện) và nút chuyển Danh sách/Bản đồ (ở phần kết quả). Vị trí cuối cùng của "Sân gần bạn" và ô AI do spec 021, 022 quyết định; spec này chỉ cam kết chỗ chừa sẵn ở tab Tìm kiếm.
+- Q: Thứ tự tab ở thanh dưới? → A: Từ trái qua phải: Trang chủ · Tìm kiếm · Lịch đặt · Vãng lai · Cộng đồng (Lịch đặt đứng trước Vãng lai). Tab chưa có màn hình báo "đang phát triển".
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Tìm sân theo tên hoặc quận (Priority: P1)
 
-Người chơi (kể cả khách chưa đăng nhập) mở màn hình tìm kiếm, gõ một phần tên sân (có thể không dấu, ví dụ "hoa binh") hoặc chọn một quận/huyện, và thấy danh sách cơ sở phù hợp. Mỗi thẻ có ảnh, tên, quận, giá "từ X đ/giờ", điểm và số lượt đánh giá. Bấm vào thẻ để mở chi tiết sân.
+Người chơi (kể cả khách chưa đăng nhập) mở tab Tìm kiếm, gõ một phần tên sân (có thể không dấu, ví dụ "hoa binh") hoặc chọn một quận/huyện, và thấy danh sách cơ sở phù hợp. Mỗi thẻ có ảnh, tên, quận, giá "từ X đ/giờ", điểm và số lượt đánh giá. Bấm vào thẻ để mở chi tiết sân.
 
 **Why this priority**: Đây là đường vào chính của luồng đặt sân; không tìm được sân thì không đặt được. Chỉ riêng story này đã đủ một MVP tìm kiếm.
 
@@ -41,7 +51,7 @@ Người chơi (kể cả khách chưa đăng nhập) mở màn hình tìm kiế
 
 ### User Story 2 - Lọc theo giá, khung giờ còn trống và tiện ích (Priority: P1)
 
-Người chơi mở bảng bộ lọc, chọn khoảng giá theo giờ, chọn ngày và khung giờ muốn chơi, và đánh dấu các tiện ích cần có (gửi xe, nước uống, phòng tắm, cho thuê vợt...). Các bộ lọc đang áp dụng hiện thành chip phía trên danh sách; người chơi bỏ từng chip hoặc bấm "Xóa bộ lọc" để bỏ hết.
+Ở tab Tìm kiếm, người chơi bấm chip lọc nhanh "Giá", "Giờ trống" hoặc "+" (bảng lọc đầy đủ) để chọn khoảng giá theo giờ, ngày và khung giờ muốn chơi, và các tiện ích cần có (gửi xe, nước uống, phòng tắm, cho thuê vợt...). Các bộ lọc đang áp dụng hiện thành chip có "x" ngay dưới ô tìm; người chơi bỏ từng chip hoặc bấm "Xóa bộ lọc" để bỏ hết.
 
 **Why this priority**: Người chơi thường đã biết mình muốn chơi lúc nào và trả bao nhiêu; lọc theo giờ còn trống giúp không phải mở từng sân để xem lịch. Đây là giá trị khác biệt chính so với danh bạ sân, và là đầu vào mà spec 022 dùng lại.
 
@@ -83,22 +93,42 @@ Người chơi chọn cách sắp xếp: gần nhất, giá thấp đến cao, h
 
 ### User Story 4 - Lịch sử tìm kiếm (Priority: P3)
 
-Khi bấm vào ô tìm kiếm mà chưa gõ gì, người chơi thấy các lần tìm gần đây của mình (từ khóa và tóm tắt bộ lọc). Bấm một mục để chạy lại đúng lần tìm đó; xóa từng mục hoặc xóa toàn bộ lịch sử.
+Khi tab Tìm kiếm chưa có từ khóa và bộ lọc nào, người chơi thấy ngay các lần tìm gần đây của mình (từ khóa và tóm tắt bộ lọc). Bấm một mục để chạy lại đúng lần tìm đó; xóa từng mục hoặc xóa toàn bộ lịch sử.
 
 **Why this priority**: Tiết kiệm thao tác cho người hay tìm cùng một kiểu sân, nhưng không chặn luồng chính.
 
-**Independent Test**: Tìm 3 lần với từ khóa/bộ lọc khác nhau, mở lại ô tìm kiếm thấy đủ 3 mục với lần mới nhất ở đầu; bấm một mục thì từ khóa và chip bộ lọc được khôi phục đúng; xóa một mục và xóa hết đều có hiệu lực sau khi mở lại app.
+**Independent Test**: Tìm 3 lần với từ khóa/bộ lọc khác nhau, xóa hết điều kiện ở tab Tìm kiếm thấy đủ 3 mục với lần mới nhất ở đầu; bấm một mục thì từ khóa và chip bộ lọc được khôi phục đúng; xóa một mục và xóa hết đều có hiệu lực sau khi mở lại app.
 
 **Acceptance Scenarios**:
 
-1. **Given** người chơi vừa thực hiện một lần tìm có từ khóa hoặc ít nhất một bộ lọc, **When** mở lại ô tìm kiếm, **Then** lần tìm đó đứng đầu lịch sử, hiện từ khóa và tóm tắt bộ lọc (ví dụ "Quận 10 · Mai 19:00–21:00 · ≤100k").
+1. **Given** người chơi vừa thực hiện một lần tìm có từ khóa hoặc ít nhất một bộ lọc, **When** xóa hết điều kiện ở tab Tìm kiếm (hoặc mở lại tab khi chưa có điều kiện), **Then** lần tìm đó đứng đầu lịch sử, hiện từ khóa và tóm tắt bộ lọc (ví dụ "Quận 10 · Mai 19:00–21:00 · ≤100k").
 2. **Given** người chơi bấm một mục lịch sử, **When** màn hình cập nhật, **Then** từ khóa, quận và các bộ lọc của mục đó được điền lại thành chip và danh sách kết quả được chạy lại.
 3. **Given** một mục lịch sử có ngày chơi đã qua, **When** người chơi bấm mục đó, **Then** các bộ lọc khác được khôi phục, còn bộ lọc khung giờ bị bỏ và app báo ngắn "Ngày đã qua, vui lòng chọn lại".
 4. **Given** người chơi tìm lại đúng một tổ hợp đã có trong lịch sử, **When** mở lịch sử, **Then** tổ hợp đó chỉ xuất hiện một lần, ở vị trí đầu.
 5. **Given** lịch sử đã có 10 mục, **When** người chơi tìm thêm một lần mới, **Then** mục cũ nhất bị bỏ.
 6. **Given** người chơi bấm xóa một mục hoặc "Xóa tất cả" (có xác nhận), **When** mở lại app, **Then** các mục đã xóa không còn.
 7. **Given** hai người dùng khác nhau, **When** mỗi người mở lịch sử, **Then** chỉ thấy lịch sử của chính mình.
-8. **Given** khách chưa đăng nhập, **When** tìm kiếm rồi bấm vào ô tìm kiếm, **Then** không có lịch sử nào được lưu hay hiển thị (có thể hiện gợi ý ngắn "Đăng nhập để lưu lịch sử tìm kiếm").
+8. **Given** khách chưa đăng nhập, **When** tìm kiếm rồi xóa hết điều kiện ở tab Tìm kiếm, **Then** không có lịch sử nào được lưu hay hiển thị; thay vào đó là gợi ý ngắn "Đăng nhập để lưu lịch sử tìm kiếm".
+
+---
+
+### User Story 5 - Xem danh sách tất cả sân ở Trang chủ (Priority: P1) *(thêm 2026-11-06)*
+
+Người chơi (kể cả khách chưa đăng nhập) mở app và thấy ngay ở tab Trang chủ danh sách mọi cơ sở đang hoạt động, tiêu đề "Tất cả sân · N", có nút sắp xếp. Họ cuộn để xem thêm và bấm một thẻ để mở chi tiết sân. Trang chủ không có ô tìm kiếm hay chip lọc; muốn tìm hoặc lọc thì sang tab Tìm kiếm.
+
+**Why this priority**: Trang chủ là màn hình đầu tiên người chơi thấy; duyệt danh sách sân là cách nhanh nhất để chọn sân khi chưa có tiêu chí cụ thể, và là lối vào chi tiết sân (spec 030) khi chưa có tìm kiếm.
+
+**Independent Test**: Với dữ liệu demo 10 cơ sở trong đó 2 cơ sở bị ẩn/khóa, mở tab Trang chủ thấy "Tất cả sân · 8", xếp theo đánh giá cao nhất; đổi sang "Giá thấp đến cao" thì thứ tự đổi; bấm một thẻ mở đúng chi tiết sân; quay lại vẫn ở đúng vị trí cuộn; trên màn hình không có ô tìm kiếm hay chip lọc.
+
+**Acceptance Scenarios**:
+
+1. **Given** người chơi mở tab Trang chủ, **When** danh sách tải xong, **Then** tiêu đề là "Tất cả sân · N" với N là số cơ sở đang hoạt động, và chỉ cơ sở đang hoạt động được hiện.
+2. **Given** Trang chủ đang hiển thị, **When** người chơi nhìn màn hình, **Then** không có ô tìm kiếm, chip lọc, ô AI hay "Sân gần bạn".
+3. **Given** người chơi chưa đổi cách sắp xếp, **When** danh sách hiện, **Then** cơ sở được xếp theo "Đánh giá cao nhất" (cùng quy tắc FR-011).
+4. **Given** người chơi chọn "Gần nhất" ở Trang chủ, **When** app chưa có quyền vị trí, **Then** áp dụng đúng luồng quyền vị trí của US3 (giải thích trước, từ chối thì giữ cách sắp xếp cũ).
+5. **Given** có nhiều hơn 20 cơ sở, **When** cuộn tới cuối, **Then** app tải thêm cho tới khi hết.
+6. **Given** người chơi bấm một thẻ ở Trang chủ, **When** quay lại từ chi tiết sân, **Then** Trang chủ giữ nguyên cách sắp xếp và vị trí cuộn.
+7. **Given** người chơi đang có từ khóa và bộ lọc ở tab Tìm kiếm, **When** chuyển sang Trang chủ rồi quay lại Tìm kiếm, **Then** Trang chủ không bị ảnh hưởng bởi điều kiện đó, và tab Tìm kiếm vẫn giữ nguyên từ khóa, bộ lọc, kết quả và vị trí cuộn.
 
 ---
 
@@ -115,7 +145,10 @@ Khi bấm vào ô tìm kiếm mà chưa gõ gì, người chơi thấy các lầ
 - **Cơ sở chưa có bảng giá**: vẫn xuất hiện khi không lọc theo giá, thẻ hiện "Liên hệ" thay cho giá; không khớp với bộ lọc giá; đứng cuối khi sắp xếp theo giá.
 - **Bảng giá không phủ hết khung đã chọn** (một phần khung không có mức giá nào): giá của khung không xác định, cơ sở được xử lý như "chưa có bảng giá" cho khung đó.
 - **Khung giờ đổi mức giá giữa chừng** (ví dụ 17:00–19:00 với giờ cao điểm từ 18:00): giá hiển thị là giá trung bình mỗi giờ của cả khung, tính từ từng khung 30 phút.
-- **Khách chưa đăng nhập bấm đặt sân từ chi tiết sân**: thuộc spec 030/040; khi quay lại sau khi đăng nhập, từ khóa và bộ lọc ở màn hình tìm kiếm được giữ nguyên.
+- **Khách chưa đăng nhập bấm đặt sân từ chi tiết sân**: thuộc spec 030/040; khi quay lại sau khi đăng nhập, từ khóa và bộ lọc ở tab Tìm kiếm (và cách sắp xếp, vị trí cuộn ở Trang chủ) được giữ nguyên.
+- **Chuyển qua lại giữa các tab**: mỗi tab giữ trạng thái riêng; Trang chủ không dùng điều kiện của tab Tìm kiếm và ngược lại. Cách sắp xếp chọn ở Trang chủ và ở tab Tìm kiếm độc lập với nhau.
+- **Bàn phím ở tab Tìm kiếm**: ô tìm chỉ tự nhận focus và mở bàn phím khi người chơi vào tab Tìm kiếm mà chưa có điều kiện nào; quay lại từ chi tiết sân hoặc vào lại tab khi đang có kết quả thì không tự mở bàn phím, để người chơi xem tiếp kết quả.
+- **Bấm lại tab đang mở** (Trang chủ hoặc Tìm kiếm): cuộn danh sách về đầu; không xóa điều kiện tìm kiếm.
 - **Một tiện ích bị admin xóa khỏi danh mục** trong khi đang nằm trong lịch sử: bộ lọc đó bị bỏ khi khôi phục mục lịch sử.
 - **Cơ sở bị ẩn ngay sau khi xuất hiện trong kết quả**: thẻ có thể còn trên màn hình tới lần tải lại kế tiếp; khi mở chi tiết sân thì spec 030 xử lý trạng thái không còn hoạt động.
 - **Bộ lọc do spec 022 (AI) điền vào** có giá trị không hợp lệ với spec này (ví dụ ngày đã qua, quận không có trong danh mục): giá trị đó bị bỏ và người chơi thấy các chip còn lại để tự chỉnh.
@@ -140,7 +173,7 @@ Khi bấm vào ô tìm kiếm mà chưa gõ gì, người chơi thấy các lầ
 - **FR-006**: Người chơi PHẢI lọc được theo khung giờ còn trống bằng cách chọn một ngày (từ hôm nay tới hết số ngày cho phép đặt trước) và giờ bắt đầu, giờ kết thúc theo bước 30 phút. Một cơ sở khớp khi có **ít nhất một sân con** trống liên tục suốt khung đó và khung đó nằm trong giờ mở cửa. Khung giờ đang bị giữ chỗ đã hết hạn được coi là trống; khung đã đặt, đang giữ còn hạn, hoặc bị chủ sân khóa được coi là bận.
 - **FR-007**: Khi chọn ngày hôm nay, app KHÔNG ĐƯỢC cho chọn giờ bắt đầu đã qua; giờ kết thúc PHẢI sau giờ bắt đầu.
 - **FR-008**: Người chơi PHẢI lọc được theo một hoặc nhiều tiện ích lấy từ danh mục chung (ví dụ gửi xe, nước uống, phòng tắm, cho thuê vợt). Một cơ sở khớp khi có **đủ tất cả** tiện ích đã chọn.
-- **FR-009**: Mỗi bộ lọc đang áp dụng (quận, khoảng giá, khung giờ, từng tiện ích) PHẢI hiện thành một chip có nhãn ngắn; bỏ một chip chỉ bỏ bộ lọc đó; "Xóa bộ lọc" bỏ mọi bộ lọc khác nhưng giữ từ khóa và quận đã chọn (khớp US2-8).
+- **FR-009**: Mỗi bộ lọc đang áp dụng (quận, khoảng giá, khung giờ, từng tiện ích) PHẢI hiện thành một chip có nhãn ngắn và nút "x" ở tab Tìm kiếm; bỏ một chip chỉ bỏ bộ lọc đó; "Xóa bộ lọc" bỏ mọi bộ lọc khác nhưng giữ từ khóa và quận đã chọn (khớp US2-8).
 - **FR-010**: Bộ lọc tìm kiếm PHẢI là một tập điều kiện dùng chung (từ khóa, quận/huyện, khoảng giá, ngày và khung giờ, tiện ích, cách sắp xếp) mà spec 022 có thể điền sẵn rồi chạy cùng một cách tìm như khi người chơi tự chọn. Giá trị không hợp lệ (ngày đã qua, quận/tiện ích không có trong danh mục, khoảng giá ngược) PHẢI bị bỏ và không làm hỏng các điều kiện còn lại.
 
 **Sắp xếp và vị trí**
@@ -154,14 +187,14 @@ Khi bấm vào ô tìm kiếm mà chưa gõ gì, người chơi thấy các lầ
 
 - **FR-015**: Mỗi thẻ kết quả PHẢI hiện ảnh đại diện (hoặc ảnh mặc định), tên cơ sở, quận/huyện, giá (khi không có bộ lọc khung giờ: "từ X đ/giờ"; khi có: "X đ/giờ · HH:mm–HH:mm" của khung đã chọn; "Liên hệ" khi chưa có giá), điểm trung bình kèm số lượt đánh giá (hoặc "Chưa có đánh giá"), và khoảng cách khi có vị trí.
 - **FR-016**: Danh sách PHẢI tải theo trang, mỗi trang 20 cơ sở, tải thêm khi cuộn tới cuối. Một trang có thể ít hơn 20 khi phải đọc thêm quá nhiều dữ liệu mới đủ; cuộn tiếp sẽ tải phần còn lại.
-- **FR-017**: Bấm một thẻ PHẢI mở chi tiết sân (spec 030) của đúng cơ sở đó; quay lại PHẢI giữ nguyên từ khóa, bộ lọc, cách sắp xếp và vị trí cuộn.
+- **FR-017**: Bấm một thẻ (ở Trang chủ hoặc tab Tìm kiếm) PHẢI mở chi tiết sân (spec 030) của đúng cơ sở đó; quay lại PHẢI giữ nguyên từ khóa, bộ lọc, cách sắp xếp và vị trí cuộn của đúng tab đó. Khi mở từ tab Tìm kiếm có bộ lọc khung giờ, ngày và khung giờ được chuyển sang chi tiết sân; mở từ Trang chủ thì không có khung giờ.
 - **FR-018**: Danh sách PHẢI cập nhật theo nội dung cuối cùng người chơi gõ hoặc chọn; kết quả của điều kiện cũ KHÔNG ĐƯỢC ghi đè kết quả của điều kiện mới.
-- **FR-019**: Màn hình PHẢI có đủ 4 trạng thái: đang tải, có kết quả, rỗng (thông báo "Không tìm thấy sân phù hợp", gợi ý bỏ bớt bộ lọc, nút "Xóa bộ lọc"), lỗi (kèm nút "Thử lại").
+- **FR-019**: Trang chủ và phần kết quả ở tab Tìm kiếm PHẢI có đủ 4 trạng thái (Trang chủ rỗng hiện "Chưa có sân nào đang hoạt động", không có nút "Xóa bộ lọc"): đang tải, có kết quả, rỗng (thông báo "Không tìm thấy sân phù hợp", gợi ý bỏ bớt bộ lọc, nút "Xóa bộ lọc"), lỗi (kèm nút "Thử lại").
 - **FR-020**: Khi mất mạng, app KHÔNG ĐƯỢC crash hay treo; nếu đã có kết quả trước đó thì vẫn hiển thị kèm thông báo có thể chưa cập nhật, nếu chưa có thì hiện trạng thái lỗi.
 
 **Lịch sử tìm kiếm**
 
-- **FR-021**: Hệ thống PHẢI lưu một mục lịch sử mỗi khi người chơi thực hiện một lần tìm có từ khóa hoặc ít nhất một bộ lọc (không lưu theo từng ký tự gõ). Mục gồm từ khóa, quận/huyện, khoảng giá, ngày và khung giờ, tiện ích, cách sắp xếp và thời điểm tìm; không gồm vị trí.
+- **FR-021**: Hệ thống PHẢI lưu một mục lịch sử mỗi khi người chơi thực hiện một lần tìm có từ khóa hoặc ít nhất một bộ lọc (không lưu theo từng ký tự gõ). Ở tab Tìm kiếm, "một lần tìm" là khi người chơi bấm tìm trên bàn phím, áp dụng một bộ lọc, chọn một mục gợi ý quận, hoặc mở chi tiết sân từ kết quả của điều kiện đang có; Trang chủ không tạo lịch sử. Mục gồm từ khóa, quận/huyện, khoảng giá, ngày và khung giờ, tiện ích, cách sắp xếp và thời điểm tìm; không gồm vị trí.
 - **FR-022**: Lịch sử PHẢI giữ tối đa 10 mục gần nhất, mới nhất ở đầu; tổ hợp trùng với một mục đã có thì đưa mục đó lên đầu thay vì thêm mục mới.
 - **FR-023**: Bấm một mục lịch sử PHẢI khôi phục từ khóa và bộ lọc rồi chạy lại tìm kiếm; bộ lọc khung giờ có ngày đã qua và tiện ích/quận không còn trong danh mục PHẢI bị bỏ kèm thông báo ngắn.
 - **FR-024**: Người chơi PHẢI xóa được từng mục và xóa toàn bộ lịch sử (có xác nhận).
@@ -171,6 +204,15 @@ Khi bấm vào ô tìm kiếm mà chưa gõ gì, người chơi thấy các lầ
 
 - **FR-026**: Khách chưa đăng nhập PHẢI dùng được toàn bộ tìm kiếm của spec này (tìm theo tên/quận, bộ lọc, sắp xếp, khoảng cách, mở chi tiết sân) mà không bị yêu cầu đăng nhập. Chỉ thông tin công khai của cơ sở hoạt động và danh mục quận/huyện, tiện ích được hiển thị cho khách; trạng thái khung giờ chỉ được dùng để xét trống/bận, không lộ thông tin cá nhân của người đã đặt.
 - **FR-027**: Lịch sử tìm kiếm chỉ có với người đã đăng nhập; khách không có lịch sử và không có dữ liệu tìm kiếm nào được lưu lên máy chủ. Thao tác cần tài khoản (đặt sân, yêu thích...) do spec tương ứng yêu cầu đăng nhập.
+
+**Trang chủ và tab Tìm kiếm** *(thêm 2026-11-06)*
+
+- **FR-028**: Thanh điều hướng dưới của người chơi PHẢI có 5 tab theo thứ tự: Trang chủ · Tìm kiếm · Lịch đặt · Vãng lai · Cộng đồng. Khách chưa đăng nhập vào được cả Trang chủ và Tìm kiếm. (Lối vào trang Tài khoản bằng avatar góc phải trên thuộc spec 011.)
+- **FR-029**: Trang chủ PHẢI hiển thị danh sách mọi cơ sở đang hoạt động với tiêu đề "Tất cả sân · N", nút sắp xếp (ba cách của FR-011, mặc định "Đánh giá cao nhất"), thẻ theo FR-015 (không có bộ lọc khung giờ nên giá là "từ X đ/giờ") và tải theo trang như FR-016. Trang chủ KHÔNG ĐƯỢC có ô tìm kiếm, chip lọc, ô AI hay vùng "Sân gần bạn".
+- **FR-030**: Tab Tìm kiếm PHẢI là một màn hình duy nhất gồm, từ trên xuống: ô tìm theo tên (có nút xóa từ khóa); hàng chip lọc nhanh "Quận", "Giờ trống", "Giá" và "+" (mở bảng lọc đầy đủ gồm mọi bộ lọc của FR-005 đến FR-008, kể cả tiện ích); các chip bộ lọc đang áp dụng có "x"; rồi phần nội dung theo FR-031. Chip "Quận", "Giờ trống", "Giá" mở thẳng phần chọn tương ứng.
+- **FR-031**: Khi tab Tìm kiếm chưa có từ khóa (từ 2 ký tự) và chưa có bộ lọc nào, phần nội dung PHẢI hiện "Tìm gần đây" kèm "Xóa tất cả" (người đã đăng nhập) hoặc "Đăng nhập để lưu lịch sử tìm kiếm" (khách). Khi có từ khóa hoặc ít nhất một bộ lọc, phần nội dung PHẢI hiện kết quả "N sân phù hợp" (hoặc "Kết quả phù hợp" khi chưa biết số) kèm nút sắp xếp và danh sách thẻ, cập nhật theo FR-018 mà không cần chuyển màn hình. Khi đang gõ, app PHẢI gợi ý các quận/huyện có tên khớp từ khóa; chọn một gợi ý thì áp dụng bộ lọc quận đó.
+- **FR-032**: Tab Tìm kiếm PHẢI chừa chỗ cho ô AI của spec 022 (ngay dưới ô tìm, khi chưa có điều kiện) và nút chuyển Danh sách/Bản đồ của spec 021 (ở phần kết quả). Chỗ chừa không hiện gì cho tới khi spec đó có; vị trí cuối cùng do spec 021, 022 quyết định.
+- **FR-033**: Mỗi tab PHẢI giữ trạng thái riêng khi người chơi chuyển tab hoặc mở chi tiết sân rồi quay lại: Trang chủ giữ cách sắp xếp và vị trí cuộn; tab Tìm kiếm giữ từ khóa, bộ lọc, cách sắp xếp, kết quả và vị trí cuộn. Điều kiện của tab này KHÔNG ĐƯỢC ảnh hưởng tab kia.
 
 ### Key Entities *(include if feature involves data)*
 
@@ -191,6 +233,7 @@ Khi bấm vào ô tìm kiếm mà chưa gõ gì, người chơi thấy các lầ
 - **SC-005**: Khi từ chối quyền vị trí hoặc mất mạng, app không crash lần nào và người chơi vẫn tìm được (hoặc thấy rõ cách thử lại) ở 100% kịch bản kiểm thử.
 - **SC-006**: 0 trường hợp người dùng đọc hoặc xóa được lịch sử tìm kiếm của người khác trong kiểm thử phân quyền.
 - **SC-007**: Ít nhất 4/5 người thử tự dùng được bộ lọc khung giờ và bỏ chip bộ lọc mà không cần hướng dẫn.
+- **SC-008** *(thêm 2026-11-06)*: Khi mở app, người chơi thấy danh sách sân ở Trang chủ trong vòng 3 giây ở ít nhất 95% số lần thử trên 4G; ít nhất 4/5 người thử, xuất phát từ Trang chủ, tìm được một sân theo quận và khung giờ (sang tab Tìm kiếm, dùng chip lọc nhanh) mà không cần hướng dẫn.
 
 ## Assumptions
 
@@ -205,3 +248,5 @@ Khi bấm vào ô tìm kiếm mà chưa gõ gì, người chơi thấy các lầ
 - Lịch sử 10 mục và trang 20 kết quả là giá trị mặc định theo thông lệ, có thể chỉnh trong `/speckit-clarify`.
 - Với sắp xếp "Gần nhất" hoặc sắp xếp giá có khung giờ, mỗi lần tìm xét tối đa 150 cơ sở; vượt quá thì app gợi ý chọn quận. Quy mô đồ án (dưới 100 cơ sở) không chạm giới hạn này.
 - Gợi ý sân gần vị trí hiện tại và chế độ bản đồ thuộc spec 021; tìm bằng câu tự do hoặc giọng nói thuộc spec 022; tìm buổi vãng lai thuộc spec 080.
+- *(2026-11-06)* Trang chủ và kết quả ở tab Tìm kiếm dùng chung một cách tìm và một kiểu thẻ; Trang chủ là trường hợp "không có điều kiện" với cách sắp xếp riêng. Thay đổi thiết kế này không đổi dữ liệu, quyền truy cập hay cách tính giá.
+- *(2026-11-06)* Thanh dưới 5 tab và avatar góc phải trên là thiết kế chung của app người chơi; spec 011 (avatar, trang Tài khoản) và các spec có tab riêng (060, 080, 090) cần cập nhật theo. Spec này chỉ quy định nội dung tab Trang chủ và Tìm kiếm.

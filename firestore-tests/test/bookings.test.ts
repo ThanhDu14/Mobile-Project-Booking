@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { assertFails, assertSucceeds, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
 import { deleteDoc, doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { createTestEnv } from './setup';
@@ -20,6 +20,40 @@ function validBookingData(userId = 'player1', overrides: Record<string, unknown>
     status: 'HOLD',
     price: 150000,
     depositAmount: 45000,
+    ...overrides,
+  };
+}
+
+function validPendingBookingData(userId = 'player1', overrides: Record<string, unknown> = {}) {
+  return {
+    userId,
+    venueId: 'demo-venue-01',
+    status: 'PENDING',
+    subtotal: 180000,
+    discount: 0,
+    total: 180000,
+    depositAmount: 0,
+    paidAmount: 0,
+    remainingAmount: 180000,
+    paymentMethod: 'AT_VENUE',
+    paymentStatus: 'UNPAID',
+    items: [
+      {
+        slotId: 'court-01_20261109_2000',
+        courtId: 'court-01',
+        courtName: 'Sân 4 · PU',
+        startAt: new Date(1731157200000),
+        endAt: new Date(1731159000000),
+        price: 30000,
+      },
+    ],
+    startAt: new Date(1731157200000),
+    endAt: new Date(1731159000000),
+    venueSnapshot: {
+      name: 'CLB Cầu Lông Gia Hân',
+      address: '123 Đào Duy Anh',
+      phone: '0901234567',
+    },
     ...overrides,
   };
 }
@@ -64,6 +98,47 @@ describe('bookings collection (Spec 041)', () => {
       const fs = owner('owner1');
       await assertFails(setDoc(doc(fs, 'bookings/booking-01'), validBookingData('owner1')));
     });
+
+    it('player can create booking with PENDING status and valid financial fields', async () => {
+      const fs = player('player1');
+      await assertSucceeds(setDoc(doc(fs, 'bookings/booking-pending-01'), validPendingBookingData('player1')));
+    });
+
+    it('create PENDING fails when userId does not match auth uid', async () => {
+      const fs = player('player1');
+      await assertFails(setDoc(doc(fs, 'bookings/booking-pending-01'), validPendingBookingData('player2')));
+    });
+
+    it('create PENDING fails when status is CONFIRMED', async () => {
+      const fs = player('player1');
+      await assertFails(
+        setDoc(doc(fs, 'bookings/booking-pending-01'), validPendingBookingData('player1', { status: 'CONFIRMED' }))
+      );
+    });
+
+    it('create PENDING fails when total != subtotal - discount', async () => {
+      const fs = player('player1');
+      await assertFails(
+        setDoc(doc(fs, 'bookings/booking-pending-01'), validPendingBookingData('player1', { total: 150000, subtotal: 180000, discount: 0 }))
+      );
+    });
+
+    it('create PENDING fails when negative amounts', async () => {
+      const fs = player('player1');
+      await assertFails(
+        setDoc(doc(fs, 'bookings/booking-pending-01'), validPendingBookingData('player1', { remainingAmount: -1 }))
+      );
+    });
+
+    it('non-player cannot create booking with PENDING status', async () => {
+      const fs = owner('owner1');
+      await assertFails(setDoc(doc(fs, 'bookings/booking-pending-01'), validPendingBookingData('owner1')));
+    });
+
+    it('unauthenticated user cannot create booking with PENDING status', async () => {
+      const fs = unauth();
+      await assertFails(setDoc(doc(fs, 'bookings/booking-pending-01'), validPendingBookingData('player1')));
+    });
   });
 
   describe('read', () => {
@@ -88,6 +163,12 @@ describe('bookings collection (Spec 041)', () => {
       await assertSucceeds(getDoc(doc(fs, 'bookings/booking-01')));
     });
 
+    it('signed in player can read non-existent booking (returns snapshot with exists == false)', async () => {
+      const fs = player('player1');
+      const snap = await getDoc(doc(fs, 'bookings/non-existent-booking-123'));
+      expect(snap.exists()).toBe(false);
+    });
+
     it('unauthenticated user cannot read booking', async () => {
       const fs = unauth();
       await assertFails(getDoc(doc(fs, 'bookings/booking-01')));
@@ -101,21 +182,17 @@ describe('bookings collection (Spec 041)', () => {
       });
     });
 
-    it('owner can update status to CANCELLED', async () => {
+    it('owner cannot directly cancel a booking', async () => {
       const fs = player('player1');
-      await assertSucceeds(
-        updateDoc(doc(fs, 'bookings/booking-01'), { status: 'CANCELLED' })
-      );
+      await assertFails(updateDoc(doc(fs, 'bookings/booking-01'), { status: 'CANCELLED' }));
     });
 
-    it('owner can update status to CONFIRMED (open for spec 050)', async () => {
+    it('owner cannot directly confirm a booking', async () => {
       const fs = player('player1');
-      await assertSucceeds(
-        updateDoc(doc(fs, 'bookings/booking-01'), { status: 'CONFIRMED' })
-      );
+      await assertFails(updateDoc(doc(fs, 'bookings/booking-01'), { status: 'CONFIRMED' }));
     });
 
-    it('owner can update status to EXPIRED', async () => {
+    it('owner can expire their HOLD booking', async () => {
       const fs = player('player1');
       await assertSucceeds(
         updateDoc(doc(fs, 'bookings/booking-01'), { status: 'EXPIRED' })

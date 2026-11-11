@@ -424,3 +424,68 @@ verify_jwt = false
 
 [functions.manage-slot-blocks]
 verify_jwt = false
+
+[functions.owner-applications]
+verify_jwt = false
+
+[functions.owner-docs]
+verify_jwt = false
+
+[functions.owner-approve-booking]
+verify_jwt = false
+
+[functions.owner-reject-booking]
+verify_jwt = false
+
+[functions.owner-cancel-booking]
+verify_jwt = false
+
+[functions.owner-create-session]
+verify_jwt = false
+
+[functions.owner-cancel-session]
+verify_jwt = false
+
+[functions.owner-checkin-dropin-registration]
+verify_jwt = false
+
+[functions.checkin-booking]
+verify_jwt = false
+
+[functions.owner-create-voucher]
+[functions.sync-account-email]
+verify_jwt = false
+
+[functions.delete-account]
+verify_jwt = false
+
+[functions.delete-account-sweeper]
+verify_jwt = false
+
+[functions.admin-review-application]
+verify_jwt = false
+
+[functions.admin-moderate-report]
+verify_jwt = false
+
+[functions.admin-manage-user]
+verify_jwt = false
+
+[functions.admin-revoke-owner]
+verify_jwt = false
+
+[functions.admin-manage-venue]
+verify_jwt = false
+
+[functions.admin-broadcast-notification]
+verify_jwt = false
+
+[functions.admin-manage-voucher]
+[functions.complete-bookings]
+verify_jwt = false
+
+[functions.expire-holds]
+verify_jwt = false
+
+[functions.player-cancel-booking]
+verify_jwt = false

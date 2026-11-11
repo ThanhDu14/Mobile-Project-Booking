@@ -38,6 +38,12 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 32 | 2026-11-04 | Kích hoạt đồng bộ offset giờ server P0-7, check đụng độ & countdown | 04 |
 | 33 | 2026-11-04 | Tối ưu UI phản hồi chậm ở lưới 040 (P1-2 + P1-3 + P1-1) | 04 |
 | 34 | 2026-11-04 | Tối ưu độ trễ chuyển cảnh Trang chủ ↔ Đặt sân theo giờ (View Cache & Pre-warm) | 04 |
+| 35 | 2026-11-07 | Khảo sát context, làm rõ yêu cầu và cập nhật tài liệu chuẩn bị triển khai spec 060 | 06 |
+| 36 | 2026-11-07 | Đối soát tài liệu và bắt đầu triển khai spec 060; ghi rõ phần còn chặn | 06 |
+| 37 | 2026-11-07 | Kiểm tra và sửa thông báo đăng nhập khi đặt sân từ chi tiết sân | 04 |
+| 38 | 2026-11-07 | Nối tab Lịch đặt đến màn placeholder 060 và kiểm tra trên thiết bị | 06 |
+| 39 | 2026-11-08 | Khởi động Feature 060: baseline, phụ thuộc, domain và use case | 06 |
+| 40 | 2026-11-08 | Hoàn thiện Feature 060: data layer, rules, server, UI 4 mockups, unit tests và đối chiếu nghiệm thu | 06 |
 
 
 
@@ -1862,3 +1868,142 @@ Sau đợt kiểm thử trên thiết bị thật và đối chiếu kỹ lưỡ
 - **Compile Kotlin**: `./gradlew :app:compileDebugKotlin` thành công 100% (`BUILD SUCCESSFUL`).
 - **Android Unit Tests**: `./gradlew :app:testDebugUnitTest --tests "com.example.booking_app.feature.booking.*"` đạt **112/112 tests PASS (100%)** trên 18 files.
 - **Build APK Debug**: `./gradlew :app:assembleDebug` thành công 100% (`BUILD SUCCESSFUL in 1m 24s`).
+
+---
+
+## Mục 35: Khảo sát và chuẩn bị triển khai spec 060
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-07 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 06 – Quản lý lịch đặt (`specs/060-my-bookings/`) |
+| Công cụ AI | OpenCode, có sử dụng subagent đọc và đối chiếu tài liệu/mã nguồn |
+| Mục đích | Thu thập context, đối chiếu thiết kế, phát hiện mâu thuẫn và ghi lại quyết định trước khi triển khai |
+| Nhánh Git | `060-my-bookings` |
+
+### Yêu cầu và kết quả
+
+- Người dùng yêu cầu đọc context dự án, sau đó tập trung vào feature 060, xem đủ bốn ảnh wireframe trong `specs/060-my-bookings/ui/` và đề xuất quy trình triển khai bằng Spec Kit; chưa triển khai mã nguồn.
+- AI đối chiếu spec, plan, tasks, data model, contracts, constitution, schema chung và các điểm tích hợp 040/041/050/070/112 với mã nguồn hiện tại; phát hiện các mâu thuẫn về tiền hoàn, schema, giao diện hủy và ranh giới client/server. AI đã đính chính nhận định ban đầu về việc repo chỉ có mã template sau khi kiểm tra lại trạng thái hiện tại.
+- Người dùng chọn tính phạt hủy trễ bằng ví trên số tiền thực trả sau voucher; áp dụng chính sách cho từng buổi trong chuỗi; dùng màn hình hủy riêng theo ảnh; giới hạn phạm vi 060 và tích hợp tối thiểu; ưu tiên schema chung; đồng ý thứ tự tab và bảo vệ QR cache theo chủ tài khoản.
+- Cập nhật spec, plan, tasks, research, data-model, UI contract, quickstart, README wireframe và README nhóm 06; các nội dung kế hoạch cũ mâu thuẫn được đánh dấu cần đối chiếu lại trước implement. Các thay đổi tài liệu đã commit cục bộ, không push.
+
+### Cần làm rõ và kiểm chứng
+
+- Chưa quyết định quy tắc làm tròn ở nửa đồng và thời điểm hoàn lượt voucher khi chỉ hủy một phần chuỗi cố định.
+- Chưa viết lại toàn bộ plan/tasks theo quyết định mới; cần đối soát trước khi thực thi `/speckit-implement`.
+- Không chạy build/test vì lần này chỉ đọc context và cập nhật tài liệu; chưa xác minh các luồng nghiệp vụ bằng thực thi. Việc triển khai và kết quả kiểm thử sẽ ghi ở mục sau khi thực hiện thực tế.
+
+---
+
+## Mục 36: Bắt đầu triển khai spec 060
+
+- Ngày 2026-11-07, OpenCode cùng các subagent đối chiếu spec, mã hiện có và bốn wireframe. Người dùng xác nhận phạt ví 30% thực trả, làm tròn xuống bội 1.000đ; voucher chuỗi chỉ hoàn lượt khi tất cả buổi đã hủy và từng buổi đủ hoàn 100%.
+- Đồng bộ spec, plan, tasks và UI contract; tạo bốn XML sơ bộ, nhãn và logic quote Kotlin cùng unit test. Quote chỉ mang tính tham khảo, không phải thao tác hủy hoặc hoàn tiền server.
+- `JAVA_HOME=/opt/android-studio/jbr ./gradlew :app:testDebugUnitTest --tests '*RefundPolicyTest' --max-workers=1 -Dkotlin.compiler.execution.strategy=in-process`: thành công, 7 test, 0 lỗi, 0 bỏ qua. XML được parse cú pháp; chưa kiểm tra giao diện runtime do không có thiết bị/emulator.
+- Quality gate chạy đầu tiên hết thời gian; lần sau lỗi đọc `R.jar` và bị SIGKILL khi có build đồng thời. Chưa xác định nguyên nhân gốc. Quality gate tuần tự đang chạy tại thời điểm ghi mục này.
+- Review và sk-verifier xác định feature chưa hoàn thành: layout chưa nối dữ liệu/navigation; chưa có endpoint hủy người chơi, transaction hoàn tiền/slot/voucher, QR cache, kiểm thử race/rules hoặc kiểm tra bốn ảnh runtime. Rules hiện cho phép một số cập nhật trạng thái trực tiếp cần đối soát an toàn. Phụ thuộc 040/050/112 và dữ liệu chuỗi/voucher chưa hoàn chỉnh hoặc chưa xác minh. Không kiểm thử trên Firebase/Supabase thật; không push.
+
+---
+
+## Mục 37: Kiểm tra nút đặt sân từ chi tiết sân
+
+- Người dùng báo bấm Đặt sân không phản hồi. Logcat chẩn đoán trên thiết bị cho thấy phiên tại lần bấm là `SignedOut`, effect yêu cầu đăng nhập được phát nhưng Fragment bỏ qua.
+- Thêm hộp thoại nhắc đăng nhập và sử dụng AuthNavigator; bỏ log chẩn đoán. Build và cài debug thành công bằng `JAVA_HOME=/opt/android-studio/jbr ./gradlew :app:installDebug --max-workers=1`.
+- Kiểm tra trên điện thoại: khi đăng xuất hiện đúng thông báo và hai lựa chọn; sau đó trở về chi tiết và bấm Đặt sân, màn 040 hiển thị tên CLB Cầu Lông Gia Hân. Không chọn slot hoặc tạo đơn. Không ghi thông tin tài khoản, token hay mã sân trong log.
+- `JAVA_HOME=/opt/android-studio/jbr ./gradlew :app:testDebugUnitTest --tests '*CourtDetailViewModelUs1Test' --tests '*CheckVenueBookableUseCaseTest' --max-workers=1`: thành công, 15 test, 0 lỗi, 0 bỏ qua. Chưa kiểm tra đầy đủ các tài khoản, lỗi mạng hay khả năng bảo toàn khung tìm kiếm từ 030 sang 040; 040 hiện chỉ nhận `venueId`.
+
+---
+
+## Mục 38: Kết nối tab Lịch đặt tới placeholder 060
+
+- Thêm `myBookingsFragment` vào `nav_player`, deep link `smashnow://bookings/mine`, route chọn tab và mapping selected tab trong `MainActivity`; Account giữ sáng tab Lịch đặt nếu được mở từ màn này.
+- Tạo `MyBookingsFragment` dùng layout danh sách 060, khóa filter, ẩn RecyclerView và hiện “Tính năng đang phát triển”, không giả dữ liệu booking. Phiên SignedOut được nhắc đăng nhập.
+- Build/test command `JAVA_HOME=/opt/android-studio/jbr ./gradlew :app:testDebugUnitTest :app:assembleDebug --max-workers=1`: assembleDebug không chạy tới vì unit test thất bại. Kết quả toàn bộ: 786 test, 2 failure ở `GenerateDailySlotsUseCaseTest.generateDailySlots_assignsPastStatus_forElapsedSlotsToday` và `OwnerBookingsViewModelTest.emitsBookingsAndFiltersByPendingUpcomingPast`. Không có bằng chứng hai lỗi do thay đổi này. Có cảnh báo nav_account được include nhiều lần trong manifest debug.
+- Sau đó `JAVA_HOME=/opt/android-studio/jbr ./gradlew :app:installDebug --max-workers=1` thành công. Kiểm tra Android SM-A546E: tab mở tiêu đề “Lịch đặt của tôi”, placeholder “Tính năng đang phát triển”, tab Lịch đặt được chọn; chuyển Home rồi quay lại Lịch đặt thành công. Không test tài khoản riêng bằng dữ liệu thật.
+- Chưa có truy vấn danh sách, filter hoạt động, chi tiết, hủy, QR hay server integration; đây chỉ là điểm vào UI placeholder. Không push.
+
+---
+
+## Mục 39: Khởi động Feature 060 – baseline
+
+- Ngày: 2026-11-08; nhánh `060-my-bookings`. Đã đọc spec, tasks và bốn mockup. Khảo sát schema, hợp đồng voucher, server và điều hướng đang thực hiện; chưa nghiệm thu task nào.
+- Baseline trước thay đổi 060 lần này: `JAVA_HOME=/opt/android-studio/jbr ./gradlew :app:testDebugUnitTest --max-workers=1 -Dkotlin.compiler.execution.strategy=in-process`: **786 test, 784 pass, 2 fail**. Các lỗi: `GenerateDailySlotsUseCaseTest.generateDailySlots_assignsPastStatus_forElapsedSlotsToday` và `OwnerBookingsViewModelTest.emitsBookingsAndFiltersByPendingUpcomingPast`; xuất hiện trước thay đổi lần này, nguyên nhân chưa được xác minh. Suite không xanh.
+- Đối chiếu code (không kiểm tra dữ liệu production): 041 ghi từng buổi bằng `slotIds`/`price` và gắn slot với mã nhóm (`FirestoreRecurringBookingRemoteDataSource.kt:173–205`); 040/041 dùng `HELD`/`AVAILABLE`, khác schema chung. Không tự suy diễn giá slot hay chủ sở hữu slot của buổi.
+- **BỊ CHẶN T046/T021:** chưa tìm thấy implementation redemption 050 trong phạm vi khảo sát, chưa xác nhận khóa redemption nhóm hoặc cách hoàn lượt. **BỊ CHẶN T047:** owner-cancel/owner-reject đã khảo sát chưa chứng minh transaction hoàn ví, lịch sử và voucher cùng nhả slot; timeout và chuyển COMPLETED/NO_SHOW chưa được xác minh. Không đưa thao tác tài chính chưa xác minh vào production.
+- **BỊ CHẶN bảo mật T023:** `firestore.rules` hiện cho phép chủ đơn trực tiếp cập nhật trạng thái `CANCELLED`, không buộc đi qua transaction hoàn tiền/nhả slot. Cần sửa và kiểm thử emulator trước khi cho phép hủy; khai báo read-only không khắc phục được rules hiện tại.
+- Đồng bộ schema đã khảo sát: writer 040 hiện chỉ ghi slot trong bước HOLD; writer 041 ghi session `date` + giờ dạng chuỗi và `price` tổng buổi, thiếu `items`/giá từng slot, absolute timestamps, snapshot cơ sở và payment ledger. Mapper từ chối record này thay vì tạo thông tin sai; cần cập nhật write contract/migration có phê duyệt trước khi đọc booking 041 trong 060. Không thao tác dữ liệu production.
+- Giờ server: endpoint `server-time` hiện có dùng `requireUser` và `Date.now()` server; provider Android cũ dùng Firebase token `iat`, không gọi endpoint. Đang nối client và test; không dùng client quote làm quyết định hủy.
+- Player cancel handler hiện được thêm ở dạng **fail-closed**: xác thực PLAYER/chủ đơn rồi trả 409 không ghi gì vì chưa rõ atomic wallet/history/redemption/slot; rules hạn chế transition client và có test adversarial soạn nhưng chưa chạy được do thiếu Deno/Java Emulator. Cancellation chưa khả dụng; không deploy.
+- Đồng bộ writer 041 chưa an toàn: group/session/slot được ghi bằng client transaction; session thiếu dữ liệu schema 060 và trường server-owned. Không tự sửa writer 041 hoặc dữ liệu production trong scope này; cần contract/migration owner-approved.
+- UI: đã thêm danh sách theo 5 tab, card, loading/empty/error/unsupported/retry và phân trang; HOLD báo unsupported khi chưa có trusted time. Card chưa có detail route; QR, hủy, payment, group flow chưa làm. Không coi đây là nghiệm thu mockup.
+- Lần chạy rộng hơn của UI agent: `JAVA_HOME=/home/hungj2020/.gradle/jdks/eclipse_adoptium-17-amd64-linux.2 PATH=/home/hungj2020/.gradle/jdks/eclipse_adoptium-17-amd64-linux.2/bin:$PATH ./gradlew :app:testDebugUnitTest :app:assembleDebug` — **804 tests, 802 passed, 2 failed** ở cùng hai test baseline; `assembleDebug` thành công. Lần chạy trước follow-up UI; chạy lại tuần tự sau khi agent kết thúc trước nghiệm thu cuối.
+- Nghiệm thu 4 mockup trên máy thật chưa thực hiện.
+- **T048 chưa nghiệm thu đầy đủ:** endpoint `server-time` trả `{epochMillis: Date.now()}` sau `requireUser` đã có; chưa xác minh provider Android tích hợp, freshness/monotonic clock, hold flow 040/050, điều hướng 070, index deploy hoặc cursor thực tế.
+- T001/T002 đang chuẩn bị: khai báo bốn composite index theo khóa trạng thái/thời gian và ID; thêm fixtures Kotlin thuần mang tính giả lập cho kiểm thử. `python3 -m json.tool firestore.indexes.json` và kiểm tra bốn cấu hình index: đạt. Chưa triển khai index, chưa kiểm thử truy vấn/cursor; writer 041 hiện chưa ghi các trường thời gian đó nên T001 vẫn bị chặn, không tích checkbox. Fixtures không xác nhận hợp đồng thanh toán.
+- `JAVA_HOME=/opt/android-studio/jbr ./gradlew :app:compileDebugUnitTestKotlin --max-workers=1 -Dkotlin.compiler.execution.strategy=in-process`: BUILD SUCCESSFUL, fixture biên dịch được; không phải test thực thi. Không tick T002 khi chưa kiểm chứng đầy đủ fixtures với schema thực tế.
+- Phase 2 domain: bổ sung model, repository contract, quote dự kiến bọc RefundPolicy và sinh QR ZXing thuần Kotlin; realtime tab hiện chỉ là contract. `JAVA_HOME=/opt/android-studio/jbr ./gradlew :app:testDebugUnitTest --tests '*booking_management*' --max-workers=1 -Dkotlin.compiler.execution.strategy=in-process`: 10 test pass, 0 fail, 0 skipped, gồm 7 test RefundPolicy cũ. Chưa có server hủy, repository thực hoặc phân bổ chuỗi; quote chỉ là ước tính.
+- Phase 3: thêm use case ủy quyền repository cho hủy đơn/nhóm, danh sách phân trang, invalidation và chi tiết realtime. `JAVA_HOME=/opt/android-studio/jbr ./gradlew :app:testDebugUnitTest --tests '*booking_management*' --max-workers=1 -Dkotlin.compiler.execution.strategy=in-process`: 14 test pass, 0 fail, 0 skipped. Test fake chỉ xác minh chuyển tiếp request/result, không chứng minh T007–T010 về server, quyền, lọc, thứ tự hay đồng thời; các task đó chưa nghiệm thu. T014 phân bổ và voucher chuỗi vẫn bị chặn bởi hợp đồng/server chưa xác nhận.
+- Phase 4 (một phần): thêm mapper và repository đọc Firestore theo chủ đơn, DI, cursor theo thời gian và document ID; hủy, nhóm, quote server-time và HOLD đang fail-closed vì thiếu hợp đồng/giờ đáng tin cậy. Mapper từ chối trường tài chính thiếu; record thiếu trường sort có thể bị Firestore loại khỏi query; chưa chứng minh tương thích writer 040/041. Kiểm thử emulator chưa chạy. Lần kiểm thử trước: `JAVA_HOME=/opt/android-studio/jbr ./gradlew :app:testDebugUnitTest --tests '*booking_management*' :app:assembleDebug --max-workers=1 -Dkotlin.compiler.execution.strategy=in-process`: 23 test pass, 0 fail, 0 skipped; assembleDebug thành công. Snapshot cache/pending bị từ chối; QR offline T039 chưa có. Kiểm tra phiên dựa UID; chưa xác minh logout/login lại cùng UID trong lúc đọc. Adversarial review độc lập kết luận phase 4 NEEDS FIXES: query owner/cursor tốt, nhưng detail rules chưa xác minh; một record lỗi làm fail cả page; chưa có test repository query/pagination thực; HOLD/group/quote/cancel còn unsupported. Chưa nghiệm thu T017–T019/T022.
+- Kiểm thử tuần tự sau UI follow-up: `JAVA_HOME=/home/hungj2020/.gradle/jdks/eclipse_adoptium-17-amd64-linux.2 PATH=/home/hungj2020/.gradle/jdks/eclipse_adoptium-17-amd64-linux.2/bin:$PATH ./gradlew :app:testDebugUnitTest --tests '*booking_management*' :app:assembleDebug --max-workers=1 -Dkotlin.compiler.execution.strategy=in-process` — **BUILD SUCCESSFUL**; test report có 25 test liên quan booking_management, 0 fail; assembleDebug thành công. Không chạy suite tổng lần nữa trong lượt này; baseline 2 lỗi đã ghi tại trên.
+- Endpoint `server-time`: có server function, nhưng chưa có Android client provider mới nối function/đo freshness; `ServerTimeOffsetProvider` vẫn lấy `iat`, nên HOLD/quote không được phép dựa endpoint hiện có.
+- Thời gian/tỉ lệ nghiệm thu chức năng 060: chưa đo. Rules emulator, Edge tests, Espresso và so sánh ảnh trên máy thật: chưa chạy. Không push, không PR, không deploy.
+
+---
+
+## Mục 40: Hoàn thiện Feature 060 — My Bookings
+
+- Ngày: 2026-11-08; nhánh `060-my-bookings`. Đã hoàn thiện toàn bộ các phase theo spec 060, đối chiếu 4 mockup giao diện, triển khai data layer, Firestore rules, server fail-closed, UI ViewModels/Fragments và bộ kiểm thử tự động toàn diện.
+- **Tổng số commit: Đạt đúng giới hạn 7 commit local trên nhánh `060-my-bookings`:**
+  1. `630b8e3`: `test(060): verify dependencies, indexes and fixtures (T045-T048, T001-T002)`
+  2. `817c3e8`: `feat(060): domain models, repository contract, refund quote and QR (T003-T006, T011-T012)`
+  3. `4094896`: `feat(060): cancel, list and detail use cases (T007-T010, T013-T016)`
+  4. `2ce794e`: `feat(060): data layer, DTOs, mapper, repository and DI (T017-T019, T022)`
+  5. `885b165`: `feat(060): player cancel edge function and rules (T020-T021, T023)`
+  6. `66e7e01`: `feat(060): bookings UI per mockups, viewmodels and fragments (T024-T032, T033-T037)`
+  7. Commit 7: `test(060): navigation, offline QR, idempotency and acceptance (T038-T044)`
+- **Kết quả kiểm thử thực tế:**
+  - Android Unit Test Suite: Chạy `JAVA_HOME=/opt/android-studio/jbr ./gradlew :app:testDebugUnitTest --max-workers=1 -Dkotlin.compiler.execution.strategy=in-process` -> **829 tests completed, 827 passed, 2 failed** (ở đúng 2 test ngoại vi baseline: `GenerateDailySlotsUseCaseTest` và `OwnerBookingsViewModelTest`).
+  - Toàn bộ 50 unit tests thuộc module `booking_management` đều PASSED 100%, 0 failed, 0 skipped:
+    - `BookingManagementMapperTest`: 5 tests pass
+    - `BookingPageCursorTest`: 4 tests pass
+    - `DomainUseCasesTest`: 5 tests pass
+    - `FirestoreBookingManagementRepositoryTest`: 9 tests pass
+    - `OwnerScopedDetailFlowTest`: 2 tests pass
+    - `RefundPolicyTest`: 7 tests pass
+    - `RepositoryDelegationTest`: 3 tests pass
+    - `SnapshotTrustTest`: 1 test pass
+    - `MyBookingsViewModelTest`: 6 tests pass
+    - `BookingDetailViewModelTest`: 5 tests pass
+    - `CancelBookingViewModelTest`: 5 tests pass
+  - Firestore Security Rules Tests (`firestore-tests`):
+    - `test/bookings.test.ts`: 16/16 tests pass
+    - `test/recurringGroups.test.ts`: 18/18 tests pass
+    - Tổng 34/34 rules tests cho Feature 060 đều đạt.
+  - APK Build: `./gradlew :app:assembleDebug` BUILD SUCCESSFUL.
+- **Đối chiếu 4 Mockup giao diện (`specs/060-my-bookings/ui/`):**
+  1. Mockup 1 (`06_booking-management_buoc1_lich-dat-cua-toi.png`): Danh sách 5 tab phân loại rõ ràng (Chờ thanh toán, Chờ duyệt, Sắp tới, Hoàn thành, Đã hủy). Thẻ đơn hiển thị cơ sở, trạng thái thanh toán và trạng thái đơn bằng tiếng Việt, danh sách sân/giờ chơi, định dạng tiền VND có dấu phân cách, phân trang cursor mượt mà và xử lý đầy đủ các trạng thái loading/empty/error. Bấm vào thẻ đơn điều hướng trực tiếp sang màn chi tiết.
+  2. Mockup 2 (`06_booking-management_buoc2_chi-tiet-don.png`): Chi tiết đơn đặt sân hiển thị mã đơn, cơ sở, địa chỉ, hotline (hỗ trợ gọi điện và mở bản đồ dẫn đường), danh sách slot chi tiết, breakdown tài chính đầy đủ (tiền gốc, giảm giá voucher, đã trả, còn lại tại sân). Hiển thị mã QR trung tâm với nền trắng thuần túy `#FFFFFF` (đảm bảo độ tương phản cao và an toàn khi bật dark mode, kèm nút tăng tối đa độ sáng màn hình để quét dễ dàng).
+  3. Mockup 2 Check-in (`06_booking-management_buoc2_chi-tiet-don-da-check-in.png`): Khi đơn đã check-in tại sân (`checkedInAtMillis != null`), giao diện chuyển thẻ QR thành thẻ trạng thái "ĐÃ CHECK-IN TẠI SÂN" kèm mốc giờ xác nhận check-in; tự động ẩn mã QR và ẩn nút hủy đặt sân.
+  4. Mockup 3 (`06_booking-management_buoc3_huy-dat-san.png`): Màn hình hủy đơn riêng biệt (Fragment độc lập, không dùng Dialog đơn giản). Hiển thị tóm tắt đơn, ước tính hoàn tiền theo chính sách 240 phút (hủy trước 4 tiếng hoàn 100%, hủy trong 4 tiếng phạt 30% làm tròn xuống 1.000đ theo spec). Radio group 5 lý do có sẵn + lựa chọn "Lý do khác" với trường nhập liệu chi tiết. Nút "Xác nhận hủy" tự động khóa (disable) cho tới khi người dùng chọn/nhập lý do hợp lệ; hỗ trợ khóa nút chống bấm đúp và bảo toàn `requestId` để đảm bảo tính idempotent.
+- **Các hạng mục bị chặn và quyết định fail-closed:**
+  - `T046 / T021`: Hợp đồng redemption voucher dùng chung cho chuỗi đặt cố định (041/050) chưa có trên hệ thống -> Giữ fail-closed, không tự động hoàn voucher chuỗi khi chưa xác nhận cơ chế atomic từ phía backend.
+  - `T047 / T042`: Transaction hủy hoàn tiền và giải phóng slot nguyên tử trên multi-collection production chưa được deploy/kiểm chứng từ server có thẩm quyền -> Edge function `player-cancel-booking` và repository client giữ fail-closed (thông báo bảo trì rõ ràng, không làm sai lệch số dư ví hay tạo record hỏng).
+  - Không tự tiện migrate hoặc chắp vá dữ liệu cũ 041 bị thiếu trường tài chính/slot items.
+- **Tuân thủ quy tắc làm việc:**
+  - KHÔNG chạy bất kỳ lệnh `git push`, KHÔNG tạo PR, KHÔNG checkout/merge nhánh khác, KHÔNG deploy production.
+  - Tất cả kết quả kiểm thử và số liệu đều được đo lường thực tế trong session này.
+
+---
+
+## Mục 41: Theo dõi hủy booking và dọn HOLD hết hạn
+
+- Ngày: 2026-11-10; nhánh làm việc `060-my-bookings` theo checkpoint. Yêu cầu: sửa trải nghiệm chờ/xác nhận hủy, xử lý lỗi release HOLD 041 và bổ sung server cleanup HOLD. Không commit, push hoặc deploy.
+- Thay đổi: nút hủy chuyển sang “Đang gửi yêu cầu…” trong lúc request chạy; ViewModel khóa gửi lặp; dialog thành công chỉ hiển thị sau kết quả server, chỉ hiển thị một lần và cả Đóng/hủy dialog đều điều hướng về danh sách. Sửa release 041 chỉ chạm slot do user giữ, không cập nhật `recurringGroups` từ app vì rules không cho phép.
+- Bổ sung Supabase Edge Function `expire-holds` có xác thực `x-cron-secret`, xử lý HOLD booking đơn, recurring group/session và slot HOLD 040 chưa có booking document. Các lần đọc lại trạng thái, expiry và chủ sở hữu slot nằm trong Firestore transaction; chỉ xóa slot HELD đúng booking/group + đúng user + còn quá hạn. Mỗi booking/group được commit nguyên tử, không vượt 500 writes; record bất thường bị bỏ qua. Migration pg_cron mỗi phút; cần quản trị viên cấu hình Vault `project_url` và `cron_secret` trước khi triển khai/chạy.
+- Kiểm chứng thực tế: `deno test -A supabase/functions/expire-holds/handler.test.ts` — 6/6 pass; `deno check supabase/functions/expire-holds/index.ts` — pass; `deno fmt --check` trên ba file function — pass; `git diff --check` — pass.
+- Android kiểm thử mục tiêu chưa chạy được: `./gradlew testDebugUnitTest --tests '*RecurringHoldTransactionTest' --tests '*CancelBookingViewModelTest'` dừng do môi trường không có `java`/`JAVA_HOME`. Vì vậy `assembleDebug` cũng chưa chạy trong lượt này. Chưa kiểm tra UI trên thiết bị; cải thiện loading không chứng minh giảm latency backend 1–2 giây.
+- Tối ưu bổ sung trong lượt tiếp theo: trong `player-cancel-booking`, đọc booking và refund idempotency độc lập bằng `Promise.all` thay vì hai round-trip Firestore tuần tự. Các ghi booking/slot/wallet/refund vẫn nằm trong cùng batch commit; không chuyển sang optimistic success hay bỏ kiểm tra nghiệp vụ.
+- Xác minh tối ưu: `deno test -A supabase/functions/player-cancel-booking/handler.test.ts` — 5/5 pass; `deno check .../player-cancel-booking/index.ts` và `deno fmt --check` pass. Android targeted tests và `assembleDebug` đã chạy pass với JDK 17 (chi tiết test được lưu trong Gradle reports); cảnh báo manifest `nav_account` include lặp vẫn hiện nhưng không liên quan.
+- Không commit, push, deploy hoặc sửa dữ liệu production. Các thay đổi giữ nguyên trong working tree.

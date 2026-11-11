@@ -114,6 +114,14 @@ class BookingRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun confirmHoldToBooking(
+        args: com.example.booking_app.feature.booking.ui.HoldToPaymentArgs,
+        paymentMethod: String,
+        userId: String
+    ): com.example.booking_app.feature.booking.domain.model.ConfirmBookingResult {
+        return remoteDataSource.confirmHoldToBooking(args, paymentMethod, userId)
+    }
+
     private inline fun <T> safeApiCall(block: () -> T): Result<T> {
         return try {
             Result.success(block())

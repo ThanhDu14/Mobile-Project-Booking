@@ -8,14 +8,6 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
-/**
- * Chữ cái đầu cho vòng tròn khi chưa có ảnh: tên Việt đặt tên riêng ở cuối nên lấy hai từ cuối
- * ("Lê Hoàng Nam" → "HN", wireframe buoc1); một từ thì lấy một chữ.
- */
-fun initialsOf(displayName: String): String =
-    displayName.trim().split(Regex("\\s+")).filter { it.isNotEmpty() }
-        .takeLast(2).joinToString("") { it.first().toString() }.uppercase()
-
 /** Tiền VND nhóm 3 chữ số bằng dấu chấm: `50000` → `50.000` (không phụ thuộc locale của máy). */
 fun formatVnd(amount: Long): String {
     val digits = kotlin.math.abs(amount).toString().reversed().chunked(3).joinToString(".").reversed()
@@ -34,3 +26,13 @@ private val SUBMITTED_AT_FORMAT = DateTimeFormatter.ofPattern("HH:mm, dd/MM/yyyy
 /** Ngày nộp hồ sơ chủ sân: `10:00, 20/10/2026` theo múi giờ của máy. */
 fun formatSubmittedAt(instant: Instant, zone: ZoneId = ZoneId.systemDefault()): String =
     SUBMITTED_AT_FORMAT.format(instant.atZone(zone))
+
+private val SLOT_TIME_FORMAT = DateTimeFormatter.ofPattern("dd/MM, HH:mm", Locale.forLanguageTag("vi-VN"))
+
+/** Giờ chơi trên màn hình Xóa tài khoản: `T3 06/10, 19:00` (wireframe buoc5), Chủ nhật là `CN`. */
+fun formatSlotTime(instant: Instant, zone: ZoneId = ZoneId.systemDefault()): String {
+    val time = instant.atZone(zone)
+    val day = time.dayOfWeek.value // 1 = thứ Hai … 7 = Chủ nhật
+    val weekday = if (day == 7) "CN" else "T${day + 1}"
+    return "$weekday ${SLOT_TIME_FORMAT.format(time)}"
+}

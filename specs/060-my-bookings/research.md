@@ -1,5 +1,7 @@
 # Research: Quản lý lịch đặt của tôi (spec 060)
 
+> **Cập nhật 2026-11-07:** Quyết định trong `spec.md` (Clarifications ngày 2026-11-07) thay thế phần mâu thuẫn dưới đây. Đặc biệt, R2 tính phạt từ giá gốc là không còn áp dụng: phạt 30% số tiền thực trả sau voucher, hoàn phần còn lại. R3 không phải thiết kế bảo mật được duyệt: hủy/hoàn tiền phải qua Edge Function và transaction phía server theo constitution; không cho client tự sửa ví/trạng thái. R4 cần làm rõ idempotency cả khi hoàn 0đ. R5 phải kiểm tra chủ tài khoản khi đọc cache và không khẳng định QR offline còn hiệu lực. Cách làm tròn nửa đồng và hoàn lượt voucher khi hủy một phần chuỗi vẫn cần chốt.
+
 **Ngày**: 2026-10-15 · **Spec**: [spec.md](spec.md) · **Plan**: [plan.md](plan.md)
 
 Tài liệu này ghi nhận các nghiên cứu kỹ thuật chuyên sâu về phân trang 5 tab, xử lý giao dịch hủy đơn nguyên tử, bảo mật chống chỉnh lùi giờ thiết bị, và xuất trình mã QR offline. Không còn mục `NEEDS CLARIFICATION`.

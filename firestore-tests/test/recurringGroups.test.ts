@@ -116,18 +116,14 @@ describe('recurringGroups collection (Spec 041)', () => {
       });
     });
 
-    it('owner can update status to CANCELLED', async () => {
+    it('owner cannot directly cancel a recurring group (contract pending)', async () => {
       const fs = player('player1');
-      await assertSucceeds(
-        updateDoc(doc(fs, 'recurringGroups/group-01'), { status: 'CANCELLED' })
-      );
+      await assertFails(updateDoc(doc(fs, 'recurringGroups/group-01'), { status: 'CANCELLED' }));
     });
 
-    it('owner can update status to EXPIRED', async () => {
+    it('owner cannot directly expire a recurring group', async () => {
       const fs = player('player1');
-      await assertSucceeds(
-        updateDoc(doc(fs, 'recurringGroups/group-01'), { status: 'EXPIRED' })
-      );
+      await assertFails(updateDoc(doc(fs, 'recurringGroups/group-01'), { status: 'EXPIRED' }));
     });
 
     it('owner cannot update status to CONFIRMED (reserved for spec 050)', async () => {

@@ -1,15 +1,51 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Placeholder của spec 010; spec sở hữu màn hình chính (020/060…) thay bằng màn hình thật. -->
+<!-- Graph của người chơi; màn đầu là Trang chủ của spec 020. -->
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/nav_player"
-    app:startDestination="@id/playerHomePlaceholderFragment">
+    app:startDestination="@id/homeFragment">
+
+    <!-- Trang chủ (spec 020 US5): danh sách mọi cơ sở đang hoạt động; bấm thẻ mở chi tiết sân (030). -->
+    <fragment
+        android:id="@+id/homeFragment"
+        android:name="com.example.booking_app.feature.search.ui.HomeFragment"
+        android:label="@string/nav_tab_home">
+        <action
+            android:id="@+id/action_home_to_courtDetail"
+            app:destination="@id/nav_court_detail" />
+    </fragment>
+    <fragment
+        android:id="@+id/myBookingsFragment"
+        android:name="com.example.booking_app.feature.booking_management.ui.MyBookingsFragment"
+        android:label="@string/my_bookings_060_title">
+        <deepLink app:uri="smashnow://bookings/mine" />
+        <action
+            android:id="@+id/action_myBookings_to_detail"
+            app:destination="@id/bookingDetailFragment" />
+    </fragment>
 
     <fragment
-        android:id="@+id/playerHomePlaceholderFragment"
-        android:name="com.example.booking_app.feature.auth.ui.home.PlayerHomePlaceholderFragment"
-        android:label="@string/app_name" />
-    <!-- Lưới đặt sân (040) mở từ nút "Đặt sân" ở chi tiết sân (030) khi màn đó có; chưa có lối vào từ Trang chủ. -->
+        android:id="@+id/bookingDetailFragment"
+        android:name="com.example.booking_app.feature.booking_management.ui.BookingDetailFragment"
+        android:label="@string/my_bookings_060_detail_title">
+        <argument
+            android:name="bookingId"
+            app:argType="string" />
+        <action
+            android:id="@+id/action_detail_to_cancel"
+            app:destination="@id/cancelBookingFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/cancelBookingFragment"
+        android:name="com.example.booking_app.feature.booking_management.ui.CancelBookingFragment"
+        android:label="@string/my_bookings_060_cancel_booking">
+        <argument
+            android:name="bookingId"
+            app:argType="string" />
+    </fragment>
+
+    <!-- Lưới đặt sân (040): Trang chủ → chi tiết sân (030) → nút "Đặt sân". -->
 
     <fragment
         android:id="@+id/bookingSlotGridFragment"
@@ -58,9 +94,35 @@
             app:argType="com.example.booking_app.feature.booking.ui.HoldToPaymentArgs" />
     </fragment>
 
-    <!-- Trang Tài khoản của spec 011 (research R14). -->
+    <!-- Trang Tài khoản của spec 011 (research R14). Mở từ avatar ở header dùng chung của mọi tab (US8),
+         qua AccountEntryNavigator; không còn tab Tài khoản. -->
     <include app:graph="@navigation/nav_account" />
 
+    <action
+        android:id="@+id/action_global_account"
+        app:destination="@id/nav_account" />
+
     <include app:graph="@navigation/nav_review" />
+
+    <!-- Chi tiết sân (spec 030): mở bằng deep link smashnow://venue/{venueId} hoặc action tới nav_court_detail. -->
+    <include app:graph="@navigation/nav_court_detail" />
+
+    <!-- Xem ảnh toàn màn hình dùng chung (core/ui/photo, spec 030 T019); 070 dùng cho ảnh đánh giá. -->
+    <fragment
+        android:id="@+id/photoViewerFragment"
+        android:name="com.example.booking_app.core.ui.photo.PhotoViewerFragment"
+        android:label="@string/court_detail_title">
+        <argument
+            android:name="photoUrls"
+            app:argType="string[]" />
+        <argument
+            android:name="startIndex"
+            app:argType="integer"
+            android:defaultValue="0" />
+    </fragment>
+
+    <action
+        android:id="@+id/action_global_photoViewer"
+        app:destination="@id/photoViewerFragment" />
 
 </navigation>

@@ -7,6 +7,7 @@
     <dimen name="space_6">24dp</dimen>
     <dimen name="space_8">32dp</dimen>
     <dimen name="touch_min">48dp</dimen>
+    <dimen name="owner_document_preview_height">320dp</dimen>
 
     <!-- Bo góc -->
     <dimen name="radius_sm">8dp</dimen>
@@ -28,6 +29,8 @@
     <dimen name="auth_button_progress_size">24dp</dimen>
     <!-- Spec 011: trang Tài khoản -->
     <dimen name="account_avatar_size">88dp</dimen>
+    <!-- Avatar ở header dùng chung (spec 011 US8), cũng là vùng chạm tối thiểu (FR-031). -->
+    <dimen name="account_header_avatar_size">48dp</dimen>
     <dimen name="account_avatar_large">120dp</dimen>
     <dimen name="account_icon_box">48dp</dimen>
     <dimen name="account_row_height">56dp</dimen>

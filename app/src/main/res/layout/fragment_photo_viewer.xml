@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Xem ảnh toàn màn hình, phóng 1×–4× (core/ui/photo, spec 030 FR-004). Dùng chung với ảnh đánh giá (070). -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/photo_viewer_background">
+
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/photoPager"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <ImageButton
+        android:id="@+id/closeButton"
+        android:layout_width="@dimen/touch_min"
+        android:layout_height="@dimen/touch_min"
+        android:layout_gravity="top|start"
+        android:layout_margin="@dimen/space_2"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/court_detail_cd_close"
+        android:src="@drawable/ic_close_24"
+        app:tint="@color/photo_viewer_on_background" />
+
+    <TextView
+        android:id="@+id/photoIndicator"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|center_horizontal"
+        android:layout_marginTop="@dimen/space_4"
+        android:background="@drawable/bg_photo_indicator"
+        android:paddingHorizontal="@dimen/space_3"
+        android:paddingVertical="@dimen/space_1"
+        android:textAppearance="?attr/textAppearanceLabelLarge"
+        android:textColor="@color/photo_viewer_on_background"
+        tools:text="2/5" />
+</FrameLayout>
