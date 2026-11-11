@@ -2301,4 +2301,4 @@ dropInSessions và startAt), bật chế độ tối và tắt mạng trên máy
 
 - `./gradlew lint testDebugUnitTest assembleDebug` xanh; `DropInListViewModelTest` 17/17.
 - Trên máy ảo: đăng ký xong quay về danh sách thì số chỗ cập nhật ngay; hủy đăng ký chạy được.
-- Chưa test: chế độ tối, mất mạng, TC4, TC5, TC7–TC9.
+- Đã test trên máy ảo Q8 (hủy sớm, hoàn 100%) và Q9 (hủy muộn, không hoàn tiền), hiện đúng; chưa test: chế độ tối, mất mạng, TC5, TC7–TC9.
