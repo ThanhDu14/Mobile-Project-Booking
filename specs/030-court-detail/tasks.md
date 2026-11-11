@@ -187,7 +187,7 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
   - `fetchStatusFromServer` dùng `get(Source.SERVER)`.
 
   Cho T020 xanh
-- [ ] T076 [P] *(thêm sau `/speckit-analyze` C2, đặt ID nối tiếp để không đánh số lại; làm ngay sau T023)* Test Repository trên Firestore Emulator `ATEST/feature/courtdetail/data/FirestoreVenueDetailRepositoryTest.kt` (constitution IV bắt buộc test Repository). Nạp dữ liệu bằng Admin SDK của Emulator hoặc Firestore client với Rules tắt, không dùng project thật:
+- [ ] T076 **[CHỜ NGƯỜI CHẠY: cần Firebase Emulator cổng 8080, xem quickstart §5 ngày 2026-11-11]** [P] *(thêm sau `/speckit-analyze` C2, đặt ID nối tiếp để không đánh số lại; làm ngay sau T023)* Test Repository trên Firestore Emulator `ATEST/feature/courtdetail/data/FirestoreVenueDetailRepositoryTest.kt` (constitution IV bắt buộc test Repository). Nạp dữ liệu bằng Admin SDK của Emulator hoặc Firestore client với Rules tắt, không dùng project thật:
   - `observeVenue`: phát `Found` với đúng trường; sửa `status` thành `LOCKED` thì phát lại `Found` với `SUSPENDED`; xóa document thì phát `Gone`; hủy người thu thập thì listener bị gỡ (không còn phát);
   - `loadCourts`, `loadPriceRules`: đọc đủ bản ghi, `priceRules` qua `PriceRuleMapper`, `endTime = "2400"` được giữ;
   - `fetchStatusFromServer`: trả đúng trạng thái; tắt mạng (`disableNetwork()`) thì trả `null`;
@@ -514,23 +514,23 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
 
 ## Phase 9: Polish & Cross-Cutting
 
-- [ ] T068 [P] Viết `RES/layout-w600dp/fragment_court_detail.xml` hai cột ([R12](research.md#r12-lỗi-offline-và-giữ-trạng-thái-fr-025-fr-026-sc-007-fr-027)): trái 40% (ảnh, bản đồ), phải 60% (thông tin, bảng giá, đánh giá), thanh "Đặt sân" cố định ở cuối. ID view giống bản điện thoại để Fragment dùng chung ViewBinding
-- [ ] T069 [P] Rà FR-027 trên mọi layout của 030 và `fragment_photo_viewer.xml`:
+- [x] T068 [P] Viết `RES/layout-w600dp/fragment_court_detail.xml` hai cột ([R12](research.md#r12-lỗi-offline-và-giữ-trạng-thái-fr-025-fr-026-sc-007-fr-027)): trái 40% (ảnh, bản đồ), phải 60% (thông tin, bảng giá, đánh giá), thanh "Đặt sân" cố định ở cuối. ID view giống bản điện thoại để Fragment dùng chung ViewBinding
+- [x] T069 [P] Rà FR-027 trên mọi layout của 030 và `fragment_photo_viewer.xml`:
   - chế độ tối dùng màu từ `values-night`, không hardcode;
   - thứ tự TalkBack tên → địa chỉ → điểm → trạng thái mở cửa → giá (`accessibilityTraversalAfter` nếu cần);
   - mọi nút và biểu tượng có `contentDescription`; vùng chạm ≥ 48dp;
   - mỗi mục có đủ 4 trạng thái kèm "Thử lại" (FR-025).
-- [ ] T070 [P] Espresso (nên có) `ATEST/feature/courtdetail/CourtDetailFlowTest.kt` trên Auth/Firestore Emulator với seed:
+- [ ] T070 **[CHỜ NGƯỜI CHẠY: cần Firebase Emulator cổng 8080, xem quickstart §5 ngày 2026-11-11]** [P] Espresso (nên có) `ATEST/feature/courtdetail/CourtDetailFlowTest.kt` trên Auth/Firestore Emulator với seed:
   - mở `smashnow://venue/demo-truong-chinh-909?date=…&start=1900&end=2100` → thấy "Khung bạn chọn" và "130.000 đ/giờ";
   - khách bấm "Đặt sân" → hộp mời đăng nhập → "Để sau" ở lại;
   - mở `smashnow://venue/khong-co` → "Sân không còn tồn tại".
 
   Tắt autofill trong lúc chạy như 010 T075
-- [ ] T071 Chạy quickstart [§4](quickstart.md#4-kịch-bản-thủ-công-trên-máy-ảo-emulator) **Q1–Q24** trên Emulator với seed, ghi kết quả thật vào cuối `specs/030-court-detail/quickstart.md`:
+- [ ] T071 **[CHỜ NGƯỜI CHẠY: cần Firebase Emulator cổng 8080, xem quickstart §5 ngày 2026-11-11]** Chạy quickstart [§4](quickstart.md#4-kịch-bản-thủ-công-trên-máy-ảo-emulator) **Q1–Q24** trên Emulator với seed, ghi kết quả thật vào cuối `specs/030-court-detail/quickstart.md`:
   - đo SC-001 bằng Logcat (mốc bấm thẻ → `header = Content` + ảnh đầu đã vẽ) **20 lần** trên máy ảo giới hạn mạng 4G (`Network type: LTE`), đạt khi ≤ 1 lần vượt 3 giây (≥ 95%);
   - kịch bản nào bị chặn bởi B, C, D thì ghi "[BLOCKED: X]" và lý do.
-- [ ] T072 [P] Chụp ảnh Q1, Q11, Q13, Q17 lưu vào `docs/features/03-court-detail/screenshots/` theo tên `03_court-detail_buocX_mo-ta.png` (ảnh đã che số điện thoại nếu là số thật)
-- [ ] T073 [P] Cập nhật `docs/features/03-court-detail/README.md`:
+- [ ] T072 **[CHỜ NGƯỜI CHẠY: cần Firebase Emulator cổng 8080, xem quickstart §5 ngày 2026-11-11]** [P] Chụp ảnh Q1, Q11, Q13, Q17 lưu vào `docs/features/03-court-detail/screenshots/` theo tên `03_court-detail_buocX_mo-ta.png` (ảnh đã che số điện thoại nếu là số thật)
+- [x] T073 [P] Cập nhật `docs/features/03-court-detail/README.md`:
   - trạng thái "🟨 Đang làm";
   - link spec, plan, tasks;
   - đánh dấu các mục phạm vi đã xong;
@@ -538,13 +538,13 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
   - ghi chú quyết định (osmdroid, dữ liệu seed, R13).
 
   Cập nhật dòng nhóm 03 ở cột *Trạng thái* và *Spec* trong `docs/features/README.md`. Ghi chú ảnh chụp: "Dữ liệu demo lấy từ datlich.alobo.vn, chỉ dùng cho mục đích học tập" (quyết định C1, [research R13](research.md#r13-dữ-liệu-seed-của-nhóm-scriptsseed-và-constitution-vi))
-- [ ] T074 [P] Gửi đề xuất sửa đặc tả CSDL ([data-model §4](data-model.md#4-thay-đổi-cần-đưa-vào-docsdesigndatabasereadmemd)) cho người phụ trách bằng comment trong PR. **Không tự sửa** `docs/design/database/README.md` ở các mục của D, C:
+- [ ] T074 **[SOẠN SẴN, gửi khi tạo PR]** [P] Gửi đề xuất sửa đặc tả CSDL ([data-model §4](data-model.md#4-thay-đổi-cần-đưa-vào-docsdesigndatabasereadmemd)) cho người phụ trách bằng comment trong PR. **Không tự sửa** `docs/design/database/README.md` ở các mục của D, C:
   - D: `ratingSums`, `"2400"`, thứ tự `photoPaths`, `phone` công khai, `DELETED`, Rules `venues`;
   - B + D: `daysOfWeek`;
   - C: Rules `reviews`.
-- [ ] T075 Chạy `./gradlew lint testDebugUnitTest assembleDebug` (0 lỗi Lint mức Error) và `npm test` trong `firestore-tests/`. Ghi số test xanh/đỏ vào PR, test VD-* còn đỏ thì ghi rõ do chờ D/C. Rà `grep -rn "TODO(B)\|TODO(C)\|TODO(D)" app/src` và liệt kê các chỗ còn lại trong PR. Ghi log AI vào `docs/ai-log/AI_log_1.md`
-- [ ] T077 *(thêm sau `/speckit-analyze` C1)* Khi spec 111 (D) đã cho chủ sân tạo cơ sở: đăng nhập một tài khoản chủ sân đã duyệt trên Emulator, tạo 1 cơ sở **bằng giao diện 111** với ảnh tự chụp hoặc miễn phí bản quyền, tiện ích, ít nhất 2 loại mặt sân và số điện thoại giả hợp lệ. Chạy lại Q1, Q6, Q9 trên cơ sở này để kiểm tra 030 đọc đúng dữ liệu do chủ sân ghi (path Supabase thay vì URL đầy đủ, `amenityIds` có giá trị, nhiều `surfaceType`). Ghi kết quả vào `specs/030-court-detail/quickstart.md`. Chưa có 111 thì ghi `[BLOCKED: D]`
-- [ ] T078 [P] *(thêm sau `/speckit-analyze` G1)* Thử SC-003 với 5 người (bạn cùng lớp, không phải thành viên nhóm): đưa máy đang mở chi tiết `demo-k3`, yêu cầu tìm giá giờ cao điểm, giờ đóng cửa và số điện thoại; đo thời gian từng người. Đạt khi ≥ 4/5 người xong dưới 30 giây. Ghi kết quả (không ghi tên người thử) vào `specs/030-court-detail/quickstart.md`
+- [ ] T075 **[ĐÃ CHẠY 2026-11-11: còn 1 lỗi Lint Error của 040 (SlotMatrixRowAdapter) và 1 unit test đỏ của 112, xem quickstart §5]** Chạy `./gradlew lint testDebugUnitTest assembleDebug` (0 lỗi Lint mức Error) và `npm test` trong `firestore-tests/`. Ghi số test xanh/đỏ vào PR, test VD-* còn đỏ thì ghi rõ do chờ D/C. Rà `grep -rn "TODO(B)\|TODO(C)\|TODO(D)" app/src` và liệt kê các chỗ còn lại trong PR. Ghi log AI vào `docs/ai-log/AI_log_1.md`
+- [ ] T077 **[CHỜ NGƯỜI CHẠY: cần Firebase Emulator cổng 8080, xem quickstart §5 ngày 2026-11-11]** *(thêm sau `/speckit-analyze` C1)* Khi spec 111 (D) đã cho chủ sân tạo cơ sở: đăng nhập một tài khoản chủ sân đã duyệt trên Emulator, tạo 1 cơ sở **bằng giao diện 111** với ảnh tự chụp hoặc miễn phí bản quyền, tiện ích, ít nhất 2 loại mặt sân và số điện thoại giả hợp lệ. Chạy lại Q1, Q6, Q9 trên cơ sở này để kiểm tra 030 đọc đúng dữ liệu do chủ sân ghi (path Supabase thay vì URL đầy đủ, `amenityIds` có giá trị, nhiều `surfaceType`). Ghi kết quả vào `specs/030-court-detail/quickstart.md`. Chưa có 111 thì ghi `[BLOCKED: D]`
+- [ ] T078 **[CHỜ NGƯỜI CHẠY: cần 5 người ngoài nhóm thử]** [P] *(thêm sau `/speckit-analyze` G1)* Thử SC-003 với 5 người (bạn cùng lớp, không phải thành viên nhóm): đưa máy đang mở chi tiết `demo-k3`, yêu cầu tìm giá giờ cao điểm, giờ đóng cửa và số điện thoại; đo thời gian từng người. Đạt khi ≥ 4/5 người xong dưới 30 giây. Ghi kết quả (không ghi tên người thử) vào `specs/030-court-detail/quickstart.md`
 
 ---
 
