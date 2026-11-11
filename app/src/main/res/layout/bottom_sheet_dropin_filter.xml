@@ -8,6 +8,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:clipChildren="false"
     android:orientation="vertical">
 
     <com.google.android.material.bottomsheet.BottomSheetDragHandleView
@@ -235,13 +236,13 @@
     </androidx.core.widget.NestedScrollView>
 
     <!-- Thanh nút bám mép dưới màn hình dù sheet đang mở lưng chừng hay bung hết: DropInFilterBottomSheet
-         đặt lại vị trí theo phần sheet đang hiện. Có nền để che chip cuộn phía sau. -->
+         đặt lại vị trí theo phần sheet đang hiện. Nền kéo dài tới mép màn hình,
+         không đổ bóng (root clipChildren=false để nền vẽ được phía dưới thanh). -->
     <LinearLayout
         android:id="@+id/buttonBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="?attr/colorSurfaceContainerLow"
-        android:elevation="4dp"
+        android:background="@drawable/bg_dropin_filter_bar"
         android:orientation="horizontal"
         android:paddingHorizontal="@dimen/screen_gutter"
         android:paddingVertical="@dimen/space_3">
