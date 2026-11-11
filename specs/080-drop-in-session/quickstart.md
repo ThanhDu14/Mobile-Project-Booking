@@ -19,7 +19,7 @@ Hướng dẫn chạy để chứng minh tính năng đúng spec. Chi tiết d�
 3. Nạp dữ liệu demo:
 
    ```bash
-   npx tsx scripts/seed/080-dropin.ts
+   deno run -A scripts/seed/080-dropin.ts   # Deno vì script dùng chung _shared/dropin.ts (npm: specifier)
    ```
 
    Script tạo:
