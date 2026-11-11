@@ -340,5 +340,43 @@ service cloud.firestore {
       allow read: if isSignedIn();
       allow write: if false;
     }
+
+    // ---------- dropInSessions + registrations (C, spec 080) ----------
+    // specs/080-drop-in-session/contracts/security-rules.md. Client chỉ đọc;
+    // đăng ký/hủy (registeredCount, status, đăng ký) đi qua Edge Function
+    // register-drop-in/cancel-drop-in; tạo/sửa/hủy buổi của D (spec 112) cũng vậy.
+
+    // Chủ cơ sở mở buổi: token OWNER và ownerId của buổi trùng uid.
+    function isSessionOwner(sessionId) {
+      return isOwner()
+          && get(/databases/$(database)/documents/dropInSessions/$(sessionId)).data.ownerId == request.auth.uid;
+    }
+
+    match /dropInSessions/{sessionId} {
+      // Ai cũng xem được danh sách và chi tiết buổi, kể cả khách chưa đăng nhập.
+      allow read: if true;
+      allow write: if false;
+
+      match /registrations/{uid} {
+        // get: ID document = uid, nên isSelf(uid) đủ (kể cả khi chưa có document).
+        allow get: if isSelf(uid) || isSessionOwner(sessionId) || isAdmin();
+        // list: người chơi chỉ liệt kê được khi truy vấn lọc userId == uid của
+        // mình (Rules không phải bộ lọc); không lọc thì cả truy vấn bị chặn (D7).
+        allow list: if (isSignedIn() && resource.data.userId == request.auth.uid)
+            || isSessionOwner(sessionId)
+            || isAdmin();
+        allow write: if false;
+      }
+    }
+
+    // "Lượt vãng lai của tôi": truy vấn collection group theo userId (D10, D11).
+    // Collection group query chỉ khớp match có {path=**}, nên quyền ở match lồng
+    // phía trên không áp dụng cho nó; chỉ mở list theo userId và cho admin.
+    // Match này cũng khớp path dropInSessions/{sid}/registrations/{uid}, nhưng
+    // không mở thêm quyền nào ngoài điều kiện userId == auth.uid đã có ở trên.
+    match /{path=**}/registrations/{uid} {
+      allow list: if (isSignedIn() && resource.data.userId == request.auth.uid)
+          || isAdmin();
+    }
   }
 }
