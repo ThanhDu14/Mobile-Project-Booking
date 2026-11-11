@@ -431,6 +431,7 @@
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_vertical"
                     android:maxWidth="180dp"
+                    android:gravity="end"
                     android:textAlignment="viewEnd"
                     android:textAppearance="?attr/textAppearanceBodyMedium"
                     android:textColor="?attr/colorOnSurfaceVariant"
