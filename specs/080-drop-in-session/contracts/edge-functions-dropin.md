@@ -54,6 +54,47 @@ Response không trả `qrToken`. App đọc token từ document đăng ký của
 
 **Sau khi commit:** gọi `send-notification` (D) với `{ type: "DROPIN_REGISTERED", userId: uid, data: { sessionId } }`. Chỉ gọi khi là đăng ký mới (`201`). Nếu gọi lỗi thì ghi log rồi bỏ qua.
 
+`action` là tùy chọn: bỏ trống hoặc `"REGISTER"` là đăng ký mới như trên; `"ADD_PARTY"` là thêm người (mục 1a); giá trị khác → `400 INVALID_ARGUMENT`.
+
+### 1a. `action: "ADD_PARTY"` — thêm người vào lượt đang có (FR-008a)
+
+Cùng endpoint `register-drop-in`, cùng xác thực và hàng đợi theo `sessionId`, cùng transaction có backoff (hết lượt thử → `503 BUSY`).
+
+```json
+{
+  "action": "ADD_PARTY",
+  "sessionId": "s_8f2a…",
+  "additional": 1,
+  "requestId": "5d1f…-uuid"
+}
+```
+
+- `additional`: số nguyên 1–3 (`MAX_PARTY − 1`); sai kiểu hoặc ngoài khoảng → `400 INVALID_ARGUMENT`. `requestId` phải là UUID. Không có `paymentMethod`: giữ cách thanh toán của lượt.
+- Thứ tự kiểm tra trong transaction:
+  1. Như đăng ký: buổi tồn tại (`SESSION_NOT_FOUND`), `status ∈ {OPEN, FULL}` (`SESSION_CANCELLED`), `serverNow < startAt` (`SESSION_STARTED`), cơ sở `ACTIVE` (`VENUE_INACTIVE`), không phải buổi của mình (`session.ownerId` hoặc `venue.ownerId` khác `uid`, ngược lại `403 OWN_SESSION`).
+  2. Đăng ký của người gọi phải đang `REGISTERED`; không có, `CANCELLED`, `CHECKED_IN` hay `WAITLISTED` → `409 NOT_REGISTERED`.
+  3. `registration.lastAddRequestId == requestId` → trả `200` với bản hiện tại, không ghi gì (idempotent; chỉ nhớ lần thêm gần nhất). Bước này nằm sau bước 1–2 nên gửi lại khi buổi đã bắt đầu hoặc lượt đã check-in vẫn nhận lỗi của bước đó; nằm trước bước 4–5 nên gửi lại khi đã đủ 4 người hoặc buổi đã `FULL` vẫn được `200`.
+  4. `partySize + additional ≤ 4`, ngược lại `409 PARTY_LIMIT` kèm `maxAdditional = max(0, 4 − partySize)`.
+  5. `registeredCount + additional ≤ capacity`, ngược lại `409 SESSION_FULL` kèm `remaining = max(0, capacity − registeredCount)`.
+- Khi hợp lệ, trong cùng `commit`:
+  - buổi: `registeredCount += additional`; `status = FULL` nếu `registeredCount ≥ capacity`, ngược lại `OPEN`; `updatedAt`;
+  - đăng ký: `partySize += additional`, `amount += pricePerPerson × additional` (giá đã chốt của lượt; thiếu thì lấy giá của buổi), `lastAddRequestId = requestId`, `updatedAt`. **Không** đổi `paymentStatus` (`MOCK_PAY` vẫn `PAID`, `AT_VENUE` vẫn `UNPAID`), `qrToken`, `ticketCode`, `requestId`.
+
+Response luôn là `200` (không bao giờ `201`), cùng dạng với đăng ký, không có `qrToken`; không gọi `send-notification`:
+
+```json
+{
+  "registration": { "sessionId": "s_8f2a…", "status": "REGISTERED", "partySize": 3, "paymentMethod": "MOCK_PAY",
+                    "paymentStatus": "PAID", "pricePerPerson": 60000, "amount": 180000,
+                    "ticketCode": "DI-7K3QXZ9M", "registeredAt": "2026-10-20T11:00:00Z" },
+  "session": { "registeredCount": 11, "capacity": 12, "status": "OPEN" }
+}
+```
+
+Lỗi: `{ "error": { "code": "PARTY_LIMIT", "message": "Mỗi lượt tối đa 4 người (thêm được 1)", "maxAdditional": 1 } }`.
+
+App (màn hình vé): `requestId` sinh một lần cho mỗi lần xác nhận với một số lượng; thử lại sau mất mạng hoặc `BUSY` dùng lại cùng mã; đổi số người thêm hoặc đã thành công thì sinh mã mới. App không tự gửi lại khi `BUSY` mà cho người dùng bấm "Thử lại".
+
 ## 2. `cancel-drop-in`
 
 ### Request
@@ -118,11 +159,11 @@ export function newTicketCode(): string // "DI-" + 8 ký tự [A-HJ-NP-Z2-9]
 
 ## 4. Mã lỗi
 
-Body lỗi có dạng `{ "error": { "code": "SESSION_FULL", "message": "...", "remaining": 1 } }`.
+Body lỗi có dạng `{ "error": { "code": "SESSION_FULL", "message": "...", "remaining": 1 } }`; `PARTY_LIMIT` kèm `maxAdditional` thay cho `remaining`.
 
 | HTTP | `error.code` | Khi nào | App hiển thị |
 |---|---|---|---|
-| 400 | `INVALID_ARGUMENT` | `partySize` ngoài 1–4, sai `paymentMethod`, `requestId` không phải UUID | Lỗi theo trường (thường đã chặn ở app) |
+| 400 | `INVALID_ARGUMENT` | `partySize` ngoài 1–4, sai `paymentMethod`, `requestId` không phải UUID; `ADD_PARTY`: `additional` ngoài 1–3; `action` lạ | Lỗi theo trường (thường đã chặn ở app) |
 | 401 | `UNAUTHENTICATED` | Token thiếu hoặc hết hạn | Làm mới token rồi thử lại 1 lần; vẫn lỗi thì chuyển sang đăng nhập |
 | 403 | `ACCOUNT_LOCKED` | `accountStatus == LOCKED` | "Tài khoản đang bị khóa" |
 | 403 | `OWN_SESSION` | Chủ sân đăng ký buổi của chính mình | "Bạn không thể đăng ký buổi do mình mở" |
@@ -134,6 +175,8 @@ Body lỗi có dạng `{ "error": { "code": "SESSION_FULL", "message": "...", "r
 | 409 | `ALREADY_REGISTERED` | Đã có đăng ký còn hiệu lực với `requestId` khác | Mở vé hiện có |
 | 409 | `ALREADY_WAITLISTED` | Đang ở hàng chờ (spec 081) | Mở lượt chờ |
 | 409 | `NOT_CANCELLABLE` | Đăng ký đã `CHECKED_IN` | "Lượt đã check-in, không hủy được" |
+| 409 | `PARTY_LIMIT` | `ADD_PARTY`: tổng người sau khi thêm > 4 (kèm `maxAdditional`) | "Mỗi lượt tối đa 4 người. Bạn chỉ thêm được N người nữa" (N = 0 thì đóng bảng thêm người) |
+| 409 | `NOT_REGISTERED` | `ADD_PARTY`: người gọi không có lượt `REGISTERED` ở buổi này | "Lượt của bạn không còn hiệu lực nên không thêm người được" |
 | 503 | `BUSY` | Hết số lần thử lại transaction | App tự gửi lại cùng `requestId`, tối đa 2 lần; sau đó hiện lỗi kèm nút thử lại |
 | 500 | `INTERNAL` | Lỗi khác | "Có lỗi xảy ra, vui lòng thử lại" + nút thử lại |
 

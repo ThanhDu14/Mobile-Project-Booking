@@ -288,18 +288,18 @@ Hilt, Firebase, supabase-kt và `core/` do [tasks 010](../010-account-auth/tasks
 
 ### Tests cho User Story 3
 
-- [ ] T042 [P] [US3] Unit test `TEST/domain/RegistrationOutcomeResolverTest.kt` theo bảng [research R7](research.md#r7-lượt-vãng-lai-của-tôi-fr-019-fr-020):
+- [x] T042 [P] [US3] Unit test `TEST/domain/RegistrationOutcomeResolverTest.kt` theo bảng [research R7](research.md#r7-lượt-vãng-lai-của-tôi-fr-019-fr-020):
   - `CHECKED_IN` → `ATTENDED`;
   - `CANCELLED` + `USER` (hoặc `SYSTEM`) → `CANCELLED_BY_ME`;
   - `CANCELLED` + `OWNER` (hoặc buổi `CANCELLED`) → `SESSION_CANCELLED`;
   - `REGISTERED` và `session.endAt < now` → `NO_SHOW`;
   - `REGISTERED` chưa bắt đầu → `UPCOMING`.
-- [ ] T043 [P] [US3] Unit test `TEST/ui/mine/MyDropInsViewModelTest.kt`:
+- [x] T043 [P] [US3] Unit test `TEST/ui/mine/MyDropInsViewModelTest.kt`:
   - "Sắp tới" sắp theo giờ gần nhất;
   - "Đã qua" mới nhất trước, phân trang, không lặp lượt đã nằm ở "Sắp tới";
   - `Empty` kèm nút "Tìm buổi vãng lai" (AC 3.6);
   - nhãn "Buổi đã thay đổi" khi `sessionChanged` (AC 3.5).
-- [ ] T044 [P] [US3] Unit test `TEST/ui/ticket/DropInTicketViewModelTest.kt`:
+- [x] T044 [P] [US3] Unit test `TEST/ui/ticket/DropInTicketViewModelTest.kt`:
   - đọc cache trước → `Offline(cached)` khi không có mạng (FR-015);
   - buổi bị hủy → không còn QR, nhãn "Buổi đã bị hủy";
   - cơ sở ngừng hoạt động → nhãn "Cơ sở tạm ngừng hoạt động";
@@ -307,24 +307,61 @@ Hilt, Firebase, supabase-kt và `core/` do [tasks 010](../010-account-auth/tasks
 
 ### Implementation cho User Story 3
 
-- [ ] T045 [US3] Cài `observeUpcoming(uid)` và `pagePast(uid, cursor)` trong `DI/data/DropInRegistrationRepositoryImpl.kt`:
+- [x] T045 [US3] Cài `observeUpcoming(uid)` và `pagePast(uid, cursor)` trong `DI/data/DropInRegistrationRepositoryImpl.kt`:
   - **Sắp tới:** collection group `registrations` `where userId == uid`, `status in [REGISTERED, WAITLISTED]`, `sessionStartAt >= now`, `orderBy sessionStartAt`.
   - **Đã qua:** `where userId == uid`, `orderBy sessionStartAt desc`, `limit 20`; bỏ những lượt thuộc "Sắp tới".
   - Đọc buổi theo lô (≤ 20) để hiển thị.
   - Cài luôn `DropInRegistrationReader` cho nhóm khác.
-- [ ] T046 [US3] Cài `DI/domain/RegistrationOutcomeResolver.kt` và `DI/domain/usecase/LoadMyDropIns.kt` cho T042 xanh
-- [ ] T047 [US3] Cài `DI/ui/mine/MyDropInsViewModel.kt`, `DI/ui/mine/DropInRegistrationAdapter.kt`, `DI/ui/mine/MyDropInsFragment.kt` + `RES/layout/fragment_dropin_mine.xml`, `RES/layout/item_dropin_registration.xml`:
+- [x] T046 [US3] Cài `DI/domain/RegistrationOutcomeResolver.kt` và `DI/domain/usecase/LoadMyDropIns.kt` cho T042 xanh
+- [x] T047 [US3] Cài `DI/ui/mine/MyDropInsViewModel.kt`, `DI/ui/mine/DropInRegistrationAdapter.kt`, `DI/ui/mine/MyDropInsFragment.kt` + `RES/layout/fragment_dropin_mine.xml`, `RES/layout/item_dropin_registration.xml`:
   - 2 tab;
   - mỗi lượt hiện ngày giờ, cơ sở, số người, trạng thái thanh toán, nhãn kết quả.
 
   Theo wireframe `ui/08_drop-in_buoc5_luot-vang-lai-cua-toi.png`. Cho T043 xanh
-- [ ] T048 [US3] Bổ sung `DropInTicketViewModel`:
+- [x] T048 [US3] Bổ sung `DropInTicketViewModel`:
   - đọc `Source.CACHE` trước để hiện ngay, sau đó nghe server;
   - nhãn "Buổi đã thay đổi", "Buổi đã bị hủy" (ẩn QR), "Cơ sở tạm ngừng hoạt động";
   - nút "Chỉ đường" mở Google Maps bằng `Intent` với tọa độ của cơ sở (AC 3.2).
 
   Cho T044 xanh
-- [ ] T049 [US3] Thêm lối vào "Lượt vãng lai của tôi" (từ tab "Lịch của tôi" hoặc trang Tài khoản, thống nhất với A/B) và đăng ký `DropInRegistrationReader` trong `DropInModule`
+
+#### Thêm người vào lượt đang có (FR-008a, AC 2.10–2.12)
+
+Task chèn thêm sau khi chốt FR-008a; đánh số `T048a`… để không đổi số các task khác. Server theo [contract mục 1a](contracts/edge-functions-dropin.md#1a-action-add_party--thêm-người-vào-lượt-đang-có-fr-008a) và [quy tắc kiểm tra `ADD_PARTY`](data-model.md#quy-tắc-kiểm-tra-của-register-drop-in-với-action-add_party-fr-008a).
+
+- [x] T048a [P] [US3] Test `ADD_PARTY` trong `FN/register-drop-in/handler.test.ts`:
+  - thêm 1 người → `200`, `partySize`/`amount` cộng đúng, buổi `+additional`, giữ `qrToken`/`ticketCode`;
+  - `AT_VENUE` vẫn `UNPAID`; thêm đủ chỗ cuối → buổi `FULL`;
+  - cùng `requestId` gửi lại → `200`, chỉ cộng một lần;
+  - vượt 4 người → `409 PARTY_LIMIT` kèm `maxAdditional`; không đủ chỗ → `409 SESSION_FULL` kèm `remaining`; cả hai không ghi gì;
+  - chưa đăng ký, đã hủy, đã check-in → `409 NOT_REGISTERED`;
+  - buổi đã bắt đầu/bị hủy, cơ sở ngừng → cùng mã lỗi như đăng ký;
+  - `additional` 0/4/1.5, `requestId` sai, `action` lạ → `400 INVALID_ARGUMENT`.
+- [x] T048b [US3] Cài `action: "ADD_PARTY"` trong `FN/register-drop-in/handler.ts` (`parseInput`, `addParty()` dùng chung `loadAndCheck()` với đăng ký, lưu `lastAddRequestId`, response `200`, không gửi thông báo). Sau đó T048a, T030, T031 phải xanh
+- [x] T048c [P] [US3] Test phía app cho thêm người:
+  - `TEST/data/DropInRegistrationRepositoryImplTest.kt`: gửi đúng body `ADD_PARTY` (`sessionId`, `additional`, `requestId`), đọc response `200`;
+  - `TEST/data/DropInErrorMappingTest.kt`: `PARTY_LIMIT` → `DropInError.PartyLimit(maxAdditional)`, `NOT_REGISTERED` → `DropInError.NotRegistered`;
+  - `TEST/domain/DropInUseCasesTest.kt`: `AddDropInParty` chuyển đúng tham số tới repository.
+- [x] T048d [US3] Cài phần data/domain cho thêm người:
+  - DTO request `ADD_PARTY` trong `DI/data/dto/EdgeDtos.kt`, ánh xạ lỗi trong `DI/data/dto/Mappers.kt`;
+  - hàm gọi `register-drop-in` với `action = "ADD_PARTY"` trong `DI/data/DropInApi.kt`;
+  - `addParty(sessionId, additional, requestId)` trong `DI/domain/DropInRepositories.kt` và `DI/data/DropInRegistrationRepositoryImpl.kt`;
+  - usecase `AddDropInParty` trong `DI/domain/usecase/DropInUseCases.kt` + `DropInUseCaseImpls.kt`, đăng ký trong `DI/data/di/DropInModule.kt`.
+
+  Cho T048c xanh
+- [x] T048e [P] [US3] Unit test thêm người trong `TEST/ui/ticket/DropInTicketViewModelTest.kt`:
+  - `addParty` (`AddPartyOffer`) chỉ có khi lượt `REGISTERED`, buổi chưa bắt đầu, cơ sở hoạt động, còn chỗ và `partySize < 4`; `maxAdditional = min(4 − partySize, số chỗ còn)` (AC 2.10, 2.11);
+  - tiền thêm = giá đã chốt × số người thêm;
+  - thử lại sau mất mạng/`BUSY` dùng lại cùng `requestId`; đổi số người hoặc đã thành công thì sinh mã mới (AC 2.12);
+  - `PartyLimit`/`SessionFull` → giới hạn lại số người chọn được theo `maxAdditional`/`remaining`; `PartyLimit(0)` và `NotRegistered` → đóng bảng, sự kiện `AddPartyFailed`;
+  - ngoại tuyến không mở bảng; `AT_VENUE` giữ cách thanh toán "Trả tại sân".
+- [x] T048f [US3] Cài "Thêm người" ở màn hình vé:
+  - `DI/ui/ticket/DropInTicketViewModel.kt`: `startAddParty()`, chọn số người, `submitAddParty()`, `dismissAddParty()`, `addPartyForm`;
+  - `DI/ui/ticket/DropInTicketFragment.kt` + `RES/layout/fragment_dropin_ticket.xml`: nút "Thêm người" (ẩn khi không có `addParty`);
+  - bottom sheet `RES/layout/bottom_sheet_dropin_add_party.xml`: chọn 1…`maxAdditional`, số tiền phải trả thêm, nút xác nhận khóa khi đang gửi; chuỗi trong `RES/values/strings_dropin_ticket.xml`.
+
+  Cho T048e xanh
+- [x] T049 [US3] Thêm lối vào "Lượt vãng lai của tôi" (từ tab "Lịch của tôi" hoặc trang Tài khoản, thống nhất với A/B) và đăng ký `DropInRegistrationReader` trong `DropInModule`
 
 **Checkpoint**: US3 chạy độc lập (quickstart Q7, Q12, Q13).
 

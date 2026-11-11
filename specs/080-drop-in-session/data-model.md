@@ -64,11 +64,12 @@ ID = `uid` (đặc tả CSDL mục 5). Client **chỉ đọc**. Mọi ghi đi qu
 | `paymentMethod` 🔒 | String | `MOCK_PAY`, `AT_VENUE` |
 | `paymentStatus` 🔒 **[MỚI]** | String | `PAID`, `UNPAID`, `REFUNDED` |
 | `pricePerPerson` 🔒 **[MỚI]** | Long | Giá chốt lúc đăng ký (Edge Cases: chủ sân đổi giá thì giữ nguyên) |
-| `amount` 🔒 | Long | `pricePerPerson × partySize` |
+| `amount` 🔒 | Long | `pricePerPerson × partySize` (thêm người thì cộng `pricePerPerson × additional`, FR-008a) |
 | `refundAmount` 🔒 **[MỚI]** | Long? | Số tiền đã hoàn (giả lập) |
 | `qrToken` 🔒 | String? | 32 byte ngẫu nhiên base64url; `null` khi `CANCELLED` |
 | `ticketCode` 🔒 **[MỚI]** | String? | `DI-XXXXXXXX`; `null` khi `CANCELLED` |
 | `requestId` 🔒 | String | UUID của lần đăng ký gần nhất (idempotent) |
+| `lastAddRequestId` 🔒 **[MỚI]** | String? | UUID của lần thêm người gần nhất (`ADD_PARTY`, FR-008a); gửi lại cùng mã thì không cộng hai lần |
 | `cancelRequestId` 🔒 **[MỚI]** | String? | UUID của lần hủy |
 | `sessionChanged` 🔒 **[MỚI]** | Boolean | `true` khi chủ sân đổi giờ/sân/giá sau khi đăng ký (D ghi); cho hoàn 100% (FR-017) và nhãn "Buổi đã thay đổi" |
 | `registeredAt` 🔒 **[MỚI]** | Timestamp | |
@@ -100,13 +101,39 @@ ID = `uid` (đặc tả CSDL mục 5). Client **chỉ đọc**. Mọi ghi đi qu
 | Buổi tồn tại, `status ∈ {OPEN, FULL}` | `SESSION_NOT_FOUND` / `SESSION_CANCELLED` | FR-011 |
 | `serverNow < startAt` | `SESSION_STARTED` | FR-011 |
 | `venues/{venueId}.status == ACTIVE` | `VENUE_INACTIVE` | FR-011 |
-| `session.ownerId != uid` | `OWN_SESSION` | Edge Cases |
+| `session.ownerId != uid` và `venue.ownerId != uid` | `OWN_SESSION` | Edge Cases |
 | Đăng ký hiện có: `REGISTERED`/`CHECKED_IN` cùng `requestId` → trả bản cũ; khác `requestId` → lỗi; `WAITLISTED` → lỗi (spec 081 xử lý) | `ALREADY_REGISTERED` / `ALREADY_WAITLISTED` | FR-008 |
 | `registeredCount + partySize ≤ capacity` | `SESSION_FULL` (kèm `remaining`) | FR-007, Edge Cases |
 
 Khi hợp lệ, trong cùng `commit`:
 1. `registeredCount += partySize`; nếu bằng `capacity` thì `status = FULL`.
 2. Ghi đăng ký: `REGISTERED`, `amount`, `paymentStatus` (`PAID` nếu `MOCK_PAY`, `UNPAID` nếu `AT_VENUE`), `qrToken`, `ticketCode`, các trường sao chép.
+
+### Quy tắc kiểm tra của `register-drop-in` với `action: "ADD_PARTY"` (FR-008a)
+
+Cùng endpoint, cùng hàng đợi theo `sessionId` và cùng transaction có backoff như đăng ký. Kiểm tra theo đúng thứ tự dưới đây (khớp `addParty()` trong `register-drop-in/handler.ts`), gặp lỗi đầu tiên thì dừng, không ghi gì:
+
+| # | Quy tắc | Lỗi | FR |
+|---|---|---|---|
+| 1 | Đã đăng nhập, `accountStatus == ACTIVE` | `UNAUTHENTICATED` / `ACCOUNT_LOCKED` | FR-006 |
+| 2 | `sessionId` có giá trị và không chứa `/`; `action ∈ {REGISTER, ADD_PARTY}` (bỏ trống = `REGISTER`); `additional` là số nguyên `1 ≤ additional ≤ 3` (`MAX_PARTY − 1`); `requestId` là UUID. Không nhận `paymentMethod` | `INVALID_ARGUMENT` (400) | FR-008a |
+| 3 | Buổi tồn tại, `status ∈ {OPEN, FULL}` | `SESSION_NOT_FOUND` / `SESSION_CANCELLED` | FR-011 |
+| 4 | `serverNow < startAt` | `SESSION_STARTED` | FR-008a, FR-011 |
+| 5 | `venues/{venueId}.status == ACTIVE` | `VENUE_INACTIVE` | FR-011 |
+| 6 | `session.ownerId != uid` và `venue.ownerId != uid` | `OWN_SESSION` (403) | Edge Cases |
+| 7 | Đăng ký của người gọi tồn tại và `status == REGISTERED` (không có, `CANCELLED`, `CHECKED_IN`, `WAITLISTED` đều bị từ chối) | `NOT_REGISTERED` (409) | FR-008a |
+| 8 | `lastAddRequestId == requestId` → trả bản hiện tại, **không ghi gì** (idempotent; chỉ nhớ mã của lần thêm gần nhất) | (200) | FR-008a |
+| 9 | `partySize + additional ≤ 4` (`MAX_PARTY`) | `PARTY_LIMIT` (409, kèm `maxAdditional = max(0, 4 − partySize)`) | FR-006, FR-008a |
+| 10 | `registeredCount + additional ≤ capacity` | `SESSION_FULL` (409, kèm `remaining = max(0, capacity − registeredCount)`) | FR-007 |
+
+Bước 3–6 dùng chung hàm với đăng ký nên mã lỗi giống hệt. Vì bước 8 nằm sau bước 3–7, gửi lại cùng `requestId` sau khi buổi đã bắt đầu hoặc lượt đã check-in vẫn nhận lỗi tương ứng (không phải 200). Bước 8 đứng trước bước 9–10 nên gửi lại sau khi đã đủ 4 người hoặc buổi đã `FULL` vẫn được 200.
+
+Khi hợp lệ, trong cùng `commit`:
+1. Buổi: `registeredCount += additional`; `status = FULL` nếu `registeredCount ≥ capacity`, ngược lại `OPEN`; `updatedAt`.
+2. Đăng ký (chỉ ghi các trường này): `partySize += additional`; `amount += pricePerPerson × additional`, trong đó `pricePerPerson` là giá đã chốt của lượt (thiếu thì lấy giá hiện tại của buổi); `lastAddRequestId = requestId`; `updatedAt`.
+3. Giữ nguyên `paymentMethod`, `paymentStatus` (`MOCK_PAY` vẫn `PAID`, coi như đã trả phần chênh lệch; `AT_VENUE` vẫn `UNPAID`, trả tại sân), `qrToken`, `ticketCode`, `requestId`, `registeredAt`.
+
+Response luôn `200` (không có `201`), không gọi `send-notification`.
 
 ### Quy tắc kiểm tra của `cancel-drop-in`
 
@@ -180,7 +207,7 @@ Tiền là `Long`, thời gian là `Instant`; hiển thị theo `Asia/Ho_Chi_Min
    - Ghi rõ `status` `OPEN`↔`FULL` do server đổi, `COMPLETED` do cron của spec 081.
    - Spec 112 FR-008 nói "không thêm field". Cần D đồng ý thêm hai trường suy ra này, ghi bằng helper `deriveSessionFields()` (xem bảng phối hợp trong [plan.md](plan.md#phối-hợp-với-nhóm)).
 2. **Mục 4.9 `registrations` (C):**
-   - Thêm `userId`, `sessionId`, `venueId`, `sessionStartAt`, `sessionEndAt`, `paymentStatus`, `pricePerPerson`, `refundAmount`, `ticketCode`, `cancelRequestId`, `sessionChanged`, `registeredAt`, `cancelledAt`, `cancelledBy`, `checkedInAt`.
+   - Thêm `userId`, `sessionId`, `venueId`, `sessionStartAt`, `sessionEndAt`, `paymentStatus`, `pricePerPerson`, `refundAmount`, `ticketCode`, `lastAddRequestId`, `cancelRequestId`, `sessionChanged`, `registeredAt`, `cancelledAt`, `cancelledBy`, `checkedInAt`.
    - Đánh dấu mọi trường là 🔒.
    - `paymentMethod`: `MOCK_PAY`, `AT_VENUE`.
 3. **Mục 4.7 `reviews`:** sửa câu "Rules chỉ cho tạo khi đơn tương ứng `COMPLETED`" thành "mọi ghi qua Edge Function `review`; sân: đơn `COMPLETED`; buổi vãng lai: đăng ký `CHECKED_IN` và buổi đã kết thúc".
