@@ -1803,3 +1803,58 @@ Kết quả mong muốn: PR CI chạy được trên GitHub, nêu rõ job nào x
 - `SKIP_BLOCKED=1 npm test` (firestore-tests): 192 passed, 5 skipped, 1 failed (T012).
 - CI trên GitHub (PR #58): Android ✅ (6 phút 32 giây), Edge Functions ✅, Firestore Rules ❌ đúng 1 ca T012.
 - Chưa chạy app trên máy ảo (không cần cho thay đổi này).
+
+## Mục 33: Sửa T012 (quyền đọc đơn của chủ sân) và VD-6 (khách xem đánh giá) theo nhờ của B và A
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-11 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | Việc chung (CI); 11 – Quản lý sân (spec 112 T012, Edge Function `checkin-booking`); 07 – Đánh giá (spec 070 R9) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5) |
+| Mục đích | Sửa test Rules còn đỏ trên CI theo nhờ của B (T012) và A (VD-6) |
+| Nhánh Git | `chore/ci-github-actions` (PR #58) |
+
+### Prompt đã dùng
+
+```
+Bối cảnh: PR #58 (CI) còn đỏ 1 test Rules T012 trong owner-operations.test.ts: rule bookings cho mọi chủ
+sân đã duyệt (isApprovedOwner) đọc mọi đơn, kể cả qrToken của cơ sở khác. B (người viết rule) nhờ mình
+sửa luôn. A nhờ sửa ca VD-6: khách chưa đăng nhập phải xem được đánh giá VISIBLE như spec 030, trong khi
+spec 070 của mình (R9) đang chặn. A cũng muốn CI chạy khi merge vào main.
+
+Yêu cầu:
+1. Sửa T012 mà không làm hỏng màn danh sách đơn và check-in QR của chủ sân; đối chiếu mô tả task T012
+   trong specs/112-owner-operations/tasks.md.
+2. Sửa Rules reviews cho khách đọc đánh giá VISIBLE; HIDDEN và list thiếu điều kiện status vẫn bị chặn;
+   cập nhật contract và spec 070 cho khớp.
+3. Kiểm tra trigger CI khi merge vào main.
+4. Chạy test Rules, Deno, unit test owner trên máy; push và xem CI trên GitHub.
+
+Ràng buộc: session spec 080 đang chạy Emulator ở cổng 8080, không động vào; máy ít RAM nên Gradle
+giới hạn bộ nhớ; không thêm dòng attribution AI.
+```
+
+### Tóm tắt phản hồi của AI
+
+- AI phát hiện `OwnerBookingRepositoryImpl` (spec 112) cũng đọc `bookings` trực tiếp theo `venueId`. Vì vậy AI không chặn hẳn quyền đọc mà đổi sang `ownsVenue(resource.data.venueId)`, đúng với mô tả task T012.
+- `checkin-booking`: `venueId` không còn bắt buộc. Server tự tra đơn theo mã đơn hoặc `qrToken`, lấy `venueId` từ chính đơn rồi mới kiểm tra quyền. Đơn của cơ sở khác trả `BOOKING_NOT_FOUND`. App bỏ đoạn tự query `bookings`.
+- `reviews`: khách đọc được đánh giá `VISIBLE` (R9), các ca còn lại vẫn bị chặn (R9b). VD-6 bỏ nhãn `[BLOCKED: C]`.
+- CI đã có sẵn trigger `push: main`, không cần sửa.
+- AI chạy test Rules trên Emulator riêng ở cổng 8181 để tránh session 080.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Chặn hẳn chủ sân đọc `bookings` như test cũ | Bỏ | Làm hỏng màn danh sách đơn của D, trái với mô tả task T012 |
+| Server tra `qrToken`, `venueId` không bắt buộc | Dùng | App không có `venueId` lúc quét QR; không cần đổi domain |
+| Lỗi đơn của cơ sở khác trả cùng mã với "không tồn tại" | Dùng | Không lộ việc mã đơn có tồn tại |
+
+### Cách kiểm chứng
+
+- Rules: 198 qua, chỉ còn 4 ca `[BLOCKED: D]`.
+- `checkin-booking`: 7/7 test.
+- `compileDebugKotlin` và unit test owner xanh.
+- CI trên GitHub xanh cả 3 job.
+- Chưa test check-in QR trên thiết bị.
