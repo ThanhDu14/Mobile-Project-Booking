@@ -97,3 +97,33 @@ Lưu ảnh chụp Q1, Q11, Q13, Q17 vào `docs/features/03-court-detail/screensh
 | Q12 | Người chơi đăng nhập (`demo-truong-chinh-909`) | **Đạt** | "Sân chưa có đánh giá", không có "Xem tất cả"; không đọc `reviews` (`ratingCount == 0`). |
 
 Phát hiện khi chạy (2026-11-06, ngoài US4): trên Firestore thật `amenities` không có khối `match` trong `firestore.rules` nên mục "Tiện ích" báo lỗi với mọi người; `districts` chỉ cho người đã đăng nhập. Đề xuất cho D (T074).
+
+### 2026-11-11 – US5, US6, Polish (nhánh `feature/030-court-detail-us5-us6`)
+
+**Đã chạy tự động:**
+
+| Lệnh | Kết quả | Ghi chú |
+|---|---|---|
+| `./gradlew testDebugUnitTest` | 939/940 xanh | 32 test mới của 030 (`PendingActionResolverTest` 7, `CourtDetailViewModelUs5Test` 13, `CourtDetailViewModelUs6Test` 12) đều xanh; 131/131 test gói `courtdetail` xanh. Test đỏ duy nhất là `OwnerBookingsViewModelTest.emitsBookingsAndFiltersByPendingUpcomingPast` (spec 112), cố định ngày 06/11/2026 là "sắp tới" nên đỏ từ 07/11, không liên quan 030 |
+| `cd firestore-tests && npm test` (Emulator cổng 8085, xem dưới) | 191/198 xanh | 030: VD-1b, VD-3, VD-4, VD-10 `[BLOCKED: D]`, VD-6 `[BLOCKED: C]`. Ngoài 030: `owner-operations` T012 (112), `recurringHoldTransaction` T042 (041) |
+| `./gradlew lintDebug` | 1 lỗi mức Error, không thuộc 030 | `feature/booking/ui/adapter/SlotMatrixRowAdapter.kt:203` `DiffUtilEquals` (040). File của 030 không có lỗi; còn cảnh báo `PluralsCandidate` (tiếng Việt không có số nhiều), `Overdraw`, `TooManyViews` |
+| `./gradlew assembleDebug` | Đạt | |
+
+**Hệ quả của Rules hiện tại (VD-3, VD-4, VD-10 còn đỏ):** khách mở cơ sở không tồn tại hoặc `DELETED` nhận `PERMISSION_DENIED` nên thấy màn hình rút gọn "Sân tạm ngừng hoạt động" thay vì "Sân không còn tồn tại"; người đã đăng nhập mở cơ sở `HIDDEN`/`LOCKED`/`DELETED`/không tồn tại thấy lỗi chung kèm "Thử lại" (không crash). Q17, Q19 và ca thứ ba của `CourtDetailFlowTest` chỉ đạt sau khi D sửa Rules `venues`.
+
+**[CHỜ NGƯỜI CHẠY] Cần máy ảo + Firebase Emulator ở cổng 8080.** Ngày 2026-11-11 cổng 8080 trên máy dev đang bị một service khác chiếm, app lại cố định `useEmulator("10.0.2.2", 8080)`, nên chưa chạy được các mục dưới. Tắt service đó rồi chạy:
+
+```bash
+# Terminal 1
+npx firebase-tools@15 emulators:start --only auth,firestore --project demo-smashnow
+# Terminal 2: seed như §1, đặt USE_EMULATOR=true trong local.properties
+./gradlew connectedDebugAndroidTest \
+  -Pandroid.testInstrumentationRunnerArguments.package=com.example.booking_app.feature.courtdetail
+```
+
+- [ ] T076 `FirestoreVenueDetailRepositoryTest` (7 test)
+- [ ] T070 `CourtDetailFlowTest` (3 test; ca "khong-co" chờ Rules của D)
+- [ ] T071 Q1–Q24 ở §4. Q13–Q16 (US5) và Q17–Q20 (US6) là phần mới. Đo SC-001 (20 lần, máy ảo `Network type: LTE`): app chưa có log mốc thời gian riêng, nên đo từ dòng `ActivityTaskManager`/`Choreographer` của Logcat hoặc quay màn hình rồi đếm khung hình từ lúc bấm thẻ ở 020 tới khi tên sân và ảnh đầu hiện
+- [ ] T072 Chụp Q1, Q11, Q13, Q17 → `docs/features/03-court-detail/screenshots/03_court-detail_buocX_mo-ta.png`, rồi điền bảng ảnh trong README nhóm 03
+- [ ] T077 (Q25) Đăng nhập chủ sân đã duyệt, tạo cơ sở qua giao diện 111 (ảnh tự chụp, tiện ích, 2 loại mặt sân, số giả hợp lệ), chạy lại Q1, Q6, Q9
+- [ ] T078 (Q26) 5 người ngoài nhóm, không ghi tên

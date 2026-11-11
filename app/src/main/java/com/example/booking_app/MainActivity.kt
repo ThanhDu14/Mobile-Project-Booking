@@ -162,23 +162,6 @@ class MainActivity : AppCompatActivity() {
                     )
                     true
                 }
-                R.id.tab_account -> {
-                    if (viewModel.sessionState.value is SessionState.SignedIn) {
-                        navController.navigate(
-                            R.id.nav_account,
-                            null,
-                            navOptions {
-                                launchSingleTop = true
-                                popUpTo(R.id.playerHomePlaceholderFragment)
-                            },
-                        )
-                        true
-                    } else {
-                        // Khách chưa có trang Tài khoản: mở đăng nhập, tab vẫn ở Trang chủ.
-                        navController.navigate(LOGIN)
-                        false
-                    }
-                }
                 R.id.tab_admin_home -> {
                     navController.popBackStack(R.id.adminHomeFragment, false)
                     true
@@ -298,8 +281,7 @@ class MainActivity : AppCompatActivity() {
                     }
                 else -> null
             }
-        } else {
-            when (destination.id) {
+            else -> when (destination.id) {
                 R.id.homeFragment -> R.id.tab_home
                 R.id.myBookingsFragment -> R.id.tab_bookings
                 // Giữ sáng tab đã mở trang Tài khoản.

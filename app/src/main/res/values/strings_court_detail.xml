@@ -66,8 +66,6 @@
     <string name="court_detail_criteria_court">Chất lượng sân</string>
     <string name="court_detail_criteria_cleanliness">Vệ sinh</string>
     <string name="court_detail_criteria_service">Phục vụ</string>
-    <string name="court_detail_rating_value">%1$s</string>
-    <string name="court_detail_rating_with_count">★ %1$s (%2$s)</string>
     <string name="court_detail_cd_review">%1$s, %2$d trên 5 sao, ngày %3$s</string>
     <string name="court_detail_cd_review_photo">Ảnh %1$d của đánh giá</string>
     <string name="court_detail_cd_criteria">%1$s: %2$s trên 5</string>
@@ -123,6 +121,4 @@
     <string name="court_detail_cd_amenity">Tiện ích %1$s</string>
     <string name="court_detail_cd_rating">Điểm %1$s trên 5</string>
     <string name="court_detail_photo_indicator">%1$d/%2$d</string>
-    <string name="court_detail_booking_login_required">Bạn cần đăng nhập để đặt sân.</string>
-    <string name="court_detail_booking_login">Đăng nhập</string>
 </resources>

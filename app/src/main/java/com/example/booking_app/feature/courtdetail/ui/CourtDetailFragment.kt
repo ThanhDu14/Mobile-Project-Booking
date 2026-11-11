@@ -11,6 +11,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.DrawableRes
+import androidx.appcompat.app.AlertDialog
 import androidx.core.content.getSystemService
 import androidx.core.net.toUri
 import androidx.core.os.bundleOf
@@ -34,8 +35,8 @@ import com.example.booking_app.databinding.ViewCourtDetailSectionErrorBinding
 import com.example.booking_app.feature.courtdetail.domain.model.LatLng
 import com.example.booking_app.feature.courtdetail.domain.model.OpeningStatus
 import com.example.booking_app.feature.courtdetail.domain.model.PhoneDisplay
+import com.example.booking_app.feature.courtdetail.domain.model.VenueAvailability
 import com.google.android.material.chip.Chip
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -66,6 +67,7 @@ class CourtDetailFragment : Fragment() {
     private var mapController: VenueMapController? = null
     private var mapPoint: LatLng? = null
     private var mapFailed = false
+    private var loginPrompt: AlertDialog? = null
 
     private val pageCallback = object : ViewPager2.OnPageChangeCallback() {
         override fun onPageSelected(position: Int) {
@@ -103,8 +105,12 @@ class CourtDetailFragment : Fragment() {
             if (viewModel.uiState.value.courts is Section.Error) viewModel.onRetry(SectionId.COURTS)
         }
         binding.bookButton.setOnClickListener { viewModel.onBookClicked() }
-        // TODO(C): mở smashnow://chat/direct khi 091 có deep link (research R7); US5 nối vào ViewModel.
-        binding.chatButton.setOnClickListener { showMessage(CourtDetailMessage.COMING_SOON) }
+        binding.chatButton.setOnClickListener { viewModel.onChatClicked() }
+        binding.favoriteButton.setOnClickListener { viewModel.onFavoriteClicked() }
+        binding.goneState.goneBackButton.setOnClickListener { findNavController().navigateUp() }
+        binding.goneState.goneRemoveFavoriteButton.setOnClickListener { viewModel.onRemoveFavoriteFromGone() }
+        binding.suspendedGuestState.suspendedGuestBackButton.setOnClickListener { findNavController().navigateUp() }
+        binding.suspendedGuestState.suspendedGuestLoginButton.setOnClickListener { viewModel.onLoginClicked() }
 
         mapController = null
         mapPoint = null
@@ -128,6 +134,19 @@ class CourtDetailFragment : Fragment() {
                 launch { viewModel.effects.collect(::handle) }
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Quay lại từ nav_auth: chạy hoặc hủy thao tác đang chờ (research R11).
+        viewModel.onScreenVisible()
+    }
+
+    override fun onPause() {
+        viewModel.onScreenHidden()
+        loginPrompt?.dismiss()
+        loginPrompt = null
+        super.onPause()
     }
 
     override fun onDestroyView() {
@@ -154,8 +173,14 @@ class CourtDetailFragment : Fragment() {
             binding.fullScreenErrorText.setText(errorText(header.error))
         }
 
+        // US6: hai trạng thái phủ toàn màn hình (FR-022, research R10).
+        binding.goneState.root.isVisible = state.availability == VenueAvailability.GONE
+        binding.goneState.goneRemoveFavoriteButton.isVisible = state.isFavorite == true
+        binding.suspendedGuestState.root.isVisible = state.availability == VenueAvailability.SUSPENDED_GUEST
+
         binding.offlineBanner.isVisible = state.isOffline
         if (header is Section.Content) renderHeader(header.data, state.photoIndex)
+        renderFavorite(state)
         renderCourts(state)
         renderDistanceCard(state)
         renderPhoneCard(state.phone)
@@ -210,6 +235,21 @@ class CourtDetailFragment : Fragment() {
         binding.photoIndicator.text = getString(R.string.court_detail_photo_indicator, shown, items.size)
         binding.photoIndicator.contentDescription =
             getString(R.string.court_detail_cd_photo_indicator, shown, items.size)
+    }
+
+    /** Trái tim hiện cả với khách (bấm thì mời đăng nhập); biểu tượng và mô tả theo [CourtDetailUiState.isFavorite]. */
+    private fun renderFavorite(state: CourtDetailUiState) {
+        val button = binding.favoriteButton
+        button.isVisible = state.header is Section.Content
+        val favorite = state.isFavorite == true
+        // Cơ sở tạm ngừng: chỉ bỏ yêu thích được (FR-021); chưa yêu thích thì nút tắt.
+        val enabled = favorite || state.availability != VenueAvailability.SUSPENDED
+        button.isEnabled = enabled
+        button.alpha = if (enabled) 1f else DISABLED_ALPHA
+        button.setImageResource(if (favorite) R.drawable.ic_favorite_24 else R.drawable.ic_favorite_border_24)
+        button.contentDescription = getString(
+            if (favorite) R.string.court_detail_cd_favorite_remove else R.string.court_detail_cd_favorite_add,
+        )
     }
 
     private fun renderCourts(state: CourtDetailUiState) {
@@ -453,13 +493,12 @@ class CourtDetailFragment : Fragment() {
 
     private fun handle(effect: CourtDetailEffect) {
         when (effect) {
-            is CourtDetailEffect.ShowLoginPrompt -> MaterialAlertDialogBuilder(requireContext())
-                .setMessage(R.string.court_detail_booking_login_required)
-                .setNegativeButton(android.R.string.cancel, null)
-                .setPositiveButton(R.string.court_detail_booking_login) { _, _ ->
-                    authNavigator.openLogin(findNavController())
-                }
-                .show()
+            is CourtDetailEffect.ShowLoginPrompt -> {
+                loginPrompt?.dismiss()
+                loginPrompt = LoginPromptDialog.show(requireContext(), effect.action, viewModel::onLoginChosen)
+            }
+            CourtDetailEffect.OpenLogin -> authNavigator.openLogin(findNavController(), returnTo = null)
+            is CourtDetailEffect.OpenChat -> openChat(effect.venueId)
             is CourtDetailEffect.OpenBookingGrid -> {
                 // TODO(B): truyền date/startTime/endTime khi 040 có tham số (research R1).
                 findNavController().navigate(
@@ -476,7 +515,16 @@ class CourtDetailFragment : Fragment() {
             is CourtDetailEffect.CopyPhone -> copyPhone(effect.text)
             is CourtDetailEffect.OpenDirections -> openDirections(effect)
             is CourtDetailEffect.OpenReviews -> openReviews(effect.venueId)
-            else -> Unit // Các sự kiện của US4–US5 nối vào khi làm các story đó.
+        }
+    }
+
+    /** Hội thoại với chủ sân của 091 qua deep link (contracts/navigation.md §2). */
+    private fun openChat(venueId: String) {
+        try {
+            findNavController().navigate("smashnow://chat/direct?venueId=${Uri.encode(venueId)}".toUri())
+        } catch (_: IllegalArgumentException) {
+            // TODO(C): bỏ nhánh này khi 091 khai báo deep link smashnow://chat/direct?venueId= trong nav graph.
+            showMessage(CourtDetailMessage.COMING_SOON)
         }
     }
 
@@ -543,6 +591,8 @@ class CourtDetailFragment : Fragment() {
     }
 
     private companion object {
+        const val DISABLED_ALPHA = 0.38f
+
         /** `iconKey` của `amenities` (spec 020) → drawable; khóa lạ dùng biểu tượng chung. */
         @DrawableRes
         fun amenityIcon(iconKey: String): Int = when (iconKey.replace('-', '_')) {

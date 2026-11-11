@@ -5,10 +5,8 @@
     <dimen name="court_detail_quick_card_min_height">104dp</dimen>
     <dimen name="court_detail_bottom_bar_height">88dp</dimen>
     <dimen name="court_detail_section_gap">24dp</dimen>
-    <dimen name="court_detail_icon_button_bg">40dp</dimen>
     <dimen name="court_detail_avatar_size">40dp</dimen>
     <dimen name="court_detail_review_photo_size">64dp</dimen>
     <dimen name="court_detail_rating_big">40sp</dimen>
     <dimen name="court_detail_criteria_bar_width">96dp</dimen>
-    <dimen name="court_detail_content_max_width">720dp</dimen>
 </resources>

@@ -187,7 +187,7 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
   - `fetchStatusFromServer` dùng `get(Source.SERVER)`.
 
   Cho T020 xanh
-- [ ] T076 [P] *(thêm sau `/speckit-analyze` C2, đặt ID nối tiếp để không đánh số lại; làm ngay sau T023)* Test Repository trên Firestore Emulator `ATEST/feature/courtdetail/data/FirestoreVenueDetailRepositoryTest.kt` (constitution IV bắt buộc test Repository). Nạp dữ liệu bằng Admin SDK của Emulator hoặc Firestore client với Rules tắt, không dùng project thật:
+- [ ] T076 **[CHỜ NGƯỜI CHẠY: cần Firebase Emulator cổng 8080, xem quickstart §5 ngày 2026-11-11]** [P] *(thêm sau `/speckit-analyze` C2, đặt ID nối tiếp để không đánh số lại; làm ngay sau T023)* Test Repository trên Firestore Emulator `ATEST/feature/courtdetail/data/FirestoreVenueDetailRepositoryTest.kt` (constitution IV bắt buộc test Repository). Nạp dữ liệu bằng Admin SDK của Emulator hoặc Firestore client với Rules tắt, không dùng project thật:
   - `observeVenue`: phát `Found` với đúng trường; sửa `status` thành `LOCKED` thì phát lại `Found` với `SUSPENDED`; xóa document thì phát `Gone`; hủy người thu thập thì listener bị gỡ (không còn phát);
   - `loadCourts`, `loadPriceRules`: đọc đủ bản ghi, `priceRules` qua `PriceRuleMapper`, `endTime = "2400"` được giữ;
   - `fetchStatusFromServer`: trả đúng trạng thái; tắt mạng (`disableNetwork()`) thì trả `null`;
@@ -448,7 +448,7 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
 
 ### Tests cho User Story 5 ⚠️ viết trước, phải fail
 
-- [ ] T059 [P] [US5] Unit test `TEST/feature/courtdetail/domain/PendingActionResolverTest.kt`: **đủ 5 dòng** của bảng ở [data-model §2.4](data-model.md#24-thao-tác-đang-chờ-r11):
+- [x] T059 [P] [US5] Unit test `TEST/feature/courtdetail/domain/PendingActionResolverTest.kt`: **đủ 5 dòng** của bảng ở [data-model §2.4](data-model.md#24-thao-tác-đang-chờ-r11):
   - `pending == null` → `Wait`;
   - `SignedIn` + có `pending` + màn hình hiện + `ownerId == uid` + `pending ∈ {BOOK, CHAT}` → `RejectOwnVenue`;
   - `SignedIn` + `FAVORITE` của chủ cơ sở → `Run(FAVORITE)`;
@@ -457,7 +457,7 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
   - màn hình không hiện → `Wait`.
 
   Thêm ca `Loading`/`Initializing`/`NeedsConsent` → `Wait`.
-- [ ] T060 [P] [US5] Unit test `TEST/feature/courtdetail/ui/CourtDetailViewModelUs5Test.kt` (`SessionManager` giả, `FavoriteGateway` giả, `SavedStateHandle`):
+- [x] T060 [P] [US5] Unit test `TEST/feature/courtdetail/ui/CourtDetailViewModelUs5Test.kt` (`SessionManager` giả, `FavoriteGateway` giả, `SavedStateHandle`):
   - khách bấm "Đặt sân", trái tim, chat → effect `ShowLoginPrompt(action)` tương ứng, không gọi repository nào;
   - `onLoginChosen(BOOK)` → `SavedStateHandle["pendingAction"] == "BOOK"` và effect `OpenLogin`;
   - chuyển `SignedIn` rồi `onScreenVisible()` → chạy **đúng một lần**: `BOOK` → `CheckVenueBookable` rồi `OpenBookingGrid(venueId, window)`; `FAVORITE` → `setFavorite(true)` một lần; `CHAT` → `OpenChat(venueId)`; gọi `onScreenVisible()` lần hai không chạy lại;
@@ -468,14 +468,14 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
 
 ### Implementation cho User Story 5
 
-- [ ] T061 [P] [US5] Cài `CD/domain/PendingActionResolver.kt`. Cho T059 xanh
-- [ ] T062 [US5] Tạo `CD/domain/FavoriteGateway.kt` (interface: `observeIsFavorite(venueId): Flow<Boolean>`, `suspend fun setFavorite(venue: VenueSummary, favorite: Boolean): Result<Unit>`). Bản cài đặt:
+- [x] T061 [P] [US5] Cài `CD/domain/PendingActionResolver.kt`. Cho T059 xanh
+- [x] T062 [US5] Tạo `CD/domain/FavoriteGateway.kt` (interface: `observeIsFavorite(venueId): Flow<Boolean>`, `suspend fun setFavorite(venue: VenueSummary, favorite: Boolean): Result<Unit>`). Bản cài đặt:
   - **khi 070 đã có `FavoriteRepository`**: `CD/data/ReviewFavoriteGateway.kt` gọi interface của 070;
   - **chưa có**: không bind, nút trái tim ẩn, kèm `// TODO(C): bind FavoriteRepository của 070`.
 
   `VenueSummary` dùng `CORE/model/VenueSummary.kt` theo [070 ui-screens §2](../070-review-favorite/contracts/ui-screens.md): `venueId`, `name`, `photoPath`, `address`. Tạo file nếu 070 chưa tạo
-- [ ] T063 [US5] Thêm vào `CD/ui/CourtDetailViewModel.kt`: `onScreenVisible`, `onLoginChosen`, `onFavoriteClicked` (lạc quan, lỗi thì trả lại và hiện snackbar), `onChatClicked`, kiểm tra chủ cơ sở (`ownerId == sessionManager.currentUid()`), `isFavorite`. Cho T060 xanh
-- [ ] T064 [US5] Cài `CD/ui/LoginPromptDialog.kt` (`MaterialAlertDialogBuilder`, tiêu đề theo `PendingAction`, nút "Đăng nhập" / "Để sau") và nối vào `CD/ui/CourtDetailFragment.kt`:
+- [x] T063 [US5] Thêm vào `CD/ui/CourtDetailViewModel.kt`: `onScreenVisible`, `onLoginChosen`, `onFavoriteClicked` (lạc quan, lỗi thì trả lại và hiện snackbar), `onChatClicked`, kiểm tra chủ cơ sở (`ownerId == sessionManager.currentUid()`), `isFavorite`. Cho T060 xanh
+- [x] T064 [US5] Cài `CD/ui/LoginPromptDialog.kt` (`MaterialAlertDialogBuilder`, tiêu đề theo `PendingAction`, nút "Đăng nhập" / "Để sau") và nối vào `CD/ui/CourtDetailFragment.kt`:
   - `onResume` gọi `viewModel.onScreenVisible()`;
   - `OpenLogin` → `authNavigator.openLogin(findNavController(), returnTo = null)` (010 R15);
   - `OpenChat` → deep link `smashnow://chat/direct?venueId=`; 091 chưa có thì bắt `IllegalArgumentException` và hiện "Tính năng sắp có", kèm `// TODO(C)`;
@@ -495,7 +495,7 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
 
 ### Tests cho User Story 6 ⚠️ viết trước, phải fail
 
-- [ ] T065 [P] [US6] Unit test `TEST/feature/courtdetail/ui/CourtDetailViewModelUs6Test.kt`:
+- [x] T065 [P] [US6] Unit test `TEST/feature/courtdetail/ui/CourtDetailViewModelUs6Test.kt`:
   - `SUSPENDED` → `bottomBar = Suspended`, không có "Đặt sân"/chat; bảng giá và đánh giá vẫn tải (US6-3); bấm trái tim khi chưa yêu thích → không gọi `setFavorite`, khi đang yêu thích → `setFavorite(false)` (US6-2);
   - `GONE` → trạng thái "không còn tồn tại", `onRemoveFavoriteFromGone()` gọi `setFavorite(false)` khi đang yêu thích;
   - `SUSPENDED_GUEST` → trạng thái rút gọn, không tải `courts`/`priceRules`/`reviews`;
@@ -505,8 +505,8 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
 
 ### Implementation cho User Story 6
 
-- [ ] T066 [US6] Thêm xử lý `availability` vào `CD/ui/CourtDetailViewModel.kt` (`SUSPENDED`, `GONE`, `SUSPENDED_GUEST`, đổi trạng thái khi đang xem). Cho T065 xanh
-- [ ] T067 [US6] Cài `RES/layout/view_court_detail_gone.xml` ("Sân không còn tồn tại", "Quay lại", "Bỏ khỏi yêu thích" khi `isFavorite == true`), `RES/layout/view_court_detail_suspended_guest.xml` ("Sân tạm ngừng hoạt động", "Quay lại", "Đăng nhập" gọi `AuthNavigator`), và ghi chú nổi bật "Sân tạm ngừng hoạt động" ở mục 2 của `fragment_court_detail.xml`. Nối vào `CD/ui/CourtDetailFragment.kt`
+- [x] T066 [US6] Thêm xử lý `availability` vào `CD/ui/CourtDetailViewModel.kt` (`SUSPENDED`, `GONE`, `SUSPENDED_GUEST`, đổi trạng thái khi đang xem). Cho T065 xanh
+- [x] T067 [US6] Cài `RES/layout/view_court_detail_gone.xml` ("Sân không còn tồn tại", "Quay lại", "Bỏ khỏi yêu thích" khi `isFavorite == true`), `RES/layout/view_court_detail_suspended_guest.xml` ("Sân tạm ngừng hoạt động", "Quay lại", "Đăng nhập" gọi `AuthNavigator`), và ghi chú nổi bật "Sân tạm ngừng hoạt động" ở mục 2 của `fragment_court_detail.xml`. Nối vào `CD/ui/CourtDetailFragment.kt`
 
 **Checkpoint**: cả 6 user story chạy độc lập; quickstart Q17–Q20 đạt (Q17, Q19 cần Rules của D).
 
@@ -514,23 +514,23 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
 
 ## Phase 9: Polish & Cross-Cutting
 
-- [ ] T068 [P] Viết `RES/layout-w600dp/fragment_court_detail.xml` hai cột ([R12](research.md#r12-lỗi-offline-và-giữ-trạng-thái-fr-025-fr-026-sc-007-fr-027)): trái 40% (ảnh, bản đồ), phải 60% (thông tin, bảng giá, đánh giá), thanh "Đặt sân" cố định ở cuối. ID view giống bản điện thoại để Fragment dùng chung ViewBinding
-- [ ] T069 [P] Rà FR-027 trên mọi layout của 030 và `fragment_photo_viewer.xml`:
+- [x] T068 [P] Viết `RES/layout-w600dp/fragment_court_detail.xml` hai cột ([R12](research.md#r12-lỗi-offline-và-giữ-trạng-thái-fr-025-fr-026-sc-007-fr-027)): trái 40% (ảnh, bản đồ), phải 60% (thông tin, bảng giá, đánh giá), thanh "Đặt sân" cố định ở cuối. ID view giống bản điện thoại để Fragment dùng chung ViewBinding
+- [x] T069 [P] Rà FR-027 trên mọi layout của 030 và `fragment_photo_viewer.xml`:
   - chế độ tối dùng màu từ `values-night`, không hardcode;
   - thứ tự TalkBack tên → địa chỉ → điểm → trạng thái mở cửa → giá (`accessibilityTraversalAfter` nếu cần);
   - mọi nút và biểu tượng có `contentDescription`; vùng chạm ≥ 48dp;
   - mỗi mục có đủ 4 trạng thái kèm "Thử lại" (FR-025).
-- [ ] T070 [P] Espresso (nên có) `ATEST/feature/courtdetail/CourtDetailFlowTest.kt` trên Auth/Firestore Emulator với seed:
+- [ ] T070 **[CHỜ NGƯỜI CHẠY: cần Firebase Emulator cổng 8080, xem quickstart §5 ngày 2026-11-11]** [P] Espresso (nên có) `ATEST/feature/courtdetail/CourtDetailFlowTest.kt` trên Auth/Firestore Emulator với seed:
   - mở `smashnow://venue/demo-truong-chinh-909?date=…&start=1900&end=2100` → thấy "Khung bạn chọn" và "130.000 đ/giờ";
   - khách bấm "Đặt sân" → hộp mời đăng nhập → "Để sau" ở lại;
   - mở `smashnow://venue/khong-co` → "Sân không còn tồn tại".
 
   Tắt autofill trong lúc chạy như 010 T075
-- [ ] T071 Chạy quickstart [§4](quickstart.md#4-kịch-bản-thủ-công-trên-máy-ảo-emulator) **Q1–Q24** trên Emulator với seed, ghi kết quả thật vào cuối `specs/030-court-detail/quickstart.md`:
+- [ ] T071 **[CHỜ NGƯỜI CHẠY: cần Firebase Emulator cổng 8080, xem quickstart §5 ngày 2026-11-11]** Chạy quickstart [§4](quickstart.md#4-kịch-bản-thủ-công-trên-máy-ảo-emulator) **Q1–Q24** trên Emulator với seed, ghi kết quả thật vào cuối `specs/030-court-detail/quickstart.md`:
   - đo SC-001 bằng Logcat (mốc bấm thẻ → `header = Content` + ảnh đầu đã vẽ) **20 lần** trên máy ảo giới hạn mạng 4G (`Network type: LTE`), đạt khi ≤ 1 lần vượt 3 giây (≥ 95%);
   - kịch bản nào bị chặn bởi B, C, D thì ghi "[BLOCKED: X]" và lý do.
-- [ ] T072 [P] Chụp ảnh Q1, Q11, Q13, Q17 lưu vào `docs/features/03-court-detail/screenshots/` theo tên `03_court-detail_buocX_mo-ta.png` (ảnh đã che số điện thoại nếu là số thật)
-- [ ] T073 [P] Cập nhật `docs/features/03-court-detail/README.md`:
+- [ ] T072 **[CHỜ NGƯỜI CHẠY: cần Firebase Emulator cổng 8080, xem quickstart §5 ngày 2026-11-11]** [P] Chụp ảnh Q1, Q11, Q13, Q17 lưu vào `docs/features/03-court-detail/screenshots/` theo tên `03_court-detail_buocX_mo-ta.png` (ảnh đã che số điện thoại nếu là số thật)
+- [x] T073 [P] Cập nhật `docs/features/03-court-detail/README.md`:
   - trạng thái "🟨 Đang làm";
   - link spec, plan, tasks;
   - đánh dấu các mục phạm vi đã xong;
@@ -538,13 +538,13 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
   - ghi chú quyết định (osmdroid, dữ liệu seed, R13).
 
   Cập nhật dòng nhóm 03 ở cột *Trạng thái* và *Spec* trong `docs/features/README.md`. Ghi chú ảnh chụp: "Dữ liệu demo lấy từ datlich.alobo.vn, chỉ dùng cho mục đích học tập" (quyết định C1, [research R13](research.md#r13-dữ-liệu-seed-của-nhóm-scriptsseed-và-constitution-vi))
-- [ ] T074 [P] Gửi đề xuất sửa đặc tả CSDL ([data-model §4](data-model.md#4-thay-đổi-cần-đưa-vào-docsdesigndatabasereadmemd)) cho người phụ trách bằng comment trong PR. **Không tự sửa** `docs/design/database/README.md` ở các mục của D, C:
+- [x] T074 **[Đã gửi trong mô tả PR #56]** [P] Gửi đề xuất sửa đặc tả CSDL ([data-model §4](data-model.md#4-thay-đổi-cần-đưa-vào-docsdesigndatabasereadmemd)) cho người phụ trách bằng comment trong PR. **Không tự sửa** `docs/design/database/README.md` ở các mục của D, C:
   - D: `ratingSums`, `"2400"`, thứ tự `photoPaths`, `phone` công khai, `DELETED`, Rules `venues`;
   - B + D: `daysOfWeek`;
   - C: Rules `reviews`.
-- [ ] T075 Chạy `./gradlew lint testDebugUnitTest assembleDebug` (0 lỗi Lint mức Error) và `npm test` trong `firestore-tests/`. Ghi số test xanh/đỏ vào PR, test VD-* còn đỏ thì ghi rõ do chờ D/C. Rà `grep -rn "TODO(B)\|TODO(C)\|TODO(D)" app/src` và liệt kê các chỗ còn lại trong PR. Ghi log AI vào `docs/ai-log/AI_log_1.md`
-- [ ] T077 *(thêm sau `/speckit-analyze` C1)* Khi spec 111 (D) đã cho chủ sân tạo cơ sở: đăng nhập một tài khoản chủ sân đã duyệt trên Emulator, tạo 1 cơ sở **bằng giao diện 111** với ảnh tự chụp hoặc miễn phí bản quyền, tiện ích, ít nhất 2 loại mặt sân và số điện thoại giả hợp lệ. Chạy lại Q1, Q6, Q9 trên cơ sở này để kiểm tra 030 đọc đúng dữ liệu do chủ sân ghi (path Supabase thay vì URL đầy đủ, `amenityIds` có giá trị, nhiều `surfaceType`). Ghi kết quả vào `specs/030-court-detail/quickstart.md`. Chưa có 111 thì ghi `[BLOCKED: D]`
-- [ ] T078 [P] *(thêm sau `/speckit-analyze` G1)* Thử SC-003 với 5 người (bạn cùng lớp, không phải thành viên nhóm): đưa máy đang mở chi tiết `demo-k3`, yêu cầu tìm giá giờ cao điểm, giờ đóng cửa và số điện thoại; đo thời gian từng người. Đạt khi ≥ 4/5 người xong dưới 30 giây. Ghi kết quả (không ghi tên người thử) vào `specs/030-court-detail/quickstart.md`
+- [ ] T075 **[ĐÃ CHẠY 2026-11-11: còn 1 lỗi Lint Error của 040 (SlotMatrixRowAdapter) và 1 unit test đỏ của 112, xem quickstart §5]** Chạy `./gradlew lint testDebugUnitTest assembleDebug` (0 lỗi Lint mức Error) và `npm test` trong `firestore-tests/`. Ghi số test xanh/đỏ vào PR, test VD-* còn đỏ thì ghi rõ do chờ D/C. Rà `grep -rn "TODO(B)\|TODO(C)\|TODO(D)" app/src` và liệt kê các chỗ còn lại trong PR. Ghi log AI vào `docs/ai-log/AI_log_1.md`
+- [ ] T077 **[CHỜ NGƯỜI CHẠY: cần Firebase Emulator cổng 8080, xem quickstart §5 ngày 2026-11-11]** *(thêm sau `/speckit-analyze` C1)* Khi spec 111 (D) đã cho chủ sân tạo cơ sở: đăng nhập một tài khoản chủ sân đã duyệt trên Emulator, tạo 1 cơ sở **bằng giao diện 111** với ảnh tự chụp hoặc miễn phí bản quyền, tiện ích, ít nhất 2 loại mặt sân và số điện thoại giả hợp lệ. Chạy lại Q1, Q6, Q9 trên cơ sở này để kiểm tra 030 đọc đúng dữ liệu do chủ sân ghi (path Supabase thay vì URL đầy đủ, `amenityIds` có giá trị, nhiều `surfaceType`). Ghi kết quả vào `specs/030-court-detail/quickstart.md`. Chưa có 111 thì ghi `[BLOCKED: D]`
+- [ ] T078 **[CHỜ NGƯỜI CHẠY: cần 5 người ngoài nhóm thử]** [P] *(thêm sau `/speckit-analyze` G1)* Thử SC-003 với 5 người (bạn cùng lớp, không phải thành viên nhóm): đưa máy đang mở chi tiết `demo-k3`, yêu cầu tìm giá giờ cao điểm, giờ đóng cửa và số điện thoại; đo thời gian từng người. Đạt khi ≥ 4/5 người xong dưới 30 giây. Ghi kết quả (không ghi tên người thử) vào `specs/030-court-detail/quickstart.md`
 
 ---
 
