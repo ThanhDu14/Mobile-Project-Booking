@@ -3,12 +3,14 @@ package com.example.booking_app.feature.dropin.ui.list
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.example.booking_app.core.testing.MainDispatcherRule
+import com.example.booking_app.feature.dropin.domain.DropInSessionLookup
 import com.example.booking_app.feature.dropin.domain.model.DropInCursor
 import com.example.booking_app.feature.dropin.domain.model.DropInError
 import com.example.booking_app.feature.dropin.domain.model.DropInFilter
 import com.example.booking_app.feature.dropin.domain.model.DropInSession
 import com.example.booking_app.feature.dropin.domain.model.Level
 import com.example.booking_app.feature.dropin.domain.model.Page
+import com.example.booking_app.feature.dropin.domain.model.SessionStatus
 import com.example.booking_app.feature.dropin.domain.model.TimeSlot
 import com.example.booking_app.feature.dropin.domain.usecase.GetDefaultDropInFilter
 import com.example.booking_app.feature.dropin.domain.usecase.LoadDropInPage
@@ -52,11 +54,21 @@ class DropInListViewModelTest {
         defaultFilter
     }
 
+    /** Bản mới nhất của từng buổi khi danh sách hiện lại (`refreshVisible`). */
+    private val fresh = mutableMapOf<String, DropInSession>()
+    private val lookupCalls = mutableListOf<Collection<String>>()
+    private val lookup = object : DropInSessionLookup {
+        override suspend fun getByIds(ids: Collection<String>): Map<String, DropInSession> {
+            lookupCalls += ids
+            return fresh.filterKeys { it in ids }
+        }
+    }
+
     /** Bộ nhớ bộ lọc dùng chung trong phiên (singleton), mỗi test một bản mới. */
     private val memory = DropInFilterMemory()
 
     private fun viewModel(handle: SavedStateHandle = SavedStateHandle()) =
-        DropInListViewModel(handle, loadPage, getDefaultFilter, memory)
+        DropInListViewModel(handle, loadPage, getDefaultFilter, memory, lookup)
 
     private fun s(id: String, hoursFromNow: Long) = session(id = id, startAt = NOW.plusSeconds(hoursFromNow * 3600))
 
@@ -68,6 +80,7 @@ class DropInListViewModelTest {
             { _, _ -> gate.await() },
             getDefaultFilter,
             memory,
+            lookup,
         )
         runCurrent()
         assertEquals(DropInListUiState.Loading, vm.uiState.value)
@@ -286,5 +299,61 @@ class DropInListViewModelTest {
             vm.onSessionClicked("s9")
             assertEquals(DropInListEvent.OpenDetail("s9"), awaitItem())
         }
+    }
+
+    // ---------- Quay lại danh sách: cập nhật số chỗ (bug: đăng ký xong vẫn hiện số cũ) ----------
+
+    @Test
+    fun `hien lai - cap nhat so cho cua buoi dang hien, giu trang da tai, khong Loading`() = runTest {
+        results += Result.success(Page(listOf(s("a", 2), s("b", 5)), DropInCursor(NOW, "b")))
+        results += Result.success(Page(listOf(s("c", 9)), null))
+        val vm = viewModel()
+        advanceUntilIdle()
+        vm.loadMore()
+        advanceUntilIdle()
+
+        fresh["a"] = s("a", 2).copy(registeredCount = 8)
+        fresh["c"] = s("c", 9).copy(registeredCount = 12, status = SessionStatus.FULL)
+        vm.uiState.test {
+            assertTrue(awaitItem() is DropInListUiState.Content)
+            vm.refreshVisible()
+            val content = awaitItem() as DropInListUiState.Content
+            assertEquals(listOf("a", "b", "c"), content.items.map { it.id })
+            assertEquals(listOf(8, 7, 12), content.items.map { it.registeredCount })
+            assertEquals(SessionStatus.FULL, content.items[2].status)
+            assertFalse(content.canLoadMore)
+            expectNoEvents()
+        }
+        assertEquals(setOf("a", "b", "c"), lookupCalls.single().toSet())
+        assertEquals(2, calls.size) // không tải lại trang
+    }
+
+    @Test
+    fun `hien lai - bo buoi da huy hoac co so ngung, het buoi thi Empty`() = runTest {
+        results += Result.success(Page(listOf(s("a", 2), s("b", 5)), null))
+        val vm = viewModel()
+        advanceUntilIdle()
+        fresh["a"] = s("a", 2).copy(status = SessionStatus.CANCELLED)
+        fresh["b"] = s("b", 5).copy(venueActive = false)
+        vm.refreshVisible()
+        advanceUntilIdle()
+        assertEquals(DropInListUiState.Empty(hasFilter = false), vm.uiState.value)
+    }
+
+    @Test
+    fun `hien lai - doc loi thi giu nguyen danh sach, chua co Content thi khong goi`() = runTest {
+        results += Result.failure(DropInError.Network())
+        val vm = viewModel()
+        advanceUntilIdle()
+        vm.refreshVisible()
+        advanceUntilIdle()
+        assertTrue(lookupCalls.isEmpty())
+
+        results += Result.success(Page(listOf(s("a", 2)), null))
+        vm.retry()
+        advanceUntilIdle()
+        vm.refreshVisible() // lookup không có "a" (đọc lỗi): giữ bản cũ
+        advanceUntilIdle()
+        assertEquals(listOf(7), (vm.uiState.value as DropInListUiState.Content).items.map { it.registeredCount })
     }
 }

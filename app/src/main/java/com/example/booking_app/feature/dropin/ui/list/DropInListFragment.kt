@@ -46,6 +46,15 @@ class DropInListFragment : Fragment(R.layout.fragment_dropin_list) {
 
     @Inject lateinit var accountEntryNavigator: AccountEntryNavigator
 
+    /**
+     * Quay về từ chi tiết/vé (hoặc mở lại app): cập nhật số chỗ của các buổi đang hiện. Lần đầu danh sách còn đang
+     * tải nên ViewModel bỏ qua.
+     */
+    override fun onStart() {
+        super.onStart()
+        viewModel.refreshVisible()
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         val binding = FragmentDropinListBinding.bind(view)

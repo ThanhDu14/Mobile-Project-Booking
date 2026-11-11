@@ -3,11 +3,13 @@ package com.example.booking_app.feature.dropin.ui.list
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.booking_app.feature.dropin.domain.DropInSessionLookup
 import com.example.booking_app.feature.dropin.domain.model.DropInCursor
 import com.example.booking_app.feature.dropin.domain.model.DropInFilter
 import com.example.booking_app.feature.dropin.domain.model.DropInSession
 import com.example.booking_app.feature.dropin.domain.model.FilterChip
 import com.example.booking_app.feature.dropin.domain.model.Page
+import com.example.booking_app.feature.dropin.domain.model.SessionStatus
 import com.example.booking_app.feature.dropin.domain.usecase.GetDefaultDropInFilter
 import com.example.booking_app.feature.dropin.domain.usecase.LoadDropInPage
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -60,6 +62,7 @@ class DropInListViewModel @Inject constructor(
     private val loadPage: LoadDropInPage,
     private val getDefaultFilter: GetDefaultDropInFilter,
     private val memory: DropInFilterMemory,
+    private val lookup: DropInSessionLookup,
 ) : ViewModel() {
 
     private val _filter = MutableStateFlow(DropInFilter())
@@ -74,6 +77,7 @@ class DropInListViewModel @Inject constructor(
     private var cursor: DropInCursor? = null
     private var loadJob: Job? = null
     private var loadMoreJob: Job? = null
+    private var refreshJob: Job? = null
 
     init {
         loadJob = viewModelScope.launch {
@@ -128,7 +132,38 @@ class DropInListViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Gọi khi danh sách hiện lại (quay về từ chi tiết/vé). Trang tải bằng `get()` một lần nên số chỗ có thể đã cũ
+     * (vừa đăng ký, hủy, thêm người): đọc lại các buổi đang hiện và cập nhật tại chỗ, giữ các trang đã tải và vị trí
+     * cuộn, không chuyển sang Loading. Buổi đã hủy/kết thúc hoặc cơ sở ngừng hoạt động thì bỏ khỏi danh sách. Đọc
+     * lỗi hoặc thiếu buổi nào thì giữ bản cũ của buổi đó.
+     */
+    fun refreshVisible() {
+        val content = _uiState.value as? DropInListUiState.Content ?: return
+        if (loadJob?.isActive == true || loadMoreJob?.isActive == true || refreshJob?.isActive == true) return
+        refreshJob = viewModelScope.launch {
+            val latest = try {
+                lookup.getByIds(content.items.map { it.id })
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                return@launch
+            }
+            val current = _uiState.value as? DropInListUiState.Content ?: return@launch
+            val items = current.items.mapNotNull { old ->
+                val now = latest[old.id] ?: return@mapNotNull old
+                now.takeIf { it.venueActive && (it.status == SessionStatus.OPEN || it.status == SessionStatus.FULL) }
+            }
+            _uiState.value = if (items.isEmpty() && !current.canLoadMore) {
+                DropInListUiState.Empty(hasFilter = !_filter.value.isEmpty)
+            } else {
+                current.copy(items = items)
+            }
+        }
+    }
+
     private fun reload() {
+        refreshJob?.cancel()
         loadJob?.cancel()
         loadMoreJob?.cancel()
         loadJob = viewModelScope.launch { loadFirstPage() }
