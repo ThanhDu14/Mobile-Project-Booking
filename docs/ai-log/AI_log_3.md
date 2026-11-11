@@ -1722,7 +1722,7 @@ tasks.md được tick đúng, có 1 commit cho US1.
 - `./gradlew assembleDebug testDebugUnitTest`: build được; 519/520 test qua. Test hỏng duy nhất là `OwnerSlotBlockViewModelTest` của nhóm D: test cố định ngày `20261030` nên hỏng từ khi qua ngày đó, không liên quan đến thay đổi lần này.
 - Chưa chạy màn hình trên máy ảo hoặc thiết bị thật.
 
-## Mục 30: Hoàn thành tuần 6 spec 080 (US1 danh sách/chi tiết buổi, US2 đăng ký và vé QR), sửa lỗi tranh chấp khi nhiều người đăng ký cùng lúc
+## Mục 32: Hoàn thành tuần 6 spec 080 (US1 danh sách/chi tiết buổi, US2 đăng ký và vé QR), sửa lỗi tranh chấp khi nhiều người đăng ký cùng lúc
 
 | Trường | Nội dung |
 |---|---|
@@ -1804,3 +1804,87 @@ UpcomingBookingsReader. Chưa push, chưa mở PR.
 - `npm test` trong `firestore-tests`: 213/220 qua, 7 test hỏng có sẵn trên main (court-detail, owner-operations, recurringHoldTransaction). `dropInSessions.test.ts` 22/22 qua.
 - Chưa chạy androidTest T020 `FirestoreDropInSessionRepositoryTest` (cần máy ảo); chưa chạy màn hình trên máy ảo hoặc thiết bị thật.
 - Commit: `8c2f7c3`, `8384b90`, `2349d64`, `9326183`, `7280a17`. Chưa push.
+
+
+## Mục 34: Deploy lên project thật, test spec 080 trên máy ảo và sửa các lỗi phát hiện khi test
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-11 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 08 – Đặt lịch vãng lai (spec 080 US1, US2; T015, T024, T027) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5) |
+| Mục đích | Deploy để test trên máy ảo; sửa lỗi mình phát hiện khi test; bàn hướng cho 2 góp ý tính năng |
+| Nhánh Git | `feature/080-drop-in-session` (PR #59) |
+
+### Prompt đã dùng
+
+**Prompt 1: Deploy để test**
+
+```
+Bối cảnh: spec 080 (đặt lịch vãng lai, US1 danh sách/chi tiết, US2 đăng ký) đã mở PR #59 nhưng chưa
+merge. App trên máy ảo trỏ Firebase/Supabase thật. Mình chọn deploy lên project thật để test đầy đủ
+rồi merge sau.
+
+Yêu cầu: trước khi deploy Rules, so sánh với bản đang chạy để không xóa rule của thành viên khác; deploy
+Rules, index và Edge Function register-drop-in; tạo vài buổi demo trên các cơ sở có sẵn (ID dễ nhận,
+xóa được sau); build app vào máy ảo và đưa kịch bản test từng bước.
+
+Ràng buộc: máy ít RAM (từng màn hình xanh), Gradle giới hạn bộ nhớ, báo trước khi cần bật máy ảo.
+```
+
+**Prompt 2: Lỗi mình phát hiện khi test (lần 1)**
+
+```
+Khi test: (1) không đăng nhập được; (2) bấm tab Vãng lai thì báo "đang phát triển". Tìm nguyên nhân
+bằng log và màn hình máy ảo rồi sửa.
+```
+
+**Prompt 3: Lỗi bộ lọc mình phát hiện**
+
+```
+Bộ lọc: (1) nút Áp dụng phải kéo sheet lên hết mới thấy; (2) chọn Khá/Nâng cao, Áp dụng, mở lại thì
+chip không còn tick; tick thêm sau lần áp dụng đầu thì không lọc được. Yêu cầu: thoát ra vào lại vẫn
+hiện đúng bộ lọc đã chọn. Tái hiện trên máy ảo, viết test trước rồi sửa.
+```
+
+**Prompt 4: Chỉnh giao diện bộ lọc theo ý mình**
+
+```
+Sheet bộ lọc vẫn mở lưng chừng như cũ, nhưng 2 nút Xóa hết và Áp dụng phải thấy ngay và luôn bám mép
+dưới màn hình dù kéo sheet lên hay xuống. Nền vùng chứa 2 nút trắng liền tới mép màn hình, không đổ
+bóng.
+```
+
+**Prompt 5: Góp ý tính năng**
+
+```
+Người dùng đã đăng ký muốn đăng ký thêm người cho buổi đó thì sao? Và mình muốn có mục "Vé của tôi"
+trong trang Tài khoản để xem vé, không phải vào Vãng lai tìm lại cơ sở. Đề xuất hướng làm.
+```
+
+### Tóm tắt phản hồi của AI
+
+- **Deploy:** AI so sánh và thấy Rules của nhánh 080 chỉ thêm rule, không xóa dòng nào so với bản đang chạy, rồi deploy Rules, index và `register-drop-in`. Hệ thống chặn AI ghi thẳng vào database thật, nên AI viết script tạo 6 buổi `demo080-p01..p06` và mình tự chạy.
+- **Không đăng nhập được:** worktree 080 dùng `google-services.json` giả (project `demo-smashnow`) nên app gọi tới project không tồn tại. AI thay bằng bản thật; lỗi này do cấu hình trên máy, không do code.
+- **Tab Vãng lai báo "đang phát triển":** `MainActivity` chưa nối tab với màn danh sách. AI thêm `openDropIn()` và xử lý tab sáng đúng.
+- **Bộ lọc:**
+  - Chỉ áp dụng được lần đầu: `savedStateHandle.remove()` gỡ luôn LiveData đang theo dõi. AI đổi thành đặt `null`.
+  - Mất bộ lọc khi đổi tab: AI thêm `DropInFilterMemory` (singleton giữ bộ lọc trong phiên chạy app) và 4 unit test.
+- **Thanh nút:** dịch thanh nút theo phần sheet đang hiện mỗi khung hình. Nền dùng inset âm để kéo trắng xuống tới mép màn hình, bỏ bóng đổ.
+- **Góp ý tính năng:** AI hỏi mình chọn hướng. Mình chọn nút "Thêm người" ở vé và làm US3 "Lượt vãng lai của tôi" (có lối vào ở trang Tài khoản) trong PR riêng. AI đã làm xong phía server của "Thêm người" (`action: "ADD_PARTY"`, 8 test), phần còn lại làm ở session sau.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Sheet mở bung hết để thấy nút (bản sửa đầu) | Bỏ | Mình muốn giữ lưng chừng, chỉ cần 2 nút bám đáy |
+| Nhớ bộ lọc trong bộ nhớ thay vì DataStore | Dùng | Đủ cho việc đổi tab; mở lại app vẫn dùng bộ lọc mặc định theo AC 1.2 |
+| Bộ lọc AI Assistant truyền vào ưu tiên hơn bộ lọc đã nhớ | Dùng | Giữ đúng AC 1.8 |
+
+### Cách kiểm chứng
+
+- Tái hiện từng lỗi trên máy ảo bằng adb (chụp màn hình, `uiautomator`), sửa xong chạy lại đúng kịch bản lỗi.
+- `DropInListViewModelTest`: 14/14.
+- Gọi thử `register-drop-in` khi chưa đăng nhập trả 401 đúng.
+- Chưa test đăng ký và vé QR trên máy ảo.
