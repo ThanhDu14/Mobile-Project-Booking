@@ -2184,3 +2184,69 @@ build lại.
 - CI PR #59 xanh cả 3 job sau commit `ff87720`.
 - Test trên máy ảo với Firebase/Supabase thật: màn "Lượt vãng lai của tôi", mở vé, Thêm người (2 → 3 người, vé cập nhật ngay).
 - Chưa test "Chỉ đường" trên máy thật.
+
+## Mục 36: Khôi phục AI log, làm US4 "Hủy đăng ký" spec 080, mở PR #61 và deploy cancel-drop-in
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-12 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 08 – Đặt lịch vãng lai (spec 080 US4; T050–T055) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5, không dùng subagent) |
+| Mục đích | Rà việc còn lại trong tuần; làm US4 hủy đăng ký; mở PR, deploy |
+| Nhánh Git | `feature/080-drop-in-us4` (PR #61 vào `main`) |
+
+### Prompt đã dùng
+
+**Prompt 1: Rà việc còn lại trong tuần**
+
+```
+Bối cảnh: tuần 6 (09/11–15/11), họp thứ Sáu 13/11. Mình phụ trách nhóm 07, 08, 09.
+Yêu cầu: đối chiếu kế hoạch 10 tuần trong team-contract, cam kết tối thiểu (commit, PR, review, AI log),
+trạng thái PR trên GitHub và ghi chú bàn giao, rồi liệt kê việc mình còn phải làm trước buổi họp.
+Kết quả mong muốn: danh sách việc còn lại, có nêu chỗ bất thường trong thư mục làm việc nếu có.
+```
+
+**Prompt 2: Khôi phục AI log và làm US4**
+
+```
+Bối cảnh: dòng đầu AI_log_3.md bị gõ nhầm; US4 "Hủy đăng ký buổi vãng lai" (T050–T055) chưa làm.
+Yêu cầu: (1) khôi phục AI_log_3.md về bản đã commit. (2) Làm US4 theo ghi chú bàn giao: tạo nhánh mới từ
+nhánh của PR #59; viết test trước (Emulator E4–E13, hủy và đăng ký đồng thời ×10, unit test ViewModel),
+rồi cài Edge Function cancel-drop-in dùng cancelRegistrationInTx có sẵn, repository/usecase, ViewModel
+và bottom sheet, nối nút "Hủy đăng ký" trên vé. Chạy deno check, Deno test trên Emulator và
+./gradlew lint testDebugUnitTest assembleDebug như CI. Commit theo Conventional Commits.
+Hỏi trước khi push, mở PR, deploy, ghi AI log.
+```
+
+**Prompt 3: Mở PR, deploy, ghi log**
+
+```
+Mở PR vào main, deploy cancel-drop-in lên Supabase thật, ghi AI log. Không được để xảy ra conflict
+với main và với PR #59.
+```
+
+### Tóm tắt phản hồi của AI
+
+- **Rà việc:** PR #59 chưa có người review, T020 chưa chạy, chưa test "Chỉ đường" trên máy thật, cần chuẩn bị demo. AI phát hiện dòng đầu AI log bị sửa nhầm và báo cáo tuần chưa có.
+- **Server:** tách phần thử lại transaction và hàng đợi theo buổi ra `_shared/dropin-tx.ts` để hai function dùng chung (commit `100bd11`). Viết `cancel-drop-in` (commit `27d6d29`): lỗi `NOT_FOUND` (kể cả token người khác), `NOT_CANCELLABLE`, `SESSION_STARTED`; `dryRun` chỉ trả số tiền hoàn; gửi lại cùng `requestId` trả kết quả cũ; không gửi thông báo.
+- **Test T051:** bản đầu xanh nhưng lượt đầu không ai đăng ký được (3 lệnh đăng ký xong trước khi lệnh hủy commit), tức là chưa thật sự kiểm tra chạy đồng thời. AI thêm độ trễ ngẫu nhiên 0–600 ms: có lượt 1–2 người vào ngay trong lúc hủy, 10/10 lần không vượt sức chứa.
+- **App** (commit `fc8badc`): ViewModel `Quoting → Quote → Cancelling → Done`; mất mạng hoặc bận thì giữ sheet và thử lại cùng `requestId` (giữ qua `SavedStateHandle`); nút "Hủy đăng ký" ẩn khi mất mạng hoặc buổi đã bắt đầu.
+- **Lint:** chặn chuỗi `Bạn được hoàn 100% (%1$s)` vì đọc `% (` như mã định dạng; sửa thành `100%%`.
+- **PR:** merge thử vào `main` trước khi push, không có conflict. AI lỡ để dòng "Generated with Claude Code" trong mô tả PR rồi xóa ngay.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Tách `_shared/dropin-tx.ts` | Dùng | Tránh chép lại code thử lại transaction |
+| Độ trễ ngẫu nhiên trong T051 | Dùng | Bản đầu không thật sự kiểm tra chạy đồng thời |
+| Bottom sheet mở bằng `childFragmentManager`, không thêm vào nav graph | Dùng | Giống sheet "Thêm người", ít sửa nav |
+| PR vào `main` dù #59 chưa merge | Dùng | Mình muốn PR vào main; merge #59 trước thì #61 chỉ còn 3 commit US4 |
+
+### Cách kiểm chứng
+
+- `deno check .` xanh; `cancel-drop-in` 10/10 trên Emulator; `register-drop-in` 29 unit + 4 Emulator vẫn xanh.
+- `./gradlew lint testDebugUnitTest assembleDebug` xanh (`CancelDropInViewModelTest` 9, repository 10).
+- Deploy `cancel-drop-in` lên Supabase thật; gọi không có token trả 401.
+- Chưa test trên máy ảo (quickstart Q8, Q9, Q13).
