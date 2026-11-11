@@ -2250,3 +2250,55 @@ với main và với PR #59.
 - `./gradlew lint testDebugUnitTest assembleDebug` xanh (`CancelDropInViewModelTest` 9, repository 10).
 - Deploy `cancel-drop-in` lên Supabase thật; gọi không có token trả 401.
 - Chưa test trên máy ảo (quickstart Q8, Q9, Q13).
+
+## Mục 37: Kịch bản test US4 và sửa lỗi danh sách vãng lai không cập nhật số chỗ
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-12 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 08 – Đặt lịch vãng lai (spec 080 US1, US4) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5, không dùng subagent) |
+| Mục đích | Có kịch bản test US4; sửa lỗi phát hiện khi test trên máy ảo |
+| Nhánh Git | `feature/080-drop-in-us4` (PR #61) |
+
+### Prompt đã dùng
+
+**Prompt 1: Kịch bản test**
+
+```
+Bối cảnh: US4 hủy đăng ký đã deploy lên Supabase thật, mình cần tự test trên máy ảo.
+Yêu cầu: viết kịch bản test từng bước (bước làm, kết quả đúng) cho hủy sớm/muộn, thanh toán tại sân,
+buổi đã thay đổi, mất mạng, buổi đã bắt đầu, xoay màn hình, chế độ tối; chỉ rõ trường nào cần sửa trên
+Firestore Console và cách dọn dữ liệu demo sau khi test. Sau đó build và cài bản mới lên máy ảo.
+```
+
+**Prompt 2: Lỗi danh sách và hướng dẫn thêm**
+
+```
+Khi test mình phát hiện: đăng ký xong một buổi rồi quay về danh sách thì buổi đó vẫn hiện số cũ (12/12),
+phải thoát tab Vãng lai rồi vào lại mới thấy 11/12. Tìm nguyên nhân gốc rồi sửa, có test.
+Ngoài ra hướng dẫn: tìm các trường của lượt đăng ký ở đâu trên Firestore Console (mình chỉ thấy
+dropInSessions và startAt), bật chế độ tối và tắt mạng trên máy ảo.
+```
+
+### Tóm tắt phản hồi của AI
+
+- **Kịch bản test:** 9 ca (TC1–TC9) theo quickstart Q8, Q9, Q13, kèm các bước dọn dữ liệu demo sau khi test. AI build và cài APK lên máy ảo bằng `adb`.
+- **Nguyên nhân lỗi danh sách:** `DropInListViewModel` chỉ tải trang bằng `get()` một lần trong `init`. Khi đi tới chi tiết hoặc vé rồi bấm Back, fragment danh sách vẫn nằm trong back stack và dùng lại ViewModel với số đếm cũ. Thoát tab thì ViewModel được tạo mới nên mới thấy số đúng.
+- **Cách sửa** (commit `71dff5c`): thêm `refreshVisible()`, được gọi ở `onStart()` của danh sách. Hàm đọc lại các buổi đang hiện bằng `DropInSessionLookup` có sẵn rồi cập nhật tại chỗ, giữ các trang đã tải và vị trí cuộn, không hiện loading. Buổi đã hủy hoặc cơ sở ngừng hoạt động thì bỏ khỏi danh sách. Đọc lỗi thì giữ bản cũ. Thêm 3 unit test.
+- **Firestore Console:** lượt đăng ký nằm trong subcollection `dropInSessions/{id}/registrations/{uid}`, phải bấm vào buổi mới thấy.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Cập nhật tại chỗ các buổi đang hiện thay vì tải lại cả trang | Dùng | Giữ trang đã tải và vị trí cuộn, không nháy loading |
+| Nghe realtime cả danh sách | Bỏ | Tốn lượt đọc Firestore; chỉ cần đúng khi quay lại màn hình |
+| Test hết TC1–TC9 ngay | Hoãn | Mình đã thử luồng chính; các ca còn lại test khi chuẩn bị demo |
+
+### Cách kiểm chứng
+
+- `./gradlew lint testDebugUnitTest assembleDebug` xanh; `DropInListViewModelTest` 17/17.
+- Trên máy ảo: đăng ký xong quay về danh sách thì số chỗ cập nhật ngay; hủy đăng ký chạy được.
+- Chưa test: chế độ tối, mất mạng, TC4, TC5, TC7–TC9.
