@@ -3,14 +3,15 @@
 // buổi `dropInSessions/{sessionId}` (research R2), idempotent theo `requestId` (research R3).
 import { errorResponse, HttpError, requireUser, toErrorResponse } from "../_shared/auth.ts";
 import * as defaultFirestore from "../_shared/firestore.ts";
+import { documentName, encodeFields, type FirestoreTransaction, updateWrite, type Write } from "../_shared/firestore.ts";
 import {
-  documentName,
-  encodeFields,
-  FirestoreError,
-  type FirestoreTransaction,
-  updateWrite,
-  type Write,
-} from "../_shared/firestore.ts";
+  createKeyedSerializer,
+  type KeyedSerializer,
+  MAX_TX_ATTEMPTS,
+  readJsonObject,
+  runWithBackoff,
+  UUID,
+} from "../_shared/dropin-tx.ts";
 import {
   newQrToken,
   newTicketCode,
@@ -45,32 +46,12 @@ export interface RegisterDeps {
   serialize?: KeyedSerializer;
 }
 
-export type KeyedSerializer = <T>(key: string, task: () => Promise<T>) => Promise<T>;
-
-/** Hàng đợi theo khóa: task cùng khóa chạy lần lượt, khác khóa chạy song song. */
-export function createKeyedSerializer(): KeyedSerializer {
-  const tails = new Map<string, Promise<unknown>>();
-  return <T>(key: string, task: () => Promise<T>): Promise<T> => {
-    const prev = tails.get(key) ?? Promise.resolve();
-    const run = prev.then(task, task);
-    const tail = run.catch(() => undefined);
-    tails.set(key, tail);
-    tail.then(() => {
-      if (tails.get(key) === tail) tails.delete(key);
-    });
-    return run;
-  };
-}
+export type { KeyedSerializer };
+export { createKeyedSerializer, MAX_TX_ATTEMPTS };
 
 const isolateSerializer = createKeyedSerializer();
 
-/** research R2: thử lại tối đa 8 lần khi `ABORTED`, backoff 50–400 ms có ngẫu nhiên. */
-export const MAX_TX_ATTEMPTS = 8;
-const BACKOFF_MIN_MS = 50;
-const BACKOFF_MAX_MS = 400;
-
 const PAYMENT_METHODS: readonly string[] = ["MOCK_PAY", "AT_VENUE"];
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 interface RegisterInput {
   kind: "REGISTER";
@@ -92,14 +73,6 @@ interface AddPartyInput {
 export const MAX_PARTY = 4;
 
 const invalid = (message: string) => new HttpError(400, "INVALID_ARGUMENT", message);
-
-async function readBody(req: Request): Promise<Record<string, unknown>> {
-  try {
-    const body = await req.json();
-    if (body && typeof body === "object" && !Array.isArray(body)) return body;
-  } catch { /* không phải JSON */ }
-  throw invalid("Body phải là JSON object");
-}
 
 function parseInput(body: Record<string, unknown>): RegisterInput | AddPartyInput {
   const sessionId = typeof body.sessionId === "string" ? body.sessionId.trim() : "";
@@ -139,26 +112,6 @@ interface RegisterResult {
   created: boolean;
   registration: RegistrationDoc;
   session: { registeredCount: number; capacity: number; status: string };
-}
-
-/** Chạy `operation` trong transaction, mỗi lần 1 lượt, ABORTED thì chờ ngẫu nhiên rồi thử lại; hết lượt → 503. */
-async function runWithBackoff<T>(
-  deps: RegisterDeps,
-  operation: (tx: FirestoreTransaction) => Promise<{ result: T; writes: Write[] }>,
-): Promise<T> {
-  const sleep = deps.sleep ?? ((ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms)));
-  for (let attempt = 1;; attempt++) {
-    try {
-      return await deps.firestore.runTransaction(operation, 1);
-    } catch (e) {
-      if (!(e instanceof FirestoreError && e.code === "ABORTED")) throw e;
-      if (attempt >= MAX_TX_ATTEMPTS) {
-        throw new HttpError(503, "BUSY", "Hệ thống đang bận, vui lòng thử lại");
-      }
-      const cap = Math.min(BACKOFF_MAX_MS, BACKOFF_MIN_MS * 2 ** attempt);
-      await sleep(BACKOFF_MIN_MS + Math.random() * (cap - BACKOFF_MIN_MS));
-    }
-  }
 }
 
 function sessionSummary(s: SessionDoc) {
@@ -354,7 +307,7 @@ export async function handleRegisterDropIn(req: Request, deps: RegisterDeps = de
   if (req.method !== "POST") return errorResponse(405, "METHOD_NOT_ALLOWED", "Chỉ hỗ trợ POST");
   try {
     const { uid } = await deps.authenticate(req);
-    const input = parseInput(await readBody(req));
+    const input = parseInput(await readJsonObject(req));
     const serialize = deps.serialize ?? isolateSerializer;
     // Lấy giờ sau khi tới lượt trong hàng đợi để kiểm tra SESSION_STARTED không dùng giờ cũ.
     const result = await serialize(input.sessionId, () => {
