@@ -69,4 +69,62 @@
     <string name="favorite_login_required">Đăng nhập để lưu sân yêu thích</string>
     <!-- Nút tạm ở trang chủ placeholder để demo; mục chính thức nằm ở trang Tài khoản (spec 011). -->
     <string name="favorite_open_list">Sân yêu thích (Feature 070)</string>
+
+    <!-- US2: ảnh đánh giá -->
+    <string name="review_photos_label">Ảnh (tối đa 3)</string>
+    <string name="review_photo_add_gallery">Chọn ảnh</string>
+    <string name="review_photo_add_camera">Chụp ảnh</string>
+    <string name="review_photo_too_large">Ảnh lớn hơn 2 MB sau khi nén, vui lòng chọn ảnh khác</string>
+    <string name="review_photo_failed">Tải ảnh lỗi, chạm để thử lại</string>
+    <string name="review_photo_uploading">Đang tải ảnh</string>
+    <string name="review_photo_remove">Bỏ ảnh %1$d</string>
+    <string name="review_photo_item">Ảnh %1$d</string>
+    <string name="review_photo_pending">Đợi ảnh tải lên xong để gửi</string>
+    <string name="review_camera_rationale_title">Cần quyền camera</string>
+    <string name="review_camera_rationale">SmashNow cần quyền camera để chụp ảnh sân cho đánh giá. Bạn vẫn có thể chọn ảnh từ thư viện.</string>
+    <string name="review_camera_denied">Chưa có quyền camera. Bạn có thể bật trong Cài đặt hoặc chọn ảnh từ thư viện.</string>
+    <string name="review_camera_allow">Cho phép</string>
+    <string name="review_camera_cancel">Để sau</string>
+    <string name="review_photo_viewer_title">Ảnh %1$d/%2$d</string>
+
+    <!-- US5: sửa, xóa đánh giá -->
+    <string name="review_edit_title">Sửa đánh giá</string>
+    <string name="review_edit">Sửa</string>
+    <string name="review_save">Lưu</string>
+    <string name="review_saved">Đã lưu đánh giá (%1$s / 5)</string>
+    <string name="review_delete">Xóa đánh giá</string>
+    <string name="review_delete_title">Xóa đánh giá?</string>
+    <string name="review_delete_message">Đánh giá và ảnh kèm theo sẽ bị xóa vĩnh viễn, điểm của sân được tính lại.</string>
+    <string name="review_delete_confirm">Xóa</string>
+    <string name="review_delete_cancel">Hủy</string>
+    <string name="review_deleted">Đã xóa đánh giá</string>
+    <string name="review_edit_window_closed">Đã quá hạn sửa (7 ngày sau khi chơi). Bạn vẫn có thể xóa đánh giá.</string>
+
+    <!-- US6: tất cả đánh giá của sân -->
+    <string name="review_list_title">Đánh giá</string>
+    <string name="review_list_count">%1$d đánh giá</string>
+    <string name="review_filter_all">Tất cả</string>
+    <string name="review_filter_stars">%1$d sao</string>
+    <string name="review_filter_photos">Có ảnh</string>
+    <string name="review_empty_filter">Không có đánh giá phù hợp bộ lọc</string>
+    <string name="review_list_load_failed">Không tải được đánh giá</string>
+    <string name="review_item_overall">Điểm %1$s trên 5</string>
+    <string name="review_item_criteria">Sân %1$d · Vệ sinh %2$d · Phục vụ %3$d</string>
+    <string name="review_avatar_description">Ảnh đại diện của %1$s</string>
+
+    <!-- US4: chủ sân phản hồi -->
+    <string name="review_owner_title">Đánh giá của khách</string>
+    <string name="review_owner_all_venues">Tất cả cơ sở</string>
+    <string name="review_owner_unreplied">Chưa phản hồi</string>
+    <string name="review_owner_empty">Chưa có đánh giá nào</string>
+    <string name="review_owner_no_venues">Bạn chưa có cơ sở nào</string>
+    <string name="review_reply">Phản hồi</string>
+    <string name="review_reply_edit">Sửa phản hồi</string>
+    <string name="review_reply_title">Phản hồi đánh giá</string>
+    <string name="review_reply_hint">Cảm ơn bạn đã góp ý…</string>
+    <string name="review_reply_send">Gửi phản hồi</string>
+    <string name="review_reply_empty">Vui lòng nhập nội dung phản hồi</string>
+    <string name="review_reply_too_long">Phản hồi tối đa 500 ký tự</string>
+    <string name="review_reply_sent">Đã gửi phản hồi</string>
+    <string name="review_reply_public_notice">Phản hồi hiện công khai dưới đánh giá. Bạn sửa được nhưng không xóa được.</string>
 </resources>

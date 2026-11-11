@@ -1,6 +1,6 @@
 # feature/review — Đánh giá sân và sân yêu thích (spec 070, C)
 
-Tài liệu thiết kế: [specs/070-review-favorite](../../../../../../../../../specs/070-review-favorite/). Hiện đã có **Sân yêu thích (US3)** và **Viết đánh giá (US1)**; US2, US4–US6 làm tiếp.
+Tài liệu thiết kế: [specs/070-review-favorite](../../../../../../../../../specs/070-review-favorite/). Đã có đủ 6 user story: viết đánh giá (US1), ảnh (US2), sân yêu thích (US3), chủ sân phản hồi (US4), sửa/xóa (US5), xem tất cả đánh giá của sân (US6).
 
 ## Gắn nút trái tim vào màn hình của nhóm khác
 
@@ -98,11 +98,53 @@ Dùng cho chi tiết đơn trong "Lịch đặt của tôi" (spec 060, B). Injec
    ```kotlin
    findNavController().navigate(
        R.id.action_bookingDetail_to_writeReview,
-       bundleOf("bookingId" to bookingId),   // mode mặc định CREATE; EDIT dùng ở US5
+       bundleOf("bookingId" to bookingId),   // mode mặc định CREATE
    )
    ```
 
+   Đã có đánh giá thì màn hình hiện nội dung đã gửi, có nút "Sửa" (còn trong 7 ngày) và "Xóa đánh giá". Muốn mở thẳng chế độ sửa thì truyền thêm `"mode" to WriteReviewMode.EDIT`:
+
+   ```kotlin
+   bundleOf("bookingId" to bookingId, "mode" to WriteReviewMode.EDIT)
+   ```
+
    Hoặc deep link `smashnow://review/write/{bookingId}` (thông báo `REVIEW_REMINDER` của spec 100 cũng dùng link này).
+
+## Tổng quan điểm và nút "Xem tất cả" ở chi tiết sân
+
+Dùng cho chi tiết sân (spec 030, A).
+
+1. Khối tổng quan: inject `ReviewRepository`, thu thập `observeSummary(venueId)` → `VenueRatingSummary` (`average`, `count`, `courtAvg`, `cleanlinessAvg`, `serviceAvg`). `count == 0` thì hiện `R.string.review_empty_venue` ("Sân chưa có đánh giá").
+2. Nút "Xem tất cả": màn `VenueReviewsFragment` nằm trong `nav_review` (đã include trong `nav_player`).
+
+   ```xml
+   <action
+       android:id="@+id/action_venueDetail_to_venueReviews"
+       app:destination="@id/venueReviewsFragment" />
+   ```
+
+   ```kotlin
+   findNavController().navigate(
+       R.id.action_venueDetail_to_venueReviews,
+       bundleOf("venueId" to venueId, "venueName" to venueName),
+   )
+   ```
+
+   Hoặc deep link `smashnow://review/venue/{venueId}` (thông báo `REVIEW_REPLY` của spec 100 dùng link này).
+
+Màn hình có chip lọc 1–5 sao (`starBucket`) và "Có ảnh", mỗi trang 20 đánh giá, chạm ảnh để xem toàn màn hình.
+
+## Mục "Đánh giá của khách" cho chủ sân
+
+Dùng cho menu chế độ quản lý sân (spec 111/112, D). Màn `OwnerReviewsFragment` nằm trong graph lồng `nav_review_owner`, đã `include` trong `nav_owner`, không có tham số:
+
+```xml
+<action
+    android:id="@+id/action_ownerMenu_to_ownerReviews"
+    app:destination="@id/nav_review_owner" />
+```
+
+Hoặc deep link `smashnow://review/owner` (giống cách trang Tài khoản mở `smashnow://owner/venues`). Danh sách cơ sở lấy qua `OwnerVenueRepository.getOwnedVenues()` của spec 111 (bỏ cơ sở `DELETED`, tối đa 30 cơ sở vì giới hạn `whereIn`). Chủ sân lọc theo cơ sở và "Chưa phản hồi", bấm "Phản hồi"/"Sửa phản hồi" để mở bottom sheet (1–500 ký tự, không xóa được phản hồi).
 
 ## Việc còn chờ nhóm khác
 

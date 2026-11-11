@@ -2,4 +2,6 @@
 <paths>
     <!-- Ảnh đại diện vừa chụp, xóa sau khi cắt xong (spec 011 R4). -->
     <cache-path name="avatar" path="avatar/" />
+    <!-- Ảnh chụp cho đánh giá (spec 070 US2), xóa khi rời màn hình viết đánh giá. -->
+    <cache-path name="review" path="review/" />
 </paths>

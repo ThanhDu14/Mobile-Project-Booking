@@ -33,6 +33,7 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 27 | 2026-10-30 | Kiểm tra tiến độ tuần 4, soạn tài liệu PDF hướng dẫn test trên emulator và giải thích code | 07 |
 | 28 | 2026-10-30 | Làm trước phần nền US1 của spec 070: Rules `reviews`, index, mã lỗi và DTO Edge Function | 07 |
 | 29 | 2026-11-06 | Triển khai US1 viết đánh giá sân của spec 070 (Edge Function review + màn hình Android) bằng `/speckit-implement` | 07 |
+| 30 | 2026-11-06 | Triển khai US2, US4, US5, US6 của spec 070 (ảnh, chủ sân phản hồi, sửa/xóa, danh sách đánh giá) bằng `/speckit-implement` | 07 |
 
 ---
 
@@ -1721,3 +1722,75 @@ tasks.md được tick đúng, có 1 commit cho US1.
 - `cd firestore-tests && npx vitest run`: 145/145 test qua (có thêm test R3 cho đánh giá chưa tồn tại).
 - `./gradlew assembleDebug testDebugUnitTest`: build được; 519/520 test qua. Test hỏng duy nhất là `OwnerSlotBlockViewModelTest` của nhóm D: test cố định ngày `20261030` nên hỏng từ khi qua ngày đó, không liên quan đến thay đổi lần này.
 - Chưa chạy màn hình trên máy ảo hoặc thiết bị thật.
+
+## Mục 30: Triển khai US2, US4, US5, US6 của spec 070
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-06 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 07 – Đánh giá và yêu thích (spec 070, task T011, T012, T014, T016, T017, T039–T046, T055–T072; làm dở T038, T041) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5) |
+| Mục đích | Hoàn thành các user story còn lại của spec 070: ảnh đánh giá, chủ sân phản hồi, sửa/xóa đánh giá, xem tất cả đánh giá của sân |
+| Nhánh Git | `feature/070-review-us1` |
+
+### Prompt đã dùng
+
+```
+Bối cảnh: mình là thành viên C, phụ trách spec 070. US1 (viết đánh giá) và US3 (sân yêu thích) đã
+xong và commit. Phiên trước đã làm dở các story còn lại trên nhánh feature/070-review-us1: backend
+Edge Function, migration Storage, data layer và test ViewModel (viết trước theo TDD) đã có nhưng
+chưa commit, chưa có ViewModel và giao diện.
+
+Mục tiêu: làm tiếp cho xong US2 (ảnh), US4 (chủ sân phản hồi), US5 (sửa/xóa), US6 (tất cả đánh giá
+của sân) theo specs/070-review-favorite/tasks.md.
+
+Yêu cầu:
+1. Tự xác định tiến độ từ git status và tasks.md, không làm lại phần đã có.
+2. Chạy lại test Deno của Edge Function review trên Firebase Emulator để kiểm chứng backend.
+3. Cài đặt ViewModel cho các test đang đỏ: WriteReviewViewModel (ảnh + chế độ EDIT),
+   VenueReviewsViewModel, OwnerReviewsViewModel.
+4. Làm giao diện theo contracts/ui-screens.md: Photo Picker + chụp ảnh (xin quyền camera lúc bấm),
+   item_review + ReviewAdapter, màn tất cả đánh giá (chip lọc sao/có ảnh, phân trang), màn chủ sân
+   + bottom sheet phản hồi, màn xem ảnh; thêm vào nav graph và deep link.
+5. Ghi hướng dẫn nối cho nhóm A (spec 030) và D (spec 111/112) vào README của feature.
+
+Ràng buộc: tầng ui không import data; lấy danh sách cơ sở qua interface domain của spec 111; hạn chế
+sửa file của nhóm khác và báo lại nếu buộc phải sửa; mọi màn hình đủ 4 trạng thái; không thêm dòng
+attribution AI vào commit.
+
+Kết quả mong muốn: test Deno và unit test Android đều qua, assembleDebug build được, tasks.md được
+tick đúng, ghi rõ phần chưa kiểm chứng được.
+```
+
+### Tóm tắt phản hồi của AI
+
+- AI kiểm tra lại backend: lúc đầu test Deno lỗi vì thiếu `FIREBASE_PROJECT_ID`. Sau khi truyền biến này khi chạy dưới `firebase emulators:exec`, 65/65 test qua.
+- AI viết 3 ViewModel theo các test có sẵn:
+  - Ảnh: tối đa 3 ảnh; ảnh đang tải hoặc tải lỗi thì khóa nút Gửi; bỏ ảnh vừa tải thì gọi `discardPhotos`.
+  - Sửa đánh giá: bỏ ảnh cũ thì không xóa ngay mà để server xóa sau khi lưu.
+  - Xóa đánh giá: phải xác nhận trước.
+- Giao diện:
+  - Màn viết đánh giá có thêm vùng ảnh, nút Sửa/Lưu/Xóa.
+  - Màn mới: tất cả đánh giá, đánh giá của khách kèm bottom sheet phản hồi, xem ảnh (ViewPager2).
+  - `ReviewAdapter` dùng chung cho các danh sách.
+- AI tách màn của chủ sân ra graph riêng `nav_review_owner`, rồi thêm 1 dòng `include` vào `nav_owner.xml` (file của nhóm D).
+- AI đổi tên một test có dấu `;` trong tên hàm vì JVM không cho phép.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Graph riêng `nav_review_owner` + `include` trong `nav_owner` | Dùng, cần báo D | Màn chủ sân thuộc luồng owner; include nguyên `nav_review` vào `nav_owner` sẽ trùng deep link của người chơi |
+| `ReplyReviewBottomSheet` mở bằng `childFragmentManager`, không phải destination | Dùng | Dùng chung ViewModel với màn danh sách để nhận kết quả gửi |
+| `UiState.Error.message` chứa tên mã `ReviewError`, Fragment đổi ra chuỗi | Dùng | ViewModel không giữ `Context` |
+| Dùng `ViewPager2` có sẵn qua Material | Dùng | Không phải thêm dependency |
+| Xóa ảnh mồ côi chạy `NonCancellable` | Dùng | Bấm "Bỏ" rồi đóng màn hình ngay vẫn xóa được ảnh |
+
+### Cách kiểm chứng
+
+- `firebase emulators:exec --only auth,firestore` + `deno test -A review/ _shared/`: 65/65 test qua.
+- `./gradlew assembleDebug testDebugUnitTest`: build được; 80/80 test review qua, 545/546 test toàn app qua. Test hỏng duy nhất vẫn là `OwnerSlotBlockViewModelTest` của nhóm D (cố định ngày `20261030`).
+- `./gradlew lintDebug`: phần review không có lỗi mức Error. Lỗi Error duy nhất nằm ở `SlotMatrixRowAdapter.kt` của nhóm B, có từ trước.
+- Chưa chạy test RLS Storage (T038) vì máy chưa có Docker.
+- Chưa chạy các màn hình mới trên máy ảo hoặc thiết bị thật.

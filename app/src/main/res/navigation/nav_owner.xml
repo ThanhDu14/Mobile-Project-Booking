@@ -82,6 +82,9 @@
          nav_player để AccountEntryNavigator dùng chung. -->
     <include app:graph="@navigation/nav_account" />
 
+    <!-- "Đánh giá của khách" của spec 070 US4 (C); menu quản lý sân mở bằng smashnow://review/owner. -->
+    <include app:graph="@navigation/nav_review_owner" />
+
     <action
         android:id="@+id/action_global_account"
         app:destination="@id/nav_account" />

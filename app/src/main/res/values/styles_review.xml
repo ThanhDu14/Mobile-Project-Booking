@@ -30,4 +30,17 @@
         <item name="android:secondaryProgressTint">@color/sn_lamp</item>
         <item name="android:progressBackgroundTint">?attr/colorOutline</item>
     </style>
+
+    <!-- Ảnh nhỏ trong item_review (T017); chạm mở PhotoViewerFragment (T046). Vùng chạm ≥ 48dp. -->
+    <style name="Widget.SmashNow.ReviewPhotoThumb" parent="">
+        <item name="android:layout_width">80dp</item>
+        <item name="android:layout_height">80dp</item>
+        <item name="android:layout_marginEnd">@dimen/space_2</item>
+        <item name="android:background">@drawable/bg_venue_placeholder</item>
+        <item name="android:scaleType">centerCrop</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="android:foreground">?attr/selectableItemBackground</item>
+        <item name="shapeAppearance">?attr/shapeAppearanceCornerSmall</item>
+    </style>
 </resources>
