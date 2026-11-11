@@ -183,7 +183,20 @@ class CourtDetailViewModel @Inject constructor(
     /** Gọi từ `onResume` (contracts/ui-screens.md §4). */
     fun onScreenVisible() {
         screenVisible = true
+        // Khách vừa đăng nhập từ màn hình "Sân tạm ngừng hoạt động": đọc lại cơ sở với quyền mới (R10).
+        if (latestView == VenueView.SuspendedGuest && !sessionManager.isGuest.value) venueReload.update { it + 1 }
         resolvePending()
+    }
+
+    /** "Đăng nhập" ở màn hình rút gọn của khách (không có thao tác chờ). */
+    fun onLoginClicked() {
+        send(CourtDetailEffect.OpenLogin)
+    }
+
+    /** "Bỏ khỏi yêu thích" ở màn hình "Sân không còn tồn tại" (FR-022). */
+    fun onRemoveFavoriteFromGone() {
+        if (latestIsFavorite != true) return
+        viewModelScope.launch { applyFavorite(false) }
     }
 
     /** Gọi từ `onPause`. */
@@ -302,8 +315,13 @@ class CourtDetailViewModel @Inject constructor(
         send(CourtDetailEffect.OpenChat(venueId))
     }
 
+    /** Cơ sở tạm ngừng thì chỉ được bỏ yêu thích, không thêm mới (FR-021, US6-2). */
+    private fun canFavorite(target: Boolean): Boolean =
+        !target || currentAvailability() == VenueAvailability.ACTIVE
+
     /** Lạc quan (FR-021 của 070): trái tim đổi ngay, ghi lỗi thì trả về trạng thái cũ và báo snackbar. */
     private suspend fun applyFavorite(target: Boolean) {
+        if (!canFavorite(target)) return
         favoriteOverride.value = target
         send(CourtDetailEffect.Snackbar(if (target) CourtDetailMessage.FAVORITE_ADDED else CourtDetailMessage.FAVORITE_REMOVED))
         val result = favoriteGateway.setFavorite(venueSummary(), target)

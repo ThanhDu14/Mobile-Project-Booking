@@ -495,7 +495,7 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
 
 ### Tests cho User Story 6 ⚠️ viết trước, phải fail
 
-- [ ] T065 [P] [US6] Unit test `TEST/feature/courtdetail/ui/CourtDetailViewModelUs6Test.kt`:
+- [x] T065 [P] [US6] Unit test `TEST/feature/courtdetail/ui/CourtDetailViewModelUs6Test.kt`:
   - `SUSPENDED` → `bottomBar = Suspended`, không có "Đặt sân"/chat; bảng giá và đánh giá vẫn tải (US6-3); bấm trái tim khi chưa yêu thích → không gọi `setFavorite`, khi đang yêu thích → `setFavorite(false)` (US6-2);
   - `GONE` → trạng thái "không còn tồn tại", `onRemoveFavoriteFromGone()` gọi `setFavorite(false)` khi đang yêu thích;
   - `SUSPENDED_GUEST` → trạng thái rút gọn, không tải `courts`/`priceRules`/`reviews`;
@@ -505,8 +505,8 @@ Viết test trước, chạy thấy **fail**, rồi mới cài đặt.
 
 ### Implementation cho User Story 6
 
-- [ ] T066 [US6] Thêm xử lý `availability` vào `CD/ui/CourtDetailViewModel.kt` (`SUSPENDED`, `GONE`, `SUSPENDED_GUEST`, đổi trạng thái khi đang xem). Cho T065 xanh
-- [ ] T067 [US6] Cài `RES/layout/view_court_detail_gone.xml` ("Sân không còn tồn tại", "Quay lại", "Bỏ khỏi yêu thích" khi `isFavorite == true`), `RES/layout/view_court_detail_suspended_guest.xml` ("Sân tạm ngừng hoạt động", "Quay lại", "Đăng nhập" gọi `AuthNavigator`), và ghi chú nổi bật "Sân tạm ngừng hoạt động" ở mục 2 của `fragment_court_detail.xml`. Nối vào `CD/ui/CourtDetailFragment.kt`
+- [x] T066 [US6] Thêm xử lý `availability` vào `CD/ui/CourtDetailViewModel.kt` (`SUSPENDED`, `GONE`, `SUSPENDED_GUEST`, đổi trạng thái khi đang xem). Cho T065 xanh
+- [x] T067 [US6] Cài `RES/layout/view_court_detail_gone.xml` ("Sân không còn tồn tại", "Quay lại", "Bỏ khỏi yêu thích" khi `isFavorite == true`), `RES/layout/view_court_detail_suspended_guest.xml` ("Sân tạm ngừng hoạt động", "Quay lại", "Đăng nhập" gọi `AuthNavigator`), và ghi chú nổi bật "Sân tạm ngừng hoạt động" ở mục 2 của `fragment_court_detail.xml`. Nối vào `CD/ui/CourtDetailFragment.kt`
 
 **Checkpoint**: cả 6 user story chạy độc lập; quickstart Q17–Q20 đạt (Q17, Q19 cần Rules của D).
 

@@ -679,4 +679,19 @@
                 android:text="@string/court_detail_back" />
         </LinearLayout>
     </FrameLayout>
+
+    <!-- US6: cơ sở đã xóa / khách mở cơ sở tạm ngừng -->
+    <include
+        android:id="@+id/goneState"
+        layout="@layout/view_court_detail_gone"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" />
+
+    <include
+        android:id="@+id/suspendedGuestState"
+        layout="@layout/view_court_detail_suspended_guest"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone" />
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

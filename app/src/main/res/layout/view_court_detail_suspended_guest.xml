@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Khách mở cơ sở tạm ngừng (spec 030 US6, research R10): Rules không cho đọc nên chỉ có màn hình rút gọn. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?android:attr/colorBackground"
+    android:clickable="true"
+    android:focusable="true"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="@dimen/space_6">
+
+    <ImageView
+        android:layout_width="64dp"
+        android:layout_height="64dp"
+        android:importantForAccessibility="no"
+        android:src="@drawable/ic_error_24"
+        app:tint="?attr/colorError" />
+
+    <TextView
+        android:id="@+id/suspendedGuestTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_4"
+        android:accessibilityHeading="true"
+        android:gravity="center"
+        android:text="@string/court_detail_suspended"
+        android:textAppearance="?attr/textAppearanceTitleLarge"
+        android:textColor="?attr/colorOnSurface" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_2"
+        android:gravity="center"
+        android:text="@string/court_detail_suspended_guest_message"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorOnSurfaceVariant" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/suspendedGuestLoginButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_6"
+        android:minHeight="@dimen/touch_min"
+        android:text="@string/court_detail_login" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/suspendedGuestBackButton"
+        style="@style/Widget.SmashNow.Button.Text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minHeight="@dimen/touch_min"
+        android:text="@string/court_detail_back" />
+</LinearLayout>

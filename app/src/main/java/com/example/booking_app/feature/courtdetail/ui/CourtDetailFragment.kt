@@ -35,6 +35,7 @@ import com.example.booking_app.databinding.ViewCourtDetailSectionErrorBinding
 import com.example.booking_app.feature.courtdetail.domain.model.LatLng
 import com.example.booking_app.feature.courtdetail.domain.model.OpeningStatus
 import com.example.booking_app.feature.courtdetail.domain.model.PhoneDisplay
+import com.example.booking_app.feature.courtdetail.domain.model.VenueAvailability
 import com.google.android.material.chip.Chip
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
@@ -106,6 +107,10 @@ class CourtDetailFragment : Fragment() {
         binding.bookButton.setOnClickListener { viewModel.onBookClicked() }
         binding.chatButton.setOnClickListener { viewModel.onChatClicked() }
         binding.favoriteButton.setOnClickListener { viewModel.onFavoriteClicked() }
+        binding.goneState.goneBackButton.setOnClickListener { findNavController().navigateUp() }
+        binding.goneState.goneRemoveFavoriteButton.setOnClickListener { viewModel.onRemoveFavoriteFromGone() }
+        binding.suspendedGuestState.suspendedGuestBackButton.setOnClickListener { findNavController().navigateUp() }
+        binding.suspendedGuestState.suspendedGuestLoginButton.setOnClickListener { viewModel.onLoginClicked() }
 
         mapController = null
         mapPoint = null
@@ -167,6 +172,11 @@ class CourtDetailFragment : Fragment() {
         if (header is Section.Error) {
             binding.fullScreenErrorText.setText(errorText(header.error))
         }
+
+        // US6: hai trạng thái phủ toàn màn hình (FR-022, research R10).
+        binding.goneState.root.isVisible = state.availability == VenueAvailability.GONE
+        binding.goneState.goneRemoveFavoriteButton.isVisible = state.isFavorite == true
+        binding.suspendedGuestState.root.isVisible = state.availability == VenueAvailability.SUSPENDED_GUEST
 
         binding.offlineBanner.isVisible = state.isOffline
         if (header is Section.Content) renderHeader(header.data, state.photoIndex)
@@ -232,6 +242,10 @@ class CourtDetailFragment : Fragment() {
         val button = binding.favoriteButton
         button.isVisible = state.header is Section.Content
         val favorite = state.isFavorite == true
+        // Cơ sở tạm ngừng: chỉ bỏ yêu thích được (FR-021); chưa yêu thích thì nút tắt.
+        val enabled = favorite || state.availability != VenueAvailability.SUSPENDED
+        button.isEnabled = enabled
+        button.alpha = if (enabled) 1f else DISABLED_ALPHA
         button.setImageResource(if (favorite) R.drawable.ic_favorite_24 else R.drawable.ic_favorite_border_24)
         button.contentDescription = getString(
             if (favorite) R.string.court_detail_cd_favorite_remove else R.string.court_detail_cd_favorite_add,
@@ -577,6 +591,8 @@ class CourtDetailFragment : Fragment() {
     }
 
     private companion object {
+        const val DISABLED_ALPHA = 0.38f
+
         /** `iconKey` của `amenities` (spec 020) → drawable; khóa lạ dùng biểu tượng chung. */
         @DrawableRes
         fun amenityIcon(iconKey: String): Int = when (iconKey.replace('-', '_')) {
