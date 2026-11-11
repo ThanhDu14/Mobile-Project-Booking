@@ -195,6 +195,8 @@ export interface CancelRegistrationOptions {
  * - Buổi đang `OPEN`/`FULL` thì gọi `afterSpotsReleased` TRƯỚC khi ghi buổi: hook đọc thêm nếu cần rồi sửa trực
  *   tiếp `registeredCount`/`status` của object `session` được truyền vào; hàm này ghi buổi theo object đó.
  *
+ * Trả `session` là buổi sau khi trả chỗ (đã qua hook), để người gọi trả về số đếm mới mà không phải đọc lại.
+ *
  * Không gọi hai lần cho cùng một buổi trong một transaction (lần sau đọc lại số đếm cũ).
  */
 export async function cancelRegistrationInTx(
@@ -203,7 +205,7 @@ export async function cancelRegistrationInTx(
   uid: string,
   cancelledBy: CancelledBy,
   opts: CancelRegistrationOptions = {},
-): Promise<{ refundAmount: number; reason?: RefundReason }> {
+): Promise<{ refundAmount: number; reason?: RefundReason; session?: SessionDoc }> {
   const now = opts.now ?? new Date();
   const regPath = registrationPath(sessionId, uid);
   const reg = await tx.get(regPath) as RegistrationDoc | null;
@@ -246,7 +248,7 @@ export async function cancelRegistrationInTx(
       updatedAt: now,
     }));
   }
-  return { refundAmount, reason: quote.reason };
+  return { refundAmount, reason: quote.reason, session: released };
 }
 
 /**

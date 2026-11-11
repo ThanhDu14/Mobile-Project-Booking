@@ -380,7 +380,7 @@ Task chèn thêm sau khi chốt FR-008a; đánh số `T048a`… để không đ�
 
 ### Tests cho User Story 4 ⚠️ viết trước, phải fail
 
-- [ ] T050 [P] [US4] Test `FN/cancel-drop-in/index.test.ts` (Firebase Emulator):
+- [x] T050 [P] [US4] Test `FN/cancel-drop-in/index.test.ts` (Firebase Emulator):
   - **E4:** cùng `requestId` gọi 5 lần, kể cả song song. Chỉ trả chỗ 1 lần, hoàn tiền 1 lần.
   - **E5:** hủy khi còn 239, 240, 241 phút → hoàn 0 / 100% / 100%.
   - **E6:** `sessionChanged = true`, còn 30 phút → hoàn 100%.
@@ -392,7 +392,7 @@ Task chèn thêm sau khi chốt FR-008a; đánh số `T048a`… để không đ�
   - Buổi đã bắt đầu → `SESSION_STARTED`.
   - `dryRun: true` không ghi gì.
   - Không gọi `send-notification`.
-- [ ] T051 [P] [US4] **Test Emulator hủy và đăng ký đồng thời** trong `FN/cancel-drop-in/index.test.ts`:
+- [x] T051 [P] [US4] **Test Emulator hủy và đăng ký đồng thời** trong `FN/cancel-drop-in/index.test.ts`:
   - buổi `FULL`; 1 người hủy (`partySize = 2`) cùng lúc 3 người khác đăng ký (`partySize = 1`);
   - kỳ vọng: đúng 2 người đăng ký được; `registeredCount == capacity`; không vượt sức chứa;
   - chạy 10 lần.
@@ -403,7 +403,7 @@ Task chèn thêm sau khi chốt FR-008a; đánh số `T048a`… để không đ�
 
 ### Implementation cho User Story 4
 
-- [ ] T053 [US4] Cài `FN/cancel-drop-in/index.ts` theo [contract mục 2](contracts/edge-functions-dropin.md#2-cancel-drop-in):
+- [x] T053 [US4] Cài `FN/cancel-drop-in/index.ts` theo [contract mục 2](contracts/edge-functions-dropin.md#2-cancel-drop-in):
   - xác thực;
   - `dryRun` → chỉ trả `computeRefund`;
   - nếu không: trong `runTransaction` gọi `cancelRegistrationInTx(tx, sessionId, uid, "USER")` và ghi `cancelRequestId`;

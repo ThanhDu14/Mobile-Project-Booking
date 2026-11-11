@@ -492,3 +492,6 @@ verify_jwt = false
 
 [functions.register-drop-in]
 verify_jwt = false
+
+[functions.cancel-drop-in]
+verify_jwt = false
