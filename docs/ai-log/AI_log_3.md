@@ -2097,3 +2097,90 @@ trong trang Tài khoản để xem vé, không phải vào Vãng lai tìm lại 
 - `DropInListViewModelTest`: 14/14.
 - Gọi thử `register-drop-in` khi chưa đăng nhập trả 401 đúng.
 - Chưa test đăng ký và vé QR trên máy ảo.
+
+## Mục 35: Sửa CI PR #59, hoàn tất "Thêm người" và US3 "Lượt vãng lai của tôi", deploy và test trên máy ảo
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-12 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 08 – Đặt lịch vãng lai (spec 080 FR-008a, US3; T042–T049, T048a–f) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5, có dùng 2 subagent chạy song song) |
+| Mục đích | Sửa CI đỏ của PR #59; làm nốt phần dở của session trước; deploy và test trên máy ảo |
+| Nhánh Git | `feature/080-drop-in-session` (PR #59, chỉ sửa CI), `feature/080-drop-in-us3` (phần còn lại) |
+
+### Prompt đã dùng
+
+**Prompt 1: Sửa CI của PR #59**
+
+```
+Bối cảnh: PR #59 (spec 080 tuần 6) có job "Android (lint, unit test, assemble)" bị đỏ, 2 job còn lại xanh.
+Yêu cầu: đọc log CI tìm đúng nguyên nhân, sửa trên nhánh của PR #59 nhưng không làm xáo trộn worktree 080
+(đang có thay đổi chưa commit của nhánh khác), chạy lại đúng lệnh CI ở máy trước khi push.
+Kết quả mong muốn: CI của PR #59 xanh cả 3 job.
+```
+
+**Prompt 2: Làm tiếp phần dở của spec 080 bằng subagent**
+
+```
+Bối cảnh: session trước dừng giữa chừng khi đang làm nút "Thêm người" (FR-008a) và US3 "Lượt vãng lai
+của tôi" trên nhánh feature/080-drop-in-us3; code chưa biên dịch, chưa test, chưa commit (ghi chú bàn giao
+ở memory dự án).
+Yêu cầu: chia subagent làm song song cho nhanh: một agent rà và hoàn thiện code Android (nút Thêm người,
+vé đọc cache/ngoại tuyến T044/T048), một agent hoàn thiện tài liệu spec cho khớp code server và chạy Deno
+test trên Emulator. Mỗi agent sửa nhóm file riêng. Chỉ chạy một tiến trình Gradle vì máy 16 GB RAM.
+Sau đó biên dịch, chạy lint + unit test + assemble như CI, commit tách theo nhóm (Conventional Commits).
+Hỏi mình trước khi push, mở PR, deploy.
+```
+
+**Prompt 3: Deploy để test trên máy ảo**
+
+```
+Deploy Edge Function register-drop-in (đã có action ADD_PARTY) lên Supabase thật; kiểm tra xem Firestore
+Rules/index có cần deploy lại không. Sau đó chuẩn bị bản app để mình test trên máy ảo và đưa danh sách
+các mục cần test.
+```
+
+**Prompt 4: Bấm build lại ra bản cũ**
+
+```
+Khi mình bấm Build/Run trong Android Studio thì app trên máy ảo lại thành bản cũ, tab Vãng lai báo
+"Tính năng đang phát triển". Tìm nguyên nhân và cho mình cách chạy đúng bản mới.
+```
+
+**Prompt 5: Lỗi khi test và chỉnh giao diện vé**
+
+```
+Khi test: (1) bấm "Thêm người" không thấy hiện gì; (2) bỏ dòng "Vé này mở được cả khi không có mạng"
+ở màn vé; (3) bấm "Chỉ đường" có mở Google Maps nhưng chỉ thấy màn hình đen dù đã cấp GPS, sau đó máy ảo
+không thao tác được nữa kể cả khi tắt bật lại. Tìm nguyên nhân từng việc, tái hiện trên máy ảo, sửa và
+build lại.
+```
+
+### Tóm tắt phản hồi của AI
+
+- **CI PR #59:** lỗi lint `RtlCompat` ở `fragment_dropin_detail.xml`: TextView có `textAlignment="viewEnd"` nhưng thiếu `gravity` đi kèm. AI thêm `android:gravity="end"` (commit `ff87720`), chạy `./gradlew lint testDebugUnitTest assembleDebug` ở máy xanh rồi mới push; CI xanh cả 3 job. AI sửa trong một worktree tạm để không đụng thay đổi chưa commit của nhánh US3.
+- **Subagent 1 (Android):** rà code còn dở, sửa chỗ đọc cache dễ lỗi biên dịch trong `FirestoreDropInTicketSources.kt`, bỏ chuỗi cứng trong bottom sheet, thêm thông báo lỗi "hệ thống bận" và 2 test.
+- **Subagent 2 (spec + server):** viết lại bảng luật `ADD_PARTY` trong `data-model.md` theo đúng thứ tự kiểm tra trong `handler.ts`, chỉnh FR-008a và contract cho khớp code, thêm task T048a–T048f. Deno test `register-drop-in` 33/33 trên Emulator.
+- **Biên dịch và test:** 155 unit test dropin xanh. Lần chạy CI đầy đủ đầu tiên đỏ ở 2 file ngoài dropin (`SlotMatrixRowAdapter`, `OwnerBookingsViewModelTest`) vì nhánh US3 tách ra trước khi main có bản sửa; AI merge nhánh PR #59 vào thì hết lỗi.
+- **Deploy:** chỉ deploy `register-drop-in`. Rules và index không đổi so với bản đã deploy hôm trước. Gọi thử khi chưa đăng nhập trả 401 đúng.
+- **Ra bản cũ:** Android Studio đang mở thư mục `Mobile-booking-app` (nhánh CI, chưa nối tab Vãng lai) chứ không phải worktree `Mobile-booking-app-080`. AI cài APK đúng bằng `adb install -r` và hướng dẫn mở đúng thư mục.
+- **Máy ảo treo:** chụp màn hình thấy launcher không phản hồi, đồng hồ đứng; nhiều khả năng do Google Maps ngốn RAM (máy ảo 4 GB) và Quick Boot khôi phục lại trạng thái đang treo. AI khởi động lại bằng `adb reboot` thì chạy bình thường.
+- **Thêm người:** sau khi khởi động lại máy ảo, AI tái hiện: bottom sheet hiện đúng (tối đa 2 người nữa, 50.000 đ/người), gửi thành công, vé lên 3 người. AI nói rõ không xác định chắc được lỗi lúc đầu vì log đã mất khi khởi động lại.
+- **Bỏ dòng ngoại tuyến:** xóa TextView, đoạn code bật/tắt và chuỗi không còn dùng (commit `9ee0791`).
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Chia 2 subagent theo nhóm file riêng, Gradle chỉ chạy một lần ở cuối | Dùng | Nhanh hơn mà không quá tải RAM |
+| Gộp toàn bộ code app vào một commit thay vì tách "Thêm người" và US3 | Dùng | Nhiều file chứa cả hai phần, tách ra thì commit giữa chừng không biên dịch được |
+| Dòng "Vé này mở được cả khi không có mạng" | Bỏ | Mình thấy không cần; chế độ ngoại tuyến vẫn giữ nhãn riêng |
+| Test Google Maps trên máy ảo | Bỏ | Máy ảo thiếu RAM; sẽ test "Chỉ đường" trên máy thật |
+
+### Cách kiểm chứng
+
+- `./gradlew lint testDebugUnitTest assembleDebug` xanh; `deno check .` xanh; Deno test `register-drop-in` 33/33 trên Emulator.
+- CI PR #59 xanh cả 3 job sau commit `ff87720`.
+- Test trên máy ảo với Firebase/Supabase thật: màn "Lượt vãng lai của tôi", mở vé, Thêm người (2 → 3 người, vé cập nhật ngay).
+- Chưa test "Chỉ đường" trên máy thật.
