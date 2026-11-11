@@ -16,11 +16,12 @@ export async function handleCheckinBooking(
     const token = await verifyIdToken(req);
     const body = await req.json().catch(() => ({}));
 
-    const venueId = typeof body.venueId === "string" ? body.venueId.trim() : "";
+    // venueId không bắt buộc: client chỉ có mã quét được (bookingId hoặc qrToken) và không còn
+    // quyền query qrToken (Rules spec 112 T012). Server tra đơn rồi lấy venueId từ chính đơn.
+    const requestedVenueId = typeof body.venueId === "string" ? body.venueId.trim() : "";
     const bookingId = typeof body.bookingId === "string" ? body.bookingId.trim() : "";
     const confirmPayment = Boolean(body.confirmPayment);
 
-    if (!venueId) throw new HttpError(400, "INVALID_VENUE_ID", "Thiếu venueId");
     if (!bookingId) throw new HttpError(400, "INVALID_BOOKING_ID", "Thiếu bookingId");
 
     // 1. Verify owner status
@@ -31,15 +32,7 @@ export async function handleCheckinBooking(
       }
     }
 
-    // 2. Verify venue ownership & status
-    const venue = await firestore.get(`venues/${venueId}`);
-    if (!venue || (venue.ownerId !== token.uid && token.appRole !== "ADMIN")) {
-      throw new HttpError(404, "NOT_FOUND", "Không tìm thấy cơ sở hoặc bạn không có quyền");
-    }
-    if (venue.status === "LOCKED") throw new HttpError(403, "VENUE_LOCKED", "Cơ sở đang bị khóa");
-    if (venue.status === "HIDDEN") throw new HttpError(403, "VENUE_HIDDEN", "Cơ sở đang ở trạng thái ẩn");
-
-    // 3. Verify booking (support direct bookingId or fallback lookup by qrToken)
+    // 2. Tìm đơn theo bookingId, không có thì tra theo qrToken
     let booking = await firestore.get(`bookings/${bookingId}`);
     let resolvedBookingId = bookingId;
     if (!booking && typeof firestore.query === "function") {
@@ -51,9 +44,19 @@ export async function handleCheckinBooking(
         resolvedBookingId = byToken[0].id;
       }
     }
-    if (!booking || booking.venueId !== venueId) {
+    const venueId = typeof booking?.venueId === "string" ? booking.venueId : "";
+    if (!booking || !venueId || (requestedVenueId && requestedVenueId !== venueId)) {
       throw new HttpError(404, "BOOKING_NOT_FOUND", "Không tìm thấy đơn đặt sân");
     }
+
+    // 3. Verify venue ownership & status. Đơn của cơ sở người khác trả cùng mã BOOKING_NOT_FOUND
+    // để không lộ việc mã đó có tồn tại.
+    const venue = await firestore.get(`venues/${venueId}`);
+    if (!venue || (venue.ownerId !== token.uid && token.appRole !== "ADMIN")) {
+      throw new HttpError(404, "BOOKING_NOT_FOUND", "Không tìm thấy đơn đặt sân");
+    }
+    if (venue.status === "LOCKED") throw new HttpError(403, "VENUE_LOCKED", "Cơ sở đang bị khóa");
+    if (venue.status === "HIDDEN") throw new HttpError(403, "VENUE_HIDDEN", "Cơ sở đang ở trạng thái ẩn");
 
     if (booking.status !== "CONFIRMED") {
       throw new HttpError(

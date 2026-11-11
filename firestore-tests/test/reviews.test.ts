@@ -124,9 +124,17 @@ describe('reviews', () => {
     await assertFails(updateDoc(doc(player(), 'venues/venueA'), { ratingAvg: 5, ratingCount: 99 }));
   });
 
-  it('R9: khách chưa đăng nhập không đọc được đánh giá', async () => {
+  it('R9: khách chưa đăng nhập đọc được đánh giá VISIBLE (khớp spec 030 VD-6)', async () => {
     const db = guest();
-    await assertFails(getDoc(doc(db, 'reviews/b-visible')));
-    await assertFails(getDocs(query(collection(db, 'reviews'), where('status', '==', 'VISIBLE'))));
+    await assertSucceeds(getDoc(doc(db, 'reviews/b-visible')));
+    await assertSucceeds(getDocs(query(collection(db, 'reviews'), where('status', '==', 'VISIBLE'))));
+  });
+
+  it('R9b: khách chưa đăng nhập không đọc được đánh giá HIDDEN, không list thiếu điều kiện status', async () => {
+    const db = guest();
+    await assertFails(getDoc(doc(db, 'reviews/b-hidden')));
+    await assertFails(getDoc(doc(db, 'reviews/khong-ton-tai')));
+    await assertFails(getDocs(collection(db, 'reviews')));
+    await assertFails(getDocs(query(collection(db, 'reviews'), where('userId', '==', 'player2'))));
   });
 });
