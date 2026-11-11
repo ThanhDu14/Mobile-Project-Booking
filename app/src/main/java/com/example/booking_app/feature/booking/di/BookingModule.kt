@@ -1,5 +1,7 @@
 package com.example.booking_app.feature.booking.di
 
+import com.example.booking_app.feature.booking.data.FirestoreUpcomingBookingsReader
+import com.example.booking_app.feature.booking.domain.UpcomingBookingsReader
 import com.example.booking_app.feature.booking.data.datasource.BookingRemoteDataSource
 import com.example.booking_app.feature.booking.data.datasource.FirestoreBookingRemoteDataSource
 import com.example.booking_app.feature.booking.data.repository.BookingRepositoryImpl
@@ -13,6 +15,10 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 abstract class BookingModule {
+
+    @Binds
+    @Singleton
+    abstract fun bindUpcomingBookingsReader(impl: FirestoreUpcomingBookingsReader): UpcomingBookingsReader
 
     @Binds
     @Singleton
