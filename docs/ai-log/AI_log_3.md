@@ -1721,3 +1721,86 @@ tasks.md được tick đúng, có 1 commit cho US1.
 - `cd firestore-tests && npx vitest run`: 145/145 test qua (có thêm test R3 cho đánh giá chưa tồn tại).
 - `./gradlew assembleDebug testDebugUnitTest`: build được; 519/520 test qua. Test hỏng duy nhất là `OwnerSlotBlockViewModelTest` của nhóm D: test cố định ngày `20261030` nên hỏng từ khi qua ngày đó, không liên quan đến thay đổi lần này.
 - Chưa chạy màn hình trên máy ảo hoặc thiết bị thật.
+
+## Mục 30: Hoàn thành tuần 6 spec 080 (US1 danh sách/chi tiết buổi, US2 đăng ký và vé QR), sửa lỗi tranh chấp khi nhiều người đăng ký cùng lúc
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-11 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 08 – Đặt lịch vãng lai (spec 080, task T001–T041; T020 chưa chạy) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5, điều phối và subagent) |
+| Mục đích | Hoàn thành các task tuần 6 còn dở: Edge Function `register-drop-in`, domain/data Android, 3 màn hình chi tiết, xác nhận, vé QR; chạy đủ các bộ test; sửa lỗi test đăng ký đồng thời E1 |
+| Nhánh Git | `feature/080-drop-in-session` |
+
+### Prompt đã dùng
+
+```
+Bối cảnh: mình là thành viên C, phụ trách nhóm tính năng 08 Đặt lịch vãng lai (spec 080). Đây là
+phiên làm tiếp: phiên trước đã làm dở các task tuần 6 (Phase 1–4 trong
+specs/080-drop-in-session/tasks.md, T001–T041) nhưng chưa commit và chưa đánh dấu tasks.md. Schema
+đã thống nhất với D (đăng ký ở subcollection dropInSessions/{sid}/registrations/{uid}, startAt/endAt
+kiểu Timestamp, courtIds, ownerId, districtId, timeSlot, venueSnapshot, level chỉ 3 mức). Hợp đồng
+domain (model, interface repository, use case) không được đổi chữ ký.
+
+Mục tiêu: hoàn thành nhanh nhất các task tuần 6 còn lại.
+
+Yêu cầu:
+1. Đối chiếu code đang có với tasks.md để biết task nào xong, dở hoặc chưa làm; báo ngắn gọn rồi
+   làm tiếp.
+2. Chia phần còn lại cho các subagent độc lập (server, Android UI, ...), quy định rõ file mỗi agent
+   được sửa để không sửa trùng. Agent không được commit hay sửa tasks.md.
+3. Giới hạn tài nguyên: mỗi lúc chỉ một agent chạy Gradle (task hẹp, không --parallel, xong thì
+   --stop), chỉ một Firebase Emulator; không chạy Docker (supabase start/serve), không bật máy ảo.
+   Cần androidTest thì dừng lại nhắc mình.
+4. Làm theo TDD khi có thể; đánh dấu [x] task đã xong; commit theo Conventional Commits, chia theo
+   nhóm (rules/index, server, Android domain/data, Android UI).
+5. Không sửa code của thành viên khác (_shared/firestore.ts, _shared/auth.ts, owner-*,
+   delete-account, ...); lỗi có sẵn của người khác chỉ ghi nhận.
+6. Cuối cùng chạy và báo đúng kết quả, kể cả test fail: compile và unit test Gradle; deno test cho
+   _shared/dropin.ts và register-drop-in, gồm test đồng thời E1, E2 chạy 10 lần trên Firebase
+   Emulator; npm test của firestore-tests. Biến môi trường xem ở thư mục repo gốc (chỉ đọc).
+
+Kết quả mong muốn: danh sách task đã xong và chưa xong kèm lý do, kết quả từng bộ test, danh sách
+commit, tin nhắn mẫu báo D các việc cần sửa theo schema mới và báo B về interface tạm
+UpcomingBookingsReader. Chưa push, chưa mở PR.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Đối chiếu hiện trạng: phần lớn code đã có. Còn thiếu 3 Fragment chi tiết, xác nhận, vé QR (T029, T038, T040), nối nút Đăng ký với đăng nhập (T041), và chưa có kết quả Gradle hay test Emulator.
+- Chia việc cho 4 subagent:
+  - UI-1: màn chi tiết buổi và T041, dùng `AuthNavigator` có sẵn của spec 010 với `returnTo = smashnow://dropin/confirm/{sessionId}`.
+  - UI-2: màn xác nhận (chọn số người, 2 cách thanh toán, cảnh báo, khóa nút khi đang gửi) và màn vé QR (ZXing, mã vé sao chép được, tăng độ sáng màn hình).
+  - Server: rà `register-drop-in` và `_shared/dropin.ts` theo contract, sửa trường hợp buổi không còn document trong `cancelRegistrationInTx`, chỉnh seed khớp kịch bản quickstart.
+  - Gradle: agent duy nhất chạy Gradle; tạo layout còn thiếu `item_dropin_filter_chip.xml`.
+- Lỗi E1 (20 người cùng đăng ký buổi còn 5 chỗ): không lần nào vượt sức chứa, nhưng 17/20 request trả `503 BUSY`. Đo trên Emulator thấy các transaction cùng giữ khóa đọc trên document buổi rồi kẹt nhau tới "Transaction lock timeout" (khoảng 2,2 giây), sau đó bị hủy cả loạt. Chỉ nới backoff thì không đủ ổn định.
+  - Cách sửa: xếp hàng các request cùng `sessionId` trong mỗi isolate (`createKeyedSerializer`) trước khi mở transaction. Giữa các isolate vẫn do transaction bảo đảm không vượt sức chứa.
+  - Test E1, E2 giả lập 4 và 2 isolate để transaction vẫn tranh chấp thật. Backoff giữ 50–400 ms đúng contract. Ghi lý do vào research.md mục R2.
+- Tài liệu: đánh dấu tasks.md (ghi chú thêm ở T004, T010, T031, T036), sửa lệnh seed trong quickstart thành `deno run -A`.
+- Soạn tin nhắn mẫu cho D (owner-create-session, check-in/roster, owner-cancel-session, owner-update-session, 2 lỗi có sẵn trên main) và cho B (interface tạm `UpcomingBookingsReader`).
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| `fragment_dropin_detail.xml`, `DropInDetailFragment.kt` | Dùng | Đúng T029, T041; bỏ ảnh đầu trang của wireframe vì model buổi không có ảnh |
+| `fragment_dropin_confirm.xml`, `DropInConfirmFragment.kt`, thêm `retryLoad()` vào `DropInConfirmViewModel` | Dùng | Đúng T038; `retryLoad()` chỉ thêm API cho nút Thử lại, không đổi test |
+| `fragment_dropin_ticket.xml`, `DropInTicketFragment.kt` | Dùng | Đúng T040; nút hủy vé để ẩn tới khi làm US4 (tuần 7) |
+| `item_dropin_filter_chip.xml` | Dùng | Bộ lọc gọi tới layout này nhưng chưa có, làm lỗi biên dịch |
+| Hàng đợi theo buổi trong `register-drop-in/handler.ts` | Dùng | Sửa lỗi E1 mà không đổi contract |
+| Nới backoff lên 2000 ms | Bỏ | Đo thực tế vẫn chập chờn và lệch contract 50–400 ms |
+| `_shared/dropin.ts`: không ghi buổi khi document buổi đã mất | Dùng | Tránh làm hỏng transaction của người gọi (ví dụ xóa tài khoản) |
+| `scripts/seed/080-dropin.ts`: đổi quận, giá, ngày của vài buổi | Dùng | Khớp các kịch bản Q1, Q2, Q8 trong quickstart |
+| Chuỗi "Chính sách hủy" ở màn chi tiết | Bỏ | Không có trong task tuần 6 |
+| `supabase/functions/deno.lock` | Bỏ (không commit) | Repo chưa từng commit file lock của Deno |
+
+### Cách kiểm chứng
+
+- `./gradlew :app:compileDebugKotlin :app:compileDebugAndroidTestKotlin`: qua.
+- `./gradlew :app:testDebugUnitTest`: 1047/1048 test qua. Test hỏng duy nhất là `OwnerBookingsViewModelTest.emitsBookingsAndFiltersByPendingUpcomingPast` của nhóm D (cố định ngày 2026-11-06), không liên quan. Phần dropin và core.format 108/108 qua.
+- `deno test` cho `_shared/dropin.test.ts` và `register-drop-in/handler.test.ts`: 37/37 qua.
+- `deno test register-drop-in/index.test.ts` trên Firebase Emulator (Auth + Firestore): 4/4 qua. E1 10/10 lần `success=5 full=15 registeredCount=12/12`, E2 10/10 lần, E3 idempotent, tài khoản bị khóa trả 403.
+- `npm test` trong `firestore-tests`: 213/220 qua, 7 test hỏng có sẵn trên main (court-detail, owner-operations, recurringHoldTransaction). `dropInSessions.test.ts` 22/22 qua.
+- Chưa chạy androidTest T020 `FirestoreDropInSessionRepositoryTest` (cần máy ảo); chưa chạy màn hình trên máy ảo hoặc thiết bị thật.
+- Commit: `8c2f7c3`, `8384b90`, `2349d64`, `9326183`, `7280a17`. Chưa push.
