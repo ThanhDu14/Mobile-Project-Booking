@@ -335,16 +335,13 @@ export async function latestOwnerApplication(uid: string): Promise<Record<string
   });
   if (!res.ok) throw await toError(res);
   const rows = await res.json() as { document?: { name: string; fields?: Record<string, FirestoreValue> } }[];
-  const docs = rows
+  const docs: Record<string, unknown>[] = rows
     .map((row) => row.document)
     .filter((doc): doc is NonNullable<typeof doc> => !!doc)
     .map((doc) => ({ ...decodeFields(doc.fields ?? {}), __documentId: doc.name.split("/").pop() }));
   if (docs.length === 0) return null;
   docs.sort((a, b) => String(b.submittedAt ?? "").localeCompare(String(a.submittedAt ?? "")));
   return docs[0];
-  const doc = rows.find((row) => row.document)?.document;
-  return doc ? { ...decodeFields(doc.fields ?? {}), __documentId: doc.name.split("/").pop() } : null;
-  throw new FirestoreError("ABORTED", 409, "Transaction bị tranh chấp sau nhiều lần thử");
 }
 
 /** Tạo document mới; đã có thì `commit` ném `ALREADY_EXISTS`. */

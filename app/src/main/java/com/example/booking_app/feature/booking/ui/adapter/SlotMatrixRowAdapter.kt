@@ -200,7 +200,6 @@ class SlotMatrixRowAdapter(
         }
 
         override fun areContentsTheSame(oldItem: SlotMatrixRow, newItem: SlotMatrixRow): Boolean {
-            if (oldItem === newItem) return true
             if (oldItem.slots.size != newItem.slots.size) return false
             for (i in oldItem.slots.indices) {
                 val s1 = oldItem.slots[i]
