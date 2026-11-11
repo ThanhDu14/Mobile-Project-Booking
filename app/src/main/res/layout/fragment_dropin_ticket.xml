@@ -148,6 +148,7 @@
                                 android:id="@+id/qrImage"
                                 android:layout_width="240dp"
                                 android:layout_height="240dp"
+                                android:contentDescription="@string/dropin_ticket_qr_image_description"
                                 android:scaleType="fitCenter"
                                 tools:src="@drawable/ic_qr_code_scanner_24" />
                         </FrameLayout>

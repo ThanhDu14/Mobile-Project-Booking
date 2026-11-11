@@ -4,6 +4,7 @@
     <string name="dropin_ticket_offline_banner">Bạn đang ngoại tuyến. Đây là vé đã lưu trên máy, mã QR vẫn dùng được.</string>
     <string name="dropin_ticket_directions">Chỉ đường</string>
     <string name="dropin_ticket_add_party">Thêm người</string>
+    <string name="dropin_ticket_qr_image_description">Mã QR check-in</string>
 
     <string name="dropin_add_party_title">Thêm người vào lượt</string>
     <string name="dropin_add_party_hint">Bạn đang có %1$d người. Thêm được tối đa %2$d người nữa (mỗi lượt tối đa 4 người).</string>
