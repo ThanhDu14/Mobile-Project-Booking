@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.booking_app.core.location.DistanceFormatter
+import com.example.booking_app.core.model.VenueSummary
 import com.example.booking_app.core.location.GeoDistance
 import com.example.booking_app.core.location.LocationProvider
 import com.example.booking_app.core.network.AppError
@@ -12,12 +13,16 @@ import com.example.booking_app.core.network.toAppError
 import com.example.booking_app.core.schedule.BookingWindow
 import com.example.booking_app.core.schedule.TimeOfDay
 import com.example.booking_app.core.session.SessionManager
+import com.example.booking_app.core.session.SessionState
 import com.example.booking_app.core.util.AppClock
+import com.example.booking_app.feature.courtdetail.domain.FavoriteGateway
 import com.example.booking_app.feature.courtdetail.domain.OpeningHours
 import com.example.booking_app.feature.courtdetail.domain.OpeningTicker
+import com.example.booking_app.feature.courtdetail.domain.PendingActionResolver
 import com.example.booking_app.feature.courtdetail.domain.SearchWindowArgs
 import com.example.booking_app.feature.courtdetail.domain.model.CourtSummary
 import com.example.booking_app.feature.courtdetail.domain.model.PendingAction
+import com.example.booking_app.feature.courtdetail.domain.model.PendingDecision
 import com.example.booking_app.feature.courtdetail.domain.model.PhoneDisplay
 import com.example.booking_app.feature.courtdetail.domain.model.ReviewPreview
 import com.example.booking_app.feature.courtdetail.domain.model.SearchWindow
@@ -38,8 +43,12 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -58,6 +67,8 @@ import javax.inject.Inject
  * - `courts`, `priceRules` đọc một lần, song song với venue; khách thì chờ venue trước để không đọc khi cơ sở
  *   đang tạm ngừng (R10).
  * - Khung giờ từ tìm kiếm hết hạn khi qua giờ bắt đầu (ticker mỗi phút).
+ * - Khách bấm "Đặt sân", trái tim, chat → mời đăng nhập; thao tác ghi vào `SavedStateHandle` và chạy đúng một lần
+ *   khi màn hình hiện lại sau khi đăng nhập (research R11, [PendingActionResolver]).
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 @HiltViewModel
@@ -68,6 +79,7 @@ class CourtDetailViewModel @Inject constructor(
     private val loadPriceTable: LoadPriceTableUseCase,
     private val checkVenueBookable: CheckVenueBookableUseCase,
     private val loadLatestReviews: LoadLatestReviewsUseCase,
+    private val favoriteGateway: FavoriteGateway,
     private val sessionManager: SessionManager,
     private val locationProvider: LocationProvider,
     private val clock: AppClock,
@@ -105,6 +117,13 @@ class CourtDetailViewModel @Inject constructor(
     private var distanceRequested = false
     private var reviewsRequested = false
 
+    /** `onResume` → `true`, `onPause` → `false`: khi `nav_auth` nằm trên thì không hủy nhầm thao tác chờ. */
+    private var screenVisible = false
+    private var latestIsFavorite: Boolean? = null
+
+    /** Trạng thái lạc quan khi vừa bấm trái tim; xóa khi ghi xong để listener quyết định (lỗi → về trạng thái cũ). */
+    private val favoriteOverride = MutableStateFlow<Boolean?>(null)
+
     private val effectChannel = Channel<CourtDetailEffect>(Channel.BUFFERED)
     val effects: Flow<CourtDetailEffect> = effectChannel.receiveAsFlow()
 
@@ -112,11 +131,30 @@ class CourtDetailViewModel @Inject constructor(
         .flatMapLatest { observeVenueDetail(venueId).onStart<VenueView?> { emit(null) } }
         .onEach(::onVenue)
 
+    /** `null` khi là khách. Listener `favorites` chỉ chạy khi đã đăng nhập và có người thu thập [uiState]. */
+    private val favoriteFlow: Flow<Boolean?> = sessionManager.sessionState
+        .map { (it as? SessionState.SignedIn)?.uid }
+        .distinctUntilChanged()
+        .flatMapLatest { uid ->
+            if (uid == null) {
+                flowOf(null)
+            } else {
+                favoriteGateway.observeIsFavorite(venueId)
+                    .map<Boolean, Boolean?> { it }
+                    // Mất quyền đọc (vừa đăng xuất): giữ trạng thái đang hiện như 070.
+                    .catch { }
+            }
+        }
+        .let { observed -> combine(observed, favoriteOverride) { o, override -> o?.let { override ?: it } } }
+        .onEach { latestIsFavorite = it }
+
     private val ticker: Flow<ZonedDateTime> = OpeningTicker.ticks(clock)
         .onEach { now -> window.update { w -> w?.takeIf { SearchWindowArgs.isUpcoming(it, now) } } }
 
     val uiState: StateFlow<CourtDetailUiState> =
-        combine(venueFlow, sections, ticker, window) { venue, s, now, w -> buildState(venue, s, now, w) }
+        combine(venueFlow, sections, ticker, window, favoriteFlow) { venue, s, now, w, favorite ->
+            buildState(venue, s, now, w).copy(isFavorite = favorite)
+        }
             .stateIn(
                 viewModelScope,
                 SharingStarted.WhileSubscribed(STOP_TIMEOUT_MS),
@@ -140,6 +178,40 @@ class CourtDetailViewModel @Inject constructor(
 
     fun onBookClicked() {
         viewModelScope.launch { book() }
+    }
+
+    /** Gọi từ `onResume` (contracts/ui-screens.md §4). */
+    fun onScreenVisible() {
+        screenVisible = true
+        resolvePending()
+    }
+
+    /** Gọi từ `onPause`. */
+    fun onScreenHidden() {
+        screenVisible = false
+    }
+
+    /** "Đăng nhập" trong hộp mời: nhớ thao tác rồi mở `nav_auth`. */
+    fun onLoginChosen(action: PendingAction) {
+        savedStateHandle[KEY_PENDING_ACTION] = action.name
+        send(CourtDetailEffect.OpenLogin)
+    }
+
+    fun onFavoriteClicked() {
+        if (sessionManager.isGuest.value) {
+            send(CourtDetailEffect.ShowLoginPrompt(PendingAction.FAVORITE))
+            return
+        }
+        if (latestVenue == null) return
+        viewModelScope.launch { applyFavorite(latestIsFavorite != true) }
+    }
+
+    fun onChatClicked() {
+        if (sessionManager.isGuest.value) {
+            send(CourtDetailEffect.ShowLoginPrompt(PendingAction.CHAT))
+            return
+        }
+        chat()
     }
 
     fun onPhotoClicked(index: Int) {
@@ -184,6 +256,65 @@ class CourtDetailViewModel @Inject constructor(
     }
 
     // ---------- nội bộ ----------
+
+    private fun resolvePending() {
+        val pending = savedStateHandle.get<String>(KEY_PENDING_ACTION)
+            ?.let { name -> PendingAction.entries.firstOrNull { it.name == name } }
+        val venue = latestVenue
+        val decision = PendingActionResolver.resolve(
+            state = sessionManager.sessionState.value,
+            pending = pending,
+            ownerId = venue?.ownerId,
+            currentUid = sessionManager.currentUid(),
+            screenVisible = screenVisible,
+        )
+        when (decision) {
+            PendingDecision.Wait -> Unit
+            PendingDecision.Cancel -> clearPending()
+            PendingDecision.RejectOwnVenue -> {
+                clearPending()
+                send(CourtDetailEffect.Snackbar(CourtDetailMessage.OWN_VENUE))
+            }
+            is PendingDecision.Run -> {
+                // Chưa có venue (tạo lại sau process death): chờ [onVenue] gọi lại để còn kiểm tra chủ cơ sở.
+                if (venue == null) return
+                clearPending()
+                when (decision.action) {
+                    PendingAction.BOOK -> viewModelScope.launch { book() }
+                    PendingAction.FAVORITE -> viewModelScope.launch { applyFavorite(true) }
+                    PendingAction.CHAT -> chat()
+                }
+            }
+        }
+    }
+
+    private fun clearPending() {
+        savedStateHandle.remove<String>(KEY_PENDING_ACTION)
+    }
+
+    private fun chat() {
+        val venue = latestVenue ?: return
+        if (venue.ownerId == sessionManager.currentUid()) {
+            send(CourtDetailEffect.Snackbar(CourtDetailMessage.OWN_VENUE))
+            return
+        }
+        if (currentAvailability() != VenueAvailability.ACTIVE) return
+        send(CourtDetailEffect.OpenChat(venueId))
+    }
+
+    /** Lạc quan (FR-021 của 070): trái tim đổi ngay, ghi lỗi thì trả về trạng thái cũ và báo snackbar. */
+    private suspend fun applyFavorite(target: Boolean) {
+        favoriteOverride.value = target
+        send(CourtDetailEffect.Snackbar(if (target) CourtDetailMessage.FAVORITE_ADDED else CourtDetailMessage.FAVORITE_REMOVED))
+        val result = favoriteGateway.setFavorite(venueSummary(), target)
+        favoriteOverride.value = null
+        if (result.isFailure) send(CourtDetailEffect.Snackbar(CourtDetailMessage.FAVORITE_FAILED))
+    }
+
+    /** Ảnh chụp nhanh lưu kèm yêu thích (070 R12); cơ sở đã xóa thì chỉ còn `venueId` để bỏ yêu thích. */
+    private fun venueSummary(): VenueSummary = latestVenue
+        ?.let { VenueSummary(venueId = it.id, name = it.name, photoPath = it.coverPhotoPath, address = it.address) }
+        ?: VenueSummary(venueId = venueId, name = "", photoPath = null, address = "")
 
     /** Khoảng cách chỉ khi đã có quyền vị trí từ trước (020 xin quyền); 030 không xin quyền (research R7). */
     private fun loadDistance(venue: VenueDetail) {
@@ -251,6 +382,7 @@ class CourtDetailViewModel @Inject constructor(
             // Đánh giá tải sau phần đầu (FR-024); chưa có đánh giá thì không đọc `reviews` (R3).
             if (!reviewsRequested && venue.rating.count > 0) loadReviews()
             if (!loadsStarted) startLoads()
+            if (screenVisible) resolvePending()
         }
     }
 
