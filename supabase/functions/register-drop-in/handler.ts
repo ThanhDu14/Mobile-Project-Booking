@@ -73,11 +73,23 @@ const PAYMENT_METHODS: readonly string[] = ["MOCK_PAY", "AT_VENUE"];
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 interface RegisterInput {
+  kind: "REGISTER";
   sessionId: string;
   partySize: number;
   paymentMethod: PaymentMethod;
   requestId: string;
 }
+
+/** `action: "ADD_PARTY"` (FR-008a): thêm người vào đăng ký đang có, tổng tối đa [MAX_PARTY]. */
+interface AddPartyInput {
+  kind: "ADD_PARTY";
+  sessionId: string;
+  additional: number;
+  requestId: string;
+}
+
+/** Tối đa số người của một lượt (bản thân + 3 bạn, FR-006). */
+export const MAX_PARTY = 4;
 
 const invalid = (message: string) => new HttpError(400, "INVALID_ARGUMENT", message);
 
@@ -89,9 +101,20 @@ async function readBody(req: Request): Promise<Record<string, unknown>> {
   throw invalid("Body phải là JSON object");
 }
 
-function parseInput(body: Record<string, unknown>): RegisterInput {
+function parseInput(body: Record<string, unknown>): RegisterInput | AddPartyInput {
   const sessionId = typeof body.sessionId === "string" ? body.sessionId.trim() : "";
   if (!sessionId || sessionId.includes("/")) throw invalid("Thiếu hoặc sai sessionId");
+  if (body.action !== undefined && body.action !== "REGISTER" && body.action !== "ADD_PARTY") {
+    throw invalid("action phải là REGISTER hoặc ADD_PARTY");
+  }
+  if (body.action === "ADD_PARTY") {
+    const additional = body.additional;
+    if (typeof additional !== "number" || !Number.isInteger(additional) || additional < 1 || additional >= MAX_PARTY) {
+      throw invalid(`additional phải từ 1 đến ${MAX_PARTY - 1}`);
+    }
+    if (typeof body.requestId !== "string" || !UUID.test(body.requestId)) throw invalid("requestId phải là UUID");
+    return { kind: "ADD_PARTY", sessionId, additional, requestId: body.requestId };
+  }
   const partySize = body.partySize;
   if (typeof partySize !== "number" || !Number.isInteger(partySize) || partySize < 1 || partySize > 4) {
     throw invalid("partySize phải từ 1 đến 4");
@@ -100,7 +123,13 @@ function parseInput(body: Record<string, unknown>): RegisterInput {
     throw invalid("paymentMethod phải là MOCK_PAY hoặc AT_VENUE");
   }
   if (typeof body.requestId !== "string" || !UUID.test(body.requestId)) throw invalid("requestId phải là UUID");
-  return { sessionId, partySize, paymentMethod: body.paymentMethod as PaymentMethod, requestId: body.requestId };
+  return {
+    kind: "REGISTER",
+    sessionId,
+    partySize,
+    paymentMethod: body.paymentMethod as PaymentMethod,
+    requestId: body.requestId,
+  };
 }
 
 const asDate = (v: unknown): Date | null => (v instanceof Date && !Number.isNaN(v.getTime()) ? v : null);
@@ -140,24 +169,30 @@ function sessionSummary(s: SessionDoc) {
   };
 }
 
-/** Kiểm tra theo đúng thứ tự bảng "Quy tắc kiểm tra của register-drop-in" (data-model.md). */
-async function register(
-  tx: FirestoreTransaction,
-  uid: string,
-  input: RegisterInput,
-  now: Date,
-): Promise<{ result: RegisterResult; writes: Write[] }> {
-  const session = await tx.get(sessionPath(input.sessionId)) as SessionDoc | null;
+interface Checked {
+  session: SessionDoc;
+  startAt: Date;
+  venueId: string;
+  regPath: string;
+  existing: RegistrationDoc | null;
+}
+
+/**
+ * Các bước kiểm tra chung của đăng ký và thêm người, theo thứ tự bảng "Quy tắc kiểm tra của register-drop-in"
+ * (data-model.md): buổi tồn tại, chưa hủy, chưa bắt đầu, cơ sở ACTIVE, không phải buổi của mình.
+ */
+async function loadAndCheck(tx: FirestoreTransaction, uid: string, sessionId: string, now: Date): Promise<Checked> {
+  const session = await tx.get(sessionPath(sessionId)) as SessionDoc | null;
   if (!session) throw new HttpError(404, "SESSION_NOT_FOUND", "Không tìm thấy buổi chơi");
   if (session.status !== "OPEN" && session.status !== "FULL") {
     throw new HttpError(409, "SESSION_CANCELLED", "Buổi đã bị hủy");
   }
   const startAt = asDate(session.startAt);
-  if (!startAt) throw new Error(`dropInSessions/${input.sessionId} thiếu startAt (Timestamp)`);
+  if (!startAt) throw new Error(`dropInSessions/${sessionId} thiếu startAt (Timestamp)`);
   if (now.getTime() >= startAt.getTime()) throw new HttpError(409, "SESSION_STARTED", "Buổi đã bắt đầu");
 
   const venueId = typeof session.venueId === "string" ? session.venueId : "";
-  const regPath = registrationPath(input.sessionId, uid);
+  const regPath = registrationPath(sessionId, uid);
   const [venue, existing] = await Promise.all([
     venueId ? tx.get(`venues/${venueId}`) : Promise.resolve(null),
     tx.get(regPath) as Promise<RegistrationDoc | null>,
@@ -168,6 +203,17 @@ async function register(
   if (session.ownerId === uid || venue.ownerId === uid) {
     throw new HttpError(403, "OWN_SESSION", "Bạn không thể đăng ký buổi do mình mở");
   }
+  return { session, startAt, venueId, regPath, existing };
+}
+
+/** Đăng ký mới (US2). */
+async function register(
+  tx: FirestoreTransaction,
+  uid: string,
+  input: RegisterInput,
+  now: Date,
+): Promise<{ result: RegisterResult; writes: Write[] }> {
+  const { session, startAt, venueId, regPath, existing } = await loadAndCheck(tx, uid, input.sessionId, now);
 
   if (existing && (existing.status === "REGISTERED" || existing.status === "CHECKED_IN")) {
     if (existing.requestId === input.requestId) {
@@ -236,6 +282,59 @@ async function register(
   };
 }
 
+/**
+ * Thêm người vào đăng ký đang có (FR-008a). Giữ nguyên QR, mã vé, cách thanh toán: MOCK_PAY coi như đã trả phần
+ * thêm (vẫn PAID), AT_VENUE trả tại sân. Gửi lại cùng `requestId` (lưu ở `lastAddRequestId`) thì không cộng lần hai.
+ */
+async function addParty(
+  tx: FirestoreTransaction,
+  uid: string,
+  input: AddPartyInput,
+  now: Date,
+): Promise<{ result: RegisterResult; writes: Write[] }> {
+  const { session, regPath, existing } = await loadAndCheck(tx, uid, input.sessionId, now);
+  if (!existing || existing.status !== "REGISTERED") {
+    throw new HttpError(409, "NOT_REGISTERED", "Bạn chưa có lượt đăng ký còn hiệu lực ở buổi này");
+  }
+  if (existing.lastAddRequestId === input.requestId) {
+    return { result: { created: false, registration: existing, session: sessionSummary(session) }, writes: [] };
+  }
+  const currentParty = asNumber(existing.partySize, 1);
+  const maxAdditional = Math.max(0, MAX_PARTY - currentParty);
+  if (input.additional > maxAdditional) {
+    throw new HttpError(409, "PARTY_LIMIT", `Mỗi lượt tối đa ${MAX_PARTY} người (thêm được ${maxAdditional})`, {
+      maxAdditional,
+    });
+  }
+  const capacity = asNumber(session.capacity);
+  const registeredCount = asNumber(session.registeredCount);
+  const remaining = Math.max(0, capacity - registeredCount);
+  if (input.additional > remaining) {
+    throw new HttpError(409, "SESSION_FULL", `Buổi không còn đủ chỗ (còn ${remaining} chỗ)`, { remaining });
+  }
+
+  const newCount = registeredCount + input.additional;
+  const newStatus = newCount >= capacity ? "FULL" : "OPEN";
+  const pricePerPerson = asNumber(existing.pricePerPerson, asNumber(session.pricePerPerson));
+  const patch = {
+    partySize: currentParty + input.additional,
+    amount: asNumber(existing.amount) + pricePerPerson * input.additional,
+    lastAddRequestId: input.requestId,
+    updatedAt: now,
+  };
+  return {
+    result: {
+      created: false,
+      registration: { ...existing, ...patch },
+      session: { registeredCount: newCount, capacity, status: newStatus },
+    },
+    writes: [
+      updateWrite(sessionPath(input.sessionId), { registeredCount: newCount, status: newStatus, updatedAt: now }),
+      updateWrite(regPath, patch),
+    ],
+  };
+}
+
 /** Body trả về: không có `qrToken` (contract §1). */
 function toResponseRegistration(r: RegistrationDoc) {
   return {
@@ -260,7 +359,10 @@ export async function handleRegisterDropIn(req: Request, deps: RegisterDeps = de
     // Lấy giờ sau khi tới lượt trong hàng đợi để kiểm tra SESSION_STARTED không dùng giờ cũ.
     const result = await serialize(input.sessionId, () => {
       const now = deps.now();
-      return runWithBackoff(deps, (tx) => register(tx, uid, input, now));
+      return runWithBackoff(
+        deps,
+        (tx) => input.kind === "ADD_PARTY" ? addParty(tx, uid, input, now) : register(tx, uid, input, now),
+      );
     });
 
     if (result.created) {

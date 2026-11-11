@@ -477,3 +477,106 @@ Deno.test("createKeyedSerializer: cùng khóa chạy lần lượt (kể cả ta
   assertEquals(await a2, 2);
   assertEquals(log, ["a1 start", "b1", "a1 end", "a2"]);
 });
+
+// ---------- ADD_PARTY: thêm người vào đăng ký đang có (FR-008a) ----------
+
+const RID3 = "0a0b0c0d-1234-4567-89ab-cdef01234567";
+const existingReg = (extra: Doc = {}): Doc => ({
+  userId: "p1",
+  sessionId: SID,
+  venueId: "v1",
+  partySize: 2,
+  status: "REGISTERED",
+  paymentMethod: "MOCK_PAY",
+  paymentStatus: "PAID",
+  pricePerPerson: 60000,
+  amount: 120000,
+  qrToken: "qr-cu",
+  ticketCode: "DI-OLD",
+  requestId: RID,
+  ...extra,
+});
+const addBody = (extra: Record<string, unknown> = {}) => ({
+  action: "ADD_PARTY",
+  sessionId: SID,
+  additional: 1,
+  requestId: RID3,
+  ...extra,
+});
+
+Deno.test("ADD_PARTY: thêm 1 người → 200, partySize 3, amount cộng thêm, buổi +1, giữ QR và mã vé", async () => {
+  const env = setup({}, { registrations: { p1: existingReg() } });
+  const r = await call(env, "p1", addBody());
+  assertEquals(r.status, 200);
+  assertEquals(r.body.registration.partySize, 3);
+  assertEquals(r.body.registration.amount, 180000);
+  assertEquals(r.body.registration.paymentStatus, "PAID");
+  assertEquals(r.body.registration.ticketCode, "DI-OLD");
+  assertEquals(r.body.session.registeredCount, 9);
+  const reg = env.fs.read(regPath("p1"))!;
+  assertEquals(reg.partySize, 3);
+  assertEquals(reg.amount, 180000);
+  assertEquals(reg.qrToken, "qr-cu");
+  assertEquals(reg.lastAddRequestId, RID3);
+  assertEquals(env.fs.read(SESSION)!.registeredCount, 9);
+  assertEquals(env.sent.length, 0);
+});
+
+Deno.test("ADD_PARTY: AT_VENUE thì vẫn UNPAID; đủ chỗ cuối → buổi FULL", async () => {
+  const env = setup({ registeredCount: 10 }, {
+    registrations: { p1: existingReg({ paymentMethod: "AT_VENUE", paymentStatus: "UNPAID" }) },
+  });
+  const r = await call(env, "p1", addBody({ additional: 2 }));
+  assertEquals(r.status, 200);
+  assertEquals(r.body.registration.paymentStatus, "UNPAID");
+  assertEquals(r.body.session.status, "FULL");
+  assertEquals(env.fs.read(SESSION)!.status, "FULL");
+});
+
+Deno.test("ADD_PARTY: cùng requestId gửi lại → 200, chỉ cộng một lần", async () => {
+  const env = setup({}, { registrations: { p1: existingReg() } });
+  await call(env, "p1", addBody());
+  const again = await call(env, "p1", addBody());
+  assertEquals(again.status, 200);
+  assertEquals(again.body.registration.partySize, 3);
+  assertEquals(env.fs.read(SESSION)!.registeredCount, 9);
+});
+
+Deno.test("ADD_PARTY: tổng vượt 4 người → 409 PARTY_LIMIT kèm maxAdditional, không ghi gì", async () => {
+  const env = setup({}, { registrations: { p1: existingReg({ partySize: 3, amount: 180000 }) } });
+  const r = await call(env, "p1", addBody({ additional: 2 }));
+  assertEquals(errorOf(r), [409, "PARTY_LIMIT"]);
+  assertEquals(r.body.error.maxAdditional, 1);
+  assertEquals(env.fs.read(regPath("p1"))!.partySize, 3);
+  assertEquals(env.fs.read(SESSION)!.registeredCount, 8);
+});
+
+Deno.test("ADD_PARTY: không đủ chỗ → 409 SESSION_FULL kèm remaining", async () => {
+  const env = setup({ registeredCount: 11 }, { registrations: { p1: existingReg() } });
+  const r = await call(env, "p1", addBody({ additional: 2 }));
+  assertEquals(errorOf(r), [409, "SESSION_FULL"]);
+  assertEquals(r.body.error.remaining, 1);
+});
+
+Deno.test("ADD_PARTY: chưa đăng ký, đã hủy hoặc đã check-in → 409 NOT_REGISTERED", async () => {
+  for (const reg of [null, existingReg({ status: "CANCELLED" }), existingReg({ status: "CHECKED_IN" })]) {
+    const env = setup({}, { registrations: reg ? { p1: reg } : {} });
+    assertEquals(errorOf(await call(env, "p1", addBody())), [409, "NOT_REGISTERED"]);
+  }
+});
+
+Deno.test("ADD_PARTY: buổi đã bắt đầu, bị hủy, cơ sở ngừng → mã lỗi như đăng ký", async () => {
+  let env = setup({ startAt: NOW }, { registrations: { p1: existingReg() } });
+  assertEquals(errorOf(await call(env, "p1", addBody())), [409, "SESSION_STARTED"]);
+  env = setup({ status: "CANCELLED" }, { registrations: { p1: existingReg() } });
+  assertEquals(errorOf(await call(env, "p1", addBody())), [409, "SESSION_CANCELLED"]);
+  env = setup({}, { venue: { status: "HIDDEN" }, registrations: { p1: existingReg() } });
+  assertEquals(errorOf(await call(env, "p1", addBody())), [409, "VENUE_INACTIVE"]);
+});
+
+Deno.test("ADD_PARTY: additional 0/4/1.5, requestId sai, action lạ → 400 INVALID_ARGUMENT", async () => {
+  const env = setup({}, { registrations: { p1: existingReg() } });
+  for (const bad of [{ additional: 0 }, { additional: 4 }, { additional: 1.5 }, { requestId: "x" }, { action: "FOO" }]) {
+    assertEquals(errorOf(await call(env, "p1", addBody(bad))), [400, "INVALID_ARGUMENT"]);
+  }
+});
