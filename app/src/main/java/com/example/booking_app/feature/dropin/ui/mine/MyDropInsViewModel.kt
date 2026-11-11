@@ -3,11 +3,16 @@ package com.example.booking_app.feature.dropin.ui.mine
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.booking_app.core.util.AppClock
 import com.example.booking_app.feature.dropin.domain.model.DropInCursor
 import com.example.booking_app.feature.dropin.domain.model.MyDropInItem
 import com.example.booking_app.feature.dropin.domain.model.Page
 import com.example.booking_app.feature.dropin.domain.model.RegistrationOutcome
+import com.example.booking_app.feature.dropin.domain.model.RegistrationStatus
 import com.example.booking_app.feature.dropin.domain.usecase.LoadMyDropIns
+import com.example.booking_app.feature.review.domain.ReviewEligibility
+import com.example.booking_app.feature.review.domain.ReviewRepository
+import com.example.booking_app.feature.review.domain.model.Review
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -17,6 +22,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import java.time.Instant
@@ -28,11 +34,14 @@ enum class MyDropInsTab { UPCOMING, PAST }
  * Một dòng trong danh sách.
  * - [showSessionChanged]: nhãn "Buổi đã thay đổi" (AC 3.5), chỉ cho lượt còn sắp tới.
  * - [outcome]: nhãn kết quả ("Đã tham gia", "Đã hủy", "Buổi bị hủy", "Không đến"); `null` khi lượt còn sắp tới.
+ * - [reviewEligibility]: nút đánh giá ở "Đã qua" (US5): "Đánh giá buổi chơi", "Xem đánh giá của bạn", "Đã hết hạn đánh giá"
+ *   hoặc không hiện ([ReviewEligibility.NOT_ELIGIBLE], gồm cả lúc chưa đọc xong đánh giá của mình).
  */
 data class MyDropInRow(
     val item: MyDropInItem,
     val showSessionChanged: Boolean,
     val outcome: RegistrationOutcome?,
+    val reviewEligibility: ReviewEligibility = ReviewEligibility.NOT_ELIGIBLE,
 )
 
 /** Trạng thái màn hình (contracts/ui-screens.md mục 2). */
@@ -57,6 +66,9 @@ sealed interface MyDropInsEvent {
 
     data object FindSessions : MyDropInsEvent
 
+    /** Mở màn hình viết hoặc xem đánh giá của buổi (US5); chế độ xem hay viết do màn hình đánh giá tự quyết theo dữ liệu. */
+    data class OpenReview(val sessionId: String) : MyDropInsEvent
+
     /** Tải thêm "Đã qua" lỗi: giữ danh sách đang hiện, Fragment báo bằng Snackbar. */
     data class LoadMoreFailed(val cause: Throwable) : MyDropInsEvent
 }
@@ -69,6 +81,8 @@ sealed interface MyDropInsEvent {
 class MyDropInsViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val loadMyDropIns: LoadMyDropIns,
+    private val reviewRepository: ReviewRepository,
+    private val clock: AppClock,
 ) : ViewModel() {
 
     /** Dữ liệu đã tải; `null` là chưa có. */
@@ -78,6 +92,8 @@ class MyDropInsViewModel @Inject constructor(
         val pastCursor: DropInCursor? = null,
         val loadingMorePast: Boolean = false,
         val error: Throwable? = null,
+        /** Đánh giá của mình theo `sessionId` cho các lượt đã check-in ở "Đã qua"; chưa có key là chưa đọc xong. */
+        val reviews: Map<String, Review?> = emptyMap(),
     )
 
     private var loaded = Loaded()
@@ -93,6 +109,8 @@ class MyDropInsViewModel @Inject constructor(
 
     private var upcomingJob: Job? = null
     private var pastJob: Job? = null
+    private val reviewJobs = mutableListOf<Job>()
+    private val reviewRequested = mutableSetOf<String>()
 
     init {
         start()
@@ -106,6 +124,10 @@ class MyDropInsViewModel @Inject constructor(
 
     fun onItemClicked(sessionId: String) {
         _events.trySend(MyDropInsEvent.OpenTicket(sessionId))
+    }
+
+    fun onReviewClicked(sessionId: String) {
+        _events.trySend(MyDropInsEvent.OpenReview(sessionId))
     }
 
     fun onFindSessionsClicked() {
@@ -128,6 +150,7 @@ class MyDropInsViewModel @Inject constructor(
                             loadingMorePast = false,
                         )
                     }
+                    loadReviews()
                 }
                 .onFailure { error ->
                     if (error is CancellationException) throw error
@@ -140,6 +163,9 @@ class MyDropInsViewModel @Inject constructor(
     private fun start() {
         upcomingJob?.cancel()
         pastJob?.cancel()
+        reviewJobs.forEach(Job::cancel)
+        reviewJobs.clear()
+        reviewRequested.clear()
         loaded = Loaded()
         _uiState.value = MyDropInsUiState.Loading
         upcomingJob = viewModelScope.launch {
@@ -149,11 +175,37 @@ class MyDropInsViewModel @Inject constructor(
         }
         pastJob = viewModelScope.launch {
             safePast(null)
-                .onSuccess { page -> update { it.copy(past = page.items, pastCursor = page.next) } }
+                .onSuccess { page ->
+                    update { it.copy(past = page.items, pastCursor = page.next) }
+                    loadReviews()
+                }
                 .onFailure { error ->
                     if (error is CancellationException) throw error
                     update { it.copy(error = error) }
                 }
+        }
+    }
+
+    /**
+     * Đọc đánh giá của mình (`reviews/{sessionId}_{uid}`) cho các lượt đã check-in chưa đọc, để biết hiện nút "Đánh giá"
+     * hay "Xem đánh giá". Đọc lỗi thì coi như chưa có đánh giá: server vẫn chặn đánh giá trùng (`ALREADY_REVIEWED`).
+     */
+    private fun loadReviews() {
+        val pending = loaded.past.orEmpty()
+            .filter { it.registration.status == RegistrationStatus.CHECKED_IN }
+            .map { it.sessionId }
+            .filter { reviewRequested.add(it) }
+        pending.forEach { sessionId ->
+            reviewJobs += viewModelScope.launch {
+                val review = try {
+                    reviewRepository.observeMyReview(reviewRepository.dropInReviewId(sessionId)).first()
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    null
+                }
+                update { it.copy(reviews = it.reviews + (sessionId to review)) }
+            }
         }
     }
 
@@ -202,6 +254,20 @@ class MyDropInsViewModel @Inject constructor(
             showSessionChanged = registration.sessionChanged && stillUpcoming,
             // Ở "Sắp tới" chỉ hiện nhãn khi có chuyện (ví dụ buổi vừa bị hủy); ở "Đã qua" luôn có nhãn kết quả.
             outcome = if (stillUpcoming) null else outcome,
+            reviewEligibility = reviewEligibility(),
+        )
+    }
+
+    private fun MyDropInItem.reviewEligibility(): ReviewEligibility {
+        // Chưa đọc xong đánh giá của mình thì chưa hiện nút, tránh nháy "Đánh giá" rồi đổi thành "Xem đánh giá".
+        if (registration.status == RegistrationStatus.CHECKED_IN && sessionId !in loaded.reviews) {
+            return ReviewEligibility.NOT_ELIGIBLE
+        }
+        return ReviewEligibility.ofDropIn(
+            registrationStatus = registration.status.name,
+            sessionEndAt = endAt,
+            existingReview = loaded.reviews[sessionId],
+            now = Instant.ofEpochMilli(clock.now()),
         )
     }
 

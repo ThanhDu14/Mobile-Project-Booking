@@ -3,6 +3,7 @@ package com.example.booking_app.feature.dropin.ui.mine
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.example.booking_app.core.testing.MainDispatcherRule
+import com.example.booking_app.core.util.AppClock
 import com.example.booking_app.feature.dropin.domain.model.DropInCursor
 import com.example.booking_app.feature.dropin.domain.model.DropInError
 import com.example.booking_app.feature.dropin.domain.model.MyDropInItem
@@ -13,6 +14,10 @@ import com.example.booking_app.feature.dropin.domain.usecase.LoadMyDropIns
 import com.example.booking_app.feature.dropin.ui.NOW
 import com.example.booking_app.feature.dropin.ui.registration
 import com.example.booking_app.feature.dropin.ui.session
+import com.example.booking_app.feature.review.FAKE_UID
+import com.example.booking_app.feature.review.FakeReviewRepository
+import com.example.booking_app.feature.review.domain.ReviewEligibility
+import com.example.booking_app.feature.review.review
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -49,7 +54,13 @@ class MyDropInsViewModelTest {
 
     private val load = FakeLoadMyDropIns()
 
-    private fun viewModel() = MyDropInsViewModel(SavedStateHandle(), load)
+    private val reviews = FakeReviewRepository()
+    private val clock = object : AppClock {
+        override fun now(): Long = NOW.toEpochMilli()
+        override fun elapsedRealtime(): Long = 0
+    }
+
+    private fun viewModel() = MyDropInsViewModel(SavedStateHandle(), load, reviews, clock)
 
     /** Lượt bắt đầu sau [hoursFromNow] giờ (âm là đã qua). */
     private fun item(
@@ -236,11 +247,82 @@ class MyDropInsViewModelTest {
     @Test
     fun `chon tab duoc giu lai`() = runTest {
         val handle = SavedStateHandle()
-        val vm = MyDropInsViewModel(handle, load)
+        val vm = MyDropInsViewModel(handle, load, reviews, clock)
         assertEquals(MyDropInsTab.UPCOMING, vm.selectedTab.value)
 
         vm.selectTab(MyDropInsTab.PAST)
 
-        assertEquals(MyDropInsTab.PAST, MyDropInsViewModel(handle, load).selectedTab.value)
+        assertEquals(MyDropInsTab.PAST, MyDropInsViewModel(handle, load, reviews, clock).selectedTab.value)
+    }
+
+    /** Xếp sẵn một trang "Đã qua" gồm [items]. */
+    private fun queuePast(vararg items: MyDropInItem) {
+        load.pastResults += Result.success(Page(items.toList(), null))
+    }
+
+    @Test
+    fun `Da qua - nut danh gia theo ofDropIn cho tung luot`() = runTest {
+        reviews.myReviewsById["viewed_$FAKE_UID"] = review("viewed_$FAKE_UID")
+        queuePast(
+            item("written", -3),
+            item("viewed", -3),
+            item("expired", -24 * 10),
+            item(
+                "noshow",
+                -3,
+                outcome = RegistrationOutcome.NO_SHOW,
+                status = RegistrationStatus.REGISTERED,
+            ),
+            item(
+                "cancelled",
+                -3,
+                outcome = RegistrationOutcome.CANCELLED_BY_ME,
+                status = RegistrationStatus.CANCELLED,
+            ),
+        )
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        val past = (vm.uiState.value as MyDropInsUiState.Content).past.associate { it.item.sessionId to it.reviewEligibility }
+        assertEquals(ReviewEligibility.CAN_WRITE, past["written"])
+        assertEquals(ReviewEligibility.CAN_VIEW, past["viewed"])
+        assertEquals(ReviewEligibility.EXPIRED, past["expired"])
+        assertEquals(ReviewEligibility.NOT_ELIGIBLE, past["noshow"])
+        assertEquals(ReviewEligibility.NOT_ELIGIBLE, past["cancelled"])
+        // Chỉ đọc đánh giá của các lượt đã check-in.
+        assertEquals(setOf("written_$FAKE_UID", "viewed_$FAKE_UID", "expired_$FAKE_UID"), reviews.observedMyReviewIds.toSet())
+    }
+
+    @Test
+    fun `Sap toi khong co nut danh gia va khong doc danh gia`() = runTest {
+        load.upcomingFlow = MutableStateFlow(listOf(item("a", 2)))
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        val content = vm.uiState.value as MyDropInsUiState.Content
+        assertEquals(ReviewEligibility.NOT_ELIGIBLE, content.upcoming.single().reviewEligibility)
+        assertTrue(reviews.observedMyReviewIds.isEmpty())
+    }
+
+    @Test
+    fun `doc danh gia loi - coi nhu chua danh gia, van hien nut Danh gia`() = runTest {
+        reviews.observeMyReviewError = DropInError.Network()
+        load.pastResults += Result.success(Page(listOf(item("p1", -3)), null))
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        val content = vm.uiState.value as MyDropInsUiState.Content
+        assertEquals(ReviewEligibility.CAN_WRITE, content.past.single().reviewEligibility)
+    }
+
+    @Test
+    fun `bam nut danh gia - phat su kien mo man hinh danh gia cua buoi`() = runTest {
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.events.test {
+            vm.onReviewClicked("p1")
+            assertEquals(MyDropInsEvent.OpenReview("p1"), awaitItem())
+        }
     }
 }

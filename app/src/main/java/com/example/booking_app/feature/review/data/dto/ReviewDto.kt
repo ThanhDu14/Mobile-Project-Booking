@@ -22,6 +22,8 @@ data class ReviewDto(
     val status: String?,
     val completedAt: Instant?,
     val editedAt: Instant?,
+    /** `DROP_IN` cho đánh giá buổi vãng lai; `null` (đánh giá cũ) là đặt sân. */
+    val targetType: String? = null,
     /** `null` khi chưa có server timestamp (vừa ghi, đọc từ cache). */
     val createdAt: Instant?,
 )

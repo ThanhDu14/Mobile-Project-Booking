@@ -243,7 +243,13 @@ class WriteReviewFragment : Fragment(R.layout.fragment_review_write) {
                 if (state.canEdit) R.string.review_already_submitted else R.string.review_edit_window_closed,
             )
             ReviewEligibility.EXPIRED -> getString(R.string.review_window_closed)
-            ReviewEligibility.NOT_ELIGIBLE -> getString(R.string.review_error_booking_not_completed)
+            ReviewEligibility.NOT_ELIGIBLE -> getString(
+                if (state.target?.isDropIn == true) {
+                    R.string.review_error_not_checked_in
+                } else {
+                    R.string.review_error_booking_not_completed
+                },
+            )
             ReviewEligibility.CAN_WRITE, null -> null
         }
         binding.statusBanner.isVisible = banner != null

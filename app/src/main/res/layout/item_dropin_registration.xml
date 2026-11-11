@@ -117,5 +117,27 @@
             android:visibility="gone"
             app:icon="@drawable/ic_qr_code_scanner_24"
             tools:visibility="visible" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/reviewButton"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_3"
+            android:minHeight="@dimen/touch_min"
+            android:text="@string/dropin_mine_review_write"
+            android:visibility="gone"
+            app:icon="@drawable/ic_star_16"
+            tools:visibility="visible" />
+
+        <TextView
+            android:id="@+id/reviewExpired"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_3"
+            android:text="@string/dropin_mine_review_expired"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:visibility="gone" />
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

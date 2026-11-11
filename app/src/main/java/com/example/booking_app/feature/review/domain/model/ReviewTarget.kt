@@ -7,7 +7,8 @@ import java.time.Instant
  * (tên sân, ngày giờ, tên sân con) và tính [com.example.booking_app.feature.review.domain.ReviewEligibility].
  */
 data class ReviewTarget(
-    val bookingId: String,
+    /** Id đơn; `null` khi đánh giá buổi vãng lai (có [sessionId]). */
+    val bookingId: String?,
     val venueId: String,
     val venueName: String,
     val venuePhotoUrl: String?,
@@ -16,4 +17,13 @@ data class ReviewTarget(
     val courtNames: List<String>,
     val status: String?,
     val completedAt: Instant?,
-)
+    /** Id buổi vãng lai (`dropInSessions/{sessionId}`); `null` khi đánh giá đơn đặt sân. */
+    val sessionId: String? = null,
+    /**
+     * Id document `reviews/...` của đối tượng này: `bookingId`, hoặc `{sessionId}_{uid}` với buổi vãng lai.
+     * Cũng là thư mục ảnh `{uid}/{reviewId}/`.
+     */
+    val reviewId: String = bookingId.orEmpty(),
+) {
+    val isDropIn: Boolean get() = sessionId != null
+}

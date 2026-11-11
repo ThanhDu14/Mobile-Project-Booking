@@ -46,6 +46,8 @@
     <string name="review_error_account_locked">Tài khoản đang bị khóa</string>
     <string name="review_error_not_found">Không tìm thấy đánh giá</string>
     <string name="review_error_booking_not_completed">Bạn chỉ đánh giá được sau khi đã chơi</string>
+    <string name="review_label_drop_in">Buổi vãng lai</string>
+    <string name="review_error_not_checked_in">Bạn chỉ đánh giá được buổi đã tham gia</string>
     <string name="review_error_window_closed">Đã hết hạn đánh giá hoặc sửa đánh giá</string>
     <string name="review_error_already_reviewed">Bạn đã đánh giá lượt chơi này</string>
     <string name="review_error_photo_missing">Có ảnh chưa tải lên xong, vui lòng thử lại</string>

@@ -33,6 +33,27 @@ enum class ReviewEligibility {
                 else -> CAN_WRITE
             }
 
+        private const val STATUS_CHECKED_IN = "CHECKED_IN"
+
+        /**
+         * Lượt vãng lai (spec 080 US5): chỉ lượt `CHECKED_IN` của buổi đã kết thúc mới đánh giá được, trong
+         * `endAt .. endAt + 7 ngày` (khớp Edge Function `review`). [registrationStatus] là `registrations.status` dạng
+         * chuỗi và [sessionEndAt] là `endAt` của buổi, để `feature/review` không phụ thuộc kiểu của `feature/dropin`.
+         */
+        fun ofDropIn(
+            registrationStatus: String?,
+            sessionEndAt: Instant?,
+            existingReview: Review?,
+            now: Instant,
+        ): ReviewEligibility =
+            when {
+                existingReview != null -> CAN_VIEW
+                registrationStatus != STATUS_CHECKED_IN || sessionEndAt == null || now.isBefore(sessionEndAt) ->
+                    NOT_ELIGIBLE
+                now.isAfter(sessionEndAt.plus(WINDOW)) -> EXPIRED
+                else -> CAN_WRITE
+            }
+
         fun canEditUntil(completedAt: Instant): Instant = completedAt.plus(WINDOW)
     }
 }

@@ -8,6 +8,7 @@ import com.example.booking_app.feature.review.domain.model.Ratings
 import com.example.booking_app.feature.review.domain.model.Review
 import com.example.booking_app.feature.review.domain.model.ReviewAuthor
 import com.example.booking_app.feature.review.domain.model.ReviewTarget
+import com.example.booking_app.feature.review.domain.model.ReviewTargetType
 import com.example.booking_app.feature.review.domain.model.SubmittedReview
 import com.example.booking_app.feature.review.domain.model.VenueRatingSummary
 import kotlinx.coroutines.CompletableDeferred
@@ -20,6 +21,8 @@ import java.time.Instant
 
 val COMPLETED_AT: Instant = Instant.parse("2026-10-04T09:00:00Z")
 
+const val FAKE_UID = "u1"
+
 /**
  * Repository giả. [createError] làm `create` ném lỗi; [createGate] giữ `create` treo cho tới khi
  * được complete (kiểm tra chặn gửi trùng).
@@ -27,6 +30,15 @@ val COMPLETED_AT: Instant = Instant.parse("2026-10-04T09:00:00Z")
 class FakeReviewRepository : ReviewRepository {
     var target: ReviewTarget = reviewTarget("b1")
     var targetError: Throwable? = null
+
+    /** Thẻ đầu màn hình đánh giá buổi vãng lai; `uid` của người dùng giả là [FAKE_UID]. */
+    var dropInTarget: ReviewTarget = dropInReviewTarget("s1")
+    val dropInTargetCalls = mutableListOf<String>()
+
+    /** Đánh giá theo id (`{sessionId}_{uid}`); id không có trong map thì dùng [myReview]. */
+    val myReviewsById = mutableMapOf<String, Review?>()
+    val observedMyReviewIds = mutableListOf<String>()
+    var observeMyReviewError: Throwable? = null
     val myReview = MutableStateFlow<Review?>(null)
     var createError: Throwable? = null
     var createGate: CompletableDeferred<Unit>? = null
@@ -37,7 +49,8 @@ class FakeReviewRepository : ReviewRepository {
     val deleteCalls = mutableListOf<String>()
     var replyError: Throwable? = null
     val replyCalls = mutableListOf<Pair<String, String>>()
-    val discardCalls = mutableListOf<Pair<String, List<String>>>()
+    val discardCalls = mutableListOf<Pair<String?, List<String>>>()
+    val discardSessionIds = mutableListOf<String?>()
 
     /** Toàn bộ đánh giá "trên server"; danh sách lọc theo đúng điều kiện truy vấn của repository thật. */
     val reviews = MutableStateFlow<List<Review>>(emptyList())
@@ -48,14 +61,24 @@ class FakeReviewRepository : ReviewRepository {
     val venueQueries = mutableListOf<VenueQuery>()
     val ownerQueries = mutableListOf<OwnerQuery>()
 
-    data class CreateCall(val bookingId: String, val ratings: Ratings, val comment: String, val photoPaths: List<String>)
+    data class CreateCall(
+        val bookingId: String?,
+        val ratings: Ratings,
+        val comment: String,
+        val photoPaths: List<String>,
+        val sessionId: String? = null,
+    )
     data class VenueQuery(val venueId: String, val stars: Int?, val withPhotos: Boolean, val limit: Int)
     data class OwnerQuery(val venueIds: List<String>, val unrepliedOnly: Boolean, val limit: Int)
 
     override fun observeSummary(venueId: String): Flow<VenueRatingSummary> =
         MutableStateFlow(VenueRatingSummary(4.0, 25, 4.2, 3.9, 4.1))
 
-    override fun observeMyReview(bookingId: String): Flow<Review?> = myReview
+    override fun observeMyReview(bookingId: String): Flow<Review?> {
+        observedMyReviewIds += bookingId
+        observeMyReviewError?.let { error -> return flow { throw error } }
+        return if (bookingId in myReviewsById) MutableStateFlow(myReviewsById[bookingId]) else myReview
+    }
 
     override fun observeVenueReviews(venueId: String, stars: Int?, withPhotos: Boolean, limit: Int): Flow<List<Review>> {
         venueQueries += VenueQuery(venueId, stars, withPhotos, limit)
@@ -85,16 +108,25 @@ class FakeReviewRepository : ReviewRepository {
         return target
     }
 
+    override suspend fun getDropInReviewTarget(sessionId: String): ReviewTarget {
+        dropInTargetCalls += sessionId
+        targetError?.let { throw it }
+        return dropInTarget
+    }
+
+    override fun dropInReviewId(sessionId: String): String = "${sessionId}_$FAKE_UID"
+
     override suspend fun create(
-        bookingId: String,
+        bookingId: String?,
         ratings: Ratings,
         comment: String,
         photoPaths: List<String>,
+        sessionId: String?,
     ): SubmittedReview {
-        createCalls += CreateCall(bookingId, ratings, comment, photoPaths)
+        createCalls += CreateCall(bookingId, ratings, comment, photoPaths, sessionId)
         createGate?.await()
         createError?.let { throw it }
-        return SubmittedReview(bookingId, overallOf(ratings), COMPLETED_AT.plus(Duration.ofDays(7)))
+        return SubmittedReview(bookingId ?: dropInReviewId(sessionId.orEmpty()), overallOf(ratings), COMPLETED_AT.plus(Duration.ofDays(7)))
     }
 
     override suspend fun update(
@@ -122,8 +154,9 @@ class FakeReviewRepository : ReviewRepository {
         return reply
     }
 
-    override suspend fun discardPhotos(bookingId: String, photoPaths: List<String>): Int {
+    override suspend fun discardPhotos(bookingId: String?, photoPaths: List<String>, sessionId: String?): Int {
         discardCalls += bookingId to photoPaths
+        discardSessionIds += sessionId
         return photoPaths.size
     }
 
@@ -164,6 +197,25 @@ fun reviewTarget(bookingId: String, status: String = "COMPLETED", completedAt: I
     completedAt = completedAt,
 )
 
+/** Buổi vãng lai đã kết thúc lúc [COMPLETED_AT] và lượt đăng ký đã check-in. */
+fun dropInReviewTarget(
+    sessionId: String,
+    status: String? = "CHECKED_IN",
+    endAt: Instant? = COMPLETED_AT,
+) = ReviewTarget(
+    bookingId = null,
+    venueId = "venueA",
+    venueName = "Sân Hòa Bình",
+    venuePhotoUrl = null,
+    startAt = endAt?.minus(Duration.ofHours(2)),
+    endAt = endAt,
+    courtNames = listOf("Sân 1", "Sân 2"),
+    status = status,
+    completedAt = endAt,
+    sessionId = sessionId,
+    reviewId = "${sessionId}_$FAKE_UID",
+)
+
 fun review(
     id: String,
     ratings: Ratings = Ratings(5, 4, 3),
@@ -173,6 +225,7 @@ fun review(
     createdAt: Instant = COMPLETED_AT.plus(Duration.ofHours(1)),
     photoPaths: List<String> = emptyList(),
     ownerReply: OwnerReply? = null,
+    targetType: ReviewTargetType = ReviewTargetType.BOOKING,
 ) = Review(
     id = id,
     venueId = venueId,
@@ -187,4 +240,5 @@ fun review(
     createdAt = createdAt,
     canEditUntil = COMPLETED_AT.plus(Duration.ofDays(7)),
     photoPaths = photoPaths,
+    targetType = targetType,
 )

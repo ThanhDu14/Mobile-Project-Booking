@@ -16,6 +16,7 @@ fun ReviewError.messageRes(): Int = when (this) {
     ReviewError.ACCOUNT_LOCKED -> R.string.review_error_account_locked
     ReviewError.NOT_FOUND -> R.string.review_error_not_found
     ReviewError.BOOKING_NOT_COMPLETED -> R.string.review_error_booking_not_completed
+    ReviewError.NOT_CHECKED_IN -> R.string.review_error_not_checked_in
     ReviewError.REVIEW_WINDOW_CLOSED -> R.string.review_error_window_closed
     ReviewError.ALREADY_REVIEWED -> R.string.review_error_already_reviewed
     ReviewError.PHOTO_MISSING -> R.string.review_error_photo_missing

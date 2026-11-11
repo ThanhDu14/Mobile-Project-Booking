@@ -13,6 +13,7 @@ import coil3.request.placeholder
 import com.example.booking_app.R
 import com.example.booking_app.databinding.ItemReviewBinding
 import com.example.booking_app.feature.review.domain.model.Review
+import com.example.booking_app.feature.review.domain.model.ReviewTargetType
 import java.text.NumberFormat
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -76,6 +77,7 @@ class ReviewAdapter(
             venueLabel.isVisible = venue != null
             venueLabel.text = venue
 
+            dropInLabel.isVisible = review.targetType == ReviewTargetType.DROP_IN
             hiddenLabel.isVisible = review.isHidden
             comment.isVisible = review.comment.isNotBlank()
             comment.text = review.comment
