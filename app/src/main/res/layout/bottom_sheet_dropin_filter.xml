@@ -234,9 +234,14 @@
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
+    <!-- Thanh nút bám mép dưới màn hình dù sheet đang mở lưng chừng hay bung hết: DropInFilterBottomSheet
+         đặt lại vị trí theo phần sheet đang hiện. Có nền để che chip cuộn phía sau. -->
     <LinearLayout
+        android:id="@+id/buttonBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:background="?attr/colorSurfaceContainerLow"
+        android:elevation="4dp"
         android:orientation="horizontal"
         android:paddingHorizontal="@dimen/screen_gutter"
         android:paddingVertical="@dimen/space_3">

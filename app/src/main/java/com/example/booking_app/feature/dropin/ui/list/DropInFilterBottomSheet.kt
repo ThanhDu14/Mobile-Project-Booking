@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewTreeObserver
 import androidx.core.os.BundleCompat
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
@@ -22,7 +23,6 @@ import com.example.booking_app.feature.dropin.domain.model.FilterError
 import com.example.booking_app.feature.dropin.domain.model.Level
 import com.example.booking_app.feature.dropin.domain.model.TimeSlot
 import com.example.booking_app.feature.dropin.ui.common.DropInUiText
-import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import com.google.android.material.chip.Chip
@@ -52,6 +52,10 @@ class DropInFilterBottomSheet : BottomSheetDialogFragment() {
     private val binding get() = _binding!!
 
     private lateinit var draft: DropInFilter
+
+    /** Đã gắn callback giữ thanh nút ở mép dưới (onStart chạy lại mỗi lần dialog hiện lại). */
+    private var buttonBarPinned = false
+    private var removePinListener: (() -> Unit)? = null
 
     /** Đang dựng lại chip từ [draft]: bỏ qua listener để không ghi ngược. */
     private var binding_ = false
@@ -106,12 +110,34 @@ class DropInFilterBottomSheet : BottomSheetDialogFragment() {
 
     override fun onStart() {
         super.onStart()
-        // Mở bung hết: nội dung cao hơn màn hình thì sheet mặc định thu gọn và đẩy "Xóa hết / Áp dụng" khuất dưới
-        // mép. Bung ra thì vùng chip cuộn bên trong, hai nút luôn nằm ở đáy.
-        (dialog as? BottomSheetDialog)?.behavior?.apply {
-            skipCollapsed = true
-            state = BottomSheetBehavior.STATE_EXPANDED
+        // Sheet mở lưng chừng như mặc định; thanh "Xóa hết / Áp dụng" luôn bám mép dưới màn hình. Khi sheet cao
+        // hơn phần đang hiện, thanh nút (nằm cuối sheet) bị đẩy xuống dưới mép, nên đặt lại vị trí mỗi khi sheet
+        // trượt hoặc đổi kích thước.
+        if (buttonBarPinned) return
+        val sheetDialog = dialog as? BottomSheetDialog ?: return
+        buttonBarPinned = true
+        val sheet = sheetDialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet) ?: return
+        // Tính lại trước mỗi khung hình: sheet được dời tới vị trí lưng chừng lúc hiện (không có sự kiện slide
+        // hay layout), và khi kéo. pinButtonBar chỉ đổi translationY khi vị trí thực sự khác.
+        val listener = ViewTreeObserver.OnPreDrawListener {
+            pinButtonBar(sheet)
+            true
         }
+        sheet.viewTreeObserver.addOnPreDrawListener(listener)
+        removePinListener = { if (sheet.viewTreeObserver.isAlive) sheet.viewTreeObserver.removeOnPreDrawListener(listener) }
+    }
+
+    /** Đặt thanh nút ở đáy phần sheet đang hiện trên màn hình (không vượt vị trí tự nhiên của nó). */
+    private fun pinButtonBar(sheet: View) {
+        val b = _binding ?: return
+        val screen = sheet.parent as? View ?: return
+        // Thanh nút là con cuối của root: kéo lên đúng phần root đang nằm dưới mép dưới của vùng hiển thị
+        // (mép màn hình trừ phần đệm sheet chừa cho thanh điều hướng hệ thống).
+        val rootBottomOnScreen = sheet.top + b.root.bottom
+        val visibleBottom = screen.height - sheet.paddingBottom
+        val hiddenBelowScreen = rootBottomOnScreen - visibleBottom
+        val target = -hiddenBelowScreen.coerceAtLeast(0).toFloat()
+        if (b.buttonBar.translationY != target) b.buttonBar.translationY = target
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -120,6 +146,9 @@ class DropInFilterBottomSheet : BottomSheetDialogFragment() {
     }
 
     override fun onDestroyView() {
+        removePinListener?.invoke()
+        removePinListener = null
+        buttonBarPinned = false
         _binding = null
         super.onDestroyView()
     }
