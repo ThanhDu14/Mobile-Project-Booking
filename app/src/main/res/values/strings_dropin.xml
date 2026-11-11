@@ -151,7 +151,6 @@
     <string name="dropin_ticket_paid">Đã thanh toán</string>
     <string name="dropin_ticket_pay_at_venue">Thanh toán tại sân</string>
     <string name="dropin_ticket_refunded">Đã hoàn tiền</string>
-    <string name="dropin_ticket_offline_hint">Vé này mở được cả khi không có mạng.</string>
     <string name="dropin_ticket_no_qr_cancelled">Buổi đã bị hủy nên vé không còn mã QR.</string>
     <string name="dropin_ticket_no_qr_inactive">Lượt này không còn hiệu lực.</string>
     <string name="dropin_ticket_qr_pending">Đang tải mã QR…</string>

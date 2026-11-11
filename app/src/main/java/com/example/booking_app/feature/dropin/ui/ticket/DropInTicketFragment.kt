@@ -186,8 +186,6 @@ class DropInTicketFragment : Fragment(R.layout.fragment_dropin_ticket) {
         binding.locationGroup.isVisible = !location.isNullOrEmpty()
         binding.locationValue.text = location
 
-        binding.offlineHint.isVisible = token != null && !offline
-
         // Chỉ đường khi biết cơ sở; thêm người chỉ khi đang có mạng và đủ điều kiện (FR-008a).
         binding.directionsButton.isVisible = session != null
         binding.addPartyButton.isVisible = !offline && state.addParty != null

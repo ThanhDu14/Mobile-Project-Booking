@@ -336,19 +336,6 @@
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
-                <TextView
-                    android:id="@+id/offlineHint"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/space_3"
-                    android:drawablePadding="@dimen/space_2"
-                    android:gravity="center_vertical"
-                    android:text="@string/dropin_ticket_offline_hint"
-                    android:textAppearance="?attr/textAppearanceBodyMedium"
-                    android:textColor="?attr/colorOnSurfaceVariant"
-                    app:drawableStartCompat="@drawable/ic_check_20"
-                    app:drawableTint="?attr/colorOnSurfaceVariant" />
-
                 <!-- Chỉ đường (AC 3.2) · Thêm người (FR-008a) -->
                 <LinearLayout
                     android:layout_width="match_parent"
