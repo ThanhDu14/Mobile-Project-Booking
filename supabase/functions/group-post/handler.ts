@@ -1,5 +1,6 @@
 // Edge Function `group-post` (spec 090, contracts/edge-functions-community.md). Khung: xác thực, parse action, router.
-// Đã cài: create, update, delete cho bài POST (T046). Các action còn lại trả 501.
+// Đã cài: create, update, delete (POST và EVENT, T046/T053), attend, unattend (T054). Các action còn lại trả 501.
+import { attendEvent, unattendEvent } from "./attendance.ts";
 import { createPost, deletePost, updatePost } from "./posts.ts";
 import { type ActionHandler, defaultGroupDeps, dispatchGroupAction, type GroupDeps } from "../_shared/groups.ts";
 
@@ -10,6 +11,8 @@ const handlers: Record<string, ActionHandler> = {
   create: createPost,
   update: updatePost,
   delete: deletePost,
+  attend: attendEvent,
+  unattend: unattendEvent,
 };
 
 export function handleGroupPost(req: Request, deps: GroupDeps = defaultGroupDeps()): Promise<Response> {

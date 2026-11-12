@@ -5,7 +5,7 @@
 //   FIREBASE_PROJECT_ID=demo-smashnow deno test --allow-env --allow-net group-post/index.test.ts
 import { assert, assertEquals } from "jsr:@std/assert@1.0.19";
 import { get, query } from "../_shared/firestore.ts";
-import { postPath } from "../_shared/groups.ts";
+import { attendeePath, postPath } from "../_shared/groups.ts";
 import { assertGroupInvariant, ensureUsers, makeTestDeps, seedGroup, seedPost } from "../_shared/groups_fixtures.ts";
 import { bearer, emulatorToken } from "../_shared/testing.ts";
 import { handleGroupPost } from "./handler.ts";
@@ -139,10 +139,9 @@ T("P1 create: path sai tiền tố, content 0 / 2001 ký tự, 5 ảnh, type l�
   await assertGroupInvariant(s.groupId);
 });
 
-T("P1 create: type EVENT chưa cài → 501; nhóm LOCKED → 423; nhóm không có → 404", async () => {
+T("P1 create: nhóm LOCKED → 423; nhóm không có → 404", async () => {
   const s = await setup("p1d");
-  let r = await call(s, s.member, createBody(s, crypto.randomUUID(), { type: "EVENT" }));
-  assertEquals([r.status, r.body.error.code], [501, "NOT_IMPLEMENTED"]);
+  let r: Awaited<ReturnType<typeof call>>;
 
   const locked = await seedGroup({ owner: s.owner, members: [s.member], status: "LOCKED" });
   r = await call(s, s.member, { ...createBody(s, crypto.randomUUID()), groupId: locked });
@@ -302,5 +301,302 @@ T("delete bài EVENT: xóa luôn attendees (chuẩn bị cho US4)", async () => 
   assertEquals(r.status, 200);
   assertEquals(await get(postPath(s.groupId, postId)), null);
   assertEquals((await query("attendees", [], { parent: postPath(s.groupId, postId) })).length, 0);
+  await assertGroupInvariant(s.groupId);
+});
+
+// ---------- US4: sự kiện giao lưu (T051: P5–P8) ----------
+
+const DAY = 24 * 3600_000;
+const inFuture = (ms = DAY) => new Date(Date.now() + ms).toISOString();
+
+const eventBody = (s: Setup, postId: string, extra: Record<string, unknown> = {}) => ({
+  action: "create",
+  groupId: s.groupId,
+  requestId: postId,
+  type: "EVENT",
+  content: "Mang vợt và nước uống",
+  photoPaths: [],
+  eventTitle: "Giao lưu cuối tuần",
+  eventAt: inFuture(),
+  eventLocation: "Sân A, Quận 7",
+  expectedCount: 8,
+  ...extra,
+});
+
+const attendeeDocs = (s: { groupId: string }, postId: string) =>
+  query("attendees", [], { parent: postPath(s.groupId, postId) });
+const attend = (s: { groupId: string } & Pick<Setup, "deps">, uid: string, postId: string, action = "attend") =>
+  call(s as Setup, uid, { action, groupId: s.groupId, postId });
+
+T("P5 create EVENT không hợp lệ → INVALID_ARGUMENT (thiếu/quá dài/quá khứ/expectedCount ngoài 2–100)", async () => {
+  const s = await setup("p5a");
+  const cases: Record<string, unknown>[] = [
+    { eventTitle: undefined },
+    { eventTitle: "   " },
+    { eventTitle: "t".repeat(101) },
+    { eventLocation: undefined },
+    { eventLocation: "l".repeat(201) },
+    { eventAt: undefined },
+    { eventAt: "không-phải-ngày" },
+    { eventAt: inFuture(-60_000) },
+    { expectedCount: 1 },
+    { expectedCount: 101 },
+    { expectedCount: 2.5 },
+    { expectedCount: "8" },
+    { expectedCount: undefined },
+    { content: "c".repeat(2001) },
+  ];
+  for (const extra of cases) {
+    const r = await call(s, s.member, eventBody(s, crypto.randomUUID(), extra));
+    assertEquals([r.status, r.body.error?.code], [400, "INVALID_ARGUMENT"], JSON.stringify(extra));
+  }
+  assertEquals(await postCount(s), 0);
+
+  // Biên hợp lệ: tiêu đề 100, địa điểm 200, expectedCount 2 và 100, mô tả rỗng hoặc vắng.
+  for (
+    const extra of [
+      { eventTitle: "t".repeat(100), eventLocation: "l".repeat(200), expectedCount: 2, content: "" },
+      { expectedCount: 100, content: undefined },
+    ]
+  ) {
+    const r = await call(s, s.member, eventBody(s, crypto.randomUUID(), extra));
+    assertEquals(r.status, 201, JSON.stringify(extra));
+  }
+  assertEquals(await postCount(s), 2);
+  await assertGroupInvariant(s.groupId);
+});
+
+T("P5 create EVENT hợp lệ → 201, attendeeCount 0, EVENT_CREATED gửi mọi thành viên trừ người đăng", async () => {
+  const s = await setup("p5b");
+  const postId = crypto.randomUUID();
+  const eventAt = inFuture(2 * DAY);
+  const r = await call(s, s.admin, eventBody(s, postId, { eventTitle: "  Giải nội bộ  ", eventAt }));
+  assertEquals(r.status, 201);
+  const p = r.body.post;
+  assertEquals([p.type, p.eventTitle, p.eventLocation, p.expectedCount], ["EVENT", "Giải nội bộ", "Sân A, Quận 7", 8]);
+  assertEquals(p.attendeeCount, 0);
+  assertEquals(p.eventAt, eventAt);
+  assertEquals(p.status, "VISIBLE");
+  const doc = await get(postPath(s.groupId, postId));
+  assert(doc?.eventAt instanceof Date);
+  assertEquals(doc?.attendeeCount, 0);
+  assertEquals(s.notifications.recipients("EVENT_CREATED").sort(), [s.owner, s.member, s.member2].sort());
+  assert(s.notifications.sent.every((n) => n.data.groupId === s.groupId && n.data.postId === postId));
+
+  // Gửi lại cùng requestId: trả bài cũ, không gửi thêm thông báo.
+  s.notifications.reset();
+  assertEquals((await call(s, s.admin, eventBody(s, postId))).status, 200);
+  assertEquals(s.notifications.sent.length, 0);
+  await assertGroupInvariant(s.groupId);
+});
+
+T("P5 create POST thường không gửi EVENT_CREATED và bỏ qua trường sự kiện", async () => {
+  const s = await setup("p5c");
+  const r = await call(s, s.member, createBody(s, crypto.randomUUID(), { eventTitle: "x", expectedCount: 5 }));
+  assertEquals(r.status, 201);
+  assertEquals(r.body.post.eventTitle, null);
+  assertEquals(s.notifications.sent.length, 0);
+});
+
+T("P6 20 thành viên attend song song, lặp 10 lần → attendeeCount = 20, đúng 20 attendees, không trùng", async () => {
+  const members = Array.from({ length: 20 }, (_, i) => `${RUN}-p6-m${i}`);
+  const owner = `${RUN}-p6-owner`;
+  const groupId = await seedGroup({ owner, members });
+  const s = { groupId, ...makeTestDeps() };
+  const RUNS = 10;
+  let expected = 0, actual = 0, duplicates = 0;
+  for (let run = 0; run < RUNS; run++) {
+    const postId = await seedPost(groupId, { type: "EVENT", authorId: owner, expectedCount: 5 });
+    const rs = await Promise.all(members.map((m) => attend(s, m, postId)));
+    assertEquals(rs.map((r) => r.status), members.map(() => 200), JSON.stringify(rs.find((r) => r.status !== 200)));
+    const post = await get(postPath(groupId, postId));
+    const docs = await attendeeDocs(s, postId);
+    expected += members.length;
+    actual += docs.length;
+    duplicates += docs.length - new Set(docs.map((d) => d.id)).size;
+    assertEquals(post?.attendeeCount, 20, `lần ${run + 1}: attendeeCount`);
+    assertEquals(docs.length, 20, `lần ${run + 1}: số attendees`);
+    await assertGroupInvariant(groupId);
+  }
+  console.log(`runs=${RUNS} expected=${expected / RUNS} actual=${actual / RUNS} duplicates=${duplicates}`);
+  assertEquals([expected, actual, duplicates], [RUNS * 20, RUNS * 20, 0]);
+});
+
+T("P6 một người bấm attend 5 lần (tuần tự và song song) → tính 1; unattend 2 lần → giảm 1", async () => {
+  const s = await setup("p6b");
+  const postId = await seedPost(s.groupId, { type: "EVENT", authorId: s.owner });
+  for (let i = 0; i < 5; i++) {
+    const r = await attend(s, s.member, postId);
+    assertEquals([r.status, r.body], [200, { attendeeCount: 1, attending: true }]);
+  }
+  const par = await Promise.all([1, 2, 3, 4, 5].map(() => attend(s, s.member, postId)));
+  assert(par.every((r) => r.status === 200 && r.body.attendeeCount === 1 && r.body.attending === true));
+  const other = await attend(s, s.member2, postId);
+  assertEquals(other.body, { attendeeCount: 2, attending: true });
+  const att = await get(attendeePath(s.groupId, postId, s.member));
+  assertEquals([att?.userId, att?.groupId, att?.postId], [s.member, s.groupId, postId]);
+  assert(att?.eventAt instanceof Date && att?.joinedAt instanceof Date);
+  assertEquals((att?.userSnapshot as { displayName: string }).displayName, `Người dùng ${s.member}`);
+  assertEquals((await attendeeDocs(s, postId)).length, 2);
+
+  for (let i = 0; i < 2; i++) {
+    const r = await attend(s, s.member, postId, "unattend");
+    assertEquals([r.status, r.body], [200, { attendeeCount: 1, attending: false }]);
+  }
+  assertEquals(await get(attendeePath(s.groupId, postId, s.member)), null);
+  // Chưa từng tham gia mà unattend: trả kết quả hiện tại.
+  const never = await attend(s, s.owner, postId, "unattend");
+  assertEquals(never.body, { attendeeCount: 1, attending: false });
+  await assertGroupInvariant(s.groupId);
+});
+
+T("P7 attend khi attendeeCount == expectedCount → thành công, vượt số dự kiến", async () => {
+  const s = await setup("p7a");
+  const postId = await seedPost(s.groupId, {
+    type: "EVENT",
+    authorId: s.owner,
+    expectedCount: 2,
+    attendees: [s.admin, s.member],
+  });
+  const r = await attend(s, s.member2, postId);
+  assertEquals([r.status, r.body], [200, { attendeeCount: 3, attending: true }]);
+  assertEquals((await get(postPath(s.groupId, postId)))?.attendeeCount, 3);
+  await assertGroupInvariant(s.groupId);
+});
+
+T("P7 attend/unattend sự kiện đã qua → 409 EVENT_PAST, không đổi dữ liệu", async () => {
+  const s = await setup("p7b");
+  const postId = await seedPost(s.groupId, {
+    type: "EVENT",
+    authorId: s.owner,
+    eventAt: new Date(Date.now() - 3600_000),
+    attendees: [s.member],
+  });
+  for (const [uid, action] of [[s.member2, "attend"], [s.member, "unattend"]]) {
+    const r = await attend(s, uid, postId, action);
+    assertEquals([r.status, r.body.error.code], [409, "EVENT_PAST"], action);
+  }
+  assertEquals((await get(postPath(s.groupId, postId)))?.attendeeCount, 1);
+  assertEquals((await attendeeDocs(s, postId)).length, 1);
+  await assertGroupInvariant(s.groupId);
+});
+
+T("P7 attend: không phải thành viên → NOT_MEMBER; bài không có/POST/HIDDEN → 404; LOCKED → 423", async () => {
+  const s = await setup("p7c");
+  const ev = await seedPost(s.groupId, { type: "EVENT", authorId: s.owner });
+  let r = await attend(s, s.outsider, ev);
+  assertEquals([r.status, r.body.error.code], [403, "NOT_MEMBER"]);
+  assertEquals((await attendeeDocs(s, ev)).length, 0);
+
+  const plain = await seedPost(s.groupId, { authorId: s.owner });
+  const hidden = await seedPost(s.groupId, { type: "EVENT", authorId: s.owner, hiddenBy: "GROUP" });
+  for (const postId of [crypto.randomUUID(), plain, hidden]) {
+    for (const action of ["attend", "unattend"]) {
+      r = await attend(s, s.member, postId, action);
+      assertEquals([r.status, r.body.error.code], [404, "POST_NOT_FOUND"], `${action} ${postId}`);
+    }
+  }
+  r = await call(s, s.member, { action: "attend", groupId: s.groupId, postId: "xyz" });
+  assertEquals([r.status, r.body.error.code], [400, "INVALID_ARGUMENT"]);
+
+  const locked = await seedGroup({ owner: s.owner, members: [s.member], status: "LOCKED" });
+  const lockedEv = await seedPost(locked, { type: "EVENT", authorId: s.owner });
+  r = await call(s, s.member, { action: "attend", groupId: locked, postId: lockedEv });
+  assertEquals([r.status, r.body.error.code], [423, "GROUP_LOCKED"]);
+  await assertGroupInvariant(s.groupId);
+});
+
+T(
+  "P8 update đổi eventAt → editedAt, mọi attendees.eventAt đổi, EVENT_UPDATED cho người tham gia trừ người sửa",
+  async () => {
+    const s = await setup("p8a");
+    const postId = await seedPost(s.groupId, {
+      type: "EVENT",
+      authorId: s.member,
+      attendees: [s.member, s.member2, s.admin],
+    });
+    const eventAt = inFuture(3 * DAY);
+    const r = await call(s, s.member, { action: "update", groupId: s.groupId, postId, eventAt });
+    assertEquals(r.status, 200);
+    assertEquals(r.body.post.eventAt, eventAt);
+    assertEquals(r.body.post.attendeeCount, 3);
+    assert(r.body.post.editedAt && !Number.isNaN(Date.parse(r.body.post.editedAt)), "editedAt");
+    const docs = await attendeeDocs(s, postId);
+    assertEquals(docs.length, 3);
+    for (const d of docs) assertEquals((d.data.eventAt as Date).toISOString(), eventAt);
+    assertEquals(s.notifications.recipients("EVENT_UPDATED").sort(), [s.member2, s.admin].sort());
+
+    // Đổi địa điểm cũng gửi; tiêu đề và expectedCount cập nhật được.
+    s.notifications.reset();
+    const r2 = await call(s, s.member, {
+      action: "update",
+      groupId: s.groupId,
+      postId,
+      eventLocation: "Sân B",
+      eventTitle: "Tên mới",
+      expectedCount: 12,
+    });
+    assertEquals([r2.status, r2.body.post.eventLocation, r2.body.post.eventTitle, r2.body.post.expectedCount], [
+      200,
+      "Sân B",
+      "Tên mới",
+      12,
+    ]);
+    assertEquals(s.notifications.recipients("EVENT_UPDATED").sort(), [s.member2, s.admin].sort());
+    await assertGroupInvariant(s.groupId);
+  },
+);
+
+T("P8 update chỉ đổi mô tả → không gửi; eventAt quá khứ/sai → INVALID_ARGUMENT; người khác → FORBIDDEN", async () => {
+  const s = await setup("p8b");
+  const postId = await seedPost(s.groupId, { type: "EVENT", authorId: s.member, attendees: [s.member2] });
+  const r = await call(s, s.member, { action: "update", groupId: s.groupId, postId, content: "Mô tả mới" });
+  assertEquals([r.status, r.body.post.content], [200, "Mô tả mới"]);
+  assertEquals(s.notifications.sent.length, 0);
+  // Mô tả rỗng được phép với sự kiện.
+  assertEquals((await call(s, s.member, { action: "update", groupId: s.groupId, postId, content: "" })).status, 200);
+
+  for (
+    const extra of [
+      { eventAt: inFuture(-60_000) },
+      { eventAt: "x" },
+      { eventTitle: "" },
+      { eventLocation: "l".repeat(201) },
+      { expectedCount: 1 },
+    ]
+  ) {
+    const e = await call(s, s.member, { action: "update", groupId: s.groupId, postId, ...extra });
+    assertEquals([e.status, e.body.error?.code], [400, "INVALID_ARGUMENT"], JSON.stringify(extra));
+  }
+  const f = await call(s, s.owner, { action: "update", groupId: s.groupId, postId, content: "x" });
+  assertEquals([f.status, f.body.error.code], [403, "FORBIDDEN"]);
+  assertEquals(s.notifications.sent.length, 0);
+  await assertGroupInvariant(s.groupId);
+});
+
+T("P8 delete sự kiện chưa diễn ra → xóa attendees, EVENT_DELETED cho người tham gia; đã qua → không gửi", async () => {
+  const s = await setup("p8c");
+  const upcoming = await seedPost(s.groupId, {
+    type: "EVENT",
+    authorId: s.member,
+    attendees: [s.member, s.member2, s.admin],
+  });
+  let r = await call(s, s.member, { action: "delete", groupId: s.groupId, postId: upcoming });
+  assertEquals(r.status, 200);
+  assertEquals(await get(postPath(s.groupId, upcoming)), null);
+  assertEquals((await attendeeDocs(s, upcoming)).length, 0);
+  assertEquals(s.notifications.recipients("EVENT_DELETED").sort(), [s.member2, s.admin].sort());
+
+  s.notifications.reset();
+  const past = await seedPost(s.groupId, {
+    type: "EVENT",
+    authorId: s.member,
+    eventAt: new Date(Date.now() - 3600_000),
+    attendees: [s.member2],
+  });
+  r = await call(s, s.member, { action: "delete", groupId: s.groupId, postId: past });
+  assertEquals(r.status, 200);
+  assertEquals((await attendeeDocs(s, past)).length, 0);
+  assertEquals(s.notifications.sent.length, 0);
   await assertGroupInvariant(s.groupId);
 });
