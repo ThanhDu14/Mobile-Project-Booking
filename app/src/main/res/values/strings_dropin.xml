@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Chuỗi của spec 080 (đặt lịch vãng lai), tiền tố dropin_ (T003, contracts/ui-screens.md mục 1).
+    Gồm 5 màn hình (danh sách, chi tiết, xác nhận, vé, lượt của tôi), 2 bottom sheet (bộ lọc, hủy), nhãn và mã lỗi ở
+    contracts/edge-functions-dropin.md mục 4.
+-->
+<resources>
+    <!-- Chung -->
+    <string name="dropin_title">Vãng lai</string>
+    <string name="dropin_back">Quay lại</string>
+    <string name="dropin_close">Đóng</string>
+    <string name="dropin_retry">Thử lại</string>
+    <string name="dropin_per_turn">/lượt</string>
+    <string name="dropin_price_per_turn">%1$s/lượt</string>
+    <string name="dropin_time_range">%1$s – %2$s</string>
+    <string name="dropin_date_time">%1$s · %2$s</string>
+    <string name="dropin_venue_district">%1$s · %2$s</string>
+    <string name="dropin_today">Hôm nay</string>
+    <string name="dropin_tomorrow">Mai</string>
+    <string name="dropin_relative_date">%1$s, %2$s</string>
+    <string name="dropin_mock_payment_notice">Thanh toán giả lập – không thu tiền thật</string>
+    <string name="dropin_offline">Không có kết nối mạng. Kiểm tra mạng rồi thử lại.</string>
+
+    <!-- Thứ trong tuần (thẻ ngày ở danh sách) -->
+    <string name="dropin_dow_mon">T2</string>
+    <string name="dropin_dow_tue">T3</string>
+    <string name="dropin_dow_wed">T4</string>
+    <string name="dropin_dow_thu">T5</string>
+    <string name="dropin_dow_fri">T6</string>
+    <string name="dropin_dow_sat">T7</string>
+    <string name="dropin_dow_sun">CN</string>
+
+    <!-- Trình độ (cùng enum users.level) -->
+    <string name="dropin_level_beginner">Mới chơi</string>
+    <string name="dropin_level_intermediate">Trung bình</string>
+    <string name="dropin_level_advanced">Khá/Nâng cao</string>
+    <string name="dropin_level_any">Mọi trình độ</string>
+
+    <!-- Khung giờ theo giờ bắt đầu (FR-003) -->
+    <string name="dropin_slot_morning">Sáng 05–11</string>
+    <string name="dropin_slot_noon">Trưa 11–13</string>
+    <string name="dropin_slot_afternoon">Chiều 13–18</string>
+    <string name="dropin_slot_evening">Tối 18–23</string>
+    <string name="dropin_slot_hint">Khung giờ theo giờ bắt đầu: Sáng 05–11 · Trưa 11–13 · Chiều 13–18 · Tối 18–23.</string>
+
+    <!-- Nhãn (Chip Material 3) -->
+    <string name="dropin_label_full">Đã đủ người</string>
+    <string name="dropin_label_session_changed">Buổi đã thay đổi</string>
+    <string name="dropin_label_session_cancelled">Buổi đã bị hủy</string>
+    <string name="dropin_label_venue_inactive">Cơ sở tạm ngừng hoạt động</string>
+    <string name="dropin_label_drop_in">Vãng lai</string>
+    <string name="dropin_label_attended">Đã tham gia</string>
+    <string name="dropin_label_cancelled_by_me">Đã hủy</string>
+    <string name="dropin_label_session_cancelled_short">Buổi bị hủy</string>
+    <string name="dropin_label_no_show">Không đến</string>
+
+    <!-- Màn hình 1: danh sách buổi -->
+    <string name="dropin_list_intro">Chơi theo lượt, không cần đủ người hay đặt cả sân. Chủ sân xếp cặp tại chỗ.</string>
+    <string name="dropin_list_open_filter">Bộ lọc</string>
+    <plurals name="dropin_list_count">
+        <item quantity="other">%d buổi phù hợp · gần nhất trước</item>
+    </plurals>
+    <string name="dropin_list_remaining">Còn %1$d/%2$d chỗ</string>
+    <string name="dropin_list_empty">Chưa có buổi vãng lai nào sắp diễn ra.</string>
+    <string name="dropin_list_empty_filtered">Không có buổi nào khớp bộ lọc. Thử bỏ bớt bộ lọc.</string>
+    <string name="dropin_list_reduce_filter">Bỏ bớt bộ lọc</string>
+    <string name="dropin_list_load_more_failed">Không tải thêm được buổi. Kéo xuống để thử lại.</string>
+    <string name="dropin_list_item_description">%1$s, %2$s, %3$s, %4$s, %5$s, %6$s</string>
+    <string name="dropin_chip_remove">Bỏ bộ lọc %1$s</string>
+    <string name="dropin_chip_max_price">≤ %1$s</string>
+
+    <!-- Bottom sheet 1: bộ lọc -->
+    <string name="dropin_filter_title">Lọc buổi vãng lai</string>
+    <string name="dropin_filter_district">Khu vực</string>
+    <string name="dropin_filter_district_hint">Chọn tối đa %1$d quận</string>
+    <string name="dropin_filter_district_error">Chọn tối đa %1$d quận</string>
+    <string name="dropin_filter_district_load_failed">Không tải được danh sách quận.</string>
+    <string name="dropin_filter_date">Ngày</string>
+    <string name="dropin_filter_date_any">30 ngày tới</string>
+    <string name="dropin_filter_date_pick">Chọn ngày</string>
+    <string name="dropin_filter_date_clear">Bỏ chọn ngày</string>
+    <string name="dropin_filter_slot">Khung giờ</string>
+    <string name="dropin_filter_level">Trình độ</string>
+    <string name="dropin_filter_max_price">Giá tối đa mỗi lượt</string>
+    <string name="dropin_filter_max_price_hint">Ví dụ 80000</string>
+    <string name="dropin_filter_max_price_suffix">đ</string>
+    <string name="dropin_filter_apply">Áp dụng</string>
+    <string name="dropin_filter_clear_all">Xóa hết</string>
+
+    <!-- Màn hình 2: chi tiết buổi -->
+    <string name="dropin_detail_title">Chi tiết buổi</string>
+    <plurals name="dropin_detail_remaining">
+        <item quantity="other">Còn %d chỗ</item>
+    </plurals>
+    <string name="dropin_detail_capacity">Sức chứa %1$d người · cập nhật trực tiếp</string>
+    <string name="dropin_detail_courts">Sân con</string>
+    <string name="dropin_detail_courts_unknown">%1$d sân</string>
+    <string name="dropin_detail_address">Địa chỉ</string>
+    <string name="dropin_detail_directions">Chỉ đường</string>
+    <string name="dropin_detail_owner_note">Ghi chú của chủ sân</string>
+    <string name="dropin_detail_privacy">Danh sách người đăng ký chỉ chủ sân xem được.</string>
+    <string name="dropin_detail_max_party">Đi tối đa 4 người mỗi lượt</string>
+    <string name="dropin_detail_register">Đăng ký</string>
+    <string name="dropin_detail_view_ticket">Xem vé của bạn</string>
+    <string name="dropin_detail_closed">Buổi không còn nhận đăng ký</string>
+    <string name="dropin_detail_own_session">Đây là buổi do bạn mở</string>
+    <string name="dropin_detail_not_found">Không tìm thấy buổi này. Buổi có thể đã bị xóa.</string>
+    <string name="dropin_detail_login_title">Đăng nhập để đăng ký</string>
+    <string name="dropin_detail_login_message">Bạn cần đăng nhập để đăng ký buổi vãng lai. Đăng nhập xong bạn sẽ quay lại buổi này.</string>
+    <string name="dropin_detail_login">Đăng nhập</string>
+    <string name="dropin_detail_later">Để sau</string>
+    <string name="dropin_detail_no_map_app">Không tìm thấy ứng dụng bản đồ.</string>
+
+    <!-- Màn hình 3: xác nhận đăng ký -->
+    <string name="dropin_confirm_title">Xác nhận đăng ký</string>
+    <string name="dropin_confirm_session_line">%1$s · Vãng lai</string>
+    <string name="dropin_confirm_level_remaining">%1$s · Còn %2$d chỗ</string>
+    <string name="dropin_confirm_party">Số người</string>
+    <string name="dropin_confirm_party_hint">Bạn và tối đa 3 bạn đi kèm, không cần tài khoản</string>
+    <string name="dropin_confirm_party_limit">Buổi còn %1$d chỗ, bạn chọn được tối đa %2$d người.</string>
+    <string name="dropin_confirm_party_decrease">Giảm số người</string>
+    <string name="dropin_confirm_party_increase">Tăng số người</string>
+    <string name="dropin_confirm_party_value">%1$d người</string>
+    <string name="dropin_confirm_payment">Thanh toán</string>
+    <string name="dropin_confirm_pay_mock">Thanh toán ngay (giả lập)</string>
+    <string name="dropin_confirm_pay_mock_desc">Luôn thành công, không trừ tiền thật</string>
+    <string name="dropin_confirm_pay_at_venue">Trả tại sân</string>
+    <string name="dropin_confirm_pay_at_venue_desc">Trả cho chủ sân khi check-in</string>
+    <string name="dropin_confirm_price_times">%1$s × %2$d người</string>
+    <string name="dropin_confirm_total">Tổng cộng</string>
+    <string name="dropin_confirm_summary_mock">%1$d người · Thanh toán ngay</string>
+    <string name="dropin_confirm_summary_at_venue">%1$d người · Trả tại sân</string>
+    <string name="dropin_confirm_one_qr">Một mã QR dùng cho cả nhóm của bạn.</string>
+    <string name="dropin_confirm_submit">Xác nhận đăng ký</string>
+    <string name="dropin_confirm_submitting">Đang đăng ký…</string>
+    <string name="dropin_confirm_no_seat">Buổi đã hết chỗ.</string>
+    <string name="dropin_warning_overlap_drop_in">Buổi này trùng giờ với một lượt vãng lai khác của bạn. Bạn vẫn đăng ký được.</string>
+    <string name="dropin_warning_overlap_booking">Buổi này trùng giờ với một đơn đặt sân của bạn. Bạn vẫn đăng ký được.</string>
+    <string name="dropin_warning_level_mismatch">Trình độ của buổi khác trình độ trong hồ sơ của bạn. Bạn vẫn đăng ký được.</string>
+
+    <!-- Màn hình 4: vé -->
+    <string name="dropin_ticket_title">Vé vãng lai</string>
+    <string name="dropin_ticket_success">Đăng ký thành công. Hẹn gặp bạn ở sân!</string>
+    <string name="dropin_ticket_qr_description">Mã QR check-in của vé %1$s</string>
+    <string name="dropin_ticket_group_hint">Một mã cho cả nhóm. Đưa chủ sân quét khi đến.</string>
+    <string name="dropin_ticket_party">Số người</string>
+    <string name="dropin_ticket_level">Trình độ</string>
+    <string name="dropin_ticket_amount">Số tiền</string>
+    <string name="dropin_ticket_payment">Thanh toán</string>
+    <string name="dropin_ticket_location">Địa điểm</string>
+    <string name="dropin_ticket_paid">Đã thanh toán</string>
+    <string name="dropin_ticket_pay_at_venue">Thanh toán tại sân</string>
+    <string name="dropin_ticket_refunded">Đã hoàn tiền</string>
+    <string name="dropin_ticket_no_qr_cancelled">Buổi đã bị hủy nên vé không còn mã QR.</string>
+    <string name="dropin_ticket_no_qr_inactive">Lượt này không còn hiệu lực.</string>
+    <string name="dropin_ticket_qr_pending">Đang tải mã QR…</string>
+    <string name="dropin_ticket_not_found">Bạn chưa có vé cho buổi này.</string>
+    <string name="dropin_ticket_cancel">Hủy đăng ký</string>
+    <string name="dropin_ticket_code_copied">Đã sao chép mã vé</string>
+
+    <!-- Màn hình 5: lượt của tôi (US3, tuần 7) -->
+    <string name="dropin_mine_title">Lượt vãng lai của tôi</string>
+    <string name="dropin_mine_entry">Lượt của tôi</string>
+    <string name="dropin_mine_upcoming">Sắp tới</string>
+    <string name="dropin_mine_past">Đã qua</string>
+    <string name="dropin_mine_empty">Bạn chưa đăng ký lượt vãng lai nào.</string>
+    <string name="dropin_mine_find">Tìm buổi vãng lai</string>
+    <string name="dropin_mine_write_review">Đánh giá buổi chơi</string>
+    <string name="dropin_mine_view_review">Xem đánh giá của bạn</string>
+
+    <!-- Bottom sheet 2: hủy đăng ký (US4) -->
+    <string name="dropin_cancel_title">Hủy đăng ký</string>
+    <string name="dropin_cancel_refund_full">Bạn được hoàn 100%% (%1$s)</string>
+    <string name="dropin_cancel_free">Không mất phí</string>
+    <string name="dropin_cancel_no_refund_title">Không được hoàn tiền</string>
+    <string name="dropin_cancel_no_refund">Hủy lúc này sẽ không được hoàn tiền.</string>
+    <string name="dropin_cancel_confirm">Xác nhận hủy</string>
+    <string name="dropin_cancel_keep">Giữ lượt</string>
+    <string name="dropin_cancel_policy">Hủy trước giờ bắt đầu từ 4 giờ trở lên được hoàn 100%. Hủy muộn hơn không được hoàn tiền.</string>
+    <string name="dropin_cancel_note_early">Số tiền được hoàn về phương thức thanh toán đã dùng.</string>
+    <string name="dropin_cancel_note_changed">Chủ sân đã thay đổi buổi nên bạn được hoàn đủ dù hủy muộn.</string>
+    <string name="dropin_cancel_note_late">Buổi bắt đầu sau chưa tới 4 giờ. Bạn vẫn có thể hủy để nhường chỗ cho người khác.</string>
+    <string name="dropin_cancel_note_free">Bạn chọn thanh toán tại sân nên hủy không mất phí.</string>
+    <string name="dropin_cancel_quoting">Đang tính số tiền hoàn…</string>
+    <string name="dropin_cancel_cancelling">Đang hủy…</string>
+    <string name="dropin_cancel_error_network">Không có kết nối mạng. Lượt của bạn chưa bị hủy, hãy thử lại.</string>
+    <string name="dropin_cancel_done">Đã hủy đăng ký</string>
+    <string name="dropin_cancel_done_refund">Đã hủy đăng ký. Hoàn %1$s</string>
+
+    <!-- Mã lỗi (contracts/edge-functions-dropin.md mục 4) -->
+    <string name="dropin_error_invalid_argument">Thông tin đăng ký không hợp lệ.</string>
+    <string name="dropin_error_unauthenticated">Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.</string>
+    <string name="dropin_error_account_locked">Tài khoản đang bị khóa</string>
+    <string name="dropin_error_own_session">Bạn không thể đăng ký buổi do mình mở</string>
+    <string name="dropin_error_not_found">Không tìm thấy buổi/lượt</string>
+    <string name="dropin_error_session_full">Buổi không còn đủ chỗ (còn %1$d chỗ)</string>
+    <string name="dropin_error_session_started">Buổi đã bắt đầu</string>
+    <string name="dropin_error_session_cancelled">Buổi đã bị hủy</string>
+    <string name="dropin_error_venue_inactive">Cơ sở tạm ngừng hoạt động</string>
+    <string name="dropin_error_already_registered">Bạn đã đăng ký buổi này.</string>
+    <string name="dropin_error_already_waitlisted">Bạn đang trong hàng chờ của buổi này.</string>
+    <string name="dropin_error_not_cancellable">Lượt đã check-in, không hủy được</string>
+    <string name="dropin_error_busy">Hệ thống đang bận. Vui lòng thử lại.</string>
+    <string name="dropin_error_network">Không có kết nối mạng. Lựa chọn của bạn vẫn được giữ, hãy thử lại.</string>
+    <string name="dropin_error_internal">Có lỗi xảy ra, vui lòng thử lại</string>
+    <!-- Bổ sung cho màn hình vé (T040) -->
+    <string name="dropin_ticket_copy_code">Sao chép mã vé</string>
+    <string name="dropin_ticket_pay_at_venue_amount">Thanh toán tại sân %1$s</string>
+</resources>

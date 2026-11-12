@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Nền thanh "Xóa hết / Áp dụng" của bộ lọc vãng lai: cùng màu sheet, kéo dài xuống dưới (inset âm) để khi sheet
+     mở lưng chừng, phần dưới thanh nút tới mép màn hình vẫn liền một màu, không lộ chip cuộn phía sau. -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:insetBottom="-200dp">
+    <shape android:shape="rectangle">
+        <solid android:color="?attr/colorSurfaceContainerLow" />
+    </shape>
+</inset>

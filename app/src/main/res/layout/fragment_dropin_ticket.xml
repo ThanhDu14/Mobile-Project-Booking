@@ -1,0 +1,391 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Vé vãng lai (spec 080 US2, T040; wireframe ui/08_drop-in_buoc4_ve-qr.png).
+    Dải "Đăng ký thành công" (justRegistered), nhãn trạng thái, thẻ vé: tên cơ sở, ngày giờ, mã QR cạnh 240dp trên nền
+    trắng tuyệt đối (cả chế độ tối), mã vé chọn để sao chép được, số người, trình độ, số tiền, trạng thái thanh toán,
+    địa điểm. include_state_views chồng lên vùng nội dung cho loading, chưa có vé, lỗi (FR-024).
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?android:attr/colorBackground"
+    android:orientation="vertical">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        app:navigationContentDescription="@string/dropin_close"
+        app:navigationIcon="@drawable/ic_close_24"
+        app:title="@string/dropin_ticket_title"
+        app:titleTextAppearance="?attr/textAppearanceTitleLarge" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/content"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingHorizontal="@dimen/screen_gutter"
+                android:paddingTop="@dimen/space_2"
+                android:paddingBottom="@dimen/space_6">
+
+                <!-- Vừa đăng ký xong -->
+                <LinearLayout
+                    android:id="@+id/successBanner"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="@dimen/space_4"
+                    android:accessibilityLiveRegion="polite"
+                    android:background="@drawable/bg_success_box"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="@dimen/space_4"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_check_20"
+                        app:tint="?attr/colorOnPrimaryContainer" />
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_3"
+                        android:layout_weight="1"
+                        android:text="@string/dropin_ticket_success"
+                        android:textAppearance="?attr/textAppearanceBodyLarge"
+                        android:textColor="?attr/colorOnPrimaryContainer" />
+                </LinearLayout>
+
+                <!-- Ngoại tuyến: đang hiện vé đã lưu trên máy (FR-015, T048) -->
+                <TextView
+                    android:id="@+id/offlineBanner"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="@dimen/space_3"
+                    android:accessibilityLiveRegion="polite"
+                    android:background="@drawable/bg_info_box"
+                    android:drawablePadding="@dimen/space_2"
+                    android:gravity="center_vertical"
+                    android:padding="@dimen/space_3"
+                    android:text="@string/dropin_ticket_offline_banner"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    android:visibility="gone"
+                    app:drawableStartCompat="@drawable/ic_wifi_off_24"
+                    app:drawableTint="?attr/colorOnSurfaceVariant"
+                    tools:visibility="visible" />
+
+                <!-- Nhãn: buổi đã thay đổi / bị hủy / cơ sở tạm ngừng (AC 3.5) -->
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/labelChips"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="@dimen/space_3"
+                    android:visibility="gone" />
+
+                <com.google.android.material.card.MaterialCardView
+                    style="?attr/materialCardViewOutlinedStyle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:cardCornerRadius="@dimen/radius_lg">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:paddingVertical="@dimen/space_4">
+
+                        <TextView
+                            android:id="@+id/venueName"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginHorizontal="@dimen/space_4"
+                            android:gravity="center"
+                            android:textAppearance="?attr/textAppearanceTitleMedium"
+                            android:textColor="?attr/colorOnSurface"
+                            tools:text="Sân cầu lông Hòa Bình" />
+
+                        <TextView
+                            android:id="@+id/sessionDateTime"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginHorizontal="@dimen/space_4"
+                            android:layout_marginTop="@dimen/space_1"
+                            android:gravity="center"
+                            android:textAppearance="?attr/textAppearanceTitleLarge"
+                            android:textColor="?attr/colorOnSurface"
+                            tools:text="T3, 06/10 · 19:00–21:00" />
+
+                        <!-- QR: nền trắng cố định, không theo theme, để máy quét đọc được cả ở chế độ tối -->
+                        <FrameLayout
+                            android:id="@+id/qrFrame"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_horizontal"
+                            android:layout_marginTop="@dimen/space_4"
+                            android:background="@drawable/bg_info_box"
+                            android:backgroundTint="@android:color/white"
+                            android:padding="@dimen/space_3">
+
+                            <ImageView
+                                android:id="@+id/qrImage"
+                                android:layout_width="240dp"
+                                android:layout_height="240dp"
+                                android:scaleType="fitCenter"
+                                tools:src="@drawable/ic_qr_code_scanner_24" />
+                        </FrameLayout>
+
+                        <!-- Không có QR: buổi bị hủy / lượt hết hiệu lực / đang tải -->
+                        <TextView
+                            android:id="@+id/noQrText"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginHorizontal="@dimen/space_4"
+                            android:layout_marginTop="@dimen/space_4"
+                            android:background="@drawable/bg_info_box"
+                            android:gravity="center"
+                            android:padding="@dimen/space_4"
+                            android:textAppearance="?attr/textAppearanceBodyLarge"
+                            android:textColor="?attr/colorOnSurfaceVariant"
+                            android:visibility="gone"
+                            tools:text="@string/dropin_ticket_no_qr_cancelled" />
+
+                        <TextView
+                            android:id="@+id/ticketCode"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_horizontal"
+                            android:layout_marginTop="@dimen/space_3"
+                            android:fontFamily="monospace"
+                            android:letterSpacing="0.1"
+                            android:textAppearance="?attr/textAppearanceHeadlineSmall"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textIsSelectable="true"
+                            tools:text="DI-7K2P" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/copyCodeButton"
+                            style="@style/Widget.SmashNow.Button.Text"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_gravity="center_horizontal"
+                            android:text="@string/dropin_ticket_copy_code" />
+
+                        <TextView
+                            android:id="@+id/groupHint"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginHorizontal="@dimen/space_4"
+                            android:gravity="center"
+                            android:text="@string/dropin_ticket_group_hint"
+                            android:textAppearance="?attr/textAppearanceBodyMedium"
+                            android:textColor="?attr/colorOnSurfaceVariant" />
+
+                        <com.google.android.material.divider.MaterialDivider
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginHorizontal="@dimen/space_4"
+                            android:layout_marginVertical="@dimen/space_4" />
+
+                        <!-- Số người · Trình độ -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:paddingHorizontal="@dimen/space_4">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:text="@string/dropin_ticket_party"
+                                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                                    android:textColor="?attr/colorOnSurfaceVariant" />
+
+                                <TextView
+                                    android:id="@+id/partyValue"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                                    android:textColor="?attr/colorOnSurface"
+                                    tools:text="2 người" />
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:text="@string/dropin_ticket_level"
+                                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                                    android:textColor="?attr/colorOnSurfaceVariant" />
+
+                                <TextView
+                                    android:id="@+id/levelValue"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                                    android:textColor="?attr/colorOnSurface"
+                                    tools:text="Trung bình" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <!-- Số tiền · Thanh toán (AC 2.3, 2.4) -->
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_3"
+                            android:orientation="horizontal"
+                            android:paddingHorizontal="@dimen/space_4">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:text="@string/dropin_ticket_amount"
+                                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                                    android:textColor="?attr/colorOnSurfaceVariant" />
+
+                                <TextView
+                                    android:id="@+id/amountValue"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                                    android:textColor="?attr/colorOnSurface"
+                                    tools:text="120.000 đ" />
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:text="@string/dropin_ticket_payment"
+                                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                                    android:textColor="?attr/colorOnSurfaceVariant" />
+
+                                <TextView
+                                    android:id="@+id/paymentValue"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                                    android:textColor="?attr/colorOnSurface"
+                                    tools:text="Đã thanh toán" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <!-- Địa điểm -->
+                        <LinearLayout
+                            android:id="@+id/locationGroup"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_3"
+                            android:orientation="vertical"
+                            android:paddingHorizontal="@dimen/space_4">
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="@string/dropin_ticket_location"
+                                android:textAppearance="?attr/textAppearanceBodyMedium"
+                                android:textColor="?attr/colorOnSurfaceVariant" />
+
+                            <TextView
+                                android:id="@+id/locationValue"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:textAppearance="?attr/textAppearanceBodyLarge"
+                                android:textColor="?attr/colorOnSurface"
+                                tools:text="Sân 1, Sân 2 · 245 Ba Tháng Hai, Quận 10" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Chỉ đường (AC 3.2) · Thêm người (FR-008a) -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_4"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/directionsButton"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="@dimen/space_2"
+                        android:minHeight="@dimen/touch_min"
+                        android:text="@string/dropin_ticket_directions"
+                        android:visibility="gone"
+                        app:icon="@drawable/ic_directions_24"
+                        tools:visibility="visible" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/addPartyButton"
+                        style="?attr/materialButtonOutlinedStyle"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:layout_marginStart="@dimen/space_2"
+                        android:minHeight="@dimen/touch_min"
+                        android:text="@string/dropin_ticket_add_party"
+                        android:visibility="gone"
+                        app:icon="@drawable/ic_add_24"
+                        tools:visibility="visible" />
+                </LinearLayout>
+
+                <!-- Hủy đăng ký (US4): mở CancelDropInBottomSheet; chỉ hiện khi canCancel và đang có mạng -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/cancelButton"
+                    style="@style/Widget.SmashNow.Button.Text"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center_horizontal"
+                    android:layout_marginTop="@dimen/space_6"
+                    android:text="@string/dropin_ticket_cancel"
+                    android:textColor="?attr/colorError"
+                    android:visibility="gone" />
+            </LinearLayout>
+        </androidx.core.widget.NestedScrollView>
+
+        <include
+            android:id="@+id/stateViews"
+            layout="@layout/include_state_views" />
+    </FrameLayout>
+</LinearLayout>

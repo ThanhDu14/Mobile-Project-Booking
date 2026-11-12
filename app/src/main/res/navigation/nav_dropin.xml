@@ -1,0 +1,107 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Nav graph lồng của spec 080 (contracts/ui-screens.md mục 1), include vào nav_player.
+    Luồng chính 4 bước (FR-025): danh sách → chi tiết → xác nhận → vé. Sau khi đăng ký thành công màn hình xác nhận bị
+    gỡ khỏi back stack (popUpTo), Back từ vé về chi tiết buổi.
+    Vào danh sách kèm bộ lọc (AI Assistant, spec 022): navigate tới @id/nav_dropin với
+    DropInListFragmentArgs(filter).toBundle(); argument "filter" khai báo cả ở graph này để Safe Args của action tới
+    graph sinh tham số.
+    MyDropInsFragment và CancelDropInBottomSheet (US3, US4, tuần 7) thêm sau.
+-->
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_dropin"
+    app:startDestination="@id/dropInListFragment">
+
+    <argument
+        android:name="filter"
+        android:defaultValue="@null"
+        app:argType="com.example.booking_app.feature.dropin.ui.list.DropInFilterArgs"
+        app:nullable="true" />
+
+    <fragment
+        android:id="@+id/dropInListFragment"
+        android:name="com.example.booking_app.feature.dropin.ui.list.DropInListFragment"
+        android:label="@string/dropin_title">
+        <argument
+            android:name="filter"
+            android:defaultValue="@null"
+            app:argType="com.example.booking_app.feature.dropin.ui.list.DropInFilterArgs"
+            app:nullable="true" />
+        <deepLink app:uri="smashnow://dropin" />
+        <action
+            android:id="@+id/action_dropInList_to_detail"
+            app:destination="@id/dropInDetailFragment" />
+        <action
+            android:id="@+id/action_dropInList_to_filter"
+            app:destination="@id/dropInFilterBottomSheet" />
+    </fragment>
+
+    <dialog
+        android:id="@+id/dropInFilterBottomSheet"
+        android:name="com.example.booking_app.feature.dropin.ui.list.DropInFilterBottomSheet"
+        android:label="@string/dropin_filter_title">
+        <argument
+            android:name="current"
+            app:argType="com.example.booking_app.feature.dropin.ui.list.DropInFilterArgs" />
+    </dialog>
+
+    <fragment
+        android:id="@+id/dropInDetailFragment"
+        android:name="com.example.booking_app.feature.dropin.ui.detail.DropInDetailFragment"
+        android:label="@string/dropin_detail_title">
+        <argument
+            android:name="sessionId"
+            app:argType="string" />
+        <!-- Thông báo DROPIN_* (spec 100). -->
+        <deepLink app:uri="smashnow://dropin/session/{sessionId}" />
+        <action
+            android:id="@+id/action_dropInDetail_to_confirm"
+            app:destination="@id/dropInConfirmFragment" />
+        <action
+            android:id="@+id/action_dropInDetail_to_ticket"
+            app:destination="@id/dropInTicketFragment" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/dropInConfirmFragment"
+        android:name="com.example.booking_app.feature.dropin.ui.confirm.DropInConfirmFragment"
+        android:label="@string/dropin_confirm_title">
+        <argument
+            android:name="sessionId"
+            app:argType="string" />
+        <!-- returnTo sau khi khách đăng nhập từ chi tiết buổi (T041): đăng nhập xong mở thẳng bước xác nhận. -->
+        <deepLink app:uri="smashnow://dropin/confirm/{sessionId}" />
+        <action
+            android:id="@+id/action_dropInConfirm_to_ticket"
+            app:destination="@id/dropInTicketFragment"
+            app:popUpTo="@id/dropInConfirmFragment"
+            app:popUpToInclusive="true" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/dropInTicketFragment"
+        android:name="com.example.booking_app.feature.dropin.ui.ticket.DropInTicketFragment"
+        android:label="@string/dropin_ticket_title">
+        <argument
+            android:name="sessionId"
+            app:argType="string" />
+        <argument
+            android:name="justRegistered"
+            android:defaultValue="false"
+            app:argType="boolean" />
+        <deepLink app:uri="smashnow://dropin/ticket/{sessionId}" />
+    </fragment>
+
+    <!-- Lượt vãng lai của tôi (US3, T047). Trang Tài khoản mở bằng deep link (AccountEntry.MY_DROPINS, T049). -->
+    <fragment
+        android:id="@+id/myDropInsFragment"
+        android:name="com.example.booking_app.feature.dropin.ui.mine.MyDropInsFragment"
+        android:label="@string/dropin_mine_title">
+        <deepLink app:uri="smashnow://dropin/mine" />
+        <action
+            android:id="@+id/action_myDropIns_to_ticket"
+            app:destination="@id/dropInTicketFragment" />
+    </fragment>
+
+</navigation>

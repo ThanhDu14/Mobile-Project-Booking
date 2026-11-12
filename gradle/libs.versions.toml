@@ -37,6 +37,8 @@ osmdroid = "6.1.20"
 # Thư viện ảnh chi tiết sân và màn hình xem ảnh (spec 030 R8); khai báo trực tiếp vì code dùng thẳng
 viewpager2 = "1.1.0"
 gmsCodeScanner = "16.1.0"
+# Vẽ mã QR trên vé vãng lai (spec 080 T001) và quét QR check-in (spec 112, research R15). 4.3.0 là bản ổn định mới nhất
+zxingAndroidEmbedded = "4.3.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -79,6 +81,7 @@ coil-network-okhttp = { group = "io.coil-kt.coil3", name = "coil-network-okhttp"
 osmdroid-android = { group = "org.osmdroid", name = "osmdroid-android", version.ref = "osmdroid" }
 androidx-viewpager2 = { group = "androidx.viewpager2", name = "viewpager2", version.ref = "viewpager2" }
 play-services-code-scanner = { group = "com.google.android.gms", name = "play-services-code-scanner", version.ref = "gmsCodeScanner" }
+zxing-android-embedded = { group = "com.journeyapps", name = "zxing-android-embedded", version.ref = "zxingAndroidEmbedded" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

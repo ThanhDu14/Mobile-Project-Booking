@@ -1877,6 +1877,89 @@ Kết quả mong muốn: PR CI chạy được trên GitHub, nêu rõ job nào x
 - CI trên GitHub (PR #58): Android ✅ (6 phút 32 giây), Edge Functions ✅, Firestore Rules ❌ đúng 1 ca T012.
 - Chưa chạy app trên máy ảo (không cần cho thay đổi này).
 
+## Mục 32: Hoàn thành tuần 6 spec 080 (US1 danh sách/chi tiết buổi, US2 đăng ký và vé QR), sửa lỗi tranh chấp khi nhiều người đăng ký cùng lúc
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-11 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 08 – Đặt lịch vãng lai (spec 080, task T001–T041; T020 chưa chạy) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5, điều phối và subagent) |
+| Mục đích | Hoàn thành các task tuần 6 còn dở: Edge Function `register-drop-in`, domain/data Android, 3 màn hình chi tiết, xác nhận, vé QR; chạy đủ các bộ test; sửa lỗi test đăng ký đồng thời E1 |
+| Nhánh Git | `feature/080-drop-in-session` |
+
+### Prompt đã dùng
+
+```
+Bối cảnh: mình là thành viên C, phụ trách nhóm tính năng 08 Đặt lịch vãng lai (spec 080). Đây là
+phiên làm tiếp: phiên trước đã làm dở các task tuần 6 (Phase 1–4 trong
+specs/080-drop-in-session/tasks.md, T001–T041) nhưng chưa commit và chưa đánh dấu tasks.md. Schema
+đã thống nhất với D (đăng ký ở subcollection dropInSessions/{sid}/registrations/{uid}, startAt/endAt
+kiểu Timestamp, courtIds, ownerId, districtId, timeSlot, venueSnapshot, level chỉ 3 mức). Hợp đồng
+domain (model, interface repository, use case) không được đổi chữ ký.
+
+Mục tiêu: hoàn thành nhanh nhất các task tuần 6 còn lại.
+
+Yêu cầu:
+1. Đối chiếu code đang có với tasks.md để biết task nào xong, dở hoặc chưa làm; báo ngắn gọn rồi
+   làm tiếp.
+2. Chia phần còn lại cho các subagent độc lập (server, Android UI, ...), quy định rõ file mỗi agent
+   được sửa để không sửa trùng. Agent không được commit hay sửa tasks.md.
+3. Giới hạn tài nguyên: mỗi lúc chỉ một agent chạy Gradle (task hẹp, không --parallel, xong thì
+   --stop), chỉ một Firebase Emulator; không chạy Docker (supabase start/serve), không bật máy ảo.
+   Cần androidTest thì dừng lại nhắc mình.
+4. Làm theo TDD khi có thể; đánh dấu [x] task đã xong; commit theo Conventional Commits, chia theo
+   nhóm (rules/index, server, Android domain/data, Android UI).
+5. Không sửa code của thành viên khác (_shared/firestore.ts, _shared/auth.ts, owner-*,
+   delete-account, ...); lỗi có sẵn của người khác chỉ ghi nhận.
+6. Cuối cùng chạy và báo đúng kết quả, kể cả test fail: compile và unit test Gradle; deno test cho
+   _shared/dropin.ts và register-drop-in, gồm test đồng thời E1, E2 chạy 10 lần trên Firebase
+   Emulator; npm test của firestore-tests. Biến môi trường xem ở thư mục repo gốc (chỉ đọc).
+
+Kết quả mong muốn: danh sách task đã xong và chưa xong kèm lý do, kết quả từng bộ test, danh sách
+commit, tin nhắn mẫu báo D các việc cần sửa theo schema mới và báo B về interface tạm
+UpcomingBookingsReader. Chưa push, chưa mở PR.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Đối chiếu hiện trạng: phần lớn code đã có. Còn thiếu 3 Fragment chi tiết, xác nhận, vé QR (T029, T038, T040), nối nút Đăng ký với đăng nhập (T041), và chưa có kết quả Gradle hay test Emulator.
+- Chia việc cho 4 subagent:
+  - UI-1: màn chi tiết buổi và T041, dùng `AuthNavigator` có sẵn của spec 010 với `returnTo = smashnow://dropin/confirm/{sessionId}`.
+  - UI-2: màn xác nhận (chọn số người, 2 cách thanh toán, cảnh báo, khóa nút khi đang gửi) và màn vé QR (ZXing, mã vé sao chép được, tăng độ sáng màn hình).
+  - Server: rà `register-drop-in` và `_shared/dropin.ts` theo contract, sửa trường hợp buổi không còn document trong `cancelRegistrationInTx`, chỉnh seed khớp kịch bản quickstart.
+  - Gradle: agent duy nhất chạy Gradle; tạo layout còn thiếu `item_dropin_filter_chip.xml`.
+- Lỗi E1 (20 người cùng đăng ký buổi còn 5 chỗ): không lần nào vượt sức chứa, nhưng 17/20 request trả `503 BUSY`. Đo trên Emulator thấy các transaction cùng giữ khóa đọc trên document buổi rồi kẹt nhau tới "Transaction lock timeout" (khoảng 2,2 giây), sau đó bị hủy cả loạt. Chỉ nới backoff thì không đủ ổn định.
+  - Cách sửa: xếp hàng các request cùng `sessionId` trong mỗi isolate (`createKeyedSerializer`) trước khi mở transaction. Giữa các isolate vẫn do transaction bảo đảm không vượt sức chứa.
+  - Test E1, E2 giả lập 4 và 2 isolate để transaction vẫn tranh chấp thật. Backoff giữ 50–400 ms đúng contract. Ghi lý do vào research.md mục R2.
+- Tài liệu: đánh dấu tasks.md (ghi chú thêm ở T004, T010, T031, T036), sửa lệnh seed trong quickstart thành `deno run -A`.
+- Soạn tin nhắn mẫu cho D (owner-create-session, check-in/roster, owner-cancel-session, owner-update-session, 2 lỗi có sẵn trên main) và cho B (interface tạm `UpcomingBookingsReader`).
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| `fragment_dropin_detail.xml`, `DropInDetailFragment.kt` | Dùng | Đúng T029, T041; bỏ ảnh đầu trang của wireframe vì model buổi không có ảnh |
+| `fragment_dropin_confirm.xml`, `DropInConfirmFragment.kt`, thêm `retryLoad()` vào `DropInConfirmViewModel` | Dùng | Đúng T038; `retryLoad()` chỉ thêm API cho nút Thử lại, không đổi test |
+| `fragment_dropin_ticket.xml`, `DropInTicketFragment.kt` | Dùng | Đúng T040; nút hủy vé để ẩn tới khi làm US4 (tuần 7) |
+| `item_dropin_filter_chip.xml` | Dùng | Bộ lọc gọi tới layout này nhưng chưa có, làm lỗi biên dịch |
+| Hàng đợi theo buổi trong `register-drop-in/handler.ts` | Dùng | Sửa lỗi E1 mà không đổi contract |
+| Nới backoff lên 2000 ms | Bỏ | Đo thực tế vẫn chập chờn và lệch contract 50–400 ms |
+| `_shared/dropin.ts`: không ghi buổi khi document buổi đã mất | Dùng | Tránh làm hỏng transaction của người gọi (ví dụ xóa tài khoản) |
+| `scripts/seed/080-dropin.ts`: đổi quận, giá, ngày của vài buổi | Dùng | Khớp các kịch bản Q1, Q2, Q8 trong quickstart |
+| Chuỗi "Chính sách hủy" ở màn chi tiết | Bỏ | Không có trong task tuần 6 |
+| `supabase/functions/deno.lock` | Bỏ (không commit) | Repo chưa từng commit file lock của Deno |
+
+### Cách kiểm chứng
+
+- `./gradlew :app:compileDebugKotlin :app:compileDebugAndroidTestKotlin`: qua.
+- `./gradlew :app:testDebugUnitTest`: 1047/1048 test qua. Test hỏng duy nhất là `OwnerBookingsViewModelTest.emitsBookingsAndFiltersByPendingUpcomingPast` của nhóm D (cố định ngày 2026-11-06), không liên quan. Phần dropin và core.format 108/108 qua.
+- `deno test` cho `_shared/dropin.test.ts` và `register-drop-in/handler.test.ts`: 37/37 qua.
+- `deno test register-drop-in/index.test.ts` trên Firebase Emulator (Auth + Firestore): 4/4 qua. E1 10/10 lần `success=5 full=15 registeredCount=12/12`, E2 10/10 lần, E3 idempotent, tài khoản bị khóa trả 403.
+- `npm test` trong `firestore-tests`: 213/220 qua, 7 test hỏng có sẵn trên main (court-detail, owner-operations, recurringHoldTransaction). `dropInSessions.test.ts` 22/22 qua.
+- Chưa chạy androidTest T020 `FirestoreDropInSessionRepositoryTest` (cần máy ảo); chưa chạy màn hình trên máy ảo hoặc thiết bị thật.
+- Commit: `8c2f7c3`, `8384b90`, `2349d64`, `9326183`, `7280a17`. Chưa push.
+
 ## Mục 33: Sửa T012 (quyền đọc đơn của chủ sân) và VD-6 (khách xem đánh giá) theo nhờ của B và A
 
 | Trường | Nội dung |
@@ -1931,3 +2014,291 @@ giới hạn bộ nhớ; không thêm dòng attribution AI.
 - `compileDebugKotlin` và unit test owner xanh.
 - CI trên GitHub xanh cả 3 job.
 - Chưa test check-in QR trên thiết bị.
+
+## Mục 34: Deploy lên project thật, test spec 080 trên máy ảo và sửa các lỗi phát hiện khi test
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-11 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 08 – Đặt lịch vãng lai (spec 080 US1, US2; T015, T024, T027) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5) |
+| Mục đích | Deploy để test trên máy ảo; sửa lỗi mình phát hiện khi test; bàn hướng cho 2 góp ý tính năng |
+| Nhánh Git | `feature/080-drop-in-session` (PR #59) |
+
+### Prompt đã dùng
+
+**Prompt 1: Deploy để test**
+
+```
+Bối cảnh: spec 080 (đặt lịch vãng lai, US1 danh sách/chi tiết, US2 đăng ký) đã mở PR #59 nhưng chưa
+merge. App trên máy ảo trỏ Firebase/Supabase thật. Mình chọn deploy lên project thật để test đầy đủ
+rồi merge sau.
+
+Yêu cầu: trước khi deploy Rules, so sánh với bản đang chạy để không xóa rule của thành viên khác; deploy
+Rules, index và Edge Function register-drop-in; tạo vài buổi demo trên các cơ sở có sẵn (ID dễ nhận,
+xóa được sau); build app vào máy ảo và đưa kịch bản test từng bước.
+
+Ràng buộc: máy ít RAM (từng màn hình xanh), Gradle giới hạn bộ nhớ, báo trước khi cần bật máy ảo.
+```
+
+**Prompt 2: Lỗi mình phát hiện khi test (lần 1)**
+
+```
+Khi test: (1) không đăng nhập được; (2) bấm tab Vãng lai thì báo "đang phát triển". Tìm nguyên nhân
+bằng log và màn hình máy ảo rồi sửa.
+```
+
+**Prompt 3: Lỗi bộ lọc mình phát hiện**
+
+```
+Bộ lọc: (1) nút Áp dụng phải kéo sheet lên hết mới thấy; (2) chọn Khá/Nâng cao, Áp dụng, mở lại thì
+chip không còn tick; tick thêm sau lần áp dụng đầu thì không lọc được. Yêu cầu: thoát ra vào lại vẫn
+hiện đúng bộ lọc đã chọn. Tái hiện trên máy ảo, viết test trước rồi sửa.
+```
+
+**Prompt 4: Chỉnh giao diện bộ lọc theo ý mình**
+
+```
+Sheet bộ lọc vẫn mở lưng chừng như cũ, nhưng 2 nút Xóa hết và Áp dụng phải thấy ngay và luôn bám mép
+dưới màn hình dù kéo sheet lên hay xuống. Nền vùng chứa 2 nút trắng liền tới mép màn hình, không đổ
+bóng.
+```
+
+**Prompt 5: Góp ý tính năng**
+
+```
+Người dùng đã đăng ký muốn đăng ký thêm người cho buổi đó thì sao? Và mình muốn có mục "Vé của tôi"
+trong trang Tài khoản để xem vé, không phải vào Vãng lai tìm lại cơ sở. Đề xuất hướng làm.
+```
+
+### Tóm tắt phản hồi của AI
+
+- **Deploy:** AI so sánh và thấy Rules của nhánh 080 chỉ thêm rule, không xóa dòng nào so với bản đang chạy, rồi deploy Rules, index và `register-drop-in`. Hệ thống chặn AI ghi thẳng vào database thật, nên AI viết script tạo 6 buổi `demo080-p01..p06` và mình tự chạy.
+- **Không đăng nhập được:** worktree 080 dùng `google-services.json` giả (project `demo-smashnow`) nên app gọi tới project không tồn tại. AI thay bằng bản thật; lỗi này do cấu hình trên máy, không do code.
+- **Tab Vãng lai báo "đang phát triển":** `MainActivity` chưa nối tab với màn danh sách. AI thêm `openDropIn()` và xử lý tab sáng đúng.
+- **Bộ lọc:**
+  - Chỉ áp dụng được lần đầu: `savedStateHandle.remove()` gỡ luôn LiveData đang theo dõi. AI đổi thành đặt `null`.
+  - Mất bộ lọc khi đổi tab: AI thêm `DropInFilterMemory` (singleton giữ bộ lọc trong phiên chạy app) và 4 unit test.
+- **Thanh nút:** dịch thanh nút theo phần sheet đang hiện mỗi khung hình. Nền dùng inset âm để kéo trắng xuống tới mép màn hình, bỏ bóng đổ.
+- **Góp ý tính năng:** AI hỏi mình chọn hướng. Mình chọn nút "Thêm người" ở vé và làm US3 "Lượt vãng lai của tôi" (có lối vào ở trang Tài khoản) trong PR riêng. AI đã làm xong phía server của "Thêm người" (`action: "ADD_PARTY"`, 8 test), phần còn lại làm ở session sau.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Sheet mở bung hết để thấy nút (bản sửa đầu) | Bỏ | Mình muốn giữ lưng chừng, chỉ cần 2 nút bám đáy |
+| Nhớ bộ lọc trong bộ nhớ thay vì DataStore | Dùng | Đủ cho việc đổi tab; mở lại app vẫn dùng bộ lọc mặc định theo AC 1.2 |
+| Bộ lọc AI Assistant truyền vào ưu tiên hơn bộ lọc đã nhớ | Dùng | Giữ đúng AC 1.8 |
+
+### Cách kiểm chứng
+
+- Tái hiện từng lỗi trên máy ảo bằng adb (chụp màn hình, `uiautomator`), sửa xong chạy lại đúng kịch bản lỗi.
+- `DropInListViewModelTest`: 14/14.
+- Gọi thử `register-drop-in` khi chưa đăng nhập trả 401 đúng.
+- Chưa test đăng ký và vé QR trên máy ảo.
+
+## Mục 35: Sửa CI PR #59, hoàn tất "Thêm người" và US3 "Lượt vãng lai của tôi", deploy và test trên máy ảo
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-12 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 08 – Đặt lịch vãng lai (spec 080 FR-008a, US3; T042–T049, T048a–f) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5, có dùng 2 subagent chạy song song) |
+| Mục đích | Sửa CI đỏ của PR #59; làm nốt phần dở của session trước; deploy và test trên máy ảo |
+| Nhánh Git | `feature/080-drop-in-session` (PR #59, chỉ sửa CI), `feature/080-drop-in-us3` (phần còn lại) |
+
+### Prompt đã dùng
+
+**Prompt 1: Sửa CI của PR #59**
+
+```
+Bối cảnh: PR #59 (spec 080 tuần 6) có job "Android (lint, unit test, assemble)" bị đỏ, 2 job còn lại xanh.
+Yêu cầu: đọc log CI tìm đúng nguyên nhân, sửa trên nhánh của PR #59 nhưng không làm xáo trộn worktree 080
+(đang có thay đổi chưa commit của nhánh khác), chạy lại đúng lệnh CI ở máy trước khi push.
+Kết quả mong muốn: CI của PR #59 xanh cả 3 job.
+```
+
+**Prompt 2: Làm tiếp phần dở của spec 080 bằng subagent**
+
+```
+Bối cảnh: session trước dừng giữa chừng khi đang làm nút "Thêm người" (FR-008a) và US3 "Lượt vãng lai
+của tôi" trên nhánh feature/080-drop-in-us3; code chưa biên dịch, chưa test, chưa commit (ghi chú bàn giao
+ở memory dự án).
+Yêu cầu: chia subagent làm song song cho nhanh: một agent rà và hoàn thiện code Android (nút Thêm người,
+vé đọc cache/ngoại tuyến T044/T048), một agent hoàn thiện tài liệu spec cho khớp code server và chạy Deno
+test trên Emulator. Mỗi agent sửa nhóm file riêng. Chỉ chạy một tiến trình Gradle vì máy 16 GB RAM.
+Sau đó biên dịch, chạy lint + unit test + assemble như CI, commit tách theo nhóm (Conventional Commits).
+Hỏi mình trước khi push, mở PR, deploy.
+```
+
+**Prompt 3: Deploy để test trên máy ảo**
+
+```
+Deploy Edge Function register-drop-in (đã có action ADD_PARTY) lên Supabase thật; kiểm tra xem Firestore
+Rules/index có cần deploy lại không. Sau đó chuẩn bị bản app để mình test trên máy ảo và đưa danh sách
+các mục cần test.
+```
+
+**Prompt 4: Bấm build lại ra bản cũ**
+
+```
+Khi mình bấm Build/Run trong Android Studio thì app trên máy ảo lại thành bản cũ, tab Vãng lai báo
+"Tính năng đang phát triển". Tìm nguyên nhân và cho mình cách chạy đúng bản mới.
+```
+
+**Prompt 5: Lỗi khi test và chỉnh giao diện vé**
+
+```
+Khi test: (1) bấm "Thêm người" không thấy hiện gì; (2) bỏ dòng "Vé này mở được cả khi không có mạng"
+ở màn vé; (3) bấm "Chỉ đường" có mở Google Maps nhưng chỉ thấy màn hình đen dù đã cấp GPS, sau đó máy ảo
+không thao tác được nữa kể cả khi tắt bật lại. Tìm nguyên nhân từng việc, tái hiện trên máy ảo, sửa và
+build lại.
+```
+
+### Tóm tắt phản hồi của AI
+
+- **CI PR #59:** lỗi lint `RtlCompat` ở `fragment_dropin_detail.xml`: TextView có `textAlignment="viewEnd"` nhưng thiếu `gravity` đi kèm. AI thêm `android:gravity="end"` (commit `ff87720`), chạy `./gradlew lint testDebugUnitTest assembleDebug` ở máy xanh rồi mới push; CI xanh cả 3 job. AI sửa trong một worktree tạm để không đụng thay đổi chưa commit của nhánh US3.
+- **Subagent 1 (Android):** rà code còn dở, sửa chỗ đọc cache dễ lỗi biên dịch trong `FirestoreDropInTicketSources.kt`, bỏ chuỗi cứng trong bottom sheet, thêm thông báo lỗi "hệ thống bận" và 2 test.
+- **Subagent 2 (spec + server):** viết lại bảng luật `ADD_PARTY` trong `data-model.md` theo đúng thứ tự kiểm tra trong `handler.ts`, chỉnh FR-008a và contract cho khớp code, thêm task T048a–T048f. Deno test `register-drop-in` 33/33 trên Emulator.
+- **Biên dịch và test:** 155 unit test dropin xanh. Lần chạy CI đầy đủ đầu tiên đỏ ở 2 file ngoài dropin (`SlotMatrixRowAdapter`, `OwnerBookingsViewModelTest`) vì nhánh US3 tách ra trước khi main có bản sửa; AI merge nhánh PR #59 vào thì hết lỗi.
+- **Deploy:** chỉ deploy `register-drop-in`. Rules và index không đổi so với bản đã deploy hôm trước. Gọi thử khi chưa đăng nhập trả 401 đúng.
+- **Ra bản cũ:** Android Studio đang mở thư mục `Mobile-booking-app` (nhánh CI, chưa nối tab Vãng lai) chứ không phải worktree `Mobile-booking-app-080`. AI cài APK đúng bằng `adb install -r` và hướng dẫn mở đúng thư mục.
+- **Máy ảo treo:** chụp màn hình thấy launcher không phản hồi, đồng hồ đứng; nhiều khả năng do Google Maps ngốn RAM (máy ảo 4 GB) và Quick Boot khôi phục lại trạng thái đang treo. AI khởi động lại bằng `adb reboot` thì chạy bình thường.
+- **Thêm người:** sau khi khởi động lại máy ảo, AI tái hiện: bottom sheet hiện đúng (tối đa 2 người nữa, 50.000 đ/người), gửi thành công, vé lên 3 người. AI nói rõ không xác định chắc được lỗi lúc đầu vì log đã mất khi khởi động lại.
+- **Bỏ dòng ngoại tuyến:** xóa TextView, đoạn code bật/tắt và chuỗi không còn dùng (commit `9ee0791`).
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Chia 2 subagent theo nhóm file riêng, Gradle chỉ chạy một lần ở cuối | Dùng | Nhanh hơn mà không quá tải RAM |
+| Gộp toàn bộ code app vào một commit thay vì tách "Thêm người" và US3 | Dùng | Nhiều file chứa cả hai phần, tách ra thì commit giữa chừng không biên dịch được |
+| Dòng "Vé này mở được cả khi không có mạng" | Bỏ | Mình thấy không cần; chế độ ngoại tuyến vẫn giữ nhãn riêng |
+| Test Google Maps trên máy ảo | Bỏ | Máy ảo thiếu RAM; sẽ test "Chỉ đường" trên máy thật |
+
+### Cách kiểm chứng
+
+- `./gradlew lint testDebugUnitTest assembleDebug` xanh; `deno check .` xanh; Deno test `register-drop-in` 33/33 trên Emulator.
+- CI PR #59 xanh cả 3 job sau commit `ff87720`.
+- Test trên máy ảo với Firebase/Supabase thật: màn "Lượt vãng lai của tôi", mở vé, Thêm người (2 → 3 người, vé cập nhật ngay).
+- Chưa test "Chỉ đường" trên máy thật.
+
+## Mục 36: Khôi phục AI log, làm US4 "Hủy đăng ký" spec 080, mở PR #61 và deploy cancel-drop-in
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-12 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 08 – Đặt lịch vãng lai (spec 080 US4; T050–T055) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5, không dùng subagent) |
+| Mục đích | Rà việc còn lại trong tuần; làm US4 hủy đăng ký; mở PR, deploy |
+| Nhánh Git | `feature/080-drop-in-us4` (PR #61 vào `main`) |
+
+### Prompt đã dùng
+
+**Prompt 1: Rà việc còn lại trong tuần**
+
+```
+Bối cảnh: tuần 6 (09/11–15/11), họp thứ Sáu 13/11. Mình phụ trách nhóm 07, 08, 09.
+Yêu cầu: đối chiếu kế hoạch 10 tuần trong team-contract, cam kết tối thiểu (commit, PR, review, AI log),
+trạng thái PR trên GitHub và ghi chú bàn giao, rồi liệt kê việc mình còn phải làm trước buổi họp.
+Kết quả mong muốn: danh sách việc còn lại, có nêu chỗ bất thường trong thư mục làm việc nếu có.
+```
+
+**Prompt 2: Khôi phục AI log và làm US4**
+
+```
+Bối cảnh: dòng đầu AI_log_3.md bị gõ nhầm; US4 "Hủy đăng ký buổi vãng lai" (T050–T055) chưa làm.
+Yêu cầu: (1) khôi phục AI_log_3.md về bản đã commit. (2) Làm US4 theo ghi chú bàn giao: tạo nhánh mới từ
+nhánh của PR #59; viết test trước (Emulator E4–E13, hủy và đăng ký đồng thời ×10, unit test ViewModel),
+rồi cài Edge Function cancel-drop-in dùng cancelRegistrationInTx có sẵn, repository/usecase, ViewModel
+và bottom sheet, nối nút "Hủy đăng ký" trên vé. Chạy deno check, Deno test trên Emulator và
+./gradlew lint testDebugUnitTest assembleDebug như CI. Commit theo Conventional Commits.
+Hỏi trước khi push, mở PR, deploy, ghi AI log.
+```
+
+**Prompt 3: Mở PR, deploy, ghi log**
+
+```
+Mở PR vào main, deploy cancel-drop-in lên Supabase thật, ghi AI log. Không được để xảy ra conflict
+với main và với PR #59.
+```
+
+### Tóm tắt phản hồi của AI
+
+- **Rà việc:** PR #59 chưa có người review, T020 chưa chạy, chưa test "Chỉ đường" trên máy thật, cần chuẩn bị demo. AI phát hiện dòng đầu AI log bị sửa nhầm và báo cáo tuần chưa có.
+- **Server:** tách phần thử lại transaction và hàng đợi theo buổi ra `_shared/dropin-tx.ts` để hai function dùng chung (commit `100bd11`). Viết `cancel-drop-in` (commit `27d6d29`): lỗi `NOT_FOUND` (kể cả token người khác), `NOT_CANCELLABLE`, `SESSION_STARTED`; `dryRun` chỉ trả số tiền hoàn; gửi lại cùng `requestId` trả kết quả cũ; không gửi thông báo.
+- **Test T051:** bản đầu xanh nhưng lượt đầu không ai đăng ký được (3 lệnh đăng ký xong trước khi lệnh hủy commit), tức là chưa thật sự kiểm tra chạy đồng thời. AI thêm độ trễ ngẫu nhiên 0–600 ms: có lượt 1–2 người vào ngay trong lúc hủy, 10/10 lần không vượt sức chứa.
+- **App** (commit `fc8badc`): ViewModel `Quoting → Quote → Cancelling → Done`; mất mạng hoặc bận thì giữ sheet và thử lại cùng `requestId` (giữ qua `SavedStateHandle`); nút "Hủy đăng ký" ẩn khi mất mạng hoặc buổi đã bắt đầu.
+- **Lint:** chặn chuỗi `Bạn được hoàn 100% (%1$s)` vì đọc `% (` như mã định dạng; sửa thành `100%%`.
+- **PR:** merge thử vào `main` trước khi push, không có conflict. AI lỡ để dòng "Generated with Claude Code" trong mô tả PR rồi xóa ngay.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Tách `_shared/dropin-tx.ts` | Dùng | Tránh chép lại code thử lại transaction |
+| Độ trễ ngẫu nhiên trong T051 | Dùng | Bản đầu không thật sự kiểm tra chạy đồng thời |
+| Bottom sheet mở bằng `childFragmentManager`, không thêm vào nav graph | Dùng | Giống sheet "Thêm người", ít sửa nav |
+| PR vào `main` dù #59 chưa merge | Dùng | Mình muốn PR vào main; merge #59 trước thì #61 chỉ còn 3 commit US4 |
+
+### Cách kiểm chứng
+
+- `deno check .` xanh; `cancel-drop-in` 10/10 trên Emulator; `register-drop-in` 29 unit + 4 Emulator vẫn xanh.
+- `./gradlew lint testDebugUnitTest assembleDebug` xanh (`CancelDropInViewModelTest` 9, repository 10).
+- Deploy `cancel-drop-in` lên Supabase thật; gọi không có token trả 401.
+- Chưa test trên máy ảo (quickstart Q8, Q9, Q13).
+
+## Mục 37: Kịch bản test US4 và sửa lỗi danh sách vãng lai không cập nhật số chỗ
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-12 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 08 – Đặt lịch vãng lai (spec 080 US1, US4) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5, không dùng subagent) |
+| Mục đích | Có kịch bản test US4; sửa lỗi phát hiện khi test trên máy ảo |
+| Nhánh Git | `feature/080-drop-in-us4` (PR #61) |
+
+### Prompt đã dùng
+
+**Prompt 1: Kịch bản test**
+
+```
+Bối cảnh: US4 hủy đăng ký đã deploy lên Supabase thật, mình cần tự test trên máy ảo.
+Yêu cầu: viết kịch bản test từng bước (bước làm, kết quả đúng) cho hủy sớm/muộn, thanh toán tại sân,
+buổi đã thay đổi, mất mạng, buổi đã bắt đầu, xoay màn hình, chế độ tối; chỉ rõ trường nào cần sửa trên
+Firestore Console và cách dọn dữ liệu demo sau khi test. Sau đó build và cài bản mới lên máy ảo.
+```
+
+**Prompt 2: Lỗi danh sách và hướng dẫn thêm**
+
+```
+Khi test mình phát hiện: đăng ký xong một buổi rồi quay về danh sách thì buổi đó vẫn hiện số cũ (12/12),
+phải thoát tab Vãng lai rồi vào lại mới thấy 11/12. Tìm nguyên nhân gốc rồi sửa, có test.
+Ngoài ra hướng dẫn: tìm các trường của lượt đăng ký ở đâu trên Firestore Console (mình chỉ thấy
+dropInSessions và startAt), bật chế độ tối và tắt mạng trên máy ảo.
+```
+
+### Tóm tắt phản hồi của AI
+
+- **Kịch bản test:** 9 ca (TC1–TC9) theo quickstart Q8, Q9, Q13, kèm các bước dọn dữ liệu demo sau khi test. AI build và cài APK lên máy ảo bằng `adb`.
+- **Nguyên nhân lỗi danh sách:** `DropInListViewModel` chỉ tải trang bằng `get()` một lần trong `init`. Khi đi tới chi tiết hoặc vé rồi bấm Back, fragment danh sách vẫn nằm trong back stack và dùng lại ViewModel với số đếm cũ. Thoát tab thì ViewModel được tạo mới nên mới thấy số đúng.
+- **Cách sửa** (commit `71dff5c`): thêm `refreshVisible()`, được gọi ở `onStart()` của danh sách. Hàm đọc lại các buổi đang hiện bằng `DropInSessionLookup` có sẵn rồi cập nhật tại chỗ, giữ các trang đã tải và vị trí cuộn, không hiện loading. Buổi đã hủy hoặc cơ sở ngừng hoạt động thì bỏ khỏi danh sách. Đọc lỗi thì giữ bản cũ. Thêm 3 unit test.
+- **Firestore Console:** lượt đăng ký nằm trong subcollection `dropInSessions/{id}/registrations/{uid}`, phải bấm vào buổi mới thấy.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| Cập nhật tại chỗ các buổi đang hiện thay vì tải lại cả trang | Dùng | Giữ trang đã tải và vị trí cuộn, không nháy loading |
+| Nghe realtime cả danh sách | Bỏ | Tốn lượt đọc Firestore; chỉ cần đúng khi quay lại màn hình |
+| Test hết TC1–TC9 ngay | Hoãn | Mình đã thử luồng chính; các ca còn lại test khi chuẩn bị demo |
+
+### Cách kiểm chứng
+
+- `./gradlew lint testDebugUnitTest assembleDebug` xanh; `DropInListViewModelTest` 17/17.
+- Trên máy ảo: đăng ký xong quay về danh sách thì số chỗ cập nhật ngay; hủy đăng ký chạy được.
+- Đã test trên máy ảo Q8 (hủy sớm, hoàn 100%) và Q9 (hủy muộn, không hoàn tiền), hiện đúng; chưa test: chế độ tối, mất mạng, TC5, TC7–TC9.

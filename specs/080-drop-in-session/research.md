@@ -20,6 +20,8 @@ Mỗi mục ghi: quyết định, lý do, phương án đã cân nhắc. Không 
 
 **Quyết định:** Mọi thay đổi số chỗ đều đi qua document buổi `dropInSessions/{id}` (trường 🔒 `registeredCount`). Transaction đọc buổi, kiểm tra `registeredCount + partySize ≤ capacity`, rồi ghi buổi và đăng ký trong cùng `commit`. Firestore khóa document đọc trong transaction nên hai transaction cùng sửa một buổi sẽ có một bên bị `ABORTED`. Edge Function thử lại tối đa **8 lần**, backoff 50–400 ms có ngẫu nhiên. Hết số lần thử thì trả `503 BUSY`; app tự gửi lại **cùng `requestId`** (R3) sau 1 giây, tối đa 2 lần, rồi mới báo lỗi.
 
+**Bổ sung khi cài (tuần 6):** Firestore Emulator khóa bi quan, nhiều transaction cùng đọc một buổi rồi cùng chờ commit sẽ kẹt tới "Transaction lock timeout" (~2 giây) rồi bị abort cả loạt; 20 người cùng lúc thì nhiều người hết 8 lần thử. Vì vậy `register-drop-in` xếp hàng các request cùng `sessionId` trong một isolate (`createKeyedSerializer`) trước khi mở transaction. Hàng đợi chỉ giảm tranh chấp; giữa các isolate vẫn dựa vào transaction. Test E1, E2 giả lập 4 và 2 isolate để transaction vẫn tranh chấp thật.
+
 **Lý do:** Một document tranh chấp duy nhất giống cách slot dùng ID tất định (constitution III). Ở quy mô đồ án (20 người cùng lúc), 8 lần thử là đủ. Người thua luôn nhận `SESSION_FULL` kèm số chỗ còn lại ở lần thử sau.
 
 **Đã cân nhắc:** *Distributed counter (shard)*: dùng cho ghi tần suất cao, không cần ở đây và làm khó việc kiểm tra tổng. Loại.
