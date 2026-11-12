@@ -470,7 +470,9 @@ Task chèn thêm sau khi chốt FR-008a; đánh số `T048a`… để không đ�
 ## Phase 8: Polish & Cross-Cutting
 
 - [ ] T061 [P] Espresso `ATEST/RegisterDropInFlowTest.kt` (Emulator + dữ liệu demo): danh sách → chi tiết → xác nhận (2 người, thanh toán giả lập) → vé có QR; kiểm tra luồng không quá 4 màn hình (FR-025, SC-001)
-- [ ] T062 [P] Kiểm tra 4 trạng thái (loading, content, empty, error + "Thử lại") trên cả 5 màn hình và 2 bottom sheet; mất mạng không crash (FR-024); chế độ tối (QR vẫn nền trắng); bố cục `w600dp` (`RES/layout-w600dp/` nếu cần); `contentDescription` cho QR và icon, vùng chạm ≥ 48dp
+- [x] T062 [P] Kiểm tra 4 trạng thái (loading, content, empty, error + "Thử lại") trên cả 5 màn hình và 2 bottom sheet; mất mạng không crash (FR-024); chế độ tối (QR vẫn nền trắng); bố cục `w600dp` (`RES/layout-w600dp/` nếu cần); `contentDescription` cho QR và icon, vùng chạm ≥ 48dp
+  - Đã kiểm 12/11 trên máy ảo (dữ liệu prod): chế độ tối, mất mạng, `w600dp` (giả lập 640dp), trạng thái trống, vùng chạm. Màn hình xác nhận chưa mở được trên máy vì tài khoản test đã đăng ký hết các buổi; đã rà tĩnh.
+  - Sửa kèm: buổi đang diễn ra nằm ở "Sắp tới" tới khi kết thúc (FR-019); nút "Hủy đăng ký" trên vé có viền đỏ, khi nhấn thì nền đỏ chữ trắng.
 - [x] T063 [P] Cập nhật `docs/design/database/README.md` theo [danh sách cuối data-model.md](data-model.md#danh-sách-thay-đổi-cần-đưa-vào-docsdesigndatabasereadmemd) (mục 4.7, 4.9, 6, 7, 8a), sau khi D đồng ý trường `timeSlot`, `venueSnapshot`
 - [x] T064 [P] Cập nhật `docs/features/08-drop-in/README.md` (link spec, plan, tasks) và cột *Spec* nhóm 08 trong `docs/features/README.md`
 - [ ] T065 Chạy toàn bộ [quickstart.md](quickstart.md):
@@ -478,7 +480,9 @@ Task chèn thêm sau khi chốt FR-008a; đánh số `T048a`… để không đ�
   - Q1–Q15 trên emulator;
   - đo SC-001, SC-006, SC-007;
   - chụp ảnh hoặc quay video minh chứng cho Definition of Done.
-- [ ] T066 Chạy `./gradlew lint testDebugUnitTest assembleDebug`, `deno test`, `npm test` trong `firestore-tests/`; không còn cảnh báo Lint mức Error; ktlint sạch
+  - Tiến độ 12/11: test tự động mục 2 đạt (xem T066); Q6, Q7 (vé mở < 0,8 giây khi mất mạng), Q8 (chỉ xem sheet), Q15 đạt trên máy ảo. Còn Q1–Q5, Q9–Q14, SC-001, SC-006 và ảnh/video minh chứng.
+- [x] T066 Chạy `./gradlew lint testDebugUnitTest assembleDebug`, `deno test`, `npm test` trong `firestore-tests/`; không còn cảnh báo Lint mức Error; ktlint sạch
+  - Kết quả 12/11 trên `main` (`f48896f`): Gradle 1163 unit test đạt, Lint 0 lỗi mức Error; `deno test` 261/263 (2 ca song song của `delete-account`, `owner-applications` đạt khi chạy riêng); `firestore-tests` 220/224 (4 ca `court-detail.test.ts` [BLOCKED: D] có từ trước). Dự án chưa cài ktlint. CI cùng commit xanh cả 3 job.
 
 ---
 

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Nút nguy hiểm dạng viền: trong suốt, khi nhấn thì nền đỏ (nút "Hủy đăng ký" trên vé vãng lai). -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:color="?attr/colorError" android:state_pressed="true" />
+    <item android:color="@android:color/transparent" />
+</selector>

@@ -26,3 +26,17 @@ data class DropInRegistration(
     val isActive: Boolean
         get() = status == RegistrationStatus.REGISTERED || status == RegistrationStatus.CHECKED_IN
 }
+
+/** Trạng thái của lượt nằm ở tab "Sắp tới". */
+val UPCOMING_REGISTRATION_STATUSES = setOf(RegistrationStatus.REGISTERED, RegistrationStatus.WAITLISTED)
+
+/**
+ * Lượt nằm ở tab "Sắp tới" cho tới khi buổi kết thúc, kể cả lúc buổi đang diễn ra, để người đến trễ vẫn
+ * tìm thấy vé check-in. Mỗi lượt ở "Đã qua" vì thế luôn có nhãn kết quả (FR-019). Thiếu giờ kết thúc thì
+ * tính theo giờ bắt đầu.
+ */
+fun DropInRegistration.isUpcomingAt(now: Instant): Boolean {
+    if (status !in UPCOMING_REGISTRATION_STATUSES) return false
+    val end = sessionEndAt ?: sessionStartAt ?: return false
+    return !end.isBefore(now)
+}
