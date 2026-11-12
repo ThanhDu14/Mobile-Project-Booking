@@ -305,7 +305,7 @@ Giống [tasks 080](../080-drop-in-session/tasks.md#quy-ước-đường-dẫn):
 - [ ] T051 [P] Cập nhật `docs/design/database/README.md` theo [danh sách cuối data-model.md](data-model.md#danh-sách-thay-đổi-cần-đưa-vào-docsdesigndatabasereadmemd) (mục 4.9, 6, 8a), **sau khi D đồng ý** (đề xuất gửi ở T001) 3 trường `waitlist*` trên `dropInSessions`
 - [x] T052 [P] Cập nhật `docs/features/08-drop-in/README.md` (link plan, tasks spec 081)
 - [ ] T053 Chạy toàn bộ [quickstart.md](quickstart.md): test tự động mục 2; M1–M8 trên Emulator; đo SC-001, SC-002; hỏi 5 người thử cho SC-006; chụp ảnh hoặc quay video minh chứng
-- [ ] T054 Chạy `./gradlew lint testDebugUnitTest assembleDebug`, `deno test -A supabase/functions`, `npm test` trong `firestore-tests/`; không còn cảnh báo Lint mức Error; ktlint sạch
+- [x] T054 Chạy `./gradlew lint testDebugUnitTest assembleDebug`, `deno test -A supabase/functions`, `npm test` trong `firestore-tests/`; không còn cảnh báo Lint mức Error; ktlint sạch
 
 ---
 
