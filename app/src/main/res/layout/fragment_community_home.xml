@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     Cộng đồng (spec 090 US1, T028; wireframe ui/09_community-chat_buoc1_nhom.png): header dùng chung (kèm nút "Tạo nhóm"),
-    2 tab "Nhóm của tôi"/"Khám phá", danh sách nhóm. Tab "Khám phá" là chỗ giữ cho US2. include_state_views chồng lên
+    2 tab "Nhóm của tôi"/"Khám phá", danh sách nhóm. Tab "Khám phá" nhúng GroupSearchFragment (US2). include_state_views chồng lên
     vùng danh sách cho loading, rỗng (nút "Tạo nhóm"), lỗi (nút "Thử lại").
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -64,16 +64,11 @@
             android:paddingBottom="@dimen/space_6"
             tools:listitem="@layout/item_group" />
 
-        <TextView
-            android:id="@+id/discoverPlaceholder"
+        <androidx.fragment.app.FragmentContainerView
+            android:id="@+id/discoverContainer"
+            android:name="com.example.booking_app.feature.community.ui.search.GroupSearchFragment"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:gravity="center"
-            android:padding="@dimen/space_6"
-            android:text="@string/community_home_discover_placeholder"
-            android:textAppearance="?attr/textAppearanceBodyLarge"
-            android:textColor="?attr/colorOnSurfaceVariant"
+            android:layout_height="match_parent"
             android:visibility="gone" />
 
         <include

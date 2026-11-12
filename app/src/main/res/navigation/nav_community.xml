@@ -4,8 +4,7 @@
     communityHomeFragment (MainActivity.openCommunity).
     Đã khai báo (US1): CommunityHomeFragment, GroupFormFragment, GroupDetailFragment.
     Thêm khi làm story sau (T019 chỉ khai báo màn đã có class Fragment):
-      - GroupSearchFragment (tab "Khám phá") và deep link smashnow://community/group/{groupId}/requests: US2
-      - JoinRequestsFragment: US2/US5
+      - (đã làm ở US2) GroupSearchFragment nhúng trong tab "Khám phá", JoinRequestsFragment và deep link ./requests
       - PostComposerFragment (groupId, postId?, type), PhotoViewerFragment dùng chung (core/ui/photo): US3
       - EventAttendeesBottomSheet (groupId, postId): US4
       - GroupMembersFragment (groupId): US5
@@ -60,6 +59,20 @@
         <action
             android:id="@+id/action_groupDetail_to_groupForm"
             app:destination="@id/groupFormFragment" />
+        <action
+            android:id="@+id/action_groupDetail_to_joinRequests"
+            app:destination="@id/joinRequestsFragment" />
+    </fragment>
+
+    <!-- Duyệt/từ chối yêu cầu tham gia (chủ nhóm, quản trị viên). -->
+    <fragment
+        android:id="@+id/joinRequestsFragment"
+        android:name="com.example.booking_app.feature.community.ui.members.JoinRequestsFragment"
+        android:label="@string/community_title_join_requests">
+        <argument
+            android:name="groupId"
+            app:argType="string" />
+        <deepLink app:uri="smashnow://community/group/{groupId}/requests" />
     </fragment>
 
 </navigation>

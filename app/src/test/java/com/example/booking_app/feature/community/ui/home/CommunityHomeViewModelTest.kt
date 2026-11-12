@@ -2,13 +2,17 @@ package com.example.booking_app.feature.community.ui.home
 
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
+import com.example.booking_app.core.catalog.CatalogRepository
+import com.example.booking_app.core.catalog.District
 import com.example.booking_app.core.session.SessionManager
+import com.example.booking_app.feature.community.ui.common.DistrictNames
 import com.example.booking_app.core.testing.MainDispatcherRule
 import com.example.booking_app.feature.community.ME
 import com.example.booking_app.feature.community.domain.CommunityError
 import com.example.booking_app.feature.community.domain.model.GroupStatus
 import com.example.booking_app.feature.community.domain.usecase.ObserveMyGroups
 import com.example.booking_app.feature.community.group
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -30,8 +34,9 @@ class CommunityHomeViewModelTest {
 
     private val observeMyGroups = mockk<ObserveMyGroups>()
     private val session = mockk<SessionManager> { every { currentUid() } returns ME }
+    private val catalog = mockk<CatalogRepository> { coEvery { districts() } returns listOf(District("q10", "Quận 10", 1, true)) }
 
-    private fun viewModel() = CommunityHomeViewModel(SavedStateHandle(), observeMyGroups, session)
+    private fun viewModel() = CommunityHomeViewModel(SavedStateHandle(), observeMyGroups, session, DistrictNames(catalog))
 
     @Test
     fun `Loading roi Content co vai tro va so thanh vien`() = runTest {
@@ -132,7 +137,7 @@ class CommunityHomeViewModelTest {
     fun `bam the nhom mo GroupDetail va khach bam Tao nhom thi can dang nhap`() = runTest {
         every { observeMyGroups() } returns flowOf(emptyList())
         val guest = mockk<SessionManager> { every { currentUid() } returns null }
-        val vm = CommunityHomeViewModel(SavedStateHandle(), observeMyGroups, guest)
+        val vm = CommunityHomeViewModel(SavedStateHandle(), observeMyGroups, guest, DistrictNames(catalog))
         advanceUntilIdle()
 
         vm.events.test {
@@ -147,8 +152,8 @@ class CommunityHomeViewModelTest {
     fun `tab duoc giu qua SavedStateHandle`() = runTest {
         every { observeMyGroups() } returns flowOf(emptyList())
         val handle = SavedStateHandle()
-        val vm = CommunityHomeViewModel(handle, observeMyGroups, session)
+        val vm = CommunityHomeViewModel(handle, observeMyGroups, session, DistrictNames(catalog))
         vm.selectTab(CommunityHomeTab.DISCOVER)
-        assertEquals(CommunityHomeTab.DISCOVER, CommunityHomeViewModel(handle, observeMyGroups, session).selectedTab.value)
+        assertEquals(CommunityHomeTab.DISCOVER, CommunityHomeViewModel(handle, observeMyGroups, session, DistrictNames(catalog)).selectedTab.value)
     }
 }

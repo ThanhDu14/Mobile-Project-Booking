@@ -90,7 +90,7 @@ class CommunityHomeFragment : Fragment(R.layout.fragment_community_home) {
         if (binding.tabGroup.checkedButtonId != checkedId) binding.tabGroup.check(checkedId)
 
         val discover = tab == CommunityHomeTab.DISCOVER
-        binding.discoverPlaceholder.isVisible = discover
+        binding.discoverContainer.isVisible = discover
         binding.stateViews.root.isVisible = !discover
         if (discover) {
             binding.groupList.isVisible = false

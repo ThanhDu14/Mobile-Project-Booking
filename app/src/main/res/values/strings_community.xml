@@ -194,7 +194,6 @@
     <string name="community_form_avatar_failed_hint">Bạn có thể thử tải ảnh lại, hoặc dùng ảnh mặc định và đổi ảnh sau.</string>
     <string name="community_action_use_default_avatar">Dùng ảnh mặc định</string>
     <string name="community_login_required_to_create">Vui lòng đăng nhập để tạo nhóm</string>
-    <string name="community_home_discover_placeholder">Khám phá nhóm sẽ sớm có mặt ở đây</string>
     <string name="community_group_meta">%1$s · %2$s</string>
     <string name="community_group_owner_pending">Bạn là chủ nhóm · %1$d yêu cầu tham gia</string>
     <string name="community_group_owner">Bạn là chủ nhóm</string>
@@ -204,4 +203,28 @@
     <string name="community_detail_about">Giới thiệu</string>
     <string name="community_detail_no_description">Nhóm chưa có mô tả</string>
     <string name="community_detail_district">Khu vực: %1$s</string>
+
+    <!-- US2: tìm và tham gia nhóm -->
+    <string name="community_search_clear_cd">Xóa từ khóa</string>
+    <string name="community_search_area_chip">Khu vực: %1$s</string>
+    <string name="community_search_area_all">Mọi khu vực</string>
+    <string name="community_search_area_cd">Chọn khu vực tìm nhóm, đang chọn %1$s</string>
+    <string name="community_search_pick_area">Chọn khu vực</string>
+    <string name="community_search_empty_filtered">Không tìm thấy nhóm phù hợp</string>
+    <string name="community_action_clear_filters">Bỏ bớt bộ lọc</string>
+    <string name="community_search_load_more_failed">Không tải thêm được. Chạm để thử lại</string>
+    <string name="community_search_loading_more_cd">Đang tải thêm nhóm</string>
+    <string name="community_login_required_to_join">Vui lòng đăng nhập để tham gia nhóm</string>
+    <string name="community_msg_joined">Bạn đã tham gia nhóm</string>
+    <string name="community_msg_requested">Đã gửi yêu cầu, chờ chủ nhóm duyệt</string>
+    <string name="community_msg_request_cancelled">Đã hủy yêu cầu tham gia</string>
+    <string name="community_msg_left">Bạn đã rời nhóm</string>
+    <string name="community_join_pending_note">Yêu cầu của bạn đang chờ chủ nhóm duyệt</string>
+    <string name="community_join_requests_sent">Gửi %1$s</string>
+    <string name="community_join_request_avatar_cd">Ảnh đại diện của %1$s</string>
+    <string name="community_join_request_approve_cd">Duyệt yêu cầu của %1$s</string>
+    <string name="community_join_request_reject_cd">Từ chối yêu cầu của %1$s</string>
+    <string name="community_join_request_item_cd">%1$s xin tham gia nhóm</string>
+    <string name="community_join_request_item_cd_removed">%1$s xin tham gia nhóm, từng bị mời ra</string>
+    <string name="community_join_request_default_name">Người dùng</string>
 </resources>

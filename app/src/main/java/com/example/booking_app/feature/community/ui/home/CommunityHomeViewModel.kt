@@ -9,6 +9,7 @@ import com.example.booking_app.feature.community.domain.model.Group
 import com.example.booking_app.feature.community.domain.model.GroupStatus
 import com.example.booking_app.feature.community.domain.toCommunityError
 import com.example.booking_app.feature.community.domain.usecase.ObserveMyGroups
+import com.example.booking_app.feature.community.ui.common.DistrictNames
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -24,7 +25,7 @@ import javax.inject.Inject
 enum class CommunityHomeTab { MY_GROUPS, DISCOVER }
 
 /** Thẻ một nhóm trong "Nhóm của tôi"; [isOwner] suy ra từ `ownerId` (UID hiện tại), [isLocked] hiện nhãn "tạm khóa". */
-data class GroupCard(val group: Group, val isOwner: Boolean) {
+data class GroupCard(val group: Group, val isOwner: Boolean, val districtName: String? = null) {
     val isLocked: Boolean get() = group.isLocked
 }
 
@@ -49,6 +50,7 @@ class CommunityHomeViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val observeMyGroups: ObserveMyGroups,
     private val session: SessionManager,
+    private val districtNames: DistrictNames,
 ) : ViewModel() {
 
     private val _selectedTab = MutableStateFlow(
@@ -78,10 +80,11 @@ class CommunityHomeViewModel @Inject constructor(
         job?.cancel()
         job = viewModelScope.launch {
             val uid = session.currentUid()
+            val names = districtNames.byId()
             observeMyGroups()
                 .catch { _myGroups.value = MyGroupsUiState.Error(it.toCommunityError()) }
                 .collect { groups ->
-                    val cards = groups.filter { it.status != GroupStatus.DELETED }.map { GroupCard(it, isOwner = it.ownerId == uid) }
+                    val cards = groups.filter { it.status != GroupStatus.DELETED }.map { GroupCard(it, isOwner = it.ownerId == uid, districtName = names[it.districtId]) }
                     _myGroups.value = if (cards.isEmpty()) MyGroupsUiState.Empty else MyGroupsUiState.Content(cards)
                 }
         }

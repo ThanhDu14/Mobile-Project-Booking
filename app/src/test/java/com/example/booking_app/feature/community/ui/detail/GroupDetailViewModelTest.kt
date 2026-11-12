@@ -2,7 +2,11 @@ package com.example.booking_app.feature.community.ui.detail
 
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
+import com.example.booking_app.core.catalog.CatalogRepository
 import com.example.booking_app.core.session.SessionManager
+import com.example.booking_app.feature.community.domain.usecase.JoinGroup
+import com.example.booking_app.feature.community.domain.usecase.LeaveGroup
+import com.example.booking_app.feature.community.ui.common.DistrictNames
 import com.example.booking_app.core.testing.MainDispatcherRule
 import com.example.booking_app.feature.community.ME
 import com.example.booking_app.feature.community.domain.CommunityError
@@ -10,6 +14,7 @@ import com.example.booking_app.feature.community.domain.GroupRepository
 import com.example.booking_app.feature.community.domain.model.GroupMembership
 import com.example.booking_app.feature.community.domain.model.GroupRole
 import com.example.booking_app.feature.community.group
+import io.mockk.coEvery
 import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.flow
@@ -30,8 +35,11 @@ class GroupDetailViewModelTest {
 
     private val groups = mockk<GroupRepository>()
     private val session = mockk<SessionManager> { every { currentUid() } returns ME }
+    private val catalog = mockk<CatalogRepository> { coEvery { districts() } returns emptyList() }
 
-    private fun viewModel() = GroupDetailViewModel(SavedStateHandle(mapOf("groupId" to "g1")), groups, session)
+    private fun viewModel() = GroupDetailViewModel(
+        SavedStateHandle(mapOf("groupId" to "g1")), groups, session, JoinGroup(groups), LeaveGroup(groups), DistrictNames(catalog),
+    )
 
     @Test
     fun `nhom khong con thi NotFound`() = runTest {

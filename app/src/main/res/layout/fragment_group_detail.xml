@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     Trang nhóm (spec 090 US1, T029): khung giới thiệu (ảnh, tên, chế độ, số thành viên, khu vực, mô tả), nút "Sửa nhóm"
-    cho chủ nhóm. joinArea (US2: Tham gia/Xin tham gia/Đang chờ duyệt) và feedArea (US3: bảng tin) để trống, gắn vào sau.
+    cho chủ nhóm. joinArea (US2, T038: các nút tham gia/rời nhóm/yêu cầu tham gia) được gắn ở GroupDetailFragment; feedArea (US3: bảng tin) để trống, gắn vào sau.
     include_state_views cho loading, lỗi (Thử lại) và "Nhóm không còn tồn tại".
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -114,13 +114,65 @@
                     app:icon="@drawable/ic_edit_24"
                     tools:visibility="visible" />
 
-                <!-- US2: nút Tham gia / Xin tham gia / Đang chờ duyệt -->
-                <FrameLayout
+                <!-- US2: Tham gia / Xin tham gia / Đang chờ duyệt + Hủy yêu cầu / Rời nhóm / Yêu cầu tham gia (N) -->
+                <LinearLayout
                     android:id="@+id/joinArea"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/space_3"
-                    android:visibility="gone" />
+                    android:orientation="vertical">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/joinButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:minHeight="@dimen/touch_min"
+                        android:text="@string/community_action_join"
+                        android:visibility="gone"
+                        tools:visibility="visible" />
+
+                    <TextView
+                        android:id="@+id/pendingNote"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:background="@drawable/bg_info_box"
+                        android:padding="@dimen/space_3"
+                        android:text="@string/community_join_pending_note"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorOnSurface"
+                        android:visibility="gone" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/cancelRequestButton"
+                        style="@style/Widget.SmashNow.Button.Outlined"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_2"
+                        android:minHeight="@dimen/touch_min"
+                        android:text="@string/community_action_cancel_request"
+                        android:visibility="gone" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/requestsButton"
+                        style="@style/Widget.SmashNow.Button.Outlined"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:minHeight="@dimen/touch_min"
+                        android:text="@string/community_title_join_requests"
+                        android:visibility="gone" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/leaveButton"
+                        style="@style/Widget.SmashNow.Button.Outlined"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_2"
+                        android:minHeight="@dimen/touch_min"
+                        android:text="@string/community_action_leave"
+                        android:textColor="?attr/colorError"
+                        android:visibility="gone"
+                        app:strokeColor="?attr/colorError" />
+                </LinearLayout>
 
                 <TextView
                     android:layout_width="match_parent"

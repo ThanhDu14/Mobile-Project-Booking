@@ -48,8 +48,9 @@ class GroupAdapter(
                 card.isOwner -> context.getString(R.string.community_group_owner)
                 else -> null
             }
-            binding.groupExtra.isVisible = extra != null
-            binding.groupExtra.text = extra
+            val extraLine = listOfNotNull(card.districtName, extra).joinToString(" · ").ifEmpty { null }
+            binding.groupExtra.isVisible = extraLine != null
+            binding.groupExtra.text = extraLine
 
             binding.groupAvatar.load(CommunityUiText.avatarUrl(group.avatarPath)) {
                 placeholder(R.drawable.ic_groups_24)

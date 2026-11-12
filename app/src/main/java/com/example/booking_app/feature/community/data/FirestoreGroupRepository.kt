@@ -5,11 +5,15 @@ import com.example.booking_app.core.session.SessionManager
 import com.example.booking_app.feature.community.data.dto.GroupDto
 import com.example.booking_app.feature.community.data.dto.GroupManageRequest
 import com.example.booking_app.feature.community.data.dto.GroupManageResponse
+import com.example.booking_app.feature.community.data.dto.JoinRequestDto
 import com.example.booking_app.feature.community.data.dto.toCreateResult
 import com.example.booking_app.feature.community.data.dto.toDomain
+import com.example.booking_app.feature.community.data.dto.toJoinResult
+import com.example.booking_app.feature.community.data.dto.asLong
 import com.example.booking_app.feature.community.data.dto.toUpdateResult
 import com.example.booking_app.feature.community.domain.CommunityError
 import com.example.booking_app.feature.community.domain.GroupRepository
+import com.example.booking_app.feature.community.domain.GroupSearchKeywords
 import com.example.booking_app.feature.community.domain.model.AvatarAction
 import com.example.booking_app.feature.community.domain.model.CreateGroupResult
 import com.example.booking_app.feature.community.domain.model.Group
@@ -38,6 +42,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -45,10 +50,8 @@ import javax.inject.Singleton
  * Nhóm của spec 090 (T025). Đọc qua Firestore (snapshot listener), ghi qua Edge Function `group-manage` với
  * `Result.failure(CommunityError)`.
  *
- * US1 chỉ cài `create`, `update`, `observeGroup`, `observeMembership`, `observeMyGroups`. Các hàm còn lại
- * (`search` US2; `join`, `cancelRequest`, `leave` US2; `approve`, `reject`, `setRole`, `transferOwner`, `remove`,
- * `observeMembers`, `observeJoinRequests` US2/US5; `delete` US5) chưa làm: hàm `suspend` trả
- * `Result.failure(CommunityError.Unknown("NOT_IMPLEMENTED"))`, hàm `observe*` phát danh sách rỗng.
+ * US1 + US2: `create`, `update`, `search`, `join`, `cancelRequest`, `leave`, `approve`, `reject`, `observe*` (trừ `observeMembers`).
+ * Chưa làm (US5): `setRole`, `transferOwner`, `remove`, `delete` trả `Result.failure(CommunityError.Unknown("NOT_IMPLEMENTED"))`, `observeMembers` phát danh sách rỗng.
  */
 @Singleton
 class FirestoreGroupRepository @Inject constructor(
@@ -220,22 +223,90 @@ class FirestoreGroupRepository @Inject constructor(
         }
     }
 
-    // ---------- Chưa làm ở US1 ----------
+    // ---------- US2: tìm nhóm, tham gia, yêu cầu tham gia ----------
 
-    // TODO US2: tìm nhóm, tham gia, hủy yêu cầu, rời nhóm, duyệt/từ chối. TODO US5: vai trò, chuyển chủ nhóm, mời ra, xóa nhóm.
-    override suspend fun search(query: String, districtIds: List<String>, cursor: PageCursor?): Result<Page<Group>> = notImplemented()
+    /**
+     * Tìm nhóm (research R5): `status == ACTIVE`, `nameKeywords array-contains <từ dài nhất>`, `districtId == <quận>`,
+     * `orderBy memberCount desc`, `limit 20`, `startAfter`. Các từ còn lại của từ khóa được lọc ở đây theo `nameKeywords`
+     * của document, nên trang trả về có thể ít hơn 20 nhưng [Page.next] vẫn có khi trang gốc đủ 20 (còn trang sau).
+     *
+     * Chọn nhiều quận: chỉ dùng quận đầu tiên. `whereIn` trên `districtId` kèm `array-contains` trên `nameKeywords` làm
+     * Firestore phải gộp hai điều kiện "một trong nhiều" trên hai trường khác nhau (một số tổ hợp bị từ chối, và cần
+     * thêm index), nên bỏ cách này; ViewModel cũng chỉ cho chọn một khu vực.
+     *
+     * Cursor dùng `orderBy(memberCount desc)` kèm `orderBy(__name__ desc)` tường minh vì `startAfter` cần đủ số giá trị
+     * bằng số `orderBy` (SDK từ chối nếu truyền `memberCount` và ID mà chỉ có một `orderBy`); index vẫn khớp vì
+     * `__name__` luôn được thêm ngầm cùng chiều với trường cuối.
+     */
+    override suspend fun search(query: String, districtIds: List<String>, cursor: PageCursor?): Result<Page<Group>> {
+        val tokens = GroupSearchKeywords.tokens(query)
+        var q: Query = firestore.collection(COLLECTION_GROUPS).whereEqualTo("status", GroupStatus.ACTIVE.name)
+        GroupSearchKeywords.primary(tokens)?.let { q = q.whereArrayContains("nameKeywords", it) }
+        districtIds.firstOrNull { it.isNotBlank() }?.let { q = q.whereEqualTo("districtId", it) }
+        q = q.orderBy("memberCount", Query.Direction.DESCENDING).orderBy(FieldPath.documentId(), Query.Direction.DESCENDING)
+        if (cursor != null) q = q.startAfter(cursor.key, cursor.id)
+        q = q.limit(Page.PAGE_SIZE.toLong())
+        return try {
+            val docs = q.get().await().documents
+            val items = docs
+                .filter { doc ->
+                    val keywords = (doc.get("nameKeywords") as? List<*>).orEmpty().filterIsInstance<String>()
+                    GroupSearchKeywords.matches(keywords, tokens)
+                }
+                .mapNotNull { GroupDto.fromMap(it.id, it.data.orEmpty()).toDomain() }
+            val last = docs.lastOrNull()
+            val next = if (docs.size >= Page.PAGE_SIZE && last != null) {
+                PageCursor(key = last.data?.get("memberCount").asLong() ?: 0L, id = last.id)
+            } else {
+                null
+            }
+            Result.success(Page(items, next))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Result.failure(e.toGroupError())
+        }
+    }
+
+    override suspend fun join(groupId: String, requestId: String): Result<JoinResult> =
+        manage(GroupManageRequest.join(requestId, groupId)) { it.toJoinResult() }
+
+    override suspend fun cancelRequest(groupId: String, requestId: String): Result<Unit> =
+        manage(GroupManageRequest.cancelRequest(requestId, groupId)) { }
+
+    override suspend fun leave(groupId: String, requestId: String): Result<Unit> =
+        manage(GroupManageRequest.leave(requestId, groupId)) { }
+
+    override suspend fun approve(groupId: String, userId: String, requestId: String): Result<Unit> =
+        manage(GroupManageRequest.approve(requestId, groupId, userId)) { }
+
+    override suspend fun reject(groupId: String, userId: String, requestId: String): Result<Unit> =
+        manage(GroupManageRequest.reject(requestId, groupId, userId)) { }
+
+    /**
+     * `joinRequests` cũ nhất trước. Chỉ chủ nhóm/quản trị viên đọc được (Rules); người khác nhận `PERMISSION_DENIED`
+     * nên đóng flow bằng [CommunityError.Forbidden].
+     */
+    override fun observeJoinRequests(groupId: String): Flow<List<JoinRequest>> = callbackFlow {
+        val registration = firestore.collection(COLLECTION_GROUPS).document(groupId).collection(COLLECTION_JOIN_REQUESTS)
+            .orderBy("createdAt", Query.Direction.ASCENDING)
+            .addSnapshotListener { snapshot, error ->
+                when {
+                    error?.code == FirebaseFirestoreException.Code.PERMISSION_DENIED -> close(CommunityError.Forbidden())
+                    error != null -> close(error.toGroupError())
+                    else -> trySend(
+                        snapshot?.documents.orEmpty().map { JoinRequestDto.fromMap(it.id, it.data.orEmpty()).toDomain() },
+                    )
+                }
+            }
+        awaitClose { registration.remove() }
+    }
+
+    // ---------- Chưa làm (US5) ----------
+
+    // TODO US5: vai trò, chuyển chủ nhóm, mời ra, xóa nhóm, danh sách thành viên.
 
     override suspend fun delete(groupId: String, confirmName: String, requestId: String): Result<Unit> = notImplemented()
-
-    override suspend fun join(groupId: String, requestId: String): Result<JoinResult> = notImplemented()
-
-    override suspend fun cancelRequest(groupId: String, requestId: String): Result<Unit> = notImplemented()
-
-    override suspend fun leave(groupId: String, requestId: String): Result<Unit> = notImplemented()
-
-    override suspend fun approve(groupId: String, userId: String, requestId: String): Result<Unit> = notImplemented()
-
-    override suspend fun reject(groupId: String, userId: String, requestId: String): Result<Unit> = notImplemented()
 
     override suspend fun setRole(groupId: String, userId: String, role: GroupRole, requestId: String): Result<Unit> = notImplemented()
 
@@ -244,8 +315,6 @@ class FirestoreGroupRepository @Inject constructor(
     override suspend fun remove(groupId: String, userId: String, requestId: String): Result<Unit> = notImplemented()
 
     override fun observeMembers(groupId: String): Flow<List<GroupMember>> = flowOf(emptyList())
-
-    override fun observeJoinRequests(groupId: String): Flow<List<JoinRequest>> = flowOf(emptyList())
 
     private fun <T> notImplemented(): Result<T> = Result.failure(CommunityError.Unknown("NOT_IMPLEMENTED"))
 
