@@ -206,4 +206,78 @@
     <!-- Bổ sung cho màn hình vé (T040) -->
     <string name="dropin_ticket_copy_code">Sao chép mã vé</string>
     <string name="dropin_ticket_pay_at_venue_amount">Thanh toán tại sân %1$s</string>
+
+    <!-- Spec 081: hàng chờ buổi vãng lai (tiền tố dropin_waitlist_) -->
+    <!-- Chi tiết buổi -->
+    <string name="dropin_waitlist_join">Vào hàng chờ</string>
+    <string name="dropin_waitlist_view">Xem lượt chờ</string>
+    <plurals name="dropin_waitlist_count">
+        <item quantity="other">%d người đang chờ</item>
+    </plurals>
+    <string name="dropin_waitlist_empty_hint">Chưa có ai trong hàng chờ</string>
+    <string name="dropin_waitlist_detail_full_note">Buổi đã đủ người. Vào hàng chờ, khi có đủ chỗ bạn sẽ được tự động đăng ký.</string>
+    <string name="dropin_waitlist_detail_position">Bạn đang ở vị trí thứ %1$d</string>
+    <string name="dropin_waitlist_login_title">Đăng nhập để vào hàng chờ</string>
+    <string name="dropin_waitlist_login_message">Bạn cần đăng nhập để vào hàng chờ của buổi này. Đăng nhập xong bạn sẽ quay lại bước xác nhận.</string>
+
+    <!-- Xác nhận vào hàng chờ -->
+    <string name="dropin_waitlist_confirm_title">Vào hàng chờ</string>
+    <string name="dropin_waitlist_confirm_submit">Vào hàng chờ</string>
+    <string name="dropin_waitlist_confirm_submitting">Đang vào hàng chờ…</string>
+    <string name="dropin_waitlist_notice">Chưa giữ chỗ, chưa thanh toán; bạn sẽ được tự động đăng ký khi có đủ chỗ</string>
+    <string name="dropin_waitlist_amount_note">Số tiền sẽ ghi nhận khi được nhận: %1$s</string>
+    <string name="dropin_waitlist_confirm_level_full">%1$s · Đã đủ người · %2$d người đang chờ</string>
+    <string name="dropin_waitlist_confirm_party_limit">Hàng chờ nhận tối đa 4 người mỗi lượt.</string>
+    <string name="dropin_waitlist_confirm_total">Số tiền sẽ ghi nhận</string>
+    <string name="dropin_waitlist_confirm_summary_mock">%1$d người · Thanh toán ngay khi được nhận</string>
+    <string name="dropin_waitlist_confirm_summary_at_venue">%1$d người · Trả tại sân khi được nhận</string>
+
+    <!-- Màn hình lượt chờ -->
+    <string name="dropin_waitlist_entry_title">Lượt chờ</string>
+    <string name="dropin_waitlist_entry_position">Vị trí %1$d / %2$d</string>
+    <string name="dropin_waitlist_entry_position_label">Vị trí của bạn trong hàng chờ</string>
+    <string name="dropin_waitlist_entry_position_description">Bạn đang ở vị trí thứ %1$d trên %2$d người đang chờ</string>
+    <string name="dropin_waitlist_entry_hint">Khi có đủ chỗ, bạn được tự động đăng ký và nhận vé QR ngay trong ứng dụng.</string>
+    <string name="dropin_waitlist_entry_party">Số người</string>
+    <string name="dropin_waitlist_entry_payment">Thanh toán</string>
+    <string name="dropin_waitlist_entry_amount">Số tiền sẽ ghi nhận khi được nhận</string>
+    <string name="dropin_waitlist_empty">Bạn không có lượt chờ ở buổi này.</string>
+    <string name="dropin_waitlist_find_other">Tìm buổi khác</string>
+
+    <!-- Rời hàng chờ -->
+    <string name="dropin_waitlist_leave">Rời hàng chờ</string>
+    <string name="dropin_waitlist_leave_dialog_title">Rời hàng chờ?</string>
+    <string name="dropin_waitlist_leave_dialog_message">Không mất phí, bạn chưa bị trừ khoản nào. Nếu vào lại hàng chờ, bạn sẽ xếp ở cuối hàng.</string>
+    <string name="dropin_waitlist_leave_confirm">Rời hàng chờ</string>
+    <string name="dropin_waitlist_leave_keep">Ở lại hàng chờ</string>
+    <string name="dropin_waitlist_leaving">Đang rời hàng chờ…</string>
+    <string name="dropin_waitlist_leave_error_network">Không có kết nối mạng. Bạn vẫn đang trong hàng chờ, hãy thử lại.</string>
+    <string name="dropin_waitlist_left_title">Bạn đã rời hàng chờ</string>
+    <string name="dropin_waitlist_left_message">Không có khoản nào bị trừ.</string>
+
+    <!-- Nhãn trạng thái (FR-015, research R6) -->
+    <string name="dropin_waitlist_status_waiting">Đang chờ – vị trí %1$d</string>
+    <string name="dropin_waitlist_status_promoted">Được nhận từ hàng chờ</string>
+    <string name="dropin_waitlist_free_cancel_until">Hủy miễn phí đến %1$s</string>
+    <string name="dropin_waitlist_status_left">Đã rời hàng chờ</string>
+    <string name="dropin_waitlist_status_left_overlap">Đã rời hàng chờ (trùng giờ)</string>
+    <string name="dropin_waitlist_status_not_admitted">Không được nhận chỗ</string>
+    <string name="dropin_waitlist_status_session_cancelled">Buổi bị hủy</string>
+    <string name="dropin_waitlist_mine_amount">Sẽ ghi nhận %1$s khi được nhận</string>
+
+    <!-- Kết quả cuối của lượt chờ (US4) -->
+    <string name="dropin_waitlist_ended_closed">Hàng chờ đã đóng vì buổi sắp bắt đầu. Bạn không được nhận chỗ và không bị trừ khoản nào.</string>
+    <string name="dropin_waitlist_ended_session_cancelled">Buổi đã bị hủy. Bạn không bị trừ khoản nào.</string>
+    <string name="dropin_waitlist_ended_overlap">Bạn đã được nhận vào một buổi khác trùng giờ nên tự rời hàng chờ này.</string>
+    <string name="dropin_waitlist_ended_left">Bạn đã rời hàng chờ. Không có khoản nào bị trừ.</string>
+    <string name="dropin_waitlist_ended_unknown">Lượt chờ này đã kết thúc. Bạn không bị trừ khoản nào.</string>
+
+    <!-- Lỗi (contract mục 6) -->
+    <string name="dropin_waitlist_error_session_has_spots">Buổi vừa có chỗ trống. Bạn có thể đăng ký ngay.</string>
+    <string name="dropin_waitlist_error_closed">Hàng chờ đã đóng</string>
+    <string name="dropin_waitlist_error_already_promoted">Bạn đã được nhận vào buổi</string>
+
+    <!-- Hủy sau khi được nhận từ hàng chờ (research R8) -->
+    <string name="dropin_waitlist_cancel_note_promoted_grace" formatted="false">Bạn vừa được nhận từ hàng chờ, hủy trong 30 phút được hoàn 100%</string>
+    <string name="dropin_waitlist_cancel_note_leave">Bạn chưa bị trừ khoản nào nên rời hàng chờ không mất phí.</string>
 </resources>

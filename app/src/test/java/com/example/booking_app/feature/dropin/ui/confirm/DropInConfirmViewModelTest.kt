@@ -10,6 +10,7 @@ import com.example.booking_app.feature.dropin.domain.model.DropInWarning
 import com.example.booking_app.feature.dropin.domain.model.PaymentMethod
 import com.example.booking_app.feature.dropin.domain.model.RegisterRequest
 import com.example.booking_app.feature.dropin.domain.usecase.CheckDropInWarnings
+import com.example.booking_app.feature.dropin.domain.usecase.JoinWaitlist
 import com.example.booking_app.feature.dropin.domain.usecase.ObserveDropInSession
 import com.example.booking_app.feature.dropin.domain.usecase.RegisterDropIn
 import com.example.booking_app.feature.dropin.ui.registration
@@ -46,6 +47,7 @@ class DropInConfirmViewModelTest {
         ObserveDropInSession { sessionFlow },
         register,
         CheckDropInWarnings { warnings },
+        JoinWaitlist { Result.failure(DropInError.Unknown("không dùng ở chế độ đăng ký")) },
     )
 
     private fun handle() = SavedStateHandle(mapOf(DropInConfirmViewModel.ARG_SESSION_ID to "s1"))
