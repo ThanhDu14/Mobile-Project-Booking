@@ -41,6 +41,20 @@ class ReviewFunctionDtosTest {
     }
 
     @Test
+    fun `create buoi vang lai - gui sessionId, khong gui bookingId`() {
+        val body = encode(
+            CreateReviewRequest(
+                sessionId = "s1",
+                ratings = RatingsDto(court = 5, cleanliness = 4, service = 3),
+                comment = "Vui",
+                photoPaths = emptyList(),
+            ),
+        )
+        assertEquals("s1", body["sessionId"]!!.jsonPrimitive.content)
+        assertEquals(setOf("action", "sessionId", "ratings", "comment", "photoPaths"), body.keys)
+    }
+
+    @Test
     fun `delete va reply - action dung ten`() {
         assertEquals("delete", encode(DeleteReviewRequest("r1"))["action"]!!.jsonPrimitive.content)
         assertEquals("reply", encode(ReplyReviewRequest("r1", "Cảm ơn"))["action"]!!.jsonPrimitive.content)

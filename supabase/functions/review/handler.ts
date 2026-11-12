@@ -2,7 +2,9 @@
 // kiểm tra điều kiện và cộng/trừ tổng điểm của cơ sở trong cùng một Firestore transaction (research R1).
 //
 // Action: `create` (US1, US2), `update`, `delete` (US5), `reply` (US4), `discardPhotos` (US2).
-// Ảnh nằm trong bucket `review-photos` theo path `{uid}/{reviewId}/{file}` (reviewId = bookingId, research R4).
+// Ảnh nằm trong bucket `review-photos` theo path `{uid}/{reviewId}/{file}` (research R4).
+// reviewId = bookingId với đánh giá sân (`targetType = VENUE`), hoặc `{sessionId}_{uid}` với đánh giá buổi
+// vãng lai (`targetType = DROP_IN`, spec 080 US5/R10): `create` nhận `bookingId` hoặc `sessionId` (đúng một).
 import { type AppRole, errorResponse, HttpError, requireUser, toErrorResponse } from "../_shared/auth.ts";
 import * as defaultFirestore from "../_shared/firestore.ts";
 import {
@@ -166,21 +168,26 @@ const stringArray = (v: unknown): string[] =>
 // ---------- create ----------
 
 interface CreateInput {
-  bookingId: string;
+  /** `bookingId` (đánh giá sân) hoặc `{sessionId}_{uid}` (đánh giá buổi vãng lai). */
+  reviewId: string;
+  /** Có khi đánh giá buổi vãng lai. */
+  sessionId: string | null;
   ratings: Ratings;
   comment: string;
   photoPaths: string[];
 }
 
 function parseCreate(uid: string, body: Record<string, unknown>): CreateInput {
-  const bookingId = parseId(body.bookingId, "bookingId");
+  if ((body.bookingId != null) === (body.sessionId != null)) throw invalid("Chỉ gửi một trong bookingId hoặc sessionId");
+  const sessionId = body.sessionId != null ? parseId(body.sessionId, "sessionId") : null;
+  const reviewId = sessionId ? `${sessionId}_${uid}` : parseId(body.bookingId, "bookingId");
 
   const ratings = parseRatings(body.ratings);
   if (!ratings) throw invalid("Cần chấm đủ 3 tiêu chí, mỗi tiêu chí 1–5 sao");
 
   const comment = parseComment(body.comment);
-  const photoPaths = parsePhotoPaths(body.photoPaths, uid, bookingId);
-  return { bookingId, ratings, comment, photoPaths };
+  const photoPaths = parsePhotoPaths(body.photoPaths, uid, reviewId);
+  return { reviewId, sessionId, ratings, comment, photoPaths };
 }
 
 const sameContent = (review: Record<string, unknown>, input: CreateInput): boolean => {
@@ -209,15 +216,26 @@ async function create(uid: string, body: Record<string, unknown>, deps: ReviewDe
   const now = deps.now();
 
   const result = await runWithBackoff<CreateResult>(deps.firestore, async (tx: FirestoreTransaction) => {
-    const booking = await tx.get(`bookings/${input.bookingId}`);
-    if (!booking) throw new HttpError(404, "NOT_FOUND", "Không tìm thấy đơn đặt sân");
-    if (booking.userId !== uid) throw new HttpError(403, "NOT_OWNER", "Đơn này không phải của bạn");
+    // Nguồn đánh giá: đơn đặt sân (đã COMPLETED) hoặc buổi vãng lai (đã CHECKED_IN, đã kết thúc).
+    let venueId: string;
+    let session: Record<string, unknown> | null = null;
+    let booking: Record<string, unknown> | null = null;
+    if (input.sessionId) {
+      session = await tx.get(`dropInSessions/${input.sessionId}`);
+      if (!session) throw new HttpError(404, "NOT_FOUND", "Không tìm thấy buổi vãng lai");
+      venueId = typeof session.venueId === "string" ? session.venueId : "";
+    } else {
+      booking = await tx.get(`bookings/${input.reviewId}`);
+      if (!booking) throw new HttpError(404, "NOT_FOUND", "Không tìm thấy đơn đặt sân");
+      if (booking.userId !== uid) throw new HttpError(403, "NOT_OWNER", "Đơn này không phải của bạn");
+      venueId = typeof booking.venueId === "string" ? booking.venueId : "";
+    }
 
-    const venueId = typeof booking.venueId === "string" ? booking.venueId : "";
-    const [existing, venue, user] = await Promise.all([
-      tx.get(`reviews/${input.bookingId}`),
+    const [existing, venue, user, registration] = await Promise.all([
+      tx.get(`reviews/${input.reviewId}`),
       venueId ? tx.get(`venues/${venueId}`) : Promise.resolve(null),
       tx.get(`users/${uid}`),
+      input.sessionId ? tx.get(`dropInSessions/${input.sessionId}/registrations/${uid}`) : Promise.resolve(null),
     ]);
     if (!venue) throw new HttpError(404, "NOT_FOUND", "Không tìm thấy cơ sở của đơn này");
 
@@ -243,11 +261,22 @@ async function create(uid: string, body: Record<string, unknown>, deps: ReviewDe
 
     requireActive(user);
     const ownerId = typeof venue.ownerId === "string" ? venue.ownerId : null;
-    if (ownerId === uid) throw new HttpError(403, "OWN_VENUE", "Bạn không thể đánh giá sân của chính mình");
+    if (ownerId === uid || (session && session.ownerId === uid)) {
+      throw new HttpError(403, "OWN_VENUE", "Bạn không thể đánh giá sân của chính mình");
+    }
 
-    const completedAt = asDate(booking.completedAt);
-    if (booking.status !== "COMPLETED" || !completedAt) {
-      throw new HttpError(409, "BOOKING_NOT_COMPLETED", "Bạn chỉ đánh giá được sau khi đã chơi");
+    let completedAt: Date | null;
+    if (session) {
+      const endAt = asDate(session.endAt);
+      if (registration?.status !== "CHECKED_IN" || !endAt || now.getTime() < endAt.getTime()) {
+        throw new HttpError(409, "NOT_CHECKED_IN", "Bạn chỉ đánh giá được buổi đã tham gia");
+      }
+      completedAt = endAt;
+    } else {
+      completedAt = asDate(booking?.completedAt);
+      if (booking?.status !== "COMPLETED" || !completedAt) {
+        throw new HttpError(409, "BOOKING_NOT_COMPLETED", "Bạn chỉ đánh giá được sau khi đã chơi");
+      }
     }
     const canEditUntil = new Date(completedAt.getTime() + REVIEW_WINDOW_MS);
     if (now.getTime() > canEditUntil.getTime()) {
@@ -267,9 +296,10 @@ async function create(uid: string, body: Record<string, unknown>, deps: ReviewDe
         ownerId,
       },
       writes: [
-        createWrite(`reviews/${input.bookingId}`, {
-          targetType: "VENUE",
-          bookingId: input.bookingId,
+        createWrite(`reviews/${input.reviewId}`, {
+          ...(input.sessionId
+            ? { targetType: "DROP_IN", sessionId: input.sessionId }
+            : { targetType: "VENUE", bookingId: input.reviewId }),
           venueId,
           userId: uid,
           userSnapshot: {
@@ -302,13 +332,13 @@ async function create(uid: string, body: Record<string, unknown>, deps: ReviewDe
     await notifyQuietly(deps, {
       type: "REVIEW_NEW",
       recipientUid: result.ownerId,
-      data: { reviewId: input.bookingId, venueId: result.venueId },
+      data: { reviewId: input.reviewId, venueId: result.venueId },
     });
   }
 
   return Response.json({
     review: {
-      id: input.bookingId,
+      id: input.reviewId,
       overall: result.overall,
       createdAt: result.createdAt.toISOString(),
       canEditUntil: result.canEditUntil.toISOString(),
@@ -514,9 +544,11 @@ async function reply(uid: string, appRole: AppRole, body: Record<string, unknown
 const MAX_DISCARD = 10;
 
 async function discardPhotos(uid: string, body: Record<string, unknown>, deps: ReviewDeps): Promise<Response> {
-  const bookingId = parseId(body.bookingId, "bookingId");
-  const paths = parsePhotoPaths(body.photoPaths, uid, bookingId, MAX_DISCARD);
-  const saved = await deps.firestore.get(`reviews/${bookingId}`);
+  // Đánh giá sân gửi `bookingId`; đánh giá buổi vãng lai gửi `sessionId` (reviewId = `{sessionId}_{uid}`).
+  if ((body.bookingId != null) === (body.sessionId != null)) throw invalid("Chỉ gửi một trong bookingId hoặc sessionId");
+  const reviewId = body.sessionId != null ? `${parseId(body.sessionId, "sessionId")}_${uid}` : parseId(body.bookingId, "bookingId");
+  const paths = parsePhotoPaths(body.photoPaths, uid, reviewId, MAX_DISCARD);
+  const saved = await deps.firestore.get(`reviews/${reviewId}`);
   const keep = new Set(stringArray(saved?.photoPaths));
   const toDelete = [...new Set(paths)].filter((p) => !keep.has(p));
   const deleted = toDelete.length > 0 ? await deps.storage.remove(toDelete) : 0;

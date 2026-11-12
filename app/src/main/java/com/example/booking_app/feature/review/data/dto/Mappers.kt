@@ -9,6 +9,7 @@ import com.example.booking_app.feature.review.domain.model.Ratings
 import com.example.booking_app.feature.review.domain.model.Review
 import com.example.booking_app.feature.review.domain.model.ReviewAuthor
 import com.example.booking_app.feature.review.domain.model.ReviewTarget
+import com.example.booking_app.feature.review.domain.model.ReviewTargetType
 import com.example.booking_app.feature.review.domain.model.VenueRatingSummary
 import java.time.Instant
 import kotlin.math.roundToLong
@@ -72,6 +73,7 @@ fun ReviewDto.toDomain(
         // Dữ liệu cũ thiếu completedAt: tính từ createdAt, server vẫn là nơi quyết định.
         canEditUntil = ReviewEligibility.canEditUntil(completedAt ?: created),
         photoPaths = photoPaths,
+        targetType = if (targetType == TARGET_DROP_IN) ReviewTargetType.DROP_IN else ReviewTargetType.BOOKING,
     )
 }
 
@@ -102,3 +104,4 @@ fun ReviewBookingDto.toTarget(photoUrl: (String?) -> String? = { it }): ReviewTa
 private fun round1(x: Double): Double = (x * 10).roundToLong() / 10.0
 
 private const val STATUS_HIDDEN = "HIDDEN"
+private const val TARGET_DROP_IN = "DROP_IN"

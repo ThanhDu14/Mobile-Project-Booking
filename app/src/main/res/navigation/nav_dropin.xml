@@ -102,6 +102,10 @@
         <action
             android:id="@+id/action_myDropIns_to_ticket"
             app:destination="@id/dropInTicketFragment" />
+        <!-- Đánh giá buổi đã tham gia (US5, T060): màn hình của spec 070 trong nav_review, nhận argument sessionId. -->
+        <action
+            android:id="@+id/action_myDropIns_to_writeReview"
+            app:destination="@id/writeReviewFragment" />
     </fragment>
 
 </navigation>

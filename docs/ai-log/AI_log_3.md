@@ -2302,3 +2302,65 @@ dropInSessions và startAt), bật chế độ tối và tắt mạng trên máy
 - `./gradlew lint testDebugUnitTest assembleDebug` xanh; `DropInListViewModelTest` 17/17.
 - Trên máy ảo: đăng ký xong quay về danh sách thì số chỗ cập nhật ngay; hủy đăng ký chạy được.
 - Đã test trên máy ảo Q8 (hủy sớm, hoàn 100%) và Q9 (hủy muộn, không hoàn tiền), hiện đúng; chưa test: chế độ tối, mất mạng, TC5, TC7–TC9.
+
+## Mục 38: US5 "Đánh giá buổi chơi" và Polish spec 080, deploy Edge Function review
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-12 |
+| Người thực hiện | Nguyễn Đức Duy |
+| Nhóm tính năng liên quan | 08 – Đặt lịch vãng lai (spec 080 US5, Polish); 07 – Đánh giá (spec 070, Edge Function `review`) |
+| Công cụ AI | Claude Code (model Claude Opus 5.5 điều phối; subagent Claude Sonnet cho server, app và Espresso; subagent Claude Haiku cho tài liệu và rà giao diện) |
+| Mục đích | Làm xong US5 và các task Polish còn lại của spec 080, deploy function `review` lên Supabase |
+| Nhánh Git | `feature/080-drop-in-us5` |
+
+### Prompt đã dùng
+
+**Prompt 1: Làm nốt spec 080**
+
+```
+Bối cảnh: spec 080 (đặt lịch vãng lai) đã xong US1–US4 (PR #59, #61). Còn US5 "Đánh giá buổi chơi"
+(T056–T060) và Polish (T061–T066, T020).
+Yêu cầu: làm nốt các task đó theo tasks.md, research R10 và contract mục 5:
+- mở rộng Edge Function `review` của spec 070 nhận `sessionId` (reviewId = {sessionId}_{uid}, targetType DROP_IN,
+  chỉ cho đánh giá khi đã check-in, buổi đã kết thúc, trong 7 ngày, không phải chủ cơ sở, mã lỗi NOT_CHECKED_IN);
+- phía app: ReviewEligibility.ofDropIn, WriteReviewFragment nhận sessionId, nhãn "Buổi vãng lai",
+  nút "Đánh giá buổi chơi" / "Xem đánh giá của bạn" ở tab "Đã qua";
+- cập nhật đặc tả CSDL, README nhóm 08; viết Espresso luồng đăng ký; rà 4 trạng thái, contentDescription,
+  vùng chạm 48dp, QR nền trắng ở chế độ tối.
+Ràng buộc: viết test trước; việc nào không đụng file nhau thì chia cho subagent dùng model rẻ hơn để tiết kiệm,
+nhưng vẫn phải đủ và đúng; AI tự review và chạy lại test trước khi commit.
+Kết quả mong muốn: commit theo Conventional Commits, tasks.md cập nhật, báo cáo kết quả test.
+```
+
+**Prompt 2: Deploy**
+
+```
+Deploy Edge Function `review` lên Supabase trước. Push nhánh để sau, khi PR #59 và #61 đã merge thì mở PR mới;
+ghi AI log cho phần việc này.
+```
+
+### Tóm tắt phản hồi của AI
+
+- **Chia việc:** 3 subagent chạy song song, mỗi agent một vùng file riêng: server `supabase/functions/review/` (Sonnet), app (Sonnet), tài liệu (Haiku). Sau đó thêm 2 agent cho Espresso T061 (Sonnet) và rà giao diện T062 (Haiku). AI chính đọc lại diff, sửa chỗ còn mâu thuẫn và tự chạy lại test.
+- **Server** (`a467552`): `create` nhận đúng một trong `bookingId` hoặc `sessionId`. Với buổi vãng lai, mọi thứ đọc trong một transaction: buổi, lượt đăng ký, cơ sở, đánh giá cũ. Đánh giá ghi `targetType = DROP_IN`, `completedAt = endAt`, và cộng điểm vào `venues.ratingSums`. `discardPhotos` cũng nhận `sessionId`. Có 12 test mới (E14, E15, buổi chưa kết thúc, quá 7 ngày, chủ cơ sở, sai tiền tố ảnh, sửa/xóa). Các test này đều fail trước khi sửa code.
+- **App** (`a7738d3`): `ofDropIn` dùng kiểu nguyên thủy để `feature/review` không phụ thuộc kiểu của `feature/dropin`. Màn viết đánh giá nạp thông tin từ `dropInSessions`. Tab "Đã qua" chỉ hiện nút sau khi đã đọc xong đánh giá của mình, để nút không đổi chữ giữa chừng.
+- **Tài liệu** (`827dd7e`): cập nhật mục 4.7, 4.9, 6, 7, 8a của đặc tả CSDL, README nhóm 08 và bảng tính năng. AI chính sửa thêm dòng phân quyền `reviews` ở mục 7, vì sau khi agent cập nhật thì dòng này mâu thuẫn với mục 4.7.
+- **Polish:** viết Espresso `RegisterDropInFlowTest` (`daac00e`), assert luồng không quá 4 màn hình. Khi rà giao diện, chỉ cần thêm contentDescription dự phòng cho ảnh QR (`179ab69`); 5 màn đều đủ 4 trạng thái.
+- **Deploy:** AI phát hiện prod chưa có function `review` và `config.toml` thiếu `verify_jwt = false`, nên token Firebase sẽ bị gateway chặn. AI thêm cấu hình này (`cf7432c`) rồi deploy.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+|---|---|---|
+| `ofDropIn(registrationStatus, sessionEndAt, existingReview, now)` thay cho `ofDropIn(registration, session, now)` trong tasks.md | Dùng, ghi chú vào tasks.md | Gọi chéo tính năng chỉ qua kiểu đơn giản (constitution I) |
+| Gửi lại đúng nội dung đánh giá cũ thì trả 200 thay vì `ALREADY_REVIEWED` | Dùng | Giữ nguyên cách spec 070 xử lý gửi lại; nội dung khác mới báo đã đánh giá |
+| Làm bố cục riêng `layout-w600dp` cho màn người chơi | Bỏ | Màn một cột, chỉ cần lề rộng hơn, đã có trong `values-w600dp` |
+
+### Cách kiểm chứng
+
+- Deno trên Firebase Emulator: 102/102 test xanh (review, register-drop-in, cancel-drop-in, `_shared/dropin`); `deno check .` sạch.
+- `./gradlew lint testDebugUnitTest assembleDebug`: xanh, 1163 unit test không lỗi; `compileDebugAndroidTestKotlin` xanh.
+- `firestore-tests`: 24/25 file xanh; 4 ca fail ở `court-detail.test.ts` (spec 030, nhãn `[BLOCKED: D]`) có từ trước, không liên quan 080.
+- Sau khi deploy, gọi `review` không kèm token thì nhận `401 UNAUTHENTICATED` do function trả về, tức function đã chạy.
+- Chưa làm: chạy T020 và T061 trên máy ảo, test tay đánh giá buổi vãng lai trên app, quickstart Q1–Q15 (T065).

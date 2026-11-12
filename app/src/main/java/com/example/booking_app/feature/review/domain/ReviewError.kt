@@ -12,6 +12,9 @@ enum class ReviewError {
     ACCOUNT_LOCKED,
     NOT_FOUND,
     BOOKING_NOT_COMPLETED,
+
+    /** Buổi vãng lai: lượt đăng ký chưa check-in hoặc buổi chưa kết thúc (spec 080 US5). */
+    NOT_CHECKED_IN,
     REVIEW_WINDOW_CLOSED,
     ALREADY_REVIEWED,
     PHOTO_MISSING,

@@ -14,7 +14,7 @@ Trạng thái: ⬜ Chưa bắt đầu · 🟨 Đang làm · 🟦 Đang review ·
 | 05 | [Thanh toán và khuyến mãi (giả lập)](05-payment-promotion/) | Người chơi | B | ⬜ Chưa bắt đầu | — |
 | 06 | [Quản lý lịch đặt](06-booking-management/) | Người chơi | B | ⬜ Chưa bắt đầu | — |
 | 07 | [Đánh giá và yêu thích](07-review-favorite/) | Người chơi | C | ⬜ Chưa bắt đầu | — |
-| 08 | [Đặt lịch vãng lai](08-drop-in/) | Người chơi | C | ⬜ Chưa bắt đầu | — |
+| 08 | [Đặt lịch vãng lai](08-drop-in/) | Người chơi | C | 🟨 Đang làm | [080](../../specs/080-drop-in-session/), [081](../../specs/081-drop-in-waitlist/) |
 | 09 | [Cộng đồng và chat](09-community-chat/) | Người chơi | C | ⬜ Chưa bắt đầu | — |
 | 10 | [Thông báo](10-notification/) | Người chơi | D | ⬜ Chưa bắt đầu | — |
 | 11 | [Quản lý sân (chủ sân)](11-court-owner/) | Chủ sân | D | ⬜ Chưa bắt đầu | — |

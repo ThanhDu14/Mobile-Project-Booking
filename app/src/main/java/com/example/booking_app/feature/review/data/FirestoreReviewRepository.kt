@@ -132,14 +132,67 @@ class FirestoreReviewRepository @Inject constructor(
         return doc.toBookingDto().toTarget { ReviewPhotoUrls.venuePhoto(it) }
     }
 
+    override suspend fun getDropInReviewTarget(sessionId: String): ReviewTarget {
+        val uid = sessionManager.currentUid() ?: throw ReviewException(ReviewError.UNAUTHENTICATED)
+        val sessionRef = firestore.collection(COLLECTION_DROP_IN_SESSIONS).document(sessionId)
+        try {
+            val session = sessionRef.get().awaitWithTimeout()
+            if (!session.exists()) throw ReviewException(ReviewError.NOT_FOUND)
+            val registration = sessionRef.collection(COLLECTION_REGISTRATIONS).document(uid).get().awaitWithTimeout()
+            val venueId = session.getString("venueId").orEmpty()
+            val venue = session.get("venueSnapshot") as? Map<*, *>
+            val courtIds = (session.get("courtIds") as? List<*>)?.filterIsInstance<String>().orEmpty()
+            val endAt = session.instantOf("endAt")
+            return ReviewTarget(
+                bookingId = null,
+                venueId = venueId,
+                venueName = venue?.get("name") as? String ?: "",
+                venuePhotoUrl = ReviewPhotoUrls.venuePhoto(venue?.get("photoUrl") as? String),
+                startAt = session.instantOf("startAt"),
+                endAt = endAt,
+                courtNames = courtNames(venueId, courtIds),
+                status = registration.takeIf { it.exists() }?.getString("status"),
+                completedAt = endAt,
+                sessionId = sessionId,
+                reviewId = dropInReviewId(sessionId),
+            )
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            throw e.asReviewException()
+        }
+    }
+
+    /** Tên sân con theo thứ tự [courtIds]; sân không đọc được thì bỏ qua (chỉ để hiển thị). */
+    private suspend fun courtNames(venueId: String, courtIds: List<String>): List<String> {
+        if (venueId.isBlank()) return emptyList()
+        return courtIds.mapNotNull { courtId ->
+            try {
+                firestore.collection(COLLECTION_VENUES).document(venueId).collection(COLLECTION_COURTS).document(courtId)
+                    .get().awaitWithTimeout().getString("name")?.takeIf { it.isNotBlank() }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                null
+            }
+        }
+    }
+
+    override fun dropInReviewId(sessionId: String): String {
+        val uid = sessionManager.currentUid() ?: throw ReviewException(ReviewError.UNAUTHENTICATED)
+        return "${sessionId}_$uid"
+    }
+
     override suspend fun create(
-        bookingId: String,
+        bookingId: String?,
         ratings: Ratings,
         comment: String,
         photoPaths: List<String>,
+        sessionId: String?,
     ): SubmittedReview {
         val request = CreateReviewRequest(
             bookingId = bookingId,
+            sessionId = sessionId,
             ratings = RatingsDto(ratings.court, ratings.cleanliness, ratings.service),
             comment = comment,
             photoPaths = photoPaths,
@@ -171,9 +224,9 @@ class FirestoreReviewRepository @Inject constructor(
         return OwnerReply(reply.text, Instant.parse(reply.repliedAt), isEdited = reply.editedAt != null)
     }
 
-    override suspend fun discardPhotos(bookingId: String, photoPaths: List<String>): Int {
+    override suspend fun discardPhotos(bookingId: String?, photoPaths: List<String>, sessionId: String?): Int {
         if (photoPaths.isEmpty()) return 0
-        return call { api.discardPhotos(DiscardPhotosRequest(bookingId, photoPaths)) }.deleted
+        return call { api.discardPhotos(DiscardPhotosRequest(photoPaths, bookingId, sessionId)) }.deleted
     }
 
     private suspend fun <T> call(block: suspend () -> T): T = try {
@@ -216,6 +269,7 @@ class FirestoreReviewRepository @Inject constructor(
             status = getString("status"),
             completedAt = instantOf("completedAt"),
             editedAt = instantOf("editedAt"),
+            targetType = getString("targetType"),
             createdAt = instantOf("createdAt"),
         )
     }
@@ -253,6 +307,9 @@ class FirestoreReviewRepository @Inject constructor(
         const val COLLECTION_REVIEWS = "reviews"
         const val COLLECTION_VENUES = "venues"
         const val COLLECTION_BOOKINGS = "bookings"
+        const val COLLECTION_DROP_IN_SESSIONS = "dropInSessions"
+        const val COLLECTION_REGISTRATIONS = "registrations"
+        const val COLLECTION_COURTS = "courts"
         const val FIELD_VENUE_ID = "venueId"
         const val FIELD_STATUS = "status"
         const val FIELD_STAR_BUCKET = "starBucket"

@@ -20,7 +20,10 @@ interface ReviewRepository {
     /** Điểm tổng quan của cơ sở; cơ sở chưa có đánh giá thì `count == 0`, mọi điểm bằng 0. */
     fun observeSummary(venueId: String): Flow<VenueRatingSummary>
 
-    /** Đánh giá của người dùng hiện tại cho đơn [bookingId] (kể cả bị ẩn); `null` khi chưa đánh giá. */
+    /**
+     * Đánh giá của người dùng hiện tại có id [bookingId] (kể cả bị ẩn); `null` khi chưa đánh giá. Với buổi vãng lai
+     * truyền [dropInReviewId].
+     */
     fun observeMyReview(bookingId: String): Flow<Review?>
 
     /**
@@ -39,14 +42,24 @@ interface ReviewRepository {
     suspend fun getReviewTarget(bookingId: String): ReviewTarget
 
     /**
-     * Gửi đánh giá. Gửi lại cùng nội dung (thử lại sau khi mất mạng) trả về đánh giá đã có, không tạo
-     * thêm (FR-002).
+     * Thông tin buổi vãng lai để hiện thẻ đầu màn hình viết đánh giá (spec 080 US5): tên cơ sở, giờ, sân con,
+     * `status` là trạng thái lượt đăng ký của mình, `completedAt` là `endAt` của buổi.
+     */
+    suspend fun getDropInReviewTarget(sessionId: String): ReviewTarget
+
+    /** Id đánh giá của người dùng hiện tại cho buổi [sessionId]: `{sessionId}_{uid}`. Ném [ReviewException] khi chưa đăng nhập. */
+    fun dropInReviewId(sessionId: String): String
+
+    /**
+     * Gửi đánh giá cho đơn [bookingId] hoặc buổi vãng lai [sessionId] (chỉ một trong hai). Gửi lại cùng nội dung
+     * (thử lại sau khi mất mạng) trả về đánh giá đã có, không tạo thêm (FR-002).
      */
     suspend fun create(
-        bookingId: String,
+        bookingId: String?,
         ratings: Ratings,
         comment: String,
         photoPaths: List<String> = emptyList(),
+        sessionId: String? = null,
     ): SubmittedReview
 
     /** Sửa đánh giá của mình trong hạn 7 ngày từ khi đơn hoàn thành (US5, FR-007). */
@@ -59,7 +72,7 @@ interface ReviewRepository {
     suspend fun reply(reviewId: String, text: String): OwnerReply
 
     /** Xóa ảnh đã tải lên mà chưa gắn vào đánh giá đã lưu (bỏ ảnh, bỏ đánh giá đang viết). Trả số ảnh đã xóa. */
-    suspend fun discardPhotos(bookingId: String, photoPaths: List<String>): Int
+    suspend fun discardPhotos(bookingId: String?, photoPaths: List<String>, sessionId: String? = null): Int
 
     companion object {
         const val PAGE_SIZE = 20

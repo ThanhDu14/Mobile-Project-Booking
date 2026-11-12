@@ -17,10 +17,12 @@ data class RatingsDto(val court: Int, val cleanliness: Int, val service: Int)
 
 @Serializable
 data class CreateReviewRequest(
-    val bookingId: String,
     val ratings: RatingsDto,
     val comment: String,
     val photoPaths: List<String>,
+    /** Đúng một trong [bookingId] và [sessionId]; trường `null` không được gửi. */
+    val bookingId: String? = null,
+    val sessionId: String? = null,
     @EncodeDefault val action: String = "create",
 )
 
@@ -48,8 +50,9 @@ data class ReplyReviewRequest(
 
 @Serializable
 data class DiscardPhotosRequest(
-    val bookingId: String,
     val photoPaths: List<String>,
+    val bookingId: String? = null,
+    val sessionId: String? = null,
     @EncodeDefault val action: String = "discardPhotos",
 )
 

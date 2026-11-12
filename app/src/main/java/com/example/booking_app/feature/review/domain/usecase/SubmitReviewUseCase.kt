@@ -33,7 +33,13 @@ class SubmitReviewUseCase @Inject constructor(
         val ratings = Ratings(draft.court!!, draft.cleanliness!!, draft.service!!)
         return try {
             SubmitReviewResult.Submitted(
-                repository.create(draft.bookingId, ratings, comment, draft.photos.mapNotNull { it.remotePath }),
+                repository.create(
+                    bookingId = draft.bookingId,
+                    ratings = ratings,
+                    comment = comment,
+                    photoPaths = draft.photos.mapNotNull { it.remotePath },
+                    sessionId = draft.sessionId,
+                ),
             )
         } catch (e: CancellationException) {
             throw e

@@ -225,7 +225,7 @@ ID document là chính mã `code` (chữ in hoa). Mã phải duy nhất trên to
 
 `reviewId` = `bookingId` hoặc `{sessionId}_{uid}` để mỗi đơn/lượt chỉ đánh giá một lần.
 
-`targetType` (`VENUE`, `DROP_IN`), `venueId`, `sessionId?`, `userId`, `userSnapshot` (tên, ảnh), `ratings` (Map: `court`, `cleanliness`, `service`, 1–5), `overall` (Double), `comment`, `photoPaths`, `ownerReply` (Map: `text`, `repliedAt`), `status` (`VISIBLE`, `HIDDEN` 🔒). Rules chỉ cho tạo khi đơn tương ứng `COMPLETED` và thuộc người viết.
+`targetType` (`VENUE`, `DROP_IN`), `venueId`, `sessionId?`, `userId`, `userSnapshot` (tên, ảnh), `ratings` (Map: `court`, `cleanliness`, `service`, 1–5), `overall` (Double), `comment`, `photoPaths`, `ownerReply` (Map: `text`, `repliedAt`), `status` (`VISIBLE`, `HIDDEN` 🔒). Mọi ghi qua Edge Function `review`. Đánh giá sân: chỉ tạo khi đơn tương ứng `COMPLETED` và thuộc người viết. Đánh giá buổi vãng lai: `reviewId` = `{sessionId}_{uid}`, `targetType = DROP_IN`, `bookingId = null`, `completedAt` = `session.endAt`; chỉ tạo khi đăng ký `CHECKED_IN`, buổi đã kết thúc và trong 7 ngày kể từ `session.endAt`, người viết không phải chủ cơ sở (xem [R10](../../../specs/080-drop-in-session/research.md#r10-đánh-giá-buổi-chơi-fr-022-fr-023)).
 
 ### 4.8. `users/{uid}/favorites/{venueId}` — C
 
@@ -233,9 +233,9 @@ ID document là chính mã `code` (chữ in hoa). Mã phải duy nhất trên to
 
 ### 4.9. `dropInSessions/{id}` và `registrations/{uid}` — C
 
-**Buổi:** `venueId`, `ownerId`, `districtId`, `courtIds`, `date`, `startAt`, `endAt`, `level`, `capacity`, `registeredCount` 🔒, `pricePerPerson` (Long), `status` (`OPEN`, `FULL`, `CANCELLED`, `COMPLETED`), `note`.
+**Buổi:** `venueId`, `ownerId`, `districtId`, `courtIds`, `date`, `startAt`, `endAt`, `timeSlot` (String: `MORNING` 05:00–11:00, `NOON` 11:00–13:00, `AFTERNOON` 13:00–18:00, `EVENING` 18:00–23:00, theo giờ bắt đầu; D ghi qua `deriveSessionFields()`), `venueSnapshot` (Map: `name`, `address`, `districtName`, chụp lúc tạo/sửa buổi; D ghi qua `deriveSessionFields()`), `level`, `capacity`, `registeredCount` 🔒, `pricePerPerson` (Long), `status` (`OPEN`, `FULL` (server đổi theo `registeredCount`), `CANCELLED` (D hủy buổi), `COMPLETED` (cron của spec 081)), `note`.
 
-**Đăng ký:** `partySize`, `status` (`REGISTERED`, `WAITLISTED`, `CANCELLED`, `CHECKED_IN`), `paymentMethod`, `amount`, `qrToken` 🔒, `waitlistedAt`, `requestId`. Đăng ký, hủy và đẩy người từ hàng chờ lên đều chạy trong transaction trên document buổi (`registeredCount`).
+**Đăng ký** (ID = `uid`; mọi trường 🔒, client chỉ đọc, ghi qua Edge Function): `userId` (String), `sessionId` (String), `venueId` (String), `sessionStartAt`, `sessionEndAt` (Timestamp, sao từ buổi), `partySize` (Int), `status` (`REGISTERED`, `WAITLISTED`, `CANCELLED`, `CHECKED_IN`), `paymentMethod` (`MOCK_PAY`, `AT_VENUE`), `paymentStatus` (`PAID`, `UNPAID`, `REFUNDED`), `pricePerPerson` (Long, giá chốt lúc đăng ký), `amount` (Long), `refundAmount` (Long?), `qrToken` (String?, `null` khi `CANCELLED`), `ticketCode` (String?, `DI-XXXXXXXX`, `null` khi `CANCELLED`), `requestId` (String), `lastAddRequestId` (String?), `cancelRequestId` (String?), `sessionChanged` (Boolean), `registeredAt` (Timestamp), `cancelledAt` (Timestamp?), `cancelledBy` (`USER`, `OWNER`, `SYSTEM`), `checkedInAt` (Timestamp?), `waitlistedAt` (Timestamp?), `createdAt`, `updatedAt` (Timestamp). Đăng ký, hủy và đẩy người từ hàng chờ lên đều chạy trong transaction trên document buổi (`registeredCount`).
 
 ### 4.10. `groups/{groupId}` — C
 
@@ -297,7 +297,12 @@ Người phụ trách bổ sung vào `firestore.indexes.json` khi viết `plan.m
 | `bookings` | `status`, `approvalDeadline` | Quét đơn quá hạn duyệt (`booking-timeout`) |
 | `bookings` | `status`, `endAt` | Chuyển `COMPLETED`/`NO_SHOW` (`booking-finalize`) |
 | `reviews` | `venueId`, `status`, `createdAt desc` | Chi tiết sân (03) |
-| `dropInSessions` | `districtId`, `date`, `status` | Danh sách vãng lai (08) |
+| `dropInSessions` | `status`, `startAt` | Danh sách không lọc (08) |
+| `dropInSessions` | `status`, `districtId`, `startAt` | Lọc khu vực (08) |
+| `dropInSessions` | `status`, `date`, `startAt` | Lọc ngày (08) |
+| `dropInSessions` | `status`, `timeSlot`, `startAt` | Lọc khung giờ (08) |
+| `dropInSessions` | `status`, `level`, `startAt` | Lọc trình độ (08) |
+| `dropInSessions` | `status`, `startAt`, `pricePerPerson` | Lọc giá tối đa (08) |
 | `chats` | `memberIds` (array-contains), `updatedAt desc` | Danh sách hội thoại (09) |
 | `reports` | `status`, `createdAt` | Hàng đợi xử lý (12) |
 | `ownerApplications` | `status`, `submittedAt` | Hồ sơ chờ duyệt (12) |
@@ -306,6 +311,10 @@ Người phụ trách bổ sung vào `firestore.indexes.json` khi viết `plan.m
 | `accountDeletions` | `state`, `requestedAt` | `delete-account-sweeper` (011) |
 | `bookings` | `userId`, `status` / `venueId`, `status` | Tác động khi xóa tài khoản (011); `venues.ownerId` là index đơn trường, tự có |
 | `registrations` (collection group) | `userId`, `status` | Lượt vãng lai, lượt chờ của người xóa tài khoản (011) |
+| `registrations` (collection group) | `userId`, `status`, `sessionStartAt` | Tab "Sắp tới" (08) |
+| `registrations` (collection group) | `userId`, `sessionStartAt desc` | Tab "Đã qua" (08) |
+| `registrations` (collection group) | `qrToken` | Check-in bằng QR (Edge Function của D) |
+| `registrations` (collection group) | `ticketCode` | Check-in bằng mã vé (Edge Function của D) |
 
 ## 7. Phân quyền (tóm tắt Security Rules)
 
@@ -323,8 +332,9 @@ Ký hiệu: R đọc, C tạo, U sửa, D xóa. "Chủ" = người sở hữu do
 | `bookings` | C `HOLD` của mình, R của mình, U → `CANCELLED` theo chính sách | R đơn sân mình, U duyệt/từ chối, check-in qua `checkin-booking` | R | Tính tiền, `EXPIRED`, `COMPLETED`, `NO_SHOW` |
 | `recurringGroups` | R của mình | R nhóm thuộc sân mình | R | Ghi toàn bộ |
 | `venues/*/vouchers`, `systemVouchers` | R voucher đang hiệu lực | CRUD voucher sân mình (qua Edge Function kiểm tra mã trùng) | CRUD `systemVouchers` | Ghi `usedCount`, `redemptions` |
-| `reviews` | C khi đơn `COMPLETED`, U/D của mình | U `ownerReply` cho sân mình | U `status` | Cập nhật `ratingAvg` |
-| `dropInSessions` | R | CRUD buổi sân mình | R, khóa | Ghi `registeredCount` |
+| `reviews` | C qua Edge Function `review` (đơn `COMPLETED` hoặc lượt vãng lai `CHECKED_IN` đã kết thúc), U/D của mình | U `ownerReply` cho sân mình | U `status` | Cập nhật `ratingAvg` |
+| `dropInSessions` | R (kể cả khách chưa đăng nhập) | CRUD buổi sân mình | R, khóa | Ghi `registeredCount` |
+| `registrations` | R của mình (kể cả collection group theo `userId`) | R đăng ký của buổi mình | R | Ghi toàn bộ (mọi ghi qua Edge Function) |
 | `groups`, `chats` | Thành viên R/C; nhóm `PUBLIC` ai cũng R | như người chơi | R để kiểm duyệt | |
 | `reports` | C | C | R, U | |
 | `notifications` | R, U `isRead` của mình | như người chơi | C (thông báo hệ thống) | C |
@@ -364,7 +374,8 @@ Mỗi dòng trên cần ít nhất một test Emulator "được phép" và mộ
 | `booking-timeout` (pg_cron mỗi phút) | Đơn `PENDING` quá `approvalDeadline` → `REJECTED`, hoàn 100% vào ví giả lập, xóa slot, gửi `BOOKING_REJECTED` | D |
 | `booking-finalize` (pg_cron mỗi phút) | Đơn `CONFIRMED` đã qua giờ kết thúc: có `checkedInAt` → `COMPLETED` + `completedAt`; không có → `NO_SHOW` | B |
 | `checkin-booking` | Chủ sân check-in đơn đặt sân bằng QR hoặc mã đặt sân: kiểm tra quyền, trạng thái, khung giờ cho phép; ghi `checkedInAt`, và `paymentStatus = PAID` khi chủ sân xác nhận đã thu tiền | D |
-| `register-drop-in`, `cancel-drop-in` | Transaction đăng ký, hàng chờ | C |
+| `register-drop-in`, `cancel-drop-in` | Đăng ký/hủy, trả chỗ; hook hàng chờ của 081 | C |
+| `_shared/dropin.ts` | Helper dùng chung cho 081, 112, `delete-account` (`deriveSessionFields`, `computeRefund`, `cancelRegistrationInTx`, `afterSpotsReleased`) | C |
 | `on-review-created` | Cập nhật `ratingAvg`, `ratingCount` | C |
 | `review-owner-application` | Duyệt/từ chối chủ sân, gán `appRole=OWNER` | D |
 | `sign-upload`, `sign-download` | Cấp signed URL cho bucket cần kiểm tra Firestore | D |

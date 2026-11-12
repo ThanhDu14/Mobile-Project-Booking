@@ -2,6 +2,7 @@ package com.example.booking_app.feature.dropin.ui.mine
 
 import android.os.Bundle
 import android.view.View
+import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -38,7 +39,7 @@ class MyDropInsFragment : Fragment(R.layout.fragment_dropin_mine) {
         val binding = FragmentDropinMineBinding.bind(view)
         binding.toolbar.setNavigationOnClickListener { findNavController().navigateUp() }
 
-        val adapter = DropInRegistrationAdapter(viewModel::onItemClicked)
+        val adapter = DropInRegistrationAdapter(viewModel::onItemClicked, viewModel::onReviewClicked)
         val layoutManager = LinearLayoutManager(requireContext())
         binding.registrationList.layoutManager = layoutManager
         binding.registrationList.adapter = adapter
@@ -67,6 +68,7 @@ class MyDropInsFragment : Fragment(R.layout.fragment_dropin_mine) {
                         when (event) {
                             is MyDropInsEvent.OpenTicket -> openTicket(event.sessionId)
                             MyDropInsEvent.FindSessions -> openDropInList()
+                            is MyDropInsEvent.OpenReview -> openReview(event.sessionId)
                             is MyDropInsEvent.LoadMoreFailed -> {
                                 val message = DropInUiText.error(requireContext(), event.cause)
                                 Snackbar.make(binding.root, message, Snackbar.LENGTH_LONG)
@@ -135,6 +137,17 @@ class MyDropInsFragment : Fragment(R.layout.fragment_dropin_mine) {
         val nav = findNavController()
         if (nav.currentDestination?.id != R.id.myDropInsFragment) return
         nav.navigate(MyDropInsFragmentDirections.actionMyDropInsToTicket(sessionId))
+    }
+
+    /**
+     * Mở `WriteReviewFragment` của spec 070 (nav_review, cùng nav_player) với `sessionId`; `mode` dùng giá trị mặc định
+     * `CREATE` (viết mới, hoặc xem đánh giá đã gửi rồi bấm "Sửa"). Safe Args không sinh được Directions qua file
+     * nav khác nên truyền Bundle.
+     */
+    private fun openReview(sessionId: String) {
+        val nav = findNavController()
+        if (nav.currentDestination?.id != R.id.myDropInsFragment) return
+        nav.navigate(R.id.action_myDropIns_to_writeReview, bundleOf("sessionId" to sessionId))
     }
 
     /** Mở tab Vãng lai (màn gốc của `nav_dropin`), giống bấm tab ở thanh dưới. */

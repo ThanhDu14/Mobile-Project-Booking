@@ -7,6 +7,7 @@ import com.example.booking_app.feature.review.data.dto.toDomain
 import com.example.booking_app.feature.review.data.dto.toSummary
 import com.example.booking_app.feature.review.data.dto.toTarget
 import com.example.booking_app.feature.review.domain.model.Ratings
+import com.example.booking_app.feature.review.domain.model.ReviewTargetType
 import com.example.booking_app.feature.review.domain.model.VenueRatingSummary
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -38,6 +39,13 @@ class ReviewMapperTest {
     )
 
     private fun map(d: ReviewDto) = d.toDomain(photoUrl = { "photo:$it" }, avatarUrl = { "avatar:$it" })
+
+    @Test
+    fun `targetType DROP_IN - map thanh DROP_IN, thieu targetType la BOOKING`() {
+        assertEquals(ReviewTargetType.DROP_IN, map(dto().copy(targetType = "DROP_IN")).targetType)
+        assertEquals(ReviewTargetType.BOOKING, map(dto()).targetType)
+        assertEquals(ReviewTargetType.BOOKING, map(dto().copy(targetType = "BOOKING")).targetType)
+    }
 
     @Test
     fun `review VISIBLE - map du truong, URL anh, han sua = completedAt + 7 ngay`() {

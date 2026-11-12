@@ -112,7 +112,13 @@ class WriteReviewViewModel @Inject constructor(
     private val clock: AppClock,
 ) : ViewModel() {
 
-    private val bookingId: String = checkNotNull(savedStateHandle["bookingId"]) { "Thiếu bookingId" }
+    /** Đúng một trong hai có giá trị: đơn đặt sân (spec 060) hoặc buổi vãng lai (spec 080 US5). */
+    private val bookingId: String? = savedStateHandle.get<String>("bookingId")
+    private val sessionId: String? = savedStateHandle.get<String>("sessionId")
+
+    init {
+        check(bookingId != null || sessionId != null) { "Thiếu bookingId hoặc sessionId" }
+    }
 
     private val mode: WriteReviewMode = when (val raw = savedStateHandle.get<Any>("mode")) {
         is WriteReviewMode -> raw
@@ -120,7 +126,7 @@ class WriteReviewViewModel @Inject constructor(
         else -> WriteReviewMode.CREATE
     }
 
-    private val _uiState = MutableStateFlow(WriteReviewUiState(draft = ReviewDraft(bookingId)))
+    private val _uiState = MutableStateFlow(WriteReviewUiState(draft = ReviewDraft(bookingId = bookingId, sessionId = sessionId)))
     val uiState: StateFlow<WriteReviewUiState> = _uiState.asStateFlow()
 
     private val _events = Channel<WriteReviewEvent>(Channel.BUFFERED)
@@ -144,10 +150,18 @@ class WriteReviewViewModel @Inject constructor(
         _uiState.update { it.copy(isLoading = true, loadError = null) }
         viewModelScope.launch {
             try {
-                val target = repository.getReviewTarget(bookingId)
-                val existing = repository.observeMyReview(bookingId).first()
+                val target = if (sessionId != null) {
+                    repository.getDropInReviewTarget(sessionId)
+                } else {
+                    repository.getReviewTarget(checkNotNull(bookingId))
+                }
+                val existing = repository.observeMyReview(target.reviewId).first()
                 val now = Instant.ofEpochMilli(clock.now())
-                val eligibility = ReviewEligibility.of(target.status, target.completedAt, existing, now)
+                val eligibility = if (target.isDropIn) {
+                    ReviewEligibility.ofDropIn(target.status, target.completedAt, existing, now)
+                } else {
+                    ReviewEligibility.of(target.status, target.completedAt, existing, now)
+                }
                 val canEdit = existing != null && !now.isAfter(existing.canEditUntil)
                 reviewId = existing?.id
                 savedPhotoPaths = existing?.photoPaths.orEmpty().toSet()
@@ -258,7 +272,7 @@ class WriteReviewViewModel @Inject constructor(
         uploadJobs[localUri]?.cancel()
         uploadJobs[localUri] = viewModelScope.launch {
             try {
-                val path = photoUploader.upload(bookingId, localUri)
+                val path = photoUploader.upload(_uiState.value.target?.reviewId ?: checkNotNull(bookingId), localUri)
                 setPhoto(localUri) { it.copy(remotePath = path, state = DraftPhoto.State.UPLOADED) }
             } catch (e: CancellationException) {
                 throw e
@@ -291,7 +305,7 @@ class WriteReviewViewModel @Inject constructor(
         viewModelScope.launch {
             withContext(NonCancellable) {
                 try {
-                    repository.discardPhotos(bookingId, paths)
+                    repository.discardPhotos(bookingId, paths, sessionId)
                 } catch (e: Exception) {
                     // Bỏ qua: không chặn người dùng vì ảnh mồ côi.
                 }
@@ -380,6 +394,7 @@ class WriteReviewViewModel @Inject constructor(
 
     private fun Review.toDraft() = ReviewDraft(
         bookingId = bookingId,
+        sessionId = sessionId,
         court = ratings.court,
         cleanliness = ratings.cleanliness,
         service = ratings.service,

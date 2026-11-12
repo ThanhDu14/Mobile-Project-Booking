@@ -6,21 +6,21 @@
 | Vai trò sử dụng | Người chơi |
 | Thành viên phụ trách | Nguyễn Đức Duy (C) |
 | App tham khảo | Alobo |
-| Trạng thái | ⬜ Chưa bắt đầu |
-| Nhánh Git | `feature/08-drop-in` |
-| Spec (Spec Kit) | [`specs/080-drop-in-session/spec.md`](../../../specs/080-drop-in-session/spec.md) (đã clarify) · [`specs/081-drop-in-waitlist/spec.md`](../../../specs/081-drop-in-waitlist/spec.md) (đã clarify) |
+| Trạng thái | 🟨 Đang làm |
+| Nhánh Git | `feature/080-drop-in-*` |
+| Spec (Spec Kit) | [`specs/080-drop-in-session/spec.md`](../../../specs/080-drop-in-session/spec.md) (đã clarify) ([plan](../../../specs/080-drop-in-session/plan.md), [tasks](../../../specs/080-drop-in-session/tasks.md)) · [`specs/081-drop-in-waitlist/spec.md`](../../../specs/081-drop-in-waitlist/spec.md) (đã clarify) |
 
 ## Phạm vi chức năng
 
 Lấy từ [Proposal](../../proposal/Proposal.html), mục 5.
 
-- [ ] Danh sách buổi vãng lai do sân/CLB mở (ngày, giờ, sân, trình độ, số chỗ còn lại, giá theo lượt)
-- [ ] Lọc theo khu vực, ngày, khung giờ, trình độ, mức giá
-- [ ] Đăng ký chơi theo lượt: chọn buổi, số người (đi một mình hoặc kèm bạn), xác nhận
-- [ ] Thanh toán theo lượt (giả lập) hoặc trả tại sân, xem vé lượt và mã QR check-in
+- [x] Danh sách buổi vãng lai do sân/CLB mở (ngày, giờ, sân, trình độ, số chỗ còn lại, giá theo lượt)
+- [x] Lọc theo khu vực, ngày, khung giờ, trình độ, mức giá
+- [x] Đăng ký chơi theo lượt: chọn buổi, số người (đi một mình hoặc kèm bạn), xác nhận
+- [x] Thanh toán theo lượt (giả lập) hoặc trả tại sân, xem vé lượt và mã QR check-in
 - [ ] Xếp hàng chờ khi buổi đã đủ người, tự động thông báo khi có người hủy
-- [ ] Hủy đăng ký theo chính sách, xem lịch sử các buổi đã tham gia
-- [ ] Đánh giá buổi chơi sau khi tham gia
+- [x] Hủy đăng ký theo chính sách, xem lịch sử các buổi đã tham gia
+- [x] Đánh giá buổi chơi sau khi tham gia
 
 ## Ảnh chụp tham khảo
 

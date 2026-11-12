@@ -29,9 +29,17 @@
         android:id="@+id/writeReviewFragment"
         android:name="com.example.booking_app.feature.review.ui.write.WriteReviewFragment"
         android:label="@string/review_write_title">
+        <!-- Đúng một trong bookingId (đơn đặt sân) và sessionId (buổi vãng lai, spec 080 US5). -->
         <argument
             android:name="bookingId"
-            app:argType="string" />
+            android:defaultValue="@null"
+            app:argType="string"
+            app:nullable="true" />
+        <argument
+            android:name="sessionId"
+            android:defaultValue="@null"
+            app:argType="string"
+            app:nullable="true" />
         <argument
             android:name="mode"
             android:defaultValue="CREATE"

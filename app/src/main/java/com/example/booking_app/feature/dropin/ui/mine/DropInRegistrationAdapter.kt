@@ -14,6 +14,7 @@ import com.example.booking_app.feature.dropin.domain.model.PaymentStatus
 import com.example.booking_app.feature.dropin.domain.model.RegistrationOutcome
 import com.example.booking_app.feature.dropin.domain.model.RegistrationStatus
 import com.example.booking_app.feature.dropin.ui.common.DropInUiText
+import com.example.booking_app.feature.review.domain.ReviewEligibility
 
 /**
  * Thẻ một lượt trong "Lượt vãng lai của tôi" (T047): ngày giờ, cơ sở, số người, trạng thái thanh toán, nhãn kết quả,
@@ -21,6 +22,7 @@ import com.example.booking_app.feature.dropin.ui.common.DropInUiText
  */
 class DropInRegistrationAdapter(
     private val onClick: (sessionId: String) -> Unit,
+    private val onReviewClick: (sessionId: String) -> Unit = {},
 ) : ListAdapter<MyDropInRow, DropInRegistrationAdapter.ViewHolder>(Diff) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder =
@@ -70,6 +72,8 @@ class DropInRegistrationAdapter(
             binding.viewTicketButton.isVisible = canViewTicket
             binding.viewTicketButton.setOnClickListener { onClick(item.sessionId) }
 
+            bindReview(row.reviewEligibility, item.sessionId)
+
             val labels = buildList {
                 add(status)
                 if (row.showSessionChanged) add(context.getString(R.string.dropin_label_session_changed))
@@ -77,6 +81,19 @@ class DropInRegistrationAdapter(
             binding.root.contentDescription =
                 context.getString(R.string.dropin_mine_item_description, venue, dateTime, detail, labels)
             binding.root.setOnClickListener { onClick(item.sessionId) }
+        }
+
+        /** Nút đánh giá ở "Đã qua" (US5): "Đánh giá buổi chơi", "Xem đánh giá của bạn" hoặc chữ "Đã hết hạn đánh giá". */
+        private fun bindReview(eligibility: ReviewEligibility, sessionId: String) {
+            val buttonText = when (eligibility) {
+                ReviewEligibility.CAN_WRITE -> R.string.dropin_mine_review_write
+                ReviewEligibility.CAN_VIEW -> R.string.dropin_mine_review_view
+                ReviewEligibility.EXPIRED, ReviewEligibility.NOT_ELIGIBLE -> null
+            }
+            binding.reviewButton.isVisible = buttonText != null
+            if (buttonText != null) binding.reviewButton.setText(buttonText)
+            binding.reviewButton.setOnClickListener { onReviewClick(sessionId) }
+            binding.reviewExpired.isVisible = eligibility == ReviewEligibility.EXPIRED
         }
 
         private fun statusText(context: Context, row: MyDropInRow): String {
