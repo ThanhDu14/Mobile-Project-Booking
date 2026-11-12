@@ -8,6 +8,7 @@ import { get, query } from "../_shared/firestore.ts";
 import { attendeePath, postPath } from "../_shared/groups.ts";
 import { assertGroupInvariant, ensureUsers, makeTestDeps, seedGroup, seedPost } from "../_shared/groups_fixtures.ts";
 import { bearer, emulatorToken } from "../_shared/testing.ts";
+import { handleGroupManage } from "../group-manage/handler.ts";
 import { handleGroupPost } from "./handler.ts";
 
 Deno.env.set("FIREBASE_PROJECT_ID", Deno.env.get("FIREBASE_PROJECT_ID") ?? "demo-smashnow");
@@ -599,4 +600,153 @@ T("P8 delete sự kiện chưa diễn ra → xóa attendees, EVENT_DELETED cho n
   assertEquals((await attendeeDocs(s, past)).length, 0);
   assertEquals(s.notifications.sent.length, 0);
   await assertGroupInvariant(s.groupId);
+});
+
+// ---------- P9: hide / unhide ----------
+
+const postDoc = async (s: Setup, postId: string) => (await get(postPath(s.groupId, postId)))!;
+
+T("P9 admin hide → HIDDEN/GROUP + hiddenByUid; hide lần 2 → 200 giữ nguyên; unhide → VISIBLE, xóa dấu", async () => {
+  const s = await setup("p9a");
+  const postId = await seedPost(s.groupId, { authorId: s.member });
+  let r = await call(s, s.admin, { action: "hide", groupId: s.groupId, postId });
+  assertEquals(r.status, 200);
+  let doc = await postDoc(s, postId);
+  assertEquals([doc.status, doc.hiddenBy, doc.hiddenByUid], ["HIDDEN", "GROUP", s.admin]);
+  assert(doc.updatedAt instanceof Date && doc.updatedAt.getTime() > Date.now() - 60_000, "updatedAt");
+
+  // Đã ẩn: trả hiện trạng, không ghi đè người ẩn.
+  r = await call(s, s.owner, { action: "hide", groupId: s.groupId, postId });
+  assertEquals(r.status, 200);
+  assertEquals((await postDoc(s, postId)).hiddenByUid, s.admin);
+
+  r = await call(s, s.owner, { action: "unhide", groupId: s.groupId, postId });
+  assertEquals(r.status, 200);
+  doc = await postDoc(s, postId);
+  assertEquals([doc.status, doc.hiddenBy, doc.hiddenByUid], ["VISIBLE", null, null]);
+  await assertGroupInvariant(s.groupId);
+});
+
+T("P9 unhide bài SYSTEM → 403 HIDDEN_BY_SYSTEM; thành viên thường / ngoài nhóm → FORBIDDEN / NOT_MEMBER", async () => {
+  const s = await setup("p9b");
+  const sys = await seedPost(s.groupId, { authorId: s.member, hiddenBy: "SYSTEM" });
+  let r = await call(s, s.admin, { action: "unhide", groupId: s.groupId, postId: sys });
+  assertEquals([r.status, r.body.error.code], [403, "HIDDEN_BY_SYSTEM"]);
+  assertEquals((await postDoc(s, sys)).status, "HIDDEN");
+
+  const visible = await seedPost(s.groupId, { authorId: s.member });
+  for (const action of ["hide", "unhide"]) {
+    r = await call(s, s.member, { action, groupId: s.groupId, postId: visible });
+    assertEquals([r.status, r.body.error.code], [403, "FORBIDDEN"], action);
+    r = await call(s, s.outsider, { action, groupId: s.groupId, postId: visible });
+    assertEquals([r.status, r.body.error.code], [403, "NOT_MEMBER"], action);
+  }
+  assertEquals((await postDoc(s, visible)).status, "VISIBLE");
+  r = await call(s, s.admin, { action: "hide", groupId: s.groupId, postId: crypto.randomUUID() });
+  assertEquals([r.status, r.body.error.code], [404, "POST_NOT_FOUND"]);
+});
+
+// ---------- P10: report ----------
+
+T("P10 report lần 1 → 201 reportId tất định + document đủ trường; lần 2 → 409 ALREADY_REPORTED", async () => {
+  const s = await setup("p10a");
+  const postId = await seedPost(s.groupId, { authorId: s.member });
+  const body = { action: "report", groupId: s.groupId, postId, reason: "SPAM" };
+  const reportId = `POST_${s.groupId}_${postId}_${s.member2}`;
+  const r = await call(s, s.member2, body);
+  assertEquals([r.status, r.body.reportId], [201, reportId]);
+  const doc = await get(`reports/${reportId}`);
+  assertEquals(doc?.reporterId, s.member2);
+  assertEquals(doc?.targetType, "POST");
+  assertEquals(doc?.targetPath, `groups/${s.groupId}/posts/${postId}`);
+  assertEquals(doc?.reason, "SPAM");
+  assertEquals(doc?.status, "OPEN");
+  assertEquals(doc?.action, "NONE");
+  assert(doc?.createdAt instanceof Date, "createdAt");
+
+  const again = await call(s, s.member2, { ...body, reason: "SCAM" });
+  assertEquals([again.status, again.body.error.code], [409, "ALREADY_REPORTED"]);
+  assertEquals((await get(`reports/${reportId}`))?.reason, "SPAM");
+  // Người khác vẫn báo cáo được cùng bài.
+  assertEquals((await call(s, s.admin, body)).status, 201);
+});
+
+T("P10 report: bài của mình → OWN_POST; ngoài nhóm → NOT_MEMBER; bài ẩn/không có → POST_NOT_FOUND", async () => {
+  const s = await setup("p10b");
+  const postId = await seedPost(s.groupId, { authorId: s.member });
+  const body = { action: "report", groupId: s.groupId, postId, reason: "OFFENSIVE" };
+  let r = await call(s, s.member, body);
+  assertEquals([r.status, r.body.error.code], [403, "OWN_POST"]);
+  r = await call(s, s.outsider, body);
+  assertEquals([r.status, r.body.error.code], [403, "NOT_MEMBER"]);
+  const hidden = await seedPost(s.groupId, { authorId: s.member, hiddenBy: "GROUP" });
+  r = await call(s, s.member2, { ...body, postId: hidden });
+  assertEquals([r.status, r.body.error.code], [404, "POST_NOT_FOUND"]);
+  r = await call(s, s.member2, { ...body, postId: crypto.randomUUID() });
+  assertEquals([r.status, r.body.error.code], [404, "POST_NOT_FOUND"]);
+  assertEquals(await get(`reports/POST_${s.groupId}_${postId}_${s.member}`), null);
+});
+
+T("P10 report: reason lạ, OTHER thiếu detail, detail 501 ký tự → 400; OTHER có detail 500 → 201", async () => {
+  const s = await setup("p10c");
+  const postId = await seedPost(s.groupId, { authorId: s.member });
+  const body = { action: "report", groupId: s.groupId, postId };
+  for (
+    const extra of [
+      { reason: "KHAC" },
+      { reason: undefined },
+      { reason: "OTHER" },
+      { reason: "OTHER", detail: "   " },
+      { reason: "OTHER", detail: "d".repeat(501) },
+      { reason: "SPAM", detail: "d".repeat(501) },
+      { reason: "SPAM", detail: 5 },
+    ]
+  ) {
+    const r = await call(s, s.member2, { ...body, ...extra });
+    assertEquals([r.status, r.body.error?.code], [400, "INVALID_ARGUMENT"], JSON.stringify(extra));
+  }
+  assertEquals(await get(`reports/POST_${s.groupId}_${postId}_${s.member2}`), null);
+  const ok = await call(s, s.member2, { ...body, reason: "OTHER", detail: "d".repeat(500) });
+  assertEquals(ok.status, 201);
+  assertEquals((await get(`reports/${ok.body.reportId}`))?.detail, "d".repeat(500));
+});
+
+// ---------- P11: nhóm LOCKED ----------
+
+T("P11 nhóm LOCKED: mọi action ghi của group-post và join → 423 GROUP_LOCKED; leave vẫn thành công", async () => {
+  const owner = `${RUN}-p11-owner`;
+  const admin = `${RUN}-p11-admin`;
+  const member = `${RUN}-p11-member`;
+  const outsider = `${RUN}-p11-outsider`;
+  const groupId = await seedGroup({ owner, admins: [admin], members: [member], status: "LOCKED" });
+  await ensureUsers([outsider]);
+  const s = { owner, admin, member, outsider, groupId, ...makeTestDeps() } as unknown as Setup;
+  const postId = await seedPost(groupId, { authorId: member });
+  const event = await seedPost(groupId, { type: "EVENT", authorId: member });
+
+  const locked = async (uid: string, body: Record<string, unknown>) => {
+    const r = await call(s, uid, { groupId, ...body });
+    assertEquals([r.status, r.body.error?.code], [423, "GROUP_LOCKED"], String(body.action));
+  };
+  await locked(member, createBody(s, crypto.randomUUID()));
+  await locked(member, { action: "update", postId, content: "x" });
+  await locked(member, { action: "delete", postId });
+  await locked(admin, { action: "hide", postId });
+  await locked(admin, { action: "unhide", postId });
+  await locked(owner, { action: "report", postId, reason: "SPAM" });
+  await locked(owner, { action: "attend", postId: event });
+  await locked(owner, { action: "unattend", postId: event });
+  assertEquals((await postDoc(s, postId)).status, "VISIBLE");
+
+  const manage = async (uid: string, body: unknown) => {
+    const r = await handleGroupManage(bearer(tokenOf(uid), { body: JSON.stringify(body) }), s.deps);
+    return { status: r.status, body: await r.json() };
+  };
+  const join = await manage(outsider, { action: "join", groupId });
+  assertEquals([join.status, join.body.error.code], [423, "GROUP_LOCKED"]);
+
+  const leave = await manage(member, { action: "leave", groupId });
+  assertEquals([leave.status, leave.body.ok], [200, true]);
+  assertEquals(await get(`groups/${groupId}/members/${member}`), null);
+  await assertGroupInvariant(groupId);
 });

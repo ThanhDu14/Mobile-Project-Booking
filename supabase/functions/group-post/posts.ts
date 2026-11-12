@@ -1,5 +1,5 @@
 // `create`, `update`, `delete` cho bài `POST` của `group-post` (spec 090 T046; data-model mục 5, research R9).
-// Nhánh EVENT (T053, data-model mục 5–6) nằm chung ở đây; attend/unattend ở attendance.ts; hide/unhide, report do US5–US6.
+// Nhánh EVENT (T053, data-model mục 5–6) nằm chung ở đây; attend/unattend ở attendance.ts; hide/unhide/report ở moderation.ts.
 import { HttpError } from "../_shared/auth.ts";
 import { createWrite, deleteWrite, updateWrite } from "../_shared/firestore.ts";
 import { asDate, asNumber, inGroupTx, invalid, requireId, requireRequestId, requireUuid } from "../_shared/group-tx.ts";

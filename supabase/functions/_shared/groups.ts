@@ -103,15 +103,8 @@ export function onGroupMembershipChanged(
   return Promise.resolve();
 }
 
-/**
- * `delete-account` (A) gọi để ẩn danh bài, rời nhóm, chuyển quyền chủ nhóm (research R16).
- * TODO(T069): cài thật; hiện là khung.
- */
-export function anonymizeCommunityGroups(
-  _uid: string,
-): Promise<{ transferredGroups: string[]; deletedGroups: string[] }> {
-  return Promise.resolve({ transferredGroups: [], deletedGroups: [] });
-}
+// `anonymizeCommunityGroups(uid)` cho `delete-account` (A) gọi (T069, research R16) nằm ở `group-anonymize.ts`.
+export { anonymizeCommunityGroups, type AnonymizeResult } from "./group-anonymize.ts";
 
 // ---------- Storage (Supabase Storage, 2 bucket: group-media, group-avatars) ----------
 

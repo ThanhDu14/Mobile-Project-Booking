@@ -7,6 +7,7 @@ import {
   type ActionHandler,
   getMembership,
   type GroupDeps,
+  type GroupDoc,
   groupPath,
   joinRequestPath,
   loadGroupForWrite,
@@ -197,10 +198,36 @@ export async function dropUpcomingAttendance(
   }
 }
 
+/**
+ * Phần ghi chung của "rời nhóm" (`leave` và `anonymizeCommunityGroups`, T069): bỏ khỏi sự kiện chưa diễn ra, xóa
+ * `members/{uid}`, giảm `memberCount` và gọi hook `removed` cùng transaction. `groupPatch` là trường nhóm cần đổi
+ * kèm (chuyển quyền chủ nhóm đặt `ownerId`) để chỉ ghi `groups/{groupId}` một lần.
+ */
+export async function applyLeave(
+  tx: FirestoreTransaction,
+  writes: Write[],
+  deps: GroupDeps,
+  groupId: string,
+  group: GroupDoc,
+  uid: string,
+  groupPatch: Record<string, unknown> = {},
+): Promise<void> {
+  const now = deps.now();
+  await dropUpcomingAttendance(tx, writes, groupId, uid, now);
+  writes.push(
+    deleteWrite(memberPath(groupId, uid)),
+    updateWrite(groupPath(groupId), {
+      ...groupPatch,
+      memberCount: Math.max(0, asNumber(group.memberCount) - 1),
+      updatedAt: now,
+    }),
+  );
+  await deps.onMembershipChanged(tx, groupId, { removed: [uid] });
+}
+
 export const leaveGroup: ActionHandler = async ({ uid, body, deps }) => {
   const groupId = requireId(body, "groupId");
   await inGroupTx(deps, groupId, async (tx, writes) => {
-    const now = deps.now();
     const group = await loadGroupForWrite(tx, groupId, { allowLocked: true });
     const role = await getMembership(tx, groupId, uid);
     if (!role) throw new HttpError(403, "NOT_MEMBER", "Bạn không phải thành viên nhóm");
@@ -209,12 +236,7 @@ export const leaveGroup: ActionHandler = async ({ uid, body, deps }) => {
         soleMember: asNumber(group.memberCount) === 1,
       });
     }
-    await dropUpcomingAttendance(tx, writes, groupId, uid, now);
-    writes.push(
-      deleteWrite(memberPath(groupId, uid)),
-      updateWrite(groupPath(groupId), { memberCount: Math.max(0, asNumber(group.memberCount) - 1), updatedAt: now }),
-    );
-    await deps.onMembershipChanged(tx, groupId, { removed: [uid] });
+    await applyLeave(tx, writes, deps, groupId, group, uid);
   });
   return ok();
 };

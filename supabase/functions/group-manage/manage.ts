@@ -2,7 +2,7 @@
 // Quản lý thành viên đọc/ghi `groups/{groupId}` trong transaction (R3); `delete` đặt `DELETED` trong transaction
 // rồi dọn dữ liệu NGOÀI transaction theo lô, chạy lại được khi lỗi giữa chừng.
 import { HttpError } from "../_shared/auth.ts";
-import { createWrite, deleteWrite, updateWrite } from "../_shared/firestore.ts";
+import { createWrite, deleteWrite, type FirestoreTransaction, updateWrite, type Write } from "../_shared/firestore.ts";
 import {
   type ActionHandler,
   getMembership,
@@ -140,7 +140,7 @@ async function drainCollection(deps: GroupDeps, collectionId: string, parent: st
  * Phần dọn sau khi nhóm đã `DELETED`; thứ tự: từng bài (ảnh, `attendees`, rồi chính bài), `members`, `joinRequests`,
  * `removals`, ảnh đại diện, document nhóm. Mỗi bước idempotent nên lỗi giữa chừng thì gọi lại `delete` chạy tiếp.
  */
-async function purgeGroup(deps: GroupDeps, groupId: string): Promise<void> {
+export async function purgeGroup(deps: GroupDeps, groupId: string): Promise<void> {
   const parent = groupPath(groupId);
   for (;;) {
     const posts = await deps.firestore.query("posts", [], { parent, limit: BATCH });
@@ -158,6 +158,17 @@ async function purgeGroup(deps: GroupDeps, groupId: string): Promise<void> {
   await deletePrefix(deps.storage, GROUP_MEDIA_BUCKET, groupId);
   // TODO(spec 091): gọi `purgeChat("group_" + groupId)` của `_shared/chats.ts` tại đây (file chưa tồn tại).
   await deps.firestore.commit([deleteWrite(parent, false)]);
+}
+
+/** Đặt nhóm `DELETED` và gọi hook `{ deleted: true }` trong transaction (dùng chung `delete` và T069); dọn dữ liệu làm sau commit. */
+export async function markGroupDeleted(
+  tx: FirestoreTransaction,
+  writes: Write[],
+  deps: GroupDeps,
+  groupId: string,
+): Promise<void> {
+  writes.push(updateWrite(groupPath(groupId), { status: "DELETED", updatedAt: deps.now() }));
+  await deps.onMembershipChanged(tx, groupId, { deleted: true });
 }
 
 /**
@@ -183,8 +194,7 @@ export const deleteGroup: ActionHandler = async ({ uid, body, deps }) => {
     if (confirmName !== String(group.name ?? "").trim()) {
       throw new HttpError(400, "CONFIRM_NAME_MISMATCH", "Tên xác nhận không khớp với tên nhóm");
     }
-    writes.push(updateWrite(groupPath(groupId), { status: "DELETED", updatedAt: deps.now() }));
-    await deps.onMembershipChanged(tx, groupId, { deleted: true });
+    await markGroupDeleted(tx, writes, deps, groupId);
   });
 
   await purgeGroup(deps, groupId);
