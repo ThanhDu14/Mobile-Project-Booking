@@ -1,7 +1,7 @@
 // Dữ liệu demo cho spec 090 (Nhóm/CLB), CHỈ trên Firebase Emulator (tasks.md T003, quickstart.md mục 1).
 //
 //   firebase emulators:start --only auth,firestore --project demo-smashnow     # terminal khác
-//   deno run -A --config supabase/functions/deno.json scripts/seed/090-community.ts# từ thư mục gốc repo
+//   deno run -A --config supabase/functions/deno.json scripts/seed/090-community.ts   # từ thư mục gốc repo
 //
 // LƯU Ý: quickstart.md mục 1 ghi `npx tsx ...` nhưng script import module Deno (`_shared/*.ts` dùng `npm:` specifier,
 // đuôi `.ts`), Node/tsx không nạp được. Lệnh đúng là `deno run -A` như seed 080 (cần sửa quickstart cho khớp).
