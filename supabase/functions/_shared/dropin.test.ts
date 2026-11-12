@@ -213,3 +213,36 @@ Deno.test("closeWaitlistInTx: giữ nguyên hành vi cũ", () => {
   assertEquals([fields.waitlistStatus, fields.closeReason], ["CLOSED", "SESSION_CANCELLED"]);
   assertEquals(w.updateMask?.fieldPaths, ["waitlistStatus", "closeReason", "updatedAt"]);
 });
+
+// ---------- Q12 (spec 081 T028): PROMOTED_GRACE ----------
+
+Deno.test("Q12: được đẩy lên lúc T−2 giờ, PAID, hủy sau 20 / 30 / 31 / 40 phút → 100% / 100% / LATE / LATE", () => {
+  const promotedAt = NOW;
+  const session = sessionAt(120); // bắt đầu sau 2 giờ kể từ lúc được đẩy lên
+  const reg = paidReg({ promotedAt });
+  const at = (m: number) => computeRefund(reg, session, new Date(NOW.getTime() + m * MIN));
+  assertEquals(at(20), { refundAmount: 120000, reason: "PROMOTED_GRACE" });
+  assertEquals(at(30), { refundAmount: 120000, reason: "PROMOTED_GRACE" });
+  assertEquals(at(31), { refundAmount: 0, reason: "LATE" });
+  assertEquals(at(40), { refundAmount: 0, reason: "LATE" });
+});
+
+Deno.test("Q12: được đẩy lên lúc T−5 giờ (không sát giờ) → theo chính sách 080 (còn ≥ 240 phút → 100% EARLY)", () => {
+  const reg = paidReg({ promotedAt: NOW });
+  const session = sessionAt(300);
+  assertEquals(computeRefund(reg, session, new Date(NOW.getTime() + 20 * MIN)), { refundAmount: 120000, reason: "EARLY" });
+  // Hủy khi còn 239 phút: quá ân hạn 30 phút của hàng chờ và dưới mốc 240 → LATE như 080.
+  assertEquals(computeRefund(reg, session, new Date(NOW.getTime() + 61 * MIN)), { refundAmount: 0, reason: "LATE" });
+});
+
+Deno.test("Q12: được đẩy lên AT_VENUE (UNPAID) → refundAmount 0, reason AT_VENUE", () => {
+  const reg = paidReg({ promotedAt: NOW, paymentMethod: "AT_VENUE", paymentStatus: "UNPAID" });
+  assertEquals(computeRefund(reg, sessionAt(120), new Date(NOW.getTime() + 10 * MIN)), { refundAmount: 0, reason: "AT_VENUE" });
+});
+
+Deno.test("cancelRegistrationInTx trả `promoted` rỗng khi tx không có query; không đụng tới waitlist", async () => {
+  const f = fakeTx({ [REG_PATH]: paidReg(), [SESSION_PATH]: sessionAt(600, { waitlistTickets: [1], waitlistCount: 1 }) });
+  const out = await cancelRegistrationInTx(f.tx, SID, "u1", "USER", { now: NOW });
+  assertEquals(out.promoted, []);
+  assertEquals(f.written(SESSION_PATH)!.waitlistTickets, undefined);
+});

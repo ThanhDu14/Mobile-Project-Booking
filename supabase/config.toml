@@ -500,6 +500,9 @@ verify_jwt = false
 [functions.cancel-drop-in]
 verify_jwt = false
 
+[functions.dropin-close]
+verify_jwt = false
+
 [functions.review]
 verify_jwt = false
 
