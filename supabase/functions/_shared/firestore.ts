@@ -166,7 +166,7 @@ export async function commit(writes: Write[], transaction?: string): Promise<voi
 
 export interface QueryFilter {
   field: string;
-  op: "EQUAL" | "IN";
+  op: "EQUAL" | "IN" | "LESS_THAN" | "LESS_THAN_OR_EQUAL" | "GREATER_THAN" | "GREATER_THAN_OR_EQUAL";
   value: unknown;
 }
 
@@ -176,6 +176,8 @@ export interface QueryOptions {
   /** `true` để truy vấn collection group (mọi collection cùng tên ở mọi cấp). */
   allDescendants?: boolean;
   limit?: number;
+  /** Sắp xếp kết quả (spec 081: lượt chờ theo `waitlistTicket`). Thiếu thì giữ thứ tự mặc định của Firestore. */
+  orderBy?: { field: string; direction?: "ASCENDING" | "DESCENDING" }[];
 }
 
 export interface QueryDocument {
@@ -199,6 +201,9 @@ function structuredQuery(collectionId: string, filters: QueryFilter[], opts: Que
     ...(clauses.length === 0 ? {} : {
       where: clauses.length === 1 ? clauses[0] : { compositeFilter: { op: "AND", filters: clauses } },
     }),
+    ...(opts.orderBy?.length
+      ? { orderBy: opts.orderBy.map((o) => ({ field: { fieldPath: o.field }, direction: o.direction ?? "ASCENDING" })) }
+      : {}),
     ...(opts.limit ? { limit: opts.limit } : {}),
   };
 }
@@ -226,7 +231,7 @@ async function queryRequest(
   });
 }
 
-/** Truy vấn có điều kiện bằng (`EQUAL`, `IN`). */
+/** Truy vấn có điều kiện (`EQUAL`, `IN`, so sánh khoảng) và sắp xếp tùy chọn. */
 export function query(collectionId: string, filters: QueryFilter[], opts: QueryOptions = {}): Promise<QueryDocument[]> {
   return queryRequest(collectionId, filters, opts);
 }
