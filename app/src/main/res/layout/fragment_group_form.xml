@@ -1,0 +1,282 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Tạo/sửa nhóm (spec 090 US1, T027). Tên (đếm 50), mô tả (500), ảnh đại diện (Photo Picker), khu vực (danh mục
+    districts), chế độ Công khai/Riêng tư kèm giải thích. include_state_views phủ lên vùng form khi đang nạp nhóm
+    (chế độ sửa) hoặc nạp lỗi.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?android:attr/colorBackground"
+    android:orientation="vertical">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        app:navigationContentDescription="@string/community_back"
+        app:navigationIcon="@drawable/ic_arrow_back_24"
+        app:title="@string/community_title_form_create"
+        app:titleTextAppearance="?attr/textAppearanceTitleLarge" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <ScrollView
+            android:id="@+id/content"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:fillViewport="true"
+            android:paddingHorizontal="@dimen/screen_gutter">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingBottom="@dimen/space_6">
+
+                <!-- Ảnh đại diện -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_2"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.imageview.ShapeableImageView
+                        android:id="@+id/avatarImage"
+                        android:layout_width="96dp"
+                        android:layout_height="96dp"
+                        android:background="?attr/colorSurfaceVariant"
+                        android:clickable="true"
+                        android:contentDescription="@string/community_form_avatar_picker_cd"
+                        android:focusable="true"
+                        android:padding="@dimen/space_6"
+                        android:scaleType="centerCrop"
+                        android:src="@drawable/ic_add_photo_24"
+                        app:shapeAppearance="@style/ShapeAppearance.SmashNow.Medium" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_3"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/avatarPickButton"
+                            style="@style/Widget.SmashNow.Button.Outlined"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:minHeight="48dp"
+                            android:text="@string/community_form_pick_avatar" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/avatarRemoveButton"
+                            style="@style/Widget.SmashNow.Button.Text"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:minHeight="48dp"
+                            android:text="@string/community_form_remove_avatar"
+                            android:visibility="gone"
+                            tools:visibility="visible" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Tên -->
+                <TextView
+                    style="@style/Widget.SmashNow.FieldLabel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_4"
+                    android:text="@string/community_field_name" />
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/nameLayout"
+                    style="@style/Widget.SmashNow.TextInputLayout"
+                    android:layout_marginTop="@dimen/space_1"
+                    app:counterEnabled="true"
+                    app:counterMaxLength="50">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/nameInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="@string/community_field_name"
+                        android:imeOptions="actionNext"
+                        android:inputType="textCapSentences"
+                        android:maxLines="1"
+                        android:minHeight="48dp" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Mô tả -->
+                <TextView
+                    style="@style/Widget.SmashNow.FieldLabel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_3"
+                    android:text="@string/community_field_description" />
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/descriptionLayout"
+                    style="@style/Widget.SmashNow.TextInputLayout"
+                    android:layout_marginTop="@dimen/space_1"
+                    app:counterEnabled="true"
+                    app:counterMaxLength="500">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/descriptionInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="top"
+                        android:hint="@string/community_form_description_hint"
+                        android:inputType="textMultiLine|textCapSentences"
+                        android:minLines="3" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Khu vực -->
+                <TextView
+                    style="@style/Widget.SmashNow.FieldLabel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_3"
+                    android:text="@string/community_field_district" />
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/districtLayout"
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_1">
+
+                    <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                        android:id="@+id/districtInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="@string/community_form_district_hint"
+                        android:inputType="none"
+                        android:minHeight="48dp" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Chế độ -->
+                <TextView
+                    style="@style/Widget.SmashNow.FieldLabel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_3"
+                    android:text="@string/community_field_visibility" />
+
+                <com.google.android.material.button.MaterialButtonToggleGroup
+                    android:id="@+id/visibilityToggle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_1"
+                    android:contentDescription="@string/community_field_visibility"
+                    app:selectionRequired="true"
+                    app:singleSelection="true">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/visibilityPublic"
+                        style="@style/Widget.SmashNow.Button.Outlined"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="1"
+                        android:minHeight="48dp"
+                        android:text="@string/community_label_public" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/visibilityPrivate"
+                        style="@style/Widget.SmashNow.Button.Outlined"
+                        android:layout_width="0dp"
+                        android:layout_height="48dp"
+                        android:layout_weight="1"
+                        android:minHeight="48dp"
+                        android:text="@string/community_label_private" />
+                </com.google.android.material.button.MaterialButtonToggleGroup>
+
+                <TextView
+                    android:id="@+id/visibilityDescription"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_2"
+                    android:accessibilityLiveRegion="polite"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    tools:text="@string/community_visibility_public_desc" />
+
+                <!-- Nhóm đã tạo nhưng ảnh chưa tải được (AC 1.3) -->
+                <LinearLayout
+                    android:id="@+id/avatarFailureBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_4"
+                    android:background="@drawable/bg_info_box"
+                    android:orientation="vertical"
+                    android:padding="@dimen/space_3"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:accessibilityLiveRegion="polite"
+                        android:text="@string/community_error_avatar_upload_failed"
+                        android:textAppearance="?attr/textAppearanceTitleSmall"
+                        android:textColor="?attr/colorError" />
+
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_1"
+                        android:text="@string/community_form_avatar_failed_hint"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_2"
+                        android:orientation="horizontal">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/retryAvatarButton"
+                            style="@style/Widget.SmashNow.Button.Outlined"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:minHeight="48dp"
+                            android:text="@string/community_action_retry" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/defaultAvatarButton"
+                            style="@style/Widget.SmashNow.Button.Text"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/space_2"
+                            android:layout_weight="1"
+                            android:minHeight="48dp"
+                            android:text="@string/community_action_use_default_avatar" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/saveButton"
+                    style="@style/Widget.SmashNow.Button"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_6"
+                    android:minHeight="48dp"
+                    android:text="@string/community_title_form_create" />
+            </LinearLayout>
+        </ScrollView>
+
+        <include
+            android:id="@+id/stateViews"
+            layout="@layout/include_state_views" />
+    </FrameLayout>
+</LinearLayout>

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Nav graph lồng của spec 090 (contracts/ui-screens.md mục 1), include vào nav_player; tab "Cộng đồng" mở màn gốc
+    communityHomeFragment (MainActivity.openCommunity).
+    Đã khai báo (US1): CommunityHomeFragment, GroupFormFragment, GroupDetailFragment.
+    Thêm khi làm story sau (T019 chỉ khai báo màn đã có class Fragment):
+      - GroupSearchFragment (tab "Khám phá") và deep link smashnow://community/group/{groupId}/requests: US2
+      - JoinRequestsFragment: US2/US5
+      - PostComposerFragment (groupId, postId?, type), PhotoViewerFragment dùng chung (core/ui/photo): US3
+      - EventAttendeesBottomSheet (groupId, postId): US4
+      - GroupMembersFragment (groupId): US5
+      - ReportPostBottomSheet (groupId, postId): US6
+-->
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_community"
+    app:startDestination="@id/communityHomeFragment">
+
+    <fragment
+        android:id="@+id/communityHomeFragment"
+        android:name="com.example.booking_app.feature.community.ui.home.CommunityHomeFragment"
+        android:label="@string/community_title_home">
+        <!-- Đích quay lại sau khi khách đăng nhập. -->
+        <deepLink app:uri="smashnow://community" />
+        <action
+            android:id="@+id/action_communityHome_to_groupForm"
+            app:destination="@id/groupFormFragment" />
+        <action
+            android:id="@+id/action_communityHome_to_groupDetail"
+            app:destination="@id/groupDetailFragment" />
+    </fragment>
+
+    <!-- groupId null: tạo nhóm; có groupId: sửa nhóm. -->
+    <fragment
+        android:id="@+id/groupFormFragment"
+        android:name="com.example.booking_app.feature.community.ui.form.GroupFormFragment"
+        android:label="@string/community_title_form_create">
+        <argument
+            android:name="groupId"
+            android:defaultValue="@null"
+            app:argType="string"
+            app:nullable="true" />
+        <!-- Tạo xong: mở trang nhóm, bỏ form khỏi back stack. -->
+        <action
+            android:id="@+id/action_groupForm_to_groupDetail"
+            app:destination="@id/groupDetailFragment"
+            app:popUpTo="@id/groupFormFragment"
+            app:popUpToInclusive="true" />
+    </fragment>
+
+    <fragment
+        android:id="@+id/groupDetailFragment"
+        android:name="com.example.booking_app.feature.community.ui.detail.GroupDetailFragment"
+        android:label="@string/community_title_group_detail">
+        <argument
+            android:name="groupId"
+            app:argType="string" />
+        <!-- Thông báo GROUP_ACTIVITY (spec 100). -->
+        <deepLink app:uri="smashnow://community/group/{groupId}" />
+        <action
+            android:id="@+id/action_groupDetail_to_groupForm"
+            app:destination="@id/groupFormFragment" />
+    </fragment>
+
+</navigation>

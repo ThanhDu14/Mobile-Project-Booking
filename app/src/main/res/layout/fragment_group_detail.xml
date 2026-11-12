@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Trang nhóm (spec 090 US1, T029): khung giới thiệu (ảnh, tên, chế độ, số thành viên, khu vực, mô tả), nút "Sửa nhóm"
+    cho chủ nhóm. joinArea (US2: Tham gia/Xin tham gia/Đang chờ duyệt) và feedArea (US3: bảng tin) để trống, gắn vào sau.
+    include_state_views cho loading, lỗi (Thử lại) và "Nhóm không còn tồn tại".
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?android:attr/colorBackground"
+    android:orientation="vertical">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        app:navigationContentDescription="@string/community_back"
+        app:navigationIcon="@drawable/ic_arrow_back_24"
+        app:title="@string/community_title_group_detail"
+        app:titleTextAppearance="?attr/textAppearanceTitleLarge" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <ScrollView
+            android:id="@+id/content"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingHorizontal="@dimen/screen_gutter"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingBottom="@dimen/space_6">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_2"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.imageview.ShapeableImageView
+                        android:id="@+id/groupAvatar"
+                        android:layout_width="72dp"
+                        android:layout_height="72dp"
+                        android:background="?attr/colorSurfaceVariant"
+                        android:scaleType="centerCrop"
+                        app:shapeAppearance="@style/ShapeAppearance.SmashNow.Medium"
+                        tools:src="@drawable/ic_groups_24" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_3"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/groupName"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textAppearance="?attr/textAppearanceTitleLarge"
+                            android:textColor="?attr/colorOnSurface"
+                            tools:text="CLB Cầu lông Quận 10" />
+
+                        <TextView
+                            android:id="@+id/groupMeta"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textAppearance="?attr/textAppearanceBodyMedium"
+                            android:textColor="?attr/colorOnSurfaceVariant"
+                            tools:text="Công khai · 48 thành viên" />
+
+                        <TextView
+                            android:id="@+id/groupDistrict"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:textAppearance="?attr/textAppearanceBodyMedium"
+                            android:textColor="?attr/colorOnSurfaceVariant"
+                            tools:text="Khu vực: Quận 10" />
+                    </LinearLayout>
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/lockedLabel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_3"
+                    android:background="@drawable/bg_info_box"
+                    android:padding="@dimen/space_3"
+                    android:text="@string/community_label_group_locked"
+                    android:textAppearance="?attr/textAppearanceBodyMedium"
+                    android:textColor="?attr/colorError"
+                    android:visibility="gone" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/editButton"
+                    style="@style/Widget.SmashNow.Button.Outlined"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_4"
+                    android:minHeight="48dp"
+                    android:text="@string/community_action_edit_group"
+                    android:visibility="gone"
+                    app:icon="@drawable/ic_edit_24"
+                    tools:visibility="visible" />
+
+                <!-- US2: nút Tham gia / Xin tham gia / Đang chờ duyệt -->
+                <FrameLayout
+                    android:id="@+id/joinArea"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_3"
+                    android:visibility="gone" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_6"
+                    android:text="@string/community_detail_about"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    android:textColor="?attr/colorOnSurface" />
+
+                <TextView
+                    android:id="@+id/groupDescription"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_1"
+                    android:textAppearance="?attr/textAppearanceBodyLarge"
+                    android:textColor="?attr/colorOnSurface"
+                    tools:text="Chơi tối thứ 6 tại sân Quận 10" />
+
+                <!-- US3: bảng tin của nhóm -->
+                <FrameLayout
+                    android:id="@+id/feedArea"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_6"
+                    android:visibility="gone" />
+            </LinearLayout>
+        </ScrollView>
+
+        <include
+            android:id="@+id/stateViews"
+            layout="@layout/include_state_views" />
+    </FrameLayout>
+</LinearLayout>

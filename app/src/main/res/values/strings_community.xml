@@ -174,4 +174,34 @@
     <string name="community_error_avatar_upload_failed">Nhóm đã được tạo nhưng chưa tải được ảnh đại diện</string>
     <string name="community_error_image_too_large">Ảnh lớn hơn 2 MB sau khi nén</string>
     <string name="community_error_image_unreadable">Không đọc được ảnh này</string>
+
+    <!-- US1: tạo/sửa nhóm, "Cộng đồng", trang nhóm -->
+    <string name="community_title_my_groups">Nhóm của bạn</string>
+    <string name="community_back">Quay lại</string>
+    <string name="community_form_name_required">Nhập tên nhóm</string>
+    <string name="community_form_name_too_short">Tên nhóm cần ít nhất 3 ký tự</string>
+    <string name="community_form_name_too_long">Tên nhóm tối đa 50 ký tự</string>
+    <string name="community_form_description_too_long">Mô tả tối đa 500 ký tự</string>
+    <string name="community_form_district_required">Chọn khu vực của nhóm</string>
+    <string name="community_form_district_hint">Chọn khu vực</string>
+    <string name="community_form_description_hint">Giới thiệu ngắn về nhóm (không bắt buộc)</string>
+    <string name="community_form_pick_avatar">Chọn ảnh đại diện</string>
+    <string name="community_form_change_avatar">Đổi ảnh</string>
+    <string name="community_form_remove_avatar">Bỏ ảnh</string>
+    <string name="community_form_avatar_picker_cd">Chọn ảnh đại diện cho nhóm</string>
+    <string name="community_form_avatar_preview_cd">Ảnh đại diện nhóm đã chọn</string>
+    <string name="community_form_saving">Đang lưu</string>
+    <string name="community_form_avatar_failed_hint">Bạn có thể thử tải ảnh lại, hoặc dùng ảnh mặc định và đổi ảnh sau.</string>
+    <string name="community_action_use_default_avatar">Dùng ảnh mặc định</string>
+    <string name="community_login_required_to_create">Vui lòng đăng nhập để tạo nhóm</string>
+    <string name="community_home_discover_placeholder">Khám phá nhóm sẽ sớm có mặt ở đây</string>
+    <string name="community_group_meta">%1$s · %2$s</string>
+    <string name="community_group_owner_pending">Bạn là chủ nhóm · %1$d yêu cầu tham gia</string>
+    <string name="community_group_owner">Bạn là chủ nhóm</string>
+    <string name="community_group_avatar_cd">Ảnh đại diện nhóm %1$s</string>
+    <string name="community_group_item_cd">%1$s, %2$s</string>
+    <string name="community_group_item_cd_locked">%1$s, %2$s, nhóm đã bị tạm khóa</string>
+    <string name="community_detail_about">Giới thiệu</string>
+    <string name="community_detail_no_description">Nhóm chưa có mô tả</string>
+    <string name="community_detail_district">Khu vực: %1$s</string>
 </resources>

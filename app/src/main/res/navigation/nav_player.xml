@@ -114,6 +114,9 @@
         android:id="@+id/action_global_dropIn"
         app:destination="@id/nav_dropin" />
 
+    <!-- Cộng đồng (spec 090): tab "Cộng đồng", deep link smashnow://community/... -->
+    <include app:graph="@navigation/nav_community" />
+
     <!-- Xem ảnh toàn màn hình dùng chung (core/ui/photo, spec 030 T019); 070 dùng cho ảnh đánh giá. -->
     <fragment
         android:id="@+id/photoViewerFragment"

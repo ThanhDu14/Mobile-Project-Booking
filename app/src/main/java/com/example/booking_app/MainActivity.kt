@@ -136,6 +136,10 @@ class MainActivity : AppCompatActivity() {
                     openDropIn()
                     true
                 }
+                R.id.tab_community -> {
+                    openCommunity()
+                    true
+                }
                 R.id.tab_owner_today -> {
                     navController.popBackStack(R.id.ownerHomePlaceholderFragment, false)
                     true
@@ -230,6 +234,7 @@ class MainActivity : AppCompatActivity() {
                 R.id.tab_home -> navController.popBackStack(R.id.homeFragment, false)
                 R.id.tab_bookings -> openMyBookings()
                 R.id.tab_drop_in -> openDropIn()
+                R.id.tab_community -> openCommunity()
                 R.id.tab_owner_today -> navController.popBackStack(R.id.ownerHomePlaceholderFragment, false)
                 R.id.tab_owner_venues -> openOwnerVenues()
             }
@@ -252,6 +257,18 @@ class MainActivity : AppCompatActivity() {
     private fun openDropIn() {
         navController.navigate(
             R.id.nav_dropin,
+            null,
+            navOptions {
+                launchSingleTop = true
+                popUpTo(R.id.homeFragment)
+            },
+        )
+    }
+
+    /** Tab Cộng đồng (spec 090 T019): màn gốc `communityHomeFragment` của graph `nav_community`. */
+    private fun openCommunity() {
+        navController.navigate(
+            R.id.nav_community,
             null,
             navOptions {
                 launchSingleTop = true
@@ -302,10 +319,12 @@ class MainActivity : AppCompatActivity() {
                 R.id.homeFragment -> R.id.tab_home
                 R.id.myBookingsFragment -> R.id.tab_bookings
                 R.id.dropInListFragment -> R.id.tab_drop_in
+                R.id.communityHomeFragment -> R.id.tab_community
                 // Giữ sáng tab đã mở trang Tài khoản.
                 R.id.accountFragment -> when (navController.previousBackStackEntry?.destination?.id) {
                     R.id.myBookingsFragment -> R.id.tab_bookings
                     R.id.dropInListFragment -> R.id.tab_drop_in
+                    R.id.communityHomeFragment -> R.id.tab_community
                     else -> R.id.tab_home
                 }
                 else -> null
