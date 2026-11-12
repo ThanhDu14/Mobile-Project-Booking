@@ -374,14 +374,17 @@
                 <!-- Hủy đăng ký (US4): mở CancelDropInBottomSheet; chỉ hiện khi canCancel và đang có mạng -->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/cancelButton"
-                    style="@style/Widget.SmashNow.Button.Text"
+                    style="?attr/materialButtonOutlinedStyle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
                     android:layout_marginTop="@dimen/space_6"
                     android:text="@string/dropin_ticket_cancel"
-                    android:textColor="?attr/colorError"
-                    android:visibility="gone" />
+                    android:textColor="@color/button_danger_outlined_text"
+                    android:visibility="gone"
+                    app:backgroundTint="@color/button_danger_outlined_bg"
+                    app:rippleColor="@android:color/transparent"
+                    app:strokeColor="?attr/colorError" />
             </LinearLayout>
         </androidx.core.widget.NestedScrollView>
 

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Chữ của nút nguy hiểm dạng viền: đỏ, khi nhấn thì trắng trên nền đỏ. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:color="?attr/colorOnError" android:state_pressed="true" />
+    <item android:color="?attr/colorError" />
+</selector>
