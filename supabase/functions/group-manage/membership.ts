@@ -12,11 +12,13 @@ import {
   loadGroupForWrite,
   memberPath,
   notifyGroupActivity,
+  postPath,
   removalPath,
   userSnapshot,
 } from "../_shared/groups.ts";
 import { UUID } from "../_shared/dropin-tx.ts";
 import { asNumber, inGroupTx, requireId } from "../_shared/group-tx.ts";
+import type { FirestoreTransaction, Write } from "../_shared/firestore.ts";
 
 const ok = () => Response.json({ ok: true });
 
@@ -164,6 +166,37 @@ export const rejectRequest = reviewHandler(false);
 
 // ---------- leave ----------
 
+/**
+ * Bỏ `uid` khỏi `attendees` của các sự kiện CHƯA diễn ra trong nhóm (dùng chung cho `leave` và `remove`, T059):
+ * collection group `attendees where userId == uid, groupId == g, eventAt > now`; với mỗi kết quả xóa `attendees`
+ * và giảm `attendeeCount` của bài (không âm). Phải gọi TRƯỚC mọi lần ghi khác không cần thiết: ở đây `writes` chỉ
+ * được gom (commit một lần ở cuối `inGroupTx`) nên mọi `tx.get`/`tx.query` đều đứng trước lần ghi, đúng giới hạn
+ * của Firestore (đọc trước ghi).
+ */
+export async function dropUpcomingAttendance(
+  tx: FirestoreTransaction,
+  writes: Write[],
+  groupId: string,
+  uid: string,
+  now: Date,
+): Promise<void> {
+  const rows = await tx.query("attendees", [
+    { field: "userId", op: "EQUAL", value: uid },
+    { field: "groupId", op: "EQUAL", value: groupId },
+    { field: "eventAt", op: "GREATER_THAN", value: now },
+  ], { allDescendants: true });
+  for (const row of rows) {
+    const postId = typeof row.data.postId === "string" ? row.data.postId : row.path.split("/")[3];
+    const post = await tx.get(postPath(groupId, postId));
+    writes.push(deleteWrite(row.path));
+    if (post) {
+      writes.push(
+        updateWrite(postPath(groupId, postId), { attendeeCount: Math.max(0, asNumber(post.attendeeCount) - 1) }),
+      );
+    }
+  }
+}
+
 export const leaveGroup: ActionHandler = async ({ uid, body, deps }) => {
   const groupId = requireId(body, "groupId");
   await inGroupTx(deps, groupId, async (tx, writes) => {
@@ -176,8 +209,7 @@ export const leaveGroup: ActionHandler = async ({ uid, body, deps }) => {
         soleMember: asNumber(group.memberCount) === 1,
       });
     }
-    // TODO(T059): trong cùng transaction bỏ người này khỏi `attendees` của các sự kiện chưa diễn ra
-    // (collection group `attendees where userId == uid, groupId == g, eventAt > now`) và giảm `attendeeCount`.
+    await dropUpcomingAttendance(tx, writes, groupId, uid, now);
     writes.push(
       deleteWrite(memberPath(groupId, uid)),
       updateWrite(groupPath(groupId), { memberCount: Math.max(0, asNumber(group.memberCount) - 1), updatedAt: now }),

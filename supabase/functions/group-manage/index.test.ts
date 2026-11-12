@@ -6,11 +6,18 @@
 // Không xóa dữ liệu Emulator (có thể đang dùng chung): uid có tiền tố ngẫu nhiên.
 import { assert, assertEquals } from "jsr:@std/assert@1.0.19";
 import { commit, createWrite, get, query } from "../_shared/firestore.ts";
-import { groupPath, joinRequestPath, memberPath, removalPath } from "../_shared/groups.ts";
-import { assertGroupInvariant, ensureUsers, makeTestDeps, seedGroup } from "../_shared/groups_fixtures.ts";
+import { attendeePath, groupPath, joinRequestPath, memberPath, postPath, removalPath } from "../_shared/groups.ts";
+import {
+  assertGroupInvariant,
+  ensureUsers,
+  FakeStorage,
+  makeTestDeps,
+  seedGroup,
+  seedPost,
+} from "../_shared/groups_fixtures.ts";
 import { nameKeywords } from "../_shared/keywords.ts";
 import { bearer, emulatorToken } from "../_shared/testing.ts";
-import { ACTIONS, handleGroupManage } from "./handler.ts";
+import { handleGroupManage } from "./handler.ts";
 
 Deno.env.set("FIREBASE_PROJECT_ID", Deno.env.get("FIREBASE_PROJECT_ID") ?? "demo-smashnow");
 
@@ -44,16 +51,6 @@ T("action lạ hoặc thiếu → 400 INVALID_ARGUMENT", async () => {
     const r = await call(handleGroupManage(post(tokenOf(uid), body), deps));
     assertEquals(r.status, 400);
     assertEquals(r.body.error.code, "INVALID_ARGUMENT");
-  }
-});
-
-T("action chưa cài (delete, setRole, transferOwner, remove) → 501 NOT_IMPLEMENTED", async () => {
-  const uid = `${RUN}-p2`;
-  await commit([createWrite(`users/${uid}`, { displayName: "P2", accountStatus: "ACTIVE" })]);
-  const { deps } = makeTestDeps();
-  for (const action of ACTIONS.filter((a) => ["delete", "setRole", "transferOwner", "remove"].includes(a))) {
-    const r = await call(handleGroupManage(post(tokenOf(uid), { action }), deps));
-    assertEquals([action, r.status, r.body.error.code], [action, 501, "NOT_IMPLEMENTED"]);
   }
 });
 
@@ -509,5 +506,267 @@ T("join lặp → ALREADY_MEMBER / ALREADY_REQUESTED; approve bởi MEMBER → F
   const noGroup = await act(t, x, { action: "join", groupId: crypto.randomUUID() });
   assertEquals([noGroup.status, noGroup.body.error.code], [404, "GROUP_NOT_FOUND"]);
   assertEquals(t.notifications.sent.length, 0);
+  await assertGroupInvariant(id);
+});
+
+// ---------- T057: G10, G11, G12, G14, G15 (US5) ----------
+
+T("G10: ADMIN remove OWNER/ADMIN → FORBIDDEN; remove MEMBER → xóa members, tạo removals, hook, REMOVED", async () => {
+  const owner = await newUser("g10o");
+  const admin = await newUser("g10a");
+  const admin2 = await newUser("g10a2");
+  const m = await newUser("g10m");
+  const t = makeTestDeps();
+  const id = await seedGroup({ owner, admins: [admin, admin2], members: [m] });
+
+  for (const target of [owner, admin2]) {
+    const r = await act(t, admin, { action: "remove", groupId: id, userId: target });
+    assertEquals([r.status, r.body.error.code], [403, "FORBIDDEN"]);
+  }
+  assertEquals(t.notifications.sent.length, 0);
+
+  const r = await act(t, admin, { action: "remove", groupId: id, userId: m });
+  assertEquals(r.status, 200);
+  assertEquals(await get(memberPath(id, m)), null);
+  const removal = await get(removalPath(id, m));
+  assertEquals(removal?.userId, m);
+  assertEquals(removal?.removedBy, admin);
+  assert(removal?.removedAt instanceof Date);
+  assertEquals((await get(groupPath(id)))?.memberCount, 3);
+  assertEquals(t.hooks.calls.at(-1)?.change, { removed: [m] });
+  assertEquals(t.hooks.calls.at(-1)?.inTransaction, true);
+  assertEquals(t.notifications.recipients("REMOVED"), [m]);
+  await assertGroupInvariant(id);
+
+  // OWNER mời được ADMIN, không mời được chính mình; đích không phải thành viên → 404.
+  const own = await act(t, owner, { action: "remove", groupId: id, userId: owner });
+  assertEquals([own.status, own.body.error.code], [400, "INVALID_ARGUMENT"]);
+  const ghost = await act(t, owner, { action: "remove", groupId: id, userId: m });
+  assertEquals([ghost.status, ghost.body.error.code], [404, "MEMBER_NOT_FOUND"]);
+  const rAdmin = await act(t, owner, { action: "remove", groupId: id, userId: admin2 });
+  assertEquals(rAdmin.status, 200);
+  assertEquals((await get(removalPath(id, admin2)))?.removedBy, owner);
+  await assertGroupInvariant(id);
+});
+
+T("G11: MEMBER setRole/update/delete/approve/transferOwner/remove và ADMIN setRole → FORBIDDEN", async () => {
+  const owner = await newUser("g11o");
+  const admin = await newUser("g11a");
+  const m = await newUser("g11m");
+  const m2 = await newUser("g11m2");
+  const p = await newUser("g11p");
+  const t = makeTestDeps();
+  const id = await seedGroup({ owner, admins: [admin], members: [m, m2], pending: [p] });
+  const g = { groupId: id };
+  const bodies: Record<string, unknown>[] = [
+    { action: "setRole", ...g, userId: m2, role: "ADMIN" },
+    { action: "update", ...g, name: "Tên mới" },
+    { action: "delete", ...g, confirmName: "CLB Cầu Lông Test" },
+    { action: "approve", ...g, userId: p },
+    { action: "transferOwner", ...g, userId: m2 },
+    { action: "remove", ...g, userId: m2 },
+  ];
+  for (const b of bodies) {
+    const r = await act(t, m, b);
+    assertEquals([b.action, r.status, r.body.error.code], [b.action, 403, "FORBIDDEN"]);
+  }
+  for (const b of [bodies[0], bodies[2], bodies[4]]) {
+    const r = await act(t, admin, b);
+    assertEquals([b.action, r.status, r.body.error.code], [b.action, 403, "FORBIDDEN"]);
+  }
+  // Người ngoài nhóm → NOT_MEMBER.
+  const out = await act(t, p, { action: "setRole", ...g, userId: m, role: "ADMIN" });
+  assertEquals([out.status, out.body.error.code], [403, "NOT_MEMBER"]);
+  assertEquals((await get(memberPath(id, m2)))?.role, "MEMBER");
+  assertEquals((await get(groupPath(id)))?.status, "ACTIVE");
+  await assertGroupInvariant(id);
+});
+
+T("setRole: OWNER phong/gỡ ADMIN; đích là chính mình, role sai, không phải thành viên → lỗi", async () => {
+  const owner = await newUser("sr_o");
+  const m = await newUser("sr_m");
+  const out = await newUser("sr_x");
+  const t = makeTestDeps();
+  const id = await seedGroup({ owner, members: [m] });
+  const g = { action: "setRole", groupId: id };
+
+  assertEquals((await act(t, owner, { ...g, userId: m, role: "ADMIN" })).status, 200);
+  assertEquals((await get(memberPath(id, m)))?.role, "ADMIN");
+  assertEquals((await act(t, owner, { ...g, userId: m, role: "MEMBER" })).status, 200);
+  assertEquals((await get(memberPath(id, m)))?.role, "MEMBER");
+
+  const self = await act(t, owner, { ...g, userId: owner, role: "ADMIN" });
+  assertEquals([self.status, self.body.error.code], [400, "INVALID_ARGUMENT"]);
+  for (const role of ["OWNER", "x", undefined]) {
+    const r = await act(t, owner, { ...g, userId: m, role });
+    assertEquals([r.status, r.body.error.code], [400, "INVALID_ARGUMENT"]);
+  }
+  const nm = await act(t, owner, { ...g, userId: out, role: "ADMIN" });
+  assertEquals([nm.status, nm.body.error.code], [404, "MEMBER_NOT_FOUND"]);
+  assertEquals((await get(memberPath(id, owner)))?.role, "OWNER");
+  await assertGroupInvariant(id);
+});
+
+T("G12: transferOwner → ownerId đổi, người nhận OWNER, chủ cũ ADMIN; sau đó chủ cũ leave được", async () => {
+  const owner = await newUser("g12o");
+  const m = await newUser("g12m");
+  const t = makeTestDeps();
+  const id = await seedGroup({ owner, members: [m] });
+
+  const self = await act(t, owner, { action: "transferOwner", groupId: id, userId: owner });
+  assertEquals([self.status, self.body.error.code], [400, "INVALID_ARGUMENT"]);
+  const nm = await act(t, owner, { action: "transferOwner", groupId: id, userId: await newUser("g12x") });
+  assertEquals([nm.status, nm.body.error.code], [404, "MEMBER_NOT_FOUND"]);
+
+  const r = await act(t, owner, { action: "transferOwner", groupId: id, userId: m });
+  assertEquals(r.status, 200);
+  assertEquals((await get(groupPath(id)))?.ownerId, m);
+  assertEquals((await get(memberPath(id, m)))?.role, "OWNER");
+  assertEquals((await get(memberPath(id, owner)))?.role, "ADMIN");
+  await assertGroupInvariant(id);
+
+  // Chủ cũ không còn quyền chủ nhóm, nhưng rời nhóm được.
+  const again = await act(t, owner, { action: "transferOwner", groupId: id, userId: m });
+  assertEquals([again.status, again.body.error.code], [403, "FORBIDDEN"]);
+  assertEquals((await act(t, owner, { action: "leave", groupId: id })).status, 200);
+  assertEquals(await get(memberPath(id, owner)), null);
+  await assertGroupInvariant(id);
+});
+
+/** Storage giả ném lỗi ở lần `remove` đầu tiên (giả lập lỗi giữa chừng lúc dọn dữ liệu). */
+class FailOnceStorage extends FakeStorage {
+  failNext = true;
+  override remove(bucket: string, paths: string[]): Promise<number> {
+    if (this.failNext && paths.length > 0) {
+      this.failNext = false;
+      return Promise.reject(new Error("storage tạm thời lỗi"));
+    }
+    return super.remove(bucket, paths);
+  }
+}
+
+async function assertGroupGone(id: string, postIds: string[]) {
+  assertEquals(await get(groupPath(id)), null);
+  const parent = groupPath(id);
+  for (const c of ["members", "joinRequests", "removals", "posts"]) {
+    assertEquals((await query(c, [], { parent })).length, 0, `còn ${c}`);
+  }
+  const left = await query("attendees", [{ field: "groupId", op: "EQUAL", value: id }], { allDescendants: true });
+  assertEquals(left.length, 0, "còn attendees");
+  for (const p of postIds) assertEquals(await get(postPath(id, p)), null);
+}
+
+T(
+  "G14: delete sai tên → CONFIRM_NAME_MISMATCH; đúng tên → dọn hết; lỗi giữa chừng rồi gọi lại → chạy tiếp",
+  async () => {
+    const owner = await newUser("g14o");
+    const m = await newUser("g14m");
+    const p = await newUser("g14p");
+    const rm = await newUser("g14r");
+    const storage = new FailOnceStorage();
+    const t = makeTestDeps({ storage });
+    const id = await seedGroup({ owner, members: [m], pending: [p], removed: [rm], name: "CLB Xóa Thử" });
+    const post1 = await seedPost(id, { authorId: m });
+    const post2 = await seedPost(id, { authorId: owner, type: "EVENT", attendees: [m, owner] });
+    const post3 = await seedPost(id, { authorId: owner, type: "EVENT", attendees: [m] });
+    storage.put("group-media", `${id}/${post1}/0.jpg`, `${id}/${post2}/0.jpg`, `${id}/${post3}/0.jpg`);
+    storage.put("group-avatars", `${id}/avatar.jpg`);
+    storage.put("group-media", "khac/p/0.jpg");
+
+    const wrong = await act(t, owner, { action: "delete", groupId: id, confirmName: "CLB Xoa Thu" });
+    assertEquals([wrong.status, wrong.body.error.code], [400, "CONFIRM_NAME_MISMATCH"]);
+    const missing = await act(t, owner, { action: "delete", groupId: id });
+    assertEquals([missing.status, missing.body.error.code], [400, "CONFIRM_NAME_MISMATCH"]);
+    assertEquals((await get(groupPath(id)))?.status, "ACTIVE");
+    assertEquals(t.hooks.calls.length, 0);
+
+    // Lần 1: storage lỗi → 500, nhóm đã DELETED (không còn trong tìm kiếm), hook deleted đã gọi.
+    const first = await act(t, owner, { action: "delete", groupId: id, confirmName: "  CLB Xóa Thử " });
+    assertEquals(first.status, 500);
+    assertEquals((await get(groupPath(id)))?.status, "DELETED");
+    assertEquals(t.hooks.calls.map((c) => c.change), [{ deleted: true }]);
+    // Người khác không chạy tiếp phần dọn được (nhóm xem như không còn).
+    const other = await act(t, m, { action: "delete", groupId: id, confirmName: "CLB Xóa Thử" });
+    assertEquals([other.status, other.body.error.code], [404, "GROUP_NOT_FOUND"]);
+
+    // Lần 2: chạy tiếp tới hết.
+    const second = await act(t, owner, { action: "delete", groupId: id, confirmName: "CLB Xóa Thử" });
+    assertEquals([second.status, second.body], [200, { deleted: true }]);
+    await assertGroupGone(id, [post1, post2, post3]);
+    for (const pid of [post1, post2, post3]) assertEquals(storage.has("group-media", `${id}/${pid}/0.jpg`), false);
+    assertEquals(storage.has("group-avatars", `${id}/avatar.jpg`), false);
+    assert(storage.has("group-media", "khac/p/0.jpg"), "không được xóa file của nhóm khác");
+    assertEquals(t.hooks.calls.length, 1, "hook deleted chỉ gọi một lần");
+
+    // Gọi lại khi nhóm đã biến mất → 404.
+    const gone = await act(t, owner, { action: "delete", groupId: id, confirmName: "CLB Xóa Thử" });
+    assertEquals([gone.status, gone.body.error.code], [404, "GROUP_NOT_FOUND"]);
+  },
+);
+
+T("G14b: delete trọn vẹn một lần với nhiều bài sự kiện", async () => {
+  const owner = await newUser("g14bo");
+  const m = await newUser("g14bm");
+  const t = makeTestDeps();
+  const id = await seedGroup({ owner, members: [m], name: "Nhóm nhiều bài" });
+  const posts: string[] = [];
+  for (let i = 0; i < 5; i++) {
+    posts.push(await seedPost(id, { authorId: m, type: "EVENT", attendees: [m, owner] }));
+  }
+  const r = await act(t, owner, { action: "delete", groupId: id, confirmName: "Nhóm nhiều bài" });
+  assertEquals([r.status, r.body], [200, { deleted: true }]);
+  await assertGroupGone(id, posts);
+});
+
+T("G15: leave → bỏ khỏi sự kiện sắp tới (attendeeCount -1), giữ sự kiện đã qua", async () => {
+  const owner = await newUser("g15o");
+  const m = await newUser("g15m");
+  const other = await newUser("g15x");
+  const t = makeTestDeps();
+  const id = await seedGroup({ owner, members: [m, other] });
+  const upcoming = await seedPost(id, { authorId: owner, type: "EVENT", attendees: [m, other] });
+  const upcoming2 = await seedPost(id, { authorId: owner, type: "EVENT", attendees: [m] });
+  const past = await seedPost(id, {
+    authorId: owner,
+    type: "EVENT",
+    eventAt: new Date(Date.now() - 24 * 3600_000),
+    attendees: [m, other],
+  });
+  // Nhóm khác cùng người, sự kiện sắp tới: không bị đụng.
+  const idB = await seedGroup({ owner, members: [m] });
+  const otherGroupEvent = await seedPost(idB, { authorId: owner, type: "EVENT", attendees: [m] });
+
+  assertEquals((await act(t, m, { action: "leave", groupId: id })).status, 200);
+  assertEquals(await get(attendeePath(id, upcoming, m)), null);
+  assertEquals(await get(attendeePath(id, upcoming2, m)), null);
+  assertEquals((await get(postPath(id, upcoming)))?.attendeeCount, 1);
+  assertEquals((await get(postPath(id, upcoming2)))?.attendeeCount, 0);
+  assert(await get(attendeePath(id, upcoming, other)));
+  assert(await get(attendeePath(id, past, m)), "sự kiện đã qua giữ nguyên");
+  assertEquals((await get(postPath(id, past)))?.attendeeCount, 2);
+  assert(await get(attendeePath(idB, otherGroupEvent, m)));
+  await assertGroupInvariant(id);
+  await assertGroupInvariant(idB);
+});
+
+T("G15: remove → bỏ khỏi sự kiện sắp tới, giữ sự kiện đã qua", async () => {
+  const owner = await newUser("g15ro");
+  const m = await newUser("g15rm");
+  const t = makeTestDeps();
+  const id = await seedGroup({ owner, members: [m] });
+  const upcoming = await seedPost(id, { authorId: owner, type: "EVENT", attendees: [m, owner] });
+  const past = await seedPost(id, {
+    authorId: owner,
+    type: "EVENT",
+    eventAt: new Date(Date.now() - 3600_000),
+    attendees: [m],
+  });
+
+  assertEquals((await act(t, owner, { action: "remove", groupId: id, userId: m })).status, 200);
+  assertEquals(await get(attendeePath(id, upcoming, m)), null);
+  assertEquals((await get(postPath(id, upcoming)))?.attendeeCount, 1);
+  assert(await get(attendeePath(id, past, m)));
+  assertEquals((await get(postPath(id, past)))?.attendeeCount, 1);
+  assert(await get(removalPath(id, m)));
   await assertGroupInvariant(id);
 });
