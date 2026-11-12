@@ -278,7 +278,7 @@ Task của spec khác ghi là `010-T###`, `070-T###`, `081-T###`.
 
 ### Tests cho User Story 6 ⚠️ viết trước, phải fail
 
-- [ ] T064 [P] [US6] Bổ sung vào `FN/group-post/index.test.ts`:
+- [X] T064 [P] [US6] Bổ sung vào `FN/group-post/index.test.ts`:
   - **P9:** quản trị viên `hide` → `HIDDEN`, `hiddenBy = GROUP`, `hiddenByUid`; `unhide` → `VISIBLE`; bài `hiddenBy = SYSTEM` → `unhide` trả `403 HIDDEN_BY_SYSTEM`; thành viên thường `hide` → `FORBIDDEN`;
   - **P10:** `report` lần 1 → `201`, document `reports/POST_{groupId}_{postId}_{uid}` có `targetType = POST`, `targetPath`, `reason`, `status = OPEN`, `action = NONE`; lần 2 → `409 ALREADY_REPORTED`; bài của mình → `OWN_POST`; không phải thành viên → `NOT_MEMBER`; `reason = OTHER` không có `detail` hoặc `detail` 501 ký tự → `INVALID_ARGUMENT`;
   - **P11:** nhóm `LOCKED`: `group-post create`, `group-manage join` → `423 GROUP_LOCKED`; `leave` vẫn thành công.
@@ -286,7 +286,7 @@ Task của spec khác ghi là `010-T###`, `070-T###`, `081-T###`.
 
 ### Implementation cho User Story 6
 
-- [ ] T066 [US6] Cài `hide`, `unhide`, `report` trong `FN/group-post/index.ts` theo [research R7](research.md#r7-ẩn-bài-phân-biệt-nhóm-ẩn-và-admin-hệ-thống-ẩn-fr-019-ac-64) và [R14](research.md#r14-báo-cáo-bài-đăng-fr-018): `report` ghi `reports/{reportId}` bằng `create` có điều kiện "chưa tồn tại" (`currentDocument.exists = false`) để chống trùng. Kiểm tra `loadGroupForWrite` (nhóm `LOCKED` → `GROUP_LOCKED`) ở mọi action ghi của cả hai function, trừ `leave`. Sau đó T064 phải xanh
+- [X] T066 [US6] Cài `hide`, `unhide`, `report` trong `FN/group-post/index.ts` theo [research R7](research.md#r7-ẩn-bài-phân-biệt-nhóm-ẩn-và-admin-hệ-thống-ẩn-fr-019-ac-64) và [R14](research.md#r14-báo-cáo-bài-đăng-fr-018): `report` ghi `reports/{reportId}` bằng `create` có điều kiện "chưa tồn tại" (`currentDocument.exists = false`) để chống trùng. Kiểm tra `loadGroupForWrite` (nhóm `LOCKED` → `GROUP_LOCKED`) ở mọi action ghi của cả hai function, trừ `leave`. Sau đó T064 phải xanh
 - [ ] T067 [US6] Cài `hide`, `unhide`, `report` trong `CM/data/FirestorePostRepository.kt`; UseCase `CM/domain/usecase/ModeratePost.kt`, `ReportPost.kt`
 - [ ] T068 [US6] Cài `CM/ui/report/ReportPostViewModel.kt`, `CM/ui/report/ReportPostBottomSheet.kt` + `RES/layout/bottom_sheet_report_post.xml` (5 lý do, ô mô tả khi "Khác"; wireframe `ui/09_community-chat_buoc3_bao-cao-bai-dang.png`); menu bài trong `item_post.xml`/`item_event.xml` theo `GroupPermissions`: "Báo cáo" (không có với bài của mình, AC 6.5), "Ẩn bài"/"Hiện lại" cho chủ nhóm/quản trị viên (ẩn "Hiện lại" khi `hiddenBy = SYSTEM`); nhóm `LOCKED` hiện banner "Nhóm đã bị tạm khóa" và ẩn nút đăng bài, tạo sự kiện. Cho T065 xanh
 
@@ -296,7 +296,7 @@ Task của spec khác ghi là `010-T###`, `070-T###`, `081-T###`.
 
 ## Phase 9: Polish & Cross-Cutting
 
-- [ ] T069 Cài `anonymizeCommunityGroups(uid)` trong `FN/_shared/groups.ts` theo [research R16](research.md#r16-chủ-nhóm-hoặc-thành-viên-xóa-tài-khoản-edge-cases-spec-011) kèm test **M3** trong `FN/_shared/groups.test.ts`: bài của người đó `authorSnapshot = null`, `authorDeleted = true`; mỗi nhóm người đó là thành viên chạy như `leave`; nếu là chủ nhóm thì chuyển quyền cho quản trị viên tham gia lâu nhất, không có thì thành viên tham gia lâu nhất, không còn ai thì xóa nhóm như T060; xóa `joinRequests/{uid}`; bỏ tham gia sự kiện chưa diễn ra. Báo A gọi hàm này trong `delete-account`
+- [X] T069 Cài `anonymizeCommunityGroups(uid)` trong `FN/_shared/groups.ts` theo [research R16](research.md#r16-chủ-nhóm-hoặc-thành-viên-xóa-tài-khoản-edge-cases-spec-011) kèm test **M3** trong `FN/_shared/groups.test.ts`: bài của người đó `authorSnapshot = null`, `authorDeleted = true`; mỗi nhóm người đó là thành viên chạy như `leave`; nếu là chủ nhóm thì chuyển quyền cho quản trị viên tham gia lâu nhất, không có thì thành viên tham gia lâu nhất, không còn ai thì xóa nhóm như T060; xóa `joinRequests/{uid}`; bỏ tham gia sự kiện chưa diễn ra. Báo A gọi hàm này trong `delete-account`
 - [ ] T070 [P] Espresso `ATEST/CreateGroupAndEventFlowTest.kt` (Emulator + seed): tạo nhóm → mở trang nhóm → tạo sự kiện → tài khoản khác tham gia → thấy "1/N người tham gia"
 - [ ] T071 [P] Kiểm tra 4 trạng thái (loading, content, empty, error + "Thử lại") trên 10 màn hình/bottom sheet (FR-020); mất mạng không crash, giữ nội dung đang soạn; chế độ tối; bố cục `w600dp` (`RES/layout-w600dp/` nếu cần, bảng tin tối đa 600dp chiều ngang); `contentDescription` cho ảnh và icon, vùng chạm ≥ 48dp
 - [ ] T072 [P] Cập nhật `docs/design/database/README.md` theo [danh sách cuối data-model.md](data-model.md#danh-sách-thay-đổi-cần-đưa-vào-docsdesigndatabasereadmemd) (mục 4.10, 4.12, 5, 6, 7, 8, 8a), **sau khi D đồng ý**
