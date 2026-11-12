@@ -222,7 +222,7 @@ Task của spec khác ghi là `010-T###`, `070-T###`, `081-T###`.
 
 ### Tests cho User Story 4 ⚠️ viết trước, phải fail
 
-- [ ] T051 [P] [US4] Bổ sung vào `FN/group-post/index.test.ts`:
+- [X] T051 [P] [US4] Bổ sung vào `FN/group-post/index.test.ts`:
   - **P5:** `EVENT` thiếu `eventTitle` hoặc `eventLocation`, `eventTitle` 101 ký tự, `eventLocation` 201 ký tự, `eventAt` quá khứ, `expectedCount` 1 và 101 → `INVALID_ARGUMENT`; hợp lệ → `attendeeCount = 0`, gửi `EVENT_CREATED` cho mọi thành viên trừ người đăng;
   - **P6:** **20 thành viên gọi `attend` song song, lặp 10 lần** → `attendeeCount` = 20, đúng 20 document `attendees`; 1 người bấm `attend` 5 lần → tính 1; in `runs=10 expected=20 actual=20 duplicates=0` (SC-003, FR-016);
   - **P7:** `attend` khi `attendeeCount == expectedCount` → thành công (`attendeeCount > expectedCount`); sự kiện đã qua → `409 EVENT_PAST`; không phải thành viên → `NOT_MEMBER`;
@@ -232,8 +232,8 @@ Task của spec khác ghi là `010-T###`, `070-T###`, `081-T###`.
 
 ### Implementation cho User Story 4
 
-- [ ] T053 [US4] Cài nhánh `EVENT` trong `create`, `update`, `delete` của `FN/group-post/index.ts` theo [data-model mục 5–6](data-model.md#5-groupsgroupidpostspostid): `eventTitle` 1–100 ký tự, `eventAt` > giờ server, `eventLocation` 1–200 ký tự, `expectedCount` 2–100, `content` (mô tả) 0–2000; `attendeeCount = 0`; sửa giờ thì cập nhật `eventAt` của mọi `attendees` trong cùng transaction; thông báo `EVENT_CREATED`, `EVENT_UPDATED`, `EVENT_DELETED` sau commit
-- [ ] T054 [US4] Cài `attend`, `unattend` trong `FN/group-post/index.ts`: trong `runTransaction` đọc bài và `attendees/{uid}`; bài phải `EVENT`, `VISIBLE`, `eventAt > now` (`EVENT_PAST`); đã có thì trả kết quả cũ; ghi `attendees/{uid}` (`userId`, `groupId`, `postId`, `eventAt`, `userSnapshot`, `joinedAt`) và `attendeeCount ± 1` trên document bài. Sau đó T051 phải xanh (**P6 10/10 lần**)
+- [X] T053 [US4] Cài nhánh `EVENT` trong `create`, `update`, `delete` của `FN/group-post/index.ts` theo [data-model mục 5–6](data-model.md#5-groupsgroupidpostspostid): `eventTitle` 1–100 ký tự, `eventAt` > giờ server, `eventLocation` 1–200 ký tự, `expectedCount` 2–100, `content` (mô tả) 0–2000; `attendeeCount = 0`; sửa giờ thì cập nhật `eventAt` của mọi `attendees` trong cùng transaction; thông báo `EVENT_CREATED`, `EVENT_UPDATED`, `EVENT_DELETED` sau commit
+- [X] T054 [US4] Cài `attend`, `unattend` trong `FN/group-post/index.ts`: trong `runTransaction` đọc bài và `attendees/{uid}`; bài phải `EVENT`, `VISIBLE`, `eventAt > now` (`EVENT_PAST`); đã có thì trả kết quả cũ; ghi `attendees/{uid}` (`userId`, `groupId`, `postId`, `eventAt`, `userSnapshot`, `joinedAt`) và `attendeeCount ± 1` trên document bài. Sau đó T051 phải xanh (**P6 10/10 lần**)
 - [ ] T055 [US4] Cài `attend`, `unattend`, `observeAttendees` trong `CM/data/FirestorePostRepository.kt` và UseCase `CM/domain/usecase/ToggleAttendance.kt` (cập nhật lạc quan, lỗi thì hoàn lại)
 - [ ] T056 [US4] Thêm `RES/layout/item_event.xml` vào `PostAdapter` (nhãn "Sự kiện", tiêu đề, thời gian theo `Asia/Ho_Chi_Minh`, địa điểm, "N/M người tham gia", nhãn "Vượt số dự kiến"/"Đã diễn ra", nút "Tham gia sự kiện"/"Bỏ tham gia" ẩn khi đã diễn ra); trường sự kiện trong `PostComposerFragment` (chọn ngày giờ, địa điểm, số dự kiến); nút "Tạo sự kiện" trên trang nhóm; `CM/ui/event/EventAttendeesBottomSheet.kt` + `RES/layout/bottom_sheet_event_attendees.xml`. Cho T052 xanh
 
