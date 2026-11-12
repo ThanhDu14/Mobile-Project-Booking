@@ -16,7 +16,7 @@ import {
   userSnapshot,
 } from "../_shared/groups.ts";
 import { UUID } from "../_shared/dropin-tx.ts";
-import { asNumber, inGroupTx, requireId } from "./common.ts";
+import { asNumber, inGroupTx, requireId } from "../_shared/group-tx.ts";
 
 const ok = () => Response.json({ ok: true });
 

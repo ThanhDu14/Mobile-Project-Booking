@@ -1,58 +1,10 @@
-// Phần dùng chung của các action `group-manage` (spec 090): kiểm tra tham số, chạy transaction có xếp hàng theo
-// nhóm, và dạng JSON trả về của `group`.
-import { HttpError } from "../_shared/auth.ts";
-import { createKeyedSerializer, runWithBackoff, UUID } from "../_shared/dropin-tx.ts";
-import type { FirestoreTransaction, Write } from "../_shared/firestore.ts";
-import type { GroupDeps, GroupDoc, GroupVisibility } from "../_shared/groups.ts";
-
-export const invalid = (message: string) => new HttpError(400, "INVALID_ARGUMENT", message);
-
-/** Hàng đợi theo `groupId` trong một isolate: các request cùng nhóm chạy lần lượt để giảm tranh chấp (giống register-drop-in). */
-const isolateSerializer = createKeyedSerializer();
-
-/**
- * Chạy `fn` trong transaction (thử lại khi ABORTED, hết lượt thì 503 BUSY), xếp hàng theo `groupId`.
- * `tx` đưa cho `fn` chỉ ĐỌC thật; mọi `tx.write` (kể cả của hook `onMembershipChanged`, spec 091) được gom vào
- * `writes` rồi commit một lần ở cuối, nên nằm trong cùng lần commit.
- */
-export function inGroupTx<T>(
-  deps: GroupDeps,
-  groupId: string,
-  fn: (tx: FirestoreTransaction, writes: Write[]) => Promise<T>,
-): Promise<T> {
-  return isolateSerializer(
-    groupId,
-    () =>
-      runWithBackoff(deps, async (raw) => {
-        const writes: Write[] = [];
-        const tx: FirestoreTransaction = {
-          id: raw.id,
-          get: (path) => raw.get(path),
-          query: (collectionId, filters, opts) => raw.query(collectionId, filters, opts),
-          write: (w) => {
-            writes.push(w);
-          },
-        };
-        const result = await fn(tx, writes);
-        return { result, writes };
-      }),
-  );
-}
+// Phần riêng của `group-manage` (spec 090): kiểm tra tham số của nhóm, ảnh đại diện và dạng JSON trả về của `group`.
+// Phần dùng chung với `group-post` (inGroupTx, requireId, ...) nằm ở `_shared/group-tx.ts`.
+import type { FirestoreTransaction } from "../_shared/firestore.ts";
+import { asDate, asNumber, invalid } from "../_shared/group-tx.ts";
+import type { GroupDoc, GroupVisibility } from "../_shared/groups.ts";
 
 // ---------- Kiểm tra tham số ----------
-
-export function requireId(body: Record<string, unknown>, key: string): string {
-  const v = body[key];
-  const s = typeof v === "string" ? v.trim() : "";
-  if (!s || s.includes("/")) throw invalid(`Thiếu hoặc sai ${key}`);
-  return s;
-}
-
-export function requireRequestId(body: Record<string, unknown>): string {
-  const v = body.requestId;
-  if (typeof v !== "string" || !UUID.test(v)) throw invalid("requestId phải là UUID");
-  return v.toLowerCase();
-}
 
 const len = (s: string) => Array.from(s).length;
 
@@ -107,10 +59,6 @@ export function parseAvatarExt(body: Record<string, unknown>): string {
 }
 
 // ---------- Dạng JSON trả về ----------
-
-const asDate = (v: unknown): Date | null => (v instanceof Date && !Number.isNaN(v.getTime()) ? v : null);
-export const asNumber = (v: unknown, fallback = 0): number =>
-  typeof v === "number" && Number.isFinite(v) ? v : fallback;
 
 /**
  * `group` trong response: `id` + các trường công khai của nhóm; `Timestamp` thành chuỗi ISO 8601 (UTC).

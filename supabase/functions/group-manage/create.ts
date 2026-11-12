@@ -14,22 +14,18 @@ import {
   userSnapshot,
 } from "../_shared/groups.ts";
 import { nameKeywords } from "../_shared/keywords.ts";
+import { asNumber, inGroupTx, invalid, requireId, requireRequestId } from "../_shared/group-tx.ts";
 import {
-  asNumber,
   assertDistrictExists,
   AVATAR_BUCKET,
   AVATAR_EXTS,
   avatarObjectPath,
   groupJson,
-  inGroupTx,
-  invalid,
   parseAvatarExt,
   parseDescription,
   parseDistrictId,
   parseName,
   parseVisibility,
-  requireId,
-  requireRequestId,
 } from "./common.ts";
 
 /** Mỗi chủ nhóm tối đa 5 nhóm `ACTIVE`/`LOCKED` (R4). */
