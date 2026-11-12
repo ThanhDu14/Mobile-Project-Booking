@@ -179,7 +179,7 @@ Sau khi buổi kết thúc, lượt đã check-in hiện nút "Đánh giá buổ
 
 **Lịch sử**
 
-- **FR-019**: Người chơi PHẢI xem được "Lượt vãng lai của tôi" gồm tab "Sắp tới" (theo thời gian bắt đầu gần nhất) và "Đã qua" (mới nhất trước, tải theo trang); mỗi lượt đã qua có một nhãn kết quả: "Đã tham gia", "Đã hủy", "Buổi bị hủy" hoặc "Không đến".
+- **FR-019**: Người chơi PHẢI xem được "Lượt vãng lai của tôi" gồm tab "Sắp tới" (theo thời gian bắt đầu gần nhất; lượt ở đây tới khi buổi kết thúc, kể cả lúc buổi đang diễn ra) và "Đã qua" (mới nhất trước, tải theo trang); mỗi lượt đã qua có một nhãn kết quả: "Đã tham gia", "Đã hủy", "Buổi bị hủy" hoặc "Không đến".
 - **FR-020**: Khi chủ sân thay đổi hoặc hủy buổi, lượt của người chơi PHẢI hiện thông tin mới nhất kèm nhãn "Buổi đã thay đổi" hoặc "Buổi đã bị hủy"; lượt của buổi bị hủy được hoàn 100% (giả lập).
 - **FR-021**: Đăng ký vãng lai của một người chỉ người đó, chủ cơ sở mở buổi và admin đọc được; người chơi khác chỉ thấy số chỗ còn lại, không thấy danh sách hay tên, ảnh của người đăng ký (kể cả khi cùng đăng ký buổi đó). Chi tiết buổi không có phần "Người tham gia"; giao lưu giữa người chơi thuộc nhóm 09.
 

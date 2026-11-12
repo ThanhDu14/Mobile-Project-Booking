@@ -17,7 +17,8 @@ import com.example.booking_app.feature.dropin.domain.model.DropInError
 import com.example.booking_app.feature.dropin.domain.model.DropInRegistration
 import com.example.booking_app.feature.dropin.domain.model.Page
 import com.example.booking_app.feature.dropin.domain.model.RegisterRequest
-import com.example.booking_app.feature.dropin.domain.model.RegistrationStatus
+import com.example.booking_app.feature.dropin.domain.model.UPCOMING_REGISTRATION_STATUSES
+import com.example.booking_app.feature.dropin.domain.model.isUpcomingAt
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FieldPath
@@ -30,6 +31,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOf
+import java.time.Duration
 import java.time.Instant
 import java.util.Date
 import javax.inject.Inject
@@ -131,9 +133,10 @@ class DropInRegistrationRepositoryImpl @Inject constructor(
 
     /**
      * T045 (research R7): collection group `registrations` `where userId == uid`, `status in [REGISTERED, WAITLISTED]`,
-     * `sessionStartAt >= now`, `orderBy sessionStartAt`. Mốc `now` lấy lúc bắt đầu nghe. Index
-     * `(userId, status, sessionStartAt)` có sẵn trong `firestore.indexes.json`. Cũng là [DropInRegistrationReader]
-     * cho nhóm khác.
+     * `sessionStartAt >= now - 24h`, `orderBy sessionStartAt`, rồi giữ lượt chưa kết thúc ([isUpcomingAt]) để buổi
+     * đang diễn ra vẫn ở "Sắp tới". Lùi 24 giờ thay vì lọc theo `sessionEndAt` vì trường này có thể thiếu và để
+     * dùng lại index `(userId, status, sessionStartAt)` có sẵn trong `firestore.indexes.json`. Mốc `now` lấy lúc
+     * bắt đầu nghe. Cũng là [DropInRegistrationReader] cho nhóm khác.
      */
     override fun observeUpcoming(uid: String): Flow<List<DropInRegistration>> {
         if (uid.isBlank()) return flowOf(emptyList())
@@ -142,13 +145,17 @@ class DropInRegistrationRepositoryImpl @Inject constructor(
             val registration = firestore.collectionGroup(COLLECTION_REGISTRATIONS)
                 .whereEqualTo(FIELD_USER_ID, uid)
                 .whereIn(FIELD_STATUS, UPCOMING_STATUSES)
-                .whereGreaterThanOrEqualTo(FIELD_SESSION_START_AT, now.toTimestamp())
+                .whereGreaterThanOrEqualTo(FIELD_SESSION_START_AT, now.minus(ONGOING_LOOKBACK).toTimestamp())
                 .orderBy(FIELD_SESSION_START_AT, Query.Direction.ASCENDING)
                 .addSnapshotListener { snapshot, error ->
                     when {
                         error?.code == FirebaseFirestoreException.Code.PERMISSION_DENIED -> trySend(emptyList())
                         error != null -> close(error.toAppError().toDropInError())
-                        else -> trySend(snapshot?.documents.orEmpty().mapNotNull { it.toRegistration() })
+                        else -> trySend(
+                            snapshot?.documents.orEmpty()
+                                .mapNotNull { it.toRegistration() }
+                                .filter { it.isUpcomingAt(now) },
+                        )
                     }
                 }
             awaitClose { registration.remove() }
@@ -171,7 +178,7 @@ class DropInRegistrationRepositoryImpl @Inject constructor(
             // Truy vấn collection group: giá trị documentId của con trỏ phải là đường dẫn đầy đủ.
             cursor?.let { query = query.startAfter(it.startAt.toTimestamp(), it.id) }
             val docs = query.limit(Page.PAGE_SIZE.toLong()).get().awaitWithTimeout().documents
-            val items = docs.mapNotNull { it.toRegistration() }.filterNot { it.isUpcoming(now) }
+            val items = docs.mapNotNull { it.toRegistration() }.filterNot { it.isUpcomingAt(now) }
             val next = docs.lastOrNull()
                 ?.takeIf { docs.size >= Page.PAGE_SIZE }
                 ?.let { last ->
@@ -183,12 +190,6 @@ class DropInRegistrationRepositoryImpl @Inject constructor(
         } catch (e: Exception) {
             Result.failure(e.toDropInError())
         }
-    }
-
-    /** Lượt nằm ở tab "Sắp tới" (cùng điều kiện với [observeUpcoming]). */
-    private fun DropInRegistration.isUpcoming(now: Instant): Boolean {
-        val start = sessionStartAt ?: return false
-        return status.name in UPCOMING_STATUSES && !start.isBefore(now)
     }
 
     /** Document trong collection group: ID buổi là document cha của `registrations`. */
@@ -205,6 +206,9 @@ class DropInRegistrationRepositoryImpl @Inject constructor(
         const val FIELD_USER_ID = "userId"
         const val FIELD_STATUS = "status"
         const val FIELD_SESSION_START_AT = "sessionStartAt"
-        val UPCOMING_STATUSES = listOf(RegistrationStatus.REGISTERED.name, RegistrationStatus.WAITLISTED.name)
+        val UPCOMING_STATUSES = UPCOMING_REGISTRATION_STATUSES.map { it.name }
+
+        /** Buổi vãng lai dài không quá 24 giờ, nên lùi chừng này là đủ để lấy buổi đang diễn ra. */
+        val ONGOING_LOOKBACK: Duration = Duration.ofHours(24)
     }
 }
