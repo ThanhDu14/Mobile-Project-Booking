@@ -43,7 +43,7 @@ object OwnerDropInDraftValidation {
     fun validate(draft: OwnerDropInDraft, registeredCount: Int = 0): List<String> = buildList {
         if (draft.venueId.isBlank()) add("Chọn cơ sở")
         if (draft.courtIds.isEmpty() || draft.courtIds.any(String::isBlank)) add("Chọn ít nhất một sân")
-        if (draft.level.isBlank()) add("Chọn trình độ")
+        if (draft.level !in setOf("BEGINNER", "INTERMEDIATE", "ADVANCED")) add("Chọn trình độ hợp lệ")
         addAll(DropInValidation.validate(DropInEditableInput(draft.capacity, draft.pricePerPersonVnd), registeredCount).map { it.message })
         val start = runCatching { java.time.LocalTime.parse(draft.startTime) }.getOrNull()
         val end = runCatching { java.time.LocalTime.parse(draft.endTime) }.getOrNull()

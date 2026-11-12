@@ -12,6 +12,18 @@
 
 ## Contract request
 
+### Owner QR/mã vé check-in — tích hợp schema 080
+
+`POST /functions/v1/owner-checkin-dropin-registration` dùng Firebase ID token và body:
+
+```json
+{ "venueId": "<venueId>", "sessionId": "<sessionId>", "credential": "<qrToken hoặc ticketCode>" }
+```
+
+QR của app 080 chứa trực tiếp `qrToken` (43 ký tự base64url từ `newQrToken()`); nhập tay dùng `ticketCode` dạng `DI-XXXXXXXX` từ `newTicketCode()`. Server trim khoảng trắng; mã vé không phân biệt hoa/thường, token QR giữ nguyên hoa/thường. Không chấp nhận UID làm credential.
+
+Sau khi xác minh owner được duyệt, quyền sở hữu venue và quan hệ session/venue, server tìm đúng một đăng ký theo `qrToken` hoặc `ticketCode` trong `dropInSessions/{sessionId}/registrations`. Đọc trạng thái và chuyển `REGISTERED` → `CHECKED_IN` trong cùng transaction; từ chối mã sai, khác buổi, đã dùng, đã hủy, đang chờ hoặc buổi không còn hoạt động. Response thành công gồm `success`, `registrationId` (UID tìm được), `sessionId`, `status`, `checkedInAt`; không trả QR/token/mã vé. Không thay đổi việc phát hành vé của C.
+
 ### Authoritative data model
 
 Please reconcile README §4.9 with 080/081 contracts, implementations, fixtures and tests. Confirm session status, registration status, waitlist order/fields, cancellation/refund behavior and capacity occupancy definition. Session fields should reuse existing schema: owner/venue/court IDs, date and times, capacity, server-managed registered count, price and status. Do not add skill/note fields unless the schema owner approves them.

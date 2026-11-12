@@ -49,6 +49,7 @@ Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 | 43  | 2026-11-06 | Hoàn thiện toàn diện, bảo mật, đối chiếu ranh giới hợp đồng và đo lường SLA SC-006 (Phase 7, Tasks T051–T054) Feature 120 bằng `$speckit-implement`                                                              | 12     |
 | 44  | 2026-11-06 | Tái cấu trúc UI Admin theo 12 wireframe artboards `specs/120-admin/ui/`, thiết lập 5 tab Bottom Navigation, loại bỏ hoàn toàn mock data và nối dữ liệu thực với Firestore & Supabase                             | 12     |
 | 45  | 2026-11-06 | Kiểm thử toàn diện và sửa lỗi Feature 110, 111, 112, 120; nộp hồ sơ chủ sân thực tế trên thiết bị; chuẩn hóa UI Đang chờ duyệt theo wireframe `specs/110-owner-onboarding/ui/11_court-owner_buoc3_cho-duyet.png` | 11, 12 |
+| 46  | 2026-11-12 | Đồng bộ owner/drop-in Feature 112 với schema và helpers Feature 080 theo bàn giao của C; bổ sung owner-update-session, hoàn tiền khi hủy và phân giải QR/mã vé để check-in | 10, 11 |
 
 ---
 
@@ -4669,5 +4670,102 @@ Kiểm thử toàn diện lại các tính năng thuộc Feature 110, 111, 112 v
   - Gửi biểu mẫu đăng ký chủ sân qua Edge Function thành công, nhận phản hồi trạng thái `PENDING`.
   - Màn hình `OwnerApplicationStatusFragment` hiển thị trực tiếp trên thiết bị khớp 100% về mặt thị giác với wireframe mẫu `11_court-owner_buoc3_cho-duyet.png`.
 - **Tuân thủ cam kết**: Tuyệt đối không commit, không push.
+
+---
+
+## Mục 46: Đồng bộ owner/drop-in Feature 112 theo bàn giao của C và sửa phân giải QR/mã vé để check-in
+
+| Trường                   | Nội dung |
+| ------------------------ | -------- |
+| Ngày                     | 2026-11-12 |
+| Người thực hiện          | Minh Nhựt |
+| Nhóm tính năng liên quan | 11 – Vận hành chủ sân (spec `specs/112-owner-operations`), tích hợp Feature 080/081; 10 – Thông báo (chốt envelope `DROPIN_REGISTERED` của spec `specs/100-notification`) |
+| Công cụ AI               | Codex (GPT-6) |
+| Mục đích                 | Rà soát mã owner và sửa đúng các mục C bàn giao: schema session, đường dẫn đăng ký, hoàn tiền khi hủy, cập nhật session qua Edge Function, ngày trong test booking và envelope thông báo; sau đó sửa riêng luồng phân giải QR/mã vé thành UID theo yêu cầu bổ sung. |
+| Nhánh Git                | `feature/120-admin-implement` |
+
+### Prompt đã dùng
+
+**Yêu cầu rà soát và sửa theo bàn giao của C**:
+
+```text
+Đây là C gửi "D ơi, nhánh feature/080-drop-in-session đã xong US1, US2 của spec 080 (Rules, index, register-drop-in, _shared/dropin.ts, app). D pull về sửa phần của D giúp mình nhé:
+
+1. owner-create-session: ghi startAt/endAt kiểu Timestamp, courtIds (mảng), ownerId, districtId, và gọi deriveSessionFields() để có timeSlot, venueSnapshot. Level chỉ BEGINNER/INTERMEDIATE/ADVANCED.
+
+2. Check-in và roster: đọc subcollection dropInSessions/{sid}/registrations/{uid}.
+
+3. owner-cancel-session: gọi cancelRegistrationInTx(tx, sessionId, uid, cancelledBy, { forceFullRefund: true }) cho từng đăng ký để hoàn 100%. closeWaitlistInTx vẫn giữ nguyên.
+
+4. Làm Edge Function owner-update-session. Android updateSession gọi function này thay vì ghi thẳng Firestore.
+
+5. Hai lỗi đang có trên main: 4 lỗi kiểu TS trong _shared/firestore.ts dòng 338–346 (có code sau return không chạy tới), và OwnerBookingsViewModelTest ghi cứng ngày 2026-11-06.
+
+6. Envelope của send-notification cho DROPIN_REGISTERED hiện gửi { type, userId, data: { sessionId } }. D chốt giúp mình định dạng nhé.". Bạn hãy đọc và xem lại mã nguồn trong feat liên quan tới owner, sau đó fix lại theo C gửi. Lưu ý không được tự ý làm thêm gì khác, có vấn đề gì thì báo cáo tôi.
+```
+
+**Yêu cầu xác định trách nhiệm đối với các phần còn thiếu**:
+
+```text
+các điểm báo cáo này cần nói đến ai hay là tự mở rộng của D
+```
+
+**Yêu cầu sửa tiếp phần QR/mã vé**:
+
+```text
+|  |  |  |
+|---|---|---|
+| QR/mã vé chưa được phân giải thành UID | D — spec 112, đối chiếu định dạng vé với C | Là phần còn thiếu của check-in mà D sở hữu. Sửa đường dẫn subcollection vừa rồi chưa làm luồng quét QR hoạt động đầy đủ. | Sửa phần này trước
+```
+
+### Tóm tắt phản hồi của AI
+
+- Xác nhận working tree ban đầu sạch, nhánh hiện hành là `feature/120-admin-implement` và đã có shared helpers của C; sửa trực tiếp trên nhánh hiện hành, không tự pull/chuyển nhánh, commit, push hoặc deploy.
+- Đồng bộ `owner-create-session` với schema 080: truyền `Date` qua Firestore REST encoder để ghi `startAt`/`endAt` dạng Timestamp; lưu `courtIds`, `ownerId`, `districtId`; đọc tên quận và gọi `deriveSessionFields()` để có ngày Việt Nam, `timeSlot`, `venueSnapshot`. Chỉ chấp nhận `BEGINNER`, `INTERMEDIATE`, `ADVANCED`; kiểm tra ngày, khung 30 phút và danh sách sân.
+- Đổi roster Android sang `dropInSessions/{sessionId}/registrations` và chờ truy vấn bằng `await()`; check-in đọc/ghi đăng ký theo UID trong subcollection của buổi.
+- Chuyển hủy buổi sang Firestore transaction: đọc session và các đăng ký trước khi ghi, dùng bộ đệm dữ liệu/ghi để gọi `cancelRegistrationInTx(..., "OWNER", { forceFullRefund: true })` cho nhiều đăng ký mà không đọc Firestore sau khi đã ghi hoặc dùng lại số chỗ cũ. Hoàn đủ tiền đã trả, giữ lượt chưa trả ở `UNPAID`, hủy buổi, trả slots và giữ nguyên helper `closeWaitlistInTx` của C.
+- Bổ sung `owner-update-session` và cấu hình gateway tương ứng; Android gửi draft tới function thay cho sửa Firestore trực tiếp. Server kiểm tra quyền, trạng thái, sức chứa và xung đột slots; cập nhật session/slots trong transaction. Khi đổi giờ/sân/giá, đánh dấu `sessionChanged` và cập nhật thời gian trên đăng ký đang giữ chỗ, giữ nguyên số tiền đã chốt.
+- Kiểm tra `_shared/firestore.ts`: phiên bản hiện hành đã hết lỗi C mô tả và qua type-check nên không sửa file này. Trong `OwnerBookingsViewModelTest`, thay ngày cố định còn lại ở helper dữ liệu và deadline bằng thời điểm tương đối.
+- Chốt trong handoff envelope `DROPIN_REGISTERED`: `{ type, userId, data: { sessionId } }`; `userId` là người nhận, producer gọi sau khi transaction đăng ký commit. Chưa triển khai `send-notification` trong lần này.
+- Báo rõ trách nhiệm: `send-notification` thuộc D/spec 100; phân giải QR/mã vé thuộc D/spec 112, đối chiếu định dạng vé với C; helper `promoteFromWaitlist` thuộc C/spec 081 và D sẽ tích hợp khi helper được cung cấp. Chỉ sửa tiếp phần QR sau khi người dùng yêu cầu; không tự mở rộng sang hai phần còn lại.
+- Đối chiếu `QrRenderer` của app 080 và `_shared/dropin.ts`: QR chứa trực tiếp `qrToken` 43 ký tự base64url; mã vé có dạng `DI-XXXXXXXX`. Đồng bộ request Android/server sang `credential`, chuẩn hóa khoảng trắng và hoa/thường của mã vé nhưng giữ nguyên hoa/thường của QR token. Server truy vấn theo `qrToken` hoặc `ticketCode` trong đúng buổi đã kiểm tra quyền, yêu cầu đúng một kết quả và kiểm tra `sessionId`/`userId` khớp UID document trước khi chuyển `REGISTERED` → `CHECKED_IN` trong cùng transaction. Không dùng UID do client nhập để bỏ qua xác thực mã vé; không trả credential trong response.
+- Bổ sung kiểm thử cho schema session, hoàn tiền nhiều đăng ký, rollback khi sửa session và các tình huống QR/mã vé: hợp lệ, sai định dạng, khác buổi, ngoài quyền, đã dùng, đã hủy, đang chờ, mã trùng hoặc sai quan hệ UID.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+| ---- | ---------- | ----- |
+| `supabase/functions/_shared/owner-dropin.ts` | Tạo mới | Dùng chung kiểm tra draft owner, chuyển ngày/giờ Việt Nam sang `Date`, giới hạn level và sinh danh sách slot cho tạo/sửa session. |
+| `supabase/functions/owner-create-session/handler.ts` | Chỉnh sửa | Ghi schema 080, các mốc thời gian dạng Timestamp và trường suy ra qua `deriveSessionFields()`. |
+| `supabase/functions/owner-cancel-session/handler.ts` | Chỉnh sửa | Hủy nhiều đăng ký và hoàn 100% tiền đã trả bằng shared helper trong cùng transaction; giữ nguyên hành vi đóng waitlist. |
+| `supabase/functions/owner-update-session/index.ts`, `handler.ts` | Tạo mới | Cung cấp endpoint server để kiểm tra quyền, cập nhật session/slots nguyên tử và đánh dấu đăng ký bị ảnh hưởng. |
+| `supabase/config.toml` | Chỉnh sửa | Thêm cấu hình `owner-update-session` với `verify_jwt = false`; handler tự xác minh Firebase ID token. |
+| `supabase/functions/owner-checkin-dropin-registration/handler.ts` | Chỉnh sửa | Phân giải QR/mã vé thành UID trong subcollection đã xác minh quyền và check-in một lần trong transaction. |
+| `supabase/functions/owner-checkin-dropin-registration/handler.test.ts` | Chỉnh sửa | Đồng bộ request kiểm thử sang `credential`, giữ kiểm tra từ chối phương thức/token không hợp lệ. |
+| `supabase/functions/owner-update-session/handler.test.ts` | Tạo mới, bổ sung | Kiểm thử owner create/update/cancel/check-in bằng Firestore giả; bổ sung lọc credential và các ca QR/mã vé bị từ chối, không ghi một phần. |
+| `app/src/main/java/com/example/booking_app/feature/owner/data/OwnerDropInRepositoryImpl.kt` | Chỉnh sửa | Đọc roster đúng subcollection bằng `await()`, gửi `courtIds`, gọi `owner-update-session` và gửi QR/mã vé qua trường `credential`. |
+| `app/src/main/java/com/example/booking_app/feature/owner/domain/dropin/OwnerDropInModels.kt` | Chỉnh sửa | Giới hạn level trong validation Android theo ba giá trị của schema 080. |
+| `app/src/test/java/com/example/booking_app/feature/owner/ui/bookings/OwnerBookingsViewModelTest.kt` | Chỉnh sửa | Loại bỏ ngày cố định còn lại để test không phụ thuộc ngày chạy. |
+| `specs/112-owner-operations/handoffs/notifications.md` | Chỉnh sửa | Ghi envelope `DROPIN_REGISTERED` đã chốt và giới hạn chưa có implementation giao thông báo end-to-end. |
+| `specs/112-owner-operations/handoffs/drop-in-operations.md` | Chỉnh sửa | Ghi hợp đồng request/response, định dạng QR/mã vé và điều kiện check-in một lần theo schema 080. |
+| `_shared/dropin.ts`, `_shared/firestore.ts`, mã phát hành vé của C và Firestore Rules | Giữ nguyên | Tái sử dụng helpers/schema đã có; lỗi TypeScript được báo ở Firestore helper không còn trong phiên bản hiện hành. |
+| Triển khai `send-notification`, tự viết `promoteFromWaitlist`, chỉnh sửa tính năng khác | Không thực hiện | Ngoài phạm vi sửa được người dùng cho phép; báo rõ phần thuộc D và phần phụ thuộc C. |
+
+### Cách kiểm chứng
+
+- **Kiểm thử TypeScript ở đợt đồng bộ ban đầu**:
+  - `deno test -A supabase/functions/owner-update-session/handler.test.ts supabase/functions/owner-create-session/handler.test.ts supabase/functions/owner-cancel-session/handler.test.ts supabase/functions/owner-checkin-dropin-registration/handler.test.ts supabase/functions/_shared/dropin.test.ts`: **29 tests PASS**.
+  - `deno test -A supabase/functions/register-drop-in/handler.test.ts`: **29 tests PASS**. Tổng đợt này **58 tests PASS**; không thay đổi producer đăng ký của C.
+  - `deno check` cho `index.ts` của `owner-create-session`, `owner-update-session`, `owner-cancel-session`, `owner-checkin-dropin-registration`: **PASS**, gồm kiểm tra kiểu các shared imports.
+- **Kiểm thử Android ở đợt đồng bộ ban đầu**:
+  - `gradlew.bat :app:compileDebugKotlin :app:testDebugUnitTest --tests 'com.example.booking_app.feature.owner.ui.bookings.OwnerBookingsViewModelTest' --tests 'com.example.booking_app.feature.owner.domain.dropin.OwnerDropInDraftValidationTest' --no-daemon '-Pkotlin.compiler.execution.strategy=in-process'`: **BUILD SUCCESSFUL**.
+  - Đối chiếu XML test report: `OwnerBookingsViewModelTest` **5 tests PASS**, `OwnerDropInDraftValidationTest` **4 tests PASS**, không có failures/errors. Gradle ban đầu bị sandbox chặn tải dependencies, sau đó được cấp quyền và chạy thành công.
+- **Kiểm chứng sau khi sửa phân giải QR/mã vé**:
+  - `deno test -A supabase/functions/owner-checkin-dropin-registration/handler.test.ts supabase/functions/owner-update-session/handler.test.ts`: **14 tests PASS**; đây là lượt chạy lại có bổ sung ca QR, không cộng với 58 tests trước đó thành số test độc lập.
+  - `deno check supabase/functions/owner-checkin-dropin-registration/index.ts`: **PASS**.
+  - `gradlew.bat :app:compileDebugKotlin --offline --no-daemon '-Pkotlin.compiler.execution.strategy=in-process'`: **BUILD SUCCESSFUL**, dùng cache dependencies của đợt trước và xác nhận Android biên dịch với trường request `credential`.
+- **Rà soát thay đổi**: `git diff --check` **PASS**; Git chỉ cảnh báo chuyển LF/CRLF. Giữ nguyên các cảnh báo build ngoài phạm vi.
+- **Giới hạn bằng chứng**: Backend tests dùng Firestore giả, chưa chạy Emulator/live check-in; chưa kiểm tra quét QR trên thiết bị thực tế. Chưa có `send-notification` để kiểm chứng giao thông báo end-to-end; chưa tích hợp promotion khi tăng sức chứa vì chưa có helper spec 081.
+- **Tuân thủ phạm vi**: Không chỉnh sửa tính năng ngoài yêu cầu; không commit, push, deploy hoặc thao tác dữ liệu production.
 
 ---
