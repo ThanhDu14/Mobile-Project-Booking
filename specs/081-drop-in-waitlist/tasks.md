@@ -53,19 +53,19 @@ Giống [tasks 080](../080-drop-in-session/tasks.md#quy-ước-đường-dẫn):
   Chưa xong thì làm theo tasks 080 trước, không viết lại ở spec này.
 
   Đồng thời gửi D (nhóm chat, trước khi code US1) đề xuất thay đổi đặc tả CSDL theo [danh sách cuối data-model.md](data-model.md#danh-sách-thay-đổi-cần-đưa-vào-docsdesigndatabasereadmemd): 3 trường `waitlist*` trên `dropInSessions`, 3 trường trên `registrations`, 2 index, function `dropin-close`. Ghi kết quả (đồng ý / cần đổi) vào mô tả PR; việc sửa README làm ở T051
-- [ ] T002 [P] Thêm chuỗi tiền tố `dropin_waitlist_` vào `RES/values/strings_dropin.xml`:
+- [x] T002 [P] Thêm chuỗi tiền tố `dropin_waitlist_` vào `RES/values/strings_dropin.xml`:
   - "Vào hàng chờ", "N người đang chờ", "Bạn đang ở vị trí thứ N", "Xem lượt chờ", "Rời hàng chờ";
   - "Chưa giữ chỗ, chưa thanh toán; bạn sẽ được tự động đăng ký khi có đủ chỗ", "Số tiền sẽ ghi nhận khi được nhận: X đ" (FR-002);
   - nhãn "Đang chờ – vị trí N", "Được nhận từ hàng chờ", "Hủy miễn phí đến HH:mm", "Đã rời hàng chờ", "Đã rời hàng chờ (trùng giờ)", "Không được nhận chỗ", "Buổi bị hủy" (FR-015, research R6);
   - lỗi `SESSION_HAS_SPOTS`, `WAITLIST_CLOSED` ("Hàng chờ đã đóng"), `ALREADY_PROMOTED` ("Bạn đã được nhận vào buổi"), `ALREADY_WAITLISTED` ([contract mục 6](contracts/edge-functions-waitlist.md#6-mã-lỗi-thêm-so-với-spec-080));
   - lý do hoàn tiền "Bạn vừa được nhận từ hàng chờ, hủy trong 30 phút được hoàn 100%" (research R8).
-- [ ] T003 [P] Tạo migration `supabase/migrations/<timestamp>_dropin_close_cron.sql`:
+- [x] T003 [P] Tạo migration `supabase/migrations/<timestamp>_dropin_close_cron.sql`:
   - `create extension if not exists pg_cron;` và `pg_net`;
   - `cron.schedule('dropin-close', '* * * * *', ...)` gọi `net.http_post` tới `/functions/v1/dropin-close` với header `x-cron-secret`;
   - `CRON_SECRET` đặt bằng `npx supabase secrets set` (cloud) hoặc `supabase/.env` (local, đã có trong `.gitignore`). Không ghi secret vào file migration.
 
   Cần cả nhóm đồng ý bật `pg_cron`, `pg_net` (bảng "Phối hợp với nhóm" trong [plan.md](plan.md#phối-hợp-với-nhóm))
-- [ ] T004 [P] Viết `scripts/seed/081-waitlist.ts` theo [quickstart mục 1](quickstart.md#1-chuẩn-bị), chạy sau `scripts/seed/080-dropin.ts` (080-T016):
+- [x] T004 [P] Viết `scripts/seed/081-waitlist.ts` theo [quickstart mục 1](quickstart.md#1-chuẩn-bị), chạy sau `scripts/seed/080-dropin.ts` (080-T016):
   - buổi `W1`: 10 chỗ, `FULL`, bắt đầu sau 2 ngày;
   - buổi `W2`: trùng giờ với `W1`, `FULL`;
   - buổi `W3`: `FULL`, bắt đầu sau 35 phút;
@@ -84,15 +84,15 @@ Giống [tasks 080](../080-drop-in-session/tasks.md#quy-ước-đường-dẫn):
 
 ### Server dùng chung
 
-- [ ] T005 Kiểm tra `FN/_shared/firestore.ts` (B) có `runQuery` **bên trong transaction** (REST `runQuery` có trường `transaction`) để lấy danh sách chờ trong cùng transaction (research R3). Nếu B chưa có thì viết bản tối thiểu `runQueryInTx(tx, structuredQuery)` cạnh `runTransaction` của 080-T004, rồi báo B để gộp
-- [ ] T006 [P] Tạo khung `FN/_shared/waitlist.ts` với đúng chữ ký ở [contract mục 5](contracts/edge-functions-waitlist.md#5-hàm-dùng-chung-_sharedwaitlistts): `promoteFromWaitlist`, `closeWaitlistInTx`, `leaveWaitlistInTx`, kiểu `PromoteResult = { promoted: { uid: string; autoLeftSessionIds: string[] }[] }`. Thân hàm tạm `throw new Error("not implemented")`. Mục đích: D (spec 112) và A (`delete-account`) import được sớm
-- [ ] T007 [P] Tạo `FN/_shared/waitlist_fixtures.ts` dùng chung cho mọi test Deno của spec này:
+- [x] T005 Kiểm tra `FN/_shared/firestore.ts` (B) có `runQuery` **bên trong transaction** (REST `runQuery` có trường `transaction`) để lấy danh sách chờ trong cùng transaction (research R3). Nếu B chưa có thì viết bản tối thiểu `runQueryInTx(tx, structuredQuery)` cạnh `runTransaction` của 080-T004, rồi báo B để gộp
+- [x] T006 [P] Tạo khung `FN/_shared/waitlist.ts` với đúng chữ ký ở [contract mục 5](contracts/edge-functions-waitlist.md#5-hàm-dùng-chung-_sharedwaitlistts): `promoteFromWaitlist`, `closeWaitlistInTx`, `leaveWaitlistInTx`, kiểu `PromoteResult = { promoted: { uid: string; autoLeftSessionIds: string[] }[] }`. Thân hàm tạm `throw new Error("not implemented")`. Mục đích: D (spec 112) và A (`delete-account`) import được sớm
+- [x] T007 [P] Tạo `FN/_shared/waitlist_fixtures.ts` dùng chung cho mọi test Deno của spec này:
   - `seedFullSession({ capacity, registered: partySize[], waitlist: partySize[], startInMinutes })` ghi buổi, các đăng ký `REGISTERED` và các lượt `WAITLISTED` (đúng `waitlistTicket`, `waitlistTickets`, `waitlistCount`) lên Emulator;
   - `assertWaitlistInvariant(sessionId)`: `waitlistTickets` khớp đúng tập lượt `WAITLISTED`, tăng dần, `waitlistCount == waitlistTickets.size`, `registeredCount == Σ partySize` của lượt `REGISTERED`/`CHECKED_IN`, `registeredCount ≤ capacity`.
 
 ### Rules và index
 
-- [ ] T008 Viết test Rules cho hàng chờ trong `firestore-tests/test/dropInSessions.test.ts` (cùng file với 080-T008). Mỗi dòng phân quyền có cả ca được phép và ca bị chặn:
+- [x] T008 Viết test Rules cho hàng chờ trong `firestore-tests/test/dropInSessions.test.ts` (cùng file với 080-T008). Mỗi dòng phân quyền có cả ca được phép và ca bị chặn:
 
   | Dòng Rules | `assertSucceeds` | `assertFails` |
   |---|---|---|
@@ -105,13 +105,13 @@ Giống [tasks 080](../080-drop-in-session/tasks.md#quy-ước-đường-dẫn):
   | collection group `registrations` list | `player3` list lượt của mình `where userId == player3` | `player3` list `where status == WAITLISTED` không lọc `userId` |
 
   Chạy `cd firestore-tests && npm test`: các ca `assertSucceeds` phải fail cho tới khi 080-T009 xong
-- [ ] T009 Chạy lại T008 sau 080-T009. Theo [contract mục 7](contracts/edge-functions-waitlist.md#7-rules) không cần thêm rule mới; nếu ca nào đỏ thì sửa `match /dropInSessions/{sessionId}` trong `firestore.rules`, không nới quyền ghi. T008 phải xanh
-- [ ] T010 [P] Thêm vào `firestore.indexes.json` 2 index **[MỚI]** ở [data-model mục 4](data-model.md#4-index-cần-thêm-vào-firestoreindexesjson): `registrations` (collection, trong buổi) `status` + `waitlistTicket`; `dropInSessions` `status` + `endAt`. Kiểm tra 2 index dùng lại của 080-T010 (`registrations` collection group `userId`,`status`,`sessionStartAt`; `dropInSessions` `status`,`startAt`) đã có
+- [x] T009 Chạy lại T008 sau 080-T009. Theo [contract mục 7](contracts/edge-functions-waitlist.md#7-rules) không cần thêm rule mới; nếu ca nào đỏ thì sửa `match /dropInSessions/{sessionId}` trong `firestore.rules`, không nới quyền ghi. T008 phải xanh
+- [x] T010 [P] Thêm vào `firestore.indexes.json` 2 index **[MỚI]** ở [data-model mục 4](data-model.md#4-index-cần-thêm-vào-firestoreindexesjson): `registrations` (collection, trong buổi) `status` + `waitlistTicket`; `dropInSessions` `status` + `endAt`. Kiểm tra 2 index dùng lại của 080-T010 (`registrations` collection group `userId`,`status`,`sessionStartAt`; `dropInSessions` `status`,`startAt`) đã có
 
 ### Domain và data dùng chung (app)
 
-- [ ] T011 [P] Unit test `TEST/domain/WaitlistPositionTest.kt`: `position = waitlistTickets.indexOf(myTicket) + 1`, `total = waitlistTickets.size`; vé không còn trong mảng → `null`; mảng rỗng → `null`; `DropInSession.isWaitlistOpen(now)` đúng khi `status == FULL && now < startAt − 30 phút`, sai ở đúng mốc `startAt − 30 phút`
-- [ ] T012 Mở rộng model trong `DI/domain/model/` theo [data-model mục 5](data-model.md#5-mô-hình-phía-app-kotlin-mở-rộng-featuredropindomain), cho T011 xanh:
+- [x] T011 [P] Unit test `TEST/domain/WaitlistPositionTest.kt`: `position = waitlistTickets.indexOf(myTicket) + 1`, `total = waitlistTickets.size`; vé không còn trong mảng → `null`; mảng rỗng → `null`; `DropInSession.isWaitlistOpen(now)` đúng khi `status == FULL && now < startAt − 30 phút`, sai ở đúng mốc `startAt − 30 phút`
+- [x] T012 Mở rộng model trong `DI/domain/model/` theo [data-model mục 5](data-model.md#5-mô-hình-phía-app-kotlin-mở-rộng-featuredropindomain), cho T011 xanh:
   - `DropInSession`: `waitlistTickets: List<Int>`, `waitlistCount: Int`, `isWaitlistOpen(now)`;
   - `DropInRegistration`: `waitlistTicket: Int?`, `promotedAt: Instant?`, `waitlistEndReason: WaitlistEndReason?`, `isFromWaitlist = promotedAt != null`;
   - enum `WaitlistEndReason`: `LEFT`, `AUTO_LEFT_OVERLAP`, `CLOSED`, `SESSION_CANCELLED`;
@@ -119,8 +119,8 @@ Giống [tasks 080](../080-drop-in-session/tasks.md#quy-ước-đường-dẫn):
   - `RegistrationOutcome` thêm `WAITING`, `LEFT_WAITLIST`, `NOT_ADMITTED`;
   - `RegisterRequest` thêm `joinWaitlist: Boolean`;
   - `CancelQuote.reason` thêm `PROMOTED_GRACE`, `WAITLIST_LEAVE` (luôn 0 đ).
-- [ ] T013 [P] Mở rộng `DI/data/dto/SessionDto.kt`, `RegistrationDto.kt`, `EdgeDtos.kt` và `Mappers.kt` (080-T013) với các trường `waitlist*`, `promotedAt`, `waitlistEndReason`, request `joinWaitlist`, `expectWaitlisted`, response `waitlist { position, total }`, `promotedCount`. `DropInError` thêm `SessionHasSpots(remaining)`, `WaitlistClosed`, `AlreadyPromoted`; `SessionFull` thêm `waitlistOpen: Boolean`
-- [ ] T014 Thêm vào `DI/domain/DropInRegistrationRepository.kt`: `joinWaitlist(req): Result<WaitlistJoinResult>` (`WaitlistJoinResult(registration: DropInRegistration, position: WaitlistPosition)`, đúng response [contract mục 1](contracts/edge-functions-waitlist.md#1-vào-hàng-chờ-register-drop-in-với-joinwaitlist-true)), `leaveWaitlist(sessionId, requestId): Result<DropInRegistration>`. Trong `RES/navigation/nav_dropin.xml`: thêm `WaitlistEntryFragment` (Safe Args `sessionId`), thêm argument `mode: REGISTER | WAITLIST` (mặc định `REGISTER`) cho `DropInConfirmFragment` ([ui-screens mục 1](contracts/ui-screens.md#1-màn-hình))
+- [x] T013 [P] Mở rộng `DI/data/dto/SessionDto.kt`, `RegistrationDto.kt`, `EdgeDtos.kt` và `Mappers.kt` (080-T013) với các trường `waitlist*`, `promotedAt`, `waitlistEndReason`, request `joinWaitlist`, `expectWaitlisted`, response `waitlist { position, total }`, `promotedCount`. `DropInError` thêm `SessionHasSpots(remaining)`, `WaitlistClosed`, `AlreadyPromoted`; `SessionFull` thêm `waitlistOpen: Boolean`
+- [x] T014 Thêm vào `DI/domain/DropInRegistrationRepository.kt`: `joinWaitlist(req): Result<WaitlistJoinResult>` (`WaitlistJoinResult(registration: DropInRegistration, position: WaitlistPosition)`, đúng response [contract mục 1](contracts/edge-functions-waitlist.md#1-vào-hàng-chờ-register-drop-in-với-joinwaitlist-true)), `leaveWaitlist(sessionId, requestId): Result<DropInRegistration>`. Trong `RES/navigation/nav_dropin.xml`: thêm `WaitlistEntryFragment` (Safe Args `sessionId`), thêm argument `mode: REGISTER | WAITLIST` (mặc định `REGISTER`) cho `DropInConfirmFragment` ([ui-screens mục 1](contracts/ui-screens.md#1-màn-hình))
 
 **Checkpoint**: Rules test hàng chờ xanh; app build được với model mở rộng; `waitlist.ts` import được.
 
@@ -134,7 +134,7 @@ Giống [tasks 080](../080-drop-in-session/tasks.md#quy-ước-đường-dẫn):
 
 ### Tests cho User Story 1 ⚠️ viết trước, phải fail
 
-- [ ] T015 [P] [US1] Test Deno `FN/register-drop-in/waitlist.test.ts` (Firebase Emulator, fixture T007). Tách file khỏi `index.test.ts` của 080 để không đụng nhau:
+- [x] T015 [P] [US1] Test Deno `FN/register-drop-in/waitlist.test.ts` (Firebase Emulator, fixture T007). Tách file khỏi `index.test.ts` của 080 để không đụng nhau:
   - **Q1:** 3 người lần lượt vào hàng chờ buổi `FULL` → response `201` với `waitlist.position` 1, 2, 3; `registeredCount` không đổi; `waitlistTickets = [1,2,3]`.
   - **Q2:** cùng `requestId` gửi 5 lần (cả song song) → 1 lượt chờ, `waitlistCount` tăng 1 lần, 4 lần sau trả `200`.
   - **Q3:** buổi `OPEN` → `409 SESSION_HAS_SPOTS` kèm `remaining`; còn đúng 30 phút → `WAITLIST_CLOSED`; chủ buổi → `OWN_SESSION`; buổi `CANCELLED` → `SESSION_CANCELLED`; cơ sở `HIDDEN` → `VENUE_INACTIVE`.
@@ -145,37 +145,37 @@ Giống [tasks 080](../080-drop-in-session/tasks.md#quy-ước-đường-dẫn):
   - Không gọi `send-notification` (mock đếm 0 lần).
   - Đăng ký thường vào buổi `FULL` → `SESSION_FULL` có `waitlistOpen: true`; vào lúc còn ≤ 30 phút → `waitlistOpen: false`.
   - Sau mỗi ca gọi `assertWaitlistInvariant`.
-- [ ] T016 [P] [US1] Unit test `TEST/ui/detail/DropInDetailViewModelWaitlistTest.kt` (MockK + Turbine):
+- [x] T016 [P] [US1] Unit test `TEST/ui/detail/DropInDetailViewModelWaitlistTest.kt` (MockK + Turbine):
   - buổi `FULL`, hàng chờ mở, chưa có lượt → `actions` có `JOIN_WAITLIST` kèm `waitlistCount` (AC 1.1);
   - đang `WAITLISTED` → `VIEW_WAITLIST` và `waitlist = WaitlistPosition(n, total)`; mảng `waitlistTickets` đổi thì vị trí đổi (AC 1.4);
   - buổi `OPEN` → chỉ `REGISTER`, không `JOIN_WAITLIST` (AC 1.5);
   - còn ≤ 30 phút hoặc buổi hủy → không `JOIN_WAITLIST` (AC 4.3);
   - chủ cơ sở xem buổi của mình → không `JOIN_WAITLIST`;
   - khách chưa đăng nhập bấm "Vào hàng chờ" → sự kiện yêu cầu đăng nhập.
-- [ ] T017 [P] [US1] Unit test `TEST/ui/confirm/DropInConfirmViewModelWaitlistTest.kt`:
+- [x] T017 [P] [US1] Unit test `TEST/ui/confirm/DropInConfirmViewModelWaitlistTest.kt`:
   - `mode = WAITLIST` → `maxParty = 4` (không giới hạn theo chỗ trống); số tiền sẽ ghi nhận = giá × số người (AC 1.3);
   - `requestId` giữ nguyên qua `SavedStateHandle` khi thử lại (AC 1.6);
   - `SessionHasSpots` → sự kiện chuyển sang `mode = REGISTER` (AC 1.5);
   - `WaitlistClosed` → `Failed`;
   - `Network` → giữ lựa chọn, cho thử lại (FR-016);
   - thành công → sự kiện mở `WaitlistEntryFragment`.
-- [ ] T018 [P] [US1] Unit test `TEST/ui/waitlist/WaitlistEntryViewModelTest.kt` (phần hiển thị): `Loading → Content(position, total, partySize, amount, paymentMethod)`; vị trí cập nhật khi `waitlistTickets` đổi; lượt không còn `WAITLISTED` → `Empty`; lỗi → `Error` + thử lại
+- [x] T018 [P] [US1] Unit test `TEST/ui/waitlist/WaitlistEntryViewModelTest.kt` (phần hiển thị): `Loading → Content(position, total, partySize, amount, paymentMethod)`; vị trí cập nhật khi `waitlistTickets` đổi; lượt không còn `WAITLISTED` → `Empty`; lỗi → `Error` + thử lại
 
 ### Implementation cho User Story 1
 
-- [ ] T019 [US1] Cài nhánh `joinWaitlist: true` trong `FN/register-drop-in/index.ts` (080-T034) theo [data-model mục 3 "Vào hàng chờ"](data-model.md#vào-hàng-chờ-register-drop-in-với-joinwaitlist-true-trong-transaction), kiểm tra đúng thứ tự trong bảng, trong cùng `runTransaction`:
+- [x] T019 [US1] Cài nhánh `joinWaitlist: true` trong `FN/register-drop-in/index.ts` (080-T034) theo [data-model mục 3 "Vào hàng chờ"](data-model.md#vào-hàng-chờ-register-drop-in-với-joinwaitlist-true-trong-transaction), kiểm tra đúng thứ tự trong bảng, trong cùng `runTransaction`:
   - lượt chờ: `status = WAITLISTED`, `waitlistTicket = waitlistNextTicket`, `waitlistedAt = serverNow`, chốt `pricePerPerson`, `amount`, `paymentMethod`; `paymentStatus`, `qrToken`, `ticketCode`, `waitlistEndReason`, `promotedAt` = `null`;
   - buổi: `waitlistNextTicket += 1`, thêm số vé vào `waitlistTickets`, `waitlistCount += 1`;
   - response `{ registration, waitlist: { position, total } }`;
   - nhánh đăng ký thường: `SESSION_FULL` thêm `waitlistOpen`.
 
   Sau đó T015 phải xanh
-- [ ] T020 [US1] Cài `joinWaitlist` trong `DI/data/DropInRegistrationRepositoryImpl.kt` (gọi `register-drop-in` với `joinWaitlist = true`, map lỗi mới); `observeMine` đọc thêm `waitlistTicket`, `promotedAt`, `waitlistEndReason`
-- [ ] T021 [US1] Cài UseCase `DI/domain/usecase/JoinWaitlist.kt`: dùng lại `CheckDropInWarnings` (080-T036) để cảnh báo trùng giờ (Edge Cases: được vào hàng chờ nhiều buổi trùng giờ, chỉ cảnh báo)
-- [ ] T022 [US1] Mở rộng `DI/ui/detail/DropInDetailViewModel.kt` (080-T028) và vùng `waitlist_container` trong `RES/layout/fragment_dropin_detail.xml` / `DropInDetailFragment.kt` (080-T029): "N người đang chờ" + "Vào hàng chờ", hoặc "Bạn đang ở vị trí thứ N" + "Xem lượt chờ". Cho T016 xanh
-- [ ] T023 [US1] Mở rộng `DI/ui/confirm/DropInConfirmViewModel.kt` và `DropInConfirmFragment.kt` (080-T037, 080-T038) cho `mode = WAITLIST`: tiêu đề "Vào hàng chờ", ô số người 1–4, dòng "Chưa giữ chỗ, chưa thanh toán…" kèm số tiền sẽ ghi nhận (FR-002). Thành công điều hướng tới `WaitlistEntryFragment` với `popUpTo` bỏ màn hình xác nhận. Cho T017 xanh
-- [ ] T024 [US1] Tạo `DI/ui/waitlist/WaitlistEntryViewModel.kt`, `DI/ui/waitlist/WaitlistEntryFragment.kt` và `RES/layout/fragment_dropin_waitlist.xml`: vị trí N / tổng, số người, cách thanh toán, số tiền sẽ ghi nhận, `include_state_views` cho 4 trạng thái; chừa chỗ nút "Rời hàng chờ" cho US3. Kết hợp `observe(sessionId)` với `observeMine(sessionId)`. Theo wireframe `ui/08_drop-in_buoc1_hang-cho.png`. Cho T018 xanh
-- [ ] T025 [US1] Ở `MyDropInsFragment` tab "Sắp tới" (080-T047): lượt `WAITLISTED` có nhãn "Đang chờ – vị trí N", tính từ `session.waitlistTickets` mà `MyDropInsViewModel` đã đọc theo lô; bấm vào mở `WaitlistEntryFragment` (FR-015)
+- [x] T020 [US1] Cài `joinWaitlist` trong `DI/data/DropInRegistrationRepositoryImpl.kt` (gọi `register-drop-in` với `joinWaitlist = true`, map lỗi mới); `observeMine` đọc thêm `waitlistTicket`, `promotedAt`, `waitlistEndReason`
+- [x] T021 [US1] Cài UseCase `DI/domain/usecase/JoinWaitlist.kt`: dùng lại `CheckDropInWarnings` (080-T036) để cảnh báo trùng giờ (Edge Cases: được vào hàng chờ nhiều buổi trùng giờ, chỉ cảnh báo)
+- [x] T022 [US1] Mở rộng `DI/ui/detail/DropInDetailViewModel.kt` (080-T028) và vùng `waitlist_container` trong `RES/layout/fragment_dropin_detail.xml` / `DropInDetailFragment.kt` (080-T029): "N người đang chờ" + "Vào hàng chờ", hoặc "Bạn đang ở vị trí thứ N" + "Xem lượt chờ". Cho T016 xanh
+- [x] T023 [US1] Mở rộng `DI/ui/confirm/DropInConfirmViewModel.kt` và `DropInConfirmFragment.kt` (080-T037, 080-T038) cho `mode = WAITLIST`: tiêu đề "Vào hàng chờ", ô số người 1–4, dòng "Chưa giữ chỗ, chưa thanh toán…" kèm số tiền sẽ ghi nhận (FR-002). Thành công điều hướng tới `WaitlistEntryFragment` với `popUpTo` bỏ màn hình xác nhận. Cho T017 xanh
+- [x] T024 [US1] Tạo `DI/ui/waitlist/WaitlistEntryViewModel.kt`, `DI/ui/waitlist/WaitlistEntryFragment.kt` và `RES/layout/fragment_dropin_waitlist.xml`: vị trí N / tổng, số người, cách thanh toán, số tiền sẽ ghi nhận, `include_state_views` cho 4 trạng thái; chừa chỗ nút "Rời hàng chờ" cho US3. Kết hợp `observe(sessionId)` với `observeMine(sessionId)`. Theo wireframe `ui/08_drop-in_buoc1_hang-cho.png`. Cho T018 xanh
+- [x] T025 [US1] Ở `MyDropInsFragment` tab "Sắp tới" (080-T047): lượt `WAITLISTED` có nhãn "Đang chờ – vị trí N", tính từ `session.waitlistTickets` mà `MyDropInsViewModel` đã đọc theo lô; bấm vào mở `WaitlistEntryFragment` (FR-015)
 
 **Checkpoint**: US1 chạy độc lập; Q1–Q3 xanh; quickstart M1, M6, M7 đúng.
 
@@ -189,7 +189,7 @@ Giống [tasks 080](../080-drop-in-session/tasks.md#quy-ước-đường-dẫn):
 
 ### Tests cho User Story 2 ⚠️ viết trước, phải fail
 
-- [ ] T026 [P] [US2] Test Deno `FN/_shared/waitlist.test.ts`, gọi `promoteFromWaitlist` trực tiếp trong `runTransaction` trên Emulator (fixture T007):
+- [x] T026 [P] [US2] Test Deno `FN/_shared/waitlist.test.ts`, gọi `promoteFromWaitlist` trực tiếp trong `runTransaction` trên Emulator (fixture T007):
   - **Q4:** chờ A(2), B(1); trả 1 chỗ → B lên, A giữ `waitlistTicket` và vị trí 1; trả tiếp 2 chỗ → A lên; `registeredCount == 10` sau mỗi bước.
   - **Q5:** lượt `MOCK_PAY` → `PAID`; `AT_VENUE` → `UNPAID`; có `qrToken` (43 ký tự), `ticketCode` (`^DI-[A-HJ-NP-Z2-9]{8}$`), `promotedAt = registeredAt = serverNow`; `amount` theo giá lúc vào hàng chờ dù `session.pricePerPerson` đã đổi.
   - **Q8:** người chờ cả `W1` và `W2` (trùng giờ), được đẩy lên `W1` → lượt `W2` thành `CANCELLED`, `cancelledBy = SYSTEM`, `waitlistEndReason = AUTO_LEFT_OVERLAP`; `W2.waitlistTickets` bỏ số vé đó, `waitlistCount` giảm; `promoted[0].autoLeftSessionIds` chứa `W2`.
@@ -199,37 +199,37 @@ Giống [tasks 080](../080-drop-in-session/tasks.md#quy-ước-đường-dẫn):
   - Giảm `capacity` (không gọi `promoteFromWaitlist`) → `waitlistTickets` và vị trí giữ nguyên (Edge Cases: chủ sân giảm sức chứa).
   - `leaveWaitlistInTx(tx, sessionId, uid, "LEFT", "SYSTEM")` (đường `delete-account` của A gọi) → lượt `CANCELLED`, `cancelledBy = SYSTEM`, vé bị bỏ, người phía sau lên vị trí; không phát sinh tiền (Edge Cases: người chờ xóa tài khoản).
   - Sau mỗi ca gọi `assertWaitlistInvariant`.
-- [ ] T027 [P] [US2] **Test Emulator Q6 đồng thời** trong `FN/cancel-drop-in/waitlist.test.ts`:
+- [x] T027 [P] [US2] **Test Emulator Q6 đồng thời** trong `FN/cancel-drop-in/waitlist.test.ts`:
   - buổi `capacity = 10`, `FULL`, 5 đăng ký `partySize = 1` sẽ hủy; 10 người chờ với `partySize` lẫn lộn 1–3;
   - bắn 5 lời gọi `cancel-drop-in` song song (`Promise.all`); **lặp 20 lần**, mỗi lần seed lại;
   - mỗi lần kiểm tra: `registeredCount ≤ capacity`; không lượt nào bị ghi `promotedAt` hai lần (đếm số lần ghi bằng `updateTime`); thứ tự được đẩy lên đúng thứ tự `waitlistTicket` sau khi bỏ qua lượt không vừa (so với kết quả mô phỏng tuần tự); `assertWaitlistInvariant` đúng;
   - in `runs=20 overCapacity=0 doublePromoted=0 orderViolations=0` (SC-003, FR-008);
   - **ưu tiên người chờ (FR-009):** buổi `FULL`, hàng chờ có A(1); 1 lượt `partySize = 1` hủy cùng lúc 3 người chưa chờ gọi `register-drop-in` thường, chạy 20 lần → mỗi lần A được đẩy lên, cả 3 người đăng ký thường nhận `SESSION_FULL`.
-- [ ] T028 [P] [US2] **Q12** bổ sung vào `FN/_shared/dropin.test.ts` (080-T005), cho `computeRefund`:
+- [x] T028 [P] [US2] **Q12** bổ sung vào `FN/_shared/dropin.test.ts` (080-T005), cho `computeRefund`:
   - được đẩy lên lúc T−2 giờ, `PAID`, hủy sau 20 / 30 / 31 / 40 phút → 100% (`PROMOTED_GRACE`) / 100% / 0 (`LATE`) / 0 (`LATE`);
   - được đẩy lên lúc T−5 giờ (không sát giờ) → theo chính sách 080 (≥ 240 phút → 100%);
   - `AT_VENUE` được đẩy lên → `refundAmount = 0`, `reason = AT_VENUE`.
-- [ ] T029 [P] [US2] Unit test app:
+- [x] T029 [P] [US2] Unit test app:
   - `TEST/ui/ticket/DropInTicketViewModelWaitlistTest.kt`: `promotedAt != null` → nhãn "Được nhận từ hàng chờ"; trong 30 phút `PROMOTED_GRACE` → hiện "Hủy miễn phí đến HH:mm" (giờ `Asia/Ho_Chi_Minh`), hết hạn thì ẩn;
   - `TEST/ui/ticket/CancelDropInViewModelTest.kt` (080-T052) thêm ca `reason = PROMOTED_GRACE` → chuỗi "Bạn vừa được nhận từ hàng chờ, hủy trong 30 phút được hoàn 100%";
   - `TEST/ui/waitlist/WaitlistEntryViewModelTest.kt` thêm ca lượt chuyển `REGISTERED` → sự kiện `Promoted` mở vé.
 
 ### Implementation cho User Story 2
 
-- [ ] T030 [US2] Cài `promoteFromWaitlist(tx, session, serverNow)` trong `FN/_shared/waitlist.ts` theo [research R3](research.md#r3-đẩy-người-chờ-lên-trong-cùng-transaction-tạo-ra-chỗ-trống-fr-007-fr-008-fr-009) và [R4](research.md#r4-lượt-chờ-được-đẩy-lên-trở-thành-đăng-ký-chính-thức-fr-010):
+- [x] T030 [US2] Cài `promoteFromWaitlist(tx, session, serverNow)` trong `FN/_shared/waitlist.ts` theo [research R3](research.md#r3-đẩy-người-chờ-lên-trong-cùng-transaction-tạo-ra-chỗ-trống-fr-007-fr-008-fr-009) và [R4](research.md#r4-lượt-chờ-được-đẩy-lên-trở-thành-đăng-ký-chính-thức-fr-010):
   - `serverNow ≥ startAt − 30 phút` → trả `promoted = []`;
   - `free = capacity − registeredCount`; lấy ứng viên bằng `runQueryInTx` (T005) `status == WAITLISTED orderBy waitlistTicket asc`;
   - duyệt: `free == 0` thì dừng; `partySize > free` thì bỏ qua nhưng giữ vị trí; còn lại chuyển `REGISTERED` (`promotedAt`, `registeredAt`, `paymentStatus`, `qrToken`, `ticketCode` bằng hàm của 080-T006);
   - cập nhật `registeredCount`, `status` (`FULL`/`OPEN`), `waitlistTickets`, `waitlistCount` trên document buổi.
-- [ ] T031 [US2] Cài tự rời hàng chờ trùng giờ trong `promoteFromWaitlist` theo [research R5](research.md#r5-tự-rời-hàng-chờ-của-các-buổi-trùng-giờ-fr-010a): collection group `registrations where userId == U, status == WAITLISTED, sessionStartAt < S.endAt`, lọc thêm `sessionEndAt > S.startAt`; mỗi lượt gọi `leaveWaitlistInTx(tx, sessionId, U, "AUTO_LEFT_OVERLAP", "SYSTEM")`: cài hàm này ngay trong task này (lượt `CANCELLED` với `waitlistEndReason = reason`, `cancelledBy`, `cancelledAt`; buổi bỏ số vé khỏi `waitlistTickets`, `waitlistCount -= 1`), vì A (`delete-account`) cũng cần sớm. Trả `autoLeftSessionIds`. Sau T030, T031 thì T026 phải xanh
-- [ ] T032 [US2] Trong `FN/_shared/dropin.ts` (080-T006):
+- [x] T031 [US2] Cài tự rời hàng chờ trùng giờ trong `promoteFromWaitlist` theo [research R5](research.md#r5-tự-rời-hàng-chờ-của-các-buổi-trùng-giờ-fr-010a): collection group `registrations where userId == U, status == WAITLISTED, sessionStartAt < S.endAt`, lọc thêm `sessionEndAt > S.startAt`; mỗi lượt gọi `leaveWaitlistInTx(tx, sessionId, U, "AUTO_LEFT_OVERLAP", "SYSTEM")`: cài hàm này ngay trong task này (lượt `CANCELLED` với `waitlistEndReason = reason`, `cancelledBy`, `cancelledAt`; buổi bỏ số vé khỏi `waitlistTickets`, `waitlistCount -= 1`), vì A (`delete-account`) cũng cần sớm. Trả `autoLeftSessionIds`. Sau T030, T031 thì T026 phải xanh
+- [x] T032 [US2] Trong `FN/_shared/dropin.ts` (080-T006):
   - `afterSpotsReleased(tx, session, serverNow)` gọi `promoteFromWaitlist` và trả kết quả lên trên;
   - `computeRefund` thêm nhánh `PROMOTED_GRACE` theo [data-model mục 3 "Hoàn tiền"](data-model.md#hoàn-tiền-computerefund-mở-rộng-spec-080): `promotedAt` có giá trị, `startAt − promotedAt < 240 phút`, `serverNow − promotedAt ≤ 30 phút`.
 
   Sau đó T028 phải xanh
-- [ ] T033 [US2] Trong `FN/cancel-drop-in/index.ts` (080-T053): nhận `promoted[]` từ `cancelRegistrationInTx`; response thêm `promotedCount` (không có danh tính); **sau khi commit** gọi `send-notification` `DROPIN_SPOT_OPENED` cho từng người với `data = { sessionId, autoLeftSessionIds }` (lỗi gửi bỏ qua, không hoàn tác). Sau đó T027 phải xanh **20/20 lần**
-- [ ] T034 [US2] Mở rộng `DI/ui/ticket/DropInTicketViewModel.kt` và `DropInTicketFragment.kt` (080-T040, 080-T048): nhãn "Được nhận từ hàng chờ", hạn "Hủy miễn phí đến HH:mm"; `CancelDropInViewModel` (080-T055) hiển thị lý do `PROMOTED_GRACE`. Cho T029 xanh
-- [ ] T035 [US2] `WaitlistEntryViewModel` phát `Promoted` khi `observeMine` thấy `status == REGISTERED` → `WaitlistEntryFragment` mở `DropInTicketFragment`; `MyDropInsFragment` chuyển lượt từ "Đang chờ" sang "Sắp tới" kèm nhãn "Được nhận từ hàng chờ" (AC 2.4)
+- [x] T033 [US2] Trong `FN/cancel-drop-in/index.ts` (080-T053): nhận `promoted[]` từ `cancelRegistrationInTx`; response thêm `promotedCount` (không có danh tính); **sau khi commit** gọi `send-notification` `DROPIN_SPOT_OPENED` cho từng người với `data = { sessionId, autoLeftSessionIds }` (lỗi gửi bỏ qua, không hoàn tác). Sau đó T027 phải xanh **20/20 lần**
+- [x] T034 [US2] Mở rộng `DI/ui/ticket/DropInTicketViewModel.kt` và `DropInTicketFragment.kt` (080-T040, 080-T048): nhãn "Được nhận từ hàng chờ", hạn "Hủy miễn phí đến HH:mm"; `CancelDropInViewModel` (080-T055) hiển thị lý do `PROMOTED_GRACE`. Cho T029 xanh
+- [x] T035 [US2] `WaitlistEntryViewModel` phát `Promoted` khi `observeMine` thấy `status == REGISTERED` → `WaitlistEntryFragment` mở `DropInTicketFragment`; `MyDropInsFragment` chuyển lượt từ "Đang chờ" sang "Sắp tới" kèm nhãn "Được nhận từ hàng chờ" (AC 2.4)
 
 **Checkpoint**: US1 + US2 là MVP của spec 081; **Q6 xanh 20/20 lần**; quickstart M3, M4 đúng, đo SC-002 ≤ 10 giây.
 
@@ -243,7 +243,7 @@ Giống [tasks 080](../080-drop-in-session/tasks.md#quy-ước-đường-dẫn):
 
 ### Tests cho User Story 3 ⚠️ viết trước, phải fail
 
-- [ ] T036 [P] [US3] Bổ sung vào `FN/cancel-drop-in/waitlist.test.ts`:
+- [x] T036 [P] [US3] Bổ sung vào `FN/cancel-drop-in/waitlist.test.ts`:
   - rời hàng chờ (`expectWaitlisted: true`) → `CANCELLED`, `cancelledBy = USER`, `waitlistEndReason = LEFT`; `refundAmount = 0`, `paymentStatus` vẫn `null`; số vé bị bỏ khỏi `waitlistTickets`, vị trí người phía sau tăng lên (AC 3.1, SC-005);
   - **Q7:** rời hàng chờ cùng lúc một lượt 1 người khác hủy làm lượt này được đẩy lên, chạy song song **20 lần** → mỗi lần đúng một kết quả: hoặc `LEFT`, hoặc `REGISTERED` + `409 ALREADY_PROMOTED`; không bao giờ cả hai; lượt `REGISTERED` không bị hủy nhầm (FR-013);
   - `dryRun: true` → `quote.refundAmount = 0`, `reason = WAITLIST_LEAVE`, không ghi gì;
@@ -252,14 +252,14 @@ Giống [tasks 080](../080-drop-in-session/tasks.md#quy-ước-đường-dẫn):
   - rời rồi vào lại → số vé mới ở cuối hàng (AC 3.3);
   - không gọi `send-notification`;
   - sau mỗi ca gọi `assertWaitlistInvariant`.
-- [ ] T037 [P] [US3] Unit test `TEST/domain/LeaveWaitlistTest.kt` và bổ sung `TEST/ui/waitlist/WaitlistEntryViewModelTest.kt`: xác nhận → `Leaving → Left`; `AlreadyPromoted` → báo "Bạn đã được nhận vào buổi" rồi mở vé; `Network` → giữ hộp thoại, thử lại cùng `requestId`
+- [x] T037 [P] [US3] Unit test `TEST/domain/LeaveWaitlistTest.kt` và bổ sung `TEST/ui/waitlist/WaitlistEntryViewModelTest.kt`: xác nhận → `Leaving → Left`; `AlreadyPromoted` → báo "Bạn đã được nhận vào buổi" rồi mở vé; `Network` → giữ hộp thoại, thử lại cùng `requestId`
 
 ### Implementation cho User Story 3
 
-- [ ] T038 [US3] Kiểm tra `leaveWaitlistInTx` (đã cài ở T031) đọc lại đăng ký trong transaction và chỉ đổi lượt còn `WAITLISTED`; gọi trên lượt đã `REGISTERED` thì ném lỗi `ALREADY_PROMOTED` để `cancel-drop-in` trả `409` (research R10)
-- [ ] T039 [US3] Thêm nhánh lượt `WAITLISTED` vào `FN/cancel-drop-in/index.ts` theo [data-model mục 3 "Rời hàng chờ"](data-model.md#rời-hàng-chờ-cancel-drop-in-khi-lượt-đang-waitlisted) và [research R10](research.md#r10-rời-hàng-chờ-và-bị-đẩy-lên-cùng-lúc-fr-013): đọc lại đăng ký trong transaction; còn `WAITLISTED` → `leaveWaitlistInTx(..., "LEFT", "USER")`; đã `REGISTERED` có `promotedAt` mà request có `expectWaitlisted: true` → `409 ALREADY_PROMOTED`, không hủy. Sau đó T036 phải xanh
-- [ ] T040 [US3] Cài `leaveWaitlist` trong `DI/data/DropInRegistrationRepositoryImpl.kt` (gửi `expectWaitlisted = true`) và UseCase `DI/domain/usecase/LeaveWaitlist.kt`
-- [ ] T041 [US3] Thêm nút "Rời hàng chờ" và hộp thoại xác nhận ("Không mất phí") vào `WaitlistEntryFragment`; nối `WaitlistEntryViewModel`. Cho T037 xanh
+- [x] T038 [US3] Kiểm tra `leaveWaitlistInTx` (đã cài ở T031) đọc lại đăng ký trong transaction và chỉ đổi lượt còn `WAITLISTED`; gọi trên lượt đã `REGISTERED` thì ném lỗi `ALREADY_PROMOTED` để `cancel-drop-in` trả `409` (research R10)
+- [x] T039 [US3] Thêm nhánh lượt `WAITLISTED` vào `FN/cancel-drop-in/index.ts` theo [data-model mục 3 "Rời hàng chờ"](data-model.md#rời-hàng-chờ-cancel-drop-in-khi-lượt-đang-waitlisted) và [research R10](research.md#r10-rời-hàng-chờ-và-bị-đẩy-lên-cùng-lúc-fr-013): đọc lại đăng ký trong transaction; còn `WAITLISTED` → `leaveWaitlistInTx(..., "LEFT", "USER")`; đã `REGISTERED` có `promotedAt` mà request có `expectWaitlisted: true` → `409 ALREADY_PROMOTED`, không hủy. Sau đó T036 phải xanh
+- [x] T040 [US3] Cài `leaveWaitlist` trong `DI/data/DropInRegistrationRepositoryImpl.kt` (gửi `expectWaitlisted = true`) và UseCase `DI/domain/usecase/LeaveWaitlist.kt`
+- [x] T041 [US3] Thêm nút "Rời hàng chờ" và hộp thoại xác nhận ("Không mất phí") vào `WaitlistEntryFragment`; nối `WaitlistEntryViewModel`. Cho T037 xanh
 
 **Checkpoint**: US3 chạy độc lập; **Q7 xanh 20/20 lần**; quickstart M2 đúng.
 
@@ -273,26 +273,26 @@ Giống [tasks 080](../080-drop-in-session/tasks.md#quy-ước-đường-dẫn):
 
 ### Tests cho User Story 4 ⚠️ viết trước, phải fail
 
-- [ ] T042 [P] [US4] Test Deno `FN/dropin-close/index.test.ts` (Firebase Emulator):
+- [x] T042 [P] [US4] Test Deno `FN/dropin-close/index.test.ts` (Firebase Emulator):
   - **Q10:** buổi tới mốc T−30 phút có 2 lượt chờ → cả 2 `CANCELLED`, `cancelledBy = SYSTEM`, `waitlistEndReason = CLOSED`, `paymentStatus` vẫn `null`; `waitlistTickets = []`, `waitlistCount = 0`; gọi `send-notification` `DROPIN_WAITLIST_CLOSED` 2 lần với `data = { sessionId, reason: "CLOSED" }`; **chạy lại không đổi gì** và không gửi thêm;
   - buổi `OPEN`/`FULL` đã qua `endAt` → `COMPLETED`;
   - buổi còn > 30 phút → không bị đụng tới;
   - response `{ closedSessions, closedEntries, completedSessions }` đúng số;
   - **Q14:** thiếu hoặc sai `CRON_SECRET` → `401`, không ghi gì.
-- [ ] T043 [P] [US4] **Q11** bổ sung vào `FN/_shared/waitlist.test.ts`: `closeWaitlistInTx(tx, session, "SESSION_CANCELLED")` → lượt chờ `CANCELLED`, `cancelledBy = OWNER`, `waitlistEndReason = SESSION_CANCELLED`; trả `closed = [uid…]`; không lượt nào có `paymentStatus` khác `null` (SC-005)
-- [ ] T044 [P] [US4] Unit test `TEST/domain/RegistrationOutcomeResolverWaitlistTest.kt` theo [research R6](research.md#r6-biểu-diễn-lượt-chờ-đã-kết-thúc-mà-không-thêm-enum-fr-014-fr-015): `waitlistEndReason` được ưu tiên đọc — `LEFT` → `LEFT_WAITLIST` ("Đã rời hàng chờ"); `AUTO_LEFT_OVERLAP` → `LEFT_WAITLIST` ("Đã rời hàng chờ (trùng giờ)"); `CLOSED` → `NOT_ADMITTED`; `SESSION_CANCELLED` → `SESSION_CANCELLED`; `WAITLISTED` → `WAITING`. Các ca của 080-T042 vẫn xanh
+- [x] T043 [P] [US4] **Q11** bổ sung vào `FN/_shared/waitlist.test.ts`: `closeWaitlistInTx(tx, session, "SESSION_CANCELLED")` → lượt chờ `CANCELLED`, `cancelledBy = OWNER`, `waitlistEndReason = SESSION_CANCELLED`; trả `closed = [uid…]`; không lượt nào có `paymentStatus` khác `null` (SC-005)
+- [x] T044 [P] [US4] Unit test `TEST/domain/RegistrationOutcomeResolverWaitlistTest.kt` theo [research R6](research.md#r6-biểu-diễn-lượt-chờ-đã-kết-thúc-mà-không-thêm-enum-fr-014-fr-015): `waitlistEndReason` được ưu tiên đọc — `LEFT` → `LEFT_WAITLIST` ("Đã rời hàng chờ"); `AUTO_LEFT_OVERLAP` → `LEFT_WAITLIST` ("Đã rời hàng chờ (trùng giờ)"); `CLOSED` → `NOT_ADMITTED`; `SESSION_CANCELLED` → `SESSION_CANCELLED`; `WAITLISTED` → `WAITING`. Các ca của 080-T042 vẫn xanh
 
 ### Implementation cho User Story 4
 
-- [ ] T045 [US4] Cài `closeWaitlistInTx(tx, session, reason)` trong `FN/_shared/waitlist.ts` theo [data-model mục 3 "Đóng hàng chờ"](data-model.md#đóng-hàng-chờ-closewaitlistintx-tx-session-reason): mọi lượt `WAITLISTED` (lấy bằng `runQueryInTx`) chuyển `CANCELLED`, `cancelledBy = SYSTEM` khi `CLOSED` hoặc `OWNER` khi `SESSION_CANCELLED`; buổi `waitlistTickets = []`, `waitlistCount = 0`; trả `closed`. Sau đó T043 phải xanh
-- [ ] T046 [US4] Tạo `FN/dropin-close/index.ts` theo [contract mục 4](contracts/edge-functions-waitlist.md#4-dropin-close-pg_cron-mỗi-phút) và [research R7](research.md#r7-đóng-hàng-chờ-30-phút-trước-giờ-bắt-đầu-fr-014-ac-41):
+- [x] T045 [US4] Cài `closeWaitlistInTx(tx, session, reason)` trong `FN/_shared/waitlist.ts` theo [data-model mục 3 "Đóng hàng chờ"](data-model.md#đóng-hàng-chờ-closewaitlistintx-tx-session-reason): mọi lượt `WAITLISTED` (lấy bằng `runQueryInTx`) chuyển `CANCELLED`, `cancelledBy = SYSTEM` khi `CLOSED` hoặc `OWNER` khi `SESSION_CANCELLED`; buổi `waitlistTickets = []`, `waitlistCount = 0`; trả `closed`. Sau đó T043 phải xanh
+- [x] T046 [US4] Tạo `FN/dropin-close/index.ts` theo [contract mục 4](contracts/edge-functions-waitlist.md#4-dropin-close-pg_cron-mỗi-phút) và [research R7](research.md#r7-đóng-hàng-chờ-30-phút-trước-giờ-bắt-đầu-fr-014-ac-41):
   - so khớp header `x-cron-secret` với `CRON_SECRET`, sai → `401`;
   - `dropInSessions where status in [OPEN, FULL], startAt ≤ now + 30 phút`, buổi có `waitlistCount > 0` → mỗi buổi một `runTransaction` gọi `closeWaitlistInTx(..., "CLOSED")`; sau commit gửi `DROPIN_WAITLIST_CLOSED`;
   - `dropInSessions where status in [OPEN, FULL], endAt < now` → `status = COMPLETED` (việc 080 R14 giao cho cron này).
 
   Sau đó T042 phải xanh
-- [ ] T047 [US4] Cài `DI/domain/RegistrationOutcomeResolver.kt` (080-T046) đọc `waitlistEndReason`; `MyDropInsFragment` tab "Đã qua" hiện nhãn "Đã rời hàng chờ", "Không được nhận chỗ", "Buổi bị hủy" (AC 4.4, FR-015). Cho T044 xanh
-- [ ] T048 [US4] `DropInDetailFragment` ẩn "Vào hàng chờ" khi hàng chờ đóng (`isWaitlistOpen(now) == false`); `WaitlistEntryFragment` hiển thị kết quả cuối khi lượt bị đóng (không crash, có nút "Tìm buổi khác") (AC 4.3, quickstart M5)
+- [x] T047 [US4] Cài `DI/domain/RegistrationOutcomeResolver.kt` (080-T046) đọc `waitlistEndReason`; `MyDropInsFragment` tab "Đã qua" hiện nhãn "Đã rời hàng chờ", "Không được nhận chỗ", "Buổi bị hủy" (AC 4.4, FR-015). Cho T044 xanh
+- [x] T048 [US4] `DropInDetailFragment` ẩn "Vào hàng chờ" khi hàng chờ đóng (`isWaitlistOpen(now) == false`); `WaitlistEntryFragment` hiển thị kết quả cuối khi lượt bị đóng (không crash, có nút "Tìm buổi khác") (AC 4.3, quickstart M5)
 
 **Checkpoint**: cả 4 user story chạy độc lập; Q10, Q11, Q14 xanh; quickstart M5 đúng.
 
@@ -303,7 +303,7 @@ Giống [tasks 080](../080-drop-in-session/tasks.md#quy-ước-đường-dẫn):
 - [ ] T049 [P] Espresso `ATEST/WaitlistFlowTest.kt` (Emulator + seed 081): chi tiết `W1` → "Vào hàng chờ" → xác nhận 2 người → thấy vị trí; một tài khoản khác hủy (gọi Edge Function trong test) → màn hình tự chuyển sang vé có nhãn "Được nhận từ hàng chờ"
 - [ ] T050 [P] Kiểm tra 4 trạng thái (loading, content, empty, error + "Thử lại") trên `WaitlistEntryFragment` và phần hàng chờ của `DropInDetailFragment`; mất mạng không crash và giữ lựa chọn (FR-016); chế độ tối; bố cục `w600dp`; vùng chạm ≥ 48dp (quickstart M8)
 - [ ] T051 [P] Cập nhật `docs/design/database/README.md` theo [danh sách cuối data-model.md](data-model.md#danh-sách-thay-đổi-cần-đưa-vào-docsdesigndatabasereadmemd) (mục 4.9, 6, 8a), **sau khi D đồng ý** (đề xuất gửi ở T001) 3 trường `waitlist*` trên `dropInSessions`
-- [ ] T052 [P] Cập nhật `docs/features/08-drop-in/README.md` (link plan, tasks spec 081)
+- [x] T052 [P] Cập nhật `docs/features/08-drop-in/README.md` (link plan, tasks spec 081)
 - [ ] T053 Chạy toàn bộ [quickstart.md](quickstart.md): test tự động mục 2; M1–M8 trên Emulator; đo SC-001, SC-002; hỏi 5 người thử cho SC-006; chụp ảnh hoặc quay video minh chứng
 - [ ] T054 Chạy `./gradlew lint testDebugUnitTest assembleDebug`, `deno test -A supabase/functions`, `npm test` trong `firestore-tests/`; không còn cảnh báo Lint mức Error; ktlint sạch
 

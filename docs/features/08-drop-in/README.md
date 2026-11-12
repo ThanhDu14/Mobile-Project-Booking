@@ -7,8 +7,8 @@
 | Thành viên phụ trách | Nguyễn Đức Duy (C) |
 | App tham khảo | Alobo |
 | Trạng thái | 🟨 Đang làm |
-| Nhánh Git | `feature/080-drop-in-*` |
-| Spec (Spec Kit) | [`specs/080-drop-in-session/spec.md`](../../../specs/080-drop-in-session/spec.md) (đã clarify) ([plan](../../../specs/080-drop-in-session/plan.md), [tasks](../../../specs/080-drop-in-session/tasks.md)) · [`specs/081-drop-in-waitlist/spec.md`](../../../specs/081-drop-in-waitlist/spec.md) (đã clarify) |
+| Nhánh Git | `feature/080-drop-in-*`, `feature/081-drop-in-waitlist` |
+| Spec (Spec Kit) | [`specs/080-drop-in-session/spec.md`](../../../specs/080-drop-in-session/spec.md) (đã clarify) ([plan](../../../specs/080-drop-in-session/plan.md), [tasks](../../../specs/080-drop-in-session/tasks.md)) · [`specs/081-drop-in-waitlist/spec.md`](../../../specs/081-drop-in-waitlist/spec.md) (đã clarify) ([plan](../../../specs/081-drop-in-waitlist/plan.md), [tasks](../../../specs/081-drop-in-waitlist/tasks.md)) |
 
 ## Phạm vi chức năng
 
