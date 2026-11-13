@@ -31,6 +31,7 @@ class AdminReportQueueFragment : Fragment(R.layout.fragment_admin_report_queue) 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         _binding = FragmentAdminReportQueueBinding.bind(view)
+        binding.toggleGroupStatus.check(if (viewModel.closedTab) R.id.buttonTabClosed else R.id.buttonTabOpen)
 
         adapter = AdminReportAdapter { report ->
             viewModel.selectReport(report)
@@ -41,6 +42,12 @@ class AdminReportQueueFragment : Fragment(R.layout.fragment_admin_report_queue) 
 
         binding.recyclerReports.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerReports.adapter = adapter
+        binding.recyclerReports.addOnScrollListener(object : androidx.recyclerview.widget.RecyclerView.OnScrollListener() {
+            override fun onScrolled(rv: androidx.recyclerview.widget.RecyclerView, dx: Int, dy: Int) {
+                if (dy > 0 && !rv.canScrollVertically(1)) viewModel.loadMore()
+            }
+        })
+        viewModel.loadReports()
 
         binding.buttonRetry.setOnClickListener {
             viewModel.loadReports()
@@ -48,7 +55,7 @@ class AdminReportQueueFragment : Fragment(R.layout.fragment_admin_report_queue) 
 
         binding.toggleGroupStatus.addOnButtonCheckedListener { _, checkedId, isChecked ->
             if (isChecked) {
-                filterReports()
+                viewModel.selectStatus(checkedId == R.id.buttonTabClosed)
             }
         }
 
@@ -81,6 +88,7 @@ class AdminReportQueueFragment : Fragment(R.layout.fragment_admin_report_queue) 
                 currentBinding.textErrorMessage.text = state.message
                 currentBinding.buttonRetry.isVisible = state.canRetry
             }
+            AdminReportQueueState.Empty -> { allReports = emptyList(); adapter.submitList(emptyList()) }
             else -> Unit
         }
     }
@@ -105,11 +113,12 @@ class AdminReportQueueFragment : Fragment(R.layout.fragment_admin_report_queue) 
         }
 
         adapter.submitList(filtered)
-        currentBinding.layoutEmpty.isVisible = filtered.isEmpty() && allReports.isNotEmpty()
+        currentBinding.layoutEmpty.isVisible = filtered.isEmpty()
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
+        viewModel.stopQueue()
         _binding = null
     }
 }

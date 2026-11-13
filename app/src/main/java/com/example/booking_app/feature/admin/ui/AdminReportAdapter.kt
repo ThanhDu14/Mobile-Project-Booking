@@ -64,7 +64,7 @@ class AdminReportAdapter(
             binding.textReason.text = item.reason.ifBlank { "Nội dung vi phạm" }
             binding.textDetail.text = item.detail.ifBlank { "Không có nội dung mô tả" }
 
-            val dateStr = if (item.createdAt > 0L) dateFormat.format(Date(item.createdAt)) else "09/10 · 08:40"
+            val dateStr = if (item.createdAt > 0L) dateFormat.format(Date(item.createdAt)) else "Chưa có thời điểm"
             binding.textReportDate.text = dateStr
 
             if (sameTargetCount > 1) {

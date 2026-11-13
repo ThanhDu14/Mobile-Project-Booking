@@ -1,7 +1,9 @@
+import { requireCurrentAdmin } from "../_shared/admin-authorization.ts";
 import { HttpError, requireRole, requireUser, toErrorResponse } from "../_shared/auth.ts";
 import * as defaultFirestore from "../_shared/firestore.ts";
 import { createWrite, updateWrite, FirestoreError } from "../_shared/firestore.ts";
 import { mergeClaims as defaultMergeClaims } from "../_shared/identity.ts";
+import { reconcileAdminClaims } from "../_shared/admin-claims.ts";
 
 export interface AdminReviewDeps {
   firestore: Pick<typeof defaultFirestore, "get" | "runTransaction">;
@@ -78,14 +80,26 @@ export async function handleAdminReviewApplication(
   try {
     const user = await requireUser(req);
     requireRole(user, "ADMIN");
+    requireCurrentAdmin(user);
 
     const body = await req.json().catch(() => ({})) as Record<string, unknown>;
     const applicationId = typeof body.applicationId === "string" ? body.applicationId.trim() : "";
     const decision = typeof body.decision === "string" ? body.decision.trim().toUpperCase() : "";
     const rejectReason = typeof body.rejectReason === "string" ? body.rejectReason.trim() : "";
+    const expectedSubmittedAt = body.expectedSubmittedAt;
+    const targetStatus = decision === "APPROVE" ? "APPROVED" : "REJECTED";
 
-    if (!applicationId) {
+    if (!applicationId || applicationId.includes("/")) {
       throw new HttpError(400, "INVALID_APPLICATION_ID", "Mã hồ sơ không hợp lệ");
+    }
+    if (body.action === "RECOVER_CLAIMS") {
+      const application = await deps.firestore.get(`ownerApplications/${applicationId}`);
+      if (!application) throw new HttpError(404,"APPLICATION_NOT_FOUND","Không tìm thấy hồ sơ");
+      if (application.status !== "APPROVED" && application.status !== "REJECTED") throw new HttpError(409,"APPLICATION_CONFLICT","Hồ sơ chưa có quyết định để phục hồi quyền");
+      const uid = String(application.uid ?? application.applicantId ?? "");
+      if (!uid) throw new HttpError(400,"INVALID_APPLICATION","Hồ sơ thiếu người nộp");
+      await reconcileAdminClaims(uid,deps.firestore.get,deps.mergeClaims);
+      return json(200,{success:true,applicationId,status:application.status,claimsSynced:true});
     }
     if (decision !== "APPROVE" && decision !== "REJECT") {
       throw new HttpError(400, "INVALID_DECISION", "Quyết định phải là APPROVE hoặc REJECT");
@@ -108,6 +122,12 @@ export async function handleAdminReviewApplication(
         throw new HttpError(400, "INVALID_APPLICATION", "Hồ sơ không có thông tin người nộp");
       }
       targetApplicantUid = applicantUid;
+      if (app.status === "PENDING" && (typeof expectedSubmittedAt !== "string" || !Number.isFinite(Date.parse(expectedSubmittedAt)))) {
+        throw new HttpError(400, "MISSING_APPLICATION_VERSION", "Vui lòng tải lại hồ sơ trước khi quyết định");
+      }
+      if (expectedSubmittedAt != null && new Date(String(app.submittedAt)).getTime() !== new Date(String(expectedSubmittedAt)).getTime()) {
+        throw new HttpError(409, "APPLICATION_CONFLICT", "Hồ sơ đã được nộp lại. Vui lòng tải trạng thái mới.");
+      }
 
       const applicant = await tx.get(`users/${applicantUid}`);
       if (!applicant) {
@@ -115,8 +135,9 @@ export async function handleAdminReviewApplication(
       }
 
       if (app.status !== "PENDING") {
-        if (app.status === decision) {
-          return { success: true, status: decision, alreadyCommitted: true, applicationId };
+        if (app.status === targetStatus && app.reviewedBy === user.uid &&
+            (decision !== "REJECT" || app.rejectReason === rejectReason)) {
+          return { success: true, status: targetStatus, alreadyCommitted: true, applicationId };
         }
         throw new HttpError(409, "APPLICATION_CONFLICT", "Hồ sơ đã được xử lý bởi quản trị viên khác");
       }
@@ -198,14 +219,10 @@ export async function handleAdminReviewApplication(
         }));
       }
 
-      return { success: true, status: decision, applicationId };
+      return { success: true, status: targetStatus, applicationId };
     });
 
-    if (decision === "APPROVE" && !outcome.alreadyCommitted && targetApplicantUid) {
-      await deps.mergeClaims(targetApplicantUid, { appRole: "OWNER" }).catch((err) => {
-        console.warn("Failed to set appRole=OWNER claim:", err);
-      });
-    }
+    await reconcileAdminClaims(targetApplicantUid, deps.firestore.get, deps.mergeClaims);
 
     return json(200, outcome);
   } catch (error) {

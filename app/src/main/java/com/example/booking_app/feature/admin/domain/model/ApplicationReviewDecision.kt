@@ -9,6 +9,7 @@ data class ApplicationReviewDecision(
     val applicationId: String,
     val action: ReviewAction,
     val rejectReason: String? = null,
+    val expectedSubmittedAt: Long? = null,
 ) {
     fun validate(): String? {
         if (applicationId.isBlank()) {

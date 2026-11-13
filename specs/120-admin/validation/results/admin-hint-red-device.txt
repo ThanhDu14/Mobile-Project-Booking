@@ -1,0 +1,212 @@
+﻿Local admin UI fixtures ready (demo-admin-repair only)
+Performing Streamed Install
+Success
+Performing Streamed Install
+Success
+INSTRUMENTATION_STATUS: class=com.example.booking_app.feature.admin.AdminApplicationScreensUiTest
+INSTRUMENTATION_STATUS: current=1
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=5
+INSTRUMENTATION_STATUS: stream=
+com.example.booking_app.feature.admin.AdminApplicationScreensUiTest:
+INSTRUMENTATION_STATUS: test=sampleScreensInflateWithTheirPrimaryActionsInLightAndDarkPhoneAndTabletModes
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=com.example.booking_app.feature.admin.AdminApplicationScreensUiTest
+INSTRUMENTATION_STATUS: current=1
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=5
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=sampleScreensInflateWithTheirPrimaryActionsInLightAndDarkPhoneAndTabletModes
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=com.example.booking_app.feature.admin.AdminLocalInteractionTest
+INSTRUMENTATION_STATUS: current=2
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=5
+INSTRUMENTATION_STATUS: stream=
+com.example.booking_app.feature.admin.AdminLocalInteractionTest:
+INSTRUMENTATION_STATUS: test=approveAndCategoryAndVenueNavigation
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=com.example.booking_app.feature.admin.AdminLocalInteractionTest
+INSTRUMENTATION_STATUS: current=2
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=5
+INSTRUMENTATION_STATUS: stack=androidx.test.espresso.base.AssertionErrorHandler$AssertionFailedWithCauseError: expected:<Thêm [tiện ích] mới> but was:<Thêm [khu vực] mới>
+	at dalvik.system.VMStack.getThreadStackTrace(Native Method)
+	at java.lang.Thread.getStackTrace(Thread.java:2849)
+	at androidx.test.espresso.base.AssertionErrorHandler.handleSafely(AssertionErrorHandler.java:35)
+	at androidx.test.espresso.base.AssertionErrorHandler.handleSafely(AssertionErrorHandler.java:26)
+	at androidx.test.espresso.base.DefaultFailureHandler$TypedFailureHandler.handle(DefaultFailureHandler.java:158)
+	at androidx.test.espresso.base.DefaultFailureHandler.handle(DefaultFailureHandler.java:120)
+	at androidx.test.espresso.ViewInteraction.waitForAndHandleInteractionResults(ViewInteraction.java:387)
+	at androidx.test.espresso.ViewInteraction.check(ViewInteraction.java:366)
+	at com.example.booking_app.feature.admin.AdminLocalInteractionTest.assertAmenityHint(AdminLocalInteractionTest.kt:197)
+	at com.example.booking_app.feature.admin.AdminLocalInteractionTest.access$assertAmenityHint(AdminLocalInteractionTest.kt:39)
+	at com.example.booking_app.feature.admin.AdminLocalInteractionTest$approveAndCategoryAndVenueNavigation$1.invokeSuspend(AdminLocalInteractionTest.kt:121)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+	at kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:263)
+	at kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:94)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking(Builders.kt:70)
+	at kotlinx.coroutines.BuildersKt.runBlocking(dex-id-e4502f858af1300eb2742ccb9a6ef9aa5783fe9c:1)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking$default(Builders.kt:48)
+	at kotlinx.coroutines.BuildersKt.runBlocking$default(dex-id-e4502f858af1300eb2742ccb9a6ef9aa5783fe9c:1)
+	at com.example.booking_app.feature.admin.AdminLocalInteractionTest.approveAndCategoryAndVenueNavigation(AdminLocalInteractionTest.kt:46)
+	... 32 trimmed
+Caused by: org.junit.ComparisonFailure: expected:<Thêm [tiện ích] mới> but was:<Thêm [khu vực] mới>
+	at org.junit.Assert.assertEquals(Assert.java:117)
+	at org.junit.Assert.assertEquals(Assert.java:146)
+	at com.example.booking_app.feature.admin.AdminLocalInteractionTest.assertAmenityHint$lambda$1(AdminLocalInteractionTest.kt:199)
+	at com.example.booking_app.feature.admin.AdminLocalInteractionTest$$ExternalSyntheticLambda0.check(D8$$SyntheticClass:0)
+	at androidx.test.espresso.ViewInteraction$SingleExecutionViewAssertion.check(ViewInteraction.java:488)
+	at androidx.test.espresso.ViewInteraction$2.call(ViewInteraction.java:346)
+	at androidx.test.espresso.ViewInteraction$2.call(ViewInteraction.java:319)
+	at java.util.concurrent.FutureTask.run(FutureTask.java:328)
+	at android.os.Handler.handleCallback(Handler.java:1014)
+	at android.os.Handler.dispatchMessage(Handler.java:102)
+	at android.os.Looper.loopOnce(Looper.java:250)
+	at android.os.Looper.loop(Looper.java:340)
+	at android.app.ActivityThread.main(ActivityThread.java:9928)
+	at java.lang.reflect.Method.invoke(Native Method)
+	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:625)
+	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:963)
+
+INSTRUMENTATION_STATUS: stream=
+Error in approveAndCategoryAndVenueNavigation(com.example.booking_app.feature.admin.AdminLocalInteractionTest):
+androidx.test.espresso.base.AssertionErrorHandler$AssertionFailedWithCauseError: expected:<Thêm [tiện ích] mới> but was:<Thêm [khu vực] mới>
+	at dalvik.system.VMStack.getThreadStackTrace(Native Method)
+	at java.lang.Thread.getStackTrace(Thread.java:2849)
+	at androidx.test.espresso.base.AssertionErrorHandler.handleSafely(AssertionErrorHandler.java:35)
+	at androidx.test.espresso.base.AssertionErrorHandler.handleSafely(AssertionErrorHandler.java:26)
+	at androidx.test.espresso.base.DefaultFailureHandler$TypedFailureHandler.handle(DefaultFailureHandler.java:158)
+	at androidx.test.espresso.base.DefaultFailureHandler.handle(DefaultFailureHandler.java:120)
+	at androidx.test.espresso.ViewInteraction.waitForAndHandleInteractionResults(ViewInteraction.java:387)
+	at androidx.test.espresso.ViewInteraction.check(ViewInteraction.java:366)
+	at com.example.booking_app.feature.admin.AdminLocalInteractionTest.assertAmenityHint(AdminLocalInteractionTest.kt:197)
+	at com.example.booking_app.feature.admin.AdminLocalInteractionTest.access$assertAmenityHint(AdminLocalInteractionTest.kt:39)
+	at com.example.booking_app.feature.admin.AdminLocalInteractionTest$approveAndCategoryAndVenueNavigation$1.invokeSuspend(AdminLocalInteractionTest.kt:121)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+	at kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:263)
+	at kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:94)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking(Builders.kt:70)
+	at kotlinx.coroutines.BuildersKt.runBlocking(dex-id-e4502f858af1300eb2742ccb9a6ef9aa5783fe9c:1)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking$default(Builders.kt:48)
+	at kotlinx.coroutines.BuildersKt.runBlocking$default(dex-id-e4502f858af1300eb2742ccb9a6ef9aa5783fe9c:1)
+	at com.example.booking_app.feature.admin.AdminLocalInteractionTest.approveAndCategoryAndVenueNavigation(AdminLocalInteractionTest.kt:46)
+	... 32 trimmed
+Caused by: org.junit.ComparisonFailure: expected:<Thêm [tiện ích] mới> but was:<Thêm [khu vực] mới>
+	at org.junit.Assert.assertEquals(Assert.java:117)
+	at org.junit.Assert.assertEquals(Assert.java:146)
+	at com.example.booking_app.feature.admin.AdminLocalInteractionTest.assertAmenityHint$lambda$1(AdminLocalInteractionTest.kt:199)
+	at com.example.booking_app.feature.admin.AdminLocalInteractionTest$$ExternalSyntheticLambda0.check(D8$$SyntheticClass:0)
+	at androidx.test.espresso.ViewInteraction$SingleExecutionViewAssertion.check(ViewInteraction.java:488)
+	at androidx.test.espresso.ViewInteraction$2.call(ViewInteraction.java:346)
+	at androidx.test.espresso.ViewInteraction$2.call(ViewInteraction.java:319)
+	at java.util.concurrent.FutureTask.run(FutureTask.java:328)
+	at android.os.Handler.handleCallback(Handler.java:1014)
+	at android.os.Handler.dispatchMessage(Handler.java:102)
+	at android.os.Looper.loopOnce(Looper.java:250)
+	at android.os.Looper.loop(Looper.java:340)
+	at android.app.ActivityThread.main(ActivityThread.java:9928)
+	at java.lang.reflect.Method.invoke(Native Method)
+	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:625)
+	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:963)
+
+INSTRUMENTATION_STATUS: test=approveAndCategoryAndVenueNavigation
+INSTRUMENTATION_STATUS_CODE: -2
+INSTRUMENTATION_STATUS: class=com.example.booking_app.feature.admin.AdminReportScreensUiTest
+INSTRUMENTATION_STATUS: current=3
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=5
+INSTRUMENTATION_STATUS: stream=
+com.example.booking_app.feature.admin.AdminReportScreensUiTest:
+INSTRUMENTATION_STATUS: test=sampleReportScreensInflateWithTheirPrimaryActionsInLightAndDarkPhoneAndTabletModes
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=com.example.booking_app.feature.admin.AdminReportScreensUiTest
+INSTRUMENTATION_STATUS: current=3
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=5
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=sampleReportScreensInflateWithTheirPrimaryActionsInLightAndDarkPhoneAndTabletModes
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=com.example.booking_app.feature.admin.AdminToolsScreensUiTest
+INSTRUMENTATION_STATUS: current=4
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=5
+INSTRUMENTATION_STATUS: stream=
+com.example.booking_app.feature.admin.AdminToolsScreensUiTest:
+INSTRUMENTATION_STATUS: test=adminToolsScreensInflateWithPrimaryActionsInLightDarkPhoneAndTabletModes
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=com.example.booking_app.feature.admin.AdminToolsScreensUiTest
+INSTRUMENTATION_STATUS: current=4
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=5
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=adminToolsScreensInflateWithPrimaryActionsInLightDarkPhoneAndTabletModes
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=com.example.booking_app.feature.admin.AdminUserVenueScreensUiTest
+INSTRUMENTATION_STATUS: current=5
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=5
+INSTRUMENTATION_STATUS: stream=
+com.example.booking_app.feature.admin.AdminUserVenueScreensUiTest:
+INSTRUMENTATION_STATUS: test=userAndVenueScreensInflateWithPrimaryActionsInLightDarkPhoneAndTabletModes
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=com.example.booking_app.feature.admin.AdminUserVenueScreensUiTest
+INSTRUMENTATION_STATUS: current=5
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=5
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=userAndVenueScreensInflateWithPrimaryActionsInLightDarkPhoneAndTabletModes
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_RESULT: stream=
+
+Time: 61,319
+There was 1 failure:
+1) approveAndCategoryAndVenueNavigation(com.example.booking_app.feature.admin.AdminLocalInteractionTest)
+androidx.test.espresso.base.AssertionErrorHandler$AssertionFailedWithCauseError: expected:<Thêm [tiện ích] mới> but was:<Thêm [khu vực] mới>
+	at dalvik.system.VMStack.getThreadStackTrace(Native Method)
+	at java.lang.Thread.getStackTrace(Thread.java:2849)
+	at androidx.test.espresso.base.AssertionErrorHandler.handleSafely(AssertionErrorHandler.java:35)
+	at androidx.test.espresso.base.AssertionErrorHandler.handleSafely(AssertionErrorHandler.java:26)
+	at androidx.test.espresso.base.DefaultFailureHandler$TypedFailureHandler.handle(DefaultFailureHandler.java:158)
+	at androidx.test.espresso.base.DefaultFailureHandler.handle(DefaultFailureHandler.java:120)
+	at androidx.test.espresso.ViewInteraction.waitForAndHandleInteractionResults(ViewInteraction.java:387)
+	at androidx.test.espresso.ViewInteraction.check(ViewInteraction.java:366)
+	at com.example.booking_app.feature.admin.AdminLocalInteractionTest.assertAmenityHint(AdminLocalInteractionTest.kt:197)
+	at com.example.booking_app.feature.admin.AdminLocalInteractionTest.access$assertAmenityHint(AdminLocalInteractionTest.kt:39)
+	at com.example.booking_app.feature.admin.AdminLocalInteractionTest$approveAndCategoryAndVenueNavigation$1.invokeSuspend(AdminLocalInteractionTest.kt:121)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+	at kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:263)
+	at kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:94)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking(Builders.kt:70)
+	at kotlinx.coroutines.BuildersKt.runBlocking(dex-id-e4502f858af1300eb2742ccb9a6ef9aa5783fe9c:1)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking$default(Builders.kt:48)
+	at kotlinx.coroutines.BuildersKt.runBlocking$default(dex-id-e4502f858af1300eb2742ccb9a6ef9aa5783fe9c:1)
+	at com.example.booking_app.feature.admin.AdminLocalInteractionTest.approveAndCategoryAndVenueNavigation(AdminLocalInteractionTest.kt:46)
+	... 32 trimmed
+Caused by: org.junit.ComparisonFailure: expected:<Thêm [tiện ích] mới> but was:<Thêm [khu vực] mới>
+	at org.junit.Assert.assertEquals(Assert.java:117)
+	at org.junit.Assert.assertEquals(Assert.java:146)
+	at com.example.booking_app.feature.admin.AdminLocalInteractionTest.assertAmenityHint$lambda$1(AdminLocalInteractionTest.kt:199)
+	at com.example.booking_app.feature.admin.AdminLocalInteractionTest$$ExternalSyntheticLambda0.check(D8$$SyntheticClass:0)
+	at androidx.test.espresso.ViewInteraction$SingleExecutionViewAssertion.check(ViewInteraction.java:488)
+	at androidx.test.espresso.ViewInteraction$2.call(ViewInteraction.java:346)
+	at androidx.test.espresso.ViewInteraction$2.call(ViewInteraction.java:319)
+	at java.util.concurrent.FutureTask.run(FutureTask.java:328)
+	at android.os.Handler.handleCallback(Handler.java:1014)
+	at android.os.Handler.dispatchMessage(Handler.java:102)
+	at android.os.Looper.loopOnce(Looper.java:250)
+	at android.os.Looper.loop(Looper.java:340)
+	at android.app.ActivityThread.main(ActivityThread.java:9928)
+	at java.lang.reflect.Method.invoke(Native Method)
+	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:625)
+	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:963)
+
+FAILURES!!!
+Tests run: 5,  Failures: 1
+
+
+INSTRUMENTATION_CODE: -1
+

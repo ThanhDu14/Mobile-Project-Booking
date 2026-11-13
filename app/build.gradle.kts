@@ -21,10 +21,16 @@ android {
         versionCode = 1
         versionName = "1.0"
 
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = providers.gradleProperty("adminTestRunner")
+            .orElse("androidx.test.runner.AndroidJUnitRunner").get()
     }
 
     buildTypes {
+        debug {
+            if (providers.gradleProperty("adminLocalAppId").orNull == "true") {
+                applicationIdSuffix = ".adminlocal"
+            }
+        }
         release {
             optimization {
                 enable = false
@@ -41,6 +47,19 @@ android {
     }
     testOptions {
         unitTests.isReturnDefaultValues = true
+    }
+    if (providers.gradleProperty("adminLocalAppId").orNull == "true") {
+        sourceSets.getByName("androidTest").kotlin.srcDir("src/adminLocalAndroidTest/java")
+    }
+}
+
+// Local instrumentation supplies a named demo Firebase app through test DI.
+// The isolated package intentionally has no hosted google-services client registration.
+if (providers.gradleProperty("adminLocalAppId").orNull == "true") {
+    afterEvaluate {
+        tasks.named<com.google.gms.googleservices.GoogleServicesTask>("processDebugGoogleServices") {
+            googleServicesJsonFiles.set(listOf(rootProject.file("scripts/admin/google-services.admin-local.json")))
+        }
     }
 }
 
@@ -93,5 +112,9 @@ dependencies {
     testImplementation(libs.turbine)
     testImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.androidx.espresso.intents)
     androidTestImplementation(libs.androidx.junit)
+    // Admin interaction tests replace backend DI with Emulator/local clients.
+    androidTestImplementation(libs.hilt.android.testing)
+    kspAndroidTest(libs.hilt.compiler)
 }

@@ -1,13 +1,14 @@
 import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest';
 import { assertFails, assertSucceeds, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
 import { collection, doc, getDoc, getDocs, query, setDoc, where } from 'firebase/firestore';
-import { createTestEnv } from './setup';
+import { createTestEnv, seedCurrentAdmin } from './setup';
 
 let env: RulesTestEnvironment;
 
 beforeAll(async () => { env = await createTestEnv(); });
 beforeEach(async () => {
   await env.clearFirestore();
+  await seedCurrentAdmin(env, 'admin');
   await env.withSecurityRulesDisabled(async (ctx) => {
     await ctx.firestore().doc('ownerApplications/app-a').set({ uid: 'applicant-a', status: 'PENDING', submittedAt: new Date() });
     await ctx.firestore().doc('ownerApplications/app-b').set({ uid: 'applicant-b', status: 'REJECTED', submittedAt: new Date() });

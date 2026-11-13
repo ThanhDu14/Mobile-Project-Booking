@@ -47,7 +47,7 @@ class AdminUserAdapter(
                 .uppercase()
             binding.textUserAvatar.text = if (initials.isNotBlank()) initials else "ND"
 
-            binding.textUserContact.text = item.phone.ifBlank { "0912 334 551" }
+            binding.textUserContact.text = listOf(item.email, item.phone).filter { it.isNotBlank() }.joinToString(" · ").ifBlank { "Chưa có thông tin liên hệ" }
 
             when {
                 item.isLocked -> {

@@ -2,6 +2,7 @@ package com.example.booking_app.feature.admin.data
 
 import com.example.booking_app.core.network.FunctionErrors
 import com.example.booking_app.feature.admin.domain.model.AdminUserLookup
+import com.example.booking_app.feature.admin.domain.model.AdminUserPage
 import com.example.booking_app.feature.admin.domain.model.AdminVenueItem
 import com.example.booking_app.feature.admin.domain.model.OwnerRevocationDecision
 import com.example.booking_app.feature.admin.domain.model.UserAccountStatus
@@ -26,6 +27,7 @@ data class AdminUserDto(
     val accountStatus: String? = null,
     val ownerRevokedReason: String? = null,
     val createdAt: String? = null,
+    val email: String? = null,
 )
 
 @Serializable
@@ -34,6 +36,8 @@ data class AdminManageUserRequest(
     val query: String? = null,
     val uid: String? = null,
     val accountStatus: String? = null,
+    val pageToken: String? = null,
+    val filter: String? = null,
 )
 
 @Serializable
@@ -43,6 +47,8 @@ data class AdminManageUserResponse(
     val uid: String? = null,
     val accountStatus: String? = null,
     val alreadyCommitted: Boolean = false,
+    val users: List<AdminUserDto> = emptyList(),
+    val nextPageToken: String = "",
 )
 
 @Serializable
@@ -79,9 +85,9 @@ class AdminUserVenueRepositoryImpl @Inject constructor(
     private val functionErrors: FunctionErrors,
 ) : AdminUserVenueRepository {
 
-    override suspend fun lookupUser(query: String): Result<AdminUserLookup?> = runCatching {
+    override suspend fun lookupUser(query: String): Result<AdminUserLookup?> = adminRunCatching {
         val trimmed = query.trim()
-        if (trimmed.isEmpty()) return@runCatching null
+        if (trimmed.isEmpty()) return@adminRunCatching null
 
         val response = functionErrors.invokeWithAuthRetry {
             supabase.functions.invoke(
@@ -93,7 +99,7 @@ class AdminUserVenueRepositoryImpl @Inject constructor(
             ).body<AdminManageUserResponse>()
         }
 
-        val dto = response.user ?: return@runCatching null
+        val dto = response.user ?: return@adminRunCatching null
         AdminUserLookup(
             uid = dto.uid ?: trimmed,
             phone = dto.phone.orEmpty(),
@@ -103,10 +109,24 @@ class AdminUserVenueRepositoryImpl @Inject constructor(
             accountStatus = UserAccountStatus.fromString(dto.accountStatus),
             ownerRevokedReason = dto.ownerRevokedReason,
             createdAt = dto.createdAt,
+            email = dto.email.orEmpty(),
         )
     }
 
-    override suspend fun setAccountStatus(uid: String, status: UserAccountStatus): Result<Unit> = runCatching {
+    override suspend fun listUsers(query: String, filter: String, pageToken: String): Result<AdminUserPage> = adminRunCatching {
+        val response = functionErrors.invokeWithAuthRetry {
+            supabase.functions.invoke(FUNCTION_MANAGE_USER, body = AdminManageUserRequest(
+                action = "LIST", query = query, filter = filter, pageToken = pageToken,
+            )).body<AdminManageUserResponse>()
+        }
+        AdminUserPage(response.users.map { dto ->
+            AdminUserLookup(requireNotNull(dto.uid), dto.phone.orEmpty(), dto.fullName.orEmpty(),
+                dto.role.orEmpty(), dto.ownerStatus.orEmpty(), UserAccountStatus.fromString(dto.accountStatus),
+                dto.ownerRevokedReason, dto.createdAt, dto.email.orEmpty())
+        }, response.nextPageToken)
+    }
+
+    override suspend fun setAccountStatus(uid: String, status: UserAccountStatus): Result<Unit> = adminRunCatching {
         functionErrors.invokeWithAuthRetry {
             supabase.functions.invoke(
                 FUNCTION_MANAGE_USER,
@@ -119,7 +139,7 @@ class AdminUserVenueRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun revokeOwner(decision: OwnerRevocationDecision): Result<Unit> = runCatching {
+    override suspend fun revokeOwner(decision: OwnerRevocationDecision): Result<Unit> = adminRunCatching {
         val err = decision.validate()
         if (err != null) throw IllegalArgumentException(err)
 
@@ -134,12 +154,12 @@ class AdminUserVenueRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getVenue(venueId: String): Result<AdminVenueItem?> = runCatching {
+    override suspend fun getVenue(venueId: String): Result<AdminVenueItem?> = adminRunCatching {
         val trimmed = venueId.trim()
-        if (trimmed.isEmpty()) return@runCatching null
+        if (trimmed.isEmpty()) return@adminRunCatching null
 
         val doc = firestore.collection("venues").document(trimmed).get().await()
-        if (!doc.exists()) return@runCatching null
+        if (!doc.exists()) return@adminRunCatching null
 
         AdminVenueItem(
             venueId = doc.id,
@@ -150,7 +170,7 @@ class AdminUserVenueRepositoryImpl @Inject constructor(
         )
     }
 
-    override suspend fun setVenueStatus(venueId: String, status: String): Result<Unit> = runCatching {
+    override suspend fun setVenueStatus(venueId: String, status: String): Result<Unit> = adminRunCatching {
         functionErrors.invokeWithAuthRetry {
             supabase.functions.invoke(
                 FUNCTION_MANAGE_VENUE,

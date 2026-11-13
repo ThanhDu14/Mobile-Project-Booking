@@ -443,6 +443,9 @@ verify_jwt = false
 [functions.owner-create-session]
 verify_jwt = false
 
+[functions.owner-update-session]
+verify_jwt = false
+
 [functions.owner-cancel-session]
 verify_jwt = false
 

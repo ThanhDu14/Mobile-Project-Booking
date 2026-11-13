@@ -1,0 +1,365 @@
+﻿To honour the JVM settings for this build a single-use Daemon process will be forked. For more on this, please refer to https://docs.gradle.org/9.6.0/userguide/gradle_daemon.html#sec:disabling_the_daemon in the Gradle documentation.
+Daemon will be stopped at the end of the build 
+Reusing configuration cache.
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugUnitTestBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:processDebugGoogleServices UP-TO-DATE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:javaPreCompileDebugUnitTest UP-TO-DATE
+> Task :app:generateDebugBuildConfig UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :app:generateSafeArgsDebug UP-TO-DATE
+> Task :app:generateDebugResources
+> Task :app:mapDebugSourceSetPaths
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:dataBindingMergeDependencyArtifactsDebug UP-TO-DATE
+> Task :app:processDebugMainManifest UP-TO-DATE
+> Task :app:processDebugManifest UP-TO-DATE
+> Task :app:processDebugManifestForPackage UP-TO-DATE
+> Task :app:processDebugNavigationResources
+> Task :app:compileDebugNavigationResources UP-TO-DATE
+> Task :app:packageDebugResources
+> Task :app:mergeDebugResources
+> Task :app:parseDebugLocalResources
+> Task :app:generateDebugRFile UP-TO-DATE
+> Task :app:dataBindingGenBaseClassesDebug
+> Task :app:processDebugResources
+> Task :app:kspDebugKotlin
+> Task :app:compileDebugKotlin
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/core/session/FcmSignOutHook.kt:47:76 'val token: Task<String!>' is deprecated. Deprecated in Java.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/core/session/FcmSignOutHook.kt:50:41 'fun deleteToken(): Task<Void!>' is deprecated. Deprecated in Java.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/core/session/FirebaseSessionManager.kt:41:5 This annotation is currently applied to the value parameter only, but in the future it will also be applied to property.
+- To opt in to applying to both value parameter and property, add '-Xannotation-default-target=param-property' to your compiler arguments.
+- To keep applying to the value parameter only, use the '@param:' annotation target.
+
+See https://youtrack.jetbrains.com/issue/KT-73255 for more details.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/core/ui/StateViews.kt:12:5 This annotation is currently applied to the value parameter only, but in the future it will also be applied to field.
+- To opt in to applying to both value parameter and field, add '-Xannotation-default-target=param-property' to your compiler arguments.
+- To keep applying to the value parameter only, use the '@param:' annotation target.
+
+See https://youtrack.jetbrains.com/issue/KT-73255 for more details.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/core/ui/StateViews.kt:13:5 This annotation is currently applied to the value parameter only, but in the future it will also be applied to field.
+- To opt in to applying to both value parameter and field, add '-Xannotation-default-target=param-property' to your compiler arguments.
+- To keep applying to the value parameter only, use the '@param:' annotation target.
+
+See https://youtrack.jetbrains.com/issue/KT-73255 for more details.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/core/ui/StateViews.kt:14:5 This annotation is currently applied to the value parameter only, but in the future it will also be applied to field.
+- To opt in to applying to both value parameter and field, add '-Xannotation-default-target=param-property' to your compiler arguments.
+- To keep applying to the value parameter only, use the '@param:' annotation target.
+
+See https://youtrack.jetbrains.com/issue/KT-73255 for more details.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/account/data/GoogleReauthTokenSource.kt:24:5 This annotation is currently applied to the value parameter only, but in the future it will also be applied to field.
+- To opt in to applying to both value parameter and field, add '-Xannotation-default-target=param-property' to your compiler arguments.
+- To keep applying to the value parameter only, use the '@param:' annotation target.
+
+See https://youtrack.jetbrains.com/issue/KT-73255 for more details.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/account/ui/account/AccountEntry.kt:13:47 This annotation is currently applied to the value parameter only, but in the future it will also be applied to field.
+- To opt in to applying to both value parameter and field, add '-Xannotation-default-target=param-property' to your compiler arguments.
+- To keep applying to the value parameter only, use the '@param:' annotation target.
+
+See https://youtrack.jetbrains.com/issue/KT-73255 for more details.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/account/ui/avatar/AvatarCropFragment.kt:47:63 'fun bundleOf(vararg pairs: Pair<String, Any?>): Bundle' is deprecated. This method does not provide type safety at compile time. Use the platform `Bundle` class directly instead.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/account/ui/avatar/AvatarSourceBottomSheet.kt:27:57 'fun bundleOf(vararg pairs: Pair<String, Any?>): Bundle' is deprecated. This method does not provide type safety at compile time. Use the platform `Bundle` class directly instead.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/account/ui/delete/DeleteAccountViewModel.kt:31:22 This annotation is currently applied to the value parameter only, but in the future it will also be applied to field.
+- To opt in to applying to both value parameter and field, add '-Xannotation-default-target=param-property' to your compiler arguments.
+- To keep applying to the value parameter only, use the '@param:' annotation target.
+
+See https://youtrack.jetbrains.com/issue/KT-73255 for more details.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/account/ui/delete/DeleteAccountViewModel.kt:50:5 This annotation is currently applied to the value parameter only, but in the future it will also be applied to field.
+- To opt in to applying to both value parameter and field, add '-Xannotation-default-target=param-property' to your compiler arguments.
+- To keep applying to the value parameter only, use the '@param:' annotation target.
+
+See https://youtrack.jetbrains.com/issue/KT-73255 for more details.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/account/ui/delete/DeleteAccountViewModel.kt:51:5 This annotation is currently applied to the value parameter only, but in the future it will also be applied to field.
+- To opt in to applying to both value parameter and field, add '-Xannotation-default-target=param-property' to your compiler arguments.
+- To keep applying to the value parameter only, use the '@param:' annotation target.
+
+See https://youtrack.jetbrains.com/issue/KT-73255 for more details.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/account/ui/delete/DeleteAccountViewModel.kt:69:26 This annotation is currently applied to the value parameter only, but in the future it will also be applied to field.
+- To opt in to applying to both value parameter and field, add '-Xannotation-default-target=param-property' to your compiler arguments.
+- To keep applying to the value parameter only, use the '@param:' annotation target.
+
+See https://youtrack.jetbrains.com/issue/KT-73255 for more details.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/account/ui/district/DistrictPickerBottomSheet.kt:40:17 'fun bundleOf(vararg pairs: Pair<String, Any?>): Bundle' is deprecated. This method does not provide type safety at compile time. Use the platform `Bundle` class directly instead.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/account/ui/email/ChangeEmailViewModel.kt:28:5 This annotation is currently applied to the value parameter only, but in the future it will also be applied to field.
+- To opt in to applying to both value parameter and field, add '-Xannotation-default-target=param-property' to your compiler arguments.
+- To keep applying to the value parameter only, use the '@param:' annotation target.
+
+See https://youtrack.jetbrains.com/issue/KT-73255 for more details.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/account/ui/email/ChangeEmailViewModel.kt:29:5 This annotation is currently applied to the value parameter only, but in the future it will also be applied to field.
+- To opt in to applying to both value parameter and field, add '-Xannotation-default-target=param-property' to your compiler arguments.
+- To keep applying to the value parameter only, use the '@param:' annotation target.
+
+See https://youtrack.jetbrains.com/issue/KT-73255 for more details.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/account/ui/email/ChangeEmailViewModel.kt:37:29 This annotation is currently applied to the value parameter only, but in the future it will also be applied to field.
+- To opt in to applying to both value parameter and field, add '-Xannotation-default-target=param-property' to your compiler arguments.
+- To keep applying to the value parameter only, use the '@param:' annotation target.
+
+See https://youtrack.jetbrains.com/issue/KT-73255 for more details.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/account/ui/password/ChangePasswordViewModel.kt:32:5 This annotation is currently applied to the value parameter only, but in the future it will also be applied to field.
+- To opt in to applying to both value parameter and field, add '-Xannotation-default-target=param-property' to your compiler arguments.
+- To keep applying to the value parameter only, use the '@param:' annotation target.
+
+See https://youtrack.jetbrains.com/issue/KT-73255 for more details.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/account/ui/password/ChangePasswordViewModel.kt:33:5 This annotation is currently applied to the value parameter only, but in the future it will also be applied to field.
+- To opt in to applying to both value parameter and field, add '-Xannotation-default-target=param-property' to your compiler arguments.
+- To keep applying to the value parameter only, use the '@param:' annotation target.
+
+See https://youtrack.jetbrains.com/issue/KT-73255 for more details.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/account/ui/password/ChangePasswordViewModel.kt:34:5 This annotation is currently applied to the value parameter only, but in the future it will also be applied to field.
+- To opt in to applying to both value parameter and field, add '-Xannotation-default-target=param-property' to your compiler arguments.
+- To keep applying to the value parameter only, use the '@param:' annotation target.
+
+See https://youtrack.jetbrains.com/issue/KT-73255 for more details.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/account/ui/password/ChangePasswordViewModel.kt:45:26 This annotation is currently applied to the value parameter only, but in the future it will also be applied to field.
+- To opt in to applying to both value parameter and field, add '-Xannotation-default-target=param-property' to your compiler arguments.
+- To keep applying to the value parameter only, use the '@param:' annotation target.
+
+See https://youtrack.jetbrains.com/issue/KT-73255 for more details.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/account/ui/reauth/ReauthDialog.kt:119:50 'fun bundleOf(vararg pairs: Pair<String, Any?>): Bundle' is deprecated. This method does not provide type safety at compile time. Use the platform `Bundle` class directly instead.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/account/ui/reauth/ReauthViewModel.kt:35:5 This annotation is currently applied to the value parameter only, but in the future it will also be applied to field.
+- To opt in to applying to both value parameter and field, add '-Xannotation-default-target=param-property' to your compiler arguments.
+- To keep applying to the value parameter only, use the '@param:' annotation target.
+
+See https://youtrack.jetbrains.com/issue/KT-73255 for more details.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/auth/data/GoogleCredentialDataSource.kt:25:5 This annotation is currently applied to the value parameter only, but in the future it will also be applied to field.
+- To opt in to applying to both value parameter and field, add '-Xannotation-default-target=param-property' to your compiler arguments.
+- To keep applying to the value parameter only, use the '@param:' annotation target.
+
+See https://youtrack.jetbrains.com/issue/KT-73255 for more details.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/auth/domain/usecase/LinkGoogleToPasswordUseCase.kt:20:5 This annotation is currently applied to the value parameter only, but in the future it will also be applied to property.
+- To opt in to applying to both value parameter and property, add '-Xannotation-default-target=param-property' to your compiler arguments.
+- To keep applying to the value parameter only, use the '@param:' annotation target.
+
+See https://youtrack.jetbrains.com/issue/KT-73255 for more details.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/auth/ui/forgot/ForgotPasswordFragment.kt:91:65 'fun bundleOf(vararg pairs: Pair<String, Any?>): Bundle' is deprecated. This method does not provide type safety at compile time. Use the platform `Bundle` class directly instead.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/auth/ui/legal/LegalDocumentFragment.kt:18:20 This annotation is currently applied to the value parameter only, but in the future it will also be applied to field.
+- To opt in to applying to both value parameter and field, add '-Xannotation-default-target=param-property' to your compiler arguments.
+- To keep applying to the value parameter only, use the '@param:' annotation target.
+
+See https://youtrack.jetbrains.com/issue/KT-73255 for more details.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/auth/ui/legal/LegalDocumentFragment.kt:18:47 This annotation is currently applied to the value parameter only, but in the future it will also be applied to field.
+- To opt in to applying to both value parameter and field, add '-Xannotation-default-target=param-property' to your compiler arguments.
+- To keep applying to the value parameter only, use the '@param:' annotation target.
+
+See https://youtrack.jetbrains.com/issue/KT-73255 for more details.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/auth/ui/legal/LegalDocumentFragment.kt:37:64 'fun bundleOf(vararg pairs: Pair<String, Any?>): Bundle' is deprecated. This method does not provide type safety at compile time. Use the platform `Bundle` class directly instead.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/auth/ui/link/LinkAccountDialog.kt:71:82 'fun bundleOf(vararg pairs: Pair<String, Any?>): Bundle' is deprecated. This method does not provide type safety at compile time. Use the platform `Bundle` class directly instead.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/auth/ui/login/LoginFragment.kt:51:71 'fun bundleOf(vararg pairs: Pair<String, Any?>): Bundle' is deprecated. This method does not provide type safety at compile time. Use the platform `Bundle` class directly instead.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/auth/ui/login/LoginFragment.kt:109:63 'fun bundleOf(vararg pairs: Pair<String, Any?>): Bundle' is deprecated. This method does not provide type safety at compile time. Use the platform `Bundle` class directly instead.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/auth/ui/otp/OtpVerifyFragment.kt:66:24 'static fun getWindowInsetsController(p0: @NonNull() View): @Nullable() WindowInsetsControllerCompat?' is deprecated. Deprecated in Java.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/auth/ui/phone/PhoneLoginFragment.kt:50:33 'fun bundleOf(vararg pairs: Pair<String, Any?>): Bundle' is deprecated. This method does not provide type safety at compile time. Use the platform `Bundle` class directly instead.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/auth/ui/register/RegisterFragment.kt:155:13 'fun bundleOf(vararg pairs: Pair<String, Any?>): Bundle' is deprecated. This method does not provide type safety at compile time. Use the platform `Bundle` class directly instead.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/auth/ui/register/RegisterFragment.kt:160:70 'fun bundleOf(vararg pairs: Pair<String, Any?>): Bundle' is deprecated. This method does not provide type safety at compile time. Use the platform `Bundle` class directly instead.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/booking_management/data/FirestoreBookingManagementRepository.kt:284:29 Condition is always 'false'.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/booking_management/data/FirestoreBookingManagementRepository.kt:323:26 Redundant creation of Json format. Creating instances for each usage can be slow.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/booking_management/ui/BookingDetailFragment.kt:239:17 'fun bundleOf(vararg pairs: Pair<String, Any?>): Bundle' is deprecated. This method does not provide type safety at compile time. Use the platform `Bundle` class directly instead.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/booking_management/ui/MyBookingsFragment.kt:49:21 'fun bundleOf(vararg pairs: Pair<String, Any?>): Bundle' is deprecated. This method does not provide type safety at compile time. Use the platform `Bundle` class directly instead.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/booking_management/ui/MyBookingsFragment.kt:66:21 'fun bundleOf(vararg pairs: Pair<String, Any?>): Bundle' is deprecated. This method does not provide type safety at compile time. Use the platform `Bundle` class directly instead.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/booking_management/ui/MyBookingsFragment.kt:72:21 'fun bundleOf(vararg pairs: Pair<String, Any?>): Bundle' is deprecated. This method does not provide type safety at compile time. Use the platform `Bundle` class directly instead.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/booking_management/ui/MyBookingsFragment.kt:116:38 'fun <T : Parcelable!> getParcelable(p0: String?): T?' is deprecated. Deprecated in Java.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/booking_management/ui/MyBookingsFragment.kt:117:27 'fun <T : Parcelable!> getParcelable(p0: String?): T?' is deprecated. Deprecated in Java.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailFragment.kt:506:21 'fun bundleOf(vararg pairs: Pair<String, Any?>): Bundle' is deprecated. This method does not provide type safety at compile time. Use the platform `Bundle` class directly instead.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailFragment.kt:511:17 'fun bundleOf(vararg pairs: Pair<String, Any?>): Bundle' is deprecated. This method does not provide type safety at compile time. Use the platform `Bundle` class directly instead.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/dropin/data/FirestoreDropInTicketSources.kt:111:5 This annotation is currently applied to the value parameter only, but in the future it will also be applied to field.
+- To opt in to applying to both value parameter and field, add '-Xannotation-default-target=param-property' to your compiler arguments.
+- To keep applying to the value parameter only, use the '@param:' annotation target.
+
+See https://youtrack.jetbrains.com/issue/KT-73255 for more details.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/dropin/ui/confirm/DropInConfirmFragment.kt:177:22 'var isChecked: Boolean' is deprecated. Deprecated in Java.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/dropin/ui/ticket/CancelDropInBottomSheet.kt:135:39 'fun bundleOf(vararg pairs: Pair<String, Any?>): Bundle' is deprecated. This method does not provide type safety at compile time. Use the platform `Bundle` class directly instead.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/dropin/ui/ticket/CancelDropInBottomSheet.kt:149:29 'fun bundleOf(vararg pairs: Pair<String, Any?>): Bundle' is deprecated. This method does not provide type safety at compile time. Use the platform `Bundle` class directly instead.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/owner/data/FirestoreOwnerVenueDataSource.kt:97:44 Unchecked cast of 'Any?' to 'List<String>'.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/owner/data/FirestoreOwnerVenueDataSource.kt:98:44 Unchecked cast of 'Any?' to 'List<String>'.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/owner/data/OwnerBookingRepositoryImpl.kt:67:64 Unchecked cast of 'Any?' to 'List<String>'.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/owner/data/OwnerBookingRepositoryImpl.kt:98:48 Unchecked cast of 'Any?' to 'List<String>'.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/owner/data/OwnerDropInRepositoryImpl.kt:85:61 Unchecked cast of 'Any?' to 'List<String>'.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/review/data/SupabaseReviewPhotoUploader.kt:35:5 This annotation is currently applied to the value parameter only, but in the future it will also be applied to field.
+- To opt in to applying to both value parameter and field, add '-Xannotation-default-target=param-property' to your compiler arguments.
+- To keep applying to the value parameter only, use the '@param:' annotation target.
+
+See https://youtrack.jetbrains.com/issue/KT-73255 for more details.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/review/ui/favorite/FavoriteVenueAdapter.kt:72:73 'constructor(p0: String!, p1: String!): Locale' is deprecated. Deprecated in Java.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/review/ui/owner/ReplyReviewBottomSheet.kt:70:25 'fun bundleOf(vararg pairs: Pair<String, Any?>): Bundle' is deprecated. This method does not provide type safety at compile time. Use the platform `Bundle` class directly instead.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/review/ui/photo/PhotoViewerFragment.kt:70:13 'fun bundleOf(vararg pairs: Pair<String, Any?>): Bundle' is deprecated. This method does not provide type safety at compile time. Use the platform `Bundle` class directly instead.
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/main/java/com/example/booking_app/feature/search/ui/HomeFragment.kt:131:55 'fun bundleOf(vararg pairs: Pair<String, Any?>): Bundle' is deprecated. This method does not provide type safety at compile time. Use the platform `Bundle` class directly instead.
+
+> Task :app:processDebugJavaRes UP-TO-DATE
+> Task :app:compileDebugJavaWithJavac
+> Task :app:hiltSyncDebug
+> Task :app:hiltAggregateDepsDebug UP-TO-DATE
+> Task :app:hiltJavaCompileDebug
+> Task :app:bundleDebugClassesToCompileJar
+> Task :app:transformDebugClassesWithAsm
+> Task :app:kspDebugUnitTestKotlin
+> Task :app:bundleDebugClassesToRuntimeJar
+> Task :app:compileDebugUnitTestKotlin
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/core/network/TaskAwaitTest.kt:43:45 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/core/session/DefaultAppModeControllerTest.kt:20:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/core/session/DefaultAppModeControllerTest.kt:28:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/core/session/DefaultAppModeControllerTest.kt:32:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/core/session/DefaultAppModeControllerTest.kt:36:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/core/session/DefaultAppModeControllerTest.kt:48:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/core/session/DefaultAppModeControllerTest.kt:50:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/core/session/DefaultAppModeControllerTest.kt:85:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/core/session/DefaultAppModeControllerTest.kt:111:35 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/core/session/DefaultAppModeControllerTest.kt:114:44 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/core/session/FirebaseSessionManagerSignOutTest.kt:56:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/core/session/FirebaseSessionManagerSignOutTest.kt:87:35 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/core/session/FirebaseSessionManagerSignOutTest.kt:90:44 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/core/session/FirebaseSessionManagerSignOutTest.kt:100:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/core/session/FirebaseSessionManagerSignOutTest.kt:111:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/core/session/FirebaseSessionManagerSignOutTest.kt:123:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/core/session/FirebaseSessionManagerTest.kt:36:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/core/session/FirebaseSessionManagerTest.kt:144:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/core/session/FirebaseSessionManagerTest.kt:157:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/core/session/FirebaseSessionManagerTest.kt:168:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/core/session/FirebaseSessionManagerTest.kt:178:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/core/session/FirebaseSessionManagerTest.kt:190:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/core/session/FirebaseSessionManagerTest.kt:207:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/core/ui/VerifyEmailBannerViewModelTest.kt:49:72 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/core/ui/VerifyEmailBannerViewModelTest.kt:56:43 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/core/ui/VerifyEmailBannerViewModelTest.kt:128:23 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/core/ui/VerifyEmailBannerViewModelTest.kt:131:23 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/core/ui/VerifyEmailBannerViewModelTest.kt:138:23 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/core/ui/VerifyEmailBannerViewModelTest.kt:139:55 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/auth/ui/forgot/ForgotPasswordViewModelTest.kt:32:47 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/auth/ui/forgot/ForgotPasswordViewModelTest.kt:69:23 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/auth/ui/forgot/ForgotPasswordViewModelTest.kt:89:23 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/auth/ui/forgot/ForgotPasswordViewModelTest.kt:90:51 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/auth/ui/forgot/ForgotPasswordViewModelTest.kt:98:23 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/auth/ui/forgot/ForgotPasswordViewModelTest.kt:99:51 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/auth/ui/otp/OtpViewModelTest.kt:38:47 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/auth/ui/otp/OtpViewModelTest.kt:94:23 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/auth/ui/otp/OtpViewModelTest.kt:116:23 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/domain/OpeningHoursTest.kt:67:54 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/domain/usecase/CheckVenueBookableUseCaseTest.kt:44:44 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailHarness.kt:40:63 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs1Test.kt:40:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs1Test.kt:45:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs1Test.kt:52:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs1Test.kt:64:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs1Test.kt:71:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs1Test.kt:83:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs1Test.kt:88:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs1Test.kt:98:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs1Test.kt:108:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs1Test.kt:111:13 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs1Test.kt:129:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs1Test.kt:133:13 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs1Test.kt:144:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs1Test.kt:155:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs1Test.kt:168:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs1Test.kt:170:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs1Test.kt:171:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs1Test.kt:181:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs1Test.kt:184:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs1Test.kt:185:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs1Test.kt:189:13 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs1Test.kt:199:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs1Test.kt:202:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs1Test.kt:203:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs1Test.kt:205:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs1Test.kt:206:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs2Test.kt:27:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs2Test.kt:44:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs2Test.kt:96:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs2Test.kt:97:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs3Test.kt:29:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs3Test.kt:53:13 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs3Test.kt:100:13 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs4Test.kt:31:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs4Test.kt:33:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs4Test.kt:43:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs4Test.kt:48:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs4Test.kt:59:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs4Test.kt:101:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs5Test.kt:34:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs5Test.kt:36:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs5Test.kt:46:13 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs5Test.kt:49:13 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs5Test.kt:52:13 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs5Test.kt:67:13 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs5Test.kt:79:13 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs5Test.kt:83:13 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs5Test.kt:85:13 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs5Test.kt:88:13 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs5Test.kt:102:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs5Test.kt:104:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs5Test.kt:106:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs5Test.kt:122:13 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs5Test.kt:124:13 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs5Test.kt:138:13 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs5Test.kt:154:13 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs5Test.kt:157:13 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs5Test.kt:171:13 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs5Test.kt:173:13 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs5Test.kt:185:13 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs5Test.kt:188:13 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs5Test.kt:199:13 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs5Test.kt:211:13 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs5Test.kt:225:13 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs6Test.kt:35:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs6Test.kt:45:13 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs6Test.kt:56:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs6Test.kt:58:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs6Test.kt:70:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs6Test.kt:72:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs6Test.kt:84:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs6Test.kt:90:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs6Test.kt:102:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs6Test.kt:104:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs6Test.kt:114:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs6Test.kt:127:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs6Test.kt:138:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs6Test.kt:147:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs6Test.kt:157:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs6Test.kt:161:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs6Test.kt:173:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs6Test.kt:176:13 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs6Test.kt:189:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs6Test.kt:197:13 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs6Test.kt:209:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs6Test.kt:213:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+w: file:///F:/CSC_HCMUS/Mobile/datcau/app/src/test/java/com/example/booking_app/feature/courtdetail/ui/CourtDetailViewModelUs6Test.kt:215:9 This declaration needs opt-in. Its usage should be marked with '@kotlinx.coroutines.ExperimentalCoroutinesApi' or '@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)'
+
+> Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :app:hiltSyncDebugUnitTest
+> Task :app:processDebugUnitTestJavaRes UP-TO-DATE
+> Task :app:hiltAggregateDepsDebugUnitTest UP-TO-DATE
+> Task :app:hiltJavaCompileDebugUnitTest NO-SOURCE
+> Task :app:transformDebugUnitTestClassesWithAsm
+.\gradlew.bat : OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap 
+classpath has been appended
+At line:24 char:231
++ ... user-home'; .\gradlew.bat :app:testDebugUnitTest --tests 'com.example ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (OpenJDK 64-Bit ...s been appended:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+> Task :app:testDebugUnitTest
+
+AdminCategoryRoutingTest > amenities_readTheirOwnCollection FAILED
+    java.lang.AssertionError at AdminCategoryRoutingTest.kt:16
+
+1 test completed, 1 failed
+
+> Task :app:testDebugUnitTest FAILED
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:testDebugUnitTest'.
+> There were failing tests. See the report at: 
+file:///F:/CSC_HCMUS/Mobile/datcau/app/build/reports/tests/testDebugUnitTest/index.html
+
+* Try:
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+
+BUILD FAILED in 10m 54s
+37 actionable tasks: 19 executed, 18 up-to-date
+Configuration cache entry reused.
+

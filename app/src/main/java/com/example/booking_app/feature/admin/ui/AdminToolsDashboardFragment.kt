@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.booking_app.R
 import com.example.booking_app.databinding.FragmentAdminToolsDashboardBinding
 import com.example.booking_app.feature.admin.domain.model.AdminDistrict
+import com.example.booking_app.feature.admin.domain.model.AdminCategoryKind
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -42,6 +43,7 @@ class AdminToolsDashboardFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        binding.buttonManageVenues.setOnClickListener { findNavController().navigate(R.id.action_dashboard_to_venue_mgmt) }
         binding.cardNavBroadcast.setOnClickListener {
             findNavController().navigate(R.id.action_dashboard_to_broadcast)
         }
@@ -57,6 +59,8 @@ class AdminToolsDashboardFragment : Fragment() {
         binding.recyclerCategories.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerCategories.addItemDecoration(DividerItemDecoration(requireContext(), DividerItemDecoration.VERTICAL))
         binding.recyclerCategories.adapter = categoryAdapter
+        binding.chipGroupCategoryTabs.check(if (viewModel.categoryKind == AdminCategoryKind.AMENITIES) R.id.chipCategoryAmenities else R.id.chipCategoryDistricts)
+        updateCategoryHint()
 
         // Tải dữ liệu thực từ Firestore
         viewModel.loadDistricts()
@@ -64,10 +68,11 @@ class AdminToolsDashboardFragment : Fragment() {
 
         binding.chipGroupCategoryTabs.setOnCheckedStateChangeListener { _, checkedIds ->
             if (checkedIds.contains(R.id.chipCategoryAmenities)) {
-                binding.inputAddCategory.hint = getString(R.string.admin_tools_category_add_amenity_hint)
+                viewModel.selectCategory(AdminCategoryKind.AMENITIES)
             } else {
-                binding.inputAddCategory.hint = getString(R.string.admin_tools_category_add_hint)
+                viewModel.selectCategory(AdminCategoryKind.DISTRICTS)
             }
+            updateCategoryHint()
         }
 
         binding.buttonAddCategory.setOnClickListener {
@@ -77,14 +82,21 @@ class AdminToolsDashboardFragment : Fragment() {
                     id = "cat_${System.currentTimeMillis()}",
                     name = name,
                     sortOrder = 1,
+                    kind = viewModel.categoryKind,
                 )
                 viewModel.saveDistrict(newDistrict)
-                binding.inputAddCategory.text?.clear()
                 Toast.makeText(requireContext(), "Đang thêm $name...", Toast.LENGTH_SHORT).show()
             }
         }
 
         observeViewModel()
+    }
+
+    private fun updateCategoryHint() {
+        binding.layoutAddCategory.hint = getString(
+            if (viewModel.categoryKind == AdminCategoryKind.AMENITIES)
+                R.string.admin_tools_category_add_amenity_hint else R.string.admin_tools_category_add_hint
+        )
     }
 
     private fun showEditCategoryDialog(item: AdminDistrict) {
@@ -119,6 +131,7 @@ class AdminToolsDashboardFragment : Fragment() {
                     viewModel.districtsState.collect { state ->
                         when (state) {
                             DistrictsUiState.Loading -> {
+                                categoryAdapter.submitList(emptyList())
                                 binding.progressCategories.isVisible = true
                             }
                             is DistrictsUiState.Content -> {
@@ -126,6 +139,8 @@ class AdminToolsDashboardFragment : Fragment() {
                                 categoryAdapter.submitList(state.districts)
                             }
                             else -> {
+                                categoryAdapter.submitList(emptyList())
+                                binding.layoutAddCategory.error = (state as? DistrictsUiState.Error)?.message
                                 binding.progressCategories.isVisible = false
                             }
                         }
@@ -133,7 +148,9 @@ class AdminToolsDashboardFragment : Fragment() {
                 }
                 launch {
                     viewModel.districtActionState.collect { state ->
+                        binding.buttonAddCategory.isEnabled = state != ToolsActionUiState.Loading
                         if (state is ToolsActionUiState.Success) {
+                            binding.inputAddCategory.text?.clear()
                             Toast.makeText(requireContext(), state.message, Toast.LENGTH_SHORT).show()
                             viewModel.clearDistrictActionState()
                             viewModel.loadDistricts()

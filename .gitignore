@@ -36,3 +36,6 @@ supabase/**/.env*
 
 # File nén báo cáo tuần (nặng, nộp riêng, không commit)
 docs/reports/weekly/*.zip
+
+# Local Android/Emulator validation state
+.android-user-home/

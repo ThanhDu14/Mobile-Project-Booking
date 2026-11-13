@@ -27,6 +27,8 @@ import com.example.booking_app.databinding.ActivityMainBinding
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
 /**
@@ -68,32 +70,46 @@ class MainActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                launch {
-                    adminAppsViewModel.queueState.collect { state ->
-                        if (viewModel.lastRootGraph == R.id.nav_admin) {
-                            val count = if (state is com.example.booking_app.feature.admin.ui.AdminQueueState.Content) {
-                                state.applications.count { it.status == "PENDING" || it.status == "RESUBMITTED" }
-                            } else 0
-                            runCatching {
-                                val badge = binding.bottomNav.getOrCreateBadge(R.id.tab_admin_applications)
-                                badge.isVisible = count > 0
-                                badge.number = count
+                viewModel.sessionState.collectLatest { session ->
+                    if (session !is SessionState.SignedIn || session.appRole != AppRole.ADMIN) return@collectLatest
+                    try {
+                        // These ViewModels start protected listeners when instantiated.
+                        // Create them only after the server-issued role is ADMIN.
+                        adminAppsViewModel.loadQueue()
+                        adminReportsViewModel.loadReports()
+                        coroutineScope {
+                            launch {
+                                adminAppsViewModel.queueState.collect { state ->
+                                    if (viewModel.lastRootGraph == R.id.nav_admin) {
+                                        val count = if (state is com.example.booking_app.feature.admin.ui.AdminQueueState.Content) {
+                                            state.applications.count { it.status == "PENDING" || it.status == "RESUBMITTED" }
+                                        } else 0
+                                        runCatching {
+                                            val badge = binding.bottomNav.getOrCreateBadge(R.id.tab_admin_applications)
+                                            badge.isVisible = count > 0
+                                            badge.number = count
+                                        }
+                                    }
+                                }
+                            }
+                            launch {
+                                adminReportsViewModel.queueState.collect { state ->
+                                    if (viewModel.lastRootGraph == R.id.nav_admin) {
+                                        val count = if (state is com.example.booking_app.feature.admin.ui.AdminReportQueueState.Content) {
+                                            state.reports.count { it.status == com.example.booking_app.feature.admin.domain.model.ReportStatus.OPEN }
+                                        } else 0
+                                        runCatching {
+                                            val badge = binding.bottomNav.getOrCreateBadge(R.id.tab_admin_reports)
+                                            badge.isVisible = count > 0
+                                            badge.number = count
+                                        }
+                                    }
+                                }
                             }
                         }
-                    }
-                }
-                launch {
-                    adminReportsViewModel.queueState.collect { state ->
-                        if (viewModel.lastRootGraph == R.id.nav_admin) {
-                            val count = if (state is com.example.booking_app.feature.admin.ui.AdminReportQueueState.Content) {
-                                state.reports.count { it.status == com.example.booking_app.feature.admin.domain.model.ReportStatus.OPEN }
-                            } else 0
-                            runCatching {
-                                val badge = binding.bottomNav.getOrCreateBadge(R.id.tab_admin_reports)
-                                badge.isVisible = count > 0
-                                badge.number = count
-                            }
-                        }
+                    } finally {
+                        adminAppsViewModel.stopQueue()
+                        adminReportsViewModel.stopQueue()
                     }
                 }
             }
@@ -330,7 +346,7 @@ class MainActivity : AppCompatActivity() {
             bottomNavMenu = menuRes
         }
         binding.bottomNav.menu.findItem(tab!!).isChecked = true
-        if (adminMode) {
+        if (adminMode && (viewModel.sessionState.value as? SessionState.SignedIn)?.appRole == AppRole.ADMIN) {
             adminAppsViewModel.loadQueue()
             adminReportsViewModel.loadReports()
         }

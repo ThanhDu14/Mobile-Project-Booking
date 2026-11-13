@@ -1,0 +1,373 @@
+{
+  "project": "demo-admin-repair",
+  "device": "Vivo V2247 (10ADBY2GH30038C)",
+  "android": 15,
+  "physicalDensity": 440,
+  "tabletOverrideDensity": 240,
+  "variants": {
+    "phone-light": {
+      "tests": 5,
+      "realInteractionTests": 1,
+      "inflationSmokeTests": 4,
+      "images": [
+        {
+          "name": "01-home.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "0b864e008aefacd440fa90734e6752b5fef77d9fb9a0424d4c8b9116154544c9"
+        },
+        {
+          "name": "02-queue.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "332d0d948dfae81b00cb9184f04441e8155e72704d0879a37fd70ed3b2bdc7c7"
+        },
+        {
+          "name": "03-detail.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "17f4e6180ccbf26454de98537cee7e0f97ef8e648eb690e801e4245a5b3b4eb8"
+        },
+        {
+          "name": "03-documents.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "bfe102ee5ea3de506e203eae35f258312e30c6e1f51da504e23fecda78fd33fc"
+        },
+        {
+          "name": "04-rejection-draft.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "557f72c55e18f6e0587674c316419d57b60bf94ef6fbb6738bdf8c12a417f9ae"
+        },
+        {
+          "name": "05-approved.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "108487e2bcca947a9ebbe9dafef1d96aca7e1736701fe9083e8b37f321b656f1"
+        },
+        {
+          "name": "05-reports.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "3434c51f51902819ce8f4c2977d81ad4e13fb2707b55648007026859aa7b780a"
+        },
+        {
+          "name": "06-report-detail.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "e1a40f5e88ed5ad5a1943cc79eecbe0cac8335f23e62478915b13354c8c82b15"
+        },
+        {
+          "name": "07-users-search.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "b7e4d91b08a4b26ddb3475db21f4c9e9596a5c92c99eefa665b759b437889a18"
+        },
+        {
+          "name": "09-venue-unlock.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "9cb82281875c5b79b0447c7dc120bda81312739ca6bc8640e128538bb7b7d607"
+        },
+        {
+          "name": "10-amenities.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "75638f3cf9d835b56b8f4ce5e915797bc0c3189bd3a64c51b6a59249e8026916"
+        },
+        {
+          "name": "11-broadcast.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "c3b6dd94a169d97cad65ea89744a16c5e2b47cdc0a59ae255900933e9ad7a01d"
+        },
+        {
+          "name": "12-voucher-form.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "b7a23b6d3684eea1d29b287bf379ace62e57cde89f70850055669e8afedd93ca"
+        },
+        {
+          "name": "12-voucher-validation-fields.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "74da8d08a2b6e8a76ca115ac0db58e9839d31c2471dd39ab282a3ea5aa35ba71"
+        }
+      ]
+    },
+    "phone-dark": {
+      "tests": 5,
+      "realInteractionTests": 1,
+      "inflationSmokeTests": 4,
+      "images": [
+        {
+          "name": "01-home.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "277b3f937e351bdc85b9a5fd9664173949d695f440babdcecad8068f5d5f884c"
+        },
+        {
+          "name": "02-queue.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "0f503b97459bc16a9d645168b867a9974e8fb622bce0580f4fdd8be82b438d0b"
+        },
+        {
+          "name": "03-detail.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "4fd3942e5585296c50149482f87028cad9f1ad33abb693bf184b8841351d4718"
+        },
+        {
+          "name": "03-documents.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "088f58973bcecbe5f8fea524cef1619ae8d31dc72b6a762e4187ec423a3629e8"
+        },
+        {
+          "name": "04-rejection-draft.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "55de96bb3cfcee0a20268ed55232376295657b99f2e3dc45366bcad7e3474c31"
+        },
+        {
+          "name": "05-approved.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "5b8b48345540fadd75b19ef68305cd5eacfd7ad5d15452f39908299f399b61ff"
+        },
+        {
+          "name": "05-reports.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "88ee868430265a7f205ac3d71588ee6db9c8687c238b46c4ed903fcc7c5b747f"
+        },
+        {
+          "name": "06-report-detail.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "3910076c0b7e219dcbc80b4fc3da1961fe4b79f2a431a2ea531ddbc5d269400e"
+        },
+        {
+          "name": "07-users-search.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "947242cbe71553a7a851e411b2668e59075aa4614a6beb6641f3fc158c3736f0"
+        },
+        {
+          "name": "09-venue-unlock.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "4167d4514f1d766783fc2cdf16862f7a2d963d032cc134a8ca199f8af33e01f8"
+        },
+        {
+          "name": "10-amenities.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "19bf318476a6216d74edcd8ffd9509e817f1740a3824e98e1f6a7a8d19a22985"
+        },
+        {
+          "name": "11-broadcast.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "80da56ec4dc1fb9fe8d536b31b4d4a84db58c3491b755dba5a3477152dc42514"
+        },
+        {
+          "name": "12-voucher-form.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "baa4eeb7a1445cd102fea9a760274f824bfbe3c4f341b1be6de55a0e75b345c6"
+        },
+        {
+          "name": "12-voucher-validation-fields.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "999ca00eccce5b57f909d4734a39996a18e005e493224112297ee2dc078621b2"
+        }
+      ]
+    },
+    "tablet-light": {
+      "tests": 5,
+      "realInteractionTests": 1,
+      "inflationSmokeTests": 4,
+      "images": [
+        {
+          "name": "01-home.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "80147acb176be36b2056b04354c03ae0a48c2b2c6a0f354b5ea5bc533a1811a4"
+        },
+        {
+          "name": "02-queue.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "1b9642e69505805e37a51c366936c26dda55c82e42a3b556221aad375747a3e3"
+        },
+        {
+          "name": "03-detail.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "c4424488e40ed92963a7dd9de7ae1097cb4f50b45386f1022ea5ea600a89f5e1"
+        },
+        {
+          "name": "03-documents.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "ea4aefe0a6cc6f1793fcec38005c92bd49a266a95b91a352d9e604da141ba41d"
+        },
+        {
+          "name": "04-rejection-draft.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "fec2faa5342d92c0f5d747e066975f33b037bdada3677d2e2d580aa03feccd3d"
+        },
+        {
+          "name": "05-approved.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "6c06b1d9b14d0f84ece131844d48540b107bfce9d4ed5b1d25134c746ad5d602"
+        },
+        {
+          "name": "05-reports.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "faef1d6a0eb4faae1fe3061c9608de9b457df98607668ab42c0c0a7127bf1397"
+        },
+        {
+          "name": "06-report-detail.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "7cd115b71ee4ac59cbdf0d8f9993e4a59d58d23cec35d80bd610920c9321d148"
+        },
+        {
+          "name": "07-users-search.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "1b0ca5426aa7ab8d86102b5e20fdf441eda28675e1107ba359cbc4357a789d1c"
+        },
+        {
+          "name": "09-venue-unlock.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "2b63948d755fe2226bc6203f5733a3bc735fe4f7d37474ba26a461e6d064cf34"
+        },
+        {
+          "name": "10-amenities.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "bf01fc72823c2daaaa50cd8ba72e47d8ae703345aa048773eaa471c57309bcac"
+        },
+        {
+          "name": "11-broadcast.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "36c2e8d66cb39ab040877ecc09a54634e92462f1295968cfb4b893a4989ec90f"
+        },
+        {
+          "name": "12-voucher-form.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "8fb517b671b69cd92f008195bf93d963d3bdf7819dafee34e092c5a32b84b9b6"
+        },
+        {
+          "name": "12-voucher-validation-fields.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "1d0a26571c10320612343ad765001c3a544912bb16821d128600a851fdc81dd7"
+        }
+      ]
+    },
+    "tablet-dark": {
+      "tests": 5,
+      "realInteractionTests": 1,
+      "inflationSmokeTests": 4,
+      "images": [
+        {
+          "name": "01-home.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "14ec46861cea1cad447e4768256126a314fd20bf53a461aaa2f557c5e5f81cf3"
+        },
+        {
+          "name": "02-queue.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "2f4a13c44e4ff9360afce7a3c704c6e7ca65cbbb11de608bca1a62187962701a"
+        },
+        {
+          "name": "03-detail.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "07d6c38d3193cfad4b88b3beb3a02f6b0cd7ebf00242dfd011ba070d3f09c46f"
+        },
+        {
+          "name": "03-documents.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "07d6c38d3193cfad4b88b3beb3a02f6b0cd7ebf00242dfd011ba070d3f09c46f"
+        },
+        {
+          "name": "04-rejection-draft.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "f106bf77dfd5bf6abc4d86fdbc14aa0aa105f4c416039749dbad3e920d9822ab"
+        },
+        {
+          "name": "05-approved.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "bd96cfcf757ac612e5c377c1a151f833440fd3b6778616cac7cc3feaed1fdf10"
+        },
+        {
+          "name": "05-reports.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "614f442700dfd9090e53f596607c1db58be4a9a829d0e155aade17766deb73c9"
+        },
+        {
+          "name": "06-report-detail.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "fb6a1673a15baefc1b404a3f17229f41c43d498e4066ecf1667cb50d10e6d015"
+        },
+        {
+          "name": "07-users-search.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "59601ee69419fd41b545aef94081634c68bcf100d0d5ea3369b188fd76cd4fdd"
+        },
+        {
+          "name": "09-venue-unlock.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "6afabe4bddc34f594b629eab0e77c4301b40775505ff67f64db97836a4a260bf"
+        },
+        {
+          "name": "10-amenities.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "b9ee3284fa061ee61d88a3bba01924501b0583c139104d10f211043fa98bfec7"
+        },
+        {
+          "name": "11-broadcast.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "db48460c882a1ab4a828f428c85d513766dbc0f5499c0e60ce399458389bd25c"
+        },
+        {
+          "name": "12-voucher-form.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "fc89df5ad989ba67258f07c3ea492fa05a1a82c2c4722d09fbb11ff2654d816b"
+        },
+        {
+          "name": "12-voucher-validation-fields.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "4844feddef7a2d575e3024064c20decaeadcd51f0064abf6ac650fab36c47733"
+        }
+      ]
+    }
+  }
+}

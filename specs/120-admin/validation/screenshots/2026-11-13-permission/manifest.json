@@ -1,0 +1,397 @@
+{
+  "project": "demo-admin-repair",
+  "device": "Vivo V2247",
+  "android": 15,
+  "physicalDensity": 440,
+  "tabletDensity": 240,
+  "variants": {
+    "phone-light": {
+      "tests": 6,
+      "actualInteractionTests": 2,
+      "inflationSmokeTests": 4,
+      "images": [
+        {
+          "name": "00-player-no-admin.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "bf54316b3cb639818302491824807e03e8d0e24c507b445d2ea003f621f434af"
+        },
+        {
+          "name": "01-home.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "6ebd4647602ecdcc32cac1ca9158944fb97d937a43ccdfdb66700ea916ab5b39"
+        },
+        {
+          "name": "02-queue.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "e32b02ce585e12b1dfe1475409ac9b2e6f95400e36a09ece530128e4d41a0114"
+        },
+        {
+          "name": "03-detail.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "f169190c3a0d48de3dc5d31a26978942c2c6c3c0734ba7693d76471b5ffb897d"
+        },
+        {
+          "name": "03-documents.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "4eb3c7655d2263a6815f9283c3d3fe163e3a152442549b58d4e06f36be80fa65"
+        },
+        {
+          "name": "04-rejection-draft.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "9452ab0d0a04af19d64616a3cd568c53283a2fcb0eced0a3b13993aa7ca23850"
+        },
+        {
+          "name": "05-approved.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "5cc41b94a7271784cb004a89bb2dbb214736bda800811e9fdba474bfc693c6b6"
+        },
+        {
+          "name": "05-reports.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "b55d28b8d960cc44e1950f02ad7c09ac886282b8f51eef39b0b0adb88b78bcd6"
+        },
+        {
+          "name": "06-report-detail.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "439d894ec8fbf70b6547239bd96d061cda80c15d78a4325559899a5a8b36a327"
+        },
+        {
+          "name": "07-users-search.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "329cfe32aa0d1872711f1aa50cc5b79a454239eb75651966d62afff941777821"
+        },
+        {
+          "name": "09-venue-unlock.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "d1b8060f8d64e16fc55892467eede4a2567b97cae3519b371cfb4b678b81f1c1"
+        },
+        {
+          "name": "10-amenities.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "451d9e9a851a8f933a0aa257c7e04faa4291fb1244149f0d68480b2ae842a39f"
+        },
+        {
+          "name": "11-broadcast.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "895f009fd14c6c1c508f0f1f1ab2c7d8e7d29b3a4d0404a72f56643a3f3aa722"
+        },
+        {
+          "name": "12-voucher-form.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "2bed517c4dc51361eb5bc59efe90de0aa957969f73cadf3bd7c8eece77851ddc"
+        },
+        {
+          "name": "12-voucher-validation-fields.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "b9d11ae60291f0d5c7a3ab8f39ea1d5c96bf13c78f02f0ba1336d656f460a051"
+        }
+      ]
+    },
+    "phone-dark": {
+      "tests": 6,
+      "actualInteractionTests": 2,
+      "inflationSmokeTests": 4,
+      "images": [
+        {
+          "name": "00-player-no-admin.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "c21c80e2844af9291dbb9d989598fde2d8c80cc16efd8fded08e27c37acd029c"
+        },
+        {
+          "name": "01-home.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "488d45b203c8ccfd816d215d16a8a3cbefb43ef83924dee54f53878e9aa4eaa9"
+        },
+        {
+          "name": "02-queue.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "b9b523bde9ca5c67092b20fef64a7f3e55ba9595611bc43ad09306312b319521"
+        },
+        {
+          "name": "03-detail.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "aaeee5850426aed590fcfc8ae8e63c178c3ed024a3a6d3da506e901f26ad99a5"
+        },
+        {
+          "name": "03-documents.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "f17acf1a3c9fcd4f51c403dcfea7dedaa03ca529330064ad829284b137b27968"
+        },
+        {
+          "name": "04-rejection-draft.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "e2e836aadb40e6f85adf50a1604301730905ad5688c9932326152dd1938f7861"
+        },
+        {
+          "name": "05-approved.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "fe093ec6b6198f809e90d5820f798f5b56d65ee1bd99bf1e4811008b8646d13d"
+        },
+        {
+          "name": "05-reports.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "cf378f075e16c76b962ff38c8a585ac1fa58482924e97ff7f07f351fdca28963"
+        },
+        {
+          "name": "06-report-detail.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "c7d2b059e6eac95f21128e7b3e0fa10d4718cad9a67ad2c6c8a16326e22ac8c2"
+        },
+        {
+          "name": "07-users-search.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "ce07f7bd59fdea9c9a89fef26685973b1922d70f40bee26f2bbb584370ee93ca"
+        },
+        {
+          "name": "09-venue-unlock.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "e3a41753e9b1b9ab41cecd130e146770380628acdf902925c66e3559a11efb77"
+        },
+        {
+          "name": "10-amenities.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "cc20146aad62185588d72efe6f9a397894ee3f494ec5b907065776ecd42e7d4a"
+        },
+        {
+          "name": "11-broadcast.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "11f70ec190118a9eaaa4284d51d16883534656970acf0f43dcb67c9c4863bc6a"
+        },
+        {
+          "name": "12-voucher-form.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "83cecf2d35e87ff5c147e64f484f974deab5ffe281026a528647ca145f1c4939"
+        },
+        {
+          "name": "12-voucher-validation-fields.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "83cecf2d35e87ff5c147e64f484f974deab5ffe281026a528647ca145f1c4939"
+        }
+      ]
+    },
+    "tablet-light": {
+      "tests": 6,
+      "actualInteractionTests": 2,
+      "inflationSmokeTests": 4,
+      "images": [
+        {
+          "name": "00-player-no-admin.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "056682cb2400861710f99f56713862c012c1f89d6ed23dfdaff00387df49c0be"
+        },
+        {
+          "name": "01-home.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "2cd8d66f99e02e3b38755963d8ff9b243eba17ee6a1ff4979f22d59a5aa480e8"
+        },
+        {
+          "name": "02-queue.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "73dce1565c279723a722f5f65a1d47f4fa3e1e80b9aad72e0973dd682130c49c"
+        },
+        {
+          "name": "03-detail.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "bafb0f516ffc3c42f816a75beead3bc48be77e8d901a23a7c06470dee5d0cee0"
+        },
+        {
+          "name": "03-documents.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "d3aff89811c2ea0ac8d97d9f9553c45cfe2d319ad1a9b4a89c4257feee880d44"
+        },
+        {
+          "name": "04-rejection-draft.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "5788b4bb1e25b62a43ab169a730806522591f0faa7ecf69f6b3b1ef5f52a3ee2"
+        },
+        {
+          "name": "05-approved.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "f398968405b8febd1195a7701d8dc2606d0b6ff53d117dea2abd994a73503f5d"
+        },
+        {
+          "name": "05-reports.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "b75c9366fb9dbfa8bf981ccdce6111996c7cf3a02b75098c73fb7d91d0329dc3"
+        },
+        {
+          "name": "06-report-detail.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "429ac241fdb48f9f78933a5c6ee57b15c2bf2becec7db0d8bd4b84d3398234f4"
+        },
+        {
+          "name": "07-users-search.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "7881994f89dca9db23ef4ea1a6c483902f117e84f53d369007c3c4c577ca6ce3"
+        },
+        {
+          "name": "09-venue-unlock.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "54e663b47ecd9118ad17735ef72aef8be62337ab3320928b174ee7e539e3babf"
+        },
+        {
+          "name": "10-amenities.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "365f38ae289ff40d0cb189788d8df65beac1a198107f50b2d10525fd71954b96"
+        },
+        {
+          "name": "11-broadcast.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "d0c3390061538955415ff28cc9be2a36caf6b5596246a574084bd227b2a6275c"
+        },
+        {
+          "name": "12-voucher-form.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "97d94f9f21d99a6bec2588d53217d9e5e53acbb2b30e21fd0cdafb8bdbb2db78"
+        },
+        {
+          "name": "12-voucher-validation-fields.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "97d94f9f21d99a6bec2588d53217d9e5e53acbb2b30e21fd0cdafb8bdbb2db78"
+        }
+      ]
+    },
+    "tablet-dark": {
+      "tests": 6,
+      "actualInteractionTests": 2,
+      "inflationSmokeTests": 4,
+      "images": [
+        {
+          "name": "00-player-no-admin.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "2ff2b68d9d6cd582cee75e211550471fcb93f69049a5d8a086886fb731fbf67f"
+        },
+        {
+          "name": "01-home.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "93bb94b8d8716c3494cf4f195ae2cf2d90bbe71f10b6e7e51b392fc4da3637e2"
+        },
+        {
+          "name": "02-queue.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "2d07f048c15d6778b49b7ae94745a61222fe3f2a16b2a15f6c91458689e60de8"
+        },
+        {
+          "name": "03-detail.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "8c3918641779117f6f4bab34544a5f17d32079e48cb16b371a4018779226f187"
+        },
+        {
+          "name": "03-documents.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "4a9edc2757f2fcac90fb7b8a29a5ccf9c337c3bbf36647b6a34f0ad7c8b759af"
+        },
+        {
+          "name": "04-rejection-draft.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "cf67c6c49d60c3210a4937db49b0f1d81b4aa4038c82c7247f9238ba7266345c"
+        },
+        {
+          "name": "05-approved.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "e2222c6a80039fee249a5034f5c8eab9e8d301ac6769bc50bf595dd123d4dddd"
+        },
+        {
+          "name": "05-reports.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "e3140e9eb4f31c773ee31ab7028516201d81ab2c31be3a922539515776123c9c"
+        },
+        {
+          "name": "06-report-detail.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "df91a4b164105fd40460e26563eb1ef21f9f8f036382e226ec310544b7a4b578"
+        },
+        {
+          "name": "07-users-search.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "092b673c883019d20c720caebdd377dc6ba5c8514cf682213227a5b4cfa4bcce"
+        },
+        {
+          "name": "09-venue-unlock.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "43506e7eac92be7ab74ee1c2fd0c92ba671c9aa93c77b803f8e98c31157ad4a4"
+        },
+        {
+          "name": "10-amenities.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "510a958c42bc97d9aeb61b8de37af5d4f03395a3666be7b2b53b82a672981fb2"
+        },
+        {
+          "name": "11-broadcast.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "ef99dc969c6b671dda289931d56615389bdc165d9b3500e4f9040aeb984ddccc"
+        },
+        {
+          "name": "12-voucher-form.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "24081fa6775068b7405ce5f9484aa9bf6f36067350ddba898152aa19e8f8fad9"
+        },
+        {
+          "name": "12-voucher-validation-fields.png",
+          "width": 1080,
+          "height": 2388,
+          "sha256": "24081fa6775068b7405ce5f9484aa9bf6f36067350ddba898152aa19e8f8fad9"
+        }
+      ]
+    }
+  }
+}

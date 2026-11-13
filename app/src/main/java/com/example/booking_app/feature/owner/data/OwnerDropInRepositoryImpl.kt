@@ -13,6 +13,7 @@ import io.ktor.client.statement.bodyAsText
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.tasks.await
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
@@ -23,7 +24,21 @@ import javax.inject.Inject
 @Serializable
 private data class CreateDropInWireRequest(
     val venueId: String,
-    val courtId: String,
+    val courtIds: List<String>,
+    val date: String,
+    val startTime: String,
+    val endTime: String,
+    val capacity: Int,
+    val pricePerPerson: Long,
+    val level: String,
+    val note: String,
+)
+
+@Serializable
+private data class UpdateDropInWireRequest(
+    val venueId: String,
+    val sessionId: String,
+    val courtIds: List<String>,
     val date: String,
     val startTime: String,
     val endTime: String,
@@ -44,7 +59,7 @@ private data class CancelDropInWireRequest(
 private data class CheckInDropInWireRequest(
     val venueId: String,
     val sessionId: String,
-    val registrationId: String,
+    val credential: String,
 )
 
 class OwnerDropInRepositoryImpl @Inject constructor(
@@ -90,10 +105,10 @@ class OwnerDropInRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getRoster(venueId: String, sessionId: String): Result<List<OwnerDropInRegistration>> = runCatching {
-        val snapshot = firestore.collection("registrations")
-            .whereEqualTo("sessionId", sessionId)
+        val snapshot = firestore.collection("dropInSessions").document(sessionId)
+            .collection("registrations")
             .get()
-            .result
+            .await()
 
         snapshot.documents.map { doc ->
             OwnerDropInRegistration(
@@ -113,7 +128,7 @@ class OwnerDropInRepositoryImpl @Inject constructor(
                 "owner-create-session",
                 body = CreateDropInWireRequest(
                     venueId = draft.venueId,
-                    courtId = courtId,
+                    courtIds = draft.courtIds,
                     date = draft.date,
                     startTime = draft.startTime.replace(":", ""),
                     endTime = draft.endTime.replace(":", ""),
@@ -129,17 +144,23 @@ class OwnerDropInRepositoryImpl @Inject constructor(
     }
 
     override suspend fun updateSession(venueId: String, sessionId: String, draft: OwnerDropInDraft): Result<Unit> = runCatching {
-        // Drop-in sessions are immutable in court/time after create; capacity can be updated
-        firestore.collection("dropInSessions").document(sessionId)
-            .update(
-                mapOf(
-                    "capacity" to draft.capacity,
-                    "pricePerPerson" to draft.pricePerPersonVnd,
-                    "level" to draft.level,
-                    "note" to draft.note,
-                    "updatedAt" to Instant.now().toString(),
-                )
+        functionErrors.invokeWithAuthRetry {
+            supabase.functions.invoke(
+                "owner-update-session",
+                body = UpdateDropInWireRequest(
+                    venueId = venueId,
+                    sessionId = sessionId,
+                    courtIds = draft.courtIds,
+                    date = draft.date,
+                    startTime = draft.startTime.replace(":", ""),
+                    endTime = draft.endTime.replace(":", ""),
+                    capacity = draft.capacity,
+                    pricePerPerson = draft.pricePerPersonVnd,
+                    level = draft.level,
+                    note = draft.note,
+                ),
             )
+        }
         Unit
     }
 
@@ -163,7 +184,7 @@ class OwnerDropInRepositoryImpl @Inject constructor(
                 body = CheckInDropInWireRequest(
                     venueId = venueId,
                     sessionId = sessionId,
-                    registrationId = credential,
+                    credential = credential,
                 ),
             )
         }

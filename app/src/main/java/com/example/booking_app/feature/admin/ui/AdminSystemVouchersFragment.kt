@@ -28,6 +28,7 @@ class AdminSystemVouchersFragment : Fragment() {
 
     private val viewModel: AdminToolsViewModel by viewModels()
     private lateinit var adapter: AdminSystemVoucherAdapter
+    private var editingVoucher: AdminSystemVoucher? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -45,12 +46,13 @@ class AdminSystemVouchersFragment : Fragment() {
             findNavController().navigateUp()
         }
 
-        adapter = AdminSystemVoucherAdapter { voucher, isChecked ->
+        adapter = AdminSystemVoucherAdapter(onEdit = ::editVoucher) { voucher, isChecked ->
             viewModel.toggleVoucher(voucher.code, isChecked)
         }
 
         binding.recyclerVouchers.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerVouchers.adapter = adapter
+        binding.textVouchersEmpty.setOnClickListener { viewModel.loadVouchers() }
 
         // Tải danh sách voucher thực từ Firestore
         viewModel.loadVouchers()
@@ -58,7 +60,7 @@ class AdminSystemVouchersFragment : Fragment() {
         binding.inputVoucherCode.doAfterTextChanged { text ->
             val code = text?.toString().orEmpty().trim().uppercase()
             val currentVouchers = (viewModel.vouchersState.value as? SystemVouchersUiState.Content)?.vouchers.orEmpty()
-            val isDuplicate = currentVouchers.any { it.code.equals(code, ignoreCase = true) }
+            val isDuplicate = editingVoucher == null && currentVouchers.any { it.code.equals(code, ignoreCase = true) }
             binding.textVoucherCodeError.isVisible = isDuplicate && code.isNotBlank()
             if (isDuplicate) {
                 binding.layoutVoucherCode.error = "Mã đã tồn tại"
@@ -84,24 +86,45 @@ class AdminSystemVouchersFragment : Fragment() {
             return
         }
 
-        val discount = discountStr.toLongOrNull() ?: 30000L
-        val minOrder = minOrderStr.toLongOrNull() ?: 200000L
+        val discount = discountStr.toLongOrNull()
+        val minOrder = minOrderStr.toLongOrNull()
+        val usageLimit = binding.inputVoucherUsageLimit.text?.toString()?.toLongOrNull()
+        val perUserLimit = binding.inputVoucherPerUserLimit.text?.toString()?.toLongOrNull()
+        if (discount == null || minOrder == null || usageLimit == null || perUserLimit == null) {
+            Toast.makeText(requireContext(), R.string.admin_voucher_invalid_numbers, Toast.LENGTH_LONG).show()
+            return
+        }
 
         val newVoucher = AdminSystemVoucher(
             code = code,
-            type = "FIXED",
+            type = editingVoucher?.type ?: "FIXED",
             value = discount,
-            maxDiscount = discount,
+            maxDiscount = editingVoucher?.takeIf { it.type in setOf("PERCENT", "PERCENTAGE") }?.maxDiscount ?: discount,
             minOrderTotal = minOrder,
-            validFrom = "01/10",
-            validTo = "31/12",
-            usageLimit = 500,
-            perUserLimit = 1,
+            validFrom = binding.inputVoucherValidFrom.text?.toString()?.trim().orEmpty(),
+            validTo = binding.inputVoucherValidTo.text?.toString()?.trim().orEmpty(),
+            usageLimit = usageLimit,
+            perUserLimit = perUserLimit,
             usedCount = 0,
-            isActive = true,
+            isActive = editingVoucher?.isActive ?: true,
         )
 
-        viewModel.createVoucher(newVoucher)
+        if (editingVoucher == null) viewModel.createVoucher(newVoucher) else viewModel.updateVoucher(newVoucher)
+    }
+
+    private fun editVoucher(voucher: AdminSystemVoucher) {
+        if (viewModel.voucherActionState.value == ToolsActionUiState.Loading) return
+        editingVoucher = voucher
+        binding.inputVoucherCode.setText(voucher.code)
+        binding.inputVoucherCode.isEnabled = false
+        binding.inputVoucherDiscount.setText(voucher.value.toString())
+        binding.inputVoucherMinOrder.setText(voucher.minOrderTotal.toString())
+        binding.inputVoucherValidFrom.setText(voucher.validFrom)
+        binding.inputVoucherValidTo.setText(voucher.validTo)
+        binding.inputVoucherUsageLimit.setText(voucher.usageLimit.toString())
+        binding.inputVoucherPerUserLimit.setText(voucher.perUserLimit.toString())
+        binding.buttonCreateVoucher.setText(R.string.admin_save_voucher)
+        binding.inputVoucherDiscount.requestFocus()
     }
 
     private fun observeViewModel() {
@@ -151,10 +174,15 @@ class AdminSystemVouchersFragment : Fragment() {
     }
 
     private fun renderAction(state: ToolsActionUiState) {
+        adapter.isBusy = state == ToolsActionUiState.Loading
+        binding.buttonCreateVoucher.isEnabled = state != ToolsActionUiState.Loading
         when (state) {
             ToolsActionUiState.Idle -> Unit
             ToolsActionUiState.Loading -> Unit
             is ToolsActionUiState.Success -> {
+                editingVoucher = null
+                binding.inputVoucherCode.isEnabled = true
+                binding.buttonCreateVoucher.setText(R.string.admin_voucher_create_button)
                 Toast.makeText(requireContext(), state.message, Toast.LENGTH_SHORT).show()
                 binding.inputVoucherCode.text?.clear()
                 binding.inputVoucherDiscount.text?.clear()

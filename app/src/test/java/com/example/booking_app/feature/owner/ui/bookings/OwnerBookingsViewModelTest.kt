@@ -122,14 +122,14 @@ class OwnerBookingsViewModelTest {
     private fun sampleBooking(
         id: String,
         status: OwnerBookingStatus,
-        start: String = "2026-11-06T10:00:00Z",
+        start: String = Instant.now().plus(1, ChronoUnit.DAYS).toString(),
     ) = OwnerBooking(
         bookingId = id,
         venueId = OwnerFixtures.venue.id,
         status = status,
         startAt = Instant.parse(start),
         endAt = Instant.parse(start).plusSeconds(3600),
-        approvalDeadline = if (status == OwnerBookingStatus.PENDING) Instant.parse("2026-11-06T09:00:00Z") else null,
+        approvalDeadline = if (status == OwnerBookingStatus.PENDING) Instant.parse(start).minusSeconds(3600) else null,
     )
 
     private class FakeBookingRepository : OwnerBookingRepository {

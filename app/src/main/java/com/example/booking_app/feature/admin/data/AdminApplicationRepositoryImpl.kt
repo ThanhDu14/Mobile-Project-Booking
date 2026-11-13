@@ -6,6 +6,9 @@ import com.example.booking_app.feature.admin.domain.model.ApplicationReviewDecis
 import com.example.booking_app.feature.admin.domain.repository.AdminApplicationRepository
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.FieldPath
+import com.google.firebase.firestore.Source
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.functions.functions
 import io.ktor.client.call.body
@@ -22,6 +25,8 @@ data class AdminReviewRequest(
     val applicationId: String,
     val decision: String,
     val rejectReason: String? = null,
+    val expectedSubmittedAt: String? = null,
+    val action: String? = null,
 )
 
 @Serializable
@@ -52,31 +57,41 @@ class AdminApplicationRepositoryImpl @Inject constructor(
     private val functionErrors: FunctionErrors,
 ) : AdminApplicationRepository {
 
-    override fun observePendingApplications(): Flow<List<AdminOwnerApplication>> = callbackFlow {
+    override fun observePendingApplications(): Flow<List<AdminOwnerApplication>> = observeApplications("PENDING", 30)
+
+    override fun observeApplications(status: String, limit: Long): Flow<List<AdminOwnerApplication>> = callbackFlow {
+        require(status in setOf("PENDING", "APPROVED", "REJECTED"))
         val listener = firestore.collection("ownerApplications")
-            .whereEqualTo("status", "PENDING")
+            .whereEqualTo("status", status)
+            .orderBy("submittedAt", if (status == "PENDING") Query.Direction.ASCENDING else Query.Direction.DESCENDING)
+            .orderBy(FieldPath.documentId())
+            .limit(limit)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     close(error)
                     return@addSnapshotListener
                 }
                 val items = snapshot?.documents?.mapNotNull { it.toAdminOwnerApplication() }
-                    ?.sortedByDescending { it.submittedAt }
                     .orEmpty()
                 trySend(items)
             }
         awaitClose { listener.remove() }
     }
 
-    override suspend fun getApplication(applicationId: String): Result<AdminOwnerApplication> = runCatching {
-        val doc = firestore.collection("ownerApplications").document(applicationId).get().await()
+    override suspend fun getApplication(applicationId: String): Result<AdminOwnerApplication> = adminRunCatching {
+        val doc = firestore.collection("ownerApplications").document(applicationId).get(Source.SERVER).await()
         if (!doc.exists()) {
             throw NoSuchElementException("Không tìm thấy hồ sơ $applicationId")
         }
-        doc.toAdminOwnerApplication() ?: throw IllegalStateException("Không thể đọc dữ liệu hồ sơ")
+        val application = doc.toAdminOwnerApplication() ?: throw IllegalStateException("Không thể đọc dữ liệu hồ sơ")
+        val applicant = firestore.collection("users").document(application.applicantId).get(Source.SERVER).await()
+        val district = application.districtId.takeIf { it.isNotBlank() }?.let {
+            firestore.collection("districts").document(it).get(Source.SERVER).await()
+        }
+        application.copy(applicantEmail = applicant.getString("email").orEmpty(), districtName = district?.getString("name").orEmpty())
     }
 
-    override suspend fun reviewApplication(decision: ApplicationReviewDecision): Result<Unit> = runCatching {
+    override suspend fun reviewApplication(decision: ApplicationReviewDecision): Result<Unit> = adminRunCatching {
         val validationError = decision.validate()
         if (validationError != null) {
             throw IllegalArgumentException(validationError)
@@ -88,12 +103,13 @@ class AdminApplicationRepositoryImpl @Inject constructor(
                     applicationId = decision.applicationId,
                     decision = decision.action.name,
                     rejectReason = decision.rejectReason?.trim(),
+                    expectedSubmittedAt = decision.expectedSubmittedAt?.let { java.time.Instant.ofEpochMilli(it).toString() },
                 ),
             ).body<AdminReviewResponse>()
         }
     }
 
-    override suspend fun getSignedDocumentUrl(applicationId: String, path: String): Result<String> = runCatching {
+    override suspend fun getSignedDocumentUrl(applicationId: String, path: String): Result<String> = adminRunCatching {
         val response = functionErrors.invokeWithAuthRetry {
             supabase.functions.invoke(
                 FUNCTION_DOCS,
@@ -105,6 +121,15 @@ class AdminApplicationRepositoryImpl @Inject constructor(
             ).body<AdminDocDownloadResponse>()
         }
         requireNotNull(response.signedUrl) { "Không nhận được đường dẫn xem giấy tờ" }
+    }
+
+    override suspend fun recoverClaims(applicationId: String): Result<Unit> = adminRunCatching {
+        val result = functionErrors.invokeWithAuthRetry {
+            supabase.functions.invoke(FUNCTION_REVIEW, body = AdminReviewRequest(
+                applicationId = applicationId, decision = "", action = "RECOVER_CLAIMS",
+            )).body<AdminReviewResponse>()
+        }
+        check(result.success) { "Chưa xác nhận đồng bộ quyền" }
     }
 
     private fun DocumentSnapshot.toAdminOwnerApplication(): AdminOwnerApplication? {
@@ -123,10 +148,10 @@ class AdminApplicationRepositoryImpl @Inject constructor(
         val photoPaths = (rawVenue?.get("photoPaths") as? List<*>)?.filterIsInstance<String>().orEmpty()
         val documentPaths = (get("documentPaths") as? List<*>)?.filterIsInstance<String>().orEmpty()
         val status = getString("status").orEmpty().ifBlank { "PENDING" }
-        val submittedAt = getTimestamp("submittedAt")?.toDate()?.time ?: 0L
+        val submittedAt = timestampMillis("submittedAt") ?: 0L
         val rejectReason = getString("rejectReason")
         val reviewedBy = getString("reviewedBy")
-        val reviewedAt = getTimestamp("reviewedAt")?.toDate()?.time
+        val reviewedAt = timestampMillis("reviewedAt")
 
         return AdminOwnerApplication(
             id = appId,
@@ -147,7 +172,18 @@ class AdminApplicationRepositoryImpl @Inject constructor(
             rejectReason = rejectReason,
             reviewedBy = reviewedBy,
             reviewedAt = reviewedAt,
+            applicantEmail = getString("email").orEmpty(),
+            latitude = (rawVenue?.get("location") as? com.google.firebase.firestore.GeoPoint)?.latitude
+                ?: (((rawVenue?.get("location") as? Map<*, *>)?.get("latitude")) as? Number)?.toDouble(),
+            longitude = (rawVenue?.get("location") as? com.google.firebase.firestore.GeoPoint)?.longitude
+                ?: (((rawVenue?.get("location") as? Map<*, *>)?.get("longitude")) as? Number)?.toDouble(),
         )
+    }
+
+    private fun DocumentSnapshot.timestampMillis(field: String): Long? = when (val value = get(field)) {
+        is com.google.firebase.Timestamp -> value.toDate().time
+        is String -> adminRunCatching { java.time.Instant.parse(value).toEpochMilli() }.getOrNull()
+        else -> null
     }
 
     companion object {

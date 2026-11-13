@@ -1,6 +1,8 @@
 # Quickstart Validation Guide: Feature 120
 
-This is a validation guide for implementation. It does not add implementation code or new endpoints. The current repository does not yet contain the feature packages, Edge Functions, collection Rules, or complete test harness; run these scenarios after those prerequisites exist. Use Firebase Emulator and Supabase local only, never a real project.
+> Current repair evidence: [repair-validation.md](repair-validation.md), with interfaces in [contracts/admin-repairs.md](contracts/admin-repairs.md). Historical success claims below have not been treated as proof of completeness. Current local/device test commands and results supersede them.
+
+Use Firebase Emulator and Supabase local only, never a real project. The repair harness below exercises the implemented packages, Rules and Edge Functions. Historical acceptance notes further below are retained for context; use repair-validation.md for current results.
 
 ## Prerequisites
 
@@ -26,19 +28,24 @@ This is a validation guide for implementation. It does not add implementation co
 
 ## Commands
 
-Use repository wrappers/configuration when the backend harness is completed. The following are expected validation entry points from current project structure; exact scripts/config flags may change when test harness is agreed:
+For device validation, use the isolated demo project `demo-admin-repair`, Auth port 19099, Firestore port 18080 and Supabase API port 54321. Start Auth/Firestore with a local emulator configuration pointing to the repository Rules/indexes. Supabase Edge env must use `host.docker.internal:18080` / `host.docker.internal:19099`, `FIREBASE_PROJECT_ID=demo-admin-repair` and `PUBLIC_STORAGE_URL=http://127.0.0.1:54321`. Keep local credentials in ignored `.gradle/` files.
 
 ```powershell
-.\gradlew.bat testDebugUnitTest
-.\gradlew.bat connectedDebugAndroidTest
-Set-Location firestore-tests
-npm test -- --run
-Set-Location ..
-supabase start
-supabase functions serve
+.\gradlew.bat :app:testDebugUnitTest --tests 'com.example.booking_app.feature.admin.*' :app:assembleDebug :app:assembleDebugAndroidTest '-PadminTestRunner=com.example.booking_app.feature.admin.AdminLocalTestRunner' '-PadminLocalAppId=true'
+npx.cmd supabase status -o json > .gradle/admin-local-status.json
+.\scripts\admin\validate-local-device.ps1 -Variant phone-light
+.\scripts\admin\validate-local-device.ps1 -Variant phone-dark
+.\scripts\admin\validate-local-device.ps1 -Variant tablet-light
+.\scripts\admin\validate-local-device.ps1 -Variant tablet-dark
 ```
 
-Run only the relevant local test suites with Emulator/local services running. No test commands were executed as part of this Plan step.
+The opt-in test source set is `app/src/adminLocalAndroidTest/java`. It uses a separate `.adminlocal` application ID, fake Google Services config, Hilt local clients and the actual MainActivity/fragments. The script seeds fake data, loads current Rules, reverses local ports, runs the entire admin instrumentation package and pulls screenshots to `validation/screenshots/<variant>`. Tablet variants exercise the w600dp resource branch on the attached phone by temporarily setting density to 240; they restore the prior density afterward. They are not a physical tablet hardware test. Keep the device unlocked. Do not uninstall the user's original app to resolve signature differences.
+
+For wireless adb, pass the current `adb devices -l` serial using `-Device`. Use `-EvidenceRun 2026-11-13-permission` to store fresh images in a dated subdirectory without overwriting historical evidence. When rerunning variants against the exact same installed APKs, `-SkipInstall` avoids retransferring them; it does not skip any tests. The local package now includes two actual interaction cases: valid ADMIN operations and PLAYER navigation/no admin query startup/denied protected read. Hilt components use isolated real preference files and reuse the already configured local Firestore client.
+
+Run Deno suites using `deno test --allow-env --allow-net --no-lock` with explicit seven admin `handler.test.ts` paths, `_shared/firestore-list.test.ts` and the affected `owner-create-voucher/handler.test.ts`; run `owner-docs/handler.test.ts` separately. For `admin-integration.local.test.ts`, set local Supabase service credentials plus `FIREBASE_PROJECT_ID=demo-admin-repair`, `FIRESTORE_EMULATOR_HOST=127.0.0.1:18080`, and `FIREBASE_AUTH_EMULATOR_HOST=127.0.0.1:19099`. That integration suite resets demo data, so run it before seeding/running UI tests.
+
+Run the full Firestore suite from `firestore-tests` with `FIRESTORE_EMULATOR_HOST=127.0.0.1:18080`, `SKIP_BLOCKED=''`, and `vitest run`. Keep the four spec 030 failures visible; do not alter court-detail expectations or skip them. Inflation tests are smoke checks, distinct from `AdminLocalInteractionTest` and its screenshots.
 
 ## References
 

@@ -35,7 +35,7 @@ class AdminCategoryAdapter(
         @SuppressLint("SetTextI18n")
         fun bind(item: AdminDistrict) {
             binding.textCategoryName.text = item.name
-            binding.textCategoryVenueCount.text = binding.root.context.getString(R.string.admin_tools_category_venues_count, (item.sortOrder.coerceAtLeast(3)))
+            binding.textCategoryVenueCount.text = ""
 
             binding.imageEditCategory.setOnClickListener {
                 onEditClick(item)

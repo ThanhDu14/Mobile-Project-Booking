@@ -2,6 +2,9 @@ package com.example.booking_app.feature.admin.data
 
 import com.example.booking_app.core.network.FunctionErrors
 import com.example.booking_app.feature.admin.domain.model.AdminDistrict
+import com.example.booking_app.feature.admin.domain.model.AdminCategoryKind
+import com.google.firebase.firestore.SetOptions
+import com.google.firebase.firestore.FieldValue
 import com.example.booking_app.feature.admin.domain.model.AdminSystemStats
 import com.example.booking_app.feature.admin.domain.model.AdminSystemVoucher
 import com.example.booking_app.feature.admin.domain.model.BroadcastNotificationRequest
@@ -20,6 +23,7 @@ import javax.inject.Singleton
 data class AdminBroadcastRequest(
     val title: String,
     val body: String,
+    val requestId: String,
 )
 
 @Serializable
@@ -57,23 +61,32 @@ class AdminToolsRepositoryImpl @Inject constructor(
     private val functionErrors: FunctionErrors,
 ) : AdminToolsRepository {
 
-    override suspend fun getSystemStats(): Result<AdminSystemStats> = runCatching {
-        val snapshot = firestore.collection("systemStats").limit(1).get().await()
-        if (snapshot.isEmpty) {
-            return@runCatching AdminSystemStats(hasData = false)
+    override suspend fun getSystemStats(): Result<AdminSystemStats> = getSystemStats(java.time.LocalDate.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh")).format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE))
+
+    override suspend fun getSystemStats(date: String): Result<AdminSystemStats> = adminRunCatching {
+        require(Regex("[0-9]{8}").matches(date))
+        val doc = firestore.collection("systemStats").document(date).get(com.google.firebase.firestore.Source.SERVER).await()
+        if (!doc.exists()) {
+            return@adminRunCatching AdminSystemStats(hasData = false)
         }
-        val doc = snapshot.documents.first()
         AdminSystemStats(
             totalUsers = doc.getLong("totalUsers") ?: 0L,
             totalVenues = doc.getLong("totalVenues") ?: 0L,
             totalBookings = doc.getLong("totalBookings") ?: 0L,
             totalRevenue = doc.getLong("totalRevenue") ?: 0L,
-            updatedAt = doc.getString("updatedAt") ?: doc.getDate("updatedAt")?.toString(),
+            updatedAt = when (val value = doc.get("updatedAt")) {
+                is com.google.firebase.Timestamp -> value.toDate().toInstant().toString()
+                is String -> value
+                else -> null
+            },
             hasData = true,
+            metrics = doc.data.orEmpty().filterValues { it is Number }.mapValues { (_, value) -> (value as Number).toLong() },
+            source = "systemStats/${doc.id}",
+            date = date,
         )
     }
 
-    override suspend fun getSystemVouchers(): Result<List<AdminSystemVoucher>> = runCatching {
+    override suspend fun getSystemVouchers(): Result<List<AdminSystemVoucher>> = adminRunCatching {
         val snapshot = firestore.collection("systemVouchers").get().await()
         snapshot.documents.mapNotNull { doc ->
             val code = doc.id
@@ -104,7 +117,10 @@ class AdminToolsRepositoryImpl @Inject constructor(
         }.sortedByDescending { it.code }
     }
 
-    override suspend fun createSystemVoucher(voucher: AdminSystemVoucher): Result<Unit> = runCatching {
+    override suspend fun createSystemVoucher(voucher: AdminSystemVoucher): Result<Unit> = persistVoucher(voucher, "CREATE")
+    override suspend fun updateSystemVoucher(voucher: AdminSystemVoucher): Result<Unit> = persistVoucher(voucher, "UPDATE")
+
+    private suspend fun persistVoucher(voucher: AdminSystemVoucher, action: String): Result<Unit> = adminRunCatching {
         val validationErr = voucher.validate()
         if (validationErr != null) {
             throw IllegalArgumentException(validationErr)
@@ -114,9 +130,9 @@ class AdminToolsRepositoryImpl @Inject constructor(
             supabase.functions.invoke(
                 FUNCTION_MANAGE_VOUCHER,
                 body = AdminManageVoucherRequest(
-                    action = "CREATE",
+                    action = action,
                     code = voucher.code.trim().uppercase(Locale.ROOT),
-                    type = voucher.type.trim().uppercase(Locale.ROOT),
+                    type = voucher.type.trim().uppercase(Locale.ROOT).replace("PERCENTAGE", "PERCENT"),
                     value = voucher.value,
                     maxDiscount = voucher.maxDiscount,
                     minOrderTotal = voucher.minOrderTotal,
@@ -130,7 +146,7 @@ class AdminToolsRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun toggleVoucherActive(code: String, isActive: Boolean): Result<Unit> = runCatching {
+    override suspend fun toggleVoucherActive(code: String, isActive: Boolean): Result<Unit> = adminRunCatching {
         functionErrors.invokeWithAuthRetry {
             supabase.functions.invoke(
                 FUNCTION_MANAGE_VOUCHER,
@@ -143,31 +159,36 @@ class AdminToolsRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getDistricts(): Result<List<AdminDistrict>> = runCatching {
-        val snapshot = firestore.collection("districts").get().await()
+    override suspend fun getDistricts(): Result<List<AdminDistrict>> = getCategories(AdminCategoryKind.DISTRICTS)
+
+    override suspend fun getCategories(kind: AdminCategoryKind): Result<List<AdminDistrict>> = adminRunCatching {
+        val snapshot = firestore.collection(kind.collection).get().await()
         snapshot.documents.mapNotNull { doc ->
             AdminDistrict(
                 id = doc.id,
                 name = doc.getString("name").orEmpty(),
                 sortOrder = doc.getLong("sortOrder")?.toInt() ?: 0,
                 isActive = doc.getBoolean("isActive") ?: true,
+                kind = kind,
             )
         }.sortedBy { it.sortOrder }
     }
 
-    override suspend fun saveDistrict(district: AdminDistrict): Result<Unit> = runCatching {
+    override suspend fun saveDistrict(district: AdminDistrict): Result<Unit> = adminRunCatching {
         if (district.id.isBlank()) throw IllegalArgumentException("Mã quận/huyện không hợp lệ")
         if (district.name.isBlank()) throw IllegalArgumentException("Tên quận/huyện không được để trống")
 
+        require(!district.id.contains('/')) { "Mã danh mục không hợp lệ" }
         val data = mapOf(
             "name" to district.name.trim(),
             "sortOrder" to district.sortOrder,
             "isActive" to district.isActive,
+            "updatedAt" to FieldValue.serverTimestamp(),
         )
-        firestore.collection("districts").document(district.id.trim()).set(data).await()
+        firestore.collection(district.kind.collection).document(district.id.trim()).set(data, SetOptions.merge()).await()
     }
 
-    override suspend fun broadcastSystemNotification(request: BroadcastNotificationRequest): Result<Int> = runCatching {
+    override suspend fun broadcastSystemNotification(request: BroadcastNotificationRequest): Result<Int> = adminRunCatching {
         val err = request.validate()
         if (err != null) throw IllegalArgumentException(err)
 
@@ -177,6 +198,7 @@ class AdminToolsRepositoryImpl @Inject constructor(
                 body = AdminBroadcastRequest(
                     title = request.title.trim(),
                     body = request.body.trim(),
+                    requestId = request.requestId,
                 ),
             ).body<AdminBroadcastResponse>()
         }
