@@ -167,6 +167,18 @@ class AdminToolsViewModelTest {
         assertTrue(state is ToolsActionUiState.Success)
         assertTrue((state as ToolsActionUiState.Success).message.contains("120"))
     }
+
+    @Test
+    fun toggleFailure_refreshesAuthoritativeVoucherState() = runTest {
+        val vm = AdminToolsViewModel(fakeRepository)
+        advanceUntilIdle()
+        val previous = fakeRepository.voucherLoads
+        fakeRepository.failToggle = true
+        vm.toggleVoucher("LOCAL10", false)
+        advanceUntilIdle()
+        assertEquals(previous + 1, fakeRepository.voucherLoads)
+        assertTrue(vm.voucherActionState.value is ToolsActionUiState.Error)
+    }
 }
 
 private class FakeAdminToolsRepository : AdminToolsRepository {
@@ -181,12 +193,15 @@ private class FakeAdminToolsRepository : AdminToolsRepository {
     var lastSavedDistrict: AdminDistrict? = null
     var lastBroadcastRequest: BroadcastNotificationRequest? = null
     var broadcastCountToReturn: Int = 0
+    var failToggle = false
+    var voucherLoads = 0
 
     override suspend fun getSystemStats(): Result<AdminSystemStats> {
         return Result.success(statsToReturn)
     }
 
     override suspend fun getSystemVouchers(): Result<List<AdminSystemVoucher>> {
+        voucherLoads++
         return Result.success(vouchersToReturn)
     }
 
@@ -198,6 +213,7 @@ private class FakeAdminToolsRepository : AdminToolsRepository {
     override suspend fun toggleVoucherActive(code: String, isActive: Boolean): Result<Unit> {
         lastToggledCode = code
         lastToggledActive = isActive
+        if (failToggle) return Result.failure(IllegalStateException("Unknown commit result"))
         return Result.success(Unit)
     }
 

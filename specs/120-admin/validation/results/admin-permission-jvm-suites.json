@@ -1,0 +1,149 @@
+﻿[
+    {
+        "suite":  "com.example.booking_app.core.session.AccountEntryNavigatorTest",
+        "tests":  4,
+        "failures":  0,
+        "errors":  0,
+        "skipped":  0
+    },
+    {
+        "suite":  "com.example.booking_app.core.session.DataStoreSessionPrefsTest",
+        "tests":  2,
+        "failures":  0,
+        "errors":  0,
+        "skipped":  2
+    },
+    {
+        "suite":  "com.example.booking_app.core.session.DefaultAccountAvatarSourceTest",
+        "tests":  7,
+        "failures":  0,
+        "errors":  0,
+        "skipped":  0
+    },
+    {
+        "suite":  "com.example.booking_app.core.session.DefaultAppModeControllerTest",
+        "tests":  10,
+        "failures":  0,
+        "errors":  0,
+        "skipped":  0
+    },
+    {
+        "suite":  "com.example.booking_app.core.session.FcmSignOutHookTest",
+        "tests":  4,
+        "failures":  0,
+        "errors":  0,
+        "skipped":  0
+    },
+    {
+        "suite":  "com.example.booking_app.core.session.FirebaseSessionManagerSignOutTest",
+        "tests":  8,
+        "failures":  0,
+        "errors":  0,
+        "skipped":  0
+    },
+    {
+        "suite":  "com.example.booking_app.core.session.FirebaseSessionManagerTest",
+        "tests":  15,
+        "failures":  0,
+        "errors":  0,
+        "skipped":  0
+    },
+    {
+        "suite":  "com.example.booking_app.core.session.RootGraphTest",
+        "tests":  2,
+        "failures":  0,
+        "errors":  0,
+        "skipped":  0
+    },
+    {
+        "suite":  "com.example.booking_app.core.session.SessionRouterTest",
+        "tests":  11,
+        "failures":  0,
+        "errors":  0,
+        "skipped":  0
+    },
+    {
+        "suite":  "com.example.booking_app.feature.admin.AdminApplicationsViewModelTest",
+        "tests":  15,
+        "failures":  0,
+        "errors":  0,
+        "skipped":  0
+    },
+    {
+        "suite":  "com.example.booking_app.feature.admin.AdminApplicationValidationTest",
+        "tests":  5,
+        "failures":  0,
+        "errors":  0,
+        "skipped":  0
+    },
+    {
+        "suite":  "com.example.booking_app.feature.admin.AdminCategoryRoutingTest",
+        "tests":  1,
+        "failures":  0,
+        "errors":  0,
+        "skipped":  0
+    },
+    {
+        "suite":  "com.example.booking_app.feature.admin.AdminQueueRepositoryTest",
+        "tests":  2,
+        "failures":  0,
+        "errors":  0,
+        "skipped":  0
+    },
+    {
+        "suite":  "com.example.booking_app.feature.admin.AdminReportsViewModelTest",
+        "tests":  8,
+        "failures":  0,
+        "errors":  0,
+        "skipped":  0
+    },
+    {
+        "suite":  "com.example.booking_app.feature.admin.AdminReportValidationTest",
+        "tests":  8,
+        "failures":  0,
+        "errors":  0,
+        "skipped":  0
+    },
+    {
+        "suite":  "com.example.booking_app.feature.admin.AdminStatsRepositoryTest",
+        "tests":  1,
+        "failures":  0,
+        "errors":  0,
+        "skipped":  0
+    },
+    {
+        "suite":  "com.example.booking_app.feature.admin.AdminToolsViewModelTest",
+        "tests":  9,
+        "failures":  0,
+        "errors":  0,
+        "skipped":  0
+    },
+    {
+        "suite":  "com.example.booking_app.feature.admin.AdminUserVenueViewModelTest",
+        "tests":  9,
+        "failures":  0,
+        "errors":  0,
+        "skipped":  0
+    },
+    {
+        "suite":  "com.example.booking_app.feature.admin.AdminVoucherRepairTest",
+        "tests":  1,
+        "failures":  0,
+        "errors":  0,
+        "skipped":  0
+    },
+    {
+        "suite":  "com.example.booking_app.feature.admin.OwnerRevocationValidationTest",
+        "tests":  4,
+        "failures":  0,
+        "errors":  0,
+        "skipped":  0
+    },
+    {
+        "suite":  "com.example.booking_app.feature.admin.SystemVoucherValidationTest",
+        "tests":  5,
+        "failures":  0,
+        "errors":  0,
+        "skipped":  0
+    }
+]

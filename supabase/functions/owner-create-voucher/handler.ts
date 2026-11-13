@@ -1,9 +1,10 @@
 import { errorResponse, HttpError, verifyIdToken } from "../_shared/auth.ts";
 import * as defaultFirestore from "../_shared/firestore.ts";
 import { createWrite, FirestoreError } from "../_shared/firestore.ts";
+import { createUniqueVoucher } from "../_shared/voucher-uniqueness.ts";
 
 export interface OwnerCreateVoucherDeps {
-  firestore: Pick<typeof defaultFirestore, "get" | "commit">;
+  firestore: Pick<typeof defaultFirestore, "get" | "commit" | "runTransaction">;
 }
 
 export async function handleOwnerCreateVoucher(
@@ -19,7 +20,7 @@ export async function handleOwnerCreateVoucher(
     const venueId = typeof body.venueId === "string" ? body.venueId.trim() : "";
     const rawCode = typeof body.code === "string" ? body.code.trim() : "";
     const code = rawCode.toUpperCase();
-    const type = typeof body.type === "string" ? body.type.trim().toUpperCase() : "";
+    const type = typeof body.type === "string" ? body.type.trim().toUpperCase().replace(/^PERCENTAGE$/, "PERCENT") : "";
     const value = Number(body.value);
     const maxDiscount = Number(body.maxDiscount || 0);
     const minOrderTotal = Number(body.minOrderTotal || 0);
@@ -33,11 +34,11 @@ export async function handleOwnerCreateVoucher(
     if (!/^[A-Z0-9]{3,20}$/.test(code)) {
       throw new HttpError(400, "INVALID_CODE", "Mã voucher phải từ 3 đến 20 ký tự chữ hoa hoặc số");
     }
-    if (type !== "PERCENTAGE" && type !== "FIXED") {
+    if (type !== "PERCENT" && type !== "FIXED") {
       throw new HttpError(400, "INVALID_TYPE", "Loại voucher phải là PERCENTAGE hoặc FIXED");
     }
     if (value <= 0) throw new HttpError(400, "INVALID_VALUE", "Giá trị voucher phải lớn hơn 0");
-    if (type === "PERCENTAGE" && value > 100) {
+    if (type === "PERCENT" && value > 100) {
       throw new HttpError(400, "INVALID_PERCENTAGE", "Phần trăm giảm không được vượt quá 100%");
     }
     if (maxDiscount < 0 || minOrderTotal < 0) {
@@ -92,7 +93,7 @@ export async function handleOwnerCreateVoucher(
     ];
 
     try {
-      await firestore.commit(writes);
+      await createUniqueVoucher(firestore.runTransaction, `venues/${venueId}/vouchers/${code}`, code, defaultFirestore.decodeFields(writes[0].update!.fields));
     } catch (e) {
       if (e instanceof FirestoreError && (e.code === "ALREADY_EXISTS" || e.code === "ABORTED")) {
         throw new HttpError(409, "VOUCHER_CONFLICT", "Xung đột dữ liệu khi tạo voucher");

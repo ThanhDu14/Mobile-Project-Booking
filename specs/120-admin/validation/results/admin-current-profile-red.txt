@@ -1,0 +1,42 @@
+﻿
+ RUN  v5.1.0 F:/CSC_HCMUS/Mobile/datcau/firestore-tests
+
+ ❯ test/admin-current-profile.test.ts (3 tests | 3 failed) 523ms
+   ❯ R120-16 current admin profile (3)
+     × denies stale ADMIN claim when profile is revoked 203ms
+     × denies stale ADMIN claim when profile is locked 96ms
+     × denies stale ADMIN claim when profile is deleting 83ms
+.\node_modules\.bin\vitest.cmd : 
+At line:2 char:71
++ ... BLOCKED=''; .\node_modules\.bin\vitest.cmd run test/admin-current-pro ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 3 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/admin-current-profile.test.ts > R120-16 current admin profile > denies stale ADMIN claim when profile is 
+revoked
+ FAIL  test/admin-current-profile.test.ts > R120-16 current admin profile > denies stale ADMIN claim when profile is 
+locked
+ FAIL  test/admin-current-profile.test.ts > R120-16 current admin profile > denies stale ADMIN claim when profile is 
+deleting
+Error: Expected request to fail, but it succeeded.
+ ❯ node_modules/.deno/@firebase+rules-unit-testing@6.0.0/node_modules/@firebase/rules-unit-testing/src/util.ts:137:9
+ ❯ test/admin-current-profile.test.ts:25:7
+     23|       await env.withSecurityRulesDisabled(async ctx => { await ctx.fir…
+     24|       const db = env.authenticatedContext('stale', { appRole: 'ADMIN' …
+     25|       await assertFails(getDoc(doc(db, 'ownerApplications/private')));
+       |       ^
+     26|       await assertFails(setDoc(doc(db, 'amenities/forbidden'), { name:…
+     27|     });
+
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯
+
+
+ Test Files  1 failed (1)
+      Tests  3 failed (3)
+   Start at  20:12:10
+   Duration  1.07s (tests 57%, import 36%, transform 6%, worker 1%)
+
+

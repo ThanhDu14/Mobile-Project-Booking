@@ -45,6 +45,7 @@ class AdminApplicationDetailFragment : Fragment(R.layout.fragment_admin_applicat
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         _binding = FragmentAdminApplicationDetailBinding.bind(view)
+        viewModel.detailState.value.application?.id?.let(viewModel::loadApplicationDetail)
 
         binding.toolbar.setNavigationOnClickListener {
             findNavController().navigateUp()
@@ -70,15 +71,21 @@ class AdminApplicationDetailFragment : Fragment(R.layout.fragment_admin_applicat
         val currentBinding = _binding ?: return
 
         currentBinding.progressBarDetail.isVisible = state.isLoading || state.isSubmitting
-        currentBinding.buttonApprove.isEnabled = !state.isSubmitting
-        currentBinding.buttonReject.isEnabled = !state.isSubmitting
+        currentBinding.buttonApprove.isEnabled = state.isAuthoritative && !state.isLoading && !state.isSubmitting && state.application?.status == "PENDING"
+        currentBinding.buttonReject.isEnabled = currentBinding.buttonApprove.isEnabled
 
         state.application?.let { app ->
             populateApplicationData(app, currentBinding)
         }
+        if (state.permissionDenied) {
+            findNavController().navigateUp()
+            return
+        }
 
         state.errorMessage?.let { error ->
-            Snackbar.make(currentBinding.root, error, Snackbar.LENGTH_LONG).show()
+            Snackbar.make(currentBinding.root, error, Snackbar.LENGTH_LONG).setAction("Thử lại") {
+                state.application?.id?.let(viewModel::loadApplicationDetail)
+            }.show()
             viewModel.clearMessages()
         }
 
@@ -94,15 +101,15 @@ class AdminApplicationDetailFragment : Fragment(R.layout.fragment_admin_applicat
         b.detailVenueName.text = app.venueName.ifBlank { "Cơ sở chưa đặt tên" }
         b.textRegisteredVenueName.text = app.venueName.ifBlank { "Chưa đặt tên" }
         b.detailVenueAddress.text = app.venueAddress.ifBlank { "Chưa cập nhật" }
-        b.detailVenueDistrict.text = app.districtId.ifBlank { "Quận 10" }
+        b.detailVenueDistrict.text = app.districtName.ifBlank { app.districtId.ifBlank { "Chưa cập nhật" } }
         b.detailCourtCount?.text = "${app.courtCount}"
         b.detailOperatingHours.text = "${app.openTime} - ${app.closeTime}"
         b.detailVenuePhone.text = app.venuePhone.ifBlank { "Chưa cập nhật" }
-        b.detailCoordinates?.text = "Đang cập nhật"
+        b.detailCoordinates?.text = app.latitude?.let { "$it, ${app.longitude}" } ?: "Chưa cập nhật"
 
         b.detailApplicantName.text = app.applicantName.ifBlank { "Chưa cập nhật" }
         b.detailApplicantPhone.text = app.applicantPhone.ifBlank { "Chưa cập nhật" }
-        b.detailApplicantEmail.text = app.applicantPhone.ifBlank { "Chưa cập nhật" }
+        b.detailApplicantEmail.text = app.applicantEmail.ifBlank { "Chưa cập nhật" }
 
         val dateStr = if (app.submittedAt > 0) dateFormat.format(Date(app.submittedAt)) else "Mới nộp"
         val waitHours = if (app.submittedAt > 0) {
@@ -129,14 +136,15 @@ class AdminApplicationDetailFragment : Fragment(R.layout.fragment_admin_applicat
             }
         }
 
-        b.chipResubmittedDetail.isVisible = !app.rejectReason.isNullOrBlank()
+        b.chipResubmittedDetail.isVisible = app.status == "PENDING" && !app.rejectReason.isNullOrBlank()
         b.cardPreviousReview.isVisible = !app.rejectReason.isNullOrBlank()
         if (b.cardPreviousReview.isVisible) {
-            b.textPreviousReview.text = getString(R.string.admin_previous_review_rejected, "03/10: ${app.rejectReason}")
+            b.textPreviousReview.text = getString(R.string.admin_previous_review_rejected, app.rejectReason)
         }
 
         b.textLinkMap?.setOnClickListener {
-            val geoUri = Uri.parse("geo:10.7731,106.6672?q=10.7731,106.6672(${Uri.encode(app.venueName)})")
+            if (app.latitude == null || app.longitude == null) return@setOnClickListener
+            val geoUri = Uri.parse("geo:${app.latitude},${app.longitude}?q=${app.latitude},${app.longitude}(${Uri.encode(app.venueName)})")
             runCatching { startActivity(Intent(Intent.ACTION_VIEW, geoUri)) }
         }
 
@@ -145,10 +153,19 @@ class AdminApplicationDetailFragment : Fragment(R.layout.fragment_admin_applicat
         }
 
         b.cardDocSignage.setOnClickListener {
-            openDocument(app.photoPaths.firstOrNull() ?: app.documentPaths.getOrNull(1))
+            openDocument(app.documentPaths.getOrNull(1))
         }
 
         b.containerDocuments.removeAllViews()
+        if (app.status in setOf("APPROVED", "REJECTED")) {
+            val recover = MaterialButton(requireContext()).apply {
+                text = getString(R.string.admin_recover_claims)
+                isEnabled = !viewModel.detailState.value.isSubmitting
+                minHeight = (48 * resources.displayMetrics.density).toInt()
+                setOnClickListener { viewModel.recoverClaims() }
+            }
+            b.containerDocuments.addView(recover)
+        }
         if (app.documentPaths.size > 2) {
             app.documentPaths.drop(2).forEachIndexed { index, path ->
                 val btn = MaterialButton(requireContext(), null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
@@ -166,12 +183,16 @@ class AdminApplicationDetailFragment : Fragment(R.layout.fragment_admin_applicat
             Snackbar.make(binding.root, "Chưa có liên kết tài liệu", Snackbar.LENGTH_SHORT).show()
             return
         }
-        val url = viewModel.detailState.value.documentUrls[path] ?: path
-        runCatching {
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
-            startActivity(intent)
-        }.onFailure {
-            Snackbar.make(binding.root, "Không thể mở tài liệu: $url", Snackbar.LENGTH_SHORT).show()
+        // Request a fresh five-minute URL for each tap, including retries after expiry.
+        viewModel.loadDocumentSignedUrl(path) { url ->
+            if (_binding == null || !isAdded) return@loadDocumentSignedUrl
+            runCatching {
+                require(Uri.parse(url).scheme in setOf("https", "http"))
+                startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+            }.onFailure {
+                Snackbar.make(binding.root, "Không thể mở tài liệu. Hãy thử lại.", Snackbar.LENGTH_LONG)
+                    .setAction("Thử lại") { openDocument(path) }.show()
+            }
         }
     }
 
@@ -190,6 +211,8 @@ class AdminApplicationDetailFragment : Fragment(R.layout.fragment_admin_applicat
         val currentApp = viewModel.detailState.value.application ?: return
         val dialog = BottomSheetDialog(requireContext())
         val dialogBinding = DialogAdminRejectApplicationBinding.inflate(layoutInflater)
+        dialogBinding.inputRejectReason.setText(viewModel.detailState.value.rejectReasonInput)
+        dialogBinding.inputRejectReason.doAfterTextChanged { viewModel.updateRejectReasonInput(it?.toString().orEmpty()) }
         dialog.setContentView(dialogBinding.root)
 
         dialogBinding.textDialogMessage.text = getString(

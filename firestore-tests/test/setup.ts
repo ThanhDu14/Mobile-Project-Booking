@@ -13,3 +13,10 @@ export function createTestEnv(): Promise<RulesTestEnvironment> {
     firestore: { rules },
   });
 }
+
+/** An ADMIN token alone is not a current authorization grant. */
+export async function seedCurrentAdmin(env: RulesTestEnvironment, uid: string): Promise<void> {
+  await env.withSecurityRulesDisabled(async ctx => {
+    await ctx.firestore().doc(`users/${uid}`).set({ role: 'ADMIN', accountStatus: 'ACTIVE' });
+  });
+}

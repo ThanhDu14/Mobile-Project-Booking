@@ -47,6 +47,19 @@ class FirebaseSessionManagerTest {
     )
 
     @Test
+    fun specialEmailCannotOverrideServerRole() = runTest {
+        authSource.authState.value = googleUser.copy(email = "eganvenven@gmail.com")
+        for (role in listOf("PLAYER", "OWNER", "ADMIN")) {
+            authSource.claims = { mapOf("appRole" to role) }
+            val manager = createManager()
+            assertEquals(AppRole.fromClaim(role), manager.currentAppRole())
+        }
+        authSource.claims = { emptyMap() }
+        val manager = createManager()
+        assertTrue(manager.sessionState.value is SessionState.NeedsConsent)
+    }
+
+    @Test
     fun `khong co nguoi dung thi SignedOut va la khach`() = runTest {
         val manager = createManager()
         assertEquals(SessionState.SignedOut(reason = null), manager.sessionState.value)

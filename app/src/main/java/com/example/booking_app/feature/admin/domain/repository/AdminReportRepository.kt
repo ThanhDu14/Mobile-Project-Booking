@@ -6,6 +6,7 @@ import kotlinx.coroutines.flow.Flow
 
 interface AdminReportRepository {
     fun observeOpenReports(): Flow<List<AdminReport>>
+    fun observeReports(closed: Boolean, limit: Long): Flow<List<AdminReport>> = observeOpenReports()
     suspend fun getReport(reportId: String): Result<AdminReport>
     suspend fun moderateReport(decision: ModerateReportDecision): Result<Unit>
     suspend fun getTargetSummary(targetPath: String): Result<Map<String, Any?>>

@@ -122,15 +122,26 @@ export async function get(path: string): Promise<Record<string, unknown> | null>
 }
 
 /** Đọc danh sách document trong collection hoặc subcollection. */
-export async function list(collectionPath: string): Promise<Record<string, unknown>[]> {
-  const res = await request(`${apiBase()}/${documentName(collectionPath)}`, { method: "GET" });
-  if (res.status === 404) {
-    await res.body?.cancel();
-    return [];
-  }
+export async function listPage(collectionPath: string, pageToken = "", pageSize = 30): Promise<{ documents: Record<string, unknown>[]; nextPageToken: string }> {
+  const url = new URL(`${apiBase()}/${documentName(collectionPath)}`);
+  url.searchParams.set("pageSize", String(pageSize));
+  if (pageToken) url.searchParams.set("pageToken", pageToken);
+  const res = await request(url.toString(), { method: "GET" });
+  if (res.status === 404) { await res.body?.cancel(); return {documents: [], nextPageToken: ""}; }
   if (!res.ok) throw await toError(res);
-  const data = await res.json() as { documents?: { fields?: Record<string, FirestoreValue> }[] };
-  return (data.documents ?? []).map((d) => decodeFields(d.fields ?? {}));
+  const data = await res.json() as { documents?: { name: string; fields?: Record<string, FirestoreValue> }[]; nextPageToken?: string };
+  return { documents: (data.documents ?? []).map((d) => ({ ...decodeFields(d.fields ?? {}), __documentId: d.name.split("/").pop() })), nextPageToken: data.nextPageToken ?? "" };
+}
+
+export async function list(collectionPath: string): Promise<Record<string, unknown>[]> {
+  const documents: Record<string, unknown>[] = [];
+  let pageToken = "";
+  do {
+    const page = await listPage(collectionPath, pageToken, 300);
+    documents.push(...page.documents);
+    pageToken = page.nextPageToken;
+  } while (pageToken);
+  return documents;
 }
 
 /** Một thao tác ghi theo REST API (`Write`). Dùng `createWrite` / `updateWrite` để tạo. */

@@ -1,5 +1,7 @@
 # Tasks: Quản trị và kiểm duyệt (Feature 120)
 
+> Kiểm chứng hiện hành: [repair-validation.md](repair-validation.md). Các dấu [X] T001–T054 và các gate “100% resolved” bên dưới là ghi nhận lịch sử, không phải bằng chứng nghiệm thu cho đợt sửa 2026-11-12. Theo dõi R120-01…R120-16 ở cuối file; checklist reviewer giữ nguyên.
+
 **Input**: `specs/120-admin/spec.md`, `plan.md`, `research.md`, `data-model.md`, `contracts/admin-boundaries.md`, `quickstart.md`, Constitution 1.2.0, database README và assignment guide.
 
 **Tổ chức**: Theo bốn User Stories của spec. Các task backend, Rules, Storage và test chỉ thuộc Feature 120 và phần được giao cho nhóm D; không sửa code/tài liệu sở hữu của Feature 010/011/050/100/110/111/112/070/080/081/090/091.
@@ -160,7 +162,9 @@ US1 + US2 ──────── US3 integration points; all selected stories 
 
 MVP là **US1** (duyệt hồ sơ P1), sau khi hoàn tất Phase 1 gates T002/T003/T006 liên quan và Phase 2; ưu tiên approve/reject, bằng chứng riêng tư, xử lý race và notification. P1 US2 tiếp theo. US3 rồi US4 theo thứ tự ưu tiên; US4 chỉ mở các phần đã có schema/hợp đồng rõ. Stories có thể phát hành độc lập khi acceptance criteria tương ứng đạt và dependency feature owners xác nhận.
 
-## Open implementation gates (do not infer) — ĐÃ GIẢI TỎA TOÀN BỘ (100% RESOLVED)
+## Historical gate claims — superseded by repair audit
+
+The prior claims below are retained as audit context. They are not current acceptance evidence; use the R120 repair tasks and repair-validation.md.
 
 - [ĐÃ ĐÓNG] Admin token verification, claim revocation/refresh, account validity và callable server interfaces: Đã chuẩn hóa qua 7 Supabase Edge Functions xác thực token Firebase Auth với custom claims `appRole == "ADMIN"`.
 - [ĐÃ ĐÓNG] Cơ chế atomic/recovery/idempotency cho Firestore + Auth claim + venue creation + notifications: Đã triển khai hoàn chỉnh bằng Firestore atomic transaction trong `admin-review-application`, `admin-moderate-report`, `admin-revoke-owner`, đảm bảo tính toàn vẹn và bất biến, chống race condition.
@@ -174,3 +178,34 @@ MVP là **US1** (duyệt hồ sơ P1), sau khi hoàn tất Phase 1 gates T002/T0
 - [ĐÃ ĐÓNG] Fixture hồ sơ đầy đủ SC-006: Xác nhận đầy đủ thông tin theo Feature 110 FR-002/Validation (tên sân, địa chỉ, quận huyện, GPS, SĐT cơ sở, số sân, giờ mở cửa, tên & SĐT đại diện, ảnh, giấy phép kinh doanh hợp lệ).
 - [ĐÃ ĐÓNG] Target read gates: Truy vấn an toàn với fallback khi target bị xóa hoặc không tìm thấy; không để lộ thông tin riêng tư.
 - [ĐÃ ĐÓNG] Ranh giới liên feature: Đã đối chiếu hoàn chỉnh giữa Feature 120 với Feature 110, 100, 010, 011, 111, 112, 050, 070, 080, 081, 090, 091. Không có vi phạm hay sửa đổi code bên ngoài boundary quản trị.
+
+## Repair audit 2026-11-12 — supersedes historical completion claims
+
+Historical [X] markers above are not acceptance evidence. Reviewer checklists remain read-only. Each repair requires a reproducing regression before code, then validation; leave incomplete work unchecked.
+
+- [X] R120-01 [P1] FR-003/T015–T023: reproduce raw path launch, expiry/permission/retry and missing second document; connect every document to fresh signed access in AdminApplicationDetailFragment/ViewModel; regression JVM + local Storage integration.
+- [X] R120-02 [P1] FR-014/T043/T048–T050: reproduce amenities tab reading/writing districts; carry category kind through load/add/edit; verify both collections and rapid tab switching.
+- [X] R120-03 [P1] FR-002/FR-010/T014/T024: reproduce missing APPROVED/REJECTED and closed reports; server-filtered paginated realtime queries, empty/retry, listener cancellation and page boundaries.
+- [X] R120-04 [P1] FR-004–FR-007/T018–T022: reproduce APPROVE/APPROVED and REJECT/REJECTED retry, stale version/race; preserve one venue/notification and reject stale submissions.
+- [X] R120-05 [P1] FR-004/FR-016/T003/T019: reproduce Auth claim failure; recover on retry using authoritative role with no false success or regrant after revoke; local Auth/Firestore integration.
+- [X] R120-06 [P1] FR-014a/T044/T048–T049: reproduce Invalid Date, missing year/timezone, invalid numeric/default inputs and venue duplicate; strict client/server validation and global uniqueness, including concurrent creation boundary.
+- [X] R120-07 [P1] FR-014/T045/T049: reproduce multi-page users missing document ID and mid-batch failure; stable request identity/content, deterministic notification IDs, retry without resetting read state, explicit ACTIVE recipients only.
+- [X] R120-08 [P2] FR-008/T033–T041: regression list/search by name/email/phone, filters and schema-backed detail; implement complete lookup/list flow.
+- [X] R120-09 [P2] FR-013/T042/T048: regression metric/date/source/time and no fixture values; remove fabricated stats/history, loading/empty/error/retry.
+- [X] R120-10 [P2] FR-002/FR-010/T017/T025: regression real email/GPS/district/report target fields; no illustrative identities/content for missing values.
+- [X] R120-11 [P2] Error states/T016/T020/T037/T046: regression retained rejection draft and duplicate submissions; restore reason and lock in-flight actions.
+- [X] R120-12 [P2] FR-009/T036/T038: regression navigation reaches venue lock/unlock controls from admin tools.
+- [X] R120-13 [P2] T023/T032/T041/T050/T051: compare valid ui/ images with phone/tablet light/dark interactions and screenshots; step 8 ERR_CONNECTION_REFUSED is missing design evidence, do not infer its layout.
+- [X] R120-14 Validation: rerun all admin JVM, seven Edge suites, all Firestore tests; preserve and separately report four known spec 030 court-detail failures. Emulator/local integrations for signed docs, review/retry/race/claims, user/venue/revoke, moderation, categories/voucher/broadcast. Run admin instrumentation on attached device; inflation checks are not E2E. No production mutations/deploy. Record actual results and blockers in repair-validation.md.
+- [X] R120-15 [P2] FR-014a/T044: reproduce missing UPDATE system voucher action; expose edit from voucher card using existing form, retain protected counters/code and reject usage limits below usedCount.
+- [X] R120-16 [P1] FR-001/FR-016/T052: reproduce stale ADMIN claim reading/writing admin data after user role revocation/account lock; enforce current profile in Firestore Rules and use valid ACTIVE ADMIN profiles in allow fixtures without changing the four spec 030 expectations.
+
+- [X] R120-17 [P2] FR-014/T050/R120-13: real phone-dark screenshot exposes overlapping district/amenity hints after switching tabs; first assert the TextInputLayout owns the correct category hint, then repair switching/restoration and rerun device variants.
+
+- [X] R120-18 [P2] FR-009/R120-13: reproduce the unlock footer promising an owner notification absent from the contract/handler; remove the unsupported promise, retain admin-only guidance, and validate resource wiring without adding a new notification event. Evidence: unlock-copy.test.cjs red→green; processDebugResources passed 13/11. Fresh device screenshots blocked by no attached adb device; see repair-validation.md.
+
+- [X] R120-19 [P1] FR-001/FR-016: real-device logs deny admin queries while debug session routing overrides Firebase claims by email. Reproduce the special-email bypass with session regression; route only by server-issued appRole, preserve legitimate ADMIN, and verify on device without granting production rights.
+- [X] R120-20 Validation harness: device runs with two actual interaction tests reproduce repeated Firestore.useEmulator initialization and duplicate DataStore-file failures. Reuse the configured local Firestore client; give each Hilt test component an isolated real DataStore file; inspect the destination's role-graph ancestry (the outer graph stays nav_main). Rerun both tests without skipping either.
+- [X] R120-21 [P1] FR-001/FR-016: MainActivity badge collectors instantiate auto-loading admin ViewModels for PLAYER/guest, generating forbidden ownerApplications/reports reads. First reproduce on physical device; instantiate/collect only for an ADMIN session and stop existing admin listeners on role loss.
+
+Audit evidence: AdminApplicationDetailFragment.openDocument uses cached URL ?: path; second card prioritizes photo over document #2. AdminToolsDashboardFragment both category tabs call saveDistrict. Application/report repositories query only PENDING/OPEN. Review handler compares app.status === decision and swallows mergeClaims failure. Voucher validation compares Invalid Date without finite checks and only checks systemVouchers. Broadcast uses random IDs and list() omits nextPageToken/document identity. Previous closed gates and quickstart claims are therefore not current verification evidence.

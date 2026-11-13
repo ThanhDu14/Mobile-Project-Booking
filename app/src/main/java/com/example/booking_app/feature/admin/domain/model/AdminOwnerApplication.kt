@@ -19,4 +19,8 @@ data class AdminOwnerApplication(
     val rejectReason: String? = null,
     val reviewedBy: String? = null,
     val reviewedAt: Long? = null,
+    val applicantEmail: String = "",
+    val latitude: Double? = null,
+    val longitude: Double? = null,
+    val districtName: String = "",
 )

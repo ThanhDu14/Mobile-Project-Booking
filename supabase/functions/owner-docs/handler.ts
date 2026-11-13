@@ -76,7 +76,9 @@ async function signDownload(uid: string, appRole: string, body: Record<string, u
   const base = Deno.env.get("SUPABASE_URL")!;
   const signedUrl = string(signed.signedURL);
   if (!signedUrl) throw new HttpError(503, "STORAGE_ERROR", "Không tạo được đường dẫn tải tệp");
-  return json(200, { signedUrl: absoluteStorageUrl(signedUrl, base), expiresInSeconds: 300 });
+  // Reverse-proxied local deployments may have a private service URL and a client-facing URL.
+  const publicBase = Deno.env.get("PUBLIC_STORAGE_URL") || base;
+  return json(200, { signedUrl: absoluteStorageUrl(signedUrl, publicBase), expiresInSeconds: 300 });
 }
 
 async function deleteStaged(uid: string, body: Record<string, unknown>): Promise<Response> {

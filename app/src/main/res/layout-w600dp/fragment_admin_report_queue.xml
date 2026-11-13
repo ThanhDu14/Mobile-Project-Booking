@@ -16,6 +16,9 @@
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:minHeight="88dp"
+            android:clipChildren="false"
+            android:clipToPadding="false"
             android:paddingHorizontal="32dp"
             android:paddingTop="24dp"
             android:paddingBottom="8dp">
@@ -34,6 +37,9 @@
                 android:id="@+id/toggleGroupStatus"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:minHeight="56dp"
+                android:clipChildren="false"
+                android:clipToPadding="false"
                 android:layout_alignParentEnd="true"
                 android:layout_centerVertical="true"
                 app:checkedButton="@id/buttonTabOpen"
@@ -58,7 +64,7 @@
         </RelativeLayout>
 
         <!-- Filter Chips Row -->
-        <HorizontalScrollView
+        <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:paddingHorizontal="32dp"
@@ -69,7 +75,7 @@
                 android:id="@+id/chipGroupCategory"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                app:singleLine="true"
+                app:singleLine="false"
                 app:singleSelection="true">
 
                 <com.google.android.material.chip.Chip
@@ -121,7 +127,7 @@
                     android:minHeight="48dp"
                     android:text="@string/admin_report_filter_user" />
             </com.google.android.material.chip.ChipGroup>
-        </HorizontalScrollView>
+        </FrameLayout>
 
         <FrameLayout
             android:layout_width="match_parent"

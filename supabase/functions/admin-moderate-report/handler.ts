@@ -1,3 +1,4 @@
+import { requireCurrentAdmin } from "../_shared/admin-authorization.ts";
 import { HttpError, requireRole, requireUser, toErrorResponse } from "../_shared/auth.ts";
 import * as defaultFirestore from "../_shared/firestore.ts";
 import { updateWrite, FirestoreError } from "../_shared/firestore.ts";
@@ -50,6 +51,7 @@ export async function handleAdminModerateReport(
   try {
     const user = await requireUser(req);
     requireRole(user, "ADMIN");
+    requireCurrentAdmin(user);
 
     const body = await req.json().catch(() => ({})) as Record<string, unknown>;
     const reportId = typeof body.reportId === "string" ? body.reportId.trim() : "";
