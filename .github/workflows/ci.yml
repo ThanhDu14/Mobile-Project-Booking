@@ -119,11 +119,29 @@ jobs:
         working-directory: supabase/functions
         run: deno check .
 
+      # admin-integration.local.test.ts kiểm tra signed URL thật trên Storage local.
+      - name: Khởi động Supabase local và cấu hình Storage
+        run: |
+          npx -y supabase@3.1.0 start --exclude logflare,vector,studio,realtime,imgproxy,edge-runtime
+          npx -y supabase@3.1.0 status -o env > "$RUNNER_TEMP/supabase.env"
+          source "$RUNNER_TEMP/supabase.env"
+          test -n "$API_URL"
+          test -n "$SERVICE_ROLE_KEY"
+          echo "::add-mask::$SERVICE_ROLE_KEY"
+          {
+            echo "SUPABASE_URL=$API_URL"
+            echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY"
+          } >> "$GITHUB_ENV"
+
       - name: deno test (Auth + Firestore Emulator)
         run: >-
           npx -y firebase-tools@15 emulators:exec
           --config firebase.json --project demo-smashnow --only auth,firestore
           "cd supabase/functions && deno test -A --no-check"
+
+      - name: Dừng Supabase local
+        if: always()
+        run: npx -y supabase@3.1.0 stop
 
   firestore-rules:
     name: Firestore Rules (Emulator)
