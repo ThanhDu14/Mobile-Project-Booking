@@ -165,6 +165,25 @@ Deno.test("RAG: owner reply or rating edit keeps the source version, comment edi
   assert(await reviewVersion({ ...review, comment: "Sàn trơn." }) !== original);
 });
 
+Deno.test("RAG: recommendation quotes the matching clause with contacts masked", async () => {
+  const ranked = await rankReviews(["v"], "GRIP", () =>
+    Promise.resolve([{
+      id: "r",
+      path: "reviews/r",
+      data: {
+        venueId: "v",
+        targetType: "VENUE",
+        status: "VISIBLE",
+        comment: "Gọi 0912345678 nhé. Sàn bám tốt, gọi 0912345678",
+      },
+    }]));
+  assertEquals(ranked[0].quotes, [{
+    reviewId: "r",
+    text: "Sàn bám tốt, gọi [phone]",
+    supports: true,
+  }]);
+});
+
 Deno.test("RAG: retrieval only queries public venue reviews", async () => {
   const seen: unknown[] = [];
   await rankReviews(["v"], "GRIP", (_collection, filters) => {
@@ -344,6 +363,7 @@ Deno.test({
     assertEquals(recommendations, [{
       venueId,
       sources: [{ reviewId, version: await reviewVersion(review) }],
+      quotes: [{ reviewId, text: "Sàn bám tốt", supports: true }],
     }]);
     const sources = recommendations[0].sources;
     const explained = await handleAiSearch(

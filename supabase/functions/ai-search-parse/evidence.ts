@@ -2,11 +2,31 @@ import type {
   query as firestoreQuery,
   QueryDocument,
 } from "../_shared/firestore.ts";
-import { normalize, type Preference, preferences } from "./criteria.ts";
+import {
+  maskQuery,
+  normalize,
+  type Preference,
+  preferences,
+} from "./criteria.ts";
 
 type ReviewData = Record<string, unknown>;
 type Source = { reviewId: string; version: string };
-export type Observation = { source: Source; phrase: string; supports: boolean };
+export type Observation = {
+  source: Source;
+  phrase: string;
+  supports: boolean;
+  quote: string;
+};
+
+const quoteMax = 140;
+
+/** The review clause that matched, shown on the recommendation card. Contact data is masked. */
+function quoteOf(clause: string): string {
+  const text = maskQuery(clause.replace(/\s+/g, " ").trim());
+  return text.length > quoteMax
+    ? text.slice(0, quoteMax - 1).trimEnd() + "…"
+    : text;
+}
 
 const labels: Record<Preference, [string, string]> = {
   GRIP: ["sàn ít trơn hoặc có độ bám tốt", "sàn trơn hoặc dễ trượt"],
@@ -62,20 +82,20 @@ function mentions(text: string, phrase: string): boolean {
 export function reviewObservations(
   comment: string,
   preference: Preference,
-): Array<{ phrase: string; supports: boolean }> {
+): Array<{ phrase: string; supports: boolean; quote: string }> {
   const dictionary = preferences[preference];
-  const clauses = comment.split(/[.!?;\n]|\bnhưng\b/iu).map(normalize);
-  let supports = false;
-  let disagrees = false;
-  for (const clause of clauses) {
-    let remaining = clause;
+  // First clause that supports / disagrees; the original text becomes the quote.
+  let support: string | null = null;
+  let disagree: string | null = null;
+  for (const raw of comment.split(/[.!?;\n]|\bnhưng\b/iu)) {
+    let remaining = normalize(raw);
     for (const phrase of dictionary.match) {
       if (!mentions(remaining, phrase)) continue;
       if (
         mentions(remaining, "khong " + phrase) ||
         mentions(remaining, "khong thay " + phrase)
-      ) disagrees = true;
-      else supports = true;
+      ) disagree ??= raw;
+      else support ??= raw;
       remaining = remaining.replaceAll(phrase, " ").replace(/\s+/g, " ").trim();
     }
     if (
@@ -83,13 +103,17 @@ export function reviewObservations(
         mentions(remaining, phrase) && !mentions(remaining, "khong " + phrase)
       )
     ) {
-      disagrees = true;
+      disagree ??= raw;
     }
   }
   const [positive, negative] = labels[preference];
   return [
-    ...(supports ? [{ phrase: positive, supports: true }] : []),
-    ...(disagrees ? [{ phrase: negative, supports: false }] : []),
+    ...(support !== null
+      ? [{ phrase: positive, supports: true, quote: quoteOf(support) }]
+      : []),
+    ...(disagree !== null
+      ? [{ phrase: negative, supports: false, quote: quoteOf(disagree) }]
+      : []),
   ];
 }
 
@@ -111,8 +135,9 @@ export async function rankReviews(
   preference: Preference,
   query: typeof firestoreQuery,
 ) {
+  type Quote = { reviewId: string; text: string; supports: boolean };
   const candidates: Array<
-    { venueId: string; score: number; sources: Source[] }
+    { venueId: string; score: number; sources: Source[]; quotes: Quote[] }
   > = [];
   // Keep individual reads bounded and use the existing venueId/status/createdAt review index.
   for (let offset = 0; offset < venueIds.length; offset += 6) {
@@ -139,21 +164,27 @@ export async function rankReviews(
         const negative = observations.filter((item) =>
           !item.supports
         );
+        const chosen = [...positive.slice(0, 2), ...negative.slice(0, 1)];
         const sources = [
-          ...new Map([...positive.slice(0, 2), ...negative.slice(0, 1)]
-            .map(({ source }) => [source.reviewId, source])).values(),
+          ...new Map(chosen.map(({ source }) => [source.reviewId, source]))
+            .values(),
         ];
         return {
           venueId,
           score: positive.length * 2 - negative.length,
           sources,
+          quotes: chosen.map(({ source, quote, supports }) => ({
+            reviewId: source.reviewId,
+            text: quote,
+            supports,
+          })),
         };
       }),
     );
     for (const candidate of group) if (candidate) candidates.push(candidate);
   }
   return candidates.sort((a, b) => b.score - a.score).slice(0, 3)
-    .map(({ venueId, sources }) => ({ venueId, sources }));
+    .map(({ venueId, sources, quotes }) => ({ venueId, sources, quotes }));
 }
 
 /**
