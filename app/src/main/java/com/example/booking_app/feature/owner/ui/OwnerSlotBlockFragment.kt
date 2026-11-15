@@ -16,6 +16,7 @@ import com.example.booking_app.databinding.FragmentOwnerSlotBlockBinding
 import com.example.booking_app.feature.owner.domain.SlotBlockInput
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import com.google.android.material.chip.Chip
 
 @AndroidEntryPoint
 class OwnerSlotBlockFragment : Fragment(R.layout.fragment_owner_slot_block) {
@@ -23,11 +24,12 @@ class OwnerSlotBlockFragment : Fragment(R.layout.fragment_owner_slot_block) {
     private val binding get() = checkNotNull(_binding)
     private val viewModel: OwnerSlotBlockViewModel by viewModels()
     private lateinit var gridAdapter: OwnerSlotGridAdapter
+    private var renderedCourts: List<com.example.booking_app.feature.owner.domain.model.OwnerCourt> = emptyList()
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         _binding = FragmentOwnerSlotBlockBinding.bind(view)
 
-        val reasons = resources.getStringArray(R.array.owner_slot_block_reasons)
+        val reasons = arrayOf(getString(R.string.owner_reason_maintenance),getString(R.string.owner_reason_event),getString(R.string.owner_reason_walk_in))
         val reasonAdapter = ArrayAdapter(requireContext(), android.R.layout.simple_list_item_1, reasons)
         binding.reason.setAdapter(reasonAdapter)
 
@@ -47,7 +49,7 @@ class OwnerSlotBlockFragment : Fragment(R.layout.fragment_owner_slot_block) {
         }
 
         binding.reason.setOnItemClickListener { _, _, position, _ ->
-            val selected = reasons.getOrNull(position) ?: "MAINTENANCE"
+            val selected = listOf("MAINTENANCE","EVENT","WALK_IN").getOrElse(position) { "MAINTENANCE" }
             viewModel.setReason(selected)
         }
 
@@ -77,19 +79,27 @@ class OwnerSlotBlockFragment : Fragment(R.layout.fragment_owner_slot_block) {
     }
 
     private fun readForm() = SlotBlockInput(
-        courtId = requireArguments().getString("courtId").orEmpty(),
+        courtId = viewModel.uiState.value.courtId,
         date = binding.date.text.toString().trim(),
         startTime = binding.startTime.text.toString().trim(),
         endTime = binding.endTime.text.toString().trim(),
-        reason = binding.reason.text.toString().trim()
+        reason = viewModel.uiState.value.selectedReason
     )
 
     private fun render(state: OwnerSlotBlockUiState) {
+        if (renderedCourts != state.courts) {
+            renderedCourts=state.courts
+            binding.courtChoices.removeAllViews()
+            state.courts.forEach { court -> binding.courtChoices.addView(Chip(requireContext()).apply {
+                text=court.name;isCheckable=true;isChecked=court.id==state.courtId
+                setOnClickListener { viewModel.selectCourt(court.id) }
+            }) }
+        }
         binding.progress.visibility = if (state.isSubmitting || state.isLoadingGrid) View.VISIBLE else View.GONE
         binding.stale.visibility = if (state.isStale) View.VISIBLE else View.GONE
         binding.offline.visibility = if (state.isOffline) View.VISIBLE else View.GONE
         binding.message.text = state.error ?: state.message.orEmpty()
-        binding.slotIds.text = state.slotIds.joinToString("\n")
+        binding.slotIds.text = if (state.slotIds.isEmpty()) "" else getString(R.string.owner_slot_preview_count,state.slotIds.size)
         binding.retry.visibility = if (state.isStale) View.VISIBLE else View.GONE
 
         val canOperate = !state.isOffline && !state.isSubmitting && !state.isStale
@@ -101,7 +111,7 @@ class OwnerSlotBlockFragment : Fragment(R.layout.fragment_owner_slot_block) {
             binding.date.setText(state.selectedDate)
         }
         if (binding.reason.text.isNullOrEmpty() && state.selectedReason.isNotEmpty()) {
-            binding.reason.setText(state.selectedReason, false)
+            binding.reason.setText(getString(when(state.selectedReason) {"EVENT"->R.string.owner_reason_event;"WALK_IN"->R.string.owner_reason_walk_in;else->R.string.owner_reason_maintenance}), false)
         }
 
         gridAdapter.submitList(state.gridSlots)

@@ -13,6 +13,13 @@
             android:layout_marginTop="4dp" android:textAppearance="?attr/textAppearanceBodyLarge" android:textColor="?attr/colorOnSurfaceVariant" />
         <TextView android:id="@+id/status" android:layout_width="match_parent" android:layout_height="wrap_content"
             android:layout_marginTop="8dp" android:textAppearance="?attr/textAppearanceLabelLarge" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/info" style="@style/Widget.SmashNow.Button.Link" android:layout_width="match_parent" android:layout_height="48dp" android:text="@string/owner_venue_info" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/courts" style="@style/Widget.SmashNow.Button.Link" android:layout_width="match_parent" android:layout_height="48dp" android:text="@string/owner_courts_title" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/prices" style="@style/Widget.SmashNow.Button.Link" android:layout_width="match_parent" android:layout_height="48dp" android:text="@string/owner_manage_prices" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/slots" style="@style/Widget.SmashNow.Button.Link" android:layout_width="match_parent" android:layout_height="48dp" android:text="@string/owner_slot_block_title" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/dropIns" style="@style/Widget.SmashNow.Button.Link" android:layout_width="match_parent" android:layout_height="48dp" android:text="@string/owner_today_action_open_dropin" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/vouchers" style="@style/Widget.SmashNow.Button.Link" android:layout_width="match_parent" android:layout_height="48dp" android:text="@string/owner_voucher_title" />
+        <com.google.android.material.button.MaterialButton android:id="@+id/statistics" style="@style/Widget.SmashNow.Button.Link" android:layout_width="match_parent" android:layout_height="48dp" android:text="@string/owner_statistics_title" />
         <com.google.android.material.switchmaterial.SwitchMaterial android:id="@+id/recurring"
             android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="56dp"
             android:text="@string/owner_accepts_recurring" />

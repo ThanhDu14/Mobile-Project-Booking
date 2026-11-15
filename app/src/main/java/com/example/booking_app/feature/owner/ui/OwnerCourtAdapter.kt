@@ -25,7 +25,8 @@ class OwnerCourtAdapter(
             binding.active.text = binding.root.context.getString(
                 if (item.isActive) R.string.owner_status_active else R.string.owner_status_inactive
             )
-            binding.deactivate.isEnabled = item.isActive
+            binding.deactivate.isEnabled = true
+            binding.deactivate.setText(if (item.isActive) R.string.owner_court_deactivate else R.string.owner_court_activate)
             binding.edit.setOnClickListener { onEdit(item) }
             binding.deactivate.setOnClickListener { onDeactivate(item) }
             binding.up.setOnClickListener { onMove(item, -1) }
