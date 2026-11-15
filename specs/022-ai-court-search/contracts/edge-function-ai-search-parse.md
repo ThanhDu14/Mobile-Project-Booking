@@ -4,6 +4,12 @@
 
 `supabase/config.toml`: `[functions.ai-search-parse] verify_jwt = false`. Giống `on-signup`, function tự xác minh Firebase ID token bằng `_shared/auth.ts`.
 
+> **Đã thay thế (2026-11-14).** Contract chính thức của Edge Function là [review-rag.md](review-rag.md), khớp code trong `supabase/functions/ai-search-parse/`. Tài liệu này chỉ giữ để tham khảo thiết kế ban đầu của nhánh `PARSE`. Các điểm **không còn đúng**:
+> - Cột "Lượt" ở §2.2: lời gọi lỗi/quá giờ **không** được hoàn. Mỗi lần gọi nhà cung cấp tăng `attempts`; app hiển thị `10 − max(used, attempts)`.
+> - Cấu trúc file ở §3.1: code thực tế gồm `index.ts`, `handler.ts`, `criteria.ts`, `evidence.ts`, `llm.ts`, `handler.test.ts`.
+> - Không còn mô tả các thao tác `USAGE`, `RECOMMEND`, `SOURCE`, `EXPLAIN` (xem review-rag.md). `EXPLAIN` không gọi LLM.
+> - Phía app dùng `CourtAiApi` / `SupabaseCourtAiApi`, không phải `AiSearchApi` / `SupabaseAiSearchApi`.
+
 ## 1. Request
 
 ```http
@@ -27,35 +33,33 @@ Body không có `uid`, ngày giờ hay thông tin người dùng nào. Ngày gi�
 
 ```jsonc
 {
-  "outcome": "PARSED",            // PARSED | LOCKED | QUOTA_EXCEEDED
-  "result": {                     // chỉ có khi outcome == PARSED
+  "result": {
     "intent": "search",           // search | unclear | faq | off_topic
     "faqTopic": null,             // CANCELLATION | DEPOSIT | VOUCHER | PAYMENT | null
     "filter": {
       "type": "COURT",            // COURT | DROP_IN
       "keyword": null,            // tên sân, ≤ 100 ký tự, có trong câu
       "districtId": "q10",
-      "date": "2026-10-06",       // yyyy-MM-dd hoặc null
-      "dateChoices": [],          // ["2026-10-10","2026-10-11"] khi người chơi nói "cuối tuần"
+      "date": "20261006",         // yyyyMMdd hoặc null
+      "dateChoices": [],          // ["20261010","20261011"] khi người chơi nói "cuối tuần"
       "partOfDay": null,          // MORNING | NOON | AFTERNOON | EVENING | null
-      "start": "19:00",           // HH:mm, 24 giờ, thẳng mốc 30 phút, hoặc null
-      "end": "21:00",
+      "start": "1900",            // HHmm, 24 giờ, thẳng mốc 30 phút, hoặc null
+      "end": "2100",
       "priceMin": null,           // VND/giờ (sân) hoặc VND/lượt (vãng lai)
       "priceMax": 100000,
       "amenityIds": ["parking"],
       "sort": null,               // RATING | PRICE_ASC | NEAREST | null
       "level": null               // BEGINNER | INTERMEDIATE | ADVANCED | null (chỉ DROP_IN)
     },
+    "preference": null,
     "dropped": []                 // ["UNKNOWN_AMENITY", "PAST_DATE", ...]
   },
   "cached": false,
-  "usage": { "used": 3, "limit": 10, "lockedUntil": null }   // lockedUntil: ISO-8601 UTC hoặc null
+  "usage": { "used": 3, "attempts": 4, "limit": 10, "lockedUntil": null }   // lockedUntil: ISO-8601 UTC hoặc null
 }
 ```
 
-- `LOCKED`: `usage.lockedUntil` có giá trị. Không có `result`.
-- `QUOTA_EXCEEDED`: `usage.used == usage.limit`. Không có `result`.
-- Hai outcome này trả `200` (không phải `429`) vì `FunctionErrors` của app gộp mọi `429` thành `AppError.RateLimited` và bỏ mất body. Đây là kết quả bình thường, không phải lỗi.
+- `AI_LOCKED` và `QUOTA_EXCEEDED` trả HTTP `409` với mã lỗi. `USAGE` cung cấp hai bộ đếm cùng thời hạn khóa.
 - Khi có `partOfDay` mà không có giờ cụ thể, server vẫn điền `start`/`end` theo mốc của buổi (18:00–22:00 cho `EVENING`). `partOfDay` được giữ để nhánh vãng lai chọn `timeSlot`.
 
 ### 2.2. Lỗi

@@ -99,7 +99,7 @@ Theo layout hai ô của 020/021: `AiAssistantFragment` mở dạng dialog rộn
 
 ## 6. Chuỗi (`values/strings_ai.xml`, tiền tố `ai_`)
 
-Mọi câu người dùng thấy nằm ở đây (FR-009). Một số chuỗi chính:
+Thông báo, câu hỏi lại, chính sách và lỗi dùng chuỗi cố định theo FR-009. Lời giải thích theo đánh giá thuộc luồng riêng ở [US7](../spec.md#user-story-7---tìm-sân-theo-nội-dung-đánh-giá-priority-p3), với quy tắc hiển thị và dẫn nguồn ở FR-029. Một số chuỗi chính:
 
 | Key | Nội dung |
 |---|---|

@@ -38,13 +38,7 @@ match /aiMetrics/{id} {
 
 ## 3. TTL
 
-| Collection group | Trường | Lệnh |
-|---|---|---|
-| `aiSearchCache` | `expiresAt` | `gcloud firestore fields ttls update expiresAt --collection-group=aiSearchCache --enable-ttl --project=<id>` |
-| `aiUsage` | `expiresAt` | tương tự |
-| `aiMetrics` | `expiresAt` | tương tự |
-
-Chạy một lần trên project thật (người có quyền Owner). Nếu Spark không cho bật TTL ([R7](../research.md#r7-cache-trong-ngày-fr-018)): dùng `ai-cache-cleanup` (pg_cron 00:30, xóa document `expiresAt < now` của ba collection theo lô 300).
+Dùng `expiresAt` cho `aiSearchCache`, `aiUsage` và `aiMetrics`. Đọc cache luôn kiểm tra hạn. Để dọn vật lý trên Firebase Spark, cấu hình tác vụ `ai-cache-cleanup` với Supabase `pg_cron` theo T103/T104. Dọn vật lý là bước riêng trước khi phát hành.
 
 ## 4. Test Edge Function
 

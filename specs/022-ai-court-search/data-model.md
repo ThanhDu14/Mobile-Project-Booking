@@ -22,7 +22,8 @@ Spec 022 không ghi dữ liệu nghiệp vụ (FR-010). Mọi document dưới �
 
 | Trường | Kiểu | Ghi chú |
 |---|---|---|
-| `count` | Int | Số lượt đã giữ trong ngày, 0–10. Tăng trước khi gọi LLM, giảm lại nếu LLM lỗi (R8) |
+| `count` | Int | Số lượt có kết quả hợp lệ trong ngày, 0–10. Tăng sau phân tích hoặc giải thích thành công. |
+| `attempts` | Int | Số lần gọi LLM thực tế đã được giữ chỗ trong ngày, 0–10. Tăng trước mỗi lần gọi, gồm dự phòng. Giữ nguyên khi lỗi hoặc quá giờ. Document cũ thiếu trường dùng `count` làm giá trị đầu. |
 | `offTopicStreak` | Int | 0–2. Đạt 3 thì về 0 và đặt `lockedUntil` |
 | `lockedUntil` | Timestamp? | `now + 5 phút` khi đủ 3 câu lạc đề liên tiếp |
 | `updatedAt` | Timestamp | **[MỚI]** server timestamp |
@@ -33,10 +34,10 @@ Hằng số: `DAILY_LIMIT = 10`, `OFF_TOPIC_LIMIT = 3`, `LOCK_MINUTES = 5`.
 **Chuyển trạng thái** (mọi bước trong transaction, [R8](research.md#r8-lượt-dùng-khóa-tạm-hai-yêu-cầu-cùng-lúc-fr-016-đến-fr-019-sc-005-sc-008)):
 
 ```text
-(không có document) ──giữ lượt──▶ count = 1
-count = n (n < 10) ──giữ lượt──▶ count = n + 1
-count = n ──LLM lỗi / quá giờ──▶ count = max(n - 1, 0)
-count = 10 ──giữ lượt──▶ từ chối QUOTA_EXCEEDED (không đổi)
+attempts < 10 ──trước mỗi lần gọi──▶ attempts += 1
+LLM trả kết quả hợp lệ ──hoàn tất──▶ count += 1
+LLM lỗi hoặc quá giờ ──hoàn tất──▶ count giữ nguyên
+attempts = 10 hoặc count = 10 ──gọi LLM──▶ QUOTA_EXCEEDED
 
 offTopicStreak = k ──off_topic──▶ k + 1; nếu = 3 → offTopicStreak = 0, lockedUntil = now + 5'
 offTopicStreak = k ──search hợp lệ──▶ 0
@@ -44,7 +45,7 @@ offTopicStreak = k ──faq / unclear──▶ k (không đổi)
 lockedUntil > now ──mọi yêu cầu──▶ từ chối LOCKED (không đổi gì)
 ```
 
-Lượt còn lại hiện trên app: `10 - count`.
+Lượt còn lại hiện trên app: `10 - max(count, attempts)`. Cache phân tích còn hạn không làm tăng hai bộ đếm.
 
 ### 2.2. `aiSearchCache/{hash}` 🔒
 
