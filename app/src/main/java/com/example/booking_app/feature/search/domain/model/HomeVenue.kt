@@ -1,5 +1,7 @@
 package com.example.booking_app.feature.search.domain.model
 
+import com.example.booking_app.core.schedule.BookingSearchWindow
+
 /** Một thẻ sân ở Trang chủ (spec 020 FR-015, FR-029). Giá `null` là chưa có bảng giá ("Liên hệ"). */
 data class HomeVenue(
     val id: String,
@@ -9,6 +11,9 @@ data class HomeVenue(
     val minPricePerHour: Long?,
     val ratingAvg: Double,
     val ratingCount: Int,
+    val distanceMeters: Double? = null,
+    val windowPricePerHour: Long? = null,
+    val window: BookingSearchWindow? = null,
 )
 
 /** Cách sắp xếp ở Trang chủ (FR-011). "Gần nhất" chưa làm ở lần này. */
