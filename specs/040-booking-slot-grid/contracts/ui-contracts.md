@@ -20,6 +20,8 @@ Màn hình chi tiết cơ sở (`CourtDetailFragment`) bấm "Đặt sân" sẽ 
 </action>
 ```
 
+Lưới nhận thêm `date` (`yyyyMMdd`), `startTime` và `endTime` (`HHmm`) dưới dạng tham số tùy chọn. Với một khung còn hợp lệ trong 30 ngày, dài ít nhất hai slot liên tiếp, lưới mở đúng ngày và cuộn tới giờ bắt đầu. Ngày và giờ chỉ phục vụ điều hướng. Người chơi chọn slot và bấm “Giữ chỗ” để chạy giao dịch kiểm tra lại ở 040.
+
 ### 1.2. Điều hướng sang Màn hình Xác nhận giữ chỗ [040] và Thanh toán [050]
 Khi người dùng bấm "Giữ chỗ" (Q6) và giữ chỗ 5 phút thành công, ViewModel phát ra `BookingSlotUiEffect.NavigateToBookingConfirm(args)` để chuyển sang Màn hình xác nhận giữ chỗ của spec 040 (Q4/FR-018). Từ màn hình xác nhận, khi người dùng bấm "Thanh toán" thì mới chuyển tiếp sang `050-payment-voucher`:
 ```kotlin

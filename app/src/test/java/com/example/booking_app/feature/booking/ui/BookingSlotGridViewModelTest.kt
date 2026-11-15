@@ -25,6 +25,8 @@ import io.mockk.mockk
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -47,6 +49,22 @@ class BookingSlotGridViewModelTest {
     private lateinit var releaseHoldUseCase: ReleaseHoldUseCase
 
     private val venueId = "demo-truong-chinh-909"
+
+    @Test
+    fun searchWindowSelectsDayAndOffersScrollWithoutSelectingSlots() = runTest {
+        val date = LocalDate.now(com.example.booking_app.core.schedule.BookingWindow.ZONE).plusDays(30)
+        val handle = SavedStateHandle(mapOf(
+            "venueId" to venueId, "date" to date.format(DateTimeFormatter.BASIC_ISO_DATE),
+            "startTime" to "1900", "endTime" to "2100",
+        ))
+        val vm = createViewModel(handle)
+        assertEquals(date, vm.uiState.value.selectedDate)
+        assertTrue(date in vm.uiState.value.dates)
+        assertEquals("1900", vm.requestedStartFor(date))
+        assertTrue(vm.uiState.value.selectedSlots.isEmpty())
+        vm.markRequestedWindowShown()
+        assertEquals(null, vm.requestedStartFor(date))
+    }
     private val venueInfo = VenueInfo(
         id = venueId,
         name = "CLB Cầu Lông Trường Chinh 909",
