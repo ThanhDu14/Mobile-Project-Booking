@@ -7,8 +7,16 @@ enum class ReviewPreference { GRIP, HIGH_CEILING, QUIET, CLEAN, GOOD_LIGHT, VENT
 @Serializable
 data class ReviewSource(val reviewId: String, val version: String)
 
+/** Câu khớp trong đánh giá (đã che liên hệ), hiển thị trên thẻ đề xuất. */
 @Serializable
-data class ReviewRecommendation(val venueId: String, val sources: List<ReviewSource>)
+data class ReviewQuote(val reviewId: String, val text: String, val supports: Boolean)
+
+@Serializable
+data class ReviewRecommendation(
+    val venueId: String,
+    val sources: List<ReviewSource>,
+    val quotes: List<ReviewQuote> = emptyList(),
+)
 
 @Serializable
 data class ReviewClaim(val source: ReviewSource, val excerpt: String, val supports: Boolean)
