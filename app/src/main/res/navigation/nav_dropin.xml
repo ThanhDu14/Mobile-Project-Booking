@@ -29,6 +29,12 @@
             app:argType="com.example.booking_app.feature.dropin.ui.list.DropInFilterArgs"
             app:nullable="true" />
         <deepLink app:uri="smashnow://dropin" />
+        <argument android:name="aiDistrictIds" app:argType="string" app:nullable="true" android:defaultValue="@null" />
+        <argument android:name="aiDate" app:argType="string" app:nullable="true" android:defaultValue="@null" />
+        <argument android:name="aiTimeSlot" app:argType="string" app:nullable="true" android:defaultValue="@null" />
+        <argument android:name="aiLevel" app:argType="string" app:nullable="true" android:defaultValue="@null" />
+        <argument android:name="aiMaxPrice" app:argType="string" app:nullable="true" android:defaultValue="@null" />
+        <deepLink app:uri="smashnow://dropin/list?districtIds={aiDistrictIds}&amp;date={aiDate}&amp;timeSlot={aiTimeSlot}&amp;level={aiLevel}&amp;maxPrice={aiMaxPrice}" />
         <action
             android:id="@+id/action_dropInList_to_detail"
             app:destination="@id/dropInDetailFragment" />
