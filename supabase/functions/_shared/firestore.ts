@@ -187,6 +187,7 @@ export interface QueryOptions {
   /** `true` để truy vấn collection group (mọi collection cùng tên ở mọi cấp). */
   allDescendants?: boolean;
   limit?: number;
+  orderBy?: { field: string; direction: "ASCENDING" | "DESCENDING" };
 }
 
 export interface QueryDocument {
@@ -211,6 +212,7 @@ function structuredQuery(collectionId: string, filters: QueryFilter[], opts: Que
       where: clauses.length === 1 ? clauses[0] : { compositeFilter: { op: "AND", filters: clauses } },
     }),
     ...(opts.limit ? { limit: opts.limit } : {}),
+    ...(opts.orderBy ? { orderBy: [{ field: { fieldPath: opts.orderBy.field }, direction: opts.orderBy.direction }] } : {}),
   };
 }
 
