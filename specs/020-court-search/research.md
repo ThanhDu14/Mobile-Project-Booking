@@ -77,8 +77,8 @@ Lọc trên máy làm một trang Firestore 20 document có thể còn ít hơn 
 
 1. **Bảng giá** `venues/{id}/priceRules` → tính giá khung bằng `SlotPricing` (R5). Thiếu rule cho bất kỳ khung 30 phút nào thì giá "không xác định" → không khớp bộ lọc giá, đứng cuối khi sắp xếp theo giá, thẻ hiện "Liên hệ" (Edge case của spec). Giá ngoài khoảng → loại, **không** đọc tiếp.
 2. **Sân con** `venues/{id}/courts` với `isActive == true`.
-3. **Khung đang bận** `slots` với `venueId ==`, `date ==`, `startAt >= windowStart`, `startAt < windowEnd`. Mỗi slot dài 30 phút và thẳng mốc, nên mọi slot chồng lên khung đều có `startAt` nằm trong khung.
-4. Một slot là **bận** khi `status` là `BOOKED` hoặc `BLOCKED`, hoặc `HOLD` với `holdExpiresAt > now` (HOLD hết hạn coi là trống, constitution III). Sân con trống = sân hoạt động không có slot bận nào trong khung. Khớp khi có ít nhất 1 sân trống. Số sân trống hiện trên thẻ ("3 sân trống khung này" như wireframe).
+3. **Khung đang bận** `slots` với `venueId ==`, `date ==`, `status IN BOOKED/BLOCKED/HELD`, rồi xét `startTime` trong khoảng giờ. Mỗi slot dài 30 phút và thẳng mốc, nên mọi slot chồng lên khung đều có `startTime` nằm trong khung.
+4. Một slot là **bận** khi `status` là `BOOKED` hoặc `BLOCKED`, hoặc `HELD` với `holdExpiresAt > now` (HELD hết hạn coi là trống, constitution III). Sân con trống = sân hoạt động không có slot bận nào trong khung. Khớp khi có ít nhất 1 sân trống. Số sân trống hiện trên thẻ ("3 sân trống khung này" như wireframe).
 
 **Giảm lượt đọc:**
 - `priceRules` và `courts` ít đổi: lưu trong bộ nhớ (`VenueStaticCache`) 10 phút cho mỗi phiên app. Lần tìm sau chỉ đọc `slots`.
@@ -177,7 +177,7 @@ Thứ tự trường theo tài liệu Firestore: trường bằng → trường 
 | V10 | `venues` | `status`, `districtId`, `minPricePerHour ASC` | + quận |
 | V11 | `venues` | `status`, `nameKeywords CONTAINS`, `minPricePerHour ASC` | + từ khóa |
 | V12 | `venues` | `status`, `districtId`, `nameKeywords CONTAINS`, `minPricePerHour ASC` | + quận + từ khóa |
-| S1 | `slots` | `venueId`, `date`, `startAt ASC` | Giờ trống của một cơ sở trong khung (mở rộng index `venueId, date` của 040, một index phục vụ cả hai) |
+| S1 | `slots` | `venueId`, `date`, `status` | Giờ trống của một cơ sở trong khung (mở rộng index `venueId, date` của 040, một index phục vụ cả hai) |
 | H1 | `searchHistory` (collection, không group) | `searchedAt DESC` | Single-field mặc định, không cần khai báo |
 
 Pha 2 của sắp xếp giá (`minPricePerHour == null` + `ratingAvg DESC`) dùng lại V1–V4 nhờ index merging cho trường bằng; nếu Firestore báo thiếu index thì thêm theo link trong log lỗi. Emulator **không** kiểm tra index, nên quickstart §3 có bước chạy với project thật để bắt lỗi thiếu index trước demo. Tổng 13 index, xa hạn 200.
