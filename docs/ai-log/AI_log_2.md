@@ -2023,7 +2023,6 @@ Sau đợt kiểm thử trên thiết bị thật và đối chiếu kỹ lưỡ
 | Nhóm tính năng liên quan | 02 – Tìm kiếm sân (spec 020, 022) |
 | Công cụ AI | Codex |
 | Nhánh Git | `feature/020-court-search-rag` |
-| Log chi tiết | [2026-11-12_A_02-court-search_rag-spec.md](2026-11-12_A_02-court-search_rag-spec.md) |
 
 ### Yêu cầu và kết quả
 
@@ -2049,7 +2048,6 @@ Sau đợt kiểm thử trên thiết bị thật và đối chiếu kỹ lưỡ
 | Nhóm tính năng liên quan | 02 – Tìm kiếm sân (spec 020, 021, 022) |
 | Công cụ AI | Claude Code (Claude Opus 5.5) |
 | Nhánh Git | `feature/020-court-search-rag` |
-| Log chi tiết | [2026-11-14_A_02-court-search_rag-sync.md](2026-11-14_A_02-court-search_rag-sync.md) |
 
 ### Prompt chính
 
