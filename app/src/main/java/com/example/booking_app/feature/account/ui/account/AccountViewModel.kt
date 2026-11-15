@@ -135,6 +135,7 @@ class AccountViewModel @Inject constructor(
     /** Nút trong mục chủ sân: "Sửa và nộp lại" khi bị từ chối, "Đăng ký làm chủ sân" khi chưa nộp hoặc bị thu hồi. */
     fun onOwnerActionClick() {
         val link = when ((uiState.value as? AccountUiState.Content)?.ownerSection) {
+            is OwnerSection.Pending -> OwnerLink.APPLICATION
             is OwnerSection.Rejected -> OwnerLink.RESUBMIT
             OwnerSection.CanApply, is OwnerSection.Revoked -> OwnerLink.APPLY_NEW
             else -> return

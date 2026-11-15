@@ -28,6 +28,29 @@ class OwnerApplicationViewModelTest {
     @get:Rule val mainDispatcherRule = MainDispatcherRule()
 
     @Test
+    fun failedDistrictLoadCanRetryWithoutLosingDraft() = runTest(mainDispatcherRule.dispatcher) {
+        var offline = true
+        val districts = object : DistrictRepository {
+            override suspend fun activeDistricts(): List<District> {
+                if (offline) error("offline")
+                return listOf(District("d1", "Quận thử", 1))
+            }
+            override suspend fun districtsByIds(ids: Collection<String>) = activeDistricts().associateBy { it.id }
+        }
+        val viewModel = OwnerApplicationViewModel(FakeRepository(), districts)
+        viewModel.initialize()
+        advanceUntilIdle()
+        assertTrue(viewModel.uiState.value.message!!.contains("quận/huyện"))
+        viewModel.update("venueName", "AUDIT draft")
+        offline = false
+        viewModel.refreshStatus()
+        advanceUntilIdle()
+        assertEquals("d1", viewModel.uiState.value.districts.single().id)
+        assertEquals("AUDIT draft", viewModel.uiState.value.draft.venue.name)
+        assertEquals(null, viewModel.uiState.value.message)
+    }
+
+    @Test
     fun newLifecycleRestoresLocalDraftEvenWhenOpenedFromApplyAction() = runTest(mainDispatcherRule.dispatcher) {
         val draft = validDraft().copy(representativeName = "Draft chưa gửi")
         val repository = FakeRepository().apply { localDraft = "local-lifecycle" to draft }

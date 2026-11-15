@@ -177,11 +177,13 @@ export async function commit(writes: Write[], transaction?: string): Promise<voi
 
 export interface QueryFilter {
   field: string;
-  op: "EQUAL" | "IN";
+  op: "EQUAL" | "IN" | "GREATER_THAN_OR_EQUAL" | "LESS_THAN";
   value: unknown;
 }
 
 export interface QueryOptions {
+  /** Explicit server-side projection; omitted keeps existing query behavior. */
+  select?: string[];
   /** Đường dẫn document cha, ví dụ `users/abc` để đọc `users/abc/favorites`. Mặc định là gốc. */
   parent?: string;
   /** `true` để truy vấn collection group (mọi collection cùng tên ở mọi cấp). */
@@ -207,6 +209,7 @@ function structuredQuery(collectionId: string, filters: QueryFilter[], opts: Que
   }));
   return {
     from: [{ collectionId, ...(opts.allDescendants ? { allDescendants: true } : {}) }],
+    ...(opts.select ? { select: { fields: opts.select.map(fieldPath => ({ fieldPath })) } } : {}),
     ...(clauses.length === 0 ? {} : {
       where: clauses.length === 1 ? clauses[0] : { compositeFilter: { op: "AND", filters: clauses } },
     }),
@@ -399,6 +402,7 @@ export type FirestoreValue =
   | { doubleValue: number }
   | { stringValue: string }
   | { timestampValue: string }
+  | { geoPointValue: { latitude: number; longitude: number } }
   | { arrayValue: { values?: FirestoreValue[] } }
   | { mapValue: { fields?: Record<string, FirestoreValue> } };
 
@@ -410,6 +414,7 @@ export function encodeValue(value: unknown): FirestoreValue {
   }
   if (typeof value === "string") return { stringValue: value };
   if (value instanceof Date) return { timestampValue: value.toISOString() };
+  if (value instanceof FirestoreGeoPoint) return { geoPointValue: { latitude: value.latitude, longitude: value.longitude } };
   if (Array.isArray(value)) return { arrayValue: { values: value.map(encodeValue) } };
   if (typeof value === "object") return { mapValue: { fields: encodeFields(value as Record<string, unknown>) } };
   throw new Error(`Kiểu giá trị không hỗ trợ: ${typeof value}`);
@@ -426,6 +431,7 @@ export function decodeValue(value: FirestoreValue): unknown {
   if ("doubleValue" in value) return value.doubleValue;
   if ("stringValue" in value) return value.stringValue;
   if ("timestampValue" in value) return new Date(value.timestampValue);
+  if ("geoPointValue" in value) return new FirestoreGeoPoint(value.geoPointValue.latitude, value.geoPointValue.longitude);
   if ("arrayValue" in value) return (value.arrayValue.values ?? []).map(decodeValue);
   if ("mapValue" in value) return decodeFields(value.mapValue.fields ?? {});
   return undefined;
@@ -433,4 +439,13 @@ export function decodeValue(value: FirestoreValue): unknown {
 
 export function decodeFields(fields: Record<string, FirestoreValue>): Record<string, unknown> {
   return Object.fromEntries(Object.entries(fields).map(([k, v]) => [k, decodeValue(v)]));
+}
+
+/** Explicit type keeps ordinary latitude/longitude request maps unchanged. */
+export class FirestoreGeoPoint {
+  constructor(readonly latitude: number, readonly longitude: number) {
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || Math.abs(latitude) > 90 || Math.abs(longitude) > 180) {
+      throw new Error("Invalid GeoPoint");
+    }
+  }
 }
