@@ -64,6 +64,8 @@ data class CourtSearchUiState(
     val capped: Boolean = false,
     val guest: Boolean = true,
     val aiInput: String = "",
+    /** Ô AI vừa được xóa chữ trong khi bộ lọc vẫn đang áp dụng: hiện gợi ý, không tự xóa bộ lọc. */
+    val filtersKept: Boolean = false,
     val aiHistory: List<String> = emptyList(),
     val aiBusy: Boolean = false,
     val reviewBusy: Boolean = false,
@@ -74,12 +76,16 @@ data class CourtSearchUiState(
     val notice: SearchNotice? = null,
 )
 
+/** Một đánh giá gốc: nguyên văn và chiều nhận định (`null` khi không rõ). */
+data class ReviewSourceItem(val comment: String, val supports: Boolean?)
+
 sealed interface CourtSearchEffect {
     data class Policy(val topic: String?) : CourtSearchEffect
     data class DropIn(val link: Uri) : CourtSearchEffect
     data class ChooseWindow(val date: LocalDate?) : CourtSearchEffect
     data object RequestLocation : CourtSearchEffect
-    data class Source(val comment: String) : CourtSearchEffect
+    /** Đánh giá gốc đã qua SOURCE (kiểm tra phiên bản), hiển thị trong bottom sheet. */
+    data class Sources(val venueId: String, val items: List<ReviewSourceItem>) : CourtSearchEffect
     data class Explanation(val venueId: String, val claims: List<ReviewClaim>) : CourtSearchEffect
 }
 
@@ -196,6 +202,7 @@ class CourtSearchViewModel @Inject constructor(
     }
 
     fun clearFilters() {
+        _state.update { it.copy(filtersKept = false) }
         val current = state.value.criteria
         change(CourtSearchCriteria(keyword = current.keyword, districtId = current.districtId, sort = current.sort), null)
     }
@@ -215,7 +222,12 @@ class CourtSearchViewModel @Inject constructor(
     fun input(value: String) {
         if (session.currentUid() == null || value == state.value.aiInput) return
         savedState["aiInput"] = value
-        _state.update { it.copy(aiInput = value, clarification = null, notice = null) }
+        _state.update {
+            it.copy(
+                aiInput = value, clarification = null, notice = null,
+                filtersKept = value.isBlank() && it.criteria.hasFilters(),
+            )
+        }
     }
 
     /** Xóa một câu khỏi lịch sử câu hỏi AI trên máy. */
@@ -232,7 +244,7 @@ class CourtSearchViewModel @Inject constructor(
         if (current.aiBusy || current.usage?.remaining == 0 || lockSeconds(current.usage) > 0 ||
             query.isEmpty() || query.codePointCount(0, query.length) > 200) return
         val generation = searchGeneration
-        _state.update { it.copy(aiBusy = true, clarification = null, notice = null) }
+        _state.update { it.copy(aiBusy = true, clarification = null, notice = null, filtersKept = false) }
         parseJob = viewModelScope.launch {
             try {
                 val response = ai.parse(query)
@@ -281,6 +293,7 @@ class CourtSearchViewModel @Inject constructor(
 
     fun clarify(date: LocalDate) {
         val result = state.value.clarification ?: return
+        _state.update { it.copy(notice = null) }
         val filter = result.filter ?: AiCourtFilter()
         val dateKey = date.format(DateTimeFormatter.BASIC_ISO_DATE)
         val requested = BookingSearchWindow.parse(dateKey, filter.start, filter.end)?.takeIf { it.isBookableAt(now()) }
@@ -297,6 +310,7 @@ class CourtSearchViewModel @Inject constructor(
 
     fun useManualClarification() {
         val result = state.value.clarification ?: return
+        _state.update { it.copy(notice = null) }
         if (result.filter?.type == "DROP_IN") {
             applyAi(result)
             return
@@ -315,8 +329,25 @@ class CourtSearchViewModel @Inject constructor(
         }
     }
 
-    fun source(venueId: String, source: ReviewSource) {
-        runReviewAction(venueId) { CourtSearchEffect.Source(ai.source(venueId, source)) to null }
+    /** Mở một nguồn, ví dụ từ một dòng trong "Vì sao phù hợp?". */
+    fun source(venueId: String, source: ReviewSource, supports: Boolean? = null) {
+        runReviewAction(venueId) {
+            CourtSearchEffect.Sources(venueId, listOf(ReviewSourceItem(ai.source(venueId, source), supports))) to null
+        }
+    }
+
+    /** Mở mọi nguồn của một đề xuất (tối đa 3). Nguồn nào hết hiệu lực thì cả đề xuất bị bỏ như trước. */
+    fun sources(venueId: String) {
+        val recommendation = state.value.recommendations.firstOrNull { it.venueId == venueId } ?: return
+        runReviewAction(venueId) {
+            val items = recommendation.sources.map { source ->
+                ReviewSourceItem(
+                    ai.source(venueId, source),
+                    recommendation.quotes.firstOrNull { it.reviewId == source.reviewId }?.supports,
+                )
+            }
+            CourtSearchEffect.Sources(venueId, items) to null
+        }
     }
 
     fun refreshUsage() {

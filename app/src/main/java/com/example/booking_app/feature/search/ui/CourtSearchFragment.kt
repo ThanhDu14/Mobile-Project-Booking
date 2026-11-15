@@ -34,6 +34,12 @@ import com.example.booking_app.databinding.DialogCourtSearchWindowBinding
 import com.example.booking_app.databinding.BottomSheetCourtSearchFilterBinding
 import com.example.booking_app.databinding.FragmentCourtSearchBinding
 import com.example.booking_app.databinding.ItemSearchRecommendationBinding
+import com.example.booking_app.databinding.BottomSheetSearchSourcesBinding
+import com.example.booking_app.databinding.DialogSearchExplanationBinding
+import com.example.booking_app.databinding.ItemSearchClaimBinding
+import com.example.booking_app.databinding.ItemSearchSourceBinding
+import android.content.res.ColorStateList
+import com.google.android.material.color.MaterialColors
 import com.example.booking_app.databinding.ViewCourtSearchControlsBinding
 import com.example.booking_app.feature.search.domain.CourtSearchSort
 import com.example.booking_app.feature.search.domain.ReviewPreference
@@ -50,6 +56,7 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.Locale
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -87,6 +94,7 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
         controls.aiInput.setText(initial.aiInput)
         controls.keyword.doAfterTextChanged { viewModel.keyword(it.toString()) }
         controls.aiInput.doAfterTextChanged { viewModel.input(it.toString()) }
+        controls.filtersKeptClear.setOnClickListener { viewModel.clearFilters() }
         controls.keyword.setOnEditorActionListener { _, action, _ ->
             if (action != EditorInfo.IME_ACTION_SEARCH) return@setOnEditorActionListener false
             hideKeyboard(controls.keyword)
@@ -163,12 +171,17 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
         if (binding.keyword.text.toString() != state.criteria.keyword) binding.keyword.setText(state.criteria.keyword)
         if (binding.aiInput.text.toString() != state.aiInput) binding.aiInput.setText(state.aiInput)
         binding.aiField.isVisible = !state.guest
+        binding.filtersKeptRow.isVisible = state.filtersKept && state.criteria.hasFilters()
         renderHistory(binding, previous, state)
         if (state.clarification != null) aiExpanded = true
         binding.aiBody.isVisible = aiExpanded && !state.guest
         renderUsage(binding, state)
-        binding.notice.isVisible = state.notice != null
-        state.notice?.let { binding.notice.setText(noticeText(it)) }
+        // Lỗi ngày hiện trong khung AI, ngay trên câu hỏi chọn ngày; các thông báo khác giữ vị trí cũ.
+        val dateNotice = state.notice == SearchNotice.INVALID_DATE
+        binding.aiDateNotice.isVisible = dateNotice
+        if (dateNotice) binding.aiDateNoticeText.setText(noticeText(SearchNotice.INVALID_DATE))
+        binding.notice.isVisible = state.notice != null && !dateNotice
+        state.notice?.takeIf { !dateNotice }?.let { binding.notice.setText(noticeText(it)) }
         binding.clarify.isVisible = state.clarification != null
         binding.clarifyChoices.isVisible = state.clarification != null
 
@@ -262,16 +275,14 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
             val row = ItemSearchRecommendationBinding.inflate(layoutInflater, binding.recommendationRows, false)
             row.venueName.text = venue.name
             row.venueName.setOnClickListener { openVenue(venue) }
+            row.rating.isVisible = venue.ratingCount > 0
+            row.rating.text = "${String.format(Locale.ROOT, "%.1f", venue.ratingAvg).replace('.', ',')} (${venue.ratingCount})"
+            val quote = recommendation.quotes.firstOrNull { it.supports }?.text
+            row.quote.isVisible = quote != null
+            quote?.let { row.quote.text = getString(R.string.search_rag_quote, it) }
             row.source.isEnabled = !state.reviewBusy && recommendation.sources.isNotEmpty()
             row.explain.isEnabled = !state.reviewBusy && recommendation.sources.isNotEmpty()
-            row.source.setOnClickListener {
-                val sources = recommendation.sources
-                if (sources.size == 1) viewModel.source(venue.id, sources.first())
-                else MaterialAlertDialogBuilder(requireContext()).setTitle(R.string.search_rag_source)
-                    .setItems(sources.indices.map { getString(R.string.search_rag_source_choice, it + 1) }.toTypedArray()) { _, which ->
-                        viewModel.source(venue.id, sources[which])
-                    }.show()
-            }
+            row.source.setOnClickListener { viewModel.sources(venue.id) }
             row.explain.setOnClickListener { viewModel.explain(venue.id) }
             binding.recommendationRows.addView(row.root)
         }
@@ -499,9 +510,9 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
         var start = current?.start ?: TimeOfDay(18 * 60)
         var end = current?.end ?: TimeOfDay(20 * 60)
         fun render() {
-            view.day.text = getString(R.string.search_choose_day, dateLabel(day))
-            view.start.text = getString(R.string.search_choose_start, start.format())
-            view.end.text = getString(R.string.search_choose_end, end.format())
+            view.dayValue.text = dayWithWeekday(day)
+            view.startValue.text = start.format()
+            view.endValue.text = end.format()
             view.error.isVisible = false
         }
         render()
@@ -559,13 +570,8 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
             is CourtSearchEffect.ChooseWindow -> chooseWindow(effect.date)
             is CourtSearchEffect.DropIn -> findNavController().navigate(effect.link)
             is CourtSearchEffect.Policy -> showPolicy(effect.topic)
-            is CourtSearchEffect.Source -> MaterialAlertDialogBuilder(requireContext()).setTitle(R.string.search_rag_source)
-                .setMessage(effect.comment).setPositiveButton(android.R.string.ok, null).show()
-            is CourtSearchEffect.Explanation -> MaterialAlertDialogBuilder(requireContext()).setTitle(R.string.search_rag_summary_label)
-                .setItems(effect.claims.map { claim ->
-                    getString(if (claim.supports) R.string.search_rag_support else R.string.search_rag_counter, claim.excerpt)
-                }.toTypedArray()) { _, which -> viewModel.source(effect.venueId, effect.claims[which].source) }
-                .setNegativeButton(android.R.string.ok, null).show()
+            is CourtSearchEffect.Sources -> showSources(effect)
+            is CourtSearchEffect.Explanation -> showExplanation(effect)
             CourtSearchEffect.RequestLocation -> MaterialAlertDialogBuilder(requireContext())
                 .setTitle(R.string.search_location_title).setMessage(R.string.search_location_rationale)
                 .setNegativeButton(R.string.common_cancel, null)
@@ -573,6 +579,57 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
                     locationPermission.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
                 }.show()
         }
+    }
+
+    /** "Vì sao phù hợp?": Điểm cộng (màu chính) và Điểm trừ (màu tertiary); chạm một dòng để mở nguồn. */
+    private fun showExplanation(effect: CourtSearchEffect.Explanation) {
+        val view = DialogSearchExplanationBinding.inflate(layoutInflater)
+        val dialog = MaterialAlertDialogBuilder(requireContext()).setTitle(R.string.search_rag_summary_label)
+            .setView(view.root).setPositiveButton(android.R.string.ok, null).create()
+        for (claim in effect.claims) {
+            val row = ItemSearchClaimBinding.inflate(layoutInflater, view.claims, false)
+            val color = MaterialColors.getColor(row.root,
+                if (claim.supports) androidx.appcompat.R.attr.colorPrimary else com.google.android.material.R.attr.colorTertiary)
+            row.dot.backgroundTintList = ColorStateList.valueOf(color)
+            row.label.setText(if (claim.supports) R.string.search_rag_plus else R.string.search_rag_minus)
+            row.label.setTextColor(color)
+            row.text.text = claim.excerpt.replaceFirstChar { it.titlecase(Locale.forLanguageTag("vi-VN")) }
+            row.root.setOnClickListener {
+                dialog.dismiss()
+                viewModel.source(effect.venueId, claim.source, claim.supports)
+            }
+            view.claims.addView(row.root)
+        }
+        dialog.show()
+    }
+
+    /** Đánh giá gốc trong bottom sheet: mỗi đánh giá một thẻ, có nhãn Ủng hộ/Trái chiều và vị trí "1/2". */
+    private fun showSources(effect: CourtSearchEffect.Sources) {
+        val sheet = BottomSheetSearchSourcesBinding.inflate(layoutInflater)
+        val venueName = viewModel.state.value.venues.firstOrNull { it.id == effect.venueId }?.name
+        sheet.venue.isVisible = venueName != null
+        sheet.venue.text = venueName
+        effect.items.forEachIndexed { index, item ->
+            val card = ItemSearchSourceBinding.inflate(layoutInflater, sheet.items, false)
+            card.comment.text = getString(R.string.search_rag_quote, item.comment.trim())
+            card.counter.isVisible = effect.items.size > 1
+            card.counter.text = getString(R.string.search_rag_position, index + 1, effect.items.size)
+            card.stance.isVisible = item.supports != null
+            item.supports?.let { supports ->
+                card.stance.setText(if (supports) R.string.search_rag_stance_support else R.string.search_rag_stance_counter)
+                card.stance.backgroundTintList = ColorStateList.valueOf(MaterialColors.getColor(card.stance,
+                    if (supports) com.google.android.material.R.attr.colorPrimaryContainer
+                    else com.google.android.material.R.attr.colorTertiaryContainer))
+                card.stance.setTextColor(MaterialColors.getColor(card.stance,
+                    if (supports) com.google.android.material.R.attr.colorOnPrimaryContainer
+                    else com.google.android.material.R.attr.colorOnTertiaryContainer))
+            }
+            sheet.items.addView(card.root)
+        }
+        BottomSheetDialog(requireContext()).apply {
+            setContentView(sheet.root)
+            behavior.state = BottomSheetBehavior.STATE_EXPANDED
+        }.show()
     }
 
     private fun showPolicy(topic: String?) {
@@ -620,6 +677,11 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
     }
 
     private fun dateLabel(day: LocalDate): String = day.format(DateTimeFormatter.ofPattern("dd/MM"))
+
+    /** "Thứ hai, 16/11": thứ giúp người dùng thấy ngày đã chọn đúng chưa. */
+    private fun dayWithWeekday(day: LocalDate): String =
+        day.format(DateTimeFormatter.ofPattern("EEEE, dd/MM", Locale.forLanguageTag("vi-VN")))
+            .replaceFirstChar { it.titlecase(Locale.forLanguageTag("vi-VN")) }
 
     private fun sortLabel(sort: CourtSearchSort): Int = when (sort) {
         CourtSearchSort.RATING -> R.string.search_sort_rating

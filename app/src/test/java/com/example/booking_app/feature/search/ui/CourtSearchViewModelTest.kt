@@ -134,6 +134,35 @@ class CourtSearchViewModelTest {
     }
 
     @Test
+    fun clearingAiTextKeepsFiltersAndOffersToClearThem() = runTest {
+        val api = mockk<CourtAiApi>()
+        val catalog = mockk<CatalogRepository>()
+        coEvery { catalog.districts() } returns listOf(District("q10", "Quận 10", 1, true))
+        coEvery { catalog.amenities() } returns emptyList()
+        val repo = object : CourtSearchRepository {
+            override fun search(
+                criteria: com.example.booking_app.feature.search.domain.CourtSearchCriteria,
+                origin: com.google.firebase.firestore.GeoPoint?,
+            ) = flowOf(CourtSearchPage(emptyList(), complete = true, capped = false))
+        }
+        val session = FakeSessionManager(SessionState.SignedIn("player", AppRole.PLAYER, true))
+        val vm = CourtSearchViewModel(SavedStateHandle(), repo, api, catalog, mockk<LocationProvider>(), session,
+            FakeClock { Instant.parse("2026-11-15T03:00:00Z").toEpochMilli() }, MemoryAiQueryHistory())
+        runCurrent()
+        vm.district("q10")
+        runCurrent()
+        vm.input("abc")
+        assertEquals(false, vm.state.value.filtersKept)
+        vm.input("")
+        assertEquals(true, vm.state.value.filtersKept)
+        assertEquals("q10", vm.state.value.criteria.districtId)
+        // "Xóa bộ lọc" có sẵn giữ lại quận và từ khóa; gợi ý chỉ được tắt.
+        vm.clearFilters()
+        assertEquals(false, vm.state.value.filtersKept)
+        assertEquals("q10", vm.state.value.criteria.districtId)
+    }
+
+    @Test
     fun aiHistoryMasksContactsDedupesAndKeepsFiveNewest() {
         val history = MemoryAiQueryHistory()
         history.add("u", "Gọi 0901 234 567 hoặc a.b@mail.com tối mai")
