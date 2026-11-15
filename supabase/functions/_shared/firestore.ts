@@ -320,7 +320,12 @@ export async function runTransaction<T>(
         : outcome as T;
     } catch (error) {
       await rollback(transaction);
-      if (error instanceof FirestoreError && error.code === "ABORTED" && attempt < maxAttempts) continue;
+      if (error instanceof FirestoreError && error.code === "ABORTED" && attempt < maxAttempts) {
+        // Let locks settle and stagger competing writers instead of retrying in lockstep.
+        const backoff = Math.min(100 * 2 ** (attempt - 1), 1000);
+        await new Promise(resolve => setTimeout(resolve, backoff / 2 + Math.random() * backoff / 2));
+        continue;
+      }
       throw error;
     }
   }

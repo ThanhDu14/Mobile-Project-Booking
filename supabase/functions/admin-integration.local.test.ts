@@ -23,7 +23,42 @@ async function status(response: Response, expected = 200) {
   assertEquals(response.status, expected, JSON.stringify(body));
   return body;
 }
-const application = (uid: string, submittedAt = "2026-11-01T00:00:00Z") => ({uid,status:"PENDING",submittedAt,representativeName:"Test representative",representativePhone:"0900000000",venueDraft:{name:"Test venue",address:"Test address",districtId:"test-district",location:{latitude:10.7,longitude:106.6},phone:"0900000000",courtCount:2,openTime:"0600",closeTime:"2200",photoPaths:["test.jpg"]},documentPaths:[]});
+const application = (uid: string, id: string, submittedAt = "2026-11-01T00:00:00Z") => ({uid,status:"PENDING",submittedAt,representativeName:"Test representative",representativePhone:"0900000000",venueDraft:{name:"Test venue",address:"Test address",districtId:"test-district",location:{latitude:10.7,longitude:106.6},phone:"0900000000",courtCount:2,openTime:"0600",closeTime:"2200",photoPaths:[`${uid}/${id}/venue.jpg`]},documentPaths:[]});
+
+async function storageFixtures(paths: string[]) {
+  const base = Deno.env.get("SUPABASE_URL") ?? "";
+  assert(/^http:\/\/127\.0\.0\.1:\d+$/.test(base), "Supabase must be local");
+  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  assert(key, "Local Storage service key is required");
+  const headers = { Authorization: `Bearer ${key}`, apikey: key, "Content-Type": "application/json" };
+  for (const [id, isPublic] of [["owner-docs", false], ["venue-photos", true]] as const) {
+    const bucket = await fetch(`${base}/storage/v1/bucket`, {
+      method: "POST", headers, body: JSON.stringify({ id, name: id, public: isPublic }),
+    });
+    assert([200, 400, 409].includes(bucket.status));
+    await bucket.body?.cancel();
+    const metadata = await fetch(`${base}/storage/v1/bucket/${id}`, { headers });
+    const body = await metadata.json();
+    assertEquals(metadata.status, 200);
+    assertEquals(body.public, isPublic);
+  }
+  for (const path of paths) {
+    // Storage survives Firestore resets and may contain a copy from a previous run.
+    const destination = path.split("/").slice(1).join("/");
+    const previousCopy = await fetch(`${base}/storage/v1/object/venue-photos`, {
+      method: "DELETE", headers, body: JSON.stringify({ prefixes: [destination] }),
+    });
+    assertEquals(previousCopy.status, 200);
+    await previousCopy.body?.cancel();
+    const upload = await fetch(`${base}/storage/v1/object/owner-docs/${path}`, {
+      method: "POST", headers: { ...headers, "Content-Type": "image/jpeg", "x-upsert": "true" },
+      body: new Uint8Array([255, 216, 255, 217]),
+    });
+    assertEquals(upload.status, 200);
+    await upload.body?.cancel();
+  }
+  return { base, headers };
+}
 
 Deno.test("R120 local Firebase: decisions, claim recovery, race, controls, moderation, voucher and broadcast", async () => {
   requireLocal();
@@ -33,15 +68,22 @@ Deno.test("R120 local Firebase: decisions, claim recovery, race, controls, moder
   await fs.commit([
     ...["admin-local","admin-second"].map((uid)=>fs.createWrite(`users/${uid}`,{role:"ADMIN",accountStatus:"ACTIVE"})),
     ...["player-local","reject-local","race-local"].map((uid)=>fs.createWrite(`users/${uid}`,{role:"PLAYER",ownerStatus:"PENDING",accountStatus:"ACTIVE"})),
-    fs.createWrite("ownerApplications/approve-local",application("player-local")),
-    fs.createWrite("ownerApplications/reject-local",application("reject-local")),
-    fs.createWrite("ownerApplications/race-local",application("race-local")),
+    fs.createWrite("ownerApplications/approve-local",application("player-local", "approve-local")),
+    fs.createWrite("ownerApplications/reject-local",application("reject-local", "reject-local")),
+    fs.createWrite("ownerApplications/race-local",application("race-local", "race-local")),
+  ]);
+  const { base } = await storageFixtures([
+    "player-local/approve-local/venue.jpg", "reject-local/reject-local/venue.jpg", "race-local/race-local/venue.jpg",
   ]);
   const approveBody = {applicationId:"approve-local",decision:"APPROVE",expectedSubmittedAt:"2026-11-01T00:00:00Z"};
   await status(await review(request(approveBody),{firestore:fs,mergeClaims:async()=>{throw new Error("Injected claim failure");}}),503);
   assertEquals((await fs.get("ownerApplications/approve-local"))?.status,"APPROVED");
   await status(await review(request(approveBody)));
   assertEquals((await getCustomClaims("player-local")).appRole,"OWNER");
+  assertEquals((await fs.get("venues/approve-local"))?.photoPaths, ["approve-local/venue.jpg"]);
+  const publicPhoto = await fetch(`${base}/storage/v1/object/public/venue-photos/approve-local/venue.jpg`);
+  assertEquals(publicPhoto.status, 200);
+  assertEquals(new Uint8Array(await publicPhoto.arrayBuffer()), new Uint8Array([255, 216, 255, 217]));
   assertEquals((await fs.list("users/player-local/notifications")).length,1);
   await status(await review(request({applicationId:"reject-local",decision:"REJECT",rejectReason:"  Missing evidence  ",expectedSubmittedAt:"2026-11-01T00:00:00Z"})));
   assertEquals((await fs.get("ownerApplications/reject-local"))?.rejectReason,"Missing evidence");
@@ -99,14 +141,24 @@ Deno.test("R120 local Firebase: decisions, claim recovery, race, controls, moder
 
 Deno.test("R120 voucher global: simultaneous system and venue code has one winner", async () => {
   requireLocal();
+  await clearEmulators();
+  const adminId = "voucher-admin-local", ownerId = "voucher-owner-local";
   const code=`RACE${Date.now()}`;
   const venueId=`voucher-${Date.now()}`;
-  await fs.commit([fs.createWrite(`venues/${venueId}`,{ownerId:"admin-local",status:"ACTIVE"})]);
+  await fs.commit([
+    fs.createWrite(`users/${adminId}`, { role: "ADMIN", accountStatus: "ACTIVE" }),
+    fs.createWrite(`users/${ownerId}`, { role: "OWNER", ownerStatus: "APPROVED", accountStatus: "ACTIVE" }),
+    fs.createWrite(`venues/${venueId}`, { ownerId, status: "ACTIVE" }),
+  ]);
   const data={action:"CREATE",code,type:"FIXED",value:10,maxDiscount:10,minOrderTotal:0,validFrom:"2026-11-01T00:00:00Z",validTo:"2026-12-01T00:00:00Z",usageLimit:10,perUserLimit:1};
   let reached=0;
   let release!:()=>void;
-  const ready=new Promise<void>(resolve=>{release=resolve;});
-  const barrier=async()=>{if(++reached===2)release();await ready;};
+  let timeout!: ReturnType<typeof setTimeout>;
+  const ready=new Promise<void>((resolve, reject)=>{
+    release=resolve;
+    timeout=setTimeout(()=>reject(new Error("Both voucher writers must reach the uniqueness query")), 10_000);
+  });
+  const barrier=async()=>{if(++reached===2){clearTimeout(timeout);release();}await ready;};
   const withBarrier=()=>{
     let initial=true;
     const transaction: typeof fs.runTransaction = async (operation,maxAttempts)=>fs.runTransaction(async tx=>operation({...tx,query:async (...args)=>{
@@ -114,36 +166,44 @@ Deno.test("R120 voucher global: simultaneous system and venue code has one winne
     }}),maxAttempts);
     return {...fs,runTransaction:transaction};
   };
-  const results=await Promise.all([voucher(request(data),{firestore:withBarrier()}),ownerVoucher(request({...data,venueId}),{firestore:withBarrier()})]);
-  const statuses=results.map(r=>r.status).sort();
-  for(const r of results) await r.body?.cancel();
-  assertEquals(statuses,[200,409]);
+  try {
+    const results=await Promise.all([
+      voucher(request(data, adminId),{firestore:withBarrier()}),
+      ownerVoucher(request({...data,venueId}, ownerId, "OWNER"),{firestore:withBarrier()}),
+    ]);
+    const statuses=results.map(r=>r.status).sort();
+    const bodies=await Promise.all(results.map(r=>r.json()));
+    assertEquals(reached, 2, JSON.stringify(bodies));
+    assertEquals(statuses,[200,409], JSON.stringify(bodies));
+    const stored=await Promise.all([fs.get(`systemVouchers/${code}`),fs.get(`venues/${venueId}/vouchers/${code}`)]);
+    assertEquals(stored.filter(Boolean).length, 1);
+  } finally {
+    clearTimeout(timeout);
+  }
 });
 
 Deno.test("R120 local Storage: both signed documents, denial, download and expiry", async () => {
   requireLocal();
-  const base=Deno.env.get("SUPABASE_URL") ?? "";
-  assert(/^http:\/\/127\.0\.0\.1:\d+$/.test(base),"Supabase must be local");
-  const key=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  assert(key);
-  const headers={Authorization:`Bearer ${key}`,apikey:key,"Content-Type":"application/json"};
-  const bucket=await fetch(`${base}/storage/v1/bucket`,{method:"POST",headers,body:JSON.stringify({id:"owner-docs",name:"owner-docs",public:false})});
-  assert([200,400,409].includes(bucket.status)); await bucket.body?.cancel();
+  await clearEmulators();
+  const adminId="storage-admin-local", playerId="storage-player-local", otherId="storage-other-local";
   const id="aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
-  const paths=[`player-local/${id}/one.jpg`,`player-local/${id}/two.jpg`];
-  await fs.commit([fs.createWrite(`ownerApplications/${id}`,{...application("player-local"),documentPaths:paths})]);
+  const paths=[`${playerId}/${id}/one.jpg`,`${playerId}/${id}/two.jpg`];
+  await fs.commit([
+    fs.createWrite(`users/${adminId}`, { role:"ADMIN", accountStatus:"ACTIVE" }),
+    ...[playerId,otherId].map(uid=>fs.createWrite(`users/${uid}`, { role:"PLAYER", accountStatus:"ACTIVE" })),
+    fs.createWrite(`ownerApplications/${id}`,{...application(playerId,id),documentPaths:paths}),
+  ]);
+  const {base,headers}=await storageFixtures(paths);
   for(const path of paths) {
-    const upload=await fetch(`${base}/storage/v1/object/owner-docs/${path}`,{method:"POST",headers:{...headers,"Content-Type":"image/jpeg","x-upsert":"true"},body:new Uint8Array([255,216,255,217])});
-    assertEquals(upload.status,200);await upload.body?.cancel();
-    const signed=await status(await docs(request({action:"SIGN_DOWNLOAD",applicationId:id,path})));
+    const signed=await status(await docs(request({action:"SIGN_DOWNLOAD",applicationId:id,path},adminId)));
     assertEquals(signed.expiresInSeconds,300);
     const download=await fetch(signed.signedUrl);assertEquals(download.status,200);await download.body?.cancel();
-    await status(await docs(request({action:"SIGN_DOWNLOAD",applicationId:id,path},"reject-local","PLAYER")),403);
+    await status(await docs(request({action:"SIGN_DOWNLOAD",applicationId:id,path},otherId,"PLAYER")),403);
   }
   const short=await fetch(`${base}/storage/v1/object/sign/owner-docs/${paths[0]}`,{method:"POST",headers,body:JSON.stringify({expiresIn:1})});
   const shortBody=await short.json();assertEquals(short.status,200);
   await new Promise(r=>setTimeout(r,2200));
   const expired=await fetch(`${base}/storage/v1${shortBody.signedURL}`);
   assert(expired.status>=400);await expired.body?.cancel();
-  await status(await docs(request({action:"SIGN_DOWNLOAD",applicationId:id,path:paths[1]})));
+  await status(await docs(request({action:"SIGN_DOWNLOAD",applicationId:id,path:paths[1]},adminId)));
 });
