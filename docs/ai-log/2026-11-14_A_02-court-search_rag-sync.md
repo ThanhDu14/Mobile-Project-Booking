@@ -3,7 +3,7 @@
 | Trường | Nội dung |
 |---|---|
 | Ngày | 2026-11-14 |
-| Người thực hiện | A |
+| Người thực hiện | Lê Quốc Hưng (thành viên 2) |
 | Nhóm tính năng liên quan | 02 – Tìm kiếm sân (spec 020, 021, 022) |
 | Công cụ AI | Claude Code (Claude Opus 5.5) |
 | Mục đích | Review code RAG so với spec, sửa lỗi, cập nhật tài liệu theo các quyết định đã chốt |

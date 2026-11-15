@@ -29,6 +29,8 @@ description: "Danh sách task triển khai spec 022 – Tìm sân thông minh (A
 - [X] T131 Kiểm thử T130 trên thiết bị với `Hôm qua 7h tối Quận 10` (có dấu) và `hom qua 7h toi quan 10` (không dấu).
   *2026-11-15:* câu không dấu hiện thông báo ngày đã qua và hỏi lại ngày: **đạt**. Câu có dấu (người dùng tự gõ): **đạt**. RAG `mai 19h-21h tan phu san it tron`: chip "Sàn ít trơn", không đề xuất, không lỗi: **đạt**.
 
+- [X] T132 Giao diện kết quả tìm bằng AI (2026-11-15): banner lỗi ngày trong khung AI (`aiDateNotice`); hộp "Giờ trống" dạng thẻ có thứ trong tuần; ✕ của ô AI chỉ xóa chữ và hiện "Bộ lọc vẫn đang áp dụng." + nút "Xóa bộ lọc"; thẻ đề xuất có điểm, câu trích (`quotes` từ `RECOMMEND`), nút có icon; "Đánh giá gốc" là bottom sheet tải mọi nguồn qua `SOURCE`, nhãn Ủng hộ/Trái chiều và vị trí; "Vì sao phù hợp?" tách Điểm cộng/Điểm trừ, chạm để mở nguồn. Test: Deno 13/13 (có Emulator), Android `clearingAiTextKeepsFiltersAndOffersToClearThem`. Đã deploy và kiểm tra trên máy thật.
+
 **Ghi nhận khi kiểm thử 2026-11-15 (chưa sửa):**
 - Câu không dấu như `toi mai …` không nhận ra buổi tối (`partOfDayFromQuery` chỉ đọc chữ có dấu, model cũng không chắc chắn), nên app hỏi lại giờ.
 - Khi hết lượt, app khóa nút "Tìm sân" và hiện "Còn 0/10 lượt AI"; thông báo `search_ai_quota` chỉ xuất hiện khi server trả `409 QUOTA_EXCEEDED`.

@@ -3,7 +3,7 @@
 | Trường | Nội dung |
 |---|---|
 | Ngày | 2026-11-12 |
-| Người thực hiện | Nhóm tính năng 02 |
+| Người thực hiện | Lê Quốc Hưng (thành viên 2) |
 | Nhóm tính năng liên quan | 02 – Tìm kiếm sân (spec 020 và 022) |
 | Công cụ AI | Codex |
 | Mục đích | Cập nhật đặc tả nghiệp vụ và kịch bản nghiệm thu RAG |

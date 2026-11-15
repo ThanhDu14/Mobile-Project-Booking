@@ -10,7 +10,7 @@ Các thao tác đi qua `POST /functions/v1/ai-search-parse` với Firebase ID to
 |---|---|---|---|---|
 | `PARSE` (mặc định) | `query` đã che liên hệ, 1–200 ký tự | `result`, `cached`, `usage`. `result.preference` là mã đặc điểm hoặc `null`. Ngày là `yyyyMMdd`, giờ là `HHmm`. | Có | Có |
 | `USAGE` | Không có trường bổ sung | `usage` gồm `used`, `attempts`, `limit`, `lockedUntil`. | Không | Không |
-| `RECOMMEND` | `preference`, tối đa 30 `venueIds` từ kết quả 020 | `recommendations`: tối đa ba mục `{venueId, sources}`. | Không | Không, trần riêng 20/ngày |
+| `RECOMMEND` | `preference`, tối đa 30 `venueIds` từ kết quả 020 | `recommendations`: tối đa ba mục `{venueId, sources, quotes}`. `quotes`: `{reviewId, text, supports}`, `text` là câu khớp trong đánh giá, đã che liên hệ, tối đa 140 ký tự. | Không | Không, trần riêng 20/ngày |
 | `SOURCE` | `venueId`, một `source` | `comment`: bình luận gốc đang công khai. | Không | Không |
 | `EXPLAIN` | `venueId`, `preference`, một đến ba `sources` | `claims`: tối đa hai mục `{source, excerpt, supports}`. Không có `usage`. | **Không** | Không |
 
@@ -35,6 +35,7 @@ Mọi nguồn thuộc sân `ACTIVE`, có `status == VISIBLE` và `targetType == 
 4. Theo đợt 6 sân: truy vấn `reviews` với `venueId == X`, `targetType == VENUE`, `status == VISIBLE`, `orderBy createdAt desc`, `limit 10`. Cần index `reviews (venueId, targetType, status, createdAt desc)` trong `firestore.indexes.json`.
 5. Mỗi đánh giá tách theo câu và "nhưng", khớp cụm thuận/trái (có xét phủ định "không …"). Điểm sân = `2 × số quan sát thuận − số quan sát trái`; sân không có quan sát thuận bị bỏ. Mỗi sân giữ tối đa 2 nguồn thuận và 1 nguồn trái.
 6. Trả top 3 theo điểm. Nguồn vừa được đọc trong chính yêu cầu này nên không đọc lại lần hai.
+7. Mỗi quan sát được chọn kèm `quote`: mệnh đề gốc đầu tiên khớp (tách theo câu và "nhưng"), che email/số điện thoại bằng `maskQuery`, cắt 140 ký tự. App hiện quote thuận đầu tiên trên thẻ đề xuất. Nội dung đầy đủ vẫn chỉ hiện qua `SOURCE` (có kiểm tra phiên bản); quote có thể cũ nếu bình luận bị sửa sau lần truy xuất, và lần mở nguồn kế tiếp sẽ bỏ đề xuất đó.
 
 Chi phí đọc tối đa mỗi lần: khoảng 30 (`venues`) + 10 × số sân có đánh giá (`reviews`) + 2 (lượt). Trần 20 lần/người/ngày giữ chi phí trong hạn mức Spark.
 
