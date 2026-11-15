@@ -16,6 +16,8 @@ data class OwnerDropInSession(
     val registeredCount: Int,
     val pricePerPersonVnd: Long,
     val status: String,
+    val level: String = "BEGINNER",
+    val note: String = "",
 )
 
 data class OwnerDropInRegistration(

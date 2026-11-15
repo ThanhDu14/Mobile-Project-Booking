@@ -46,7 +46,7 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
-                        android:text="18:00–20:00 · Sân 3 · Trình trung bình"
+                        android:id="@+id/sessionSummary"
                         android:textAppearance="?attr/textAppearanceBodyLarge"
                         android:textColor="?attr/colorOnSurfaceVariant" />
                 </LinearLayout>
@@ -89,7 +89,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="14/16"
+                            android:id="@+id/registeredCount" android:text="0"
                             android:textAppearance="?attr/textAppearanceHeadlineMedium"
                             android:textColor="?attr/colorOnSurface"
                             android:textStyle="bold" />
@@ -125,7 +125,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="3"
+                            android:id="@+id/checkedInCount" android:text="0"
                             android:textAppearance="?attr/textAppearanceHeadlineMedium"
                             android:textColor="@color/sn_on_court_container"
                             android:textStyle="bold" />
@@ -163,7 +163,7 @@
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="0"
+                            android:id="@+id/waitlistCount" android:text="0"
                             android:textAppearance="?attr/textAppearanceHeadlineMedium"
                             android:textColor="?attr/colorOnSurface"
                             android:textStyle="bold" />
@@ -285,7 +285,8 @@
                 android:textAppearance="?attr/textAppearanceBodyMedium"
                 android:textColor="?attr/colorOnSurfaceVariant" />
 
-            <!-- Bottom Action: Quét QR check-in -->
+    <com.google.android.material.button.MaterialButton android:id="@+id/editSession" style="@style/Widget.SmashNow.Button.Outlined" android:layout_width="match_parent" android:layout_height="48dp" android:text="@string/owner_edit_session" /><com.google.android.material.button.MaterialButton android:id="@+id/cancelSession" style="@style/Widget.SmashNow.Button.Outlined" android:layout_width="match_parent" android:layout_height="48dp" android:text="@string/owner_cancel_session" />
+        <!-- Bottom Action: Quét QR check-in -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/scanQr"
                 style="@style/Widget.SmashNow.Button"

@@ -88,6 +88,13 @@ class OwnerVouchersFragment : Fragment(R.layout.fragment_owner_vouchers) {
             row.usage.text = getString(R.string.owner_voucher_usage, voucher.usedCount, voucher.usageLimit?.toString() ?: getString(R.string.owner_voucher_unlimited), if (voucher.isActive) getString(R.string.owner_voucher_active) else getString(R.string.owner_voucher_inactive))
             row.isActive.setOnCheckedChangeListener(null)
             row.isActive.isChecked = voucher.isActive
+            row.isActive.setText(if(voucher.isActive) R.string.owner_voucher_active else R.string.owner_voucher_inactive)
+            row.isActive.isEnabled = !viewModel.uiState.value.isSaving
+            row.voucherProgress.max = voucher.usageLimit ?: 1
+            row.voucherProgress.progress = voucher.usedCount
+            row.root.setOnClickListener {
+                selectedVenueId?.let { id -> findNavController().navigate(R.id.action_ownerVouchers_to_form,Bundle().apply {putString("venueId",id);putString("code",voucher.code)}) }
+            }
             row.isActive.setOnCheckedChangeListener { _, active ->
                 selectedVenueId?.let { venue -> viewModel.setActive(venue, voucher.code, active) }
             }

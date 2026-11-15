@@ -110,9 +110,9 @@ class GenerateDailySlotsUseCaseTest {
 
     @Test
     fun generateDailySlots_assignsPastStatus_forElapsedSlotsToday() {
-        val todayStr = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE)
-        // Current time is 10:15 AM today
-        val tenFifteenToday = LocalDateTime.now().withHour(10).withMinute(15)
+        // Fixed Tuesday matches the weekday price fixtures, including on weekend test runs.
+        val todayStr = date
+        val tenFifteenToday = LocalDateTime.of(2026, 10, 27, 10, 15)
             .atZone(ZoneId.of("Asia/Ho_Chi_Minh")).toInstant().toEpochMilli()
 
         val slots = useCase(

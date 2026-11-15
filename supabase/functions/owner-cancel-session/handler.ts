@@ -11,6 +11,7 @@ import {
   registrationPath,
 } from "../_shared/dropin.ts";
 import { decodeFields } from "../_shared/firestore.ts";
+import { requireOwnerVenue } from "../_shared/owner-access.ts";
 
 export interface OwnerCancelSessionDeps {
   firestore: Pick<typeof defaultFirestore, "get" | "runTransaction">;
@@ -36,33 +37,16 @@ export async function handleOwnerCancelSession(
       ? body.reason.trim()
       : "Chủ sân hủy buổi chơi";
 
-    if (!venueId) throw new HttpError(400, "INVALID_VENUE_ID", "Thiếu venueId");
-    if (!sessionId) {
+    if (!venueId || venueId.includes("/")) throw new HttpError(400, "INVALID_VENUE_ID", "Thiếu venueId");
+    if (!sessionId || sessionId.includes("/")) {
       throw new HttpError(400, "INVALID_SESSION_ID", "Thiếu sessionId");
-    }
-
-    // 1. Verify owner
-    if (token.appRole !== "ADMIN") {
-      const user = await firestore.get(`users/${token.uid}`);
-      if (user?.ownerStatus !== "APPROVED") {
-        throw new HttpError(403, "FORBIDDEN", "Chủ sân chưa được phê duyệt");
-      }
-    }
-
-    // 2. Verify venue
-    const venue = await firestore.get(`venues/${venueId}`);
-    if (!venue || (venue.ownerId !== token.uid && token.appRole !== "ADMIN")) {
-      throw new HttpError(
-        404,
-        "NOT_FOUND",
-        "Không tìm thấy cơ sở hoặc bạn không có quyền",
-      );
     }
 
     const now = new Date();
     const nowIso = now.toISOString();
     try {
       await firestore.runTransaction(async (tx) => {
+        await requireOwnerVenue(tx, token.uid, venueId);
         // Lock session and registration query before collecting any writes.
         const session = await tx.get(`dropInSessions/${sessionId}`);
         if (!session || session.venueId !== venueId) {
@@ -81,6 +65,17 @@ export async function handleOwnerCancelSession(
           );
         }
 
+        const slotIds = Array.isArray(session.slotIds) ? [...new Set(session.slotIds)] : [];
+        for (const slotId of slotIds) {
+          if (typeof slotId !== "string" || !slotId || slotId.includes("/")) {
+            throw new HttpError(409, "SLOT_CONFLICT", "Dữ liệu khung giờ buổi chơi không hợp lệ");
+          }
+          const slot = await tx.get(`slots/${slotId}`);
+          if (!slot || slot.venueId !== venueId || slot.sessionId !== sessionId ||
+            slot.status !== "BLOCKED" || slot.blockReason !== "DROP_IN") {
+            throw new HttpError(409, "SLOT_CONFLICT", "Khung giờ không còn thuộc buổi chơi này");
+          }
+        }
         const registrations = await tx.query("registrations", [], {
           parent: `dropInSessions/${sessionId}`,
         });
@@ -133,7 +128,6 @@ export async function handleOwnerCancelSession(
         );
 
         // Release all blocked slots
-        const slotIds = Array.isArray(session.slotIds) ? session.slotIds : [];
         for (const slotId of slotIds) {
           if (typeof slotId === "string" && slotId.trim()) {
             writes.push(deleteWrite(`slots/${slotId.trim()}`, true));

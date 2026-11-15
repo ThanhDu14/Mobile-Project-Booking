@@ -25,6 +25,7 @@ data class OwnerVoucherUiState(
     val error: String? = null,
     val isEmpty: Boolean = false,
     val validationErrors: List<String> = emptyList(),
+    val saved: Boolean = false,
 )
 
 @HiltViewModel
@@ -59,23 +60,39 @@ class OwnerVoucherViewModel @Inject constructor(
     }
 
     fun create(venueId: String, draft: OwnerVoucherDraft) {
+        if (_uiState.value.isSaving) return
         val errors = OwnerVoucherValidation.validate(draft)
         if (errors.isNotEmpty()) {
             _uiState.value = _uiState.value.copy(validationErrors = errors, error = null)
             return
         }
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isSaving = true, error = null, validationErrors = emptyList())
+            _uiState.value = _uiState.value.copy(isSaving = true, error = null, validationErrors = emptyList(), saved = false)
             voucherRepository.create(venueId, draft)
-                .onSuccess { _uiState.value = _uiState.value.copy(isSaving = false) }
+                .onSuccess { _uiState.value = _uiState.value.copy(isSaving = false, saved = true) }
                 .onFailure { failure -> _uiState.value = _uiState.value.copy(isSaving = false, error = failure.message ?: "Không tạo được voucher") }
         }
     }
 
     fun setActive(venueId: String, code: String, isActive: Boolean) {
+        if (_uiState.value.isSaving) return
         viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isSaving=true,error=null)
             voucherRepository.setActive(venueId, code, isActive)
                 .onFailure { failure -> _uiState.value = _uiState.value.copy(error = failure.message ?: "Không cập nhật được trạng thái voucher") }
+            _uiState.value = _uiState.value.copy(isSaving=false)
+        }
+    }
+
+    fun update(venueId: String, code: String, draft: OwnerVoucherDraft) {
+        if (_uiState.value.isSaving) return
+        val errors=OwnerVoucherValidation.validate(draft)
+        if(errors.isNotEmpty()){_uiState.value=_uiState.value.copy(validationErrors=errors);return}
+        viewModelScope.launch {
+            _uiState.value=_uiState.value.copy(isSaving=true,error=null,saved=false)
+            voucherRepository.update(venueId,code,draft)
+                .onSuccess{_uiState.value=_uiState.value.copy(isSaving=false,saved=true)}
+                .onFailure{_uiState.value=_uiState.value.copy(isSaving=false,error=it.message ?: "Không sửa được voucher")}
         }
     }
 

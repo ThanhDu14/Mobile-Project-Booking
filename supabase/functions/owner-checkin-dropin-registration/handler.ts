@@ -2,6 +2,7 @@ import { errorResponse, HttpError, verifyIdToken } from "../_shared/auth.ts";
 import * as defaultFirestore from "../_shared/firestore.ts";
 import { FirestoreError, updateWrite } from "../_shared/firestore.ts";
 import { registrationPath } from "../_shared/dropin.ts";
+import { requireOwnerVenue } from "../_shared/owner-access.ts";
 
 export interface OwnerCheckinDropInDeps {
   firestore: Pick<typeof defaultFirestore, "get" | "runTransaction">;
@@ -27,8 +28,8 @@ export async function handleOwnerCheckinDropIn(
       ? body.credential.trim()
       : "";
 
-    if (!venueId) throw new HttpError(400, "INVALID_VENUE_ID", "Thiếu venueId");
-    if (!sessionId) {
+    if (!venueId || venueId.includes("/")) throw new HttpError(400, "INVALID_VENUE_ID", "Thiếu venueId");
+    if (!sessionId || sessionId.includes("/")) {
       throw new HttpError(400, "INVALID_SESSION_ID", "Thiếu sessionId");
     }
     const ticketCode = credential.toUpperCase();
@@ -42,28 +43,11 @@ export async function handleOwnerCheckinDropIn(
       );
     }
 
-    // 1. Verify owner
-    if (token.appRole !== "ADMIN") {
-      const user = await firestore.get(`users/${token.uid}`);
-      if (user?.ownerStatus !== "APPROVED") {
-        throw new HttpError(403, "FORBIDDEN", "Chủ sân chưa được phê duyệt");
-      }
-    }
-
-    // 2. Verify venue
-    const venue = await firestore.get(`venues/${venueId}`);
-    if (!venue || (venue.ownerId !== token.uid && token.appRole !== "ADMIN")) {
-      throw new HttpError(
-        404,
-        "NOT_FOUND",
-        "Không tìm thấy cơ sở hoặc bạn không có quyền",
-      );
-    }
-
     const now = new Date();
     const nowIso = now.toISOString();
     try {
       const registrationId = await firestore.runTransaction(async (tx) => {
+        await requireOwnerVenue(tx, token.uid, venueId);
         // Read both documents in the transaction so concurrent check-ins cannot succeed twice.
         const session = await tx.get(`dropInSessions/${sessionId}`);
         if (!session || session.venueId !== venueId) {

@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest';
 import { assertFails, assertSucceeds, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
-import { collection, doc, getDoc, getDocs, query, updateDoc, where } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, updateDoc, where, setDoc } from 'firebase/firestore';
 import { createTestEnv } from './setup';
 
 let env: RulesTestEnvironment;
@@ -40,6 +40,20 @@ beforeEach(async () => {
 afterAll(async () => { await env.cleanup(); });
 
 describe('Feature 112 owner access prerequisites', () => {
+  it('reads real venue vouchers but never permits client writes to vouchers or counters', async () => {
+    await env.withSecurityRulesDisabled(async ctx => {
+      await ctx.firestore().doc('venues/venue-a/vouchers/AUDIT10').set({code:'AUDIT10',usedCount:3,isActive:true});
+      await ctx.firestore().doc('venues/venue-locked/vouchers/AUDIT20').set({code:'AUDIT20',usedCount:0});
+    });
+    const owner = env.authenticatedContext('owner-a', {appRole:'OWNER'}).firestore();
+    const other = env.authenticatedContext('owner-b', {appRole:'OWNER'}).firestore();
+    await assertSucceeds(getDocs(collection(owner, 'venues/venue-a/vouchers')));
+    await assertFails(updateDoc(doc(owner, 'venues/venue-a/vouchers/AUDIT10'), {usedCount:0}));
+    await assertFails(setDoc(doc(owner, 'venues/venue-a/vouchers/NEW'), {code:'NEW'}));
+    await assertFails(updateDoc(doc(other, 'venues/venue-a/vouchers/AUDIT10'), {isActive:false}));
+    await assertFails(getDocs(collection(other, 'venues/venue-locked/vouchers')));
+    await assertFails(getDocs(collection(env.unauthenticatedContext().firestore(), 'venues/venue-a/vouchers')));
+  });
   it('allows an approved owner to access editable data under an owned active venue', async () => {
     const fs = env.authenticatedContext('owner-a', { appRole: 'OWNER' }).firestore();
     await assertSucceeds(updateDoc(doc(fs, 'venues/venue-a'), { name: 'Sân A mới' }));

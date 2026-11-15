@@ -7,7 +7,7 @@ import {
   updateWrite,
 } from "../_shared/firestore.ts";
 import { ACTIVE_STATUSES, deriveSessionFields } from "../_shared/dropin.ts";
-import { parseOwnerSessionInput } from "../_shared/owner-dropin.ts";
+import { parseOwnerSessionInput, validateOwnerSessionSchedule } from "../_shared/owner-dropin.ts";
 
 export interface OwnerUpdateSessionDeps {
   firestore: Pick<typeof defaultFirestore, "runTransaction">;
@@ -35,7 +35,7 @@ export async function handleOwnerUpdateSession(
     await firestore.runTransaction(async (tx) => {
       if (token.appRole !== "ADMIN") {
         const user = await tx.get(`users/${token.uid}`);
-        if (user?.ownerStatus !== "APPROVED") {
+        if (token.appRole !== "OWNER" || user?.ownerStatus !== "APPROVED" || user.role !== "OWNER" || user.accountStatus !== "ACTIVE" || user.deletionRequestedAt != null) {
           throw new HttpError(403, "FORBIDDEN", "Chủ sân chưa được phê duyệt");
         }
       }
@@ -57,6 +57,8 @@ export async function handleOwnerUpdateSession(
         );
       }
       const path = `dropInSessions/${sessionId}`;
+      const priceRules=await tx.query("priceRules",[],{parent:`venues/${venueId}`});
+      validateOwnerSessionSchedule(input,venue,priceRules.map(rule=>rule.data));
       const session = await tx.get(path);
       if (!session || session.venueId !== venueId) {
         throw new HttpError(

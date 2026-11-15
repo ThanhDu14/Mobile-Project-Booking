@@ -5,6 +5,7 @@ import android.content.res.Configuration
 import android.view.ContextThemeWrapper
 import android.view.LayoutInflater
 import android.view.View
+import android.widget.TextView
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
@@ -40,6 +41,16 @@ class OwnerBookingsLayoutTest {
                 screen = LayoutInflater.from(themed).inflate(R.layout.fragment_owner_bookings, null, false)
                 checkIn = LayoutInflater.from(themed).inflate(R.layout.fragment_owner_booking_checkin, null, false)
                 row = LayoutInflater.from(themed).inflate(R.layout.item_owner_booking, null, false)
+                val time = row!!.findViewById<TextView>(R.id.time)
+                val deadline = row!!.findViewById<TextView>(R.id.deadline)
+                time.text = "Th 2, 16/11 · 22:30–23:00"
+                deadline.text = "Hạn xử lý: 23:44 15/11/2026 · Còn 46 phút 34 giây"
+                row!!.measure(View.MeasureSpec.makeMeasureSpec(dp(themed, 320), View.MeasureSpec.EXACTLY),
+                    View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED))
+                row!!.layout(0, 0, row!!.measuredWidth, row!!.measuredHeight)
+                assertTrue("Countdown must not squeeze the booking time", time.width >= dp(themed, 240))
+                assertTrue("Booking time must remain readable", time.height < dp(themed, 80))
+                assertTrue("Countdown must be below the booking time", deadline.top >= time.bottom)
             }
             assertNotNull(screen!!.findViewById<View>(R.id.bookingScroll))
             assertNotNull(screen!!.findViewById<View>(R.id.venueSpinner))

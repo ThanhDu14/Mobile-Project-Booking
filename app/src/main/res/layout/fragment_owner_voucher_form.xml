@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:tools="http://schemas.android.com/tools" xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -253,7 +253,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="@dimen/space_1"
                     android:letterSpacing="0.05"
-                    android:text="CUOITUAN15"
+                    tools:text="CUOITUAN15"
                     android:textAppearance="?attr/textAppearanceTitleLarge"
                     android:textColor="@color/sn_on_court_container"
                     android:textStyle="bold" />
@@ -263,7 +263,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
-                    android:text="Giảm 15%, tối đa 40.000 đ cho đơn từ 100.000 đ"
+                    tools:text="Giảm 15%, tối đa 40.000 đ cho đơn từ 100.000 đ"
                     android:textAppearance="?attr/textAppearanceBodyMedium"
                     android:textColor="@color/sn_on_court_container" />
             </LinearLayout>
@@ -273,7 +273,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/space_3"
-            android:text="@string/owner_voucher_create_preview_footer"
+            android:id="@+id/previewFooter"
             android:textAppearance="?attr/textAppearanceBodySmall"
             android:textColor="?attr/colorOnSurfaceVariant" />
 

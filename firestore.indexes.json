@@ -1,6 +1,22 @@
 {
   "indexes": [
     {
+      "collectionGroup": "bookings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "venueId", "order": "ASCENDING" },
+        { "fieldPath": "startAt", "order": "ASCENDING" }
+      ]
+    },
+    {
+      "collectionGroup": "bookings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "venueId", "order": "ASCENDING" },
+        { "fieldPath": "date", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "districts",
       "queryScope": "COLLECTION",
       "fields": [

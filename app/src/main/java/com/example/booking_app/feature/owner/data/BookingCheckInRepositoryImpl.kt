@@ -11,6 +11,10 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.longOrNull
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.contentOrNull
 import java.time.Instant
 import javax.inject.Inject
 
@@ -46,21 +50,22 @@ class BookingCheckInRepositoryImpl @Inject constructor(
         val jsonObj = Json.parseToJsonElement(response.bodyAsText()).jsonObject
         val bookingId = jsonObj["bookingId"]?.jsonPrimitive?.content ?: targetBookingId
         val checkedInAtStr = jsonObj["checkedInAt"]?.jsonPrimitive?.content
-        val epochMillis = if (!checkedInAtStr.isNullOrBlank()) {
-            try {
-                Instant.parse(checkedInAtStr).toEpochMilli()
-            } catch (_: Exception) {
-                System.currentTimeMillis()
-            }
-        } else {
-            System.currentTimeMillis()
-        }
-        val paymentStatus = jsonObj["paymentStatus"]?.jsonPrimitive?.content
+        val epochMillis = checkedInAtStr?.let { runCatching { Instant.parse(it).toEpochMilli() }.getOrNull() }
+        val requiresPayment = jsonObj["requiresPaymentConfirmation"]?.jsonPrimitive?.booleanOrNull ?: false
+        require(requiresPayment || epochMillis != null) { "Máy chủ chưa xác nhận kết quả check-in" }
+        val paymentStatus = jsonObj["paymentStatus"]?.jsonPrimitive?.contentOrNull
+        val remaining = jsonObj["remainingAmount"]?.jsonPrimitive?.longOrNull
+        require(remaining != null && remaining >= 0) { "Chưa nhận được số tiền còn phải thu" }
 
         BookingCheckInResult(
             bookingId = bookingId,
             checkedInAtEpochMillis = epochMillis,
             paymentStatus = paymentStatus,
+            remainingAmountVnd = remaining,
+            paymentConfirmationRequired = requiresPayment,
+            courtNames = jsonObj["courtNames"]?.jsonArray?.mapNotNull { it.jsonPrimitive.contentOrNull }.orEmpty(),
+            startAt = jsonObj["startAt"]?.jsonPrimitive?.contentOrNull?.let(Instant::parse),
+            endAt = jsonObj["endAt"]?.jsonPrimitive?.contentOrNull?.let(Instant::parse),
         )
     }
 

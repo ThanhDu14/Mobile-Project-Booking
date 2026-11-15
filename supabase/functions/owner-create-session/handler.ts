@@ -2,15 +2,23 @@ import { errorResponse, HttpError, verifyIdToken } from "../_shared/auth.ts";
 import * as defaultFirestore from "../_shared/firestore.ts";
 import { createWrite, FirestoreError } from "../_shared/firestore.ts";
 import { deriveSessionFields } from "../_shared/dropin.ts";
-import { parseOwnerSessionInput } from "../_shared/owner-dropin.ts";
+import { parseOwnerSessionInput, validateOwnerSessionSchedule } from "../_shared/owner-dropin.ts";
+import { ownerTransaction } from "../_shared/owner-transaction.ts";
 
 export interface OwnerCreateSessionDeps {
-  firestore: Pick<typeof defaultFirestore, "get" | "commit">;
+  firestore: Pick<typeof defaultFirestore, "get" | "commit" | "runTransaction">;
 }
 
 export async function handleOwnerCreateSession(
   req: Request,
   { firestore }: OwnerCreateSessionDeps = { firestore: defaultFirestore },
+): Promise<Response> {
+  return await ownerTransaction(req, firestore, (request, source) => handleInTransaction(request, { firestore: source }));
+}
+
+async function handleInTransaction(
+  req: Request,
+  { firestore }: { firestore: Pick<typeof defaultFirestore, "get" | "commit" | "query"> },
 ): Promise<Response> {
   if (req.method !== "POST") {
     return errorResponse(405, "METHOD_NOT_ALLOWED", "Chỉ hỗ trợ POST");
@@ -28,7 +36,7 @@ export async function handleOwnerCreateSession(
     // 1. Verify owner status
     if (token.appRole !== "ADMIN") {
       const user = await firestore.get(`users/${token.uid}`);
-      if (user?.ownerStatus !== "APPROVED") {
+      if (token.appRole !== "OWNER" || user?.ownerStatus !== "APPROVED" || user.role !== "OWNER" || user.accountStatus !== "ACTIVE" || user.deletionRequestedAt != null) {
         throw new HttpError(403, "FORBIDDEN", "Chủ sân chưa được phê duyệt");
       }
     }
@@ -48,6 +56,9 @@ export async function handleOwnerCreateSession(
     if (venue.status === "HIDDEN") {
       throw new HttpError(403, "VENUE_HIDDEN", "Cơ sở đang ở trạng thái ẩn");
     }
+
+    const priceRules=await firestore.query("priceRules",[],{parent:`venues/${venueId}`});
+    validateOwnerSessionSchedule(input,venue,priceRules.map(rule=>rule.data));
 
     for (const courtId of courtIds) {
       const court = await firestore.get(`venues/${venueId}/courts/${courtId}`);

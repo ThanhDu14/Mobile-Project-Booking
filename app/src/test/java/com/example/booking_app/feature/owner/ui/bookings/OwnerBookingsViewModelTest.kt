@@ -119,6 +119,17 @@ class OwnerBookingsViewModelTest {
         assertFalse(viewModel.uiState.value.actionInProgress)
     }
 
+    @Test
+    fun blankRejectReasonDoesNotReachRepository() = runTest {
+        val viewModel = OwnerBookingsViewModel(venueRepository, bookingRepository)
+        advanceUntilIdle()
+        viewModel.submit(OwnerBookingCommand.Reject(OwnerFixtures.venue.id, "b1", "  "))
+        advanceUntilIdle()
+        assertEquals(null, bookingRepository.lastCommand)
+        assertFalse(viewModel.uiState.value.actionInProgress)
+        assertTrue(viewModel.uiState.value.error!!.contains("lý do"))
+    }
+
     private fun sampleBooking(
         id: String,
         status: OwnerBookingStatus,

@@ -239,6 +239,13 @@ service cloud.firestore {
                           && onlyChanges(['daysOfWeek', 'startTime', 'endTime', 'pricePerHour', 'label']));
         allow delete: if isAdmin() || ownsVenue(venueId);
       }
+
+      // Venue voucher mutations and usage counters are exclusively server-owned.
+      match /vouchers/{code} {
+        allow read: if isSignedIn() && (isAdmin() || ownsVenue(venueId)
+            || get(/databases/$(database)/documents/venues/$(venueId)).data.status == 'ACTIVE');
+        allow write: if false;
+      }
     }
 
     // ---------- slots (B, spec 040; tasks.md T022) ----------

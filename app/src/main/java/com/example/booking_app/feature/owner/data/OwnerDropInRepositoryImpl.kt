@@ -76,8 +76,8 @@ class OwnerDropInRepositoryImpl @Inject constructor(
                     close(error)
                 } else if (snapshot != null) {
                     val sessions = snapshot.documents.mapNotNull { doc ->
-                        val startTimestamp = doc.getTimestamp("startAt")
-                        val endTimestamp = doc.getTimestamp("endAt")
+                        val startTimestamp = ownerTimestamp(doc.get("startAt"))
+                        val endTimestamp = ownerTimestamp(doc.get("endAt"))
 
                         val startInstant = startTimestamp?.toDate()?.toInstant() ?: Instant.now()
                         val endInstant = endTimestamp?.toDate()?.toInstant() ?: Instant.now()
@@ -95,6 +95,8 @@ class OwnerDropInRepositoryImpl @Inject constructor(
                             registeredCount = doc.getLong("registeredCount")?.toInt() ?: 0,
                             pricePerPersonVnd = doc.getLong("pricePerPerson") ?: 0L,
                             status = doc.getString("status") ?: "OPEN",
+                            level = doc.getString("level") ?: "BEGINNER",
+                            note = doc.getString("note").orEmpty(),
                         )
                     }
                     trySend(sessions)
