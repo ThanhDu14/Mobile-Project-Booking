@@ -6,7 +6,26 @@
 
 ## Summary
 
-Người chơi đã đăng nhập gõ hoặc nói một câu tiếng Việt tự do ("q10 duoi 100k co gui xe toi mai"). App đổi câu đó thành chip bộ lọc của 020, hoặc mở danh sách vãng lai của 080, hỏi lại một lần, hiện chính sách có sẵn, hay báo lạc đề. AI chỉ điền bộ lọc: không viết chữ cho người dùng xem, không đặt sân, không đọc dữ liệu nghiệp vụ.
+Người chơi đã đăng nhập nhập câu tiếng Việt để điền bộ lọc 020 hoặc mở danh sách 080. Khi câu nêu sở thích dựa trên đánh giá, 020 trả danh sách trước và 022 bổ sung đề xuất. Bấm “Vì sao phù hợp?” mới tạo lời giải thích có nguồn, ghép tất định từ cụm đặc điểm, không gọi LLM (chốt 2026-11-14).
+
+### US7 — RAG từ đánh giá công khai
+
+Truy xuất trực tiếp đánh giá `VISIBLE` loại `VENUE` (lọc `targetType` ngay trong truy vấn) của các sân hợp lệ có `ratingCount > 0`. Xếp hạng bằng từ điển cụm từ chuẩn hóa tiếng Việt cho danh sách đóng 7 sở thích, trong giới hạn tối đa 30 sân và 10 đánh giá mỗi sân. Cách này dùng Spark và không cần sao chép đánh giá, embeddings hay cơ sở dữ liệu mới.
+
+`ai-search-parse` nhận các thao tác `PARSE`, `USAGE`, `RECOMMEND`, `SOURCE`, `EXPLAIN` ([contract chính thức](contracts/review-rag.md)). Chỉ `PARSE` gọi LLM; mỗi lần gọi nhà cung cấp được giữ hạn mức qua transaction trước khi gửi và chỉ kết quả hợp lệ làm tăng lượt có kết quả. `EXPLAIN` ghép một nhận định thuận và một nhận định trái chiều (nếu có) từ nhãn cố định, nên không gửi nội dung đánh giá đi đâu và không tính lượt. `RECOMMEND` có trần riêng 20 lần/người/ngày để giữ hạn mức đọc. Phiên bản nguồn băm `venueId`, `targetType`, `status`, `createdAt`, `comment` (không băm `updatedAt`, để phản hồi của chủ sân không làm mất nguồn).
+
+### Đồng bộ với code (2026-11-14)
+
+Code là nguồn chuẩn. Các phần dưới đây ("Cách làm", Technical Context, Project Structure) là thiết kế ban đầu và còn giữ để tham khảo lý do; khi khác code thì theo bảng này.
+
+| Thiết kế ban đầu | Code hiện tại |
+|---|---|
+| `AiSearchApi`, `SupabaseAiSearchApi`, `AiUsageRepository` | `feature/search/domain/CourtAiApi.kt`, `feature/search/data/SupabaseCourtAiApi.kt` (lượt đọc qua thao tác `USAGE`, không đọc Firestore trực tiếp) |
+| `AiAssistantFragment`, `AiAssistantViewModel`, `AiEntryCardFragment` | Ô AI, hỏi lại, chính sách, đề xuất và giải thích nằm trong `CourtSearchFragment` / `CourtSearchViewModel` |
+| `SearchViewModel.applyExternal`, `SearchCriteria` | `CourtSearchViewModel.applyAi(...)`, `CourtSearchCriteria` |
+| ~12 file trong `ai-search-parse/` (`query.ts`, `pii.ts`, `prompt.ts`, `schema.ts`, `normalize.ts`, `validate.ts`, `usage.ts`, `cache.ts`, `metrics.ts`, `catalog.ts`, `llm/*`) | `handler.ts` (định tuyến, lượt, cache, metrics, danh mục), `criteria.ts` (prompt, schema, chuẩn hóa, che PII, từ điển sở thích), `evidence.ts` (RAG), `llm.ts` (Gemini/Groq) |
+| Hoàn lượt khi LLM lỗi (R8) | Không hoàn: mỗi lần gọi nhà cung cấp tăng `attempts`; app hiển thị `10 − max(used, attempts)` (spec FR-016, FR-017) |
+| `EXPLAIN` gọi LLM rồi kiểm tra đầu ra | `EXPLAIN` không gọi LLM (spec FR-029, Clarifications 2026-11-14) |
 
 **Cách làm:**
 - **Một Edge Function `ai-search-parse`** ([contract](contracts/edge-function-ai-search-parse.md)): xác thực Firebase ID token bằng `_shared/auth.ts` → che PII lần hai → kiểm tra khóa tạm → cache trong ngày → giữ lượt bằng transaction → gọi LLM → kiểm tra và chuẩn hóa → cập nhật bộ đếm lạc đề, ghi cache và `aiMetrics` trong một commit.
@@ -18,7 +37,7 @@ Người chơi đã đăng nhập gõ hoặc nói một câu tiếng Việt tự
   - Server: schema, trường lạ, danh mục, ngày giờ, giá. `venueName` phải là chuỗi con của câu. App không bao giờ thấy đầu ra thô của LLM.
   - App: chạy lại `SearchCriteriaSanitizer` của 020 qua `applyExternal`, vì kết quả cache có thể đã cũ trong ngày.
 - **Lượt và khóa** ([R8](research.md#r8-lượt-dùng-khóa-tạm-hai-yêu-cầu-cùng-lúc-fr-016-đến-fr-019-sc-005-sc-008)): giữ lượt trước trong transaction Firestore REST, hoàn lượt nếu LLM lỗi/quá giờ. Hai yêu cầu song song không vượt 10 (SC-005, SC-008). Khóa 5 phút sau 3 câu lạc đề liên tiếp, kể cả khi cache trúng.
-- **Cache** ([R7](research.md#r7-cache-trong-ngày-fr-018)): `SHA-256(câu đã che + chuẩn hóa + ngày)`; trúng thì không trừ lượt. Dọn bằng TTL policy (dự phòng `pg_cron`).
+- **Cache** ([R7](research.md#r7-cache-trong-ngày-fr-018)): `SHA-256(câu đã che + chuẩn hóa + ngày)`; trúng thì không trừ lượt. Cache hết hạn bị bỏ qua ngay khi đọc. Dọn vật lý dùng tác vụ định kỳ của Supabase trên Firebase Spark.
 - **App** ([contract](contracts/app-ai-search.md)):
   - thẻ AI trong `ai_entry_container` của 020;
   - màn hình `AiAssistantFragment` trong `nav_search`;

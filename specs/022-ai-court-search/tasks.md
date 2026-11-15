@@ -5,6 +5,36 @@ description: "Danh sách task triển khai spec 022 – Tìm sân thông minh (A
 
 # Tasks: Tìm sân thông minh (AI Assistant)
 
+### Phần triển khai US7 — RAG từ đánh giá
+
+- [X] T117 [US7] Thêm phân tích JSON, giới hạn hai bộ đếm và gọi Gemini/Groq trong `supabase/functions/ai-search-parse/`.
+- [X] T118 [US7] Truy xuất/xếp hạng đánh giá hiện hành và kiểm tra nguồn trước/sau lời giải thích trong `supabase/functions/ai-search-parse/`.
+- [X] T119 [US7] Nối chip và danh sách đề xuất, xem đúng nguồn, giải thích theo yêu cầu trong `feature/search/ui/CourtSearchFragment.kt` và `CourtSearchViewModel.kt`.
+- [X] T120 [US7] Kiểm tra hồi quy về giữ lượt (kể cả lần gọi dự phòng), giới hạn lượt, nguồn ẩn và phản hồi cũ bằng Android unit test, Deno test và `git diff --check`.
+
+### Đồng bộ RAG với quyết định 2026-11-14
+
+- [X] T121 [US7] Phiên bản nguồn không băm `updatedAt` (phản hồi của chủ sân không làm mất nguồn) trong `evidence.ts` `reviewVersion`; test "owner reply … keeps the source version" và kịch bản Emulator.
+- [X] T122 [US7] Truy vấn đánh giá lọc `targetType == VENUE` trong `evidence.ts` `rankReviews`; thêm index `reviews (venueId, targetType, status, createdAt desc)` vào `firestore.indexes.json`; test "retrieval only queries public venue reviews".
+- [X] T123 [US7] Giảm lượt đọc của `RECOMMEND`: bỏ sân `ratingCount == 0`, bỏ bước đọc lại nguồn thừa, thêm trần `recommendCount` 20/ngày (`409 RECOMMEND_LIMIT`); test Emulator "RECOMMEND has its own daily cap".
+- [X] T124 [US7] `EXPLAIN` không gọi LLM: `buildExplanation` trong `evidence.ts`, bỏ giữ/tính lượt; app bỏ điều kiện lượt/khóa trên nút "Vì sao phù hợp?", `AiExplanationResponse.usage` thành tùy chọn, nhãn `search_rag_summary_label` ("Tổng hợp từ đánh giá").
+- [X] T125 Cập nhật spec (Clarifications 2026-11-14, FR-009/010/016/017/026–030, US5-2, US7), [review-rag.md](contracts/review-rag.md) thành contract chính thức, đánh dấu [edge-function-ai-search-parse.md](contracts/edge-function-ai-search-parse.md) là thiết kế cũ, plan thêm bảng "Đồng bộ với code".
+- [X] T126 *(2026-11-15: index Enabled, function deploy lại cùng ngày)* Deploy: `firebase deploy --only firestore:indexes` (chờ index mới ở trạng thái Enabled) rồi `npx supabase functions deploy ai-search-parse --no-verify-jwt`. Thứ tự này bắt buộc, vì function mới truy vấn theo `targetType` sẽ lỗi nếu index chưa có.
+- [X] T127 Kiểm thử thủ công trên thiết bị theo Independent Test của US7 (3 sân A/B/C), thêm một lần chủ sân phản hồi đánh giá của A rồi mở lại nguồn.
+  *2026-11-15, máy thật, một sân (`demo-truong-chinh-909`, đánh giá test tạo tay):* chip "Theo đánh giá", dòng đề xuất, "Xem đánh giá gốc" đúng nguyên văn, "Vì sao phù hợp?" không trừ lượt, bỏ chip gỡ đề xuất: **đạt**. Sau đó, với đánh giá test `test-us7-*` ở Quận 12 và câu `mai 19h-21h quan 12 duoi 85k san bam tot`: danh sách có Minh Tâm CN1 (76k, có đánh giá) và Quang Vinh (80k, không có đánh giá), mục đề xuất chỉ có Minh Tâm CN1; PAM (110k) và Gia Hân (90k) có đánh giá khớp nhưng vượt giá nên không được đề xuất (kịch bản 3; "kín giờ" thay bằng "vượt giá" để không phải sửa slot thật). Không giới hạn giá: thứ tự PAM (2 nguồn thuận) → Gia Hân → Minh Tâm; bỏ chip giá truy xuất lại không trừ lượt (kịch bản 6). Lời giải thích của PAM chỉ có cụm cố định dù đánh giá chứa số điện thoại và câu ra lệnh (kịch bản 7); của Minh Tâm có cả ý thuận và trái (FR-029). Chủ sân phản hồi → nguồn vẫn mở đúng (kịch bản 8); sửa bình luận → "Đánh giá nguồn đã thay đổi…" và PAM bị bỏ khỏi đề xuất (kịch bản 5): **đạt**. Lưu ý: bộ lọc giá so với giá của khung giờ đã chọn, không phải giá "từ" của sân. Lưu ý dữ liệu: đánh giá tạo tay không cập nhật `ratingCount` của sân, mà `RECOMMEND` bỏ sân `ratingCount == 0`.
+- [X] T128 FR-031: nút xóa (`endIconMode="clear_text"`) cho ô AI; lịch sử câu hỏi AI trên máy (`AiQueryHistory`, `PrefsAiQueryHistory` kiêm `SignOutHook`), chip "Câu hỏi gần đây" trong `CourtSearchFragment`; test `aiHistoryMasksContactsDedupesAndKeepsFiveNewest`.
+- [X] T129 Kiểm thử FR-031 trên thiết bị: hỏi 6 câu → chỉ còn 5; chạm chip điền lại không trừ lượt; ✕ xóa một câu; đăng xuất rồi đăng nhập lại → lịch sử trống.
+  *2026-11-15, máy thật:* giữ 5 câu mới nhất, che `[phone]`, không lưu câu ngoài phạm vi, chạm chip điền lại không trừ lượt, ✕ xóa một câu, chip ẩn khi gõ, nút ✕ của ô AI, khách không thấy lịch sử và bấm khung AI mở đăng nhập: **đạt**. Sau đó: đăng nhập lại → lịch sử trống; gửi cùng câu hai lần → chỉ một mục (lần hai trả từ cache, không trừ lượt): **đạt**.
+- [X] T130 Ngày đã qua: `pastDayInQuery` trong `criteria.ts` ("hôm qua", "hôm kia", "tuần trước", "tháng trước", có hoặc không dấu) luôn bỏ ngày với `INVALID_DATE`, vì schema không có ngày quá khứ và model trả TODAY hoặc không trả ngày. Tăng `version` thành `court-search-rag-3` để bỏ cache cũ. App hiện "Ngày đã qua hoặc không hợp lệ, vui lòng chọn lại." (`SearchNotice.INVALID_DATE`) kèm câu hỏi lại ngày. Test Deno "a past day in the query drops the date…" và Android `pastDateAsksForDateAgainWithNotice`. Đã deploy 2026-11-15.
+- [X] T131 Kiểm thử T130 trên thiết bị với `Hôm qua 7h tối Quận 10` (có dấu) và `hom qua 7h toi quan 10` (không dấu).
+  *2026-11-15:* câu không dấu hiện thông báo ngày đã qua và hỏi lại ngày: **đạt**. Câu có dấu (người dùng tự gõ): **đạt**. RAG `mai 19h-21h tan phu san it tron`: chip "Sàn ít trơn", không đề xuất, không lỗi: **đạt**.
+
+**Ghi nhận khi kiểm thử 2026-11-15 (chưa sửa):**
+- Câu không dấu như `toi mai …` không nhận ra buổi tối (`partOfDayFromQuery` chỉ đọc chữ có dấu, model cũng không chắc chắn), nên app hỏi lại giờ.
+- Khi hết lượt, app khóa nút "Tìm sân" và hiện "Còn 0/10 lượt AI"; thông báo `search_ai_quota` chỉ xuất hiện khi server trả `409 QUOTA_EXCEEDED`.
+
+> **Ghi chú về T001–T116 bên dưới (thay thế, không dùng để đo tiến độ):** danh sách này là kế hoạch ban đầu theo cấu trúc file trong plan (AiAssistantFragment, `query.ts`, `pii.ts`…). Phần lớn chức năng US1–US6 đã được hiện thực gọn hơn trong `CourtSearchFragment`/`CourtSearchViewModel` và `handler.ts`/`criteria.ts` (xem bảng "Đồng bộ với code" trong plan.md), nên các ô chưa tick **không** có nghĩa chức năng chưa có. Khi cần đối chiếu từng task, chạy `/speckit-converge` để so code với spec thay vì tick hàng loạt.
+
 **Input**: tài liệu thiết kế trong `specs/022-ai-court-search/`: [plan.md](plan.md), [spec.md](spec.md), [research.md](research.md), [data-model.md](data-model.md), [contracts/](contracts/), [quickstart.md](quickstart.md)
 
 **Tests**: Có. Constitution IV bắt buộc test cho logic ViewModel/UseCase/Repository và Security Rules. Spec này có thêm FR-024 (bộ câu mẫu). Cụ thể:
@@ -320,8 +350,8 @@ Phần server (giữ/hoàn lượt, chặn gửi thẳng, E1–E7) đã xong ở
 
 ## Phase 9: Polish & Cross-Cutting Concerns
 
-- [ ] T103 Bật TTL trên project thật cho `expiresAt` của ba collection group `aiSearchCache`, `aiUsage`, `aiMetrics` theo [contracts/rules-and-tests.md §3](contracts/rules-and-tests.md#3-ttl) (người có quyền Owner chạy `gcloud`). Ghi kết quả vào research R7. **Nếu Spark không cho bật:** làm T104
-- [ ] T104 (Chỉ khi T103 không được) Cài đặt `FN/ai-cache-cleanup/index.ts` + test: xóa document `expiresAt < now` của ba collection theo lô 300 bằng `runQuery` + `deleteWrite`; chỉ chạy khi có header bí mật `CRON_SECRET`; migration `supabase/migrations/<ts>_ai_cache_cleanup_cron.sql` tạo job `pg_cron` 00:30 (giờ Việt Nam = 17:30 UTC) gọi function qua `pg_net`
+- [ ] T103 Xác nhận chính sách dọn `aiSearchCache`, `aiUsage`, `aiMetrics` trên Firebase Spark bằng Supabase `pg_cron` theo [contract](contracts/rules-and-tests.md#3-ttl).
+- [ ] T104 Sau T103, Cài đặt `FN/ai-cache-cleanup/index.ts` + test: xóa document `expiresAt < now` của ba collection theo lô 300 bằng `runQuery` + `deleteWrite`; chỉ chạy khi có header bí mật `CRON_SECRET`; migration `supabase/migrations/<ts>_ai_cache_cleanup_cron.sql` tạo job `pg_cron` 00:30 (giờ Việt Nam = 17:30 UTC) gọi function qua `pg_net`
 - [ ] T105 [P] Cập nhật `docs/design/database/README.md` theo [danh sách cuối data-model.md](data-model.md#danh-sách-thay-đổi-cần-đưa-vào-docsdesigndatabasereadmemd) (5 mục: bảng collection thêm `aiMetrics`; trường `aiUsage`/`aiSearchCache`/`aiMetrics`; mục 7 phân quyền; mục 8a Edge Functions; secrets)
 - [ ] T106 [P] Thêm một câu vào chính sách quyền riêng tư (tài liệu pháp lý của 011/010 mà `LegalDocumentFragment` hiển thị): câu gõ vào trợ lý AI, sau khi che số điện thoại và email, được gửi tới Google Gemini API (dự phòng Groq) để phân tích; không gửi tên hay thông tin tài khoản ([R16 #9](research.md#r16-những-chỗ-cần-sửa-spec-hoặc-tài-liệu-khác))
 - [ ] T107 [P] Vẽ màn `AiAssistant` trên canvas thiết kế SmashNow (hàng mới dưới y≈28600, dùng design system và BottomNav có sẵn): ô nhập + chip ví dụ, đang nghe, hỏi lại, chính sách, lạc đề, hết lượt, khóa đếm ngược, thẻ AI của khách; sáng và tối. Xuất ảnh vào `specs/022-ai-court-search/ui/` (tên `02_ai-search_buocN_<mo-ta>.png`) kèm `README.md` như `specs/020-court-search/ui/README.md`. Chỉnh layout T059, T069, T078 cho khớp
