@@ -4,11 +4,15 @@
 
 **Created**: 2026-10-05
 
+**Updated**: 2026-11-12 (tìm sân theo nội dung đánh giá và giải thích có nguồn) · 2026-11-14 (chốt RAG không dùng LLM ở bước giải thích, xem Clarifications)
+
 **Status**: Draft
 
 **Input**: User description: "Người chơi tìm sân bằng một câu tiếng Việt tự nhiên, gõ hoặc nói (giọng nói xin quyền micro lúc bấm; từ chối thì vẫn gõ được). Ví dụ "tối mai 7h-9h sân gần Quận 10 dưới 100k có gửi xe", kể cả viết tắt, không dấu ("q10 duoi 100k co gui xe"). AI phân loại ý định trong một lần gọi: search (trích bộ lọc gồm quận, ngày, giờ bắt đầu/kết thúc, giá tối đa, tiện ích, loại sân thường hay buổi vãng lai; hiểu thời gian đời thường theo ngày giờ hiện tại, múi giờ Asia/Ho_Chi_Minh, "tối" = 18:00–22:00; kết quả hiện thành chip bộ lọc để người dùng sửa trước khi tìm, rồi chạy truy vấn của spec 020); unclear (hỏi lại đúng 1 câu kèm chip chọn nhanh; bấm chip thì app tự điền, không gọi AI lần hai; vẫn thiếu thì chuyển sang bộ lọc thủ công với phần đã hiểu được điền sẵn); faq (hiện nội dung chính sách có sẵn theo chủ đề, không do AI viết); off_topic (thông báo cố định kèm câu ví dụ; câu pha trộn chỉ lấy phần tìm sân). Kết quả AI luôn được kiểm tra trước khi dùng: quận và tiện ích phải có trong danh mục, giờ và giá hợp lệ, trường lạ bị bỏ; sai thì xử lý như unclear. AI không trả lời tự do, không tự đặt sân, không đọc hay ghi dữ liệu nghiệp vụ; câu cố bẻ prompt chỉ cho ra bộ lọc sai hoặc off_topic. Giới hạn: câu rỗng hoặc quá 200 ký tự bị chặn ngay trên app; mỗi người tối đa N lượt mỗi ngày và app hiện số lượt còn lại; 3 câu lạc đề liên tiếp thì tạm khóa ô AI vài phút; cùng một câu trong ngày dùng lại kết quả cũ. Số điện thoại và email trong câu bị che trước khi gửi; không gửi tên hay thông tin tài khoản. AI lỗi, quá thời gian hoặc mất mạng thì báo ngắn và quay về bộ lọc thủ công, giữ nguyên câu đã nhập. Có câu ví dụ gợi ý dưới ô nhập. Không có kết quả thì gợi ý nới điều kiện bằng truy vấn lại, không gọi AI. Ghi số liệu không kèm thông tin cá nhân để đo tỉ lệ trích đúng trên bộ 20–30 câu mẫu và 10–15 câu ngoại lệ. Không bao gồm: bộ lọc thủ công, danh sách kết quả, lịch sử tìm kiếm (spec 020); bản đồ (spec 021); danh sách buổi vãng lai (spec 080); nội dung chính sách (spec 050, 060); chọn nhà cung cấp LLM (họp 09/10). Dữ liệu và quy tắc: docs/proposal/AI-feature.md; districts, amenities, venues, users/{uid}/aiUsage, aiSearchCache theo docs/design/database/README.md; Edge Function ai-search-parse theo constitution v1.2.0."
 
 **Nhóm tính năng**: [02 — Tìm kiếm sân](../../docs/features/02-court-search/README.md) · **Phụ trách**: A · **Đặc tả nghiệp vụ gốc**: [AI-feature.md](../../docs/proposal/AI-feature.md) · **Liên quan**: [spec 020](../020-court-search/spec.md) (bộ lọc và kết quả), spec 080 (buổi vãng lai), spec 050/060 (nội dung chính sách), spec 120 (danh mục quận, tiện ích)
+
+**Cập nhật phạm vi RAG**: Khi câu tìm sân thường có sở thích như “sàn ít trơn”, 022 dùng đánh giá công khai của các sân đã qua bộ lọc 020 để đề xuất sân. Người chơi có thể yêu cầu một lời giải thích ngắn dựa trên đánh giá nguồn. Theo quyết định 2026-11-14, lời giải thích được ghép tất định từ các cụm đặc điểm đã kiểm tra, không gọi LLM, nên app không hiển thị văn bản do AI tự viết ở bất kỳ luồng nào.
 
 ## Clarifications
 
@@ -20,6 +24,18 @@
 ### Session 2026-10-13
 
 - Q: Nội dung trả lời cho ý định hỏi chính sách (`faq`) lấy từ đâu? → A: B cung cấp văn bản cố định (phương án 6.A, spec 050 và 060) cho các chủ đề: hủy sân (mốc 4 giờ: hủy sớm hoàn 100%; hủy trễ mất tiền cọc hoặc phạt 30% với ví giả lập), đặt cọc (30% tổng đơn, làm tròn tới nghìn đồng), ví giả lập và voucher. App chỉ hiển thị văn bản này, AI không viết nội dung chính sách.
+
+### Session 2026-11-14 (chốt RAG theo code đã triển khai)
+
+- Q: Bước "Vì sao phù hợp?" có gọi LLM không? → A: Không. Lời giải thích gồm tối đa hai nhận định lấy từ danh sách cụm đặc điểm cố định (một thuận, và một trái chiều nếu có), mỗi nhận định trỏ tới đánh giá nguồn. Không gửi nội dung đánh giá tới dịch vụ AI, không tính lượt AI, không bị chặn khi hết lượt hoặc đang khóa. Nhãn hiển thị là "Tổng hợp từ đánh giá", không phải nhãn AI.
+- Q: Những sở thích nào được hỗ trợ? → A: Danh sách đóng gồm 7 mã: `GRIP` (sàn ít trơn, bám tốt), `HIGH_CEILING` (trần cao), `QUIET` (ít đông, yên tĩnh), `CLEAN` (sạch sẽ), `GOOD_LIGHT` (ánh sáng tốt), `VENTILATED` (thoáng mát), `GOOD_SERVICE` (phục vụ tốt). Cụm từ nhận diện và cụm trái nghĩa nằm ở `supabase/functions/ai-search-parse/criteria.ts`. Sở thích ngoài danh sách bị bỏ qua, các điều kiện khác vẫn dùng. Thêm mã mới là thay đổi spec, cần cập nhật cả từ điển, nhãn trong `evidence.ts` và chuỗi `search_rag_*` của app.
+- Q: "Còn X/10" hiển thị theo trần nào khi có hai trần ở FR-016? → A: Theo trần chặt hơn: `10 − max(lượt có kết quả, lần gọi LLM thực tế)`. Lần gọi lỗi hoặc quá giờ phía nhà cung cấp không tăng lượt có kết quả nhưng vẫn tăng số lần gọi thực tế, nên số hiển thị có thể giảm khi lỗi. Không hoàn lần gọi đã gửi tới nhà cung cấp.
+- Q: Bước truy xuất không tính lượt AI thì có giới hạn gì không? → A: Có trần riêng **20 lần truy xuất đề xuất mỗi người mỗi ngày** (`aiUsage.recommendCount`) để giữ hạn mức đọc Firestore. Hết trần thì mục đề xuất không hiện, danh sách 020 vẫn dùng bình thường.
+
+### Session 2026-11-15 (sau kiểm thử trên thiết bị)
+
+- Q: Người dùng ghi ngày đã qua ("hôm qua") thì sao? → A: Server luôn bỏ ngày (`INVALID_DATE`) khi câu có "hôm qua", "hôm kia", "tuần trước", "tháng trước" (có hoặc không dấu), không phụ thuộc model. App báo "Ngày đã qua hoặc không hợp lệ, vui lòng chọn lại." và hỏi lại ngày. Lượt vẫn bị trừ vì câu đã được phân tích.
+- Q: Có lưu lịch sử câu hỏi AI không? → A: Có, chỉ trên máy, theo FR-031.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -111,7 +127,7 @@ Mỗi người có một số lượt dùng AI mỗi ngày; app hiện số lư�
 **Acceptance Scenarios**:
 
 1. **Given** người chơi còn lượt, **When** mở màn hình tìm kiếm, **Then** thấy "Còn X/10 lượt hôm nay" gần ô AI.
-2. **Given** người chơi gửi một câu mới tới AI, **When** có kết quả (bất kể nhánh nào), **Then** số lượt giảm 1; **When** câu giống hệt (sau khi chuẩn hóa) một câu đã gửi trong ngày, **Then** dùng lại kết quả cũ và không trừ lượt.
+2. **Given** người chơi gửi một câu mới tới AI, **When** có kết quả (bất kể nhánh nào), **Then** số lượt giảm 1 (khi lời gọi tới nhà cung cấp lỗi, số lượt hiển thị vẫn có thể giảm theo trần lần gọi thực tế, xem Clarifications 2026-11-14); **When** câu giống hệt (sau khi chuẩn hóa) một câu đã gửi trong ngày, **Then** dùng lại kết quả cũ và không trừ lượt.
 3. **Given** người chơi đã hết lượt, **When** xem ô AI, **Then** ô bị khóa kèm thông báo "Bạn đã dùng hết lượt hôm nay, thử lại vào ngày mai" và nút mở bộ lọc thủ công; lượt được làm mới lúc 00:00 giờ Việt Nam.
 4. **Given** người chơi cố gửi vượt lượt bằng cách không qua app, **When** yêu cầu tới hệ thống, **Then** hệ thống từ chối.
 5. **Given** mất mạng hoặc AI không phản hồi trong 10 giây, **When** người chơi gửi, **Then** app báo "Trợ lý đang bận, bạn dùng bộ lọc nhé", mở bộ lọc thủ công, giữ nguyên câu trong ô; lượt không bị trừ nếu không có kết quả. Trường hợp hiếm app đã hết 10 giây nhưng hệ thống vẫn phân tích xong, lượt có thể đã bị trừ; gửi lại đúng câu đó trong ngày thì dùng lại kết quả đã lưu và không trừ thêm.
@@ -139,6 +155,27 @@ Khi bộ lọc AI điền ra không có sân nào, app gợi ý vài cách nới
 
 ---
 
+### User Story 7 - Tìm sân theo nội dung đánh giá (Priority: P3)
+
+Người chơi đã đăng nhập nhập “Tối mai 7–9h ở Quận 10, dưới 100k, ưu tiên sân được khen là ít trơn”. App hiện danh sách sân thỏa các điều kiện của 020 và mục “Phù hợp theo đánh giá” với các sân có đánh giá liên quan, chẳng hạn đánh giá nhắc “sàn bám tốt”. Người chơi có thể mở đánh giá gốc hoặc bấm “Vì sao phù hợp?” để xem lời giải thích có nguồn.
+
+**Why this priority**: Giúp người chơi so sánh những sân cùng thỏa bộ lọc khi sở thích nằm trong nội dung đánh giá thay vì danh mục tiện ích.
+
+**Independent Test**: Chuẩn bị ba sân ở cùng quận. Sân A và B có giờ trống, giá hợp lệ, nhưng chỉ A có đánh giá công khai nói “sàn bám tốt”. Sân C có đánh giá tương tự nhưng đã kín giờ. Gửi câu ở trên và kiểm tra danh sách có A và B, mục đề xuất chỉ có A, còn lời giải thích của A mở được đánh giá nguồn.
+
+**Acceptance Scenarios**:
+
+1. **Given** có sân thỏa bộ lọc và có đánh giá liên quan, **When** 020 trả kết quả, **Then** danh sách chính hiện mà không chờ đề xuất. Mục đề xuất sau đó hiện tối đa ba sân có bằng chứng, theo độ liên quan, kèm lối mở đánh giá gốc của từng sân.
+2. **Given** người chơi đang xem một sân được đề xuất, **When** bấm “Vì sao phù hợp?”, **Then** app hiện lời giải thích ngắn có nhãn "Tổng hợp từ đánh giá" (không gọi AI, không trừ lượt) và liên kết tới các đánh giá công khai hỗ trợ lời giải thích.
+3. **Given** một sân có đánh giá liên quan nhưng sai quận, vượt giá, thiếu tiện ích bắt buộc hoặc kín giờ, **When** tìm xong, **Then** sân đó không xuất hiện trong mục đề xuất. Sân thỏa bộ lọc nhưng thiếu đánh giá vẫn xuất hiện trong danh sách chính.
+4. **Given** không đủ đánh giá phù hợp hoặc bước truy xuất gặp lỗi, **When** danh sách đã hiện, **Then** người chơi tiếp tục duyệt, chỉnh bộ lọc và mở chi tiết sân. Nếu riêng bước giải thích gặp lỗi hoặc quá giờ, app báo ngắn và giữ lối xem các đánh giá công khai đang còn hiệu lực.
+5. **Given** một đánh giá nguồn bị sửa, ẩn hoặc xóa, **When** app kiểm tra nguồn trước khi hiển thị hoặc mở lại kết quả, **Then** app không hiện bằng chứng hoặc lời giải thích dựa trên nội dung cũ. Nếu không còn đủ nguồn, app dùng phương án ở kịch bản 4.
+6. **Given** người chơi sửa chip giá trong lúc đang tải đề xuất, **When** phản hồi của bộ lọc cũ đến, **Then** app bỏ phản hồi đó. Nếu người chơi còn giữ sở thích, app chỉ truy xuất lại cho bộ lọc mới và không phân tích lại câu bằng AI. Bỏ sở thích thì ẩn mục đề xuất.
+7. **Given** đánh giá chứa email, số điện thoại hoặc câu ra lệnh cho AI, **When** người chơi yêu cầu giải thích, **Then** nội dung đánh giá không được gửi tới dịch vụ AI và lời giải thích chỉ chứa cụm đặc điểm cố định, nên thông tin liên hệ và câu ra lệnh không thể xuất hiện hay chi phối lời giải thích.
+8. **Given** chủ sân phản hồi đánh giá hoặc người viết chỉ sửa số sao, **When** người chơi mở nguồn hoặc bấm "Vì sao phù hợp?", **Then** nguồn vẫn hợp lệ vì nội dung bình luận không đổi. Chỉ khi bình luận bị sửa, đánh giá bị ẩn hoặc xóa thì nguồn mới hết hiệu lực.
+
+---
+
 ### Edge Cases
 
 - **Thời gian đã qua**: "tối nay 7h" khi đã 20:00 → giờ bắt đầu đã qua bị coi là không hợp lệ; app báo và gợi ý chọn giờ khác hoặc ngày mai.
@@ -154,6 +191,8 @@ Khi bộ lọc AI điền ra không có sân nào, app gợi ý vài cách nới
 - **Danh mục quận/tiện ích thay đổi** sau khi một câu đã được lưu kết quả trong ngày: kết quả cũ vẫn được kiểm tra lại với danh mục hiện tại trước khi dùng.
 - **Ô AI đang bị tạm khóa vì lạc đề** và người chơi đóng/mở lại app: vẫn bị khóa tới hết thời gian.
 - **Buổi vãng lai chưa có trong khu vực/khung giờ**: hiện trạng thái rỗng của danh sách buổi vãng lai (spec 080), không gợi ý nới điều kiện ở phiên bản này.
+- **Có sở thích nhưng bộ lọc không ra sân**: hiện trạng thái rỗng và gợi ý nới điều kiện của US6. Đề xuất theo đánh giá chỉ xét sân đã qua bộ lọc hiện tại.
+- **Đánh giá mâu thuẫn**: nếu các nguồn được dùng có nhận xét trái chiều về sở thích, lời giải thích thể hiện sự khác nhau. Nhận xét của người đánh giá không được trình bày như đặc điểm đã được app xác minh.
 
 ## Requirements *(mandatory)*
 
@@ -164,16 +203,16 @@ Khi bộ lọc AI điền ra không có sân nào, app gợi ý vài cách nới
 - **FR-001**: Màn hình tìm kiếm của spec 020 PHẢI có ô "Tìm bằng AI" nhận một câu tiếng Việt tự do (có dấu hoặc không dấu, viết tắt), tối đa 200 ký tự, kèm bộ đếm ký tự và câu ví dụ gợi ý (placeholder và 2–3 chip ví dụ bấm được).
 - **FR-002**: App PHẢI chặn ngay trên thiết bị, không gửi đi và không trừ lượt: câu rỗng, chỉ có khoảng trắng, dài hơn 200 ký tự, hoặc gửi khi đang có một yêu cầu chưa xong.
 - **FR-003**: Người chơi PHẢI nhập được bằng giọng nói tiếng Việt; câu nhận dạng hiện vào ô nhập để xem và sửa trước khi gửi. Quyền micro chỉ được xin khi bấm biểu tượng micro, kèm giải thích; từ chối hoặc thiết bị không hỗ trợ thì vẫn gõ được.
-- **FR-004**: Trước khi gửi, số điện thoại và địa chỉ email trong câu PHẢI được che. Hệ thống KHÔNG ĐƯỢC gửi kèm tên, email, số điện thoại hay mã tài khoản của người dùng tới dịch vụ AI; chỉ gửi câu đã che và ngày giờ hiện tại.
+- **FR-004**: Trước khi gửi, số điện thoại và địa chỉ email trong câu PHẢI được che. Hệ thống KHÔNG ĐƯỢC gửi kèm tên, email, số điện thoại hay mã tài khoản của người dùng tới dịch vụ AI. Lời gọi phân tích dùng câu đã che, ngày giờ hiện tại và danh mục cần để kiểm tra bộ lọc. Lời gọi giải thích chịu thêm giới hạn dữ liệu của FR-027.
 
 **Phân tích câu**
 
-- **FR-005**: Mỗi câu PHẢI được phân tích bằng **một** lần gọi AI, cho ra đúng một trong bốn ý định: tìm sân/buổi chơi, thiếu thông tin, hỏi chính sách (kèm chủ đề), lạc đề.
+- **FR-005**: Mỗi lần gửi câu hợp lệ cần dùng AI PHẢI được phân tích trong một lần xử lý, cho ra đúng một trong bốn ý định: tìm sân/buổi chơi, thiếu thông tin, hỏi chính sách (kèm chủ đề), lạc đề. Dịch vụ dự phòng chỉ được gọi trong hạn mức của FR-016. Giải thích đề xuất là thao tác riêng theo FR-029 và không gọi AI.
 - **FR-006**: Với ý định tìm, hệ thống PHẢI trích được các điều kiện: tên sân (nếu có), quận/huyện, ngày, giờ bắt đầu và kết thúc, giá tối thiểu/tối đa mỗi giờ, tiện ích, cách sắp xếp, và loại (sân thường hay buổi vãng lai). Điều kiện không có trong câu thì để trống.
 - **FR-007**: Thời gian PHẢI được hiểu theo ngày giờ hiện tại tại múi giờ Việt Nam: "hôm nay/nay", "mai", "mốt", thứ trong tuần (gần nhất từ hôm nay), "sáng" 05:00–11:00, "trưa" 11:00–13:00, "chiều" 13:00–18:00, "tối" 18:00–22:00. Giờ PHẢI được làm tròn theo bước 30 phút. Khoảng nhiều ngày ("cuối tuần này") PHẢI được hỏi lại bằng chip ngày cụ thể.
 - **FR-008**: Kết quả của AI KHÔNG ĐƯỢC tin trực tiếp. Trước khi dùng, hệ thống PHẢI kiểm tra: chỉ nhận các điều kiện ở FR-006 (trường lạ bị bỏ); quận và tiện ích phải có trong danh mục hiện tại; ngày nằm trong phạm vi đặt trước và không ở quá khứ; giờ kết thúc sau giờ bắt đầu; giá là số dương và giá tối thiểu không lớn hơn giá tối đa. Giá trị sai bị bỏ kèm thông báo ngắn; kết quả sai định dạng hoàn toàn được xử lý như thiếu thông tin.
-- **FR-009**: AI KHÔNG ĐƯỢC tạo ra văn bản hiển thị cho người dùng. Mọi câu chữ người dùng thấy (thông báo lạc đề, câu hỏi lại, nội dung chính sách, lỗi) PHẢI là chuỗi có sẵn của app.
-- **FR-010**: AI KHÔNG ĐƯỢC đặt sân, đọc hay ghi dữ liệu nghiệp vụ (cơ sở, đơn, người dùng). Kết quả của AI chỉ là đầu vào cho bộ lọc; mọi hành động tiếp theo cần người dùng bấm.
+- **FR-009**: Thông báo lạc đề, câu hỏi lại, nội dung chính sách và lỗi PHẢI dùng chuỗi có sẵn của app. Lời giải thích theo FR-029 chỉ ghép các cụm đặc điểm cố định của app, nên app không hiển thị văn bản do AI tự viết.
+- **FR-010**: Dịch vụ AI KHÔNG ĐƯỢC truy cập trực tiếp dữ liệu nghiệp vụ, ghi dữ liệu hoặc đặt sân. 020 truy vấn và kiểm tra các sân thỏa bộ lọc. Máy chủ 022 (không phải dịch vụ AI) truy xuất đánh giá công khai cho bước đề xuất và giải thích theo FR-027; nội dung đánh giá không được gửi tới dịch vụ AI.
 
 **Xử lý theo ý định**
 
@@ -185,9 +224,9 @@ Khi bộ lọc AI điền ra không có sân nào, app gợi ý vài cách nới
 
 **Giới hạn và bảo vệ**
 
-- **FR-016**: Mỗi người dùng PHẢI có tối đa **10** lượt gửi tới AI mỗi ngày, làm mới lúc 00:00 giờ Việt Nam. Mọi lần gửi có kết quả từ AI (kể cả lạc đề, hỏi chính sách) tính một lượt; câu bị chặn ở FR-002, câu dùng lại kết quả cũ (FR-018), lần gọi lỗi hoặc quá thời gian không tính lượt. Giới hạn PHẢI được kiểm tra ở máy chủ, không chỉ trên app. Nếu app đã hết thời gian chờ (FR-020) nhưng máy chủ vẫn phân tích xong thì lượt có thể đã bị trừ; kết quả được lưu theo FR-018 nên gửi lại đúng câu đó trong ngày không bị trừ thêm.
-- **FR-017**: App PHẢI hiển thị số lượt còn lại trong ngày; khi hết lượt, ô AI bị khóa kèm thông báo và lối vào bộ lọc thủ công.
-- **FR-018**: Câu giống hệt một câu đã gửi trong cùng ngày (sau khi chuẩn hóa chữ hoa/thường và khoảng trắng) PHẢI dùng lại kết quả đã có thay vì gọi AI lại. Kết quả lưu lại không chứa câu gốc hay thông tin người dùng và hết hiệu lực khi hết ngày.
+- **FR-016**: Mỗi người dùng có tối đa **10 lượt AI có kết quả** mỗi ngày, làm mới lúc 00:00 giờ Việt Nam. Phân tích câu (kể cả lạc đề và hỏi chính sách) mỗi lần tính một lượt. Lời giải thích theo FR-029 không gọi LLM nên không tính lượt. Câu bị chặn ở FR-002, kết quả phân tích dùng lại (FR-018), lần gọi lỗi hoặc quá giờ phía máy chủ không tính lượt có kết quả. Nếu app hết thời gian chờ nhưng máy chủ phân tích xong, lượt phân tích vẫn có thể bị tính và gửi lại đúng câu đó trong ngày được dùng kết quả đã lưu. Máy chủ còn PHẢI kiểm tra trần riêng **10 lần gọi LLM thực tế mỗi người mỗi ngày**, gồm cả lần gọi dự phòng, lỗi và quá giờ. Khi chạm một trong hai trần, app giải thích ngắn lý do và cho người chơi tiếp tục dùng bộ lọc hoặc xem đánh giá gốc.
+- **FR-017**: App PHẢI hiển thị số lượt còn lại trong ngày, tính theo trần chặt hơn của FR-016 (`10 − max(lượt có kết quả, lần gọi thực tế)`); khi hết lượt, ô AI bị khóa kèm thông báo và lối vào bộ lọc thủ công.
+- **FR-018**: Câu giống hệt một câu đã gửi trong cùng ngày (sau khi chuẩn hóa chữ hoa/thường và khoảng trắng) PHẢI dùng lại kết quả phân tích đã có thay vì gọi AI lại. Kết quả lưu lại không chứa câu gốc hay thông tin người dùng và hết hiệu lực khi hết ngày. Đề xuất và lời giải thích phải dựa trên các đánh giá còn công khai ở lần sử dụng hiện tại, theo FR-027 và FR-029.
 - **FR-019**: Sau 3 câu lạc đề liên tiếp của cùng một người, ô AI PHẢI bị tạm khóa 5 phút (kiểm tra ở máy chủ), hiện thời gian còn lại; một câu tìm sân hợp lệ (còn ít nhất một điều kiện sau khi kiểm tra) đặt lại bộ đếm; câu hỏi chính sách và câu thiếu thông tin không làm thay đổi bộ đếm. Câu dùng lại kết quả đã lưu (FR-018) vẫn được tính vào bộ đếm. Bộ lọc thủ công không bị ảnh hưởng.
 - **FR-020**: Khi mất mạng, dịch vụ AI lỗi hoặc không phản hồi trong 10 giây, app PHẢI báo ngắn, mở bộ lọc thủ công và giữ nguyên câu trong ô; không crash, không treo.
 - **FR-021**: Câu cố điều khiển AI (yêu cầu bỏ qua hướng dẫn, xem hướng dẫn nội bộ, đóng vai...) PHẢI chỉ dẫn tới một bộ lọc (đã được kiểm tra theo FR-008) hoặc thông báo lạc đề.
@@ -205,6 +244,15 @@ Khi bộ lọc AI điền ra không có sân nào, app gợi ý vài cách nới
 
 - **FR-025**: Chỉ người dùng đã đăng nhập mới dùng được ô AI (gõ, nói, chip ví dụ). Khách chưa đăng nhập thấy ô AI ở trạng thái khóa kèm lời mời đăng nhập; bộ lọc thủ công của spec 020 vẫn dùng đầy đủ. Hệ thống PHẢI từ chối mọi yêu cầu phân tích câu không kèm phiên đăng nhập hợp lệ, hoặc từ tài khoản đang bị khóa.
 
+**Đề xuất dựa trên đánh giá và giải thích có nguồn (RAG)**
+
+- **FR-026**: Khi câu tìm sân thường nêu rõ sở thích có thể đối chiếu với đánh giá, 022 PHẢI nhận diện sở thích riêng với các điều kiện ở FR-006. Sở thích thuộc danh sách đóng 7 mã (`GRIP`, `HIGH_CEILING`, `QUIET`, `CLEAN`, `GOOD_LIGHT`, `VENTILATED`, `GOOD_SERVICE`, xem Clarifications 2026-11-14); sở thích ngoài danh sách bị bỏ qua mà không chặn các điều kiện khác. Sở thích hiện thành chip “Theo đánh giá” có thể bỏ. Luồng tìm theo đánh giá chỉ chạy sau khi có đủ điều kiện tìm theo US1 hoặc US2. Luồng vãng lai, chính sách và lạc đề dùng các quy tắc tương ứng ở FR-012 đến FR-015.
+- **FR-027**: Hệ thống PHẢI chỉ dùng đánh giá về sân (`VENUE`) còn công khai (`VISIBLE`), thuộc sân thỏa bộ lọc 020 hiện tại. Bằng chứng phải liên quan đến sở thích và trỏ tới đánh giá gốc của đúng sân. Chỉ lấy đánh giá `targetType == VENUE` ngay trong truy vấn (đánh giá buổi vãng lai dùng chung collection và `venueId`, không được chiếm chỗ trong 10 đánh giá mới nhất mỗi sân). Nội dung đánh giá, tên và mã tài khoản tác giả, thông tin liên hệ, ảnh và dữ liệu đặt sân không được gửi tới dịch vụ AI. Phiên bản nguồn chỉ dựa trên `venueId`, `targetType`, `status`, `createdAt` và `comment`, nên phản hồi của chủ sân hay việc sửa số sao không làm nguồn hết hiệu lực. Đánh giá đã sửa phải được xét theo nội dung mới và đánh giá ẩn hoặc đã xóa phải bị loại khi kiểm tra nguồn.
+- **FR-028**: 022 PHẢI trả tối đa ba đề xuất, mỗi đề xuất có ít nhất một đánh giá nguồn, để 020 hiển thị theo FR-034 của 020. Sở thích chỉ dùng để xếp hạng đề xuất. Đổi chip điều kiện có thể chạy lại bước truy xuất cho sở thích còn áp dụng mà không gọi lại LLM để phân tích câu. Bỏ chip sở thích hoặc bắt đầu lần tìm mới phải gỡ đề xuất cũ. Bước truy xuất và xếp hạng chạy không cần LLM, không tính lượt AI, nhưng có trần riêng 20 lần mỗi người mỗi ngày; hết trần thì không hiện đề xuất.
+- **FR-029**: Chỉ khi người chơi bấm “Vì sao phù hợp?” mới tạo lời giải thích cho sân đã chọn. Lời giải thích được ghép tất định, không gọi LLM: một nhận định thuận và, nếu các nguồn có nhận xét trái chiều, một nhận định trái chiều. App PHẢI hiển thị tối đa hai nhận định với nhãn "Tổng hợp từ đánh giá", mỗi nhận định có nguồn còn công khai và truy cập được. Nếu nguồn mâu thuẫn, thể hiện đó là các nhận xét khác nhau. Không hiển thị lời giải thích có nhận định ngoài nguồn, dẫn nguồn sai sân hoặc dùng bản đánh giá cũ. Khi thiếu nguồn, lỗi hoặc quá 10 giây, app dùng thông báo cố định và giữ danh sách cùng các đánh giá gốc còn công khai.
+- **FR-030**: Bước tạo lời giải thích PHẢI kiểm tra phiên và trạng thái tài khoản theo FR-025. Vì không gọi LLM, bước này không áp dụng hạn mức FR-016 và khóa tạm FR-019. Câu người dùng và nội dung đánh giá đều là dữ liệu để phân tích. Chỉ dẫn có trong hai nguồn này không được thay đổi phạm vi câu trả lời. Đo lường theo FR-023 phải phân biệt phân tích câu và giải thích, đồng thời loại nội dung đánh giá và thông tin nhận dạng khỏi bản ghi.
+- **FR-031** *(thêm 2026-11-15)*: Ô "Tìm bằng AI" PHẢI có nút xóa toàn bộ câu đang gõ ở mép phải. App PHẢI lưu lịch sử câu hỏi AI **chỉ trên máy**, riêng cho từng tài khoản: tối đa 5 câu mới nhất, bỏ câu trùng, che số điện thoại và email trước khi lưu, không lưu câu bị đánh giá là ngoài phạm vi hoặc lời gọi lỗi. Lịch sử hiện dưới ô AI khi ô đang trống; chạm một câu để điền lại (không tự gửi, không tốn lượt), chạm ✕ để xóa câu đó. Đăng xuất xóa lịch sử của tài khoản. Không gửi lịch sử lên server. Lịch sử này khác lịch sử tìm kiếm của spec 020 (từ khóa và bộ lọc, US4).
+
 ### Key Entities *(include if feature involves data)*
 
 - **Câu tìm kiếm**: câu người dùng gõ hoặc nói, sau khi che số điện thoại/email; chỉ dùng để phân tích, không lưu lại.
@@ -215,6 +263,8 @@ Khi bộ lọc AI điền ra không có sân nào, app gợi ý vài cách nới
 - **Nội dung chính sách theo chủ đề** (của spec 050/060): văn bản cố định do nhóm soạn cho từng chủ đề.
 - **Danh mục quận/huyện và tiện ích** (của spec 020/120): dùng để kiểm tra kết quả AI.
 - **Bản ghi đo lường**: số liệu ẩn danh của mỗi lần gọi AI theo FR-023.
+- **Sở thích theo đánh giá**: đặc điểm người chơi muốn tham khảo trong phiên tìm sân hiện tại. Lịch sử 020 ghi các điều kiện tìm kiếm theo spec 020.
+- **Đề xuất có nguồn**: một sân thỏa bộ lọc hiện tại, một hoặc nhiều đánh giá công khai hỗ trợ sở thích và lời giải thích có nguồn nếu người chơi yêu cầu.
 
 ## Success Criteria *(mandatory)*
 
@@ -227,12 +277,14 @@ Khi bộ lọc AI điền ra không có sân nào, app gợi ý vài cách nới
 - **SC-005**: 0 trường hợp người dùng gửi được vượt số lượt trong ngày hoặc khi đang bị tạm khóa, kể cả khi gửi không qua app.
 - **SC-006**: Khi mất mạng, AI lỗi hoặc hết lượt, 100% kịch bản kiểm thử vẫn đưa người chơi tới bộ lọc thủ công với câu còn nguyên, không crash.
 - **SC-007**: 0 số điện thoại hoặc email trong câu kiểm thử xuất hiện trong dữ liệu gửi tới dịch vụ AI hoặc trong bản ghi đo lường.
-- **SC-008**: Chi phí AI có trần: tổng số lần gọi AI trong một ngày không vượt quá số người dùng hoạt động nhân với số lượt mỗi ngày.
+- **SC-008**: Trong kiểm thử đồng thời, lỗi, quá giờ và chuyển nhà cung cấp, số lần gọi LLM thực tế không vượt quá 10 mỗi người trong một ngày giờ Việt Nam. Chỉ phân tích câu dùng LLM nên chỉ phân tích câu tính vào trần này.
+- **SC-009**: Trên ít nhất 10 câu tìm có sở thích và bộ đánh giá có đáp án đã kiểm tra, ít nhất 8/10 câu có một sân phù hợp với sở thích trong ba đề xuất đầu. 100% đề xuất thỏa bộ lọc 020 và mở được ít nhất một đánh giá nguồn công khai.
+- **SC-010**: Trong các kịch bản giải thích, 100% nhận định hiển thị có nguồn đúng sân. Các kịch bản nguồn bị sửa, ẩn hoặc xóa, phản hồi của chủ sân (nguồn vẫn hợp lệ), hết trần truy xuất và lỗi đều giữ danh sách 020 có thể sử dụng và không hiển thị lời giải thích thiếu nguồn hoặc lộ thông tin cá nhân.
 
 ## Assumptions
 
 - Nhà cung cấp AI (chốt ở `/speckit-plan`, research R2): Google Gemini API dòng Flash-Lite là chính, Groq là dự phòng khi nhà cung cấp chính hết hạn mức hoặc lỗi; cả hai có gói miễn phí, không bắt buộc gắn thẻ, theo constitution v1.2.0. Hành vi trong spec không phụ thuộc vào nhà cung cấp cụ thể.
-- Bộ lọc dùng chung, danh sách kết quả, trạng thái rỗng/lỗi và quy tắc xin quyền vị trí thuộc spec 020; tính năng này chỉ điền bộ lọc. Khi có khung giờ, giá được hiểu theo giá của đúng khung đó như spec 020 đã chốt.
+- Bộ lọc dùng chung, danh sách chính, trạng thái rỗng/lỗi và quy tắc xin quyền vị trí thuộc spec 020. 022 điền bộ lọc và cung cấp đề xuất theo đánh giá theo US7. Khi có khung giờ, giá được hiểu theo giá của đúng khung đó như spec 020 đã chốt.
 - Danh sách buổi vãng lai và bộ lọc của nó thuộc spec 080 (C). Plan 080 đã chốt các điều kiện AI được điền: khu vực, ngày, khung giờ, trình độ, giá tối đa mỗi lượt; app mở danh sách bằng deep link (plan 022, research R12).
 - Nội dung chính sách hủy, đặt cọc, voucher, thanh toán lấy từ spec 050, 060 (B) dưới dạng văn bản cố định (đã chốt ở Clarifications, phương án 6.A).
 - Danh mục quận/huyện, tiện ích và khoảng giá hợp lệ lấy từ dữ liệu chung (A tạo, admin quản lý ở spec 120); A ↔ D thống nhất khoảng giá hợp lệ.
@@ -241,4 +293,4 @@ Khi bộ lọc AI điền ra không có sân nào, app gợi ý vài cách nới
 - Chỉ người đã đăng nhập dùng ô AI (đã chốt ở Clarifications); spec 010 cung cấp màn hình đăng nhập và đưa người dùng quay lại màn hình tìm kiếm.
 - Thời gian tạm khóa 5 phút, thời gian chờ 10 giây, bậc nới giá 20.000 đ, mặc định "7h-9h" là buổi tối và các khoảng "sáng/trưa/chiều/tối" là giá trị mặc định theo [AI-feature.md](../../docs/proposal/AI-feature.md) và thông lệ, có thể chỉnh trong `/speckit-clarify`.
 - Nhận dạng giọng nói dùng khả năng có sẵn của thiết bị; chất lượng nhận dạng không thuộc phạm vi đo của SC-001.
-- Ghi chú: AI chỉ rút ngắn bước lọc, không thay thế bộ lọc thủ công (AI-feature.md mục 6).
+- Đánh giá công khai và quy tắc sửa, ẩn hoặc xóa đánh giá thuộc [spec 070](../070-review-favorite/spec.md). US7 dùng đánh giá sân thường. Người chơi vẫn có thể kiểm tra đánh giá gốc ở luồng chi tiết sân của spec 030.
