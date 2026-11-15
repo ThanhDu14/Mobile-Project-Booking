@@ -13,9 +13,15 @@ internal object HomeFormat {
     fun vnd(amount: Long): String =
         amount.toString().reversed().chunked(3).joinToString(".").reversed()
 
-    fun price(context: Context, venue: HomeVenue): String =
-        venue.minPricePerHour?.let { context.getString(R.string.search_price_from, vnd(it)) }
+    fun price(context: Context, venue: HomeVenue): String {
+        val window = venue.window
+        val windowPrice = venue.windowPricePerHour
+        if (window != null && windowPrice != null) {
+            return context.getString(R.string.search_window_rate, vnd(windowPrice), window.start.format(), window.end.format())
+        }
+        return venue.minPricePerHour?.let { context.getString(R.string.search_price_from, vnd(it)) }
             ?: context.getString(R.string.search_price_contact)
+    }
 
     fun rating(context: Context, venue: HomeVenue): String =
         if (venue.ratingCount <= 0) {
