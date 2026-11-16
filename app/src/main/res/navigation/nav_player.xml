@@ -104,6 +104,9 @@
 
     <include app:graph="@navigation/nav_review" />
 
+    <!-- Thanh toán và khuyến mãi (spec 050): Thanh toán → Chuyển khoản → Hóa đơn → 060. -->
+    <include app:graph="@navigation/nav_payment" />
+
     <!-- Chi tiết sân (spec 030): mở bằng deep link smashnow://venue/{venueId} hoặc action tới nav_court_detail. -->
     <include app:graph="@navigation/nav_court_detail" />
 

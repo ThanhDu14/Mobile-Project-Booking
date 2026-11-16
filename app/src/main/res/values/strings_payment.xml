@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Chuỗi của spec 050 (thanh toán và khuyến mãi); contracts/ui-contracts.md §4. -->
+<resources>
+    <!-- Tiêu đề màn trong nav_payment -->
+    <string name="payment_title">Thanh toán</string>
+    <string name="payment_transfer_title">Chuyển khoản</string>
+    <string name="payment_receipt_title">Hóa đơn</string>
+
+    <!-- Chuỗi bắt buộc (ui-contracts.md §4) -->
+    <string name="payment_mock_banner">Hệ thống thanh toán giả lập phục vụ học tập - Không thu tiền thật</string>
+    <string name="payment_sandbox_banner">Môi trường thử nghiệm (sandbox) - Không chuyển tiền thật, dùng Mô phỏng giao dịch</string>
+    <string name="payment_transfer_unsupported">Cơ sở chưa hỗ trợ chuyển khoản</string>
+    <string name="payment_hold_expired">Đã hết thời gian giữ chỗ</string>
+    <string name="receipt_mock_note">Giao dịch giả lập phục vụ học tập - Không thu tiền thật</string>
+    <string name="payment_late_refund">Đơn không thành công, chủ sân sẽ hoàn tiền</string>
+</resources>

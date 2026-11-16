@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Nav graph lồng của spec 050 (contracts/ui-contracts.md §1), include vào nav_player.
+    Thanh toán → Chuyển khoản (VietQR, SePay sandbox) → Hóa đơn → Lịch đặt của tôi (060).
+    Back từ Chuyển khoản về Thanh toán để đổi sang trả tại sân; từ Hóa đơn sang 060 thì bỏ cả graph khỏi back stack.
+-->
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_payment"
+    app:startDestination="@id/paymentFragment">
+
+    <!-- Vào từ 040/041 (hoặc "Thanh toán tiếp" ở 060) với HoldToPaymentArgs. -->
+    <fragment
+        android:id="@+id/paymentFragment"
+        android:name="com.example.booking_app.feature.payment.ui.PaymentFragment"
+        android:label="@string/payment_title">
+        <argument
+            android:name="args"
+            app:argType="com.example.booking_app.feature.booking.ui.HoldToPaymentArgs" />
+        <action
+            android:id="@+id/action_payment_to_transfer"
+            app:destination="@id/transferFragment" />
+        <action
+            android:id="@+id/action_payment_to_receipt"
+            app:destination="@id/paymentReceiptFragment"
+            app:popUpTo="@id/paymentFragment"
+            app:popUpToInclusive="true" />
+    </fragment>
+
+    <!-- TransferArgs (ui-contracts.md §1.2), lấy từ phản hồi 200 của booking-payment-transfer. -->
+    <fragment
+        android:id="@+id/transferFragment"
+        android:name="com.example.booking_app.feature.payment.ui.TransferFragment"
+        android:label="@string/payment_transfer_title">
+        <argument
+            android:name="bookingId"
+            app:argType="string" />
+        <argument
+            android:name="isRecurring"
+            android:defaultValue="false"
+            app:argType="boolean" />
+        <argument
+            android:name="paymentCode"
+            app:argType="string" />
+        <argument
+            android:name="amountDue"
+            app:argType="long" />
+        <argument
+            android:name="holdExpiresAtMillis"
+            app:argType="long" />
+        <argument
+            android:name="qrUrl"
+            app:argType="string" />
+        <argument
+            android:name="bankShortName"
+            app:argType="string" />
+        <argument
+            android:name="accountNumber"
+            app:argType="string" />
+        <argument
+            android:name="accountHolderName"
+            app:argType="string" />
+        <action
+            android:id="@+id/action_transfer_to_receipt"
+            app:destination="@id/paymentReceiptFragment"
+            app:popUpTo="@id/paymentFragment"
+            app:popUpToInclusive="true" />
+    </fragment>
+
+    <!-- ReceiptArgs: màn đọc lại đơn/nhóm để hiển thị. -->
+    <fragment
+        android:id="@+id/paymentReceiptFragment"
+        android:name="com.example.booking_app.feature.payment.ui.PaymentReceiptFragment"
+        android:label="@string/payment_receipt_title">
+        <argument
+            android:name="bookingId"
+            app:argType="string" />
+        <argument
+            android:name="isRecurring"
+            android:defaultValue="false"
+            app:argType="boolean" />
+        <!-- Nút "Xem lịch đặt của tôi": MyBookingsFragment đọc bundle key "args". -->
+        <action
+            android:id="@+id/action_receipt_to_myBookings"
+            app:destination="@id/myBookingsFragment"
+            app:popUpTo="@id/nav_payment"
+            app:popUpToInclusive="true">
+            <argument
+                android:name="args"
+                app:argType="com.example.booking_app.feature.booking_management.domain.ReceiptToMyBookingsArgs" />
+        </action>
+    </fragment>
+</navigation>

@@ -33,10 +33,10 @@ description: "Danh sách task triển khai spec 050 – Thanh toán và Khuyến
 
 ## Phase 1: Setup
 
-- [ ] T001 Xóa function nạp ví chưa commit: thư mục `FN/wallet-topup-create/`, khối `[functions.wallet-topup-create]` trong `supabase/config.toml`, khối `match /walletTopups/{code}` trong `firestore.rules`
-- [ ] T002 [P] Thêm khối `verify_jwt = false` cho `booking-payment-confirm`, `booking-payment-transfer`, `owner-mark-refunded`, `refund-report`, `refund-reminders` trong `supabase/config.toml` (giữ `sepay-webhook`)
-- [ ] T003 [P] Tạo khung package `PAY/{domain/model,domain/usecase,domain/repository,data/remote,data/di,ui}` và file chuỗi `RES/values/strings_payment.xml` với 6 key bắt buộc ở [ui-contracts.md §4](contracts/ui-contracts.md) (`payment_mock_banner`, `payment_sandbox_banner`, `payment_transfer_unsupported`, `payment_hold_expired`, `receipt_mock_note`, `payment_late_refund`)
-- [ ] T004 [P] Tạo `RES/navigation/nav_payment.xml` (graph lồng: `paymentFragment` → `transferFragment` → `paymentReceiptFragment`, kèm action `receipt → 060` dùng `ReceiptToMyBookingsArgs`) và include vào graph người chơi
+- [x] T001 Xóa function nạp ví chưa commit: thư mục `FN/wallet-topup-create/`, khối `[functions.wallet-topup-create]` trong `supabase/config.toml`, khối `match /walletTopups/{code}` trong `firestore.rules`
+- [x] T002 [P] Thêm khối `verify_jwt = false` cho `booking-payment-confirm`, `booking-payment-transfer`, `owner-mark-refunded`, `refund-report`, `refund-reminders` trong `supabase/config.toml` (giữ `sepay-webhook`)
+- [x] T003 [P] Tạo khung package `PAY/{domain/model,domain/usecase,domain/repository,data/remote,data/di,ui}` và file chuỗi `RES/values/strings_payment.xml` với 6 key bắt buộc ở [ui-contracts.md §4](contracts/ui-contracts.md) (`payment_mock_banner`, `payment_sandbox_banner`, `payment_transfer_unsupported`, `payment_hold_expired`, `receipt_mock_note`, `payment_late_refund`)
+- [x] T004 [P] Tạo `RES/navigation/nav_payment.xml` (graph lồng: `paymentFragment` → `transferFragment` → `paymentReceiptFragment`, kèm action `receipt → 060` dùng `ReceiptToMyBookingsArgs`) và include vào graph người chơi
 
 ---
 
