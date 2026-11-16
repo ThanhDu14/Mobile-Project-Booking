@@ -32,7 +32,7 @@ class OwnerSlotGridAdapter(
 
         fun bind(item: OwnerSlotItem) {
             val context = binding.root.context
-            binding.slotTime.text = item.displayTime
+            binding.slotTime.text = "${item.startTime.take(2)}:${item.startTime.takeLast(2)}"
             binding.slotCheckbox.isChecked = item.isSelected
 
             val isSelectable = item.status == "AVAILABLE" || item.isOwnerRemovable
@@ -47,7 +47,7 @@ class OwnerSlotGridAdapter(
                     binding.slotReason.visibility = View.GONE
                 }
                 "BLOCKED" -> {
-                    val reasonText = item.blockReason ?: ""
+                    val reasonText = when(item.blockReason) {"MAINTENANCE"->context.getString(R.string.owner_reason_maintenance);"EVENT"->context.getString(R.string.owner_reason_event);"WALK_IN"->context.getString(R.string.owner_reason_walk_in);"DROP_IN"->context.getString(R.string.owner_today_action_open_dropin);else->""}
                     binding.slotStatus.text = context.getString(R.string.owner_slot_status_blocked)
                     binding.slotStatus.setTextColor(ContextCompat.getColor(context, android.R.color.holo_red_dark))
                     if (reasonText.isNotEmpty()) {
@@ -78,6 +78,8 @@ class OwnerSlotGridAdapter(
                     onSlotClick(item)
                 }
             }
+            binding.slotCheckbox.contentDescription = "${item.displayTime} · ${binding.slotStatus.text}"
+            binding.slotCheckbox.setOnClickListener { if (isSelectable) onSlotClick(item) }
         }
     }
 

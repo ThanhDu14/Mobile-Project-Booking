@@ -98,9 +98,23 @@ class OwnerBookingsViewModel @Inject constructor(
         _uiState.value = _uiState.value.copy(selectedDetail = null)
     }
 
+    fun clearActionMessage() {
+        _uiState.value = _uiState.value.copy(actionMessage = null)
+    }
+
     fun submit(command: OwnerBookingCommand) {
+        if (_uiState.value.actionInProgress) return
+        val reason = when (command) {
+            is OwnerBookingCommand.Reject -> command.reason
+            is OwnerBookingCommand.CancelConfirmed -> command.reason
+            else -> null
+        }
+        if (reason != null && reason.isBlank()) {
+            _uiState.value = _uiState.value.copy(error = "Nhập lý do từ chối hoặc hủy đơn")
+            return
+        }
+        _uiState.value = _uiState.value.copy(actionInProgress = true, actionMessage = null, error = null)
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(actionInProgress = true, actionMessage = null, error = null)
             bookingRepository.submit(command)
                 .onSuccess {
                     _uiState.value = _uiState.value.copy(actionInProgress = false, actionMessage = "Đã cập nhật booking")

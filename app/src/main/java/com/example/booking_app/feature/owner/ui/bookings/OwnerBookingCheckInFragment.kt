@@ -40,8 +40,9 @@ class OwnerBookingCheckInFragment : Fragment(R.layout.fragment_owner_booking_che
                 }
         }
         binding.submitCheckIn.setOnClickListener {
-            viewModel.submit(binding.bookingCode.text?.toString().orEmpty(), binding.paymentCollected.isChecked)
+            viewModel.submit(binding.bookingCode.text?.toString().orEmpty(), paymentCollected = false)
         }
+        binding.paymentCollected.isVisible = false
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
@@ -49,21 +50,28 @@ class OwnerBookingCheckInFragment : Fragment(R.layout.fragment_owner_booking_che
                     binding.submitCheckIn.isEnabled = !state.isSubmitting
                     binding.errorText.isVisible = state.error != null
                     binding.errorText.text = state.error
-                    binding.successCard.isVisible = state.result != null
-                    binding.successText.isVisible = state.result != null
-                    state.result?.let { bookingId ->
-                        binding.successText.text = getString(R.string.owner_booking_checkin_success, bookingId)
-                        val isPaid = state.checkInResult?.paymentStatus == "PAID"
-                        if (isPaid) {
-                            binding.remainingAmountText.text = "0 đ"
-                            binding.confirmPaymentButton.isEnabled = false
-                        } else {
-                            binding.confirmPaymentButton.isEnabled = true
-                            binding.confirmPaymentButton.setOnClickListener {
-                                binding.paymentCollected.isChecked = true
-                                viewModel.submit(binding.bookingCode.text?.toString().orEmpty(), paymentCollected = true)
-                            }
+                    binding.successCard.isVisible = state.checkInResult != null
+                    binding.successText.isVisible = state.checkInResult != null
+                    state.checkInResult?.let { checked ->
+                        binding.successTitle.setText(if (checked.paymentConfirmationRequired)
+                            R.string.owner_checkin_payment_pending else R.string.owner_checkin_success_title)
+                        binding.successText.text = if (checked.paymentConfirmationRequired)
+                            getString(R.string.owner_checkin_match_found, checked.bookingId)
+                            else getString(R.string.owner_booking_checkin_success, checked.bookingId)
+                        binding.remainingAmountText.text = checked.remainingAmountVnd?.let {
+                            getString(R.string.owner_booking_remaining, java.text.NumberFormat.getIntegerInstance(java.util.Locale.forLanguageTag("vi")).format(it))
+                        } ?: getString(R.string.owner_bookings_amount_unknown)
+                        val time = java.time.format.DateTimeFormatter.ofPattern("HH:mm").withZone(java.time.ZoneId.of("Asia/Ho_Chi_Minh"))
+                        binding.successDetails.text = listOfNotNull(
+                            checked.courtNames.takeIf { it.isNotEmpty() }?.joinToString(", "),
+                            if (checked.startAt != null && checked.endAt != null) "${time.format(checked.startAt)}–${time.format(checked.endAt)}" else null
+                        ).joinToString(" · ")
+                        binding.confirmPaymentButton.isVisible = checked.paymentConfirmationRequired
+                        binding.confirmPaymentButton.isEnabled = checked.paymentConfirmationRequired && !state.isSubmitting
+                        binding.confirmPaymentButton.setOnClickListener {
+                            viewModel.submit(checked.bookingId, paymentCollected = true)
                         }
+                        if (!checked.paymentConfirmationRequired) binding.bookingCode.text?.clear()
                     }
                 }
             }

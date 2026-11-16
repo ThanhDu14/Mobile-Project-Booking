@@ -109,10 +109,11 @@ class GenerateDailySlotsUseCaseTest {
 
     @Test
     fun generateDailySlots_assignsPastStatus_forElapsedSlotsToday() {
-        // "Today" and 10:15 are taken in the venue zone, so the result does not depend on the machine's time zone (CI runs in UTC).
+        // Use a fixed date and the venue zone so the test is independent of the clock and machine's time zone.
+        val todayStr = date
         val vietnam = ZoneId.of("Asia/Ho_Chi_Minh")
-        val todayStr = LocalDate.now(vietnam).format(DateTimeFormatter.BASIC_ISO_DATE)
-        val tenFifteenToday = LocalDate.now(vietnam).atTime(10, 15).atZone(vietnam).toInstant().toEpochMilli()
+        val tenFifteenToday = LocalDate.parse(todayStr, DateTimeFormatter.BASIC_ISO_DATE)
+            .atTime(10, 15).atZone(vietnam).toInstant().toEpochMilli()
         // The fixture rules cover Mon-Fri only; this test must work on any weekday, so it uses rules for all 7 days.
         val everyDayRules = listOf(
             normalRule.copy(daysOfWeek = (1..7).toList()),

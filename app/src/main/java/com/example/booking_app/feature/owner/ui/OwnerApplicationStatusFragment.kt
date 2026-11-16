@@ -4,13 +4,14 @@ import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.FrameLayout
 import android.content.ContentValues
 import android.os.Environment
 import android.provider.MediaStore
 import androidx.core.net.toUri
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.activityViewModels
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -38,7 +39,10 @@ import java.time.format.DateTimeFormatter
 class OwnerApplicationStatusFragment : Fragment(R.layout.fragment_owner_application_status) {
     private var _binding: FragmentOwnerApplicationStatusBinding? = null
     private val binding get() = checkNotNull(_binding)
-    private val viewModel: OwnerApplicationViewModel by activityViewModels()
+    private val viewModel: OwnerApplicationViewModel by viewModels(
+        ownerProducer = { findNavController().getBackStackEntry(R.id.nav_account) },
+        factoryProducer = { defaultViewModelProviderFactory },
+    )
     private var state: OwnerApplicationState? = null
     private var role: String? = null
 
@@ -125,12 +129,12 @@ class OwnerApplicationStatusFragment : Fragment(R.layout.fragment_owner_applicat
     private fun renderDocuments(applicationId: String?, paths: List<String>, statusFresh: Boolean) {
         binding.statusDocuments.removeAllViews()
         binding.statusDocuments.isVisible = applicationId != null && paths.isNotEmpty()
-        paths.forEach { path ->
+        paths.forEachIndexed { index, path ->
             binding.statusDocuments.addView(MaterialButton(requireContext(), null, android.R.attr.borderlessButtonStyle).apply {
                 setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_BodyMedium)
                 setTextColor(ContextCompat.getColor(requireContext(), R.color.sn_court))
-                text = getString(R.string.owner_view_document, path.substringAfterLast('/'))
-                contentDescription = getString(R.string.owner_view_document_named, path.substringAfterLast('/'))
+                text = getString(R.string.owner_view_document_number, index + 1)
+                contentDescription = text
                 minHeight = resources.getDimensionPixelSize(R.dimen.touch_target_min)
                 icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_description_24)
                 iconTint = ContextCompat.getColorStateList(requireContext(), R.color.sn_court)
@@ -143,7 +147,7 @@ class OwnerApplicationStatusFragment : Fragment(R.layout.fragment_owner_applicat
     private fun openDocument(applicationId: String, path: String) {
         viewLifecycleOwner.lifecycleScope.launch {
             binding.statusProgress.isVisible = true
-            viewModel.signedDocumentUrl(applicationId, path).onSuccess { signedUrl ->
+            viewModel.downloadDocument(applicationId, path).onSuccess { bytes ->
                 if (_binding == null) return@onSuccess
                 binding.statusProgress.isVisible = false
                 val image = ImageView(requireContext()).apply {
@@ -153,11 +157,17 @@ class OwnerApplicationStatusFragment : Fragment(R.layout.fragment_owner_applicat
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         resources.getDimensionPixelSize(R.dimen.owner_document_preview_height),
                     )
-                    load(signedUrl) { crossfade(true) }
+                    load(bytes) { crossfade(true) }
+                }
+                // AlertDialog replaces the custom view's LayoutParams. Keep the image's
+                // fixed height on a child so the preview cannot collapse to zero height.
+                val preview = FrameLayout(requireContext()).apply {
+                    addView(image, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                        resources.getDimensionPixelSize(R.dimen.owner_document_preview_height)))
                 }
                 MaterialAlertDialogBuilder(requireContext())
-                    .setTitle(path.substringAfterLast('/'))
-                    .setView(image)
+                    .setTitle(R.string.owner_document_preview)
+                    .setView(preview)
                     .setNegativeButton(R.string.common_cancel, null)
                     .setPositiveButton(R.string.owner_download_document) { _, _ -> downloadDocument(applicationId, path) }
                     .show()

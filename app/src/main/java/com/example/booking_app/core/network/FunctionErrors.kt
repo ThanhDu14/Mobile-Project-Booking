@@ -55,6 +55,9 @@ class FunctionErrors @Inject constructor(
             return call()
         } catch (e: Exception) {
             if (e is CancellationException) throw e
+            if (com.example.booking_app.BuildConfig.DEBUG) {
+                android.util.Log.w("EdgeTransport", "Request failed: ${e.javaClass.simpleName}; cause=${e.cause?.javaClass?.simpleName}")
+            }
             val failure = e.toFunctionHttpException() ?: throw e.toAppError()
             android.util.Log.e("EdgeFunction", "Failure status=${failure.status}, body=${failure.body}")
             if (failure.status != 401) throw map(failure)

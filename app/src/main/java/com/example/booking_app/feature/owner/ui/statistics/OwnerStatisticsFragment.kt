@@ -105,13 +105,13 @@ class OwnerStatisticsFragment : Fragment(R.layout.fragment_owner_statistics) {
     }
 
     private fun renderResult(result: OwnerStatisticsResult) {
-        binding.revenue.text = getString(
-            R.string.owner_statistics_revenue,
-            NUMBER_FORMAT.format(result.revenue.depositedVnd),
-            NUMBER_FORMAT.format(result.revenue.paidVnd),
-            result.revenue.refundedBookingCount,
-            NUMBER_FORMAT.format(result.revenue.refundedVnd),
-        )
+        binding.revenue.text = getString(R.string.owner_amount_vnd, NUMBER_FORMAT.format(result.revenue.paidVnd))
+        binding.revenueSubtitle.setText(R.string.owner_stats_paid_explanation)
+        binding.depositAmount.text = getString(R.string.owner_amount_vnd, NUMBER_FORMAT.format(result.revenue.depositedVnd))
+        binding.depositBookingCount.isVisible = false
+        binding.refundCount.text = getString(R.string.owner_stats_refund_count, result.revenue.refundedBookingCount)
+        binding.refundAmount.text = getString(R.string.owner_amount_vnd, NUMBER_FORMAT.format(result.revenue.refundedVnd))
+        binding.occupancyProgress.progress = result.occupancyPercent.toInt().coerceIn(0,100)
         binding.occupancy.text = getString(R.string.owner_statistics_occupancy, result.occupancyPercent)
         val freshness = result.computedAt.atZone(LOCAL_ZONE).format(DATE_TIME_FORMAT)
         binding.freshness.text = getString(if (result.isPartialPeriod) R.string.owner_statistics_partial_freshness else R.string.owner_statistics_freshness, freshness)

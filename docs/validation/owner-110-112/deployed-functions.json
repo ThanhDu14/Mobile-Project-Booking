@@ -1,0 +1,72 @@
+[
+    {
+        "slug":  "owner-docs",
+        "status":  "ACTIVE",
+        "version":  7
+    },
+    {
+        "slug":  "owner-applications",
+        "status":  "ACTIVE",
+        "version":  8
+    },
+    {
+        "slug":  "admin-review-application",
+        "status":  "ACTIVE",
+        "version":  7
+    },
+    {
+        "slug":  "checkin-booking",
+        "status":  "ACTIVE",
+        "version":  5
+    },
+    {
+        "slug":  "manage-slot-blocks",
+        "status":  "ACTIVE",
+        "version":  6
+    },
+    {
+        "slug":  "owner-approve-booking",
+        "status":  "ACTIVE",
+        "version":  5
+    },
+    {
+        "slug":  "owner-cancel-booking",
+        "status":  "ACTIVE",
+        "version":  4
+    },
+    {
+        "slug":  "owner-cancel-session",
+        "status":  "ACTIVE",
+        "version":  4
+    },
+    {
+        "slug":  "owner-checkin-dropin-registration",
+        "status":  "ACTIVE",
+        "version":  4
+    },
+    {
+        "slug":  "owner-create-session",
+        "status":  "ACTIVE",
+        "version":  5
+    },
+    {
+        "slug":  "owner-create-voucher",
+        "status":  "ACTIVE",
+        "version":  5
+    },
+    {
+        "slug":  "owner-reject-booking",
+        "status":  "ACTIVE",
+        "version":  6
+    },
+    {
+        "slug":  "owner-update-session",
+        "status":  "ACTIVE",
+        "version":  4
+    },
+    {
+        "slug":  "owner-statistics-source",
+        "status":  "ACTIVE",
+        "version":  1
+    }
+]

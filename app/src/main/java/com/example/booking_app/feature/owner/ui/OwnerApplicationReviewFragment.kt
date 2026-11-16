@@ -4,7 +4,7 @@ import android.os.Bundle
 import android.view.View
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.activityViewModels
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -19,7 +19,10 @@ import kotlinx.coroutines.launch
 class OwnerApplicationReviewFragment : Fragment(R.layout.fragment_owner_application_review) {
     private var _binding: FragmentOwnerApplicationReviewBinding? = null
     private val binding get() = checkNotNull(_binding)
-    private val viewModel: OwnerApplicationViewModel by activityViewModels()
+    private val viewModel: OwnerApplicationViewModel by viewModels(
+        ownerProducer = { findNavController().getBackStackEntry(R.id.nav_account) },
+        factoryProducer = { defaultViewModelProviderFactory },
+    )
     private var navigating = false
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {

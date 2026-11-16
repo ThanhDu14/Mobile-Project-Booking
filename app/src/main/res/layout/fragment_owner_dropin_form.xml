@@ -51,7 +51,7 @@
             android:id="@+id/courtSpinner"
             android:layout_width="match_parent"
             android:layout_height="48dp"
-            android:contentDescription="@string/owner_dropin_select_court" />
+            android:contentDescription="@string/owner_dropin_select_court" /><com.google.android.material.chip.ChipGroup android:id="@+id/courtChoices" android:layout_width="match_parent" android:layout_height="wrap_content" />
 
         <!-- Field: Ngày -->
         <com.google.android.material.textfield.TextInputLayout
@@ -186,7 +186,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/space_1"
-            android:text="@string/owner_dropin_create_price_note"
+            android:id="@+id/courtCountNote"
             android:textAppearance="?attr/textAppearanceBodySmall"
             android:textColor="?attr/colorOnSurfaceVariant" />
 

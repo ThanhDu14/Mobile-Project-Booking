@@ -16,6 +16,11 @@ import com.example.booking_app.feature.owner.domain.voucher.OwnerVoucherType
 import dagger.hilt.android.AndroidEntryPoint
 import java.time.LocalDate
 import kotlinx.coroutines.launch
+import androidx.navigation.fragment.findNavController
+import com.google.android.material.snackbar.Snackbar
+import androidx.core.widget.doAfterTextChanged
+import android.widget.AdapterView
+import android.widget.TextView
 
 @AndroidEntryPoint
 class OwnerVoucherFormFragment : Fragment(R.layout.fragment_owner_voucher_form) {
@@ -23,15 +28,48 @@ class OwnerVoucherFormFragment : Fragment(R.layout.fragment_owner_voucher_form) 
     private var _binding: FragmentOwnerVoucherFormBinding? = null
     private val binding get() = checkNotNull(_binding)
     private val venueId get() = requireArguments().getString(ARG_VENUE_ID).orEmpty()
+    private val editingCode get() = arguments?.getString("code")
+    private var populated = false
+    private var selectedVenue = false
+    private var navigatedAfterSave = false
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         _binding = FragmentOwnerVoucherFormBinding.bind(view)
         binding.type.adapter = ArrayAdapter.createFromResource(requireContext(), R.array.owner_voucher_types, android.R.layout.simple_spinner_dropdown_item)
+        listOf(binding.code, binding.value, binding.maxDiscount, binding.minOrder).forEach { input ->
+            input.doAfterTextChanged { renderPreview() }
+        }
+        binding.type.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onNothingSelected(parent: AdapterView<*>?) = Unit
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) = renderPreview()
+        }
+        renderPreview()
         binding.save.setOnClickListener { submitForm() }
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
+                    if (!selectedVenue && state.venues.any { it.id == venueId }) {
+                        selectedVenue=true
+                        viewModel.selectVenue(venueId)
+                    }
+                    if (!populated && editingCode != null) state.vouchers.firstOrNull { it.code == editingCode }?.let { voucher ->
+                        binding.code.setText(voucher.code);binding.code.isEnabled=false
+                        binding.type.setSelection(if(voucher.type==OwnerVoucherType.PERCENT)0 else 1)
+                        binding.value.setText(voucher.value.toString());binding.maxDiscount.setText(voucher.maxDiscountVnd.toString())
+                        binding.minOrder.setText(voucher.minOrderTotalVnd.toString());binding.validFrom.setText(voucher.validFrom.toString())
+                        binding.validTo.setText(voucher.validTo.toString());binding.usageLimit.setText(voucher.usageLimit?.toString().orEmpty())
+                        binding.perUserLimit.setText(voucher.perUserLimit?.toString().orEmpty());binding.isActive.isChecked=voucher.isActive
+                        binding.save.setText(R.string.save);populated=true
+                    }
+                    if (state.saved) {
+                        if (!navigatedAfterSave) {
+                            navigatedAfterSave = true
+                            Snackbar.make(binding.root, R.string.owner_voucher_saved, Snackbar.LENGTH_LONG).show()
+                            findNavController().popBackStack()
+                        }
+                        return@collect
+                    }
                     binding.loading.isVisible = state.isSaving
                     binding.save.isEnabled = !state.isSaving
                     binding.validationText.isVisible = state.validationErrors.isNotEmpty()
@@ -40,6 +78,8 @@ class OwnerVoucherFormFragment : Fragment(R.layout.fragment_owner_voucher_form) 
                     binding.errorText.text = state.error?.let { error ->
                         if (error.contains("Contract CRUD", true)) getString(R.string.owner_voucher_contract_error) else error
                     }
+                    binding.previewFooter.text = getString(R.string.owner_voucher_create_preview_footer,
+                        state.venues.firstOrNull { it.id == venueId }?.name.orEmpty())
                 }
             }
         }
@@ -70,7 +110,15 @@ class OwnerVoucherFormFragment : Fragment(R.layout.fragment_owner_voucher_form) 
             perUserLimit = binding.perUserLimit.text?.toString()?.toIntOrNull(),
             isActive = binding.isActive.isChecked,
         )
-        viewModel.create(venueId, draft)
+        editingCode?.let { viewModel.update(venueId,it,draft) } ?: viewModel.create(venueId, draft)
+    }
+
+    private fun renderPreview() {
+        binding.previewCode.text = binding.code.text?.toString().orEmpty()
+        val amount = binding.value.text?.toString().orEmpty()
+        val discount = if (binding.type.selectedItemPosition == 0) "$amount%" else "$amount đ"
+        binding.previewSummary.text = getString(R.string.owner_voucher_preview_live, discount,
+            binding.maxDiscount.text?.toString().orEmpty(), binding.minOrder.text?.toString().orEmpty())
     }
 
     private companion object { const val ARG_VENUE_ID = "venueId" }

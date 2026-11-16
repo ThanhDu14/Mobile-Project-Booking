@@ -1,13 +1,15 @@
 import { requireCurrentAdmin } from "../_shared/admin-authorization.ts";
 import { HttpError, requireRole, requireUser, toErrorResponse } from "../_shared/auth.ts";
 import * as defaultFirestore from "../_shared/firestore.ts";
-import { createWrite, updateWrite, FirestoreError } from "../_shared/firestore.ts";
+import { createWrite, updateWrite, FirestoreError, FirestoreGeoPoint } from "../_shared/firestore.ts";
 import { mergeClaims as defaultMergeClaims } from "../_shared/identity.ts";
 import { reconcileAdminClaims } from "../_shared/admin-claims.ts";
+import { publishApprovedVenuePhotos } from "../_shared/venue-photo-publication.ts";
 
 export interface AdminReviewDeps {
   firestore: Pick<typeof defaultFirestore, "get" | "runTransaction">;
   mergeClaims: (uid: string, claims: Record<string, unknown>) => Promise<void>;
+  publishPhotos?: typeof publishApprovedVenuePhotos;
 }
 
 function json(status: number, data: unknown): Response {
@@ -110,6 +112,17 @@ export async function handleAdminReviewApplication(
 
     const nowIso = new Date().toISOString();
     let targetApplicantUid = "";
+    let publishedPhotos: string[] = [];
+    let stagedPhotoPaths: string[] = [];
+    if (decision === "APPROVE") {
+      const application = await deps.firestore.get(`ownerApplications/${applicationId}`);
+      if (application?.status === "PENDING") {
+        const draft = (application.venueDraft ?? {}) as Record<string,unknown>;
+        stagedPhotoPaths = Array.isArray(draft.photoPaths) ? draft.photoPaths as string[] : [];
+        const documents = Array.isArray(application.documentPaths) ? application.documentPaths as string[] : [];
+        publishedPhotos = await (deps.publishPhotos ?? publishApprovedVenuePhotos)(String(application.uid ?? application.applicantId),applicationId,stagedPhotoPaths,documents);
+      }
+    }
 
     const outcome = await deps.firestore.runTransaction(async (tx) => {
       const app = await tx.get(`ownerApplications/${applicationId}`);
@@ -125,7 +138,9 @@ export async function handleAdminReviewApplication(
       if (app.status === "PENDING" && (typeof expectedSubmittedAt !== "string" || !Number.isFinite(Date.parse(expectedSubmittedAt)))) {
         throw new HttpError(400, "MISSING_APPLICATION_VERSION", "Vui lòng tải lại hồ sơ trước khi quyết định");
       }
-      if (expectedSubmittedAt != null && new Date(String(app.submittedAt)).getTime() !== new Date(String(expectedSubmittedAt)).getTime()) {
+      const submittedMillis = app.submittedAt instanceof Date ? app.submittedAt.getTime()
+        : typeof app.submittedAt === "string" ? Date.parse(app.submittedAt) : NaN;
+      if (expectedSubmittedAt != null && submittedMillis !== Date.parse(String(expectedSubmittedAt))) {
         throw new HttpError(409, "APPLICATION_CONFLICT", "Hồ sơ đã được nộp lại. Vui lòng tải trạng thái mới.");
       }
 
@@ -158,6 +173,9 @@ export async function handleAdminReviewApplication(
         }));
 
         const draft = (app.venueDraft ?? {}) as Record<string, unknown>;
+        if (JSON.stringify(draft.photoPaths ?? []) !== JSON.stringify(stagedPhotoPaths)) {
+          throw new HttpError(409,"APPLICATION_CONFLICT","Ảnh cơ sở đã thay đổi. Hãy tải lại hồ sơ.");
+        }
         const venueName = typeof draft.name === "string" ? draft.name.trim() : "Cơ sở cầu lông";
         const location = (draft.location ?? { latitude: 10.7769, longitude: 106.7009 }) as Record<string, unknown>;
         const lat = typeof location.latitude === "number" ? location.latitude : 10.7769;
@@ -169,13 +187,13 @@ export async function handleAdminReviewApplication(
           nameKeywords: generateKeywords(venueName),
           address: typeof draft.address === "string" ? draft.address.trim() : "",
           districtId: typeof draft.districtId === "string" ? draft.districtId.trim() : "",
-          location: { latitude: lat, longitude: lng },
+          location: new FirestoreGeoPoint(lat, lng),
           geohash: geohash(lat, lng),
           openTime: typeof draft.openTime === "string" ? draft.openTime : "0600",
           closeTime: typeof draft.closeTime === "string" ? draft.closeTime : "2200",
           phone: typeof draft.phone === "string" ? draft.phone.trim() : (typeof draft.representativePhone === "string" ? draft.representativePhone.trim() : ""),
           amenityIds: Array.isArray(draft.amenityIds) ? draft.amenityIds : [],
-          photoPaths: Array.isArray(draft.photoPaths) ? draft.photoPaths : [],
+          photoPaths: publishedPhotos,
           courtCount: typeof draft.courtCount === "number" ? draft.courtCount : 1,
           minPricePerHour: 0,
           ratingAvg: 0.0,

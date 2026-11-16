@@ -188,7 +188,7 @@
     <string name="owner_dropin_create_note_hint">Ví dụ: có sẵn cầu, mang giày đế không in vết</string>
     <string name="owner_dropin_create_lock_warning">Các khung giờ của buổi sẽ bị khóa với người đặt sân.</string>
     <string name="owner_dropin_create_submit">Mở buổi</string>
-    <string name="owner_dropin_roster_title">Buổi vãng lai hôm nay</string>
+    <string name="owner_dropin_roster_title">Buổi vãng lai</string>
     <string name="owner_dropin_roster_registered_stat">Đã đăng ký</string>
     <string name="owner_dropin_roster_entered_stat">Đã vào sân</string>
     <string name="owner_dropin_roster_waitlist_stat">Hàng chờ</string>

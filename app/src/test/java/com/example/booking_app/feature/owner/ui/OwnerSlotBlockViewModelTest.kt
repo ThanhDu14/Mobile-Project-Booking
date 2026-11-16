@@ -208,7 +208,7 @@ class OwnerSlotBlockViewModelTest {
         var lastUnlockedSlotIds: List<String> = emptyList()
 
         override suspend fun getOwnedVenues(): Result<List<OwnerVenue>> = Result.success(emptyList())
-        override suspend fun getVenue(venueId: String): Result<OwnerVenue> = Result.failure(NotImplementedError())
+        override suspend fun getVenue(venueId: String): Result<OwnerVenue> = Result.success(com.example.booking_app.feature.owner.fixture.OwnerFixtures.venue)
         override suspend fun updateVenue(venueId: String, fields: VenueEditableFields): Result<Unit> = Result.success(Unit)
         override suspend fun hideVenue(venueId: String): Result<Unit> = Result.success(Unit)
         override suspend fun setAcceptsRecurring(venueId: String, accepts: Boolean): Result<Unit> = Result.success(Unit)

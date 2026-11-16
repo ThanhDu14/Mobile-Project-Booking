@@ -1,4 +1,6 @@
 package com.example.booking_app.feature.owner.ui
+import io.mockk.mockk
+import io.mockk.coEvery
 
 import androidx.lifecycle.SavedStateHandle
 import com.example.booking_app.feature.owner.domain.OwnerVenueRepository
@@ -116,6 +118,21 @@ class OwnerVenueViewModelTest {
         assertEquals("court-1", repository.deactivatedCourtId)
     }
 
+    @Test fun slowCatalogDoesNotEraseTheVenueOrCourtStateThatAlreadyLoaded() = runTest {
+        val catalog=mockk<com.example.booking_app.core.catalog.CatalogRepository>()
+        val gate=CompletableDeferred<List<com.example.booking_app.core.catalog.District>>()
+        coEvery { catalog.districts() } coAnswers { gate.await() }
+        coEvery { catalog.amenities() } returns emptyList()
+        val vm=OwnerVenueDetailViewModel(SavedStateHandle(mapOf("venueId" to OwnerFixtures.VENUE_A)),repository,catalog)
+        advanceUntilIdle()
+        assertEquals(OwnerFixtures.venue,vm.uiState.value.venue)
+        gate.complete(listOf(com.example.booking_app.core.catalog.District("district-1","Quận 1",0,true)))
+        advanceUntilIdle()
+        assertEquals(OwnerFixtures.venue,vm.uiState.value.venue)
+        assertEquals(OwnerFixtures.courts,vm.uiState.value.courts)
+        assertTrue(vm.uiState.value.isFresh)
+    }
+
     private class FakeOwnerRepository : OwnerVenueRepository {
         var venues = listOf(OwnerFixtures.venue)
         var listResult: Result<List<OwnerVenue>>? = null
@@ -138,6 +155,7 @@ class OwnerVenueViewModelTest {
         override suspend fun getCourts(venueId: String) = Result.success(OwnerFixtures.courts)
         override suspend fun createCourt(venueId: String, fields: CourtFields) = Result.success("court-new")
         override suspend fun updateCourt(venueId: String, courtId: String, fields: CourtFields): Result<Unit> { updatedCourtIds += courtId; return Result.success(Unit) }
+        override suspend fun swapCourtOrder(venueId: String, first: OwnerCourt, second: OwnerCourt): Result<Unit> { updatedCourtIds += listOf(first.id,second.id); return Result.success(Unit) }
         override suspend fun deactivateCourt(venueId: String, courtId: String): Result<Unit> { deactivatedCourtId = courtId; return Result.success(Unit) }
         override suspend fun getPriceRules(venueId: String): Result<List<OwnerPriceRule>> = Result.success(listOf(OwnerFixtures.priceRule))
         override suspend fun createPriceRule(venueId: String, rule: PriceRuleInput): Result<String> = Result.success("rule-new")

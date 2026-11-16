@@ -2,6 +2,20 @@ import { assertEquals } from "jsr:@std/assert@1.0.19";
 import { generateKeywords, geohash, handleAdminReviewApplication } from "./handler.ts";
 import { adminFixture } from "../_shared/admin-testing.ts";
 
+Deno.test("native submitted Timestamp preserves milliseconds when validating the review version",()=>adminFixture(async({records,request})=>{
+  records.set("users/player",{role:"PLAYER",ownerStatus:"PENDING",accountStatus:"ACTIVE"});
+  records.set("ownerApplications/a",{uid:"player",status:"PENDING",submittedAt:new Date("2026-11-15T09:59:10.939Z")});
+  const firestore=await import("../_shared/firestore.ts");
+  const deps={firestore,mergeClaims:async()=>{}};
+  const body={applicationId:"a",decision:"REJECT",rejectReason:"AUDIT supplement required"};
+  const stale=await handleAdminReviewApplication(request({...body,expectedSubmittedAt:"2026-11-15T09:59:10.938Z"}),deps);
+  assertEquals(stale.status,409);await stale.body?.cancel();
+  assertEquals(records.get("ownerApplications/a")?.status,"PENDING");
+  const result=await handleAdminReviewApplication(request({...body,expectedSubmittedAt:"2026-11-15T09:59:10.939Z"}),deps);
+  assertEquals(result.status,200);await result.body?.cancel();
+  assertEquals(records.get("ownerApplications/a")?.status,"REJECTED");
+}));
+
 Deno.test("R120-05: another current admin can recover claims after reopening a decided application", () => adminFixture(async ({records,request}) => {
   records.set("users/player",{role:"OWNER",ownerStatus:"APPROVED"});
   records.set("ownerApplications/a",{uid:"player",status:"APPROVED",reviewedBy:"previous-admin"});

@@ -1,5 +1,25 @@
 import { HttpError } from "./auth.ts";
 
+export function validateOwnerSessionSchedule(input: ReturnType<typeof parseOwnerSessionInput>, venue: Record<string,unknown>, rules: Record<string,unknown>[]) {
+  const open=String(venue.openTime ?? ""),close=String(venue.closeTime ?? "");
+  if(!/^\d{4}$/.test(open) || !/^\d{4}$/.test(close) || input.startTime < open || input.endTime > close) {
+    throw new HttpError(400,"OUTSIDE_OPENING_HOURS","Buổi chơi phải nằm trong giờ hoạt động của cơ sở");
+  }
+  if(input.startAt.getTime() <= Date.now()) throw new HttpError(400,"SESSION_IN_PAST","Chọn thời gian bắt đầu trong tương lai");
+  const day=new Date(input.startAt.getTime()+7*3600_000).getUTCDay() || 7;
+  const start=Number(input.startTime.slice(0,2))*60+Number(input.startTime.slice(2));
+  const end=Number(input.endTime.slice(0,2))*60+Number(input.endTime.slice(2));
+  for(let minute=start;minute<end;minute+=30) {
+    const from=String(Math.floor(minute/60)).padStart(2,"0")+String(minute%60).padStart(2,"0");
+    const next=minute+30;
+    const to=String(Math.floor(next/60)).padStart(2,"0")+String(next%60).padStart(2,"0");
+    if(!rules.some(rule=>Array.isArray(rule.daysOfWeek) && rule.daysOfWeek.includes(day) &&
+      String(rule.startTime)<=from && String(rule.endTime)>=to && Number(rule.pricePerHour)>0)) {
+      throw new HttpError(400,"PRICE_REQUIRED","Cần bảng giá cho toàn bộ khoảng thời gian mở buổi");
+    }
+  }
+}
+
 /** Owner wire format: local Vietnam date yyyyMMdd and time HHmm. */
 export function parseOwnerSessionInput(body: Record<string, unknown>) {
   const courtIds = Array.isArray(body.courtIds)

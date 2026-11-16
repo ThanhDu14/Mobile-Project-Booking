@@ -39,20 +39,22 @@ object OwnerStatisticsCalculator {
         var refundedVnd = 0L
 
         bookings.forEach { booking ->
+            // Refunded money is a separate group, including rejected/cancelled bookings.
+            if (booking.paymentStatus == "REFUNDED") {
+                refundedBookingCount++
+                refundedVnd += booking.refundAmountVnd
+                return@forEach
+            }
             if (booking.status in setOf("REJECTED", "CANCELLED", "EXPIRED")) {
                 return@forEach
             }
 
             when (booking.paymentStatus) {
                 "DEPOSITED" -> {
-                    depositedVnd += booking.depositAmountVnd
+                    if (booking.paymentMethod != "AT_VENUE") depositedVnd += booking.depositAmountVnd
                 }
                 "PAID" -> {
                     paidVnd += booking.totalVnd
-                }
-                "REFUNDED" -> {
-                    refundedBookingCount++
-                    refundedVnd += booking.refundAmountVnd
                 }
                 else -> {
                     // Unpaid or unknown status excluded from collected revenue
@@ -90,13 +92,19 @@ object OwnerStatisticsCalculator {
         zoneId: ZoneId = DEFAULT_ZONE,
     ): List<OwnerPeakHour> {
         val distinctSlots = slots.distinctBy { it.slotId }
-        val occupied = distinctSlots.filter { isSlotOccupied(it) }
+        val occupied = distinctSlots.filter { it.status != "BLOCKED" && isSlotOccupied(it) }
         val hourMinutes = mutableMapOf<Int, Int>()
 
         occupied.forEach { slot ->
-            val localHour = slot.startAt.atZone(zoneId).hour
-            val duration = Duration.between(slot.startAt, slot.endAt).toMinutes().toInt().coerceAtLeast(30)
-            hourMinutes[localHour] = (hourMinutes[localHour] ?: 0) + duration
+            var cursor = slot.startAt
+            while (cursor < slot.endAt) {
+                val local = cursor.atZone(zoneId)
+                val nextHour = local.plusHours(1).withMinute(0).withSecond(0).withNano(0).toInstant()
+                val end = minOf(nextHour, slot.endAt)
+                val minutes = Duration.between(cursor, end).toMinutes().toInt()
+                hourMinutes[local.hour] = (hourMinutes[local.hour] ?: 0) + minutes
+                cursor = end
+            }
         }
 
         return hourMinutes.map { (hour, minutes) ->
@@ -106,5 +114,5 @@ object OwnerStatisticsCalculator {
 
     private fun isSlotOccupied(slot: StatisticsSlotRecord): Boolean =
         slot.bookingStatus in setOf("CONFIRMED", "COMPLETED", "NO_SHOW") ||
-            slot.status in setOf("CONFIRMED", "COMPLETED", "NO_SHOW", "BOOKED")
+            (slot.bookingStatus == null && slot.status in setOf("CONFIRMED", "COMPLETED", "NO_SHOW", "BOOKED"))
 }

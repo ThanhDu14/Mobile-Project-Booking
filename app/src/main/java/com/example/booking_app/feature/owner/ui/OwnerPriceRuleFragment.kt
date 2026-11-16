@@ -14,6 +14,9 @@ import com.example.booking_app.feature.owner.domain.OwnerErrorKind
 import com.example.booking_app.feature.owner.domain.PriceRuleInput
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.timepicker.MaterialTimePicker
+import com.google.android.material.timepicker.TimeFormat
 
 @AndroidEntryPoint
 class OwnerPriceRuleFragment : Fragment(R.layout.fragment_owner_price_rule) {
@@ -23,6 +26,7 @@ class OwnerPriceRuleFragment : Fragment(R.layout.fragment_owner_price_rule) {
 
     private var editingRuleId: String? = null
     private var gapDialog: AlertDialog? = null
+    private var selectedLabel = "NORMAL"
 
     private val adapter = OwnerPriceRuleAdapter(
         onEdit = { rule ->
@@ -32,7 +36,8 @@ class OwnerPriceRuleFragment : Fragment(R.layout.fragment_owner_price_rule) {
             binding.startTimeInput.setText(rule.startTime)
             binding.endTimeInput.setText(rule.endTime)
             binding.priceInput.setText(rule.pricePerHour.toString())
-            binding.labelInput.setText(rule.label)
+            selectedLabel=rule.label
+            binding.labelInput.setText(priceLabels()[listOf("NORMAL","PEAK","WEEKEND").indexOf(rule.label).coerceAtLeast(0)])
         },
         onDelete = { rule ->
             viewModel.requestDelete(rule)
@@ -43,6 +48,22 @@ class OwnerPriceRuleFragment : Fragment(R.layout.fragment_owner_price_rule) {
         _binding = FragmentOwnerPriceRuleBinding.bind(view)
         binding.rules.adapter = adapter
         binding.retry.setOnClickListener { viewModel.load() }
+        binding.labelInput.showSoftInputOnFocus=false
+        binding.labelInput.setText(priceLabels()[0])
+        binding.labelInput.setOnClickListener {
+            MaterialAlertDialogBuilder(requireContext()).setTitle(R.string.owner_price_kind)
+                .setItems(priceLabels()) { _,index -> selectedLabel=listOf("NORMAL","PEAK","WEEKEND")[index]; binding.labelInput.setText(priceLabels()[index]) }.show()
+        }
+        listOf(binding.startTimeInput,binding.endTimeInput).forEach { field ->
+            field.showSoftInputOnFocus=false
+            field.setOnClickListener {
+                val raw=field.text.toString().padEnd(4,'0')
+                val picker=MaterialTimePicker.Builder().setTimeFormat(TimeFormat.CLOCK_24H)
+                    .setHour(raw.take(2).toIntOrNull() ?: 8).setMinute(raw.takeLast(2).toIntOrNull() ?: 0).build()
+                picker.addOnPositiveButtonClickListener { field.setText("%02d%02d".format(picker.hour,picker.minute)) }
+                picker.show(parentFragmentManager,"owner-price-time")
+            }
+        }
 
         binding.saveRule.setOnClickListener {
             val days = binding.daysInput.text.toString().split(",")
@@ -50,7 +71,7 @@ class OwnerPriceRuleFragment : Fragment(R.layout.fragment_owner_price_rule) {
             val startTime = binding.startTimeInput.text.toString().trim()
             val endTime = binding.endTimeInput.text.toString().trim()
             val price = binding.priceInput.text.toString().trim().toLongOrNull() ?: 0L
-            val label = binding.labelInput.text.toString().trim().uppercase()
+            val label = selectedLabel
 
             val input = PriceRuleInput(days, startTime, endTime, price, label)
             viewModel.save(editingRuleId, input)
@@ -116,8 +137,11 @@ class OwnerPriceRuleFragment : Fragment(R.layout.fragment_owner_price_rule) {
         binding.startTimeInput.text.clear()
         binding.endTimeInput.text.clear()
         binding.priceInput.text.clear()
-        binding.labelInput.text.clear()
+        selectedLabel="NORMAL"
+        binding.labelInput.setText(priceLabels()[0])
     }
+
+    private fun priceLabels()=arrayOf(getString(R.string.owner_price_normal_label),getString(R.string.owner_price_peak_label),getString(R.string.owner_price_weekend_label))
 
     override fun onDestroyView() {
         gapDialog?.dismiss()

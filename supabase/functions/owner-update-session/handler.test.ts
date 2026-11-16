@@ -23,10 +23,12 @@ const token = await new SignJWT({ appRole: "OWNER" }).setProtectedHeader({
     "https://securetoken.google.com/demo-owner-dropin",
   )
   .setExpirationTime("1h").sign(privateKey);
+const testDay = new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10);
+const testDate = testDay.replaceAll("-", "");
 const draft = {
   venueId: "v1",
   courtIds: ["c1"],
-  date: "20261115",
+  date: testDate,
   startTime: "1800",
   endTime: "1900",
   capacity: 8,
@@ -46,13 +48,14 @@ const request = (body: Record<string, unknown>) =>
 type Doc = Record<string, unknown>;
 class Store {
   docs = new Map<string, Doc>([
-    ["users/owner", { ownerStatus: "APPROVED" }],
+    ["users/owner", { ownerStatus: "APPROVED", role:"OWNER", accountStatus:"ACTIVE" }],
     ["venues/v1", {
       ownerId: "owner",
       districtId: "d1",
       status: "ACTIVE",
       name: "Sân A",
       address: "Địa chỉ A",
+      openTime: "0800", closeTime: "2300",
     }],
     ["venues/v1/courts/c1", { isActive: true }],
     ["venues/v1/courts/c2", { isActive: true }],
@@ -98,6 +101,7 @@ class Store {
       },
       query: (collection, filters, options) => {
         checkRead();
+        if (collection === "priceRules") return Promise.resolve([{id:"price",path:`${options?.parent}/priceRules/price`,data:{daysOfWeek:[1,2,3,4,5,6,7],startTime:"0800",endTime:"2300",pricePerHour:100000}}]);
         assertEquals(collection, "registrations");
         assert(options?.parent?.startsWith("dropInSessions/"));
         const prefix = `${options!.parent}/${collection}/`;
@@ -141,15 +145,15 @@ async function created() {
 Deno.test("owner create: timestamps, array courts, owner/district and derived snapshot match spec 080", async () => {
   const { store, path } = await created();
   const session = store.docs.get(path)!;
-  assertEquals(session.startAt, new Date("2026-11-15T11:00:00Z"));
-  assertEquals(session.endAt, new Date("2026-11-15T12:00:00Z"));
+  assertEquals(session.startAt, new Date(`${testDay}T11:00:00Z`));
+  assertEquals(session.endAt, new Date(`${testDay}T12:00:00Z`));
   assertEquals(session.courtIds, ["c1"]);
   assertEquals([
     session.ownerId,
     session.districtId,
     session.timeSlot,
     session.date,
-  ], ["owner", "d1", "EVENING", "20261115"]);
+  ], ["owner", "d1", "EVENING", testDate]);
   assertEquals(session.venueSnapshot, {
     name: "Sân A",
     address: "Địa chỉ A",
@@ -454,7 +458,7 @@ Deno.test("owner update moves courts/time atomically, recomputes fields, marks r
     "MORNING",
     2,
   ]);
-  assertEquals(session.startAt, new Date("2026-11-15T01:00:00Z"));
+  assertEquals(session.startAt, new Date(`${testDay}T01:00:00Z`));
   assertEquals(store.docs.get(`${path}/registrations/u1`)!.amount, 100000);
   assertEquals(
     store.docs.get(`${path}/registrations/u1`)!.sessionChanged,
@@ -462,15 +466,37 @@ Deno.test("owner update moves courts/time atomically, recomputes fields, marks r
   );
   assertEquals(
     [...store.docs.keys()].filter((key) => key.startsWith("slots/")).sort(),
-    ["slots/c2_20261115_0800", "slots/c2_20261115_0830"],
+    [`slots/c2_${testDate}_0800`, `slots/c2_${testDate}_0830`],
   );
+});
+
+Deno.test("owner cancel and check-in enforce current authority and reject foreign slots without writes", async () => {
+  for (const scenario of ["role", "account", "owner", "slot"]) {
+    const { store, sessionId, path } = await created();
+    if (scenario === "role") store.docs.set("users/owner", { role: "PLAYER", ownerStatus: "APPROVED", accountStatus: "ACTIVE" });
+    if (scenario === "account") store.docs.set("users/owner", { role: "OWNER", ownerStatus: "APPROVED", accountStatus: "BLOCKED" });
+    if (scenario === "owner") store.docs.set("venues/v1", { ...store.docs.get("venues/v1"), ownerId: "other" });
+    if (scenario === "slot") {
+      const slotId = (store.docs.get(path)!.slotIds as string[])[0];
+      store.docs.set(`slots/${slotId}`, { status: "BOOKED", venueId: "v1", bookingId: "other" });
+    }
+    const before = structuredClone(store.docs);
+    const cancellation = await handleOwnerCancelSession(request({ venueId: "v1", sessionId, reason: "Test" }), { firestore: store });
+    assertEquals(cancellation.status, scenario === "owner" ? 404 : scenario === "slot" ? 409 : 403);
+    assertEquals(store.docs, before);
+    if (scenario !== "slot") {
+      const checkin = await handleOwnerCheckinDropIn(request({ venueId: "v1", sessionId, credential: "A".repeat(43) }), { firestore: store });
+      assertEquals(checkin.status, scenario === "owner" ? 404 : 403);
+      assertEquals(store.docs, before);
+    }
+  }
 });
 
 Deno.test("owner update rejects slot conflict, low capacity, wrong owner, closed session with no partial writes", async () => {
   for (const scenario of ["conflict", "capacity", "owner", "closed"]) {
     const { store, sessionId, path } = await created();
     if (scenario === "conflict") {
-      store.docs.set("slots/c2_20261115_1800", { status: "BOOKED" });
+      store.docs.set(`slots/c2_${testDate}_1800`, { status: "BOOKED" });
     }
     if (scenario === "capacity") {
       store.docs.set(path, { ...store.docs.get(path), registeredCount: 10 });

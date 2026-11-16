@@ -57,6 +57,16 @@ class BookingCheckInViewModelTest {
         assertEquals(null, repository.lastInput)
     }
 
+    @Test fun paymentPreviewDoesNotReportSuccessfulCheckIn() = runTest {
+        repository.response = BookingCheckInResult("booking-123", null, "UNPAID", 2000, true)
+        val viewModel = BookingCheckInViewModel(repository)
+        viewModel.submit("booking-123", paymentCollected = false)
+        advanceUntilIdle()
+        assertEquals(null, viewModel.uiState.value.result)
+        assertEquals(2000L, viewModel.uiState.value.checkInResult?.remainingAmountVnd)
+        assertTrue(viewModel.uiState.value.checkInResult!!.paymentConfirmationRequired)
+    }
+
     @Test fun exposesContractOrServerFailureAndDoesNotReportSuccess() = runTest {
         repository.failure = IllegalStateException("function unavailable")
         val viewModel = BookingCheckInViewModel(repository)
@@ -68,12 +78,13 @@ class BookingCheckInViewModelTest {
     }
 
     private class RecordingCheckInRepository : BookingCheckInRepository {
+        var response = BookingCheckInResult("booking-123", 1_799_000_000_000, null)
         var lastInput: BookingCheckInInput? = null
         var failure: Throwable? = null
         override suspend fun checkIn(input: BookingCheckInInput): Result<BookingCheckInResult> {
             lastInput = input
             failure?.let { return Result.failure(it) }
-            return Result.success(BookingCheckInResult("booking-123", 1_799_000_000_000, null))
+            return Result.success(response)
         }
     }
 }

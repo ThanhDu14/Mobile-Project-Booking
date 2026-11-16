@@ -66,7 +66,7 @@
             android:layout_height="48dp"
             android:layout_weight="1"
             android:minHeight="48dp"
-            android:text="@string/owner_stats_7days" />
+            android:text="@string/owner_statistics_day" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/week"
@@ -75,7 +75,7 @@
             android:layout_height="48dp"
             android:layout_weight="1"
             android:minHeight="48dp"
-            android:text="@string/owner_stats_30days" />
+            android:text="@string/owner_statistics_week" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/custom"
@@ -265,7 +265,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
-                        android:text="41 đơn, gồm đơn trả tại sân đã xác nhận thu"
+                        android:text="@string/owner_stats_paid_explanation"
                         android:textAppearance="?attr/textAppearanceBodySmall"
                         android:textColor="?attr/colorOnSurfaceVariant" />
                 </LinearLayout>
@@ -318,7 +318,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
-                            android:text="11 đơn"
+                            tools:text="11 đơn"
                             android:textAppearance="?attr/textAppearanceBodySmall"
                             android:textColor="?attr/colorOnSurfaceVariant" />
                     </LinearLayout>
@@ -364,7 +364,7 @@
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
-                            android:text="Đã hoàn 210.000 đ vào ví khách"
+                            tools:text="210.000 đ"
                             android:textAppearance="?attr/textAppearanceBodySmall"
                             android:textColor="?attr/colorOnSurfaceVariant" />
                     </LinearLayout>

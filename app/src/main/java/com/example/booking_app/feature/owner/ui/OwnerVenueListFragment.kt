@@ -23,7 +23,18 @@ class OwnerVenueListFragment : Fragment(R.layout.fragment_owner_venue_list) {
     private val adapter = OwnerVenueAdapter(
         onOpen = { venue -> findNavController().navigate(OwnerVenueListFragmentDirections.actionOwnerVenueListToDetail(venue.id)) },
         onHide = { viewModel.hide(it.id) },
-        onToggleRecurring = { viewModel.toggleRecurring(it) }
+        onToggleRecurring = { viewModel.toggleRecurring(it) },
+        onNavigate = { venue, section ->
+            val destination = when(section) {
+                "prices" -> R.id.ownerPriceRuleFragment
+                "slots" -> R.id.ownerSlotBlockFragment
+                "courts" -> R.id.ownerVenueDetailFragment
+                "dropin" -> R.id.ownerDropInFragment
+                "vouchers" -> R.id.ownerVouchersFragment
+                else -> R.id.ownerStatisticsFragment
+            }
+            findNavController().navigate(destination,Bundle().apply { putString("venueId",venue.id); putString("section",section); putString("courtId","") })
+        },
     )
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
