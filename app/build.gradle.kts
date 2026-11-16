@@ -48,6 +48,9 @@ android {
     testOptions {
         unitTests.isReturnDefaultValues = true
     }
+    // Spec 050: bảng ca test tiền payment-calc-cases.json dùng chung với Edge Function (deno test).
+    // Đọc thẳng từ thư mục contracts để chỉ có một bản, không chép vào src/test/resources.
+    sourceSets.getByName("test").resources.srcDir("../specs/050-payment-voucher/contracts")
     if (providers.gradleProperty("adminLocalAppId").orNull == "true") {
         sourceSets.getByName("androidTest").kotlin.srcDir("src/adminLocalAndroidTest/java")
     }

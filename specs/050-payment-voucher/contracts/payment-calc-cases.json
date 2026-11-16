@@ -1,0 +1,159 @@
+{
+  "_note": "Bảng ca test tiền dùng chung cho PaymentCalculator (Kotlin, app) và _shared/payment-calc.ts (Edge Function), spec 050 research R7 và quickstart §2. Đây là nguồn duy nhất: test hai phía đều đọc file này, không chép số vào test. Tiền là số nguyên VND. voucher.type: PERCENT (value là %) hoặc FIXED (value là VND); maxDiscount null = không trần. amountDue theo cách trả: AT_VENUE luôn 0, TRANSFER_DEPOSIT = depositAmount, TRANSFER_FULL = total. remainingAfterDeposit = total - depositAmount.",
+  "cases": [
+    {
+      "id": "Q1",
+      "note": "quickstart §2 dòng 1: không voucher, cọc 30% tròn nghìn",
+      "subtotal": 200000,
+      "voucher": null,
+      "expected": {
+        "discount": 0,
+        "total": 200000,
+        "depositAmount": 60000,
+        "remainingAfterDeposit": 140000,
+        "isFree": false,
+        "amountDue": { "AT_VENUE": 0, "TRANSFER_DEPOSIT": 60000, "TRANSFER_FULL": 200000 }
+      }
+    },
+    {
+      "id": "Q2",
+      "note": "quickstart §2 dòng 2: 52.500 làm tròn lên 53.000",
+      "subtotal": 175000,
+      "voucher": null,
+      "expected": {
+        "discount": 0,
+        "total": 175000,
+        "depositAmount": 53000,
+        "remainingAfterDeposit": 122000,
+        "isFree": false,
+        "amountDue": { "AT_VENUE": 0, "TRANSFER_DEPOSIT": 53000, "TRANSFER_FULL": 175000 }
+      }
+    },
+    {
+      "id": "Q3",
+      "note": "quickstart §2 dòng 3: 10% không trần",
+      "subtotal": 300000,
+      "voucher": { "type": "PERCENT", "value": 10, "maxDiscount": null },
+      "expected": {
+        "discount": 30000,
+        "total": 270000,
+        "depositAmount": 81000,
+        "remainingAfterDeposit": 189000,
+        "isFree": false,
+        "amountDue": { "AT_VENUE": 0, "TRANSFER_DEPOSIT": 81000, "TRANSFER_FULL": 270000 }
+      }
+    },
+    {
+      "id": "Q4",
+      "note": "quickstart §2 dòng 4: 50% bị chặn ở trần 40.000",
+      "subtotal": 150000,
+      "voucher": { "type": "PERCENT", "value": 50, "maxDiscount": 40000 },
+      "expected": {
+        "discount": 40000,
+        "total": 110000,
+        "depositAmount": 33000,
+        "remainingAfterDeposit": 77000,
+        "isFree": false,
+        "amountDue": { "AT_VENUE": 0, "TRANSFER_DEPOSIT": 33000, "TRANSFER_FULL": 110000 }
+      }
+    },
+    {
+      "id": "Q5",
+      "note": "quickstart §2 dòng 5: giảm cố định lớn hơn tạm tính bị chặn bằng tạm tính, đơn miễn phí",
+      "subtotal": 80000,
+      "voucher": { "type": "FIXED", "value": 100000, "maxDiscount": null },
+      "expected": {
+        "discount": 80000,
+        "total": 0,
+        "depositAmount": 0,
+        "remainingAfterDeposit": 0,
+        "isFree": true,
+        "amountDue": { "AT_VENUE": 0, "TRANSFER_DEPOSIT": 0, "TRANSFER_FULL": 0 }
+      }
+    },
+    {
+      "id": "Q6",
+      "note": "quickstart §2 dòng 6: 300đ làm tròn về 0 thì cọc bằng cả tổng, không cọc 0đ",
+      "subtotal": 1000,
+      "voucher": null,
+      "expected": {
+        "discount": 0,
+        "total": 1000,
+        "depositAmount": 1000,
+        "remainingAfterDeposit": 0,
+        "isFree": false,
+        "amountDue": { "AT_VENUE": 0, "TRANSFER_DEPOSIT": 1000, "TRANSFER_FULL": 1000 }
+      }
+    },
+    {
+      "id": "E1",
+      "note": "giảm cố định nhỏ hơn tạm tính",
+      "subtotal": 200000,
+      "voucher": { "type": "FIXED", "value": 50000, "maxDiscount": null },
+      "expected": {
+        "discount": 50000,
+        "total": 150000,
+        "depositAmount": 45000,
+        "remainingAfterDeposit": 105000,
+        "isFree": false,
+        "amountDue": { "AT_VENUE": 0, "TRANSFER_DEPOSIT": 45000, "TRANSFER_FULL": 150000 }
+      }
+    },
+    {
+      "id": "E2",
+      "note": "phần trăm ra số lẻ thì cắt phần thập phân (14.999,85 → 14.999); cọc 25.500 → 26.000",
+      "subtotal": 99999,
+      "voucher": { "type": "PERCENT", "value": 15, "maxDiscount": null },
+      "expected": {
+        "discount": 14999,
+        "total": 85000,
+        "depositAmount": 26000,
+        "remainingAfterDeposit": 59000,
+        "isFree": false,
+        "amountDue": { "AT_VENUE": 0, "TRANSFER_DEPOSIT": 26000, "TRANSFER_FULL": 85000 }
+      }
+    },
+    {
+      "id": "E3",
+      "note": "cọc 30.300 làm tròn xuống 30.000",
+      "subtotal": 101000,
+      "voucher": null,
+      "expected": {
+        "discount": 0,
+        "total": 101000,
+        "depositAmount": 30000,
+        "remainingAfterDeposit": 71000,
+        "isFree": false,
+        "amountDue": { "AT_VENUE": 0, "TRANSFER_DEPOSIT": 30000, "TRANSFER_FULL": 101000 }
+      }
+    },
+    {
+      "id": "E4",
+      "note": "trần giảm giá lớn hơn số giảm theo % thì không tác dụng",
+      "subtotal": 200000,
+      "voucher": { "type": "PERCENT", "value": 20, "maxDiscount": 50000 },
+      "expected": {
+        "discount": 40000,
+        "total": 160000,
+        "depositAmount": 48000,
+        "remainingAfterDeposit": 112000,
+        "isFree": false,
+        "amountDue": { "AT_VENUE": 0, "TRANSFER_DEPOSIT": 48000, "TRANSFER_FULL": 160000 }
+      }
+    },
+    {
+      "id": "E5",
+      "note": "100% không trần: miễn phí",
+      "subtotal": 120000,
+      "voucher": { "type": "PERCENT", "value": 100, "maxDiscount": null },
+      "expected": {
+        "discount": 120000,
+        "total": 0,
+        "depositAmount": 0,
+        "remainingAfterDeposit": 0,
+        "isFree": true,
+        "amountDue": { "AT_VENUE": 0, "TRANSFER_DEPOSIT": 0, "TRANSFER_FULL": 0 }
+      }
+    }
+  ]
+}
