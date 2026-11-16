@@ -6,6 +6,8 @@
 
 ## Summary
 
+> **Đồng bộ với code (2026-11-14):** spec 021 **chưa được hiện thực** (0/84 task). Plan này dựa trên thiết kế ban đầu của 020 (`SearchCriteria`, `SearchViewModel`, `VenueSearchEngine`, `VenueMatcher`, `AvailabilityEvaluator`, `VenueDataSource`), nhưng 020 thực tế được hiện thực bằng `CourtSearchCriteria`, `CourtSearchViewModel` và `FirestoreCourtSearchRepository` (xem bảng "Đồng bộ với code" trong [plan 020](../020-court-search/plan.md)). Trước khi code 021, cần cập nhật các mục "Phối hợp với nhóm" và Project Structure để nối vào các lớp này, đặc biệt là test đối chiếu SC-002 (bản đồ và danh sách phải dùng cùng logic lọc).
+
 Người chơi, kể cả khách, xem cơ sở cầu lông trên bản đồ và tìm sân gần mình. Chế độ bản đồ nằm trên màn hình tìm kiếm của 020 và dùng chung bộ lọc với danh sách. Các phần chính:
 - marker quả cầu lông, gộp cụm khi chồng nhau;
 - thẻ tóm tắt vuốt được, đồng bộ với marker;

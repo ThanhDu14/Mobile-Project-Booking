@@ -33,4 +33,5 @@
 
 - Đã giải quyết 2 marker ở Clarifications (Session 2026-10-05): Q1 10 lượt AI mỗi người mỗi ngày (FR-016); Q2 chỉ người đã đăng nhập dùng ô AI, khách dùng bộ lọc thủ công (FR-025, US5 kịch bản 8–9).
 - Spec nói "dịch vụ AI", "máy chủ" ở mức nghiệp vụ; tên Edge Function, schema JSON và nhà cung cấp LLM để `/speckit-plan` quyết định theo AI-feature.md và constitution v1.2.0.
+- Rà soát 2026-11-12. US7, FR-026 đến FR-030 và SC-009, SC-010 bao phủ đề xuất, giải thích có nguồn, đánh giá thay đổi và cách tiếp tục khi thiếu dữ liệu. FR-016 và SC-008 xác định hai hạn mức khi bổ sung lời giải thích. Việc chọn cách lập chỉ mục và truy xuất thuộc bước lập kế hoạch kỹ thuật.
 - Items marked incomplete require spec updates before `/speckit-clarify` or `/speckit-plan`

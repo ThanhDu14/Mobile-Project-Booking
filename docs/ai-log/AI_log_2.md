@@ -44,6 +44,10 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 38 | 2026-11-07 | Nối tab Lịch đặt đến màn placeholder 060 và kiểm tra trên thiết bị | 06 |
 | 39 | 2026-11-08 | Khởi động Feature 060: baseline, phụ thuộc, domain và use case | 06 |
 | 40 | 2026-11-08 | Hoàn thiện Feature 060: data layer, rules, server, UI 4 mockups, unit tests và đối chiếu nghiệm thu | 06 |
+| 41 | 2026-11-10 | Theo dõi hủy booking và dọn HOLD hết hạn | 06 |
+| 42 | 2026-11-12 | Đặc tả và triển khai ban đầu đề xuất sân theo đánh giá (RAG) cho tìm kiếm 020/022 | 02 |
+| 43 | 2026-11-14 | Rà soát RAG so với spec, sửa lỗi và đồng bộ tài liệu 020/021/022 với code | 02 |
+| 44 | 2026-11-15 | Kiểm thử AI search trên máy thật, sửa lỗi, cải thiện giao diện, deploy, commit và push | 02 |
 
 
 
@@ -2007,3 +2011,98 @@ Sau đợt kiểm thử trên thiết bị thật và đối chiếu kỹ lưỡ
 - Tối ưu bổ sung trong lượt tiếp theo: trong `player-cancel-booking`, đọc booking và refund idempotency độc lập bằng `Promise.all` thay vì hai round-trip Firestore tuần tự. Các ghi booking/slot/wallet/refund vẫn nằm trong cùng batch commit; không chuyển sang optimistic success hay bỏ kiểm tra nghiệp vụ.
 - Xác minh tối ưu: `deno test -A supabase/functions/player-cancel-booking/handler.test.ts` — 5/5 pass; `deno check .../player-cancel-booking/index.ts` và `deno fmt --check` pass. Android targeted tests và `assembleDebug` đã chạy pass với JDK 17 (chi tiết test được lưu trong Gradle reports); cảnh báo manifest `nav_account` include lặp vẫn hiện nhưng không liên quan.
 - Không commit, push, deploy hoặc sửa dữ liệu production. Các thay đổi giữ nguyên trong working tree.
+
+---
+
+## Mục 42: Đặc tả và triển khai ban đầu đề xuất sân theo đánh giá (RAG)
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-12 (bổ sung 2026-11-13) |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 02 – Tìm kiếm sân (spec 020, 022) |
+| Công cụ AI | Codex |
+| Nhánh Git | `feature/020-court-search-rag` |
+
+### Yêu cầu và kết quả
+
+- Tạo nhánh `feature/020-court-search-rag`, cập nhật spec 020 (điều kiện tìm kiếm) và 022 (đề xuất sân dựa trên đánh giá công khai, giải thích có nguồn khi người chơi bấm xem).
+- Sửa giới hạn lượt: tách lượt có kết quả và số lần thực tế gọi LLM, gồm cả lỗi và dự phòng.
+- Triển khai: nối tab Tìm kiếm 020; chuyển ngày/giờ từ 030 vào lưới 040; Edge Function `ai-search-parse` cho phân tích câu, truy xuất và giải thích; truy vấn đánh giá trực tiếp có giới hạn.
+- 2026-11-13: sửa lỗi `RecyclerView has no LayoutManager` khi mở tab Tìm kiếm; tab tải danh sách cơ sở khi chưa có bộ lọc; chỉnh vị trí thẻ AI, chip, bảng lọc và khoảng cách theo wireframe cũ.
+
+### Kiểm chứng
+
+- Build APK debug, unit test tìm kiếm Android, test Edge Function trên Auth/Firestore Emulator (nhà cung cấp LLM là bản giả).
+- Trên SM-A546E: mở tab Tìm kiếm, thấy "Tất cả sân · 10" và mở được bảng lọc.
+- Chưa: chạy bộ đánh giá với khóa Gemini/Groq thật, trường hợp trên 100 cơ sở.
+
+---
+
+## Mục 43: Rà soát RAG so với spec, sửa lỗi và đồng bộ tài liệu 020/021/022
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-14 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 02 – Tìm kiếm sân (spec 020, 021, 022) |
+| Công cụ AI | Claude Code (Claude Opus 5.5) |
+| Nhánh Git | `feature/020-court-search-rag` |
+
+### Prompt chính
+
+"Tôi muốn build tính năng RAG của feature AI liên quan đến search và hoạt động được, hãy làm rõ những điểm mâu thuẫn và cần thống nhất giúp tôi." Sau đó: "Hãy giải quyết A, B.1 (1), B.2 … B.5 theo đề xuất, C. Hãy cập nhật theo đề xuất."
+
+### AI phát hiện và quyết định đã chốt
+
+- Lỗi: (A1) phiên bản nguồn băm `updatedAt` nên chủ sân phản hồi làm nguồn hết hiệu lực; (A2) truy vấn đánh giá không lọc `targetType`; (A3) `RECOMMEND` có thể đọc khoảng 340 document mỗi lần mà không có trần; (A4) bộ đếm "Còn X/10" lệch với mô tả hoàn lượt.
+- Quyết định: B1 bỏ LLM ở bước giải thích (`EXPLAIN` tất định, không tính lượt); B2 danh sách đóng 7 mã sở thích; B3 hai trần lượt, hiển thị theo trần chặt hơn; B4 ghi đúng cách chọn 30 sân ứng viên; B5 code là chuẩn.
+
+### Thay đổi
+
+- `evidence.ts`: `reviewVersion` không băm `updatedAt`; `rankReviews` lọc `targetType == VENUE`; `buildExplanation` thay lời giải thích từ LLM. Thêm index `reviews (venueId, targetType, status, createdAt desc)`.
+- `handler.ts`: trần `RECOMMEND` 20 lần/ngày (`409 RECOMMEND_LIMIT`), bỏ sân `ratingCount == 0`; `EXPLAIN` không gọi LLM.
+- App: `AiExplanationResponse.usage` tùy chọn, nút "Vì sao phù hợp?" không phụ thuộc lượt, nhãn "Tổng hợp từ đánh giá".
+- Tài liệu: spec 022 (Clarifications, FR liên quan, US7), `review-rag.md` thành contract chính thức, plan/tasks/quickstart 022; spec/plan 020 đồng bộ với code; plan 021 ghi chú chưa hiện thực.
+
+### Kiểm chứng
+
+- `deno test` dưới Emulator: 10/10 (gồm 4 test Emulator); Android search unit test 17/17; `deno check`.
+- Không tick hàng loạt T001–T116 vì chưa kiểm chứng từng task.
+
+---
+
+## Mục 44: Kiểm thử AI search trên máy thật, sửa lỗi, cải thiện giao diện, deploy, commit và push
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-15 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 02 – Tìm kiếm sân (spec 020, 022); tích hợp với 040, 080 |
+| Công cụ AI | Claude Code (Claude Opus 5.5 và Claude Haiku 5.5), có điều khiển điện thoại qua `adb` |
+| Nhánh Git | `feature/020-court-search-rag` |
+
+### Yêu cầu và kết quả
+
+1. **Nhà cung cấp LLM:** kiểm tra key trước khi deploy bằng script `check-providers.ts` (dùng đúng prompt/schema của function). Cấu hình 2 key Gemini (2 tài khoản, `gemini-3.5-flash-lite`) và 1 key Groq (`openai/gpt-oss-120b`); thứ tự Gemini → Gemini 2 → Groq, chỉ chuyển khi lỗi 429/5xx. Sửa: `.trim()` key (lỗi `\r`), không log `error.message` (có thể lộ key), tăng token và `reasoning_effort: low` cho gpt-oss, thời gian còn lại dành cho dự phòng, `partOfDayFromQuery` để "tối" trong câu thắng kết quả model. Key nhập bằng `read -s`, không đưa vào log hay chat.
+2. **Hạn mức khi test:** thêm `AI_UNLIMITED_UIDS` (bỏ trần cho UID chỉ định) nhưng không đặt được secret vì tài khoản thiếu quyền; dùng cách đặt lại `aiUsage/{ngày}` để test.
+3. **Lịch sử câu hỏi AI (FR-031):** nút ✕ trong ô AI; lưu 5 câu gần nhất chỉ trên máy, che số điện thoại/email, bỏ câu ngoài phạm vi, xóa khi đăng xuất.
+4. **Ngày đã qua:** app báo `INVALID_DATE`; server thêm `pastDayInQuery` ("hôm qua", "hôm kia", "tuần trước", "tháng trước") vì model đôi khi hiểu "hôm qua" thành hôm nay.
+5. **Kiểm thử US7 trên máy thật:** tạo đánh giá test `manual-test-review-01` và `test-us7-*` (Quận 12) qua Firestore REST, đặt `ratingCount`/`ratingAvg` tương ứng. Đạt: Independent Test (dùng "vượt giá" thay "kín giờ"), thứ tự đề xuất, bỏ chip truy xuất lại không trừ lượt, giải thích không lộ số điện thoại/câu ra lệnh, giải thích hai chiều, chủ sân phản hồi giữ nguồn, sửa bình luận làm nguồn hết hiệu lực.
+6. **Giao diện:** banner lỗi ngày trong khung AI; hộp "Giờ trống" dạng thẻ có thứ trong tuần; ✕ trong ô AI chỉ xóa chữ, hiện "Bộ lọc vẫn đang áp dụng." kèm nút "Xóa bộ lọc"; thẻ đề xuất có điểm, câu trích và nút có icon; "Đánh giá gốc" thành bottom sheet có nhãn Ủng hộ/Trái chiều; "Vì sao phù hợp?" tách Điểm cộng/Điểm trừ. Server `RECOMMEND` trả thêm `quotes` (câu khớp, đã che liên hệ, tối đa 140 ký tự).
+7. **Git:** 26 commit (021: 1, 020: 10, 022: 15) và push nhánh lên `origin`; sau đó 8 commit cho phần giao diện và log này.
+
+### Deploy và dữ liệu thật
+
+- Deploy `ai-search-parse` nhiều lần trong ngày (bản sửa ngày đã qua, `version` `court-search-rag-3`, `quotes`), sau khi người dùng đồng ý.
+- Dữ liệu test còn trên Firestore (người dùng sẽ tự dọn): `reviews/manual-test-review-01`, `reviews/test-us7-a1…c1`, một review tạo tay trong Console, `ratingCount`/`ratingAvg` của `demo-truong-chinh-909`, `demo-pam-badminton`, `demo-minh-tam-cn1`, `demo-gia-han`; `test-us7-a1` đã có phản hồi chủ sân và bình luận bị sửa.
+
+### Kiểm chứng
+
+- Deno: 13/13 (gồm Emulator); Android search unit test pass (thêm test lịch sử, ngày đã qua, giữ bộ lọc); build và cài APK trên SM-A546E, kiểm tra từng màn bằng ảnh chụp.
+
+### Sai sót và giới hạn
+
+- Khi điều khiển bằng `adb`, một lần chạm nhầm mở trang "Xóa tài khoản"; không bấm gì và thoát ngay, tài khoản không bị ảnh hưởng. Một lần ô nhập không được xóa nên ba câu bị dính vào nhau và tốn lượt; đã xóa các câu này khỏi lịch sử.
+- Trong 26 commit, một số commit giữa có thể không build vì code 020 và 022 nằm chung file chưa từng commit; HEAD là bản đã test.
+- Chưa sửa: câu không dấu "toi mai" không nhận ra buổi tối; nút "Xóa bộ lọc" vẫn giữ Quận và từ khóa (chờ người dùng quyết định).

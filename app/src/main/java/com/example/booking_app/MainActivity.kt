@@ -141,7 +141,11 @@ class MainActivity : AppCompatActivity() {
         binding.bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.tab_home -> {
-                    navController.popBackStack(R.id.homeFragment, false)
+                    navController.popBackStack(R.id.homeFragment, false, true)
+                    true
+                }
+                R.id.tab_search -> {
+                    openCourtSearch()
                     true
                 }
                 R.id.tab_bookings -> {
@@ -244,6 +248,7 @@ class MainActivity : AppCompatActivity() {
             if (navController.currentDestination?.id != R.id.accountFragment) return@setOnItemReselectedListener
             when (item.itemId) {
                 R.id.tab_home -> navController.popBackStack(R.id.homeFragment, false)
+                R.id.tab_search -> navController.popBackStack(R.id.courtSearchFragment, false)
                 R.id.tab_bookings -> openMyBookings()
                 R.id.tab_drop_in -> openDropIn()
                 R.id.tab_owner_today -> navController.popBackStack(R.id.ownerHomePlaceholderFragment, false)
@@ -259,9 +264,17 @@ class MainActivity : AppCompatActivity() {
             null,
             navOptions {
                 launchSingleTop = true
-                popUpTo(R.id.homeFragment)
+                popUpTo(R.id.homeFragment) { saveState = true }
             },
         )
+    }
+
+    private fun openCourtSearch() {
+        navController.navigate(R.id.courtSearchFragment, null, navOptions {
+            launchSingleTop = true
+            restoreState = true
+            popUpTo(R.id.homeFragment) { saveState = true }
+        })
     }
 
     /** Tab Vãng lai (spec 080 T015): danh sách buổi, màn gốc `dropInListFragment` của graph `nav_dropin`. */
@@ -271,7 +284,7 @@ class MainActivity : AppCompatActivity() {
             null,
             navOptions {
                 launchSingleTop = true
-                popUpTo(R.id.homeFragment)
+                popUpTo(R.id.homeFragment) { saveState = true }
             },
         )
     }
@@ -316,10 +329,12 @@ class MainActivity : AppCompatActivity() {
             }
             else -> when (destination.id) {
                 R.id.homeFragment -> R.id.tab_home
+                R.id.courtSearchFragment -> R.id.tab_search
                 R.id.myBookingsFragment -> R.id.tab_bookings
                 R.id.dropInListFragment -> R.id.tab_drop_in
                 // Giữ sáng tab đã mở trang Tài khoản.
                 R.id.accountFragment -> when (navController.previousBackStackEntry?.destination?.id) {
+                    R.id.courtSearchFragment -> R.id.tab_search
                     R.id.myBookingsFragment -> R.id.tab_bookings
                     R.id.dropInListFragment -> R.id.tab_drop_in
                     else -> R.id.tab_home

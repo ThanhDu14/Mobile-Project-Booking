@@ -124,13 +124,13 @@ Query của app luôn có `where("status", "==", "ACTIVE")` để Rules chứng 
     { "collectionGroup": "slots", "queryScope": "COLLECTION", "fields": [
       { "fieldPath": "venueId", "order": "ASCENDING" },
       { "fieldPath": "date", "order": "ASCENDING" },
-      { "fieldPath": "startAt", "order": "ASCENDING" } ] }
+      { "fieldPath": "status", "order": "ASCENDING" } ] }
   ],
   "fieldOverrides": []
 }
 ```
 
-Dòng chuỗi `"…"` chỉ để rút gọn tài liệu; file thật liệt kê đủ 13 index. Index `slots` thay index `venueId, date` của 040 (một index phục vụ cả hai query). Báo B trước khi merge.
+Dòng chuỗi `"…"` chỉ để rút gọn tài liệu; chỉ mục `slots(venueId, date, status)` dùng chung với 040. 020 lấy giờ từ `startTime` của các slot bận trong ngày đã chọn.
 
 ## 4. Bảng test
 
@@ -161,5 +161,5 @@ Mỗi dòng ít nhất một test. "Khách" = `testEnv.unauthenticatedContext()`
 | V-3 | Khách | Đọc trực tiếp `venues/{id}` có `status = HIDDEN` hoặc `LOCKED` | ❌ (SC-004) |
 | V-4 | Chủ cơ sở | Đọc cơ sở `HIDDEN` của mình | ✅ |
 | V-5 | Khách | Đọc `venues/{id}/courts`, `priceRules` | ✅ |
-| S-1 | Khách | Query `slots` theo `venueId`, `date`, `startAt` | ✅ |
+| S-1 | Khách | Query `slots` theo `venueId`, `date`, `status` | ✅ |
 | S-2 | Khách | Tạo hoặc sửa `slots/{id}` | ❌ |

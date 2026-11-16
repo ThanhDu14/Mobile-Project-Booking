@@ -83,11 +83,28 @@ class DropInListViewModel @Inject constructor(
         loadJob = viewModelScope.launch {
             val initial = savedStateHandle.get<DropInFilterArgs>(KEY_CURRENT_FILTER)?.toFilter()
                 ?: savedStateHandle.get<DropInFilterArgs>(ARG_FILTER)?.toFilter()
+                ?: aiLinkFilter()
                 ?: memory.last
                 ?: defaultFilter()
             setFilter(initial)
             loadFirstPage()
         }
+    }
+
+    private fun aiLinkFilter(): DropInFilter? {
+        val districts = savedStateHandle.get<String>("aiDistrictIds")
+        val date = savedStateHandle.get<String>("aiDate")
+        val timeSlot = savedStateHandle.get<String>("aiTimeSlot")
+        val level = savedStateHandle.get<String>("aiLevel")
+        val price = savedStateHandle.get<String>("aiMaxPrice")
+        if (listOf(districts, date, timeSlot, level, price).all { it == null }) return null
+        return DropInFilterArgs(
+            districtIds = districts?.split(',')?.take(10),
+            date = com.example.booking_app.core.schedule.BookingSearchWindow.parseDate(date)?.toString(),
+            timeSlot = timeSlot,
+            level = level,
+            maxPrice = price?.toLongOrNull(),
+        ).toFilter()
     }
 
     fun retry() = reload()
