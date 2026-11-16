@@ -3,6 +3,8 @@ package com.example.booking_app.feature.booking.ui
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.booking_app.core.schedule.BookingSearchWindow
+import com.example.booking_app.core.schedule.BookingWindow
 import com.example.booking_app.core.di.DefaultDispatcher
 import com.example.booking_app.core.session.SessionManager
 import com.example.booking_app.feature.booking.domain.model.BusySlotsUpdate
@@ -39,6 +41,7 @@ import kotlinx.coroutines.withContext
 import java.text.DecimalFormat
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import java.util.UUID
@@ -64,10 +67,16 @@ class BookingSlotGridViewModel @Inject constructor(
     // Q12: Bỏ fallback "demo-venue-01" im lặng; venueId bắt buộc
     val venueId: String = savedStateHandle["venueId"] ?: ""
 
+    private val openedAt = ZonedDateTime.now(BookingWindow.ZONE)
+    private val requestedWindow = BookingSearchWindow.parse(
+        savedStateHandle["date"], savedStateHandle["startTime"], savedStateHandle["endTime"],
+    )?.takeIf { it.isBookableAt(openedAt) }
+
     private val _uiState = MutableStateFlow(
         BookingSlotUiState(
             venueId = venueId,
-            dates = generate30DaysList()
+            dates = (0..BookingWindow.ADVANCE_DAYS).map { openedAt.toLocalDate().plusDays(it.toLong()) },
+            selectedDate = requestedWindow?.date ?: openedAt.toLocalDate(),
         )
     )
     val uiState: StateFlow<BookingSlotUiState> = _uiState.asStateFlow()
@@ -104,6 +113,14 @@ class BookingSlotGridViewModel @Inject constructor(
 
     fun loadInitialData() {
         loadVenueAndSlots()
+    }
+
+    fun requestedStartFor(date: LocalDate): String? = requestedWindow
+        ?.takeIf { it.date == date && savedStateHandle.get<Boolean>("searchWindowShown") != true }
+        ?.start?.toHhmm()
+
+    fun markRequestedWindowShown() {
+        savedStateHandle["searchWindowShown"] = true
     }
 
     fun loadVenueAndSlots(forceRefresh: Boolean = false) {
@@ -1204,11 +1221,6 @@ class BookingSlotGridViewModel @Inject constructor(
         val courtName = activeCourts.find { it.id == slot.courtId }?.name ?: "Sân"
         val time = formatHourMinute(slot.startTime)
         return "$time ($courtName)"
-    }
-
-    private fun generate30DaysList(): List<LocalDate> {
-        val today = LocalDate.now(zoneVietnam)
-        return (0L until 30L).map { today.plusDays(it) }
     }
 
     private fun formatHourMinute(hhmm: String): String {

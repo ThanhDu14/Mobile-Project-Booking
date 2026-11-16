@@ -117,3 +117,9 @@ node scripts/ai-eval/export-metrics.mjs --project=<id> --from=<yyyyMMdd> --to=<y
 ```
 
 Kèm báo cáo của §2 và §5 vào báo cáo kỹ thuật (FR-024).
+
+## 7. Đề xuất từ đánh giá (US7)
+
+Chạy `deno test -A --no-lock supabase/functions/ai-search-parse/` để kiểm tra bộ lọc, dẫn chứng và chống bịa nguồn. Để chạy các kịch bản Firestore, khởi động Auth/Firestore Emulator và đặt `FIREBASE_PROJECT_ID`, `FIRESTORE_EMULATOR_HOST`, `FIREBASE_AUTH_EMULATOR_HOST` trước cùng lệnh. Bộ test dùng provider giả, không cần khóa Gemini/Groq.
+
+Khi chạy Edge Function và app với môi trường thử nghiệm đã cấu hình, nhập “tối mai 7–9h Q10 dưới 100k, sân ít trơn”. Kiểm tra danh sách chính hiện trước đề xuất. Mở đúng đánh giá gốc, rồi bấm “Vì sao phù hợp?”. Kiểm tra lời giải thích có nhãn "Tổng hợp từ đánh giá" và số lượt AI không đổi (bước này không gọi LLM). Cho chủ sân phản hồi đánh giá của sân đề xuất rồi mở lại nguồn: nguồn vẫn hợp lệ. Sửa bộ lọc khi đề xuất đang tải, rồi ẩn đánh giá và bấm lại "Vì sao phù hợp?" để kiểm tra app bỏ đề xuất cũ. Trước khi thử trên project thật, deploy index `reviews (venueId, targetType, status, createdAt desc)` rồi mới deploy function. Cấu hình khóa bằng secrets ở môi trường thử nghiệm; contract đầy đủ ở [review-rag.md](contracts/review-rag.md).

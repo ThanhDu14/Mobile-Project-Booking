@@ -500,10 +500,14 @@ class CourtDetailFragment : Fragment() {
             CourtDetailEffect.OpenLogin -> authNavigator.openLogin(findNavController(), returnTo = null)
             is CourtDetailEffect.OpenChat -> openChat(effect.venueId)
             is CourtDetailEffect.OpenBookingGrid -> {
-                // TODO(B): truyền date/startTime/endTime khi 040 có tham số (research R1).
                 findNavController().navigate(
                     R.id.action_courtDetail_to_bookingSlotGrid,
-                    bundleOf(CourtDetailViewModel.ARG_VENUE_ID to effect.venueId),
+                    bundleOf(
+                        CourtDetailViewModel.ARG_VENUE_ID to effect.venueId,
+                        "date" to effect.window?.date?.format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE),
+                        "startTime" to effect.window?.start?.toHhmm(),
+                        "endTime" to effect.window?.end?.toHhmm(),
+                    ),
                 )
             }
             is CourtDetailEffect.OpenPhotoViewer -> findNavController().navigate(

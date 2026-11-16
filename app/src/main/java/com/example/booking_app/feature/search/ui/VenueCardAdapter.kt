@@ -10,6 +10,7 @@ import coil3.load
 import coil3.request.error
 import coil3.request.placeholder
 import com.example.booking_app.R
+import com.example.booking_app.core.location.DistanceFormatter
 import com.example.booking_app.databinding.ItemSearchVenueBinding
 import com.example.booking_app.feature.search.domain.model.HomeVenue
 
@@ -28,8 +29,13 @@ class VenueCardAdapter(
         fun bind(venue: HomeVenue) {
             val context = binding.root.context
             binding.name.text = venue.name
-            binding.district.text = venue.districtName
-            binding.district.isVisible = venue.districtName != null
+            val district = venue.districtName
+            val distance = venue.distanceMeters?.let(DistanceFormatter::format)
+            val location = if (district != null && distance != null) {
+                context.getString(R.string.search_result_distance, district, distance)
+            } else district ?: distance
+            binding.district.text = location
+            binding.district.isVisible = location != null
             val price = HomeFormat.price(context, venue)
             val rating = HomeFormat.rating(context, venue)
             binding.price.text = price
@@ -38,7 +44,7 @@ class VenueCardAdapter(
                 placeholder(R.drawable.img_venue_placeholder)
                 error(R.drawable.img_venue_placeholder)
             }
-            binding.root.contentDescription = venue.districtName
+            binding.root.contentDescription = location
                 ?.let { context.getString(R.string.search_card_description, venue.name, it, price, rating) }
                 ?: context.getString(R.string.search_card_description_no_district, venue.name, price, rating)
             binding.root.setOnClickListener { onClick(venue) }

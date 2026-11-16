@@ -11,7 +11,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import java.time.LocalDate
-import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
@@ -110,17 +109,23 @@ class GenerateDailySlotsUseCaseTest {
 
     @Test
     fun generateDailySlots_assignsPastStatus_forElapsedSlotsToday() {
-        // Fixed Tuesday matches the weekday price fixtures, including on weekend test runs.
+        // Use a fixed date and the venue zone so the test is independent of the clock and machine's time zone.
         val todayStr = date
-        val tenFifteenToday = LocalDateTime.of(2026, 10, 27, 10, 15)
-            .atZone(ZoneId.of("Asia/Ho_Chi_Minh")).toInstant().toEpochMilli()
+        val vietnam = ZoneId.of("Asia/Ho_Chi_Minh")
+        val tenFifteenToday = LocalDate.parse(todayStr, DateTimeFormatter.BASIC_ISO_DATE)
+            .atTime(10, 15).atZone(vietnam).toInstant().toEpochMilli()
+        // The fixture rules cover Mon-Fri only; this test must work on any weekday, so it uses rules for all 7 days.
+        val everyDayRules = listOf(
+            normalRule.copy(daysOfWeek = (1..7).toList()),
+            peakRule.copy(daysOfWeek = (1..7).toList()),
+        )
 
         val slots = useCase(
             courtId = courtId,
             date = todayStr,
             openTime = "0600",
             closeTime = "2200",
-            priceRules = priceRules,
+            priceRules = everyDayRules,
             busySlots = emptyList(),
             currentTimeMillis = tenFifteenToday
         )
