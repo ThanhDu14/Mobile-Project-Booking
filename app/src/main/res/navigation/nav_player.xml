@@ -69,7 +69,7 @@
         android:label="@string/booking_confirm_title">
         <argument
             android:name="args"
-            app:argType="com.example.booking_app.feature.booking.ui.HoldToPaymentArgs" />
+            app:argType="com.example.booking_app.core.navigation.HoldToPaymentArgs" />
     </fragment>
 
     <fragment
@@ -91,7 +91,7 @@
         android:label="@string/recurring_confirm_title">
         <argument
             android:name="args"
-            app:argType="com.example.booking_app.feature.booking.ui.HoldToPaymentArgs" />
+            app:argType="com.example.booking_app.core.navigation.HoldToPaymentArgs" />
     </fragment>
 
     <!-- Trang Tài khoản của spec 011 (research R14). Mở từ avatar ở header dùng chung của mọi tab (US8),

@@ -16,7 +16,7 @@
         android:label="@string/payment_title">
         <argument
             android:name="args"
-            app:argType="com.example.booking_app.feature.booking.ui.HoldToPaymentArgs" />
+            app:argType="com.example.booking_app.core.navigation.HoldToPaymentArgs" />
         <action
             android:id="@+id/action_payment_to_transfer"
             app:destination="@id/transferFragment" />

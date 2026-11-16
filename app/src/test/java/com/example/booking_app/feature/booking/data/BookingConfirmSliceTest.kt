@@ -4,7 +4,7 @@ import com.example.booking_app.feature.booking.data.mapper.BookingDocumentBuilde
 import com.example.booking_app.feature.booking.domain.model.ConfirmBookingResult
 import com.example.booking_app.feature.booking.domain.repository.BookingRepository
 import com.example.booking_app.feature.booking.domain.usecase.ConfirmHoldToBookingUseCase
-import com.example.booking_app.feature.booking.ui.HoldToPaymentArgs
+import com.example.booking_app.core.navigation.HoldToPaymentArgs
 import com.example.booking_app.feature.booking_management.data.BookingManagementMapper
 import com.example.booking_app.feature.booking_management.domain.PaymentStatus
 import com.example.booking_app.feature.booking_management.domain.RefundPolicy

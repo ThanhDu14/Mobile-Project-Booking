@@ -13,6 +13,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.example.booking_app.R
+import com.example.booking_app.core.navigation.HoldToPaymentArgs
 import com.example.booking_app.core.session.SessionManager
 import com.example.booking_app.databinding.FragmentBookingConfirmBinding
 import com.example.booking_app.databinding.ItemConfirmCourtSlotsBinding

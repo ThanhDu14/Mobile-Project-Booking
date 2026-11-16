@@ -13,6 +13,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.booking_app.R
+import com.example.booking_app.core.navigation.HoldToPaymentArgs
 import com.example.booking_app.core.session.SessionManager
 import com.example.booking_app.databinding.FragmentBookingRecurringConfirmBinding
 import com.example.booking_app.feature.booking.data.time.ServerTimeOffsetProvider

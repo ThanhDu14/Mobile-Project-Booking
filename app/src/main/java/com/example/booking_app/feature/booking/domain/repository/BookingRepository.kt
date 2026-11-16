@@ -35,7 +35,7 @@ interface BookingRepository {
     ): Result<Unit>
 
     suspend fun confirmHoldToBooking(
-        args: com.example.booking_app.feature.booking.ui.HoldToPaymentArgs,
+        args: com.example.booking_app.core.navigation.HoldToPaymentArgs,
         paymentMethod: String,
         userId: String
     ): com.example.booking_app.feature.booking.domain.model.ConfirmBookingResult

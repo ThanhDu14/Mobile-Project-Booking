@@ -1,6 +1,6 @@
 package com.example.booking_app.feature.booking.ui.state
 
-import com.example.booking_app.feature.booking.ui.HoldToPaymentArgs
+import com.example.booking_app.core.navigation.HoldToPaymentArgs
 
 sealed interface BookingRecurringUiEffect {
     data class ShowToast(val message: String) : BookingRecurringUiEffect
