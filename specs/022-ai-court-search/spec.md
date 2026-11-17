@@ -37,6 +37,13 @@
 - Q: Người dùng ghi ngày đã qua ("hôm qua") thì sao? → A: Server luôn bỏ ngày (`INVALID_DATE`) khi câu có "hôm qua", "hôm kia", "tuần trước", "tháng trước" (có hoặc không dấu), không phụ thuộc model. App báo "Ngày đã qua hoặc không hợp lệ, vui lòng chọn lại." và hỏi lại ngày. Lượt vẫn bị trừ vì câu đã được phân tích.
 - Q: Có lưu lịch sử câu hỏi AI không? → A: Có, chỉ trên máy, theo FR-031.
 
+### Session 2026-11-18 (gợi ý nới điều kiện, US6)
+
+- Q: Gợi ý hiện khi nào? → A: Với mọi lần tìm có lọc ra 0 sân, cả bộ lọc tay lẫn bộ lọc AI điền (không chỉ sau AI). Vẫn tính trong app, không gọi AI, không trừ lượt.
+- Q: Nới giá thế nào? → A: Tới mức giá gần nhất có sân (giá thấp nhất trong các sân phù hợp khi bỏ trần, làm tròn lên nghìn đồng), thay cho bước cố định +20.000 đ.
+- Q: Có thêm cách nới nào ngoài spec? → A: Thêm "Mọi quận" (bỏ giới hạn quận) và "Cùng giờ ngày mai". Tối đa vẫn 3 gợi ý, ưu tiên mỗi nhóm một gợi ý (giá, giờ, tiện ích, ngày, khu vực).
+- Q: Hiển thị ra sao? → A: Dòng "Thử nới điều kiện:" và tối đa 3 chip dưới thông báo rỗng; bấm chip là áp dụng ngay, chip bộ lọc đổi theo.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Tìm sân bằng một câu tự nhiên (Priority: P1)
@@ -233,7 +240,7 @@ Người chơi đã đăng nhập nhập “Tối mai 7–9h ở Quận 10, dư�
 
 **Không có kết quả**
 
-- **FR-022**: Khi bộ lọc do AI điền cho kết quả rỗng, app PHẢI gợi ý tối đa 3 cách nới điều kiện (tăng giá tối đa thêm 20.000 đ, dời khung giờ sớm/muộn 1 giờ, bỏ một tiện ích), mỗi gợi ý kèm số kết quả, chỉ hiện gợi ý có ít nhất 1 kết quả; tính gợi ý không gọi AI và không trừ lượt.
+- **FR-022**: Khi một lần tìm có lọc (bộ lọc tay hoặc do AI điền) cho kết quả rỗng, app PHẢI gợi ý tối đa 3 cách nới điều kiện (nâng trần giá tới mức gần nhất có sân, dời khung giờ sớm/muộn 1 giờ, bỏ một tiện ích, cùng giờ ngày mai, bỏ giới hạn quận), mỗi gợi ý kèm số kết quả, chỉ hiện gợi ý có ít nhất 1 kết quả; tính gợi ý không gọi AI và không trừ lượt (cập nhật 2026-11-18, xem Clarifications).
 
 **Đo lường**
 

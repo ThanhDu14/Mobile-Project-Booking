@@ -337,24 +337,31 @@ Phần server (giữ/hoàn lượt, chặn gửi thẳng, E1–E7) đã xong ở
 
 ## Phase 8: User Story 6 - Gợi ý nới điều kiện khi không có kết quả (Priority: P3)
 
+> **Đồng bộ với code (2026-11-18):** cài trên màn tìm sân thực tế (`CourtSearchFragment`/`CourtSearchViewModel`), không có `SearchViewModel.applyExternal` hay `AiRelaxationsView` riêng. Phạm vi đã mở rộng theo Clarifications 2026-11-18.
+> - `SEARCH/domain/Relaxation.kt`: `RelaxationPlanner.probes` (giá, muộn/sớm 1 giờ, bỏ tiện ích chọn sau cùng (tối đa 2), ngày mai, mọi quận; bỏ biến thể đã qua hoặc quá 30 ngày) và `pick` (tối đa 3, mỗi nhóm một gợi ý trước; giá = mức gần nhất có sân, làm tròn lên nghìn).
+> - `CourtSearchRepository.variantPrices` (thay `countVariants`): trả giá mỗi giờ của từng sân phù hợp cho mỗi biến thể; danh sách sân theo quận, `priceRules` + `courts` theo sân, `slots` theo sân và ngày được đọc một lần và dùng chung.
+> - `CourtSearchViewModel`: lần tìm có lọc xong mà 0 sân thì tính `relaxations`; `applyRelaxation` áp dụng như đổi bộ lọc tay và lưu lịch sử; tìm lần mới thì xóa gợi ý.
+> - Giao diện: "Thử nới điều kiện:" + tối đa 3 chip dưới thông báo rỗng (`relaxSection` trong `view_court_search_controls.xml`).
+> - Test: `RelaxationPlannerTest.kt`, `RelaxationViewModelTest.kt`. T102 (thử trên máy, quickstart K28) còn chờ người dùng.
+
 **Goal**: bộ lọc AI cho kết quả rỗng thì hiện tối đa 3 gợi ý nới điều kiện kèm số kết quả, không gọi AI.
 
 **Independent Test**: dữ liệu không có sân ≤100k lúc 19–21 nhưng có sân 120k → gửi câu tương ứng thấy "Nới giá lên 120k (N sân)"; bấm thì danh sách hiện các sân đó (quickstart K28).
 
 ### Tests for User Story 6 ⚠️
 
-- [ ] T093 [P] [US6] Viết `TEST/feature/search/domain/ai/RelaxationPlannerTest.kt` (clock giả): thứ tự `PRICE_UP` (+20.000, chỉ khi có `priceMax`), `LATER` (+1 giờ), `EARLIER` (−1 giờ, bỏ khi `start − 1h` đã qua hoặc < 05:00), `DROP_AMENITY` (tiện ích cuối trước, tối đa 2); tối đa 5 biến thể; không có `timeWindow` thì không có `LATER`/`EARLIER`; khung `end + 1h > 24:00` thì bỏ `LATER`
-- [ ] T094 [P] [US6] (Sửa 020) Viết test `countVariants` trong `TEST/feature/search/data/FirestoreVenueSearchEngineTest.kt` (fake `VenueDataSource`): kết quả từng biến thể bằng đúng `firstPage` của biến thể đó (cắt ở `limit`); chỉ **một** query ứng viên và **một** lượt `busySlots` mỗi cơ sở cho khung hợp; `priceRules`/`courts` lấy từ `VenueStaticCache`. **Phụ thuộc: 020 T065**
-- [ ] T095 [P] [US6] Viết `TEST/feature/search/domain/ai/usecase/SuggestRelaxationsTest.kt` (`VenueSearchEngine` giả): chỉ giữ biến thể `count ≥ 1`, tối đa 3, giữ thứ tự ưu tiên; không gọi `AiSearchApi`
-- [ ] T096 [P] [US6] Bổ sung `SearchViewModelTest.kt`: `lastAiCriteria` được ghi khi `applyExternal(_, AI)`; danh sách rỗng **và** `criteria == lastAiCriteria` → gọi `SuggestRelaxations`; người chơi sửa chip → không gọi; bấm gợi ý → `applyExternal(variant, AI)`
+- [x] T093 [P] [US6] Viết `TEST/feature/search/domain/ai/RelaxationPlannerTest.kt` (clock giả): thứ tự `PRICE_UP` (+20.000, chỉ khi có `priceMax`), `LATER` (+1 giờ), `EARLIER` (−1 giờ, bỏ khi `start − 1h` đã qua hoặc < 05:00), `DROP_AMENITY` (tiện ích cuối trước, tối đa 2); tối đa 5 biến thể; không có `timeWindow` thì không có `LATER`/`EARLIER`; khung `end + 1h > 24:00` thì bỏ `LATER`
+- [x] T094 [P] [US6] (Sửa 020) Viết test `countVariants` trong `TEST/feature/search/data/FirestoreVenueSearchEngineTest.kt` (fake `VenueDataSource`): kết quả từng biến thể bằng đúng `firstPage` của biến thể đó (cắt ở `limit`); chỉ **một** query ứng viên và **một** lượt `busySlots` mỗi cơ sở cho khung hợp; `priceRules`/`courts` lấy từ `VenueStaticCache`. **Phụ thuộc: 020 T065**
+- [x] T095 [P] [US6] Viết `TEST/feature/search/domain/ai/usecase/SuggestRelaxationsTest.kt` (`VenueSearchEngine` giả): chỉ giữ biến thể `count ≥ 1`, tối đa 3, giữ thứ tự ưu tiên; không gọi `AiSearchApi`
+- [x] T096 [P] [US6] Bổ sung `SearchViewModelTest.kt`: `lastAiCriteria` được ghi khi `applyExternal(_, AI)`; danh sách rỗng **và** `criteria == lastAiCriteria` → gọi `SuggestRelaxations`; người chơi sửa chip → không gọi; bấm gợi ý → `applyExternal(variant, AI)`
 
 ### Implementation for User Story 6
 
-- [ ] T097 [US6] Cài đặt `SEARCH/domain/ai/model/Relaxation.kt` và `SEARCH/domain/ai/RelaxationPlanner.kt`. T093 xanh
-- [ ] T098 [US6] (Sửa 020) Bổ sung `SEARCH/domain/VenueSearchEngine.kt` (`countVariants(variants, limit = 20): List<Int>`) và `SEARCH/data/FirestoreVenueSearchEngine.kt` theo [research R13](research.md#r13-gợi-ý-nới-điều-kiện-fr-022). T094 xanh. **Phụ thuộc: 020 T065**
-- [ ] T099 [US6] Cài đặt `SEARCH/domain/ai/usecase/SuggestRelaxations.kt`. T095 xanh
-- [ ] T100 [US6] (Sửa 020) Bổ sung `SEARCH/ui/SearchViewModel.kt` + `SearchUiState`: `lastAiCriteria`, `relaxations: List<Relaxation>` khi rỗng; `onRelaxationClicked`. T096 xanh
-- [ ] T101 [US6] Cài đặt `SEARCH/ui/ai/AiRelaxationsView.kt` + `RES/layout/view_ai_relaxations.xml` (tối đa 3 nút "Nới giá lên 120k (3 sân)", "Đổi sang 20:00–22:00 (2 sân)", "Bỏ "Gửi xe" (4 sân)" theo `ai_relax_*`), đặt trong `ai_relaxations_container` của trạng thái rỗng 020; không có gợi ý thì ẩn, hiện trạng thái rỗng thường (US6-4). **Phụ thuộc: 020 T052**
+- [x] T097 [US6] Cài đặt `SEARCH/domain/ai/model/Relaxation.kt` và `SEARCH/domain/ai/RelaxationPlanner.kt`. T093 xanh
+- [x] T098 [US6] (Sửa 020) Bổ sung `SEARCH/domain/VenueSearchEngine.kt` (`countVariants(variants, limit = 20): List<Int>`) và `SEARCH/data/FirestoreVenueSearchEngine.kt` theo [research R13](research.md#r13-gợi-ý-nới-điều-kiện-fr-022). T094 xanh. **Phụ thuộc: 020 T065**
+- [x] T099 [US6] Cài đặt `SEARCH/domain/ai/usecase/SuggestRelaxations.kt`. T095 xanh
+- [x] T100 [US6] (Sửa 020) Bổ sung `SEARCH/ui/SearchViewModel.kt` + `SearchUiState`: `lastAiCriteria`, `relaxations: List<Relaxation>` khi rỗng; `onRelaxationClicked`. T096 xanh
+- [x] T101 [US6] Cài đặt `SEARCH/ui/ai/AiRelaxationsView.kt` + `RES/layout/view_ai_relaxations.xml` (tối đa 3 nút "Nới giá lên 120k (3 sân)", "Đổi sang 20:00–22:00 (2 sân)", "Bỏ "Gửi xe" (4 sân)" theo `ai_relax_*`), đặt trong `ai_relaxations_container` của trạng thái rỗng 020; không có gợi ý thì ẩn, hiện trạng thái rỗng thường (US6-4). **Phụ thuộc: 020 T052**
 - [ ] T102 [US6] Chạy quickstart K28 (thêm một cơ sở 120k/giờ vào dữ liệu Emulator nếu seed chưa đủ, chỉ nạp Emulator); ghi số lượt đọc thêm so với ước lượng ~25–100 ở R13
 
 **Checkpoint**: cả 6 story chạy độc lập.
