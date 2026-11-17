@@ -32,6 +32,9 @@ import com.example.booking_app.feature.search.domain.ReviewSource
 import com.example.booking_app.feature.search.domain.SearchHistory
 import com.example.booking_app.feature.search.domain.SearchHistoryEntry
 import com.example.booking_app.feature.search.domain.SearchHistoryRepository
+import com.example.booking_app.feature.search.domain.VoiceError
+import com.example.booking_app.feature.search.domain.VoiceEvent
+import com.example.booking_app.feature.search.domain.VoiceInput
 import com.example.booking_app.feature.search.domain.model.HomeVenue
 import com.google.firebase.firestore.GeoPoint
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -52,7 +55,10 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
-enum class SearchNotice { AI_ERROR, QUOTA, LOCKED, SOURCE_UNAVAILABLE, INVALID_WINDOW, INVALID_DATE, DROPPED_FILTERS, OFF_TOPIC, LOCATION_UNAVAILABLE, HISTORY_DATE_PAST }
+/** Giới hạn ký tự của câu hỏi AI (khớp `counterMaxLength` của ô nhập). */
+private const val AI_INPUT_MAX = 200
+
+enum class SearchNotice { AI_ERROR, QUOTA, LOCKED, SOURCE_UNAVAILABLE, INVALID_WINDOW, INVALID_DATE, DROPPED_FILTERS, OFF_TOPIC, LOCATION_UNAVAILABLE, HISTORY_DATE_PAST, VOICE_NO_MATCH, VOICE_NETWORK }
 
 data class CourtSearchUiState(
     val criteria: CourtSearchCriteria = CourtSearchCriteria(),
@@ -72,6 +78,11 @@ data class CourtSearchUiState(
     val aiHistory: List<String> = emptyList(),
     /** Lịch sử tìm kiếm trên Firestore (spec 020 US4), mới nhất trước; khách luôn rỗng. */
     val history: List<SearchHistoryEntry> = emptyList(),
+    /** Micro ở ô AI (spec 022 US4): ẩn khi máy không có dịch vụ nhận dạng. */
+    val voiceAvailable: Boolean = false,
+    val listening: Boolean = false,
+    /** Người dùng đã từ chối quyền micro: micro mờ, bấm thì gợi ý mở cài đặt. */
+    val voiceDenied: Boolean = false,
     val aiBusy: Boolean = false,
     val reviewBusy: Boolean = false,
     val usage: AiSearchUsage? = null,
@@ -105,6 +116,7 @@ class CourtSearchViewModel @Inject constructor(
     private val clock: AppClock,
     private val history: AiQueryHistory,
     private val searchHistory: SearchHistoryRepository,
+    private val voice: VoiceInput,
 ) : ViewModel() {
     private val _state = MutableStateFlow(
         CourtSearchUiState(criteria = restoredCriteria(), aiInput = savedState["aiInput"] ?: ""),
@@ -119,15 +131,18 @@ class CourtSearchViewModel @Inject constructor(
     private var reviewJob: Job? = null
     private var usageJob: Job? = null
     private var historyJob: Job? = null
+    private var voiceJob: Job? = null
     private var origin: GeoPoint? = null
     private var searchGeneration = 0
 
     init {
+        _state.update { it.copy(voiceAvailable = voice.isAvailable()) }
         loadCatalog()
         viewModelScope.launch {
             session.sessionState.filter { it is SessionState.SignedIn || it is SessionState.SignedOut }
                 .map { (it as? SessionState.SignedIn)?.uid }.distinctUntilChanged().collect { uid ->
                 parseJob?.cancel()
+                stopVoice()
                 recommendJob?.cancel()
                 reviewJob?.cancel()
                 _state.update { it.copy(
@@ -355,6 +370,62 @@ class CourtSearchViewModel @Inject constructor(
         }
     }
 
+    /** Quay lại màn hình (có thể từ Cài đặt): quyền đã bật thì bỏ trạng thái micro mờ. */
+    fun voicePermissionChecked(granted: Boolean) {
+        if (granted && state.value.voiceDenied) _state.update { it.copy(voiceDenied = false) }
+    }
+
+    /** Kết quả xin quyền micro; `true` thì bắt đầu nghe luôn. */
+    fun voicePermission(granted: Boolean) {
+        _state.update { it.copy(voiceDenied = !granted) }
+        if (granted) startVoice()
+    }
+
+    /**
+     * Nghe một câu và điền vào ô AI (spec 022 US4). Không tự gửi nên không tốn lượt AI.
+     * Bấm micro lần nữa thì dừng. Lỗi nhận dạng giữ lại chữ cũ và hiện gợi ý gõ tay.
+     */
+    fun toggleVoice() {
+        if (state.value.listening) stopVoice() else startVoice()
+    }
+
+    fun stopVoice() {
+        voiceJob?.cancel()
+        voiceJob = null
+        _state.update { it.copy(listening = false) }
+    }
+
+    private fun startVoice() {
+        if (session.currentUid() == null || !state.value.voiceAvailable || state.value.aiBusy) return
+        voiceJob?.cancel()
+        val before = state.value.aiInput
+        _state.update { it.copy(listening = true, notice = null, clarification = null) }
+        voiceJob = viewModelScope.launch {
+            try {
+                voice.listen().collect { event ->
+                    when (event) {
+                        VoiceEvent.Ready -> Unit
+                        is VoiceEvent.Partial -> input(event.text.take(AI_INPUT_MAX))
+                        is VoiceEvent.Final -> input(event.text.take(AI_INPUT_MAX))
+                        is VoiceEvent.Error -> {
+                            input(before)
+                            _state.update { it.copy(notice = if (event.kind == VoiceError.NETWORK) {
+                                SearchNotice.VOICE_NETWORK
+                            } else SearchNotice.VOICE_NO_MATCH) }
+                        }
+                    }
+                }
+            } catch (error: CancellationException) {
+                throw error
+            } catch (_: Exception) {
+                input(before)
+                _state.update { it.copy(notice = SearchNotice.VOICE_NO_MATCH) }
+            } finally {
+                _state.update { it.copy(listening = false) }
+            }
+        }
+    }
+
     /** Xóa một câu khỏi lịch sử câu hỏi AI trên máy. */
     fun removeHistory(query: String) {
         val uid = session.currentUid() ?: return
@@ -367,7 +438,7 @@ class CourtSearchViewModel @Inject constructor(
         val current = state.value
         val query = current.aiInput.trim()
         if (current.aiBusy || current.usage?.remaining == 0 || lockSeconds(current.usage) > 0 ||
-            query.isEmpty() || query.codePointCount(0, query.length) > 200) return
+            query.isEmpty() || query.codePointCount(0, query.length) > AI_INPUT_MAX) return
         val generation = searchGeneration
         _state.update { it.copy(aiBusy = true, clarification = null, notice = null, filtersKept = false) }
         parseJob = viewModelScope.launch {

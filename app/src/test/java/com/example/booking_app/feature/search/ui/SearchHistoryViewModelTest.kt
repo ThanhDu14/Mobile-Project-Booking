@@ -65,7 +65,11 @@ class SearchHistoryViewModelTest {
     // 2026-11-15 10:00 giờ Việt Nam.
     private val clock = FakeClock { Instant.parse("2026-11-15T03:00:00Z").toEpochMilli() }
 
-    private fun viewModel(history: FakeSearchHistory, signedIn: Boolean = true): CourtSearchViewModel {
+    private fun viewModel(
+        history: FakeSearchHistory,
+        signedIn: Boolean = true,
+        voice: FakeVoiceInput = FakeVoiceInput(),
+    ): CourtSearchViewModel {
         val catalog = mockk<CatalogRepository>()
         coEvery { catalog.districts() } returns listOf(District("q10", "Quận 10", 1, true))
         coEvery { catalog.amenities() } returns emptyList()
@@ -77,7 +81,7 @@ class SearchHistoryViewModelTest {
             if (signedIn) SessionState.SignedIn("player", AppRole.PLAYER, true) else SessionState.SignedOut(null),
         )
         return CourtSearchViewModel(SavedStateHandle(), repo, mockk<CourtAiApi>(), catalog,
-            mockk<LocationProvider>(), session, clock, MemoryAiQueryHistory(), history)
+            mockk<LocationProvider>(), session, clock, MemoryAiQueryHistory(), history, voice)
     }
 
     @Test

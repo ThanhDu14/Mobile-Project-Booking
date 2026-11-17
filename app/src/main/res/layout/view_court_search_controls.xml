@@ -117,7 +117,9 @@
                 android:hint="@string/search_ai_hint"
                 app:counterEnabled="true"
                 app:counterMaxLength="200"
-                app:endIconMode="clear_text">
+                app:endIconMode="clear_text"
+                app:startIconContentDescription="@string/search_voice_start_cd"
+                app:startIconDrawable="@drawable/ic_mic_24">
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/aiInput"
                     android:layout_width="match_parent"

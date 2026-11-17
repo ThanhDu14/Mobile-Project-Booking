@@ -3,7 +3,12 @@ package com.example.booking_app.feature.search.ui
 import android.Manifest
 import android.app.DatePickerDialog
 import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.Bundle
+import android.provider.Settings
+import androidx.core.content.ContextCompat
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
@@ -78,6 +83,22 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
         else view?.let { Snackbar.make(it, R.string.search_location_unavailable, Snackbar.LENGTH_SHORT).show() }
     }
 
+    private val micPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        viewModel.voicePermission(granted)
+        if (!granted) showVoiceDenied()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        viewModel.voicePermissionChecked(hasMicPermission())
+    }
+
+    override fun onStop() {
+        // Không nghe khi màn hình không còn hiển thị (spec 022 T083).
+        viewModel.stopVoice()
+        super.onStop()
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         val binding = FragmentCourtSearchBinding.bind(view)
         val manager = LinearLayoutManager(requireContext())
@@ -128,6 +149,7 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
         controls.sort.setOnClickListener { chooseSort() }
         controls.retry.setOnClickListener { viewModel.retry() }
         controls.recentAll.setOnClickListener { showHistorySheet() }
+        controls.aiField.setStartIconOnClickListener { onMicClicked() }
         controls.historyGuestHint.setOnClickListener { authNavigator.openLogin(findNavController()) }
         controls.aiToggle.setOnClickListener {
             if (viewModel.state.value.guest) authNavigator.openLogin(findNavController())
@@ -179,6 +201,7 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
         if (binding.keyword.text.toString() != state.criteria.keyword) binding.keyword.setText(state.criteria.keyword)
         if (binding.aiInput.text.toString() != state.aiInput) binding.aiInput.setText(state.aiInput)
         binding.aiField.isVisible = !state.guest
+        renderVoice(binding, state)
         binding.filtersKeptRow.isVisible = state.filtersKept && state.criteria.hasFilters()
         renderHistory(binding, previous, state)
         renderRecent(binding, previous, state)
@@ -233,6 +256,58 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
         if (previous?.venues != state.venues || previous?.shownCount != state.shownCount) {
             venues.submitList(state.venues.take(state.shownCount))
         }
+    }
+
+    /** Micro ở mép trái ô AI: ẩn khi máy không hỗ trợ, mờ khi bị từ chối quyền, "Đang nghe…" khi nghe. */
+    private fun renderVoice(binding: ViewCourtSearchControlsBinding, state: CourtSearchUiState) {
+        val field = binding.aiField
+        field.isStartIconVisible = state.voiceAvailable
+        if (!state.voiceAvailable) return
+        val denied = state.voiceDenied && !state.listening
+        field.setStartIconDrawable(if (denied) R.drawable.ic_mic_off_24 else R.drawable.ic_mic_24)
+        field.startIconContentDescription = getString(when {
+            state.listening -> R.string.search_voice_stop_cd
+            denied -> R.string.search_voice_denied_cd
+            else -> R.string.search_voice_start_cd
+        })
+        val color = MaterialColors.getColor(field, if (state.listening) {
+            androidx.appcompat.R.attr.colorPrimary
+        } else com.google.android.material.R.attr.colorOnSurfaceVariant)
+        field.setStartIconTintList(ColorStateList.valueOf(color))
+        field.findViewById<View>(com.google.android.material.R.id.text_input_start_icon)?.alpha = if (denied) 0.38f else 1f
+        field.helperText = if (state.listening) getString(R.string.search_voice_listening) else null
+    }
+
+    private fun hasMicPermission(): Boolean = ContextCompat.checkSelfPermission(
+        requireContext(), Manifest.permission.RECORD_AUDIO,
+    ) == PackageManager.PERMISSION_GRANTED
+
+    /** Có quyền thì nghe/dừng; chưa có thì giải thích trước rồi mới xin; đã từ chối thì gợi ý mở Cài đặt. */
+    private fun onMicClicked() {
+        val state = viewModel.state.value
+        when {
+            state.listening || hasMicPermission() -> {
+                hideKeyboard(requireView())
+                viewModel.toggleVoice()
+            }
+            state.voiceDenied -> showVoiceDenied()
+            else -> MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.search_voice_rationale_title)
+                .setMessage(R.string.search_voice_rationale)
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton(R.string.search_voice_continue) { _, _ -> micPermission.launch(Manifest.permission.RECORD_AUDIO) }
+                .show()
+        }
+    }
+
+    private fun showVoiceDenied() {
+        val root = view ?: return
+        Snackbar.make(root, R.string.search_voice_denied, Snackbar.LENGTH_LONG)
+            .setAction(R.string.search_voice_open_settings) {
+                startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                    .setData(Uri.fromParts("package", requireContext().packageName, null)))
+            }
+            .show()
     }
 
     /**
@@ -811,6 +886,8 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
         SearchNotice.OFF_TOPIC -> R.string.search_ai_off_topic
         SearchNotice.LOCATION_UNAVAILABLE -> R.string.search_location_unavailable
         SearchNotice.HISTORY_DATE_PAST -> R.string.search_history_date_past
+        SearchNotice.VOICE_NO_MATCH -> R.string.search_voice_no_match
+        SearchNotice.VOICE_NETWORK -> R.string.search_voice_network
     }
 
     private class ControlsAdapter(private val view: View) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
