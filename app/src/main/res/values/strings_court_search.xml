@@ -91,6 +91,12 @@
     <string name="search_voice_open_settings">Mở cài đặt</string>
     <string name="search_voice_no_match">Không nghe rõ, bạn thử lại hoặc gõ nhé.</string>
     <string name="search_voice_network">Cần kết nối mạng để nhận giọng nói. Bạn thử lại hoặc gõ nhé.</string>
+    <string name="search_relax_title">Thử nới điều kiện:</string>
+    <string name="search_relax_price">Giá đến %1$sk · %2$d sân</string>
+    <string name="search_relax_window">%1$s–%2$s · %3$d sân</string>
+    <string name="search_relax_amenity">Bỏ “%1$s” · %2$d sân</string>
+    <string name="search_relax_tomorrow">%1$s %2$s–%3$s · %4$d sân</string>
+    <string name="search_relax_all_districts">Mọi quận · %1$d sân</string>
     <string name="search_window_hint">Chọn ngày và khung giờ chơi, tối thiểu 60 phút.</string>
     <string name="search_window_day">Ngày chơi</string>
     <string name="search_window_start">Bắt đầu</string>

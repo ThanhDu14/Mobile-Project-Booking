@@ -51,6 +51,8 @@ import com.example.booking_app.databinding.ViewCourtSearchControlsBinding
 import com.example.booking_app.databinding.ItemSearchHistoryBinding
 import com.example.booking_app.databinding.SheetSearchHistoryBinding
 import com.example.booking_app.feature.search.domain.CourtSearchCriteria
+import com.example.booking_app.feature.search.domain.Relaxation
+import com.example.booking_app.feature.search.domain.RelaxationKind
 import com.example.booking_app.feature.search.domain.CourtSearchSort
 import com.example.booking_app.feature.search.domain.ReviewPreference
 import com.example.booking_app.feature.search.domain.model.HomeVenue
@@ -270,6 +272,7 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
         binding.resultsMessage.isVisible = message != null
         message?.let(binding.resultsMessage::setText)
         binding.retry.isVisible = state.failed
+        renderRelaxations(binding, previous, state)
         if (previous?.venues != state.venues || previous?.shownCount != state.shownCount) {
             venues.submitList(state.venues.take(state.shownCount))
         }
@@ -401,6 +404,43 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
                     .setData(Uri.fromParts("package", requireContext().packageName, null)))
             }
             .show()
+    }
+
+    /** "Thử nới điều kiện:" dưới thông báo rỗng (spec 022 US6); không có gợi ý thì ẩn cả khối. */
+    private fun renderRelaxations(binding: ViewCourtSearchControlsBinding, previous: CourtSearchUiState?, state: CourtSearchUiState) {
+        binding.relaxSection.isVisible = state.relaxations.isNotEmpty() && !state.loading
+        if (previous?.relaxations == state.relaxations && previous.amenities == state.amenities) return
+        binding.relaxChips.removeAllViews()
+        for (relaxation in state.relaxations) {
+            binding.relaxChips.addView(Chip(requireContext()).apply {
+                text = relaxationLabel(relaxation, state)
+                setOnClickListener { viewModel.applyRelaxation(relaxation) }
+            })
+        }
+    }
+
+    /** "Giá đến 120k · 3 sân", "20:00–22:00 · 2 sân", "Bỏ “Gửi xe” · 4 sân", "Mai 19:00–21:00 · 1 sân", "Mọi quận · 5 sân". */
+    private fun relaxationLabel(relaxation: Relaxation, state: CourtSearchUiState): String {
+        val window = relaxation.criteria.window
+        return when (relaxation.kind) {
+            RelaxationKind.PRICE -> getString(
+                R.string.search_relax_price, ((relaxation.criteria.priceMax ?: 0) / 1000).toString(), relaxation.count,
+            )
+            RelaxationKind.LATER, RelaxationKind.EARLIER -> getString(
+                R.string.search_relax_window, window!!.start.format(), window.end.format(), relaxation.count,
+            )
+            RelaxationKind.DROP_AMENITY -> getString(
+                R.string.search_relax_amenity,
+                state.amenities.firstOrNull { it.id == relaxation.amenityId }?.name ?: relaxation.amenityId.orEmpty(),
+                relaxation.count,
+            )
+            RelaxationKind.TOMORROW -> getString(
+                R.string.search_relax_tomorrow,
+                if (window!!.date == viewModel.today().plusDays(1)) getString(R.string.search_history_tomorrow) else dateLabel(window.date),
+                window.start.format(), window.end.format(), relaxation.count,
+            )
+            RelaxationKind.ALL_DISTRICTS -> getString(R.string.search_relax_all_districts, relaxation.count)
+        }
     }
 
     /**

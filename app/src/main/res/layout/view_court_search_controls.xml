@@ -347,6 +347,27 @@
         android:layout_height="wrap_content"
         android:accessibilityLiveRegion="polite"
         android:textAppearance="?attr/textAppearanceBodyMedium" />
+    <!-- Gợi ý nới điều kiện khi tìm có lọc ra 0 sân (spec 022 US6): tối đa 3 chip, bấm là áp dụng. -->
+    <LinearLayout
+        android:id="@+id/relaxSection"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_3"
+        android:orientation="vertical"
+        android:visibility="gone">
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/space_1"
+            android:accessibilityHeading="true"
+            android:text="@string/search_relax_title"
+            android:textAppearance="?attr/textAppearanceTitleSmall" />
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/relaxChips"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:chipSpacingVertical="4dp" />
+    </LinearLayout>
     <com.google.android.material.button.MaterialButton
         android:id="@+id/retry"
         style="?attr/materialButtonOutlinedStyle"
