@@ -29,6 +29,8 @@ import com.example.booking_app.feature.search.domain.ReviewClaim
 import com.example.booking_app.feature.search.domain.ReviewPreference
 import com.example.booking_app.feature.search.domain.ReviewRecommendation
 import com.example.booking_app.feature.search.domain.ReviewSource
+import com.example.booking_app.feature.search.domain.Relaxation
+import com.example.booking_app.feature.search.domain.RelaxationPlanner
 import com.example.booking_app.feature.search.domain.SearchHistory
 import com.example.booking_app.feature.search.domain.SearchHistoryEntry
 import com.example.booking_app.feature.search.domain.SearchHistoryRepository
@@ -89,6 +91,8 @@ data class CourtSearchUiState(
     val clarification: AiCourtParse? = null,
     val preference: ReviewPreference? = null,
     val recommendations: List<ReviewRecommendation> = emptyList(),
+    /** Gợi ý nới điều kiện khi lần tìm có lọc ra 0 sân (spec 022 US6), tối đa 3, mỗi gợi ý có ≥ 1 sân. */
+    val relaxations: List<Relaxation> = emptyList(),
     val notice: SearchNotice? = null,
 )
 
@@ -132,6 +136,7 @@ class CourtSearchViewModel @Inject constructor(
     private var usageJob: Job? = null
     private var historyJob: Job? = null
     private var voiceJob: Job? = null
+    private var relaxJob: Job? = null
     private val _voiceLevel = MutableStateFlow(0f)
 
     /** Âm lượng micro 0..1 khi đang nghe; tách khỏi [state] vì cập nhật vài chục lần mỗi giây. */
@@ -648,12 +653,14 @@ class CourtSearchViewModel @Inject constructor(
         searchJob?.cancel()
         recommendJob?.cancel()
         reviewJob?.cancel()
+        relaxJob?.cancel()
         val generation = ++searchGeneration
         val criteria = state.value.criteria
         val preference = state.value.preference
         _state.update { it.copy(
             venues = emptyList(), shownCount = 20, loading = true, complete = false,
             failed = false, capped = false, recommendations = emptyList(), reviewBusy = false,
+            relaxations = emptyList(),
         ) }
         searchJob = viewModelScope.launch {
             if (debounce) delay(300)
@@ -671,10 +678,39 @@ class CourtSearchViewModel @Inject constructor(
                         recommend(preference, page.venues.take(30).map { it.id }, generation)
                     }
                 }
+                val done = state.value
+                if (generation == searchGeneration && done.complete && done.venues.isEmpty() && criteria.hasFilters()) {
+                    suggestRelaxations(criteria, generation)
+                }
             } catch (error: CancellationException) {
                 throw error
             } catch (_: Exception) {
                 if (generation == searchGeneration) _state.update { it.copy(loading = false, failed = true) }
+            }
+        }
+    }
+
+    /** Bấm một gợi ý nới điều kiện: áp dụng như đổi bộ lọc bằng tay (chip đổi theo, sửa tiếp được). */
+    fun applyRelaxation(relaxation: Relaxation) {
+        change(relaxation.criteria)
+        recordSearch()
+    }
+
+    /**
+     * Tính gợi ý nới điều kiện trong app (US6-2: không gọi AI, không trừ lượt). Lỗi đọc dữ liệu thì
+     * không hiện gợi ý, màn hình giữ trạng thái rỗng thường (US6-4).
+     */
+    private fun suggestRelaxations(criteria: CourtSearchCriteria, generation: Int) {
+        val probes = RelaxationPlanner.probes(criteria, now())
+        if (probes.isEmpty()) return
+        relaxJob = viewModelScope.launch {
+            try {
+                val relaxations = RelaxationPlanner.pick(probes, repository.variantPrices(probes.map { it.criteria }))
+                if (generation == searchGeneration) _state.update { it.copy(relaxations = relaxations) }
+            } catch (error: CancellationException) {
+                throw error
+            } catch (_: Exception) {
+                // Suggestions are optional; the empty state stays as is.
             }
         }
     }
