@@ -41,6 +41,9 @@ import com.example.booking_app.databinding.ItemSearchSourceBinding
 import android.content.res.ColorStateList
 import com.google.android.material.color.MaterialColors
 import com.example.booking_app.databinding.ViewCourtSearchControlsBinding
+import com.example.booking_app.databinding.ItemSearchHistoryBinding
+import com.example.booking_app.databinding.SheetSearchHistoryBinding
+import com.example.booking_app.feature.search.domain.CourtSearchCriteria
 import com.example.booking_app.feature.search.domain.CourtSearchSort
 import com.example.booking_app.feature.search.domain.ReviewPreference
 import com.example.booking_app.feature.search.domain.model.HomeVenue
@@ -58,6 +61,9 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import javax.inject.Inject
+
+/** Số chip "Tìm gần đây" trên màn tìm; "Xem tất cả" mở đủ 10 mục. */
+private const val RECENT_CHIPS = 5
 
 @AndroidEntryPoint
 class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
@@ -98,7 +104,7 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
         controls.keyword.setOnEditorActionListener { _, action, _ ->
             if (action != EditorInfo.IME_ACTION_SEARCH) return@setOnEditorActionListener false
             hideKeyboard(controls.keyword)
-            viewModel.retry()
+            viewModel.submitKeyword()
             true
         }
         controls.aiInput.setOnEditorActionListener { _, action, _ ->
@@ -121,6 +127,8 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
         controls.amenities.setOnClickListener { chooseAmenities() }
         controls.sort.setOnClickListener { chooseSort() }
         controls.retry.setOnClickListener { viewModel.retry() }
+        controls.recentAll.setOnClickListener { showHistorySheet() }
+        controls.historyGuestHint.setOnClickListener { authNavigator.openLogin(findNavController()) }
         controls.aiToggle.setOnClickListener {
             if (viewModel.state.value.guest) authNavigator.openLogin(findNavController())
             else {
@@ -173,6 +181,7 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
         binding.aiField.isVisible = !state.guest
         binding.filtersKeptRow.isVisible = state.filtersKept && state.criteria.hasFilters()
         renderHistory(binding, previous, state)
+        renderRecent(binding, previous, state)
         if (state.clarification != null) aiExpanded = true
         binding.aiBody.isVisible = aiExpanded && !state.guest
         renderUsage(binding, state)
@@ -224,6 +233,96 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
         if (previous?.venues != state.venues || previous?.shownCount != state.shownCount) {
             venues.submitList(state.venues.take(state.shownCount))
         }
+    }
+
+    /**
+     * "Tìm gần đây" (spec 020 US4): hàng chip ngang dưới ô tên sân, chỉ khi chưa có điều kiện nào.
+     * Khách thấy gợi ý đăng nhập khi đang tìm, vì lần tìm đó không được lưu.
+     */
+    private fun renderRecent(binding: ViewCourtSearchControlsBinding, previous: CourtSearchUiState?, state: CourtSearchUiState) {
+        val idle = !state.criteria.hasFilters()
+        binding.recentSection.isVisible = !state.guest && idle && state.history.isNotEmpty()
+        binding.historyGuestHint.isVisible = state.guest && !idle
+        if (previous != null && previous.history == state.history && previous.districts == state.districts &&
+            previous.amenities == state.amenities) return
+        binding.recentChips.removeAllViews()
+        for (entry in state.history.take(RECENT_CHIPS)) {
+            binding.recentChips.addView(Chip(requireContext()).apply {
+                text = historyLabel(entry.criteria, state)
+                setChipIconResource(R.drawable.ic_history_24)
+                isChipIconVisible = true
+                setOnClickListener { viewModel.applyHistory(entry) }
+            })
+        }
+        historySheetRefresh?.invoke(state)
+    }
+
+    private var historySheetRefresh: ((CourtSearchUiState) -> Unit)? = null
+
+    /** Toàn bộ lịch sử (tối đa 10): chạm để tìm lại, ✕ để xóa một mục, "Xóa tất cả" có xác nhận. */
+    private fun showHistorySheet() {
+        val dialog = BottomSheetDialog(requireContext())
+        val sheet = SheetSearchHistoryBinding.inflate(layoutInflater)
+        dialog.setContentView(sheet.root)
+        fun fill(state: CourtSearchUiState) {
+            sheet.items.removeAllViews()
+            sheet.empty.isVisible = state.history.isEmpty()
+            sheet.clearAll.isEnabled = state.history.isNotEmpty()
+            for (entry in state.history) {
+                val row = ItemSearchHistoryBinding.inflate(layoutInflater, sheet.items, false)
+                val label = historyLabel(entry.criteria, state)
+                row.label.text = label
+                row.root.setOnClickListener {
+                    dialog.dismiss()
+                    viewModel.applyHistory(entry)
+                }
+                row.delete.contentDescription = getString(R.string.search_history_delete, label)
+                row.delete.setOnClickListener { viewModel.deleteHistory(entry.id) }
+                sheet.items.addView(row.root)
+            }
+        }
+        sheet.clearAll.setOnClickListener {
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.search_history_clear_title)
+                .setMessage(R.string.search_history_clear_message)
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton(R.string.search_history_clear) { _, _ ->
+                    viewModel.clearHistory()
+                    dialog.dismiss()
+                }
+                .show()
+        }
+        fill(viewModel.state.value)
+        historySheetRefresh = ::fill
+        dialog.setOnDismissListener { historySheetRefresh = null }
+        dialog.show()
+    }
+
+    /** "“Trường Chinh” · Quận 10 · ≤100k · Mai 19:00–21:00 · Gửi xe". */
+    private fun historyLabel(criteria: CourtSearchCriteria, state: CourtSearchUiState): String {
+        val parts = mutableListOf<String>()
+        criteria.keyword.trim().takeIf { it.isNotEmpty() }?.let { parts += getString(R.string.search_history_keyword, it) }
+        criteria.districtId?.let { id -> parts += state.districts.firstOrNull { it.id == id }?.name ?: id }
+        val min = criteria.priceMin?.let { (it / 1000).toString() }
+        val max = criteria.priceMax?.let { (it / 1000).toString() }
+        when {
+            min != null && max != null -> parts += getString(R.string.search_history_price_range, min, max)
+            max != null -> parts += getString(R.string.search_history_price_max, max)
+            min != null -> parts += getString(R.string.search_history_price_min, min)
+        }
+        criteria.window?.let { window ->
+            val today = viewModel.today()
+            val day = when (window.date) {
+                today -> getString(R.string.search_history_today)
+                today.plusDays(1) -> getString(R.string.search_history_tomorrow)
+                else -> dateLabel(window.date)
+            }
+            parts += "$day ${window.start.format()}–${window.end.format()}"
+        }
+        criteria.amenityIds.mapNotNull { id -> state.amenities.firstOrNull { it.id == id }?.name }
+            .takeIf { it.isNotEmpty() }?.let { parts += it.joinToString(", ") }
+        if (criteria.sort != CourtSearchSort.RATING) parts += getString(sortLabel(criteria.sort))
+        return parts.joinToString(" · ")
     }
 
     /** Lịch sử câu hỏi AI: chỉ hiện khi ô AI đang trống. Chạm để điền lại, ✕ để xóa khỏi lịch sử. */
@@ -650,6 +749,8 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
     private fun openVenue(venue: HomeVenue) {
         val nav = findNavController()
         if (nav.currentDestination?.id != R.id.courtSearchFragment) return
+        // Mở chi tiết sân từ kết quả cũng là một lần tìm (FR-021).
+        viewModel.recordSearch()
         val window = venue.window
         nav.navigate(R.id.action_search_to_courtDetail, bundleOf(
             "venueId" to venue.id, "date" to window?.dateKey(),
@@ -709,6 +810,7 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
         SearchNotice.DROPPED_FILTERS -> R.string.search_ai_dropped
         SearchNotice.OFF_TOPIC -> R.string.search_ai_off_topic
         SearchNotice.LOCATION_UNAVAILABLE -> R.string.search_location_unavailable
+        SearchNotice.HISTORY_DATE_PAST -> R.string.search_history_date_past
     }
 
     private class ControlsAdapter(private val view: View) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {

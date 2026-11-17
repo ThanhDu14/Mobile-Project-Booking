@@ -51,7 +51,7 @@ class CourtSearchViewModelTest {
         }
         val vm = CourtSearchViewModel(SavedStateHandle(), repo, mockk<CourtAiApi>(), catalog,
             mockk<LocationProvider>(), FakeSessionManager(SessionState.SignedOut(null)),
-            FakeClock { Instant.parse("2026-11-12T03:00:00Z").toEpochMilli() }, MemoryAiQueryHistory())
+            FakeClock { Instant.parse("2026-11-12T03:00:00Z").toEpochMilli() }, MemoryAiQueryHistory(), FakeSearchHistory())
         runCurrent()
         assertEquals(listOf("a"), vm.state.value.venues.map { it.id })
         assertTrue(!seen.last().hasFilters())
@@ -88,7 +88,7 @@ class CourtSearchViewModelTest {
         }
         val history = MemoryAiQueryHistory()
         val vm = CourtSearchViewModel(SavedStateHandle(), repo, api, catalog, mockk<LocationProvider>(), session,
-            FakeClock { Instant.parse("2026-11-12T03:00:00Z").toEpochMilli() }, history)
+            FakeClock { Instant.parse("2026-11-12T03:00:00Z").toEpochMilli() }, history, FakeSearchHistory())
         runCurrent()
         vm.input("Quận 10, sàn ít trơn")
         vm.submitAi()
@@ -124,7 +124,7 @@ class CourtSearchViewModelTest {
         }
         val session = FakeSessionManager(SessionState.SignedIn("player", AppRole.PLAYER, true))
         val vm = CourtSearchViewModel(SavedStateHandle(), repo, api, catalog, mockk<LocationProvider>(), session,
-            FakeClock { Instant.parse("2026-11-15T03:00:00Z").toEpochMilli() }, MemoryAiQueryHistory())
+            FakeClock { Instant.parse("2026-11-15T03:00:00Z").toEpochMilli() }, MemoryAiQueryHistory(), FakeSearchHistory())
         runCurrent()
         vm.input("Hôm qua 7h tối Quận 10")
         vm.submitAi()
@@ -147,7 +147,7 @@ class CourtSearchViewModelTest {
         }
         val session = FakeSessionManager(SessionState.SignedIn("player", AppRole.PLAYER, true))
         val vm = CourtSearchViewModel(SavedStateHandle(), repo, api, catalog, mockk<LocationProvider>(), session,
-            FakeClock { Instant.parse("2026-11-15T03:00:00Z").toEpochMilli() }, MemoryAiQueryHistory())
+            FakeClock { Instant.parse("2026-11-15T03:00:00Z").toEpochMilli() }, MemoryAiQueryHistory(), FakeSearchHistory())
         runCurrent()
         vm.district("q10")
         runCurrent()

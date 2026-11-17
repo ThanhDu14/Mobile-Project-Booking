@@ -29,6 +29,9 @@ import com.example.booking_app.feature.search.domain.ReviewClaim
 import com.example.booking_app.feature.search.domain.ReviewPreference
 import com.example.booking_app.feature.search.domain.ReviewRecommendation
 import com.example.booking_app.feature.search.domain.ReviewSource
+import com.example.booking_app.feature.search.domain.SearchHistory
+import com.example.booking_app.feature.search.domain.SearchHistoryEntry
+import com.example.booking_app.feature.search.domain.SearchHistoryRepository
 import com.example.booking_app.feature.search.domain.model.HomeVenue
 import com.google.firebase.firestore.GeoPoint
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -49,7 +52,7 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
-enum class SearchNotice { AI_ERROR, QUOTA, LOCKED, SOURCE_UNAVAILABLE, INVALID_WINDOW, INVALID_DATE, DROPPED_FILTERS, OFF_TOPIC, LOCATION_UNAVAILABLE }
+enum class SearchNotice { AI_ERROR, QUOTA, LOCKED, SOURCE_UNAVAILABLE, INVALID_WINDOW, INVALID_DATE, DROPPED_FILTERS, OFF_TOPIC, LOCATION_UNAVAILABLE, HISTORY_DATE_PAST }
 
 data class CourtSearchUiState(
     val criteria: CourtSearchCriteria = CourtSearchCriteria(),
@@ -67,6 +70,8 @@ data class CourtSearchUiState(
     /** Ô AI vừa được xóa chữ trong khi bộ lọc vẫn đang áp dụng: hiện gợi ý, không tự xóa bộ lọc. */
     val filtersKept: Boolean = false,
     val aiHistory: List<String> = emptyList(),
+    /** Lịch sử tìm kiếm trên Firestore (spec 020 US4), mới nhất trước; khách luôn rỗng. */
+    val history: List<SearchHistoryEntry> = emptyList(),
     val aiBusy: Boolean = false,
     val reviewBusy: Boolean = false,
     val usage: AiSearchUsage? = null,
@@ -99,6 +104,7 @@ class CourtSearchViewModel @Inject constructor(
     private val session: SessionManager,
     private val clock: AppClock,
     private val history: AiQueryHistory,
+    private val searchHistory: SearchHistoryRepository,
 ) : ViewModel() {
     private val _state = MutableStateFlow(
         CourtSearchUiState(criteria = restoredCriteria(), aiInput = savedState["aiInput"] ?: ""),
@@ -112,6 +118,7 @@ class CourtSearchViewModel @Inject constructor(
     private var parseJob: Job? = null
     private var reviewJob: Job? = null
     private var usageJob: Job? = null
+    private var historyJob: Job? = null
     private var origin: GeoPoint? = null
     private var searchGeneration = 0
 
@@ -130,6 +137,7 @@ class CourtSearchViewModel @Inject constructor(
                     aiHistory = uid?.let(history::read).orEmpty(),
                 ) }
                 if (uid == null) savedState["aiInput"] = ""
+                observeHistory(uid)
                 refreshUsage()
             }
         }
@@ -155,16 +163,26 @@ class CourtSearchViewModel @Inject constructor(
         change(state.value.criteria.copy(keyword = value), preference = null, debounce = true)
     }
 
-    fun district(id: String?) = change(state.value.criteria.copy(districtId = id))
+    fun district(id: String?) {
+        change(state.value.criteria.copy(districtId = id))
+        recordSearch()
+    }
 
-    fun amenities(ids: Set<String>) = change(state.value.criteria.copy(amenityIds = ids))
+    fun amenities(ids: Set<String>) {
+        change(state.value.criteria.copy(amenityIds = ids))
+        recordSearch()
+    }
 
-    fun price(min: Long?, max: Long?) = change(state.value.criteria.copy(priceMin = min, priceMax = max))
+    fun price(min: Long?, max: Long?) {
+        change(state.value.criteria.copy(priceMin = min, priceMax = max))
+        recordSearch()
+    }
 
     fun applyFilters(districtId: String?, min: Long?, max: Long?, amenities: Set<String>, window: BookingSearchWindow?): Boolean {
         if (window != null && !window.isBookableAt(now())) return false
         change(state.value.criteria.copy(districtId = districtId, priceMin = min, priceMax = max,
             amenityIds = amenities, window = window))
+        recordSearch()
         return true
     }
 
@@ -174,6 +192,7 @@ class CourtSearchViewModel @Inject constructor(
             return false
         }
         change(state.value.criteria.copy(window = window))
+        recordSearch()
         return true
     }
 
@@ -185,6 +204,7 @@ class CourtSearchViewModel @Inject constructor(
     fun sort(sort: CourtSearchSort) {
         if (sort != CourtSearchSort.NEAREST) {
             change(state.value.criteria.copy(sort = sort))
+            recordSearch()
             return
         }
         if (!location.hasPermission()) {
@@ -197,6 +217,7 @@ class CourtSearchViewModel @Inject constructor(
             else {
                 origin = point
                 change(state.value.criteria.copy(sort = sort))
+                recordSearch()
             }
         }
     }
@@ -205,6 +226,7 @@ class CourtSearchViewModel @Inject constructor(
         _state.update { it.copy(filtersKept = false) }
         val current = state.value.criteria
         change(CourtSearchCriteria(keyword = current.keyword, districtId = current.districtId, sort = current.sort), null)
+        recordSearch()
     }
 
     fun removePreference() {
@@ -214,6 +236,109 @@ class CourtSearchViewModel @Inject constructor(
     }
 
     fun retry() = search()
+
+    /** Bấm tìm trên bàn phím của ô tên sân: một "lần tìm" theo FR-021. */
+    fun submitKeyword() {
+        search()
+        recordSearch()
+    }
+
+    /**
+     * Lưu bộ điều kiện hiện tại vào lịch sử (FR-021): chỉ khi đã đăng nhập và có từ khóa hợp lệ
+     * hoặc ít nhất một bộ lọc. Lỗi ghi (mất mạng, Rules) không ảnh hưởng việc tìm.
+     */
+    fun recordSearch() {
+        val uid = session.currentUid() ?: return
+        val criteria = state.value.criteria
+        if (!SearchHistory.worthSaving(criteria)) return
+        val current = state.value.history
+        val prune = current.size >= SearchHistory.LIMIT && current.none { it.id == SearchHistory.idOf(criteria) }
+        viewModelScope.launch {
+            try {
+                searchHistory.record(uid, criteria, prune)
+            } catch (error: CancellationException) {
+                throw error
+            } catch (_: Exception) {
+                // History is best effort; the search itself already ran.
+            }
+        }
+    }
+
+    /**
+     * Chạy lại một mục lịch sử (FR-023, US4-3): khung giờ đã qua bị bỏ kèm thông báo "Ngày đã qua";
+     * quận/tiện ích không còn trong danh mục bị bỏ kèm thông báo chung. Mục được đưa lên đầu.
+     */
+    fun applyHistory(entry: SearchHistoryEntry) {
+        val current = state.value
+        var criteria = entry.criteria
+        var notice: SearchNotice? = null
+        val window = criteria.window
+        if (window != null && !window.isBookableAt(now())) {
+            criteria = criteria.copy(window = null)
+            notice = SearchNotice.HISTORY_DATE_PAST
+        }
+        if (current.catalogReady) {
+            val district = criteria.districtId?.takeIf { id -> current.districts.any { it.id == id } }
+            val amenities = criteria.amenityIds.filter { id -> current.amenities.any { it.id == id } }.toSet()
+            if (district != criteria.districtId || amenities != criteria.amenityIds) {
+                criteria = criteria.copy(districtId = district, amenityIds = amenities)
+                notice = notice ?: SearchNotice.DROPPED_FILTERS
+            }
+        }
+        // Vị trí không được lưu (FR-014): thiếu vị trí hiện tại thì sắp xếp theo đánh giá.
+        if (criteria.sort == CourtSearchSort.NEAREST && origin == null) {
+            criteria = criteria.copy(sort = CourtSearchSort.RATING)
+        }
+        change(criteria, preference = null)
+        notice?.let { value -> _state.update { it.copy(notice = value) } }
+        recordSearch()
+    }
+
+    fun deleteHistory(id: String) {
+        val uid = session.currentUid() ?: return
+        _state.update { it.copy(history = it.history.filterNot { entry -> entry.id == id }) }
+        viewModelScope.launch {
+            try {
+                searchHistory.delete(uid, id)
+            } catch (error: CancellationException) {
+                throw error
+            } catch (_: Exception) {
+                // The listener restores the entry if the delete did not reach the server.
+            }
+        }
+    }
+
+    fun clearHistory() {
+        val uid = session.currentUid() ?: return
+        val ids = state.value.history.map { it.id }
+        _state.update { it.copy(history = emptyList()) }
+        viewModelScope.launch {
+            try {
+                searchHistory.clear(uid, ids)
+            } catch (error: CancellationException) {
+                throw error
+            } catch (_: Exception) {
+                // The listener restores the entries if the delete did not reach the server.
+            }
+        }
+    }
+
+    private fun observeHistory(uid: String?) {
+        historyJob?.cancel()
+        _state.update { it.copy(history = emptyList()) }
+        if (uid == null) return
+        historyJob = viewModelScope.launch {
+            try {
+                searchHistory.observe(uid).collect { entries ->
+                    if (session.currentUid() == uid) _state.update { it.copy(history = entries) }
+                }
+            } catch (error: CancellationException) {
+                throw error
+            } catch (_: Exception) {
+                // Without history the search screen keeps working.
+            }
+        }
+    }
 
     fun loadMore() {
         _state.update { if (it.shownCount >= it.venues.size) it else it.copy(shownCount = it.shownCount + 20) }
@@ -425,6 +550,8 @@ class CourtSearchViewModel @Inject constructor(
             sort = if (requestedSort == CourtSearchSort.NEAREST && origin == null) CourtSearchSort.RATING else requestedSort,
         )
         change(criteria, ReviewPreference.entries.firstOrNull { it.name == result.preference })
+        // AI-filled filters are saved like a manual search (spec 020 US4), not the question itself.
+        recordSearch()
         if (dropped) _state.update { it.copy(notice = if ("INVALID_DATE" in result.dropped) SearchNotice.INVALID_DATE else SearchNotice.DROPPED_FILTERS) }
         if (requestedSort == CourtSearchSort.NEAREST && origin == null) sort(requestedSort)
     }
