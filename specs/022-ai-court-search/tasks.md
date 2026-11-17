@@ -284,20 +284,27 @@ Phần server (`faqTopic`, bộ đếm lạc đề, `lockedUntil`, E9–E12) đ�
 
 ## Phase 6: User Story 4 - Nhập bằng giọng nói (Priority: P2)
 
+> **Đồng bộ với code (2026-11-18):** ô "Tìm bằng AI" nằm ngay trong màn tìm sân (không có `AiAssistantFragment`), nên micro gắn ở mép trái `aiField` của `view_court_search_controls.xml`; nút ✕ xóa chữ vẫn ở mép phải.
+> - `SEARCH/domain/VoiceInput.kt`, `SEARCH/data/AndroidVoiceInput.kt` (vi-VN, kết quả tạm, map lỗi), bind trong `SearchModule`.
+> - `CourtSearchViewModel`: `toggleVoice`, `stopVoice` (gọi ở `onStop`), `voicePermission`, `voicePermissionChecked`; chữ chỉ điền vào ô, không tự gửi, không tốn lượt; lỗi giữ chữ cũ và báo "Không nghe rõ, bạn thử lại hoặc gõ nhé.".
+> - Quyền: hộp giải thích trước khi xin; bị từ chối → micro mờ (`ic_mic_off_24`), bấm hiện snackbar "Mở cài đặt"; máy không có dịch vụ nhận dạng → ẩn micro. Chỉ ô AI có micro, ô tên sân không có.
+> - Test: `VoiceInputViewModelTest.kt`. T086 (chạy V1–V5 trên máy thật) còn chờ.
+
+
 **Goal**: micro nhận dạng tiếng Việt, điền vào ô để sửa trước khi gửi; quyền xin lúc bấm; từ chối hoặc máy không hỗ trợ thì vẫn gõ được.
 
 **Independent Test**: cho phép micro, nói "tối mai sân quận mười dưới một trăm nghìn" → câu hiện trong ô, gửi ra chip như khi gõ; từ chối micro thì vẫn gõ được (quickstart V1–V5).
 
 ### Tests for User Story 4 ⚠️
 
-- [ ] T081 [P] [US4] Bổ sung `AiAssistantViewModelTest.kt` phần US4 (`VoiceInput` giả): `isAvailable == false` → `voice = Hidden`; `Partial` cập nhật chữ tạm, `Final` điền `input` và **không** gửi; `Error(NO_MATCH | NETWORK)` → thông báo `ai_voice_no_match`, API không được gọi; quyền bị từ chối → `voice = Denied`; bấm micro khi `Denied` → sự kiện mở cài đặt; `startVoice = true` → tự bắt đầu nghe khi đã có quyền, chưa có quyền thì đi luồng giải thích
+- [x] T081 [P] [US4] Bổ sung `AiAssistantViewModelTest.kt` phần US4 (`VoiceInput` giả): `isAvailable == false` → `voice = Hidden`; `Partial` cập nhật chữ tạm, `Final` điền `input` và **không** gửi; `Error(NO_MATCH | NETWORK)` → thông báo `ai_voice_no_match`, API không được gọi; quyền bị từ chối → `voice = Denied`; bấm micro khi `Denied` → sự kiện mở cài đặt; `startVoice = true` → tự bắt đầu nghe khi đã có quyền, chưa có quyền thì đi luồng giải thích
 
 ### Implementation for User Story 4
 
-- [ ] T082 [US4] Cài đặt `SEARCH/data/ai/AndroidVoiceInput.kt`: `isAvailable = SpeechRecognizer.isRecognitionAvailable(context)`; `listen()` là `callbackFlow` tạo `SpeechRecognizer` trên main thread, `RecognizerIntent.ACTION_RECOGNIZE_SPEECH` với `EXTRA_LANGUAGE = "vi-VN"`, `EXTRA_LANGUAGE_MODEL = LANGUAGE_MODEL_FREE_FORM`, `EXTRA_PARTIAL_RESULTS = true`; `ERROR_NO_MATCH`/`ERROR_SPEECH_TIMEOUT` → `NO_MATCH`, `ERROR_NETWORK*` → `NETWORK`, `ERROR_RECOGNIZER_BUSY` → `BUSY`; `awaitClose { destroy() }`. Bind trong `SEARCH/di/AiSearchModule.kt`
-- [ ] T083 [US4] Bổ sung `AiAssistantViewModel.kt`: `onMicClicked`, `onPermissionResult`, thu `VoiceInput.listen()` trong `viewModelScope` (hủy khi bấm lại hoặc rời màn hình). T081 xanh
-- [ ] T084 [US4] Bổ sung `AiAssistantFragment.kt` + `fragment_ai_assistant.xml`: nút micro (`ic_mic`/`ic_mic_off`, `contentDescription` theo trạng thái, 48dp); `ActivityResultContracts.RequestPermission` cho `RECORD_AUDIO`; lần đầu (hoặc `shouldShowRequestPermissionRationale`) hiện `MaterialAlertDialog` với `ai_voice_rationale` rồi mới xin quyền; `Denied` bấm → `Settings.ACTION_APPLICATION_DETAILS_SETTINGS`; hiệu ứng "đang nghe"
-- [ ] T085 [US4] (Sửa 020) Micro trong ô tìm kiếm của `RES/layout/fragment_search.xml` / `SEARCH/ui/SearchFragment.kt`: bấm → `aiAssistantFragment(startVoice = true)`; ẩn khi khách hoặc `VoiceInput.isAvailable == false`. **Phụ thuộc: 020 T051, T052**
+- [x] T082 [US4] Cài đặt `SEARCH/data/ai/AndroidVoiceInput.kt`: `isAvailable = SpeechRecognizer.isRecognitionAvailable(context)`; `listen()` là `callbackFlow` tạo `SpeechRecognizer` trên main thread, `RecognizerIntent.ACTION_RECOGNIZE_SPEECH` với `EXTRA_LANGUAGE = "vi-VN"`, `EXTRA_LANGUAGE_MODEL = LANGUAGE_MODEL_FREE_FORM`, `EXTRA_PARTIAL_RESULTS = true`; `ERROR_NO_MATCH`/`ERROR_SPEECH_TIMEOUT` → `NO_MATCH`, `ERROR_NETWORK*` → `NETWORK`, `ERROR_RECOGNIZER_BUSY` → `BUSY`; `awaitClose { destroy() }`. Bind trong `SEARCH/di/AiSearchModule.kt`
+- [x] T083 [US4] Bổ sung `AiAssistantViewModel.kt`: `onMicClicked`, `onPermissionResult`, thu `VoiceInput.listen()` trong `viewModelScope` (hủy khi bấm lại hoặc rời màn hình). T081 xanh
+- [x] T084 [US4] Bổ sung `AiAssistantFragment.kt` + `fragment_ai_assistant.xml`: nút micro (`ic_mic`/`ic_mic_off`, `contentDescription` theo trạng thái, 48dp); `ActivityResultContracts.RequestPermission` cho `RECORD_AUDIO`; lần đầu (hoặc `shouldShowRequestPermissionRationale`) hiện `MaterialAlertDialog` với `ai_voice_rationale` rồi mới xin quyền; `Denied` bấm → `Settings.ACTION_APPLICATION_DETAILS_SETTINGS`; hiệu ứng "đang nghe"
+- [x] T085 [US4] (Sửa 020) Micro trong ô tìm kiếm của `RES/layout/fragment_search.xml` / `SEARCH/ui/SearchFragment.kt`: bấm → `aiAssistantFragment(startVoice = true)`; ẩn khi khách hoặc `VoiceInput.isAvailable == false`. **Phụ thuộc: 020 T051, T052**
 - [ ] T086 [US4] Chạy quickstart V1–V5 trên máy thật hoặc Emulator có Google app (V5 trên Emulator không có dịch vụ nhận dạng)
 
 **Checkpoint**: giọng nói dùng được; từ chối quyền không làm hỏng ô nhập.
