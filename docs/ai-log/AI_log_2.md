@@ -51,6 +51,7 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 45 | 2026-11-15 | Sửa CI đỏ của PR #65 (test sinh slot phụ thuộc múi giờ và thứ trong tuần) | 04, 02 |
 | 46 | 2026-11-17 | Bộ đánh giá Tìm bằng AI (42 câu), quy tắc đọc ngày/quận/giờ trong câu, dự phòng khi quá thời gian | 02 |
 | 47 | 2026-11-18 | Lịch sử tìm kiếm (020 US4), nhập bằng giọng nói (022 US4), deploy Rules, kiểm thử trên máy, mở PR và sửa CI | 02, 04 |
+| 48 | 2026-11-18 | Gợi ý nới điều kiện khi tìm không ra sân (022 US6) và cập nhật AI log | 02 |
 
 
 
@@ -2202,4 +2203,39 @@ Sau đợt kiểm thử trên thiết bị thật và đối chiếu kỹ lưỡ
 - Khi điều khiển `adb`, điện thoại tự xoay giữa dọc và ngang nên vài lần chạm nhầm (mở một sân, chuyển sang tab Lịch đặt và Cộng đồng); chỉ chuyển màn, không thay đổi dữ liệu.
 - Lần thử "Xóa tất cả" đã xóa lịch sử tìm kiếm của tài khoản người dùng (đây là dữ liệu AI vừa tạo khi test); người dùng tạo lại bằng cách tìm vài lần.
 - Dữ liệu review test trên Firestore vẫn giữ lại theo yêu cầu để demo.
+
+---
+
+## Mục 48: Gợi ý nới điều kiện khi tìm không ra sân (022 US6)
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-18 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 02 – Tìm kiếm sân (spec 022 US6, FR-022) |
+| Công cụ AI | Claude Code (Claude Opus 5.5) |
+| Nhánh Git | `feature/020-021-022-complete` |
+
+### Prompt chính
+
+"Tiếp với 022 US6 nhé." AI hỏi trắc nghiệm trước khi code, người dùng chọn: hiện gợi ý cho mọi lần tìm có lọc (không chỉ sau AI); nới giá tới mức gần nhất có sân; thêm "Bỏ giới hạn quận" và "Cùng giờ ngày mai"; hiển thị dạng chip dưới thông báo rỗng. Sau đó: "ok CI xanh thì tiếp tục 022 US6 nhé, à quên nãy giờ chưa cập nhật AI-log", "Phần này tầm 7-8 commit nhé", "Bạn cứ test nhé, điện thoại sẽ test sau và thông qua tôi".
+
+### Yêu cầu và kết quả
+
+1. **Domain** `Relaxation.kt`: `RelaxationPlanner.probes` lập biến thể theo thứ tự ưu tiên (giá, muộn/sớm 1 giờ, bỏ tiện ích chọn sau cùng tối đa 2, ngày mai, mọi quận), bỏ biến thể đã qua giờ hoặc quá 30 ngày; `pick` chọn tối đa 3 gợi ý có ≥ 1 sân, mỗi nhóm một gợi ý trước cho đa dạng. Giá gợi ý = giá thấp nhất trong các sân phù hợp khi bỏ trần, làm tròn lên nghìn đồng.
+2. **Repository** `variantPrices`: trả giá mỗi giờ của từng sân phù hợp cho mỗi biến thể; danh sách sân theo quận, bảng giá + sân con theo sân, lịch bận theo sân và ngày được đọc một lần, dùng chung giữa các biến thể (tốn khoảng một lần tìm).
+3. **ViewModel**: lần tìm có lọc xong mà 0 sân thì tính gợi ý; bấm gợi ý áp dụng như đổi bộ lọc tay và lưu lịch sử; tìm lần mới thì xóa gợi ý. Không gọi AI, không trừ lượt (US6-2); không có gợi ý nào có kết quả thì giữ trạng thái rỗng thường (US6-4).
+4. **Giao diện**: "Thử nới điều kiện:" và tối đa 3 chip ("Giá đến 120k · 3 sân", "20:00–22:00 · 2 sân", "Bỏ “Gửi xe” · 4 sân", "Mai 19:00–21:00 · 1 sân", "Mọi quận · 5 sân").
+5. **Tài liệu**: Clarifications 2026-11-18 và FR-022 trong spec 022; tasks Phase 8 ghi chú đồng bộ với code, T102 (thử trên máy) để mở.
+6. **AI log**: thêm các Mục 45–48.
+
+### Kiểm chứng
+
+- Test mới: `RelaxationPlannerTest` (4), `RelaxationViewModelTest` (3). Toàn bộ `lint testDebugUnitTest assembleDebug` ở `TZ=UTC`: thành công, 1.224 unit test, 0 lỗi.
+
+### Sai sót và giới hạn
+
+- Bản đầu của `pick` lọc giá theo `priceMin` thay vì trần giá cũ; AI tự phát hiện khi đọc lại và sửa trước khi chạy test. Một test giá ghi sai kỳ vọng (121.000 thay vì 120.000); code đúng, đã sửa dữ liệu test.
+- Chưa thử trên điện thoại vì máy không kết nối `adb`; người dùng sẽ tự thử (T102).
+- `variantPrices` chưa có unit test riêng ở tầng Firestore (repository dùng Firestore thật); được kiểm gián tiếp qua test ViewModel với repository giả.
 
