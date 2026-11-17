@@ -132,6 +132,10 @@ class CourtSearchViewModel @Inject constructor(
     private var usageJob: Job? = null
     private var historyJob: Job? = null
     private var voiceJob: Job? = null
+    private val _voiceLevel = MutableStateFlow(0f)
+
+    /** Âm lượng micro 0..1 khi đang nghe; tách khỏi [state] vì cập nhật vài chục lần mỗi giây. */
+    val voiceLevel = _voiceLevel.asStateFlow()
     private var origin: GeoPoint? = null
     private var searchGeneration = 0
 
@@ -392,6 +396,7 @@ class CourtSearchViewModel @Inject constructor(
     fun stopVoice() {
         voiceJob?.cancel()
         voiceJob = null
+        _voiceLevel.value = 0f
         _state.update { it.copy(listening = false) }
     }
 
@@ -405,6 +410,7 @@ class CourtSearchViewModel @Inject constructor(
                 voice.listen().collect { event ->
                     when (event) {
                         VoiceEvent.Ready -> Unit
+                        is VoiceEvent.Level -> _voiceLevel.value = event.value
                         is VoiceEvent.Partial -> input(event.text.take(AI_INPUT_MAX))
                         is VoiceEvent.Final -> input(event.text.take(AI_INPUT_MAX))
                         is VoiceEvent.Error -> {
@@ -421,6 +427,7 @@ class CourtSearchViewModel @Inject constructor(
                 input(before)
                 _state.update { it.copy(notice = SearchNotice.VOICE_NO_MATCH) }
             } finally {
+                _voiceLevel.value = 0f
                 _state.update { it.copy(listening = false) }
             }
         }

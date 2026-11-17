@@ -7,6 +7,8 @@ sealed interface VoiceEvent {
     /** Máy đã sẵn sàng nghe. */
     data object Ready : VoiceEvent
     data class Partial(val text: String) : VoiceEvent
+    /** Âm lượng đang thu, chuẩn hóa về 0..1, để giao diện "nhún" theo giọng nói. */
+    data class Level(val value: Float) : VoiceEvent
     data class Final(val text: String) : VoiceEvent
     data class Error(val kind: VoiceError) : VoiceEvent
 }

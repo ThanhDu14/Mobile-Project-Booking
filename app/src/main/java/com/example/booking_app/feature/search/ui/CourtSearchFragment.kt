@@ -6,7 +6,9 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
+import android.animation.ValueAnimator
 import android.os.Bundle
+import android.view.HapticFeedbackConstants
 import android.provider.Settings
 import androidx.core.content.ContextCompat
 import android.view.View
@@ -96,6 +98,15 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
         viewModel.voicePermissionChecked(hasMicPermission())
     }
 
+    override fun onDestroyView() {
+        // Hiệu ứng micro gắn với view cũ; view mới bắt đầu lại từ trạng thái nghỉ.
+        micPulse?.cancel()
+        micPulse = null
+        micListening = false
+        aiFieldIdle = null
+        super.onDestroyView()
+    }
+
     override fun onStop() {
         // Không nghe khi màn hình không còn hiển thị (spec 022 T083).
         viewModel.stopVoice()
@@ -176,6 +187,7 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
                     }
                 }
                 launch { viewModel.effects.collect(::handleEffect) }
+                launch { viewModel.voiceLevel.collect { renderVoiceLevel(controls, it) } }
                 launch {
                     viewModel.refreshUsage()
                     var day = viewModel.today()
@@ -275,17 +287,88 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
             denied -> R.string.search_voice_denied_cd
             else -> R.string.search_voice_start_cd
         })
-        val color = MaterialColors.getColor(field, if (state.listening) {
-            androidx.appcompat.R.attr.colorPrimary
-        } else com.google.android.material.R.attr.colorOnSurfaceVariant)
-        field.setStartIconTintList(ColorStateList.valueOf(color))
-        field.findViewById<View>(com.google.android.material.R.id.text_input_start_icon)?.alpha = if (denied) 0.38f else 1f
+        val primary = MaterialColors.getColor(field, androidx.appcompat.R.attr.colorPrimary)
+        val muted = MaterialColors.getColor(field, com.google.android.material.R.attr.colorOnSurfaceVariant)
+        field.setStartIconTintList(ColorStateList.valueOf(if (state.listening) primary else muted))
+        micIcon(binding)?.alpha = if (denied) 0.38f else 1f
         // Lỗi nhận dạng hiện ngay dưới ô (cạnh micro), không ở dòng thông báo chung bên dưới bộ lọc.
         field.helperText = when {
             state.listening -> getString(R.string.search_voice_listening)
             state.notice in VOICE_NOTICES -> getString(noticeText(state.notice!!))
             else -> null
         }
+        field.setHelperTextColor(ColorStateList.valueOf(if (state.listening) primary else muted))
+        if (state.listening != micListening) {
+            micListening = state.listening
+            if (state.listening) startListeningEffect(binding, primary) else stopListeningEffect(binding)
+        }
+    }
+
+    private var micListening = false
+    private var micPulse: ValueAnimator? = null
+    private var aiFieldIdle: AiFieldLook? = null
+
+    /** Gợi ý và độ dày viền gốc của ô AI để trả lại sau khi nghe xong. */
+    private class AiFieldLook(val hint: CharSequence?, val width: Int)
+
+    private fun micIcon(binding: ViewCourtSearchControlsBinding): View? =
+        binding.aiField.findViewById(com.google.android.material.R.id.text_input_start_icon)
+
+    /**
+     * "Đang nghe" phải thấy được ngay (spec 022 US4): viền ô sáng màu chủ đạo, gợi ý đổi thành
+     * "Mời bạn nói…", vòng sáng sau micro "thở" liên tục và micro nhún theo âm lượng ([renderVoiceLevel]).
+     * Tắt hiệu ứng chuyển động khi người dùng tắt hoạt ảnh trong cài đặt máy.
+     */
+    private fun startListeningEffect(binding: ViewCourtSearchControlsBinding, primary: Int) {
+        val field = binding.aiField
+        if (aiFieldIdle == null) {
+            aiFieldIdle = AiFieldLook(field.hint, field.boxStrokeWidth)
+        }
+        field.hint = getString(R.string.search_voice_speak_hint)
+        field.setBoxStrokeColorStateList(ColorStateList.valueOf(primary))
+        field.boxStrokeWidth = field.boxStrokeWidthFocused
+        field.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+        field.announceForAccessibility(getString(R.string.search_voice_listening))
+        val icon = micIcon(binding) ?: return
+        icon.background = ContextCompat.getDrawable(requireContext(), R.drawable.bg_voice_pulse)?.mutate()?.apply {
+            setTint(primary)
+            alpha = 60
+        }
+        if (!ValueAnimator.areAnimatorsEnabled()) return
+        micPulse?.cancel()
+        micPulse = ValueAnimator.ofInt(40, 110).apply {
+            duration = 650
+            repeatMode = ValueAnimator.REVERSE
+            repeatCount = ValueAnimator.INFINITE
+            addUpdateListener { icon.background?.alpha = it.animatedValue as Int }
+            start()
+        }
+    }
+
+    private fun stopListeningEffect(binding: ViewCourtSearchControlsBinding) {
+        micPulse?.cancel()
+        micPulse = null
+        micIcon(binding)?.apply {
+            animate().cancel()
+            scaleX = 1f
+            scaleY = 1f
+            background = null
+        }
+        val field = binding.aiField
+        aiFieldIdle?.let { look ->
+            field.hint = look.hint
+            // Màu viền mặc định của ô Outlined trong Material 3 (theo trạng thái focus/hover).
+            ContextCompat.getColorStateList(requireContext(), com.google.android.material.R.color.m3_textfield_stroke_color)
+                ?.let(field::setBoxStrokeColorStateList)
+            field.boxStrokeWidth = look.width
+        }
+    }
+
+    /** Micro nhún theo âm lượng thu được (0..1): im lặng thì nhỏ, nói to thì phồng tới 1,25 lần (vòng sáng vẫn nằm trong ô). */
+    private fun renderVoiceLevel(binding: ViewCourtSearchControlsBinding, level: Float) {
+        if (!micListening || !ValueAnimator.areAnimatorsEnabled()) return
+        val scale = 1f + 0.25f * level
+        micIcon(binding)?.animate()?.scaleX(scale)?.scaleY(scale)?.setDuration(90)?.start()
     }
 
     private fun hasMicPermission(): Boolean = ContextCompat.checkSelfPermission(

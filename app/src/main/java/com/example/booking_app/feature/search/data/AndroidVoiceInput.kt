@@ -47,7 +47,10 @@ class AndroidVoiceInput @Inject constructor(
             }
 
             override fun onBeginningOfSpeech() = Unit
-            override fun onRmsChanged(rmsdB: Float) = Unit
+            override fun onRmsChanged(rmsdB: Float) {
+                // RMS của SpeechRecognizer nằm khoảng -2..10 dB.
+                trySend(VoiceEvent.Level(((rmsdB + 2f) / 12f).coerceIn(0f, 1f)))
+            }
             override fun onBufferReceived(buffer: ByteArray?) = Unit
             override fun onEndOfSpeech() = Unit
             override fun onEvent(eventType: Int, params: Bundle?) = Unit

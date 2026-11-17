@@ -94,14 +94,17 @@ class VoiceInputViewModelTest {
         runCurrent()
         assertTrue(vm.state.value.listening)
 
+        voice.send(VoiceEvent.Level(0.7f), finished = false)
         voice.send(VoiceEvent.Partial("tối mai"))
         runCurrent()
         assertEquals("tối mai", vm.state.value.aiInput)
+        assertEquals(0.7f, vm.voiceLevel.value)
 
         voice.send(VoiceEvent.Final("tối mai quận 10 dưới 100k"))
         runCurrent()
         assertEquals("tối mai quận 10 dưới 100k", vm.state.value.aiInput)
         assertFalse(vm.state.value.listening)
+        assertEquals(0f, vm.voiceLevel.value) // micro về trạng thái nghỉ
         coVerify(exactly = 0) { api.parse(any()) }
     }
 

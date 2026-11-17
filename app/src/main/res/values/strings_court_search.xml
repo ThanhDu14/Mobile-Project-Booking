@@ -82,7 +82,8 @@
     <string name="search_voice_start_cd">Nói câu tìm sân</string>
     <string name="search_voice_stop_cd">Dừng nghe</string>
     <string name="search_voice_denied_cd">Micro chưa được cấp quyền</string>
-    <string name="search_voice_listening">Đang nghe…</string>
+    <string name="search_voice_listening">Đang nghe… Chạm micro để dừng</string>
+    <string name="search_voice_speak_hint">Mời bạn nói, ví dụ: tối mai Q10 dưới 100k</string>
     <string name="search_voice_rationale_title">Nói thay vì gõ</string>
     <string name="search_voice_rationale">Ứng dụng dùng micro để chuyển lời nói thành chữ trong ô Tìm bằng AI. Âm thanh do dịch vụ nhận dạng giọng nói của máy (thường là Google) xử lý; ứng dụng không lưu bản ghi âm. Bạn vẫn xem lại câu trước khi gửi.</string>
     <string name="search_voice_continue">Tiếp tục</string>
