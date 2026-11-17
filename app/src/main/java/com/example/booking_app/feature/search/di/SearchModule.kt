@@ -5,6 +5,8 @@ import com.example.booking_app.feature.search.data.FirestoreHomeVenueRepository
 import com.example.booking_app.feature.search.data.PrefsAiQueryHistory
 import com.example.booking_app.feature.search.data.FirestoreSearchHistoryRepository
 import com.example.booking_app.feature.search.domain.SearchHistoryRepository
+import com.example.booking_app.feature.search.data.AndroidVoiceInput
+import com.example.booking_app.feature.search.domain.VoiceInput
 import com.example.booking_app.feature.search.domain.AiQueryHistory
 import dagger.multibindings.IntoSet
 import com.example.booking_app.feature.search.data.FirestoreCourtSearchRepository
@@ -35,6 +37,9 @@ abstract class SearchModule {
 
     @Binds
     abstract fun bindSearchHistoryRepository(impl: FirestoreSearchHistoryRepository): SearchHistoryRepository
+
+    @Binds
+    abstract fun bindVoiceInput(impl: AndroidVoiceInput): VoiceInput
 
     /** Xóa lịch sử câu hỏi AI của tài khoản khi đăng xuất. */
     @Binds

@@ -18,6 +18,16 @@
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
 
+    <!-- Nhập bằng giọng nói ở ô "Tìm bằng AI" (spec 022 US4, research R15): xin quyền khi bấm micro.
+         <queries> để SpeechRecognizer.isRecognitionAvailable thấy dịch vụ nhận dạng từ Android 11. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+    <queries>
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+    </queries>
+
     <application
         android:name=".SmashNowApp"
         android:allowBackup="true"
