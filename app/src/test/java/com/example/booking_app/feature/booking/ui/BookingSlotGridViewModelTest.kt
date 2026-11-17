@@ -362,7 +362,9 @@ class BookingSlotGridViewModelTest {
     @Test
     fun p1_3_raceCondition_snapshotArrivesBeforeMetadata_matrixBuiltSuccessfully() = runTest {
         val busyFlow = MutableSharedFlow<BusySlotsUpdate>(replay = 1)
-        val selectedDateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"))
+        // Cùng múi giờ với ViewModel (giờ Việt Nam); LocalDate.now() theo máy chạy lệch một ngày từ 17:00 UTC.
+        val selectedDateStr = java.time.LocalDate.now(com.example.booking_app.core.schedule.BookingWindow.ZONE)
+            .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"))
         val bookedSlot = TimeSlot("c1_${selectedDateStr}_0600", "c1", selectedDateStr, "0600", "0630", 40000L, SlotStatus.BOOKED)
 
         // Snapshot arrives BEFORE metadata completes
