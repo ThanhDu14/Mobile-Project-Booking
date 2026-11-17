@@ -33,6 +33,13 @@ data class CourtSearchPage(val venues: List<HomeVenue>, val complete: Boolean, v
 
 interface CourtSearchRepository {
     fun search(criteria: CourtSearchCriteria, origin: GeoPoint?): Flow<CourtSearchPage>
+
+    /**
+     * Gợi ý nới điều kiện (spec 022 US6): với mỗi biến thể, giá mỗi giờ của từng sân phù hợp
+     * (giá theo khung giờ nếu có khung giờ, `null` khi sân chưa có giá). Cùng thứ tự với [variants].
+     * Mặc định không có kết quả, để các repository giả trong test không phải cài.
+     */
+    suspend fun variantPrices(variants: List<CourtSearchCriteria>): List<List<Long?>> = variants.map { emptyList() }
 }
 
 internal fun normalizedSearchText(value: String): String = Normalizer.normalize(value.lowercase(), Normalizer.Form.NFD)
