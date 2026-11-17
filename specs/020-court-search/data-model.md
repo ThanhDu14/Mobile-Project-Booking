@@ -45,7 +45,7 @@ Spec 020 đọc `venueId`, `courtId`, `date`, `startTime` (`HHmm`), `status`, `h
 |---|---|---|---|
 | `keyword` | String | có (có thể rỗng) | ≤ 100 ký tự, giữ nguyên chữ người dùng gõ để hiển thị |
 | `districtId` | String? | | ID danh mục |
-| `priceMin`, `priceMax` | Long? | | ≥ 0, bội số 10.000; `priceMin ≤ priceMax` khi có cả hai |
+| `priceMin`, `priceMax` | Long? | | ≥ 0, bội số 1.000; `priceMin ≤ priceMax` khi có cả hai |
 | `date` | String? `yyyyMMdd` | Cùng có hoặc cùng không với `startTime`, `endTime` | |
 | `startTime`, `endTime` | String? `HHmm` | | Bội số 30 phút, `endTime > startTime` |
 | `amenityIds` | Array\<String> | có | ≤ 20 phần tử, đã sắp xếp |

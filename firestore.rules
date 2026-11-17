@@ -199,6 +199,58 @@ service cloud.firestore {
           && request.resource.data.venueSnapshot.keys().hasOnly(['name', 'photoPath', 'address']);
     }
 
+    // ---------- users/{uid}/searchHistory (A, spec 020 US4; contracts/security-rules-and-indexes.md §1) ----------
+    // ID = 20 ký tự hex đầu SHA-256 của bộ điều kiện, nên tìm lại cùng tổ hợp ghi đè đúng document.
+    // Không có vị trí (FR-014). App giữ tối đa 10 mục; xóa cùng tài khoản do delete-account (service account).
+    match /users/{uid}/searchHistory/{historyId} {
+      function historyFields() {
+        return ['keyword', 'districtId', 'priceMin', 'priceMax', 'date', 'startTime', 'endTime',
+                'amenityIds', 'sort', 'searchedAt', 'createdAt', 'updatedAt'];
+      }
+
+      function optString(d, f, maxLen) {
+        return !(f in d) || d[f] == null || (d[f] is string && d[f].size() <= maxLen);
+      }
+
+      function optPrice(d, f) {
+        // Bội số 1.000 (không phải 10.000 như contract ban đầu): AI điền được "dưới 55k" = 55.000.
+        return !(f in d) || d[f] == null || (d[f] is int && d[f] >= 0 && d[f] % 1000 == 0);
+      }
+
+      function validWindow(d) {
+        let none = (!('date' in d) || d.date == null)
+                && (!('startTime' in d) || d.startTime == null)
+                && (!('endTime' in d) || d.endTime == null);
+        let all = d.get('date', null) is string && d.date.matches('^[0-9]{8}$')
+               && d.get('startTime', null) is string && d.startTime.matches('^[0-9]{2}(00|30)$')
+               && d.get('endTime', null) is string && d.endTime.matches('^[0-9]{2}(00|30)$')
+               && d.endTime > d.startTime;
+        return none || all;
+      }
+
+      function validHistory(d) {
+        return d.keys().hasOnly(historyFields())
+            && d.keyword is string && d.keyword.size() <= 100
+            && optString(d, 'districtId', 40)
+            && optPrice(d, 'priceMin') && optPrice(d, 'priceMax')
+            && (d.get('priceMin', null) == null || d.get('priceMax', null) == null
+                || d.priceMin <= d.priceMax)
+            && validWindow(d)
+            && d.amenityIds is list && d.amenityIds.size() <= 20
+            && d.sort in ['RATING', 'PRICE_ASC', 'NEAREST']
+            && d.searchedAt == request.time;
+      }
+
+      allow read, delete: if isSelf(uid) && isInitialized();
+      allow create: if isSelf(uid) && isInitialized()
+                    && validHistory(request.resource.data)
+                    && hasServerTimestamps();
+      allow update: if isSelf(uid) && isInitialized()
+                    && validHistory(request.resource.data)
+                    && request.resource.data.createdAt == resource.data.createdAt
+                    && request.resource.data.updatedAt == request.time;
+    }
+
     // ---------- venues, courts, priceRules (B, spec 040 / D, spec 111) ----------
     // Người chơi chỉ thấy dữ liệu công khai của venue ACTIVE. Owner đã duyệt
     // vẫn đọc được dữ liệu quản lý của venue mình.
