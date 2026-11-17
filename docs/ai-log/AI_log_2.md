@@ -48,6 +48,9 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 42 | 2026-11-12 | Đặc tả và triển khai ban đầu đề xuất sân theo đánh giá (RAG) cho tìm kiếm 020/022 | 02 |
 | 43 | 2026-11-14 | Rà soát RAG so với spec, sửa lỗi và đồng bộ tài liệu 020/021/022 với code | 02 |
 | 44 | 2026-11-15 | Kiểm thử AI search trên máy thật, sửa lỗi, cải thiện giao diện, deploy, commit và push | 02 |
+| 45 | 2026-11-15 | Sửa CI đỏ của PR #65 (test sinh slot phụ thuộc múi giờ và thứ trong tuần) | 04, 02 |
+| 46 | 2026-11-17 | Bộ đánh giá Tìm bằng AI (42 câu), quy tắc đọc ngày/quận/giờ trong câu, dự phòng khi quá thời gian | 02 |
+| 47 | 2026-11-18 | Lịch sử tìm kiếm (020 US4), nhập bằng giọng nói (022 US4), deploy Rules, kiểm thử trên máy, mở PR và sửa CI | 02, 04 |
 
 
 
@@ -2106,3 +2109,97 @@ Sau đợt kiểm thử trên thiết bị thật và đối chiếu kỹ lưỡ
 - Khi điều khiển bằng `adb`, một lần chạm nhầm mở trang "Xóa tài khoản"; không bấm gì và thoát ngay, tài khoản không bị ảnh hưởng. Một lần ô nhập không được xóa nên ba câu bị dính vào nhau và tốn lượt; đã xóa các câu này khỏi lịch sử.
 - Trong 26 commit, một số commit giữa có thể không build vì code 020 và 022 nằm chung file chưa từng commit; HEAD là bản đã test.
 - Chưa sửa: câu không dấu "toi mai" không nhận ra buổi tối; nút "Xóa bộ lọc" vẫn giữ Quận và từ khóa (chờ người dùng quyết định).
+
+---
+
+## Mục 45: Sửa CI đỏ của PR #65
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-15 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 04 – Đặt sân (test của spec 040), ảnh hưởng PR 02 |
+| Công cụ AI | Claude Code (Claude Opus 5.5) |
+| Nhánh Git | `feature/020-court-search-rag` |
+
+### Yêu cầu và kết quả
+
+- Prompt: "Khi test thì CI fail hãy kiểm tra giúp tôi" (kèm log CI), sau đó chọn "cách 1" trong các phương án AI đưa ra.
+- AI đọc log, xác định `GenerateDailySlotsUseCaseTest` (test đánh dấu slot `PAST`) phụ thuộc giờ và thứ trong tuần của máy chạy CI (UTC), không phải lỗi của code 020/022.
+- Sửa test cho độc lập múi giờ và ngày trong tuần (commit `ce2fb4d`); CI xanh và PR #65 được merge vào `main`.
+
+---
+
+## Mục 46: Bộ đánh giá Tìm bằng AI và quy tắc đọc điều kiện trong câu
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-17 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 02 – Tìm kiếm sân (spec 022) |
+| Công cụ AI | Claude Code (Claude Opus 5.5) |
+| Nhánh Git | `feature/020-021-022-complete` |
+
+### Prompt chính
+
+"Tôi vừa pull code từ main về, hãy giúp tôi hoàn thiện các tính năng còn lại trong feature 020, 021 và 022. Đầu tiên hãy rà soát lại xem còn thiếu gì." Sau khi AI liệt kê việc còn lại: "Bắt đầu với cái này đi" (bộ eval), "Làm thêm 2 quy tắc sau đó deploy, phần này commit tầm 3-4 commit và commit bằng tiếng Anh".
+
+### Yêu cầu và kết quả
+
+1. **Bộ eval** `scripts/ai-eval/`: 42 câu (26 câu tìm sân, 16 câu ngoại lệ), chạy `handleAiSearch` với Firestore trong bộ nhớ, nhà cung cấp LLM thật và đồng hồ cố định (2026-10-05 10:00, thứ Hai). Chấm ý định, bộ lọc, văn bản tự do, PII; xuất báo cáo `.md` và `.json` vào `docs/reports/ai-eval/`. Key do người dùng nhập bằng `read -s`, AI không đọc key.
+2. **Quy tắc tất định** trong `criteria.ts` bổ sung hoặc sửa kết quả của model: ngày `dd/mm`, thứ (`thứ 2…CN`, `t7`, `tuần sau`), quận (`Quận 10`, `q10`, `q 10`), ngày tương đối (`tối nay`, `mai`, `mốt`), khung giờ (`19h-21h`). Thứ viết bằng chữ phải có dấu để tránh nhầm "thứ tự".
+3. **Dự phòng khi quá thời gian:** nhà cung cấp đầu quá thời gian mà còn ≥ 1,5 giây thì chuyển sang nhà cung cấp kế tiếp (trước đây chỉ chuyển khi 429/5xx). Giới hạn thời gian production giữ nguyên 6 s / 8,5 s; eval có tham số `--budget-ms` riêng.
+4. **Kết quả:** từ 69,2% / 65,4% / 75,0% lên **96,2% ý định, 96,2% bộ lọc, 100% ngoại lệ, 0 vi phạm văn bản tự do, 0 vi phạm PII** (`court-search-rag-4`). Câu còn sai: "bt sang cn" (không dấu, app hỏi lại giờ).
+5. Deploy `ai-search-parse` sau khi người dùng đồng ý; 4 commit tiếng Anh.
+
+### Sai sót và giới hạn
+
+- AI thêm dòng prompt "q10 = Quận 10" làm mọi "Quận N" trả về `null`; phát hiện qua eval, sửa thành bảng viết tắt → mã quận và thêm `districtFromQuery` dự phòng.
+- Lần eval đầu toàn `AI_TIMEOUT` vì mạng của người dùng chậm hơn giới hạn 6 s; xử lý bằng tham số thời gian riêng cho eval, không nới giới hạn production.
+- Cổng 8080 của Emulator bị một tiến trình lạ chiếm; AI không tắt tiến trình đó mà dùng file cấu hình tạm với cổng khác.
+
+### Kiểm chứng
+
+- `deno test`: 13/13 không Emulator, 17/17 có Emulator. Báo cáo eval lưu trong repo.
+
+---
+
+## Mục 47: Lịch sử tìm kiếm, nhập bằng giọng nói, deploy Rules, kiểm thử trên máy và sửa CI
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-18 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 02 – Tìm kiếm sân (spec 020 US4, 022 US4); test của 04 (spec 040) |
+| Công cụ AI | Claude Code (Claude Opus 5.5), có điều khiển điện thoại qua `adb` |
+| Nhánh Git | `feature/020-021-022-complete` |
+
+### Prompt chính
+
+"Tiếp theo là nhập bằng giọng nói và lịch sử tìm kiếm, hãy làm rõ 2 cái này trước khi triển khai. Có thể hỏi tôi bằng trắc nghiệm." Người dùng trả lời trắc nghiệm: micro ở mép trái ô AI, nhận dạng ngay trong app có trạng thái "Đang nghe…", chỉ ô AI có micro, từ chối quyền thì micro mờ và có "Mở cài đặt"; lịch sử là hàng "Tìm gần đây" + sheet "Xem tất cả", tìm bằng AI lưu bộ lọc (không lưu câu hỏi), lưu trên Firestore `users/{uid}/searchHistory`.
+
+### Yêu cầu và kết quả
+
+1. **Lịch sử tìm kiếm (020 US4):**
+   - Rules và test H-1…H-15 (`firestore-tests/test/searchHistory.test.ts`); giá chấp nhận bội số 1.000 thay vì 10.000 vì AI điền được "dưới 55k" (đã sửa contract và data-model).
+   - Repository: ID tất định (20 ký tự hex đầu SHA-256 của bộ điều kiện chuẩn hóa) nên tìm lại không tạo bản trùng; transaction giữ `createdAt`; giữ 10 mục; xóa từng mục, xóa tất cả.
+   - Ghi khi bấm tìm trên bàn phím, đổi quận/giá/tiện ích/khung giờ/sắp xếp, áp dụng bảng lọc, mở chi tiết sân, áp dụng bộ lọc AI. Khách không ghi, thấy gợi ý đăng nhập.
+   - Khôi phục: khung giờ đã qua bị bỏ kèm "Ngày đã qua, vui lòng chọn lại."; quận/tiện ích không còn bị bỏ; "Gần nhất" khi chưa có vị trí chuyển về theo đánh giá.
+2. **Nhập bằng giọng nói (022 US4):** `SpeechRecognizer` tiếng Việt, kết quả tạm hiện dần; chỉ điền vào ô, không tự gửi nên không tốn lượt; hộp giải thích trước khi xin quyền; bị từ chối thì micro mờ và snackbar "Mở cài đặt"; máy không có dịch vụ nhận dạng thì ẩn micro; lỗi nhận dạng giữ chữ cũ. Theo yêu cầu "giao diện khi mic nhận âm thanh sống động hơn": vòng sáng "thở" sau micro, micro nhún theo âm lượng, viền ô màu chủ đạo, gợi ý "Mời bạn nói…", rung nhẹ và TalkBack đọc "Đang nghe"; tắt chuyển động khi máy tắt hoạt ảnh. Chính sách quyền riêng tư bổ sung micro và lịch sử.
+3. **Deploy Rules:** người dùng đồng ý ("Tôi đồng ý chạy fire rule đi"). Trước khi deploy, AI tải bộ rules đang chạy về so sánh: trùng `main`, bản mới chỉ thêm khối `searchHistory` nên không ghi đè thay đổi của thành viên khác. Deploy qua Firebase Rules API bằng tài khoản gcloud của người dùng; ghi lại mã ruleset cũ để quay lại khi cần.
+4. **Kiểm thử trên máy thật (SM-A546E) qua `adb`:** đạt lưu/khôi phục/xóa một mục/xóa tất cả (đối chiếu dữ liệu Firestore), hộp giải thích, từ chối quyền, "Mở cài đặt", cấp lại quyền, trạng thái đang nghe, không nghe rõ. Người dùng tự thử nói thật và báo đạt. Sửa 3 lỗi giao diện phát hiện khi thử: thông báo lỗi giọng nói nằm xa micro, sheet lịch sử chỉ mở hé khi xoay ngang, "Đang nghe…" dính sát "Câu hỏi gần đây" và vòng sáng lấn viền ô.
+5. **Git và PR:** commit tiếng Anh, tác giả chỉ Lê Quốc Hưng, push nhánh. Máy không có `gh` và AI không lấy token GitHub đã lưu, nên AI soạn tiêu đề/mô tả tiếng Anh và mở trang tạo PR điền sẵn để người dùng bấm tạo.
+6. **CI đỏ của PR:**
+   - Lần 1: lint `UseAppTint` trong `item_search_history.xml` (AI chỉ chạy unit test, chưa chạy lint trước khi push). Sửa sang `app:tint`.
+   - Lần 2: `BookingSlotGridViewModelTest` (spec 040) lấy ngày bằng `LocalDate.now()` theo múi giờ máy chạy, còn ViewModel dùng giờ Việt Nam; CI chạy trong 17:00–24:00 UTC nên lệch một ngày. AI tái hiện bằng `TZ=UTC`, sửa test dùng `BookingWindow.ZONE`. CI xanh cả 3 job.
+
+### Kiểm chứng
+
+- Android: 1.217 unit test, 0 lỗi; `lint testDebugUnitTest assembleDebug` chạy ở `TZ=UTC` thành công. Rules test 21/21. CI GitHub xanh (Android, Firestore Rules, Edge Functions).
+
+### Sai sót và giới hạn
+
+- Khi điều khiển `adb`, điện thoại tự xoay giữa dọc và ngang nên vài lần chạm nhầm (mở một sân, chuyển sang tab Lịch đặt và Cộng đồng); chỉ chuyển màn, không thay đổi dữ liệu.
+- Lần thử "Xóa tất cả" đã xóa lịch sử tìm kiếm của tài khoản người dùng (đây là dữ liệu AI vừa tạo khi test); người dùng tạo lại bằng cách tìm vài lần.
+- Dữ liệu review test trên Firestore vẫn giữ lại theo yêu cầu để demo.
+
