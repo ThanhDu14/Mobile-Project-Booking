@@ -70,6 +70,9 @@ import javax.inject.Inject
 /** Số chip "Tìm gần đây" trên màn tìm; "Xem tất cả" mở đủ 10 mục. */
 private const val RECENT_CHIPS = 5
 
+/** Thông báo của micro: hiện dưới ô AI thay cho dòng thông báo chung. */
+private val VOICE_NOTICES = setOf(SearchNotice.VOICE_NO_MATCH, SearchNotice.VOICE_NETWORK)
+
 @AndroidEntryPoint
 class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
     private val viewModel: CourtSearchViewModel by viewModels()
@@ -208,12 +211,14 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
         if (state.clarification != null) aiExpanded = true
         binding.aiBody.isVisible = aiExpanded && !state.guest
         renderUsage(binding, state)
-        // Lỗi ngày hiện trong khung AI, ngay trên câu hỏi chọn ngày; các thông báo khác giữ vị trí cũ.
+        // Lỗi ngày hiện trong khung AI, ngay trên câu hỏi chọn ngày; lỗi micro hiện dưới ô AI (renderVoice);
+        // các thông báo khác giữ vị trí cũ.
         val dateNotice = state.notice == SearchNotice.INVALID_DATE
+        val inAiPanel = dateNotice || state.notice in VOICE_NOTICES
         binding.aiDateNotice.isVisible = dateNotice
         if (dateNotice) binding.aiDateNoticeText.setText(noticeText(SearchNotice.INVALID_DATE))
-        binding.notice.isVisible = state.notice != null && !dateNotice
-        state.notice?.takeIf { !dateNotice }?.let { binding.notice.setText(noticeText(it)) }
+        binding.notice.isVisible = state.notice != null && !inAiPanel
+        state.notice?.takeIf { !inAiPanel }?.let { binding.notice.setText(noticeText(it)) }
         binding.clarify.isVisible = state.clarification != null
         binding.clarifyChoices.isVisible = state.clarification != null
 
@@ -275,7 +280,12 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
         } else com.google.android.material.R.attr.colorOnSurfaceVariant)
         field.setStartIconTintList(ColorStateList.valueOf(color))
         field.findViewById<View>(com.google.android.material.R.id.text_input_start_icon)?.alpha = if (denied) 0.38f else 1f
-        field.helperText = if (state.listening) getString(R.string.search_voice_listening) else null
+        // Lỗi nhận dạng hiện ngay dưới ô (cạnh micro), không ở dòng thông báo chung bên dưới bộ lọc.
+        field.helperText = when {
+            state.listening -> getString(R.string.search_voice_listening)
+            state.notice in VOICE_NOTICES -> getString(noticeText(state.notice!!))
+            else -> null
+        }
     }
 
     private fun hasMicPermission(): Boolean = ContextCompat.checkSelfPermission(
@@ -339,6 +349,9 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
         val dialog = BottomSheetDialog(requireContext())
         val sheet = SheetSearchHistoryBinding.inflate(layoutInflater)
         dialog.setContentView(sheet.root)
+        // Mở hết ngay, kể cả màn hình ngang (mặc định chỉ hé phần tiêu đề).
+        dialog.behavior.skipCollapsed = true
+        dialog.behavior.state = BottomSheetBehavior.STATE_EXPANDED
         fun fill(state: CourtSearchUiState) {
             sheet.items.removeAllViews()
             sheet.empty.isVisible = state.history.isEmpty()
