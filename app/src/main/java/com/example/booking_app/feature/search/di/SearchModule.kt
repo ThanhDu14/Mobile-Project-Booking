@@ -3,6 +3,8 @@ package com.example.booking_app.feature.search.di
 import com.example.booking_app.core.session.SignOutHook
 import com.example.booking_app.feature.search.data.FirestoreHomeVenueRepository
 import com.example.booking_app.feature.search.data.PrefsAiQueryHistory
+import com.example.booking_app.feature.search.data.FirestoreSearchHistoryRepository
+import com.example.booking_app.feature.search.domain.SearchHistoryRepository
 import com.example.booking_app.feature.search.domain.AiQueryHistory
 import dagger.multibindings.IntoSet
 import com.example.booking_app.feature.search.data.FirestoreCourtSearchRepository
@@ -30,6 +32,9 @@ abstract class SearchModule {
 
     @Binds
     abstract fun bindAiQueryHistory(impl: PrefsAiQueryHistory): AiQueryHistory
+
+    @Binds
+    abstract fun bindSearchHistoryRepository(impl: FirestoreSearchHistoryRepository): SearchHistoryRepository
 
     /** Xóa lịch sử câu hỏi AI của tài khoản khi đăng xuất. */
     @Binds
