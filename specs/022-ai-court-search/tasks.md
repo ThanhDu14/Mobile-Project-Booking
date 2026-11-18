@@ -158,7 +158,7 @@ Code gom Trợ lý AI vào **màn tìm kiếm của 020** thay cho `AiAssistantF
 - [ ] T011 [P] [ĐỘC LẬP] Viết `FT/ai.test.ts` (Vitest + `@firebase/rules-unit-testing`, cùng `FT/setup.ts`) theo bảng AI-1…AI-8 ở [contracts/rules-and-tests.md §2](contracts/rules-and-tests.md#2-test-rules-emulator). Phải fail trước T012
   > Đối chiếu 2026-11-18: Chưa có test Rules cho `aiUsage`.
 - [ ] T012 [ĐỘC LẬP] Thêm vào `firestore.rules` đúng [contract §1](contracts/rules-and-tests.md#1-rules): `match /aiUsage/{day}` **bên trong** `match /users/{uid}` (`allow read: if isSelf(uid) || isAdmin(); allow write: if false;`), `match /aiSearchCache/{hash}` (`allow read, write: if false;`), `match /aiMetrics/{id}` (`allow read: if isAdmin(); allow write: if false;`). Dùng hàm `isSelf`, `isAdmin` đã có. T011 xanh; `npm test` trong `firestore-tests` không làm đỏ test cũ
-  > Đối chiếu 2026-11-18: Không có `match` cho `aiUsage`: app không đọc trực tiếp (lượt lấy qua function), mặc định bị từ chối là đủ. Chú thích trong Rules nói có match riêng là chưa đúng.
+  > Đối chiếu 2026-11-18: Không có `match` cho `aiUsage`: app không đọc trực tiếp (lượt lấy qua function), mặc định bị từ chối là đủ. Chú thích trong Rules đã sửa cho đúng ngày 2026-11-18 (`e1e3576`).
 
 ### 2C. Edge Function `ai-search-parse` (phục vụ mọi story)
 

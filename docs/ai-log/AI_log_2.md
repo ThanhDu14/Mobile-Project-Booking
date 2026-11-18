@@ -59,6 +59,7 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 53 | 2026-11-18 | Supabase: deploy 4 Edge Function, tìm nguyên nhân job định kỳ không chạy, chuẩn bị bật cron | 04 |
 | 54 | 2026-11-18 | Lưới 040 dùng giờ server; Lịch đặt chỉ tải lại khi có đơn đổi; đánh dấu T102 (022) | 04, 02 |
 | 55 | 2026-11-18 | Đồng bộ tasks 020 và 022 với code thực tế, cập nhật trạng thái nhóm tính năng 02 | 02 |
+| 56 | 2026-11-18 | Sửa 3 điểm phát hiện khi đối chiếu: chú thích Rules, giá lưới 040 dùng chung SlotPricing, test tìm kiếm | 02, 04 |
 
 
 
@@ -2477,3 +2478,29 @@ Người dùng chọn "Đồng bộ tasks 020/022" trong câu hỏi trắc nghi�
 ### Giới hạn
 
 - Phán định "Làm khác" dựa trên đọc code và các lần thử trên máy trong phiên, không chạy lại từng kịch bản quickstart.
+
+## Mục 56: Sửa các điểm phát hiện khi đối chiếu 020/022
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-18 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 02 – Tìm kiếm sân (020, 022); 04 – Đặt sân (040) |
+| Công cụ AI | Claude Code (Claude Opus 5.5) |
+| Nhánh Git | `feature/020-021-022-complete` |
+
+### Prompt chính
+
+Người dùng dán lại 3 phát hiện ở cuối Mục 55 và hỏi "Bạn đã fix phần này chưa". AI trả lời là chưa (mới ghi nhận) rồi sửa lần lượt.
+
+### Kết quả
+
+1. **Chú thích Rules** (`e1e3576`): chú thích nói `favorites`, `notifications`, `aiUsage` có match riêng; thực tế chỉ `favorites`, `searchHistory` có, còn `notifications`, `aiUsage` do Edge Function ghi và client bị từ chối mặc định. Chỉ sửa chú thích, không cần deploy.
+2. **Giá lưới 040 dùng chung `SlotPricing`** (`bb6d04d`): thêm `SlotPricing.ruleForSlot`, bảng tra 48 khung của 040 dựng từ hàm này. Khác biệt duy nhất trước đây: 040 coi `daysOfWeek` rỗng là mọi ngày, 020/030 coi là không ngày nào. Chọn cách hiểu của phần dùng chung vì khớp schema (`docs/design/database/README.md`: 1–7, khung không có rule thì không đặt được) và màn chủ sân từ chối danh sách rỗng; 62/62 dòng giá trên production đều có ngày nên giá hiển thị không đổi. `SharedSlotPricingTest` chạy lưới trên bộ ca P1–P9; test golden cũ ghi rõ 1–7 thay vì dùng danh sách rỗng.
+3. **Test tìm kiếm** (`1eabf05`): `CourtSearchCriteriaTest` (3 test) và `CourtSearchFiltersViewModelTest` (4 test: debounce 300 ms, bỏ một chip, "Xóa bộ lọc", "Gần nhất" có/không quyền/mất vị trí). Thử phá code có chủ đích (bỏ debounce, xóa quận khi "Xóa bộ lọc"): 2 test tương ứng thất bại, sau đó trả code về như cũ. Tasks 020: 76 xong, 38 mở.
+
+### Kiểm chứng và giới hạn
+
+- Unit test của booking, pricing, chi tiết sân và tìm kiếm: 310 qua; tìm kiếm riêng 45 qua.
+- Điện thoại ngắt kết nối giữa chừng nên chưa xem lại giá trên lưới bằng máy; bộ ca giá dùng chung thay cho bước này.
+- Còn mở: test cho repository tìm kiếm (đọc Firestore) và lọc tiện ích "đủ tất cả".
