@@ -67,6 +67,39 @@ class BookingPresentationTest {
     }
 
     @Test
+    fun paidRowIsHiddenWhenNothingWasPaid() {
+        assertNull(BookingPresentation.paidLabel(booking(RefundPolicy.Status.PENDING).finance))
+        assertEquals(
+            "Đã đặt cọc (giả lập)",
+            BookingPresentation.paidLabel(booking(RefundPolicy.Status.CONFIRMED, method = RefundPolicy.PaymentMethod.DEPOSIT, paid = 18_000).finance),
+        )
+        assertEquals(
+            "Đã thanh toán (ví giả lập)",
+            BookingPresentation.paidLabel(booking(RefundPolicy.Status.CONFIRMED, method = RefundPolicy.PaymentMethod.MOCK_WALLET, paid = 60_000).finance),
+        )
+    }
+
+    @Test
+    fun cancellationPolicyMatchesThePaymentMethod() {
+        val atVenue = BookingPresentation.cancellationPolicy(booking(RefundPolicy.Status.CONFIRMED), time)
+        assertFalse("đơn trả tại sân không có tiền cọc", atVenue.contains("cọc"))
+
+        val deposit = BookingPresentation.cancellationPolicy(
+            booking(RefundPolicy.Status.CONFIRMED, method = RefundPolicy.PaymentMethod.DEPOSIT, paid = 18_000), time,
+        )
+        // Mốc hủy sớm = giờ chơi (sau 5 giờ) trừ 4 giờ.
+        assertTrue(deposit.contains("hủy trước t60 ") && deposit.contains("mất tiền cọc"))
+
+        val wallet = BookingPresentation.cancellationPolicy(
+            booking(RefundPolicy.Status.CONFIRMED, method = RefundPolicy.PaymentMethod.MOCK_WALLET, paid = 60_000), time,
+        )
+        assertTrue(wallet.contains("phạt 30%, hoàn 70%"))
+
+        // Đơn chờ duyệt luôn được hoàn 100% (FR-017).
+        assertTrue(BookingPresentation.cancellationPolicy(booking(RefundPolicy.Status.PENDING), time).contains("hoàn 100%"))
+    }
+
+    @Test
     fun rejectedAndCancelledShowTheirReason() {
         val rejected = booking(RefundPolicy.Status.REJECTED, reason = "Sân bảo trì")
         assertEquals("Sân bảo trì", BookingPresentation.note(rejected, BookingPresentation.phase(rejected, now), now, time))

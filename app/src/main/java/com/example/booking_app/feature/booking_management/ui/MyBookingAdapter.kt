@@ -102,7 +102,8 @@ class MyBookingAdapter(
                 else ->
                     "Chưa thanh toán"
             }
-            binding.textBookingDetails.text = "$courtsStr • $paymentDetail"
+            // Tổng tiền đơn trên thẻ (FR-010)
+            binding.textBookingDetails.text = "$courtsStr • ${currencyFormat.format(item.finance.total)} • $paymentDetail"
 
             // Trạng thái theo thời điểm hiện tại: đơn quá hạn duyệt hoặc đã qua giờ chơi không còn là "chờ"/"sắp tới"
             val now = System.currentTimeMillis()

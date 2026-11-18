@@ -1,6 +1,7 @@
 package com.example.booking_app.feature.booking_management.ui
 
 import com.example.booking_app.feature.booking_management.domain.BookingDetail
+import com.example.booking_app.feature.booking_management.domain.BookingFinance
 import com.example.booking_app.feature.booking_management.domain.RefundPolicy
 
 /**
@@ -15,6 +16,8 @@ enum class BookingPhase {
 }
 
 object BookingPresentation {
+    /** Mốc hủy sớm 4 giờ (240 phút) trước giờ chơi, cùng giá trị với RefundPolicy. */
+    private const val EARLY_CANCEL_MILLIS = 240L * 60_000L
 
     fun phase(booking: BookingDetail, nowMillis: Long): BookingPhase = when (booking.status) {
         RefundPolicy.Status.HOLD -> BookingPhase.HOLD
@@ -64,4 +67,29 @@ object BookingPresentation {
 
     /** QR chỉ có ý nghĩa với đơn đã xác nhận, chưa check-in và chưa hết giờ chơi. */
     fun showQr(phase: BookingPhase): Boolean = phase == BookingPhase.UPCOMING
+
+    /** Nhãn dòng "đã trả"; null khi chưa trả đồng nào (ví dụ đơn trả tại sân). */
+    fun paidLabel(finance: BookingFinance): String? = when {
+        finance.paidAmount <= 0 -> null
+        finance.paymentMethod == RefundPolicy.PaymentMethod.DEPOSIT -> "Đã đặt cọc (giả lập)"
+        else -> "Đã thanh toán (ví giả lập)"
+    }
+
+    /** Chính sách hủy theo đúng phương thức thanh toán của đơn (FR-017 đến FR-020). */
+    fun cancellationPolicy(booking: BookingDetail, formatTime: (Long) -> String): String {
+        if (booking.status == RefundPolicy.Status.PENDING) {
+            return "Chính sách hủy: đơn chưa được duyệt, hủy trước giờ chơi được hoàn 100% số tiền đã trả."
+        }
+        val deadline = formatTime(booking.startAtMillis - EARLY_CANCEL_MILLIS)
+        return when (booking.finance.paymentMethod) {
+            RefundPolicy.PaymentMethod.AT_VENUE ->
+                "Chính sách hủy: đơn trả tại sân hủy trước giờ chơi không mất phí. Đơn đã check-in không hủy được."
+            RefundPolicy.PaymentMethod.DEPOSIT ->
+                "Chính sách hủy: hủy trước $deadline hôm chơi (từ 4 giờ trở lên) được hoàn 100% tiền cọc. " +
+                    "Hủy sau mốc đó mất tiền cọc. Đơn đã check-in không hủy được."
+            RefundPolicy.PaymentMethod.MOCK_WALLET ->
+                "Chính sách hủy: hủy trước $deadline hôm chơi (từ 4 giờ trở lên) được hoàn 100% vào ví. " +
+                    "Hủy sau mốc đó phạt 30%, hoàn 70%. Đơn đã check-in không hủy được."
+        }
+    }
 }

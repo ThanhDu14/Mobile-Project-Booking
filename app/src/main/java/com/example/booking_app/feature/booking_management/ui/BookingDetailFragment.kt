@@ -222,7 +222,10 @@ class BookingDetailFragment : Fragment(R.layout.fragment_booking_detail_060) {
         val slotsCount = booking.items.size
         binding.labelSubtotal.text = "Tiền sân ($slotsCount × 30 phút)"
         binding.textSubtotal.text = currencyFormat.format(booking.finance.subtotal)
-        binding.labelPaidAmount.text = if (booking.finance.depositAmount > 0) "Đã đặt cọc 30% (ví giả lập)" else "Đã thanh toán (ví giả lập)"
+        // Ẩn dòng "đã trả" khi chưa trả đồng nào (đơn trả tại sân từng hiện "-0 ₫" kèm nhãn ví)
+        val paidLabel = BookingPresentation.paidLabel(booking.finance)
+        binding.rowPaid.isVisible = paidLabel != null
+        binding.labelPaidAmount.text = paidLabel
         binding.textPaidAmount.text = "-${currencyFormat.format(booking.finance.paidAmount)}"
         binding.textRemainingAmount.text = currencyFormat.format(booking.finance.remainingAmount)
 
@@ -234,8 +237,7 @@ class BookingDetailFragment : Fragment(R.layout.fragment_booking_detail_060) {
         }
 
         // Cancellation Policy Text Box
-        val deadlineTime = timeFormat.format(Date(booking.startAtMillis - 240 * 60 * 1000L))
-        binding.textCancellationPolicy.text = "Chính sách hủy: hủy trước $deadlineTime hôm chơi (từ 4 giờ trở lên) được hoàn 100% tiền cọc. Hủy sau mốc đó mất tiền cọc. Đơn đã check-in không hủy được."
+        binding.textCancellationPolicy.text = BookingPresentation.cancellationPolicy(booking, formatTime)
 
         // Cancel button
         val canCancel = (booking.status == RefundPolicy.Status.PENDING || booking.status == RefundPolicy.Status.CONFIRMED) &&
