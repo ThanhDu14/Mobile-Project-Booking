@@ -52,6 +52,8 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 46 | 2026-11-17 | Bộ đánh giá Tìm bằng AI (42 câu), quy tắc đọc ngày/quận/giờ trong câu, dự phòng khi quá thời gian | 02 |
 | 47 | 2026-11-18 | Lịch sử tìm kiếm (020 US4), nhập bằng giọng nói (022 US4), deploy Rules, kiểm thử trên máy, mở PR và sửa CI | 02, 04 |
 | 48 | 2026-11-18 | Gợi ý nới điều kiện khi tìm không ra sân (022 US6) và cập nhật AI log | 02 |
+| 49 | 2026-11-18 | Kiểm thử gợi ý nới điều kiện (022 US6) trên máy thật | 02 |
+| 50 | 2026-11-18 | Lưới đặt sân theo bề ngang màn hình: chia đều cột, hé cột, ghim tên sân (040) | 04 |
 
 
 
@@ -2239,3 +2241,70 @@ Sau đợt kiểm thử trên thiết bị thật và đối chiếu kỹ lưỡ
 - Chưa thử trên điện thoại vì máy không kết nối `adb`; người dùng sẽ tự thử (T102).
 - `variantPrices` chưa có unit test riêng ở tầng Firestore (repository dùng Firestore thật); được kiểm gián tiếp qua test ViewModel với repository giả.
 
+## Mục 49: Kiểm thử gợi ý nới điều kiện (022 US6) trên máy thật
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-18 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 02 – Tìm kiếm sân (spec 022 US6) |
+| Công cụ AI | Claude Code (Claude Opus 5.5) |
+| Nhánh Git | `feature/020-021-022-complete` |
+
+### Prompt chính
+
+"Bạn hãy tiến hành test tôi đã kết nối với máy rồi, hãy test giúp tôi và báo cáo."
+
+### Yêu cầu và kết quả
+
+AI cài bản build lên Galaxy A54 qua `adb`, đọc danh sách sân trên Firestore (chỉ đọc) để tính trước kết quả mong đợi, rồi thử từng kịch bản:
+
+1. Tân Phú, giá đến 40k → "Giá đến 50k · 1 sân", "Mọi quận · 4 sân"; bấm từng chip thì bộ lọc đổi đúng và có sân.
+2. Tân Phú, 04:00–05:00 ngày mai (sân mở 05:00) → "05:00–06:00 · 1 sân", "Mọi quận · 2 sân".
+3. Tân Phú + Gửi xe → "Bỏ “Gửi xe” · 1 sân".
+4. Câu AI "san tan phu duoi 40k" (chọn ngày 19/11) → "Giá đến 130k · 1 sân" (giá buổi tối); bấm chip không trừ lượt AI.
+5. Chỉ có từ khóa ra 0 sân → không có gợi ý.
+
+Số sân trên chip khớp số tính trước; các lần bấm gợi ý đều được lưu vào lịch sử tìm kiếm; gợi ý hiện khoảng 3 giây sau kết quả rỗng.
+
+### Sai sót và giới hạn
+
+- Chưa thử được "Cùng giờ ngày mai" vì dữ liệu không có sân kín hôm nay mà trống ngày mai; AI không tạo booking giả để tránh ghi dữ liệu thật. Phần này chỉ có unit test.
+- Thử nghiệm dùng 1 lượt AI và thêm vài mục lịch sử tìm kiếm của tài khoản thử.
+- Ghi nhận ngoài phạm vi: thông báo rỗng vẫn ghi "bỏ bớt bộ lọc" khi chỉ có từ khóa; tab Tìm kiếm mất điều kiện khi chuyển tab.
+
+## Mục 50: Lưới đặt sân theo bề ngang màn hình (040)
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-18 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 04 – Đặt sân (spec 040, FR-029, FR-030) |
+| Công cụ AI | Claude Code (Claude Opus 5.5) |
+| Nhánh Git | `feature/020-021-022-complete` |
+
+### Prompt chính
+
+"Hiện nếu vào giao diện đặt sân của 1 sân cầu lông nếu chỗ sân đó có từ 5 sân trở xuống thì sẽ bị trống 1 đoạn ở bên phải, tôi muốn giao diện phải scale theo màn hình ... các trường hợp còn lại bạn hãy test và đưa ra phương án cho tôi tham khảo." Sau đó: "Phải scale cho mọi thiết bị chứ không phải mỗi máy tôi nhé", "Làm A + C, màn ngang giới hạn 160dp nhé", "Tách 3 commit phần này".
+
+### Yêu cầu và kết quả
+
+1. **Chia đều cột** (`1cb3f0a`): `SlotMatrixColumns.cellWidthPx` tính độ rộng ô từ bề ngang thật của lưới và mật độ màn hình; ≤ 5 sân, hoặc mọi cột vừa ở 80dp, thì chia đều. Fragment tính lại khi bề ngang lưới đổi (lần vẽ đầu, xoay màn hình) và áp cho cả ô lẫn tên sân.
+2. **Hé cột và giới hạn màn ngang** (`5a601d4`): nhiều sân phải cuộn thì chọn độ rộng gần 80dp sao cho thấy đúng N cột rưỡi; màn ngang ô tối đa 160dp và căn giữa khi lưới hẹp hơn màn hình.
+3. **Ghim tên sân** (`ce5ba69`): bản sao hàng tên sân hiện ở đầu vùng nội dung khi hàng gốc cuộn khuất, cuộn ngang hai chiều đồng bộ với lưới.
+4. **Tài liệu** (`608cd3f`): Clarifications 2026-11-18, FR-029, FR-030, edge case màn hẹp/rộng, tasks Phase 7 (T043–T047).
+
+AI đưa 4 phương án cho cơ sở nhiều sân (A hé cột, B dàn vừa đến 6 sân, C ghim tên sân, D chia nhóm sân bằng tab); người dùng chọn A + C.
+
+### Kiểm chứng
+
+- `SlotMatrixColumnsTest`: bề ngang 320/360/384/412/600/800dp, 1–12 sân, giới hạn 160dp.
+- Thử trên Galaxy A54: 3, 5, 6, 12 sân ở màn dọc và màn ngang; giả lập 320dp và 600dp bằng `wm density` (đã đặt lại); chọn ô, cuộn ngang hai chiều, hàng tên sân ghim.
+- Theo yêu cầu, chưa chạy toàn bộ CI; chỉ chạy test liên quan. CI chạy khi mở/cập nhật PR.
+
+### Sai sót và giới hạn
+
+- Bản đầu có ngưỡng tối thiểu 56dp làm máy 320dp với 5 sân quay về cuộn ngang; người dùng nhắc phải đúng mọi thiết bị, AI bỏ ngưỡng.
+- Khi thêm căn giữa cho màn ngang, AI đặt `layout_gravity="center_horizontal"` trong layout; trên máy thật HorizontalScrollView vẫn căn giữa khi lưới rộng hơn màn hình, lưới 12 sân bị lệch khoảng 3,75 cột và không cuộn về Sân 1. AI phát hiện qua ảnh chụp, chuyển sang đặt căn giữa bằng code chỉ khi cả lưới vừa màn hình, rồi thử lại.
+- Ở 320dp ô đang chọn "✓ 22:00" vừa đủ nhưng sát lề.
+- Ghi nhận ngoài phạm vi: tiêu đề lưới ghi "Quận Quận 12" (lặp chữ "Quận").
