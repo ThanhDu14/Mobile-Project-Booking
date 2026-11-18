@@ -67,6 +67,8 @@ class CourtMapController(
     private var anyTileLoaded = false
     private var tilesFailed = false
     private var shownKey: Any? = null
+    private var lastVenues: List<HomeVenue> = emptyList()
+    private var lastSelected: String? = null
     private var myLocationMarker: Marker? = null
 
     private val tileHandler = object : Handler(Looper.getMainLooper()) {
@@ -121,7 +123,14 @@ class CourtMapController(
         mapView.controller.setCenter(GeoPoint(center.lat, center.lng))
         // Báo sau lượt bố cục: báo ngay trong onLayout thì giao diện đổi visibility giữa lượt bố cục và bị bỏ qua
         // (dòng trạng thái không hiện cho tới lần kéo bản đồ đầu tiên).
-        mapView.addOnFirstLayoutListener { _, _, _, _, _ -> mapView.post { report() } }
+        // Sau lần bố cục đầu cũng tự vẽ lại: vùng báo về có thể trùng vùng đã lưu nên màn hình không phát lại, mà các
+        // marker vẽ trước khi có kích thước thì chưa gom cụm.
+        mapView.addOnFirstLayoutListener { _, _, _, _, _ ->
+            mapView.post {
+                report()
+                render(lastVenues, lastSelected)
+            }
+        }
     }
 
     /** Di chuyển có hiệu ứng tới [center] (vị trí của tôi, sân gần bạn). */
@@ -142,10 +151,14 @@ class CourtMapController(
      * (FR-003); sân đang chọn luôn vẽ riêng. Bỏ qua nếu danh sách, sân chọn và mức phóng không đổi.
      */
     fun render(venues: List<HomeVenue>, selectedId: String?) {
+        lastVenues = venues
+        lastSelected = selectedId
         val zoom = mapView.zoomLevelDouble
         val key = Triple(venues.map { it.id }, selectedId, (zoom * 10).roundToInt())
-        if (key == shownKey && mapView.width > 0) return
-        shownKey = key
+        if (key == shownKey) return
+        // Chưa có kích thước thì chưa gom cụm được: không ghi nhớ để lần vẽ sau bố cục chạy lại đầy đủ
+        // (quay lại từ chi tiết sân từng hiện các marker chồng nhau thay vì cụm).
+        shownKey = if (mapView.width > 0) key else null
         mapView.overlays.removeAll { it is Marker }
         val context = mapView.context
         val normal = ContextCompat.getDrawable(context, R.drawable.ic_marker_shuttlecock)
