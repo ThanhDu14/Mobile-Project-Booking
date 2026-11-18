@@ -158,4 +158,25 @@ class CourtMapViewModelTest {
         runCurrent()
         assertTrue(vm.map.value.focus!!.id > focus.id)
     }
+
+    @Test
+    fun tappingAMarkerAnchorsTheCardsAndSwipingOnlyMovesTheHighlight() = runTest {
+        val vm = viewModel()
+        runCurrent()
+        vm.showMap(true)
+
+        vm.selectVenue("909")
+        assertEquals("909", vm.map.value.selectedId)
+        assertEquals("909", vm.map.value.cardAnchorId)
+
+        // Vuốt sang thẻ kế bên: thứ tự thẻ giữ theo sân đã chạm (FR-008).
+        vm.selectVenue("k3", fromCard = true)
+        assertEquals("k3", vm.map.value.selectedId)
+        assertEquals("909", vm.map.value.cardAnchorId)
+
+        // Chạm vùng trống: ẩn thẻ, bỏ nổi bật (FR-010).
+        vm.selectVenue(null)
+        assertNull(vm.map.value.selectedId)
+        assertNull(vm.map.value.cardAnchorId)
+    }
 }

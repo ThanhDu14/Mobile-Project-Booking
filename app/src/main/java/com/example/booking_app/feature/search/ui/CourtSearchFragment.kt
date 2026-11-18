@@ -59,6 +59,9 @@ import com.example.booking_app.feature.search.domain.model.HomeVenue
 import com.example.booking_app.feature.search.domain.map.CourtMap
 import com.example.booking_app.feature.search.domain.map.MapViewport
 import com.example.booking_app.feature.search.ui.map.CourtMapController
+import com.example.booking_app.feature.search.ui.map.MapCardAdapter
+import androidx.viewpager2.widget.MarginPageTransformer
+import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -96,6 +99,7 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
 
     /** Bản đồ tạo lần đầu khi chuyển sang chế độ bản đồ, gắn với view hiện tại (spec 021). */
     private var mapController: CourtMapController? = null
+    private var mapCards: MapCardAdapter? = null
     private var lastFocusId: Int? = null
 
     private val micPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -115,6 +119,7 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
         micListening = false
         aiFieldIdle = null
         mapController = null
+        mapCards = null
         super.onDestroyView()
     }
 
@@ -189,6 +194,17 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
         binding.mapToggle.setOnClickListener { viewModel.showMap(!viewModel.map.value.visible) }
         binding.map.mapFilters.setOnClickListener { showFilters() }
         binding.map.myLocation.setOnClickListener { viewModel.locateOnMap() }
+        val cards = MapCardAdapter(::openVenue).also { mapCards = it }
+        binding.map.mapCards.adapter = cards
+        binding.map.mapCards.offscreenPageLimit = 1
+        binding.map.mapCards.setPageTransformer(MarginPageTransformer(resources.getDimensionPixelSize(R.dimen.space_2)))
+        binding.map.mapCards.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+            override fun onPageSelected(position: Int) {
+                // Vuốt thẻ: làm nổi bật marker của sân đang xem (FR-008).
+                val venue = cards.currentList.getOrNull(position) ?: return
+                if (venue.id != viewModel.map.value.selectedId) viewModel.selectVenue(venue.id, fromCard = true)
+            }
+        })
 
         var previous: CourtSearchUiState? = null
         viewLifecycleOwner.lifecycleScope.launch {
@@ -1053,10 +1069,27 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
         val viewport = map.viewport ?: controller.viewport()
         val shown = viewport?.let { CourtMap.visible(state.venues, it).venues }.orEmpty()
         controller.render(shown, map.selectedId)
+        renderMapCards(binding, shown, map)
 
         val active = activeFilterCount(state.criteria)
         binding.map.mapFilters.text = if (active == 0) getString(R.string.map_filters)
         else getString(R.string.map_filters_count, active)
+    }
+
+    /** Thẻ tóm tắt (FR-007, FR-008): thứ tự theo sân được chạm, cuộn tới sân đang chọn; ẩn khi bỏ chọn (FR-010). */
+    private fun renderMapCards(binding: FragmentCourtSearchBinding, shown: List<HomeVenue>, map: CourtMapState) {
+        val adapter = mapCards ?: return
+        val pager = binding.map.mapCards
+        val anchor = map.cardAnchorId?.takeIf { id -> shown.any { it.id == id } }
+        val cards = if (anchor != null && map.selectedId != null) CourtMap.cardOrder(shown, anchor) else emptyList()
+        pager.isVisible = cards.isNotEmpty()
+        adapter.submitList(cards) {
+            val index = cards.indexOfFirst { it.id == map.selectedId }
+            if (index >= 0 && pager.currentItem != index) pager.setCurrentItem(index, false)
+        }
+        // Nút "Vị trí của tôi" nhích lên khi thẻ hiện để không bị che.
+        val lift = if (pager.isVisible) pager.height.takeIf { it > 0 } ?: resources.getDimensionPixelSize(R.dimen.map_card_height) else 0
+        binding.map.myLocation.translationY = -lift.toFloat()
     }
 
     private val mapListener = object : CourtMapController.Listener {

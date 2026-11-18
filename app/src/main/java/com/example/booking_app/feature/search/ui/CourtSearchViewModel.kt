@@ -117,6 +117,8 @@ data class CourtMapState(
     val visible: Boolean = false,
     val viewport: MapViewport? = null,
     val selectedId: String? = null,
+    /** Sân được chạm trên bản đồ: thứ tự thẻ tính theo khoảng cách tới sân này và giữ nguyên khi vuốt (FR-008). */
+    val cardAnchorId: String? = null,
     val myLocation: LatLng? = null,
     /** Người dùng đã kéo/phóng sau lần tải gần nhất: hiện nút "Tìm ở khu vực này" khi có ích (FR-005). */
     val moved: Boolean = false,
@@ -723,7 +725,9 @@ class CourtSearchViewModel @Inject constructor(
     /** Bấm một gợi ý nới điều kiện: áp dụng như đổi bộ lọc bằng tay (chip đổi theo, sửa tiếp được). */
     /** Chuyển Danh sách / Bản đồ (FR-001). Hai chế độ dùng chung tiêu chí và kết quả nên không mất bộ lọc. */
     fun showMap(visible: Boolean) {
-        _map.update { it.copy(visible = visible, selectedId = if (visible) it.selectedId else null) }
+        _map.update {
+            if (visible) it.copy(visible = true) else it.copy(visible = false, selectedId = null, cardAnchorId = null)
+        }
     }
 
     /** Bản đồ báo vùng đang xem; [byUser] khi người dùng kéo/phóng (không tự tải lại, FR-004). */
@@ -731,9 +735,18 @@ class CourtSearchViewModel @Inject constructor(
         _map.update { it.copy(viewport = viewport, moved = it.moved || byUser) }
     }
 
-    /** Chọn marker hoặc vuốt thẻ (FR-007, FR-008); `null` khi chạm vùng trống (FR-010). */
-    fun selectVenue(id: String?) {
-        _map.update { it.copy(selectedId = id) }
+    /**
+     * Chạm marker ([fromCard] = false) đặt lại thứ tự thẻ quanh sân đó (FR-007); vuốt thẻ ([fromCard] = true) chỉ đổi
+     * marker được làm nổi bật (FR-008); `null` khi chạm vùng trống thì ẩn thẻ (FR-010).
+     */
+    fun selectVenue(id: String?, fromCard: Boolean = false) {
+        _map.update {
+            when {
+                id == null -> it.copy(selectedId = null, cardAnchorId = null)
+                fromCard -> it.copy(selectedId = id)
+                else -> it.copy(selectedId = id, cardAnchorId = id)
+            }
+        }
     }
 
     /**
