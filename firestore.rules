@@ -80,7 +80,9 @@ service cloud.firestore {
 
     // ---------- users (A, spec 010; contracts/security-rules.md) ----------
     // Tạo bởi on-signup, xóa bởi delete-account (service account, không qua Rules).
-    // Không áp dụng xuống subcollection: favorites, notifications, aiUsage có match riêng.
+    // Không áp dụng xuống subcollection. Subcollection có match riêng: favorites, searchHistory.
+    // notifications và aiUsage chỉ do Edge Function ghi/đọc (service account); client không có match
+    // nên mặc định bị từ chối. App lấy lượt AI qua function ai-search-parse.
     match /users/{uid} {
       // Trường người dùng tự sửa được. Spec 011 bổ sung kiểm tra chi tiết từng trường.
       function selfEditableFields() {
