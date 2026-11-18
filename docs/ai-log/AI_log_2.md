@@ -55,6 +55,7 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 49 | 2026-11-18 | Kiểm thử gợi ý nới điều kiện (022 US6) trên máy thật | 02 |
 | 50 | 2026-11-18 | Lưới đặt sân theo bề ngang màn hình: chia đều cột, hé cột, ghim tên sân (040) | 04 |
 | 51 | 2026-11-18 | Rà soát và sửa lỗi đặt sân (040) và lịch đặt (060): Rules slot/đơn, tiền ảo trong ví, tab Đã hủy, job phía server, giao diện đơn | 04 |
+| 52 | 2026-11-18 | Deploy Firestore Rules, sửa 28 mốc thời gian lưu sai kiểu, sửa lỗi phân trang lặp ở Lịch đặt | 04 |
 
 
 
@@ -2353,7 +2354,31 @@ AI đưa 4 phương án cho cơ sở nhiều sân (A hé cột, B dàn vừa đ�
 
 - Commit `7ab6def` làm hỏng một unit test của 041 vì lúc đó AI chưa chạy unit test (chỉ chạy test Rules); phát hiện ở bước sau và bổ sung bằng `a61ad72`.
 - Lần sửa đầu trong `complete-bookings` thay `nowIso` bằng `now` trong khi biến tên là `serverNow`; test chưa bắt được vì test cũ coi chuỗi và Timestamp như nhau. AI sửa tên biến và siết test.
-- Chưa deploy: Firestore Rules, 4 Edge Function (`player-cancel-booking`, `expire-holds`, `complete-bookings`, `booking-timeout`) và migration cron đều cần người dùng đồng ý; cũng cần kiểm tra Vault `project_url`, `cron_secret` và `CRON_SECRET` trên Supabase vì các job hiện không chạy.
-- Chưa chạy `scripts/admin/fix-string-timestamps.ts --apply` (28 document) vì ghi dữ liệu production; bản chạy thử đã liệt kê đúng.
+- Chưa deploy 4 Edge Function (`player-cancel-booking`, `expire-holds`, `complete-bookings`, `booking-timeout`) và migration cron; cũng cần kiểm tra Vault `project_url`, `cron_secret` và `CRON_SECRET` trên Supabase vì các job hiện không chạy. Rules và sửa dữ liệu: xem Mục 52.
 - Số dư 141.000 đ trong ví tài khoản thử được giữ nguyên (dữ liệu demo).
 - Chưa làm: tạo đơn và tính giá phía server (thuộc 050), gom listener đếm tab, dùng giờ server trong lưới 040, thử tranh chấp 2 máy (chờ có người thử cùng).
+
+## Mục 52: Deploy Rules, sửa dữ liệu thời gian và lỗi phân trang Lịch đặt
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-18 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 04 – Đặt sân (spec 040, 060) |
+| Công cụ AI | Claude Code (Claude Opus 5.5) |
+| Nhánh Git | `feature/020-021-022-complete` |
+
+### Prompt chính
+
+"Ok deploy rules và chạy script sửa dữ liệu đi."
+
+### Yêu cầu và kết quả
+
+1. **Deploy Firestore Rules** qua Firebase Rules API bằng token gcloud. Trước khi deploy, AI tải bản đang chạy và so sánh: khớp với Rules trước đợt sửa (chỉ khác một dòng trống), nên phần thay đổi đúng là các sửa ở Mục 51. Ruleset mới `c5491e28-dfed-4fba-8c41-3c74722f3a4c`; ruleset cũ để quay lại khi cần: `7f017007-49fa-4028-b712-111d90c764d4`.
+2. **Sửa dữ liệu**: `scripts/admin/fix-string-timestamps.ts` chạy thử (28 document), chạy thật `--apply` (28/28: 13 đơn, 13 bản ghi hoàn tiền, 2 user), chạy thử lại còn 0.
+3. **Kiểm tra trên máy**: tab "Đã hủy" hiện số đếm 13 và lý do hủy. Khi cuộn, AI thấy đơn cũ nhất xuất hiện sai thứ tự và tìm ra lỗi mới: `loadNextPage()` không chặn khi trang sau đang tải dở, nên mỗi lần cuộn gần cuối lại tải cùng một cursor và nối trang lặp (`60c2165`). Test giữ trang 2 ở trạng thái đang tải, cuộn 3 lần: trước khi sửa gọi 3 lần, sau khi sửa 1 lần. Trên máy sau khi sửa: đủ 13 đơn, không lặp, đúng thứ tự `updatedAt` giảm dần.
+
+### Sai sót và giới hạn
+
+- Lỗi phân trang có từ trước nhưng bị che vì tab "Đã hủy" không tải được trang 2; chỉ lộ ra sau khi dữ liệu được sửa.
+- Vẫn chưa deploy 4 Edge Function và migration cron (máy chưa có Supabase CLI); cho tới khi deploy, đơn hủy mới vẫn được ghi thời gian dạng chuỗi bởi function cũ và cần chạy lại script.
