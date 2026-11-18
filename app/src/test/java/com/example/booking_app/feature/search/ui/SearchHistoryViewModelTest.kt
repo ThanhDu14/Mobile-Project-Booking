@@ -11,6 +11,10 @@ import com.example.booking_app.core.session.FakeSessionManager
 import com.example.booking_app.core.session.SessionState
 import com.example.booking_app.core.testing.FakeClock
 import com.example.booking_app.core.testing.MainDispatcherRule
+import com.example.booking_app.feature.search.domain.AiParseResponse
+import com.example.booking_app.feature.search.domain.AiCourtParse
+import com.example.booking_app.feature.search.domain.AiCourtFilter
+import com.example.booking_app.feature.search.domain.AiSearchUsage
 import com.example.booking_app.feature.search.domain.CourtAiApi
 import com.example.booking_app.feature.search.domain.CourtSearchCriteria
 import com.example.booking_app.feature.search.domain.CourtSearchPage
@@ -22,6 +26,7 @@ import com.example.booking_app.feature.search.domain.SearchHistoryEntry
 import com.example.booking_app.feature.search.domain.SearchHistoryRepository
 import com.google.firebase.firestore.GeoPoint
 import io.mockk.coEvery
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -192,5 +197,57 @@ class SearchHistoryViewModelTest {
         )
         assertNotEquals(SearchHistory.idOf(base), SearchHistory.idOf(base.copy(districtId = "q1")))
         assertEquals(20, SearchHistory.idOf(base).length)
+    }
+
+    private fun aiViewModel(history: FakeSearchHistory, location: LocationProvider): CourtSearchViewModel {
+        val catalog = mockk<CatalogRepository>()
+        coEvery { catalog.districts() } returns listOf(District("q10", "Quận 10", 1, true))
+        coEvery { catalog.amenities() } returns emptyList()
+        val repo = object : CourtSearchRepository {
+            override fun search(criteria: CourtSearchCriteria, origin: GeoPoint?) =
+                flowOf(CourtSearchPage(emptyList(), complete = true, capped = false))
+        }
+        val ai = mockk<CourtAiApi>()
+        coEvery { ai.usage() } returns AiSearchUsage(0, 0, 10)
+        coEvery { ai.parse(any()) } returns AiParseResponse(
+            AiCourtParse("search", filter = AiCourtFilter(districtId = "q10", sort = "NEAREST")), AiSearchUsage(1, 1, 10),
+        )
+        return CourtSearchViewModel(SavedStateHandle(), repo, ai, catalog, location,
+            FakeSessionManager(SessionState.SignedIn("player", AppRole.PLAYER, true)), clock,
+            MemoryAiQueryHistory(), history, FakeVoiceInput())
+    }
+
+    @Test
+    fun aiNearestSearchIsSavedOnceAfterTheLocationIsKnown() = runTest {
+        val history = FakeSearchHistory()
+        val location = mockk<LocationProvider>()
+        every { location.hasPermission() } returns true
+        coEvery { location.current() } returns GeoPoint(10.77, 106.67)
+        val vm = aiViewModel(history, location)
+        runCurrent()
+
+        vm.input("sân gần tôi ở quận 10")
+        vm.submitAi()
+        runCurrent()
+        // Trước đây lưu hai mục: bản theo đánh giá rồi bản "Gần nhất".
+        assertEquals(listOf(CourtSearchSort.NEAREST), history.recorded.map { (c, _) -> c.sort })
+        assertEquals("q10", history.recorded.single().first.districtId)
+    }
+
+    @Test
+    fun aiNearestSearchWithoutLocationIsSavedOnceByRating() = runTest {
+        val history = FakeSearchHistory()
+        val location = mockk<LocationProvider>()
+        every { location.hasPermission() } returns false
+        val vm = aiViewModel(history, location)
+        runCurrent()
+
+        vm.input("sân gần tôi ở quận 10")
+        vm.submitAi()
+        runCurrent()
+        assertTrue(history.recorded.isEmpty()) // đang chờ người dùng trả lời hộp xin quyền
+        vm.locationResult(LocationReason.SORT, granted = false)
+        runCurrent()
+        assertEquals(listOf(CourtSearchSort.RATING), history.recorded.map { (c, _) -> c.sort })
     }
 }

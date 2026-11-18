@@ -181,6 +181,12 @@ class CourtSearchViewModel @Inject constructor(
     /** Âm lượng micro 0..1 khi đang nghe; tách khỏi [state] vì cập nhật vài chục lần mỗi giây. */
     val voiceLevel = _voiceLevel.asStateFlow()
     private var origin: GeoPoint? = null
+
+    /**
+     * AI yêu cầu "Gần nhất" khi chưa có vị trí: chờ kết quả định vị rồi mới lưu lịch sử một lần (có vị trí thì lưu bản
+     * "Gần nhất", không có thì lưu bản theo đánh giá), thay vì lưu cả hai.
+     */
+    private var recordWhenLocated = false
     private var focusId = 0
 
     private val _map = MutableStateFlow(CourtMapState())
@@ -280,8 +286,10 @@ class CourtSearchViewModel @Inject constructor(
         }
         viewModelScope.launch {
             val point = location.current()
-            if (point == null) _state.update { it.copy(notice = SearchNotice.LOCATION_UNAVAILABLE) }
-            else {
+            if (point == null) {
+                _state.update { it.copy(notice = SearchNotice.LOCATION_UNAVAILABLE) }
+                recordPendingAiSearch()
+            } else {
                 origin = point
                 change(state.value.criteria.copy(sort = sort))
                 recordSearch()
@@ -679,10 +687,12 @@ class CourtSearchViewModel @Inject constructor(
             sort = if (requestedSort == CourtSearchSort.NEAREST && origin == null) CourtSearchSort.RATING else requestedSort,
         )
         change(criteria, ReviewPreference.entries.firstOrNull { it.name == result.preference })
-        // AI-filled filters are saved like a manual search (spec 020 US4), not the question itself.
-        recordSearch()
         if (dropped) _state.update { it.copy(notice = if ("INVALID_DATE" in result.dropped) SearchNotice.INVALID_DATE else SearchNotice.DROPPED_FILTERS) }
-        if (requestedSort == CourtSearchSort.NEAREST && origin == null) sort(requestedSort)
+        // AI-filled filters are saved like a manual search (spec 020 US4), not the question itself.
+        if (requestedSort == CourtSearchSort.NEAREST && origin == null) {
+            recordWhenLocated = true
+            sort(requestedSort)
+        } else recordSearch()
     }
 
     private fun change(
@@ -692,6 +702,8 @@ class CourtSearchViewModel @Inject constructor(
     ) {
         // Mọi đường vào (hộp giá, bảng lọc, AI, lịch sử, gợi ý nới) đều qua đây nên giá luôn lưu được vào lịch sử.
         val criteria = requested.withRoundedPrices()
+        // Người dùng đổi điều kiện khác trong lúc chờ vị trí: lần lưu đang chờ không còn đúng.
+        recordWhenLocated = false
         save(criteria)
         _state.update { it.copy(criteria = criteria, preference = preference, clarification = null, notice = null) }
         _map.update { it.copy(moved = false) }
@@ -828,7 +840,10 @@ class CourtSearchViewModel @Inject constructor(
     fun locationResult(reason: LocationReason, granted: Boolean) {
         when (reason) {
             LocationReason.SORT -> if (granted) sort(CourtSearchSort.NEAREST)
-                else _state.update { it.copy(notice = SearchNotice.LOCATION_UNAVAILABLE) }
+                else {
+                    _state.update { it.copy(notice = SearchNotice.LOCATION_UNAVAILABLE) }
+                    recordPendingAiSearch()
+                }
             LocationReason.MAP -> if (granted) locateOnMap()
                 else _state.update { it.copy(notice = SearchNotice.LOCATION_UNAVAILABLE) }
             LocationReason.NEARBY -> if (granted) locateNearby()
@@ -876,6 +891,13 @@ class CourtSearchViewModel @Inject constructor(
             _state.update { it.copy(nearbyStatus = NearbyStatus.READY, nearbyLocation = here) }
             _map.update { it.copy(myLocation = here) }
         }
+    }
+
+    /** Không lấy được vị trí cho yêu cầu "Gần nhất" của AI: lưu lần tìm đã chạy (theo đánh giá). */
+    private fun recordPendingAiSearch() {
+        if (!recordWhenLocated) return
+        recordWhenLocated = false
+        recordSearch()
     }
 
     fun applyRelaxation(relaxation: Relaxation) {
