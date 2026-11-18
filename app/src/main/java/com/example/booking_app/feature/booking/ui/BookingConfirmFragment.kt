@@ -151,11 +151,13 @@ class BookingConfirmFragment : Fragment() {
         binding.rowPayAtVenue.setOnClickListener {
             updatePaymentRadioSelection(PaymentOption.PAY_AT_VENUE, args)
         }
-        binding.rowDeposit.setOnClickListener {
-            updatePaymentRadioSelection(PaymentOption.DEPOSIT, args)
-        }
-        binding.rowWallet.setOnClickListener {
-            updatePaymentRadioSelection(PaymentOption.WALLET, args)
+        // Đặt cọc và ví giả lập cần trừ tiền phía server (050). Khi client tự ghi "đã trả", hủy sớm sẽ hoàn
+        // vào ví số tiền chưa từng trả, nên tạm khóa hai lựa chọn này; Rules cũng chỉ nhận đơn trả tại sân.
+        for (row in listOf(binding.rowDeposit, binding.rowWallet)) {
+            row.alpha = DISABLED_PAYMENT_ALPHA
+            row.setOnClickListener {
+                Snackbar.make(binding.root, R.string.booking_payment_server_only, Snackbar.LENGTH_SHORT).show()
+            }
         }
 
         // 4. Thanh số dư ví (3c: placeholder 0 đ kèm TODO(050))
@@ -478,4 +480,9 @@ class BookingConfirmFragment : Fragment() {
         countDownTimer = null
         _binding = null
     }
+
+    private companion object {
+        const val DISABLED_PAYMENT_ALPHA = 0.45f
+    }
+
 }

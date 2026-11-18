@@ -131,6 +131,28 @@ describe('bookings collection (Spec 041)', () => {
       );
     });
 
+    // Chưa có thanh toán phía server (050): client không được tự khai đã trả hoặc đã cọc (rà soát 2026-11-18).
+    it('create PENDING fails when paying by wallet or deposit from the client', async () => {
+      const fs = player('player1');
+      await assertFails(
+        setDoc(doc(fs, 'bookings/booking-pending-01'), validPendingBookingData('player1', {
+          paymentMethod: 'MOCK_WALLET', paymentStatus: 'PAID', paidAmount: 180000, remainingAmount: 0,
+        }))
+      );
+      await assertFails(
+        setDoc(doc(fs, 'bookings/booking-pending-01'), validPendingBookingData('player1', {
+          paymentMethod: 'DEPOSIT', paymentStatus: 'DEPOSITED', depositAmount: 54000, paidAmount: 54000, remainingAmount: 126000,
+        }))
+      );
+    });
+
+    it('create PENDING fails when remainingAmount differs from total', async () => {
+      const fs = player('player1');
+      await assertFails(
+        setDoc(doc(fs, 'bookings/booking-pending-01'), validPendingBookingData('player1', { remainingAmount: 0 }))
+      );
+    });
+
     it('non-player cannot create booking with PENDING status', async () => {
       const fs = owner('owner1');
       await assertFails(setDoc(doc(fs, 'bookings/booking-pending-01'), validPendingBookingData('owner1')));

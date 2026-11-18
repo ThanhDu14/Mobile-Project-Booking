@@ -384,6 +384,12 @@ service cloud.firestore {
             request.resource.data.status == 'HOLD'
             || (
               request.resource.data.status == 'PENDING'
+              // Chưa có thanh toán phía server (050): client chỉ được tạo đơn trả tại sân, chưa trả đồng nào.
+              // Nếu cho client tự khai paidAmount/depositAmount, hủy sớm sẽ "hoàn" số tiền chưa từng trả vào ví.
+              && request.resource.data.paymentMethod == 'AT_VENUE'
+              && request.resource.data.paidAmount == 0
+              && request.resource.data.depositAmount == 0
+              && request.resource.data.remainingAmount == request.resource.data.total
               && request.resource.data.subtotal is number && request.resource.data.subtotal >= 0
               && request.resource.data.discount is number && request.resource.data.discount >= 0
               && request.resource.data.total is number && request.resource.data.total == request.resource.data.subtotal - request.resource.data.discount
