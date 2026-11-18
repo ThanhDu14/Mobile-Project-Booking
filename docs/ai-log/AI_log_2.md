@@ -56,6 +56,7 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 50 | 2026-11-18 | Lưới đặt sân theo bề ngang màn hình: chia đều cột, hé cột, ghim tên sân (040) | 04 |
 | 51 | 2026-11-18 | Rà soát và sửa lỗi đặt sân (040) và lịch đặt (060): Rules slot/đơn, tiền ảo trong ví, tab Đã hủy, job phía server, giao diện đơn | 04 |
 | 52 | 2026-11-18 | Deploy Firestore Rules, sửa 28 mốc thời gian lưu sai kiểu, sửa lỗi phân trang lặp ở Lịch đặt | 04 |
+| 53 | 2026-11-18 | Supabase: deploy 4 Edge Function, tìm nguyên nhân job định kỳ không chạy, chuẩn bị bật cron | 04 |
 
 
 
@@ -2382,3 +2383,30 @@ AI đưa 4 phương án cho cơ sở nhiều sân (A hé cột, B dàn vừa đ�
 
 - Lỗi phân trang có từ trước nhưng bị che vì tab "Đã hủy" không tải được trang 2; chỉ lộ ra sau khi dữ liệu được sửa.
 - Vẫn chưa deploy 4 Edge Function và migration cron (máy chưa có Supabase CLI); cho tới khi deploy, đơn hủy mới vẫn được ghi thời gian dạng chuỗi bởi function cũ và cần chạy lại script.
+
+## Mục 53: Supabase: deploy Edge Function và chuẩn bị bật job định kỳ
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-18 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 04 – Đặt sân (spec 040, 060) |
+| Công cụ AI | Claude Code (Claude Opus 5.5) |
+| Nhánh Git | `feature/020-021-022-complete` |
+
+### Prompt chính
+
+"Tiếp theo là trên supabase." Hai câu hỏi trắc nghiệm, người dùng chọn: deploy cả 4 function; bật cả 3 job và chấp nhận 3 đơn demo đổi trạng thái theo đúng quy tắc. Sau đó: "đặt secret đợi bạn tôi nâng sau, hãy chuyển qua phần việc khác".
+
+### Kết quả
+
+1. **Tìm nguyên nhân job không chạy** (chỉ đọc): Supabase CLI trên máy đã đăng nhập sẵn vào project `smashnow`. Không có secret `CRON_SECRET` nên handler trả 401 với mọi lần gọi; `expire-holds` chưa từng được deploy; trên production mới áp 2/8 migration (không có migration cron nào), `pg_cron` và `pg_net` chưa bật, Vault chỉ có `FIREBASE_*`.
+2. **Deploy** `player-cancel-booking` v5, `complete-bookings` v4, `expire-holds` v1, `booking-timeout` v1, tất cả `verify_jwt=false`. CLI chặn lần deploy đầu vì cần hỏi người dùng, AI hỏi rồi mới chạy lại với `--yes`. Gọi `booking-timeout` không kèm secret: 401 đúng như mong đợi.
+3. **Vault**: ghi `project_url`.
+4. **CRON_SECRET**: AI viết script để người dùng tự chạy, tạo giá trị ngẫu nhiên trong shell, ghi vào secret của function và `cron_secret` trong Vault, không in giá trị ra. Lần 1 lỗi bị ẩn vì script bỏ hết output; AI sửa để in lỗi thật (giá trị secret được thay bằng `***`). Lần 2 cho thấy tài khoản vai trò Developer không có quyền đặt secret. Người dùng đã nhờ nâng quyền.
+
+### Việc còn lại
+
+- Người dùng chạy lại script sau khi được nâng quyền.
+- AI áp riêng 3 migration cron (`20261109203000`, `20261110100000`, `20261118120000`), đánh dấu đã áp, rồi kiểm tra lượt chạy đầu tiên. Không dùng `db push` vì sẽ áp cả migration của thành viên khác.
+- Báo nhóm: `server-time`, `delete-account`, `delete-account-sweeper`, `sync-account-email` chưa được deploy; migration cron xóa tài khoản và 2 bucket ảnh chưa được áp.
