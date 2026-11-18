@@ -1168,7 +1168,14 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
         val adapter = mapCards ?: return
         val pager = binding.map.mapCards
         val anchor = map.cardAnchorId?.takeIf { id -> shown.any { it.id == id } }
-        val cards = if (anchor != null && map.selectedId != null) CourtMap.cardOrder(shown, anchor) else emptyList()
+        val here = map.myLocation
+        // Có vị trí trên máy thì thẻ luôn có khoảng cách (FR-014), kể cả khi kết quả chưa được tìm lại theo vị trí.
+        val cards = if (anchor != null && map.selectedId != null) CourtMap.cardOrder(shown, anchor).map { venue ->
+            val position = venue.position
+            if (venue.distanceMeters == null && here != null && position != null) {
+                venue.copy(distanceMeters = CourtMap.meters(here, position))
+            } else venue
+        } else emptyList()
         pager.isVisible = cards.isNotEmpty()
         adapter.submitList(cards) {
             val index = cards.indexOfFirst { it.id == map.selectedId }
