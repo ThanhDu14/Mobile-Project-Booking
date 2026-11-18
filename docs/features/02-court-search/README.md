@@ -6,7 +6,7 @@
 | Vai trò sử dụng | Người chơi |
 | Thành viên phụ trách | A |
 | App tham khảo | Alobo |
-| Trạng thái | 🟨 Đang làm (020, 022 có phần chính; 021 bản đồ chưa làm) |
+| Trạng thái | 🟨 Đang làm (020, 021, 022 có phần chính; 021 chờ thử trên máy) |
 | Nhánh Git | `feature/020-021-022-complete` |
 | Spec (Spec Kit) | [020 Tìm kiếm sân](../../specs/020-court-search/spec.md) · [021 Bản đồ sân](../../specs/021-court-map/spec.md) · [022 Tìm sân bằng AI](../../specs/022-ai-court-search/spec.md) |
 
@@ -21,7 +21,7 @@ Tình trạng ngày 2026-11-18 (chi tiết từng task: mục "Đối chiếu v�
 - [x] Tìm sân thông minh bằng AI (AI Assistant): nhập câu tự do hoặc giọng nói, tự trích xuất bộ lọc (quận, ngày/giờ, giá, tiện ích) (022 US1–US5); gợi ý nới điều kiện khi không có kết quả (022 US6); đề xuất theo đánh giá (022 US7)
 - [x] Sắp xếp: gần nhất, giá, đánh giá (020 US3)
 - [x] Gợi ý sân gần vị trí hiện tại (sắp xếp "Gần nhất" có khoảng cách, 020 US3)
-- [ ] Chế độ xem bản đồ: marker icon quả cầu lông, chạm vào marker để xem thẻ tóm tắt rồi vào chi tiết sân (021, chưa làm)
+- [x] Chế độ xem bản đồ: marker icon quả cầu lông, chạm vào marker để xem thẻ tóm tắt rồi vào chi tiết sân (021 US1–US4: cụm marker, vuốt thẻ, "Tìm ở khu vực này", "Vị trí của tôi", "Sân gần bạn"; còn thử trên máy)
 - [x] Lưu lịch sử tìm kiếm (020 US4)
 
 ## Ảnh chụp tham khảo
