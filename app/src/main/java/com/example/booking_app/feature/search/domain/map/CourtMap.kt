@@ -34,7 +34,7 @@ data class ScreenPoint(val venueId: String, val x: Float, val y: Float)
 object CourtMap {
     /** Trung tâm TP.HCM, mức phóng thấy được vài quận (Clarifications 2026-10-06). */
     val DEFAULT_CENTER = LatLng(10.7769, 106.7009)
-    const val DEFAULT_ZOOM = 12.5
+    const val DEFAULT_ZOOM = 12.0
     const val FOCUS_ZOOM = 15.0
     const val MAX_VENUES = 100
     const val NEARBY_RADIUS_METERS = 5_000.0

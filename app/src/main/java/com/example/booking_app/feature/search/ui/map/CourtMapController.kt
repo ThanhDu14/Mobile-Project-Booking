@@ -119,7 +119,9 @@ class CourtMapController(
         val center = viewport?.center ?: CourtMap.DEFAULT_CENTER
         mapView.controller.setZoom(viewport?.zoom ?: CourtMap.DEFAULT_ZOOM)
         mapView.controller.setCenter(GeoPoint(center.lat, center.lng))
-        mapView.addOnFirstLayoutListener { _, _, _, _, _ -> report() }
+        // Báo sau lượt bố cục: báo ngay trong onLayout thì giao diện đổi visibility giữa lượt bố cục và bị bỏ qua
+        // (dòng trạng thái không hiện cho tới lần kéo bản đồ đầu tiên).
+        mapView.addOnFirstLayoutListener { _, _, _, _, _ -> mapView.post { report() } }
     }
 
     /** Di chuyển có hiệu ứng tới [center] (vị trí của tôi, sân gần bạn). */
