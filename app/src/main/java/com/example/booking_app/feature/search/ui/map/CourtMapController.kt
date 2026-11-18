@@ -67,6 +67,7 @@ class CourtMapController(
     private var anyTileLoaded = false
     private var tilesFailed = false
     private var shownKey: Any? = null
+    private var myLocationMarker: Marker? = null
 
     private val tileHandler = object : Handler(Looper.getMainLooper()) {
         override fun handleMessage(msg: Message) {
@@ -165,9 +166,51 @@ class CourtMapController(
             if (cluster.isSingle) mapView.overlays.add(venueMarker(members.first(), normal))
             else mapView.overlays.add(clusterMarker(members))
         }
-        // Marker đang chọn vẽ sau cùng để nằm trên các marker khác.
+        // Marker đang chọn vẽ sau cùng để nằm trên các marker khác; chấm vị trí của tôi giữ qua mỗi lần vẽ lại.
         byId[selectedId]?.let { mapView.overlays.add(venueMarker(it, selected)) }
+        myLocationMarker?.let(mapView.overlays::add)
         mapView.invalidate()
+    }
+
+    /** Chấm "vị trí của tôi" (FR-011); `null` thì bỏ chấm. Chỉ vẽ trên máy, không lưu (FR-015). */
+    fun showMyLocation(point: LatLng?) {
+        val current = myLocationMarker
+        if (point == null) {
+            current?.let(mapView.overlays::remove)
+            myLocationMarker = null
+        } else if (current == null) {
+            myLocationMarker = Marker(mapView).apply {
+                position = point.toGeoPoint()
+                icon = myLocationDot()
+                setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
+                setInfoWindow(null)
+                title = mapView.context.getString(R.string.map_my_location)
+                setOnMarkerClickListener { _, _ -> true }
+            }.also(mapView.overlays::add)
+        } else {
+            current.position = point.toGeoPoint()
+        }
+        mapView.invalidate()
+    }
+
+    /** Chấm tròn màu chính có viền trắng và quầng mờ, kiểu chấm vị trí quen thuộc. */
+    private fun myLocationDot(): BitmapDrawable {
+        val context = mapView.context
+        val density = context.resources.displayMetrics.density
+        val size = (DOT_SIZE_DP * density).roundToInt()
+        val color = MaterialColors.getColor(mapView, androidx.appcompat.R.attr.colorPrimary)
+        val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+        val center = size / 2f
+        paint.color = color
+        paint.alpha = 60
+        canvas.drawCircle(center, center, center, paint)
+        paint.color = android.graphics.Color.WHITE
+        canvas.drawCircle(center, center, 9 * density, paint)
+        paint.color = color
+        canvas.drawCircle(center, center, 6.5f * density, paint)
+        return BitmapDrawable(context.resources, bitmap)
     }
 
     private fun venueMarker(venue: HomeVenue, icon: android.graphics.drawable.Drawable?) = Marker(mapView).apply {
@@ -259,5 +302,6 @@ class CourtMapController(
         /** Hai marker cách nhau dưới khoảng này trên màn hình thì gộp (marker rộng 36dp). */
         const val CLUSTER_RADIUS_DP = 40f
         const val CLUSTER_SIZE_DP = 40f
+        const val DOT_SIZE_DP = 32f
     }
 }

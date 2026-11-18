@@ -217,7 +217,11 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
                         render(controls, venues, previous, state)
                         val noticeHidden = manager.findFirstVisibleItemPosition() > 0 || viewModel.map.value.visible
                         if (state.notice != previous?.notice && state.notice != null && noticeHidden) {
-                            Snackbar.make(binding.root, noticeText(state.notice), Snackbar.LENGTH_LONG).show()
+                            // Trên bản đồ, thiếu vị trí thì nói rõ bản đồ đang ở khu vực mặc định (FR-013).
+                            val text = if (viewModel.map.value.visible && state.notice == SearchNotice.LOCATION_UNAVAILABLE) {
+                                R.string.map_no_location
+                            } else noticeText(state.notice)
+                            Snackbar.make(binding.root, text, Snackbar.LENGTH_LONG).show()
                         }
                         previous = state
                     }
@@ -1072,6 +1076,7 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
         val viewport = map.viewport ?: controller.viewport()
         val visible = viewport?.let { CourtMap.visible(state.venues, it) }
         val shown = visible?.venues.orEmpty()
+        controller.showMyLocation(map.myLocation)
         controller.render(shown, map.selectedId)
         renderMapCards(binding, shown, map)
         renderMapStatus(binding, state, visible)
