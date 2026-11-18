@@ -73,12 +73,16 @@
 
         </LinearLayout>
 
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1">
+
         <!-- Main Content (Cuộn dọc) -->
         <androidx.core.widget.NestedScrollView
             android:id="@+id/scrollViewContent"
             android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_weight="1"
+            android:layout_height="match_parent"
             android:fillViewport="true">
 
             <LinearLayout
@@ -458,6 +462,31 @@
             </LinearLayout>
 
         </androidx.core.widget.NestedScrollView>
+
+            <!-- Hàng tên sân ghim trên cùng khi cuộn lưới xuống; cuộn ngang đồng bộ với lưới -->
+            <HorizontalScrollView
+                android:id="@+id/scrollStickyHeaders"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@color/sn_surface"
+                android:clipToPadding="false"
+                android:elevation="2dp"
+                android:importantForAccessibility="noHideDescendants"
+                android:paddingHorizontal="16dp"
+                android:scrollbars="none"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <LinearLayout
+                    android:id="@+id/layoutStickyCourtHeaders"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:paddingBottom="4dp" />
+
+            </HorizontalScrollView>
+
+        </FrameLayout>
 
         <!-- Bottom Summary Bar (Thanh tóm tắt và nút Giữ chỗ) -->
         <include

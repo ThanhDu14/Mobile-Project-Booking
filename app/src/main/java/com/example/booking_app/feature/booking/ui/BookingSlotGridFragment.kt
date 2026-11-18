@@ -10,6 +10,7 @@ import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.view.isVisible
+import androidx.core.widget.NestedScrollView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -138,6 +139,7 @@ class BookingSlotGridFragment : Fragment() {
         }
 
         binding.scrollViewMatrix.addOnLayoutChangeListener(matrixWidthListener)
+        setupStickyCourtHeaders()
 
         setupListeners()
         observeUiState()
@@ -312,6 +314,7 @@ class BookingSlotGridFragment : Fragment() {
         val showEmpty = state.isClosed || (state.courts.isEmpty() && !state.isLoading)
         binding.layoutEmptyState.isVisible = showEmpty
         binding.scrollViewMatrix.isVisible = !showEmpty
+        updateStickyCourtHeaders()
         if (state.isClosed) {
             binding.tvEmptyTitle.setText(R.string.booking_venue_closed_title)
             binding.tvEmptyMessage.text = state.errorMessage ?: getString(R.string.booking_venue_closed_message)
@@ -351,15 +354,51 @@ class BookingSlotGridFragment : Fragment() {
     }
 
     private fun renderCourtHeaders(courts: List<Court>) {
-        val container = binding.layoutCourtHeaders
-        container.removeAllViews()
         val inflater = LayoutInflater.from(requireContext())
+        // Hàng trong lưới và bản ghim trên cùng (hiện khi cuộn xuống) dùng cùng nội dung
+        for (container in listOf(binding.layoutCourtHeaders, binding.layoutStickyCourtHeaders)) {
+            container.removeAllViews()
+            for (court in courts) {
+                val headerBinding = ItemCourtColumnHeaderBinding.inflate(inflater, container, false)
+                headerBinding.tvCourtName.text = court.name
+                headerBinding.tvCourtSurface.text = court.surfaceType
+                container.addView(headerBinding.root)
+            }
+        }
+    }
 
-        for (court in courts) {
-            val headerBinding = ItemCourtColumnHeaderBinding.inflate(inflater, container, false)
-            headerBinding.tvCourtName.text = court.name
-            headerBinding.tvCourtSurface.text = court.surfaceType
-            container.addView(headerBinding.root)
+    /** Cuộn ngang lưới và hàng tên sân ghim luôn đi cùng nhau; cuộn dọc thì quyết định có ghim hay không. */
+    private fun setupStickyCourtHeaders() {
+        val b = binding
+        b.scrollViewMatrix.setOnScrollChangeListener { _, scrollX, _, _, _ ->
+            _binding?.scrollStickyHeaders?.scrollTo(scrollX, 0)
+        }
+        b.scrollStickyHeaders.setOnScrollChangeListener { _, scrollX, _, _, _ ->
+            _binding?.scrollViewMatrix?.scrollTo(scrollX, 0)
+        }
+        b.scrollViewContent.setOnScrollChangeListener(
+            NestedScrollView.OnScrollChangeListener { _, _, _, _, _ -> updateStickyCourtHeaders() }
+        )
+    }
+
+    /** Ghim hàng tên sân khi hàng gốc đã cuộn khuất phía trên mà lưới vẫn còn trên màn hình. */
+    private fun updateStickyCourtHeaders() {
+        val b = _binding ?: return
+        val headers = b.layoutCourtHeaders
+        val show = b.scrollViewMatrix.isVisible && headers.childCount > 0 && run {
+            val location = IntArray(2)
+            b.scrollViewContent.getLocationInWindow(location)
+            val viewportTop = location[1]
+            headers.getLocationInWindow(location)
+            val headersTop = location[1]
+            b.scrollViewMatrix.getLocationInWindow(location)
+            val matrixBottom = location[1] + b.scrollViewMatrix.height
+            headersTop < viewportTop && matrixBottom - headers.height > viewportTop
+        }
+        val sticky = b.scrollStickyHeaders
+        if (sticky.isVisible != show) {
+            sticky.isVisible = show
+            if (show) sticky.post { _binding?.let { it.scrollStickyHeaders.scrollTo(it.scrollViewMatrix.scrollX, 0) } }
         }
     }
 
@@ -378,21 +417,25 @@ class BookingSlotGridFragment : Fragment() {
             resources.displayMetrics.density,
             maxCellDp = if (landscape) SlotMatrixColumns.LANDSCAPE_MAX_CELL_DP else null,
         )
-        for (i in 0 until courtCount) {
-            val header = b.layoutCourtHeaders.getChildAt(i)
-            val params = header.layoutParams
-            if (params.width != width) {
-                params.width = width
-                header.layoutParams = params
+        for (container in listOf(b.layoutCourtHeaders, b.layoutStickyCourtHeaders)) {
+            for (i in 0 until container.childCount) {
+                val header = container.getChildAt(i)
+                val params = header.layoutParams
+                if (params.width != width) {
+                    params.width = width
+                    header.layoutParams = params
+                }
             }
         }
         // Cả lưới vừa màn hình (ô bị giới hạn 160dp khi xoay ngang) thì căn giữa; rộng hơn thì canh trái để cuộn
         val margins = 2 * (SlotMatrixColumns.CELL_MARGIN_DP * resources.displayMetrics.density).roundToInt()
         val gravity = if (courtCount * (width + margins) < available) Gravity.CENTER_HORIZONTAL else Gravity.START
-        val contentParams = b.layoutMatrixContent.layoutParams as FrameLayout.LayoutParams
-        if (contentParams.gravity != gravity) {
-            contentParams.gravity = gravity
-            b.layoutMatrixContent.layoutParams = contentParams
+        for (content in listOf(b.layoutMatrixContent, b.layoutStickyCourtHeaders)) {
+            val params = content.layoutParams as FrameLayout.LayoutParams
+            if (params.gravity != gravity) {
+                params.gravity = gravity
+                content.layoutParams = params
+            }
         }
         matrixAdapter.setCellWidth(width)
     }
@@ -503,7 +546,14 @@ class BookingSlotGridFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        _binding?.scrollViewMatrix?.removeOnLayoutChangeListener(matrixWidthListener)
+        _binding?.let {
+            it.scrollViewMatrix.removeOnLayoutChangeListener(matrixWidthListener)
+            // View được cache toàn cục: gỡ listener để không giữ fragment cũ
+            it.scrollViewMatrix.setOnScrollChangeListener(null)
+            it.scrollStickyHeaders.setOnScrollChangeListener(null)
+            it.scrollViewContent.setOnScrollChangeListener(null as NestedScrollView.OnScrollChangeListener?)
+            it.scrollStickyHeaders.isVisible = false
+        }
         // Tháo view khỏi ViewGroup cha để có thể tái gắn vào container ở lần hiển thị kế tiếp
         (globalCachedView?.parent as? ViewGroup)?.removeView(globalCachedView)
         _binding = null
