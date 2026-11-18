@@ -50,6 +50,11 @@ class BookingSlotGridFragment : Fragment() {
     private lateinit var matrixAdapter: SlotMatrixRowAdapter
     private var renderedCourts: List<Court> = emptyList()
 
+    // Bề ngang lưới đổi (lần vẽ đầu, xoay màn hình) thì tính lại độ rộng cột sân con
+    private val matrixWidthListener = View.OnLayoutChangeListener { v, left, _, right, _, oldLeft, _, oldRight, _ ->
+        if (right - left != oldRight - oldLeft) v.post { applyColumnWidths() }
+    }
+
     companion object {
         private var globalCachedView: View? = null
         private var globalBinding: FragmentBookingSlotGridBinding? = null
@@ -127,6 +132,8 @@ class BookingSlotGridFragment : Fragment() {
                 }
             }
         }
+
+        binding.scrollViewMatrix.addOnLayoutChangeListener(matrixWidthListener)
 
         setupListeners()
         observeUiState()
@@ -283,6 +290,7 @@ class BookingSlotGridFragment : Fragment() {
         if (state.courts.isNotEmpty() && (state.courts != renderedCourts || binding.layoutCourtHeaders.childCount == 0)) {
             renderedCourts = state.courts
             renderCourtHeaders(state.courts)
+            applyColumnWidths()
         }
 
         // 7. Lưới slot ma trận - Progressive chunked render trên cold start để tránh freeze
@@ -349,6 +357,26 @@ class BookingSlotGridFragment : Fragment() {
             headerBinding.tvCourtSurface.text = court.surfaceType
             container.addView(headerBinding.root)
         }
+    }
+
+    /** Ít sân thì các cột chia đều bề ngang màn hình, nhiều sân thì giữ 80dp và cuộn ngang. */
+    private fun applyColumnWidths() {
+        val b = _binding ?: return
+        val courtCount = b.layoutCourtHeaders.childCount
+        val scroll = b.scrollViewMatrix
+        val available = scroll.width - scroll.paddingLeft - scroll.paddingRight
+        if (courtCount == 0 || available <= 0) return
+
+        val width = SlotMatrixColumns.cellWidthPx(available, courtCount, resources.displayMetrics.density)
+        for (i in 0 until courtCount) {
+            val header = b.layoutCourtHeaders.getChildAt(i)
+            val params = header.layoutParams
+            if (params.width != width) {
+                params.width = width
+                header.layoutParams = params
+            }
+        }
+        matrixAdapter.setCellWidth(width)
     }
 
     private fun observeUiEffects() {
@@ -457,6 +485,7 @@ class BookingSlotGridFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        _binding?.scrollViewMatrix?.removeOnLayoutChangeListener(matrixWidthListener)
         // Tháo view khỏi ViewGroup cha để có thể tái gắn vào container ở lần hiển thị kế tiếp
         (globalCachedView?.parent as? ViewGroup)?.removeView(globalCachedView)
         _binding = null
