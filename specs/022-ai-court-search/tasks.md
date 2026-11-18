@@ -342,7 +342,7 @@ Phần server (giữ/hoàn lượt, chặn gửi thẳng, E1–E7) đã xong ở
 > - `CourtSearchRepository.variantPrices` (thay `countVariants`): trả giá mỗi giờ của từng sân phù hợp cho mỗi biến thể; danh sách sân theo quận, `priceRules` + `courts` theo sân, `slots` theo sân và ngày được đọc một lần và dùng chung.
 > - `CourtSearchViewModel`: lần tìm có lọc xong mà 0 sân thì tính `relaxations`; `applyRelaxation` áp dụng như đổi bộ lọc tay và lưu lịch sử; tìm lần mới thì xóa gợi ý.
 > - Giao diện: "Thử nới điều kiện:" + tối đa 3 chip dưới thông báo rỗng (`relaxSection` trong `view_court_search_controls.xml`).
-> - Test: `RelaxationPlannerTest.kt`, `RelaxationViewModelTest.kt`. T102 (thử trên máy, quickstart K28) còn chờ người dùng.
+> - Test: `RelaxationPlannerTest.kt`, `RelaxationViewModelTest.kt`. T102 đã thử trên máy ngày 2026-11-18 (xem T102).
 
 **Goal**: bộ lọc AI cho kết quả rỗng thì hiện tối đa 3 gợi ý nới điều kiện kèm số kết quả, không gọi AI.
 
@@ -362,7 +362,8 @@ Phần server (giữ/hoàn lượt, chặn gửi thẳng, E1–E7) đã xong ở
 - [x] T099 [US6] Cài đặt `SEARCH/domain/ai/usecase/SuggestRelaxations.kt`. T095 xanh
 - [x] T100 [US6] (Sửa 020) Bổ sung `SEARCH/ui/SearchViewModel.kt` + `SearchUiState`: `lastAiCriteria`, `relaxations: List<Relaxation>` khi rỗng; `onRelaxationClicked`. T096 xanh
 - [x] T101 [US6] Cài đặt `SEARCH/ui/ai/AiRelaxationsView.kt` + `RES/layout/view_ai_relaxations.xml` (tối đa 3 nút "Nới giá lên 120k (3 sân)", "Đổi sang 20:00–22:00 (2 sân)", "Bỏ "Gửi xe" (4 sân)" theo `ai_relax_*`), đặt trong `ai_relaxations_container` của trạng thái rỗng 020; không có gợi ý thì ẩn, hiện trạng thái rỗng thường (US6-4). **Phụ thuộc: 020 T052**
-- [ ] T102 [US6] Chạy quickstart K28 (thêm một cơ sở 120k/giờ vào dữ liệu Emulator nếu seed chưa đủ, chỉ nạp Emulator); ghi số lượt đọc thêm so với ước lượng ~25–100 ở R13
+- [x] T102 [US6] Chạy quickstart K28 (thêm một cơ sở 120k/giờ vào dữ liệu Emulator nếu seed chưa đủ, chỉ nạp Emulator); ghi số lượt đọc thêm so với ước lượng ~25–100 ở R13
+  > Đã chạy ngày 2026-11-18 trên Galaxy A54 với dữ liệu production (chỉ đọc, không cần nạp Emulator): Tân Phú ≤40k → "Giá đến 50k · 1 sân", "Mọi quận · 4 sân"; Tân Phú 04:00–05:00 ngày mai → "05:00–06:00 · 1 sân", "Mọi quận · 2 sân"; Tân Phú + Gửi xe → "Bỏ “Gửi xe” · 1 sân"; câu AI "san tan phu duoi 40k" → "Giá đến 130k · 1 sân", bấm không trừ lượt; chỉ từ khóa → không gợi ý. Số sân trên chip khớp số tính trước. Chưa thử được "Cùng giờ ngày mai" (thiếu dữ liệu sân kín hôm nay, không tạo booking giả) và chưa đo chính xác số lượt đọc thêm so với R13; gợi ý hiện sau khoảng 3 giây.
 
 **Checkpoint**: cả 6 story chạy độc lập.
 
