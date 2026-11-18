@@ -81,7 +81,11 @@ class MyBookingsViewModel @Inject constructor(
     }
 
     fun loadNextPage() {
-        if (cursor != null && _state.value !is MyBookingsState.Loading) loadPage(replace = false)
+        // Mỗi lần cuộn gần cuối đều gọi hàm này; khi trang sau đang tải dở thì bỏ qua, nếu không cùng một
+        // cursor được tải nhiều lần và trang đó bị nối lặp vào danh sách.
+        if (cursor != null && _state.value is MyBookingsState.Content && loadJob?.isActive != true) {
+            loadPage(replace = false)
+        }
     }
 
     private fun loadPage(replace: Boolean) {
