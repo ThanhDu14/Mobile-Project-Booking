@@ -4,6 +4,8 @@ import com.example.booking_app.core.location.GeoDistance
 import com.example.booking_app.feature.search.domain.model.HomeVenue
 import com.example.booking_app.feature.search.domain.model.LatLng
 import com.google.firebase.firestore.GeoPoint
+import kotlin.math.cos
+import kotlin.math.log2
 
 /**
  * Vùng bản đồ đang xem (spec 021). [north] ≥ [south]; vùng không vắt qua kinh tuyến 180 (TP.HCM), nên [west] ≤ [east].
@@ -77,6 +79,23 @@ object CourtMap {
             if (target != null) target.second += point.venueId else clusters += point to mutableListOf(point.venueId)
         }
         return clusters.map { (center, ids) -> MarkerCluster(ids, center.x, center.y) }
+    }
+
+    /**
+     * Mức phóng để một điểm cách tâm [distanceMeters] vẫn nằm trong khoảng [radiusDp] quanh tâm (tile 256dp, osmdroid
+     * phóng theo mật độ màn hình), giới hạn trong [[minZoom], [maxZoom]]. Dùng cho "Tìm rộng hơn" (FR-018).
+     */
+    fun zoomToShow(
+        distanceMeters: Double,
+        latitude: Double,
+        radiusDp: Double = 150.0,
+        minZoom: Double = 10.0,
+        maxZoom: Double = 13.5,
+    ): Double {
+        if (distanceMeters <= 0.0) return maxZoom
+        val metersPerDpAtZoom0 = 156_543.03 * cos(Math.toRadians(latitude))
+        val zoom = log2(metersPerDpAtZoom0 * radiusDp / distanceMeters)
+        return zoom.coerceIn(minZoom, maxZoom)
     }
 
     /** "Sân gần bạn": tối đa [limit] sân trong [radiusMeters] quanh [origin], gần trước (FR-016). */

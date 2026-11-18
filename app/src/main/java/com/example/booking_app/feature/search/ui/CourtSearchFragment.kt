@@ -935,7 +935,16 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
             is CourtSearchEffect.Sources -> showSources(effect)
             is CourtSearchEffect.Explanation -> showExplanation(effect)
             is CourtSearchEffect.RequestLocation -> MaterialAlertDialogBuilder(requireContext())
-                .setTitle(R.string.search_location_title).setMessage(R.string.search_location_rationale)
+                .setTitle(when (effect.reason) {
+                    LocationReason.SORT -> R.string.search_location_title
+                    LocationReason.MAP -> R.string.map_my_location
+                    LocationReason.NEARBY -> R.string.nearby_title
+                })
+                .setMessage(when (effect.reason) {
+                    LocationReason.SORT -> R.string.search_location_rationale
+                    LocationReason.MAP -> R.string.map_location_rationale
+                    LocationReason.NEARBY -> R.string.nearby_location_rationale
+                })
                 .setNegativeButton(R.string.common_cancel, null)
                 .setPositiveButton(android.R.string.ok) { _, _ ->
                     locationReason = effect.reason
@@ -1143,7 +1152,7 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
         val action = when (state.nearbyStatus) {
             NearbyStatus.NEED_LOCATION -> R.string.nearby_enable to { viewModel.enableNearby() }
             NearbyStatus.UNAVAILABLE -> R.string.nearby_try_again to { viewModel.enableNearby() }
-            NearbyStatus.READY -> if (message != null) R.string.nearby_wider to { viewModel.openNearbyMap(WIDER_ZOOM) } else null
+            NearbyStatus.READY -> if (message != null) R.string.nearby_wider to { viewModel.openNearbyMap(WIDER_ZOOM, wider = true) } else null
             NearbyStatus.LOCATING -> null
         }
         binding.nearbyAction.isVisible = action != null

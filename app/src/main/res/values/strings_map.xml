@@ -16,6 +16,8 @@
     <string name="map_offline">Không có mạng. Sân trên bản đồ có thể chưa cập nhật.</string>
     <string name="map_district_dropped">Đã bỏ lọc quận để tìm theo vùng đang xem.</string>
     <string name="map_my_location">Vị trí của tôi</string>
+    <string name="map_location_rationale">Cho phép vị trí để đưa bản đồ về chỗ bạn và tính khoảng cách tới các sân. Vị trí chỉ dùng trên máy, không lưu lại.</string>
+    <string name="nearby_location_rationale">Cho phép vị trí để tìm các sân trong bán kính 5 km quanh bạn. Vị trí chỉ dùng trên máy, không lưu lại.</string>
     <string name="map_no_location">Chưa có vị trí của bạn. Bản đồ đang ở trung tâm TP.HCM.</string>
     <string name="map_cd_marker">%1$s, chạm để xem tóm tắt</string>
     <string name="map_cd_cluster">%1$d sân, chạm để phóng to</string>

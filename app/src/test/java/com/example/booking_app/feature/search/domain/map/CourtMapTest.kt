@@ -65,4 +65,15 @@ class CourtMapTest {
         val many = (1..12).map { venue("n$it", origin.lat + it * 0.0005, origin.lng) }
         assertEquals((1..10).map { "n$it" }, CourtMap.nearby(many, origin).map { it.id })
     }
+
+    @Test
+    fun widerSearchZoomsOutJustEnoughToReachTheNearestVenue() {
+        // Dĩ An → sân gần nhất ở Quận 12 khoảng 13 km: phóng xa hơn mức 12 cố định trước đây.
+        val far = CourtMap.zoomToShow(13_000.0, 10.9)
+        assertTrue(far in 10.0..11.5)
+        // Càng gần thì phóng càng gần, nhưng không vượt mức 13,5.
+        assertTrue(CourtMap.zoomToShow(3_000.0, 10.8) > far)
+        assertEquals(13.5, CourtMap.zoomToShow(100.0, 10.8), 0.0)
+        assertEquals(10.0, CourtMap.zoomToShow(200_000.0, 10.8), 0.0)
+    }
 }

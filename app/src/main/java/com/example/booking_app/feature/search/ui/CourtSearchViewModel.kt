@@ -783,6 +783,8 @@ class CourtSearchViewModel @Inject constructor(
             }
             val here = LatLng(point.latitude, point.longitude)
             _map.update { it.copy(myLocation = here, focus = MapFocus(here, CourtMap.FOCUS_ZOOM, ++focusId)) }
+            // Cùng một vị trí cho "Sân gần bạn": quyền vừa cấp trên bản đồ thì dải không còn mời "Bật vị trí".
+            _state.update { it.copy(nearbyStatus = NearbyStatus.READY, nearbyLocation = here) }
             // Vị trí chỉ dùng trên máy để tính khoảng cách (FR-014, FR-015), không lưu vào tiêu chí hay lịch sử.
             if (origin != point) {
                 origin = point
@@ -816,11 +818,18 @@ class CourtSearchViewModel @Inject constructor(
         else locateNearby()
     }
 
-    /** "Xem tất cả trên bản đồ" (FR-017) và "Tìm rộng hơn" (FR-018): mở bản đồ quanh vị trí, [zoom] nhỏ hơn thì rộng hơn. */
-    fun openNearbyMap(zoom: Double) {
+    /**
+     * "Xem tất cả trên bản đồ" (FR-017): mở bản đồ quanh vị trí với [zoom]. "Tìm rộng hơn" (FR-018) gọi với [wider]:
+     * phóng vừa đủ để thấy sân gần nhất (đặt zoom cố định thì ở xa trung tâm vẫn có thể không thấy sân nào).
+     */
+    fun openNearbyMap(zoom: Double, wider: Boolean = false) {
         val here = state.value.nearbyLocation ?: return
+        val nearest = if (wider) {
+            state.value.venues.mapNotNull { it.position?.let { p -> CourtMap.meters(here, p) } }.minOrNull()
+        } else null
+        val target = nearest?.let { CourtMap.zoomToShow(it, here.lat) } ?: zoom
         _map.update {
-            it.copy(visible = true, myLocation = here, focus = MapFocus(here, zoom, ++focusId), selectedId = null, cardAnchorId = null)
+            it.copy(visible = true, myLocation = here, focus = MapFocus(here, target, ++focusId), selectedId = null, cardAnchorId = null)
         }
     }
 

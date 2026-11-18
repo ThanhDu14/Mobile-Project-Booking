@@ -152,6 +152,9 @@ class CourtMapViewModelTest {
         // Tìm lại với vị trí để thẻ có khoảng cách; vị trí không nằm trong tiêu chí/lịch sử (FR-015).
         assertEquals(here, repo.searches.last().second)
         assertEquals(CourtSearchCriteria(), repo.searches.last().first)
+        // "Sân gần bạn" dùng luôn vị trí này (trước đây vẫn mời "Bật vị trí" sau khi đã cấp quyền trên bản đồ).
+        assertEquals(NearbyStatus.READY, vm.state.value.nearbyStatus)
+        assertEquals(LatLng(10.8128, 106.6283), vm.state.value.nearbyLocation)
 
         // Bấm lại: lệnh mới để bản đồ quay về vị trí dù người dùng đã kéo đi.
         vm.locateOnMap()
