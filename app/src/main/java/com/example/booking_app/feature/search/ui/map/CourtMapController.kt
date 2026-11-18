@@ -1,6 +1,17 @@
 package com.example.booking_app.feature.search.ui.map
 
 import android.annotation.SuppressLint
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Paint
+import android.graphics.Point
+import android.graphics.Typeface
+import android.graphics.drawable.BitmapDrawable
+import com.example.booking_app.feature.search.domain.map.MarkerCluster
+import com.example.booking_app.feature.search.domain.map.ScreenPoint
+import com.google.android.material.color.MaterialColors
+import org.osmdroid.util.BoundingBox
+import kotlin.math.roundToInt
 import android.os.Handler
 import android.os.Looper
 import android.os.Message
@@ -55,8 +66,7 @@ class CourtMapController(
     private var userGesture = false
     private var anyTileLoaded = false
     private var tilesFailed = false
-    private var shownIds: List<String> = emptyList()
-    private var shownSelected: String? = null
+    private var shownKey: Any? = null
 
     private val tileHandler = object : Handler(Looper.getMainLooper()) {
         override fun handleMessage(msg: Message) {
@@ -124,33 +134,99 @@ class CourtMapController(
         return MapViewport(box.latNorth, box.latSouth, box.lonEast, box.lonWest, mapView.zoomLevelDouble)
     }
 
-    /** Vẽ marker cho [venues] (đã lọc theo vùng); bỏ qua nếu không có gì thay đổi. */
+    /**
+     * Vẽ marker cho [venues] (đã lọc theo vùng). Marker chồng nhau ở mức phóng hiện tại gộp thành cụm có số lượng
+     * (FR-003); sân đang chọn luôn vẽ riêng. Bỏ qua nếu danh sách, sân chọn và mức phóng không đổi.
+     */
     fun render(venues: List<HomeVenue>, selectedId: String?) {
-        val ids = venues.map { it.id }
-        if (ids == shownIds && selectedId == shownSelected) return
-        shownIds = ids
-        shownSelected = selectedId
+        val zoom = mapView.zoomLevelDouble
+        val key = Triple(venues.map { it.id }, selectedId, (zoom * 10).roundToInt())
+        if (key == shownKey && mapView.width > 0) return
+        shownKey = key
         mapView.overlays.removeAll { it is Marker }
         val context = mapView.context
         val normal = ContextCompat.getDrawable(context, R.drawable.ic_marker_shuttlecock)
         val selected = ContextCompat.getDrawable(context, R.drawable.ic_marker_shuttlecock_selected)
-        // Marker đang chọn vẽ sau cùng để nằm trên các marker khác.
-        venues.sortedBy { it.id == selectedId }.forEach { venue ->
-            val position = venue.position ?: return@forEach
-            mapView.overlays.add(Marker(mapView).apply {
-                this.position = GeoPoint(position.lat, position.lng)
-                icon = if (venue.id == selectedId) selected else normal
-                setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
-                setInfoWindow(null)
-                title = venue.name
-                setOnMarkerClickListener { _, _ ->
-                    listener.onMarkerTapped(venue.id)
-                    true
-                }
-            })
+        val byId = venues.filter { it.position != null }.associateBy { it.id }
+
+        val others = byId.values.filter { it.id != selectedId }
+        val clusters = if (mapView.width == 0) {
+            others.map { MarkerCluster(listOf(it.id), 0f, 0f) }
+        } else {
+            val projection = mapView.projection
+            val point = Point()
+            CourtMap.cluster(others.map { venue ->
+                projection.toPixels(venue.position!!.toGeoPoint(), point)
+                ScreenPoint(venue.id, point.x.toFloat(), point.y.toFloat())
+            }, CLUSTER_RADIUS_DP * context.resources.displayMetrics.density)
         }
+        for (cluster in clusters) {
+            val members = cluster.venueIds.mapNotNull(byId::get)
+            if (cluster.isSingle) mapView.overlays.add(venueMarker(members.first(), normal))
+            else mapView.overlays.add(clusterMarker(members))
+        }
+        // Marker đang chọn vẽ sau cùng để nằm trên các marker khác.
+        byId[selectedId]?.let { mapView.overlays.add(venueMarker(it, selected)) }
         mapView.invalidate()
     }
+
+    private fun venueMarker(venue: HomeVenue, icon: android.graphics.drawable.Drawable?) = Marker(mapView).apply {
+        position = venue.position!!.toGeoPoint()
+        this.icon = icon
+        setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_BOTTOM)
+        setInfoWindow(null)
+        title = venue.name
+        setOnMarkerClickListener { _, _ ->
+            listener.onMarkerTapped(venue.id)
+            true
+        }
+    }
+
+    /** Cụm: chạm thì phóng vào vùng của cụm; đã ở mức phóng tối đa thì chọn sân đầu tiên để vuốt thẻ qua cụm. */
+    private fun clusterMarker(members: List<HomeVenue>) = Marker(mapView).apply {
+        val points = members.map { it.position!!.toGeoPoint() }
+        position = points.first()
+        icon = clusterIcon(members.size)
+        setAnchor(Marker.ANCHOR_CENTER, Marker.ANCHOR_CENTER)
+        setInfoWindow(null)
+        title = mapView.context.getString(R.string.map_cd_cluster, members.size)
+        setOnMarkerClickListener { _, _ ->
+            if (mapView.zoomLevelDouble >= mapView.maxZoomLevel - 0.5) {
+                listener.onMarkerTapped(members.first().id)
+            } else {
+                userGesture = true
+                val border = (CLUSTER_RADIUS_DP * 2 * mapView.context.resources.displayMetrics.density).roundToInt()
+                mapView.zoomToBoundingBox(BoundingBox.fromGeoPointsSafe(points), true, border)
+            }
+            true
+        }
+    }
+
+    /** Vòng tròn màu chính, viền màu nền chữ, số sân ở giữa. */
+    private fun clusterIcon(count: Int): BitmapDrawable {
+        val context = mapView.context
+        val density = context.resources.displayMetrics.density
+        val size = (CLUSTER_SIZE_DP * density).roundToInt()
+        val fill = MaterialColors.getColor(mapView, androidx.appcompat.R.attr.colorPrimary)
+        val onFill = MaterialColors.getColor(mapView, com.google.android.material.R.attr.colorOnPrimary)
+        val bitmap = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+        val radius = size / 2f
+        paint.color = onFill
+        canvas.drawCircle(radius, radius, radius, paint)
+        paint.color = fill
+        canvas.drawCircle(radius, radius, radius - 2.5f * density, paint)
+        paint.color = onFill
+        paint.textAlign = Paint.Align.CENTER
+        paint.textSize = 14 * density
+        paint.typeface = Typeface.DEFAULT_BOLD
+        val label = if (count > 99) "99+" else count.toString()
+        canvas.drawText(label, radius, radius - (paint.descent() + paint.ascent()) / 2, paint)
+        return BitmapDrawable(context.resources, bitmap)
+    }
+
+    private fun LatLng.toGeoPoint() = GeoPoint(lat, lng)
 
     private fun report(): Boolean {
         viewport()?.let { listener.onViewportChanged(it, userGesture) }
@@ -180,5 +256,8 @@ class CourtMapController(
         const val MAX_ZOOM = 19.0
         const val VIEWPORT_DELAY_MS = 250L
         const val FOCUS_ANIMATION_MS = 600L
+        /** Hai marker cách nhau dưới khoảng này trên màn hình thì gộp (marker rộng 36dp). */
+        const val CLUSTER_RADIUS_DP = 40f
+        const val CLUSTER_SIZE_DP = 40f
     }
 }
