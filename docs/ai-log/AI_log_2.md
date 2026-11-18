@@ -54,6 +54,7 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 48 | 2026-11-18 | Gợi ý nới điều kiện khi tìm không ra sân (022 US6) và cập nhật AI log | 02 |
 | 49 | 2026-11-18 | Kiểm thử gợi ý nới điều kiện (022 US6) trên máy thật | 02 |
 | 50 | 2026-11-18 | Lưới đặt sân theo bề ngang màn hình: chia đều cột, hé cột, ghim tên sân (040) | 04 |
+| 51 | 2026-11-18 | Rà soát và sửa lỗi đặt sân (040) và lịch đặt (060): Rules slot/đơn, tiền ảo trong ví, tab Đã hủy, job phía server, giao diện đơn | 04 |
 
 
 
@@ -2308,3 +2309,51 @@ AI đưa 4 phương án cho cơ sở nhiều sân (A hé cột, B dàn vừa đ�
 - Khi thêm căn giữa cho màn ngang, AI đặt `layout_gravity="center_horizontal"` trong layout; trên máy thật HorizontalScrollView vẫn căn giữa khi lưới rộng hơn màn hình, lưới 12 sân bị lệch khoảng 3,75 cột và không cuộn về Sân 1. AI phát hiện qua ảnh chụp, chuyển sang đặt căn giữa bằng code chỉ khi cả lưới vừa màn hình, rồi thử lại.
 - Ở 320dp ô đang chọn "✓ 22:00" vừa đủ nhưng sát lề.
 - Ghi nhận ngoài phạm vi: tiêu đề lưới ghi "Quận Quận 12" (lặp chữ "Quận").
+
+## Mục 51: Rà soát và sửa lỗi đặt sân (040) và lịch đặt (060)
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-18 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 04 – Đặt sân (spec 040, 060) |
+| Công cụ AI | Claude Code (Claude Opus 5.5) |
+| Nhánh Git | `feature/020-021-022-complete` |
+
+### Prompt chính
+
+"Duyệt qua 2 tính năng 040 và 060, test các tính năng tìm bug, kiểm tra phản hồi và gợi ý phương hướng khắc phục / nâng cấp." Sau báo cáo: "Bạn hãy sửa theo thứ tự cho tôi nhé (phần tranh chấp khi nào có bạn tôi thì mới test được), ưu tiên những phần nghiêm trọng trước, nhớ commit cho từng phần sửa và cập nhật AI-log luôn nhé, khoan hẵn push và PR." Với lỗi tiền ảo trong ví, người dùng chọn "chặn tạm, giữ phạm vi 040".
+
+### Cách rà soát
+
+Đọc code tầng dữ liệu và Firestore Rules, đọc Edge Function, đối chiếu dữ liệu production bằng truy vấn chỉ đọc, thử trên Galaxy A54. Lỗi tab "Đã hủy" được tìm bằng một dòng log tạm trong ViewModel (đã gỡ trước khi commit).
+
+### Lỗi tìm thấy và cách sửa
+
+| Mức | Lỗi | Bằng chứng | Commit |
+|---|---|---|---|
+| Cao | Người giữ chỗ trả được slot đã BOOKED về trống hoặc xóa nó (Rules chỉ kiểm `holdBy`); app có đường dẫn tới đó khi bấm Back hoặc hết giờ trong lúc đang xác nhận → đặt trùng | Đọc Rules và `BookingConfirmFragment` | `7ab6def`, `a61ad72` |
+| Cao | HELD → BOOKED không cần có đơn | 2 slot BOOKED trỏ tới đơn không tồn tại | `16ca013` |
+| Cao | Client tự khai số tiền đã trả/đã cọc; ví không bị trừ nhưng hủy sớm lại được hoàn → tạo tiền ảo | Ví tài khoản thử 141.000 đ = tổng tiền "hoàn" | `ec84a36` (chặn tạm) |
+| Cao | Tab "Đã hủy" báo lỗi khi có trên 10 đơn; đơn hủy bị lọc khỏi danh sách và số đếm | `player-cancel-booking` ghi thời gian dạng chuỗi (13/13 đơn) | `68a413e` |
+| Cao | Job phía server không chạy; không có job từ chối đơn quá hạn duyệt; `expire-holds` và `complete-bookings` cũng ghi thời gian dạng chuỗi | 38 HOLD, 128 HELD hết hạn; 1 PENDING quá hạn; 2 CONFIRMED đã qua giờ | `8c59c75`, `5bd86cc` |
+| Vừa | Đơn quá hạn duyệt vẫn "Chờ duyệt"; đơn 09/11 ở "Sắp tới" kèm mã QR; chi tiết đơn PENDING không có trạng thái | Thử trên máy | `c4ca310` |
+| Vừa | Thẻ thiếu tổng tiền; đơn trả tại sân hiện "-0 ₫" nhãn ví; chính sách hủy luôn nói về tiền cọc | Thử trên máy | `9ea4bd3` |
+| Thấp | Tiêu đề "Quận Quận 12"; chữ "Slot" trong thông báo | Thử trên máy | `35c3391`, `18912b0` |
+
+### Kiểm chứng
+
+- Firestore Rules trên emulator: 246/250 test qua, gồm 9 test mới cho slot và đơn; 4 test lỗi là `court-detail` "[BLOCKED: D]", lỗi sẵn với Rules gốc. Cổng 8080 bị dịch vụ khác chiếm nên chạy emulator ở cổng 8187 bằng config tạm.
+- Edge Function: 29 test qua (thêm 5 test `booking-timeout`; test cron và hủy đơn giờ bắt buộc kiểu Timestamp và đã được xác nhận là thất bại với code cũ).
+- Unit test Android của 040 và 060 qua, thêm `BookingPresentationTest` và test "không nhả slot đã BOOKED".
+- Trên máy: tab "Đã hủy" hết báo lỗi (hiện rỗng cho tới khi sửa dữ liệu), thẻ và chi tiết đơn quá hạn/đã qua giờ hiển thị đúng, tiêu đề lưới "Quận 12".
+- Theo yêu cầu, chưa chạy toàn bộ CI.
+
+### Sai sót và giới hạn
+
+- Commit `7ab6def` làm hỏng một unit test của 041 vì lúc đó AI chưa chạy unit test (chỉ chạy test Rules); phát hiện ở bước sau và bổ sung bằng `a61ad72`.
+- Lần sửa đầu trong `complete-bookings` thay `nowIso` bằng `now` trong khi biến tên là `serverNow`; test chưa bắt được vì test cũ coi chuỗi và Timestamp như nhau. AI sửa tên biến và siết test.
+- Chưa deploy: Firestore Rules, 4 Edge Function (`player-cancel-booking`, `expire-holds`, `complete-bookings`, `booking-timeout`) và migration cron đều cần người dùng đồng ý; cũng cần kiểm tra Vault `project_url`, `cron_secret` và `CRON_SECRET` trên Supabase vì các job hiện không chạy.
+- Chưa chạy `scripts/admin/fix-string-timestamps.ts --apply` (28 document) vì ghi dữ liệu production; bản chạy thử đã liệt kê đúng.
+- Số dư 141.000 đ trong ví tài khoản thử được giữ nguyên (dữ liệu demo).
+- Chưa làm: tạo đơn và tính giá phía server (thuộc 050), gom listener đếm tab, dùng giờ server trong lưới 040, thử tranh chấp 2 máy (chờ có người thử cùng).
