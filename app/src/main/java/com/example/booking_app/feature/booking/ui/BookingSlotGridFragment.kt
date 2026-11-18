@@ -249,7 +249,8 @@ class BookingSlotGridFragment : Fragment() {
         binding.tvHeaderTitle.setText(R.string.booking_title)
         val venueName = state.venueName.ifEmpty { "Cơ sở ${state.venueId}" }
         val locationPart = if (state.districtName.isNotEmpty()) {
-            "Quận ${state.districtName}"
+            // Tên đã đầy đủ ("Quận 12", "Tân Bình", "TP. Thủ Đức"): thêm "Quận " từng thành "Quận Quận 12"
+            state.districtName
         } else if (state.operatingHours.isNotEmpty()) {
             state.operatingHours
         } else {

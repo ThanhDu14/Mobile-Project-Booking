@@ -102,7 +102,7 @@ class BookingConfirmFragment : Fragment() {
         // 1. Thẻ cơ sở
         binding.tvConfirmVenueName.text = args.venueName.ifEmpty { "Cơ sở ${args.venueId}" }
         binding.tvConfirmVenueAddress.text = args.venueAddress.ifEmpty {
-            if (args.districtName.isNotEmpty()) "Quận ${args.districtName}, TP. Hồ Chí Minh" else "TP. Hồ Chí Minh"
+            if (args.districtName.isNotEmpty()) "${args.districtName}, TP. Hồ Chí Minh" else "TP. Hồ Chí Minh"
         }
 
         // Tải ảnh cơ sở thật từ photoUrl (nếu có và bắt đầu bằng http)
