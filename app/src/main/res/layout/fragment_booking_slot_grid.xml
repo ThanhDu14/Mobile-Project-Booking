@@ -377,7 +377,9 @@
                     android:paddingHorizontal="16dp"
                     android:scrollbars="horizontal">
 
+                    <!-- Fragment căn giữa khối này khi cả lưới vừa màn hình (ô bị giới hạn ở màn ngang) -->
                     <LinearLayout
+                        android:id="@+id/layoutMatrixContent"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:orientation="vertical">

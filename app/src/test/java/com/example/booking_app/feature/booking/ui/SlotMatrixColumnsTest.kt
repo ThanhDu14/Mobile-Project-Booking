@@ -24,9 +24,31 @@ class SlotMatrixColumnsTest {
     }
 
     @Test
-    fun manyCourtsKeepTheFixedWidthAndScroll() {
-        assertEquals(dp(80), SlotMatrixColumns.cellWidthPx(available, 6, density))
-        assertEquals(dp(80), SlotMatrixColumns.cellWidthPx(available, 12, density))
+    fun manyCourtsShowAHalfColumnAtTheRightEdge() {
+        // Đúng N cột rưỡi trên mọi bề ngang phổ biến, ô vẫn gần 80 dp.
+        for ((widthDp, d) in listOf(320 to 2f, 360 to 3f, 384 to 2.8125f, 412 to 2.625f, 600 to 2.5f)) {
+            val avail = Math.round((widthDp - 32) * d)
+            val slot = SlotMatrixColumns.cellWidthPx(avail, 12, d) + 2 * Math.round(SlotMatrixColumns.CELL_MARGIN_DP * d)
+            val visible = avail.toFloat() / slot
+            val half = visible - visible.toInt()
+            assertTrue("$widthDp dp: thấy $visible cột", half in 0.45f..0.55f)
+            val cellDp = (slot - 2 * Math.round(SlotMatrixColumns.CELL_MARGIN_DP * d)) / d
+            assertTrue("$widthDp dp: ô $cellDp dp", cellDp in 64f..96f)
+        }
+        // Máy bạn: 4 cột rưỡi, 6 hay 12 sân đều như nhau.
+        val cell = SlotMatrixColumns.cellWidthPx(available, 6, density)
+        assertEquals(cell, SlotMatrixColumns.cellWidthPx(available, 12, density))
+        assertEquals(4.5f, available.toFloat() / (cell + margins), 0.05f)
+    }
+
+    @Test
+    fun landscapeCapsWideCellsAt160dp() {
+        val landscape = dp(800)
+        assertEquals(dp(160), SlotMatrixColumns.cellWidthPx(landscape, 3, density, SlotMatrixColumns.LANDSCAPE_MAX_CELL_DP))
+        // Ô đã hẹp hơn 160 dp thì giữ nguyên, vẫn dàn vừa.
+        assertEquals(landscape / 8 - margins, SlotMatrixColumns.cellWidthPx(landscape, 8, density, 160))
+        // Màn dọc không giới hạn.
+        assertTrue(SlotMatrixColumns.cellWidthPx(available, 2, density) > dp(160))
     }
 
     @Test

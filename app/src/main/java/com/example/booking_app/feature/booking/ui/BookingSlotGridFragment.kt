@@ -1,9 +1,12 @@
 package com.example.booking_app.feature.booking.ui
 
+import android.content.res.Configuration
 import android.os.Bundle
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.view.isVisible
@@ -31,6 +34,7 @@ import kotlinx.coroutines.launch
 import java.text.DecimalFormat
 import java.time.LocalDate
 import java.time.ZoneId
+import kotlin.math.roundToInt
 
 @AndroidEntryPoint
 class BookingSlotGridFragment : Fragment() {
@@ -367,7 +371,13 @@ class BookingSlotGridFragment : Fragment() {
         val available = scroll.width - scroll.paddingLeft - scroll.paddingRight
         if (courtCount == 0 || available <= 0) return
 
-        val width = SlotMatrixColumns.cellWidthPx(available, courtCount, resources.displayMetrics.density)
+        val landscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        val width = SlotMatrixColumns.cellWidthPx(
+            available,
+            courtCount,
+            resources.displayMetrics.density,
+            maxCellDp = if (landscape) SlotMatrixColumns.LANDSCAPE_MAX_CELL_DP else null,
+        )
         for (i in 0 until courtCount) {
             val header = b.layoutCourtHeaders.getChildAt(i)
             val params = header.layoutParams
@@ -375,6 +385,14 @@ class BookingSlotGridFragment : Fragment() {
                 params.width = width
                 header.layoutParams = params
             }
+        }
+        // Cả lưới vừa màn hình (ô bị giới hạn 160dp khi xoay ngang) thì căn giữa; rộng hơn thì canh trái để cuộn
+        val margins = 2 * (SlotMatrixColumns.CELL_MARGIN_DP * resources.displayMetrics.density).roundToInt()
+        val gravity = if (courtCount * (width + margins) < available) Gravity.CENTER_HORIZONTAL else Gravity.START
+        val contentParams = b.layoutMatrixContent.layoutParams as FrameLayout.LayoutParams
+        if (contentParams.gravity != gravity) {
+            contentParams.gravity = gravity
+            b.layoutMatrixContent.layoutParams = contentParams
         }
         matrixAdapter.setCellWidth(width)
     }
