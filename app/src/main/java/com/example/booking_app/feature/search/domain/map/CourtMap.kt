@@ -25,6 +25,12 @@ data class MapViewport(
 /** Kết quả chọn sân cho vùng đang xem: [capped] khi vùng có nhiều hơn giới hạn (FR-006). */
 data class VisibleVenues(val venues: List<HomeVenue>, val capped: Boolean)
 
+/**
+ * Dòng trạng thái trên bản đồ (FR-019). [RESULTS_CAPPED]: kết quả tìm kiếm đã bị cắt ở 150 sân, phóng gần không thêm
+ * được sân nên phải thu hẹp bằng quận; [VIEW_CAPPED]: vùng đang xem có hơn 100 sân, phóng gần thì thấy thêm (FR-006).
+ */
+enum class MapStatus { ERROR, LOADING, RESULTS_CAPPED, VIEW_CAPPED, EMPTY }
+
 /** Một cụm marker trên màn hình: [venueIds] theo thứ tự đầu vào, tâm tại điểm đầu tiên (FR-003). */
 data class MarkerCluster(val venueIds: List<String>, val x: Float, val y: Float) {
     val isSingle: Boolean get() = venueIds.size == 1
@@ -97,6 +103,17 @@ object CourtMap {
         val zoom = log2(metersPerDpAtZoom0 * radiusDp / distanceMeters)
         return zoom.coerceIn(minZoom, maxZoom)
     }
+
+    /** Trạng thái cần báo, ưu tiên lỗi, rồi đang tải, rồi giới hạn, cuối cùng là vùng không có sân; `null` khi ổn. */
+    fun status(failed: Boolean, loading: Boolean, resultsCapped: Boolean, complete: Boolean, visible: VisibleVenues?): MapStatus? =
+        when {
+            failed -> MapStatus.ERROR
+            loading -> MapStatus.LOADING
+            resultsCapped -> MapStatus.RESULTS_CAPPED
+            visible?.capped == true -> MapStatus.VIEW_CAPPED
+            visible != null && visible.venues.isEmpty() && complete -> MapStatus.EMPTY
+            else -> null
+        }
 
     /** "Sân gần bạn": tối đa [limit] sân trong [radiusMeters] quanh [origin], gần trước (FR-016). */
     fun nearby(

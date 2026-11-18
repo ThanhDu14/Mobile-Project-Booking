@@ -58,6 +58,7 @@ import com.example.booking_app.feature.search.domain.CourtSearchSort
 import com.example.booking_app.feature.search.domain.ReviewPreference
 import com.example.booking_app.feature.search.domain.model.HomeVenue
 import com.example.booking_app.feature.search.domain.map.CourtMap
+import com.example.booking_app.feature.search.domain.map.MapStatus
 import com.example.booking_app.feature.search.domain.map.MapViewport
 import com.example.booking_app.feature.search.domain.map.VisibleVenues
 import com.example.booking_app.feature.search.ui.map.CourtMapController
@@ -1165,17 +1166,19 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
     }
 
     /**
-     * Một dòng trạng thái nhỏ ở trên cùng, không che bản đồ (FR-019): đang tải, lỗi kèm "Thử lại", quá 100 sân
-     * (FR-006), không có sân trong vùng.
+     * Một dòng trạng thái nhỏ ở trên cùng, không che bản đồ (FR-019): đang tải, lỗi kèm "Thử lại", kết quả quá 150 sân,
+     * vùng đang xem quá 100 sân (FR-006), không có sân trong vùng.
      */
     private fun renderMapStatus(binding: FragmentCourtSearchBinding, state: CourtSearchUiState, visible: VisibleVenues?) {
         val loading = state.loading && state.venues.isEmpty()
-        val text = when {
-            state.failed -> R.string.map_error
-            loading -> R.string.map_loading
-            visible?.capped == true || state.capped -> R.string.map_capped
-            visible != null && visible.venues.isEmpty() && state.complete -> R.string.map_empty
-            else -> null
+        // Kết quả bị cắt ở 150 sân thì phóng gần không giúp được: nói giống danh sách là chọn khu vực.
+        val text = when (CourtMap.status(state.failed, loading, state.capped, state.complete, visible)) {
+            MapStatus.ERROR -> R.string.map_error
+            MapStatus.LOADING -> R.string.map_loading
+            MapStatus.RESULTS_CAPPED -> R.string.search_result_capped
+            MapStatus.VIEW_CAPPED -> R.string.map_capped
+            MapStatus.EMPTY -> R.string.map_empty
+            null -> null
         }
         binding.map.mapStatus.isVisible = text != null
         text?.let(binding.map.mapStatusText::setText)

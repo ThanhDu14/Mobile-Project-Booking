@@ -76,4 +76,17 @@ class CourtMapTest {
         assertEquals(13.5, CourtMap.zoomToShow(100.0, 10.8), 0.0)
         assertEquals(10.0, CourtMap.zoomToShow(200_000.0, 10.8), 0.0)
     }
+
+    @Test
+    fun cappedResultsAskForADistrictInsteadOfZoomingIn() {
+        val some = VisibleVenues(listOf(truongChinh), capped = false)
+        // Kết quả bị cắt ở 150 sân: phóng gần không thêm sân, nên không được bảo "Phóng gần hơn".
+        assertEquals(MapStatus.RESULTS_CAPPED, CourtMap.status(false, false, true, true, some))
+        assertEquals(MapStatus.VIEW_CAPPED, CourtMap.status(false, false, false, true, some.copy(capped = true)))
+        assertEquals(MapStatus.ERROR, CourtMap.status(true, true, true, true, some))
+        assertEquals(MapStatus.LOADING, CourtMap.status(false, true, false, false, null))
+        assertEquals(MapStatus.EMPTY, CourtMap.status(false, false, false, true, VisibleVenues(emptyList(), false)))
+        assertEquals(null, CourtMap.status(false, false, false, false, VisibleVenues(emptyList(), false)))
+        assertEquals(null, CourtMap.status(false, false, false, true, some))
+    }
 }
