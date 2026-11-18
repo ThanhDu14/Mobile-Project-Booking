@@ -2,7 +2,6 @@ package com.example.booking_app.feature.courtdetail.ui
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.res.Configuration as AndroidConfiguration
 import android.os.Handler
 import android.os.Looper
 import android.os.Message
@@ -10,11 +9,10 @@ import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
-import com.example.booking_app.BuildConfig
 import com.example.booking_app.R
+import com.example.booking_app.core.map.OsmdroidSetup
 import com.example.booking_app.databinding.ViewCourtDetailMapBinding
 import com.example.booking_app.feature.courtdetail.domain.model.LatLng
-import org.osmdroid.config.Configuration
 import org.osmdroid.tileprovider.MapTileProviderBase
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
@@ -22,12 +20,11 @@ import org.osmdroid.views.CustomZoomButtonsController
 import org.osmdroid.views.MapView
 import org.osmdroid.views.overlay.Marker
 import org.osmdroid.views.overlay.TilesOverlay
-import java.io.File
 
 /**
  * Bản đồ nhỏ không tương tác ở mục "Vị trí" (research R7, FR-010, FR-013).
  *
- * - Cấu hình osmdroid: user agent riêng của SmashNow (xem [USER_AGENT]), cache tile trong `cacheDir/osmdroid` (không cần quyền bộ nhớ).
+ * - Cấu hình osmdroid: user agent riêng của SmashNow (xem [OsmdroidSetup.USER_AGENT]), cache tile trong `cacheDir/osmdroid` (không cần quyền bộ nhớ).
  * - Tắt cuộn, phóng to, xoay; mức phóng 16, marker quả cầu lông ở giữa; chế độ tối đảo màu tile.
  * - `onResume`/`onPause`/`onDetach` của `MapView` theo [lifecycleOwner] (truyền `viewLifecycleOwner`).
  * - Tile đầu tiên tải lỗi trước khi có tile nào thành công (mất mạng, chưa có cache) → [onTilesFailed] để Fragment
@@ -117,23 +114,8 @@ class VenueMapController(
     private companion object {
         const val ZOOM = 16.0
 
-        /**
-         * Chính sách tile của OSM yêu cầu user agent nhận diện được ứng dụng. Tên gói chung như `com.example.*`
-         * (và mặc định của osmdroid) bị chặn: máy chủ trả ảnh "403 Access blocked" với mã 200.
-         */
-        val USER_AGENT = "SmashNow/${BuildConfig.VERSION_NAME} (Android; +https://github.com/ThanhDu14/Mobile-Project-Booking)"
+        fun configureOsmdroid(context: Context) = OsmdroidSetup.configure(context)
 
-        fun configureOsmdroid(context: Context) {
-            Configuration.getInstance().apply {
-                userAgentValue = USER_AGENT
-                val base = File(context.cacheDir, "osmdroid")
-                osmdroidBasePath = base
-                osmdroidTileCache = File(base, "tiles")
-            }
-        }
-
-        fun isNight(context: Context): Boolean =
-            context.resources.configuration.uiMode and AndroidConfiguration.UI_MODE_NIGHT_MASK ==
-                AndroidConfiguration.UI_MODE_NIGHT_YES
+        fun isNight(context: Context): Boolean = OsmdroidSetup.isNight(context)
     }
 }

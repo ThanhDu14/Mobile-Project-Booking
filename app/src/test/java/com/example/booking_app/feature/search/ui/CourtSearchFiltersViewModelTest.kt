@@ -111,7 +111,7 @@ class CourtSearchFiltersViewModelTest {
 
         vm.sort(CourtSearchSort.NEAREST)
         runCurrent()
-        assertEquals(CourtSearchEffect.RequestLocation, vm.effects.first())
+        assertEquals(CourtSearchEffect.RequestLocation(LocationReason.SORT), vm.effects.first())
         assertEquals(CourtSearchSort.RATING, vm.state.value.criteria.sort)
         assertEquals(before, repo.searches.size)
     }

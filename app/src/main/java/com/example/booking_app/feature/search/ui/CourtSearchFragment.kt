@@ -56,6 +56,9 @@ import com.example.booking_app.feature.search.domain.RelaxationKind
 import com.example.booking_app.feature.search.domain.CourtSearchSort
 import com.example.booking_app.feature.search.domain.ReviewPreference
 import com.example.booking_app.feature.search.domain.model.HomeVenue
+import com.example.booking_app.feature.search.domain.map.CourtMap
+import com.example.booking_app.feature.search.domain.map.MapViewport
+import com.example.booking_app.feature.search.ui.map.CourtMapController
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -64,6 +67,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.ZoneId
@@ -85,10 +89,14 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
     @Inject lateinit var accountEntryNavigator: AccountEntryNavigator
     @Inject lateinit var authNavigator: AuthNavigator
 
+    private var locationReason = LocationReason.SORT
     private val locationPermission = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { grants ->
-        if (grants.values.any { it }) viewModel.sort(CourtSearchSort.NEAREST)
-        else view?.let { Snackbar.make(it, R.string.search_location_unavailable, Snackbar.LENGTH_SHORT).show() }
+        viewModel.locationResult(locationReason, grants.values.any { it })
     }
+
+    /** Bản đồ tạo lần đầu khi chuyển sang chế độ bản đồ, gắn với view hiện tại (spec 021). */
+    private var mapController: CourtMapController? = null
+    private var lastFocusId: Int? = null
 
     private val micPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         viewModel.voicePermission(granted)
@@ -106,6 +114,7 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
         micPulse = null
         micListening = false
         aiFieldIdle = null
+        mapController = null
         super.onDestroyView()
     }
 
@@ -176,19 +185,28 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
             }
         }
 
+        lastFocusId = viewModel.map.value.focus?.id
+        binding.mapToggle.setOnClickListener { viewModel.showMap(!viewModel.map.value.visible) }
+        binding.map.mapFilters.setOnClickListener { showFilters() }
+        binding.map.myLocation.setOnClickListener { viewModel.locateOnMap() }
+
         var previous: CourtSearchUiState? = null
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
                     viewModel.state.collect { state ->
                         render(controls, venues, previous, state)
-                        if (state.notice != previous?.notice && state.notice != null && manager.findFirstVisibleItemPosition() > 0) {
+                        val noticeHidden = manager.findFirstVisibleItemPosition() > 0 || viewModel.map.value.visible
+                        if (state.notice != previous?.notice && state.notice != null && noticeHidden) {
                             Snackbar.make(binding.root, noticeText(state.notice), Snackbar.LENGTH_LONG).show()
                         }
                         previous = state
                     }
                 }
                 launch { viewModel.effects.collect(::handleEffect) }
+                launch {
+                    combine(viewModel.state, viewModel.map, ::Pair).collect { (state, map) -> renderMap(binding, state, map) }
+                }
                 launch { viewModel.voiceLevel.collect { renderVoiceLevel(controls, it) } }
                 launch {
                     viewModel.refreshUsage()
@@ -882,10 +900,11 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
             is CourtSearchEffect.Policy -> showPolicy(effect.topic)
             is CourtSearchEffect.Sources -> showSources(effect)
             is CourtSearchEffect.Explanation -> showExplanation(effect)
-            CourtSearchEffect.RequestLocation -> MaterialAlertDialogBuilder(requireContext())
+            is CourtSearchEffect.RequestLocation -> MaterialAlertDialogBuilder(requireContext())
                 .setTitle(R.string.search_location_title).setMessage(R.string.search_location_rationale)
                 .setNegativeButton(R.string.common_cancel, null)
                 .setPositiveButton(android.R.string.ok) { _, _ ->
+                    locationReason = effect.reason
                     locationPermission.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
                 }.show()
         }
@@ -1011,7 +1030,55 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
         ReviewPreference.GOOD_SERVICE -> R.string.search_rag_service
     }
 
+    /**
+     * Chế độ bản đồ (spec 021): nút nổi đổi nhãn, danh sách ẩn để TalkBack không đọc phía sau bản đồ, marker là các
+     * sân của kết quả tìm kiếm hiện tại nằm trong vùng đang xem (dùng chung bộ lọc với danh sách, FR-001, FR-002).
+     */
+    private fun renderMap(binding: FragmentCourtSearchBinding, state: CourtSearchUiState, map: CourtMapState) {
+        binding.mapToggle.setText(if (map.visible) R.string.map_toggle_list else R.string.map_toggle_map)
+        binding.mapToggle.setIconResource(if (map.visible) R.drawable.ic_list_24 else R.drawable.ic_map_24)
+        binding.map.root.isVisible = map.visible
+        binding.results.isVisible = !map.visible
+        if (!map.visible) return
+
+        val controller = mapController ?: CourtMapController(binding.map.mapHost, viewLifecycleOwner, mapListener)
+            .also {
+                mapController = it
+                it.restore(map.viewport)
+            }
+        map.focus?.takeIf { it.id != lastFocusId }?.let {
+            lastFocusId = it.id
+            controller.focus(it.center, it.zoom)
+        }
+        val viewport = map.viewport ?: controller.viewport()
+        val shown = viewport?.let { CourtMap.visible(state.venues, it).venues }.orEmpty()
+        controller.render(shown, map.selectedId)
+
+        val active = activeFilterCount(state.criteria)
+        binding.map.mapFilters.text = if (active == 0) getString(R.string.map_filters)
+        else getString(R.string.map_filters_count, active)
+    }
+
+    private val mapListener = object : CourtMapController.Listener {
+        override fun onViewportChanged(viewport: MapViewport, byUser: Boolean) = viewModel.mapMoved(viewport, byUser)
+        override fun onMarkerTapped(venueId: String) = viewModel.selectVenue(venueId)
+        override fun onEmptyTapped() = viewModel.selectVenue(null)
+        override fun onTilesFailed() {
+            // Bản đồ không tải được: về danh sách, giữ bộ lọc (FR-020).
+            viewModel.showMap(false)
+            view?.let { Snackbar.make(it, R.string.map_tiles_failed, Snackbar.LENGTH_LONG).show() }
+        }
+    }
+
+    private fun activeFilterCount(criteria: CourtSearchCriteria): Int = listOf(
+        criteria.districtId != null,
+        criteria.priceMin != null || criteria.priceMax != null,
+        criteria.amenityIds.isNotEmpty(),
+        criteria.window != null,
+    ).count { it }
+
     private fun noticeText(notice: SearchNotice): Int = when (notice) {
+        SearchNotice.MAP_DISTRICT_DROPPED -> R.string.map_district_dropped
         SearchNotice.AI_ERROR -> R.string.search_ai_unavailable
         SearchNotice.QUOTA -> R.string.search_ai_quota
         SearchNotice.LOCKED -> R.string.search_ai_locked
