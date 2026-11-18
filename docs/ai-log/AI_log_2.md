@@ -58,6 +58,7 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 52 | 2026-11-18 | Deploy Firestore Rules, sửa 28 mốc thời gian lưu sai kiểu, sửa lỗi phân trang lặp ở Lịch đặt | 04 |
 | 53 | 2026-11-18 | Supabase: deploy 4 Edge Function, tìm nguyên nhân job định kỳ không chạy, chuẩn bị bật cron | 04 |
 | 54 | 2026-11-18 | Lưới 040 dùng giờ server; Lịch đặt chỉ tải lại khi có đơn đổi; đánh dấu T102 (022) | 04, 02 |
+| 55 | 2026-11-18 | Đồng bộ tasks 020 và 022 với code thực tế, cập nhật trạng thái nhóm tính năng 02 | 02 |
 
 
 
@@ -2436,3 +2437,43 @@ AI đưa 4 phương án cho cơ sở nhiều sân (A hé cột, B dàn vừa đ�
 
 - Unit test 040 (130) và 060 (70) qua; mỗi test mới được xác nhận là thất bại với code cũ.
 - Theo yêu cầu, chưa chạy toàn bộ CI.
+
+## Mục 55: Đồng bộ tasks 020 và 022 với code thực tế
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-18 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 02 – Tìm kiếm sân (spec 020, 022) |
+| Công cụ AI | Claude Code (Claude Opus 5.5) |
+| Nhánh Git | `feature/020-021-022-complete` |
+
+### Prompt chính
+
+Người dùng chọn "Đồng bộ tasks 020/022" trong câu hỏi trắc nghiệm về việc làm tiếp khi chờ secret Supabase.
+
+### Cách làm
+
+1. Script đổi bí danh đường dẫn trong tasks.md (`CORE/`, `SEARCH/`, `AIFN/`...) ra đường dẫn thật và kiểm tra file nào tồn tại. Kết quả cho thấy code đi theo kiến trúc khác kế hoạch: một màn tìm kiếm (`CourtSearchFragment`, `CourtSearchViewModel`, `CourtSearchCriteria`, `FirestoreCourtSearchRepository`) và Edge Function gom vào `handler.ts`, `criteria.ts`, `llm.ts`, `evidence.ts`.
+2. Vì vậy đối chiếu theo chức năng: đọc code, tên test, Rules, index, báo cáo eval, danh sách function đã deploy. Mỗi task được đánh dấu xong ("Làm khác" kèm file thật nếu khác), "Không áp dụng" khi kiến trúc mới không cần, hoặc để mở kèm phần còn thiếu. Đầu mỗi tasks.md có bảng ánh xạ kế hoạch → code.
+
+### Kết quả
+
+| Spec | Trước | Sau |
+|---|---|---|
+| 020 | 18 xong / 111 | 70 xong, 44 mở |
+| 022 | 15 xong / 116 | 97 xong, 38 mở |
+
+- `docs/features/README.md` và `02-court-search/README.md`: trạng thái 🟨 Đang làm, link spec 020/021/022, tick các mục phạm vi đã có (bản đồ 021 còn mở).
+- Commit: `0ce9da4`, `f0ea317`, `1bf6888`.
+
+### Phát hiện khi đối chiếu
+
+- Phần test phía app của tìm kiếm còn mỏng (5 test ViewModel, 5 test lọc giờ trống); nhiều task "viết test" vẫn mở.
+- App không dùng `nameKeywords` và repo không có index `venues`; tìm kiếm đọc tối đa `MAX_VENUES` sân rồi lọc trên máy.
+- Rules không có `match` cho `aiUsage` dù chú thích nói có; vẫn an toàn vì app đọc lượt qua function.
+- 040 vẫn dùng `CalculateTotalPriceUseCase` riêng thay cho `core/pricing/SlotPricing` (020 T036).
+
+### Giới hạn
+
+- Phán định "Làm khác" dựa trên đọc code và các lần thử trên máy trong phiên, không chạy lại từng kịch bản quickstart.
