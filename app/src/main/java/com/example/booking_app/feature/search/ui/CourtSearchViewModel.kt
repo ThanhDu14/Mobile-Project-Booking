@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.booking_app.core.catalog.Amenity
 import com.example.booking_app.core.catalog.CatalogRepository
 import com.example.booking_app.core.catalog.District
+import com.example.booking_app.core.location.GeoDistance
 import com.example.booking_app.core.location.LocationProvider
 import com.example.booking_app.core.network.AppError
 import com.example.booking_app.core.network.FunctionHttpException
@@ -66,6 +67,9 @@ private const val AI_INPUT_MAX = 200
 
 /** Máy tính bảng: chọn sân từ danh sách thì phóng ít nhất tới mức thấy rõ khu phố. */
 private const val LIST_FOCUS_ZOOM = 14.0
+
+/** "Vị trí của tôi" chỉ tìm lại khi vị trí mới cách vị trí đã dùng hơn mức này (khoảng cách trên thẻ làm tròn 0,1 km). */
+private const val RESEARCH_DISTANCE_METERS = 100.0
 
 enum class SearchNotice { MAP_DISTRICT_DROPPED, AI_ERROR, QUOTA, LOCKED, SOURCE_UNAVAILABLE, INVALID_WINDOW, INVALID_DATE, DROPPED_FILTERS, OFF_TOPIC, LOCATION_UNAVAILABLE, HISTORY_DATE_PAST, VOICE_NO_MATCH, VOICE_NETWORK }
 
@@ -811,7 +815,9 @@ class CourtSearchViewModel @Inject constructor(
             // Cùng một vị trí cho "Sân gần bạn": quyền vừa cấp trên bản đồ thì dải không còn mời "Bật vị trí".
             _state.update { it.copy(nearbyStatus = NearbyStatus.READY, nearbyLocation = here) }
             // Vị trí chỉ dùng trên máy để tính khoảng cách (FR-014, FR-015), không lưu vào tiêu chí hay lịch sử.
-            if (origin != point) {
+            // Mỗi lần định vị lệch vài mét: chỉ tìm lại khi thật sự đổi chỗ, không tải lại danh sách mỗi lần bấm.
+            val previous = origin
+            if (previous == null || GeoDistance.meters(previous, point) > RESEARCH_DISTANCE_METERS) {
                 origin = point
                 search()
             }

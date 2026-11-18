@@ -159,9 +159,19 @@ class CourtMapViewModelTest {
         assertEquals(LatLng(10.8128, 106.6283), vm.state.value.nearbyLocation)
 
         // Bấm lại: lệnh mới để bản đồ quay về vị trí dù người dùng đã kéo đi.
+        val searches = repo.searches.size
+        coEvery { location.current() } returns GeoPoint(10.81285, 106.62835) // lệch khoảng 7 m
         vm.locateOnMap()
         runCurrent()
         assertTrue(vm.map.value.focus!!.id > focus.id)
+        // Lệch vài mét thì không tìm lại cả danh sách (trước đây mỗi lần bấm đều tải lại).
+        assertEquals(searches, repo.searches.size)
+
+        coEvery { location.current() } returns GeoPoint(10.8228, 106.6283) // đi khoảng 1,1 km
+        vm.locateOnMap()
+        runCurrent()
+        assertEquals(searches + 1, repo.searches.size)
+        assertEquals(GeoPoint(10.8228, 106.6283), repo.searches.last().second)
     }
 
     @Test
