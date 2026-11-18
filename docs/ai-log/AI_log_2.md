@@ -61,6 +61,7 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 55 | 2026-11-18 | Đồng bộ tasks 020 và 022 với code thực tế, cập nhật trạng thái nhóm tính năng 02 | 02 |
 | 56 | 2026-11-18 | Sửa 3 điểm phát hiện khi đối chiếu: chú thích Rules, giá lưới 040 dùng chung SlotPricing, test tìm kiếm | 02, 04 |
 | 57 | 2026-11-18 | Bản đồ sân và sân gần bạn (021 US1–US4) | 02 |
+| 58 | 2026-11-18 | Thử bản đồ sân (021) trên máy thật và sửa 5 lỗi | 02 |
 
 
 
@@ -2545,3 +2546,37 @@ Tài liệu (`fd36e29`): Clarifications 2026-11-18 trong spec 021; tasks 021 đ�
 - **Chưa thử trên máy**: điện thoại ngắt kết nối suốt lúc làm, nên phần giao diện osmdroid (marker, cụm, thẻ, nút nổi, chấm vị trí) chưa được chạy thật; quickstart T080 còn mở.
 - Lần biên dịch đầu thiếu import `StateFlow` và tham chiếu drawable `ic_tune_24` không tồn tại; AI sửa (bỏ icon cho thống nhất với nút "Bộ lọc" của danh sách).
 - Chưa làm: mô tả marker cho TalkBack, bố cục máy tính bảng (FR-023), trạng thái mất mạng sau khi đã tải (FR-021), đo thời gian.
+
+## Mục 58: Thử bản đồ sân (021) trên máy thật
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-18 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 02 – Tìm kiếm sân (spec 021) |
+| Công cụ AI | Claude Code (Claude Opus 5.5) |
+| Nhánh Git | `feature/020-021-022-complete` |
+
+### Prompt chính
+
+"Hãy tiến hành test cho tôi" (sau khi cắm lại Galaxy A54).
+
+### Đã thử (chế độ tối)
+
+Chuyển Danh sách/Bản đồ; marker và cụm; chạm marker → thẻ; vuốt thẻ đổi marker nổi bật; chạm thẻ mở đúng chi tiết sân, quay lại giữ vùng xem và thẻ; chạm cụm phóng vào; "Bộ lọc · 1" sau khi chọn quận; kéo bản đồ → "Tìm ở khu vực này" → bỏ lọc quận kèm thông báo; "Vị trí của tôi" → hộp giải thích → quyền "Trong khi dùng ứng dụng" → chấm vị trí; "Sân gần bạn": chưa có quyền, tự lấy vị trí khi đã có quyền, không có sân trong 5 km, "Tìm rộng hơn".
+
+### Lỗi tìm thấy và đã sửa
+
+| Lỗi | Nguyên nhân | Commit |
+|---|---|---|
+| Mở bản đồ không có dòng trạng thái tới khi kéo; vùng mặc định không có sân demo | Vùng xem đầu tiên báo từ trong `onLayout`, đổi visibility giữa lượt bố cục bị bỏ; zoom 12,5 quá hẹp | `92e6887` (báo bằng `post`, zoom 12) |
+| Chạm marker làm app crash | ViewPager2 yêu cầu trang `match_parent` | `af84d77` |
+| Quay lại từ chi tiết sân, cụm thành các marker chồng nhau | Vẽ trước khi có kích thước, vùng báo về trùng vùng cũ nên không vẽ lại | `f979e78` |
+| Đã cấp quyền trên bản đồ nhưng "Sân gần bạn" vẫn mời "Bật vị trí"; hộp xin quyền luôn ghi "Sắp xếp sân gần bạn"; "Tìm rộng hơn" vẫn không thấy sân nào | Hai luồng vị trí không chia sẻ; tiêu đề cố định; zoom cố định | `0fa1a73` (chia sẻ vị trí, lời giải thích theo lý do, `CourtMap.zoomToShow`) |
+| Thẻ trên bản đồ thiếu khoảng cách khi vị trí lấy từ "Sân gần bạn" | Chỉ "Vị trí của tôi" tìm lại theo vị trí | `2f53eea` (tính khoảng cách tại chỗ) |
+
+### Giới hạn
+
+- Màn ngang điện thoại: bản đồ thấp, thẻ che nút "Bộ lọc" và nút vị trí (thuộc FR-023, còn mở).
+- Chưa thử chế độ sáng, dải "Sân gần bạn" có sân (máy đang ở Dĩ An, sân gần nhất khoảng 13 km), mất mạng.
+- Quyền vị trí của app trên máy đã được cấp ("Trong khi dùng ứng dụng") trong lúc thử.
