@@ -239,7 +239,10 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
                 launch {
                     viewModel.state.collect { state ->
                         render(controls, venues, previous, state)
-                        val noticeHidden = manager.findFirstVisibleItemPosition() > 0 || viewModel.map.value.visible
+                        // Thông báo nằm ở đầu danh sách: chỉ cần snackbar khi danh sách đã cuộn hoặc đang bị bản đồ che.
+                        // Máy tính bảng luôn thấy danh sách nên không hiện thêm snackbar (trước đây hiện hai lần).
+                        val listHidden = viewModel.map.value.visible && !twoPane
+                        val noticeHidden = manager.findFirstVisibleItemPosition() > 0 || listHidden
                         if (state.notice != previous?.notice && state.notice != null && noticeHidden) {
                             // Trên bản đồ, thiếu vị trí thì nói rõ bản đồ đang ở khu vực mặc định (FR-013).
                             val text = if (viewModel.map.value.visible && state.notice == SearchNotice.LOCATION_UNAVAILABLE) {
