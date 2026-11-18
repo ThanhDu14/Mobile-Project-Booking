@@ -14,6 +14,7 @@ import com.example.booking_app.feature.search.domain.CourtSearchRepository
 import com.example.booking_app.feature.search.domain.MemoryAiQueryHistory
 import com.example.booking_app.feature.search.domain.map.CourtMap
 import com.example.booking_app.feature.search.domain.map.MapViewport
+import com.example.booking_app.feature.search.domain.model.HomeVenue
 import com.example.booking_app.feature.search.domain.model.LatLng
 import com.google.firebase.firestore.GeoPoint
 import io.mockk.coEvery
@@ -39,8 +40,9 @@ class CourtMapViewModelTest {
 
     private class RecordingRepository : CourtSearchRepository {
         val searches = mutableListOf<Pair<CourtSearchCriteria, GeoPoint?>>()
+        var venues: List<HomeVenue> = emptyList()
         override fun search(criteria: CourtSearchCriteria, origin: GeoPoint?) =
-            flowOf(CourtSearchPage(emptyList(), complete = true, capped = false)).also { searches += criteria to origin }
+            flowOf(CourtSearchPage(venues, complete = true, capped = false)).also { searches += criteria to origin }
     }
 
     private val location = mockk<LocationProvider>()
@@ -228,5 +230,27 @@ class CourtMapViewModelTest {
         assertTrue(vm.map.value.visible)
         assertEquals(LatLng(10.8128, 106.6283), vm.map.value.focus!!.center)
         assertEquals(13.5, vm.map.value.focus!!.zoom, 0.0)
+    }
+
+    @Test
+    fun onTabletsTappingAListCardSelectsTheVenueAndMovesTheMapToIt() = runTest {
+        val k3 = LatLng(10.8020, 106.6530)
+        repo.venues = listOf(HomeVenue("k3", "K3", null, null, 50_000, 0.0, 0, position = k3))
+        val vm = viewModel()
+        runCurrent()
+        vm.showMap(true)
+        vm.mapMoved(viewport.copy(zoom = 12.0), byUser = false)
+
+        vm.selectFromList("k3")
+        val map = vm.map.value
+        assertEquals("k3", map.selectedId)
+        assertEquals("k3", map.cardAnchorId)
+        assertEquals(k3, map.focus?.center)
+        // Đang xem rộng thì phóng tới mức 14; đã gần hơn thì giữ mức đang xem.
+        assertEquals(14.0, map.focus!!.zoom, 0.0)
+        vm.mapMoved(viewport.copy(zoom = 16.0), byUser = true)
+        vm.selectFromList("k3")
+        assertEquals(16.0, vm.map.value.focus!!.zoom, 0.0)
+        assertTrue(vm.map.value.focus!!.id > map.focus!!.id)
     }
 }

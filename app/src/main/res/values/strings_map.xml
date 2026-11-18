@@ -23,6 +23,7 @@
     <string name="map_cd_cluster">%1$d sân, chạm để phóng to</string>
     <string name="map_card_distance">%1$s · %2$s</string>
     <string name="map_card_position">%1$d/%2$d</string>
+    <string name="map_card_selected">Đang chọn trên bản đồ</string>
 
     <!-- Sân gần bạn (spec 021 US4) -->
     <string name="nearby_title">Sân gần bạn</string>

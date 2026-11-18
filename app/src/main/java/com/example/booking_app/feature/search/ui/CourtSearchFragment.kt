@@ -16,6 +16,7 @@ import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
@@ -86,6 +87,7 @@ private const val RECENT_CHIPS = 5
 /** Mức phóng khi mở bản đồ từ "Sân gần bạn": thấy khoảng bán kính 5 km; "Tìm rộng hơn" thấy vài quận (spec 021). */
 private const val NEARBY_ZOOM = 13.5
 private const val WIDER_ZOOM = 12.0
+private const val LIST_PANE_PERCENT = 0.4f
 
 /** Thông báo của micro: hiện dưới ô AI thay cho dòng thông báo chung. */
 private val VOICE_NOTICES = setOf(SearchNotice.VOICE_NO_MATCH, SearchNotice.VOICE_NETWORK)
@@ -106,6 +108,14 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
     /** Bản đồ tạo lần đầu khi chuyển sang chế độ bản đồ, gắn với view hiện tại (spec 021). */
     private var mapController: CourtMapController? = null
     private var mapCards: MapCardAdapter? = null
+    private var venueCards: VenueCardAdapter? = null
+    private var listSelection: String? = null
+
+    /** Máy tính bảng: danh sách và bản đồ cạnh nhau (spec 021 FR-023). */
+    private val twoPane: Boolean get() = resources.getBoolean(R.bool.search_two_pane)
+
+    /** Điện thoại xoay ngang: ẩn tiêu đề khi xem bản đồ, thẻ ở góc trái nên nút vị trí không cần nhích. */
+    private val compactLandscape: Boolean get() = resources.getBoolean(R.bool.map_compact_landscape)
     private var lastFocusId: Int? = null
 
     private val micPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
@@ -126,6 +136,8 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
         aiFieldIdle = null
         mapController = null
         mapCards = null
+        venueCards = null
+        listSelection = null
         super.onDestroyView()
     }
 
@@ -143,7 +155,7 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
         binding.header.tabTitle.setText(R.string.nav_tab_search)
         MainTabHeader.bind(this, binding.header, avatarSource, accountEntryNavigator)
 
-        val venues = VenueCardAdapter(::openVenue)
+        val venues = VenueCardAdapter(::onVenueCard).also { venueCards = it }
         venues.stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
         binding.results.adapter = ConcatAdapter(ControlsAdapter(controls.root), venues)
         binding.results.addOnScrollListener(object : RecyclerView.OnScrollListener() {
@@ -197,6 +209,8 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
         }
 
         lastFocusId = viewModel.map.value.focus?.id
+        // Máy tính bảng luôn hiện bản đồ bên cạnh danh sách (cũng thử lại nếu lần trước tile lỗi).
+        if (twoPane) viewModel.showMap(true)
         binding.mapToggle.setOnClickListener { viewModel.showMap(!viewModel.map.value.visible) }
         binding.map.mapFilters.setOnClickListener { showFilters() }
         binding.map.myLocation.setOnClickListener { viewModel.locateOnMap() }
@@ -1019,6 +1033,42 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
         dialog.show()
     }
 
+    /**
+     * Máy tính bảng (spec 021 FR-023): danh sách luôn hiện, chiếm 40% khi có bản đồ và cả màn khi bản đồ lỗi; thẻ của
+     * sân đang chọn được tô nền và cuộn vào tầm nhìn khi chọn từ bản đồ.
+     */
+    private fun renderListPane(binding: FragmentCourtSearchBinding, map: CourtMapState) {
+        binding.results.isVisible = true
+        binding.mapToggle.isVisible = false
+        (binding.results.layoutParams as? ConstraintLayout.LayoutParams)?.let { params ->
+            val percent = if (map.visible) LIST_PANE_PERCENT else 1f
+            if (params.matchConstraintPercentWidth != percent) {
+                params.matchConstraintPercentWidth = percent
+                binding.results.layoutParams = params
+            }
+        }
+        val adapter = venueCards ?: return
+        val selected = if (map.visible) map.selectedId else null
+        adapter.selectedId = selected
+        if (selected == null || selected == listSelection) {
+            listSelection = selected
+            return
+        }
+        listSelection = selected
+        val manager = binding.results.layoutManager as? LinearLayoutManager ?: return
+        // Ô đầu là phần điều khiển (ô tìm, bộ lọc), thẻ sân bắt đầu từ vị trí 1.
+        val index = adapter.currentList.indexOfFirst { it.id == selected }.takeIf { it >= 0 }?.plus(1) ?: return
+        if (index !in manager.findFirstCompletelyVisibleItemPosition()..manager.findLastCompletelyVisibleItemPosition()) {
+            manager.scrollToPositionWithOffset(index, resources.getDimensionPixelSize(R.dimen.space_4))
+        }
+    }
+
+    /** Chạm thẻ trong danh sách: máy tính bảng chọn sân trên bản đồ (sân không có tọa độ thì mở chi tiết). */
+    private fun onVenueCard(venue: HomeVenue) {
+        if (twoPane && viewModel.map.value.visible && venue.position != null) viewModel.selectFromList(venue.id)
+        else openVenue(venue)
+    }
+
     private fun openVenue(venue: HomeVenue) {
         val nav = findNavController()
         if (nav.currentDestination?.id != R.id.courtSearchFragment) return
@@ -1081,10 +1131,9 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
         binding.mapToggle.setText(if (map.visible) R.string.map_toggle_list else R.string.map_toggle_map)
         binding.mapToggle.setIconResource(if (map.visible) R.drawable.ic_list_24 else R.drawable.ic_map_24)
         binding.map.root.isVisible = map.visible
-        binding.results.isVisible = !map.visible
-        // Màn ngang: ẩn dòng tiêu đề khi xem bản đồ để bản đồ đủ cao (FR-023).
-        val landscape = resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
-        binding.header.root.isVisible = !(map.visible && landscape)
+        // Điện thoại xoay ngang: ẩn dòng tiêu đề khi xem bản đồ để bản đồ đủ cao (FR-023).
+        binding.header.root.isVisible = !(map.visible && compactLandscape)
+        if (twoPane) renderListPane(binding, map) else binding.results.isVisible = !map.visible
         if (!map.visible) return
 
         val controller = mapController ?: CourtMapController(binding.map.mapHost, viewLifecycleOwner, mapListener)
@@ -1184,9 +1233,8 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
             val index = cards.indexOfFirst { it.id == map.selectedId }
             if (index >= 0 && pager.currentItem != index) pager.setCurrentItem(index, false)
         }
-        // Màn dọc: nút "Vị trí của tôi" nhích lên khi thẻ hiện để không bị che. Màn ngang thẻ ở góc trái nên không cần.
-        val portrait = resources.configuration.orientation != android.content.res.Configuration.ORIENTATION_LANDSCAPE
-        val lift = if (pager.isVisible && portrait) pager.height.takeIf { it > 0 } ?: resources.getDimensionPixelSize(R.dimen.map_card_height) else 0
+        // Nút "Vị trí của tôi" nhích lên khi thẻ hiện để không bị che. Điện thoại xoay ngang thẻ ở góc trái nên không cần.
+        val lift = if (pager.isVisible && !compactLandscape) pager.height.takeIf { it > 0 } ?: resources.getDimensionPixelSize(R.dimen.map_card_height) else 0
         binding.map.myLocation.translationY = -lift.toFloat()
     }
 

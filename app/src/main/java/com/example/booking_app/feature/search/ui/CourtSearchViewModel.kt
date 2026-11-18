@@ -64,6 +64,9 @@ import javax.inject.Inject
 /** Giới hạn ký tự của câu hỏi AI (khớp `counterMaxLength` của ô nhập). */
 private const val AI_INPUT_MAX = 200
 
+/** Máy tính bảng: chọn sân từ danh sách thì phóng ít nhất tới mức thấy rõ khu phố. */
+private const val LIST_FOCUS_ZOOM = 14.0
+
 enum class SearchNotice { MAP_DISTRICT_DROPPED, AI_ERROR, QUOTA, LOCKED, SOURCE_UNAVAILABLE, INVALID_WINDOW, INVALID_DATE, DROPPED_FILTERS, OFF_TOPIC, LOCATION_UNAVAILABLE, HISTORY_DATE_PAST, VOICE_NO_MATCH, VOICE_NETWORK }
 
 data class CourtSearchUiState(
@@ -751,6 +754,23 @@ class CourtSearchViewModel @Inject constructor(
                 fromCard -> it.copy(selectedId = id)
                 else -> it.copy(selectedId = id, cardAnchorId = id)
             }
+        }
+    }
+
+    /**
+     * Máy tính bảng: chạm thẻ trong danh sách là chọn sân (spec 021 FR-023): marker nổi bật, thẻ tóm tắt hiện, bản đồ
+     * di tới sân với mức phóng ít nhất [LIST_FOCUS_ZOOM] (giữ mức đang xem nếu đã gần hơn).
+     */
+    fun selectFromList(id: String) {
+        val position = state.value.venues.firstOrNull { it.id == id }?.position
+        _map.update {
+            val zoom = maxOf(it.viewport?.zoom ?: CourtMap.DEFAULT_ZOOM, LIST_FOCUS_ZOOM)
+            it.copy(
+                visible = true,
+                selectedId = id,
+                cardAnchorId = id,
+                focus = position?.let { p -> MapFocus(p, zoom, ++focusId) } ?: it.focus,
+            )
         }
     }
 
