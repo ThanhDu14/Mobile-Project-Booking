@@ -27,6 +27,21 @@ data class CourtSearchCriteria(
         price == null -> false
         else -> (priceMin == null || price >= priceMin) && (priceMax == null || price <= priceMax)
     }
+
+    /**
+     * Giá về bội số [PRICE_STEP] như Rules của lịch sử tìm kiếm yêu cầu (data-model §2.1): giá thấp nhất làm tròn
+     * xuống, giá cao nhất làm tròn lên để không loại sân nào người dùng muốn thấy; giá thấp nhất dưới 1.000 đ coi như
+     * không đặt. Giá lẻ (gõ tay hoặc AI hiểu "dưới 55k5") trước đây làm lần ghi lịch sử bị từ chối mà không báo.
+     */
+    fun withRoundedPrices(): CourtSearchCriteria {
+        val min = priceMin?.let { it / PRICE_STEP * PRICE_STEP }?.takeIf { it > 0 }
+        val max = priceMax?.let { (it + PRICE_STEP - 1) / PRICE_STEP * PRICE_STEP }
+        return if (min == priceMin && max == priceMax) this else copy(priceMin = min, priceMax = max)
+    }
+
+    companion object {
+        const val PRICE_STEP = 1_000L
+    }
 }
 
 data class CourtSearchPage(val venues: List<HomeVenue>, val complete: Boolean, val capped: Boolean)

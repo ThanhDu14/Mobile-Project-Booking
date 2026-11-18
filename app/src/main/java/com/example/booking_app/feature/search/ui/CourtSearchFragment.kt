@@ -866,9 +866,10 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
             dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener {
                 val min = price.min.text.toString().toLongOrNull()
                 val max = price.max.text.toString().toLongOrNull()
-                if ((min != null && min <= 0) || (max != null && max <= 0) ||
-                    (min != null && max != null && min > max)) {
-                    price.maxField.error = getString(R.string.search_price_invalid)
+                // Giá tính bằng đồng: "50" nhiều khả năng là 50.000 đ gõ thiếu, báo thay vì tìm với 50 đ.
+                val tooLow = listOfNotNull(min, max).any { it < CourtSearchCriteria.PRICE_STEP }
+                if (tooLow || (min != null && max != null && min > max)) {
+                    price.maxField.error = getString(if (tooLow) R.string.search_price_too_low else R.string.search_price_invalid)
                 } else {
                     viewModel.price(min, max)
                     dialog.dismiss()

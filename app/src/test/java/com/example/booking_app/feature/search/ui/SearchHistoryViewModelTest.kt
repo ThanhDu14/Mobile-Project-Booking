@@ -106,6 +106,19 @@ class SearchHistoryViewModelTest {
     }
 
     @Test
+    fun oddPricesAreRoundedSoTheSearchCanBeSaved() = runTest {
+        val history = FakeSearchHistory()
+        val vm = viewModel(history)
+        runCurrent()
+
+        vm.price(40_500, 55_500)
+        runCurrent()
+        // Rules chỉ nhận bội số 1.000: trước đây lần ghi này bị từ chối mà không báo.
+        assertEquals(40_000L to 56_000L, vm.state.value.criteria.let { it.priceMin to it.priceMax })
+        assertEquals(listOf(40_000L to 56_000L), history.recorded.map { (c, _) -> c.priceMin to c.priceMax })
+    }
+
+    @Test
     fun guestSearchesAreNeverSaved() = runTest {
         val history = FakeSearchHistory()
         val vm = viewModel(history, signedIn = false)

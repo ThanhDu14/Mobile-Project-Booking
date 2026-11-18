@@ -51,4 +51,16 @@ class CourtSearchCriteriaTest {
         assertTrue(matchesVenueName("x", name))             // dưới 2 ký tự: không lọc
         assertEquals("san cau long minh tam cn1 nguyen van qua", normalizedSearchText(name))
     }
+
+    @Test
+    fun pricesAreRoundedToWholeThousandsWithoutHidingWantedVenues() {
+        // "dưới 55k5" và giá gõ tay lẻ: trần làm tròn lên, sàn làm tròn xuống (Rules lịch sử chỉ nhận bội số 1.000).
+        val rounded = CourtSearchCriteria(priceMin = 40_500, priceMax = 55_500).withRoundedPrices()
+        assertEquals(40_000L, rounded.priceMin)
+        assertEquals(56_000L, rounded.priceMax)
+        assertEquals(null, CourtSearchCriteria(priceMin = 500).withRoundedPrices().priceMin)
+        assertEquals(1_000L, CourtSearchCriteria(priceMax = 1).withRoundedPrices().priceMax)
+        val whole = CourtSearchCriteria(priceMin = 50_000, priceMax = 100_000)
+        assertTrue(whole.withRoundedPrices() === whole)
+    }
 }

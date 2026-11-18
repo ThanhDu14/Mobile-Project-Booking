@@ -27,6 +27,7 @@
     <string name="search_price_min">Giá thấp nhất (đ/giờ)</string>
     <string name="search_price_max">Giá cao nhất (đ/giờ)</string>
     <string name="search_price_invalid">Nhập giá hợp lệ và giá cao nhất không thấp hơn giá thấp nhất.</string>
+    <string name="search_price_too_low">Nhập giá theo đồng, từ 1.000 đ trở lên (ví dụ 100000).</string>
     <string name="search_price_min_chip">Từ %1$s đ/giờ</string>
     <string name="search_price_max_chip">Đến %1$s đ/giờ</string>
     <string name="search_price_range_chip">%1$s–%2$s đ/giờ</string>

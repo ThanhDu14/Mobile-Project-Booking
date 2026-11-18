@@ -679,10 +679,12 @@ class CourtSearchViewModel @Inject constructor(
     }
 
     private fun change(
-        criteria: CourtSearchCriteria,
+        requested: CourtSearchCriteria,
         preference: ReviewPreference? = state.value.preference,
         debounce: Boolean = false,
     ) {
+        // Mọi đường vào (hộp giá, bảng lọc, AI, lịch sử, gợi ý nới) đều qua đây nên giá luôn lưu được vào lịch sử.
+        val criteria = requested.withRoundedPrices()
         save(criteria)
         _state.update { it.copy(criteria = criteria, preference = preference, clarification = null, notice = null) }
         _map.update { it.copy(moved = false) }
@@ -955,7 +957,7 @@ class CourtSearchViewModel @Inject constructor(
             ?.takeIf { it.isBookableAt(now()) },
         sort = CourtSearchSort.entries.firstOrNull { it.name == savedState.get<String>("sort") }
             ?.takeUnless { it == CourtSearchSort.NEAREST } ?: CourtSearchSort.RATING,
-    )
+    ).withRoundedPrices()
 
     private fun save(criteria: CourtSearchCriteria) {
         savedState["keyword"] = criteria.keyword
