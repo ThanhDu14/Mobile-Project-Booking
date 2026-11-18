@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest';
 import { assertFails, assertSucceeds, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
-import { doc, deleteDoc, getDoc, setDoc, Timestamp, updateDoc } from 'firebase/firestore';
+import { doc, deleteDoc, getDoc, setDoc, Timestamp, updateDoc, writeBatch } from 'firebase/firestore';
 import { createTestEnv } from './setup';
 
 let env: RulesTestEnvironment;
@@ -162,7 +162,7 @@ describe('slots collection (T022)', () => {
   });
 });
 
-// Rà soát 040 ngày 2026-11-18: người giữ chỗ không được trả slot đã đặt về trống.
+// Rà soát 040 ngày 2026-11-18: người giữ chỗ không được trả slot đã đặt về trống hoặc tự đánh BOOKED khi không có đơn.
 describe('slot integrity after booking (review 2026-11-18)', () => {
   const SLOT = 'slots/court-01_20261027_0600';
 
@@ -182,6 +182,27 @@ describe('slot integrity after booking (review 2026-11-18)', () => {
       });
     });
 
+  const pendingBooking = (userId = 'player1') => ({
+    userId,
+    venueId: 'demo-venue-01',
+    status: 'PENDING',
+    subtotal: 40000,
+    discount: 0,
+    total: 40000,
+    depositAmount: 0,
+    paidAmount: 0,
+    remainingAmount: 40000,
+    paymentMethod: 'AT_VENUE',
+    paymentStatus: 'UNPAID',
+  });
+
+  const confirmBatch = (fs: ReturnType<typeof player>, bookingId: string, slotBookingId = bookingId) => {
+    const batch = writeBatch(fs);
+    batch.set(doc(fs, `bookings/${bookingId}`), pendingBooking());
+    batch.update(doc(fs, SLOT), { status: 'BOOKED', holdExpiresAt: null, bookingId: slotBookingId });
+    return batch.commit();
+  };
+
   it('holder cannot release a BOOKED slot back to AVAILABLE', async () => {
     await seedSlot('BOOKED', { holdExpiresAt: null });
     await assertFails(
@@ -199,5 +220,25 @@ describe('slot integrity after booking (review 2026-11-18)', () => {
     await assertSucceeds(
       updateDoc(doc(player('player1'), SLOT), { status: 'AVAILABLE', holdExpiresAt: null, holdBy: null, bookingId: null })
     );
+  });
+
+  it('holder cannot mark a HELD slot BOOKED without a booking', async () => {
+    await seedSlot('HELD');
+    await assertFails(updateDoc(doc(player('player1'), SLOT), { status: 'BOOKED', holdExpiresAt: null }));
+  });
+
+  it('holder can mark a HELD slot BOOKED together with their PENDING booking', async () => {
+    await seedSlot('HELD');
+    await assertSucceeds(confirmBatch(player('player1'), 'req-01'));
+  });
+
+  it('booking id must match the id given when the slot was held', async () => {
+    await seedSlot('HELD');
+    await assertFails(confirmBatch(player('player1'), 'req-other'));
+  });
+
+  it('an expired hold cannot be confirmed', async () => {
+    await seedSlot('HELD', { holdExpiresAt: Timestamp.fromMillis(Date.now() - 60 * 1000) });
+    await assertFails(confirmBatch(player('player1'), 'req-01'));
   });
 });

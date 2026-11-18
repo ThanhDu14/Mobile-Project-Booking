@@ -334,11 +334,17 @@ service cloud.firestore {
                         && resource.data.status == 'HELD'
                         && resource.data.holdBy == request.auth.uid
                       )
-                      // Xác nhận đặt sân: chuyển slot đang HELD của chính mình sang BOOKED
+                      // Xác nhận đặt sân: slot HELD còn hạn của chính mình sang BOOKED, giữ nguyên mã đã gắn lúc
+                      // giữ chỗ, và đơn PENDING của chính mình với mã đó phải được tạo trong cùng transaction.
                       || (
                         request.resource.data.status == 'BOOKED'
                         && resource.data.status == 'HELD'
                         && resource.data.holdBy == request.auth.uid
+                        && resource.data.holdExpiresAt > request.time
+                        && request.resource.data.bookingId == resource.data.bookingId
+                        && existsAfter(/databases/$(database)/documents/bookings/$(resource.data.bookingId))
+                        && getAfter(/databases/$(database)/documents/bookings/$(resource.data.bookingId)).data.userId == request.auth.uid
+                        && getAfter(/databases/$(database)/documents/bookings/$(resource.data.bookingId)).data.status == 'PENDING'
                       )
                     );
 
