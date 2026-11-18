@@ -58,6 +58,7 @@ import com.example.booking_app.feature.search.domain.ReviewPreference
 import com.example.booking_app.feature.search.domain.model.HomeVenue
 import com.example.booking_app.feature.search.domain.map.CourtMap
 import com.example.booking_app.feature.search.domain.map.MapViewport
+import com.example.booking_app.feature.search.domain.map.VisibleVenues
 import com.example.booking_app.feature.search.ui.map.CourtMapController
 import com.example.booking_app.feature.search.ui.map.MapCardAdapter
 import androidx.viewpager2.widget.MarginPageTransformer
@@ -194,6 +195,8 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
         binding.mapToggle.setOnClickListener { viewModel.showMap(!viewModel.map.value.visible) }
         binding.map.mapFilters.setOnClickListener { showFilters() }
         binding.map.myLocation.setOnClickListener { viewModel.locateOnMap() }
+        binding.map.searchArea.setOnClickListener { viewModel.searchThisArea() }
+        binding.map.mapRetry.setOnClickListener { viewModel.retry() }
         val cards = MapCardAdapter(::openVenue).also { mapCards = it }
         binding.map.mapCards.adapter = cards
         binding.map.mapCards.offscreenPageLimit = 1
@@ -1067,13 +1070,36 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
             controller.focus(it.center, it.zoom)
         }
         val viewport = map.viewport ?: controller.viewport()
-        val shown = viewport?.let { CourtMap.visible(state.venues, it).venues }.orEmpty()
+        val visible = viewport?.let { CourtMap.visible(state.venues, it) }
+        val shown = visible?.venues.orEmpty()
         controller.render(shown, map.selectedId)
         renderMapCards(binding, shown, map)
+        renderMapStatus(binding, state, visible)
+        // Chỉ có ích khi đang lọc theo quận: kết quả không lọc quận đã gồm mọi sân khớp bộ lọc (FR-005).
+        binding.map.searchArea.isVisible = map.moved && state.criteria.districtId != null
 
         val active = activeFilterCount(state.criteria)
         binding.map.mapFilters.text = if (active == 0) getString(R.string.map_filters)
         else getString(R.string.map_filters_count, active)
+    }
+
+    /**
+     * Một dòng trạng thái nhỏ ở trên cùng, không che bản đồ (FR-019): đang tải, lỗi kèm "Thử lại", quá 100 sân
+     * (FR-006), không có sân trong vùng.
+     */
+    private fun renderMapStatus(binding: FragmentCourtSearchBinding, state: CourtSearchUiState, visible: VisibleVenues?) {
+        val loading = state.loading && state.venues.isEmpty()
+        val text = when {
+            state.failed -> R.string.map_error
+            loading -> R.string.map_loading
+            visible?.capped == true || state.capped -> R.string.map_capped
+            visible != null && visible.venues.isEmpty() && state.complete -> R.string.map_empty
+            else -> null
+        }
+        binding.map.mapStatus.isVisible = text != null
+        text?.let(binding.map.mapStatusText::setText)
+        binding.map.mapLoading.isVisible = loading && !state.failed
+        binding.map.mapRetry.isVisible = state.failed
     }
 
     /** Thẻ tóm tắt (FR-007, FR-008): thứ tự theo sân được chạm, cuộn tới sân đang chọn; ẩn khi bỏ chọn (FR-010). */
