@@ -212,6 +212,16 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- Trạng thái đơn khi không có thẻ QR (chờ duyệt, quá hạn, đã qua giờ chơi, đã hủy...) -->
+            <TextView
+                android:id="@+id/textDetailNotice"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textColor="?attr/colorOnBackground"
+                android:visibility="gone" />
+
             <!-- Venue Info Section -->
             <TextView
                 android:id="@+id/textDetailVenue"

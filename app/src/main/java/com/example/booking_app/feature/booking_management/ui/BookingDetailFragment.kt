@@ -94,8 +94,18 @@ class BookingDetailFragment : Fragment(R.layout.fragment_booking_detail_060) {
         }
         binding.textBookingSubtitle.text = "#SN-$shortId"
 
-        // QR Card (Mockup 2)
-        if (qrBitmap != null && booking.checkedInAtMillis == null) {
+        val now = System.currentTimeMillis()
+        val phase = BookingPresentation.phase(booking, now)
+        val formatTime: (Long) -> String = { timeFormat.format(Date(it)) }
+
+        // Trạng thái và ghi chú cho đơn không có thẻ QR (trước đây đơn PENDING không hiện trạng thái)
+        val note = BookingPresentation.note(booking, phase, now, formatTime)
+        val showQr = qrBitmap != null && BookingPresentation.showQr(phase)
+        binding.textDetailNotice.isVisible = !showQr && phase != BookingPhase.CHECKED_IN
+        binding.textDetailNotice.text = listOfNotNull(BookingPresentation.badge(phase), note).joinToString(" · ")
+
+        // QR Card (Mockup 2): chỉ khi đơn đã xác nhận, chưa check-in và chưa qua giờ chơi
+        if (showQr) {
             binding.cardQr.isVisible = true
             binding.cardCheckedIn.isVisible = false
             binding.imageBookingQr.setImageBitmap(qrBitmap)
@@ -104,7 +114,7 @@ class BookingDetailFragment : Fragment(R.layout.fragment_booking_detail_060) {
 
             val openCheckInTime = timeFormat.format(Date(booking.startAtMillis - 30 * 60 * 1000L))
             binding.textQrInstructions.text = "Đưa mã cho chủ sân khi đến. Không quét được thì đọc mã chữ ở trên. Check-in mở từ $openCheckInTime, 30 phút trước giờ chơi."
-        } else if (booking.checkedInAtMillis != null) {
+        } else if (phase == BookingPhase.CHECKED_IN && booking.checkedInAtMillis != null) {
             // Checked In Card (Mockup 2 Check-in)
             binding.cardQr.isVisible = false
             binding.cardCheckedIn.isVisible = true
@@ -230,7 +240,7 @@ class BookingDetailFragment : Fragment(R.layout.fragment_booking_detail_060) {
         // Cancel button
         val canCancel = (booking.status == RefundPolicy.Status.PENDING || booking.status == RefundPolicy.Status.CONFIRMED) &&
                 booking.checkedInAtMillis == null &&
-                System.currentTimeMillis() < booking.startAtMillis
+                now < booking.startAtMillis
 
         binding.buttonCancelBooking.isVisible = canCancel
         binding.buttonCancelBooking.setOnClickListener {

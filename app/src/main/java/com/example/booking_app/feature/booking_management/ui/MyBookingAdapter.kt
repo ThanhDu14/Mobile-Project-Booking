@@ -104,8 +104,12 @@ class MyBookingAdapter(
             }
             binding.textBookingDetails.text = "$courtsStr • $paymentDetail"
 
+            // Trạng thái theo thời điểm hiện tại: đơn quá hạn duyệt hoặc đã qua giờ chơi không còn là "chờ"/"sắp tới"
+            val now = System.currentTimeMillis()
+            val phase = BookingPresentation.phase(item, now)
+
             // Status Badge and Action Buttons matching Mockup 1
-            if (item.checkedInAtMillis != null) {
+            if (phase == BookingPhase.CHECKED_IN && item.checkedInAtMillis != null) {
                 // Đã check-in • Đang chơi
                 binding.iconStatusBadge.setImageResource(R.drawable.ic_person_outline_24)
                 binding.textStatusBadge.setText(R.string.my_bookings_060_badge_playing)
@@ -120,18 +124,14 @@ class MyBookingAdapter(
                 binding.buttonSecondaryAction.isVisible = false
                 binding.buttonPrimaryAction.setOnClickListener { onClick(item) }
             } else {
-                binding.iconStatusBadge.setImageResource(R.drawable.ic_check_20)
-                binding.textStatusBadge.text = when (item.status) {
-                    RefundPolicy.Status.CONFIRMED -> "Đã xác nhận"
-                    RefundPolicy.Status.PENDING -> "Chờ duyệt"
-                    RefundPolicy.Status.HOLD -> "Chờ thanh toán"
-                    RefundPolicy.Status.COMPLETED -> "Hoàn thành"
-                    RefundPolicy.Status.CANCELLED -> "Đã hủy"
-                    RefundPolicy.Status.REJECTED -> "Đã từ chối"
-                    RefundPolicy.Status.NO_SHOW -> "Vắng mặt / Chưa check-in"
-                    else -> item.status.name
-                }
-                binding.textBookingExtra.isVisible = false
+                // Đơn đang chờ dùng đồng hồ, không dùng dấu ✓ (dễ nhầm với "Đã xác nhận")
+                val waiting = phase == BookingPhase.HOLD || phase == BookingPhase.PENDING ||
+                    phase == BookingPhase.PENDING_OVERDUE || phase == BookingPhase.ENDED_UNSETTLED
+                binding.iconStatusBadge.setImageResource(if (waiting) R.drawable.ic_timer_24 else R.drawable.ic_check_20)
+                binding.textStatusBadge.text = BookingPresentation.badge(phase)
+                val note = BookingPresentation.note(item, phase, now) { timeFormat.format(Date(it)) }
+                binding.textBookingExtra.isVisible = note != null
+                binding.textBookingExtra.text = note
 
                 when (item.status) {
                     RefundPolicy.Status.HOLD -> {
@@ -173,7 +173,13 @@ class MyBookingAdapter(
                         binding.buttonSecondaryAction.setIconResource(R.drawable.ic_directions_24)
                         binding.buttonSecondaryAction.setOnClickListener { openDirections(item) }
                     }
-                    RefundPolicy.Status.CONFIRMED -> {
+                    RefundPolicy.Status.CONFIRMED -> if (!BookingPresentation.showQr(phase)) {
+                        // Đã qua giờ chơi: không mời mở mã check-in nữa
+                        binding.buttonPrimaryAction.text = binding.root.context.getString(R.string.my_bookings_060_btn_view_detail)
+                        binding.buttonPrimaryAction.setIconResource(0)
+                        binding.buttonPrimaryAction.setOnClickListener { onClick(item) }
+                        binding.buttonSecondaryAction.isVisible = false
+                    } else {
                         binding.buttonPrimaryAction.text = binding.root.context.getString(R.string.my_bookings_060_btn_checkin_code)
                         binding.buttonPrimaryAction.setIconResource(R.drawable.ic_qr_code_scanner_24)
                         binding.buttonPrimaryAction.setOnClickListener { onClick(item) }
