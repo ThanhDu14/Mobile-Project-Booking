@@ -57,6 +57,7 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 51 | 2026-11-18 | Rà soát và sửa lỗi đặt sân (040) và lịch đặt (060): Rules slot/đơn, tiền ảo trong ví, tab Đã hủy, job phía server, giao diện đơn | 04 |
 | 52 | 2026-11-18 | Deploy Firestore Rules, sửa 28 mốc thời gian lưu sai kiểu, sửa lỗi phân trang lặp ở Lịch đặt | 04 |
 | 53 | 2026-11-18 | Supabase: deploy 4 Edge Function, tìm nguyên nhân job định kỳ không chạy, chuẩn bị bật cron | 04 |
+| 54 | 2026-11-18 | Lưới 040 dùng giờ server; Lịch đặt chỉ tải lại khi có đơn đổi; đánh dấu T102 (022) | 04, 02 |
 
 
 
@@ -2410,3 +2411,28 @@ AI đưa 4 phương án cho cơ sở nhiều sân (A hé cột, B dàn vừa đ�
 - Người dùng chạy lại script sau khi được nâng quyền.
 - AI áp riêng 3 migration cron (`20261109203000`, `20261110100000`, `20261118120000`), đánh dấu đã áp, rồi kiểm tra lượt chạy đầu tiên. Không dùng `db push` vì sẽ áp cả migration của thành viên khác.
 - Báo nhóm: `server-time`, `delete-account`, `delete-account-sweeper`, `sync-account-email` chưa được deploy; migration cron xóa tài khoản và 2 bucket ảnh chưa được áp.
+
+## Mục 54: Giờ server cho lưới 040, tải lại Lịch đặt đúng lúc, đánh dấu T102
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-18 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 04 – Đặt sân (spec 040, 060); 02 – Tìm kiếm sân (spec 022) |
+| Công cụ AI | Claude Code (Claude Opus 5.5) |
+| Nhánh Git | `feature/020-021-022-complete` |
+
+### Prompt chính
+
+"Đặt secret đợi bạn tôi nâng sau, hãy chuyển qua phần việc khác khi nào xong tôi sẽ thông báo." AI chọn làm các việc còn tồn từ rà soát 040/060 (Mục 51) và ghi kết quả thử US6.
+
+### Kết quả
+
+1. **T102 (022 US6)** (`e5c11a9`): đánh dấu xong kèm các kịch bản đã thử trên máy và phần chưa thử được.
+2. **Giờ server cho lưới 040** (`9a2493d`): lệnh giữ chỗ so với giờ server nhưng lưới và mapper dùng giờ máy, nên máy chậm giờ cho chọn khung đã qua (server từ chối), máy nhanh giờ coi hold còn hạn là hết hạn. ViewModel và hai repository giờ dùng `ServerTimeOffsetProvider`. Test đặt giờ server đi trước 3 ngày, mọi khung "ngày mai" của máy phải là PAST; test thất bại với code dùng giờ máy.
+3. **Tải lại Lịch đặt** (`e511a18`): listener tải lại trang đầu ở mọi snapshot, nên mỗi lần mở tab tốn 2–3 lần đọc trang và danh sách nhảy về đầu dù không có gì đổi. Giờ bỏ qua snapshot đầu và snapshot không có thay đổi. AI không gom 2 listener như đề xuất ban đầu vì SDK Firestore đã dùng chung một kết nối theo dõi cho hai truy vấn giống hệt nhau; lợi ích nằm ở việc bớt tải lại. Test thất bại với listener cũ. Trên máy: danh sách đứng yên sau 15 giây, các tab tải bình thường.
+
+### Kiểm chứng
+
+- Unit test 040 (130) và 060 (70) qua; mỗi test mới được xác nhận là thất bại với code cũ.
+- Theo yêu cầu, chưa chạy toàn bộ CI.
