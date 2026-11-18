@@ -49,10 +49,10 @@ class MapCardAdapter(
                 placeholder(R.drawable.img_venue_placeholder)
                 error(R.drawable.img_venue_placeholder)
             }
-            binding.root.contentDescription = location
+            binding.card.contentDescription = location
                 ?.let { context.getString(R.string.search_card_description, venue.name, it, price, rating) }
                 ?: context.getString(R.string.search_card_description_no_district, venue.name, price, rating)
-            binding.root.setOnClickListener { onClick(venue) }
+            binding.card.setOnClickListener { onClick(venue) }
         }
     }
 

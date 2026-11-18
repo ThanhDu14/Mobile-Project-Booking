@@ -107,7 +107,7 @@
     <androidx.viewpager2.widget.ViewPager2
         android:id="@+id/mapCards"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="@dimen/map_card_height"
         android:layout_gravity="bottom"
         android:layout_marginBottom="80dp"
         android:visibility="gone"

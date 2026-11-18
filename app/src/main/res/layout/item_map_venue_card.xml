@@ -1,11 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Thẻ tóm tắt khi chạm marker (spec 021 FR-007); nằm trong ViewPager2 để vuốt sang sân kế bên (FR-008). -->
-<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- ViewPager2 bắt buộc trang match_parent cả hai chiều: bọc thẻ trong FrameLayout. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:paddingHorizontal="@dimen/space_4">
+
+<com.google.android.material.card.MaterialCardView
+    android:id="@+id/card"
     style="@style/Widget.Material3.CardView.Elevated"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginHorizontal="@dimen/space_4"
+    android:layout_gravity="bottom"
     android:clickable="true"
     android:focusable="true"
     app:cardCornerRadius="@dimen/radius_md">
@@ -84,3 +91,4 @@
         </LinearLayout>
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>
+</FrameLayout>
