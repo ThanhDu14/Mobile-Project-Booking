@@ -70,6 +70,8 @@ class CourtMapController(
     private var lastVenues: List<HomeVenue> = emptyList()
     private var lastSelected: String? = null
     private var myLocationMarker: Marker? = null
+    /** Đã `onDetach`: việc hẹn trước (post, DelayedMapListener) không được chạm vào MapView nữa. */
+    private var destroyed = false
 
     private val tileHandler = object : Handler(Looper.getMainLooper()) {
         override fun handleMessage(msg: Message) {
@@ -127,6 +129,8 @@ class CourtMapController(
         // marker vẽ trước khi có kích thước thì chưa gom cụm.
         mapView.addOnFirstLayoutListener { _, _, _, _, _ ->
             mapView.post {
+                // Xoay hoặc đổi cấu hình ngay sau khi mở có thể đã hủy bản đồ trước khi lệnh này chạy.
+                if (destroyed) return@post
                 report()
                 render(lastVenues, lastSelected)
             }
@@ -153,6 +157,7 @@ class CourtMapController(
     fun render(venues: List<HomeVenue>, selectedId: String?) {
         lastVenues = venues
         lastSelected = selectedId
+        if (destroyed) return
         val zoom = mapView.zoomLevelDouble
         val key = Triple(venues.map { it.id }, selectedId, (zoom * 10).roundToInt())
         if (key == shownKey) return
@@ -287,6 +292,7 @@ class CourtMapController(
     private fun LatLng.toGeoPoint() = GeoPoint(lat, lng)
 
     private fun report(): Boolean {
+        if (destroyed) return true
         viewport()?.let { listener.onViewportChanged(it, userGesture) }
         return true
     }
@@ -303,6 +309,7 @@ class CourtMapController(
     override fun onResume(owner: LifecycleOwner) = mapView.onResume()
     override fun onPause(owner: LifecycleOwner) = mapView.onPause()
     override fun onDestroy(owner: LifecycleOwner) {
+        destroyed = true
         owner.lifecycle.removeObserver(this)
         mapView.tileProvider.tileRequestCompleteHandlers.remove(tileHandler)
         tileHandler.removeCallbacksAndMessages(null)
