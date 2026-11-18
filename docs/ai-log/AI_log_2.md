@@ -63,6 +63,7 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 57 | 2026-11-18 | Bản đồ sân và sân gần bạn (021 US1–US4) | 02 |
 | 58 | 2026-11-18 | Thử bản đồ sân (021) trên máy thật và sửa 5 lỗi | 02 |
 | 59 | 2026-11-18 | Bố cục máy tính bảng cho tìm sân và bản đồ (021 T074) | 02 |
+| 60 | 2026-11-19 | Bật 3 cron job trên Supabase sau khi có CRON_SECRET | 04, 06 |
 
 
 
@@ -2612,3 +2613,33 @@ Chuyển Danh sách/Bản đồ; marker và cụm; chạm marker → thẻ; vu�
 ### Giới hạn
 
 Chưa thử trên máy tính bảng thật; giả lập bằng mật độ màn hình nên kích thước chữ và ảnh nhỏ hơn thực tế.
+
+## Mục 60: Bật 3 cron job trên Supabase
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-19 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 04 – Đặt sân (040), 06 – Lịch đặt của tôi (060) |
+| Công cụ AI | Claude Code (Claude Opus 5.5) |
+| Nhánh Git | `feature/020-021-022-complete` |
+
+### Prompt chính
+
+"Tôi đã nâng quyền và thực hiện lệnh đặt secret"
+
+### Các bước
+
+1. Người dùng được nâng quyền project `smashnow` và tự chạy script đặt `CRON_SECRET` (secret của Edge Function và `cron_secret` trong Vault cùng một giá trị). AI không đọc giá trị: chỉ so mã SHA-256 của `vault.decrypted_secrets` với mã băm `secrets list` trả về (khớp), và kiểm tra `project_url` trỏ đúng project.
+2. Áp 3 migration bằng `db query --remote --yes -f`: `20261109203000_cron_complete_bookings` (5 phút), `20261110100000_cron_expire_holds` (mỗi phút), `20261118120000_cron_booking_timeout` (2 phút); migration tự bật `pg_cron` và `pg_net`. Sau đó `migration repair --remote --status applied` chỉ cho 3 phiên bản này. Ba migration bucket và account sweeper của thành viên khác vẫn để nguyên.
+3. Sau 6 phút: 12/12 lượt gọi trả về HTTP 200, `cron.job_run_details` đều `succeeded`.
+
+### Lượt chạy đầu
+
+| Job | Kết quả |
+|---|---|
+| `booking-timeout` | 1 booking PENDING quá hạn duyệt → REJECTED |
+| `complete-bookings` | 2 booking CONFIRMED đã qua giờ: 1 COMPLETED, 1 NO_SHOW |
+| `expire-holds` | 2 nhóm định kỳ và 38 booking HOLD quá hạn → EXPIRED; không còn slot HELD nào |
+
+Mọi trường thời gian do job ghi đều là `timestampValue` (không còn chuỗi ISO như lỗi đã sửa ở `8c59c75`).
