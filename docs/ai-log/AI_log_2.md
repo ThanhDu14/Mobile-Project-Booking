@@ -60,6 +60,7 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 54 | 2026-11-18 | Lưới 040 dùng giờ server; Lịch đặt chỉ tải lại khi có đơn đổi; đánh dấu T102 (022) | 04, 02 |
 | 55 | 2026-11-18 | Đồng bộ tasks 020 và 022 với code thực tế, cập nhật trạng thái nhóm tính năng 02 | 02 |
 | 56 | 2026-11-18 | Sửa 3 điểm phát hiện khi đối chiếu: chú thích Rules, giá lưới 040 dùng chung SlotPricing, test tìm kiếm | 02, 04 |
+| 57 | 2026-11-18 | Bản đồ sân và sân gần bạn (021 US1–US4) | 02 |
 
 
 
@@ -2504,3 +2505,43 @@ Người dùng dán lại 3 phát hiện ở cuối Mục 55 và hỏi "Bạn đ
 - Unit test của booking, pricing, chi tiết sân và tìm kiếm: 310 qua; tìm kiếm riêng 45 qua.
 - Điện thoại ngắt kết nối giữa chừng nên chưa xem lại giá trên lưới bằng máy; bộ ca giá dùng chung thay cho bước này.
 - Còn mở: test cho repository tìm kiếm (đọc Firestore) và lọc tiện ích "đủ tất cả".
+
+## Mục 57: Bản đồ sân và sân gần bạn (021 US1–US4)
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-18 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 02 – Tìm kiếm sân (spec 021) |
+| Công cụ AI | Claude Code (Claude Opus 5.5) |
+| Nhánh Git | `feature/020-021-022-complete` |
+
+### Prompt chính
+
+"Bắt đầu 021 nhé, sau đó hẵn CI sau." AI hỏi trắc nghiệm trước khi code, người dùng chọn: làm đủ US1–US4; bản đồ dùng chung kết quả tìm kiếm 020 (không truy vấn geohash); nút nổi "Bản đồ / Danh sách" giữa cạnh dưới.
+
+### Kết quả (8 commit)
+
+| Commit | Nội dung |
+|---|---|
+| `62dbb5e` | `HomeVenue.position` (LatLng) đọc từ `venues.location`; tọa độ thiếu, sai kiểu hoặc 0,0 thì bỏ khỏi bản đồ |
+| `161e758` | `CourtMap`: vùng đang xem, tối đa 100 sân gần tâm, thứ tự thẻ, gom cụm theo khoảng cách trên màn hình, sân gần bạn 5 km/10 sân |
+| `bc0af83` | Chế độ bản đồ trên màn tìm kiếm: `CourtMapController` (osmdroid), `OsmdroidSetup` dùng chung với 030, `CourtMapState` trong ViewModel, nút "Bộ lọc", lỗi tile → về danh sách, "Vị trí của tôi" (xin quyền khi bấm, `LocationReason`) |
+| `a066c0a` | Thẻ tóm tắt trong ViewPager2: chạm marker, vuốt sang sân kế bên, chạm thẻ mở chi tiết sân, chạm vùng trống ẩn thẻ |
+| `8284ad6` | Gom marker chồng nhau thành cụm có số; chạm cụm phóng vào, mức phóng tối đa thì chọn sân đầu |
+| `7f7a0a0` | "Tìm ở khu vực này" (bỏ lọc quận, chỉ hiện khi đang lọc quận) và dòng trạng thái: đang tải, lỗi kèm "Thử lại", quá 100 sân, vùng không có sân |
+| `d766808` | Chấm vị trí của tôi; thông báo bản đồ ở trung tâm TP.HCM khi không có vị trí |
+| `0f3934c` | Dải "Sân gần bạn" dưới ô tìm kiếm: tự lấy vị trí nếu đã có quyền, "Bật vị trí", "Thử lại", "Tìm rộng hơn", "Tìm theo quận", "Xem tất cả trên bản đồ" |
+
+Tài liệu (`fd36e29`): Clarifications 2026-11-18 trong spec 021; tasks 021 đối chiếu 84 task (46 xong, 38 mở); nhóm tính năng 02 đánh dấu mục bản đồ.
+
+### Kiểm chứng
+
+- Unit test mới: `CourtMapTest` (5), `CourtMapViewModelTest` (8), một ca trong `HomeVenueMapperTest`; toàn bộ test tìm kiếm qua (59).
+- Theo yêu cầu, chưa chạy toàn bộ CI.
+
+### Sai sót và giới hạn
+
+- **Chưa thử trên máy**: điện thoại ngắt kết nối suốt lúc làm, nên phần giao diện osmdroid (marker, cụm, thẻ, nút nổi, chấm vị trí) chưa được chạy thật; quickstart T080 còn mở.
+- Lần biên dịch đầu thiếu import `StateFlow` và tham chiếu drawable `ic_tune_24` không tồn tại; AI sửa (bỏ icon cho thống nhất với nút "Bộ lọc" của danh sách).
+- Chưa làm: mô tả marker cho TalkBack, bố cục máy tính bảng (FR-023), trạng thái mất mạng sau khi đã tải (FR-021), đo thời gian.
