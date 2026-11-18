@@ -8,6 +8,9 @@ import com.example.booking_app.core.session.FakeSessionManager
 import com.example.booking_app.core.session.SessionState
 import com.example.booking_app.core.testing.FakeClock
 import com.example.booking_app.core.testing.MainDispatcherRule
+import com.example.booking_app.feature.search.domain.AiParseResponse
+import com.example.booking_app.feature.search.domain.AiCourtParse
+import com.example.booking_app.feature.search.domain.AiCourtFilter
 import com.example.booking_app.feature.search.domain.AiSearchUsage
 import com.example.booking_app.feature.search.domain.CourtAiApi
 import com.example.booking_app.feature.search.domain.CourtSearchCriteria
@@ -162,5 +165,29 @@ class VoiceInputViewModelTest {
         vm.voicePermission(granted = true)
         runCurrent()
         assertTrue(vm.state.value.listening)
+    }
+
+    @Test
+    fun sendingWhileListeningStopsTheMicSoALateResultCannotOverwriteTheQuestion() = runTest {
+        val voice = FakeVoiceInput()
+        coEvery { api.parse(any()) } returns AiParseResponse(
+            AiCourtParse("unclear", filter = AiCourtFilter(districtId = "q10")), AiSearchUsage(1, 1, 10),
+        )
+        val vm = viewModel(voice)
+        runCurrent()
+        vm.toggleVoice()
+        runCurrent()
+        voice.send(VoiceEvent.Partial("sân quận 10"))
+        runCurrent()
+
+        vm.submitAi()
+        assertFalse(vm.state.value.listening)
+        runCurrent()
+        assertTrue(vm.state.value.clarification != null)
+        // Kết quả cuối đến muộn không còn được nhận.
+        voice.send(VoiceEvent.Final("sân quận 10 tối nay"))
+        runCurrent()
+        assertEquals("sân quận 10", vm.state.value.aiInput)
+        assertTrue(vm.state.value.clarification != null)
     }
 }

@@ -491,6 +491,9 @@ class CourtSearchViewModel @Inject constructor(
         if (current.aiBusy || current.usage?.remaining == 0 || lockSeconds(current.usage) > 0 ||
             query.isEmpty() || query.codePointCount(0, query.length) > AI_INPUT_MAX) return
         val generation = searchGeneration
+        // Gửi khi micro còn nghe: dừng trước, nếu không kết quả nhận dạng đến muộn sẽ ghi đè câu đã gửi và xóa
+        // câu hỏi chọn ngày AI vừa trả về.
+        if (current.listening) stopVoice()
         _state.update { it.copy(aiBusy = true, clarification = null, notice = null, filtersKept = false) }
         parseJob = viewModelScope.launch {
             try {
