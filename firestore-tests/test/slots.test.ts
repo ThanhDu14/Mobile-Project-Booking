@@ -161,3 +161,43 @@ describe('slots collection (T022)', () => {
     await assertSucceeds(deleteDoc(doc(fsHolder, 'slots/court-01_20261027_0600')));
   });
 });
+
+// Rà soát 040 ngày 2026-11-18: người giữ chỗ không được trả slot đã đặt về trống.
+describe('slot integrity after booking (review 2026-11-18)', () => {
+  const SLOT = 'slots/court-01_20261027_0600';
+
+  const seedSlot = (status: string, extra: Record<string, unknown> = {}) =>
+    env.withSecurityRulesDisabled(async (ctx) => {
+      await setDoc(doc(ctx.firestore(), SLOT), {
+        venueId: 'demo-venue-01',
+        courtId: 'court-01',
+        date: '20261027',
+        startTime: '0600',
+        endTime: '0630',
+        status,
+        holdExpiresAt: status === 'HELD' ? Timestamp.fromMillis(Date.now() + 4 * 60 * 1000) : null,
+        holdBy: 'player1',
+        bookingId: 'req-01',
+        ...extra,
+      });
+    });
+
+  it('holder cannot release a BOOKED slot back to AVAILABLE', async () => {
+    await seedSlot('BOOKED', { holdExpiresAt: null });
+    await assertFails(
+      updateDoc(doc(player('player1'), SLOT), { status: 'AVAILABLE', holdExpiresAt: null, holdBy: null, bookingId: null })
+    );
+  });
+
+  it('holder cannot delete a BOOKED slot', async () => {
+    await seedSlot('BOOKED', { holdExpiresAt: null });
+    await assertFails(deleteDoc(doc(player('player1'), SLOT)));
+  });
+
+  it('holder can still release their own HELD slot', async () => {
+    await seedSlot('HELD');
+    await assertSucceeds(
+      updateDoc(doc(player('player1'), SLOT), { status: 'AVAILABLE', holdExpiresAt: null, holdBy: null, bookingId: null })
+    );
+  });
+});

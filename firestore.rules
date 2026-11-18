@@ -326,9 +326,12 @@ service cloud.firestore {
                         && (resource.data.status != 'BOOKED' && resource.data.status != 'BLOCKED')
                         && (resource.data.status != 'HELD' || resource.data.holdExpiresAt < request.time || resource.data.holdBy == request.auth.uid)
                       )
-                      // Hủy giữ chỗ hoặc nhả slot về AVAILABLE bởi chính người đang giữ
+                      // Hủy giữ chỗ: chỉ nhả slot ĐANG HELD do chính mình giữ. Slot đã BOOKED vẫn còn
+                      // holdBy của người đặt, nên thiếu điều kiện status sẽ cho phép trả sân đã đặt về trống
+                      // (đặt trùng). Hủy đơn đã đặt phải đi qua Edge Function.
                       || (
                         request.resource.data.status == 'AVAILABLE'
+                        && resource.data.status == 'HELD'
                         && resource.data.holdBy == request.auth.uid
                       )
                       // Xác nhận đặt sân: chuyển slot đang HELD của chính mình sang BOOKED
@@ -339,7 +342,8 @@ service cloud.firestore {
                       )
                     );
 
-      allow delete: if isAdmin() || (isSignedIn() && resource.data.holdBy == request.auth.uid);
+      allow delete: if isAdmin()
+                    || (isSignedIn() && resource.data.status == 'HELD' && resource.data.holdBy == request.auth.uid);
     }
 
     // ---------- recurringGroups + bookings (B, spec 041) ----------

@@ -50,6 +50,10 @@ class BookingConfirmFragment : Fragment() {
 
     private var countDownTimer: CountDownTimer? = null
     private var holdArgs: HoldToPaymentArgs? = null
+
+    // Đang ghi đơn: chặn nhả chỗ (Back, hủy, hết giờ) để lệnh nhả không chạy sau khi slot đã BOOKED
+    private var isConfirming = false
+    private var timeoutWhileConfirming = false
     private val currencyFormatter = DecimalFormat("#,###", java.text.DecimalFormatSymbols(Locale.GERMANY))
 
     // Trạng thái chọn phương thức thanh toán display-only
@@ -188,6 +192,7 @@ class BookingConfirmFragment : Fragment() {
             }
 
             binding.btnConfirmBooking.isEnabled = false
+            isConfirming = true
             val methodStr = when (selectedPaymentOption) {
                 PaymentOption.PAY_AT_VENUE -> "AT_VENUE"
                 PaymentOption.DEPOSIT -> "DEPOSIT"
@@ -210,12 +215,21 @@ class BookingConfirmFragment : Fragment() {
                         )
                     }
                     is com.example.booking_app.feature.booking.domain.model.ConfirmBookingResult.Expired -> {
+                        isConfirming = false
+                        timeoutWhileConfirming = false
                         if (_binding != null) {
                             binding.btnConfirmBooking.isEnabled = true
                         }
                         onCountdownTimeout()
                     }
                     is com.example.booking_app.feature.booking.domain.model.ConfirmBookingResult.Error -> {
+                        isConfirming = false
+                        if (timeoutWhileConfirming) {
+                            // Hết giờ giữ chỗ trong lúc đang ghi đơn: giờ mới xử lý hết hạn
+                            timeoutWhileConfirming = false
+                            onCountdownTimeout()
+                            return@launch
+                        }
                         if (_binding != null) {
                             binding.btnConfirmBooking.isEnabled = true
                         }
@@ -392,6 +406,10 @@ class BookingConfirmFragment : Fragment() {
     private fun onCountdownTimeout() {
         countDownTimer?.cancel()
         if (!isAdded) return
+        if (isConfirming) {
+            timeoutWhileConfirming = true
+            return
+        }
 
         MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.booking_confirm_timeout_title)
@@ -406,6 +424,10 @@ class BookingConfirmFragment : Fragment() {
     }
 
     private fun handleCancelAndRelease() {
+        if (isConfirming) {
+            Toast.makeText(requireContext(), R.string.booking_confirm_in_progress, Toast.LENGTH_SHORT).show()
+            return
+        }
         countDownTimer?.cancel()
         val args = holdArgs
         val userId = sessionManager.currentUid() ?: ""

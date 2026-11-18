@@ -79,6 +79,7 @@
     <string name="booking_confirm_total_label">Tổng thanh toán</string>
     <string name="booking_confirm_pay_btn">Thanh toán</string>
     <string name="booking_confirm_cancel_btn">Hủy / Quay lại</string>
+    <string name="booking_confirm_in_progress">Đang xác nhận đơn, bạn đợi chút nhé.</string>
     <string name="booking_confirm_timeout_title">Hết thời gian giữ chỗ</string>
     <string name="booking_confirm_timeout_message">Thời gian giữ chỗ 5 phút đã kết thúc. Vui lòng quay lại và chọn lại khung giờ.</string>
     <string name="booking_confirm_timeout_ok">Về danh sách khung giờ</string>
