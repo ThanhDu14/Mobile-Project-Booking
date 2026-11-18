@@ -62,6 +62,7 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 56 | 2026-11-18 | Sửa 3 điểm phát hiện khi đối chiếu: chú thích Rules, giá lưới 040 dùng chung SlotPricing, test tìm kiếm | 02, 04 |
 | 57 | 2026-11-18 | Bản đồ sân và sân gần bạn (021 US1–US4) | 02 |
 | 58 | 2026-11-18 | Thử bản đồ sân (021) trên máy thật và sửa 5 lỗi | 02 |
+| 59 | 2026-11-18 | Bố cục máy tính bảng cho tìm sân và bản đồ (021 T074) | 02 |
 
 
 
@@ -2577,6 +2578,37 @@ Chuyển Danh sách/Bản đồ; marker và cụm; chạm marker → thẻ; vu�
 
 ### Giới hạn
 
-- Màn ngang điện thoại (FR-023), sửa theo yêu cầu "Hãy sửa màn hình ngang nhé": `layout-land` cho bản đồ và nút chuyển; nút "Bộ lọc" góc trên trái, thẻ rộng 360dp ở góc dưới trái (ảnh 72dp), nút "Danh sách" góc dưới phải, nút vị trí ngay trên nó; ẩn dòng tiêu đề khi xem bản đồ ở màn ngang. Đã thử trên máy: thẻ đủ nội dung, không che nút; chuyển danh sách và xoay về dọc bình thường. Bố cục máy tính bảng hai cột (T074) vẫn chưa làm.
+- Màn ngang điện thoại (FR-023), sửa theo yêu cầu "Hãy sửa màn hình ngang nhé": `layout-land` cho bản đồ và nút chuyển; nút "Bộ lọc" góc trên trái, thẻ rộng 360dp ở góc dưới trái (ảnh 72dp), nút "Danh sách" góc dưới phải, nút vị trí ngay trên nó; ẩn dòng tiêu đề khi xem bản đồ ở màn ngang. Đã thử trên máy: thẻ đủ nội dung, không che nút; chuyển danh sách và xoay về dọc bình thường. Bố cục máy tính bảng hai cột: Mục 59.
 - Chưa thử chế độ sáng, dải "Sân gần bạn" có sân (máy đang ở Dĩ An, sân gần nhất khoảng 13 km), mất mạng.
 - Quyền vị trí của app trên máy đã được cấp ("Trong khi dùng ứng dụng") trong lúc thử.
+
+## Mục 59: Bố cục máy tính bảng cho tìm sân và bản đồ (021 T074)
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-18 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 02 – Tìm kiếm sân (spec 021 FR-023) |
+| Công cụ AI | Claude Code (Claude Opus 5.5) |
+| Nhánh Git | `feature/020-021-022-complete` |
+
+### Prompt chính
+
+"Làm luôn bố cục máy tính bảng rồi chạy CI sau đó mới push PR nhé"
+
+### Kết quả
+
+- Màn hình rộng nhỏ nhất từ 600dp (`layout-sw600dp`): danh sách bên trái 40% (tối thiểu 320dp), bản đồ bên phải, không có nút chuyển chế độ. Dùng `sw600dp` thay cho `w600dp` của kế hoạch vì điện thoại xoay ngang cũng rộng khoảng 830dp.
+- Chạm thẻ trong danh sách là chọn sân: marker nổi bật, bản đồ di tới (zoom ít nhất 14), hiện thẻ tóm tắt; sân không có tọa độ thì vẫn mở chi tiết. Chạm marker thì thẻ trong danh sách được tô nền, viền và cuộn vào tầm nhìn; TalkBack đọc "Đang chọn trên bản đồ".
+- Thẻ tóm tắt rộng tối đa 420dp nhưng không vượt khung bản đồ (máy tính bảng dọc chỉ còn khoảng 300dp). Bản đồ lỗi tile thì ẩn khung bản đồ, danh sách chiếm cả màn.
+- Hai cờ tài nguyên `search_two_pane` và `map_compact_landscape` thay cho kiểm tra hướng màn hình trong code, để máy tính bảng xoay ngang vẫn giữ tiêu đề.
+
+### Kiểm tra
+
+- Unit test: `CourtMapViewModelTest.onTabletsTappingAListCardSelectsTheVenueAndMovesTheMapToIt`.
+- Trên Galaxy A54 với `adb shell wm density 280` (rộng nhỏ nhất khoảng 617dp), dọc và ngang: chọn từ danh sách, chọn từ marker, thẻ vừa khung; sau đó trả mật độ về như cũ, kiểm tra lại chế độ điện thoại.
+- Khi đổi mật độ màn hình, phát hiện app crash nếu bản đồ bị hủy ngay sau khi mở (lệnh vẽ lại hẹn sau lần bố cục đầu ở `f979e78` chạy sau `onDetach`). Đã sửa ở `3d2085d`; xoay và đổi mật độ liên tục không còn crash.
+
+### Giới hạn
+
+Chưa thử trên máy tính bảng thật; giả lập bằng mật độ màn hình nên kích thước chữ và ảnh nhỏ hơn thực tế.

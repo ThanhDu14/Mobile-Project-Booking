@@ -21,7 +21,7 @@ Tình trạng ngày 2026-11-18 (chi tiết từng task: mục "Đối chiếu v�
 - [x] Tìm sân thông minh bằng AI (AI Assistant): nhập câu tự do hoặc giọng nói, tự trích xuất bộ lọc (quận, ngày/giờ, giá, tiện ích) (022 US1–US5); gợi ý nới điều kiện khi không có kết quả (022 US6); đề xuất theo đánh giá (022 US7)
 - [x] Sắp xếp: gần nhất, giá, đánh giá (020 US3)
 - [x] Gợi ý sân gần vị trí hiện tại (sắp xếp "Gần nhất" có khoảng cách, 020 US3)
-- [x] Chế độ xem bản đồ: marker icon quả cầu lông, chạm vào marker để xem thẻ tóm tắt rồi vào chi tiết sân (021 US1–US4: cụm marker, vuốt thẻ, "Tìm ở khu vực này", "Vị trí của tôi", "Sân gần bạn"; còn thử trên máy)
+- [x] Chế độ xem bản đồ: marker icon quả cầu lông, chạm vào marker để xem thẻ tóm tắt rồi vào chi tiết sân (021 US1–US4: cụm marker, vuốt thẻ, "Tìm ở khu vực này", "Vị trí của tôi", "Sân gần bạn", máy tính bảng hai cột; đã thử trên máy 2026-11-18)
 - [x] Lưu lịch sử tìm kiếm (020 US4)
 
 ## Ảnh chụp tham khảo
