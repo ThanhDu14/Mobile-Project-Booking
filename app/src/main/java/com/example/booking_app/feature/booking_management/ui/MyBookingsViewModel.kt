@@ -1,5 +1,6 @@
 package com.example.booking_app.feature.booking_management.ui
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.booking_app.feature.booking_management.domain.BookingDetail
@@ -97,11 +98,17 @@ class MyBookingsViewModel @Inject constructor(
                 throw cancelled
             } catch (error: UnsupportedOperationException) {
                 _state.value = MyBookingsState.Error("", true)
-            } catch (_: Exception) {
+            } catch (error: Exception) {
+                Log.w(TAG, "Không tải được tab $tab", error)
                 if (currentTab == tab) {
                     _state.value = MyBookingsState.Error("Không thể tải lịch đặt. Kiểm tra kết nối rồi thử lại.")
                 }
             }
         }
     }
+
+    private companion object {
+        const val TAG = "MyBookings"
+    }
+
 }

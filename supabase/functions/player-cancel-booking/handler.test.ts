@@ -87,6 +87,19 @@ Deno.test("player-cancel-booking: successfully cancels PENDING booking and relea
   // Check committed writes: booking update, 2 slot deletes, user balance update, refund doc create
   const slotDeletes = committedWrites.filter((w) => w.delete && w.delete.includes("slots/"));
   assertEquals(slotDeletes.length, 2);
+
+  // Mốc thời gian phải lưu thành Timestamp, không phải chuỗi (tab "Đã hủy" sắp xếp theo updatedAt).
+  const bookingWrite = committedWrites.find((w) => w.update?.name?.endsWith("/bookings/b-pending"));
+  assertEquals(typeof bookingWrite.update.fields.updatedAt.timestampValue, "string");
+  assertEquals(typeof bookingWrite.update.fields.cancelledAt.timestampValue, "string");
+  assertEquals(bookingWrite.update.fields.paymentStatus.stringValue, "REFUNDED");
+  const refundWrite = committedWrites.find((w) => w.update?.name?.endsWith("/refunds/refund_b-pending"));
+  assertEquals(typeof refundWrite.update.fields.createdAt.timestampValue, "string");
+
+  // Ví được cộng dồn nguyên tử, không ghi đè số dư đọc trước đó.
+  const walletWrite = committedWrites.find((w) => w.update?.name?.endsWith("/users/user-1"));
+  assertEquals(walletWrite.update.fields.walletBalance, undefined);
+  assertEquals(walletWrite.updateTransforms, [{ fieldPath: "walletBalance", increment: { integerValue: "57000" } }]);
 });
 
 Deno.test("player-cancel-booking: works when invoked by Deno.serve with info as 2nd arg", async () => {

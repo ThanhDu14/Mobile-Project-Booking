@@ -92,6 +92,7 @@ class FirestoreBookingManagementRepositoryTest {
             every { id } returns "b1"
             every { data } returns validBookingData("b1")
             every { getTimestamp("createdAt") } returns start
+            every { this@mockk.get("createdAt") } returns start
         }
         every { querySnapshot.documents } returns listOf(doc1)
 
@@ -109,11 +110,13 @@ class FirestoreBookingManagementRepositoryTest {
             every { id } returns "valid_b"
             every { data } returns validBookingData("valid_b")
             every { getTimestamp("createdAt") } returns start
+            every { this@mockk.get("createdAt") } returns start
         }
         val corruptedDoc: DocumentSnapshot = mockk {
             every { id } returns "corrupted_b"
             every { data } returns mapOf("userId" to testUid, "status" to "PENDING") // missing items, amounts, timestamps
             every { getTimestamp("createdAt") } returns null
+            every { this@mockk.get("createdAt") } returns null
         }
         every { querySnapshot.documents } returns listOf(validDoc, corruptedDoc)
 
@@ -131,6 +134,7 @@ class FirestoreBookingManagementRepositoryTest {
                 every { id } returns "b$i"
                 every { data } returns validBookingData("b$i")
                 every { getTimestamp("createdAt") } returns start
+                every { this@mockk.get("createdAt") } returns start
             }
         }
         every { querySnapshot.documents } returns docs
@@ -168,11 +172,13 @@ class FirestoreBookingManagementRepositoryTest {
             every { id } returns "hold_active"
             every { data } returns activeHoldData
             every { getTimestamp("createdAt") } returns start
+            every { this@mockk.get("createdAt") } returns start
         }
         val expiredDoc: DocumentSnapshot = mockk {
             every { id } returns "hold_expired"
             every { data } returns expiredHoldData
             every { getTimestamp("createdAt") } returns start
+            every { this@mockk.get("createdAt") } returns start
         }
         every { querySnapshot.documents } returns listOf(activeDoc, expiredDoc)
 
@@ -192,6 +198,7 @@ class FirestoreBookingManagementRepositoryTest {
             every { data } returns validBookingData("b1")
             every { getString("status") } returns "PENDING"
             every { getTimestamp("createdAt") } returns start
+            every { this@mockk.get("createdAt") } returns start
         }
         val fallbackSnapshot: QuerySnapshot = mockk()
         every { fallbackSnapshot.metadata } returns this@FirestoreBookingManagementRepositoryTest.metadata

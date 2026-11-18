@@ -1,6 +1,6 @@
 import { errorResponse, HttpError, verifyIdToken } from "../_shared/auth.ts";
 import * as defaultFirestore from "../_shared/firestore.ts";
-import { createWrite, deleteWrite, FirestoreError, updateWrite } from "../_shared/firestore.ts";
+import { createWrite, deleteWrite, encodeValue, FirestoreError, updateWrite } from "../_shared/firestore.ts";
 
 export interface PlayerCancelBookingDeps {
   firestore?: Pick<typeof defaultFirestore, "get" | "commit">;
@@ -104,19 +104,22 @@ export async function handlePlayerCancelBooking(
       }
     }
 
-    const nowIso = new Date().toISOString();
-    const writes: defaultFirestore.Write[] = [
-      updateWrite(`bookings/${bookingId}`, {
-        status: "CANCELLED",
-        cancelledAt: nowIso,
-        cancelReason: reason,
-        cancelledBy: "USER",
-        refundAmount,
-        penaltyAmount,
-        refundStatus: "COMPLETED",
-        updatedAt: nowIso,
-      }),
-    ];
+    // Ghi mốc thời gian bằng Date để REST lưu thành Timestamp. Chuỗi ISO bị lưu thành string, làm app
+    // không sắp xếp và phân trang được tab "Đã hủy" (rà soát 060 ngày 2026-11-18).
+    const cancelledAt = new Date();
+    const nowIso = cancelledAt.toISOString();
+    const bookingUpdate: Record<string, unknown> = {
+      status: "CANCELLED",
+      cancelledAt,
+      cancelReason: reason,
+      cancelledBy: "USER",
+      refundAmount,
+      penaltyAmount,
+      refundStatus: "COMPLETED",
+      updatedAt: cancelledAt,
+    };
+    if (refundAmount > 0) bookingUpdate.paymentStatus = "REFUNDED";
+    const writes: defaultFirestore.Write[] = [updateWrite(`bookings/${bookingId}`, bookingUpdate)];
 
     // Nhả slot (deduplicate để tránh Firestore commit lỗi "multiple writes to same document")
     const slotIdSet = new Set<string>();
@@ -136,16 +139,12 @@ export async function handlePlayerCancelBooking(
       writes.push(deleteWrite(`slots/${slotId}`, false));
     }
 
-    // Hoàn tiền ví giả lập nếu có
+    // Hoàn tiền ví giả lập nếu có: cộng dồn nguyên tử, không đọc rồi ghi đè số dư (hai lần hoàn cùng lúc
+    // sẽ làm mất một khoản).
     if (refundAmount > 0) {
-      const user = await firestore.get(`users/${booking.userId}`);
-      const currentBalance = Number(user?.walletBalance || 0);
-      writes.push(
-        updateWrite(`users/${booking.userId}`, {
-          walletBalance: currentBalance + refundAmount,
-          updatedAt: nowIso,
-        }),
-      );
+      const walletWrite = updateWrite(`users/${booking.userId}`, { updatedAt: cancelledAt });
+      walletWrite.updateTransforms = [{ fieldPath: "walletBalance", increment: encodeValue(refundAmount) }];
+      writes.push(walletWrite);
     }
 
     // Ghi nhận idempotency refund record
@@ -156,7 +155,7 @@ export async function handlePlayerCancelBooking(
         requestId,
         refundAmount,
         penaltyAmount,
-        createdAt: nowIso,
+        createdAt: cancelledAt,
       }),
     );
 
