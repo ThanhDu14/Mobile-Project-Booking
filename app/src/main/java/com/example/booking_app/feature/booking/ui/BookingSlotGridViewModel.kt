@@ -365,7 +365,7 @@ class BookingSlotGridViewModel @Inject constructor(
         when (clickedSlot.status) {
             SlotStatus.BOOKED -> {
                 viewModelScope.launch {
-                    _uiEffect.send(BookingSlotUiEffect.ShowErrorSnackbar("Slot này đã được đặt"))
+                    _uiEffect.send(BookingSlotUiEffect.ShowErrorSnackbar("Khung giờ này đã được đặt"))
                 }
                 return
             }
@@ -376,20 +376,20 @@ class BookingSlotGridViewModel @Inject constructor(
                     // Hết hạn HELD: cho phép chọn bình thường (P0-4)
                 } else {
                     viewModelScope.launch {
-                        _uiEffect.send(BookingSlotUiEffect.ShowErrorSnackbar("Slot này đang được giữ"))
+                        _uiEffect.send(BookingSlotUiEffect.ShowErrorSnackbar("Khung giờ này đang được giữ"))
                     }
                     return
                 }
             }
             SlotStatus.BLOCKED -> {
                 viewModelScope.launch {
-                    _uiEffect.send(BookingSlotUiEffect.ShowErrorSnackbar("Slot này không khả dụng"))
+                    _uiEffect.send(BookingSlotUiEffect.ShowErrorSnackbar("Khung giờ này không khả dụng"))
                 }
                 return
             }
             SlotStatus.PAST -> {
                 viewModelScope.launch {
-                    _uiEffect.send(BookingSlotUiEffect.ShowErrorSnackbar("Slot này đã qua giờ"))
+                    _uiEffect.send(BookingSlotUiEffect.ShowErrorSnackbar("Khung giờ này đã qua giờ"))
                 }
                 return
             }

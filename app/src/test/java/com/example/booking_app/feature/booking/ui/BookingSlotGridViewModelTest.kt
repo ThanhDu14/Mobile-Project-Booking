@@ -168,19 +168,19 @@ class BookingSlotGridViewModelTest {
             vm.onSlotClicked(bookedSlot)
             val effect1 = awaitItem()
             assertTrue(effect1 is BookingSlotUiEffect.ShowErrorSnackbar)
-            assertEquals("Slot này đã được đặt", (effect1 as BookingSlotUiEffect.ShowErrorSnackbar).message)
+            assertEquals("Khung giờ này đã được đặt", (effect1 as BookingSlotUiEffect.ShowErrorSnackbar).message)
 
             vm.onSlotClicked(heldSlot)
             val effect2 = awaitItem()
-            assertEquals("Slot này đang được giữ", (effect2 as BookingSlotUiEffect.ShowErrorSnackbar).message)
+            assertEquals("Khung giờ này đang được giữ", (effect2 as BookingSlotUiEffect.ShowErrorSnackbar).message)
 
             vm.onSlotClicked(blockedSlot)
             val effect3 = awaitItem()
-            assertEquals("Slot này không khả dụng", (effect3 as BookingSlotUiEffect.ShowErrorSnackbar).message)
+            assertEquals("Khung giờ này không khả dụng", (effect3 as BookingSlotUiEffect.ShowErrorSnackbar).message)
 
             vm.onSlotClicked(pastSlot)
             val effect4 = awaitItem()
-            assertEquals("Slot này đã qua giờ", (effect4 as BookingSlotUiEffect.ShowErrorSnackbar).message)
+            assertEquals("Khung giờ này đã qua giờ", (effect4 as BookingSlotUiEffect.ShowErrorSnackbar).message)
 
             // Selection remains 0
             assertEquals(0, vm.uiState.value.selectedSlotsCount)
