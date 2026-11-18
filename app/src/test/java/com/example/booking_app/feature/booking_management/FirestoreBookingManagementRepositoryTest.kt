@@ -227,6 +227,29 @@ class FirestoreBookingManagementRepositoryTest {
     }
 
     @Test
+    fun observeTabInvalidations_ignoresTheFirstSnapshotAndSnapshotsWithoutChanges() = kotlinx.coroutines.test.runTest {
+        val listenerSlot = slot<EventListener<QuerySnapshot>>()
+        every { userQuery.addSnapshotListener(capture(listenerSlot)) } returns mockk(relaxed = true)
+        fun snapshot(changes: Int): QuerySnapshot = mockk {
+            every { documentChanges } returns List(changes) { mockk<com.google.firebase.firestore.DocumentChange>() }
+        }
+
+        var reloads = 0
+        val job = launch { repository.observeTabInvalidations(BookingTab.CANCELLED).collect { reloads++ } }
+        testScheduler.advanceUntilIdle()
+
+        listenerSlot.captured.onEvent(snapshot(changes = 13), null) // dữ liệu ban đầu (từ cache)
+        listenerSlot.captured.onEvent(snapshot(changes = 0), null)  // server xác nhận, không đổi gì
+        testScheduler.advanceUntilIdle()
+        assertEquals(0, reloads)
+
+        listenerSlot.captured.onEvent(snapshot(changes = 1), null)  // một đơn vừa đổi trạng thái
+        testScheduler.advanceUntilIdle()
+        assertEquals(1, reloads)
+        job.cancel()
+    }
+
+    @Test
     fun observeTabCounts_filtersOutMalformed041SessionsAndExpiredHolds() = kotlinx.coroutines.test.runTest {
         val listenerSlot = slot<EventListener<QuerySnapshot>>()
         every { userQuery.addSnapshotListener(capture(listenerSlot)) } returns mockk(relaxed = true)

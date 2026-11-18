@@ -159,16 +159,19 @@ class FirestoreBookingManagementRepository @Inject constructor(
     override fun observeTabInvalidations(tab: BookingTab): Flow<Unit> {
         return session.sessionState.map { session.currentUid() }.distinctUntilChanged().flatMapLatest { uid ->
             if (uid == null) flowOf(Unit) else callbackFlow {
+                // Snapshot đầu tiên chỉ là dữ liệu hiện có (màn hình vừa tải trang đầu rồi); snapshot xác nhận từ
+                // server không kèm thay đổi cũng bỏ qua. Trước đây mỗi lần mở tab tải trang đầu 2–3 lần và danh
+                // sách nhảy về đầu dù không đơn nào đổi.
+                var initial = true
                 val registration = firestore.collection("bookings")
                     .whereEqualTo("userId", uid)
-                    .addSnapshotListener { _, error ->
-                        if (session.currentUid() == uid) {
-                            if (error != null) {
-                                // Do not crash flow on snapshot error
-                            } else {
-                                trySend(Unit)
-                            }
+                    .addSnapshotListener { snapshot, error ->
+                        if (session.currentUid() != uid || error != null || snapshot == null) return@addSnapshotListener
+                        if (initial) {
+                            initial = false
+                            return@addSnapshotListener
                         }
+                        if (snapshot.documentChanges.isNotEmpty()) trySend(Unit)
                     }
                 awaitClose { registration.remove() }
             }
