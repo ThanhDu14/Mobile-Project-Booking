@@ -56,7 +56,7 @@ Code đi theo một kiến trúc gọn hơn kế hoạch: **một màn tìm ki�
 | `VenueResultAdapter` | `feature/search/ui/VenueCardAdapter.kt` |
 | Lịch sử (US4) | `FirestoreSearchHistoryRepository.kt`, `SearchHistory.kt` (đã tick từ trước) |
 
-**Việc thật sự còn thiếu:** test cho repository tìm kiếm, debounce, chip, sắp xếp và quyền vị trí; dòng "N sân trống" trên thẻ; cache `priceRules`/`courts`; lưới 2 cột; rà chế độ tối và TalkBack; log đo thời gian, lượt đọc và chạy đo SC-001; seed `search-demo`; Espresso; thử với người dùng; các việc phối hợp chưa được xác nhận.
+**Việc thật sự còn thiếu:** test cho repository tìm kiếm (đọc Firestore) và lọc tiện ích "đủ tất cả"; dòng "N sân trống" trên thẻ; cache `priceRules`/`courts`; lưới 2 cột; rà chế độ tối và TalkBack; log đo thời gian, lượt đọc và chạy đo SC-001; seed `search-demo`; Espresso; thử với người dùng; các việc phối hợp chưa được xác nhận.
 
 ## Phase 1: Setup
 
@@ -123,8 +123,8 @@ Code đi theo một kiến trúc gọn hơn kế hoạch: **một màn tìm ki�
 
 ### 2C. PR `feat(search)`: domain dùng chung cho các story
 
-- [ ] T025 [P] Viết `TEST/feature/search/domain/model/SearchCriteriaTest.kt`: `hasAnyCondition()` (sắp xếp đơn thuần không tính; từ khóa < 2 ký tự không tính), `clearFilters()` giữ `keyword`, `districtId`, `sort` và bỏ giá, khung giờ, tiện ích (US2-8), `canonicalKey()` ổn định khi `amenityIds` khác thứ tự và khi từ khóa khác hoa/thường/dấu, round-trip JSON qua kotlinx-serialization
-  > Đối chiếu 2026-11-18: Chưa có test riêng cho tiêu chí (`hasFilters`, xóa bộ lọc); một phần nằm trong `CourtSearchAvailabilityTest`.
+- [x] T025 [P] Viết `TEST/feature/search/domain/model/SearchCriteriaTest.kt`: `hasAnyCondition()` (sắp xếp đơn thuần không tính; từ khóa < 2 ký tự không tính), `clearFilters()` giữ `keyword`, `districtId`, `sort` và bỏ giá, khung giờ, tiện ích (US2-8), `canonicalKey()` ổn định khi `amenityIds` khác thứ tự và khi từ khóa khác hoa/thường/dấu, round-trip JSON qua kotlinx-serialization
+  > Đối chiếu 2026-11-18: `TEST/feature/search/domain/CourtSearchCriteriaTest.kt` (thêm 2026-11-18): sắp xếp đơn thuần và từ khóa 1 ký tự không tính là lọc, giới hạn giá, sân chưa có giá.
 - [x] T026 Cài đặt `SEARCH/domain/model/SearchCriteria.kt`, `TimeWindow.kt`, `SortOption.kt` (`RATING` mặc định, `PRICE_ASC`, `NEAREST`) và `SEARCH/domain/model/serializer/LocalDateAsStringSerializer.kt`, `TimeOfDayAsStringSerializer.kt` (chuỗi `yyyyMMdd`, `HHmm`) theo [contract §1](contracts/search-criteria.md#1-kiểu-dữ-liệu). `SearchCriteria` là `@Serializable` ngay từ đầu vì US1 lưu vào `SavedStateHandle` và 021/022 dùng lại. T025 xanh
   > Đối chiếu 2026-11-18: Làm khác: `CourtSearchCriteria`, `CourtSearchSort` (`SEARCH/domain/CourtSearchCriteria.kt`) và `BookingSearchWindow`.
 - [x] T027 [P] Cài đặt các model còn lại trong `SEARCH/domain/model/`: `VenueSummary.kt` (kèm `nameWords`), `VenueResult.kt`, `DisplayPrice.kt` (`From`, `ForWindow`, `Contact`), `SearchPage.kt` (`items`, `hasMore`, `totalCount: Int?`, `isFromCache`, `capped`), `SearchSession.kt` (`id`, `criteria`, `strategy: SERVER_ORDERED | CLIENT_ORDERED`, `cursor: SearchCursor` mờ với domain, không lộ kiểu Firestore), `SearchHistoryEntry.kt`, `SanitizeResult.kt`, `DroppedField.kt` theo [data-model §3.1](data-model.md#31-featuresearchdomainmodel)
@@ -150,8 +150,8 @@ Theo bảng "Phối hợp với nhóm" của [plan.md](plan.md#phối-hợp-vớ
   > Đối chiếu 2026-11-18: Rules `venues`: đọc khi `ACTIVE` hoặc admin.
 - [x] T035 [P] Theo dõi (**B**): Rules `slots` cho mọi người đọc; quyết định có bỏ `holdBy`/`bookingId` khỏi document không ([research R13](research.md#r13-quyền-đọc-cho-khách-chưa-đăng-nhập-fr-026-fr-027)). Khi xong: bỏ `it.todo` của S-1, S-2 trong `firestore-tests/test/search.test.ts`
   > Đối chiếu 2026-11-18: Rules `slots`: `allow read: if true`.
-- [ ] T036 [P] Theo dõi (**B**): 040 dùng `CORE/pricing/SlotPricing.kt`, `CORE/schedule/*` thay `CalculateTotalPriceUseCase`, `GenerateDailySlotsUseCase` tự viết; B review PR 2A
-  > Đối chiếu 2026-11-18: Chưa: 040 vẫn dùng `CalculateTotalPriceUseCase`, `GenerateDailySlotsUseCase` riêng.
+- [x] T036 [P] Theo dõi (**B**): 040 dùng `CORE/pricing/SlotPricing.kt`, `CORE/schedule/*` thay `CalculateTotalPriceUseCase`, `GenerateDailySlotsUseCase` tự viết; B review PR 2A
+  > Đối chiếu 2026-11-18: Làm ngày 2026-11-18: lưới 040 chọn dòng giá bằng `SlotPricing.ruleForSlot` dùng chung, có `SharedSlotPricingTest` chạy bộ ca P1–P9; `CalculateTotalPriceUseCase` chỉ còn cộng giá và tính cọc.
 - [x] T037 Theo dõi (**B + D**): chốt quy ước `daysOfWeek` (đề xuất ISO 1 = Thứ hai); sửa hằng số trong `CORE/pricing/SlotPricing.kt` và test T006 nếu khác đề xuất
   > Đối chiếu 2026-11-18: `CORE/pricing/DayConvention.kt`.
 - [ ] T038 [P] Theo dõi (**C**, spec 070): giữ `ratingAvg`, `ratingCount` luôn là số; thống nhất cách gắn nút trái tim vào `RES/layout/item_search_venue.xml` (interface ở `CORE/`)
@@ -171,14 +171,14 @@ Theo bảng "Phối hợp với nhóm" của [plan.md](plan.md#phối-hợp-vớ
 
 ### Tests cho User Story 1 ⚠️ viết trước, phải fail
 
-- [ ] T040 [P] [US1] Viết `TEST/feature/search/data/VenueMatcherTest.kt` (phần từ khóa và quận): US1-1, US1-2, US1-4; nhiều token đều phải là tiền tố của một từ trong tên; từ khóa < 2 ký tự không lọc theo tên
-  > Đối chiếu 2026-11-18: Chưa có test riêng cho từ khóa và quận; có một ca tên tiếng Việt trong `CourtSearchAvailabilityTest`.
+- [x] T040 [P] [US1] Viết `TEST/feature/search/data/VenueMatcherTest.kt` (phần từ khóa và quận): US1-1, US1-2, US1-4; nhiều token đều phải là tiền tố của một từ trong tên; từ khóa < 2 ký tự không lọc theo tên
+  > Đối chiếu 2026-11-18: `CourtSearchCriteriaTest.namesMatchWithoutAccentsByWordPrefix` (thêm 2026-11-18): không dấu, tiền tố từng từ, mọi từ khóa đều phải khớp, đ → d; quận được lọc trong repository.
 - [ ] T041 [P] [US1] Viết `TEST/feature/search/data/VenueQueryBuilderTest.kt` (phần đánh giá): `sort == RATING` → chiến lược S1, luôn có `status == ACTIVE`, thêm `districtId ==` khi có quận, `nameKeywords array-contains serverToken` khi có, `orderBy(ratingAvg DESC).orderBy(ratingCount DESC)`, `limit(25)` (khớp V1–V4)
   > Đối chiếu 2026-11-18: Không áp dụng (không có `VenueQueryBuilder`).
 - [ ] T042 [P] [US1] Viết `TEST/feature/search/data/FirestoreVenueSearchEngineTest.kt` với fake `VenueDataSource` (phần S1): đọc tiếp tới khi đủ 20 kết quả; dừng sau 4 lô (100 document) dù chưa đủ 20, `hasMore = true`; `nextPage` đọc tiếp từ con trỏ; hết dữ liệu → `hasMore = false`; `isFromCache` truyền lên `SearchPage`; `count()` trả số khi không có lọc trên máy và `null` khi có ([research R3](research.md#r3-hai-chiến-lược-phân-trang-fr-016-khi-có-lọc-trên-máy))
   > Đối chiếu 2026-11-18: Không áp dụng (không có engine theo lô); chưa có test cho `FirestoreCourtSearchRepository`.
-- [ ] T043 [P] [US1] Viết `TEST/feature/search/ui/SearchViewModelTest.kt` (Turbine, fake engine): gõ "ho" rồi "hoa" trong 300 ms chỉ chạy một lần tìm; kết quả của "ho" trả về muộn không ghi đè "hoa" (FR-018); 4 trạng thái Loading/Content/Empty/Error (FR-019); `isFromCache` → `staleBanner = true`, lỗi khi chưa có kết quả → `Error` có "Thử lại" (FR-020); `onLoadMore` của phiên cũ bị bỏ; `SearchCriteria` khôi phục từ `SavedStateHandle` (FR-017); khách vẫn tìm được (FR-026); `onVenueClicked` phát sự kiện điều hướng với `venueId`
-  > Đối chiếu 2026-11-18: Một phần: `CourtSearchViewModelTest` có ca kết quả trễ bị bỏ và tải lại khi bỏ lọc; chưa có test debounce 300 ms.
+- [x] T043 [P] [US1] Viết `TEST/feature/search/ui/SearchViewModelTest.kt` (Turbine, fake engine): gõ "ho" rồi "hoa" trong 300 ms chỉ chạy một lần tìm; kết quả của "ho" trả về muộn không ghi đè "hoa" (FR-018); 4 trạng thái Loading/Content/Empty/Error (FR-019); `isFromCache` → `staleBanner = true`, lỗi khi chưa có kết quả → `Error` có "Thử lại" (FR-020); `onLoadMore` của phiên cũ bị bỏ; `SearchCriteria` khôi phục từ `SavedStateHandle` (FR-017); khách vẫn tìm được (FR-026); `onVenueClicked` phát sự kiện điều hướng với `venueId`
+  > Đối chiếu 2026-11-18: `CourtSearchFiltersViewModelTest.typingQuicklySearchesOnceWithTheLastKeyword` (thêm 2026-11-18) cùng các ca kết quả trễ có sẵn trong `CourtSearchViewModelTest`.
 
 ### Implementation cho User Story 1
 
@@ -226,8 +226,8 @@ Theo bảng "Phối hợp với nhóm" của [plan.md](plan.md#phối-hợp-vớ
   > Đối chiếu 2026-11-18: Không áp dụng (không có QueryBuilder/engine).
 - [ ] T059 [P] [US2] Viết `TEST/feature/search/ui/SearchFilterViewModelTest.kt`: chọn hôm nay không chọn được giờ bắt đầu đã qua, giờ kết thúc luôn sau giờ bắt đầu (FR-007, US2-9); ngày từ hôm nay tới +30; khoảng giá ngược không áp dụng được và báo lỗi tại bộ lọc; đầu phải 200.000 = không giới hạn trên; `previewCount` debounce 400 ms, `null` → nút "Xem kết quả"
   > Đối chiếu 2026-11-18: Chưa có test chọn ngày, giờ trong bảng lọc.
-- [ ] T060 [P] [US2] Bổ sung `TEST/feature/search/ui/SearchViewModelTest.kt`: bỏ một chip chỉ bỏ bộ lọc đó; "Xóa bộ lọc" giữ từ khóa và quận (US2-8); thứ tự chip quận → giá → khung giờ → từng tiện ích; `capped` → hiện `search_capped`
-  > Đối chiếu 2026-11-18: Chưa có test bỏ một chip và "Xóa bộ lọc".
+- [x] T060 [P] [US2] Bổ sung `TEST/feature/search/ui/SearchViewModelTest.kt`: bỏ một chip chỉ bỏ bộ lọc đó; "Xóa bộ lọc" giữ từ khóa và quận (US2-8); thứ tự chip quận → giá → khung giờ → từng tiện ích; `capped` → hiện `search_capped`
+  > Đối chiếu 2026-11-18: `CourtSearchFiltersViewModelTest.removingOneFilterKeepsTheOthersAndClearKeepsKeywordDistrictAndSort` (thêm 2026-11-18).
 
 ### Implementation cho User Story 2
 
@@ -266,8 +266,8 @@ Theo bảng "Phối hợp với nhóm" của [plan.md](plan.md#phối-hợp-vớ
   > Đối chiếu 2026-11-18: Chưa có test sắp xếp riêng (sắp xếp nằm trong repository); Trang chủ có `HomeVenueSorterTest`.
 - [ ] T071 [P] [US3] Bổ sung `TEST/feature/search/data/VenueQueryBuilderTest.kt` và `FirestoreVenueSearchEngineTest.kt`: `PRICE_ASC` không khung giờ → S1 hai pha (pha 1 `minPricePerHour >= priceMin ?: 0` `orderBy ASC`, V9–V12; hết pha 1 mới sang pha 2 `minPricePerHour == null` theo đánh giá; có lọc giá thì không chạy pha 2); `NEAREST` → S2 với `origin`, thẻ có `distanceMeters`
   > Đối chiếu 2026-11-18: Không áp dụng.
-- [ ] T072 [P] [US3] Bổ sung `TEST/feature/search/ui/SearchViewModelTest.kt` (fake `LocationProvider`): chọn "Gần nhất" khi chưa có quyền → sự kiện hiện giải thích, "Để sau" giữ sắp xếp cũ; quyền bị từ chối → sắp xếp trở về lựa chọn trước, sự kiện snackbar có hành động "Cài đặt" (US3-5); có quyền nhưng `current()` trả `null` → giữ sắp xếp cũ, báo "Không lấy được vị trí" (US3-6); đã có quyền thì mọi cách sắp xếp đều có khoảng cách (FR-013); vị trí không nằm trong `SearchCriteria` (FR-014)
-  > Đối chiếu 2026-11-18: Chưa có test quyền vị trí và "Gần nhất".
+- [x] T072 [P] [US3] Bổ sung `TEST/feature/search/ui/SearchViewModelTest.kt` (fake `LocationProvider`): chọn "Gần nhất" khi chưa có quyền → sự kiện hiện giải thích, "Để sau" giữ sắp xếp cũ; quyền bị từ chối → sắp xếp trở về lựa chọn trước, sự kiện snackbar có hành động "Cài đặt" (US3-5); có quyền nhưng `current()` trả `null` → giữ sắp xếp cũ, báo "Không lấy được vị trí" (US3-6); đã có quyền thì mọi cách sắp xếp đều có khoảng cách (FR-013); vị trí không nằm trong `SearchCriteria` (FR-014)
+  > Đối chiếu 2026-11-18: `CourtSearchFiltersViewModelTest` (thêm 2026-11-18): chưa có quyền → xin quyền và giữ cách sắp xếp; có vị trí → tìm theo vị trí; mất vị trí → thông báo.
 
 ### Implementation cho User Story 3
 
