@@ -98,7 +98,12 @@ data class CourtSearchUiState(
     /** Gợi ý nới điều kiện khi lần tìm có lọc ra 0 sân (spec 022 US6), tối đa 3, mỗi gợi ý có ≥ 1 sân. */
     val relaxations: List<Relaxation> = emptyList(),
     val notice: SearchNotice? = null,
+    /** "Sân gần bạn" (spec 021 US4): trạng thái vị trí và vị trí đã lấy (chỉ dùng trên máy, FR-015). */
+    val nearbyStatus: NearbyStatus = NearbyStatus.NEED_LOCATION,
+    val nearbyLocation: LatLng? = null,
 )
+
+enum class NearbyStatus { NEED_LOCATION, LOCATING, UNAVAILABLE, READY }
 
 /** Một đánh giá gốc: nguyên văn và chiều nhận định (`null` khi không rõ). */
 data class ReviewSourceItem(val comment: String, val supports: Boolean?)
@@ -793,7 +798,43 @@ class CourtSearchViewModel @Inject constructor(
                 else _state.update { it.copy(notice = SearchNotice.LOCATION_UNAVAILABLE) }
             LocationReason.MAP -> if (granted) locateOnMap()
                 else _state.update { it.copy(notice = SearchNotice.LOCATION_UNAVAILABLE) }
-            LocationReason.NEARBY -> Unit
+            LocationReason.NEARBY -> if (granted) locateNearby()
+                else _state.update { it.copy(notice = SearchNotice.LOCATION_UNAVAILABLE) }
+        }
+    }
+
+    /** Khi màn hình hiện: đã có quyền thì lấy vị trí luôn; chưa có thì chỉ mời bật vị trí, không tự hỏi (FR-012). */
+    fun startNearby() {
+        val status = state.value.nearbyStatus
+        if (status == NearbyStatus.READY || status == NearbyStatus.LOCATING) return
+        if (location.hasPermission()) locateNearby()
+    }
+
+    /** Nút "Bật vị trí" / "Thử lại" của mục "Sân gần bạn" (FR-018). */
+    fun enableNearby() {
+        if (!location.hasPermission()) _effects.trySend(CourtSearchEffect.RequestLocation(LocationReason.NEARBY))
+        else locateNearby()
+    }
+
+    /** "Xem tất cả trên bản đồ" (FR-017) và "Tìm rộng hơn" (FR-018): mở bản đồ quanh vị trí, [zoom] nhỏ hơn thì rộng hơn. */
+    fun openNearbyMap(zoom: Double) {
+        val here = state.value.nearbyLocation ?: return
+        _map.update {
+            it.copy(visible = true, myLocation = here, focus = MapFocus(here, zoom, ++focusId), selectedId = null, cardAnchorId = null)
+        }
+    }
+
+    private fun locateNearby() {
+        _state.update { it.copy(nearbyStatus = NearbyStatus.LOCATING) }
+        viewModelScope.launch {
+            val point = location.current()
+            if (point == null) {
+                _state.update { it.copy(nearbyStatus = NearbyStatus.UNAVAILABLE) }
+                return@launch
+            }
+            val here = LatLng(point.latitude, point.longitude)
+            _state.update { it.copy(nearbyStatus = NearbyStatus.READY, nearbyLocation = here) }
+            _map.update { it.copy(myLocation = here) }
         }
     }
 

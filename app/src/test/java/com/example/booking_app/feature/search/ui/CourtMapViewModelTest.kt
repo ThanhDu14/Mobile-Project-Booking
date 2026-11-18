@@ -179,4 +179,51 @@ class CourtMapViewModelTest {
         assertNull(vm.map.value.selectedId)
         assertNull(vm.map.value.cardAnchorId)
     }
+
+    @Test
+    fun nearbyNeverPromptsOnItsOwnAndUsesAnExistingPermission() = runTest {
+        every { location.hasPermission() } returns false
+        val vm = viewModel()
+        runCurrent()
+        vm.startNearby()
+        assertEquals(NearbyStatus.NEED_LOCATION, vm.state.value.nearbyStatus)
+
+        // Bấm "Bật vị trí": lúc này mới xin quyền (FR-012).
+        vm.enableNearby()
+        assertEquals(CourtSearchEffect.RequestLocation(LocationReason.NEARBY), vm.effects.first())
+
+        // Quyền đã có từ trước: lấy vị trí ngay khi màn hình hiện.
+        every { location.hasPermission() } returns true
+        coEvery { location.current() } returns GeoPoint(10.8128, 106.6283)
+        val granted = viewModel()
+        runCurrent()
+        granted.startNearby()
+        runCurrent()
+        assertEquals(NearbyStatus.READY, granted.state.value.nearbyStatus)
+        assertEquals(LatLng(10.8128, 106.6283), granted.state.value.nearbyLocation)
+        assertEquals(LatLng(10.8128, 106.6283), granted.map.value.myLocation)
+        // Vị trí không đi vào tiêu chí tìm kiếm (FR-015).
+        assertEquals(CourtSearchCriteria(), granted.state.value.criteria)
+    }
+
+    @Test
+    fun nearbyReportsAMissingPositionAndOpensTheMapAroundTheUser() = runTest {
+        every { location.hasPermission() } returns true
+        coEvery { location.current() } returns null
+        val vm = viewModel()
+        runCurrent()
+        vm.startNearby()
+        runCurrent()
+        assertEquals(NearbyStatus.UNAVAILABLE, vm.state.value.nearbyStatus)
+        vm.openNearbyMap(13.5)
+        assertFalse("chưa có vị trí thì không mở bản đồ", vm.map.value.visible)
+
+        coEvery { location.current() } returns GeoPoint(10.8128, 106.6283)
+        vm.enableNearby()
+        runCurrent()
+        vm.openNearbyMap(13.5)
+        assertTrue(vm.map.value.visible)
+        assertEquals(LatLng(10.8128, 106.6283), vm.map.value.focus!!.center)
+        assertEquals(13.5, vm.map.value.focus!!.zoom, 0.0)
+    }
 }

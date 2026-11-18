@@ -61,6 +61,7 @@ import com.example.booking_app.feature.search.domain.map.MapViewport
 import com.example.booking_app.feature.search.domain.map.VisibleVenues
 import com.example.booking_app.feature.search.ui.map.CourtMapController
 import com.example.booking_app.feature.search.ui.map.MapCardAdapter
+import com.example.booking_app.feature.search.ui.map.NearbyAdapter
 import androidx.viewpager2.widget.MarginPageTransformer
 import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.chip.Chip
@@ -81,6 +82,10 @@ import javax.inject.Inject
 
 /** Số chip "Tìm gần đây" trên màn tìm; "Xem tất cả" mở đủ 10 mục. */
 private const val RECENT_CHIPS = 5
+
+/** Mức phóng khi mở bản đồ từ "Sân gần bạn": thấy khoảng bán kính 5 km; "Tìm rộng hơn" thấy vài quận (spec 021). */
+private const val NEARBY_ZOOM = 13.5
+private const val WIDER_ZOOM = 12.0
 
 /** Thông báo của micro: hiện dưới ô AI thay cho dòng thông báo chung. */
 private val VOICE_NOTICES = setOf(SearchNotice.VOICE_NO_MATCH, SearchNotice.VOICE_NETWORK)
@@ -196,6 +201,11 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
         binding.map.mapFilters.setOnClickListener { showFilters() }
         binding.map.myLocation.setOnClickListener { viewModel.locateOnMap() }
         binding.map.searchArea.setOnClickListener { viewModel.searchThisArea() }
+        val nearby = NearbyAdapter(::openVenue)
+        controls.nearbyList.adapter = nearby
+        controls.nearbySeeMap.setOnClickListener { viewModel.openNearbyMap(NEARBY_ZOOM) }
+        controls.nearbySecondary.setOnClickListener { chooseDistrict() }
+        viewModel.startNearby()
         binding.map.mapRetry.setOnClickListener { viewModel.retry() }
         val cards = MapCardAdapter(::openVenue).also { mapCards = it }
         binding.map.mapCards.adapter = cards
@@ -256,6 +266,7 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
         previous: CourtSearchUiState?,
         state: CourtSearchUiState,
     ) {
+        renderNearby(binding, state)
         if (binding.keyword.text.toString() != state.criteria.keyword) binding.keyword.setText(state.criteria.keyword)
         if (binding.aiInput.text.toString() != state.aiInput) binding.aiInput.setText(state.aiInput)
         binding.aiField.isVisible = !state.guest
@@ -1105,6 +1116,42 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
         text?.let(binding.map.mapStatusText::setText)
         binding.map.mapLoading.isVisible = loading && !state.failed
         binding.map.mapRetry.isVisible = state.failed
+    }
+
+    /**
+     * "Sân gần bạn" (spec 021 US4): chỉ khi chưa có từ khóa và bộ lọc (FR-015a). Có vị trí thì tối đa 10 sân trong
+     * 5 km (FR-016); không có sân thì "Tìm rộng hơn" / "Tìm theo quận"; chưa có vị trí thì mời bật (FR-018).
+     */
+    private fun renderNearby(binding: ViewCourtSearchControlsBinding, state: CourtSearchUiState) {
+        val show = !state.criteria.hasFilters() && state.criteria.keyword.isBlank()
+        binding.nearbySection.isVisible = show
+        if (!show) return
+        val here = state.nearbyLocation
+        val venues = if (state.nearbyStatus == NearbyStatus.READY && here != null) CourtMap.nearby(state.venues, here) else emptyList()
+        val waitingForVenues = state.venues.isEmpty() && !state.complete
+        (binding.nearbyList.adapter as? NearbyAdapter)?.submitList(venues)
+        binding.nearbyList.isVisible = venues.isNotEmpty()
+        binding.nearbySeeMap.isVisible = venues.isNotEmpty()
+        val message = when (state.nearbyStatus) {
+            NearbyStatus.NEED_LOCATION -> R.string.nearby_need_location
+            NearbyStatus.LOCATING -> R.string.nearby_locating
+            NearbyStatus.UNAVAILABLE -> R.string.nearby_unavailable
+            NearbyStatus.READY -> if (venues.isEmpty() && !waitingForVenues) R.string.nearby_empty else null
+        }
+        binding.nearbyMessage.isVisible = message != null
+        message?.let(binding.nearbyMessage::setText)
+        val action = when (state.nearbyStatus) {
+            NearbyStatus.NEED_LOCATION -> R.string.nearby_enable to { viewModel.enableNearby() }
+            NearbyStatus.UNAVAILABLE -> R.string.nearby_try_again to { viewModel.enableNearby() }
+            NearbyStatus.READY -> if (message != null) R.string.nearby_wider to { viewModel.openNearbyMap(WIDER_ZOOM) } else null
+            NearbyStatus.LOCATING -> null
+        }
+        binding.nearbyAction.isVisible = action != null
+        action?.let { (text, onClick) ->
+            binding.nearbyAction.setText(text)
+            binding.nearbyAction.setOnClickListener { onClick() }
+        }
+        binding.nearbySecondary.isVisible = state.nearbyStatus == NearbyStatus.READY && message != null
     }
 
     /** Thẻ tóm tắt (FR-007, FR-008): thứ tự theo sân được chạm, cuộn tới sân đang chọn; ẩn khi bỏ chọn (FR-010). */
