@@ -2577,6 +2577,6 @@ Chuyển Danh sách/Bản đồ; marker và cụm; chạm marker → thẻ; vu�
 
 ### Giới hạn
 
-- Màn ngang điện thoại: bản đồ thấp, thẻ che nút "Bộ lọc" và nút vị trí (thuộc FR-023, còn mở).
+- Màn ngang điện thoại (FR-023), sửa theo yêu cầu "Hãy sửa màn hình ngang nhé": `layout-land` cho bản đồ và nút chuyển; nút "Bộ lọc" góc trên trái, thẻ rộng 360dp ở góc dưới trái (ảnh 72dp), nút "Danh sách" góc dưới phải, nút vị trí ngay trên nó; ẩn dòng tiêu đề khi xem bản đồ ở màn ngang. Đã thử trên máy: thẻ đủ nội dung, không che nút; chuyển danh sách và xoay về dọc bình thường. Bố cục máy tính bảng hai cột (T074) vẫn chưa làm.
 - Chưa thử chế độ sáng, dải "Sân gần bạn" có sân (máy đang ở Dĩ An, sân gần nhất khoảng 13 km), mất mạng.
 - Quyền vị trí của app trên máy đã được cấp ("Trong khi dùng ứng dụng") trong lúc thử.

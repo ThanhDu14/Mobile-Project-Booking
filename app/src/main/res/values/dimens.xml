@@ -36,4 +36,8 @@
     <dimen name="account_row_height">56dp</dimen>
     <!-- Chiều cao ước lượng của thẻ tóm tắt trên bản đồ (spec 021), dùng trước khi pager đo xong -->
     <dimen name="map_card_height">128dp</dimen>
+    <dimen name="map_card_photo">88dp</dimen>
+    <dimen name="map_card_min_height">104dp</dimen>
+    <!-- Thẻ tóm tắt bản đồ ở màn ngang chỉ chiếm góc trái (spec 021 FR-023) -->
+    <dimen name="map_card_width_land">360dp</dimen>
 </resources>

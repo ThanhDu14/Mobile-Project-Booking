@@ -20,14 +20,14 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:minHeight="104dp"
+        android:minHeight="@dimen/map_card_min_height"
         android:orientation="horizontal"
         android:padding="@dimen/space_3">
 
         <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/photo"
-            android:layout_width="88dp"
-            android:layout_height="88dp"
+            android:layout_width="@dimen/map_card_photo"
+            android:layout_height="@dimen/map_card_photo"
             android:contentDescription="@null"
             android:scaleType="centerCrop"
             app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Small" />

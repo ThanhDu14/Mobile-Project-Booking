@@ -1082,6 +1082,9 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
         binding.mapToggle.setIconResource(if (map.visible) R.drawable.ic_list_24 else R.drawable.ic_map_24)
         binding.map.root.isVisible = map.visible
         binding.results.isVisible = !map.visible
+        // Màn ngang: ẩn dòng tiêu đề khi xem bản đồ để bản đồ đủ cao (FR-023).
+        val landscape = resources.configuration.orientation == android.content.res.Configuration.ORIENTATION_LANDSCAPE
+        binding.header.root.isVisible = !(map.visible && landscape)
         if (!map.visible) return
 
         val controller = mapController ?: CourtMapController(binding.map.mapHost, viewLifecycleOwner, mapListener)
@@ -1181,8 +1184,9 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
             val index = cards.indexOfFirst { it.id == map.selectedId }
             if (index >= 0 && pager.currentItem != index) pager.setCurrentItem(index, false)
         }
-        // Nút "Vị trí của tôi" nhích lên khi thẻ hiện để không bị che.
-        val lift = if (pager.isVisible) pager.height.takeIf { it > 0 } ?: resources.getDimensionPixelSize(R.dimen.map_card_height) else 0
+        // Màn dọc: nút "Vị trí của tôi" nhích lên khi thẻ hiện để không bị che. Màn ngang thẻ ở góc trái nên không cần.
+        val portrait = resources.configuration.orientation != android.content.res.Configuration.ORIENTATION_LANDSCAPE
+        val lift = if (pager.isVisible && portrait) pager.height.takeIf { it > 0 } ?: resources.getDimensionPixelSize(R.dimen.map_card_height) else 0
         binding.map.myLocation.translationY = -lift.toFloat()
     }
 
