@@ -270,10 +270,16 @@ class ChatOutbox @Inject constructor(
             val uploadResult = transport.uploadImage(current.chatId, current.messageId, current.localImageUri!!)
             val uploadedPath = uploadResult.getOrElse { throwable ->
                 if (throwable is CancellationException) throw throwable
+                if (getEntry(current.chatId, current.messageId) == null) return true
                 val err = throwable.toChatError()
-                markEntryFailed(current, retryable = err.isRetryable, errorCode = err.code)
-                return !err.isRetryable
+                if (!err.isRetryable) {
+                    markEntryFailed(current, retryable = false, errorCode = err.code)
+                    return true
+                }
+                handleRetryableFailure(current, err)
+                return false
             }
+            if (getEntry(current.chatId, current.messageId) == null) return true
             current = current.copy(imagePath = uploadedPath)
             updateEntry(current)
         }
@@ -313,17 +319,21 @@ class ChatOutbox @Inject constructor(
             }
 
             // Lỗi do mạng hoặc BUSY quá số lần: kiểm tra mốc 60 giây.
-            val elapsed = clock.now() - current.createdAtLocal
-            if (elapsed >= TIMEOUT_MS) {
-                clearRetryState(current.chatId)
-                markEntryFailed(current, retryable = true, errorCode = err.code)
-            } else {
-                scheduleTimeoutIfNeeded(current)
-                if (networkMonitor.isCurrentlyOnline() && !scheduleBackoffRetry(current.chatId)) {
-                    markEntryFailed(current, retryable = true, errorCode = err.code)
-                }
-            }
+            handleRetryableFailure(current, err)
             return false
+        }
+    }
+
+    private suspend fun handleRetryableFailure(entry: OutboxEntry, err: ChatError) {
+        val elapsed = clock.now() - entry.createdAtLocal
+        if (elapsed >= TIMEOUT_MS) {
+            clearRetryState(entry.chatId)
+            markEntryFailed(entry, retryable = true, errorCode = err.code)
+        } else {
+            scheduleTimeoutIfNeeded(entry)
+            if (networkMonitor.isCurrentlyOnline() && !scheduleBackoffRetry(entry.chatId)) {
+                markEntryFailed(entry, retryable = true, errorCode = err.code)
+            }
         }
     }
 

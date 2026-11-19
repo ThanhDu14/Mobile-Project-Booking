@@ -221,6 +221,108 @@ class FirestoreChatRepositoryTest {
     }
 
     @Test
+    fun `observeChats khong phat danh sach thieu chat nhom khi chatsListener ban lan 2 truoc groupListeners`() = runTest {
+        every { sessionManager.currentUid() } returns "player1"
+
+        val chatsCol = mockk<CollectionReference>()
+        val chatsQuery1 = mockk<Query>()
+        val chatsQuery2 = mockk<Query>()
+        val chatsListenerSlot = slot<EventListener<QuerySnapshot>>()
+        val chatsReg = mockk<ListenerRegistration>(relaxed = true)
+
+        val groupsCol = mockk<CollectionReference>()
+        val groupsQuery1 = mockk<Query>()
+        val groupsQuery2 = mockk<Query>()
+        val groupsListenerSlot = slot<EventListener<QuerySnapshot>>()
+        val groupsReg = mockk<ListenerRegistration>(relaxed = true)
+
+        val participantsGroupQuery = mockk<Query>()
+        val participantsQuery = mockk<Query>()
+        val participantsListenerSlot = slot<EventListener<QuerySnapshot>>()
+        val participantsReg = mockk<ListenerRegistration>(relaxed = true)
+
+        every { firestore.collection("chats") } returns chatsCol
+        every { chatsCol.whereArrayContains("memberIds", "player1") } returns chatsQuery1
+        every { chatsQuery1.orderBy("updatedAt", Query.Direction.DESCENDING) } returns chatsQuery2
+        every { chatsQuery2.addSnapshotListener(capture(chatsListenerSlot)) } returns chatsReg
+
+        every { firestore.collection("groups") } returns groupsCol
+        every { groupsCol.whereIn(FieldPath.documentId(), any()) } returns groupsQuery1
+        every { groupsQuery1.whereIn("status", listOf("ACTIVE", "LOCKED")) } returns groupsQuery2
+        every { groupsQuery2.addSnapshotListener(capture(groupsListenerSlot)) } returns groupsReg
+
+        every { firestore.collectionGroup("participants") } returns participantsGroupQuery
+        every { participantsGroupQuery.whereEqualTo("userId", "player1") } returns participantsQuery
+        every { participantsQuery.addSnapshotListener(capture(participantsListenerSlot)) } returns participantsReg
+
+        val repo = createRepo()
+
+        fun doc(id: String, dataMap: Map<String, Any?>): DocumentSnapshot = mockk {
+            every { this@mockk.id } returns id
+            every { data } returns dataMap
+        }
+        fun qSnap(vararg docs: DocumentSnapshot): QuerySnapshot = mockk {
+            every { documents } returns docs.toList()
+        }
+
+        repo.observeChats(ChatMode.PLAYER).test {
+            participantsListenerSlot.captured.onEvent(qSnap(), null)
+
+            val directChatV1 = doc(
+                "owner1_player1",
+                mapOf(
+                    "type" to "DIRECT",
+                    "memberIds" to listOf("owner1", "player1"),
+                    "ownerId" to "owner1",
+                    "playerId" to "player1",
+                    "unreadCounts" to mapOf("player1" to 0L),
+                    "status" to "ACTIVE",
+                ),
+            )
+            val groupChat = doc(
+                "group_g-alive",
+                mapOf(
+                    "type" to "GROUP",
+                    "groupId" to "g-alive",
+                    "memberIds" to listOf("player1"),
+                    "status" to "ACTIVE",
+                ),
+            )
+            // Lần 1 (ví dụ cache): đăng ký groupListeners nhưng groupListeners CHƯA trả kết quả.
+            chatsListenerSlot.captured.onEvent(qSnap(directChatV1, groupChat), null)
+            expectNoEvents()
+
+            // Lần 2 (ví dụ server cập nhật unreadCounts chat riêng) bắn TRƯỚC khi groupListeners trả lần đầu:
+            // KHÔNG được emit sớm danh sách thiếu chat nhóm.
+            val directChatV2 = doc(
+                "owner1_player1",
+                mapOf(
+                    "type" to "DIRECT",
+                    "memberIds" to listOf("owner1", "player1"),
+                    "ownerId" to "owner1",
+                    "playerId" to "player1",
+                    "unreadCounts" to mapOf("player1" to 2L),
+                    "status" to "ACTIVE",
+                ),
+            )
+            chatsListenerSlot.captured.onEvent(qSnap(directChatV2, groupChat), null)
+            expectNoEvents()
+
+            // Khi groupListeners trả snapshot đầu tiên: phát đủ cả chat riêng (unreadCount mới = 2) và chat nhóm.
+            val groupDoc = doc("g-alive", mapOf("name" to "CLB Đang Hoạt Động", "status" to "ACTIVE", "memberCount" to 5L))
+            groupsListenerSlot.captured.onEvent(qSnap(groupDoc), null)
+
+            val emitted = awaitItem()
+            assertEquals(listOf("owner1_player1", "group_g-alive"), emitted.map { it.id })
+            assertEquals(2, emitted.first { it.id == "owner1_player1" }.unreadCount)
+            assertEquals("CLB Đang Hoạt Động", emitted.first { it.id == "group_g-alive" }.title)
+            verify(exactly = 1) { groupsQuery2.addSnapshotListener(any()) }
+
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
     fun `setBlocked het han timeout khi mat mang tra ChatError Network thay vi treo vo han`() = runTest {
         every { sessionManager.currentUid() } returns "player1"
 

@@ -87,6 +87,8 @@ class FirestoreChatRepository @Inject constructor(
         var latestDtos: List<ChatDto> = emptyList()
         var latestGroupsById: Map<String, GroupHeaderInfo> = emptyMap()
         var latestHadGroupError = false
+        var groupsLoaded = false
+        var groupGeneration = 0
 
         fun emitCombined() {
             val visible = latestDtos.mapNotNull { dto ->
@@ -119,9 +121,11 @@ class FirestoreChatRepository @Inject constructor(
 
         val chatsListener = baseQuery.addSnapshotListener { snapshot, error ->
             if (error != null) {
+                groupGeneration++
                 groupListeners.forEach { it.remove() }
                 groupListeners = emptyList()
                 lastGroupIds = emptyList()
+                groupsLoaded = false
                 if (error.code == FirebaseFirestoreException.Code.PERMISSION_DENIED) {
                     trySend(emptyList())
                 } else {
@@ -143,23 +147,27 @@ class FirestoreChatRepository @Inject constructor(
             val groupIds = dtos.mapNotNull { it.groupId?.takeIf(String::isNotBlank) }.distinct()
 
             if (groupIds.isEmpty()) {
+                groupGeneration++
                 groupListeners.forEach { it.remove() }
                 groupListeners = emptyList()
                 lastGroupIds = emptyList()
                 latestGroupsById = emptyMap()
                 latestHadGroupError = false
+                groupsLoaded = false
                 trySend(dtos.map { it to null })
                 return@addSnapshotListener
             }
 
             if (groupIds == lastGroupIds && groupListeners.isNotEmpty()) {
-                emitCombined()
+                if (groupsLoaded) emitCombined()
                 return@addSnapshotListener
             }
 
+            val gen = ++groupGeneration
             groupListeners.forEach { it.remove() }
             groupListeners = emptyList()
             lastGroupIds = groupIds
+            groupsLoaded = false
 
             // Bài học F1 của spec 090 (T035): đọc groups theo lô ≤ 10 bằng whereIn(documentId) KÈM status in [ACTIVE, LOCKED].
             val chunks = groupIds.chunked(WHERE_IN_LIMIT)
@@ -170,6 +178,7 @@ class FirestoreChatRepository @Inject constructor(
                     .whereIn(FieldPath.documentId(), chunk)
                     .whereIn("status", VISIBLE_GROUP_STATUSES)
                     .addSnapshotListener { groupSnapshot, groupError ->
+                        if (gen != groupGeneration) return@addSnapshotListener
                         if (groupError != null) {
                             chunkErrors[index] = true
                             chunkResults[index] = emptyMap()
@@ -184,6 +193,7 @@ class FirestoreChatRepository @Inject constructor(
                                 chunkResults.forEach { it?.let(::putAll) }
                             }
                             latestHadGroupError = chunkErrors.any { it }
+                            groupsLoaded = true
                             emitCombined()
                         }
                     }

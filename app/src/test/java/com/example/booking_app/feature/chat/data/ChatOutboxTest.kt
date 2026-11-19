@@ -394,11 +394,10 @@ class ChatOutboxTest {
 
     @Test
     fun `tai anh loi chuyen FAILED va gui lai tai lai roi gui cung messageId`() = runTest {
-        var uploadAttempts = 0
+        var shouldFail = true
         val transport = FakeTransport().apply {
             uploadHandler = { chatId, msgId, _ ->
-                uploadAttempts++
-                if (uploadAttempts == 1) {
+                if (shouldFail) {
                     Result.failure(ChatError.Network())
                 } else {
                     Result.success("$chatId/$msgId.jpg")
@@ -406,23 +405,71 @@ class ChatOutboxTest {
             }
         }
         val outbox = createOutbox(transport = transport)
+        try {
+            outbox.enqueue(entry("m-img-retry", text = "Mặt sân", localImageUri = "content://img/1"))
+            advanceUntilIdle()
 
-        outbox.enqueue(entry("m-img-retry", text = "Mặt sân", localImageUri = "content://img/1"))
-        advanceUntilIdle()
+            val failed = outbox.observe("chat-1").first()
+            assertEquals(1, failed.size)
+            assertEquals(Delivery.FAILED, failed.first().status)
+            assertTrue(transport.sentIds.isEmpty())
 
-        val failed = outbox.observe("chat-1").first()
-        assertEquals(1, failed.size)
-        assertEquals(Delivery.FAILED, failed.first().status)
-        assertTrue(transport.sentIds.isEmpty())
+            // Bấm "Gửi lại": tải lại ảnh và gửi tin dùng lại đúng messageId.
+            shouldFail = false
+            val uploadsBeforeRetry = transport.uploadedIds.size
+            outbox.retry("chat-1", "m-img-retry")
+            advanceUntilIdle()
 
-        // Bấm "Gửi lại": tải lại ảnh và gửi tin dùng lại đúng messageId.
-        outbox.retry("chat-1", "m-img-retry")
-        advanceUntilIdle()
+            assertTrue(outbox.observe("chat-1").first().isEmpty())
+            assertEquals(uploadsBeforeRetry + 1, transport.uploadedIds.size)
+            assertTrue(transport.uploadedIds.all { it == "m-img-retry" })
+            assertEquals(listOf("m-img-retry"), transport.sentIds)
+        } finally {
+            outbox.close()
+        }
+    }
 
-        assertTrue(outbox.observe("chat-1").first().isEmpty())
-        assertEquals(listOf("m-img-retry", "m-img-retry"), transport.uploadedIds)
-        assertEquals(listOf("m-img-retry"), transport.sentIds)
-        outbox.close()
+    @Test
+    fun `tai anh gap loi mang tam thoi luc dang online tu thu lai theo backoff va gui thanh cong cung messageId`() = runTest {
+        val network = FakeNetworkMonitor(initialOnline = true)
+        val clock = FakeClock(1_000_000L)
+        var uploadAttempts = 0
+        val transport = FakeTransport().apply {
+            uploadHandler = { chatId, msgId, _ ->
+                uploadAttempts++
+                if (uploadAttempts < 3) {
+                    Result.failure(ChatError.Network())
+                } else {
+                    Result.success("$chatId/$msgId.jpg")
+                }
+            }
+        }
+        val outbox = createOutbox(transport = transport, network = network, clock = clock)
+        try {
+            outbox.enqueue(
+                entry(
+                    id = "m-img-backoff",
+                    text = "Ảnh mặt sân",
+                    localImageUri = "content://img/court.jpg",
+                    createdAtLocal = clock.currentMs,
+                ),
+            )
+            runCurrent()
+            // Lần 1 thất bại → vẫn PENDING chờ backoff, chưa gọi chat-send.
+            assertEquals(1, uploadAttempts)
+            assertEquals(Delivery.PENDING, outbox.observe("chat-1").first().single().status)
+            assertTrue(transport.sentIds.isEmpty())
+
+            // Qua nhịp backoff 2s (lần 2 vẫn lỗi) + 4s (lần 3 tải xong và gửi chat-send thành công).
+            advanceTimeBy(2_000L + 4_000L + 100L)
+            runCurrent()
+
+            assertTrue(outbox.observe("chat-1").first().isEmpty())
+            assertEquals(listOf("m-img-backoff", "m-img-backoff", "m-img-backoff"), transport.uploadedIds)
+            assertEquals(listOf("m-img-backoff"), transport.sentIds)
+        } finally {
+            outbox.close()
+        }
     }
 
     @Test
