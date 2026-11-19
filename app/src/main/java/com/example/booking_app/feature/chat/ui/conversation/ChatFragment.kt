@@ -168,13 +168,20 @@ class ChatFragment : Fragment(R.layout.fragment_chat) {
             else -> header.title.ifBlank { ctx.getString(R.string.chat_default_user_name) }
         }
         binding.headerTitle.text = displayTitle
-        binding.headerAvatarInitials.text = if (header.isDeletedOtherParty) "?" else initialsOf(displayTitle)
-        val avatarUrl = if (header.isDeletedOtherParty) null else ChatUiText.publicImageUrl(header.avatarBucket, header.avatarPath)
         binding.headerAvatar.contentDescription = ctx.getString(R.string.chat_cd_avatar, displayTitle)
-        binding.headerAvatar.isVisible = avatarUrl != null
-        if (avatarUrl != null) {
-            binding.headerAvatar.load(avatarUrl) {
-                error(R.drawable.ic_account_circle_24)
+        if (header.isDeletedOtherParty) {
+            binding.headerAvatarInitials.isVisible = false
+            binding.headerAvatar.isVisible = true
+            binding.headerAvatar.setImageResource(R.drawable.ic_account_circle_24)
+        } else {
+            val avatarUrl = ChatUiText.publicImageUrl(header.avatarBucket, header.avatarPath)
+            binding.headerAvatarInitials.text = initialsOf(displayTitle).ifEmpty { "?" }
+            binding.headerAvatarInitials.isVisible = avatarUrl == null
+            binding.headerAvatar.isVisible = avatarUrl != null
+            if (avatarUrl != null) {
+                binding.headerAvatar.load(avatarUrl) {
+                    error(if (header.type == ChatType.GROUP) R.drawable.ic_groups_24 else R.drawable.ic_account_circle_24)
+                }
             }
         }
 

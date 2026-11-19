@@ -223,6 +223,8 @@ class ChatViewModel @Inject constructor(
         val chatFlow = repository.observeChat(chatId)
         val groupHeaderFlow = chatFlow.flatMapLatest { detail ->
             val gid = detail?.groupId
+                ?: argGroupId
+                ?: chatId.takeIf { it.startsWith("group_") }?.removePrefix("group_")
             if (detail?.type == ChatType.GROUP && !gid.isNullOrBlank()) {
                 repository.observeGroupHeader(gid)
             } else {
@@ -285,6 +287,8 @@ class ChatViewModel @Inject constructor(
     private fun emitKickedOutOnce() {
         if (kickedEmitted) return
         kickedEmitted = true
+        viewingJob?.cancel()
+        viewingJob = null
         _events.trySend(ChatEvent.KickedOut)
     }
 

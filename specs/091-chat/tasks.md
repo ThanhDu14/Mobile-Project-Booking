@@ -139,13 +139,13 @@ Task của spec khác ghi là `010-T###`, `070-T###`, `090-T###`.
   - **C3:** chat nhóm 20 thành viên, **20 người gửi song song, lặp 10 lần** → đủ 20 tin; `unreadCounts[u]` = số tin của người khác; `lastMessage` là tin có `createdAt` lớn nhất; in `runs=10 messages=20 unreadOk=true lastOk=true`;
   - **C6 (phần nhóm):** nhóm `LOCKED` → `423 GROUP_LOCKED`, đọc vẫn được;
   - **tích hợp với 090:** gọi `group-manage join` rồi `chat-send` → thành công; gọi `group-manage remove` rồi `chat-send` từ người bị mời ra → `NOT_PARTICIPANT` (C4 sau khi rời nhóm).
-- [ ] T032 [P] [US2] Bổ sung `ChatViewModelTest`: chat nhóm hiện tên và ảnh người gửi theo `senderSnapshot`, tin của mình bên phải; `senderDeleted` → "Người dùng đã xóa" và ảnh mặc định; nhóm `LOCKED` → ẩn ô nhập, hiện "Nhóm đã bị tạm khóa"; mất quyền (listener trả `PERMISSION_DENIED` sau khi bị mời ra) → đóng màn hình, báo "Bạn không còn trong cuộc trò chuyện"
+- [X] T032 [P] [US2] Bổ sung `ChatViewModelTest`: chat nhóm hiện tên và ảnh người gửi theo `senderSnapshot`, tin của mình bên phải; `senderDeleted` → "Người dùng đã xóa" và ảnh mặc định; nhóm `LOCKED` → ẩn ô nhập, hiện "Nhóm đã bị tạm khóa"; mất quyền (listener trả `PERMISSION_DENIED` sau khi bị mời ra) → đóng màn hình, báo "Bạn không còn trong cuộc trò chuyện"
 
 ### Implementation cho User Story 2
 
 - [X] T033 [US2] Bổ sung `FN/chat-send/index.ts` bước 3 cho chat nhóm: đọc `groups/{groupId}` trong transaction, `status != ACTIVE` → `423 GROUP_LOCKED`. Sau đó T031 phải xanh (**C3 10/10 lần**)
-- [ ] T034 [US2] Xử lý deep link `smashnow://chat/group/{groupId}` → mở `ChatFragment` với `chatId = group_{groupId}`; đầu màn hình chat nhóm hiện tên và ảnh nhóm (đọc `groups/{groupId}`). Báo C/090 nối nút "Chat nhóm" trên `GroupDetailFragment` (090 `ui-screens.md` mục 3)
-- [ ] T035 [US2] `MessageAdapter` hiện tên, ảnh người gửi trong chat nhóm và "Người dùng đã xóa"; `ChatListViewModel` đọc tên/ảnh nhóm theo lô ≤ 10 bằng `whereIn(documentId)` **kèm `where status in [ACTIVE, LOCKED]`** (bài học F1 của spec 090); bỏ khỏi danh sách cuộc có `status == DELETED`. Theo wireframe `ui/09_community-chat_buoc2_chat-nhom.png`. Cho T032 xanh
+- [X] T034 [US2] Xử lý deep link `smashnow://chat/group/{groupId}` → mở `ChatFragment` với `chatId = group_{groupId}`; đầu màn hình chat nhóm hiện tên và ảnh nhóm (đọc `groups/{groupId}`). Báo C/090 nối nút "Chat nhóm" trên `GroupDetailFragment` (090 `ui-screens.md` mục 3)
+- [X] T035 [US2] `MessageAdapter` hiện tên, ảnh người gửi trong chat nhóm và "Người dùng đã xóa"; `ChatListViewModel` đọc tên/ảnh nhóm theo lô ≤ 10 bằng `whereIn(documentId)` **kèm `where status in [ACTIVE, LOCKED]`** (bài học F1 của spec 090); bỏ khỏi danh sách cuộc có `status == DELETED`. Theo wireframe `ui/09_community-chat_buoc2_chat-nhom.png`. Cho T032 xanh
 
 **Checkpoint**: US1 + US2 là MVP; **C3 xanh 10/10 lần**; quickstart Q5–Q7 đúng.
 

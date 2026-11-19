@@ -2,6 +2,7 @@ package com.example.booking_app.feature.chat.ui.conversation
 
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
+import com.example.booking_app.R
 import com.example.booking_app.core.media.SignedUrlBatch
 import com.example.booking_app.core.media.SignedUrlCache
 import com.example.booking_app.core.session.SessionManager
@@ -9,6 +10,10 @@ import com.example.booking_app.core.testing.MainDispatcherRule
 import com.example.booking_app.core.ui.UiState
 import com.example.booking_app.core.util.AppClock
 import com.example.booking_app.feature.chat.data.NetworkMonitor
+import com.example.booking_app.feature.chat.data.dto.ChatUserSnapshotDto
+import com.example.booking_app.feature.chat.data.dto.MessageDto
+import com.example.booking_app.feature.chat.data.dto.toDomain
+import com.example.booking_app.feature.chat.domain.ChatError
 import com.example.booking_app.feature.chat.domain.ChatRepository
 import com.example.booking_app.feature.chat.domain.model.ChatDetail
 import com.example.booking_app.feature.chat.domain.model.ChatMessage
@@ -16,6 +21,7 @@ import com.example.booking_app.feature.chat.domain.model.ChatStatus
 import com.example.booking_app.feature.chat.domain.model.ChatType
 import com.example.booking_app.feature.chat.domain.model.Delivery
 import com.example.booking_app.feature.chat.domain.model.DirectChatResult
+import com.example.booking_app.feature.chat.domain.model.GroupHeaderInfo
 import com.example.booking_app.feature.chat.domain.model.OutboxEntry
 import com.example.booking_app.feature.chat.domain.model.Participant
 import com.example.booking_app.feature.chat.domain.model.UserSummary
@@ -27,13 +33,15 @@ import com.example.booking_app.feature.chat.domain.usecase.ObserveMessages
 import com.example.booking_app.feature.chat.domain.usecase.OpenDirectChat
 import com.example.booking_app.feature.chat.domain.usecase.RetryMessage
 import com.example.booking_app.feature.chat.domain.usecase.SendMessage
+import com.example.booking_app.feature.chat.ui.common.ChatUiText
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
-import io.mockk.slot
+import io.mockk.verify
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runCurrent
@@ -68,6 +76,7 @@ class ChatViewModelTest {
     }
 
     private val chatFlow = MutableStateFlow<ChatDetail?>(null)
+    private val groupHeaderFlow = MutableStateFlow<GroupHeaderInfo?>(null)
     private val messagesFlow = MutableStateFlow<List<ChatMessage>>(emptyList())
     private val outboxFlow = MutableStateFlow<List<OutboxEntry>>(emptyList())
     private val signedUrlCache = SignedUrlCache(
@@ -105,6 +114,19 @@ class ChatViewModelTest {
         isMine = isMine,
     )
 
+    private fun groupChat(
+        groupId: String = "g1",
+        status: ChatStatus = ChatStatus.ACTIVE,
+        memberIds: List<String> = listOf("player1", "member2", "member3"),
+    ) = ChatDetail(
+        id = "group_$groupId",
+        type = ChatType.GROUP,
+        memberIds = memberIds,
+        groupId = groupId,
+        status = status,
+        myParticipant = Participant(),
+    )
+
     private fun createViewModel(
         args: Map<String, Any?> = mapOf(ChatViewModel.ARG_CHAT_ID to "owner1_player1"),
         uid: String? = "player1",
@@ -112,6 +134,7 @@ class ChatViewModelTest {
     ): ChatViewModel {
         every { sessionManager.currentUid() } returns uid
         every { repository.observeChat(any()) } returns chatFlow
+        every { repository.observeGroupHeader(any()) } returns groupHeaderFlow
         every { repository.observeMessages(any()) } returns messagesFlow
         every { repository.observeOutbox(any()) } returns outboxFlow
         every { repository.estimatedServerOffsetMs() } returns serverOffsetMs
@@ -313,5 +336,144 @@ class ChatViewModelTest {
 
         coVerify(exactly = 1) { repository.openDirect("v1") }
         assertEquals("owner1_player1", playerVm.uiState.value.header?.chatId)
+    }
+
+    // ---------- T032: US2 Chat nhóm ----------
+
+    @Test
+    fun `chat nhom mo tu deep link groupId hien ten anh nhom va nguoi gui theo senderSnapshot`() = runTest {
+        chatFlow.value = groupChat(groupId = "g1")
+        groupHeaderFlow.value = GroupHeaderInfo(
+            groupId = "g1",
+            name = "CLB Cầu lông Quận 1",
+            avatarPath = "g1/avatar.jpg",
+            memberCount = 12,
+            isLocked = false,
+        )
+        messagesFlow.value = listOf(
+            ChatMessage(
+                id = "m-other",
+                senderId = "member2",
+                senderName = "Trần Quốc",
+                senderAvatarPath = "member2/avatar.jpg",
+                text = "Tối nay 19h nhé mọi người",
+                createdAt = Instant.ofEpochMilli(1_700_000_001_000L),
+                delivery = Delivery.SENT,
+                isMine = false,
+            ),
+            ChatMessage(
+                id = "m-mine",
+                senderId = "player1",
+                senderName = "Mình",
+                text = "Ok mình tới đúng giờ",
+                createdAt = Instant.ofEpochMilli(1_700_000_002_000L),
+                delivery = Delivery.SENT,
+                isMine = true,
+            ),
+        )
+
+        val vm = createViewModel(args = mapOf(ChatViewModel.ARG_GROUP_ID to "g1"))
+        runCurrent()
+
+        verify(exactly = 1) { repository.observeChat("group_g1") }
+        verify(exactly = 1) { repository.observeGroupHeader("g1") }
+
+        val header = vm.uiState.value.header!!
+        assertEquals(ChatType.GROUP, header.type)
+        assertEquals("CLB Cầu lông Quận 1", header.title)
+        assertEquals("g1/avatar.jpg", header.avatarPath)
+        assertEquals("group-avatars", header.avatarBucket)
+        assertEquals(12, header.groupMemberCount)
+        assertTrue(vm.uiState.value.canSend)
+
+        val items = (vm.uiState.value.messages as UiState.Content).data
+        assertEquals(2, items.size)
+        assertFalse(items[0].isMine)
+        assertEquals("Trần Quốc", items[0].senderName)
+        assertEquals("member2/avatar.jpg", items[0].senderAvatarPath)
+        assertTrue(items[1].isMine)
+    }
+
+    @Test
+    fun `tin co senderDeleted bo ten anh cu de hien Nguoi dung da xoa`() = runTest {
+        val deletedDomain = MessageDto(
+            id = "m-del",
+            senderId = "gone-user",
+            senderSnapshot = ChatUserSnapshotDto(displayName = "Tên cũ", avatarPath = "gone/old.jpg"),
+            senderDeleted = true,
+            text = "Tin nhắn cũ",
+            createdAt = Instant.ofEpochMilli(1_700_000_001_000L),
+            status = "NORMAL",
+        ).toDomain(currentUid = "player1")
+
+        assertTrue(deletedDomain.senderDeleted)
+        assertNull(deletedDomain.senderName)
+        assertNull(deletedDomain.senderAvatarPath)
+
+        chatFlow.value = groupChat(groupId = "g1")
+        groupHeaderFlow.value = GroupHeaderInfo("g1", "CLB Quận 1")
+        messagesFlow.value = listOf(deletedDomain)
+
+        val vm = createViewModel(args = mapOf(ChatViewModel.ARG_GROUP_ID to "g1"))
+        runCurrent()
+
+        val msg = (vm.uiState.value.messages as UiState.Content).data.single()
+        assertTrue(msg.senderDeleted)
+        assertNull(msg.senderName)
+        assertNull(msg.senderAvatarPath)
+    }
+
+    @Test
+    fun `nhom LOCKED an o nhap va hien Nhom da bi tam khoa`() = runTest {
+        chatFlow.value = groupChat(groupId = "g1")
+        groupHeaderFlow.value = GroupHeaderInfo(
+            groupId = "g1",
+            name = "CLB Bị Khóa",
+            memberCount = 5,
+            isLocked = true,
+        )
+
+        val vm = createViewModel(args = mapOf(ChatViewModel.ARG_GROUP_ID to "g1"))
+        runCurrent()
+
+        assertFalse(vm.uiState.value.canSend)
+        assertEquals(ComposerDisabledReason.GROUP_LOCKED, vm.uiState.value.disabledReason)
+        assertEquals(R.string.chat_error_group_locked, ChatUiText.errorRes(ChatError.GroupLocked()))
+    }
+
+    @Test
+    fun `mat quyen PERMISSION_DENIED sau khi bi moi ra dong man hinh va bao loi`() = runTest {
+        val kickedChatFlow = flow<ChatDetail?> {
+            throw ChatError.NotParticipant()
+        }
+        every { sessionManager.currentUid() } returns "player1"
+        every { repository.observeChat("group_g1") } returns kickedChatFlow
+        every { repository.observeGroupHeader(any()) } returns groupHeaderFlow
+        every { repository.observeMessages("group_g1") } returns messagesFlow
+        every { repository.observeOutbox("group_g1") } returns outboxFlow
+        every { repository.estimatedServerOffsetMs() } returns 0L
+        coEvery { repository.setViewing(any(), any()) } returns Result.success(Unit)
+
+        val vm = ChatViewModel(
+            savedStateHandle = SavedStateHandle(mapOf(ChatViewModel.ARG_GROUP_ID to "g1")),
+            repository = repository,
+            openDirectChat = OpenDirectChat(repository),
+            observeMessages = ObserveMessages(repository),
+            loadOlderMessages = LoadOlderMessages(repository),
+            sendMessage = SendMessage(repository, clock),
+            retryMessage = RetryMessage(repository),
+            discardMessage = DiscardMessage(repository),
+            markChatRead = MarkChatRead(repository),
+            signedUrlCache = signedUrlCache,
+            networkMonitor = networkMonitor,
+            sessionManager = sessionManager,
+            clock = clock,
+        )
+
+        vm.events.test {
+            runCurrent()
+            assertEquals(ChatEvent.KickedOut, awaitItem())
+        }
+        assertEquals(R.string.chat_error_not_participant, ChatUiText.errorRes(ChatError.NotParticipant()))
     }
 }

@@ -144,8 +144,8 @@ fun MessageDto.toDomain(currentUid: String): ChatMessage {
     return ChatMessage(
         id = id,
         senderId = sender,
-        senderName = senderSnapshot?.displayName,
-        senderAvatarPath = senderSnapshot?.avatarPath,
+        senderName = if (senderDeleted) null else senderSnapshot?.displayName,
+        senderAvatarPath = if (senderDeleted) null else senderSnapshot?.avatarPath,
         senderDeleted = senderDeleted,
         text = if (msgStatus == MessageStatus.NORMAL) text.orEmpty() else "",
         imagePath = if (msgStatus == MessageStatus.NORMAL) imagePath else null,

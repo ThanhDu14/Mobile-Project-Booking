@@ -148,13 +148,20 @@ class MessageAdapter(
                     msg.senderName?.takeIf { it.isNotBlank() } ?: ctx.getString(R.string.chat_default_user_name)
                 }
                 b.senderName.text = displayName
-                b.senderAvatarInitials.text = if (msg.senderDeleted) "?" else initialsOf(displayName)
-                val avatarUrl = if (msg.senderDeleted) null else ChatUiText.publicImageUrl("avatars", msg.senderAvatarPath)
                 b.senderAvatar.contentDescription = ctx.getString(R.string.chat_cd_avatar, displayName)
-                b.senderAvatar.isVisible = avatarUrl != null
-                if (avatarUrl != null) {
-                    b.senderAvatar.load(avatarUrl) {
-                        error(R.drawable.ic_account_circle_24)
+                if (msg.senderDeleted) {
+                    b.senderAvatarInitials.isVisible = false
+                    b.senderAvatar.isVisible = true
+                    b.senderAvatar.setImageResource(R.drawable.ic_account_circle_24)
+                } else {
+                    val avatarUrl = ChatUiText.publicImageUrl("avatars", msg.senderAvatarPath)
+                    b.senderAvatarInitials.text = initialsOf(displayName).ifEmpty { "?" }
+                    b.senderAvatarInitials.isVisible = avatarUrl == null
+                    b.senderAvatar.isVisible = avatarUrl != null
+                    if (avatarUrl != null) {
+                        b.senderAvatar.load(avatarUrl) {
+                            error(R.drawable.ic_account_circle_24)
+                        }
                     }
                 }
             }
