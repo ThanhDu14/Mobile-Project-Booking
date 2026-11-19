@@ -239,7 +239,14 @@ ID document là chính mã `code` (chữ in hoa). Mã phải duy nhất trên to
 
 ### 4.10. `groups/{groupId}` — C
 
-**Nhóm:** `name`, `description`, `avatarUrl`, `districtId`, `ownerId`, `memberCount` 🔒, `visibility` (`PUBLIC`, `PRIVATE`). Con: `members/{uid}` (`role`: `OWNER`, `ADMIN`, `MEMBER`; `joinedAt`), `posts/{postId}` (`authorId`, `type`: `POST`, `EVENT`; `content`, `photoPaths`, `eventAt?`, `status`).
+**Nhóm:** `name`, `nameKeywords` 🔒 (tiền tố từng từ, chữ thường, bỏ dấu), `description`, `avatarPath` (path trong bucket `group-avatars`, `null` thì dùng ảnh mặc định), `districtId`, `ownerId` 🔒, `memberCount` 🔒, `pendingRequestCount` 🔒, `visibility` (`PUBLIC`, `PRIVATE`), `status` 🔒 (`ACTIVE`, `LOCKED` (admin khóa, spec 120), `DELETED` (đang xóa dở)), `createdAt`, `updatedAt`. `groupId` = `requestId` của lần bấm "Tạo nhóm". Mọi ghi qua Edge Function `group-manage` (xem [spec 090 data-model](../../../specs/090-community-group/data-model.md)).
+
+**Con:**
+- `members/{uid}`: `userId`, `groupId` (cho truy vấn collection group "Nhóm của tôi"), `role` (`OWNER`, `ADMIN`, `MEMBER`; đúng một `OWNER`), `userSnapshot` 🔒 (`displayName`, `avatarPath`), `joinedAt`.
+- `joinRequests/{uid}`: `userId`, `userSnapshot` 🔒, `wasRemoved` (từng bị mời ra), `requestId`, `createdAt`.
+- `removals/{uid}`: `userId`, `removedBy`, `removedAt`. Có document này thì `join` nhóm công khai thành yêu cầu chờ duyệt.
+- `posts/{postId}` (`postId` = `requestId` của lần bấm "Đăng"): `groupId`, `authorId`, `authorSnapshot` 🔒 (`null` khi người đăng xóa tài khoản), `authorDeleted` 🔒, `type` (`POST`, `EVENT`), `content`, `photoPaths` (0–4, bắt đầu bằng `{groupId}/{postId}/`), `eventTitle?`, `eventAt?`, `eventLocation?`, `expectedCount?` (chỉ để tham khảo), `attendeeCount` 🔒, `status` 🔒 (`VISIBLE`, `HIDDEN`), `hiddenBy` 🔒 (`GROUP`, `SYSTEM`), `hiddenByUid` 🔒, `editedAt` 🔒, `createdAt`, `updatedAt`. Bài `HIDDEN` bởi `SYSTEM` (admin, spec 120) thì nhóm không bỏ ẩn được.
+- `posts/{postId}/attendees/{uid}`: `userId`, `groupId`, `postId`, `eventAt` (chép từ bài), `userSnapshot` 🔒, `joinedAt`.
 
 ### 4.11. `chats/{chatId}` — C
 
@@ -248,6 +255,8 @@ ID document là chính mã `code` (chữ in hoa). Mã phải duy nhất trên to
 ### 4.12. `reports/{reportId}` — D
 
 `reporterId`, `targetType` (`POST`, `MESSAGE`, `REVIEW`, `VENUE`, `USER`, `DROP_IN`), `targetPath` (đường dẫn document), `reason`, `detail`, `status` 🔒 (`OPEN`, `RESOLVED`, `DISMISSED`), `action` 🔒 (`NONE`, `HIDE_CONTENT`, `LOCK_USER`, `LOCK_VENUE`), `handledBy` 🔒, `handledAt` 🔒.
+
+Báo cáo bài đăng nhóm (spec 090, Edge Function `group-post`): `reportId` = `POST_{groupId}_{postId}_{uid}` (mỗi người báo một lần), `targetPath` = `groups/{groupId}/posts/{postId}`; `reason` dùng chung `SPAM`, `OFFENSIVE`, `SCAM`, `INAPPROPRIATE`, `OTHER`; `detail` ≤ 500 ký tự (bắt buộc khi `OTHER`).
 
 ### 4.13. `users/{uid}/notifications/{id}` — D
 
@@ -280,6 +289,8 @@ Người dùng tự làm một thao tác (tự hủy đơn, tự hủy đăng k�
 | `registrations` | `uid` | Mỗi người một đăng ký mỗi buổi |
 | `favorites` | `venueId` | Không trùng |
 | `chats` (riêng) | `{uidNhỏ}_{uidLớn}` | Không tạo hai hội thoại cho cùng một cặp |
+| `groups`, `posts` | `requestId` | Bấm nhiều lần không tạo nhóm/bài trùng |
+| `members`, `joinRequests`, `removals`, `attendees` | `uid` | Mỗi người một document mỗi nhóm/sự kiện |
 
 ## 6. Index dự kiến
 
@@ -304,6 +315,18 @@ Người phụ trách bổ sung vào `firestore.indexes.json` khi viết `plan.m
 | `dropInSessions` | `status`, `level`, `startAt` | Lọc trình độ (08) |
 | `dropInSessions` | `status`, `startAt`, `pricePerPerson` | Lọc giá tối đa (08) |
 | `chats` | `memberIds` (array-contains), `updatedAt desc` | Danh sách hội thoại (09) |
+| `groups` | `status`, `memberCount desc` | Danh sách nhóm không lọc (09) |
+| `groups` | `status`, `districtId`, `memberCount desc` | Lọc khu vực (09) |
+| `groups` | `status`, `nameKeywords` (array-contains), `memberCount desc` | Tìm nhóm theo tên (09) |
+| `groups` | `status`, `nameKeywords` (array-contains), `districtId`, `memberCount desc` | Tên + khu vực (09) |
+| `groups` | `ownerId`, `status` | Đếm giới hạn 5 nhóm mỗi chủ (09) |
+| `members` (collection group) | `userId`, `joinedAt desc` | "Nhóm của tôi" (09) |
+| `members` (collection) | `role`, `joinedAt` | Danh sách thành viên, chuyển quyền (09) |
+| `posts` (collection) | `status`, `createdAt desc` | Bảng tin thành viên (09) |
+| `posts` (collection) | `authorId`, `status`, `createdAt desc` | Bài bị ẩn của chính mình (09) |
+| `posts` (collection group) | `authorId` | Ẩn danh khi xóa tài khoản (09, 011) |
+| `attendees` (collection group) | `userId`, `groupId`, `eventAt` | Bỏ tham gia khi rời nhóm (09) |
+| `joinRequests` (collection) | `createdAt` | Danh sách yêu cầu (09) |
 | `reports` | `status`, `createdAt` | Hàng đợi xử lý (12) |
 | `ownerApplications` | `status`, `submittedAt` | Hồ sơ chờ duyệt (12) |
 | `districts` | `isActive`, `sortOrder` | Danh sách khu vực (011, 02) |
@@ -335,7 +358,8 @@ Ký hiệu: R đọc, C tạo, U sửa, D xóa. "Chủ" = người sở hữu do
 | `reviews` | C qua Edge Function `review` (đơn `COMPLETED` hoặc lượt vãng lai `CHECKED_IN` đã kết thúc), U/D của mình | U `ownerReply` cho sân mình | U `status` | Cập nhật `ratingAvg` |
 | `dropInSessions` | R (kể cả khách chưa đăng nhập) | CRUD buổi sân mình | R, khóa | Ghi `registeredCount` |
 | `registrations` | R của mình (kể cả collection group theo `userId`) | R đăng ký của buổi mình | R | Ghi toàn bộ (mọi ghi qua Edge Function) |
-| `groups`, `chats` | Thành viên R/C; nhóm `PUBLIC` ai cũng R | như người chơi | R để kiểm duyệt | |
+| `groups` | Giới thiệu nhóm (`ACTIVE`, `LOCKED`) ai cũng R, kể cả khách; bảng tin, thành viên chỉ thành viên R; `joinRequests` R của mình; mọi ghi qua Edge Function | như người chơi | R để kiểm duyệt | Ghi toàn bộ (`group-manage`, `group-post`) |
+| `chats` | Thành viên R/C | như người chơi | R để kiểm duyệt | |
 | `reports` | C | C | R, U | |
 | `notifications` | R, U `isRead` của mình | như người chơi | C (thông báo hệ thống) | C |
 
@@ -351,7 +375,8 @@ Mỗi dòng trên cần ít nhất một test Emulator "được phép" và mộ
 | `venue-photos` | public | `{venueId}/{tên file}` | Owner sân (kiểm tra qua Edge Function `sign-upload`) | Mọi người | D |
 | `review-photos` | public | `{reviewId}/{tên file}` | Người viết | Mọi người | C |
 | `owner-docs` | **private** | `{uid}/{applicationId}/{tên file}` | Chủ | **Chỉ chủ và `appRole == ADMIN`**, qua signed URL hết hạn sau 5 phút | D |
-| `group-media` | private | `{groupId}/{tên file}` | Thành viên | Thành viên, qua signed URL | C |
+| `group-avatars` | public | `{groupId}/avatar.{jpg,png,webp}` | Chủ nhóm, qua signed upload URL của Edge Function `group-manage` (không có policy ghi trực tiếp) | Mọi người | C |
+| `group-media` | private | `{groupId}/{postId}/{n}.{ext}` | Thành viên, qua signed upload URL của Edge Function `group-media-url` | Thành viên, qua signed URL của `group-media-url` | C |
 | `chat-media` | private | `{chatId}/{tên file}` | Thành viên chat | Thành viên chat, qua signed URL | C |
 
 - Chính sách RLS chỉ đọc được JWT, không đọc được Firestore. Quyền nào cần dữ liệu Firestore (owner của `venueId` nào, thành viên của `chatId` nào) thì app gọi Edge Function `sign-upload` hoặc `sign-download`; Edge Function kiểm tra Firestore rồi trả signed URL.
@@ -376,6 +401,9 @@ Mỗi dòng trên cần ít nhất một test Emulator "được phép" và mộ
 | `checkin-booking` | Chủ sân check-in đơn đặt sân bằng QR hoặc mã đặt sân: kiểm tra quyền, trạng thái, khung giờ cho phép; ghi `checkedInAt`, và `paymentStatus = PAID` khi chủ sân xác nhận đã thu tiền | D |
 | `register-drop-in`, `cancel-drop-in` | Đăng ký/hủy, trả chỗ; hook hàng chờ của 081 | C |
 | `_shared/dropin.ts` | Helper dùng chung cho 081, 112, `delete-account` (`deriveSessionFields`, `computeRefund`, `cancelRegistrationInTx`, `afterSpotsReleased`) | C |
+| `group-manage` | Nhóm/CLB: `create`, `update`, `delete`, `join`, `cancelRequest`, `leave`, `approve`, `reject`, `setRole`, `transferOwner`, `remove`; cấp signed upload URL cho ảnh đại diện | C |
+| `group-post` | Bài đăng nhóm: `create`, `update`, `delete`, `hide`, `unhide`, `attend`, `unattend`, `report` | C |
+| `group-media-url` | Signed URL ảnh bài viết `group-media`: `upload`, `download`, `discard` | C |
 | `on-review-created` | Cập nhật `ratingAvg`, `ratingCount` | C |
 | `review-owner-application` | Duyệt/từ chối chủ sân, gán `appRole=OWNER` | D |
 | `sign-upload`, `sign-download` | Cấp signed URL cho bucket cần kiểm tra Firestore | D |
