@@ -24,6 +24,9 @@ interface PostRepository {
     /** Bài mới hơn [after] (realtime) để hiện "Có bài mới" mà không làm mới cả trang; cùng quy tắc lọc với [feed]. */
     fun observeNewPosts(groupId: String, isMod: Boolean, after: Instant): Flow<List<Post>>
 
+    /** Đọc một bài theo ID (dùng khi mở màn sửa bài); `null` nếu không còn tồn tại. */
+    suspend fun getPost(groupId: String, postId: String): Result<Post?> = Result.success(null)
+
     /** Đăng bài hoặc sự kiện; mọi ảnh trong [draft] phải `UPLOADED`. `postId` là `draft.requestId`. */
     suspend fun create(groupId: String, draft: PostDraft): Result<Post>
 

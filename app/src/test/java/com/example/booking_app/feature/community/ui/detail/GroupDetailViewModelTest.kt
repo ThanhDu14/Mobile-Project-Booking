@@ -4,10 +4,16 @@ import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.example.booking_app.core.catalog.CatalogRepository
 import com.example.booking_app.core.session.SessionManager
+import com.example.booking_app.core.testing.FakeClock
+import com.example.booking_app.core.testing.MainDispatcherRule
+import com.example.booking_app.feature.community.domain.usecase.DeletePost
 import com.example.booking_app.feature.community.domain.usecase.JoinGroup
 import com.example.booking_app.feature.community.domain.usecase.LeaveGroup
+import com.example.booking_app.feature.community.domain.usecase.ModeratePost
+import com.example.booking_app.feature.community.domain.usecase.ToggleAttendance
+import com.example.booking_app.feature.community.emptyPostRepository
+import com.example.booking_app.feature.community.noopSignedUrls
 import com.example.booking_app.feature.community.ui.common.DistrictNames
-import com.example.booking_app.core.testing.MainDispatcherRule
 import com.example.booking_app.feature.community.ME
 import com.example.booking_app.feature.community.domain.CommunityError
 import com.example.booking_app.feature.community.domain.GroupRepository
@@ -37,8 +43,21 @@ class GroupDetailViewModelTest {
     private val session = mockk<SessionManager> { every { currentUid() } returns ME }
     private val catalog = mockk<CatalogRepository> { coEvery { districts() } returns emptyList() }
 
+    private val posts = emptyPostRepository()
+
     private fun viewModel() = GroupDetailViewModel(
-        SavedStateHandle(mapOf("groupId" to "g1")), groups, session, JoinGroup(groups), LeaveGroup(groups), DistrictNames(catalog),
+        SavedStateHandle(mapOf("groupId" to "g1")),
+        groups,
+        posts,
+        session,
+        JoinGroup(groups),
+        LeaveGroup(groups),
+        DeletePost(posts),
+        ModeratePost(posts),
+        ToggleAttendance(posts),
+        noopSignedUrls(),
+        DistrictNames(catalog),
+        FakeClock { 0L },
     )
 
     @Test
@@ -81,7 +100,11 @@ class GroupDetailViewModelTest {
 
         viewModel().state.test {
             awaitItem()
-            assertTrue((awaitItem() as GroupDetailUiState.Content).canEdit)
+            val content = awaitItem() as GroupDetailUiState.Content
+            assertTrue(content.canEdit)
+            assertTrue(content.showFeed)
+            assertEquals(JoinAction.NONE, content.joinAction)
+            assertEquals(GroupRole.OWNER, content.membership.role)
         }
     }
 

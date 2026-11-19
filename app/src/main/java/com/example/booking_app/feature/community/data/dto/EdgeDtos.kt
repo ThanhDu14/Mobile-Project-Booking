@@ -189,6 +189,8 @@ data class PostResultDto(
     val id: String,
     val groupId: String? = null,
     val authorId: String? = null,
+    val authorSnapshot: UserSnapshotDto? = null,
+    val authorDeleted: Boolean = false,
     val type: String? = null,
     val content: String? = null,
     val photoPaths: List<String> = emptyList(),

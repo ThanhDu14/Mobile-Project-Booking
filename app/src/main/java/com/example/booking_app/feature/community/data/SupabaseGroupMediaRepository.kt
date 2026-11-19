@@ -4,6 +4,10 @@ import com.example.booking_app.core.image.ImageCompressor
 import com.example.booking_app.core.image.ImageTooLargeException
 import com.example.booking_app.core.image.ImageUnreadableException
 import com.example.booking_app.core.network.toAppError
+import com.example.booking_app.feature.community.data.dto.GroupMediaRequest
+import com.example.booking_app.feature.community.data.dto.UploadFileDto
+import com.example.booking_app.feature.community.data.dto.toDomain
+import com.example.booking_app.feature.community.data.dto.toSignedUrls
 import com.example.booking_app.feature.community.domain.CommunityError
 import com.example.booking_app.feature.community.domain.GroupMediaRepository
 import com.example.booking_app.feature.community.domain.model.DraftPhoto
@@ -13,19 +17,21 @@ import com.example.booking_app.feature.community.domain.model.UploadFile
 import com.example.booking_app.feature.community.domain.toCommunityError
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.storage.storage
+import io.ktor.http.ContentType
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
 /**
- * Ảnh của nhóm (T025, US1: chỉ ảnh đại diện). Ảnh được nén bằng [ImageCompressor] rồi tải thẳng lên signed upload
- * URL do `group-manage` cấp (`uploadToSignedUrl`, token nằm trong [SignedUpload.token]). Phần ảnh bài đăng
- * (`requestUploads`, `upload`, `signedUrls`, `discard`) làm ở US3, hiện trả lỗi `NOT_IMPLEMENTED`.
+ * Ảnh của nhóm (T025 + T047): ảnh đại diện ở bucket public `group-avatars`, ảnh bài đăng ở bucket private
+ * `group-media`. Ảnh được nén bằng [ImageCompressor] rồi tải thẳng lên signed upload URL (`uploadToSignedUrl`).
  */
 class SupabaseGroupMediaRepository @Inject constructor(
     private val imageCompressor: ImageCompressor,
     private val supabase: SupabaseClient,
+    private val mediaApi: GroupMediaApi,
 ) : GroupMediaRepository {
 
     override suspend fun uploadAvatar(localUri: String, target: SignedUpload): Result<Unit> {
@@ -41,7 +47,10 @@ class SupabaseGroupMediaRepository @Inject constructor(
             return Result.failure(CommunityError.ImageUnreadable())
         }
         return try {
-            supabase.storage.from(BUCKET_AVATARS).uploadToSignedUrl(target.path, target.token, jpeg)
+            supabase.storage.from(BUCKET_AVATARS).uploadToSignedUrl(target.path, target.token, jpeg) {
+                upsert = true
+                contentType = ContentType.Image.JPEG
+            }
             Result.success(Unit)
         } catch (e: CancellationException) {
             throw e
@@ -50,20 +59,74 @@ class SupabaseGroupMediaRepository @Inject constructor(
         }
     }
 
-    // TODO US3 (T038 trở đi): ảnh bài đăng ở bucket private `group-media`.
-    override suspend fun requestUploads(groupId: String, postId: String, files: List<UploadFile>): Result<List<SignedUpload>> =
-        notImplemented()
+    override suspend fun requestUploads(
+        groupId: String,
+        postId: String,
+        files: List<UploadFile>,
+    ): Result<List<SignedUpload>> {
+        if (files.isEmpty()) return Result.success(emptyList())
+        return try {
+            val dtoFiles = files.map { UploadFileDto(it.index, it.contentType, it.size) }
+            val response = mediaApi.invoke(GroupMediaRequest.upload(groupId, postId, dtoFiles))
+            Result.success(response.uploads.map { it.toDomain() })
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Result.failure(e.toCommunityError())
+        }
+    }
 
-    override fun upload(localUri: String, target: SignedUpload): Flow<DraftPhoto> =
-        flowOf(DraftPhoto(localUri = localUri, state = DraftPhoto.State.FAILED))
+    override fun upload(localUri: String, target: SignedUpload): Flow<DraftPhoto> = flow {
+        emit(DraftPhoto(localUri = localUri, remotePath = null, state = DraftPhoto.State.UPLOADING))
+        val jpeg = try {
+            imageCompressor.compress(localUri)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            emit(DraftPhoto(localUri = localUri, remotePath = null, state = DraftPhoto.State.FAILED))
+            return@flow
+        }
+        emitAll(uploadCompressed(localUri, jpeg, target))
+    }
 
-    override suspend fun signedUrls(paths: List<String>): Result<SignedUrls> = notImplemented()
+    override fun uploadCompressed(localUri: String, jpeg: ByteArray, target: SignedUpload): Flow<DraftPhoto> = flow {
+        emit(DraftPhoto(localUri = localUri, remotePath = null, state = DraftPhoto.State.UPLOADING))
+        try {
+            supabase.storage.from(BUCKET_MEDIA).uploadToSignedUrl(target.path, target.token, jpeg) {
+                upsert = true
+                contentType = ContentType.Image.JPEG
+            }
+            emit(DraftPhoto(localUri = localUri, remotePath = target.path, state = DraftPhoto.State.UPLOADED))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            emit(DraftPhoto(localUri = localUri, remotePath = null, state = DraftPhoto.State.FAILED))
+        }
+    }
 
-    override suspend fun discard(groupId: String, postId: String): Result<Unit> = notImplemented()
+    override suspend fun signedUrls(paths: List<String>): Result<SignedUrls> {
+        if (paths.isEmpty()) return Result.success(SignedUrls(emptyMap(), null))
+        return try {
+            val response = mediaApi.invoke(GroupMediaRequest.download(paths))
+            Result.success(response.toSignedUrls())
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Result.failure(e.toCommunityError())
+        }
+    }
 
-    private fun <T> notImplemented(): Result<T> = Result.failure(CommunityError.Unknown("NOT_IMPLEMENTED"))
+    override suspend fun discard(groupId: String, postId: String): Result<Unit> = try {
+        mediaApi.invoke(GroupMediaRequest.discard(groupId, postId))
+        Result.success(Unit)
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        Result.failure(e.toCommunityError())
+    }
 
     private companion object {
         const val BUCKET_AVATARS = "group-avatars"
+        const val BUCKET_MEDIA = "group-media"
     }
 }

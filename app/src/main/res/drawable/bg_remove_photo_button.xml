@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Nền tròn tối bán trong suốt cho nút gỡ ảnh trên góc phải ảnh (vẫn giữ vùng chạm 48dp). -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:inset="8dp">
+    <shape android:shape="oval">
+        <solid android:color="#80000000" />
+    </shape>
+</inset>

@@ -62,6 +62,77 @@
         <action
             android:id="@+id/action_groupDetail_to_joinRequests"
             app:destination="@id/joinRequestsFragment" />
+        <action
+            android:id="@+id/action_groupDetail_to_postComposer"
+            app:destination="@id/postComposerFragment" />
+        <action
+            android:id="@+id/action_groupDetail_to_eventAttendees"
+            app:destination="@id/eventAttendeesBottomSheet" />
+        <action
+            android:id="@+id/action_groupDetail_to_groupMembers"
+            app:destination="@id/groupMembersFragment" />
+        <action
+            android:id="@+id/action_groupDetail_to_reportPost"
+            app:destination="@id/reportPostBottomSheet" />
+    </fragment>
+
+    <!-- Báo cáo bài đăng (US6). -->
+    <dialog
+        android:id="@+id/reportPostBottomSheet"
+        android:name="com.example.booking_app.feature.community.ui.report.ReportPostBottomSheet"
+        android:label="@string/community_title_report">
+        <argument
+            android:name="groupId"
+            app:argType="string" />
+        <argument
+            android:name="postId"
+            app:argType="string" />
+    </dialog>
+
+    <!-- Danh sách thành viên và chọn người nhận quyền chủ nhóm (US5). -->
+    <fragment
+        android:id="@+id/groupMembersFragment"
+        android:name="com.example.booking_app.feature.community.ui.members.GroupMembersFragment"
+        android:label="@string/community_title_members">
+        <argument
+            android:name="groupId"
+            app:argType="string" />
+        <argument
+            android:name="selectTransferTarget"
+            android:defaultValue="false"
+            app:argType="boolean" />
+    </fragment>
+
+    <!-- Danh sách người tham gia sự kiện (US4). -->
+    <dialog
+        android:id="@+id/eventAttendeesBottomSheet"
+        android:name="com.example.booking_app.feature.community.ui.event.EventAttendeesBottomSheet"
+        android:label="@string/community_title_attendees">
+        <argument
+            android:name="groupId"
+            app:argType="string" />
+        <argument
+            android:name="postId"
+            app:argType="string" />
+    </dialog>
+
+    <!-- Soạn/sửa bài đăng hoặc sự kiện (US3, US4). -->
+    <fragment
+        android:id="@+id/postComposerFragment"
+        android:name="com.example.booking_app.feature.community.ui.composer.PostComposerFragment"
+        android:label="@string/community_title_composer_post">
+        <argument
+            android:name="groupId"
+            app:argType="string" />
+        <argument
+            android:name="postId"
+            android:defaultValue="@null"
+            app:argType="string"
+            app:nullable="true" />
+        <argument
+            android:name="type"
+            android:defaultValue="POST"
+            app:argType="string" />
     </fragment>
 
     <!-- Duyệt/từ chối yêu cầu tham gia (chủ nhóm, quản trị viên). -->

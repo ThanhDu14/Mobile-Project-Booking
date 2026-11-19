@@ -6,6 +6,7 @@ import com.example.booking_app.feature.community.data.dto.GroupDto
 import com.example.booking_app.feature.community.data.dto.GroupManageRequest
 import com.example.booking_app.feature.community.data.dto.GroupManageResponse
 import com.example.booking_app.feature.community.data.dto.JoinRequestDto
+import com.example.booking_app.feature.community.data.dto.MemberDto
 import com.example.booking_app.feature.community.data.dto.toCreateResult
 import com.example.booking_app.feature.community.data.dto.toDomain
 import com.example.booking_app.feature.community.data.dto.toJoinResult
@@ -302,21 +303,38 @@ class FirestoreGroupRepository @Inject constructor(
         awaitClose { registration.remove() }
     }
 
-    // ---------- Chưa làm (US5) ----------
+    // ---------- US5: quản lý thành viên và xóa nhóm ----------
 
-    // TODO US5: vai trò, chuyển chủ nhóm, mời ra, xóa nhóm, danh sách thành viên.
+    override suspend fun delete(groupId: String, confirmName: String, requestId: String): Result<Unit> =
+        manage(GroupManageRequest.delete(requestId, groupId, confirmName)) { }
 
-    override suspend fun delete(groupId: String, confirmName: String, requestId: String): Result<Unit> = notImplemented()
+    override suspend fun setRole(groupId: String, userId: String, role: GroupRole, requestId: String): Result<Unit> =
+        manage(GroupManageRequest.setRole(requestId, groupId, userId, role.name)) { }
 
-    override suspend fun setRole(groupId: String, userId: String, role: GroupRole, requestId: String): Result<Unit> = notImplemented()
+    override suspend fun transferOwner(groupId: String, userId: String, requestId: String): Result<Unit> =
+        manage(GroupManageRequest.transferOwner(requestId, groupId, userId)) { }
 
-    override suspend fun transferOwner(groupId: String, userId: String, requestId: String): Result<Unit> = notImplemented()
+    override suspend fun remove(groupId: String, userId: String, requestId: String): Result<Unit> =
+        manage(GroupManageRequest.remove(requestId, groupId, userId)) { }
 
-    override suspend fun remove(groupId: String, userId: String, requestId: String): Result<Unit> = notImplemented()
-
-    override fun observeMembers(groupId: String): Flow<List<GroupMember>> = flowOf(emptyList())
-
-    private fun <T> notImplemented(): Result<T> = Result.failure(CommunityError.Unknown("NOT_IMPLEMENTED"))
+    /** Danh sách thành viên realtime: Chủ nhóm, Quản trị viên ở đầu, rồi Thành viên theo `joinedAt` tăng dần (AC 5.1). */
+    override fun observeMembers(groupId: String): Flow<List<GroupMember>> = callbackFlow {
+        val registration = firestore.collection(COLLECTION_GROUPS).document(groupId).collection(COLLECTION_MEMBERS)
+            .orderBy("joinedAt", Query.Direction.ASCENDING)
+            .addSnapshotListener { snapshot, error ->
+                when {
+                    error?.code == FirebaseFirestoreException.Code.PERMISSION_DENIED -> close(CommunityError.NotMember())
+                    error != null -> close(error.toGroupError())
+                    else -> {
+                        val sorted = snapshot?.documents.orEmpty()
+                            .map { MemberDto.fromMap(it.id, it.data.orEmpty()).toDomain() }
+                            .sortedWith(MEMBER_ORDER)
+                        trySend(sorted)
+                    }
+                }
+            }
+        awaitClose { registration.remove() }
+    }
 
     /** Mất kết nối Firestore (`UNAVAILABLE`, `DEADLINE_EXCEEDED`) là [CommunityError.Network]. */
     private fun Throwable.toGroupError(): CommunityError =
@@ -336,5 +354,15 @@ class FirestoreGroupRepository @Inject constructor(
         val VISIBLE_STATUSES = listOf(GroupStatus.ACTIVE.name, GroupStatus.LOCKED.name)
         const val MAX_BUSY_RETRIES = 2
         const val BUSY_RETRY_DELAY_MS = 500L
+
+        val MEMBER_ORDER: Comparator<GroupMember> = compareBy<GroupMember> { roleRank(it.role) }
+            .thenBy { it.joinedAt ?: java.time.Instant.MAX }
+            .thenBy { it.userId }
+
+        private fun roleRank(role: GroupRole): Int = when (role) {
+            GroupRole.OWNER -> 0
+            GroupRole.ADMIN -> 1
+            GroupRole.MEMBER -> 2
+        }
     }
 }

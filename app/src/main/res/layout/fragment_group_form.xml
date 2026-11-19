@@ -272,6 +272,22 @@
                     android:layout_marginTop="@dimen/space_6"
                     android:minHeight="48dp"
                     android:text="@string/community_title_form_create" />
+
+                <!-- US5 T063: nút xóa nhóm khi ở chế độ sửa -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/deleteGroupButton"
+                    style="@style/Widget.SmashNow.Button.Outlined"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_3"
+                    android:minHeight="@dimen/touch_min"
+                    android:text="@string/community_action_delete_group"
+                    android:textColor="?attr/colorError"
+                    android:visibility="gone"
+                    app:icon="@drawable/ic_delete_24"
+                    app:iconTint="?attr/colorError"
+                    app:strokeColor="?attr/colorError"
+                    tools:visibility="visible" />
             </LinearLayout>
         </ScrollView>
 
