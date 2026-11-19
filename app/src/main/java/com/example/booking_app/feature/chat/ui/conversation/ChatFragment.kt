@@ -17,6 +17,7 @@ import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.setFragmentResultListener
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -39,6 +40,7 @@ import com.example.booking_app.feature.chat.domain.model.ChatMessage
 import com.example.booking_app.feature.chat.domain.model.ChatMessageRules
 import com.example.booking_app.feature.chat.domain.model.ChatType
 import com.example.booking_app.feature.chat.ui.common.ChatUiText
+import com.example.booking_app.feature.chat.ui.report.ReportMessageBottomSheet
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
@@ -128,6 +130,12 @@ class ChatFragment : Fragment(R.layout.fragment_chat) {
         binding.attachImageButton.setOnClickListener { showAttachOptions() }
         binding.sendButton.setOnClickListener { viewModel.onSendClicked() }
         binding.removePendingImageButton.setOnClickListener { viewModel.onPendingImageCleared() }
+
+        setFragmentResultListener(ReportMessageBottomSheet.RESULT_KEY_REPORT_SENT) { _, _ ->
+            _binding?.let { b ->
+                Snackbar.make(b.root, R.string.chat_report_sent, Snackbar.LENGTH_SHORT).show()
+            }
+        }
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {

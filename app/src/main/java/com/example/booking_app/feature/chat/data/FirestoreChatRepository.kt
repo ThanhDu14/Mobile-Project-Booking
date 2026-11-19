@@ -403,15 +403,30 @@ class FirestoreChatRepository @Inject constructor(
         }
     }
 
-    override suspend fun recall(chatId: String, messageId: String): Result<Unit> =
-        Result.failure(ChatError.Unknown("NOT_IMPLEMENTED"))
+    override suspend fun recall(chatId: String, messageId: String): Result<Unit> = try {
+        actionApi.invoke(ChatActionRequest.recall(chatId, messageId))
+        Result.success(Unit)
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        Result.failure(e.toChatError())
+    }
 
     override suspend fun report(
         chatId: String,
         messageId: String,
         reason: ReportReason,
         detail: String?,
-    ): Result<String> = Result.failure(ChatError.Unknown("NOT_IMPLEMENTED"))
+    ): Result<String> = try {
+        val response = actionApi.invoke(ChatActionRequest.report(chatId, messageId, reason.name, detail))
+        val reportId = response.reportId?.takeIf { it.isNotBlank() }
+            ?: return Result.failure(ChatError.Unknown("INVALID_REPORT_RESPONSE"))
+        Result.success(reportId)
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        Result.failure(e.toChatError())
+    }
 
     companion object {
         const val PAGE_SIZE = 30L

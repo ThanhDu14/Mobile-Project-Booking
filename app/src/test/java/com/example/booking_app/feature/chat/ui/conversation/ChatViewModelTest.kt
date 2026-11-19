@@ -25,6 +25,7 @@ import com.example.booking_app.feature.chat.domain.model.ChatType
 import com.example.booking_app.feature.chat.domain.model.Delivery
 import com.example.booking_app.feature.chat.domain.model.DirectChatResult
 import com.example.booking_app.feature.chat.domain.model.GroupHeaderInfo
+import com.example.booking_app.feature.chat.domain.model.MessageStatus
 import com.example.booking_app.feature.chat.domain.model.OutboxEntry
 import com.example.booking_app.feature.chat.domain.model.Participant
 import com.example.booking_app.feature.chat.domain.model.UserSummary
@@ -34,8 +35,10 @@ import com.example.booking_app.feature.chat.domain.usecase.LoadOlderMessages
 import com.example.booking_app.feature.chat.domain.usecase.MarkChatRead
 import com.example.booking_app.feature.chat.domain.usecase.ObserveMessages
 import com.example.booking_app.feature.chat.domain.usecase.OpenDirectChat
+import com.example.booking_app.feature.chat.domain.usecase.RecallMessage
 import com.example.booking_app.feature.chat.domain.usecase.RetryMessage
 import com.example.booking_app.feature.chat.domain.usecase.SendMessage
+import com.example.booking_app.feature.chat.domain.usecase.SetBlocked
 import com.example.booking_app.feature.chat.domain.usecase.SetMuted
 import com.example.booking_app.feature.chat.ui.common.ChatUiText
 import io.mockk.coEvery
@@ -84,8 +87,12 @@ class ChatViewModelTest {
     private val groupHeaderFlow = MutableStateFlow<GroupHeaderInfo?>(null)
     private val messagesFlow = MutableStateFlow<List<ChatMessage>>(emptyList())
     private val outboxFlow = MutableStateFlow<List<OutboxEntry>>(emptyList())
+    private val requestedSignedPaths = mutableListOf<String>()
     private val signedUrlCache = SignedUrlCache(
-        fetch = { paths -> Result.success(SignedUrlBatch(paths.associateWith { "https://signed/$it" }, null)) },
+        fetch = { paths ->
+            requestedSignedPaths.addAll(paths)
+            Result.success(SignedUrlBatch(paths.associateWith { "https://signed/$it" }, null))
+        },
         clock = clock,
     )
 
@@ -162,6 +169,8 @@ class ChatViewModelTest {
             discardMessage = DiscardMessage(repository),
             markChatRead = MarkChatRead(repository),
             setMuted = SetMuted(repository),
+            setBlocked = SetBlocked(repository),
+            recallMessage = RecallMessage(repository),
             signedUrlCache = signedUrlCache,
             networkMonitor = networkMonitor,
             sessionManager = sessionManager,
@@ -472,6 +481,8 @@ class ChatViewModelTest {
             discardMessage = DiscardMessage(repository),
             markChatRead = MarkChatRead(repository),
             setMuted = SetMuted(repository),
+            setBlocked = SetBlocked(repository),
+            recallMessage = RecallMessage(repository),
             signedUrlCache = signedUrlCache,
             networkMonitor = networkMonitor,
             sessionManager = sessionManager,
@@ -604,5 +615,143 @@ class ChatViewModelTest {
         runCurrent()
         assertEquals(1, outboxFlow.value.size)
         assertEquals("content://picker/gallery1.jpg", outboxFlow.value.single().localImageUri)
+    }
+
+    // ---------- T048: US5 Thu hồi, báo cáo, chặn, tin bị ẩn ----------
+
+    @Test
+    fun `menu giu tin dung quyen thu hoi bao cao va an voi tin thu hoi hoac bi an`() = runTest {
+        chatFlow.value = directChat()
+        val vm = createViewModel()
+        runCurrent()
+
+        val now = Instant.ofEpochMilli(clock.currentMs)
+        val myRecent = ChatMessage(
+            id = "m-my-recent",
+            senderId = "player1",
+            text = "Tin vừa gửi",
+            createdAt = now.minusSeconds(300), // 5 phút trước
+            status = MessageStatus.NORMAL,
+            delivery = Delivery.SENT,
+            isMine = true,
+        )
+        val myExpired = myRecent.copy(id = "m-my-old", createdAt = now.minusSeconds(601))
+        val otherNormal = ChatMessage(
+            id = "m-other",
+            senderId = "owner1",
+            text = "Tin chủ sân",
+            createdAt = now.minusSeconds(60),
+            status = MessageStatus.NORMAL,
+            delivery = Delivery.SENT,
+            isMine = false,
+        )
+        val recalled = myRecent.copy(id = "m-recalled", text = "", status = MessageStatus.RECALLED)
+        val hidden = otherNormal.copy(id = "m-hidden", text = "", status = MessageStatus.HIDDEN)
+
+        assertEquals(listOf(MessageMenuAction.COPY, MessageMenuAction.RECALL), vm.availableActionsFor(myRecent))
+        assertEquals(listOf(MessageMenuAction.COPY), vm.availableActionsFor(myExpired))
+        assertEquals(listOf(MessageMenuAction.COPY, MessageMenuAction.REPORT), vm.availableActionsFor(otherNormal))
+        assertTrue(vm.availableActionsFor(recalled).isEmpty())
+        assertTrue(vm.availableActionsFor(hidden).isEmpty())
+    }
+
+    @Test
+    fun `thu hoi tin va chan chi ap dung cho chat rieng`() = runTest {
+        chatFlow.value = directChat()
+        val vm = createViewModel()
+        coEvery { repository.recall("owner1_player1", "m1") } returns Result.success(Unit)
+        coEvery { repository.setBlocked("owner1_player1", true) } returns Result.success(Unit)
+        runCurrent()
+
+        vm.events.test {
+            vm.onRecallConfirmed("m1")
+            runCurrent()
+            assertEquals(ChatEvent.ShowMessage(R.string.chat_recalled_success), awaitItem())
+
+            vm.onToggleBlockedConfirmed()
+            runCurrent()
+            assertEquals(ChatEvent.ShowMessage(R.string.chat_blocked_success), awaitItem())
+        }
+        coVerify(exactly = 1) { repository.recall("owner1_player1", "m1") }
+        coVerify(exactly = 1) { repository.setBlocked("owner1_player1", true) }
+
+        // Chat nhóm không cho chặn (AC 5.5).
+        chatFlow.value = groupChat("g1")
+        groupHeaderFlow.value = GroupHeaderInfo("g1", "CLB")
+        val groupVm = createViewModel(args = mapOf(ChatViewModel.ARG_GROUP_ID to "g1"))
+        runCurrent()
+        groupVm.onToggleBlockedConfirmed()
+        runCurrent()
+        coVerify(exactly = 0) { repository.setBlocked("group_g1", any()) }
+    }
+
+    @Test
+    fun `bi chan khi gui an o nhap va bao khong the gui tin`() = runTest {
+        chatFlow.value = directChat()
+        val vm = createViewModel()
+        runCurrent()
+        assertTrue(vm.uiState.value.canSend)
+
+        outboxFlow.value = listOf(
+            OutboxEntry(
+                messageId = "m-blk",
+                chatId = "owner1_player1",
+                text = "Alo",
+                createdAtLocal = clock.currentMs,
+                status = Delivery.FAILED,
+                retryable = false,
+                errorCode = ChatError.Blocked().code,
+            ),
+        )
+        runCurrent()
+
+        assertFalse(vm.uiState.value.canSend)
+        assertEquals(ComposerDisabledReason.BLOCKED, vm.uiState.value.disabledReason)
+        assertEquals(R.string.chat_error_blocked, ChatUiText.errorRes(ChatError.Blocked()))
+    }
+
+    @Test
+    fun `tin HIDDEN va RECALLED khong xin signed URL anh va khong mo PhotoViewer`() = runTest {
+        requestedSignedPaths.clear()
+        val hiddenFromDto = MessageDto(
+            id = "m-hidden-img",
+            senderId = "owner1",
+            text = "Nội dung cũ chưa xóa trên server",
+            imagePath = "owner1_player1/m-hidden-img.jpg",
+            createdAt = Instant.ofEpochMilli(1_700_000_005_000L),
+            status = "HIDDEN",
+        ).toDomain(currentUid = "player1")
+        assertEquals(MessageStatus.HIDDEN, hiddenFromDto.status)
+        assertEquals("", hiddenFromDto.text)
+        assertNull(hiddenFromDto.imagePath)
+
+        // Kể cả nếu model vẫn còn imagePath trên tin HIDDEN/RECALLED thì ViewModel cũng KHÔNG xin signed URL (FR-015).
+        chatFlow.value = directChat()
+        messagesFlow.value = listOf(
+            ChatMessage(
+                id = "m-hidden-raw",
+                senderId = "owner1",
+                imagePath = "owner1_player1/m-hidden-raw.jpg",
+                createdAt = Instant.ofEpochMilli(1_700_000_006_000L),
+                status = MessageStatus.HIDDEN,
+                delivery = Delivery.SENT,
+                isMine = false,
+            ),
+            ChatMessage(
+                id = "m-recalled-raw",
+                senderId = "player1",
+                imagePath = "owner1_player1/m-recalled-raw.jpg",
+                createdAt = Instant.ofEpochMilli(1_700_000_007_000L),
+                status = MessageStatus.RECALLED,
+                delivery = Delivery.SENT,
+                isMine = true,
+            ),
+        )
+
+        val vm = createViewModel()
+        advanceUntilIdle()
+
+        assertTrue(requestedSignedPaths.isEmpty())
+        assertTrue(vm.uiState.value.imageUrls.isEmpty())
     }
 }

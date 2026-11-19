@@ -31,8 +31,10 @@ import com.example.booking_app.feature.chat.domain.usecase.LoadOlderMessages
 import com.example.booking_app.feature.chat.domain.usecase.MarkChatRead
 import com.example.booking_app.feature.chat.domain.usecase.ObserveMessages
 import com.example.booking_app.feature.chat.domain.usecase.OpenDirectChat
+import com.example.booking_app.feature.chat.domain.usecase.RecallMessage
 import com.example.booking_app.feature.chat.domain.usecase.RetryMessage
 import com.example.booking_app.feature.chat.domain.usecase.SendMessage
+import com.example.booking_app.feature.chat.domain.usecase.SetBlocked
 import com.example.booking_app.feature.chat.domain.usecase.SetMuted
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
@@ -125,6 +127,8 @@ class ChatViewModel @Inject constructor(
     private val discardMessage: DiscardMessage,
     private val markChatRead: MarkChatRead,
     private val setMuted: SetMuted,
+    private val setBlocked: SetBlocked,
+    private val recallMessage: RecallMessage,
     @param:ChatMediaSignedUrlCache private val signedUrlCache: SignedUrlCache,
     private val networkMonitor: NetworkMonitor,
     private val sessionManager: SessionManager,
@@ -214,6 +218,7 @@ class ChatViewModel @Inject constructor(
         activeChatId = chatId
         lastMarkedMarker = null
         kickedEmitted = false
+        blockedByOther = false
         olderMessages.value = emptyList()
         observeJob?.cancel()
         _uiState.update { it.copy(messages = UiState.Loading, canLoadOlder = true) }
@@ -421,6 +426,7 @@ class ChatViewModel @Inject constructor(
 
     fun onRetryMessage(messageId: String) {
         val chatId = activeChatId ?: return
+        blockedByOther = false
         viewModelScope.launch {
             retryMessage(chatId, messageId).onFailure { err ->
                 _events.trySend(ChatEvent.ShowError(err.toChatError()))
@@ -549,7 +555,7 @@ class ChatViewModel @Inject constructor(
         if (header.type != ChatType.DIRECT) return
         val targetBlocked = !header.blockedOther
         viewModelScope.launch {
-            repository.setBlocked(chatId, targetBlocked).fold(
+            setBlocked(chatId, targetBlocked).fold(
                 onSuccess = {
                     _events.trySend(
                         ChatEvent.ShowMessage(
@@ -576,7 +582,7 @@ class ChatViewModel @Inject constructor(
     fun onRecallConfirmed(messageId: String) {
         val chatId = activeChatId ?: return
         viewModelScope.launch {
-            repository.recall(chatId, messageId).fold(
+            recallMessage(chatId, messageId).fold(
                 onSuccess = { _events.trySend(ChatEvent.ShowMessage(R.string.chat_recalled_success)) },
                 onFailure = { err -> _events.trySend(ChatEvent.ShowError(err.toChatError())) },
             )

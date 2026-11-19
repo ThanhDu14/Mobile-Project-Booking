@@ -210,14 +210,14 @@ Task của spec khác ghi là `010-T###`, `070-T###`, `090-T###`.
   - **R1:** `recall` sau 5 phút → `RECALLED`, `text = ""`, `imagePath = null`, ảnh bị xóa khỏi `chat-media`, `lastMessage.preview` thành "Tin nhắn đã được thu hồi" nếu là tin cuối; sau 11 phút → `RECALL_WINDOW_PASSED`; tin người khác → `FORBIDDEN` (SC-003);
   - **R2:** `report` lần 1 → `201`, `reports/MESSAGE_{chatId}_{messageId}_{uid}` có `targetType = MESSAGE`, `targetPath`, `status = OPEN`, `action = NONE`; lần 2 → `ALREADY_REPORTED`; tin của mình → `OWN_MESSAGE`; tin đã thu hồi → `INVALID_ARGUMENT`; `OTHER` không có `detail` hoặc 501 ký tự → `INVALID_ARGUMENT`;
   - **C5:** `participants/{người nhận}.blockedOther = true` → `403 BLOCKED`; người chặn gửi → thành công; bỏ chặn rồi gửi → thành công.
-- [ ] T048 [P] [US5] Unit test: `TEST/domain/ChatMessageTest.kt` (`canRecall` đúng tại mốc 10 phút theo `createdAt` server); `TEST/ui/report/ReportMessageViewModelTest.kt` (giống `ReportPostViewModelTest` của 090); bổ sung `ChatViewModelTest`: menu giữ tin (tin của mình ≤ 10 phút có "Thu hồi", tin người khác có "Báo cáo", tin đã thu hồi/ẩn không có menu); `BLOCKED` khi gửi → ô nhập thành "Bạn không thể gửi tin trong cuộc trò chuyện này"; tin `HIDDEN` hiện "Tin nhắn đã bị ẩn", không xin URL ảnh
+- [X] T048 [P] [US5] Unit test: `TEST/domain/ChatMessageTest.kt` (`canRecall` đúng tại mốc 10 phút theo `createdAt` server); `TEST/ui/report/ReportMessageViewModelTest.kt` (giống `ReportPostViewModelTest` của 090); bổ sung `ChatViewModelTest`: menu giữ tin (tin của mình ≤ 10 phút có "Thu hồi", tin người khác có "Báo cáo", tin đã thu hồi/ẩn không có menu); `BLOCKED` khi gửi → ô nhập thành "Bạn không thể gửi tin trong cuộc trò chuyện này"; tin `HIDDEN` hiện "Tin nhắn đã bị ẩn", không xin URL ảnh
 
 ### Implementation cho User Story 5
 
 - [X] T049 [US5] Cài `recall` và `report` trong `FN/chat-action/index.ts` theo [research R9, R12](research.md#r9-thu-hồi-tin-fr-010): `recall` trong transaction kiểm tra người gửi, `status == NORMAL`, `now < createdAt + 10 phút`; sau commit `deletePrefix`/xóa ảnh; `report` ghi `reports/{reportId}` với điều kiện "chưa tồn tại"
 - [X] T050 [US5] Bổ sung `FN/chat-send/index.ts` bước 3 cho chat riêng: đọc `participants/{người nhận}.blockedOther` trong transaction, `true` → `403 BLOCKED`. Sau đó T047 phải xanh
-- [ ] T051 [US5] Cài `recall`, `report`, `setBlocked` trong `CH/data/FirestoreChatRepository.kt` (`setBlocked` ghi `participants/{mình}.blockedOther`); UseCase `CH/domain/usecase/RecallMessage.kt`, `ReportMessage.kt`, `SetBlocked.kt`
-- [ ] T052 [US5] Menu giữ tin trong `ChatFragment` (hộp thoại xác nhận "Thu hồi"); `CH/ui/report/ReportMessageViewModel.kt`, `CH/ui/report/ReportMessageBottomSheet.kt` + `RES/layout/bottom_sheet_report_message.xml`; menu "Chặn"/"Bỏ chặn" chỉ ở chat riêng; hiển thị tin `RECALLED` và `HIDDEN`; trạng thái ô nhập khi bị chặn. Cho T048 xanh
+- [X] T051 [US5] Cài `recall`, `report`, `setBlocked` trong `CH/data/FirestoreChatRepository.kt` (`setBlocked` ghi `participants/{mình}.blockedOther`); UseCase `CH/domain/usecase/RecallMessage.kt`, `ReportMessage.kt`, `SetBlocked.kt`
+- [X] T052 [US5] Menu giữ tin trong `ChatFragment` (hộp thoại xác nhận "Thu hồi"); `CH/ui/report/ReportMessageViewModel.kt`, `CH/ui/report/ReportMessageBottomSheet.kt` + `RES/layout/bottom_sheet_report_message.xml`; menu "Chặn"/"Bỏ chặn" chỉ ở chat riêng; hiển thị tin `RECALLED` và `HIDDEN`; trạng thái ô nhập khi bị chặn. Cho T048 xanh
 
 **Checkpoint**: cả 5 user story chạy độc lập; quickstart Q12–Q14 đúng.
 
