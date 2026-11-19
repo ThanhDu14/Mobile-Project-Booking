@@ -163,11 +163,13 @@ fun GroupManageResponse.toUpdateResult(): UpdateGroupResult? {
 
 fun GroupManageResponse.toJoinResult(): JoinResult? = result.toEnumOrNull<JoinResult>()
 
-/** Bài vừa tạo/sửa; người tạo/sửa chưa tham gia sự kiện của mình nên `iAmAttending = false`; không có snapshot tác giả. */
+/** Bài từ response `create`/`update`; `postJson` không trả trạng thái tham gia của người xem nên `iAmAttending = false`. */
 fun PostResultDto.toDomain(): Post? = PostDto(
     id = id,
     groupId = groupId,
     authorId = authorId,
+    authorSnapshot = authorSnapshot,
+    authorDeleted = authorDeleted,
     type = type,
     content = content,
     photoPaths = photoPaths,

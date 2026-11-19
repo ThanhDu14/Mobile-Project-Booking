@@ -57,10 +57,10 @@ data class PostComposerState(
     val isEvent: Boolean get() = type == PostType.EVENT
     val canAddMorePhotos: Boolean get() = !saving && photos.size < PostComposerViewModel.MAX_PHOTOS
 
-    /** Nút "Đăng"/"Lưu" khóa khi đang tải hoặc còn ảnh `UPLOADING`/`FAILED` (AC 3.3). */
+    /** Nút "Đăng"/"Lưu" chỉ bật khi không đang lưu/tải và mọi ảnh đã `UPLOADED` kèm `remotePath` (AC 3.3). */
     val canPublish: Boolean
         get() = !saving && !loading && loadError == null &&
-            photos.none { it.state == DraftPhoto.State.UPLOADING || it.state == DraftPhoto.State.FAILED }
+            photos.all { it.state == DraftPhoto.State.UPLOADED && !it.remotePath.isNullOrBlank() }
 }
 
 sealed interface PostComposerEvent {
@@ -107,6 +107,9 @@ class PostComposerViewModel @Inject constructor(
 
     private val uploadJobs = LinkedHashMap<String, Job>()
     private val slotByKey = LinkedHashMap<String, Int>()
+    private val originalSlots = LinkedHashSet<Int>()
+    private val allocatedInSession = LinkedHashSet<Int>()
+    private val uploadedPathsInSession = LinkedHashSet<String>()
     private var hasUploadedInSession = false
     private var originalContent: String = ""
     private var originalPhotoPaths: List<String> = emptyList()
@@ -136,9 +139,13 @@ class PostComposerViewModel @Inject constructor(
                         originalEventLocation = post.event?.location.orEmpty()
                         originalExpectedCountText = post.event?.expectedCount?.toString().orEmpty()
                         slotByKey.clear()
+                        originalSlots.clear()
+                        allocatedInSession.clear()
+                        uploadedPathsInSession.clear()
                         val existingPhotos = post.photoPaths.mapIndexed { idx, path ->
                             val parsedIndex = parseSlotIndex(path) ?: idx
                             slotByKey[path] = parsedIndex
+                            originalSlots += parsedIndex
                             DraftPhoto(localUri = path, remotePath = path, state = DraftPhoto.State.UPLOADED)
                         }
                         _state.update {
@@ -332,6 +339,7 @@ class PostComposerViewModel @Inject constructor(
         viewModelScope.launch {
             if (shouldDiscard) {
                 runCatching { uploadPhotos.discard(groupId, requestId) }
+                    .onFailure { if (it is CancellationException) throw it }
             }
             _events.trySend(PostComposerEvent.Close)
         }
@@ -361,6 +369,13 @@ class PostComposerViewModel @Inject constructor(
         uploadJobs.remove(localUri)?.cancel()
         uploadJobs[localUri] = viewModelScope.launch {
             uploadPhotos.uploadOne(groupId, requestId, slotIndex, localUri).collect { updated ->
+                val remotePath = updated.remotePath
+                if (updated.state == DraftPhoto.State.UPLOADED && !remotePath.isNullOrBlank()) {
+                    val alreadyUploaded = !uploadedPathsInSession.add(remotePath)
+                    if (remotePath in originalPhotoPaths || alreadyUploaded) {
+                        signedUrls.invalidate(listOf(remotePath))
+                    }
+                }
                 _state.update { state ->
                     state.copy(
                         photos = state.photos.map { photo ->
@@ -374,9 +389,13 @@ class PostComposerViewModel @Inject constructor(
 
     private fun allocateSlot(key: String): Int {
         slotByKey[key]?.let { return it }
-        val used = slotByKey.values.toSet()
-        val free = (0 until MAX_PHOTOS).firstOrNull { it !in used } ?: 0
+        val active = slotByKey.values.toSet()
+        val free = (0 until MAX_PHOTOS).firstOrNull { it !in active && it !in originalSlots && it !in allocatedInSession }
+            ?: (0 until MAX_PHOTOS).firstOrNull { it !in active && it !in originalSlots }
+            ?: (0 until MAX_PHOTOS).firstOrNull { it !in active }
+            ?: 0
         slotByKey[key] = free
+        allocatedInSession += free
         return free
     }
 

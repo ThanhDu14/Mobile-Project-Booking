@@ -99,7 +99,7 @@ class GroupDetailFragment : Fragment(R.layout.fragment_group_detail) {
                 }
             },
         )
-        binding.feedLoadMoreRetry.setOnClickListener { viewModel.loadMoreFeed() }
+        binding.feedLoadMoreRetry.setOnClickListener { viewModel.retryLoadMoreFeed() }
 
         binding.editButton.setOnClickListener {
             val nav = findNavController()

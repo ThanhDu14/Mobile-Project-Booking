@@ -1,6 +1,7 @@
 package com.example.booking_app.feature.community.ui.detail
 
 import androidx.lifecycle.SavedStateHandle
+import app.cash.turbine.test
 import com.example.booking_app.core.catalog.CatalogRepository
 import com.example.booking_app.core.media.SignedUrlBatch
 import com.example.booking_app.core.media.SignedUrlCache
@@ -8,6 +9,10 @@ import com.example.booking_app.core.session.SessionManager
 import com.example.booking_app.core.testing.FakeClock
 import com.example.booking_app.core.testing.MainDispatcherRule
 import com.example.booking_app.feature.community.ME
+import com.example.booking_app.feature.community.data.FirestorePostRepository
+import com.example.booking_app.feature.community.data.dto.PostResultDto
+import com.example.booking_app.feature.community.data.dto.UserSnapshotDto
+import com.example.booking_app.feature.community.data.dto.toDomain
 import com.example.booking_app.feature.community.domain.CommunityError
 import com.example.booking_app.feature.community.domain.GroupRepository
 import com.example.booking_app.feature.community.domain.PostRepository
@@ -37,11 +42,14 @@ import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -327,5 +335,164 @@ class GroupFeedTest {
         assertTrue(lockedContent.group.isLocked)
         val lockedItems = (lockedContent.feed as FeedUiState.Content).items
         assertTrue(lockedItems.none { it.hasMenuActions })
+    }
+
+    // ---------- US3 fix: observeNewPosts xóa/ẩn, effectiveMember, delete, isEdited, loadMoreError, mergeMemberFeedPage ----------
+
+    @Test
+    fun `bai moi tu observeNewPosts bi xoa hoac bi an thi bien khoi bang tin`() = runTest {
+        givenMember(GroupRole.MEMBER)
+        val t1 = Instant.parse("2026-11-10T01:00:00Z")
+        val t2 = Instant.parse("2026-11-10T02:00:00Z")
+        val newPostsFlow = MutableSharedFlow<List<Post>>()
+        coEvery { posts.feed("g1", false, null) } returns Result.success(
+            Page(listOf(post(id = "old", createdAt = t1)), null),
+        )
+        every { posts.observeNewPosts("g1", false, t1) } returns newPostsFlow
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        newPostsFlow.emit(listOf(post(id = "p_new", createdAt = t2, authorId = "other")))
+        advanceUntilIdle()
+        val withNew = (vm.state.value as GroupDetailUiState.Content).feed as FeedUiState.Content
+        assertEquals(listOf("p_new", "old"), withNew.items.map { it.post.id })
+
+        // Bài mới bị xóa (snapshot trả rỗng) → biến khỏi bảng tin.
+        newPostsFlow.emit(emptyList())
+        advanceUntilIdle()
+        val afterRemove = (vm.state.value as GroupDetailUiState.Content).feed as FeedUiState.Content
+        assertEquals(listOf("old"), afterRemove.items.map { it.post.id })
+    }
+
+    @Test
+    fun `suy ra OWNER tu ownerId khi observeMembership loi van mo bang tin va tai voi isMod true`() = runTest {
+        every { groups.observeGroup("g1") } returns flowOf(group(ownerId = ME))
+        every { groups.observeMembership("g1") } returns flow { throw CommunityError.Network() }
+        coEvery { posts.feed("g1", true, null) } returns Result.success(Page(listOf(post("p1")), null))
+        every { posts.observeNewPosts("g1", true, any()) } returns emptyFlow()
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        val content = vm.state.value as GroupDetailUiState.Content
+        assertTrue(content.showFeed)
+        assertEquals(JoinAction.NONE, content.joinAction)
+        val feed = content.feed as FeedUiState.Content
+        assertEquals(listOf("p1"), feed.items.map { it.post.id })
+        coVerify(exactly = 1) { posts.feed("g1", true, null) }
+    }
+
+    @Test
+    fun `onDeletePostConfirmed thanh cong go bai va phat PostDeleted, that bai giu bai va phat ShowError`() = runTest {
+        givenMember(GroupRole.MEMBER)
+        coEvery { posts.feed("g1", false, null) } returns Result.success(
+            Page(listOf(post("p1", authorId = ME, edited = true), post("p2", authorId = ME)), null),
+        )
+        every { posts.observeNewPosts("g1", false, any()) } returns emptyFlow()
+        coEvery { posts.delete("g1", "p1") } returns Result.success(Unit)
+        coEvery { posts.delete("g1", "p2") } returns Result.failure(CommunityError.Network())
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        val before = (vm.state.value as GroupDetailUiState.Content).feed as FeedUiState.Content
+        assertTrue(before.items.first { it.post.id == "p1" }.post.isEdited)
+        assertFalse(before.items.first { it.post.id == "p2" }.post.isEdited)
+
+        vm.events.test {
+            vm.onDeletePostConfirmed("p1")
+            advanceUntilIdle()
+            assertEquals(GroupDetailEvent.PostDeleted, awaitItem())
+
+            val afterDelete = (vm.state.value as GroupDetailUiState.Content).feed as FeedUiState.Content
+            assertEquals(listOf("p2"), afterDelete.items.map { it.post.id })
+
+            vm.onDeletePostConfirmed("p2")
+            advanceUntilIdle()
+            val errEvent = awaitItem() as GroupDetailEvent.ShowError
+            assertTrue(errEvent.error is CommunityError.Network)
+
+            val afterFail = (vm.state.value as GroupDetailUiState.Content).feed as FeedUiState.Content
+            assertEquals(listOf("p2"), afterFail.items.map { it.post.id })
+        }
+    }
+
+    @Test
+    fun `loadMoreError chan loadMoreFeed tu goi lai va retryLoadMoreFeed tai lai duoc`() = runTest {
+        givenMember(GroupRole.MEMBER)
+        val t1 = Instant.parse("2026-11-10T02:00:00Z")
+        val t2 = Instant.parse("2026-11-10T01:00:00Z")
+        val cursor = PageCursor(t1.toEpochMilli(), "p1")
+        coEvery { posts.feed("g1", false, null) } returns Result.success(Page(listOf(post("p1", createdAt = t1)), cursor))
+        var nextCalls = 0
+        coEvery { posts.feed("g1", false, cursor) } answers {
+            if (nextCalls++ == 0) Result.failure(CommunityError.Network())
+            else Result.success(Page(listOf(post("p2", createdAt = t2)), null))
+        }
+        every { posts.observeNewPosts("g1", false, any()) } returns emptyFlow()
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.loadMoreFeed()
+        advanceUntilIdle()
+        val errFeed = (vm.state.value as GroupDetailUiState.Content).feed as FeedUiState.Content
+        assertNotNull(errFeed.loadMoreError)
+
+        // Gọi loadMoreFeed khi đang lỗi → bị chặn, không gọi thêm request.
+        vm.loadMoreFeed()
+        advanceUntilIdle()
+        coVerify(exactly = 1) { posts.feed("g1", false, cursor) }
+
+        // Bấm nút Thử lại → gọi retryLoadMoreFeed thành công.
+        vm.retryLoadMoreFeed()
+        advanceUntilIdle()
+        val okFeed = (vm.state.value as GroupDetailUiState.Content).feed as FeedUiState.Content
+        assertNull(okFeed.loadMoreError)
+        assertEquals(listOf("p1", "p2"), okFeed.items.map { it.post.id })
+        coVerify(exactly = 2) { posts.feed("g1", false, cursor) }
+    }
+
+    @Test
+    fun `mergeMemberFeedPage cat bai HIDDEN cu hon boundary khi con trang tiep va giu het o trang cuoi`() {
+        val t1 = Instant.parse("2026-11-10T01:00:00Z")
+        val t2 = Instant.parse("2026-11-10T02:00:00Z")
+        val t3 = Instant.parse("2026-11-10T03:00:00Z")
+        val t4 = Instant.parse("2026-11-10T04:00:00Z")
+
+        val visible = listOf(
+            post("v1", createdAt = t4),
+            post("v2", createdAt = t2),
+        )
+        val ownHidden = listOf(
+            post("h_in", createdAt = t3, authorId = ME, status = PostStatus.HIDDEN),
+            post("h_on_boundary", createdAt = t2, authorId = ME, status = PostStatus.HIDDEN),
+            post("h_older", createdAt = t1, authorId = ME, status = PostStatus.HIDDEN),
+        )
+
+        val cursor = PageCursor(t2.toEpochMilli(), "v2")
+        val pageWithNext = FirestorePostRepository.mergeMemberFeedPage(visible, ownHidden, cursor)
+        assertEquals(listOf("v1", "h_in", "v2", "h_on_boundary"), pageWithNext.map { it.id })
+
+        val lastPage = FirestorePostRepository.mergeMemberFeedPage(visible, ownHidden, next = null)
+        assertEquals(listOf("v1", "h_in", "v2", "h_on_boundary", "h_older"), lastPage.map { it.id })
+    }
+
+    @Test
+    fun `PostResultDto toDomain giu authorSnapshot va authorDeleted`() {
+        val dto = PostResultDto(
+            id = "p1",
+            groupId = "g1",
+            authorId = "u1",
+            authorSnapshot = UserSnapshotDto(displayName = "Nguyễn A", avatarPath = "u1/avatar.jpg"),
+            authorDeleted = true,
+            type = "POST",
+            content = "Xin chào",
+        )
+        val domain = dto.toDomain()!!
+        assertEquals("Nguyễn A", domain.author.displayName)
+        assertEquals("u1/avatar.jpg", domain.author.avatarPath)
+        assertTrue(domain.author.isDeleted)
     }
 }

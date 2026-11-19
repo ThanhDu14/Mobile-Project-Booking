@@ -70,6 +70,14 @@ class SignedUrlCache(
         if (isFresh(entry, clock.now())) entry.url else null
     }
 
+    /** Xóa cache cho các [paths] đã bị ghi đè để lần đọc sau xin lại URL mới. */
+    suspend fun invalidate(paths: Collection<String>) {
+        if (paths.isEmpty()) return
+        mutex.withLock {
+            for (path in paths) entries.remove(path)
+        }
+    }
+
     suspend fun clear() = mutex.withLock { entries.clear() }
 
     private fun isFresh(entry: Entry, nowMs: Long): Boolean = entry.expiresAtMs - SAFETY_MARGIN_MS > nowMs

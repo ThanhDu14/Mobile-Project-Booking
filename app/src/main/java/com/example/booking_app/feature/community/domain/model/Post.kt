@@ -67,7 +67,7 @@ data class PostDraft(
     val eventLocation: String = "",
     val expectedCount: Int? = null,
 ) {
-    /** Nút "Đăng" chỉ bật khi không còn ảnh đang tải hoặc lỗi. */
+    /** Nút "Đăng" chỉ bật khi mọi ảnh đều đã `UPLOADED` và có `remotePath`. */
     val photosReady: Boolean
-        get() = photos.none { it.state == DraftPhoto.State.UPLOADING || it.state == DraftPhoto.State.FAILED }
+        get() = photos.all { it.state == DraftPhoto.State.UPLOADED && !it.remotePath.isNullOrBlank() }
 }

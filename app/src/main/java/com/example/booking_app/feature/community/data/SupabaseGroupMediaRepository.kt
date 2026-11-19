@@ -17,8 +17,10 @@ import com.example.booking_app.feature.community.domain.model.UploadFile
 import com.example.booking_app.feature.community.domain.toCommunityError
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.storage.storage
+import io.ktor.http.ContentType
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
@@ -45,7 +47,10 @@ class SupabaseGroupMediaRepository @Inject constructor(
             return Result.failure(CommunityError.ImageUnreadable())
         }
         return try {
-            supabase.storage.from(BUCKET_AVATARS).uploadToSignedUrl(target.path, target.token, jpeg)
+            supabase.storage.from(BUCKET_AVATARS).uploadToSignedUrl(target.path, target.token, jpeg) {
+                upsert = true
+                contentType = ContentType.Image.JPEG
+            }
             Result.success(Unit)
         } catch (e: CancellationException) {
             throw e
@@ -81,8 +86,16 @@ class SupabaseGroupMediaRepository @Inject constructor(
             emit(DraftPhoto(localUri = localUri, remotePath = null, state = DraftPhoto.State.FAILED))
             return@flow
         }
+        emitAll(uploadCompressed(localUri, jpeg, target))
+    }
+
+    override fun uploadCompressed(localUri: String, jpeg: ByteArray, target: SignedUpload): Flow<DraftPhoto> = flow {
+        emit(DraftPhoto(localUri = localUri, remotePath = null, state = DraftPhoto.State.UPLOADING))
         try {
-            supabase.storage.from(BUCKET_MEDIA).uploadToSignedUrl(target.path, target.token, jpeg)
+            supabase.storage.from(BUCKET_MEDIA).uploadToSignedUrl(target.path, target.token, jpeg) {
+                upsert = true
+                contentType = ContentType.Image.JPEG
+            }
             emit(DraftPhoto(localUri = localUri, remotePath = target.path, state = DraftPhoto.State.UPLOADED))
         } catch (e: CancellationException) {
             throw e

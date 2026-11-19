@@ -103,4 +103,28 @@ class SignedUrlCacheTest {
         assertEquals(emptyMap<String, String>(), cache.resolve(emptyList()))
         assertEquals(0, calls)
     }
+
+    @Test
+    fun `invalidate xoa dung path khoi cache de lan resolve sau xin URL moi`() = runTest {
+        val now = 1_000_000L
+        val exp = Instant.ofEpochMilli(now + 60L * 60 * 1000)
+        var calls = 0
+        val cache = SignedUrlCache(
+            fetch = { paths ->
+                calls++
+                Result.success(SignedUrlBatch(paths.associateWith { "https://cdn/$it?v=$calls" }, exp))
+            },
+            clock = FakeClock { now },
+        )
+
+        cache.resolve(listOf("g1/p1/0.jpg", "g1/p1/1.jpg"))
+        assertEquals(1, calls)
+
+        cache.invalidate(listOf("g1/p1/0.jpg"))
+        val after = cache.resolve(listOf("g1/p1/0.jpg", "g1/p1/1.jpg"))
+
+        assertEquals(2, calls)
+        assertEquals("https://cdn/g1/p1/0.jpg?v=2", after["g1/p1/0.jpg"])
+        assertEquals("https://cdn/g1/p1/1.jpg?v=1", after["g1/p1/1.jpg"])
+    }
 }

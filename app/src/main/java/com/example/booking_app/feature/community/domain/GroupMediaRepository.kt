@@ -20,6 +20,12 @@ interface GroupMediaRepository {
      */
     fun upload(localUri: String, target: SignedUpload): Flow<DraftPhoto>
 
+    /**
+     * Tải trực tiếp mảng [jpeg] đã nén trước lên [target] (không nén lại lần hai).
+     * Phát `UPLOADING`, sau đó `UPLOADED` (kèm `remotePath = target.path`) hoặc `FAILED`; không ném lỗi.
+     */
+    fun uploadCompressed(localUri: String, jpeg: ByteArray, target: SignedUpload): Flow<DraftPhoto>
+
     /** URL xem ảnh cho [paths] (tối đa 40 mỗi lần); path của nhóm mình không là thành viên bị bỏ qua. */
     suspend fun signedUrls(paths: List<String>): Result<SignedUrls>
 

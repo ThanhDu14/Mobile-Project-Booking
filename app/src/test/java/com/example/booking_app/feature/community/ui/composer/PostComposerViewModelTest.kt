@@ -2,6 +2,10 @@ package com.example.booking_app.feature.community.ui.composer
 
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
+import com.example.booking_app.core.image.ImageCompressor
+import com.example.booking_app.core.image.ImageTooLargeException
+import com.example.booking_app.core.media.SignedUrlBatch
+import com.example.booking_app.core.media.SignedUrlCache
 import com.example.booking_app.core.testing.FakeClock
 import com.example.booking_app.core.testing.MainDispatcherRule
 import com.example.booking_app.feature.community.domain.CommunityError
@@ -11,6 +15,7 @@ import com.example.booking_app.feature.community.domain.model.DraftPhoto
 import com.example.booking_app.feature.community.domain.model.PostDraft
 import com.example.booking_app.feature.community.domain.model.PostType
 import com.example.booking_app.feature.community.domain.model.SignedUpload
+import com.example.booking_app.feature.community.domain.model.UploadFile
 import com.example.booking_app.feature.community.domain.usecase.EditPost
 import com.example.booking_app.feature.community.domain.usecase.PublishPost
 import com.example.booking_app.feature.community.domain.usecase.UploadPostPhotos
@@ -43,29 +48,35 @@ class PostComposerViewModelTest {
 
     private val posts = mockk<PostRepository>()
     private val media = mockk<GroupMediaRepository>()
+    private val compressor = mockk<ImageCompressor> {
+        coEvery { compress(any()) } returns ByteArray(1024) { 1 }
+    }
 
     private val now = Instant.parse("2026-11-10T10:00:00Z")
 
-    private fun viewModel(handle: SavedStateHandle = SavedStateHandle(mapOf("groupId" to "g1"))) =
+    private fun viewModel(
+        handle: SavedStateHandle = SavedStateHandle(mapOf("groupId" to "g1")),
+        signedUrls: SignedUrlCache = noopSignedUrls(),
+    ) =
         PostComposerViewModel(
             savedStateHandle = handle,
             posts = posts,
-            uploadPhotos = UploadPostPhotos(media),
+            uploadPhotos = UploadPostPhotos(media, compressor),
             publishPost = PublishPost(posts),
             editPost = EditPost(posts),
-            signedUrls = noopSignedUrls(),
+            signedUrls = signedUrls,
             clock = FakeClock { now.toEpochMilli() },
         )
 
     private fun stubUploadSuccess() {
         coEvery { media.requestUploads(any(), any(), any()) } answers {
             val postId = secondArg<String>()
-            val files = thirdArg<List<com.example.booking_app.feature.community.domain.model.UploadFile>>()
+            val files = thirdArg<List<UploadFile>>()
             Result.success(files.map { SignedUpload("g1/$postId/${it.index}.jpg", "https://up", "tok") })
         }
-        every { media.upload(any(), any()) } answers {
+        every { media.uploadCompressed(any(), any(), any()) } answers {
             val uri = firstArg<String>()
-            val target = secondArg<SignedUpload>()
+            val target = thirdArg<SignedUpload>()
             flowOf(
                 DraftPhoto(uri, null, DraftPhoto.State.UPLOADING),
                 DraftPhoto(uri, target.path, DraftPhoto.State.UPLOADED),
@@ -96,9 +107,9 @@ class PostComposerViewModelTest {
             listOf(SignedUpload("g1/p/0.jpg", "https://up", "tok")),
         )
         var attempts = 0
-        every { media.upload("u1", any()) } answers {
+        every { media.uploadCompressed("u1", any(), any()) } answers {
             attempts++
-            val target = secondArg<SignedUpload>()
+            val target = thirdArg<SignedUpload>()
             flow {
                 emit(DraftPhoto("u1", null, DraftPhoto.State.UPLOADING))
                 gate.await()
@@ -278,5 +289,123 @@ class PostComposerViewModelTest {
         assertEquals("Sân Hòa Bình", draftSlot.captured.eventLocation)
         assertEquals(8, draftSlot.captured.expectedCount)
         assertEquals("", draftSlot.captured.content)
+    }
+
+    // ---------- US3 fix: slot ảnh gốc, nén trước, PENDING, PhotoMissing, contentError ----------
+
+    @Test
+    fun `sua bai go anh goc o slot 0 roi them anh moi thi anh moi khong nam o slot 0`() = runTest {
+        stubUploadSuccess()
+        val existing = post(id = "p9", content = "Bài cũ", photoPaths = listOf("g1/p9/0.jpg"))
+        coEvery { posts.getPost("g1", "p9") } returns Result.success(existing)
+
+        val vm = viewModel(SavedStateHandle(mapOf("groupId" to "g1", "postId" to "p9")))
+        advanceUntilIdle()
+
+        vm.onRemovePhoto("g1/p9/0.jpg")
+        vm.onPhotosPicked(listOf("content://new-photo"))
+        advanceUntilIdle()
+
+        val uploaded = vm.state.value.photos.single()
+        assertEquals(DraftPhoto.State.UPLOADED, uploaded.state)
+        assertEquals("g1/p9/1.jpg", uploaded.remotePath)
+        coVerify(exactly = 1) {
+            media.requestUploads("g1", "p9", match { it.single().index == 1 && it.single().size == 1024L })
+        }
+    }
+
+    @Test
+    fun `ghi de slot goc khi da du 4 anh goc thi xoa path do khoi SignedUrlCache`() = runTest {
+        stubUploadSuccess()
+        val origPaths = (0..3).map { "g1/p9/$it.jpg" }
+        val existing = post(id = "p9", content = "Đủ 4 ảnh", photoPaths = origPaths)
+        coEvery { posts.getPost("g1", "p9") } returns Result.success(existing)
+
+        var fetchCount = 0
+        val cache = SignedUrlCache(
+            fetch = { paths ->
+                fetchCount++
+                Result.success(
+                    SignedUrlBatch(
+                        paths.associateWith { "https://cdn/$it?v=$fetchCount" },
+                        Instant.ofEpochMilli(now.toEpochMilli() + 60L * 60 * 1000),
+                    ),
+                )
+            },
+            clock = FakeClock { now.toEpochMilli() },
+        )
+
+        val vm = viewModel(SavedStateHandle(mapOf("groupId" to "g1", "postId" to "p9")), signedUrls = cache)
+        advanceUntilIdle()
+        assertEquals("https://cdn/g1/p9/0.jpg?v=1", cache.peek("g1/p9/0.jpg"))
+
+        vm.onRemovePhoto("g1/p9/0.jpg")
+        vm.onPhotosPicked(listOf("content://replace-0"))
+        advanceUntilIdle()
+
+        assertEquals("g1/p9/0.jpg", vm.state.value.photos.last().remotePath)
+        assertNull(cache.peek("g1/p9/0.jpg"))
+        assertEquals("https://cdn/g1/p9/1.jpg?v=1", cache.peek("g1/p9/1.jpg"))
+    }
+
+    @Test
+    fun `nen anh loi hoac qua 2MB thi FAILED ngay ma khong goi mang`() = runTest {
+        coEvery { compressor.compress("u-big") } throws ImageTooLargeException()
+        val vm = viewModel()
+        vm.onPhotosPicked(listOf("u-big"))
+        advanceUntilIdle()
+
+        assertEquals(DraftPhoto.State.FAILED, vm.state.value.photos.single().state)
+        assertFalse(vm.state.value.canPublish)
+        coVerify(exactly = 0) { media.requestUploads(any(), any(), any()) }
+        coVerify(exactly = 0) { media.uploadCompressed(any(), any(), any()) }
+    }
+
+    @Test
+    fun `canPublish va photosReady false khi con anh PENDING`() {
+        val pending = DraftPhoto(localUri = "u1", remotePath = null, state = DraftPhoto.State.PENDING)
+        val state = PostComposerState(content = "Xin chào", photos = listOf(pending))
+        val draft = PostDraft(requestId = "r1", type = PostType.POST, content = "Xin chào", photos = listOf(pending))
+        assertFalse(state.canPublish)
+        assertFalse(draft.photosReady)
+    }
+
+    @Test
+    fun `submit nhan PhotoMissing danh dau anh moi tai la FAILED va giu anh goc`() = runTest {
+        stubUploadSuccess()
+        val existing = post(id = "p9", content = "Bài cũ", photoPaths = listOf("g1/p9/0.jpg"))
+        coEvery { posts.getPost("g1", "p9") } returns Result.success(existing)
+        coEvery { posts.update("g1", any()) } returns Result.failure(CommunityError.PhotoMissing())
+
+        val vm = viewModel(SavedStateHandle(mapOf("groupId" to "g1", "postId" to "p9")))
+        advanceUntilIdle()
+        vm.onPhotosPicked(listOf("content://new-1"))
+        advanceUntilIdle()
+
+        vm.events.test {
+            vm.submit()
+            advanceUntilIdle()
+            val event = awaitItem() as PostComposerEvent.ShowError
+            assertTrue(event.error is CommunityError.PhotoMissing)
+        }
+        val photos = vm.state.value.photos.associateBy { it.localUri }
+        assertEquals(DraftPhoto.State.UPLOADED, photos.getValue("g1/p9/0.jpg").state)
+        assertEquals(DraftPhoto.State.FAILED, photos.getValue("content://new-1").state)
+        assertNull(photos.getValue("content://new-1").remotePath)
+        assertFalse(vm.state.value.saving)
+        assertFalse(vm.state.value.canPublish)
+    }
+
+    @Test
+    fun `bai dang thuong rong hoac qua 2000 ky tu bao contentError REQUIRED va TOO_LONG`() = runTest {
+        val vm = viewModel()
+        vm.onContentChanged("   ")
+        vm.submit()
+        assertEquals(PostContentError.REQUIRED, vm.state.value.contentError)
+
+        vm.onContentChanged("x".repeat(PostComposerViewModel.MAX_CONTENT_LENGTH + 1))
+        vm.submit()
+        assertEquals(PostContentError.TOO_LONG, vm.state.value.contentError)
+        coVerify(exactly = 0) { posts.create(any(), any()) }
     }
 }

@@ -100,7 +100,11 @@ class GroupDetailViewModelTest {
 
         viewModel().state.test {
             awaitItem()
-            assertTrue((awaitItem() as GroupDetailUiState.Content).canEdit)
+            val content = awaitItem() as GroupDetailUiState.Content
+            assertTrue(content.canEdit)
+            assertTrue(content.showFeed)
+            assertEquals(JoinAction.NONE, content.joinAction)
+            assertEquals(GroupRole.OWNER, content.membership.role)
         }
     }
 

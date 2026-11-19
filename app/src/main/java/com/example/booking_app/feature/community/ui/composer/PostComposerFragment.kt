@@ -22,6 +22,7 @@ import com.example.booking_app.core.ui.EmptyStateSpec
 import com.example.booking_app.core.ui.UiState
 import com.example.booking_app.core.ui.render
 import com.example.booking_app.databinding.FragmentPostComposerBinding
+import com.example.booking_app.feature.community.domain.CommunityError
 import com.example.booking_app.feature.community.ui.common.CommunityUiText
 import com.google.android.material.datepicker.CalendarConstraints
 import com.google.android.material.datepicker.DateValidatorPointForward
@@ -140,6 +141,7 @@ class PostComposerFragment : Fragment(R.layout.fragment_post_composer) {
         state: PostComposerState,
     ) {
         val coreState: UiState<Unit> = when {
+            state.loadError is CommunityError.PostNotFound -> UiState.Empty
             state.loadError != null -> UiState.Error(CommunityUiText.error(requireContext(), state.loadError), viewModel::loadPost)
             state.loading -> UiState.Loading
             else -> UiState.Content(Unit)

@@ -87,22 +87,14 @@ class FirestorePostRepository @Inject constructor(
                     .orderBy(FieldPath.documentId(), Query.Direction.DESCENDING)
                 if (cursorTs != null && cursor != null) hiddenQ = hiddenQ.startAfter(cursorTs, cursor.id)
                 val hiddenDocs = runCatching { hiddenQ.limit(Page.PAGE_SIZE.toLong()).get().await().documents }
+                    .onFailure { if (it is CancellationException) throw it }
                     .getOrElse { emptyList() }
-                val rawHidden = hiddenDocs.mapNotNull { it.toPost() }
-                if (next != null) {
-                    val boundary = Instant.ofEpochMilli(next.key)
-                    rawHidden.filter { p -> p.createdAt?.let { !it.isBefore(boundary) } == true }
-                } else {
-                    rawHidden
-                }
+                hiddenDocs.mapNotNull { it.toPost() }
             } else {
                 emptyList()
             }
 
-            val merged = (visiblePosts + ownHiddenPosts)
-                .associateBy { it.id }
-                .values
-                .sortedWith(POST_ORDER)
+            val merged = mergeMemberFeedPage(visiblePosts, ownHiddenPosts, next)
             Result.success(Page(attachAttendance(groupId, uid, merged), next))
         }
     } catch (e: CancellationException) {
@@ -219,7 +211,8 @@ class FirestorePostRepository @Inject constructor(
                     async {
                         val attending = runCatching {
                             col.document(post.id).collection(COLLECTION_ATTENDEES).document(uid).get().await().exists()
-                        }.getOrDefault(false)
+                        }.onFailure { if (it is CancellationException) throw it }
+                            .getOrDefault(false)
                         post.copy(event = post.event.copy(iAmAttending = attending))
                     }
                 }
@@ -283,14 +276,35 @@ class FirestorePostRepository @Inject constructor(
             toAppError().toCommunityError()
         }
 
-    private companion object {
-        const val COLLECTION_GROUPS = "groups"
-        const val COLLECTION_POSTS = "posts"
-        const val COLLECTION_ATTENDEES = "attendees"
-        const val MAX_BUSY_RETRIES = 2
-        const val BUSY_RETRY_DELAY_MS = 500L
+    companion object {
+        private const val COLLECTION_GROUPS = "groups"
+        private const val COLLECTION_POSTS = "posts"
+        private const val COLLECTION_ATTENDEES = "attendees"
+        private const val MAX_BUSY_RETRIES = 2
+        private const val BUSY_RETRY_DELAY_MS = 500L
 
-        val POST_ORDER: Comparator<Post> = compareByDescending<Post> { it.createdAt ?: Instant.EPOCH }
+        private val POST_ORDER: Comparator<Post> = compareByDescending<Post> { it.createdAt ?: Instant.EPOCH }
             .thenByDescending { it.id }
+
+        /**
+         * Gộp trang `VISIBLE` với bài `HIDDEN` của chính mình cho thành viên thường (US3):
+         * khi còn trang tiếp theo (`next != null`), cắt bỏ bài ẩn cũ hơn mốc `next.key` để tránh chen sai trang.
+         */
+        internal fun mergeMemberFeedPage(
+            visiblePosts: List<Post>,
+            ownHiddenPosts: List<Post>,
+            next: PageCursor?,
+        ): List<Post> {
+            val clippedHidden = if (next != null) {
+                val boundary = Instant.ofEpochMilli(next.key)
+                ownHiddenPosts.filter { p -> p.createdAt?.let { !it.isBefore(boundary) } == true }
+            } else {
+                ownHiddenPosts
+            }
+            return (visiblePosts + clippedHidden)
+                .associateBy { it.id }
+                .values
+                .sortedWith(POST_ORDER)
+        }
     }
 }

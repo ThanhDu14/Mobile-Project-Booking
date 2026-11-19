@@ -74,7 +74,8 @@
         android:layout_width="@dimen/touch_min"
         android:layout_height="@dimen/touch_min"
         android:layout_gravity="top|end"
-        android:background="?attr/selectableItemBackgroundBorderless"
+        android:background="@drawable/bg_remove_photo_button"
+        android:foreground="?attr/selectableItemBackgroundBorderless"
         android:padding="@dimen/space_3"
         android:src="@drawable/ic_close_24"
         app:tint="@android:color/white" />

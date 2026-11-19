@@ -1,5 +1,6 @@
 package com.example.booking_app.feature.community.data.dto
 
+import kotlinx.serialization.Serializable
 import java.time.Instant
 
 /*
@@ -9,6 +10,7 @@ import java.time.Instant
  */
 
 /** `userSnapshot`/`authorSnapshot`: `displayName`, `avatarPath` chép từ `users` lúc vào nhóm (R18). */
+@Serializable
 data class UserSnapshotDto(val displayName: String? = null, val avatarPath: String? = null) {
     companion object {
         fun fromAny(raw: Any?): UserSnapshotDto? {

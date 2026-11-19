@@ -193,6 +193,7 @@ class GroupDetailViewModel @Inject constructor(
     private var activeFeedKey: Pair<Boolean, Boolean>? = null
     private var currentIsMod: Boolean = false
     private var rawPosts: List<Post> = emptyList()
+    private var observedNewPostIds: Set<String> = emptySet()
     private var photoUrls: MutableMap<String, String> = LinkedHashMap()
     private var nextCursor: PageCursor? = null
     private var loadingMore: Boolean = false
@@ -233,7 +234,18 @@ class GroupDetailViewModel @Inject constructor(
 
     fun loadMoreFeed() {
         val cursor = nextCursor ?: return
+        if (loadingMore || loadMoreError != null) return
+        fetchNextPage(cursor)
+    }
+
+    fun retryLoadMoreFeed() {
+        val cursor = nextCursor ?: return
         if (loadingMore) return
+        loadMoreError = null
+        fetchNextPage(cursor)
+    }
+
+    private fun fetchNextPage(cursor: PageCursor) {
         loadingMore = true
         loadMoreError = null
         publishFeed()
@@ -264,6 +276,7 @@ class GroupDetailViewModel @Inject constructor(
         viewModelScope.launch {
             deletePost(groupId, postId).fold(
                 onSuccess = {
+                    observedNewPostIds = observedNewPostIds - postId
                     rawPosts = rawPosts.filterNot { it.id == postId }
                     publishFeed()
                     _events.trySend(GroupDetailEvent.PostDeleted)
@@ -368,10 +381,15 @@ class GroupDetailViewModel @Inject constructor(
                     GroupDetailUiState.NotFound
                 } else {
                     val role = member.role ?: GroupRole.OWNER.takeIf { group.ownerId == uid }
+                    val effectiveMember = if (member.role == null && role != null) {
+                        GroupMembership(role = role, pending = false)
+                    } else {
+                        member
+                    }
                     val permissions = GroupPermissions(uid, role, group.status)
                     GroupDetailUiState.Content(
                         group = group,
-                        membership = member,
+                        membership = effectiveMember,
                         permissions = permissions,
                         districtName = names[group.districtId],
                         busy = isBusy,
@@ -413,6 +431,8 @@ class GroupDetailViewModel @Inject constructor(
         cancelFeedJobs()
         currentIsMod = isMod
         rawPosts = emptyList()
+        observedNewPostIds = emptySet()
+        photoUrls.clear()
         nextCursor = null
         loadingMore = false
         loadMoreError = null
@@ -444,9 +464,13 @@ class GroupDetailViewModel @Inject constructor(
                 .catch { /* Lỗi listener bài mới không ghi đè trang đã tải. */ }
                 .collect { incoming ->
                     val filtered = filterVisible(incoming, isMod, uid)
-                    if (filtered.isEmpty()) return@collect
-                    resolveUrls(filtered)
-                    rawPosts = mergePosts(filtered, rawPosts)
+                    val currentIds = filtered.mapTo(HashSet()) { it.id }
+                    val removedIds = observedNewPostIds - currentIds
+                    if (filtered.isEmpty() && removedIds.isEmpty()) return@collect
+                    observedNewPostIds = currentIds
+                    if (filtered.isNotEmpty()) resolveUrls(filtered)
+                    val remaining = if (removedIds.isEmpty()) rawPosts else rawPosts.filterNot { it.id in removedIds }
+                    rawPosts = mergePosts(filtered, remaining)
                     publishFeed()
                 }
         }
@@ -487,6 +511,8 @@ class GroupDetailViewModel @Inject constructor(
     private fun clearFeed() {
         cancelFeedJobs()
         rawPosts = emptyList()
+        observedNewPostIds = emptySet()
+        photoUrls.clear()
         nextCursor = null
         loadingMore = false
         loadMoreError = null
