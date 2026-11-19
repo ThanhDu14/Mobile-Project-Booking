@@ -51,5 +51,7 @@ class HomeVenueMapperTest {
         assertEquals(LatLng(10.8128, 106.6283), here.position)
         assertNull(HomeVenueMapper.map("v5", mapOf("location" to GeoPoint(0.0, 0.0)), districts, resolver).position)
         assertNull(HomeVenueMapper.map("v6", mapOf("location" to "10.8,106.6"), districts, resolver).position)
+        // Sân "Nhut" trên production lưu (90, 90): hiện cách 8.794 km nếu không loại.
+        assertNull(HomeVenueMapper.map("v7", mapOf("location" to GeoPoint(90.0, 90.0)), districts, resolver).position)
     }
 }

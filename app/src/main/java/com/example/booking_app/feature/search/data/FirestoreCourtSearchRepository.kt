@@ -2,6 +2,7 @@ package com.example.booking_app.feature.search.data
 
 import com.example.booking_app.core.catalog.CatalogRepository
 import com.example.booking_app.core.location.GeoDistance
+import com.example.booking_app.core.location.VenueArea
 import com.example.booking_app.core.media.PhotoUrlResolver
 import com.example.booking_app.core.network.awaitWithTimeout
 import com.example.booking_app.core.pricing.PriceRuleMapper
@@ -66,7 +67,7 @@ class FirestoreCourtSearchRepository @Inject constructor(
             if (!matchesVenueName(criteria.keyword, venue.name)) return@mapNotNull null
             val amenities = (data["amenityIds"] as? List<*>)?.filterIsInstance<String>().orEmpty()
             if (!amenities.containsAll(criteria.amenityIds)) return@mapNotNull null
-            val location = data["location"] as? GeoPoint
+            val location = (data["location"] as? GeoPoint)?.takeIf { VenueArea.contains(it.latitude, it.longitude) }
             val distance = if (origin != null && location != null) GeoDistance.meters(origin, location) else null
             Candidate(venue.copy(distanceMeters = distance), data["openTime"] as? String, data["closeTime"] as? String)
         }
