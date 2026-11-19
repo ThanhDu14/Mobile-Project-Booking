@@ -342,7 +342,7 @@ class ChatFragment : Fragment(R.layout.fragment_chat) {
             0,
             if (header.muted) R.string.chat_menu_unmute else R.string.chat_menu_mute,
         )
-        if (header.type == ChatType.DIRECT) {
+        if (header.type == ChatType.DIRECT && !header.isDeletedOtherParty) {
             popup.menu.add(
                 0,
                 MENU_BLOCK,
@@ -520,10 +520,13 @@ class ChatFragment : Fragment(R.layout.fragment_chat) {
                 }
             }
             is ChatEvent.OpenReport -> {
-                findNavController().navigate(
-                    R.id.action_chat_to_reportMessage,
-                    bundleOf("chatId" to event.chatId, "messageId" to event.messageId),
-                )
+                val nav = findNavController()
+                if (nav.currentDestination?.id == R.id.chatFragment) {
+                    nav.navigate(
+                        R.id.action_chat_to_reportMessage,
+                        bundleOf("chatId" to event.chatId, "messageId" to event.messageId),
+                    )
+                }
             }
             ChatEvent.CameraPermissionDenied -> showCameraDenied()
         }

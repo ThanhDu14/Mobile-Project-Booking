@@ -944,4 +944,113 @@ class ChatViewModelTest {
             vm.uiState.value.imageUrls["owner1_player1/m-img-exp.jpg"],
         )
     }
+
+    // ---------- Review Argon US5 #2, #3, #5 ----------
+
+    @Test
+    fun `xoa hoac gui lai tin loi BLOCKED va tin moi tu doi phuong mo khoa lai o nhap`() = runTest {
+        chatFlow.value = directChat()
+        messagesFlow.value = listOf(serverMessage("m0", "Chào", secondsOffset = 1, isMine = false))
+        val vm = createViewModel()
+        coEvery { repository.discard("owner1_player1", any()) } coAnswers {
+            val id = secondArg<String>()
+            outboxFlow.value = outboxFlow.value.filterNot { it.messageId == id }
+            Result.success(com.example.booking_app.feature.chat.domain.model.DiscardResult.DISCARDED)
+        }
+        coEvery { repository.retry("owner1_player1", any()) } coAnswers {
+            val id = secondArg<String>()
+            outboxFlow.value = outboxFlow.value.map {
+                if (it.messageId == id) it.copy(status = Delivery.PENDING, errorCode = null) else it
+            }
+            Result.success(Unit)
+        }
+        runCurrent()
+
+        // 1. Một tin lỗi BLOCKED -> khóa ô nhập; bấm Xóa tin lỗi -> mở khóa lại ô nhập.
+        outboxFlow.value = listOf(
+            OutboxEntry("m-blk-1", "owner1_player1", "Alo", createdAtLocal = 100L, status = Delivery.FAILED, retryable = false, errorCode = "BLOCKED"),
+        )
+        runCurrent()
+        assertEquals(ComposerDisabledReason.BLOCKED, vm.uiState.value.disabledReason)
+
+        vm.onDiscardMessage("m-blk-1")
+        runCurrent()
+        assertNull(vm.uiState.value.disabledReason)
+        assertTrue(vm.uiState.value.canSend)
+
+        // 2. Có 2 tin lỗi BLOCKED -> bấm Gửi lại tin 1 không bị tin 2 khóa ngược lại ngay.
+        outboxFlow.value = listOf(
+            OutboxEntry("m-blk-a", "owner1_player1", "Tin A", createdAtLocal = 200L, status = Delivery.FAILED, retryable = false, errorCode = "BLOCKED"),
+            OutboxEntry("m-blk-b", "owner1_player1", "Tin B", createdAtLocal = 201L, status = Delivery.FAILED, retryable = false, errorCode = "BLOCKED"),
+        )
+        runCurrent()
+        assertEquals(ComposerDisabledReason.BLOCKED, vm.uiState.value.disabledReason)
+
+        vm.onRetryMessage("m-blk-a")
+        runCurrent()
+        assertNull(vm.uiState.value.disabledReason)
+
+        // Nếu m-blk-a lại lỗi BLOCKED lần mới -> khóa lại.
+        outboxFlow.value = outboxFlow.value.map {
+            if (it.messageId == "m-blk-a") it.copy(status = Delivery.FAILED, errorCode = "BLOCKED") else it
+        }
+        runCurrent()
+        assertEquals(ComposerDisabledReason.BLOCKED, vm.uiState.value.disabledReason)
+
+        // 3. Đối phương nhắn tin mới sang (đã bỏ chặn) -> tự mở khóa lại ô nhập.
+        messagesFlow.value = messagesFlow.value + serverMessage("m1", "Anh mở chặn rồi nhé", secondsOffset = 10, isMine = false)
+        runCurrent()
+        assertNull(vm.uiState.value.disabledReason)
+    }
+
+    @Test
+    fun `thu hoi tin o olderMessages cap nhat ngay UI va don cache signed URL anh bi thu hoi hoac an`() = runTest {
+        val initial30 = (1..30).map { i -> serverMessage("m$i", "Tin $i", secondsOffset = i.toLong() + 100, isMine = true) }
+        val olderImg = ChatMessage(
+            id = "old-img",
+            senderId = "player1",
+            text = "Ảnh trang cũ",
+            imagePath = "owner1_player1/old-img.jpg",
+            createdAt = Instant.ofEpochMilli(1_700_000_000_000L + 50_000L),
+            status = MessageStatus.NORMAL,
+            delivery = Delivery.SENT,
+            isMine = true,
+        )
+        chatFlow.value = directChat()
+        messagesFlow.value = initial30
+        coEvery { repository.loadOlder("owner1_player1", initial30.first().createdAt!!) } returns Result.success(listOf(olderImg))
+        coEvery { repository.recall("owner1_player1", "old-img") } returns Result.success(Unit)
+
+        val vm = createViewModel()
+        runCurrent()
+
+        vm.loadOlder()
+        advanceUntilIdle()
+        assertEquals("https://signed/owner1_player1/old-img.jpg", vm.uiState.value.imageUrls["owner1_player1/old-img.jpg"])
+        assertEquals("https://signed/owner1_player1/old-img.jpg", signedUrlCache.peek("owner1_player1/old-img.jpg"))
+
+        // Thu hồi tin nằm trong olderMessages -> UI cập nhật RECALLED và xóa signed URL khỏi state + SignedUrlCache.
+        vm.onRecallConfirmed("old-img")
+        advanceUntilIdle()
+
+        val updatedOld = (vm.uiState.value.messages as UiState.Content).data.first { it.id == "old-img" }
+        assertEquals(MessageStatus.RECALLED, updatedOld.status)
+        assertEquals("", updatedOld.text)
+        assertNull(updatedOld.imagePath)
+        assertNull(vm.uiState.value.imageUrls["owner1_player1/old-img.jpg"])
+        assertNull(signedUrlCache.peek("owner1_player1/old-img.jpg"))
+    }
+
+    @Test
+    fun `khong cho chan khi doi phuong da xoa tai khoan`() = runTest {
+        chatFlow.value = directChat(status = ChatStatus.READ_ONLY).copy(
+            otherParty = UserSummary("owner1", null, null, isDeleted = true),
+        )
+        val vm = createViewModel()
+        runCurrent()
+
+        vm.onToggleBlockedConfirmed()
+        runCurrent()
+        coVerify(exactly = 0) { repository.setBlocked(any(), any()) }
+    }
 }

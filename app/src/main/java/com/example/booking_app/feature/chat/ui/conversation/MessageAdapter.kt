@@ -19,6 +19,7 @@ import com.example.booking_app.feature.chat.domain.model.ChatMessage
 import com.example.booking_app.feature.chat.domain.model.Delivery
 import com.example.booking_app.feature.chat.domain.model.MessageStatus
 import com.example.booking_app.feature.chat.ui.common.ChatUiText
+import com.google.android.material.color.MaterialColors
 
 /**
  * Danh sách tin nhắn trong cuộc trò chuyện (`ListAdapter` + `DiffUtil`, T029, T035, T046, T052).
@@ -89,8 +90,13 @@ class MessageAdapter(
                     error(R.drawable.bg_venue_placeholder)
                 }
                 b.messageImage.setOnClickListener { onPhotoClick(msg) }
+                b.messageImage.setOnLongClickListener {
+                    onMessageLongClick(msg)
+                    true
+                }
             } else {
                 b.messageImage.setOnClickListener(null)
+                b.messageImage.setOnLongClickListener(null)
             }
 
             // Nội dung chữ
@@ -102,6 +108,16 @@ class MessageAdapter(
             b.messageText.isVisible = displayText.isNotEmpty()
             b.messageText.text = displayText
             b.messageText.setTypeface(null, if (isSpecial) Typeface.ITALIC else Typeface.NORMAL)
+            b.messageText.setTextColor(
+                MaterialColors.getColor(
+                    b.messageText,
+                    if (isSpecial) {
+                        com.google.android.material.R.attr.colorOnSurfaceVariant
+                    } else {
+                        com.google.android.material.R.attr.colorOnPrimaryContainer
+                    },
+                ),
+            )
 
             // Thời gian + trạng thái gửi
             b.messageTime.text = ChatUiText.messageTime(msg.createdAt)
@@ -188,8 +204,13 @@ class MessageAdapter(
                     error(R.drawable.bg_venue_placeholder)
                 }
                 b.messageImage.setOnClickListener { onPhotoClick(msg) }
+                b.messageImage.setOnLongClickListener {
+                    onMessageLongClick(msg)
+                    true
+                }
             } else {
                 b.messageImage.setOnClickListener(null)
+                b.messageImage.setOnLongClickListener(null)
             }
 
             // Nội dung chữ
@@ -201,6 +222,16 @@ class MessageAdapter(
             b.messageText.isVisible = displayText.isNotEmpty()
             b.messageText.text = displayText
             b.messageText.setTypeface(null, if (isSpecial) Typeface.ITALIC else Typeface.NORMAL)
+            b.messageText.setTextColor(
+                MaterialColors.getColor(
+                    b.messageText,
+                    if (isSpecial) {
+                        com.google.android.material.R.attr.colorOnSurfaceVariant
+                    } else {
+                        com.google.android.material.R.attr.colorOnSurface
+                    },
+                ),
+            )
 
             b.messageTime.text = ChatUiText.messageTime(msg.createdAt)
             b.bubbleContainer.setOnLongClickListener {

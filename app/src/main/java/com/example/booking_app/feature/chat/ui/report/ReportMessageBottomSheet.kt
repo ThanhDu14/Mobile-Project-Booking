@@ -81,6 +81,7 @@ class ReportMessageBottomSheet : BottomSheetDialogFragment() {
         b.detailContainer.isVisible = state.showDetailField
         if (b.detailInput.text?.toString() != state.detail) {
             b.detailInput.setText(state.detail)
+            b.detailInput.setSelection(state.detail.length)
         }
         b.detailLayout.error = when (state.detailError) {
             ReportMessageDetailError.REQUIRED -> getString(R.string.chat_report_detail_required)

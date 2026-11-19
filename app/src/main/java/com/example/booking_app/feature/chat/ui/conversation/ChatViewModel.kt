@@ -153,6 +153,9 @@ class ChatViewModel @Inject constructor(
     private var screenVisible: Boolean = false
     private var kickedEmitted: Boolean = false
     private var blockedByOther: Boolean = false
+    private val ignoredBlockedOutboxIds = mutableSetOf<String>()
+    private var latestOutboxEntries: List<OutboxEntry> = emptyList()
+    private var lastOtherServerMessageId: String? = null
     private var groupLockedByError: Boolean = false
     private var readOnlyByError: Boolean = false
     private var reachedOldestPage: Boolean = false
@@ -229,6 +232,9 @@ class ChatViewModel @Inject constructor(
         lastMarkedMarker = null
         kickedEmitted = false
         blockedByOther = false
+        ignoredBlockedOutboxIds.clear()
+        latestOutboxEntries = emptyList()
+        lastOtherServerMessageId = null
         groupLockedByError = false
         readOnlyByError = false
         reachedOldestPage = false
@@ -275,6 +281,17 @@ class ChatViewModel @Inject constructor(
                 }
 
                 // Kiểm tra lỗi đặc biệt từ outbox (BLOCKED, NOT_PARTICIPANT, GROUP_LOCKED, CHAT_READ_ONLY).
+                latestOutboxEntries = snap.outbox
+                val latestOtherId = snap.live.lastOrNull { !it.isMine }?.id
+                if (latestOtherId != null) {
+                    if (lastOtherServerMessageId != null && latestOtherId != lastOtherServerMessageId) {
+                        // Đối phương vừa gửi tin mới -> đã bỏ chặn; bỏ qua các lỗi BLOCKED cũ trong outbox.
+                        snap.outbox
+                            .filter { it.status == Delivery.FAILED && it.errorCode == "BLOCKED" }
+                            .forEach { ignoredBlockedOutboxIds.add(it.messageId) }
+                    }
+                    lastOtherServerMessageId = latestOtherId
+                }
                 handleOutboxErrors(snap.outbox)
 
                 currentServerMessages = mergeServerMessages(snap.older, snap.live)
@@ -301,9 +318,11 @@ class ChatViewModel @Inject constructor(
             emitKickedOutOnce()
             return
         }
-        if (entries.any { it.status == Delivery.FAILED && it.errorCode == "BLOCKED" }) {
-            blockedByOther = true
-        }
+        val currentBlockedIds = entries
+            .filter { it.status == Delivery.FAILED && it.errorCode == "BLOCKED" }
+            .mapTo(HashSet()) { it.messageId }
+        ignoredBlockedOutboxIds.retainAll(currentBlockedIds)
+        blockedByOther = currentBlockedIds.any { it !in ignoredBlockedOutboxIds }
         groupLockedByError = entries.any { it.status == Delivery.FAILED && it.errorCode == "GROUP_LOCKED" }
         readOnlyByError = entries.any { it.status == Delivery.FAILED && it.errorCode == "CHAT_READ_ONLY" }
     }
@@ -375,18 +394,31 @@ class ChatViewModel @Inject constructor(
     }
 
     private fun resolveSignedImageUrls(messages: List<ChatMessage>) {
-        // Chỉ xin signed URL cho tin NORMAL có imagePath (không xin cho tin HIDDEN/RECALLED, FR-015).
-        val paths = messages
+        // Chỉ giữ và xin signed URL cho tin NORMAL có imagePath (không giữ/xin cho tin HIDDEN/RECALLED, FR-015).
+        val activePaths = messages
             .filter { it.status == MessageStatus.NORMAL && !it.imagePath.isNullOrBlank() }
             .mapNotNull { it.imagePath }
             .distinct()
-        if (paths.isEmpty()) return
+        val activeSet = activePaths.toSet()
+        val removedPaths = _uiState.value.imageUrls.keys.filter { it !in activeSet }
+        if (removedPaths.isNotEmpty()) {
+            _uiState.update { it.copy(imageUrls = it.imageUrls - removedPaths.toSet()) }
+        }
+        if (activePaths.isEmpty() && removedPaths.isEmpty()) return
 
         viewModelScope.launch {
-            // Truyền thẳng toàn bộ paths để SignedUrlCache tự kiểm tra hết hạn (5 phút an toàn) và chỉ gọi mạng khi cần.
-            val resolved = signedUrlCache.resolve(paths)
-            if (resolved.isNotEmpty()) {
-                _uiState.update { it.copy(imageUrls = it.imageUrls + resolved) }
+            if (removedPaths.isNotEmpty()) {
+                signedUrlCache.invalidate(removedPaths)
+            }
+            if (activePaths.isNotEmpty()) {
+                // Truyền thẳng toàn bộ activePaths để SignedUrlCache tự kiểm tra hết hạn (5 phút an toàn) và chỉ gọi mạng khi cần.
+                val resolved = signedUrlCache.resolve(activePaths)
+                if (resolved.isNotEmpty()) {
+                    _uiState.update { state ->
+                        val filtered = resolved.filterKeys { it in activeSet }
+                        state.copy(imageUrls = state.imageUrls + filtered)
+                    }
+                }
             }
         }
     }
@@ -442,6 +474,11 @@ class ChatViewModel @Inject constructor(
 
     fun onRetryMessage(messageId: String) {
         val chatId = activeChatId ?: return
+        // Đánh dấu bỏ qua các tin lỗi BLOCKED khác trong outbox để không tự khóa lại ngay khi thử lại tin này.
+        latestOutboxEntries
+            .filter { it.status == Delivery.FAILED && it.errorCode == "BLOCKED" && it.messageId != messageId }
+            .forEach { ignoredBlockedOutboxIds.add(it.messageId) }
+        ignoredBlockedOutboxIds.remove(messageId)
         blockedByOther = false
         viewModelScope.launch {
             retryMessage(chatId, messageId).onFailure { err ->
@@ -587,7 +624,7 @@ class ChatViewModel @Inject constructor(
     fun onToggleBlockedConfirmed() {
         val chatId = activeChatId ?: return
         val header = _uiState.value.header ?: return
-        if (header.type != ChatType.DIRECT) return
+        if (header.type != ChatType.DIRECT || header.isDeletedOtherParty) return
         val targetBlocked = !header.blockedOther
         viewModelScope.launch {
             setBlocked(chatId, targetBlocked).fold(
@@ -618,7 +655,18 @@ class ChatViewModel @Inject constructor(
         val chatId = activeChatId ?: return
         viewModelScope.launch {
             recallMessage(chatId, messageId).fold(
-                onSuccess = { _events.trySend(ChatEvent.ShowMessage(R.string.chat_recalled_success)) },
+                onSuccess = {
+                    olderMessages.update { list ->
+                        list.map { msg ->
+                            if (msg.id == messageId) {
+                                msg.copy(status = MessageStatus.RECALLED, text = "", imagePath = null)
+                            } else {
+                                msg
+                            }
+                        }
+                    }
+                    _events.trySend(ChatEvent.ShowMessage(R.string.chat_recalled_success))
+                },
                 onFailure = { err -> _events.trySend(ChatEvent.ShowError(err.toChatError())) },
             )
         }

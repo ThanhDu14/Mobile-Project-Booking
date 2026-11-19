@@ -3,7 +3,9 @@ package com.example.booking_app.feature.chat.data
 import app.cash.turbine.test
 import com.example.booking_app.core.session.SessionManager
 import com.example.booking_app.core.util.AppClock
+import com.example.booking_app.feature.chat.domain.ChatError
 import com.example.booking_app.feature.chat.domain.model.ChatMode
+import com.google.android.gms.tasks.TaskCompletionSource
 import com.google.android.gms.tasks.Tasks
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.CollectionReference
@@ -216,5 +218,27 @@ class FirestoreChatRepositoryTest {
 
             cancelAndIgnoreRemainingEvents()
         }
+    }
+
+    @Test
+    fun `setBlocked het han timeout khi mat mang tra ChatError Network thay vi treo vo han`() = runTest {
+        every { sessionManager.currentUid() } returns "player1"
+
+        val chatsCol = mockk<CollectionReference>()
+        val chatDocRef = mockk<DocumentReference>()
+        val partsCol = mockk<CollectionReference>()
+        val partDocRef = mockk<DocumentReference>()
+        val hangingTask = TaskCompletionSource<Void>().task // Không bao giờ hoàn tất khi offline.
+
+        every { firestore.collection("chats") } returns chatsCol
+        every { chatsCol.document("owner1_player1") } returns chatDocRef
+        every { chatDocRef.collection("participants") } returns partsCol
+        every { partsCol.document("player1") } returns partDocRef
+        every { partDocRef.update("blockedOther", true) } returns hangingTask
+
+        val repo = createRepo()
+        val result = repo.setBlocked("owner1_player1", true)
+        assertEquals(true, result.isFailure)
+        assertEquals(true, result.exceptionOrNull() is ChatError.Network)
     }
 }

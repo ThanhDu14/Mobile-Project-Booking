@@ -41,7 +41,6 @@ import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flowOf
-import kotlinx.coroutines.tasks.await
 import java.time.Instant
 import java.util.concurrent.atomic.AtomicLong
 import javax.inject.Inject
@@ -324,7 +323,7 @@ class FirestoreChatRepository @Inject constructor(
                 .startAfter(Timestamp(before.epochSecond, before.nano))
                 .limit(PAGE_SIZE)
                 .get()
-                .await()
+                .awaitWithTimeout()
             val messages = snapshot.documents
                 .map { MessageDto.fromMap(it.id, it.data.orEmpty()).toDomain(uid) }
                 .reversed()
@@ -404,7 +403,7 @@ class FirestoreChatRepository @Inject constructor(
             firestore.collection(COLLECTION_CHATS).document(chatId)
                 .collection(COLLECTION_PARTICIPANTS).document(uid)
                 .update("viewingUntil", value)
-                .await()
+                .awaitWithTimeout()
             Result.success(Unit)
         } catch (e: CancellationException) {
             throw e
@@ -419,7 +418,7 @@ class FirestoreChatRepository @Inject constructor(
             firestore.collection(COLLECTION_CHATS).document(chatId)
                 .collection(COLLECTION_PARTICIPANTS).document(uid)
                 .update("muted", muted)
-                .await()
+                .awaitWithTimeout()
             Result.success(Unit)
         } catch (e: CancellationException) {
             throw e
@@ -434,7 +433,7 @@ class FirestoreChatRepository @Inject constructor(
             firestore.collection(COLLECTION_CHATS).document(chatId)
                 .collection(COLLECTION_PARTICIPANTS).document(uid)
                 .update("blockedOther", blocked)
-                .await()
+                .awaitWithTimeout()
             Result.success(Unit)
         } catch (e: CancellationException) {
             throw e
