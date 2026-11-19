@@ -360,7 +360,16 @@ class GroupDetailViewModel @Inject constructor(
                 },
                 onFailure = { err ->
                     rawPosts = rawPosts.map { p ->
-                        if (p.id == postId) p.copy(event = originalEvent) else p
+                        if (p.id == postId && p.event != null) {
+                            p.copy(
+                                event = p.event.copy(
+                                    iAmAttending = originalEvent.iAmAttending,
+                                    attendeeCount = (p.event.attendeeCount + if (nextAttending) -1 else 1).coerceAtLeast(0),
+                                ),
+                            )
+                        } else {
+                            p
+                        }
                     }
                     publishFeed()
                     _events.trySend(GroupDetailEvent.ShowError(err.toCommunityError()))
@@ -470,7 +479,8 @@ class GroupDetailViewModel @Inject constructor(
                     observedNewPostIds = currentIds
                     if (filtered.isNotEmpty()) resolveUrls(filtered)
                     val remaining = if (removedIds.isEmpty()) rawPosts else rawPosts.filterNot { it.id in removedIds }
-                    rawPosts = mergePosts(filtered, remaining)
+                    val preserved = preserveInFlightAttendance(filtered, remaining)
+                    rawPosts = mergePosts(preserved, remaining)
                     publishFeed()
                 }
         }
@@ -485,6 +495,24 @@ class GroupDetailViewModel @Inject constructor(
 
     private fun filterVisible(items: List<Post>, isMod: Boolean, uid: String): List<Post> =
         if (isMod) items else items.filter { it.status == PostStatus.VISIBLE || it.author.userId == uid }
+
+    private fun preserveInFlightAttendance(incoming: List<Post>, existing: List<Post>): List<Post> {
+        if (attendanceInFlight.isEmpty() || incoming.isEmpty()) return incoming
+        val existingById = existing.associateBy { it.id }
+        return incoming.map { post ->
+            val currentEvent = existingById[post.id]?.event
+            if (post.id in attendanceInFlight && post.event != null && currentEvent != null) {
+                post.copy(
+                    event = post.event.copy(
+                        iAmAttending = currentEvent.iAmAttending,
+                        attendeeCount = currentEvent.attendeeCount,
+                    ),
+                )
+            } else {
+                post
+            }
+        }
+    }
 
     private fun mergePosts(preferred: List<Post>, existing: List<Post>): List<Post> {
         val byId = LinkedHashMap<String, Post>()

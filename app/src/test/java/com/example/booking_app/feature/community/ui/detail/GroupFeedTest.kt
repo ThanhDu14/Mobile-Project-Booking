@@ -40,11 +40,13 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -265,10 +267,11 @@ class GroupFeedTest {
             type = PostType.EVENT,
             event = EventInfo("Giao lưu", futureAt, "Sân A", expectedCount = 8, attendeeCount = 2, iAmAttending = false),
         )
+        val unattendGate = CompletableDeferred<Result<AttendResult>>()
         coEvery { posts.feed("g1", false, null) } returns Result.success(Page(listOf(eventPost), null))
         every { posts.observeNewPosts("g1", false, any()) } returns emptyFlow()
         coEvery { posts.attend("g1", "e1") } returns Result.success(AttendResult(attendeeCount = 3, attending = true))
-        coEvery { posts.unattend("g1", "e1") } returns Result.failure(CommunityError.Network())
+        coEvery { posts.unattend("g1", "e1") } coAnswers { unattendGate.await() }
 
         val vm = viewModel()
         advanceUntilIdle()
@@ -278,13 +281,92 @@ class GroupFeedTest {
         val afterJoin = ((vm.state.value as GroupDetailUiState.Content).feed as FeedUiState.Content).items.single()
         assertTrue(afterJoin.post.event!!.iAmAttending)
         assertEquals(3, afterJoin.post.event!!.attendeeCount)
+        assertFalse(afterJoin.attendanceBusy)
 
-        // Bỏ tham gia bị lỗi mạng → hoàn lại trạng thái đang tham gia (3 người).
+        // Bỏ tham gia: kiểm tra trạng thái lạc quan trung gian trước khi API trả về.
         vm.onToggleAttendance("e1")
+        runCurrent()
+        val optimistic = ((vm.state.value as GroupDetailUiState.Content).feed as FeedUiState.Content).items.single()
+        assertFalse(optimistic.post.event!!.iAmAttending)
+        assertEquals(2, optimistic.post.event!!.attendeeCount)
+        assertTrue(optimistic.attendanceBusy)
+
+        // API trả lỗi mạng → hoàn lại trạng thái đang tham gia (3 người, hết busy).
+        unattendGate.complete(Result.failure(CommunityError.Network()))
         advanceUntilIdle()
         val afterFail = ((vm.state.value as GroupDetailUiState.Content).feed as FeedUiState.Content).items.single()
         assertTrue(afterFail.post.event!!.iAmAttending)
         assertEquals(3, afterFail.post.event!!.attendeeCount)
+        assertFalse(afterFail.attendanceBusy)
+    }
+
+    @Test
+    fun `observeNewPosts khong ghi de trang thai tham gia lac quan va loi van giu truong moi`() = runTest {
+        givenMember(GroupRole.MEMBER)
+        val futureAt = Instant.parse("2026-11-20T12:00:00Z")
+        val t1 = Instant.parse("2026-11-10T01:00:00Z")
+        val t2 = Instant.parse("2026-11-10T02:00:00Z")
+        val initialEvent = post(id = "e1", createdAt = t2).copy(
+            type = PostType.EVENT,
+            event = EventInfo("Tiêu đề cũ", futureAt, "Sân A", expectedCount = 8, attendeeCount = 2, iAmAttending = false),
+        )
+        val newPostsFlow = MutableSharedFlow<List<Post>>()
+        val attendGate = CompletableDeferred<Result<AttendResult>>()
+        coEvery { posts.feed("g1", false, null) } returns Result.success(Page(listOf(post("old", createdAt = t1)), null))
+        every { posts.observeNewPosts("g1", false, t1) } returns newPostsFlow
+        coEvery { posts.attend("g1", "e1") } coAnswers { attendGate.await() }
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        newPostsFlow.emit(listOf(initialEvent))
+        advanceUntilIdle()
+
+        // Bấm tham gia → trạng thái lạc quan (iAmAttending = true, count = 3).
+        vm.onToggleAttendance("e1")
+        runCurrent()
+
+        // Listener phát lại sự kiện với tiêu đề mới trong lúc attend đang bay → giữ nguyên lạc quan.
+        val updatedFromServer = initialEvent.copy(
+            event = initialEvent.event!!.copy(title = "Tiêu đề mới", attendeeCount = 2, iAmAttending = false),
+        )
+        newPostsFlow.emit(listOf(updatedFromServer))
+        runCurrent()
+
+        val duringInFlight = ((vm.state.value as GroupDetailUiState.Content).feed as FeedUiState.Content)
+            .items.first { it.post.id == "e1" }
+        assertEquals("Tiêu đề mới", duringInFlight.post.event!!.title)
+        assertTrue(duringInFlight.post.event!!.iAmAttending)
+        assertEquals(3, duringInFlight.post.event!!.attendeeCount)
+
+        // Khi attend lỗi → hoàn lại tham gia dựa trên trạng thái hiện tại, vẫn giữ "Tiêu đề mới".
+        attendGate.complete(Result.failure(CommunityError.Network()))
+        advanceUntilIdle()
+
+        val afterFail = ((vm.state.value as GroupDetailUiState.Content).feed as FeedUiState.Content)
+            .items.first { it.post.id == "e1" }
+        assertEquals("Tiêu đề mới", afterFail.post.event!!.title)
+        assertFalse(afterFail.post.event!!.iAmAttending)
+        assertEquals(2, afterFail.post.event!!.attendeeCount)
+    }
+
+    @Test
+    fun `su kien da qua hoac dung bang now thi isEventPast true va canAttend false`() = runTest {
+        givenMember(GroupRole.MEMBER)
+        val nowInstant = Instant.ofEpochMilli(nowMs)
+        val pastEvent = post(id = "e_past").copy(
+            type = PostType.EVENT,
+            event = EventInfo("Đã diễn ra", nowInstant, "Sân B", expectedCount = 6, attendeeCount = 4, iAmAttending = false),
+        )
+        coEvery { posts.feed("g1", false, null) } returns Result.success(Page(listOf(pastEvent), null))
+        every { posts.observeNewPosts("g1", false, any()) } returns emptyFlow()
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        val item = ((vm.state.value as GroupDetailUiState.Content).feed as FeedUiState.Content).items.single()
+        assertTrue(item.isEventPast)
+        assertFalse(item.canAttend)
     }
 
     @Test

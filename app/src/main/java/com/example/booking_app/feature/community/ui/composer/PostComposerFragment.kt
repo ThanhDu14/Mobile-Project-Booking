@@ -48,6 +48,7 @@ class PostComposerFragment : Fragment(R.layout.fragment_post_composer) {
 
     private val viewModel: PostComposerViewModel by viewModels()
     private var binding: FragmentPostComposerBinding? = null
+    private var pendingPickedDate: LocalDate? = null
 
     private val pickPhotos = registerForActivityResult(
         ActivityResultContracts.PickMultipleVisualMedia(PostComposerViewModel.MAX_PHOTOS),
@@ -79,6 +80,9 @@ class PostComposerFragment : Fragment(R.layout.fragment_post_composer) {
         binding.eventLocationInput.doAfterTextChanged { viewModel.onEventLocationChanged(it?.toString().orEmpty()) }
         binding.eventExpectedInput.doAfterTextChanged { viewModel.onExpectedCountChanged(it?.toString().orEmpty()) }
         binding.eventTimeButton.setOnClickListener { openDateTimePicker() }
+        pendingPickedDate = savedInstanceState?.getString(KEY_PENDING_PICKED_DATE)
+            ?.let { raw -> runCatching { LocalDate.parse(raw) }.getOrNull() }
+        reattachPickers()
 
         binding.contentInput.doAfterTextChanged { viewModel.onContentChanged(it?.toString().orEmpty()) }
         binding.pickPhotosButton.setOnClickListener {
@@ -98,41 +102,73 @@ class PostComposerFragment : Fragment(R.layout.fragment_post_composer) {
         }
     }
 
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        pendingPickedDate?.let { outState.putString(KEY_PENDING_PICKED_DATE, it.toString()) }
+    }
+
     override fun onDestroyView() {
         binding = null
         super.onDestroyView()
     }
 
+    private fun reattachPickers() {
+        @Suppress("UNCHECKED_CAST")
+        val existingDatePicker = childFragmentManager.findFragmentByTag(TAG_DATE_PICKER) as? MaterialDatePicker<Long>
+        existingDatePicker?.let { attachDatePickerListener(it) }
+
+        val existingTimePicker = childFragmentManager.findFragmentByTag(TAG_TIME_PICKER) as? MaterialTimePicker
+        existingTimePicker?.let { attachTimePickerListener(it) }
+    }
+
     private fun openDateTimePicker() {
+        if (childFragmentManager.findFragmentByTag(TAG_DATE_PICKER) != null) return
         val currentZoned = (viewModel.state.value.eventAt ?: Instant.now().plusSeconds(3600)).atZone(TimeFormat.ZONE)
         val initialSelectionUtc = currentZoned.toLocalDate().atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
+        val todayVnUtcMillis = LocalDate.now(TimeFormat.ZONE).atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
         val constraints = CalendarConstraints.Builder()
-            .setValidator(DateValidatorPointForward.now())
+            .setValidator(DateValidatorPointForward.from(todayVnUtcMillis))
             .build()
         val datePicker = MaterialDatePicker.Builder.datePicker()
             .setTitleText(R.string.community_field_event_time)
             .setSelection(initialSelectionUtc)
             .setCalendarConstraints(constraints)
             .build()
-        datePicker.addOnPositiveButtonClickListener { utcMillis ->
-            val pickedDate: LocalDate = Instant.ofEpochMilli(utcMillis).atZone(ZoneOffset.UTC).toLocalDate()
-            openTimePicker(pickedDate, currentZoned.hour, currentZoned.minute)
-        }
+        attachDatePickerListener(datePicker)
         datePicker.show(childFragmentManager, TAG_DATE_PICKER)
     }
 
+    private fun attachDatePickerListener(datePicker: MaterialDatePicker<Long>) {
+        datePicker.clearOnPositiveButtonClickListeners()
+        datePicker.addOnPositiveButtonClickListener { utcMillis ->
+            val currentZoned = (viewModel.state.value.eventAt ?: Instant.now().plusSeconds(3600)).atZone(TimeFormat.ZONE)
+            val pickedDate: LocalDate = Instant.ofEpochMilli(utcMillis).atZone(ZoneOffset.UTC).toLocalDate()
+            openTimePicker(pickedDate, currentZoned.hour, currentZoned.minute)
+        }
+    }
+
     private fun openTimePicker(date: LocalDate, hour: Int, minute: Int) {
+        if (childFragmentManager.findFragmentByTag(TAG_TIME_PICKER) != null) return
+        pendingPickedDate = date
         val timePicker = MaterialTimePicker.Builder()
             .setTimeFormat(PickerTimeFormat.CLOCK_24H)
             .setHour(hour)
             .setMinute(minute)
             .setTitleText(R.string.community_field_event_time)
             .build()
+        attachTimePickerListener(timePicker)
+        timePicker.show(childFragmentManager, TAG_TIME_PICKER)
+    }
+
+    private fun attachTimePickerListener(timePicker: MaterialTimePicker) {
+        timePicker.clearOnPositiveButtonClickListeners()
         timePicker.addOnPositiveButtonClickListener {
+            val date = pendingPickedDate
+                ?: (viewModel.state.value.eventAt ?: Instant.now()).atZone(TimeFormat.ZONE).toLocalDate()
             val zoned = ZonedDateTime.of(date, LocalTime.of(timePicker.hour, timePicker.minute), TimeFormat.ZONE)
             viewModel.onEventAtChanged(zoned.toInstant())
+            pendingPickedDate = null
         }
-        timePicker.show(childFragmentManager, TAG_TIME_PICKER)
     }
 
     private fun render(
@@ -261,5 +297,6 @@ class PostComposerFragment : Fragment(R.layout.fragment_post_composer) {
         private const val PHOTO_GRID_SPAN = 2
         private const val TAG_DATE_PICKER = "community_event_date"
         private const val TAG_TIME_PICKER = "community_event_time"
+        private const val KEY_PENDING_PICKED_DATE = "community_pending_picked_date"
     }
 }

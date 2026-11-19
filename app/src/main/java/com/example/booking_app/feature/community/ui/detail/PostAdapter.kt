@@ -145,7 +145,12 @@ class PostAdapter(
                 event.expectedCount,
             )
             binding.attendeeCountText.text = progressText
-            binding.attendeesRow.contentDescription = context.getString(R.string.community_event_attendees_cd, progressText)
+            val cdParts = buildList {
+                add(context.getString(R.string.community_event_attendees_cd, progressText))
+                if (event.isOverExpected) add(context.getString(R.string.community_label_event_over_expected))
+                if (item.isEventPast) add(context.getString(R.string.community_label_event_past))
+            }
+            binding.attendeesRow.contentDescription = cdParts.joinToString(", ")
             binding.attendeesRow.setOnClickListener { actions.onViewAttendees(post.id) }
 
             binding.overExpectedBadge.isVisible = event.isOverExpected

@@ -12,6 +12,7 @@ import com.example.booking_app.feature.community.domain.CommunityError
 import com.example.booking_app.feature.community.domain.GroupMediaRepository
 import com.example.booking_app.feature.community.domain.PostRepository
 import com.example.booking_app.feature.community.domain.model.DraftPhoto
+import com.example.booking_app.feature.community.domain.model.EventInfo
 import com.example.booking_app.feature.community.domain.model.PostDraft
 import com.example.booking_app.feature.community.domain.model.PostType
 import com.example.booking_app.feature.community.domain.model.SignedUpload
@@ -407,5 +408,75 @@ class PostComposerViewModelTest {
         vm.submit()
         assertEquals(PostContentError.TOO_LONG, vm.state.value.contentError)
         coVerify(exactly = 0) { posts.create(any(), any()) }
+    }
+
+    @Test
+    fun `che do sua su kien nap san truong event va goi update`() = runTest {
+        val oldAt = now.plusSeconds(3600)
+        val newAt = now.plusSeconds(7200)
+        val existingEvent = post(id = "e9", content = "Mô tả cũ").copy(
+            type = PostType.EVENT,
+            event = EventInfo(
+                title = "Giao lưu cũ",
+                at = oldAt,
+                location = "Sân A",
+                expectedCount = 8,
+                attendeeCount = 3,
+                iAmAttending = true,
+            ),
+        )
+        val updatedDraft = slot<PostDraft>()
+        coEvery { posts.getPost("g1", "e9") } returns Result.success(existingEvent)
+        coEvery { posts.update("g1", capture(updatedDraft)) } returns Result.success(
+            existingEvent.copy(
+                content = "Mô tả mới",
+                isEdited = true,
+                event = existingEvent.event!!.copy(
+                    title = "Giao lưu mới",
+                    at = newAt,
+                    location = "Sân B",
+                    expectedCount = 12,
+                ),
+            ),
+        )
+
+        val vm = viewModel(SavedStateHandle(mapOf("groupId" to "g1", "postId" to "e9", "type" to PostType.EVENT.name)))
+        advanceUntilIdle()
+
+        assertTrue(vm.state.value.isEdit)
+        assertTrue(vm.state.value.isEvent)
+        assertEquals("Giao lưu cũ", vm.state.value.eventTitle)
+        assertEquals(oldAt, vm.state.value.eventAt)
+        assertEquals("Sân A", vm.state.value.eventLocation)
+        assertEquals("8", vm.state.value.expectedCountText)
+
+        vm.events.test {
+            // Chưa sửa gì → thoát ngay không hỏi.
+            vm.onBackPressed()
+            assertEquals(PostComposerEvent.Close, awaitItem())
+
+            // Sửa trường sự kiện → có thay đổi chưa lưu → hỏi xác nhận bỏ.
+            vm.onEventTitleChanged("Giao lưu mới")
+            vm.onEventAtChanged(newAt)
+            vm.onEventLocationChanged("Sân B")
+            vm.onExpectedCountChanged("12")
+            vm.onContentChanged("Mô tả mới")
+            vm.onBackPressed()
+            assertEquals(PostComposerEvent.ConfirmDiscard, awaitItem())
+
+            vm.submit()
+            advanceUntilIdle()
+            assertTrue(awaitItem() is PostComposerEvent.Posted)
+        }
+
+        coVerify(exactly = 1) { posts.update("g1", any()) }
+        coVerify(exactly = 0) { posts.create(any(), any()) }
+        assertEquals("e9", updatedDraft.captured.requestId)
+        assertEquals(PostType.EVENT, updatedDraft.captured.type)
+        assertEquals("Giao lưu mới", updatedDraft.captured.eventTitle)
+        assertEquals(newAt, updatedDraft.captured.eventAt)
+        assertEquals("Sân B", updatedDraft.captured.eventLocation)
+        assertEquals(12, updatedDraft.captured.expectedCount)
+        assertEquals("Mô tả mới", updatedDraft.captured.content)
     }
 }
