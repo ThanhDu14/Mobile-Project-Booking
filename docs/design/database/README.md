@@ -327,6 +327,7 @@ Người phụ trách bổ sung vào `firestore.indexes.json` khi viết `plan.m
 | `posts` (collection group) | `authorId` | Ẩn danh khi xóa tài khoản (09, 011) |
 | `attendees` (collection group) | `userId`, `groupId`, `eventAt` | Bỏ tham gia khi rời nhóm (09) |
 | `joinRequests` (collection) | `createdAt` | Danh sách yêu cầu (09) |
+| `joinRequests` (collection group) | `userId` | Hủy yêu cầu chờ duyệt khi xóa tài khoản (09, 011) |
 | `reports` | `status`, `createdAt` | Hàng đợi xử lý (12) |
 | `ownerApplications` | `status`, `submittedAt` | Hồ sơ chờ duyệt (12) |
 | `districts` | `isActive`, `sortOrder` | Danh sách khu vực (011, 02) |
