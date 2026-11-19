@@ -26,7 +26,7 @@
     <!-- Danh sách "Tin nhắn khách hàng" chế độ quản lý sân (OwnerLink.CHAT). -->
     <fragment
         android:id="@+id/ownerChatListFragment"
-        android:name="com.example.booking_app.feature.chat.ui.list.ChatListFragment"
+        android:name="com.example.booking_app.feature.chat.ui.list.OwnerChatListFragment"
         android:label="@string/chat_title_owner">
         <argument
             android:name="mode"

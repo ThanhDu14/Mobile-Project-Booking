@@ -10,6 +10,7 @@ import com.example.booking_app.feature.chat.domain.ChatRepository
 import com.example.booking_app.feature.chat.domain.model.ChatMode
 import com.example.booking_app.feature.chat.domain.model.ChatStatus
 import com.example.booking_app.feature.chat.domain.model.ChatSummary
+import com.example.booking_app.feature.chat.domain.model.ChatType
 import com.example.booking_app.feature.chat.domain.toChatError
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -68,7 +69,7 @@ class ChatListViewModel @Inject constructor(
         observeJob?.cancel()
         val uid = sessionManager.currentUid()
         if (uid == null) {
-            _state.value = UiState.Error(ChatError.Unauthenticated().code)
+            _state.value = UiState.Error(ChatError.Unauthenticated().code, ::retry)
             val returnTo = if (mode == ChatMode.OWNER) "smashnow://chat/owner" else "smashnow://chat"
             _events.trySend(ChatListEvent.RequireLogin(returnTo))
             return
@@ -83,7 +84,13 @@ class ChatListViewModel @Inject constructor(
                 }
                 .collect { items ->
                     val visible = items
-                        .filter { it.status != ChatStatus.DELETED }
+                        .filter { item ->
+                            if (item.status == ChatStatus.DELETED) return@filter false
+                            when (mode) {
+                                ChatMode.OWNER -> item.ownerId == uid && item.type == ChatType.DIRECT
+                                ChatMode.PLAYER -> item.ownerId != uid
+                            }
+                        }
                         .sortedByDescending { it.updatedAt ?: Instant.EPOCH }
                     _state.value = if (visible.isEmpty()) UiState.Empty else UiState.Content(visible)
                 }

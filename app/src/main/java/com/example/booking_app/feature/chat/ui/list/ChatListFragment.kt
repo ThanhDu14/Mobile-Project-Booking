@@ -3,7 +3,6 @@ package com.example.booking_app.feature.chat.ui.list
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
-import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -31,7 +30,7 @@ import javax.inject.Inject
  * Danh sách cuộc trò chuyện: chế độ `PLAYER` ("Tin nhắn") hoặc `OWNER` ("Tin nhắn khách hàng").
  */
 @AndroidEntryPoint
-class ChatListFragment : Fragment(R.layout.fragment_chat_list) {
+open class ChatListFragment : Fragment(R.layout.fragment_chat_list) {
 
     @Inject lateinit var authNavigator: AuthNavigator
 
@@ -111,23 +110,39 @@ class ChatListFragment : Fragment(R.layout.fragment_chat_list) {
         adapter.submitList((state as? UiState.Content)?.data.orEmpty())
     }
 
+    protected open fun openChat(chatId: String) {
+        val nav = findNavController()
+        if (nav.currentDestination?.id == R.id.chatListFragment) {
+            nav.navigate(ChatListFragmentDirections.actionChatListToChat(chatId = chatId))
+        }
+    }
+
     private fun handle(event: ChatListEvent) {
         when (event) {
-            is ChatListEvent.OpenChat -> {
-                findNavController().navigate(R.id.chatFragment, bundleOf("chatId" to event.chatId))
-            }
+            is ChatListEvent.OpenChat -> openChat(event.chatId)
             is ChatListEvent.RequireLogin -> {
                 authNavigator.openLogin(findNavController(), returnTo = Uri.parse(event.returnTo))
             }
             ChatListEvent.OpenJoinGroup -> {
-                runCatching { findNavController().navigate(Uri.parse("smashnow://community")) }
+                findNavController().navigate(Uri.parse("smashnow://community"))
             }
             ChatListEvent.OpenFindVenue -> {
                 val nav = findNavController()
                 if (!nav.popBackStack(R.id.courtSearchFragment, false)) {
-                    runCatching { nav.navigate(R.id.courtSearchFragment) }
+                    nav.navigate(Uri.parse("smashnow://search"))
                 }
             }
+        }
+    }
+}
+
+/** Subclass riêng cho destination `@+id/ownerChatListFragment` để tránh xung đột sinh mã Safe Args. */
+@AndroidEntryPoint
+class OwnerChatListFragment : ChatListFragment() {
+    override fun openChat(chatId: String) {
+        val nav = findNavController()
+        if (nav.currentDestination?.id == R.id.ownerChatListFragment) {
+            nav.navigate(OwnerChatListFragmentDirections.actionOwnerChatListToChat(chatId = chatId))
         }
     }
 }

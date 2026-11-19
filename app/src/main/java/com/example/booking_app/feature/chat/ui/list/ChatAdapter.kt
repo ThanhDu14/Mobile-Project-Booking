@@ -7,6 +7,7 @@ import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import coil3.dispose
 import coil3.load
 import coil3.request.error
 import com.example.booking_app.R
@@ -53,6 +54,7 @@ class ChatAdapter(
             if (isDeletedDirect) {
                 b.avatarInitials.isVisible = false
                 b.avatarImage.isVisible = true
+                b.avatarImage.dispose()
                 b.avatarImage.setImageResource(R.drawable.ic_account_circle_24)
             } else {
                 val bucket = item.avatarBucket ?: if (item.type == ChatType.GROUP) "group-avatars" else "avatars"
@@ -64,6 +66,8 @@ class ChatAdapter(
                     b.avatarImage.load(avatarUrl) {
                         error(if (item.type == ChatType.GROUP) R.drawable.ic_groups_24 else R.drawable.ic_account_circle_24)
                     }
+                } else {
+                    b.avatarImage.dispose()
                 }
             }
 
@@ -85,7 +89,13 @@ class ChatAdapter(
                 else -> ""
             }
             val currentUid = currentUidProvider()
-            val preview = if (basePreview.isNotEmpty() && item.lastMessageSenderId != null && item.lastMessageSenderId == currentUid) {
+            val recalledText = ctx.getString(R.string.chat_message_recalled)
+            val preview = if (
+                basePreview.isNotEmpty() &&
+                basePreview != recalledText &&
+                item.lastMessageSenderId != null &&
+                item.lastMessageSenderId == currentUid
+            ) {
                 ctx.getString(R.string.chat_preview_mine, basePreview)
             } else {
                 basePreview

@@ -238,6 +238,31 @@ class ChatListViewModelTest {
             val event = awaitItem() as ChatListEvent.RequireLogin
             assertEquals("smashnow://chat/owner", event.returnTo)
         }
-        assertTrue(vm.state.value is UiState.Error)
+        val error = vm.state.value as UiState.Error
+        assertTrue(error.retry != null)
+    }
+
+    @Test
+    fun `tach danh sach PLAYER bo cuoc co ownerId trung currentUid va OWNER chi giu DIRECT cua minh`() = runTest {
+        val items = listOf(
+            summary("c-group", updatedAtSec = 30).copy(type = ChatType.GROUP, ownerId = null),
+            summary("c-ask-other", updatedAtSec = 20).copy(type = ChatType.DIRECT, ownerId = "owner2"),
+            summary("c-customer", updatedAtSec = 10).copy(type = ChatType.DIRECT, ownerId = "owner1"),
+        )
+        chatsFlow.value = items
+
+        val playerVm = createViewModel(mode = ChatMode.PLAYER, uid = "owner1")
+        runCurrent()
+        assertEquals(
+            listOf("c-group", "c-ask-other"),
+            (playerVm.state.value as UiState.Content).data.map { it.id },
+        )
+
+        val ownerVm = createViewModel(mode = ChatMode.OWNER, uid = "owner1")
+        runCurrent()
+        assertEquals(
+            listOf("c-customer"),
+            (ownerVm.state.value as UiState.Content).data.map { it.id },
+        )
     }
 }
