@@ -316,7 +316,7 @@ Người phụ trách bổ sung vào `firestore.indexes.json` khi viết `plan.m
 | `registrations` (collection group) | `qrToken` | Check-in bằng QR (Edge Function của D) |
 | `registrations` (collection group) | `ticketCode` | Check-in bằng mã vé (Edge Function của D) |
 | `registrations` | `status`, `waitlistTicket` | Lấy người chờ kế tiếp theo thứ tự (081) |
-| `dropInSessions` | `status`, `endAt` | `dropin-close` tìm buổi cần đóng hàng chờ / chuyển `COMPLETED` (081) |
+| `dropInSessions` | `status`, `endAt` | `dropin-close` tìm buổi đã qua `endAt` để chuyển `COMPLETED` (081; bước đóng hàng chờ dùng index `status`, `startAt` sẵn có) |
 
 ## 7. Phân quyền (tóm tắt Security Rules)
 
