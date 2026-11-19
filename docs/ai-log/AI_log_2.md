@@ -2681,3 +2681,40 @@ Thử lại trên Galaxy A54 sau khi cắm lại máy:
 - Lỗi 1: nhập "50" thì hộp giá báo lỗi; nhập "55500" thì tìm với "Từ 55.000 đ/giờ" (3 sân) và lịch sử lưu mục "≥55k". Phát hiện lỗi luôn hiện dưới ô "Giá cao nhất" dù số sai nằm ở ô "Giá thấp nhất"; đã sửa để lỗi hiện dưới đúng ô.
 - Lỗi 2 (giả lập máy tính bảng bằng `wm density 280`): "Tìm ở khu vực này" chỉ hiện thông báo trên danh sách, không kèm snackbar; khi danh sách đã cuộn thì hiện snackbar.
 - Lỗi 7: các sân bằng điểm (PAM Badminton, Minh Tâm CN1, cùng ★4,5 với 2 lượt) xếp cùng thứ tự ở Trang chủ và Tìm kiếm.
+
+## Mục 62: Duyệt lại các luồng 020, 021, 022, 040, 060 trên máy
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-19 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 02 – Tìm sân (020, 021, 022), 04 – Đặt sân (040), 06 – Lịch đặt của tôi (060) |
+| Công cụ AI | Claude Code (Claude Opus 5.5) |
+| Nhánh Git | `feature/020-021-022-complete` |
+
+### Prompt chính
+
+"Bạn hãy duyệt qua các luồng xem đã ổn định chưa, các feature cần kiểm tra tương ứng là 020, 021, 022, 040, 060"
+
+### Đã thử trên Galaxy A54
+
+| Phần | Luồng | Kết quả |
+|---|---|---|
+| 020 | Tìm "MINH tam" (không dấu, khác hoa thường), lọc quận, giờ trống, giá; ba cách sắp xếp; chuyển tab giữ điều kiện | Đúng. Theo giá: cùng giá thì sân có đánh giá trước, "Liên hệ" cuối. Theo khoảng cách: tăng dần |
+| 022 US6 | Không có kết quả → gợi ý nới điều kiện | "Mọi quận · 2 sân" bấm vào ra đúng 2 sân |
+| 021 | Bản đồ, bấm cụm, bấm marker, vuốt thẻ, mở chi tiết rồi quay lại, "Vị trí của tôi", "Tìm rộng hơn" | Đúng; quay lại giữ vị trí, mức zoom và sân đang chọn |
+| 022 | Câu AI "toi mai quan 12 duoi 55k5 gan nhat" | Hỏi lại giờ chơi; điền Quận 12, 20/11 18:00–22:00, "Đến 56.000 đ/giờ", gần nhất; lịch sử lưu đúng 1 mục |
+| 040 | Chi tiết sân → lưới khung giờ → chọn 2 ô | 110.000 đ (giờ cao điểm), cọc 30% 33.000 đ. Không bấm "Giữ chỗ" để tránh ghi dữ liệu thật |
+| 060 | Các tab, tải thêm trang, chi tiết đơn | Tab "Đã hủy" đủ 14 đơn, khớp Firestore (13 CANCELLED + 1 REJECTED) |
+
+Không có crash trong logcat suốt phiên thử.
+
+### Lỗi tìm thấy
+
+- Đơn bị từ chối vẫn hiện "Còn trả tại sân 60.000 ₫". Đã ẩn dòng này cho đơn đã hủy, bị từ chối hoặc hết hạn (`91f12de`), có test và đã thử lại trên máy.
+
+### Còn để ngỏ
+
+- Sân "Nhut" có tọa độ (90, 90) nên hiện cách 8.794 km. Đây là dữ liệu nhập ở luồng đăng ký chủ sân (thành viên khác phụ trách), cần chủ sân sửa vị trí hoặc thêm kiểm tra tọa độ khi tạo sân.
+- Màn hình Lịch đặt ghi tiền dạng "225.000 ₫", các màn hình tìm sân và đặt sân ghi "đ".
+- Đơn "Vắng mặt" trả tại sân vẫn hiện "Còn trả tại sân"; chưa đổi vì cần chốt quy định với người phụ trách 060.
