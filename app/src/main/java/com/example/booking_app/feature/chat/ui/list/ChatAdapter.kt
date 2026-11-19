@@ -48,15 +48,22 @@ class ChatAdapter(
                 rawName
             }
             b.chatTitle.text = displayTitle
-            b.avatarInitials.text = initialsOf(rawName).ifEmpty { "?" }
-
-            val bucket = item.avatarBucket ?: if (item.type == ChatType.GROUP) "group-avatars" else "avatars"
-            val avatarUrl = ChatUiText.publicImageUrl(bucket, item.avatarPath)
+            val isDeletedDirect = item.type == ChatType.DIRECT && item.isReadOnly && item.title.isBlank()
             b.avatarImage.contentDescription = ctx.getString(R.string.chat_cd_avatar, rawName)
-            b.avatarImage.isVisible = avatarUrl != null
-            if (avatarUrl != null) {
-                b.avatarImage.load(avatarUrl) {
-                    error(if (item.type == ChatType.GROUP) R.drawable.ic_groups_24 else R.drawable.ic_account_circle_24)
+            if (isDeletedDirect) {
+                b.avatarInitials.isVisible = false
+                b.avatarImage.isVisible = true
+                b.avatarImage.setImageResource(R.drawable.ic_account_circle_24)
+            } else {
+                val bucket = item.avatarBucket ?: if (item.type == ChatType.GROUP) "group-avatars" else "avatars"
+                val avatarUrl = ChatUiText.publicImageUrl(bucket, item.avatarPath)
+                b.avatarInitials.text = initialsOf(rawName).ifEmpty { "?" }
+                b.avatarInitials.isVisible = avatarUrl == null
+                b.avatarImage.isVisible = avatarUrl != null
+                if (avatarUrl != null) {
+                    b.avatarImage.load(avatarUrl) {
+                        error(if (item.type == ChatType.GROUP) R.drawable.ic_groups_24 else R.drawable.ic_account_circle_24)
+                    }
                 }
             }
 

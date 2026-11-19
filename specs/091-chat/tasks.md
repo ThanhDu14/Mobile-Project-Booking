@@ -159,14 +159,14 @@ Task của spec khác ghi là `010-T###`, `070-T###`, `090-T###`.
 
 ### Tests cho User Story 3 ⚠️ viết trước, phải fail
 
-- [ ] T036 [P] [US3] Unit test `TEST/ui/list/ChatListViewModelTest.kt`: sắp `updatedAt desc`; số chưa đọc từ `unreadCounts[uid]`, > 99 hiện "99+"; tin cuối là ảnh hiện "[Hình ảnh]", tin thu hồi hiện "Tin nhắn đã được thu hồi"; tin mới tới thì cuộc nhảy lên đầu (AC 3.2); `Empty` chế độ `PLAYER` có "Tham gia một nhóm" và "Tìm sân để hỏi chủ sân" (AC 3.4), chế độ `OWNER` có thông báo riêng; `Error` + thử lại
-- [ ] T037 [P] [US3] Unit test `TEST/data/UnreadChatsReaderImplTest.kt`: đếm số cuộc có `unreadCounts[uid] > 0` (không phải tổng số tin); cập nhật khi chat đổi; đăng xuất thì về 0
+- [X] T036 [P] [US3] Unit test `TEST/ui/list/ChatListViewModelTest.kt`: sắp `updatedAt desc`; số chưa đọc từ `unreadCounts[uid]`, > 99 hiện "99+"; tin cuối là ảnh hiện "[Hình ảnh]", tin thu hồi hiện "Tin nhắn đã được thu hồi"; tin mới tới thì cuộc nhảy lên đầu (AC 3.2); `Empty` chế độ `PLAYER` có "Tham gia một nhóm" và "Tìm sân để hỏi chủ sân" (AC 3.4), chế độ `OWNER` có thông báo riêng; `Error` + thử lại
+- [X] T037 [P] [US3] Unit test `TEST/data/UnreadChatsReaderImplTest.kt`: đếm số cuộc có `unreadCounts[uid] > 0` (không phải tổng số tin); cập nhật khi chat đổi; đăng xuất thì về 0
 
 ### Implementation cho User Story 3
 
-- [ ] T038 [US3] Hoàn thiện `ChatListViewModel`, `ChatAdapter`, `item_chat.xml` (ảnh, tên nhóm hoặc tên người/cơ sở, tin cuối, thời gian, huy hiệu số chưa đọc, nhãn "Chỉ đọc"), 4 trạng thái. Theo wireframe `ui/09_community-chat_buoc1_tin-nhan.png`, `buoc4_chu-san-tin-nhan-khach.png`. Cho T036 xanh
-- [ ] T039 [US3] Cài `CH/data/UnreadChatsReaderImpl.kt` (listener `chats where memberIds array-contains uid`) và bind vào `UnreadChatsReader` trong `ChatModule`. Báo A gắn huy hiệu cho mục "Tin nhắn" trong `MainActivity` qua interface này. Cho T037 xanh
-- [ ] T040 [US3] Menu "Tắt thông báo"/"Bật thông báo" trong `ChatFragment` ghi `participants/{mình}.muted` (UseCase `CH/domain/usecase/SetMuted.kt`); biểu tượng chuông gạch trên dòng của cuộc đã tắt trong danh sách (AC 3.5)
+- [X] T038 [US3] Hoàn thiện `ChatListViewModel`, `ChatAdapter`, `item_chat.xml` (ảnh, tên nhóm hoặc tên người/cơ sở, tin cuối, thời gian, huy hiệu số chưa đọc, nhãn "Chỉ đọc"), 4 trạng thái. Theo wireframe `ui/09_community-chat_buoc1_tin-nhan.png`, `buoc4_chu-san-tin-nhan-khach.png`. Cho T036 xanh
+- [X] T039 [US3] Cài `CH/data/UnreadChatsReaderImpl.kt` (listener `chats where memberIds array-contains uid`) và bind vào `UnreadChatsReader` trong `ChatModule`. Báo A gắn huy hiệu cho mục "Tin nhắn" trong `MainActivity` qua interface này. Cho T037 xanh
+- [X] T040 [US3] Menu "Tắt thông báo"/"Bật thông báo" trong `ChatFragment` ghi `participants/{mình}.muted` (UseCase `CH/domain/usecase/SetMuted.kt`); biểu tượng chuông gạch trên dòng của cuộc đã tắt trong danh sách (AC 3.5)
 
 **Checkpoint**: US3 chạy độc lập; quickstart Q8, Q9 đúng.
 

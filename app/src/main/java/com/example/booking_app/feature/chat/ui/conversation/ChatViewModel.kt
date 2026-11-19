@@ -33,6 +33,7 @@ import com.example.booking_app.feature.chat.domain.usecase.ObserveMessages
 import com.example.booking_app.feature.chat.domain.usecase.OpenDirectChat
 import com.example.booking_app.feature.chat.domain.usecase.RetryMessage
 import com.example.booking_app.feature.chat.domain.usecase.SendMessage
+import com.example.booking_app.feature.chat.domain.usecase.SetMuted
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
@@ -122,6 +123,7 @@ class ChatViewModel @Inject constructor(
     private val retryMessage: RetryMessage,
     private val discardMessage: DiscardMessage,
     private val markChatRead: MarkChatRead,
+    private val setMuted: SetMuted,
     @param:ChatMediaSignedUrlCache private val signedUrlCache: SignedUrlCache,
     private val networkMonitor: NetworkMonitor,
     private val sessionManager: SessionManager,
@@ -516,7 +518,7 @@ class ChatViewModel @Inject constructor(
         val chatId = activeChatId ?: return
         val targetMuted = !(_uiState.value.header?.muted ?: false)
         viewModelScope.launch {
-            repository.setMuted(chatId, targetMuted).fold(
+            setMuted(chatId, targetMuted).fold(
                 onSuccess = {
                     _events.trySend(
                         ChatEvent.ShowMessage(

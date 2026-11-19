@@ -33,6 +33,7 @@ import com.example.booking_app.feature.chat.domain.usecase.ObserveMessages
 import com.example.booking_app.feature.chat.domain.usecase.OpenDirectChat
 import com.example.booking_app.feature.chat.domain.usecase.RetryMessage
 import com.example.booking_app.feature.chat.domain.usecase.SendMessage
+import com.example.booking_app.feature.chat.domain.usecase.SetMuted
 import com.example.booking_app.feature.chat.ui.common.ChatUiText
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -155,6 +156,7 @@ class ChatViewModelTest {
             retryMessage = RetryMessage(repository),
             discardMessage = DiscardMessage(repository),
             markChatRead = MarkChatRead(repository),
+            setMuted = SetMuted(repository),
             signedUrlCache = signedUrlCache,
             networkMonitor = networkMonitor,
             sessionManager = sessionManager,
@@ -464,6 +466,7 @@ class ChatViewModelTest {
             retryMessage = RetryMessage(repository),
             discardMessage = DiscardMessage(repository),
             markChatRead = MarkChatRead(repository),
+            setMuted = SetMuted(repository),
             signedUrlCache = signedUrlCache,
             networkMonitor = networkMonitor,
             sessionManager = sessionManager,
@@ -475,5 +478,32 @@ class ChatViewModelTest {
             assertEquals(ChatEvent.KickedOut, awaitItem())
         }
         assertEquals(R.string.chat_error_not_participant, ChatUiText.errorRes(ChatError.NotParticipant()))
+    }
+
+    // ---------- T040: US3 Tắt/bật thông báo ----------
+
+    @Test
+    fun `bat tat thong bao ghi muted va phat thong bao`() = runTest {
+        chatFlow.value = directChat()
+        val vm = createViewModel()
+        coEvery { repository.setMuted("owner1_player1", any()) } returns Result.success(Unit)
+        runCurrent()
+
+        vm.events.test {
+            vm.onToggleMuted()
+            runCurrent()
+            assertEquals(ChatEvent.ShowMessage(R.string.chat_muted_success), awaitItem())
+            coVerify(exactly = 1) { repository.setMuted("owner1_player1", true) }
+
+            // Sau khi participant cập nhật muted = true -> bấm lần nữa để bật lại.
+            chatFlow.value = directChat().copy(myParticipant = Participant(muted = true))
+            runCurrent()
+            assertTrue(vm.uiState.value.header!!.muted)
+
+            vm.onToggleMuted()
+            runCurrent()
+            assertEquals(ChatEvent.ShowMessage(R.string.chat_unmuted_success), awaitItem())
+            coVerify(exactly = 1) { repository.setMuted("owner1_player1", false) }
+        }
     }
 }
