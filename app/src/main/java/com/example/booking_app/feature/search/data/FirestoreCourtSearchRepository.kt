@@ -15,6 +15,7 @@ import com.example.booking_app.feature.search.domain.CourtSearchPage
 import com.example.booking_app.feature.search.domain.CourtSearchRepository
 import com.example.booking_app.feature.search.domain.CourtSearchSort
 import com.example.booking_app.feature.search.domain.OccupiedSlot
+import com.example.booking_app.feature.search.domain.VenueOrder
 import com.example.booking_app.feature.search.domain.hasContinuousCourt
 import com.example.booking_app.feature.search.domain.matchesVenueName
 import com.example.booking_app.feature.search.domain.model.HomeVenue
@@ -206,8 +207,7 @@ class FirestoreCourtSearchRepository @Inject constructor(
             }
 
     private fun comparator(sort: CourtSearchSort): Comparator<HomeVenue> {
-        val rating = compareByDescending<HomeVenue> { it.ratingCount > 0 }.thenByDescending { it.ratingAvg }
-            .thenByDescending { it.ratingCount }.thenBy { it.id }
+        val rating = VenueOrder.byRating
         return when (sort) {
             CourtSearchSort.RATING -> rating
             CourtSearchSort.PRICE_ASC -> compareBy<HomeVenue> { it.windowPricePerHour ?: it.minPricePerHour ?: Long.MAX_VALUE }
