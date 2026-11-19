@@ -110,7 +110,11 @@ class BookingPresentationTest {
     @Test
     fun closedBookingsDoNotAskToPayAtTheVenue() {
         // Đơn #SN-333F bị từ chối nhưng vẫn hiện "Còn trả tại sân 60.000 ₫".
-        for (status in listOf(RefundPolicy.Status.CANCELLED, RefundPolicy.Status.REJECTED, RefundPolicy.Status.EXPIRED)) {
+        // Đơn #SN-28D2 vắng mặt từng hiện "Còn trả tại sân 225.000 ₫".
+        val closed = listOf(
+            RefundPolicy.Status.CANCELLED, RefundPolicy.Status.REJECTED, RefundPolicy.Status.EXPIRED, RefundPolicy.Status.NO_SHOW,
+        )
+        for (status in closed) {
             assertFalse(BookingPresentation.showRemaining(BookingPresentation.phase(booking(status), now)))
         }
         for (status in listOf(RefundPolicy.Status.PENDING, RefundPolicy.Status.CONFIRMED, RefundPolicy.Status.COMPLETED)) {

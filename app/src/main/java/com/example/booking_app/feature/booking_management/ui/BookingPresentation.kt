@@ -68,9 +68,15 @@ object BookingPresentation {
     /** QR chỉ có ý nghĩa với đơn đã xác nhận, chưa check-in và chưa hết giờ chơi. */
     fun showQr(phase: BookingPhase): Boolean = phase == BookingPhase.UPCOMING
 
-    /** Đơn đã đóng (hủy, bị từ chối, hết hạn giữ chỗ) không còn khoản nào phải trả tại sân. */
-    fun showRemaining(phase: BookingPhase): Boolean =
-        phase != BookingPhase.CANCELLED && phase != BookingPhase.REJECTED && phase != BookingPhase.EXPIRED
+    /**
+     * Đơn đã đóng (hủy, bị từ chối, hết hạn giữ chỗ) và đơn vắng mặt không còn khoản nào thu tại sân:
+     * buổi chơi không diễn ra nên không ai thu nữa. Tiền cọc đã trả vẫn hiện ở dòng "Đã đặt cọc".
+     */
+    fun showRemaining(phase: BookingPhase): Boolean = phase !in NOTHING_TO_COLLECT
+
+    private val NOTHING_TO_COLLECT = setOf(
+        BookingPhase.CANCELLED, BookingPhase.REJECTED, BookingPhase.EXPIRED, BookingPhase.NO_SHOW,
+    )
 
     /** Nhãn dòng "đã trả"; null khi chưa trả đồng nào (ví dụ đơn trả tại sân). */
     fun paidLabel(finance: BookingFinance): String? = when {
