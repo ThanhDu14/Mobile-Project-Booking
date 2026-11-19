@@ -524,12 +524,7 @@ class CourtDetailFragment : Fragment() {
 
     /** Hội thoại với chủ sân của 091 qua deep link (contracts/navigation.md §2). */
     private fun openChat(venueId: String) {
-        try {
-            findNavController().navigate("smashnow://chat/direct?venueId=${Uri.encode(venueId)}".toUri())
-        } catch (_: IllegalArgumentException) {
-            // TODO(C): bỏ nhánh này khi 091 khai báo deep link smashnow://chat/direct?venueId= trong nav graph.
-            showMessage(CourtDetailMessage.COMING_SOON)
-        }
+        findNavController().navigate("smashnow://chat/direct?venueId=${Uri.encode(venueId)}".toUri())
     }
 
     /** Danh sách đánh giá đầy đủ của 070 qua deep link (research R3). */

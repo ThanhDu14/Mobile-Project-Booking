@@ -1,0 +1,317 @@
+package com.example.booking_app.feature.chat.ui.conversation
+
+import androidx.lifecycle.SavedStateHandle
+import app.cash.turbine.test
+import com.example.booking_app.core.media.SignedUrlBatch
+import com.example.booking_app.core.media.SignedUrlCache
+import com.example.booking_app.core.session.SessionManager
+import com.example.booking_app.core.testing.MainDispatcherRule
+import com.example.booking_app.core.ui.UiState
+import com.example.booking_app.core.util.AppClock
+import com.example.booking_app.feature.chat.data.NetworkMonitor
+import com.example.booking_app.feature.chat.domain.ChatRepository
+import com.example.booking_app.feature.chat.domain.model.ChatDetail
+import com.example.booking_app.feature.chat.domain.model.ChatMessage
+import com.example.booking_app.feature.chat.domain.model.ChatStatus
+import com.example.booking_app.feature.chat.domain.model.ChatType
+import com.example.booking_app.feature.chat.domain.model.Delivery
+import com.example.booking_app.feature.chat.domain.model.DirectChatResult
+import com.example.booking_app.feature.chat.domain.model.OutboxEntry
+import com.example.booking_app.feature.chat.domain.model.Participant
+import com.example.booking_app.feature.chat.domain.model.UserSummary
+import com.example.booking_app.feature.chat.domain.model.VenueSummary
+import com.example.booking_app.feature.chat.domain.usecase.DiscardMessage
+import com.example.booking_app.feature.chat.domain.usecase.LoadOlderMessages
+import com.example.booking_app.feature.chat.domain.usecase.MarkChatRead
+import com.example.booking_app.feature.chat.domain.usecase.ObserveMessages
+import com.example.booking_app.feature.chat.domain.usecase.OpenDirectChat
+import com.example.booking_app.feature.chat.domain.usecase.RetryMessage
+import com.example.booking_app.feature.chat.domain.usecase.SendMessage
+import io.mockk.coEvery
+import io.mockk.coVerify
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.slot
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runCurrent
+import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Rule
+import org.junit.Test
+import java.time.Instant
+
+/** T023: unit test cho [ChatViewModel] (US1). */
+@OptIn(ExperimentalCoroutinesApi::class)
+class ChatViewModelTest {
+
+    @get:Rule
+    val mainDispatcherRule = MainDispatcherRule()
+
+    private class FakeClock(var currentMs: Long = 1_700_000_000_000L) : AppClock {
+        override fun now(): Long = currentMs
+        override fun elapsedRealtime(): Long = currentMs
+    }
+
+    private val repository = mockk<ChatRepository>(relaxed = true)
+    private val sessionManager = mockk<SessionManager>(relaxed = true)
+    private val clock = FakeClock()
+    private val onlineFlow = MutableStateFlow(true)
+    private val networkMonitor = object : NetworkMonitor {
+        override val isOnline = onlineFlow
+        override fun isCurrentlyOnline() = onlineFlow.value
+    }
+
+    private val chatFlow = MutableStateFlow<ChatDetail?>(null)
+    private val messagesFlow = MutableStateFlow<List<ChatMessage>>(emptyList())
+    private val outboxFlow = MutableStateFlow<List<OutboxEntry>>(emptyList())
+    private val signedUrlCache = SignedUrlCache(
+        fetch = { paths -> Result.success(SignedUrlBatch(paths.associateWith { "https://signed/$it" }, null)) },
+        clock = clock,
+    )
+
+    private fun directChat(
+        id: String = "owner1_player1",
+        status: ChatStatus = ChatStatus.ACTIVE,
+        venue: VenueSummary? = VenueSummary("v1", "Sân Hòa Bình", "v1/cover.jpg"),
+    ) = ChatDetail(
+        id = id,
+        type = ChatType.DIRECT,
+        memberIds = listOf("owner1", "player1"),
+        ownerId = "owner1",
+        playerId = "player1",
+        venue = venue,
+        otherParty = UserSummary("owner1", "Anh Tuấn", "owner1/avatar.jpg"),
+        status = status,
+        myParticipant = Participant(),
+    )
+
+    private fun serverMessage(
+        id: String,
+        text: String,
+        secondsOffset: Long = 0,
+        isMine: Boolean = false,
+    ) = ChatMessage(
+        id = id,
+        senderId = if (isMine) "player1" else "owner1",
+        text = text,
+        createdAt = Instant.ofEpochMilli(1_700_000_000_000L + secondsOffset * 1000),
+        delivery = Delivery.SENT,
+        isMine = isMine,
+    )
+
+    private fun createViewModel(
+        args: Map<String, Any?> = mapOf(ChatViewModel.ARG_CHAT_ID to "owner1_player1"),
+        uid: String? = "player1",
+        serverOffsetMs: Long = 0L,
+    ): ChatViewModel {
+        every { sessionManager.currentUid() } returns uid
+        every { repository.observeChat(any()) } returns chatFlow
+        every { repository.observeMessages(any()) } returns messagesFlow
+        every { repository.observeOutbox(any()) } returns outboxFlow
+        every { repository.estimatedServerOffsetMs() } returns serverOffsetMs
+        coEvery { repository.markRead(any()) } returns Result.success(Unit)
+        coEvery { repository.setViewing(any(), any()) } returns Result.success(Unit)
+        coEvery { repository.send(any()) } coAnswers {
+            val entry = firstArg<OutboxEntry>()
+            outboxFlow.value = outboxFlow.value + entry
+            Result.success(Unit)
+        }
+        return ChatViewModel(
+            savedStateHandle = SavedStateHandle(args),
+            repository = repository,
+            openDirectChat = OpenDirectChat(repository),
+            observeMessages = ObserveMessages(repository),
+            loadOlderMessages = LoadOlderMessages(repository),
+            sendMessage = SendMessage(repository, clock),
+            retryMessage = RetryMessage(repository),
+            discardMessage = DiscardMessage(repository),
+            markChatRead = MarkChatRead(repository),
+            signedUrlCache = signedUrlCache,
+            networkMonitor = networkMonitor,
+            sessionManager = sessionManager,
+            clock = clock,
+        )
+    }
+
+    @Test
+    fun `Loading den Content gop tin server va outbox o cuoi dung trang thai`() = runTest {
+        val vm = createViewModel()
+        assertEquals(UiState.Loading, vm.uiState.value.messages)
+
+        chatFlow.value = directChat()
+        messagesFlow.value = listOf(serverMessage("m1", "Chào bạn", 1))
+        outboxFlow.value = listOf(
+            OutboxEntry("m-pending", "owner1_player1", "Đang gửi...", createdAtLocal = 2000L, status = Delivery.PENDING),
+            OutboxEntry("m-failed", "owner1_player1", "Bị lỗi", createdAtLocal = 3000L, status = Delivery.FAILED),
+        )
+        runCurrent()
+
+        val content = vm.uiState.value.messages as UiState.Content
+        assertEquals(listOf("m1", "m-pending", "m-failed"), content.data.map { it.id })
+        assertEquals(Delivery.SENT, content.data[0].delivery)
+        assertEquals(Delivery.PENDING, content.data[1].delivery)
+        assertEquals(Delivery.FAILED, content.data[2].delivery)
+    }
+
+    @Test
+    fun `gui tin hien ngay PENDING va chan o nhap rong hoac vuot 1000 ky tu`() = runTest {
+        chatFlow.value = directChat()
+        val vm = createViewModel()
+        runCurrent()
+
+        // Rỗng hoặc chỉ khoảng trắng: không gửi.
+        vm.onComposerChanged("   \n\t  ")
+        assertFalse(vm.uiState.value.canSubmit)
+        vm.onSendClicked()
+        runCurrent()
+        coVerify(exactly = 0) { repository.send(any()) }
+
+        // Quá 1000 ký tự: chặn gửi và hiện bộ đếm.
+        vm.onComposerChanged("a".repeat(1001))
+        assertTrue(vm.uiState.value.isOverLimit)
+        assertTrue(vm.uiState.value.showCounter)
+        assertFalse(vm.uiState.value.canSubmit)
+        vm.onSendClicked()
+        runCurrent()
+        coVerify(exactly = 0) { repository.send(any()) }
+
+        // Hợp lệ: gửi và hiện PENDING ngay lập tức.
+        vm.onComposerChanged("Tối thứ 7 còn sân không?")
+        assertTrue(vm.uiState.value.canSubmit)
+        vm.onSendClicked()
+        runCurrent()
+
+        val items = (vm.uiState.value.messages as UiState.Content).data
+        assertEquals(1, items.size)
+        assertEquals("Tối thứ 7 còn sân không?", items.first().text)
+        assertEquals(Delivery.PENDING, items.first().delivery)
+        assertEquals("", vm.uiState.value.composerText)
+    }
+
+    @Test
+    fun `tin moi nhat hien thi thi goi markRead`() = runTest {
+        chatFlow.value = directChat()
+        messagesFlow.value = listOf(serverMessage("m1", "Tin 1"))
+        val vm = createViewModel()
+        runCurrent()
+
+        vm.onLatestMessageVisible()
+        runCurrent()
+        coVerify(exactly = 1) { repository.markRead("owner1_player1") }
+
+        // Gọi lại cùng tin cuối không gọi trùng.
+        vm.onLatestMessageVisible()
+        runCurrent()
+        coVerify(exactly = 1) { repository.markRead("owner1_player1") }
+
+        // Có tin mới tới -> gọi lại markRead.
+        messagesFlow.value = listOf(serverMessage("m1", "Tin 1"), serverMessage("m2", "Tin 2", 5))
+        runCurrent()
+        vm.onLatestMessageVisible()
+        runCurrent()
+        coVerify(exactly = 2) { repository.markRead("owner1_player1") }
+    }
+
+    @Test
+    fun `gia han viewingUntil moi 45 giay theo gio server uoc luong va dat null khi roi`() = runTest {
+        // Giả lập đồng hồ máy chậm hơn server 30 giây (serverOffsetMs = +30_000).
+        val serverOffset = 30_000L
+        chatFlow.value = directChat()
+        val captured = mutableListOf<Instant?>()
+        val vm = createViewModel(serverOffsetMs = serverOffset)
+        // Cài sau createViewModel vì hàm đó gán lại setViewing mặc định.
+        coEvery { repository.setViewing("owner1_player1", any()) } answers {
+            captured.add(secondArg())
+            Result.success(Unit)
+        }
+        runCurrent()
+
+        vm.onScreenVisible()
+        runCurrent()
+        assertEquals(1, captured.size)
+        assertEquals(
+            Instant.ofEpochMilli(clock.currentMs + serverOffset + ChatViewModel.VIEWING_TTL_MS),
+            captured[0],
+        )
+
+        // Sau 45 giây tự gia hạn lần 2.
+        clock.currentMs += ChatViewModel.VIEWING_RENEW_INTERVAL_MS
+        advanceTimeBy(ChatViewModel.VIEWING_RENEW_INTERVAL_MS)
+        runCurrent()
+        assertEquals(2, captured.size)
+        assertEquals(
+            Instant.ofEpochMilli(clock.currentMs + serverOffset + ChatViewModel.VIEWING_TTL_MS),
+            captured[1],
+        )
+
+        // Rời màn hình: đặt viewingUntil = null.
+        vm.onScreenHidden()
+        runCurrent()
+        assertEquals(3, captured.size)
+        assertNull(captured[2])
+    }
+
+    @Test
+    fun `dau man hinh chat rieng co ten va anh co so va READ_ONLY an o nhap`() = runTest {
+        chatFlow.value = directChat(
+            status = ChatStatus.READ_ONLY,
+            venue = VenueSummary("v1", "Sân cầu lông Hòa Bình", "venues/v1.jpg"),
+        )
+        val vm = createViewModel()
+        runCurrent()
+
+        val header = vm.uiState.value.header!!
+        assertEquals("Sân cầu lông Hòa Bình", header.venue?.name)
+        assertEquals("venues/v1.jpg", header.venue?.photoPath)
+        assertFalse(vm.uiState.value.canSend)
+        assertEquals(ComposerDisabledReason.READ_ONLY, vm.uiState.value.disabledReason)
+    }
+
+    @Test
+    fun `cuon len tai them 30 tin cu`() = runTest {
+        val initial30 = (1..30).map { i -> serverMessage("m$i", "Tin $i", secondsOffset = i.toLong() + 100) }
+        val older30 = (1..30).map { i -> serverMessage("old$i", "Cũ $i", secondsOffset = i.toLong()) }
+        chatFlow.value = directChat()
+        messagesFlow.value = initial30
+        coEvery { repository.loadOlder("owner1_player1", initial30.first().createdAt!!) } returns Result.success(older30)
+
+        val vm = createViewModel()
+        runCurrent()
+        assertEquals(30, (vm.uiState.value.messages as UiState.Content).data.size)
+
+        vm.loadOlder()
+        advanceUntilIdle()
+
+        val merged = (vm.uiState.value.messages as UiState.Content).data
+        assertEquals(60, merged.size)
+        assertEquals("old1", merged.first().id)
+        assertEquals("m30", merged.last().id)
+        assertTrue(vm.uiState.value.canLoadOlder)
+    }
+
+    @Test
+    fun `deep link venueId goi openDirect va moi dang nhap khi khach chua dang nhap`() = runTest {
+        // Trường hợp khách chưa đăng nhập
+        val guestVm = createViewModel(args = mapOf(ChatViewModel.ARG_VENUE_ID to "v1"), uid = null)
+        guestVm.events.test {
+            val event = awaitItem()
+            assertTrue(event is ChatEvent.RequireLogin)
+            assertEquals("smashnow://chat/direct?venueId=v1", (event as ChatEvent.RequireLogin).returnTo)
+        }
+
+        // Trường hợp người chơi đã đăng nhập
+        coEvery { repository.openDirect("v1") } returns Result.success(DirectChatResult("owner1_player1", created = true))
+        chatFlow.value = directChat()
+        val playerVm = createViewModel(args = mapOf(ChatViewModel.ARG_VENUE_ID to "v1"), uid = "player1")
+        advanceUntilIdle()
+
+        coVerify(exactly = 1) { repository.openDirect("v1") }
+        assertEquals("owner1_player1", playerVm.uiState.value.header?.chatId)
+    }
+}
