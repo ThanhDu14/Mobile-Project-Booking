@@ -18,6 +18,7 @@ import com.example.booking_app.feature.community.domain.model.JoinResult
 import com.example.booking_app.feature.community.domain.usecase.DeletePost
 import com.example.booking_app.feature.community.domain.usecase.JoinGroup
 import com.example.booking_app.feature.community.domain.usecase.LeaveGroup
+import com.example.booking_app.feature.community.domain.usecase.ModeratePost
 import com.example.booking_app.feature.community.domain.usecase.ToggleAttendance
 import com.example.booking_app.feature.community.emptyPostRepository
 import com.example.booking_app.feature.community.group
@@ -64,6 +65,7 @@ class GroupDetailMembershipTest {
         JoinGroup(groups),
         LeaveGroup(groups),
         DeletePost(posts),
+        ModeratePost(posts),
         ToggleAttendance(posts),
         noopSignedUrls(),
         DistrictNames(catalog),

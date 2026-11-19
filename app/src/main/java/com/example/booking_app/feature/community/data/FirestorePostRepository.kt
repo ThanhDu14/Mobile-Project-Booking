@@ -195,14 +195,18 @@ class FirestorePostRepository @Inject constructor(
         awaitClose { reg.remove() }
     }
 
-    // ---------- Chưa làm (US6) ----------
+    // ---------- US6: ẩn/hiện bài và báo cáo ----------
 
-    override suspend fun hide(groupId: String, postId: String): Result<Unit> = notImplemented()
-    override suspend fun unhide(groupId: String, postId: String): Result<Unit> = notImplemented()
+    override suspend fun hide(groupId: String, postId: String): Result<Unit> =
+        callPost(GroupPostRequest.hide(groupId, postId)) { }
+
+    override suspend fun unhide(groupId: String, postId: String): Result<Unit> =
+        callPost(GroupPostRequest.unhide(groupId, postId)) { }
+
     override suspend fun report(groupId: String, postId: String, reason: ReportReason, detail: String?): Result<String> =
-        notImplemented()
-
-    private fun <T> notImplemented(): Result<T> = Result.failure(CommunityError.Unknown("NOT_IMPLEMENTED"))
+        callPost(GroupPostRequest.report(groupId, postId, reason.name, detail?.trim()?.takeIf { it.isNotEmpty() })) { res ->
+            res.reportId
+        }
 
     private suspend fun attachAttendance(groupId: String, uid: String?, posts: List<Post>): List<Post> {
         if (uid == null || posts.none { it.type == PostType.EVENT && it.event != null }) return posts

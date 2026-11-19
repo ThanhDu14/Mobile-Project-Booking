@@ -27,6 +27,7 @@ import com.example.booking_app.feature.community.domain.model.JoinResult
 import com.example.booking_app.feature.community.domain.model.PostType
 import com.example.booking_app.feature.community.ui.common.CommunityUiText
 import com.example.booking_app.feature.community.ui.composer.PostComposerFragment
+import com.example.booking_app.feature.community.ui.report.ReportPostBottomSheet
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
@@ -52,6 +53,9 @@ class GroupDetailFragment : Fragment(R.layout.fragment_group_detail) {
         setFragmentResultListener(PostComposerFragment.RESULT_KEY_POST_SAVED) { _, _ ->
             viewModel.refreshFeed()
         }
+        setFragmentResultListener(ReportPostBottomSheet.RESULT_KEY_REPORT_SENT) { _, _ ->
+            Snackbar.make(binding.root, R.string.community_report_sent, Snackbar.LENGTH_SHORT).show()
+        }
 
         val postAdapter = PostAdapter(object : PostActions {
             override fun onPhotoClick(urls: List<String>, startIndex: Int) {
@@ -72,6 +76,16 @@ class GroupDetailFragment : Fragment(R.layout.fragment_group_detail) {
                 val nav = findNavController()
                 if (nav.currentDestination?.id != R.id.groupDetailFragment) return
                 nav.navigate(GroupDetailFragmentDirections.actionGroupDetailToEventAttendees(viewModel.groupId, postId))
+            }
+
+            override fun onHidePost(postId: String) = confirmHidePost(postId)
+
+            override fun onUnhidePost(postId: String) = viewModel.onUnhidePost(postId)
+
+            override fun onReportPost(postId: String) {
+                val nav = findNavController()
+                if (nav.currentDestination?.id != R.id.groupDetailFragment) return
+                nav.navigate(GroupDetailFragmentDirections.actionGroupDetailToReportPost(viewModel.groupId, postId))
             }
         })
         binding.feedList.layoutManager = LinearLayoutManager(requireContext())
@@ -241,6 +255,15 @@ class GroupDetailFragment : Fragment(R.layout.fragment_group_detail) {
             .show()
     }
 
+    private fun confirmHidePost(postId: String) {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.community_confirm_hide_post_title)
+            .setMessage(R.string.community_confirm_hide_post_message)
+            .setNegativeButton(R.string.community_action_cancel, null)
+            .setPositiveButton(R.string.community_action_hide) { _, _ -> viewModel.onHidePostConfirmed(postId) }
+            .show()
+    }
+
     private fun suggestDeleteGroup() {
         MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.community_suggest_delete_title)
@@ -270,6 +293,8 @@ class GroupDetailFragment : Fragment(R.layout.fragment_group_detail) {
             GroupDetailEvent.RequestCancelled -> Snackbar.make(binding.root, R.string.community_msg_request_cancelled, Snackbar.LENGTH_SHORT).show()
             GroupDetailEvent.Left -> Snackbar.make(binding.root, R.string.community_msg_left, Snackbar.LENGTH_SHORT).show()
             GroupDetailEvent.PostDeleted -> Snackbar.make(binding.root, R.string.community_msg_post_deleted, Snackbar.LENGTH_SHORT).show()
+            GroupDetailEvent.PostHidden -> Snackbar.make(binding.root, R.string.community_msg_post_hidden, Snackbar.LENGTH_SHORT).show()
+            GroupDetailEvent.PostUnhidden -> Snackbar.make(binding.root, R.string.community_msg_post_unhidden, Snackbar.LENGTH_SHORT).show()
             is GroupDetailEvent.OpenTransferOwner -> {
                 Snackbar.make(binding.root, R.string.community_error_owner_must_transfer, Snackbar.LENGTH_SHORT).show()
                 openMembers(selectTransferTarget = true)

@@ -15,6 +15,7 @@ import com.example.booking_app.feature.community.domain.model.AttendResult
 import com.example.booking_app.feature.community.domain.model.EventInfo
 import com.example.booking_app.feature.community.domain.model.GroupMembership
 import com.example.booking_app.feature.community.domain.model.GroupRole
+import com.example.booking_app.feature.community.domain.model.GroupStatus
 import com.example.booking_app.feature.community.domain.model.HiddenBy
 import com.example.booking_app.feature.community.domain.model.Page
 import com.example.booking_app.feature.community.domain.model.PageCursor
@@ -24,6 +25,7 @@ import com.example.booking_app.feature.community.domain.model.PostType
 import com.example.booking_app.feature.community.domain.usecase.DeletePost
 import com.example.booking_app.feature.community.domain.usecase.JoinGroup
 import com.example.booking_app.feature.community.domain.usecase.LeaveGroup
+import com.example.booking_app.feature.community.domain.usecase.ModeratePost
 import com.example.booking_app.feature.community.domain.usecase.ToggleAttendance
 import com.example.booking_app.feature.community.group
 import com.example.booking_app.feature.community.noopSignedUrls
@@ -66,6 +68,7 @@ class GroupFeedTest {
         JoinGroup(groups),
         LeaveGroup(groups),
         DeletePost(posts),
+        ModeratePost(posts),
         ToggleAttendance(posts),
         signedUrls,
         DistrictNames(catalog),
@@ -274,5 +277,55 @@ class GroupFeedTest {
         val afterFail = ((vm.state.value as GroupDetailUiState.Content).feed as FeedUiState.Content).items.single()
         assertTrue(afterFail.post.event!!.iAmAttending)
         assertEquals(3, afterFail.post.event!!.attendeeCount)
+    }
+
+    @Test
+    fun `an va hien lai bai cap nhat bang tin, bai SYSTEM khong hien nut hien lai, nhom LOCKED an nut dang bai`() = runTest {
+        every { groups.observeGroup("g1") } returns flowOf(group(ownerId = ME, status = GroupStatus.ACTIVE))
+        every { groups.observeMembership("g1") } returns flowOf(GroupMembership(GroupRole.OWNER, false))
+        coEvery { posts.feed("g1", true, null) } returns Result.success(
+            Page(
+                listOf(
+                    post(id = "p1", authorId = "other", status = PostStatus.VISIBLE),
+                    post(id = "p2", authorId = "other", status = PostStatus.HIDDEN, hiddenBy = HiddenBy.SYSTEM),
+                    post(id = "p3", authorId = ME, status = PostStatus.VISIBLE),
+                ),
+                null,
+            ),
+        )
+        every { posts.observeNewPosts("g1", true, any()) } returns emptyFlow()
+        coEvery { posts.hide("g1", "p1") } returns Result.success(Unit)
+        coEvery { posts.unhide("g1", "p1") } returns Result.success(Unit)
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        val initial = ((vm.state.value as GroupDetailUiState.Content).feed as FeedUiState.Content).items.associateBy { it.post.id }
+        assertTrue(initial.getValue("p1").canHide)
+        assertTrue(initial.getValue("p1").canReport)
+        assertFalse(initial.getValue("p2").canUnhide) // SYSTEM ẩn không hiện lại được (AC 6.4)
+        assertFalse(initial.getValue("p3").canReport) // Không báo cáo bài của mình (AC 6.5)
+
+        vm.onHidePostConfirmed("p1")
+        advanceUntilIdle()
+        val afterHide = ((vm.state.value as GroupDetailUiState.Content).feed as FeedUiState.Content).items.first { it.post.id == "p1" }
+        assertEquals(PostStatus.HIDDEN, afterHide.post.status)
+        assertEquals(HiddenBy.GROUP, afterHide.post.hiddenBy)
+        assertTrue(afterHide.canUnhide)
+
+        vm.onUnhidePost("p1")
+        advanceUntilIdle()
+        val afterUnhide = ((vm.state.value as GroupDetailUiState.Content).feed as FeedUiState.Content).items.first { it.post.id == "p1" }
+        assertEquals(PostStatus.VISIBLE, afterUnhide.post.status)
+
+        // Nhóm LOCKED: ẩn nút đăng bài và tắt mọi menu ghi.
+        every { groups.observeGroup("g1") } returns flowOf(group(ownerId = ME, status = GroupStatus.LOCKED))
+        val lockedVm = viewModel()
+        advanceUntilIdle()
+        val lockedContent = lockedVm.state.value as GroupDetailUiState.Content
+        assertFalse(lockedContent.canPost)
+        assertTrue(lockedContent.group.isLocked)
+        val lockedItems = (lockedContent.feed as FeedUiState.Content).items
+        assertTrue(lockedItems.none { it.hasMenuActions })
     }
 }

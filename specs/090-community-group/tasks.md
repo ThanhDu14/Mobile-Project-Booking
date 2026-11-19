@@ -282,13 +282,13 @@ Task của spec khác ghi là `010-T###`, `070-T###`, `081-T###`.
   - **P9:** quản trị viên `hide` → `HIDDEN`, `hiddenBy = GROUP`, `hiddenByUid`; `unhide` → `VISIBLE`; bài `hiddenBy = SYSTEM` → `unhide` trả `403 HIDDEN_BY_SYSTEM`; thành viên thường `hide` → `FORBIDDEN`;
   - **P10:** `report` lần 1 → `201`, document `reports/POST_{groupId}_{postId}_{uid}` có `targetType = POST`, `targetPath`, `reason`, `status = OPEN`, `action = NONE`; lần 2 → `409 ALREADY_REPORTED`; bài của mình → `OWN_POST`; không phải thành viên → `NOT_MEMBER`; `reason = OTHER` không có `detail` hoặc `detail` 501 ký tự → `INVALID_ARGUMENT`;
   - **P11:** nhóm `LOCKED`: `group-post create`, `group-manage join` → `423 GROUP_LOCKED`; `leave` vẫn thành công.
-- [ ] T065 [P] [US6] Unit test `TEST/ui/report/ReportPostViewModelTest.kt`: chọn lý do; "Khác" bắt buộc mô tả ≤ 500 ký tự; thành công → "Đã gửi báo cáo"; `AlreadyReported` → "Bạn đã báo cáo bài này" (AC 6.2); `Network` giữ lựa chọn
+- [X] T065 [P] [US6] Unit test `TEST/ui/report/ReportPostViewModelTest.kt`: chọn lý do; "Khác" bắt buộc mô tả ≤ 500 ký tự; thành công → "Đã gửi báo cáo"; `AlreadyReported` → "Bạn đã báo cáo bài này" (AC 6.2); `Network` giữ lựa chọn
 
 ### Implementation cho User Story 6
 
 - [X] T066 [US6] Cài `hide`, `unhide`, `report` trong `FN/group-post/index.ts` theo [research R7](research.md#r7-ẩn-bài-phân-biệt-nhóm-ẩn-và-admin-hệ-thống-ẩn-fr-019-ac-64) và [R14](research.md#r14-báo-cáo-bài-đăng-fr-018): `report` ghi `reports/{reportId}` bằng `create` có điều kiện "chưa tồn tại" (`currentDocument.exists = false`) để chống trùng. Kiểm tra `loadGroupForWrite` (nhóm `LOCKED` → `GROUP_LOCKED`) ở mọi action ghi của cả hai function, trừ `leave`. Sau đó T064 phải xanh
-- [ ] T067 [US6] Cài `hide`, `unhide`, `report` trong `CM/data/FirestorePostRepository.kt`; UseCase `CM/domain/usecase/ModeratePost.kt`, `ReportPost.kt`
-- [ ] T068 [US6] Cài `CM/ui/report/ReportPostViewModel.kt`, `CM/ui/report/ReportPostBottomSheet.kt` + `RES/layout/bottom_sheet_report_post.xml` (5 lý do, ô mô tả khi "Khác"; wireframe `ui/09_community-chat_buoc3_bao-cao-bai-dang.png`); menu bài trong `item_post.xml`/`item_event.xml` theo `GroupPermissions`: "Báo cáo" (không có với bài của mình, AC 6.5), "Ẩn bài"/"Hiện lại" cho chủ nhóm/quản trị viên (ẩn "Hiện lại" khi `hiddenBy = SYSTEM`); nhóm `LOCKED` hiện banner "Nhóm đã bị tạm khóa" và ẩn nút đăng bài, tạo sự kiện. Cho T065 xanh
+- [X] T067 [US6] Cài `hide`, `unhide`, `report` trong `CM/data/FirestorePostRepository.kt`; UseCase `CM/domain/usecase/ModeratePost.kt`, `ReportPost.kt`
+- [X] T068 [US6] Cài `CM/ui/report/ReportPostViewModel.kt`, `CM/ui/report/ReportPostBottomSheet.kt` + `RES/layout/bottom_sheet_report_post.xml` (5 lý do, ô mô tả khi "Khác"; wireframe `ui/09_community-chat_buoc3_bao-cao-bai-dang.png`); menu bài trong `item_post.xml`/`item_event.xml` theo `GroupPermissions`: "Báo cáo" (không có với bài của mình, AC 6.5), "Ẩn bài"/"Hiện lại" cho chủ nhóm/quản trị viên (ẩn "Hiện lại" khi `hiddenBy = SYSTEM`); nhóm `LOCKED` hiện banner "Nhóm đã bị tạm khóa" và ẩn nút đăng bài, tạo sự kiện. Cho T065 xanh
 
 **Checkpoint**: cả 6 user story chạy độc lập; quickstart Q12, Q13 đúng.
 

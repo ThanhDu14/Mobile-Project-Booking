@@ -14,6 +14,7 @@ import com.example.booking_app.feature.community.domain.model.Group
 import com.example.booking_app.feature.community.domain.model.GroupMembership
 import com.example.booking_app.feature.community.domain.model.GroupRole
 import com.example.booking_app.feature.community.domain.model.GroupVisibility
+import com.example.booking_app.feature.community.domain.model.HiddenBy
 import com.example.booking_app.feature.community.domain.model.JoinResult
 import com.example.booking_app.feature.community.domain.model.PageCursor
 import com.example.booking_app.feature.community.domain.model.Post
@@ -22,6 +23,7 @@ import com.example.booking_app.feature.community.domain.toCommunityError
 import com.example.booking_app.feature.community.domain.usecase.DeletePost
 import com.example.booking_app.feature.community.domain.usecase.JoinGroup
 import com.example.booking_app.feature.community.domain.usecase.LeaveGroup
+import com.example.booking_app.feature.community.domain.usecase.ModeratePost
 import com.example.booking_app.feature.community.domain.usecase.ToggleAttendance
 import com.example.booking_app.feature.community.ui.common.DistrictNames
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -140,6 +142,8 @@ sealed interface GroupDetailEvent {
     data object RequestCancelled : GroupDetailEvent
     data object Left : GroupDetailEvent
     data object PostDeleted : GroupDetailEvent
+    data object PostHidden : GroupDetailEvent
+    data object PostUnhidden : GroupDetailEvent
 
     /** Chủ nhóm rời khi chưa chuyển quyền: mở chọn người nhận quyền (US5). */
     data class OpenTransferOwner(val groupId: String) : GroupDetailEvent
@@ -163,6 +167,7 @@ class GroupDetailViewModel @Inject constructor(
     private val joinGroup: JoinGroup,
     private val leaveGroup: LeaveGroup,
     private val deletePost: DeletePost,
+    private val moderatePost: ModeratePost,
     private val toggleAttendance: ToggleAttendance,
     private val signedUrls: SignedUrlCache,
     private val districtNames: DistrictNames,
@@ -262,6 +267,42 @@ class GroupDetailViewModel @Inject constructor(
                     rawPosts = rawPosts.filterNot { it.id == postId }
                     publishFeed()
                     _events.trySend(GroupDetailEvent.PostDeleted)
+                },
+                onFailure = { err ->
+                    _events.trySend(GroupDetailEvent.ShowError(err.toCommunityError()))
+                },
+            )
+        }
+    }
+
+    /** T068: chủ nhóm/quản trị viên ẩn bài vi phạm. */
+    fun onHidePostConfirmed(postId: String) {
+        viewModelScope.launch {
+            moderatePost.hide(groupId, postId).fold(
+                onSuccess = {
+                    rawPosts = rawPosts.map { p ->
+                        if (p.id == postId) p.copy(status = PostStatus.HIDDEN, hiddenBy = HiddenBy.GROUP) else p
+                    }
+                    publishFeed()
+                    _events.trySend(GroupDetailEvent.PostHidden)
+                },
+                onFailure = { err ->
+                    _events.trySend(GroupDetailEvent.ShowError(err.toCommunityError()))
+                },
+            )
+        }
+    }
+
+    /** T068: chủ nhóm/quản trị viên hiện lại bài do nhóm ẩn (bài `SYSTEM` ẩn trả `HiddenBySystem`). */
+    fun onUnhidePost(postId: String) {
+        viewModelScope.launch {
+            moderatePost.unhide(groupId, postId).fold(
+                onSuccess = {
+                    rawPosts = rawPosts.map { p ->
+                        if (p.id == postId) p.copy(status = PostStatus.VISIBLE, hiddenBy = null) else p
+                    }
+                    publishFeed()
+                    _events.trySend(GroupDetailEvent.PostUnhidden)
                 },
                 onFailure = { err ->
                     _events.trySend(GroupDetailEvent.ShowError(err.toCommunityError()))

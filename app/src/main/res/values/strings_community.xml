@@ -277,4 +277,16 @@
     <string name="community_suggest_delete_title">Bạn là thành viên duy nhất</string>
     <string name="community_member_more_cd">Tùy chọn cho %1$s</string>
     <string name="community_member_avatar_cd">Ảnh đại diện của %1$s</string>
+
+    <!-- US6: báo cáo và ẩn bài -->
+    <string name="community_report_note">Người đăng không biết ai đã báo cáo. Chủ nhóm và admin sẽ xem xét.</string>
+    <string name="community_report_detail_hint">Cho biết bài đăng vi phạm thế nào</string>
+    <string name="community_report_reason_required">Chọn một lý do báo cáo</string>
+    <string name="community_report_detail_required">Nhập mô tả khi chọn Khác</string>
+    <string name="community_report_detail_too_long">Mô tả tối đa 500 ký tự</string>
+    <string name="community_report_sending">Đang gửi</string>
+    <string name="community_confirm_hide_post_title">Ẩn bài đăng?</string>
+    <string name="community_confirm_hide_post_message">Thành viên khác sẽ không còn thấy bài này. Bạn có thể hiện lại sau.</string>
+    <string name="community_msg_post_hidden">Đã ẩn bài đăng</string>
+    <string name="community_msg_post_unhidden">Đã hiện lại bài đăng</string>
 </resources>

@@ -71,7 +71,23 @@
         <action
             android:id="@+id/action_groupDetail_to_groupMembers"
             app:destination="@id/groupMembersFragment" />
+        <action
+            android:id="@+id/action_groupDetail_to_reportPost"
+            app:destination="@id/reportPostBottomSheet" />
     </fragment>
+
+    <!-- Báo cáo bài đăng (US6). -->
+    <dialog
+        android:id="@+id/reportPostBottomSheet"
+        android:name="com.example.booking_app.feature.community.ui.report.ReportPostBottomSheet"
+        android:label="@string/community_title_report">
+        <argument
+            android:name="groupId"
+            app:argType="string" />
+        <argument
+            android:name="postId"
+            app:argType="string" />
+    </dialog>
 
     <!-- Danh sách thành viên và chọn người nhận quyền chủ nhóm (US5). -->
     <fragment
