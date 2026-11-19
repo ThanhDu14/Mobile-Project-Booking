@@ -37,3 +37,15 @@ export function groupIdOfPath(path: string): string | null {
 export async function deletePrefix(storage: GroupStorage, bucket: string, prefix: string): Promise<number> {
   return await storage.remove(bucket, await storage.list(bucket, prefix));
 }
+
+// ---------- Ảnh chat (spec 091): bucket private `chat-media`, object `{chatId}/{messageId}.{ext}` ----------
+
+export const CHAT_MEDIA_BUCKET = "chat-media";
+
+export const chatMediaPath = (chatId: string, messageId: string, ext: string) => `${chatId}/${messageId}.${ext}`;
+
+/** `{chatId}/{messageId}.{jpg,png,webp}` → `{ chatId, messageId }`; sai dạng thì `null`. */
+export function parseChatMediaPath(path: string): { chatId: string; messageId: string } | null {
+  const m = /^([^/.][^/]*)\/([^/.]+)\.(jpg|png|webp)$/.exec(path);
+  return m ? { chatId: m[1], messageId: m[2] } : null;
+}

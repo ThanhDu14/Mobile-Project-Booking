@@ -5,6 +5,7 @@ import { errorResponse, HttpError, requireUser, toErrorResponse } from "./auth.t
 import * as defaultFirestore from "./firestore.ts";
 import type { FirestoreTransaction } from "./firestore.ts";
 import { readJsonObject } from "./dropin-tx.ts";
+import { syncGroupChat } from "./chats.ts";
 
 // ---------- Kiểu dữ liệu và đường dẫn (data-model.md mục 1–6) ----------
 
@@ -92,15 +93,15 @@ export interface MembershipChange {
  *
  * PHẢI được gọi trong CÙNG transaction với thao tác đổi danh sách thành viên (`create`, `join` khi `JOINED`,
  * `approve`, `update` có tự duyệt, `leave`, `remove`, `delete`), để `chats/{chatId}.memberIds` không lệch với
- * `members`. Spec 090 để thân trống; spec 091 cài (cập nhật `memberIds`, tạo chat khi `created`, khóa/xóa chat
+ * `members`. Spec 091 cài (`syncGroupChat`: cập nhật `memberIds`, tạo chat khi `created`, khóa/xóa chat
  * khi `deleted`) bằng `tx.get`/`tx.write`.
  */
 export function onGroupMembershipChanged(
-  _tx: FirestoreTransaction,
-  _groupId: string,
-  _change: MembershipChange,
+  tx: FirestoreTransaction,
+  groupId: string,
+  change: MembershipChange,
 ): Promise<void> {
-  return Promise.resolve();
+  return syncGroupChat(tx, groupId, change);
 }
 
 // `anonymizeCommunityGroups(uid)` cho `delete-account` (A) gọi (T069, research R16) nằm ở `group-anonymize.ts`.

@@ -48,7 +48,7 @@ Task của spec khác ghi là `010-T###`, `070-T###`, `090-T###`.
 
   Phần nào chưa có thì làm theo task gốc, không viết lại ở spec này
 - [ ] T002 [P] Tạo `RES/values/strings_chat.xml`, tiền tố `chat_`: tiêu đề "Tin nhắn", "Tin nhắn khách hàng", "Chat nhóm"; "Đang gửi", "Gửi lỗi", "Gửi lại", "Xóa"; "[Hình ảnh]", "Tin nhắn đã được thu hồi", "Tin nhắn đã bị ẩn", "Người dùng đã xóa", "Cuộc trò chuyện chỉ đọc", "Nhóm đã bị tạm khóa", "Bạn không thể gửi tin trong cuộc trò chuyện này"; menu "Tắt/Bật thông báo", "Chặn/Bỏ chặn", "Thu hồi", "Báo cáo"; 5 lý do báo cáo (dùng chung chữ với 090); rỗng "Tham gia một nhóm", "Tìm sân để hỏi chủ sân"; giải thích quyền camera; thông báo cho mọi mã lỗi ở [contract mục 5](contracts/edge-functions-chat.md#5-mã-lỗi)
-- [ ] T003 [P] Viết `scripts/seed/091-chat.ts` theo [quickstart mục 1](quickstart.md#1-chuẩn-bị), chạy sau `scripts/seed/090-community.ts`: `owner1` (`ownerStatus = APPROVED`) có `V1`, `V2` `ACTIVE`, `V3` `HIDDEN`; `owner2` chưa duyệt; chat `player1`–`owner1` 40 tin (1 ảnh, 1 `HIDDEN`, 1 `RECALLED`); `group_G1` khớp thành viên `G1`, 35 tin; chat `player2`–`owner1` với `participants/owner1.blockedOther = true`. Mọi chat có `unreadCounts`, `participants` khớp `memberIds`
+- [X] T003 [P] Viết `scripts/seed/091-chat.ts` theo [quickstart mục 1](quickstart.md#1-chuẩn-bị), chạy sau `scripts/seed/090-community.ts`: `owner1` (`ownerStatus = APPROVED`) có `V1`, `V2` `ACTIVE`, `V3` `HIDDEN`; `owner2` chưa duyệt; chat `player1`–`owner1` 40 tin (1 ảnh, 1 `HIDDEN`, 1 `RECALLED`); `group_G1` khớp thành viên `G1`, 35 tin; chat `player2`–`owner1` với `participants/owner1.blockedOther = true`. Mọi chat có `unreadCounts`, `participants` khớp `memberIds`
 
 **Checkpoint**: seed 090 + 091 chạy được trên Emulator.
 
@@ -62,20 +62,20 @@ Task của spec khác ghi là `010-T###`, `070-T###`, `090-T###`.
 
 ### Server dùng chung
 
-- [ ] T004 Kiểm tra `FN/_shared/firestore.ts` (B) hỗ trợ trong transaction: transform `REQUEST_TIME` khi commit (cho `createdAt`, `updatedAt`) và `increment` theo field path `unreadCounts.<uid>`. Thiếu thì thêm bản tối thiểu (REST `commit` có `updateTransforms` với `setToServerValue: REQUEST_TIME` và `increment`) rồi báo B gộp
-- [ ] T005 [P] Tạo `FN/_shared/media.ts` + `FN/_shared/media.test.ts`: `validateImage(contentType, size)` (chỉ `image/jpeg`, `image/png`, `image/webp`; `size ≤ 2097152`), `signedUpload(bucket, path)`, `signedDownloads(bucket, paths, 3600)`, `objectExists(bucket, path)`, `deletePrefix(bucket, prefix)`. Nếu 090-T045 đã viết các hàm này trong `group-media-url` thì chuyển sang đây và để `group-media-url` gọi lại (không đổi hành vi)
-- [ ] T006 [P] Tạo `FN/_shared/chats_fixtures.ts`: `seedDirectChat(player, owner, venueId, messages)`, `seedGroupChat(groupId, memberIds, messages)`; `assertChatInvariant(chatId)`: khóa của `unreadCounts` đúng bằng `memberIds`, có đúng một `participants/{uid}` cho mỗi `memberIds`, `lastMessage.messageId` là tin có `createdAt` lớn nhất; mock `send-notification` ghi lại lời gọi
-- [ ] T007 Viết test `FN/_shared/chats.test.ts` cho **H1** (`syncGroupChat` với `created`, `added`, `removed`, `deleted` theo bảng [research R5](research.md#r5-đồng-bộ-chat-nhóm-với-danh-sách-thành-viên-fr-002); người mới có `lastReadAt = joinedAt`) và **H2** (`purgeChat` xóa hết `messages`, `participants`, ảnh `chat-media/{chatId}/`); chạy thấy fail
-- [ ] T008 Cài `FN/_shared/chats.ts`: `syncGroupChat(tx, groupId, change)` (`chatId = group_{groupId}`; `participants/{uid}` có `userId`, `chatId`, `userSnapshot`, `joinedAt`, `lastReadAt = joinedAt`, `muted = false`); `purgeChat(chatId)` (xóa theo lô ≤ 500, rồi `deletePrefix`); khung `anonymizeCommunityChats(uid)` (cài ở T053). Điền thân hook `onGroupMembershipChanged` trong `FN/_shared/groups.ts` (090-T006) để gọi `syncGroupChat`. Sau đó T007 phải xanh và test G1, G5 của 090 vẫn xanh
-- [ ] T009 Tạo khung 3 function `FN/chat-send/index.ts`, `FN/chat-action/index.ts`, `FN/chat-media-url/index.ts`: xác thực `_shared/auth.ts`, `accountStatus == ACTIVE`, router `action` (cho `chat-action`, `chat-media-url`), body lỗi `{ error: { code, message } }`, helper `loadChatForMember(tx, chatId, uid)` (`CHAT_NOT_FOUND` khi không có hoặc `DELETED`, `NOT_PARTICIPANT` khi không trong `memberIds`)
+- [X] T004 Kiểm tra `FN/_shared/firestore.ts` (B) hỗ trợ trong transaction: transform `REQUEST_TIME` khi commit (cho `createdAt`, `updatedAt`) và `increment` theo field path `unreadCounts.<uid>`. Thiếu thì thêm bản tối thiểu (REST `commit` có `updateTransforms` với `setToServerValue: REQUEST_TIME` và `increment`) rồi báo B gộp
+- [X] T005 [P] Tạo `FN/_shared/media.ts` + `FN/_shared/media.test.ts`: `validateImage(contentType, size)` (chỉ `image/jpeg`, `image/png`, `image/webp`; `size ≤ 2097152`), `signedUpload(bucket, path)`, `signedDownloads(bucket, paths, 3600)`, `objectExists(bucket, path)`, `deletePrefix(bucket, prefix)`. Nếu 090-T045 đã viết các hàm này trong `group-media-url` thì chuyển sang đây và để `group-media-url` gọi lại (không đổi hành vi)
+- [X] T006 [P] Tạo `FN/_shared/chats_fixtures.ts`: `seedDirectChat(player, owner, venueId, messages)`, `seedGroupChat(groupId, memberIds, messages)`; `assertChatInvariant(chatId)`: khóa của `unreadCounts` đúng bằng `memberIds`, có đúng một `participants/{uid}` cho mỗi `memberIds`, `lastMessage.messageId` là tin có `createdAt` lớn nhất; mock `send-notification` ghi lại lời gọi
+- [X] T007 Viết test `FN/_shared/chats.test.ts` cho **H1** (`syncGroupChat` với `created`, `added`, `removed`, `deleted` theo bảng [research R5](research.md#r5-đồng-bộ-chat-nhóm-với-danh-sách-thành-viên-fr-002); người mới có `lastReadAt = joinedAt`) và **H2** (`purgeChat` xóa hết `messages`, `participants`, ảnh `chat-media/{chatId}/`); chạy thấy fail
+- [X] T008 Cài `FN/_shared/chats.ts`: `syncGroupChat(tx, groupId, change)` (`chatId = group_{groupId}`; `participants/{uid}` có `userId`, `chatId`, `userSnapshot`, `joinedAt`, `lastReadAt = joinedAt`, `muted = false`); `purgeChat(chatId)` (xóa theo lô ≤ 500, rồi `deletePrefix`); khung `anonymizeCommunityChats(uid)` (cài ở T053). Điền thân hook `onGroupMembershipChanged` trong `FN/_shared/groups.ts` (090-T006) để gọi `syncGroupChat`. Sau đó T007 phải xanh và test G1, G5 của 090 vẫn xanh
+- [X] T009 Tạo khung 3 function `FN/chat-send/index.ts`, `FN/chat-action/index.ts`, `FN/chat-media-url/index.ts`: xác thực `_shared/auth.ts`, `accountStatus == ACTIVE`, router `action` (cho `chat-action`, `chat-media-url`), body lỗi `{ error: { code, message } }`, helper `loadChatForMember(tx, chatId, uid)` (`CHAT_NOT_FOUND` khi không có hoặc `DELETED`, `NOT_PARTICIPANT` khi không trong `memberIds`)
 
 ### Rules, Storage và index
 
-- [ ] T010 Viết test Rules `firestore-tests/test/chats.test.ts` cho **CR1–CR8** theo [security-rules.md mục 2](contracts/security-rules.md#2-bảng-test-rules-mỗi-dòng-có-cả-ca-được-phép-và-ca-bị-chặn), cấu trúc giống `firestore-tests/test/base.test.ts` (`createTestEnv()`, `withSecurityRulesDisabled` để seed, claim `appRole`). Mỗi dòng phân quyền có ít nhất một `assertSucceeds` và một `assertFails`; dòng `if false` chỉ có ca bị chặn. Chạy thấy fail
-- [ ] T011 Thêm phần `chats` vào `firestore.rules` đúng [bản phác](contracts/security-rules.md#1-bản-phác-rules): đọc theo `memberIds`; `update` chỉ `unreadCounts.{mình} = 0`; `participants/{uid}` chỉ chính người đó sửa `lastReadAt` (`== request.time`), `muted`, `blockedOther`, `viewingUntil` (`null` hoặc `≤ request.time + 10 phút`, nới rộng để chịu được đồng hồ điện thoại lệch); `messages` chỉ đọc; collection group `participants` chỉ `list` khi `userId == request.auth.uid`. Sau đó T010 phải xanh
+- [X] T010 Viết test Rules `firestore-tests/test/chats.test.ts` cho **CR1–CR8** theo [security-rules.md mục 2](contracts/security-rules.md#2-bảng-test-rules-mỗi-dòng-có-cả-ca-được-phép-và-ca-bị-chặn), cấu trúc giống `firestore-tests/test/base.test.ts` (`createTestEnv()`, `withSecurityRulesDisabled` để seed, claim `appRole`). Mỗi dòng phân quyền có ít nhất một `assertSucceeds` và một `assertFails`; dòng `if false` chỉ có ca bị chặn. Chạy thấy fail
+- [X] T011 Thêm phần `chats` vào `firestore.rules` đúng [bản phác](contracts/security-rules.md#1-bản-phác-rules): đọc theo `memberIds`; `update` chỉ `unreadCounts.{mình} = 0`; `participants/{uid}` chỉ chính người đó sửa `lastReadAt` (`== request.time`), `muted`, `blockedOther`, `viewingUntil` (`null` hoặc `≤ request.time + 10 phút`, nới rộng để chịu được đồng hồ điện thoại lệch); `messages` chỉ đọc; collection group `participants` chỉ `list` khi `userId == request.auth.uid`. Sau đó T010 phải xanh
 - [ ] T012 [P] Viết test pgTAP `supabase/tests/chat_media.test.sql` cho **S1–S4** ([security-rules.md mục 3](contracts/security-rules.md#3-storage-chat-media)); chạy thấy fail
 - [ ] T013 Tạo migration `supabase/migrations/<timestamp>_chat_media_bucket.sql`: bucket `chat-media` (`public = false`, `file_size_limit = 2097152`, `allowed_mime_types = {image/jpeg,image/png,image/webp}`), không có policy cho `authenticated`, `anon`. Nếu bucket đã có thì chỉ chỉnh cấu hình. Sau đó T012 phải xanh
-- [ ] T014 [P] Thêm vào `firestore.indexes.json` các index ở [data-model mục 6](data-model.md#6-index-cần-thêm-vào-firestoreindexesjson): `chats` (`memberIds` array-contains, `updatedAt desc`), `chats` (`memberIds` array-contains, `ownerId`, `type`, `updatedAt desc`), collection group `messages` (`senderId`), collection group `participants` (`userId`)
+- [X] T014 [P] Thêm vào `firestore.indexes.json` các index ở [data-model mục 6](data-model.md#6-index-cần-thêm-vào-firestoreindexesjson): `chats` (`memberIds` array-contains, `updatedAt desc`), `chats` (`memberIds` array-contains, `ownerId`, `type`, `updatedAt desc`), collection group `messages` (`senderId`), collection group `participants` (`userId`)
 
 ### Domain, data và outbox (app)
 
@@ -98,13 +98,13 @@ Task của spec khác ghi là `010-T###`, `070-T###`, `090-T###`.
 
 ### Tests cho User Story 1 ⚠️ viết trước, phải fail
 
-- [ ] T021 [P] [US1] Test Deno `FN/chat-action/index.test.ts` cho `openDirect`:
+- [X] T021 [P] [US1] Test Deno `FN/chat-action/index.test.ts` cho `openDirect`:
   - **D1:** người chơi và chủ sân gọi `openDirect` (và tạo qua cả hai phía) cùng lúc lần đầu, **lặp 20 lần** → mỗi lần đúng 1 document `chats/{uidNhỏ}_{uidLớn}`; in `runs=20 chats=1`;
   - **D2:** mở lần 2 từ `V2` cùng chủ → cùng `chatId`, `venueId`/`venueSnapshot` đổi, `created = false`;
   - **D3:** chủ sân mở với sân của mình → `OWN_VENUE`; sân `HIDDEN` → `VENUE_INACTIVE`; chủ sân chưa duyệt → `OWNER_NOT_APPROVED`;
   - **D4:** chat đã có, sân bị khóa sau đó → `openDirect` vẫn trả `chatId`; chủ sân bị thu hồi quyền (`ownerStatus = NONE`) → `chat-send` từ người chơi vẫn thành công (Edge Cases);
   - tạo mới có đủ `type = DIRECT`, `memberIds`, `ownerId`, `playerId`, `memberSnapshots`, 2 `participants`, `unreadCounts` = 0; `assertChatInvariant`.
-- [ ] T022 [P] [US1] Test Deno `FN/chat-send/index.test.ts`:
+- [X] T022 [P] [US1] Test Deno `FN/chat-send/index.test.ts`:
   - **C1:** tin chữ hợp lệ → `NORMAL`, `createdAt` theo giờ server, `senderSnapshot` khớp `participants`; `lastMessage` đúng; `unreadCounts` người nhận +1, người gửi không đổi;
   - **C2:** cùng `messageId` 5 lần (cả song song) → 1 tin, `unreadCounts` +1 đúng một lần, các lần sau `200`;
   - **C4:** người ngoài cuộc → `NOT_PARTICIPANT`;
@@ -116,8 +116,8 @@ Task của spec khác ghi là `010-T###`, `070-T###`, `090-T###`.
 
 ### Implementation cho User Story 1
 
-- [ ] T025 [US1] Cài `openDirect` trong `FN/chat-action/index.ts` theo [research R3, R4](research.md#r3-id-cuộc-trò-chuyện-tất-định-fr-003-sc-005): trong `runTransaction` đọc `venues/{venueId}`, `users/{ownerId}`; chưa có chat thì kiểm tra điều kiện R4 và tạo chat + 2 `participants` (`userSnapshot` từ `users`); luôn cập nhật `venueId`, `venueSnapshot` (`name`, `photoPath`). Sau đó T021 phải xanh (**D1 20/20 lần**)
-- [ ] T026 [US1] Cài `FN/chat-send/index.ts` cho tin chữ theo [contract mục 1](contracts/edge-functions-chat.md#1-chat-send) bước 1, 2, 4, 5 (bước 3 chặn/khóa nhóm làm ở T033, T050): `text` sau trim 1–1000 ký tự; ghi tin và cập nhật `chats` trong một transaction (`createdAt`, `updatedAt` bằng `REQUEST_TIME`, `unreadCounts.<uid>` increment cho mọi người trừ người gửi); sau commit gửi `CHAT_MESSAGE` theo [research R7](research.md#r7-thông-báo-tin-nhắn-mới-fr-013-fr-018). Sau đó T022 phải xanh
+- [X] T025 [US1] Cài `openDirect` trong `FN/chat-action/index.ts` theo [research R3, R4](research.md#r3-id-cuộc-trò-chuyện-tất-định-fr-003-sc-005): trong `runTransaction` đọc `venues/{venueId}`, `users/{ownerId}`; chưa có chat thì kiểm tra điều kiện R4 và tạo chat + 2 `participants` (`userSnapshot` từ `users`); luôn cập nhật `venueId`, `venueSnapshot` (`name`, `photoPath`). Sau đó T021 phải xanh (**D1 20/20 lần**)
+- [X] T026 [US1] Cài `FN/chat-send/index.ts` cho tin chữ theo [contract mục 1](contracts/edge-functions-chat.md#1-chat-send) bước 1, 2, 4, 5 (bước 3 chặn/khóa nhóm làm ở T033, T050): `text` sau trim 1–1000 ký tự; ghi tin và cập nhật `chats` trong một transaction (`createdAt`, `updatedAt` bằng `REQUEST_TIME`, `unreadCounts.<uid>` increment cho mọi người trừ người gửi); sau commit gửi `CHAT_MESSAGE` theo [research R7](research.md#r7-thông-báo-tin-nhắn-mới-fr-013-fr-018). Sau đó T022 phải xanh
 - [ ] T027 [US1] Cài `CH/data/FirestoreChatRepository.kt`: `openDirect` (gọi `chat-action`), `observeChat`, `observeMessages` (listener `orderBy createdAt desc limit 30` bọc `callbackFlow`), `loadOlder` (`startAfter`, một lần đọc), `send` (qua `ChatOutbox` → `chat-send`, làm mới token khi `401`), `markRead` (batch `participants/{mình}.lastReadAt = serverTimestamp()` và `chats.unreadCounts.{mình} = 0`), `setViewing`
 - [ ] T028 [US1] Cài UseCase `CH/domain/usecase/OpenDirectChat.kt`, `ObserveMessages.kt`, `LoadOlderMessages.kt`, `SendMessage.kt` (sinh `messageId` UUID), `RetryMessage.kt`, `DiscardMessage.kt`, `MarkChatRead.kt`
 - [ ] T029 [US1] Cài `CH/ui/conversation/ChatViewModel.kt`, `CH/ui/conversation/ChatFragment.kt` + `RES/layout/fragment_chat.xml`, `CH/ui/conversation/MessageAdapter.kt` (`ListAdapter` + `DiffUtil`) + `RES/layout/item_message_mine.xml`, `RES/layout/item_message_other.xml` (thời gian theo `Asia/Ho_Chi_Minh`, trạng thái "Đang gửi"/"Gửi lỗi" với nút "Gửi lại"/"Xóa"). Theo wireframe `ui/09_community-chat_buoc3_chat-voi-chu-san.png`, `buoc5_chu-san-tro-chuyen-voi-khach.png`. Cho T023 xanh
@@ -135,7 +135,7 @@ Task của spec khác ghi là `010-T###`, `070-T###`, `090-T###`.
 
 ### Tests cho User Story 2 ⚠️ viết trước, phải fail
 
-- [ ] T031 [P] [US2] Bổ sung vào `FN/chat-send/index.test.ts`:
+- [X] T031 [P] [US2] Bổ sung vào `FN/chat-send/index.test.ts`:
   - **C3:** chat nhóm 20 thành viên, **20 người gửi song song, lặp 10 lần** → đủ 20 tin; `unreadCounts[u]` = số tin của người khác; `lastMessage` là tin có `createdAt` lớn nhất; in `runs=10 messages=20 unreadOk=true lastOk=true`;
   - **C6 (phần nhóm):** nhóm `LOCKED` → `423 GROUP_LOCKED`, đọc vẫn được;
   - **tích hợp với 090:** gọi `group-manage join` rồi `chat-send` → thành công; gọi `group-manage remove` rồi `chat-send` từ người bị mời ra → `NOT_PARTICIPANT` (C4 sau khi rời nhóm).
@@ -143,7 +143,7 @@ Task của spec khác ghi là `010-T###`, `070-T###`, `090-T###`.
 
 ### Implementation cho User Story 2
 
-- [ ] T033 [US2] Bổ sung `FN/chat-send/index.ts` bước 3 cho chat nhóm: đọc `groups/{groupId}` trong transaction, `status != ACTIVE` → `423 GROUP_LOCKED`. Sau đó T031 phải xanh (**C3 10/10 lần**)
+- [X] T033 [US2] Bổ sung `FN/chat-send/index.ts` bước 3 cho chat nhóm: đọc `groups/{groupId}` trong transaction, `status != ACTIVE` → `423 GROUP_LOCKED`. Sau đó T031 phải xanh (**C3 10/10 lần**)
 - [ ] T034 [US2] Xử lý deep link `smashnow://chat/group/{groupId}` → mở `ChatFragment` với `chatId = group_{groupId}`; đầu màn hình chat nhóm hiện tên và ảnh nhóm (đọc `groups/{groupId}`). Báo C/090 nối nút "Chat nhóm" trên `GroupDetailFragment` (090 `ui-screens.md` mục 3)
 - [ ] T035 [US2] `MessageAdapter` hiện tên, ảnh người gửi trong chat nhóm và "Người dùng đã xóa"; `ChatListViewModel` đọc tên/ảnh nhóm theo lô ≤ 10 bằng `whereIn(documentId)` **kèm `where status in [ACTIVE, LOCKED]`** (bài học F1 của spec 090); bỏ khỏi danh sách cuộc có `status == DELETED`. Theo wireframe `ui/09_community-chat_buoc2_chat-nhom.png`. Cho T032 xanh
 
@@ -180,7 +180,7 @@ Task của spec khác ghi là `010-T###`, `070-T###`, `090-T###`.
 
 ### Tests cho User Story 4 ⚠️ viết trước, phải fail
 
-- [ ] T041 [P] [US4] Test Deno `FN/chat-media-url/index.test.ts` và bổ sung `FN/chat-send/index.test.ts`:
+- [X] T041 [P] [US4] Test Deno `FN/chat-media-url/index.test.ts` và bổ sung `FN/chat-send/index.test.ts`:
   - **M1:** `upload` khi không trong cuộc → `NOT_PARTICIPANT`; `image/gif` → `INVALID_ARGUMENT`; 3 MB → `INVALID_ARGUMENT`; hợp lệ → path `{chatId}/{messageId}.{ext}`;
   - **M2:** `download` path của tin `RECALLED`, tin `HIDDEN`, chat khác → không có URL; tin `NORMAL` của chat mình → có URL; 31 path → `INVALID_ARGUMENT`;
   - `discard` khi chưa có tin → xóa ảnh; khi tin đã có → không xóa;
@@ -189,8 +189,8 @@ Task của spec khác ghi là `010-T###`, `070-T###`, `090-T###`.
 
 ### Implementation cho User Story 4
 
-- [ ] T043 [US4] Cài `FN/chat-media-url/index.ts` theo [contract mục 3](contracts/edge-functions-chat.md#3-chat-media-url) dùng `_shared/media.ts` (T005). Sau đó phần M1, M2 của T041 phải xanh
-- [ ] T044 [US4] Bổ sung `FN/chat-send/index.ts`: `imagePath` phải đúng `{chatId}/{messageId}.{jpg,png,webp}` và `objectExists` trong `chat-media`; tin ảnh cho phép `text` 0–1000 ký tự; `lastMessage.type = IMAGE`. Sau đó phần C7 của T041 phải xanh
+- [X] T043 [US4] Cài `FN/chat-media-url/index.ts` theo [contract mục 3](contracts/edge-functions-chat.md#3-chat-media-url) dùng `_shared/media.ts` (T005). Sau đó phần M1, M2 của T041 phải xanh
+- [X] T044 [US4] Bổ sung `FN/chat-send/index.ts`: `imagePath` phải đúng `{chatId}/{messageId}.{jpg,png,webp}` và `objectExists` trong `chat-media`; tin ảnh cho phép `text` 0–1000 ký tự; `lastMessage.type = IMAGE`. Sau đó phần C7 của T041 phải xanh
 - [ ] T045 [US4] Cài `CH/data/SupabaseChatMediaRepository.kt` (nén bằng `ImageCompressor`, xin signed URL, PUT, phát trạng thái) và nối vào `ChatOutbox` (tải ảnh trước rồi mới gọi `chat-send`; tải lỗi → `FAILED`). Dùng `SignedUrlCache` cho ảnh hiển thị: nếu 090-T047 đã tạo trong `feature/community/data` thì chuyển lên `APP/core/media/SignedUrlCache.kt` (chỉ đổi package, cập nhật import của 090) để không import chéo feature. Cho T042 (phần outbox) xanh
 - [ ] T046 [US4] Nút ảnh trong `ChatFragment`: chọn "Chụp ảnh" (`ActivityResultContracts.TakePicture`, xin quyền camera lúc dùng, có giải thích) hoặc "Chọn ảnh" (Photo Picker `PickVisualMedia`); bong bóng ảnh trong `item_message_*.xml` (ảnh qua signed URL, `contentDescription`), bấm mở `PhotoViewerFragment` (`core/ui`). Cho T042 xanh
 
@@ -206,7 +206,7 @@ Task của spec khác ghi là `010-T###`, `070-T###`, `090-T###`.
 
 ### Tests cho User Story 5 ⚠️ viết trước, phải fail
 
-- [ ] T047 [P] [US5] Bổ sung `FN/chat-action/index.test.ts` và `FN/chat-send/index.test.ts`:
+- [X] T047 [P] [US5] Bổ sung `FN/chat-action/index.test.ts` và `FN/chat-send/index.test.ts`:
   - **R1:** `recall` sau 5 phút → `RECALLED`, `text = ""`, `imagePath = null`, ảnh bị xóa khỏi `chat-media`, `lastMessage.preview` thành "Tin nhắn đã được thu hồi" nếu là tin cuối; sau 11 phút → `RECALL_WINDOW_PASSED`; tin người khác → `FORBIDDEN` (SC-003);
   - **R2:** `report` lần 1 → `201`, `reports/MESSAGE_{chatId}_{messageId}_{uid}` có `targetType = MESSAGE`, `targetPath`, `status = OPEN`, `action = NONE`; lần 2 → `ALREADY_REPORTED`; tin của mình → `OWN_MESSAGE`; tin đã thu hồi → `INVALID_ARGUMENT`; `OTHER` không có `detail` hoặc 501 ký tự → `INVALID_ARGUMENT`;
   - **C5:** `participants/{người nhận}.blockedOther = true` → `403 BLOCKED`; người chặn gửi → thành công; bỏ chặn rồi gửi → thành công.
@@ -214,8 +214,8 @@ Task của spec khác ghi là `010-T###`, `070-T###`, `090-T###`.
 
 ### Implementation cho User Story 5
 
-- [ ] T049 [US5] Cài `recall` và `report` trong `FN/chat-action/index.ts` theo [research R9, R12](research.md#r9-thu-hồi-tin-fr-010): `recall` trong transaction kiểm tra người gửi, `status == NORMAL`, `now < createdAt + 10 phút`; sau commit `deletePrefix`/xóa ảnh; `report` ghi `reports/{reportId}` với điều kiện "chưa tồn tại"
-- [ ] T050 [US5] Bổ sung `FN/chat-send/index.ts` bước 3 cho chat riêng: đọc `participants/{người nhận}.blockedOther` trong transaction, `true` → `403 BLOCKED`. Sau đó T047 phải xanh
+- [X] T049 [US5] Cài `recall` và `report` trong `FN/chat-action/index.ts` theo [research R9, R12](research.md#r9-thu-hồi-tin-fr-010): `recall` trong transaction kiểm tra người gửi, `status == NORMAL`, `now < createdAt + 10 phút`; sau commit `deletePrefix`/xóa ảnh; `report` ghi `reports/{reportId}` với điều kiện "chưa tồn tại"
+- [X] T050 [US5] Bổ sung `FN/chat-send/index.ts` bước 3 cho chat riêng: đọc `participants/{người nhận}.blockedOther` trong transaction, `true` → `403 BLOCKED`. Sau đó T047 phải xanh
 - [ ] T051 [US5] Cài `recall`, `report`, `setBlocked` trong `CH/data/FirestoreChatRepository.kt` (`setBlocked` ghi `participants/{mình}.blockedOther`); UseCase `CH/domain/usecase/RecallMessage.kt`, `ReportMessage.kt`, `SetBlocked.kt`
 - [ ] T052 [US5] Menu giữ tin trong `ChatFragment` (hộp thoại xác nhận "Thu hồi"); `CH/ui/report/ReportMessageViewModel.kt`, `CH/ui/report/ReportMessageBottomSheet.kt` + `RES/layout/bottom_sheet_report_message.xml`; menu "Chặn"/"Bỏ chặn" chỉ ở chat riêng; hiển thị tin `RECALLED` và `HIDDEN`; trạng thái ô nhập khi bị chặn. Cho T048 xanh
 
@@ -225,7 +225,7 @@ Task của spec khác ghi là `010-T###`, `070-T###`, `090-T###`.
 
 ## Phase 8: Polish & Cross-Cutting
 
-- [ ] T053 Cài `anonymizeCommunityChats(uid)` trong `FN/_shared/chats.ts` theo [research R16](research.md#r16-người-dùng-xóa-tài-khoản-edge-cases-spec-011) kèm test **A1** trong `FN/_shared/chats.test.ts`: chat riêng có uid → `status = READ_ONLY`, `memberSnapshots.{uid} = null`; tin của uid (collection group `messages where senderId == uid`, theo lô) → `senderSnapshot = null`, `senderDeleted = true`; test thêm `chat-send` vào chat đó → `CHAT_READ_ONLY` (C6). Báo A gọi hàm này trong `delete-account` (sau `anonymizeCommunityGroups` của 090)
+- [X] T053 Cài `anonymizeCommunityChats(uid)` trong `FN/_shared/chats.ts` theo [research R16](research.md#r16-người-dùng-xóa-tài-khoản-edge-cases-spec-011) kèm test **A1** trong `FN/_shared/chats.test.ts`: chat riêng có uid → `status = READ_ONLY`, `memberSnapshots.{uid} = null`; tin của uid (collection group `messages where senderId == uid`, theo lô) → `senderSnapshot = null`, `senderDeleted = true`; test thêm `chat-send` vào chat đó → `CHAT_READ_ONLY` (C6). Báo A gọi hàm này trong `delete-account` (sau `anonymizeCommunityGroups` của 090)
 - [ ] T054 [P] Espresso `ATEST/PlayerOwnerChatFlowTest.kt` (Emulator + seed): người chơi mở chi tiết `V1` → "Nhắn tin cho chủ sân" (giả lập deep link) → gửi tin → đăng nhập `owner1` → "Tin nhắn khách hàng" thấy cuộc kèm tên `V1`
 - [ ] T055 [P] Kiểm tra 4 trạng thái trên `ChatListFragment`, `ChatFragment`, `ReportMessageBottomSheet` (FR-017); mất mạng không crash, giữ nội dung đang soạn; chế độ tối; bố cục `w600dp` (bong bóng tin tối đa 70% chiều ngang); `contentDescription` cho ảnh, vùng chạm ≥ 48dp
 - [ ] T056 [P] Cập nhật `docs/design/database/README.md` theo [danh sách cuối data-model.md](data-model.md#danh-sách-thay-đổi-cần-đưa-vào-docsdesigndatabasereadmemd) (mục 4.11, 4.12, 5, 6, 7, 8, 8a), **sau khi D đồng ý**

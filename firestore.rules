@@ -449,6 +449,50 @@ service cloud.firestore {
       }
     }
 
+    // ---------- chats + participants/messages (C, spec 091) ----------
+    // specs/091-chat/contracts/security-rules.md. Tin nhắn ghi qua Edge Function chat-send/chat-action;
+    // client chỉ ghi chats.unreadCounts.{mình} = 0 và participants/{mình} (lastReadAt, muted, blockedOther, viewingUntil).
+    match /chats/{chatId} {
+      function inChat() {
+        return isSignedIn() && request.auth.uid in resource.data.memberIds;
+      }
+      function inChatById() {
+        return isSignedIn()
+            && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.memberIds;
+      }
+
+      allow get, list: if inChat() || isAdmin();
+      // Chỉ đặt số chưa đọc của chính mình về 0.
+      allow update: if inChat()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['unreadCounts'])
+          && request.resource.data.unreadCounts.diff(resource.data.unreadCounts).affectedKeys().hasOnly([request.auth.uid])
+          && request.resource.data.unreadCounts[request.auth.uid] == 0;
+      allow create, delete: if false;
+
+      match /participants/{uid} {
+        allow get: if isSelf(uid) || isAdmin();
+        allow update: if isSelf(uid) && inChatById()
+            && request.resource.data.diff(resource.data).affectedKeys()
+                .hasOnly(['lastReadAt', 'muted', 'blockedOther', 'viewingUntil'])
+            && (!('lastReadAt' in request.resource.data.diff(resource.data).affectedKeys())
+                || request.resource.data.lastReadAt == request.time)
+            && (!('viewingUntil' in request.resource.data.diff(resource.data).affectedKeys())
+                || request.resource.data.viewingUntil == null
+                || request.resource.data.viewingUntil <= request.time + duration.value(10, 'm'));
+        allow create, delete: if false;
+      }
+
+      match /messages/{messageId} {
+        allow read: if inChatById() || isAdmin();
+        allow write: if false;
+      }
+    }
+
+    // Ẩn danh khi xóa tài khoản / kiểm tra tắt thông báo: collection group participants chỉ list theo userId mình.
+    match /{path=**}/participants/{uid} {
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
     // "Nhóm của tôi": truy vấn collection group members theo userId.
     // Match này cũng khớp groups/{gid}/members/{uid} nhưng chỉ mở list khi
     // userId == uid mình, không mở thêm quyền ngoài điều kiện đó.
