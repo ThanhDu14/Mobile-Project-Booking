@@ -227,4 +227,24 @@
     <string name="community_join_request_item_cd">%1$s xin tham gia nhóm</string>
     <string name="community_join_request_item_cd_removed">%1$s xin tham gia nhóm, từng bị mời ra</string>
     <string name="community_join_request_default_name">Người dùng</string>
+
+    <!-- US3: bảng tin và đăng bài -->
+    <string name="community_composer_content_required">Nhập nội dung bài đăng</string>
+    <string name="community_composer_content_too_long">Nội dung tối đa 2000 ký tự</string>
+    <string name="community_composer_max_photos">Tối đa 4 ảnh mỗi bài</string>
+    <string name="community_composer_photo_wait">Đợi ảnh tải lên xong hoặc bỏ ảnh lỗi</string>
+    <string name="community_composer_publishing">Đang đăng</string>
+    <string name="community_composer_photo_preview_cd">Ảnh đính kèm %1$d</string>
+    <string name="community_composer_remove_photo_cd">Gỡ ảnh %1$d</string>
+    <string name="community_composer_retry_photo_cd">Thử tải lại ảnh %1$d</string>
+    <string name="community_post_more_cd">Tùy chọn bài đăng</string>
+    <string name="community_post_author_avatar_cd">Ảnh đại diện của %1$s</string>
+    <string name="community_post_photo_cd">Ảnh %1$d/%2$d của bài đăng</string>
+    <string name="community_post_just_now">Vừa xong</string>
+    <string name="community_msg_post_deleted">Đã xóa bài đăng</string>
+    <string name="community_feed_no_comments_note">Bài đăng không có bình luận. Trao đổi thêm trong chat nhóm.</string>
+    <string name="community_feed_load_more_failed">Không tải thêm được bài. Chạm để thử lại</string>
+    <string name="community_feed_loading_more_cd">Đang tải thêm bài</string>
+    <string name="community_composer_bar_hint">Chia sẻ với nhóm…</string>
+    <string name="community_chat_coming_soon">Chat nhóm chưa khả dụng</string>
 </resources>

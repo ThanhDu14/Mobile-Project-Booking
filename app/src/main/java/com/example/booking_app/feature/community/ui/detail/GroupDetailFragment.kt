@@ -3,13 +3,17 @@ package com.example.booking_app.feature.community.ui.detail
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
+import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
+import androidx.core.widget.NestedScrollView
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.setFragmentResultListener
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.LinearLayoutManager
 import coil3.load
 import coil3.request.error
 import coil3.request.placeholder
@@ -20,17 +24,18 @@ import com.example.booking_app.core.ui.UiState
 import com.example.booking_app.core.ui.render
 import com.example.booking_app.databinding.FragmentGroupDetailBinding
 import com.example.booking_app.feature.community.domain.model.JoinResult
+import com.example.booking_app.feature.community.domain.model.PostType
 import com.example.booking_app.feature.community.ui.common.CommunityUiText
+import com.example.booking_app.feature.community.ui.composer.PostComposerFragment
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
-
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * Trang nhóm (T029, khung US1). Mở bằng `smashnow://community/group/{groupId}` (thông báo `GROUP_ACTIVITY`) hoặc từ
- * danh sách. Nhóm không còn hoặc bị Rules từ chối hiện "Nhóm không còn tồn tại".
+ * Trang nhóm và bảng tin (T029 + T038 + T050). Mở bằng `smashnow://community/group/{groupId}` hoặc từ danh sách.
+ * Người ngoài chỉ thấy giới thiệu + nút tham gia; thành viên thấy bảng tin, nút đăng bài và menu bài đăng.
  */
 @AndroidEntryPoint
 class GroupDetailFragment : Fragment(R.layout.fragment_group_detail) {
@@ -43,12 +48,44 @@ class GroupDetailFragment : Fragment(R.layout.fragment_group_detail) {
         super.onViewCreated(view, savedInstanceState)
         val binding = FragmentGroupDetailBinding.bind(view)
         binding.toolbar.setNavigationOnClickListener { findNavController().navigateUp() }
+
+        setFragmentResultListener(PostComposerFragment.RESULT_KEY_POST_SAVED) { _, _ ->
+            viewModel.refreshFeed()
+        }
+
+        val postAdapter = PostAdapter(object : PostActions {
+            override fun onPhotoClick(urls: List<String>, startIndex: Int) {
+                if (urls.isEmpty()) return
+                findNavController().navigate(
+                    R.id.action_global_photoViewer,
+                    bundleOf("photoUrls" to urls.toTypedArray(), "startIndex" to startIndex),
+                )
+            }
+
+            override fun onEditPost(postId: String) = openComposer(postId = postId, type = PostType.POST)
+
+            override fun onDeletePost(postId: String) = confirmDeletePost(postId)
+        })
+        binding.feedList.layoutManager = LinearLayoutManager(requireContext())
+        binding.feedList.adapter = postAdapter
+
+        binding.content.setOnScrollChangeListener(
+            NestedScrollView.OnScrollChangeListener { v, _, scrollY, _, _ ->
+                val child = v.getChildAt(0) ?: return@OnScrollChangeListener
+                if (scrollY + v.height >= child.measuredHeight - LOAD_MORE_THRESHOLD_PX) {
+                    viewModel.loadMoreFeed()
+                }
+            },
+        )
+        binding.feedLoadMoreRetry.setOnClickListener { viewModel.loadMoreFeed() }
+
         binding.editButton.setOnClickListener {
             val nav = findNavController()
             if (nav.currentDestination?.id != R.id.groupDetailFragment) return@setOnClickListener
             nav.navigate(GroupDetailFragmentDirections.actionGroupDetailToGroupForm(viewModel.groupId))
         }
-
+        binding.newPostButton.setOnClickListener { openComposer(postId = null, type = PostType.POST) }
+        binding.chatButton.setOnClickListener { openGroupChat(binding) }
         binding.joinButton.setOnClickListener { viewModel.onJoinClicked() }
         binding.cancelRequestButton.setOnClickListener { viewModel.onCancelRequestClicked() }
         binding.leaveButton.setOnClickListener { confirmLeave() }
@@ -60,17 +97,35 @@ class GroupDetailFragment : Fragment(R.layout.fragment_group_detail) {
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                launch { viewModel.state.collect { render(binding, it) } }
+                launch { viewModel.state.collect { render(binding, postAdapter, it) } }
                 launch { viewModel.events.collect { handle(binding, it) } }
             }
         }
     }
 
-    private fun render(binding: FragmentGroupDetailBinding, state: GroupDetailUiState) {
+    private fun openComposer(postId: String?, type: PostType) {
+        val nav = findNavController()
+        if (nav.currentDestination?.id != R.id.groupDetailFragment) return
+        nav.navigate(
+            GroupDetailFragmentDirections.actionGroupDetailToPostComposer(
+                groupId = viewModel.groupId,
+                postId = postId,
+                type = type.name,
+            ),
+        )
+    }
+
+    private fun openGroupChat(binding: FragmentGroupDetailBinding) {
+        val uri = Uri.parse("smashnow://chat/group/${viewModel.groupId}")
+        runCatching { findNavController().navigate(uri) }.onFailure {
+            Snackbar.make(binding.root, R.string.community_chat_coming_soon, Snackbar.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun render(binding: FragmentGroupDetailBinding, postAdapter: PostAdapter, state: GroupDetailUiState) {
         val coreState: UiState<Unit> = when (state) {
             GroupDetailUiState.Loading -> UiState.Loading
             is GroupDetailUiState.Content -> UiState.Content(Unit)
-            // "Nhóm không còn tồn tại" là trạng thái rỗng, không có nút thử lại.
             GroupDetailUiState.NotFound -> UiState.Empty
             is GroupDetailUiState.Error -> UiState.Error(CommunityUiText.error(requireContext(), state.cause), viewModel::retry)
         }
@@ -99,8 +154,37 @@ class GroupDetailFragment : Fragment(R.layout.fragment_group_detail) {
             error(R.drawable.ic_groups_24)
         }
         binding.lockedLabel.isVisible = group.isLocked
+        binding.memberActionsRow.isVisible = state.showFeed
         binding.editButton.isVisible = state.canEdit
         renderMembershipButtons(binding, state)
+        renderFeed(binding, postAdapter, state)
+    }
+
+    private fun renderFeed(binding: FragmentGroupDetailBinding, postAdapter: PostAdapter, state: GroupDetailUiState.Content) {
+        binding.feedArea.isVisible = state.showFeed
+        if (!state.showFeed) {
+            postAdapter.submitList(emptyList())
+            return
+        }
+        binding.composerBar.isVisible = state.canPost
+
+        val feedState = state.feed
+        val feedCoreState: UiState<Unit> = when (feedState) {
+            FeedUiState.Loading -> UiState.Loading
+            is FeedUiState.Content -> UiState.Content(Unit)
+            FeedUiState.Empty -> UiState.Empty
+            is FeedUiState.Error -> UiState.Error(CommunityUiText.error(requireContext(), feedState.cause), viewModel::retryFeed)
+        }
+        binding.feedStateViews.render(
+            feedCoreState,
+            binding.feedList,
+            EmptyStateSpec(message = R.string.community_empty_feed, icon = R.drawable.ic_edit_24),
+        )
+        val content = feedState as? FeedUiState.Content
+        postAdapter.submitList(content?.items.orEmpty())
+        binding.feedLoadMoreProgress.isVisible = content?.loadingMore == true
+        binding.feedLoadMoreRetry.isVisible = content?.loadMoreError != null
+        binding.feedFooterNote.isVisible = content != null && content.items.isNotEmpty() && !content.canLoadMore
     }
 
     /** T038/T039: nút theo [GroupDetailUiState.Content.joinAction], "Rời nhóm" và "Yêu cầu tham gia (N)". */
@@ -132,12 +216,20 @@ class GroupDetailFragment : Fragment(R.layout.fragment_group_detail) {
             .show()
     }
 
+    private fun confirmDeletePost(postId: String) {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.community_confirm_delete_post_title)
+            .setMessage(R.string.community_confirm_delete_post_message)
+            .setNegativeButton(R.string.community_action_cancel, null)
+            .setPositiveButton(R.string.community_action_delete) { _, _ -> viewModel.onDeletePostConfirmed(postId) }
+            .show()
+    }
+
     private fun handle(binding: FragmentGroupDetailBinding, event: GroupDetailEvent) {
         val context = requireContext()
         when (event) {
             is GroupDetailEvent.RequireLogin -> {
                 Snackbar.make(binding.root, R.string.community_login_required_to_join, Snackbar.LENGTH_SHORT).show()
-                // Đăng nhập xong quay lại đúng trang nhóm (deep link smashnow://community/group/{groupId}).
                 authNavigator.openLogin(findNavController(), Uri.parse(event.returnTo))
             }
             is GroupDetailEvent.JoinOutcome -> Snackbar.make(
@@ -147,12 +239,16 @@ class GroupDetailFragment : Fragment(R.layout.fragment_group_detail) {
             ).show()
             GroupDetailEvent.RequestCancelled -> Snackbar.make(binding.root, R.string.community_msg_request_cancelled, Snackbar.LENGTH_SHORT).show()
             GroupDetailEvent.Left -> Snackbar.make(binding.root, R.string.community_msg_left, Snackbar.LENGTH_SHORT).show()
-            // TODO US5: mở màn chọn người nhận quyền (GroupMembersFragment) thay cho thông báo.
+            GroupDetailEvent.PostDeleted -> Snackbar.make(binding.root, R.string.community_msg_post_deleted, Snackbar.LENGTH_SHORT).show()
             is GroupDetailEvent.OpenTransferOwner ->
                 Snackbar.make(binding.root, R.string.community_error_owner_must_transfer, Snackbar.LENGTH_LONG).show()
             GroupDetailEvent.SuggestDeleteGroup ->
                 Snackbar.make(binding.root, R.string.community_error_owner_must_transfer_sole, Snackbar.LENGTH_LONG).show()
             is GroupDetailEvent.ShowError -> Snackbar.make(binding.root, CommunityUiText.error(context, event.error), Snackbar.LENGTH_LONG).show()
         }
+    }
+
+    private companion object {
+        const val LOAD_MORE_THRESHOLD_PX = 400
     }
 }

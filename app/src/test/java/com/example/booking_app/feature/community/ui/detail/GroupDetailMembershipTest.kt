@@ -14,9 +14,12 @@ import com.example.booking_app.feature.community.domain.model.GroupRole
 import com.example.booking_app.feature.community.domain.model.GroupStatus
 import com.example.booking_app.feature.community.domain.model.GroupVisibility
 import com.example.booking_app.feature.community.domain.model.JoinResult
+import com.example.booking_app.feature.community.domain.usecase.DeletePost
 import com.example.booking_app.feature.community.domain.usecase.JoinGroup
 import com.example.booking_app.feature.community.domain.usecase.LeaveGroup
+import com.example.booking_app.feature.community.emptyPostRepository
 import com.example.booking_app.feature.community.group
+import com.example.booking_app.feature.community.noopSignedUrls
 import com.example.booking_app.feature.community.ui.common.DistrictNames
 import io.mockk.coEvery
 import io.mockk.coVerify
@@ -49,8 +52,18 @@ class GroupDetailMembershipTest {
         coEvery { districts() } returns listOf(District("q10", "Quận 10", 1, true))
     }
 
+    private val posts = emptyPostRepository()
+
     private fun viewModel(handle: SavedStateHandle = SavedStateHandle(mapOf("groupId" to "g1"))) = GroupDetailViewModel(
-        handle, groups, session, JoinGroup(groups), LeaveGroup(groups), DistrictNames(catalog),
+        handle,
+        groups,
+        posts,
+        session,
+        JoinGroup(groups),
+        LeaveGroup(groups),
+        DeletePost(posts),
+        noopSignedUrls(),
+        DistrictNames(catalog),
     )
 
     private fun given(

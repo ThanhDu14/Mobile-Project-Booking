@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Trang nhóm (spec 090 US1, T029): khung giới thiệu (ảnh, tên, chế độ, số thành viên, khu vực, mô tả), nút "Sửa nhóm"
-    cho chủ nhóm. joinArea (US2, T038: các nút tham gia/rời nhóm/yêu cầu tham gia) được gắn ở GroupDetailFragment; feedArea (US3: bảng tin) để trống, gắn vào sau.
-    include_state_views cho loading, lỗi (Thử lại) và "Nhóm không còn tồn tại".
+    Trang nhóm (spec 090 US1–US3, T029 + T038 + T050; wireframe 09_community-chat_buoc2_bang-tin-nhom.png).
+    Người ngoài chỉ thấy giới thiệu + nút tham gia; thành viên thấy thêm nút Chat nhóm, Thành viên, thanh đăng bài
+    và bảng tin (có đủ 4 trạng thái qua feedStateViews).
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -26,7 +26,7 @@
         android:layout_height="0dp"
         android:layout_weight="1">
 
-        <ScrollView
+        <androidx.core.widget.NestedScrollView
             android:id="@+id/content"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
@@ -102,13 +102,45 @@
                     android:textColor="?attr/colorError"
                     android:visibility="gone" />
 
+                <!-- Thành viên: Chat nhóm + Thành viên (wireframe bước 2) -->
+                <LinearLayout
+                    android:id="@+id/memberActionsRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_3"
+                    android:orientation="horizontal"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/chatButton"
+                        style="@style/Widget.SmashNow.Button"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginEnd="@dimen/space_2"
+                        android:layout_weight="1"
+                        android:minHeight="@dimen/touch_min"
+                        android:text="@string/community_action_chat"
+                        app:icon="@drawable/ic_chat_24" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/membersButton"
+                        style="@style/Widget.SmashNow.Button.Outlined"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:minHeight="@dimen/touch_min"
+                        android:text="@string/community_action_members"
+                        app:icon="@drawable/ic_groups_24" />
+                </LinearLayout>
+
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/editButton"
                     style="@style/Widget.SmashNow.Button.Outlined"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/space_4"
-                    android:minHeight="48dp"
+                    android:layout_marginTop="@dimen/space_3"
+                    android:minHeight="@dimen/touch_min"
                     android:text="@string/community_action_edit_group"
                     android:visibility="gone"
                     app:icon="@drawable/ic_edit_24"
@@ -177,7 +209,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/space_6"
+                    android:layout_marginTop="@dimen/space_4"
                     android:text="@string/community_detail_about"
                     android:textAppearance="?attr/textAppearanceTitleMedium"
                     android:textColor="?attr/colorOnSurface" />
@@ -191,15 +223,101 @@
                     android:textColor="?attr/colorOnSurface"
                     tools:text="Chơi tối thứ 6 tại sân Quận 10" />
 
-                <!-- US3: bảng tin của nhóm -->
-                <FrameLayout
+                <!-- US3: bảng tin của nhóm (chỉ hiện với thành viên, AC 3.7) -->
+                <LinearLayout
                     android:id="@+id/feedArea"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/space_6"
-                    android:visibility="gone" />
+                    android:layout_marginTop="@dimen/space_4"
+                    android:orientation="vertical"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <!-- Thanh soạn bài / tạo sự kiện (ẩn khi nhóm LOCKED) -->
+                    <LinearLayout
+                        android:id="@+id/composerBar"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginBottom="@dimen/space_3"
+                        android:orientation="horizontal"
+                        android:visibility="gone"
+                        tools:visibility="visible">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/newPostButton"
+                            style="@style/Widget.SmashNow.Button.Outlined"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:minHeight="@dimen/touch_min"
+                            android:text="@string/community_action_new_post"
+                            app:icon="@drawable/ic_edit_24" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/newEventButton"
+                            style="@style/Widget.SmashNow.Button.Outlined"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/space_2"
+                            android:layout_weight="1"
+                            android:minHeight="@dimen/touch_min"
+                            android:text="@string/community_action_new_event"
+                            android:visibility="gone"
+                            app:icon="@drawable/ic_event_24" />
+                    </LinearLayout>
+
+                    <FrameLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:minHeight="180dp">
+
+                        <androidx.recyclerview.widget.RecyclerView
+                            android:id="@+id/feedList"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:nestedScrollingEnabled="false"
+                            android:visibility="gone"
+                            tools:visibility="visible" />
+
+                        <include
+                            android:id="@+id/feedStateViews"
+                            layout="@layout/include_state_views" />
+                    </FrameLayout>
+
+                    <com.google.android.material.progressindicator.CircularProgressIndicator
+                        android:id="@+id/feedLoadMoreProgress"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_horizontal"
+                        android:layout_marginVertical="@dimen/space_3"
+                        android:contentDescription="@string/community_feed_loading_more_cd"
+                        android:indeterminate="true"
+                        android:visibility="gone"
+                        app:indicatorSize="28dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/feedLoadMoreRetry"
+                        style="@style/Widget.SmashNow.Button.Text"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:minHeight="@dimen/touch_min"
+                        android:text="@string/community_feed_load_more_failed"
+                        android:visibility="gone" />
+
+                    <TextView
+                        android:id="@+id/feedFooterNote"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="@dimen/space_2"
+                        android:gravity="center"
+                        android:text="@string/community_feed_no_comments_note"
+                        android:textAppearance="?attr/textAppearanceBodySmall"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        android:visibility="gone"
+                        tools:visibility="visible" />
+                </LinearLayout>
             </LinearLayout>
-        </ScrollView>
+        </androidx.core.widget.NestedScrollView>
 
         <include
             android:id="@+id/stateViews"

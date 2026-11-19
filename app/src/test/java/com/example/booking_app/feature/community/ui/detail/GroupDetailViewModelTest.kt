@@ -4,8 +4,11 @@ import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.example.booking_app.core.catalog.CatalogRepository
 import com.example.booking_app.core.session.SessionManager
+import com.example.booking_app.feature.community.domain.usecase.DeletePost
 import com.example.booking_app.feature.community.domain.usecase.JoinGroup
 import com.example.booking_app.feature.community.domain.usecase.LeaveGroup
+import com.example.booking_app.feature.community.emptyPostRepository
+import com.example.booking_app.feature.community.noopSignedUrls
 import com.example.booking_app.feature.community.ui.common.DistrictNames
 import com.example.booking_app.core.testing.MainDispatcherRule
 import com.example.booking_app.feature.community.ME
@@ -37,8 +40,18 @@ class GroupDetailViewModelTest {
     private val session = mockk<SessionManager> { every { currentUid() } returns ME }
     private val catalog = mockk<CatalogRepository> { coEvery { districts() } returns emptyList() }
 
+    private val posts = emptyPostRepository()
+
     private fun viewModel() = GroupDetailViewModel(
-        SavedStateHandle(mapOf("groupId" to "g1")), groups, session, JoinGroup(groups), LeaveGroup(groups), DistrictNames(catalog),
+        SavedStateHandle(mapOf("groupId" to "g1")),
+        groups,
+        posts,
+        session,
+        JoinGroup(groups),
+        LeaveGroup(groups),
+        DeletePost(posts),
+        noopSignedUrls(),
+        DistrictNames(catalog),
     )
 
     @Test
