@@ -44,7 +44,7 @@ Giống [tasks 080](../080-drop-in-session/tasks.md#quy-ước-đường-dẫn):
 
 **Purpose**: kiểm tra nền của spec 080 và thêm những gì riêng của hàng chờ.
 
-- [ ] T001 Kiểm tra Phase 1–2 của tasks 080 đã xong (080-T001 → 080-T016), đặc biệt:
+- [x] T001 Kiểm tra Phase 1–2 của tasks 080 đã xong (080-T001 → 080-T016), đặc biệt:
   - 080-T006: `FN/_shared/dropin.ts` có `cancelRegistrationInTx` và hook `afterSpotsReleased` để trống;
   - 080-T009: Rules `dropInSessions`/`registrations` trong `firestore.rules`;
   - 080-T011, 080-T013: model và `DropInError`;
@@ -302,7 +302,7 @@ Giống [tasks 080](../080-drop-in-session/tasks.md#quy-ước-đường-dẫn):
 
 - [ ] T049 [P] Espresso `ATEST/WaitlistFlowTest.kt` (Emulator + seed 081): chi tiết `W1` → "Vào hàng chờ" → xác nhận 2 người → thấy vị trí; một tài khoản khác hủy (gọi Edge Function trong test) → màn hình tự chuyển sang vé có nhãn "Được nhận từ hàng chờ"
 - [ ] T050 [P] Kiểm tra 4 trạng thái (loading, content, empty, error + "Thử lại") trên `WaitlistEntryFragment` và phần hàng chờ của `DropInDetailFragment`; mất mạng không crash và giữ lựa chọn (FR-016); chế độ tối; bố cục `w600dp`; vùng chạm ≥ 48dp (quickstart M8)
-- [ ] T051 [P] Cập nhật `docs/design/database/README.md` theo [danh sách cuối data-model.md](data-model.md#danh-sách-thay-đổi-cần-đưa-vào-docsdesigndatabasereadmemd) (mục 4.9, 6, 8a), **sau khi D đồng ý** (đề xuất gửi ở T001) 3 trường `waitlist*` trên `dropInSessions`
+- [x] T051 [P] Cập nhật `docs/design/database/README.md` theo [danh sách cuối data-model.md](data-model.md#danh-sách-thay-đổi-cần-đưa-vào-docsdesigndatabasereadmemd) (mục 4.9, 6, 8a), **sau khi D đồng ý** (đề xuất gửi ở T001) 3 trường `waitlist*` trên `dropInSessions`
 - [x] T052 [P] Cập nhật `docs/features/08-drop-in/README.md` (link plan, tasks spec 081)
 - [ ] T053 Chạy toàn bộ [quickstart.md](quickstart.md): test tự động mục 2; M1–M8 trên Emulator; đo SC-001, SC-002; hỏi 5 người thử cho SC-006; chụp ảnh hoặc quay video minh chứng
 - [x] T054 Chạy `./gradlew lint testDebugUnitTest assembleDebug`, `deno test -A supabase/functions`, `npm test` trong `firestore-tests/`; không còn cảnh báo Lint mức Error; ktlint sạch
