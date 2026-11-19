@@ -12,15 +12,15 @@
     <string name="admin_home_role_badge">Quản trị viên · Quản trị hệ thống</string>
     <string name="admin_home_todo_header">Cần xử lý</string>
     <string name="admin_home_pending_applications_title">Hồ sơ chủ sân chờ duyệt</string>
-    <string name="admin_home_pending_applications_sub">Hồ sơ cũ nhất đã chờ 2 ngày</string>
+    <string name="admin_home_pending_applications_sub">Chọn để xem các hồ sơ chờ duyệt</string>
     <string name="admin_home_open_reports_title">Báo cáo đang mở</string>
     <string name="admin_home_open_reports_sub">2 báo cáo cùng trỏ tới một bài đăng</string>
     <string name="admin_home_daily_stats_header">Số liệu ngày %s</string>
     <string name="admin_home_daily_stats_select_date">Chọn ngày</string>
-    <string name="admin_home_stat_new_users">Người dùng mới</string>
+    <string name="admin_home_stat_new_users">Tổng người dùng</string>
     <string name="admin_home_stat_bookings">Đơn đặt sân</string>
-    <string name="admin_home_stat_active_venues">Cơ sở đang hoạt động</string>
-    <string name="admin_home_stat_dropins">Buổi vãng lai</string>
+    <string name="admin_home_stat_active_venues">Tổng cơ sở</string>
+    <string name="admin_home_stat_dropins">Tổng doanh thu (đ)</string>
     <string name="admin_home_stats_footnote">Nguồn: thống kê hệ thống, cộng dồn lúc 00:15. Không phải số liệu thời gian thực.</string>
     <string name="admin_home_recent_actions_header">Bạn đã xử lý gần đây</string>
     <string name="admin_home_recent_item_1">Duyệt hồ sơ Sân Thủ Đức Arena</string>
@@ -165,7 +165,7 @@
     <string name="admin_venue_unlock_option_active_desc">Hiện lại với người chơi, nhận đặt sân ngay.</string>
     <string name="admin_venue_unlock_option_hidden">Ẩn</string>
     <string name="admin_venue_unlock_option_hidden_desc">Chủ sân sửa lại thông tin rồi tự bật hiển thị.</string>
-    <string name="admin_venue_unlock_admin_only_note">Chỉ admin mở khóa được. Chủ sân sẽ nhận thông báo.</string>
+    <string name="admin_venue_unlock_admin_only_note">Chỉ admin mở khóa được.</string>
     <string name="admin_venue_unlock_button">Mở khóa</string>
     <string name="admin_venue_management_title">Quản lý cơ sở</string>
     <string name="admin_venue_search_hint">Nhập mã cơ sở (Venue ID)</string>
@@ -181,7 +181,7 @@
     <string name="admin_tools_dashboard_title">Công cụ</string>
     <string name="admin_tools_section_header">Công cụ</string>
     <string name="admin_tools_broadcast_title">Gửi thông báo hệ thống</string>
-    <string name="admin_tools_broadcast_desc">Tới mọi tài khoản đang hoạt động. Lần gần nhất 01/10.</string>
+    <string name="admin_tools_broadcast_desc">Tới mọi tài khoản đang hoạt động.</string>
     <string name="admin_tools_vouchers_title">Voucher toàn hệ thống</string>
     <string name="admin_tools_vouchers_desc">Áp dụng cho mọi cơ sở. %d đang bật.</string>
     <string name="admin_tools_categories_header">Danh mục</string>

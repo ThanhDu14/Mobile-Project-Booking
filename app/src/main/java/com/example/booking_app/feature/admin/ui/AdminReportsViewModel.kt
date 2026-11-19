@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
 import javax.inject.Inject
 
 sealed interface AdminReportQueueState {
@@ -42,14 +43,26 @@ class AdminReportsViewModel @Inject constructor(
     private val _detailState = MutableStateFlow(AdminReportDetailUiState())
     val detailState: StateFlow<AdminReportDetailUiState> = _detailState.asStateFlow()
 
-    init {
+
+
+    private var queueJob: Job? = null
+    var closedTab = false; private set
+    private var pageLimit = 30L
+
+    fun selectStatus(closed: Boolean) { closedTab = closed; pageLimit = 30; loadReports() }
+    fun loadMore() {
+        val content = _queueState.value as? AdminReportQueueState.Content ?: return
+        if (content.reports.size.toLong() < pageLimit) return
+        pageLimit += 30
         loadReports()
     }
+    fun stopQueue() { queueJob?.cancel() }
 
     fun loadReports() {
+        queueJob?.cancel()
         _queueState.value = AdminReportQueueState.Loading
-        viewModelScope.launch {
-            repository.observeOpenReports()
+        queueJob = viewModelScope.launch {
+            repository.observeReports(closedTab, pageLimit)
                 .catch { e ->
                     _queueState.value = AdminReportQueueState.Error(
                         message = e.localizedMessage ?: "Không thể tải danh sách báo cáo",
@@ -70,6 +83,7 @@ class AdminReportsViewModel @Inject constructor(
         _detailState.update {
             it.copy(
                 report = report,
+                targetSummary = emptyMap(),
                 isLoading = false,
                 errorMessage = null,
                 successMessage = null,
@@ -85,6 +99,7 @@ class AdminReportsViewModel @Inject constructor(
         viewModelScope.launch {
             repository.getReport(reportId)
                 .onSuccess { report ->
+                    if (_detailState.value.report?.id?.let { it != reportId } == true) return@onSuccess
                     _detailState.update {
                         it.copy(report = report, isLoading = false)
                     }
@@ -93,6 +108,7 @@ class AdminReportsViewModel @Inject constructor(
                     }
                 }
                 .onFailure { err ->
+                    if (_detailState.value.report?.id?.let { it != reportId } == true) return@onFailure
                     _detailState.update {
                         it.copy(
                             isLoading = false,
@@ -107,12 +123,13 @@ class AdminReportsViewModel @Inject constructor(
         viewModelScope.launch {
             repository.getTargetSummary(targetPath)
                 .onSuccess { data ->
-                    _detailState.update { it.copy(targetSummary = data) }
+                    if (_detailState.value.report?.targetPath == targetPath) _detailState.update { it.copy(targetSummary = data) }
                 }
         }
     }
 
     fun submitModeration(action: ReportAction, onComplete: ((Boolean) -> Unit)? = null) {
+        if (_detailState.value.isSubmitting) return
         val currentReport = _detailState.value.report ?: return
         val decision = ModerateReportDecision(
             reportId = currentReport.id,
@@ -131,6 +148,7 @@ class AdminReportsViewModel @Inject constructor(
         viewModelScope.launch {
             repository.moderateReport(decision)
                 .onSuccess {
+                    if (_detailState.value.report?.id != currentReport.id) return@onSuccess
                     val msg = if (action == ReportAction.NONE) "Đã bỏ qua báo cáo" else "Đã xử lý vi phạm thành công"
                     _detailState.update {
                         it.copy(
@@ -141,6 +159,7 @@ class AdminReportsViewModel @Inject constructor(
                     onComplete?.invoke(true)
                 }
                 .onFailure { err ->
+                    if (_detailState.value.report?.id != currentReport.id) return@onFailure
                     _detailState.update {
                         it.copy(
                             isSubmitting = false,
@@ -154,5 +173,8 @@ class AdminReportsViewModel @Inject constructor(
 
     fun clearMessages() {
         _detailState.update { it.copy(errorMessage = null, successMessage = null) }
+    }
+    init {
+        loadReports()
     }
 }

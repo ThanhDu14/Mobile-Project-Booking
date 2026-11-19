@@ -13,8 +13,15 @@ import java.text.NumberFormat
 import java.util.Locale
 
 class AdminSystemVoucherAdapter(
+    private val onEdit: (AdminSystemVoucher) -> Unit = {},
     private val onToggleActive: (AdminSystemVoucher, Boolean) -> Unit,
 ) : ListAdapter<AdminSystemVoucher, AdminSystemVoucherAdapter.ViewHolder>(DiffCallback) {
+    var isBusy: Boolean = false
+        set(value) {
+            if (field == value) return
+            field = value
+            notifyItemRangeChanged(0, itemCount)
+        }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val binding = ItemAdminSystemVoucherBinding.inflate(
@@ -34,6 +41,9 @@ class AdminSystemVoucherAdapter(
     ) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(voucher: AdminSystemVoucher) {
+            binding.root.isEnabled = !isBusy
+            binding.switchVoucherActive.isEnabled = !isBusy
+            binding.root.setOnClickListener { onEdit(voucher) }
             val numberFormat = NumberFormat.getInstance(Locale.forLanguageTag("vi-VN"))
             binding.textVoucherCode.text = voucher.code
 
@@ -47,7 +57,7 @@ class AdminSystemVoucherAdapter(
                 binding.textVoucherStatusTag.text = binding.root.context.getString(R.string.admin_voucher_status_inactive)
             }
 
-            val discountPart = if (voucher.type.equals("PERCENTAGE", ignoreCase = true)) {
+            val discountPart = if (voucher.type.uppercase() in setOf("PERCENT", "PERCENTAGE")) {
                 "Giảm ${voucher.value}%, tối đa ${numberFormat.format(voucher.maxDiscount)} đ"
             } else {
                 "Giảm ${numberFormat.format(voucher.value)} đ"
@@ -67,9 +77,14 @@ class AdminSystemVoucherAdapter(
 
             binding.switchVoucherActive.setOnCheckedChangeListener(null)
             binding.switchVoucherActive.isChecked = voucher.isActive
-            binding.switchVoucherActive.setOnCheckedChangeListener { _, isChecked ->
-                onToggleActive(voucher, isChecked)
-            }
+            binding.switchVoucherActive.setOnCheckedChangeListener(object : android.widget.CompoundButton.OnCheckedChangeListener {
+                override fun onCheckedChanged(button: android.widget.CompoundButton, checked: Boolean) {
+                    button.setOnCheckedChangeListener(null)
+                    button.isChecked = voucher.isActive
+                    button.setOnCheckedChangeListener(this)
+                    if (!isBusy) onToggleActive(voucher, checked)
+                }
+            })
         }
     }
 

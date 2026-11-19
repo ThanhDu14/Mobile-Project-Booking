@@ -1,0 +1,63 @@
+﻿{
+    "project":  "mobile-22e6c",
+    "indexes":  [
+                    {
+                        "collectionGroup":  "ownerApplications",
+                        "fields":  [
+                                       {
+                                           "fieldPath":  "status",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "submittedAt",
+                                           "order":  "DESCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "__name__",
+                                           "order":  "ASCENDING"
+                                       }
+                                   ],
+                        "state":  "READY",
+                        "name":  "projects/mobile-22e6c/databases/(default)/collectionGroups/ownerApplications/indexes/CICAgNi4o4sL"
+                    },
+                    {
+                        "collectionGroup":  "ownerApplications",
+                        "fields":  [
+                                       {
+                                           "fieldPath":  "status",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "submittedAt",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "__name__",
+                                           "order":  "ASCENDING"
+                                       }
+                                   ],
+                        "state":  "READY",
+                        "name":  "projects/mobile-22e6c/databases/(default)/collectionGroups/ownerApplications/indexes/CICAgJjm-tkK"
+                    },
+                    {
+                        "collectionGroup":  "reports",
+                        "fields":  [
+                                       {
+                                           "fieldPath":  "status",
+                                           "order":  "ASCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "createdAt",
+                                           "order":  "DESCENDING"
+                                       },
+                                       {
+                                           "fieldPath":  "__name__",
+                                           "order":  "ASCENDING"
+                                       }
+                                   ],
+                        "state":  "READY",
+                        "name":  "projects/mobile-22e6c/databases/(default)/collectionGroups/reports/indexes/CICAgJjFvYoL"
+                    }
+                ],
+    "allReady":  true
+}

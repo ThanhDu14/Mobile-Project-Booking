@@ -1,0 +1,70 @@
+﻿running 3 tests from ./supabase/functions/admin-integration.local.test.ts
+R120 local Firebase: decisions, claim recovery, race, controls, moderation, voucher and broadcast ...
+------- output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[toErrorResponse] FirestoreError: Injected mid-batch failure
+    at Object.commit (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/admin-integration.local.test.ts:86:29)
+    at handleAdminBroadcastNotification (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/admin-broadcast-notification/handler.ts:81:51)
+    at async file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/admin-integration.local.test.ts:85:16
+    at async innerWrapped (ext:cli/40_test.js:300:5)
+    at async exitSanitizer (ext:cli/40_test.js:201:27)
+    at async outerWrapped (ext:cli/40_test.js:239:22) {
+  code: "UNKNOWN",
+  status: 503
+}
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- output end -----
+R120 local Firebase: decisions, claim recovery, race, controls, moderation, voucher and broadcast ... ok (28s)
+R120 voucher global: simultaneous system and venue code has one winner ...
+------- output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- output end -----
+R120 voucher global: simultaneous system and venue code has one winner ... ok (2s)
+R120 local Storage: both signed documents, denial, download and expiry ... FAILED (85ms)
+
+ ERRORS 
+
+R120 local Storage: both signed documents, denial, download and expiry => ./supabase/functions/admin-integration.local.test.ts:123:6
+error: FirestoreError: {"error":{"code":409,"message":"entity already exists: EntityRef[partitionRef=dev~demo-admin-repair, path=\/ownerApplications\/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa]","status":"ALREADY_EXISTS"}}
+  return new FirestoreError(code, res.status, text);
+         ^
+    at toError (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/_shared/firestore.ts:109:10)
+    at async Module.commit (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/_shared/firestore.ts:170:22)
+    at async file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/admin-integration.local.test.ts:134:3
+
+ FAILURES 
+
+R120 local Storage: both signed documents, denial, download and expiry => ./supabase/functions/admin-integration.local.test.ts:123:6
+
+FAILED | 2 passed | 1 failed (30s)
+
+deno.exe : error: Test failed
+At line:2 char:348
++ ... 0.1:19099'; & 'C:/Users/ACER/AppData/Local/npm-cache/_npx/05b6ef7b136 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (error: Test failed:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+

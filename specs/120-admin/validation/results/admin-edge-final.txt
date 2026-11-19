@@ -1,0 +1,136 @@
+﻿deno.exe : Check supabase/functions/admin-broadcast-notification/handler.test.ts
+At line:2 char:1
++ & 'C:/Users/ACER/AppData/Local/npm-cache/_npx/05b6ef7b13673c57/node_m ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Check supabase/...handler.test.ts:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+Check supabase/functions/admin-review-application/handler.test.ts
+Check supabase/functions/admin-moderate-report/handler.test.ts
+Check supabase/functions/admin-manage-voucher/handler.test.ts
+Check supabase/functions/owner-create-voucher/handler.test.ts
+Check supabase/functions/admin-revoke-owner/handler.test.ts
+Check supabase/functions/admin-manage-venue/handler.test.ts
+Check supabase/functions/admin-manage-user/handler.test.ts
+Check supabase/functions/_shared/firestore-list.test.ts
+running 4 tests from ./supabase/functions/admin-broadcast-notification/handler.test.ts
+R120-07: retry after partial batch sends once to all explicitly active document IDs ...
+------- output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[toErrorResponse] FirestoreError: {"error":{"status":"UNAVAILABLE"}}
+    at toError (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/_shared/firestore.ts:109:10)
+    at async Object.commit (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/_shared/firestore.ts:170:22)
+    at async handleAdminBroadcastNotification (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/admin-broadcast-notification/handler.ts:81:30)
+    at async file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/admin-broadcast-notification/handler.test.ts:11:17
+    at async adminFixture (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/_shared/admin-testing.ts:50:5)
+    at async innerWrapped (ext:cli/40_test.js:300:5)
+    at async exitSanitizer (ext:cli/40_test.js:201:27)
+    at async outerWrapped (ext:cli/40_test.js:239:22) {
+  code: "UNKNOWN",
+  status: 503
+}
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- output end -----
+R120-07: retry after partial batch sends once to all explicitly active document IDs ... ok (121ms)
+admin-broadcast-notification: rejects non-POST ... ok (1ms)
+admin-broadcast-notification: rejects unauthenticated request ... ok (963µs)
+admin-broadcast-notification: validateBroadcastContent checks non-empty title and body ... ok (410µs)
+running 11 tests from ./supabase/functions/admin-review-application/handler.test.ts
+R120-05: another current admin can recover claims after reopening a decided application ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+R120-05: another current admin can recover claims after reopening a decided application ... ok (31ms)
+R120-05: revoked admin claim cannot mutate or recover another account ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+R120-05: revoked admin claim cannot mutate or recover another account ... ok (2ms)
+R120-04/05: committed approve retry repairs failed claim without duplicate effects ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+R120-04/05: committed approve retry repairs failed claim without duplicate effects ... ok (8ms)
+R120-04: stale submitted version cannot approve a resubmission ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+R120-04: stale submitted version cannot approve a resubmission ... ok (2ms)
+R120-04: missing snapshot version cannot decide a pending application ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+R120-04: missing snapshot version cannot decide a pending application ... ok (2ms)
+R120-05: retry after owner revocation reconciles PLAYER, never old OWNER ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+R120-05: retry after owner revocation reconciles PLAYER, never old OWNER ... ok (1ms)
+R120-04: REJECT retry maps REJECTED, opposing decision conflicts ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+R120-04: REJECT retry maps REJECTED, opposing decision conflicts ... ok (1ms)
+admin-review-application: rejects non-POST ... ok (930µs)
+admin-review-application: rejects unauthenticated requests ... ok (734µs)
+admin-review-application: generateKeywords strips accents and generates prefixes ... ok (663µs)
+admin-review-application: geohash encodes coordinates correctly ... ok (115µs)
+running 3 tests from ./supabase/functions/admin-moderate-report/handler.test.ts
+admin-moderate-report: rejects non-POST ... ok (17ms)
+admin-moderate-report: rejects unauthenticated requests ... ok (1ms)
+admin-moderate-report: validateActionTarget correctly maps target types ... ok (437µs)
+running 6 tests from ./supabase/functions/admin-manage-voucher/handler.test.ts
+R120-15: edit preserves counters and rejects limits below usage ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+R120-15: edit preserves counters and rejects limits below usage ... ok (29ms)
+R120-06: canonical PERCENT contract is accepted ... ok (409µs)
+R120-06: rejects invalid dates, absent timezone, non-finite and fractional amounts ... ok (736µs)
+admin-manage-voucher: rejects non-POST ... ok (336µs)
+admin-manage-voucher: rejects unauthenticated request ... ok (504µs)
+admin-manage-voucher: validateVoucherInput validates valid input and rejects invalid ... ok (331µs)
+running 2 tests from ./supabase/functions/owner-create-voucher/handler.test.ts
+owner-create-voucher: rejects non-POST requests ... ok (14ms)
+owner-create-voucher: rejects unauthenticated requests ... ok (1ms)
+running 3 tests from ./supabase/functions/admin-revoke-owner/handler.test.ts
+admin-revoke-owner: rejects non-POST ... ok (15ms)
+admin-revoke-owner: rejects unauthenticated request ... ok (3ms)
+admin-revoke-owner: validateRevokeReason trims whitespace and rejects empty ... ok (378µs)
+running 3 tests from ./supabase/functions/admin-manage-venue/handler.test.ts
+admin-manage-venue: rejects non-POST ... ok (11ms)
+admin-manage-venue: rejects unauthenticated request ... ok (1ms)
+admin-manage-venue: validateVenueStatus accepts only LOCKED, ACTIVE, HIDDEN ... ok (457µs)
+running 6 tests from ./supabase/functions/admin-manage-user/handler.test.ts
+R120-08: exact email beyond scan window is found without unrelated user pages ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+R120-08: exact email beyond scan window is found without unrelated user pages ... ok (19ms)
+R120-08: LIST searches name/email/phone, filters, follows cursors and sanitizes ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+R120-08: LIST searches name/email/phone, filters, follows cursors and sanitizes ... ok (5ms)
+R120-08: email lookup returns document identity and email ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+R120-08: email lookup returns document identity and email ... ok (2ms)
+admin-manage-user: rejects non-POST ... ok (558µs)
+admin-manage-user: rejects unauthenticated request ... ok (1ms)
+admin-manage-user: sanitizeUserRecord filters sensitive fields ... ok (131µs)
+running 1 test from ./supabase/functions/_shared/firestore-list.test.ts
+R120-07: list follows page tokens and preserves document ID over stored UID ... ok (27ms)
+
+ok | 39 passed | 0 failed (2s)
+
+

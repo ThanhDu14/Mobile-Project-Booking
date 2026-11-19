@@ -13,11 +13,15 @@ interface OwnerVenueRepository {
     suspend fun updateVenue(venueId: String, fields: VenueEditableFields): Result<Unit>
     suspend fun hideVenue(venueId: String): Result<Unit>
     suspend fun setAcceptsRecurring(venueId: String, accepts: Boolean): Result<Unit>
+    suspend fun uploadPhoto(venueId: String, mime: String, bytes: ByteArray): Result<String> =
+        Result.failure(IllegalStateException("Chưa thể tải ảnh"))
 
     suspend fun getCourts(venueId: String): Result<List<OwnerCourt>>
     suspend fun createCourt(venueId: String, fields: CourtFields): Result<String>
     suspend fun updateCourt(venueId: String, courtId: String, fields: CourtFields): Result<Unit>
     suspend fun deactivateCourt(venueId: String, courtId: String): Result<Unit>
+    suspend fun swapCourtOrder(venueId: String, first: OwnerCourt, second: OwnerCourt): Result<Unit> =
+        Result.failure(IllegalStateException("Không thể đổi thứ tự sân"))
 
     suspend fun getPriceRules(venueId: String): Result<List<OwnerPriceRule>>
     suspend fun createPriceRule(venueId: String, rule: PriceRuleInput): Result<String>

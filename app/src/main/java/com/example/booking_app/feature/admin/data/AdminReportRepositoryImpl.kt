@@ -9,6 +9,9 @@ import com.example.booking_app.feature.admin.domain.model.ReportTargetType
 import com.example.booking_app.feature.admin.domain.repository.AdminReportRepository
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
+import com.google.firebase.firestore.FieldPath
+import com.google.firebase.firestore.Source
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.functions.functions
 import io.ktor.client.call.body
@@ -42,9 +45,14 @@ class AdminReportRepositoryImpl @Inject constructor(
     private val functionErrors: FunctionErrors,
 ) : AdminReportRepository {
 
-    override fun observeOpenReports(): Flow<List<AdminReport>> = callbackFlow {
+    override fun observeOpenReports(): Flow<List<AdminReport>> = observeReports(false, 30)
+
+    override fun observeReports(closed: Boolean, limit: Long): Flow<List<AdminReport>> = callbackFlow {
         val listener = firestore.collection("reports")
-            .whereEqualTo("status", "OPEN")
+            .whereIn("status", if (closed) listOf("RESOLVED", "DISMISSED") else listOf("OPEN"))
+            .orderBy("createdAt", Query.Direction.DESCENDING)
+            .orderBy(FieldPath.documentId())
+            .limit(limit)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     close(error)
@@ -58,15 +66,15 @@ class AdminReportRepositoryImpl @Inject constructor(
         awaitClose { listener.remove() }
     }
 
-    override suspend fun getReport(reportId: String): Result<AdminReport> = runCatching {
-        val doc = firestore.collection("reports").document(reportId).get().await()
+    override suspend fun getReport(reportId: String): Result<AdminReport> = adminRunCatching {
+        val doc = firestore.collection("reports").document(reportId).get(Source.SERVER).await()
         if (!doc.exists()) {
             throw NoSuchElementException("Không tìm thấy báo cáo $reportId")
         }
         doc.toAdminReport() ?: throw IllegalStateException("Không thể đọc dữ liệu báo cáo")
     }
 
-    override suspend fun moderateReport(decision: ModerateReportDecision): Result<Unit> = runCatching {
+    override suspend fun moderateReport(decision: ModerateReportDecision): Result<Unit> = adminRunCatching {
         val validationErr = decision.validate()
         if (validationErr != null) {
             throw IllegalArgumentException(validationErr)
@@ -82,10 +90,10 @@ class AdminReportRepositoryImpl @Inject constructor(
         }
     }
 
-    override suspend fun getTargetSummary(targetPath: String): Result<Map<String, Any?>> = runCatching {
-        if (targetPath.isBlank()) return@runCatching emptyMap()
+    override suspend fun getTargetSummary(targetPath: String): Result<Map<String, Any?>> = adminRunCatching {
+        if (targetPath.isBlank()) return@adminRunCatching emptyMap()
         val doc = firestore.document(targetPath).get().await()
-        if (!doc.exists()) return@runCatching emptyMap()
+        if (!doc.exists()) return@adminRunCatching emptyMap()
         doc.data.orEmpty()
     }
 
@@ -102,8 +110,8 @@ class AdminReportRepositoryImpl @Inject constructor(
         val rawAction = getString("action")
         val action = ReportAction.fromString(rawAction)
         val handledBy = getString("handledBy")
-        val handledAt = getTimestamp("handledAt")?.toDate()?.time
-        val createdAt = getTimestamp("createdAt")?.toDate()?.time ?: 0L
+        val handledAt = timestampMillis("handledAt")
+        val createdAt = timestampMillis("createdAt") ?: 0L
 
         return AdminReport(
             id = id,
@@ -122,5 +130,11 @@ class AdminReportRepositoryImpl @Inject constructor(
 
     companion object {
         private const val FUNCTION_MODERATE = "admin-moderate-report"
+    }
+
+    private fun DocumentSnapshot.timestampMillis(field: String): Long? = when (val value = get(field)) {
+        is com.google.firebase.Timestamp -> value.toDate().time
+        is String -> adminRunCatching { java.time.Instant.parse(value).toEpochMilli() }.getOrNull()
+        else -> null
     }
 }

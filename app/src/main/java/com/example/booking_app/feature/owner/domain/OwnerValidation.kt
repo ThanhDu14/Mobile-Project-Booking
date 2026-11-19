@@ -94,6 +94,7 @@ object OwnerValidation {
     fun slotBlock(input: SlotBlockInput): List<OwnerFieldError> = buildList {
         required(input.courtId, "courtId")
         if (!datePattern.matches(input.date)) add(OwnerFieldError("date", "Ngày phải có dạng yyyyMMdd"))
+        else if (runCatching { java.time.LocalDate.parse(input.date,java.time.format.DateTimeFormatter.BASIC_ISO_DATE) }.isFailure) add(OwnerFieldError("date","Ngày không hợp lệ"))
         halfHourTime(input.startTime, "startTime")
         halfHourTime(input.endTime, "endTime")
         if (validHalfHour(input.startTime) && validHalfHour(input.endTime) && input.startTime >= input.endTime) {

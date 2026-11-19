@@ -5,7 +5,17 @@
 
 ## Current contract gap
 
-Feature 100 identifies notification event types/recipients and the `notifications` collection/FCM transport, but event transport envelope, event ID, producer API, retry and idempotency are not closed. Feature 112 must not write notification documents directly or claim delivery by merely committing an operation.
+### Chốt envelope tích hợp Feature 080 — DROPIN_REGISTERED
+
+Giữ nguyên request của C tới `POST /functions/v1/send-notification` bằng service role:
+
+```json
+{ "type": "DROPIN_REGISTERED", "userId": "<uid người đăng ký>", "data": { "sessionId": "<sessionId>" } }
+```
+
+`userId` là người nhận; `data.sessionId` là tham chiếu buổi chơi. Không đổi thành `recipientId`, không đưa `sessionId` lên cấp gốc, không gửi QR/token. Producer gọi sau khi transaction đăng ký commit; không gửi khi rollback. Đây là envelope đã chốt riêng cho `DROPIN_REGISTERED`; retry/deduplication và các event khác vẫn là phần hợp đồng còn thiếu bên dưới. Repo hiện chưa có implementation `send-notification`, nên chưa xác nhận được việc giao thông báo end-to-end.
+
+Feature 100 identifies notification event types/recipients and the `notifications` collection/FCM transport. Apart from the `DROPIN_REGISTERED` envelope above, event transport envelope, event ID, producer API, retry and idempotency are not closed. Feature 112 must not write notification documents directly or claim delivery by merely committing an operation.
 
 ## Contract request
 

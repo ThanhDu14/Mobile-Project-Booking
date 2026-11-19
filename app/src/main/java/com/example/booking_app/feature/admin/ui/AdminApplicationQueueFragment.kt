@@ -29,6 +29,11 @@ class AdminApplicationQueueFragment : Fragment(R.layout.fragment_admin_applicati
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         _binding = FragmentAdminApplicationQueueBinding.bind(view)
+        binding.chipGroupStatus.check(when (viewModel.queueStatus) {
+            "APPROVED" -> R.id.chipApproved
+            "REJECTED" -> R.id.chipRejected
+            else -> R.id.chipPending
+        })
 
         adapter = AdminApplicationAdapter { application ->
             viewModel.selectApplication(application)
@@ -39,13 +44,23 @@ class AdminApplicationQueueFragment : Fragment(R.layout.fragment_admin_applicati
 
         binding.recyclerApplications.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerApplications.adapter = adapter
+        binding.recyclerApplications.addOnScrollListener(object : androidx.recyclerview.widget.RecyclerView.OnScrollListener() {
+            override fun onScrolled(rv: androidx.recyclerview.widget.RecyclerView, dx: Int, dy: Int) {
+                if (dy > 0 && !rv.canScrollVertically(1)) viewModel.loadMore()
+            }
+        })
+        viewModel.loadQueue()
 
         binding.buttonRetry.setOnClickListener {
             viewModel.loadQueue()
         }
 
         binding.chipGroupStatus.setOnCheckedStateChangeListener { _, checkedIds ->
-            filterList(checkedIds.firstOrNull())
+            viewModel.selectStatus(when (checkedIds.firstOrNull()) {
+                R.id.chipApproved -> "APPROVED"
+                R.id.chipRejected -> "REJECTED"
+                else -> "PENDING"
+            })
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
@@ -78,6 +93,7 @@ class AdminApplicationQueueFragment : Fragment(R.layout.fragment_admin_applicati
                 currentBinding.textErrorMessage.text = state.message
                 currentBinding.buttonRetry.isVisible = state.canRetry
             }
+            AdminQueueState.Empty -> { allApplications = emptyList(); adapter.submitList(emptyList()) }
             else -> Unit
         }
     }
@@ -89,11 +105,12 @@ class AdminApplicationQueueFragment : Fragment(R.layout.fragment_admin_applicati
             else -> allApplications.filter { it.status == "PENDING" || it.status.isBlank() }
         }
         adapter.submitList(filtered)
-        _binding?.layoutEmpty?.isVisible = filtered.isEmpty() && allApplications.isNotEmpty()
+        _binding?.layoutEmpty?.isVisible = filtered.isEmpty()
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
+        viewModel.stopQueue()
         _binding = null
     }
 }

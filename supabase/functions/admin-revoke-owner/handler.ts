@@ -1,7 +1,9 @@
+import { requireCurrentAdmin } from "../_shared/admin-authorization.ts";
 import { HttpError, requireRole, requireUser, toErrorResponse } from "../_shared/auth.ts";
 import * as defaultFirestore from "../_shared/firestore.ts";
 import { createWrite, updateWrite } from "../_shared/firestore.ts";
 import { mergeClaims as defaultMergeClaims } from "../_shared/identity.ts";
+import { reconcileAdminClaims } from "../_shared/admin-claims.ts";
 
 export interface AdminRevokeOwnerDeps {
   firestore: Pick<typeof defaultFirestore, "get" | "runTransaction">;
@@ -37,6 +39,7 @@ export async function handleAdminRevokeOwner(
   try {
     const admin = await requireUser(req);
     requireRole(admin, "ADMIN");
+    requireCurrentAdmin(admin);
 
     const body = await req.json().catch(() => ({})) as Record<string, unknown>;
     const uid = typeof body.uid === "string" ? body.uid.trim() : "";
@@ -88,11 +91,7 @@ export async function handleAdminRevokeOwner(
       return { alreadyCommitted: false };
     });
 
-    if (!outcome.alreadyCommitted) {
-      await deps.mergeClaims(uid, { appRole: "PLAYER" }).catch((err) => {
-        console.error("Không thể cập nhật claim appRole=PLAYER:", err);
-      });
-    }
+    await reconcileAdminClaims(uid, deps.firestore.get, deps.mergeClaims);
 
     return json(200, {
       success: true,

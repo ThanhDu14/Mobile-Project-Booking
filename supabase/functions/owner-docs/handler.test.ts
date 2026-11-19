@@ -13,6 +13,7 @@ Deno.test("owner-docs enforces applicant/admin paths and signs only authorized s
   const previousFetch = globalThis.fetch;
   Deno.env.set("SUPABASE_URL", "http://supabase.local");
   Deno.env.set("SUPABASE_SERVICE_ROLE_KEY", "test-service-key");
+  Deno.env.set("PUBLIC_STORAGE_URL", "http://127.0.0.1:54321");
   globalThis.fetch = async (input, init) => {
     const url = String(input);
     if (!url.includes("/storage/v1/")) return await previousFetch(input, init);
@@ -74,6 +75,7 @@ Deno.test("owner-docs enforces applicant/admin paths and signs only authorized s
       body: JSON.stringify({ action: "SIGN_DOWNLOAD", applicationId, path: documentPath }),
     }));
     assertEquals(adminDownload.status, 200);
+    assertEquals(String((await adminDownload.json()).signedUrl).startsWith("http://127.0.0.1:54321/storage/v1/"), true);
 
     const referencedDelete = await handleOwnerDocs(bearer(token(), {
       body: JSON.stringify({ action: "DELETE_STAGED", path: documentPath }),
@@ -91,6 +93,7 @@ Deno.test("owner-docs enforces applicant/admin paths and signs only authorized s
     globalThis.fetch = previousFetch;
     Deno.env.delete("SUPABASE_URL");
     Deno.env.delete("SUPABASE_SERVICE_ROLE_KEY");
+    Deno.env.delete("PUBLIC_STORAGE_URL");
   }
 });
 

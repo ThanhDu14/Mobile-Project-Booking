@@ -1,0 +1,5 @@
+﻿
+ RUN  v5.1.0 F:/CSC_HCMUS/Mobile/datcau/firestore-tests
+
+ ❯ test/court-detail.test.ts (13 tests | 13 skipped) 10474ms
+

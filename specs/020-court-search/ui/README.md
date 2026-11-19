@@ -2,6 +2,10 @@
 
 > **Lỗi thời từ 2026-11-06.** Bốn ảnh `02_court-search_buoc1..4` bên dưới vẽ luồng 4 bước cũ (Trang chủ là bước 1 của tìm kiếm, tab "Tài khoản" ở thanh dưới). Thiết kế điều hướng mới ([spec Clarifications 2026-11-06](../spec.md#session-2026-11-06-thay-đổi-thiết-kế-điều-hướng), FR-028 → FR-033) thay thế chúng. Giữ ảnh cũ để tham khảo thẻ sân và bảng lọc (hai phần này không đổi); bố cục màn hình theo mục "Thiết kế 2026-11-06" dưới đây. Ảnh mới sẽ xuất sau khi vẽ lại trên canvas.
 
+## Cập nhật 2026-11-13
+
+Tab Tìm kiếm hiển thị danh sách sân hoạt động ngay khi chưa chọn điều kiện; giữ thanh 5 tab và tham khảo hình thức thẻ sân, ô tìm, chip và bảng lọc từ ảnh cũ. Quyết định này thay thế nội dung mặc định "Tìm gần đây" trong bảng bên dưới. Các nút chỉ xuất hiện khi đã có chức năng.
+
 ## Thiết kế 2026-11-06 (cần vẽ lại trên canvas)
 
 Thanh dưới chung: Trang chủ · Tìm kiếm · Lịch đặt · Vãng lai · Cộng đồng. Header chung: logo bên trái, avatar tròn góc phải trên (spec 011; khách thấy biểu tượng người → đăng nhập).

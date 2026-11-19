@@ -23,7 +23,10 @@ data class AdminUserLookup(
     val accountStatus: UserAccountStatus,
     val ownerRevokedReason: String? = null,
     val createdAt: String? = null,
+    val email: String = "",
 ) {
     val isLocked: Boolean get() = accountStatus == UserAccountStatus.LOCKED
     val isOwnerOrApproved: Boolean get() = role.equals("OWNER", ignoreCase = true) || ownerStatus.equals("APPROVED", ignoreCase = true)
 }
+
+data class AdminUserPage(val users: List<AdminUserLookup>, val nextPageToken: String = "")

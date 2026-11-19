@@ -7,4 +7,7 @@ data class AdminSystemStats(
     val totalRevenue: Long = 0,
     val updatedAt: String? = null,
     val hasData: Boolean = false,
+    val metrics: Map<String, Long> = emptyMap(),
+    val source: String = "",
+    val date: String = "",
 )

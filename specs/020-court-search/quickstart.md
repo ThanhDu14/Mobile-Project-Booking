@@ -9,7 +9,7 @@ Hướng dẫn chạy và kiểm tra. Không chứa code triển khai. Chi tiế
 - Bộ dữ liệu demo có đáp án biết trước (SC-003): `scripts/seed/search-demo.json`, gồm:
   - 30 cơ sở ở Quận 10, Tân Bình, Bình Thạnh; 2 cơ sở `HIDDEN`, 1 cơ sở `LOCKED`.
   - Cơ sở "Sân cầu lông Hòa Bình" (Q10, thường 80k, cao điểm 19:00–22:00 giá 150k, có Gửi xe).
-  - Cơ sở A trống 19:00–21:00 ngày mai; cơ sở B kín khung đó; cơ sở C có sân 1 trống 19:00–20:00 và sân 2 trống 20:00–21:00 (US2-4); cơ sở D có một slot `HOLD` đã hết hạn trong khung (US2-5).
+  - Cơ sở A trống 19:00–21:00 ngày mai; cơ sở B kín khung đó; cơ sở C có sân 1 trống 19:00–20:00 và sân 2 trống 20:00–21:00 (US2-4); cơ sở D có một slot `HELD` đã hết hạn trong khung (US2-5).
   - 1 cơ sở chưa có bảng giá (`minPricePerHour = null`), 1 cơ sở chưa có đánh giá, 1 cơ sở không có ảnh.
   - File `scripts/seed/search-demo.expected.json`: kết quả đúng (theo thứ tự) cho 12 bộ điều kiện mẫu.
 - Ngày trong dữ liệu demo tính theo "hôm nay" lúc seed, script nhận `--today=yyyyMMdd`.
@@ -109,3 +109,7 @@ Chạy lại 12 bộ điều kiện. Logcat có `FAILED_PRECONDITION … require
 - Ghi kết quả §1–§5a vào mô tả PR, kèm ảnh chụp sáng/tối.
 - Cập nhật `docs/design/database/README.md` theo [danh sách cuối data-model.md](data-model.md#danh-sách-thay-đổi-cần-đưa-vào-docsdesigndatabasereadmemd).
 - Ghi log AI vào `docs/ai-log/AI_log_1.md`.
+
+## 020 → 030 → 040
+
+Ở tab Tìm kiếm, lọc sân bằng quận, ngày mai 19:00–21:00, giá và tiện ích. Mở một sân, bấm “Đặt sân” và kiểm tra lưới mở đúng ngày, cuộn tới 19:00, chưa có slot được chọn. Thử khung 19:00–19:30 để kiểm tra app yêu cầu chọn tối thiểu 60 phút. Kiểm thử một slot `HELD` trước, đúng lúc và sau khi hết hạn. Sau khi danh sách hiện, giữ cùng slot trên tài khoản thứ hai và kiểm tra giao dịch 040 từ chối giữ chỗ trùng.

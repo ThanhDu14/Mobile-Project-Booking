@@ -1,9 +1,10 @@
+import { requireCurrentAdmin } from "../_shared/admin-authorization.ts";
 import { HttpError, requireRole, requireUser, toErrorResponse } from "../_shared/auth.ts";
 import * as defaultFirestore from "../_shared/firestore.ts";
-import { createWrite } from "../_shared/firestore.ts";
+import { createWrite, FirestoreError } from "../_shared/firestore.ts";
 
 export interface AdminBroadcastDeps {
-  firestore: Pick<typeof defaultFirestore, "list" | "commit">;
+  firestore: Pick<typeof defaultFirestore, "list" | "commit" | "get">;
 }
 
 function json(status: number, data: unknown): Response {
@@ -37,14 +38,21 @@ export async function handleAdminBroadcastNotification(
   try {
     const admin = await requireUser(req);
     requireRole(admin, "ADMIN");
+    requireCurrentAdmin(admin);
 
     const reqBody = await req.json().catch(() => ({})) as Record<string, unknown>;
     const { title, body } = validateBroadcastContent(reqBody.title, reqBody.body);
+    const requestId = reqBody.requestId;
+    if (typeof requestId !== "string" || !/^[a-zA-Z0-9-]{16,80}$/.test(requestId)) {
+      throw new HttpError(400, "INVALID_REQUEST_ID", "Thiếu mã yêu cầu ổn định để thử lại thông báo");
+    }
+    const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(`${admin.uid}:${requestId}`));
+    const notificationId = `sys_${Array.from(new Uint8Array(digest), (v) => v.toString(16).padStart(2, "0")).join("")}`;
 
     const allUsers = await deps.firestore.list("users");
     const activeUsers = allUsers.filter((u) => {
       const status = u.accountStatus as string | undefined;
-      return !status || status === "ACTIVE";
+      return status === "ACTIVE" && !u.deletionRequestedAt;
     });
 
     if (activeUsers.length === 0) {
@@ -57,23 +65,25 @@ export async function handleAdminBroadcastNotification(
 
     for (let i = 0; i < activeUsers.length; i += batchSize) {
       const chunk = activeUsers.slice(i, i + batchSize);
-      const writes = chunk.map((user) => {
-        const uid = String(user.uid ?? user.__documentId ?? "");
-        if (!uid) return null;
-        const notificationId = `sys_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-        return createWrite(`users/${uid}/notifications/${notificationId}`, {
-          type: "SYSTEM",
-          title,
-          body,
-          data: {},
-          isRead: false,
-          createdAt: nowIso,
-        });
-      }).filter((w): w is NonNullable<typeof w> => w !== null);
-
-      if (writes.length > 0) {
-        await deps.firestore.commit(writes);
-        sentCount += writes.length;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const writes = (await Promise.all(chunk.map(async (user) => {
+          const uid = String(user.__documentId ?? "");
+          if (!uid) throw new HttpError(503, "MISSING_RECIPIENT_ID", "Không thể xác định người nhận");
+          const path = `users/${uid}/notifications/${notificationId}`;
+          const existing = await deps.firestore.get(path);
+          if (existing) {
+            if (existing.title !== title || existing.body !== body) throw new HttpError(409, "REQUEST_CONFLICT", "Mã yêu cầu đã dùng cho nội dung khác");
+            return null;
+          }
+          return createWrite(path, { type: "SYSTEM", title, body, data: {}, isRead: false, createdAt: nowIso });
+        }))).filter((w): w is NonNullable<typeof w> => w !== null);
+        try {
+          if (writes.length) await deps.firestore.commit(writes);
+          sentCount += chunk.length;
+          break;
+        } catch (error) {
+          if (!(error instanceof FirestoreError) || error.code !== "ALREADY_EXISTS" || attempt === 2) throw error;
+        }
       }
     }
 

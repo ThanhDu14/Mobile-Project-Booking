@@ -20,12 +20,12 @@ class FirestoreOwnerVenueDataSource @Inject constructor(
         get() = sessionManager.currentUid() ?: error("Owner chưa đăng nhập")
 
     suspend fun getOwnedVenues(): List<OwnerVenue> {
-        return firestore.collection(VENUES).whereEqualTo("ownerId", uid).get().await()
+        return firestore.collection(VENUES).whereEqualTo("ownerId", uid).get(com.google.firebase.firestore.Source.SERVER).await()
             .documents.map(::toVenue)
     }
 
     suspend fun getVenue(venueId: String): OwnerVenue {
-        return firestore.collection(VENUES).document(venueId).get().await()
+        return firestore.collection(VENUES).document(venueId).get(com.google.firebase.firestore.Source.SERVER).await()
             .takeIf { it.exists() }?.let(::toVenue)
             ?: error("Không tìm thấy cơ sở")
     }
@@ -44,7 +44,7 @@ class FirestoreOwnerVenueDataSource @Inject constructor(
 
     suspend fun getCourts(venueId: String): List<OwnerCourt> {
         return firestore.collection(VENUES).document(venueId).collection(COURTS)
-            .get().await().documents.map(::toCourt).sortedBy { it.sortOrder }
+            .get(com.google.firebase.firestore.Source.SERVER).await().documents.map(::toCourt).sortedBy { it.sortOrder }
     }
 
     suspend fun createCourt(venueId: String, fields: CourtFields): String {
@@ -58,8 +58,23 @@ class FirestoreOwnerVenueDataSource @Inject constructor(
             .update(fields.toMap()).await()
     }
 
+    suspend fun swapCourtOrder(venueId: String, first: OwnerCourt, second: OwnerCourt) {
+        val courts=firestore.collection(VENUES).document(venueId).collection(COURTS)
+        firestore.runTransaction { transaction ->
+            val firstRef=courts.document(first.id)
+            val secondRef=courts.document(second.id)
+            val firstDoc=transaction.get(firstRef)
+            val secondDoc=transaction.get(secondRef)
+            check(firstDoc.getLong("sortOrder")?.toInt()==first.sortOrder && secondDoc.getLong("sortOrder")?.toInt()==second.sortOrder) {
+                "Thứ tự sân vừa thay đổi. Hãy tải lại."
+            }
+            transaction.update(firstRef,"sortOrder",second.sortOrder)
+            transaction.update(secondRef,"sortOrder",first.sortOrder)
+        }.await()
+    }
+
     suspend fun getPriceRules(venueId: String): List<OwnerPriceRule> = firestore.collection(VENUES).document(venueId)
-        .collection(PRICE_RULES).get().await().documents.map { doc ->
+        .collection(PRICE_RULES).get(com.google.firebase.firestore.Source.SERVER).await().documents.map { doc ->
             OwnerPriceRule(doc.id, (doc.get("daysOfWeek") as? List<*>).orEmpty().mapNotNull { it as? Long }.map { it.toInt() }, doc.getString("startTime").orEmpty(), doc.getString("endTime").orEmpty(), doc.getLong("pricePerHour") ?: 0L, doc.getString("label").orEmpty())
         }
 
@@ -80,8 +95,8 @@ class FirestoreOwnerVenueDataSource @Inject constructor(
     }
 
     suspend fun getSlots(venueId: String, date: String): List<OwnerSlot> = firestore.collection(SLOTS)
-        .whereEqualTo("venueId", venueId).whereEqualTo("date", date).get().await().documents.map { doc ->
-            OwnerSlot(doc.id, doc.getString("venueId").orEmpty(), doc.getString("courtId").orEmpty(), doc.getString("date").orEmpty(), doc.getTimestamp("startAt"), doc.getTimestamp("endAt"), doc.getString("status").orEmpty(), doc.getString("blockReason"), doc.getString("bookingId"), doc.getString("holdBy"))
+        .whereEqualTo("venueId", venueId).whereEqualTo("date", date).get(com.google.firebase.firestore.Source.SERVER).await().documents.map { doc ->
+            OwnerSlot(doc.id, doc.getString("venueId").orEmpty(), doc.getString("courtId").orEmpty(), doc.getString("date").orEmpty(), ownerSlotTimestamp(doc, "startAt"), ownerSlotTimestamp(doc, "endAt"), doc.getString("status").orEmpty(), doc.getString("blockReason"), doc.getString("bookingId"), doc.getString("holdBy"))
         }
 
     private fun toVenue(doc: com.google.firebase.firestore.DocumentSnapshot) = OwnerVenue(
@@ -90,7 +105,7 @@ class FirestoreOwnerVenueDataSource @Inject constructor(
         name = doc.getString("name").orEmpty(),
         address = doc.getString("address").orEmpty(),
         districtId = doc.getString("districtId").orEmpty(),
-        location = doc.getGeoPoint("location"),
+        location = ownerLocation(doc.get("location")),
         openTime = doc.getString("openTime").orEmpty(),
         closeTime = doc.getString("closeTime").orEmpty(),
         phone = doc.getString("phone").orEmpty(),

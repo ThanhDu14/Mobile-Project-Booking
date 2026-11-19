@@ -12,7 +12,7 @@ import {
   Timestamp,
   updateDoc,
 } from 'firebase/firestore';
-import { createTestEnv } from './setup';
+import { createTestEnv, seedCurrentAdmin } from './setup';
 
 let env: RulesTestEnvironment;
 
@@ -47,6 +47,7 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await env.clearFirestore();
+  await seedCurrentAdmin(env, 'admin1');
   await env.withSecurityRulesDisabled(async (ctx) => {
     const db = ctx.firestore();
     await setDoc(doc(db, 'users/player1'), seedUser('player1'));

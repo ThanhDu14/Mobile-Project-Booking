@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest';
 import { assertFails, assertSucceeds, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
 import { collection, doc, getDoc, getDocs, updateDoc } from 'firebase/firestore';
-import { createTestEnv } from './setup';
+import { createTestEnv, seedCurrentAdmin } from './setup';
 
 let env: RulesTestEnvironment;
 
@@ -11,6 +11,7 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await env.clearFirestore();
+  await seedCurrentAdmin(env, 'admin-uid');
   await env.withSecurityRulesDisabled(async (ctx) => {
     // Fixture user
     await ctx.firestore().doc('users/user-1').set({

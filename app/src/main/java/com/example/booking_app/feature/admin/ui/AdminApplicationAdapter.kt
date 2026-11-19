@@ -45,7 +45,7 @@ class AdminApplicationAdapter(
             binding.textVenueName.text = item.venueName.ifBlank { "Cơ sở chưa đặt tên" }
             
             val applicant = item.applicantName.ifBlank { "Người nộp" }
-            val district = item.districtId.ifBlank { "TP.HCM" }
+            val district = item.districtName.ifBlank { item.districtId.ifBlank { "Chưa có quận/huyện" } }
             binding.textApplicantAndDistrict.text = "$applicant · $district"
 
             when (item.status) {
@@ -67,15 +67,15 @@ class AdminApplicationAdapter(
             }
 
             // If resubmitted
-            binding.chipResubmitted.isVisible = !item.rejectReason.isNullOrBlank()
+            binding.chipResubmitted.isVisible = item.status == "PENDING" && !item.rejectReason.isNullOrBlank()
             if (binding.chipResubmitted.isVisible) {
-                binding.chipResubmitted.text = "Nộp lại lần 2"
+                binding.chipResubmitted.text = "Có lần từ chối trước"
             }
 
-            val docCount = (item.documentPaths.size + item.photoPaths.size).coerceAtLeast(1)
+            val docCount = item.documentPaths.size
             binding.textDocCount.text = binding.root.context.getString(R.string.admin_docs_count, docCount)
 
-            val dateStr = if (item.submittedAt > 0) dateFormat.format(Date(item.submittedAt)) else "08/10 · 08:12"
+            val dateStr = if (item.submittedAt > 0) dateFormat.format(Date(item.submittedAt)) else "Chưa có thời điểm"
             binding.textSubmittedAt.text = binding.root.context.getString(R.string.admin_submitted_at, dateStr)
 
             binding.cardApplication.setOnClickListener {

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="admin_save_voucher">Lưu voucher</string>
+    <string name="admin_recover_claims">Đồng bộ lại quyền</string>
+    <string name="admin_stats_loading">Đang tải thống kê</string>
+    <string name="admin_voucher_from_iso">Bắt đầu (2026-11-01T00:00:00+07:00)</string>
+    <string name="admin_voucher_to_iso">Kết thúc (2026-12-01T00:00:00+07:00)</string>
+    <string name="admin_voucher_usage_limit">Tổng lượt sử dụng</string>
+    <string name="admin_voucher_per_user_limit">Lượt sử dụng mỗi tài khoản</string>
+    <string name="admin_voucher_invalid_numbers">Nhập đầy đủ số tiền và giới hạn sử dụng hợp lệ</string>
+    <string name="admin_manage_venues">Quản lý khóa/mở khóa cơ sở</string>
+</resources>

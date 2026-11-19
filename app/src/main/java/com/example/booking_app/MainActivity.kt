@@ -27,6 +27,8 @@ import com.example.booking_app.databinding.ActivityMainBinding
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
 /**
@@ -68,32 +70,46 @@ class MainActivity : AppCompatActivity() {
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                launch {
-                    adminAppsViewModel.queueState.collect { state ->
-                        if (viewModel.lastRootGraph == R.id.nav_admin) {
-                            val count = if (state is com.example.booking_app.feature.admin.ui.AdminQueueState.Content) {
-                                state.applications.count { it.status == "PENDING" || it.status == "RESUBMITTED" }
-                            } else 0
-                            runCatching {
-                                val badge = binding.bottomNav.getOrCreateBadge(R.id.tab_admin_applications)
-                                badge.isVisible = count > 0
-                                badge.number = count
+                viewModel.sessionState.collectLatest { session ->
+                    if (session !is SessionState.SignedIn || session.appRole != AppRole.ADMIN) return@collectLatest
+                    try {
+                        // These ViewModels start protected listeners when instantiated.
+                        // Create them only after the server-issued role is ADMIN.
+                        adminAppsViewModel.loadQueue()
+                        adminReportsViewModel.loadReports()
+                        coroutineScope {
+                            launch {
+                                adminAppsViewModel.queueState.collect { state ->
+                                    if (viewModel.lastRootGraph == R.id.nav_admin) {
+                                        val count = if (state is com.example.booking_app.feature.admin.ui.AdminQueueState.Content) {
+                                            state.applications.count { it.status == "PENDING" || it.status == "RESUBMITTED" }
+                                        } else 0
+                                        runCatching {
+                                            val badge = binding.bottomNav.getOrCreateBadge(R.id.tab_admin_applications)
+                                            badge.isVisible = count > 0
+                                            badge.number = count
+                                        }
+                                    }
+                                }
+                            }
+                            launch {
+                                adminReportsViewModel.queueState.collect { state ->
+                                    if (viewModel.lastRootGraph == R.id.nav_admin) {
+                                        val count = if (state is com.example.booking_app.feature.admin.ui.AdminReportQueueState.Content) {
+                                            state.reports.count { it.status == com.example.booking_app.feature.admin.domain.model.ReportStatus.OPEN }
+                                        } else 0
+                                        runCatching {
+                                            val badge = binding.bottomNav.getOrCreateBadge(R.id.tab_admin_reports)
+                                            badge.isVisible = count > 0
+                                            badge.number = count
+                                        }
+                                    }
+                                }
                             }
                         }
-                    }
-                }
-                launch {
-                    adminReportsViewModel.queueState.collect { state ->
-                        if (viewModel.lastRootGraph == R.id.nav_admin) {
-                            val count = if (state is com.example.booking_app.feature.admin.ui.AdminReportQueueState.Content) {
-                                state.reports.count { it.status == com.example.booking_app.feature.admin.domain.model.ReportStatus.OPEN }
-                            } else 0
-                            runCatching {
-                                val badge = binding.bottomNav.getOrCreateBadge(R.id.tab_admin_reports)
-                                badge.isVisible = count > 0
-                                badge.number = count
-                            }
-                        }
+                    } finally {
+                        adminAppsViewModel.stopQueue()
+                        adminReportsViewModel.stopQueue()
                     }
                 }
             }
@@ -125,7 +141,11 @@ class MainActivity : AppCompatActivity() {
         binding.bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.tab_home -> {
-                    navController.popBackStack(R.id.homeFragment, false)
+                    navController.popBackStack(R.id.homeFragment, false, true)
+                    true
+                }
+                R.id.tab_search -> {
+                    openCourtSearch()
                     true
                 }
                 R.id.tab_bookings -> {
@@ -232,6 +252,7 @@ class MainActivity : AppCompatActivity() {
             if (navController.currentDestination?.id != R.id.accountFragment) return@setOnItemReselectedListener
             when (item.itemId) {
                 R.id.tab_home -> navController.popBackStack(R.id.homeFragment, false)
+                R.id.tab_search -> navController.popBackStack(R.id.courtSearchFragment, false)
                 R.id.tab_bookings -> openMyBookings()
                 R.id.tab_drop_in -> openDropIn()
                 R.id.tab_community -> openCommunity()
@@ -248,9 +269,17 @@ class MainActivity : AppCompatActivity() {
             null,
             navOptions {
                 launchSingleTop = true
-                popUpTo(R.id.homeFragment)
+                popUpTo(R.id.homeFragment) { saveState = true }
             },
         )
+    }
+
+    private fun openCourtSearch() {
+        navController.navigate(R.id.courtSearchFragment, null, navOptions {
+            launchSingleTop = true
+            restoreState = true
+            popUpTo(R.id.homeFragment) { saveState = true }
+        })
     }
 
     /** Tab Vãng lai (spec 080 T015): danh sách buổi, màn gốc `dropInListFragment` của graph `nav_dropin`. */
@@ -260,7 +289,7 @@ class MainActivity : AppCompatActivity() {
             null,
             navOptions {
                 launchSingleTop = true
-                popUpTo(R.id.homeFragment)
+                popUpTo(R.id.homeFragment) { saveState = true }
             },
         )
     }
@@ -317,11 +346,13 @@ class MainActivity : AppCompatActivity() {
             }
             else -> when (destination.id) {
                 R.id.homeFragment -> R.id.tab_home
+                R.id.courtSearchFragment -> R.id.tab_search
                 R.id.myBookingsFragment -> R.id.tab_bookings
                 R.id.dropInListFragment -> R.id.tab_drop_in
                 R.id.communityHomeFragment -> R.id.tab_community
                 // Giữ sáng tab đã mở trang Tài khoản.
                 R.id.accountFragment -> when (navController.previousBackStackEntry?.destination?.id) {
+                    R.id.courtSearchFragment -> R.id.tab_search
                     R.id.myBookingsFragment -> R.id.tab_bookings
                     R.id.dropInListFragment -> R.id.tab_drop_in
                     R.id.communityHomeFragment -> R.id.tab_community
@@ -349,7 +380,7 @@ class MainActivity : AppCompatActivity() {
             bottomNavMenu = menuRes
         }
         binding.bottomNav.menu.findItem(tab!!).isChecked = true
-        if (adminMode) {
+        if (adminMode && (viewModel.sessionState.value as? SessionState.SignedIn)?.appRole == AppRole.ADMIN) {
             adminAppsViewModel.loadQueue()
             adminReportsViewModel.loadReports()
         }

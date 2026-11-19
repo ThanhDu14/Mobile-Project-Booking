@@ -65,39 +65,30 @@ class AdminUserManagementFragment : Fragment() {
             applyFilter()
         }
 
+        binding.textUserNotFound.setOnClickListener { viewModel.loadUsers(more = viewModel.usersState.value.nextPageToken.isNotEmpty()) }
+        binding.recyclerUsers.addOnScrollListener(object : androidx.recyclerview.widget.RecyclerView.OnScrollListener() {
+            override fun onScrolled(rv: androidx.recyclerview.widget.RecyclerView, dx: Int, dy: Int) {
+                if (dy > 0 && !rv.canScrollVertically(1)) viewModel.loadUsers(more = true)
+            }
+        })
+        viewModel.loadUsers()
         observeViewModel()
     }
 
-    private fun performSearch() {
-        val query = binding.inputUserSearch.text?.toString()?.trim().orEmpty()
-        if (query.isNotBlank()) {
-            viewModel.searchUser(query)
-        }
-    }
+    private fun performSearch() { applyFilter() }
 
     private fun applyFilter() {
-        val user = currentUser ?: return
-        val checkedFilter = binding.chipGroupUserFilter.checkedChipId
-        val matchFilter = when (checkedFilter) {
-            R.id.chipFilterOwners -> user.isOwnerOrApproved
-            R.id.chipFilterLocked -> user.isLocked
-            else -> true
+        val filter = when (binding.chipGroupUserFilter.checkedChipId) {
+            R.id.chipFilterOwners -> "OWNERS"
+            R.id.chipFilterLocked -> "LOCKED"
+            else -> "ALL"
         }
-
-        if (matchFilter) {
-            adapter.submitList(listOf(user))
-            binding.recyclerUsers.isVisible = true
-            binding.textUserNotFound.isVisible = false
-        } else {
-            adapter.submitList(emptyList())
-            binding.recyclerUsers.isVisible = false
-            binding.textUserNotFound.isVisible = true
-            binding.textUserNotFound.text = "Không có tài khoản phù hợp với bộ lọc đã chọn"
-        }
+        viewModel.loadUsers(binding.inputUserSearch.text?.toString()?.trim().orEmpty(), filter)
     }
 
     private fun showUserActionBottomSheet(user: AdminUserLookup) {
-        val actions = mutableListOf<String>()
+        if (viewModel.actionState.value == AdminActionUiState.Loading) return
+        val actions = mutableListOf("Thông tin tài khoản")
         if (user.isLocked) {
             actions.add(getString(R.string.admin_user_unlock_button))
         } else {
@@ -109,9 +100,11 @@ class AdminUserManagementFragment : Fragment() {
         }
 
         MaterialAlertDialogBuilder(requireContext())
-            .setTitle(user.fullName.ifBlank { user.phone })
+            .setTitle(user.fullName.ifBlank { user.uid })
+
             .setItems(actions.toTypedArray()) { _, which ->
                 when (actions[which]) {
+                    "Thông tin tài khoản" -> MaterialAlertDialogBuilder(requireContext()).setTitle(user.fullName.ifBlank { user.uid }).setMessage(listOf(user.uid, user.email, user.phone, user.role, user.accountStatus.name, user.ownerRevokedReason.orEmpty()).filter { it.isNotBlank() }.joinToString("\n")).setPositiveButton(android.R.string.ok, null).show()
                     getString(R.string.admin_user_lock_button) -> confirmToggleLock(user)
                     getString(R.string.admin_user_unlock_button) -> confirmToggleLock(user)
                     getString(R.string.admin_user_revoke_owner_button) -> showRevokeOwnerDialog(user)
@@ -165,43 +158,13 @@ class AdminUserManagementFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
-                    viewModel.userLookupState.collect { state ->
-                        when (state) {
-                            UserLookupUiState.Idle -> {
-                                binding.progressUserLoading.isVisible = false
-                                binding.textUserNotFound.text = "Nhập số điện thoại, email hoặc UID để tra cứu tài khoản."
-                                binding.textUserNotFound.isVisible = true
-                                binding.recyclerUsers.isVisible = false
-                                adapter.submitList(emptyList())
-                                currentUser = null
-                            }
-                            UserLookupUiState.Loading -> {
-                                binding.progressUserLoading.isVisible = true
-                                binding.textUserNotFound.isVisible = false
-                                binding.recyclerUsers.isVisible = false
-                            }
-                            is UserLookupUiState.Success -> {
-                                binding.progressUserLoading.isVisible = false
-                                currentUser = state.user
-                                applyFilter()
-                            }
-                            UserLookupUiState.NotFound -> {
-                                binding.progressUserLoading.isVisible = false
-                                binding.textUserNotFound.text = getString(R.string.admin_not_found_user)
-                                binding.textUserNotFound.isVisible = true
-                                binding.recyclerUsers.isVisible = false
-                                adapter.submitList(emptyList())
-                                currentUser = null
-                            }
-                            is UserLookupUiState.Error -> {
-                                binding.progressUserLoading.isVisible = false
-                                binding.textUserNotFound.text = state.message
-                                binding.textUserNotFound.isVisible = true
-                                binding.recyclerUsers.isVisible = false
-                                adapter.submitList(emptyList())
-                                currentUser = null
-                            }
-                        }
+                    viewModel.usersState.collect { state ->
+                        binding.progressUserLoading.isVisible = state.isLoading
+                        binding.recyclerUsers.isVisible = state.users.isNotEmpty()
+                        adapter.submitList(state.users)
+                        binding.textUserNotFound.isVisible = state.error != null || (!state.isLoading && state.users.isEmpty()) || state.nextPageToken.isNotEmpty()
+                        binding.textUserNotFound.text = state.error?.let { "$it · Thử lại" }
+                            ?: if (state.nextPageToken.isNotEmpty()) "Tải thêm kết quả" else getString(R.string.admin_not_found_user)
                     }
                 }
 
@@ -212,6 +175,7 @@ class AdminUserManagementFragment : Fragment() {
                             AdminActionUiState.Loading -> Unit
                             is AdminActionUiState.Success -> {
                                 Toast.makeText(requireContext(), state.message, Toast.LENGTH_SHORT).show()
+                                viewModel.loadUsers()
                                 viewModel.clearActionState()
                             }
                             is AdminActionUiState.Error -> {

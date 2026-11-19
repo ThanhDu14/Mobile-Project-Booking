@@ -10,8 +10,13 @@ data class BookingCheckInInput(
 
 data class BookingCheckInResult(
     val bookingId: String,
-    val checkedInAtEpochMillis: Long,
+    val checkedInAtEpochMillis: Long?,
     val paymentStatus: String?,
+    val remainingAmountVnd: Long? = null,
+    val paymentConfirmationRequired: Boolean = false,
+    val courtNames: List<String> = emptyList(),
+    val startAt: java.time.Instant? = null,
+    val endAt: java.time.Instant? = null,
 )
 
 interface BookingCheckInRepository {

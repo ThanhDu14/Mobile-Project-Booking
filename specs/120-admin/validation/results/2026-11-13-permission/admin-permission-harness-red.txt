@@ -1,0 +1,179 @@
+﻿INSTRUMENTATION_STATUS: class=com.example.booking_app.feature.admin.AdminApplicationScreensUiTest
+INSTRUMENTATION_STATUS: current=1
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=6
+INSTRUMENTATION_STATUS: stream=
+com.example.booking_app.feature.admin.AdminApplicationScreensUiTest:
+INSTRUMENTATION_STATUS: test=sampleScreensInflateWithTheirPrimaryActionsInLightAndDarkPhoneAndTabletModes
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=com.example.booking_app.feature.admin.AdminApplicationScreensUiTest
+INSTRUMENTATION_STATUS: current=1
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=6
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=sampleScreensInflateWithTheirPrimaryActionsInLightAndDarkPhoneAndTabletModes
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=com.example.booking_app.feature.admin.AdminLocalInteractionTest
+INSTRUMENTATION_STATUS: current=2
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=6
+INSTRUMENTATION_STATUS: stream=
+com.example.booking_app.feature.admin.AdminLocalInteractionTest:
+INSTRUMENTATION_STATUS: test=approveAndCategoryAndVenueNavigation
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=com.example.booking_app.feature.admin.AdminLocalInteractionTest
+INSTRUMENTATION_STATUS: current=2
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=6
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=approveAndCategoryAndVenueNavigation
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=com.example.booking_app.feature.admin.AdminLocalInteractionTest
+INSTRUMENTATION_STATUS: current=3
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=6
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: test=specialEmailWithPlayerClaimDoesNotEnterAdmin
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=com.example.booking_app.feature.admin.AdminLocalInteractionTest
+INSTRUMENTATION_STATUS: current=3
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=6
+INSTRUMENTATION_STATUS: stack=java.lang.IllegalStateException: Cannot call useEmulator() after instance has already been initialized.
+	at com.google.firebase.firestore.FirebaseFirestore.useEmulator(FirebaseFirestore.java:285)
+	at com.example.booking_app.feature.admin.AdminLocalBackendModule.firestore(AdminLocalBackendModule.kt:38)
+	at com.example.booking_app.feature.admin.AdminLocalBackendModule_FirestoreFactory.firestore(AdminLocalBackendModule_FirestoreFactory.java:46)
+	at dagger.hilt.android.internal.testing.root.DaggerDefault_HiltComponents_SingletonC$SingletonCImpl$SwitchingProvider.get(DaggerDefault_HiltComponents_SingletonC.java:2382)
+	at dagger.internal.DoubleCheck.getSynchronized(DoubleCheck.java:54)
+	at dagger.internal.DoubleCheck.get(DoubleCheck.java:45)
+	at dagger.hilt.android.internal.testing.root.DaggerDefault_HiltComponents_SingletonC$SingletonCImpl.injectAdminLocalInteractionTest(DaggerDefault_HiltComponents_SingletonC.java:2337)
+	at dagger.hilt.android.internal.testing.root.DaggerDefault_HiltComponents_SingletonC$SingletonCImpl.injectTest(DaggerDefault_HiltComponents_SingletonC.java:2308)
+	at com.example.booking_app.feature.admin.AdminLocalInteractionTest_TestComponentDataSupplier.injectInternal(AdminLocalInteractionTest_TestComponentDataSupplier.java:25)
+	at com.example.booking_app.feature.admin.AdminLocalInteractionTest_TestComponentDataSupplier.lambda$get$0(AdminLocalInteractionTest_TestComponentDataSupplier.java:17)
+	at com.example.booking_app.feature.admin.AdminLocalInteractionTest_TestComponentDataSupplier$$ExternalSyntheticLambda0.injectTest(D8$$SyntheticClass:0)
+	at dagger.hilt.android.internal.testing.TestApplicationComponentManager.inject(TestApplicationComponentManager.java:251)
+	at dagger.hilt.android.internal.testing.MarkThatRulesRanRule.inject(MarkThatRulesRanRule.java:83)
+	at dagger.hilt.android.testing.HiltAndroidRule.inject(HiltAndroidRule.java:49)
+	at com.example.booking_app.feature.admin.AdminLocalInteractionTest$specialEmailWithPlayerClaimDoesNotEnterAdmin$1.invokeSuspend(AdminLocalInteractionTest.kt:48)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+	at kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:263)
+	at kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:94)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking(Builders.kt:70)
+	at kotlinx.coroutines.BuildersKt.runBlocking(dex-id-e4502f858af1300eb2742ccb9a6ef9aa5783fe9c:1)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking$default(Builders.kt:48)
+	at kotlinx.coroutines.BuildersKt.runBlocking$default(dex-id-e4502f858af1300eb2742ccb9a6ef9aa5783fe9c:1)
+	at com.example.booking_app.feature.admin.AdminLocalInteractionTest.specialEmailWithPlayerClaimDoesNotEnterAdmin(AdminLocalInteractionTest.kt:47)
+
+INSTRUMENTATION_STATUS: stream=
+Error in specialEmailWithPlayerClaimDoesNotEnterAdmin(com.example.booking_app.feature.admin.AdminLocalInteractionTest):
+java.lang.IllegalStateException: Cannot call useEmulator() after instance has already been initialized.
+	at com.google.firebase.firestore.FirebaseFirestore.useEmulator(FirebaseFirestore.java:285)
+	at com.example.booking_app.feature.admin.AdminLocalBackendModule.firestore(AdminLocalBackendModule.kt:38)
+	at com.example.booking_app.feature.admin.AdminLocalBackendModule_FirestoreFactory.firestore(AdminLocalBackendModule_FirestoreFactory.java:46)
+	at dagger.hilt.android.internal.testing.root.DaggerDefault_HiltComponents_SingletonC$SingletonCImpl$SwitchingProvider.get(DaggerDefault_HiltComponents_SingletonC.java:2382)
+	at dagger.internal.DoubleCheck.getSynchronized(DoubleCheck.java:54)
+	at dagger.internal.DoubleCheck.get(DoubleCheck.java:45)
+	at dagger.hilt.android.internal.testing.root.DaggerDefault_HiltComponents_SingletonC$SingletonCImpl.injectAdminLocalInteractionTest(DaggerDefault_HiltComponents_SingletonC.java:2337)
+	at dagger.hilt.android.internal.testing.root.DaggerDefault_HiltComponents_SingletonC$SingletonCImpl.injectTest(DaggerDefault_HiltComponents_SingletonC.java:2308)
+	at com.example.booking_app.feature.admin.AdminLocalInteractionTest_TestComponentDataSupplier.injectInternal(AdminLocalInteractionTest_TestComponentDataSupplier.java:25)
+	at com.example.booking_app.feature.admin.AdminLocalInteractionTest_TestComponentDataSupplier.lambda$get$0(AdminLocalInteractionTest_TestComponentDataSupplier.java:17)
+	at com.example.booking_app.feature.admin.AdminLocalInteractionTest_TestComponentDataSupplier$$ExternalSyntheticLambda0.injectTest(D8$$SyntheticClass:0)
+	at dagger.hilt.android.internal.testing.TestApplicationComponentManager.inject(TestApplicationComponentManager.java:251)
+	at dagger.hilt.android.internal.testing.MarkThatRulesRanRule.inject(MarkThatRulesRanRule.java:83)
+	at dagger.hilt.android.testing.HiltAndroidRule.inject(HiltAndroidRule.java:49)
+	at com.example.booking_app.feature.admin.AdminLocalInteractionTest$specialEmailWithPlayerClaimDoesNotEnterAdmin$1.invokeSuspend(AdminLocalInteractionTest.kt:48)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+	at kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:263)
+	at kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:94)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking(Builders.kt:70)
+	at kotlinx.coroutines.BuildersKt.runBlocking(dex-id-e4502f858af1300eb2742ccb9a6ef9aa5783fe9c:1)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking$default(Builders.kt:48)
+	at kotlinx.coroutines.BuildersKt.runBlocking$default(dex-id-e4502f858af1300eb2742ccb9a6ef9aa5783fe9c:1)
+	at com.example.booking_app.feature.admin.AdminLocalInteractionTest.specialEmailWithPlayerClaimDoesNotEnterAdmin(AdminLocalInteractionTest.kt:47)
+
+INSTRUMENTATION_STATUS: test=specialEmailWithPlayerClaimDoesNotEnterAdmin
+INSTRUMENTATION_STATUS_CODE: -2
+INSTRUMENTATION_STATUS: class=com.example.booking_app.feature.admin.AdminReportScreensUiTest
+INSTRUMENTATION_STATUS: current=4
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=6
+INSTRUMENTATION_STATUS: stream=
+com.example.booking_app.feature.admin.AdminReportScreensUiTest:
+INSTRUMENTATION_STATUS: test=sampleReportScreensInflateWithTheirPrimaryActionsInLightAndDarkPhoneAndTabletModes
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=com.example.booking_app.feature.admin.AdminReportScreensUiTest
+INSTRUMENTATION_STATUS: current=4
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=6
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=sampleReportScreensInflateWithTheirPrimaryActionsInLightAndDarkPhoneAndTabletModes
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=com.example.booking_app.feature.admin.AdminToolsScreensUiTest
+INSTRUMENTATION_STATUS: current=5
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=6
+INSTRUMENTATION_STATUS: stream=
+com.example.booking_app.feature.admin.AdminToolsScreensUiTest:
+INSTRUMENTATION_STATUS: test=adminToolsScreensInflateWithPrimaryActionsInLightDarkPhoneAndTabletModes
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=com.example.booking_app.feature.admin.AdminToolsScreensUiTest
+INSTRUMENTATION_STATUS: current=5
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=6
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=adminToolsScreensInflateWithPrimaryActionsInLightDarkPhoneAndTabletModes
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=com.example.booking_app.feature.admin.AdminUserVenueScreensUiTest
+INSTRUMENTATION_STATUS: current=6
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=6
+INSTRUMENTATION_STATUS: stream=
+com.example.booking_app.feature.admin.AdminUserVenueScreensUiTest:
+INSTRUMENTATION_STATUS: test=userAndVenueScreensInflateWithPrimaryActionsInLightDarkPhoneAndTabletModes
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=com.example.booking_app.feature.admin.AdminUserVenueScreensUiTest
+INSTRUMENTATION_STATUS: current=6
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=6
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=userAndVenueScreensInflateWithPrimaryActionsInLightDarkPhoneAndTabletModes
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_RESULT: stream=
+
+Time: 89,619
+There was 1 failure:
+1) specialEmailWithPlayerClaimDoesNotEnterAdmin(com.example.booking_app.feature.admin.AdminLocalInteractionTest)
+java.lang.IllegalStateException: Cannot call useEmulator() after instance has already been initialized.
+	at com.google.firebase.firestore.FirebaseFirestore.useEmulator(FirebaseFirestore.java:285)
+	at com.example.booking_app.feature.admin.AdminLocalBackendModule.firestore(AdminLocalBackendModule.kt:38)
+	at com.example.booking_app.feature.admin.AdminLocalBackendModule_FirestoreFactory.firestore(AdminLocalBackendModule_FirestoreFactory.java:46)
+	at dagger.hilt.android.internal.testing.root.DaggerDefault_HiltComponents_SingletonC$SingletonCImpl$SwitchingProvider.get(DaggerDefault_HiltComponents_SingletonC.java:2382)
+	at dagger.internal.DoubleCheck.getSynchronized(DoubleCheck.java:54)
+	at dagger.internal.DoubleCheck.get(DoubleCheck.java:45)
+	at dagger.hilt.android.internal.testing.root.DaggerDefault_HiltComponents_SingletonC$SingletonCImpl.injectAdminLocalInteractionTest(DaggerDefault_HiltComponents_SingletonC.java:2337)
+	at dagger.hilt.android.internal.testing.root.DaggerDefault_HiltComponents_SingletonC$SingletonCImpl.injectTest(DaggerDefault_HiltComponents_SingletonC.java:2308)
+	at com.example.booking_app.feature.admin.AdminLocalInteractionTest_TestComponentDataSupplier.injectInternal(AdminLocalInteractionTest_TestComponentDataSupplier.java:25)
+	at com.example.booking_app.feature.admin.AdminLocalInteractionTest_TestComponentDataSupplier.lambda$get$0(AdminLocalInteractionTest_TestComponentDataSupplier.java:17)
+	at com.example.booking_app.feature.admin.AdminLocalInteractionTest_TestComponentDataSupplier$$ExternalSyntheticLambda0.injectTest(D8$$SyntheticClass:0)
+	at dagger.hilt.android.internal.testing.TestApplicationComponentManager.inject(TestApplicationComponentManager.java:251)
+	at dagger.hilt.android.internal.testing.MarkThatRulesRanRule.inject(MarkThatRulesRanRule.java:83)
+	at dagger.hilt.android.testing.HiltAndroidRule.inject(HiltAndroidRule.java:49)
+	at com.example.booking_app.feature.admin.AdminLocalInteractionTest$specialEmailWithPlayerClaimDoesNotEnterAdmin$1.invokeSuspend(AdminLocalInteractionTest.kt:48)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+	at kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:263)
+	at kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:94)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking(Builders.kt:70)
+	at kotlinx.coroutines.BuildersKt.runBlocking(dex-id-e4502f858af1300eb2742ccb9a6ef9aa5783fe9c:1)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking$default(Builders.kt:48)
+	at kotlinx.coroutines.BuildersKt.runBlocking$default(dex-id-e4502f858af1300eb2742ccb9a6ef9aa5783fe9c:1)
+	at com.example.booking_app.feature.admin.AdminLocalInteractionTest.specialEmailWithPlayerClaimDoesNotEnterAdmin(AdminLocalInteractionTest.kt:47)
+
+FAILURES!!!
+Tests run: 6,  Failures: 1
+
+
+INSTRUMENTATION_CODE: -1
+

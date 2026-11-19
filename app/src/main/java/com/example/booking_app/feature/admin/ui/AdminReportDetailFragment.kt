@@ -37,6 +37,7 @@ class AdminReportDetailFragment : Fragment(R.layout.fragment_admin_report_detail
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         _binding = FragmentAdminReportDetailBinding.bind(view)
+        viewModel.detailState.value.report?.id?.let(viewModel::loadReportDetail)
 
         binding.toolbar.setNavigationOnClickListener {
             findNavController().navigateUp()
@@ -118,19 +119,19 @@ class AdminReportDetailFragment : Fragment(R.layout.fragment_admin_report_detail
         b.chipReportTargetType.text = typeName
         b.chipReportStatus.text = if (report.status == ReportStatus.OPEN) getString(R.string.admin_report_tab_open) else getString(R.string.admin_report_tab_closed)
 
-        b.textReportReason.text = report.reason.ifBlank { "Lừa đảo" }
-        b.textReportQuote.text = "“${report.detail.ifBlank { "Nội dung vi phạm theo báo cáo của người dùng." }}”"
+        b.textReportReason.text = report.reason.ifBlank { "Chưa có lý do" }
+        b.textReportQuote.text = "“${report.detail.ifBlank { "Chưa có nội dung báo cáo" }}”"
 
-        val dateStr = if (report.createdAt > 0L) dateFormat.format(Date(report.createdAt)) else "09/10 · 08:40"
-        b.textReporterInfo.text = getString(R.string.admin_report_reporter_format, "Hà My", dateStr)
+        val dateStr = if (report.createdAt > 0L) dateFormat.format(Date(report.createdAt)) else "Chưa có thời điểm"
+        b.textReporterInfo.text = getString(R.string.admin_report_reporter_format, report.reporterId, dateStr)
 
         // Target Section
-        val authorName = targetSummary["authorName"]?.toString() ?: "Khánh Lê"
+        val authorName = targetSummary["authorName"]?.toString() ?: targetSummary["displayName"]?.toString() ?: targetSummary["name"]?.toString() ?: "Chưa có tên"
         b.textTargetAuthorName.text = authorName
         b.textTargetAvatar.text = authorName.take(2).uppercase()
-        b.textTargetContext.text = targetSummary["context"]?.toString() ?: "Nhóm Cầu lông Quận 10 · 08/10 · 22:47"
+        b.textTargetContext.text = targetSummary["context"]?.toString() ?: targetSummary["email"]?.toString() ?: report.targetPath
         b.textTargetBody.text = targetSummary["content"]?.toString()
-            ?: "Pass lại 4 vé giải đấu phong trào cuối tuần, giá chỉ 50k/vé. Chuyển khoản trước để giữ chỗ, ai cần inbox mình gấp, số lượng có hạn."
+            ?: targetSummary["body"]?.toString() ?: targetSummary["address"]?.toString() ?: targetSummary["phone"]?.toString() ?: "Không có nội dung hoặc không đủ quyền đọc"
 
         // Conclusion setup based on target
         when (report.targetType) {

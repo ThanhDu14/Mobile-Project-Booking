@@ -1,0 +1,48 @@
+﻿
+ RUN  v5.1.0 F:/CSC_HCMUS/Mobile/datcau/firestore-tests
+
+ ❯ test/court-detail.test.ts (13 tests | 4 failed) 2150ms
+   ❯ Chi tiết sân – quyền đọc (spec 030) (13)
+     × VD-1b [BLOCKED: D]: khách đọc courts, priceRules của cơ sở tạm ngừng (R10: read if true) 130ms
+     × VD-3 [BLOCKED: D]: khách get venues/v-missing được, exists == false 111ms
+     × VD-4 [BLOCKED: D]: người chơi đã khởi tạo get v-hidden, v-locked, v-deleted 108ms
+     × VD-10 [BLOCKED: D]: khách get venues/v-deleted được, status == DELETED 119ms
+.\node_modules\.bin\vitest.cmd : 
+At line:2 char:71
++ ... BLOCKED=''; .\node_modules\.bin\vitest.cmd run *> ../.gradle/admin-fi ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+⎯⎯⎯⎯⎯⎯⎯ Failed Tests 4 ⎯⎯⎯⎯⎯⎯⎯
+
+ FAIL  test/court-detail.test.ts > Chi tiết sân – quyền đọc (spec 030) > VD-1b [BLOCKED: D]: khách đọc courts, 
+priceRules của cơ sở tạm ngừng (R10: read if true)
+FirebaseError: 
+evaluation error at L222:24 for 'list' @ L222, false for 'list' @ L222
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/4]⎯
+
+ FAIL  test/court-detail.test.ts > Chi tiết sân – quyền đọc (spec 030) > VD-3 [BLOCKED: D]: khách get venues/v-missing 
+được, exists == false
+FirebaseError: 
+evaluation error at L208:22 for 'get' @ L208, Null value error. for 'get' @ L208
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/4]⎯
+
+ FAIL  test/court-detail.test.ts > Chi tiết sân – quyền đọc (spec 030) > VD-4 [BLOCKED: D]: người chơi đã khởi tạo get 
+v-hidden, v-locked, v-deleted
+ FAIL  test/court-detail.test.ts > Chi tiết sân – quyền đọc (spec 030) > VD-10 [BLOCKED: D]: khách get 
+venues/v-deleted được, status == DELETED
+FirebaseError: 
+evaluation error at L208:22 for 'get' @ L208, false for 'get' @ L208
+⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/4]⎯
+
+
+ Test Files  1 failed | 25 passed (26)
+      Tests  4 failed | 223 passed (227)
+   Start at  20:14:11
+   Duration  49.87s (tests 75%, import 24%, transform 1%)
+
+    Isolate  26 workers spawned · ~165ms startup each (spawn + environment, per file)
+             at least ~4.14s faster with isolate: false — reuses workers across files instead of one per file
+
+

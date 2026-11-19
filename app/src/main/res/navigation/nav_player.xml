@@ -15,6 +15,12 @@
             app:destination="@id/nav_court_detail" />
     </fragment>
     <fragment
+        android:id="@+id/courtSearchFragment"
+        android:name="com.example.booking_app.feature.search.ui.CourtSearchFragment"
+        android:label="@string/nav_tab_search">
+        <action android:id="@+id/action_search_to_courtDetail" app:destination="@id/nav_court_detail" />
+    </fragment>
+    <fragment
         android:id="@+id/myBookingsFragment"
         android:name="com.example.booking_app.feature.booking_management.ui.MyBookingsFragment"
         android:label="@string/my_bookings_060_title">
@@ -55,6 +61,9 @@
             android:name="venueId"
             app:argType="string"
             android:defaultValue="demo-truong-chinh-909" />
+        <argument android:name="date" app:argType="string" app:nullable="true" android:defaultValue="@null" />
+        <argument android:name="startTime" app:argType="string" app:nullable="true" android:defaultValue="@null" />
+        <argument android:name="endTime" app:argType="string" app:nullable="true" android:defaultValue="@null" />
         <action
             android:id="@+id/action_bookingSlotGrid_to_bookingConfirm"
             app:destination="@id/bookingConfirmFragment" />

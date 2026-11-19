@@ -1,0 +1,304 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingTop="@dimen/space_2"
+    android:paddingBottom="@dimen/space_2">
+
+    <com.google.android.material.textfield.TextInputLayout
+        style="@style/Widget.Material3.TextInputLayout.FilledBox"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/search_venue_name"
+        app:boxCornerRadiusTopStart="28dp"
+        app:boxCornerRadiusTopEnd="28dp"
+        app:boxCornerRadiusBottomStart="28dp"
+        app:boxCornerRadiusBottomEnd="28dp"
+        app:boxStrokeWidth="0dp"
+        app:boxStrokeWidthFocused="0dp"
+        app:endIconMode="clear_text"
+        app:startIconDrawable="@drawable/ic_search_24">
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/keyword"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:imeOptions="actionSearch"
+            android:inputType="text"
+            android:maxLines="1" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.card.MaterialCardView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_3"
+        app:cardBackgroundColor="?attr/colorSurfaceContainerLowest"
+        app:cardCornerRadius="12dp"
+        app:strokeColor="?attr/colorOutlineVariant"
+        app:strokeWidth="1dp">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="@dimen/space_3">
+            <TextView
+                android:id="@+id/aiToggle"
+                android:layout_width="match_parent"
+                android:layout_height="48dp"
+                android:accessibilityHeading="true"
+                android:clickable="true"
+                android:focusable="true"
+                android:gravity="center_vertical"
+                android:text="@string/search_ai_compact"
+                android:textColor="?attr/colorPrimary"
+                android:textAppearance="?attr/textAppearanceTitleMedium" />
+            <LinearLayout
+                android:id="@+id/aiBody"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="gone">
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/aiField"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_2"
+                android:hint="@string/search_ai_hint"
+                app:counterEnabled="true"
+                app:counterMaxLength="200"
+                app:endIconMode="clear_text">
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/aiInput"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:imeOptions="actionSend"
+                    android:inputType="textCapSentences"
+                    android:maxLines="2" />
+            </com.google.android.material.textfield.TextInputLayout>
+            <LinearLayout
+                android:id="@+id/filtersKeptRow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:visibility="gone">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:accessibilityLiveRegion="polite"
+                    android:text="@string/search_ai_filters_kept"
+                    android:textAppearance="?attr/textAppearanceBodySmall"
+                    android:textColor="?attr/colorOnSurfaceVariant" />
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/filtersKeptClear"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/search_filter_clear" />
+            </LinearLayout>
+            <TextView
+                android:id="@+id/aiHistoryTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/search_ai_history"
+                android:textAppearance="?attr/textAppearanceLabelMedium"
+                android:visibility="gone" />
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/aiHistory"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+                <TextView
+                    android:id="@+id/usage"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textAppearance="?attr/textAppearanceBodySmall" />
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/aiSubmit"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/search_ai_submit" />
+            </LinearLayout>
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/aiDateNotice"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_3"
+                android:accessibilityLiveRegion="polite"
+                android:visibility="gone"
+                app:cardBackgroundColor="?attr/colorErrorContainer"
+                app:cardCornerRadius="@dimen/radius_md"
+                app:cardElevation="0dp"
+                app:strokeColor="?attr/colorError"
+                app:strokeWidth="1dp">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal"
+                    android:padding="@dimen/space_3">
+                    <ImageView
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/ic_info_24"
+                        app:tint="?attr/colorError" />
+                    <TextView
+                        android:id="@+id/aiDateNoticeText"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_2"
+                        android:layout_weight="1"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorOnErrorContainer" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+            <TextView
+                android:id="@+id/clarify"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_3"
+                android:accessibilityLiveRegion="polite"
+                android:text="@string/search_ai_clarify"
+                android:visibility="gone" />
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/clarifyChoices"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone" />
+            </LinearLayout>
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_3"
+        android:scrollbars="none">
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/allFilters"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="@dimen/space_3"
+                android:text="@string/search_filters_title" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/district"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="@dimen/space_3"
+                android:text="@string/search_filter_district" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/window"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="@dimen/space_3"
+                android:text="@string/search_filter_window" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/price"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="@dimen/space_3"
+                android:text="@string/search_filter_price" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/amenities"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/search_filter_amenities" />
+        </LinearLayout>
+    </HorizontalScrollView>
+
+    <com.google.android.material.chip.ChipGroup
+        android:id="@+id/filters"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:chipSpacingHorizontal="8dp"
+        app:chipSpacingVertical="4dp" />
+
+    <TextView
+        android:id="@+id/notice"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_2"
+        android:accessibilityLiveRegion="polite"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:visibility="gone" />
+
+    <LinearLayout
+        android:id="@+id/recommendations"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone">
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_3"
+            android:accessibilityHeading="true"
+            android:text="@string/search_rag_title"
+            android:textAppearance="?attr/textAppearanceTitleMedium" />
+        <LinearLayout
+            android:id="@+id/recommendationRows"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_3"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+        <TextView
+            android:id="@+id/resultsTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:accessibilityHeading="true"
+            android:textAppearance="?attr/textAppearanceTitleMedium" />
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/sort"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:icon="@drawable/ic_sort_24" />
+    </LinearLayout>
+
+    <com.google.android.material.progressindicator.LinearProgressIndicator
+        android:id="@+id/loading"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:indeterminate="true"
+        android:visibility="gone" />
+    <TextView
+        android:id="@+id/resultsMessage"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:accessibilityLiveRegion="polite"
+        android:textAppearance="?attr/textAppearanceBodyMedium" />
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/retry"
+        style="?attr/materialButtonOutlinedStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/common_retry"
+        android:visibility="gone" />
+</LinearLayout>

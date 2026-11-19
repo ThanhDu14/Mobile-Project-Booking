@@ -1,0 +1,86 @@
+﻿[
+    {
+        "suite":  "com.example.booking_app.feature.admin.AdminApplicationsViewModelTest",
+        "tests":  15,
+        "failures":  0,
+        "errors":  0,
+        "skipped":  0
+    },
+    {
+        "suite":  "com.example.booking_app.feature.admin.AdminApplicationValidationTest",
+        "tests":  5,
+        "failures":  0,
+        "errors":  0,
+        "skipped":  0
+    },
+    {
+        "suite":  "com.example.booking_app.feature.admin.AdminCategoryRoutingTest",
+        "tests":  1,
+        "failures":  0,
+        "errors":  0,
+        "skipped":  0
+    },
+    {
+        "suite":  "com.example.booking_app.feature.admin.AdminQueueRepositoryTest",
+        "tests":  2,
+        "failures":  0,
+        "errors":  0,
+        "skipped":  0
+    },
+    {
+        "suite":  "com.example.booking_app.feature.admin.AdminReportsViewModelTest",
+        "tests":  8,
+        "failures":  0,
+        "errors":  0,
+        "skipped":  0
+    },
+    {
+        "suite":  "com.example.booking_app.feature.admin.AdminReportValidationTest",
+        "tests":  8,
+        "failures":  0,
+        "errors":  0,
+        "skipped":  0
+    },
+    {
+        "suite":  "com.example.booking_app.feature.admin.AdminStatsRepositoryTest",
+        "tests":  1,
+        "failures":  0,
+        "errors":  0,
+        "skipped":  0
+    },
+    {
+        "suite":  "com.example.booking_app.feature.admin.AdminToolsViewModelTest",
+        "tests":  9,
+        "failures":  0,
+        "errors":  0,
+        "skipped":  0
+    },
+    {
+        "suite":  "com.example.booking_app.feature.admin.AdminUserVenueViewModelTest",
+        "tests":  9,
+        "failures":  0,
+        "errors":  0,
+        "skipped":  0
+    },
+    {
+        "suite":  "com.example.booking_app.feature.admin.AdminVoucherRepairTest",
+        "tests":  1,
+        "failures":  0,
+        "errors":  0,
+        "skipped":  0
+    },
+    {
+        "suite":  "com.example.booking_app.feature.admin.OwnerRevocationValidationTest",
+        "tests":  4,
+        "failures":  0,
+        "errors":  0,
+        "skipped":  0
+    },
+    {
+        "suite":  "com.example.booking_app.feature.admin.SystemVoucherValidationTest",
+        "tests":  5,
+        "failures":  0,
+        "errors":  0,
+        "skipped":  0
+    }
+]

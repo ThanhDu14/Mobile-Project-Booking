@@ -1,0 +1,149 @@
+﻿INSTRUMENTATION_STATUS: class=com.example.booking_app.feature.admin.AdminApplicationScreensUiTest
+INSTRUMENTATION_STATUS: current=1
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=6
+INSTRUMENTATION_STATUS: stream=
+com.example.booking_app.feature.admin.AdminApplicationScreensUiTest:
+INSTRUMENTATION_STATUS: test=sampleScreensInflateWithTheirPrimaryActionsInLightAndDarkPhoneAndTabletModes
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=com.example.booking_app.feature.admin.AdminApplicationScreensUiTest
+INSTRUMENTATION_STATUS: current=1
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=6
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=sampleScreensInflateWithTheirPrimaryActionsInLightAndDarkPhoneAndTabletModes
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=com.example.booking_app.feature.admin.AdminLocalInteractionTest
+INSTRUMENTATION_STATUS: current=2
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=6
+INSTRUMENTATION_STATUS: stream=
+com.example.booking_app.feature.admin.AdminLocalInteractionTest:
+INSTRUMENTATION_STATUS: test=approveAndCategoryAndVenueNavigation
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=com.example.booking_app.feature.admin.AdminLocalInteractionTest
+INSTRUMENTATION_STATUS: current=2
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=6
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=approveAndCategoryAndVenueNavigation
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=com.example.booking_app.feature.admin.AdminLocalInteractionTest
+INSTRUMENTATION_STATUS: current=3
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=6
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: test=specialEmailWithPlayerClaimDoesNotEnterAdmin
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=com.example.booking_app.feature.admin.AdminLocalInteractionTest
+INSTRUMENTATION_STATUS: current=3
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=6
+INSTRUMENTATION_STATUS: stack=java.lang.AssertionError: expected:<2131362786> but was:<2131362784>
+	at org.junit.Assert.fail(Assert.java:89)
+	at org.junit.Assert.failNotEquals(Assert.java:835)
+	at org.junit.Assert.assertEquals(Assert.java:120)
+	at org.junit.Assert.assertEquals(Assert.java:146)
+	at com.example.booking_app.feature.admin.AdminLocalInteractionTest$specialEmailWithPlayerClaimDoesNotEnterAdmin$1.invokeSuspend(AdminLocalInteractionTest.kt:61)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+	at kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:263)
+	at kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:94)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking(Builders.kt:70)
+	at kotlinx.coroutines.BuildersKt.runBlocking(dex-id-e4502f858af1300eb2742ccb9a6ef9aa5783fe9c:1)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking$default(Builders.kt:48)
+	at kotlinx.coroutines.BuildersKt.runBlocking$default(dex-id-e4502f858af1300eb2742ccb9a6ef9aa5783fe9c:1)
+	at com.example.booking_app.feature.admin.AdminLocalInteractionTest.specialEmailWithPlayerClaimDoesNotEnterAdmin(AdminLocalInteractionTest.kt:47)
+
+INSTRUMENTATION_STATUS: stream=
+Error in specialEmailWithPlayerClaimDoesNotEnterAdmin(com.example.booking_app.feature.admin.AdminLocalInteractionTest):
+java.lang.AssertionError: expected:<2131362786> but was:<2131362784>
+	at org.junit.Assert.fail(Assert.java:89)
+	at org.junit.Assert.failNotEquals(Assert.java:835)
+	at org.junit.Assert.assertEquals(Assert.java:120)
+	at org.junit.Assert.assertEquals(Assert.java:146)
+	at com.example.booking_app.feature.admin.AdminLocalInteractionTest$specialEmailWithPlayerClaimDoesNotEnterAdmin$1.invokeSuspend(AdminLocalInteractionTest.kt:61)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+	at kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:263)
+	at kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:94)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking(Builders.kt:70)
+	at kotlinx.coroutines.BuildersKt.runBlocking(dex-id-e4502f858af1300eb2742ccb9a6ef9aa5783fe9c:1)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking$default(Builders.kt:48)
+	at kotlinx.coroutines.BuildersKt.runBlocking$default(dex-id-e4502f858af1300eb2742ccb9a6ef9aa5783fe9c:1)
+	at com.example.booking_app.feature.admin.AdminLocalInteractionTest.specialEmailWithPlayerClaimDoesNotEnterAdmin(AdminLocalInteractionTest.kt:47)
+
+INSTRUMENTATION_STATUS: test=specialEmailWithPlayerClaimDoesNotEnterAdmin
+INSTRUMENTATION_STATUS_CODE: -2
+INSTRUMENTATION_STATUS: class=com.example.booking_app.feature.admin.AdminReportScreensUiTest
+INSTRUMENTATION_STATUS: current=4
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=6
+INSTRUMENTATION_STATUS: stream=
+com.example.booking_app.feature.admin.AdminReportScreensUiTest:
+INSTRUMENTATION_STATUS: test=sampleReportScreensInflateWithTheirPrimaryActionsInLightAndDarkPhoneAndTabletModes
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=com.example.booking_app.feature.admin.AdminReportScreensUiTest
+INSTRUMENTATION_STATUS: current=4
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=6
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=sampleReportScreensInflateWithTheirPrimaryActionsInLightAndDarkPhoneAndTabletModes
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=com.example.booking_app.feature.admin.AdminToolsScreensUiTest
+INSTRUMENTATION_STATUS: current=5
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=6
+INSTRUMENTATION_STATUS: stream=
+com.example.booking_app.feature.admin.AdminToolsScreensUiTest:
+INSTRUMENTATION_STATUS: test=adminToolsScreensInflateWithPrimaryActionsInLightDarkPhoneAndTabletModes
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=com.example.booking_app.feature.admin.AdminToolsScreensUiTest
+INSTRUMENTATION_STATUS: current=5
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=6
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=adminToolsScreensInflateWithPrimaryActionsInLightDarkPhoneAndTabletModes
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=com.example.booking_app.feature.admin.AdminUserVenueScreensUiTest
+INSTRUMENTATION_STATUS: current=6
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=6
+INSTRUMENTATION_STATUS: stream=
+com.example.booking_app.feature.admin.AdminUserVenueScreensUiTest:
+INSTRUMENTATION_STATUS: test=userAndVenueScreensInflateWithPrimaryActionsInLightDarkPhoneAndTabletModes
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=com.example.booking_app.feature.admin.AdminUserVenueScreensUiTest
+INSTRUMENTATION_STATUS: current=6
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=6
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=userAndVenueScreensInflateWithPrimaryActionsInLightDarkPhoneAndTabletModes
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_RESULT: stream=
+
+Time: 114,739
+There was 1 failure:
+1) specialEmailWithPlayerClaimDoesNotEnterAdmin(com.example.booking_app.feature.admin.AdminLocalInteractionTest)
+java.lang.AssertionError: expected:<2131362786> but was:<2131362784>
+	at org.junit.Assert.fail(Assert.java:89)
+	at org.junit.Assert.failNotEquals(Assert.java:835)
+	at org.junit.Assert.assertEquals(Assert.java:120)
+	at org.junit.Assert.assertEquals(Assert.java:146)
+	at com.example.booking_app.feature.admin.AdminLocalInteractionTest$specialEmailWithPlayerClaimDoesNotEnterAdmin$1.invokeSuspend(AdminLocalInteractionTest.kt:61)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+	at kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:263)
+	at kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:94)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking(Builders.kt:70)
+	at kotlinx.coroutines.BuildersKt.runBlocking(dex-id-e4502f858af1300eb2742ccb9a6ef9aa5783fe9c:1)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking$default(Builders.kt:48)
+	at kotlinx.coroutines.BuildersKt.runBlocking$default(dex-id-e4502f858af1300eb2742ccb9a6ef9aa5783fe9c:1)
+	at com.example.booking_app.feature.admin.AdminLocalInteractionTest.specialEmailWithPlayerClaimDoesNotEnterAdmin(AdminLocalInteractionTest.kt:47)
+
+FAILURES!!!
+Tests run: 6,  Failures: 1
+
+
+INSTRUMENTATION_CODE: -1
+

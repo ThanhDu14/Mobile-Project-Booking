@@ -49,6 +49,9 @@ Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 | 43  | 2026-11-06 | Hoàn thiện toàn diện, bảo mật, đối chiếu ranh giới hợp đồng và đo lường SLA SC-006 (Phase 7, Tasks T051–T054) Feature 120 bằng `$speckit-implement`                                                              | 12     |
 | 44  | 2026-11-06 | Tái cấu trúc UI Admin theo 12 wireframe artboards `specs/120-admin/ui/`, thiết lập 5 tab Bottom Navigation, loại bỏ hoàn toàn mock data và nối dữ liệu thực với Firestore & Supabase                             | 12     |
 | 45  | 2026-11-06 | Kiểm thử toàn diện và sửa lỗi Feature 110, 111, 112, 120; nộp hồ sơ chủ sân thực tế trên thiết bị; chuẩn hóa UI Đang chờ duyệt theo wireframe `specs/110-owner-onboarding/ui/11_court-owner_buoc3_cho-duyet.png` | 11, 12 |
+| 46  | 2026-11-12 | Đồng bộ owner/drop-in Feature 112 với schema và helpers Feature 080 theo bàn giao của C; bổ sung owner-update-session, hoàn tiền khi hủy và phân giải QR/mã vé để check-in | 10, 11 |
+| 47  | 2026-11-13 | Rà soát và sửa Feature 120 Admin theo spec/contracts/wireframe; regression, Emulator/local integration, kiểm thử máy thật; xử lý lệch quyền ADMIN và tạo index Firebase theo yêu cầu bổ sung | 12 |
+| 48  | 2026-11-15 | Rà soát và sửa Feature 110, 111, 112 trên máy Android thật; thay dữ liệu mẫu bằng Firebase/Supabase, deploy backend được cho phép, kiểm thử vòng duyệt hồ sơ và vận hành chủ sân; sửa nút và dòng giờ bị vỡ bố cục | 11, 12 |
 
 ---
 
@@ -4669,5 +4672,333 @@ Kiểm thử toàn diện lại các tính năng thuộc Feature 110, 111, 112 v
   - Gửi biểu mẫu đăng ký chủ sân qua Edge Function thành công, nhận phản hồi trạng thái `PENDING`.
   - Màn hình `OwnerApplicationStatusFragment` hiển thị trực tiếp trên thiết bị khớp 100% về mặt thị giác với wireframe mẫu `11_court-owner_buoc3_cho-duyet.png`.
 - **Tuân thủ cam kết**: Tuyệt đối không commit, không push.
+
+---
+
+## Mục 46: Đồng bộ owner/drop-in Feature 112 theo bàn giao của C và sửa phân giải QR/mã vé để check-in
+
+| Trường                   | Nội dung |
+| ------------------------ | -------- |
+| Ngày                     | 2026-11-12 |
+| Người thực hiện          | Minh Nhựt |
+| Nhóm tính năng liên quan | 11 – Vận hành chủ sân (spec `specs/112-owner-operations`), tích hợp Feature 080/081; 10 – Thông báo (chốt envelope `DROPIN_REGISTERED` của spec `specs/100-notification`) |
+| Công cụ AI               | Codex (GPT-6) |
+| Mục đích                 | Rà soát mã owner và sửa đúng các mục C bàn giao: schema session, đường dẫn đăng ký, hoàn tiền khi hủy, cập nhật session qua Edge Function, ngày trong test booking và envelope thông báo; sau đó sửa riêng luồng phân giải QR/mã vé thành UID theo yêu cầu bổ sung. |
+| Nhánh Git                | `feature/120-admin-implement` |
+
+### Prompt đã dùng
+
+**Yêu cầu rà soát và sửa theo bàn giao của C**:
+
+```text
+Đây là C gửi "D ơi, nhánh feature/080-drop-in-session đã xong US1, US2 của spec 080 (Rules, index, register-drop-in, _shared/dropin.ts, app). D pull về sửa phần của D giúp mình nhé:
+
+1. owner-create-session: ghi startAt/endAt kiểu Timestamp, courtIds (mảng), ownerId, districtId, và gọi deriveSessionFields() để có timeSlot, venueSnapshot. Level chỉ BEGINNER/INTERMEDIATE/ADVANCED.
+
+2. Check-in và roster: đọc subcollection dropInSessions/{sid}/registrations/{uid}.
+
+3. owner-cancel-session: gọi cancelRegistrationInTx(tx, sessionId, uid, cancelledBy, { forceFullRefund: true }) cho từng đăng ký để hoàn 100%. closeWaitlistInTx vẫn giữ nguyên.
+
+4. Làm Edge Function owner-update-session. Android updateSession gọi function này thay vì ghi thẳng Firestore.
+
+5. Hai lỗi đang có trên main: 4 lỗi kiểu TS trong _shared/firestore.ts dòng 338–346 (có code sau return không chạy tới), và OwnerBookingsViewModelTest ghi cứng ngày 2026-11-06.
+
+6. Envelope của send-notification cho DROPIN_REGISTERED hiện gửi { type, userId, data: { sessionId } }. D chốt giúp mình định dạng nhé.". Bạn hãy đọc và xem lại mã nguồn trong feat liên quan tới owner, sau đó fix lại theo C gửi. Lưu ý không được tự ý làm thêm gì khác, có vấn đề gì thì báo cáo tôi.
+```
+
+**Yêu cầu xác định trách nhiệm đối với các phần còn thiếu**:
+
+```text
+các điểm báo cáo này cần nói đến ai hay là tự mở rộng của D
+```
+
+**Yêu cầu sửa tiếp phần QR/mã vé**:
+
+```text
+|  |  |  |
+|---|---|---|
+| QR/mã vé chưa được phân giải thành UID | D — spec 112, đối chiếu định dạng vé với C | Là phần còn thiếu của check-in mà D sở hữu. Sửa đường dẫn subcollection vừa rồi chưa làm luồng quét QR hoạt động đầy đủ. | Sửa phần này trước
+```
+
+### Tóm tắt phản hồi của AI
+
+- Xác nhận working tree ban đầu sạch, nhánh hiện hành là `feature/120-admin-implement` và đã có shared helpers của C; sửa trực tiếp trên nhánh hiện hành, không tự pull/chuyển nhánh, commit, push hoặc deploy.
+- Đồng bộ `owner-create-session` với schema 080: truyền `Date` qua Firestore REST encoder để ghi `startAt`/`endAt` dạng Timestamp; lưu `courtIds`, `ownerId`, `districtId`; đọc tên quận và gọi `deriveSessionFields()` để có ngày Việt Nam, `timeSlot`, `venueSnapshot`. Chỉ chấp nhận `BEGINNER`, `INTERMEDIATE`, `ADVANCED`; kiểm tra ngày, khung 30 phút và danh sách sân.
+- Đổi roster Android sang `dropInSessions/{sessionId}/registrations` và chờ truy vấn bằng `await()`; check-in đọc/ghi đăng ký theo UID trong subcollection của buổi.
+- Chuyển hủy buổi sang Firestore transaction: đọc session và các đăng ký trước khi ghi, dùng bộ đệm dữ liệu/ghi để gọi `cancelRegistrationInTx(..., "OWNER", { forceFullRefund: true })` cho nhiều đăng ký mà không đọc Firestore sau khi đã ghi hoặc dùng lại số chỗ cũ. Hoàn đủ tiền đã trả, giữ lượt chưa trả ở `UNPAID`, hủy buổi, trả slots và giữ nguyên helper `closeWaitlistInTx` của C.
+- Bổ sung `owner-update-session` và cấu hình gateway tương ứng; Android gửi draft tới function thay cho sửa Firestore trực tiếp. Server kiểm tra quyền, trạng thái, sức chứa và xung đột slots; cập nhật session/slots trong transaction. Khi đổi giờ/sân/giá, đánh dấu `sessionChanged` và cập nhật thời gian trên đăng ký đang giữ chỗ, giữ nguyên số tiền đã chốt.
+- Kiểm tra `_shared/firestore.ts`: phiên bản hiện hành đã hết lỗi C mô tả và qua type-check nên không sửa file này. Trong `OwnerBookingsViewModelTest`, thay ngày cố định còn lại ở helper dữ liệu và deadline bằng thời điểm tương đối.
+- Chốt trong handoff envelope `DROPIN_REGISTERED`: `{ type, userId, data: { sessionId } }`; `userId` là người nhận, producer gọi sau khi transaction đăng ký commit. Chưa triển khai `send-notification` trong lần này.
+- Báo rõ trách nhiệm: `send-notification` thuộc D/spec 100; phân giải QR/mã vé thuộc D/spec 112, đối chiếu định dạng vé với C; helper `promoteFromWaitlist` thuộc C/spec 081 và D sẽ tích hợp khi helper được cung cấp. Chỉ sửa tiếp phần QR sau khi người dùng yêu cầu; không tự mở rộng sang hai phần còn lại.
+- Đối chiếu `QrRenderer` của app 080 và `_shared/dropin.ts`: QR chứa trực tiếp `qrToken` 43 ký tự base64url; mã vé có dạng `DI-XXXXXXXX`. Đồng bộ request Android/server sang `credential`, chuẩn hóa khoảng trắng và hoa/thường của mã vé nhưng giữ nguyên hoa/thường của QR token. Server truy vấn theo `qrToken` hoặc `ticketCode` trong đúng buổi đã kiểm tra quyền, yêu cầu đúng một kết quả và kiểm tra `sessionId`/`userId` khớp UID document trước khi chuyển `REGISTERED` → `CHECKED_IN` trong cùng transaction. Không dùng UID do client nhập để bỏ qua xác thực mã vé; không trả credential trong response.
+- Bổ sung kiểm thử cho schema session, hoàn tiền nhiều đăng ký, rollback khi sửa session và các tình huống QR/mã vé: hợp lệ, sai định dạng, khác buổi, ngoài quyền, đã dùng, đã hủy, đang chờ, mã trùng hoặc sai quan hệ UID.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+| ---- | ---------- | ----- |
+| `supabase/functions/_shared/owner-dropin.ts` | Tạo mới | Dùng chung kiểm tra draft owner, chuyển ngày/giờ Việt Nam sang `Date`, giới hạn level và sinh danh sách slot cho tạo/sửa session. |
+| `supabase/functions/owner-create-session/handler.ts` | Chỉnh sửa | Ghi schema 080, các mốc thời gian dạng Timestamp và trường suy ra qua `deriveSessionFields()`. |
+| `supabase/functions/owner-cancel-session/handler.ts` | Chỉnh sửa | Hủy nhiều đăng ký và hoàn 100% tiền đã trả bằng shared helper trong cùng transaction; giữ nguyên hành vi đóng waitlist. |
+| `supabase/functions/owner-update-session/index.ts`, `handler.ts` | Tạo mới | Cung cấp endpoint server để kiểm tra quyền, cập nhật session/slots nguyên tử và đánh dấu đăng ký bị ảnh hưởng. |
+| `supabase/config.toml` | Chỉnh sửa | Thêm cấu hình `owner-update-session` với `verify_jwt = false`; handler tự xác minh Firebase ID token. |
+| `supabase/functions/owner-checkin-dropin-registration/handler.ts` | Chỉnh sửa | Phân giải QR/mã vé thành UID trong subcollection đã xác minh quyền và check-in một lần trong transaction. |
+| `supabase/functions/owner-checkin-dropin-registration/handler.test.ts` | Chỉnh sửa | Đồng bộ request kiểm thử sang `credential`, giữ kiểm tra từ chối phương thức/token không hợp lệ. |
+| `supabase/functions/owner-update-session/handler.test.ts` | Tạo mới, bổ sung | Kiểm thử owner create/update/cancel/check-in bằng Firestore giả; bổ sung lọc credential và các ca QR/mã vé bị từ chối, không ghi một phần. |
+| `app/src/main/java/com/example/booking_app/feature/owner/data/OwnerDropInRepositoryImpl.kt` | Chỉnh sửa | Đọc roster đúng subcollection bằng `await()`, gửi `courtIds`, gọi `owner-update-session` và gửi QR/mã vé qua trường `credential`. |
+| `app/src/main/java/com/example/booking_app/feature/owner/domain/dropin/OwnerDropInModels.kt` | Chỉnh sửa | Giới hạn level trong validation Android theo ba giá trị của schema 080. |
+| `app/src/test/java/com/example/booking_app/feature/owner/ui/bookings/OwnerBookingsViewModelTest.kt` | Chỉnh sửa | Loại bỏ ngày cố định còn lại để test không phụ thuộc ngày chạy. |
+| `specs/112-owner-operations/handoffs/notifications.md` | Chỉnh sửa | Ghi envelope `DROPIN_REGISTERED` đã chốt và giới hạn chưa có implementation giao thông báo end-to-end. |
+| `specs/112-owner-operations/handoffs/drop-in-operations.md` | Chỉnh sửa | Ghi hợp đồng request/response, định dạng QR/mã vé và điều kiện check-in một lần theo schema 080. |
+| `_shared/dropin.ts`, `_shared/firestore.ts`, mã phát hành vé của C và Firestore Rules | Giữ nguyên | Tái sử dụng helpers/schema đã có; lỗi TypeScript được báo ở Firestore helper không còn trong phiên bản hiện hành. |
+| Triển khai `send-notification`, tự viết `promoteFromWaitlist`, chỉnh sửa tính năng khác | Không thực hiện | Ngoài phạm vi sửa được người dùng cho phép; báo rõ phần thuộc D và phần phụ thuộc C. |
+
+### Cách kiểm chứng
+
+- **Kiểm thử TypeScript ở đợt đồng bộ ban đầu**:
+  - `deno test -A supabase/functions/owner-update-session/handler.test.ts supabase/functions/owner-create-session/handler.test.ts supabase/functions/owner-cancel-session/handler.test.ts supabase/functions/owner-checkin-dropin-registration/handler.test.ts supabase/functions/_shared/dropin.test.ts`: **29 tests PASS**.
+  - `deno test -A supabase/functions/register-drop-in/handler.test.ts`: **29 tests PASS**. Tổng đợt này **58 tests PASS**; không thay đổi producer đăng ký của C.
+  - `deno check` cho `index.ts` của `owner-create-session`, `owner-update-session`, `owner-cancel-session`, `owner-checkin-dropin-registration`: **PASS**, gồm kiểm tra kiểu các shared imports.
+- **Kiểm thử Android ở đợt đồng bộ ban đầu**:
+  - `gradlew.bat :app:compileDebugKotlin :app:testDebugUnitTest --tests 'com.example.booking_app.feature.owner.ui.bookings.OwnerBookingsViewModelTest' --tests 'com.example.booking_app.feature.owner.domain.dropin.OwnerDropInDraftValidationTest' --no-daemon '-Pkotlin.compiler.execution.strategy=in-process'`: **BUILD SUCCESSFUL**.
+  - Đối chiếu XML test report: `OwnerBookingsViewModelTest` **5 tests PASS**, `OwnerDropInDraftValidationTest` **4 tests PASS**, không có failures/errors. Gradle ban đầu bị sandbox chặn tải dependencies, sau đó được cấp quyền và chạy thành công.
+- **Kiểm chứng sau khi sửa phân giải QR/mã vé**:
+  - `deno test -A supabase/functions/owner-checkin-dropin-registration/handler.test.ts supabase/functions/owner-update-session/handler.test.ts`: **14 tests PASS**; đây là lượt chạy lại có bổ sung ca QR, không cộng với 58 tests trước đó thành số test độc lập.
+  - `deno check supabase/functions/owner-checkin-dropin-registration/index.ts`: **PASS**.
+  - `gradlew.bat :app:compileDebugKotlin --offline --no-daemon '-Pkotlin.compiler.execution.strategy=in-process'`: **BUILD SUCCESSFUL**, dùng cache dependencies của đợt trước và xác nhận Android biên dịch với trường request `credential`.
+- **Rà soát thay đổi**: `git diff --check` **PASS**; Git chỉ cảnh báo chuyển LF/CRLF. Giữ nguyên các cảnh báo build ngoài phạm vi.
+- **Giới hạn bằng chứng**: Backend tests dùng Firestore giả, chưa chạy Emulator/live check-in; chưa kiểm tra quét QR trên thiết bị thực tế. Chưa có `send-notification` để kiểm chứng giao thông báo end-to-end; chưa tích hợp promotion khi tăng sức chứa vì chưa có helper spec 081.
+- **Tuân thủ phạm vi**: Không chỉnh sửa tính năng ngoài yêu cầu; không commit, push, deploy hoặc thao tác dữ liệu production.
+
+---
+
+## Mục 47: Sửa Feature 120 Admin, kiểm thử máy thật và khắc phục quyền/index Firebase theo yêu cầu bổ sung
+
+| Trường                   | Nội dung |
+| ------------------------ | -------- |
+| Ngày                     | 2026-11-13 |
+| Người thực hiện          | Minh Nhựt |
+| Nhóm tính năng liên quan | 12 – Quản trị và kiểm duyệt (spec `specs/120-admin`), đối chiếu ranh giới phiên 010/011, hồ sơ chủ sân 110, voucher 050 và thông báo 100 |
+| Công cụ AI               | Codex (GPT-6), skill `$speckit-implement` |
+| Mục đích                 | Rà soát và sửa Feature 120 trong phiên bắt đầu ngày 12/11, tiếp tục kiểm thử và chẩn đoán trên thiết bị ngày 13/11; tái hiện lỗi trước sửa, ghi task có truy vết, bảo toàn checklist reviewer và phân biệt bằng chứng local với thao tác Firebase thật được người dùng cho phép sau đó. |
+| Nhánh Git                | `feature/120-admin-implement` |
+
+### Prompt đã dùng
+
+```text
+$speckit-implement
+
+Sửa Feature 120-admin tại specs/120-admin theo spec.md, plan.md,
+contracts/, tasks.md và các wireframe hợp lệ trong ui/.
+
+Không coi các task đã đánh [X] là bằng chứng chức năng đã hoàn thiện.
+Đối chiếu lại và bổ sung task sửa lỗi có truy vết trước khi triển khai.
+Không tự đánh dấu checklist của reviewer.
+
+Ưu tiên P1:
+1. Nối UI mở giấy tờ với signed URL; xử lý hết hạn, retry và thiếu quyền;
+   không mở storage path thô, không bỏ sót tài liệu thứ hai.
+2. Tách đúng districts/amenities khi tải, thêm, sửa danh mục.
+3. Sửa query cho các tab hồ sơ PENDING/APPROVED/REJECTED và báo cáo
+   OPEN/đã đóng; kiểm tra empty, cập nhật realtime và phân trang.
+4. Sửa mapping APPROVE→APPROVED, REJECT→REJECTED cho retry;
+   kiểm tra stale request/race và không lặp tác động.
+5. Bổ sung recovery đồng bộ Firebase Auth claim sau quyết định hồ sơ;
+   không báo hoàn tất khi trạng thái quyền còn không nhất quán.
+6. Voucher: ngày hợp lệ có năm/múi giờ, kiểm tra Invalid Date,
+   validation đầy đủ, mã duy nhất cả voucher hệ thống và voucher sân,
+   không dùng giá trị mặc định âm thầm thay đầu vào lỗi.
+7. Broadcast: idempotency và phục hồi sau lỗi giữa batch.
+   Rà soát helper list() đang thiếu phân trang và document ID,
+   bảo đảm gửi đủ đúng tài khoản active.
+
+Tiếp theo:
+8. Hoàn thiện danh sách/tìm kiếm người dùng theo tên, email, điện thoại,
+   bộ lọc và luồng chi tiết theo hợp đồng dữ liệu.
+9. Thống kê đúng metric/ngày/nguồn/thời điểm; bỏ số và lịch sử mẫu;
+   xử lý loading/empty/error/retry.
+10. Hiển thị email, tọa độ, quận và dữ liệu báo cáo thực;
+    không thay dữ liệu thiếu bằng nhân vật/nội dung minh họa.
+11. Giữ và phục hồi lý do từ chối; khóa thao tác đang gửi.
+12. Kiểm tra đường điều hướng tới quản lý khóa/mở khóa venue.
+13. Đối chiếu các màn admin với ảnh ui/ hợp lệ trên phone/tablet,
+    light/dark; ảnh bước 8 hiện là ERR_CONNECTION_REFUSED,
+    báo thiếu chuẩn thiết kế, không tự suy diễn.
+
+Validation bắt buộc:
+- Viết regression test tái hiện từng lỗi trước khi sửa.
+- Chạy lại toàn bộ JVM admin, 7 Edge Function suite và Firestore.
+- Giữ riêng 4 failure spec 030 hiện có trong court-detail.test.ts;
+  không skip hoặc sửa kỳ vọng để làm xanh.
+- Test tích hợp trên Firebase Emulator/Supabase local:
+  signed document, approve/reject, retry/race/claim failure,
+  lock/unlock/revoke, moderation, categories, voucher, broadcast.
+- Nếu adb có thiết bị, chạy instrumentation package admin và kiểm tra
+  luồng tương tác thực kèm screenshot đối chiếu; không dùng inflate test
+  làm bằng chứng end-to-end.
+- Không dùng project thật cho mutation kiểm thử; không deploy.
+- Báo rõ test pass/fail, phần bị chặn và sai lệch UI còn lại.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Đọc spec, plan, contracts, tasks và các wireframe; đối chiếu mã thay vì xem task `[X]` là bằng chứng. Bổ sung task sửa lỗi có truy vết R120-01–R120-21 và báo cáo validation; giữ nguyên checklist reviewer.
+- Nối từng giấy tờ với `owner-docs SIGN_DOWNLOAD`, lấy signed URL mới mỗi lần mở/retry, xử lý lỗi/quyền và mở đủ tài liệu thứ hai; bỏ fallback mở storage path hoặc dùng ảnh sân thay tài liệu.
+- Mang loại danh mục theo dữ liệu tải/thêm/sửa để `districts` và `amenities` ghi đúng collection. Sửa query theo từng trạng thái hồ sơ, OPEN và RESOLVED/DISMISSED; giới hạn cửa sổ phân trang, thứ tự ổn định theo thời gian/document ID và hủy listener cũ khi đổi tab.
+- Sửa retry APPROVE/REJECT về đúng APPROVED/REJECTED; so sánh phiên nộp hồ sơ trong transaction, xử lý race/stale response và giữ một lần tạo venue/notification. Lỗi đồng bộ Auth trả `CLAIM_SYNC_PENDING`; retry/recovery đối chiếu role hiện hành, không tự cấp lại OWNER sau revoke hoặc báo hoàn tất khi quyền chưa đồng bộ.
+- Kiểm tra voucher ở client/server: số và giới hạn sử dụng, ngày có năm/múi giờ, Invalid Date và khoảng hiệu lực; bỏ fallback âm thầm cho đầu vào lỗi. Bổ sung UPDATE, bảo toàn counters/redemptions và dùng chung transaction cho tạo voucher hệ thống/voucher sân để chống trùng mã kể cả hai writer chạy đồng thời.
+- Sửa helper `list()` theo đủ page token và giữ document ID; broadcast dùng request ID ổn định, notification ID xác định và phục hồi phần chưa gửi sau lỗi giữa batch. Chỉ gửi tới tài khoản ACTIVE không đang xóa, giữ `isRead` của thông báo đã tồn tại khi retry.
+- Hoàn thiện danh sách/tìm kiếm tên, email, điện thoại và bộ lọc người dùng; đọc đúng thống kê theo ngày Việt Nam, nguồn và thời điểm cập nhật; hiển thị email/GPS/quận/đối tượng báo cáo từ dữ liệu thực. Bỏ số, người, lịch sử và số báo cáo liên quan mẫu; giữ draft từ chối, khóa thao tác đang gửi và mở được luồng quản lý venue từ công cụ.
+- Đối chiếu ảnh hợp lệ bước 1–7 và 9–12. Ảnh bước 8 là lỗi kết nối nên ghi thiếu chuẩn thiết kế, không dựng màn chi tiết theo ảnh lỗi; dùng luồng thông tin tài khoản theo schema hiện có. Sửa tab báo cáo bị cắt, hint danh mục chồng nhau và footer mở khóa hứa gửi notification ngoài hợp đồng; ghi rõ các khác biệt typography/icon/spacing và form voucher dài hơn wireframe.
+- Bổ sung harness Hilt với APK `.adminlocal`, Firebase demo Emulator và Supabase local để chạy MainActivity/Fragment/repository thật trên Vivo, tải thật hai signed document và chụp ảnh. Giữ riêng test inflate là smoke; sửa cấu hình Firestore lặp và file DataStore trùng giữa component test, không bỏ test để làm xanh.
+- Khi người dùng yêu cầu điều tra `PERMISSION_DENIED` trên máy thật, phát hiện hai lỗi client: ép ADMIN theo email ở debug và MainActivity khởi tạo ViewModel tự query dữ liệu admin cho mọi phiên để lấy badge. Bỏ override, chỉ mở listener badge cho phiên ADMIN và hủy khi mất vai trò/dừng Activity; regression trên thiết bị tái hiện lỗi trước sửa rồi pass sau sửa.
+- Ban đầu giữ toàn bộ mutation kiểm thử ở local. Sau yêu cầu cấp quyền riêng và thông tin xác thực do người dùng cung cấp, kiểm tra được hồ sơ đã ADMIN nhưng Auth claim vẫn PLAYER; dùng script hiện có để đồng bộ ADMIN cho đúng tài khoản được chỉ định, đọc lại claim/role và giữ nguyên ACTIVE/trạng thái xóa. Không ghi UID thật, email thật hoặc nội dung khóa vào mục log này.
+- Sau đó log app gốc báo `FAILED_PRECONDITION: The query requires an index`. Chỉ sau khi người dùng yêu cầu tạo index thật và bổ sung quyền IAM, tạo đúng ba composite index admin còn thiếu, theo dõi đến READY và kiểm tra các tab bằng thao tác chỉ đọc trên máy thật. Không deploy Rules/Edge Functions, không xóa index cũ; tách thao tác quản trị được cho phép này khỏi mutation kiểm thử local.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+| ---- | ---------- | ----- |
+| `specs/120-admin/tasks.md`, `contracts/admin-repairs.md`, `repair-validation.md`, `permission-denied-2026-11-13.md`, `quickstart.md` | Bổ sung, chỉnh sửa | Ghi task có truy vết, hợp đồng sửa lỗi, kết quả chạy và giới hạn; thay bằng chứng nghiệm thu cho các khẳng định hoàn tất cũ. |
+| Các repository, model, ViewModel và Fragment trong `feature/admin` | Chỉnh sửa | Nối signed document, query trạng thái/phân trang/realtime, dữ liệu thực, validation, giữ draft, chống gửi lặp và xử lý kết quả đến muộn. |
+| `MainActivity.kt`, `core/session/FirebaseSessionManager.kt` và regression session | Chỉnh sửa | Bỏ ép ADMIN theo email; ngăn badge khởi tạo query admin ngoài phiên ADMIN và hủy listener đúng vòng đời/quyền. |
+| `admin-review-application`, `admin-revoke-owner`, `_shared/admin-claims.ts` | Chỉnh sửa, bổ sung | Retry đúng trạng thái, kiểm tra version/race và recovery quyền theo dữ liệu hiện hành, không lặp side effect. |
+| Bảy admin handlers, `_shared/admin-authorization.ts`, `firestore.rules` | Chỉnh sửa, bổ sung | Kiểm tra cả token ADMIN và hồ sơ ADMIN ACTIVE không đang xóa; regression cho claim cũ sau revoke/lock/delete. |
+| `admin-manage-voucher`, `_shared/voucher-uniqueness.ts`, `owner-create-voucher` | Chỉnh sửa tối thiểu, bổ sung | Validation và UPDATE đầy đủ; cả hai writer phải dùng chung read set transaction để bảo đảm mã duy nhất toàn hệ thống. |
+| `admin-broadcast-notification`, `_shared/firestore.ts` và regression tương ứng | Chỉnh sửa, bổ sung | Theo hết page token, giữ document ID và retry batch bằng định danh ổn định, không đặt lại trạng thái đã đọc. |
+| `admin-manage-user`, `owner-docs` và các test liên quan | Chỉnh sửa, bổ sung | Trả đúng danh tính/email, tìm kiếm/phân trang/bộ lọc và signed URL có quyền/TTL đúng, hỗ trợ địa chỉ Storage truy cập được trong kiểm thử local. |
+| Layout phone/w600dp, strings admin, `firestore.indexes.json` | Chỉnh sửa | Bổ sung trường voucher bắt buộc, bỏ dữ liệu/copy không có nguồn, sửa bố cục/hint và khai báo index đúng query. |
+| `app/src/test/.../admin`, `core/session` tests, `supabase/functions/admin-integration.local.test.ts`, Firestore tests | Bổ sung, điều chỉnh fixture | Tái hiện lỗi trước sửa; kiểm tra quyền, retry/race/claim failure, global uniqueness, batch recovery và allow/deny theo hồ sơ hiện hành. |
+| `app/src/adminLocalAndroidTest/`, Gradle/dependencies, cấu hình debug local, `scripts/admin/validate-local-device.ps1`, fixture local | Tạo mới, chỉnh sửa | Chạy tương tác thật với client local và APK riêng; lưu bằng chứng theo ngày, giữ app gốc và phục hồi density. |
+| `scripts/admin/unlock-copy.test.cjs` | Tạo mới | Regression cho lời hứa notification khi mở khóa không có trong FR-009/handler. |
+| `specs/120-admin/validation/` | Bổ sung | Lưu log đỏ/xanh, tổng hợp JVM, ảnh lỗi gốc, ảnh tương tác mới và manifest kích thước/checksum. |
+| Cấp ADMIN cho tài khoản thật và tạo ba index trên Firebase | Thực hiện theo yêu cầu bổ sung riêng | Có chỉ định và thông tin xác thực từ người dùng; kiểm tra lại kết quả, giữ nguyên khóa/xóa tài khoản và các index khác. |
+| Checklist reviewer và `firestore-tests/test/court-detail.test.ts` | Giữ nguyên | Không tự nghiệm thu thay reviewer, không skip/đổi kỳ vọng của bốn failure spec 030. |
+| Màn chi tiết theo ảnh bước 8; số/người/lịch sử mẫu; lời hứa notification mở khóa | Không suy diễn / Loại bỏ | Thiếu thiết kế hoặc nguồn dữ liệu/hợp đồng hợp lệ; không dùng nội dung minh họa làm kết quả thật. |
+| Deploy Rules/Edge Functions, commit/push và mutation kiểm thử trên project thật | Không thực hiện | Giữ phạm vi ban đầu; chỉ các thao tác cấp quyền/tạo index được người dùng cho phép sau đó mới chạy trên project thật. |
+
+### Cách kiểm chứng
+
+- **Đối chiếu đặc tả và truy vết**: xem [báo cáo sửa lỗi](../../specs/120-admin/repair-validation.md), [hợp đồng sửa lỗi](../../specs/120-admin/contracts/admin-repairs.md) và R120-01–R120-21 trong tasks. Không dùng checkbox cũ làm bằng chứng chức năng; checklist reviewer không đổi.
+- **Regression trước sửa**: tái hiện các lỗi signed-document/state, danh mục, query tab, quyết định lặp, claim failure, ngày voucher, global uniqueness, list/broadcast và stale ADMIN. Riêng phiên/người chơi: `specialEmailCannotOverrideServerRole` thất bại trước khi bỏ override; regression máy thật báo `PLAYER must not initialize admin query ViewModels` trước khi sửa badge. Log đỏ được giữ riêng, không tính là pass nghiệm thu.
+- **JVM và build**: đợt admin có **68 tests PASS**; đợt cuối chạy cả `core.session.*` và `feature.admin.*` ghi nhận **131 tests, 129 PASS, 0 failure/error, 2 skip Windows có sẵn** ở `DataStoreSessionPrefsTest`. Toàn bộ 68 admin và 15 ca `FirebaseSessionManagerTest` pass. Build APK/test APK, cấu hình local và kiểm tra cấu hình mặc định đều thành công ở các lượt tương ứng; không cộng các lượt chạy lại thành test độc lập.
+- **Edge Functions**: bảy suite admin có **36 tests PASS**; shared list **1**, owner-create-voucher **2**, owner-docs **1**, tổng lượt cuối **40 PASS, 0 FAIL**. Đây là test handler/transport và không thay cho bằng chứng tích hợp backend thật.
+- **Firestore đầy đủ**: **223 PASS, 4 FAIL trên 227 tests**, không skip. Giữ riêng bốn failure spec 030: **VD-1b, VD-3, VD-4, VD-10**; không chỉnh `court-detail.test.ts` hoặc kỳ vọng để làm xanh. Các allow fixture được bổ sung hồ sơ ADMIN ACTIVE phù hợp với điều kiện quyền hiện hành.
+- **Firebase Emulator/Supabase local**: lượt cuối chạy tuần tự **3 integration tests PASS**, bao phủ approve/reject, stale/race, claim failure/retry/recovery/revoke, account/venue lock-unlock, moderation, voucher, broadcast và signed Storage. Barrier voucher đồng thời có một writer thành công và một conflict; broadcast hơn 300 người nhận được chèn lỗi ở batch thứ hai rồi retry, không lặp thông báo hoặc mất `isRead`; hai signed document tải được, kiểm tra privacy/expiry và cấp lại URL. Categories được kiểm tra thêm qua repository thật trong luồng thiết bị.
+- **Thiết bị thật**: Vivo V2247, Android 15, dùng APK `.adminlocal` với DI local. Bốn biến thể phone-light, phone-dark, tablet-light, tablet-dark đều **6/6 PASS**, tổng **24/24**, gồm **8 lượt test tương tác thật và 16 lượt inflate smoke**, không skip. Có **60 ảnh mới ngày 13/11**, giữ riêng baseline 56 ảnh ngày 12/11. Tablet là nhánh w600dp trên cùng Vivo bằng density tạm 240; phục hồi density 440, không tuyên bố đã test phần cứng tablet riêng. [Ảnh và manifest mới](../../specs/120-admin/validation/screenshots/2026-11-13-permission/manifest.json).
+- **Giới hạn và các lượt thất bại**: giữ log va chạm fixture khi hai suite dùng chung Emulator, lượt Firestore timeout, hai lỗi vòng đời harness và assertion đọc nhầm graph gốc; sửa/chạy lại và chỉ dùng các lượt cuối thành công làm bằng chứng. Hai skip JVM là giả định Windows đã có, không phải skip mới. Bước 8 vẫn thiếu artboard hợp lệ; typography/icon/spacing và form voucher bổ sung trường còn khác ảnh mẫu, đã ghi trong đối chiếu UI.
+- **Chẩn đoán/quản trị Firebase thật theo yêu cầu bổ sung**: kiểm tra trước/sau xác nhận lệch claim PLAYER với hồ sơ ADMIN và sau đó đồng bộ ADMIN, giữ ACTIVE/trạng thái xóa. Khi tạo index bị `403`, người dùng bổ sung quyền IAM; ba index status/submittedAt ASC–DESC/document ID của hồ sơ và status/createdAt DESC/document ID của reports đều được kiểm tra **READY**. [Bằng chứng index](../../specs/120-admin/validation/results/2026-11-13-permission/firebase-admin-indexes-ready.json). Không deploy Rules hoặc Edge Functions, không xóa index khác.
+- **Kiểm tra chỉ đọc trên app gốc sau khi index READY**: hồ sơ chờ duyệt, hồ sơ đã duyệt và hai tab báo cáo tải được mà không hiện `FAILED_PRECONDITION`/`PERMISSION_DENIED`. Tab hồ sơ từ chối chưa được xác nhận riêng trong lượt spot check này vì màn hình đổi giữa thao tác; index lịch sử dùng chung đã READY. Không mô tả spot check này thành nghiệm thu production toàn bộ. Chi tiết trong [báo cáo quyền/index](../../specs/120-admin/permission-denied-2026-11-13.md).
+- **Rà soát cuối**: `git diff --check` pass; giữ nguyên checklist reviewer và bốn kỳ vọng lỗi spec 030. Không commit/push, không đưa nội dung Service Account hoặc thông tin định danh thật vào mục log.
+
+---
+
+## Mục 48: Rà soát, sửa và kiểm thử Feature 110, 111, 112 trên máy thật với Firebase/Supabase
+
+| Trường                   | Nội dung |
+| ------------------------ | -------- |
+| Ngày                     | 2026-11-15 |
+| Người thực hiện          | Minh Nhựt |
+| Nhóm tính năng liên quan | 11 – Chủ sân: `specs/110-owner-onboarding`, `specs/111-owner-venue-setup`, `specs/112-owner-operations`; phụ thuộc thẩm định hồ sơ của nhóm 12 – Quản trị (`specs/120-admin`). |
+| Công cụ AI               | Codex (GPT-6); thao tác trực tiếp repository, Gradle, adb, Firebase CLI và Supabase CLI; không gọi skill Spec Kit trong lượt rà soát này. |
+| Mục đích                 | Ghi nhận phiên sửa và kiểm thử ngày 14–15/11: đối chiếu spec/UI với mã và ứng dụng trên Android thật, nối backend đúng kiến trúc, deploy phần thiếu theo yêu cầu bổ sung, xác minh dữ liệu bền vững và phân biệt bằng chứng thực tế với test tự động/phần chưa xác minh. |
+| Nhánh Git                | `fix-feature/11-owner` |
+
+### Prompt đã dùng
+
+```text
+Hãy rà soát, kiểm thử và sửa hoàn chỉnh các tính năng CHỦ SÂN thuộc feat 110, 111, 112 trong repository hiện tại. Thực hiện trực tiếp trên code và chạy ứng dụng trên thiết bị Android thật đang kết nối; không chỉ phân tích hoặc lập kế hoạch.
+
+1. Đọc yêu cầu và xác định phạm vi
+- Đọc AGENTS.md và các hướng dẫn có liên quan.
+- Tìm đúng thư mục spec của feat 110, 111, 112; đọc spec.md, plan.md, tasks.md và toàn bộ tài liệu, hình ảnh trong ui/.
+- Xác định màn hình, luồng nghiệp vụ, tiêu chí nghiệm thu và các phụ thuộc giữa ba feature.
+- Đối chiếu với code hiện tại để xác định phần đã làm, thiếu, sai yêu cầu hoặc đang dùng dữ liệu giả.
+
+2. Kiểm tra trên máy thật
+- Kiểm tra thiết bị bằng adb, build và cài đúng biến thể ứng dụng, sau đó thao tác kiểm thử trực tiếp.
+- Kiểm tra toàn bộ luồng chủ sân của ba feature, bao gồm điều hướng, nhập liệu, validation, lưu/cập nhật dữ liệu, trạng thái loading, empty, error và quyền truy cập.
+- Đối chiếu từng màn hình với tài liệu trong spec/.../ui/: bố cục, màu sắc, font chữ, khoảng cách, icon, nội dung, trạng thái tương tác và bàn phím.
+- Chụp ảnh màn hình làm bằng chứng, ghi rõ màn hình và trường hợp kiểm thử. Dùng logcat để tìm crash và lỗi runtime.
+- Phần nào chưa khớp yêu cầu thì sửa rồi chạy lại trên thiết bị thật để xác nhận.
+
+3. Thay mock data bằng backend thật
+- Rà soát mock data, hardcoded data, fake repository, placeholder và các thao tác chỉ cập nhật trạng thái cục bộ.
+- Kết nối Firebase hoặc Supabase theo kiến trúc và trách nhiệm đã được xác định trong dự án; không tự ý chuyển backend hay ghi trùng dữ liệu sang cả hai.
+- Hoàn thiện các thao tác đọc, tạo, sửa, xóa, upload và đồng bộ mà spec yêu cầu.
+- Kiểm tra authentication, quyền chủ sân và phân tách dữ liệu theo tài khoản; không nới lỏng security rules hoặc RLS để làm cho tính năng chạy được.
+- Xác nhận dữ liệu đã được lưu trên backend thật và vẫn đúng sau khi tải lại màn hình hoặc khởi động lại ứng dụng.
+- Dùng tài khoản/dữ liệu kiểm thử được phép sử dụng, tránh ảnh hưởng dữ liệu người dùng thật. Không ghi secrets hoặc token vào code, ảnh chụp hay báo cáo.
+
+4. Phát hiện và xử lý lỗi khác
+- Với lỗi phát hiện trong quá trình kiểm tra, ghi nhận cách tái hiện, nguyên nhân, mức ảnh hưởng và sửa các lỗi thuộc ba feature hoặc phụ thuộc cần thiết để chúng hoạt động đúng.
+- Với lỗi ngoài phạm vi, báo cáo rõ; chỉ sửa khi thay đổi nhỏ, có đủ căn cứ và không gây ảnh hưởng lan rộng.
+- Giữ nguyên các thay đổi sẵn có của người dùng và tránh refactor không liên quan.
+
+5. Xác minh sau khi sửa
+- Chạy các kiểm tra build, lint và test phù hợp với thay đổi.
+- Kiểm thử lại những luồng đã sửa trên máy thật và kiểm tra hồi quy giữa feat 110, 111, 112.
+- Phân biệt rõ kết quả đã xác minh bằng thao tác thực tế với kết luận chỉ dựa trên đọc code.
+- Nếu thiếu thiết bị, tài khoản, cấu hình hoặc quyền truy cập backend, nêu chính xác trở ngại và thông tin cần bổ sung; tiếp tục các phần độc lập có thể làm được. Không dùng mock để thay thế rồi báo hoàn tất.
+
+Kết quả bàn giao:
+- Bảng theo từng feature/màn hình: yêu cầu spec, lỗi hoặc sai lệch ban đầu, thay đổi đã thực hiện, kết quả kiểm thử.
+- Danh sách phần mock đã được thay bằng Firebase/Supabase thật và bằng chứng dữ liệu được lưu.
+- Danh sách file thay đổi, kết quả build/test và đường dẫn ảnh chụp/log kiểm thử.
+- Các lỗi còn tồn tại, phần chưa xác minh và lý do cụ thể.
+
+Bắt đầu bằng việc khảo sát repository và thiết bị đang kết nối, sau đó triển khai sửa và kiểm thử đến khi đáp ứng các tiêu chí có thể xác minh. Cập nhật tiến độ ngắn gọn bằng tiếng Việt.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Đọc spec, plan, tasks, contracts và toàn bộ 18 ảnh UI của ba feature; đối chiếu mã và hành vi thật thay vì xem task `[X]` là nghiệm thu. Khảo sát thiết bị vivo V2247, Android 15, build/cài APK debug và thao tác trực tiếp qua adb; lưu báo cáo, ảnh và log tại `docs/validation/owner-110-112/`.
+- Sửa lỗi đọc location dạng map cũ gây crash khi client chờ GeoPoint; bổ sung mapper tương thích và ghi GeoPoint đúng kiểu khi duyệt hồ sơ. Đọc venue từ server, sửa race catalog trả chậm ghi đè state hiện tại và giữ draft khi nhập/lưu.
+- Feature 110: sửa chọn quận/huyện từ danh mục Firebase, thông báo lỗi/retry, map pin thật, lối mở lại hồ sơ PENDING, phạm vi ViewModel theo graph tài khoản và preview/download giấy tờ private. Chuyển giờ HHmm từ server sang HH:mm cho form nộp lại; sửa so sánh version Timestamp giữ mili giây và bổ sung index hàng đợi thẩm định còn thiếu.
+- Kiểm thử trên máy thật toàn vòng hồ sơ TEST: nhập/validation, upload fixture, xem lại/sửa, PENDING, ADMIN từ chối có lý do, PLAYER sửa/nộp lại cùng application ID, ADMIN duyệt và đăng nhập lại đúng tài khoản có quyền OWNER. Truy vấn độc lập xác nhận đúng một hồ sơ, cơ sở mới, GeoPoint và ảnh public HTTP 200; giấy tờ vẫn private.
+- Feature 111: hoàn thiện thông tin cơ sở, danh mục, map, tiện ích, ảnh, trạng thái ACTIVE/HIDDEN và các đường vào vận hành. Tạo court, bảng giá và khóa/mở giờ trên backend thật; sửa chọn sân/giờ theo cơ sở, ghi nguyên tử và chặn mở khóa slot thuộc nơi khác. Chia nút Lên/Xuống/Sửa/Ngừng hoạt động thành hai hàng để tránh vỡ chữ, kể cả Hoạt động lại.
+- Tạo bucket public `venue-photos` còn thiếu bằng migration riêng; ký upload theo ownership và chỉ công khai ảnh cơ sở khi duyệt, giữ tài liệu pháp lý private. Đã upload/lưu/gỡ ảnh thử qua UI và kiểm tra ảnh còn lại truy cập được; không đẩy toàn bộ migration chưa đối chiếu hoặc mở quyền ghi Storage trực tiếp.
+- Feature 112: thay repository voucher đang chờ hợp đồng bằng Firestore/Edge thật, nối tạo/sửa/bật/tắt, kiểm tra mã duy nhất và bảo vệ counters. Bỏ số người, đơn, lịch và tiền mẫu trên dashboard/roster/thống kê; sửa preview voucher, placeholder định dạng và điều hướng thành công lặp.
+- Hoàn thiện tạo/sửa/hủy buổi vãng lai, nhiều sân, sức chứa và roster thực; đưa quyền hiện tại và kiểm tra liên kết slot vào transaction. Trên máy thật đã tạo buổi, sửa từ 2 lên 3 chỗ rồi hủy có lý do; backend xác nhận CANCELLED và giải phóng slot.
+- Sửa duyệt/từ chối/hủy booking thành transaction kiểm tra quyền, trạng thái, thời hạn và slot; lý do bắt buộc cho từ chối/hủy, hoàn số đã thu qua cơ chế ví dự án và ledger chống lặp. Bật nút theo điều kiện nghiệp vụ; sửa dòng giờ bị deadline ép hẹp và giữ row khi countdown cập nhật để không làm mất thao tác chạm. Giảm padding để Chờ duyệt hiển thị đủ trên điện thoại.
+- Sửa check-in: preview chỉ đọc số tiền còn thu, nút Đã thu tiền xác nhận riêng, bắt buộc timestamp thật từ server và chống xử lý trùng trong transaction. Ba booking TEST chưa thu được tạo bằng script fixture quản trị có giới hạn đúng cơ sở được phép; các bước duyệt/từ chối/hủy/check-in thực hiện qua Android. Đây không phải bằng chứng PLAYER checkout hoặc giao dịch tiền thật.
+- Thống kê chuyển sang endpoint `owner-statistics-source`, tối đa 30 ngày, xác minh quyền hiện tại và whitelist trường, không trả QR/danh tính khách. Trên máy thật xác nhận 2.000đ TEST đã thanh toán, cọc/hoàn 0đ, lấp đầy 50%, peak 23:00/30 phút; số liệu vẫn đúng sau tải lại và force-stop/mở ứng dụng.
+- Deploy Rules/index Firebase, các Edge Functions liên quan và migration bucket theo phạm vi người dùng cho phép; giữ quyền phân tách dữ liệu và index ngoài repo. Kết thúc: tắt voucher/court thử ban đầu, xóa giá thử ban đầu, hủy buổi và mở khóa; cơ sở TEST mới HIDDEN, giữ court/giá/booking để truy vết, không sửa cơ sở cũ hoặc xóa đơn đang chơi/đã check-in.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+| ---- | ---------- | ----- |
+| Onboarding/account: datasource, time mapper, ViewModel và ba màn form/review/status | Chỉnh sửa, bổ sung | Chọn danh mục thật, giữ draft đúng tài khoản, mở lại hồ sơ, xem giấy tờ và nộp lại sau từ chối; khắc phục giờ không đúng định dạng. |
+| `admin-review-application/handler.ts` và test, `firestore.indexes.json` | Chỉnh sửa phụ thuộc cần thiết | So sánh version chính xác đến mili giây và hỗ trợ query hàng đợi; xác minh vòng từ chối/nộp lại/duyệt trên máy thật. |
+| `OwnerLocationMapper`, venue datasource/repository/ViewModel, `LocationPickerDialog` và giao diện cơ sở/sân | Chỉnh sửa, bổ sung | Hỗ trợ dữ liệu location cũ/mới, tải server, map thật, ảnh, trạng thái và các thao tác sân; tránh catalog ghi đè state. |
+| Layout phone/w600dp, strings, adapter sân và `OwnerBookingsFragment` | Chỉnh sửa | Nút đủ chiều rộng, sửa chuỗi định dạng, tách giờ/deadline và giữ row qua tick; cập nhật trạng thái thao tác theo quyền. |
+| `FirestoreOwnerVoucherRepository`, DI, form/ViewModel voucher, `owner-create-voucher` và Rules voucher | Thay adapter placeholder, chỉnh sửa | Đọc/ghi thật, preview theo dữ liệu nhập, uniqueness toàn hệ thống và bảo vệ counters; cấm ghi voucher trực tiếp từ client. |
+| `owner-docs`, `_shared/venue-photo-publication.ts`, API ảnh và migration `20261114150000_owner_venue_photos_bucket.sql` | Chỉnh sửa, tạo mới và deploy theo yêu cầu | Upload/publication đúng loại tệp và ownership, ảnh sân public còn giấy tờ private; tạo bucket đang thiếu. |
+| `manage-slot-blocks`, `_shared/owner-transaction.ts`, `_shared/owner-access.ts` và UI khóa giờ | Chỉnh sửa, bổ sung | Quyền hiện tại và toàn bộ đọc/ghi slot trong transaction; ngăn ghi đè/mở khóa chéo cơ sở. |
+| Drop-in repositories/UI, `_shared/owner-dropin.ts`, các owner session/check-in handlers | Chỉnh sửa | CRUD và roster thật, nhiều sân, validation lịch, đồng bộ sau thao tác và hủy/giải phóng slot đúng liên kết. |
+| `_shared/owner-booking-command.ts`, owner approve/reject/cancel handlers, booking repository/ViewModel | Chỉnh sửa, bổ sung | Duyệt/từ chối/hủy nguyên tử, lý do bắt buộc, không hoàn đơn chưa thu và chống hoàn lặp; không trả QR cho owner. |
+| `checkin-booking`, booking check-in repository/domain/ViewModel/Fragment | Chỉnh sửa | Preview thu tiền riêng, xác nhận một lần, timestamp thật và chống check-in trùng; bỏ fallback giờ client. |
+| `owner-statistics-source`, `_shared/firestore.ts`, statistics repository/calculator/UI | Chỉnh sửa, tạo mới | Projection giới hạn kỳ và trường, hỗ trợ Timestamp/legacy, tính doanh thu/hoàn/occupancy/peak theo nguồn thật; không dựng dữ liệu tổng hợp giả. |
+| Dashboard/calendar, `core/network/FunctionErrors.kt` | Chỉnh sửa | Bỏ dữ liệu mẫu; chẩn đoán lỗi mạng bằng tên lớp exception ở debug, không ghi token/request vào log bổ sung. |
+| JVM/Edge/Emulator tests và `OwnerBookingsLayoutTest.kt` | Bổ sung, chỉnh fixture | Kiểm tra mapper, state, validation, quyền hiện tại, transaction/cạnh tranh và đo dòng giờ 320dp; sửa test phụ thuộc ngày chạy. |
+| `scripts/owner/`, `docs/validation/owner-110-112/` | Tạo mới | Điều khiển thiết bị, fixture giới hạn, truy vấn xác nhận độc lập; lưu bảng yêu cầu/lỗi/sửa/kết quả, file thay đổi, deploy, ảnh và log đã lọc. |
+| Mock dashboard/roster/thống kê, voucher placeholder, client check-in timestamp fallback | Loại bỏ khỏi các luồng đã sửa | Không dùng dữ liệu giả hoặc trạng thái cục bộ làm bằng chứng backend hoàn tất. |
+| Nới Rules/RLS, ghi trùng Firebase/Supabase, đổi role để vượt quyền, xóa index ngoài repo, commit/push | Không thực hiện | Giữ kiến trúc, phân quyền và thay đổi sẵn có; chỉ dùng tài khoản do người dùng đăng nhập và deploy được cho phép. |
+| Luồng Thêm cơ sở của OWNER APPROVED | Chưa tự thay đổi hợp đồng | Contract 111 yêu cầu đi qua 110 nhưng FR-018 của 110 cấm hồ sơ mới khi đã APPROVED; báo cần chốt lifecycle, không cấp đường tạo trực tiếp vượt kiểm duyệt. |
+
+### Cách kiểm chứng
+
+- **Truy vết và bàn giao**: [báo cáo theo feature/màn hình](../validation/owner-110-112/report.md), [lỗi và nguyên nhân](../validation/owner-110-112/issues.md), [chỉ mục ảnh/ca kiểm thử](../validation/owner-110-112/evidence.md), [danh sách file](../validation/owner-110-112/files-changed.txt) và [trạng thái Edge Functions](../validation/owner-110-112/deployed-functions.json). Phân biệt thao tác hosted thật, test transport giả và Emulator; không ghi toàn bộ tiêu chí spec/UI đã đạt.
+- **Build/JVM/lint**: build APK debug và test APK thành công; XML JVM có **1.196 tests, 1.194 PASS, 0 failure, 0 error, 2 skip có sẵn** ở `DataStoreSessionPrefsTest` trên Windows. Lint cuối **0 errors, 753 warnings** toàn ứng dụng. [Lượt xác minh cuối](../validation/owner-110-112/logs/owner-final-verification.log), [build sửa dòng giờ](../validation/owner-110-112/logs/owner-booking-layout-build.log), [build/lint nhãn lọc](../validation/owner-110-112/logs/owner-filter-layout-final.log). Không cộng các lượt chạy lại thành số test độc lập.
+- **Edge handlers/transport**: **55/55 PASS**, gồm voucher, thẩm định hồ sơ, ảnh, thống kê, booking/check-in và drop-in. [Log](../validation/owner-110-112/logs/owner-edge-final-55.log). Đây là test tự động, không thay cho việc xác minh dữ liệu thật.
+- **Auth/Firestore Emulator**: **29/29 PASS**, gồm onboarding, private uploads, slot/booking, check-in và hoàn tiền; có ca cạnh tranh, rollback, quyền bị thu hồi và liên kết slot giả mạo. [Log](../validation/owner-110-112/logs/owner-edge-emulator-final.log); script tái chạy `scripts/owner/test-edge-emulators.ps1`.
+- **Firestore Rules toàn repository**: **224 PASS, 4 FAIL** tại Feature 030, các ca VD-1b/VD-3/VD-4/VD-10. Giữ nguyên kỳ vọng về đọc venue ẩn/khóa/không tồn tại; không nới quyền, không skip để làm xanh.
+- **Thiết bị thật**: APK chính `com.example.booking_app` chạy trên vivo V2247, Android 15. Đã thao tác hồ sơ PLAYER/ADMIN/OWNER, voucher, venue/court/giá/slot/ảnh, drop-in và booking; bằng chứng theo từng ca trong chỉ mục. Instrumentation cuối **4/4 PASS**, gồm inflate phone/light/dark/w600dp và đo dòng giờ với deadline dài tại 320dp; không coi đây là test toàn bộ nghiệp vụ hoặc phần cứng tablet riêng. [Log](../validation/owner-110-112/logs/owner-instrumentation-final.log).
+- **Hồ sơ và Storage thật**: đúng một hồ sơ TEST qua PENDING → REJECTED → nộp lại → APPROVED; role OWNER/ownerStatus APPROVED, venue GeoPoint, ảnh public HEAD 200. Giấy tờ ở bucket private; tệp tải xuống 6.788 bytes có SHA-256 trùng fixture, không dùng giấy tờ cá nhân thật. [Trạng thái cuối](../validation/owner-110-112/logs/owner-onboarding-final-state.log).
+- **Booking và số liệu thật**: ba fixture quản trị ban đầu AT_VENUE/UNPAID, mỗi đơn 2.000đ TEST; trên máy duyệt hai đơn, từ chối một và hủy một. Đơn check-in preview 2.000đ chưa ghi nhận thu; sau xác nhận PAID/paidAmount=2000/remainingAmount=0 và có checkedInAt từ server; lần nhập lại mã bị chặn. Hai đơn từ chối/hủy chưa thu có refundAmount=0. [Trạng thái booking](../validation/owner-110-112/logs/owner-bookings-final-state.log); ảnh `booking-checkin-success.png`, `booking-checkin-duplicate.png`, `booking-details-real.png`. Không giao dịch tiền thật, không coi script fixture là PLAYER checkout đã pass.
+- **UI và lưu bền vững**: đối chiếu ảnh trước/sau nút sân, dòng giờ và nhãn lọc; đã cài APK cuối lên máy. Thống kê hiển thị 2.000đ, cọc/hoàn 0đ, 50%, peak 23:00/30 phút và giữ nguyên sau force-stop/mở lại; ảnh `statistics-positive-real.png`, `statistics-after-restart.png`. Cơ sở TEST mới đã HIDDEN, cơ sở cũ giữ nguyên; voucher/court thử ban đầu đã tắt, bảng giá thử ban đầu đã xóa, buổi đã hủy và slot đã mở.
+- **Log và rà soát thay đổi**: `git diff --check` pass, chỉ còn cảnh báo chuẩn hóa LF/CRLF; logcat cuối không có AndroidRuntime error trong cửa sổ 5.000 entry được đọc, không suy diễn là không tồn tại mọi lỗi runtime. Không ghi token, mật khẩu, signed URL private hoặc định danh tài khoản thật vào mục log; không commit/push.
+- **Phần chưa xác minh/còn mở**: camera quét QR hợp lệ, hoàn tiền booking đã thu trên hosted backend, check-in registration vãng lai có người tham gia, usability và SLA 4G/3 giây chưa có đủ bằng chứng. Check-in từng báo lỗi mạng, không ghi dữ liệu khi lỗi và sau mở lại app đã thành công; chưa xác định nguyên nhân gián đoạn. FR-015 nhắc `dailyStats` cần đồng bộ với quyết định T007 dùng server projection; mâu thuẫn lifecycle Thêm cơ sở 110/111 cần quyết định nghiệp vụ. Không báo hoàn tất toàn bộ nghiệm thu khi các mục này còn mở.
 
 ---

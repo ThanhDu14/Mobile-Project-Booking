@@ -7,6 +7,8 @@ import com.example.booking_app.feature.admin.domain.repository.AdminApplicationR
 import com.example.booking_app.feature.admin.ui.AdminApplicationsViewModel
 import com.example.booking_app.feature.admin.ui.AdminQueueState
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -212,6 +214,74 @@ class AdminApplicationsViewModelTest {
             submittedAt = 1000L,
         )
     }
+
+    @Test
+    fun duplicateDecision_isIgnoredWhileSubmitting() = runTest {
+        val vm = AdminApplicationsViewModel(fakeRepository)
+        vm.selectApplication(createSampleApplication("duplicate", "Test"))
+        vm.submitDecision(ReviewAction.APPROVE)
+        vm.submitDecision(ReviewAction.APPROVE)
+        advanceUntilIdle()
+        assertEquals(1, fakeRepository.reviewCalls)
+    }
+
+    @Test
+    fun statusAndNextPage_areSentToRepository() = runTest {
+        fakeRepository.setPendingApplications((1..30).map { createSampleApplication("$it", "Venue") })
+        val vm = AdminApplicationsViewModel(fakeRepository)
+        vm.selectStatus("APPROVED")
+        advanceUntilIdle()
+        assertEquals("APPROVED", fakeRepository.observedStatus)
+        assertEquals(30L, fakeRepository.observedLimit)
+        vm.loadMore()
+        advanceUntilIdle()
+        assertEquals(60L, fakeRepository.observedLimit)
+    }
+
+    @Test
+    fun lateDetailResponse_cannotReplaceAnotherSelectedApplication() = runTest {
+        val first = createSampleApplication("first", "First")
+        val second = createSampleApplication("second", "Second")
+        val gate = CompletableDeferred<Result<AdminOwnerApplication>>()
+        fakeRepository.detailGates[first.id] = gate
+        val vm = AdminApplicationsViewModel(fakeRepository)
+        vm.selectApplication(first)
+        vm.loadApplicationDetail(first.id)
+        runCurrent()
+        vm.selectApplication(second)
+        gate.complete(Result.success(first))
+        advanceUntilIdle()
+        assertEquals(second.id, vm.detailState.value.application?.id)
+    }
+
+    @Test
+    fun lateDecisionResult_cannotReportSuccessForAnotherApplication() = runTest {
+        val first = createSampleApplication("first", "First")
+        val second = createSampleApplication("second", "Second")
+        val gate = CompletableDeferred<Result<Unit>>()
+        fakeRepository.reviewGates[first.id] = gate
+        val vm = AdminApplicationsViewModel(fakeRepository)
+        vm.selectApplication(first)
+        vm.submitDecision(ReviewAction.APPROVE)
+        runCurrent()
+        vm.selectApplication(second)
+        gate.complete(Result.success(Unit))
+        advanceUntilIdle()
+        assertEquals(second.id, vm.detailState.value.application?.id)
+        assertEquals(null, vm.detailState.value.successMessage)
+    }
+
+    @Test
+    fun selectingAnotherApplication_clearsSignedUrlsAndRejectionDraft() = runTest {
+        val vm = AdminApplicationsViewModel(fakeRepository)
+        vm.selectApplication(createSampleApplication("first", "First"))
+        vm.updateRejectReasonInput("Private draft")
+        vm.loadDocumentSignedUrl("doc.pdf")
+        advanceUntilIdle()
+        vm.selectApplication(createSampleApplication("second", "Second"))
+        assertEquals("", vm.detailState.value.rejectReasonInput)
+        assertTrue(vm.detailState.value.documentUrls.isEmpty())
+    }
 }
 
 private class FakeAdminApplicationRepository : AdminApplicationRepository {
@@ -219,6 +289,16 @@ private class FakeAdminApplicationRepository : AdminApplicationRepository {
     var shouldThrowOnObserve = false
     var shouldFailReview = false
     var lastDecision: ApplicationReviewDecision? = null
+    var reviewCalls = 0
+    var observedStatus: String? = null
+    var observedLimit = 0L
+    val detailGates = mutableMapOf<String, CompletableDeferred<Result<AdminOwnerApplication>>>()
+    val reviewGates = mutableMapOf<String, CompletableDeferred<Result<Unit>>>()
+
+    override fun observeApplications(status: String, limit: Long): Flow<List<AdminOwnerApplication>> {
+        observedStatus = status; observedLimit = limit
+        return observePendingApplications()
+    }
 
     init {
         pendingFlow.tryEmit(emptyList())
@@ -236,6 +316,7 @@ private class FakeAdminApplicationRepository : AdminApplicationRepository {
     }
 
     override suspend fun getApplication(applicationId: String): Result<AdminOwnerApplication> {
+        detailGates[applicationId]?.let { return it.await() }
         return Result.success(
             AdminOwnerApplication(
                 id = applicationId,
@@ -256,6 +337,8 @@ private class FakeAdminApplicationRepository : AdminApplicationRepository {
     }
 
     override suspend fun reviewApplication(decision: ApplicationReviewDecision): Result<Unit> {
+        reviewCalls++
+        reviewGates[decision.applicationId]?.let { return it.await() }
         lastDecision = decision
         if (shouldFailReview) {
             return Result.failure(RuntimeException("Hồ sơ đã được xử lý bởi quản trị viên khác"))

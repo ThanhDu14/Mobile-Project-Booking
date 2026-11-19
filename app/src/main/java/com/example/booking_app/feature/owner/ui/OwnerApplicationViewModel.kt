@@ -69,7 +69,7 @@ class OwnerApplicationViewModel @Inject constructor(
         viewModelScope.launch {
             val statusResult = repository.refreshStatus()
             val status = statusResult.getOrNull()
-            val districts = runCatching { districtRepository.activeDistricts() }.getOrDefault(emptyList())
+            val districtsResult = loadDistricts()
             var applicationId = UUID.randomUUID().toString()
             var draft = OwnerApplicationUiState.emptyDraft()
             when {
@@ -101,10 +101,10 @@ class OwnerApplicationViewModel @Inject constructor(
                     statusFresh = statusResult.isSuccess,
                     applicationId = applicationId,
                     draft = draft,
-                    districts = districts,
+                    districts = districtsResult.getOrDefault(emptyList()),
                     message = if (statusResult.isFailure) {
                         statusResult.exceptionOrNull()?.message ?: "Không thể tải trạng thái. Chạm để thử lại."
-                    } else null,
+                    } else districtsResult.exceptionOrNull()?.message,
                 )
             }
             persistDraft()
@@ -113,10 +113,21 @@ class OwnerApplicationViewModel @Inject constructor(
 
     fun refreshStatus() = viewModelScope.launch {
         _uiState.update { it.copy(loading = true, statusFresh = false, message = null) }
+        val districtsResult = loadDistricts()
         repository.refreshStatus().onSuccess { status ->
-            _uiState.update { it.copy(loading = false, status = status, statusFresh = true) }
+            _uiState.update { it.copy(loading = false, status = status, statusFresh = true,
+                districts = districtsResult.getOrDefault(it.districts), message = districtsResult.exceptionOrNull()?.message) }
         }.onFailure { error ->
             _uiState.update { it.copy(loading = false, statusFresh = false, message = error.message ?: "Không thể làm mới trạng thái") }
+        }
+    }
+
+    private suspend fun loadDistricts(): Result<List<District>> {
+        return try {
+            Result.success(districtRepository.activeDistricts().also { require(it.isNotEmpty()) })
+        } catch (error: Exception) {
+            if (error is kotlinx.coroutines.CancellationException) throw error
+            Result.failure(IllegalStateException("Không tải được quận/huyện. Chạm vào quận/huyện để thử lại.", error))
         }
     }
 

@@ -1,13 +1,14 @@
+import { requireCurrentAdmin } from "../_shared/admin-authorization.ts";
 import { HttpError, requireRole, requireUser, toErrorResponse } from "../_shared/auth.ts";
 import * as defaultFirestore from "../_shared/firestore.ts";
 import { updateWrite } from "../_shared/firestore.ts";
 import { setUserDisabled as defaultSetUserDisabled } from "../_shared/identity.ts";
 
-export type AdminUserAction = "LOOKUP" | "SET_ACCOUNT_STATUS";
+export type AdminUserAction = "LOOKUP" | "LIST" | "SET_ACCOUNT_STATUS";
 export type AccountStatus = "ACTIVE" | "LOCKED";
 
 export interface AdminManageUserDeps {
-  firestore: Pick<typeof defaultFirestore, "get" | "runTransaction" | "list">;
+  firestore: Pick<typeof defaultFirestore, "get" | "runTransaction" | "list" | "listPage" | "query">;
   setUserDisabled: (uid: string, disabled: boolean) => Promise<void>;
 }
 
@@ -23,6 +24,7 @@ export function sanitizeUserRecord(uid: string, data: Record<string, unknown> | 
   return {
     uid,
     fullName: data.displayName ?? data.fullName ?? "",
+    email: data.email ?? "",
     phone: data.phone ?? "",
     role: data.role ?? "PLAYER",
     ownerStatus: data.ownerStatus ?? "NONE",
@@ -43,9 +45,33 @@ export async function handleAdminManageUser(
   try {
     const admin = await requireUser(req);
     requireRole(admin, "ADMIN");
+    requireCurrentAdmin(admin);
 
     const body = await req.json().catch(() => ({})) as Record<string, unknown>;
     const action = typeof body.action === "string" ? body.action.trim().toUpperCase() as AdminUserAction : "LOOKUP";
+
+    if (action === "LIST") {
+      const query = typeof body.query === "string" ? normalizeSearch(body.query) : "";
+      const cursor = typeof body.pageToken === "string" ? body.pageToken : "";
+      const filter = typeof body.filter === "string" ? body.filter : "ALL";
+      if (!["ALL","OWNERS","LOCKED"].includes(filter)) throw new HttpError(400,"INVALID_FILTER","Bộ lọc không hợp lệ");
+      const email = typeof body.query === "string" ? body.query.trim().toLowerCase() : "";
+      if (!cursor && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        const direct = await deps.firestore.query("users",[{field:"email",op:"EQUAL",value:email}],{limit:30});
+        if (direct.length) return json(200,{success:true,users:direct.filter(u=>matchesAdminFilter(u.data,filter)).map(u=>sanitizeUserRecord(u.id,u.data)),nextPageToken:""});
+      }
+      let next = cursor;
+      const users: Record<string, unknown>[] = [];
+      // Bounded scan of existing fields: no new search index/schema is assumed.
+      for (let page = 0; page < 5; page++) {
+        const result = await deps.firestore.listPage("users", next, 30);
+        users.push(...result.documents.filter((u) => matchesSearch(u, query) && matchesAdminFilter(u,filter))
+          .map((u) => sanitizeUserRecord(String(u.__documentId),u)!));
+        next = result.nextPageToken;
+        if (users.length || !next) break;
+      }
+      return json(200,{success:true,users,nextPageToken:next});
+    }
 
     if (action === "LOOKUP") {
       const query = typeof body.query === "string" ? body.query.trim() : "";
@@ -61,12 +87,11 @@ export async function handleAdminManageUser(
       if (!userDoc) {
         const allUsers = await deps.firestore.list("users");
         const found = allUsers.find((u) => {
-          const p = String(u.phone ?? "");
-          return p === query || p.replace(/\s+/g, "") === query;
+          return matchesSearch(u, normalizeSearch(query));
         });
         if (found) {
           userDoc = found;
-          targetUid = String(found.uid ?? query);
+          targetUid = String(found.__documentId ?? "");
         }
       }
 
@@ -111,9 +136,9 @@ export async function handleAdminManageUser(
         return { alreadyCommitted: false };
       });
 
-      if (!outcome.alreadyCommitted) {
-        await deps.setUserDisabled(uid, accountStatus === "LOCKED");
-      }
+      // Retry also repairs Auth after Firestore has already committed.
+      const current = await deps.firestore.get(`users/${uid}`);
+      await deps.setUserDisabled(uid, current?.accountStatus === "LOCKED");
 
       return json(200, {
         success: true,
@@ -127,4 +152,12 @@ export async function handleAdminManageUser(
   } catch (err) {
     return toErrorResponse(err);
   }
+}
+
+function normalizeSearch(value: string): string { return value.normalize("NFD").replace(/\p{Mn}/gu, "").replace(/[đĐ]/g,"d").toLowerCase().replace(/\s+/g,"").trim(); }
+function matchesSearch(user: Record<string,unknown>, query: string): boolean {
+  return [user.__documentId,user.displayName,user.fullName,user.email,user.phone].some((v) => normalizeSearch(String(v ?? "")).includes(query));
+}
+function matchesAdminFilter(user: Record<string,unknown>, filter: string): boolean {
+  return (filter !== "OWNERS" || user.role === "OWNER" || user.ownerStatus === "APPROVED") && (filter !== "LOCKED" || user.accountStatus === "LOCKED");
 }

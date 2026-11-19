@@ -3,6 +3,8 @@ package com.example.booking_app.feature.admin.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.booking_app.feature.admin.domain.model.AdminDistrict
+import com.example.booking_app.feature.admin.domain.model.AdminCategoryKind
+import kotlinx.coroutines.Job
 import com.example.booking_app.feature.admin.domain.model.AdminSystemStats
 import com.example.booking_app.feature.admin.domain.model.AdminSystemVoucher
 import com.example.booking_app.feature.admin.domain.model.BroadcastNotificationRequest
@@ -65,16 +67,17 @@ class AdminToolsViewModel @Inject constructor(
     private val _districtActionState = MutableStateFlow<ToolsActionUiState>(ToolsActionUiState.Idle)
     val districtActionState: StateFlow<ToolsActionUiState> = _districtActionState.asStateFlow()
 
-    init {
-        loadStats()
-        loadVouchers()
-        loadDistricts()
-    }
 
-    fun loadStats() {
+
+    var statsDate: String = java.time.LocalDate.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh")).format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE); private set
+    private var statsJob: Job? = null
+
+    fun loadStats(date: String = statsDate) {
+        statsDate = date
+        statsJob?.cancel()
         _statsState.value = SystemStatsUiState.Loading
-        viewModelScope.launch {
-            repository.getSystemStats()
+        statsJob = viewModelScope.launch {
+            repository.getSystemStats(date)
                 .onSuccess { stats ->
                     _statsState.value = if (stats.hasData) {
                         SystemStatsUiState.Content(stats)
@@ -110,6 +113,7 @@ class AdminToolsViewModel @Inject constructor(
     }
 
     fun createVoucher(voucher: AdminSystemVoucher) {
+        if (_voucherActionState.value == ToolsActionUiState.Loading) return
         val err = voucher.validate()
         if (err != null) {
             _voucherActionState.value = ToolsActionUiState.Error(err)
@@ -132,6 +136,7 @@ class AdminToolsViewModel @Inject constructor(
     }
 
     fun toggleVoucher(code: String, isActive: Boolean) {
+        if (_voucherActionState.value == ToolsActionUiState.Loading) return
         _voucherActionState.value = ToolsActionUiState.Loading
         viewModelScope.launch {
             repository.toggleVoucherActive(code, isActive)
@@ -144,14 +149,34 @@ class AdminToolsViewModel @Inject constructor(
                     _voucherActionState.value = ToolsActionUiState.Error(
                         error.localizedMessage ?: "Không thể cập nhật trạng thái voucher"
                     )
+                    loadVouchers()
                 }
         }
     }
 
-    fun loadDistricts() {
-        _districtsState.value = DistrictsUiState.Loading
+    fun updateVoucher(voucher: AdminSystemVoucher) {
+        if (_voucherActionState.value == ToolsActionUiState.Loading) return
+        val error = voucher.validate()
+        if (error != null) { _voucherActionState.value = ToolsActionUiState.Error(error); return }
+        _voucherActionState.value = ToolsActionUiState.Loading
         viewModelScope.launch {
-            repository.getDistricts()
+            repository.updateSystemVoucher(voucher)
+                .onSuccess { _voucherActionState.value = ToolsActionUiState.Success("Đã lưu voucher"); loadVouchers() }
+                .onFailure { _voucherActionState.value = ToolsActionUiState.Error(it.localizedMessage ?: "Không thể lưu voucher") }
+        }
+    }
+
+    var categoryKind = AdminCategoryKind.DISTRICTS; private set
+    private var categoriesJob: Job? = null
+
+    fun selectCategory(kind: AdminCategoryKind) { categoryKind = kind; loadDistricts() }
+
+    fun loadDistricts() {
+        categoriesJob?.cancel()
+        val kind = categoryKind
+        _districtsState.value = DistrictsUiState.Loading
+        categoriesJob = viewModelScope.launch {
+            repository.getCategories(kind)
                 .onSuccess { list ->
                     _districtsState.value = if (list.isEmpty()) {
                         DistrictsUiState.Empty
@@ -168,6 +193,7 @@ class AdminToolsViewModel @Inject constructor(
     }
 
     fun saveDistrict(district: AdminDistrict) {
+        if (_districtActionState.value == ToolsActionUiState.Loading) return
         _districtActionState.value = ToolsActionUiState.Loading
         viewModelScope.launch {
             repository.saveDistrict(district)
@@ -183,8 +209,12 @@ class AdminToolsViewModel @Inject constructor(
         }
     }
 
+    private var pendingBroadcast: BroadcastNotificationRequest? = null
+
     fun broadcastNotification(title: String, body: String) {
-        val req = BroadcastNotificationRequest(title = title, body = body)
+        if (_broadcastActionState.value == ToolsActionUiState.Loading) return
+        val req = pendingBroadcast?.takeIf { it.title == title && it.body == body }
+            ?: BroadcastNotificationRequest(title = title, body = body).also { pendingBroadcast = it }
         val err = req.validate()
         if (err != null) {
             _broadcastActionState.value = ToolsActionUiState.Error(err)
@@ -195,6 +225,7 @@ class AdminToolsViewModel @Inject constructor(
         viewModelScope.launch {
             repository.broadcastSystemNotification(req)
                 .onSuccess { count ->
+                    pendingBroadcast = null
                     _broadcastActionState.value = ToolsActionUiState.Success(
                         "Đã phát thông báo hệ thống tới $count tài khoản đang hoạt động"
                     )
@@ -217,5 +248,10 @@ class AdminToolsViewModel @Inject constructor(
 
     fun clearDistrictActionState() {
         _districtActionState.value = ToolsActionUiState.Idle
+    }
+    init {
+        loadStats()
+        loadVouchers()
+        loadDistricts()
     }
 }

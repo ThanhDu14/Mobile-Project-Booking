@@ -53,12 +53,15 @@ class AdminHomeFragment : Fragment() {
         }
 
         binding.buttonSelectDate.setOnClickListener {
-            Snackbar.make(binding.root, "Chức năng chọn ngày thống kê", Snackbar.LENGTH_SHORT).show()
+            val current = java.time.LocalDate.parse(toolsViewModel.statsDate, java.time.format.DateTimeFormatter.BASIC_ISO_DATE)
+            android.app.DatePickerDialog(requireContext(), { _, year, month, day ->
+                toolsViewModel.loadStats(java.time.LocalDate.of(year, month + 1, day).format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE))
+            }, current.year, current.monthValue - 1, current.dayOfMonth).show()
         }
 
         // Tải dữ liệu thực tế
-        appsViewModel.loadQueue()
-        reportsViewModel.loadReports()
+        appsViewModel.selectStatus("PENDING")
+        reportsViewModel.selectStatus(false)
         toolsViewModel.loadStats()
 
         observeData()
@@ -69,9 +72,10 @@ class AdminHomeFragment : Fragment() {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
                     appsViewModel.queueState.collect { state ->
+                        binding.textPendingCount.text = if (state is AdminQueueState.Empty) "0" else "—"
                         if (state is AdminQueueState.Content) {
                             val count = state.applications.count { it.status == "PENDING" || it.status == "RESUBMITTED" }
-                            binding.textPendingCount.text = count.toString()
+                            binding.textPendingCount.text = if (count >= 30) "≥$count" else count.toString()
                             binding.textPendingSub.text = if (count > 0) {
                                 getString(R.string.admin_home_pending_applications_sub)
                             } else {
@@ -82,9 +86,10 @@ class AdminHomeFragment : Fragment() {
                 }
                 launch {
                     reportsViewModel.queueState.collect { state ->
+                        binding.textOpenReportsCount.text = if (state is AdminReportQueueState.Empty) "0" else "—"
                         if (state is AdminReportQueueState.Content) {
                             val openCount = state.reports.count { it.status == ReportStatus.OPEN }
-                            binding.textOpenReportsCount.text = openCount.toString()
+                            binding.textOpenReportsCount.text = if (openCount >= 30) "≥$openCount" else openCount.toString()
                             binding.textOpenReportsSub.text = if (openCount > 0) {
                                 "Cần xử lý vi phạm"
                             } else {
@@ -95,12 +100,22 @@ class AdminHomeFragment : Fragment() {
                 }
                 launch {
                     toolsViewModel.statsState.collect { state ->
-                        if (state is SystemStatsUiState.Content) {
-                            val stats = state.stats
-                            binding.textStatNewUsers.text = stats.totalUsers.toString()
-                            binding.textStatBookings.text = stats.totalBookings.toString()
-                            binding.textStatActiveVenues.text = stats.totalVenues.toString()
+                        val stats = (state as? SystemStatsUiState.Content)?.stats
+                        binding.textStatNewUsers.text = stats?.metrics?.get("totalUsers")?.toString() ?: "—"
+                        binding.textStatBookings.text = stats?.metrics?.get("totalBookings")?.toString() ?: "—"
+                        binding.textStatActiveVenues.text = stats?.metrics?.get("totalVenues")?.toString() ?: "—"
+                        binding.textStatDropins.text = stats?.metrics?.get("totalRevenue")?.toString() ?: "—"
+                        binding.textDailyStatsHeader.text = when (state) {
+                            SystemStatsUiState.Loading -> getString(R.string.admin_stats_loading)
+                            SystemStatsUiState.Empty -> "Chưa có thống kê ngày "+toolsViewModel.statsDate
+                            is SystemStatsUiState.Error -> state.message+" · Chạm để thử lại"
+                            is SystemStatsUiState.Content -> stats?.let { "Số liệu ngày " + java.time.LocalDate.parse(it.date, java.time.format.DateTimeFormatter.BASIC_ISO_DATE).format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")) }
                         }
+                        val updated = stats?.updatedAt?.let { value ->
+                            runCatching { java.time.OffsetDateTime.parse(value).atZoneSameInstant(java.time.ZoneId.of("Asia/Ho_Chi_Minh")).format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm z")) }.getOrNull()
+                        }
+                        binding.textStatsSource.text = if (stats == null) "Chưa có nguồn số liệu" else "Nguồn: thống kê hệ thống · Cập nhật: ${updated ?: "Chưa có thời điểm"}"
+                        binding.textDailyStatsHeader.setOnClickListener { toolsViewModel.loadStats() }
                     }
                 }
             }

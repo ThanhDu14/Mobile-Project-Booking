@@ -25,15 +25,17 @@ class BookingCheckInViewModel @Inject constructor(
     val uiState = _uiState.asStateFlow()
 
     fun submit(code: String, paymentCollected: Boolean) {
+        if (_uiState.value.isSubmitting) return
         val input = BookingCheckInInput(code, paymentCollected).normalized()
         if (input.credential.isBlank()) {
             _uiState.value = BookingCheckInUiState(error = "Nhập mã đặt sân hoặc quét mã QR.")
             return
         }
+        _uiState.value = BookingCheckInUiState(isSubmitting = true)
         viewModelScope.launch {
-            _uiState.value = BookingCheckInUiState(isSubmitting = true)
             repository.checkIn(input)
-                .onSuccess { checked -> _uiState.value = BookingCheckInUiState(result = checked.bookingId, checkInResult = checked) }
+                .onSuccess { checked -> _uiState.value = BookingCheckInUiState(
+                    result = checked.bookingId.takeUnless { checked.paymentConfirmationRequired }, checkInResult = checked) }
                 .onFailure { failure -> _uiState.value = BookingCheckInUiState(error = failure.message ?: "Không thể check-in") }
         }
     }

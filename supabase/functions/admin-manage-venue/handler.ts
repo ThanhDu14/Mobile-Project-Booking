@@ -1,3 +1,4 @@
+import { requireCurrentAdmin } from "../_shared/admin-authorization.ts";
 import { HttpError, requireRole, requireUser, toErrorResponse } from "../_shared/auth.ts";
 import * as defaultFirestore from "../_shared/firestore.ts";
 import { updateWrite } from "../_shared/firestore.ts";
@@ -37,6 +38,7 @@ export async function handleAdminManageVenue(
   try {
     const admin = await requireUser(req);
     requireRole(admin, "ADMIN");
+    requireCurrentAdmin(admin);
 
     const body = await req.json().catch(() => ({})) as Record<string, unknown>;
     const venueId = typeof body.venueId === "string" ? body.venueId.trim() : "";

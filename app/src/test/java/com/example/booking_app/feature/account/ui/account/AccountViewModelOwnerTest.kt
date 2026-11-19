@@ -141,6 +141,21 @@ class AccountViewModelOwnerTest {
     }
 
     @Test
+    fun pendingApplicantCanReopenSubmittedApplication() = runTest(mainRule.dispatcher) {
+        profile.value = myProfile("PENDING")
+        val vm = viewModel()
+        vm.uiState.test {
+            runCurrent()
+            vm.events.test {
+                vm.onOwnerActionClick()
+                runCurrent()
+                assertEquals(AccountEvent.OpenLink(OwnerLink.APPLICATION.deepLink), awaitItem())
+            }
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
     fun `Dang ky lam chu san, ke ca sau khi bi thu hoi, mo deep link mode=new`() = runTest(mainRule.dispatcher) {
         listOf(myProfile(), myProfile(revokedReason = "Báo cáo sai sự thật")).forEach { p ->
             profile.value = p

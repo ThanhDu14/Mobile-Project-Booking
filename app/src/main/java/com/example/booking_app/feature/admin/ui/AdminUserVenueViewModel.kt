@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
 import java.util.Locale
 import javax.inject.Inject
 
@@ -38,6 +39,11 @@ sealed interface AdminActionUiState {
     data class Error(val message: String) : AdminActionUiState
 }
 
+data class AdminUserListState(
+    val users: List<AdminUserLookup> = emptyList(), val isLoading: Boolean = false,
+    val nextPageToken: String = "", val error: String? = null,
+)
+
 @HiltViewModel
 class AdminUserVenueViewModel @Inject constructor(
     private val repository: AdminUserVenueRepository,
@@ -54,6 +60,25 @@ class AdminUserVenueViewModel @Inject constructor(
 
     private var lastUserQuery: String = ""
     private var lastVenueQuery: String = ""
+    private val _usersState = MutableStateFlow(AdminUserListState())
+    val usersState = _usersState.asStateFlow()
+    private var usersJob: Job? = null
+    private var listQuery = ""
+    private var listFilter = "ALL"
+
+    fun loadUsers(query: String = listQuery, filter: String = listFilter, more: Boolean = false) {
+        if (more && (_usersState.value.isLoading || _usersState.value.nextPageToken.isEmpty())) return
+        usersJob?.cancel()
+        listQuery = query; listFilter = filter
+        val old = if (more) _usersState.value.users else emptyList()
+        val token = if (more) _usersState.value.nextPageToken else ""
+        _usersState.value = AdminUserListState(old, true, token)
+        usersJob = viewModelScope.launch {
+            repository.listUsers(query, filter, token)
+                .onSuccess { page -> _usersState.value = AdminUserListState((old + page.users).distinctBy { it.uid }, false, page.nextPageToken) }
+                .onFailure { _usersState.value = AdminUserListState(old, false, token, it.localizedMessage ?: "Không thể tải người dùng") }
+        }
+    }
 
     fun searchUser(query: String) {
         val trimmed = query.trim()
@@ -81,6 +106,7 @@ class AdminUserVenueViewModel @Inject constructor(
     }
 
     fun toggleAccountLock(user: AdminUserLookup) {
+        if (_actionState.value == AdminActionUiState.Loading) return
         val targetStatus = if (user.isLocked) UserAccountStatus.ACTIVE else UserAccountStatus.LOCKED
         _actionState.value = AdminActionUiState.Loading
         viewModelScope.launch {
@@ -105,6 +131,7 @@ class AdminUserVenueViewModel @Inject constructor(
     }
 
     fun revokeOwner(uid: String, reason: String) {
+        if (_actionState.value == AdminActionUiState.Loading) return
         val decision = OwnerRevocationDecision(uid = uid, reason = reason)
         val validationErr = decision.validate()
         if (validationErr != null) {
@@ -155,6 +182,7 @@ class AdminUserVenueViewModel @Inject constructor(
     }
 
     fun setVenueStatus(venueId: String, status: String) {
+        if (_actionState.value == AdminActionUiState.Loading) return
         _actionState.value = AdminActionUiState.Loading
         viewModelScope.launch {
             repository.setVenueStatus(venueId, status)

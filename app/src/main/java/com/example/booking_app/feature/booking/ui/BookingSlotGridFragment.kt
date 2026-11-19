@@ -219,6 +219,18 @@ class BookingSlotGridFragment : Fragment() {
         }
     }
 
+    private fun focusRequestedWindow(state: BookingSlotUiState) {
+        val rootView = view ?: return
+        if (viewModel.uiState.value.selectedDate != state.selectedDate) return
+        val start = viewModel.requestedStartFor(state.selectedDate) ?: return
+        val row = matrixAdapter.currentList.indexOfFirst { it.timeRaw == start }
+        if (row < 0 || rootView !== binding.root) return
+        binding.rvSlotMatrixRows.scrollToPosition(row)
+        val day = state.dates.indexOf(state.selectedDate)
+        if (day >= 0) binding.rvDateSelector.scrollToPosition(day)
+        viewModel.markRequestedWindowShown()
+    }
+
     private fun renderUi(state: BookingSlotUiState) {
         // 1. Header (Q7: "Chọn khung giờ" + tên cơ sở + quận từ dữ liệu thật)
         binding.tvHeaderTitle.setText(R.string.booking_title)
@@ -277,11 +289,11 @@ class BookingSlotGridFragment : Fragment() {
         if (binding.rvSlotMatrixRows.childCount == 0 && state.matrixRows.size > 12) {
             matrixAdapter.submitList(state.matrixRows.take(12)) {
                 binding.rvSlotMatrixRows.post {
-                    matrixAdapter.submitList(state.matrixRows)
+                    matrixAdapter.submitList(state.matrixRows) { focusRequestedWindow(state) }
                 }
             }
         } else {
-            matrixAdapter.submitList(state.matrixRows)
+            matrixAdapter.submitList(state.matrixRows) { focusRequestedWindow(state) }
         }
 
         // 8. Trạng thái rỗng / Đóng cửa

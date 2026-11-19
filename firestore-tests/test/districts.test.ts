@@ -2,7 +2,7 @@
 import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest';
 import { assertFails, assertSucceeds, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
 import { collection, doc, getDoc, getDocs, orderBy, query, setDoc, where } from 'firebase/firestore';
-import { createTestEnv } from './setup';
+import { createTestEnv, seedCurrentAdmin } from './setup';
 import { seedDistrict, seedUser } from './fixtures';
 
 let env: RulesTestEnvironment;
@@ -15,6 +15,7 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   await env.clearFirestore();
+  await seedCurrentAdmin(env, 'admin1');
   await env.withSecurityRulesDisabled(async (ctx) => {
     const db = ctx.firestore();
     await setDoc(doc(db, 'users/player1'), seedUser('player1'));

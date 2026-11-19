@@ -58,7 +58,11 @@ service cloud.firestore {
     }
 
     function isAdmin() {
-      return appRole() == 'ADMIN';
+      return appRole() == 'ADMIN'
+          && exists(/databases/$(database)/documents/users/$(request.auth.uid))
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', null) == 'ADMIN'
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('accountStatus', null) == 'ACTIVE'
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('deletionRequestedAt', null) == null;
     }
 
     // Client chỉ được ghi đúng các trường cho phép.
@@ -234,6 +238,13 @@ service cloud.firestore {
                       || (ownsVenue(venueId)
                           && onlyChanges(['daysOfWeek', 'startTime', 'endTime', 'pricePerHour', 'label']));
         allow delete: if isAdmin() || ownsVenue(venueId);
+      }
+
+      // Venue voucher mutations and usage counters are exclusively server-owned.
+      match /vouchers/{code} {
+        allow read: if isSignedIn() && (isAdmin() || ownsVenue(venueId)
+            || get(/databases/$(database)/documents/venues/$(venueId)).data.status == 'ACTIVE');
+        allow write: if false;
       }
     }
 

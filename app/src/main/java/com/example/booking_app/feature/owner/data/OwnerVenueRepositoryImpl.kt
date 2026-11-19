@@ -13,16 +13,22 @@ import javax.inject.Inject
 class OwnerVenueRepositoryImpl @Inject constructor(
     private val source: FirestoreOwnerVenueDataSource,
     private val syncApi: SyncVenuePriceApi,
-    private val slotBlocksApi: ManageSlotBlocksApi
+    private val slotBlocksApi: ManageSlotBlocksApi,
+    private val photos: OwnerVenuePhotoApi,
 ) : OwnerVenueRepository {
     override suspend fun getOwnedVenues(): Result<List<OwnerVenue>> = runCatching { source.getOwnedVenues() }
     override suspend fun getVenue(venueId: String): Result<OwnerVenue> = runCatching { source.getVenue(venueId) }
-    override suspend fun updateVenue(venueId: String, fields: VenueEditableFields): Result<Unit> = runCatching { source.updateVenue(venueId, fields) }
+    override suspend fun updateVenue(venueId: String, fields: VenueEditableFields): Result<Unit> = runCatching {
+        val mapping = if (fields.photoPaths.any { !it.startsWith("http") && it.split('/').size==3 }) photos.publishLegacy(venueId) else emptyMap()
+        source.updateVenue(venueId, fields.copy(photoPaths=fields.photoPaths.map { mapping[it] ?: it }))
+    }
     override suspend fun hideVenue(venueId: String): Result<Unit> = runCatching { source.hideVenue(venueId) }
     override suspend fun setAcceptsRecurring(venueId: String, accepts: Boolean): Result<Unit> = runCatching { source.setAcceptsRecurring(venueId, accepts) }
+    override suspend fun uploadPhoto(venueId: String, mime: String, bytes: ByteArray): Result<String> = runCatching { photos.upload(venueId,mime,bytes) }
     override suspend fun getCourts(venueId: String): Result<List<OwnerCourt>> = runCatching { source.getCourts(venueId) }
     override suspend fun createCourt(venueId: String, fields: CourtFields): Result<String> = runCatching { source.createCourt(venueId, fields) }
     override suspend fun updateCourt(venueId: String, courtId: String, fields: CourtFields): Result<Unit> = runCatching { source.updateCourt(venueId, courtId, fields) }
+    override suspend fun swapCourtOrder(venueId: String, first: OwnerCourt, second: OwnerCourt): Result<Unit> = runCatching { source.swapCourtOrder(venueId,first,second) }
     override suspend fun deactivateCourt(venueId: String, courtId: String): Result<Unit> = runCatching {
         val court = source.getCourts(venueId).first { it.id == courtId }
         source.updateCourt(venueId, courtId, CourtFields(court.name, court.surfaceType, false, court.sortOrder))

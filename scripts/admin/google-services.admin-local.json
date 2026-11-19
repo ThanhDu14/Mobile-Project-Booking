@@ -1,0 +1,15 @@
+{
+  "project_info": {
+    "project_number": "123456789",
+    "project_id": "demo-admin-repair"
+  },
+  "client": [{
+    "client_info": {
+      "mobilesdk_app_id": "1:123456789:android:adminlocal",
+      "android_client_info": { "package_name": "com.example.booking_app.adminlocal" }
+    },
+    "oauth_client": [{ "client_id": "admin-local.apps.googleusercontent.com", "client_type": 3 }],
+    "api_key": [{ "current_key": "AIzaSy000000000000000000000000000000000" }]
+  }],
+  "configuration_version": "1"
+}

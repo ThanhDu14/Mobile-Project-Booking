@@ -53,6 +53,7 @@ sealed interface OwnerBookingCommand {
     data class Reject(
         override val venueId: String,
         override val bookingId: String,
+        val reason: String,
     ) : OwnerBookingCommand
 
     data class CancelConfirmed(

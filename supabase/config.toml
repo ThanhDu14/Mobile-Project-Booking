@@ -443,6 +443,9 @@ verify_jwt = false
 [functions.owner-create-session]
 verify_jwt = false
 
+[functions.owner-update-session]
+verify_jwt = false
+
 [functions.owner-cancel-session]
 verify_jwt = false
 
@@ -453,6 +456,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.owner-create-voucher]
+verify_jwt = false
 [functions.sync-account-email]
 verify_jwt = false
 
@@ -497,4 +501,10 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.review]
+verify_jwt = false
+
+[functions.owner-statistics-source]
+verify_jwt = false
+
+[functions.ai-search-parse]
 verify_jwt = false

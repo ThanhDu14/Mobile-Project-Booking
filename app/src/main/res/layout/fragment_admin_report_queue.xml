@@ -14,6 +14,9 @@
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:minHeight="88dp"
+            android:clipChildren="false"
+            android:clipToPadding="false"
             android:paddingHorizontal="16dp"
             android:paddingTop="20dp"
             android:paddingBottom="8dp">
@@ -32,6 +35,9 @@
                 android:id="@+id/toggleGroupStatus"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:minHeight="56dp"
+                android:clipChildren="false"
+                android:clipToPadding="false"
                 android:layout_alignParentEnd="true"
                 android:layout_centerVertical="true"
                 app:checkedButton="@id/buttonTabOpen"
@@ -42,7 +48,7 @@
                     style="?attr/materialButtonOutlinedStyle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:minHeight="40dp"
+                    android:minHeight="48dp"
                     android:text="@string/admin_report_tab_open"
                     android:textSize="13sp" />
 
@@ -51,14 +57,14 @@
                     style="?attr/materialButtonOutlinedStyle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:minHeight="40dp"
+                    android:minHeight="48dp"
                     android:text="@string/admin_report_tab_closed"
                     android:textSize="13sp" />
             </com.google.android.material.button.MaterialButtonToggleGroup>
         </RelativeLayout>
 
         <!-- Filter Chips Row (Tất cả, Bài đăng, Tin nhắn, Đánh giá, Cơ sở, Người dùng) -->
-        <HorizontalScrollView
+        <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:paddingHorizontal="16dp"
@@ -69,7 +75,7 @@
                 android:id="@+id/chipGroupCategory"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                app:singleLine="true"
+                app:singleLine="false"
                 app:singleSelection="true">
 
                 <com.google.android.material.chip.Chip
@@ -121,7 +127,7 @@
                     android:minHeight="48dp"
                     android:text="@string/admin_report_filter_user" />
             </com.google.android.material.chip.ChipGroup>
-        </HorizontalScrollView>
+        </FrameLayout>
 
         <!-- Main Content Area -->
         <FrameLayout

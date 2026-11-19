@@ -15,7 +15,7 @@ import androidx.core.view.isVisible
 import androidx.core.net.toUri
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.activityViewModels
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -35,19 +35,37 @@ import kotlinx.coroutines.launch
 class OwnerApplicationFormFragment : Fragment(R.layout.fragment_owner_application_form) {
     private var _binding: FragmentOwnerApplicationFormBinding? = null
     private val binding get() = checkNotNull(_binding)
-    private val viewModel: OwnerApplicationViewModel by activityViewModels()
+    private val viewModel: OwnerApplicationViewModel by viewModels(
+        ownerProducer = { findNavController().getBackStackEntry(R.id.nav_account) },
+        factoryProducer = { defaultViewModelProviderFactory },
+    )
     private var bindingFields = false
     private var redirected = false
+    private var renderedDistricts: List<com.example.booking_app.feature.account.domain.model.District>? = null
     private val photos = registerForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris -> handlePicked(uris, document = false) }
     private val documents = registerForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris -> handlePicked(uris, document = true) }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         _binding = FragmentOwnerApplicationFormBinding.bind(view)
+        renderedDistricts = null
         val mode = arguments?.getString("mode") ?: "new"
         viewModel.initialize(resubmit = mode == "resubmit", forceNew = mode == "new")
         wireTextFields()
         binding.backButton.setOnClickListener { findNavController().navigateUp() }
         binding.changePin.setOnClickListener { showCoordinateDialog() }
+        val chooseDistrict = {
+            if (viewModel.uiState.value.districts.isEmpty()) viewModel.refreshStatus()
+            else {
+                val districts = viewModel.uiState.value.districts
+                MaterialAlertDialogBuilder(requireContext()).setTitle(R.string.owner_district)
+                    .setItems(districts.map { it.name }.toTypedArray()) { _, index ->
+                        viewModel.update("districtId", districts[index].id)
+                    }.show()
+            }
+            Unit
+        }
+        binding.district.setOnClickListener { chooseDistrict() }
+        binding.districtLayout.setEndIconOnClickListener { chooseDistrict() }
         binding.formMessage.setOnClickListener { viewModel.refreshStatus() }
         configureTimePicker(binding.openTime, "owner-open-time")
         configureTimePicker(binding.closeTime, "owner-close-time")
@@ -93,7 +111,10 @@ class OwnerApplicationFormFragment : Fragment(R.layout.fragment_owner_applicatio
         if (binding.closeTime.text?.toString() != draft.venue.closeTime) binding.closeTime.setText(draft.venue.closeTime)
         if (binding.representativeName.text?.toString() != draft.representativeName) binding.representativeName.setText(draft.representativeName)
         if (binding.representativePhone.text?.toString() != draft.representativePhone) binding.representativePhone.setText(draft.representativePhone)
-        binding.district.setAdapter(ArrayAdapter(requireContext(), android.R.layout.simple_list_item_1, state.districts.map { it.name }))
+        if (renderedDistricts != state.districts) {
+            renderedDistricts = state.districts
+            binding.district.setAdapter(ArrayAdapter(requireContext(), android.R.layout.simple_list_item_1, state.districts.map { it.name }))
+        }
         state.districts.firstOrNull { it.id == draft.venue.districtId }?.let { district ->
             if (binding.district.text?.toString() != district.name) binding.district.setText(district.name, false)
         }
@@ -105,7 +126,8 @@ class OwnerApplicationFormFragment : Fragment(R.layout.fragment_owner_applicatio
         renderUploadRows(binding.documentList, state.uploads.filter { it.document })
         binding.venueNameLayout.error = state.errors.firstOrNull { it.field == "venueName" }?.message
         binding.addressLayout.error = state.errors.firstOrNull { it.field == "address" }?.message
-        binding.districtLayout.error = state.errors.firstOrNull { it.field == "districtId" }?.message
+        binding.districtLayout.error = if (!state.loading && state.districts.isEmpty())
+            getString(R.string.owner_district_retry) else state.errors.firstOrNull { it.field == "districtId" }?.message
         binding.venuePhoneLayout.error = state.errors.firstOrNull { it.field == "venuePhone" }?.message
         binding.courtCountLayout.error = state.errors.firstOrNull { it.field == "courtCount" }?.message
         binding.openTimeLayout.error = state.errors.firstOrNull { it.field == "openTime" }?.message
@@ -243,20 +265,9 @@ class OwnerApplicationFormFragment : Fragment(R.layout.fragment_owner_applicatio
     }
 
     private fun showCoordinateDialog() {
-        val state = viewModel.uiState.value
-        val group = LinearLayout(requireContext()).apply { orientation = LinearLayout.VERTICAL; setPadding(32, 8, 32, 0) }
-        val lat = EditText(requireContext()).apply { hint = getString(R.string.owner_latitude); inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL or android.text.InputType.TYPE_NUMBER_FLAG_SIGNED; setText(state.draft.venue.location?.latitude?.toString().orEmpty()) }
-        val lng = EditText(requireContext()).apply { hint = getString(R.string.owner_longitude); inputType = android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL or android.text.InputType.TYPE_NUMBER_FLAG_SIGNED; setText(state.draft.venue.location?.longitude?.toString().orEmpty()) }
-        group.addView(lat); group.addView(lng)
-        MaterialAlertDialogBuilder(requireContext()).setTitle(R.string.owner_location_title).setView(group)
-            .setNegativeButton(R.string.common_cancel, null)
-            .setPositiveButton(R.string.owner_save_location) { _, _ ->
-                val latitude = lat.text.toString().toDoubleOrNull()
-                val longitude = lng.text.toString().toDoubleOrNull()
-                if (latitude == null || longitude == null || latitude !in -90.0..90.0 || longitude !in -180.0..180.0) {
-                    Snackbar.make(binding.root, R.string.owner_location_invalid, Snackbar.LENGTH_LONG).show()
-                } else viewModel.updateLocation(latitude, longitude)
-            }.show()
+        com.example.booking_app.core.ui.LocationPickerDialog.show(requireContext(), viewModel.uiState.value.draft.venue.location) { point ->
+            viewModel.updateLocation(point.latitude, point.longitude)
+        }
     }
 
     private fun configureTimePicker(field: com.google.android.material.textfield.TextInputEditText, tag: String) {

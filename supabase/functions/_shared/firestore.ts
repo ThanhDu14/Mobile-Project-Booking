@@ -122,15 +122,26 @@ export async function get(path: string): Promise<Record<string, unknown> | null>
 }
 
 /** Đọc danh sách document trong collection hoặc subcollection. */
-export async function list(collectionPath: string): Promise<Record<string, unknown>[]> {
-  const res = await request(`${apiBase()}/${documentName(collectionPath)}`, { method: "GET" });
-  if (res.status === 404) {
-    await res.body?.cancel();
-    return [];
-  }
+export async function listPage(collectionPath: string, pageToken = "", pageSize = 30): Promise<{ documents: Record<string, unknown>[]; nextPageToken: string }> {
+  const url = new URL(`${apiBase()}/${documentName(collectionPath)}`);
+  url.searchParams.set("pageSize", String(pageSize));
+  if (pageToken) url.searchParams.set("pageToken", pageToken);
+  const res = await request(url.toString(), { method: "GET" });
+  if (res.status === 404) { await res.body?.cancel(); return {documents: [], nextPageToken: ""}; }
   if (!res.ok) throw await toError(res);
-  const data = await res.json() as { documents?: { fields?: Record<string, FirestoreValue> }[] };
-  return (data.documents ?? []).map((d) => decodeFields(d.fields ?? {}));
+  const data = await res.json() as { documents?: { name: string; fields?: Record<string, FirestoreValue> }[]; nextPageToken?: string };
+  return { documents: (data.documents ?? []).map((d) => ({ ...decodeFields(d.fields ?? {}), __documentId: d.name.split("/").pop() })), nextPageToken: data.nextPageToken ?? "" };
+}
+
+export async function list(collectionPath: string): Promise<Record<string, unknown>[]> {
+  const documents: Record<string, unknown>[] = [];
+  let pageToken = "";
+  do {
+    const page = await listPage(collectionPath, pageToken, 300);
+    documents.push(...page.documents);
+    pageToken = page.nextPageToken;
+  } while (pageToken);
+  return documents;
 }
 
 /** Một thao tác ghi theo REST API (`Write`). Dùng `createWrite` / `updateWrite` để tạo. */
@@ -171,14 +182,18 @@ export interface QueryFilter {
 }
 
 export interface QueryOptions {
+  /** Explicit server-side projection; omitted keeps existing query behavior. */
+  select?: string[];
   /** Đường dẫn document cha, ví dụ `users/abc` để đọc `users/abc/favorites`. Mặc định là gốc. */
   parent?: string;
   /** `true` để truy vấn collection group (mọi collection cùng tên ở mọi cấp). */
   allDescendants?: boolean;
   limit?: number;
-  /** Sắp xếp kết quả (spec 081: lượt chờ theo `waitlistTicket`). Thiếu thì giữ thứ tự mặc định của Firestore. */
-  orderBy?: { field: string; direction?: "ASCENDING" | "DESCENDING" }[];
+  /** Sắp xếp kết quả (spec 081: lượt chờ theo `waitlistTicket`; 022 truyền 1 object). Thiếu thì giữ thứ tự mặc định của Firestore. */
+  orderBy?: OrderBy | OrderBy[];
 }
+
+type OrderBy = { field: string; direction?: "ASCENDING" | "DESCENDING" };
 
 export interface QueryDocument {
   id: string;
@@ -196,13 +211,15 @@ function structuredQuery(collectionId: string, filters: QueryFilter[], opts: Que
   const clauses = filters.map((f) => ({
     fieldFilter: { field: { fieldPath: f.field }, op: f.op, value: encodeValue(f.value) },
   }));
+  const orderBy = opts.orderBy === undefined ? [] : [opts.orderBy].flat();
   return {
     from: [{ collectionId, ...(opts.allDescendants ? { allDescendants: true } : {}) }],
+    ...(opts.select ? { select: { fields: opts.select.map(fieldPath => ({ fieldPath })) } } : {}),
     ...(clauses.length === 0 ? {} : {
       where: clauses.length === 1 ? clauses[0] : { compositeFilter: { op: "AND", filters: clauses } },
     }),
-    ...(opts.orderBy?.length
-      ? { orderBy: opts.orderBy.map((o) => ({ field: { fieldPath: o.field }, direction: o.direction ?? "ASCENDING" })) }
+    ...(orderBy.length
+      ? { orderBy: orderBy.map((o) => ({ field: { fieldPath: o.field }, direction: o.direction ?? "ASCENDING" })) }
       : {}),
     ...(opts.limit ? { limit: opts.limit } : {}),
   };
@@ -311,7 +328,12 @@ export async function runTransaction<T>(
         : outcome as T;
     } catch (error) {
       await rollback(transaction);
-      if (error instanceof FirestoreError && error.code === "ABORTED" && attempt < maxAttempts) continue;
+      if (error instanceof FirestoreError && error.code === "ABORTED" && attempt < maxAttempts) {
+        // Let locks settle and stagger competing writers instead of retrying in lockstep.
+        const backoff = Math.min(100 * 2 ** (attempt - 1), 1000);
+        await new Promise(resolve => setTimeout(resolve, backoff / 2 + Math.random() * backoff / 2));
+        continue;
+      }
       throw error;
     }
   }
@@ -393,6 +415,7 @@ export type FirestoreValue =
   | { doubleValue: number }
   | { stringValue: string }
   | { timestampValue: string }
+  | { geoPointValue: { latitude: number; longitude: number } }
   | { arrayValue: { values?: FirestoreValue[] } }
   | { mapValue: { fields?: Record<string, FirestoreValue> } };
 
@@ -404,6 +427,7 @@ export function encodeValue(value: unknown): FirestoreValue {
   }
   if (typeof value === "string") return { stringValue: value };
   if (value instanceof Date) return { timestampValue: value.toISOString() };
+  if (value instanceof FirestoreGeoPoint) return { geoPointValue: { latitude: value.latitude, longitude: value.longitude } };
   if (Array.isArray(value)) return { arrayValue: { values: value.map(encodeValue) } };
   if (typeof value === "object") return { mapValue: { fields: encodeFields(value as Record<string, unknown>) } };
   throw new Error(`Kiểu giá trị không hỗ trợ: ${typeof value}`);
@@ -420,6 +444,7 @@ export function decodeValue(value: FirestoreValue): unknown {
   if ("doubleValue" in value) return value.doubleValue;
   if ("stringValue" in value) return value.stringValue;
   if ("timestampValue" in value) return new Date(value.timestampValue);
+  if ("geoPointValue" in value) return new FirestoreGeoPoint(value.geoPointValue.latitude, value.geoPointValue.longitude);
   if ("arrayValue" in value) return (value.arrayValue.values ?? []).map(decodeValue);
   if ("mapValue" in value) return decodeFields(value.mapValue.fields ?? {});
   return undefined;
@@ -427,4 +452,13 @@ export function decodeValue(value: FirestoreValue): unknown {
 
 export function decodeFields(fields: Record<string, FirestoreValue>): Record<string, unknown> {
   return Object.fromEntries(Object.entries(fields).map(([k, v]) => [k, decodeValue(v)]));
+}
+
+/** Explicit type keeps ordinary latitude/longitude request maps unchanged. */
+export class FirestoreGeoPoint {
+  constructor(readonly latitude: number, readonly longitude: number) {
+    if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || Math.abs(latitude) > 90 || Math.abs(longitude) > 180) {
+      throw new Error("Invalid GeoPoint");
+    }
+  }
 }

@@ -18,3 +18,5 @@
 | [`12_admin_buoc9_mo-khoa-co-so.png`](12_admin_buoc9_mo-khoa-co-so.png) | `AdminVenueUnlock` |
 
 Mã QR, marker bản đồ và ảnh sân trong ảnh là hình minh họa thay cho ảnh tải lên trên canvas.
+
+Kiểm tra ngày 12/11/2026: ảnh bước 8 (`12_admin_buoc8_chi-tiet-nguoi-dung.png`) thực tế là trang lỗi `ERR_CONNECTION_REFUSED`, không phải artboard chi tiết người dùng. Thiếu chuẩn thiết kế hợp lệ cho màn này; không dùng ảnh lỗi để suy diễn bố cục. Xem [đối chiếu UI và bằng chứng thiết bị](../validation/README.md).

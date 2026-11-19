@@ -13,6 +13,7 @@ import io.github.jan.supabase.functions.functions
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import kotlinx.coroutines.tasks.await
 import kotlinx.serialization.Serializable
 import java.time.Instant
 import javax.inject.Inject
@@ -21,7 +22,7 @@ import javax.inject.Inject
 private data class ApproveBookingWire(val venueId: String, val bookingId: String)
 
 @Serializable
-private data class RejectBookingWire(val venueId: String, val bookingId: String, val reason: String = "Từ chối bởi chủ sân")
+internal data class RejectBookingWire(val venueId: String, val bookingId: String, val reason: String)
 
 @Serializable
 private data class CancelBookingWire(val venueId: String, val bookingId: String, val reason: String)
@@ -48,12 +49,12 @@ class OwnerBookingRepositoryImpl @Inject constructor(
                         }
 
                         // Filter out HOLD from confirmed/pending queue
-                        val startTimestamp = doc.getTimestamp("startAt") ?: doc.getTimestamp("startTime")
-                        val endTimestamp = doc.getTimestamp("endAt") ?: doc.getTimestamp("endTime")
-                        val deadlineTimestamp = doc.getTimestamp("approvalDeadline")
+                        val startTimestamp = ownerTimestamp(doc.get("startAt")) ?: ownerTimestamp(doc.get("startTime"))
+                        val endTimestamp = ownerTimestamp(doc.get("endAt")) ?: ownerTimestamp(doc.get("endTime"))
+                        val deadlineTimestamp = ownerTimestamp(doc.get("approvalDeadline"))
 
-                        val startInstant = startTimestamp?.toDate()?.toInstant() ?: Instant.now()
-                        val endInstant = endTimestamp?.toDate()?.toInstant() ?: Instant.now()
+                        val startInstant = startTimestamp?.toDate()?.toInstant() ?: return@mapNotNull null
+                        val endInstant = endTimestamp?.toDate()?.toInstant() ?: return@mapNotNull null
                         val deadlineInstant = deadlineTimestamp?.toDate()?.toInstant()
 
                         OwnerBooking(
@@ -69,7 +70,7 @@ class OwnerBookingRepositoryImpl @Inject constructor(
                             paymentStatus = doc.getString("paymentStatus"),
                             displayAmountVnd = doc.getLong("total") ?: doc.getLong("totalAmount"),
                             depositAmountVnd = doc.getLong("depositAmount"),
-                            checkedInAt = doc.getTimestamp("checkedInAt")?.toDate()?.toInstant(),
+                            checkedInAt = ownerTimestamp(doc.get("checkedInAt"))?.toDate()?.toInstant(),
                         )
                     }
                     trySend(bookings)
@@ -80,12 +81,13 @@ class OwnerBookingRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getBooking(venueId: String, bookingId: String): Result<OwnerBookingDetail> = runCatching {
-        val doc = firestore.collection("bookings").document(bookingId).get().result
-        val statusStr = doc.getString("status")?.uppercase() ?: "PENDING"
-        val status = try { OwnerBookingStatus.valueOf(statusStr) } catch (_: Exception) { OwnerBookingStatus.PENDING }
+        val doc = firestore.collection("bookings").document(bookingId).get().await()
+        check(doc.exists() && doc.getString("venueId") == venueId) { "Không tìm thấy đơn đặt trong cơ sở" }
+        val statusStr = doc.getString("status")?.uppercase() ?: error("Đơn thiếu trạng thái")
+        val status = OwnerBookingStatus.valueOf(statusStr)
 
-        val startInstant = doc.getTimestamp("startAt")?.toDate()?.toInstant() ?: Instant.now()
-        val endInstant = doc.getTimestamp("endAt")?.toDate()?.toInstant() ?: Instant.now()
+        val startInstant = ownerTimestamp(doc.get("startAt"))?.toDate()?.toInstant() ?: error("Đơn thiếu giờ bắt đầu")
+        val endInstant = ownerTimestamp(doc.get("endAt"))?.toDate()?.toInstant() ?: error("Đơn thiếu giờ kết thúc")
 
         val booking = OwnerBooking(
             bookingId = doc.id,
@@ -93,19 +95,20 @@ class OwnerBookingRepositoryImpl @Inject constructor(
             status = status,
             startAt = startInstant,
             endAt = endInstant,
-            approvalDeadline = doc.getTimestamp("approvalDeadline")?.toDate()?.toInstant(),
+            approvalDeadline = ownerTimestamp(doc.get("approvalDeadline"))?.toDate()?.toInstant(),
             customerDisplayName = doc.getString("customerDisplayName"),
             courtNames = doc.get("courtNames") as? List<String> ?: emptyList(),
             paymentMethod = doc.getString("paymentMethod"),
             paymentStatus = doc.getString("paymentStatus"),
             displayAmountVnd = doc.getLong("total"),
             depositAmountVnd = doc.getLong("depositAmount"),
-            checkedInAt = doc.getTimestamp("checkedInAt")?.toDate()?.toInstant(),
+            checkedInAt = ownerTimestamp(doc.get("checkedInAt"))?.toDate()?.toInstant(),
         )
 
         OwnerBookingDetail(
             booking = booking,
-            slotCount = (doc.get("slotIds") as? List<*>)?.size ?: 1,
+            slotCount = (doc.get("slotIds") as? List<*>)?.size ?: (doc.get("items") as? List<*>)?.size
+                ?: error("Đơn thiếu thông tin khung giờ"),
             subtotalVnd = doc.getLong("subtotal"),
             discountVnd = doc.getLong("discount"),
             refundVnd = doc.getLong("refundAmount"),
@@ -125,7 +128,7 @@ class OwnerBookingRepositoryImpl @Inject constructor(
                 is OwnerBookingCommand.Reject -> {
                     supabase.functions.invoke(
                         "owner-reject-booking",
-                        body = RejectBookingWire(venueId = command.venueId, bookingId = command.bookingId),
+                        body = RejectBookingWire(venueId = command.venueId, bookingId = command.bookingId, reason = command.reason.trim()),
                     )
                 }
                 is OwnerBookingCommand.CancelConfirmed -> {
