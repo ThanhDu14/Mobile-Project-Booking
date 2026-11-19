@@ -63,8 +63,9 @@ class GroupPermissions(
     fun canUnhide(post: Post): Boolean =
         canModerate && post.status == PostStatus.HIDDEN && post.hiddenBy == HiddenBy.GROUP
 
-    /** Báo cáo: thành viên xem bài không phải của mình. */
-    fun canReport(post: Post): Boolean = writable && isMember && post.author.userId != myUid
+    /** Báo cáo: thành viên xem bài đang hiển thị không phải của mình. */
+    fun canReport(post: Post): Boolean =
+        writable && isMember && post.status == PostStatus.VISIBLE && post.author.userId != myUid
 
     /** Sửa bài: chỉ người đăng. */
     fun canEditPost(post: Post): Boolean = writable && isMember && post.author.userId == myUid

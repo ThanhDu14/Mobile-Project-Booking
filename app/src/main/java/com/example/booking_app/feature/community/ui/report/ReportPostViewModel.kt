@@ -72,10 +72,14 @@ class ReportPostViewModel @Inject constructor(
             return
         }
         val trimmedDetail = current.detail.trim()
-        val detailError = when {
-            reason == ReportReason.OTHER && trimmedDetail.isEmpty() -> ReportDetailError.REQUIRED
-            trimmedDetail.length > MAX_DETAIL_LENGTH -> ReportDetailError.TOO_LONG
-            else -> null
+        val detailError = if (reason == ReportReason.OTHER) {
+            when {
+                trimmedDetail.isEmpty() -> ReportDetailError.REQUIRED
+                trimmedDetail.length > MAX_DETAIL_LENGTH -> ReportDetailError.TOO_LONG
+                else -> null
+            }
+        } else {
+            null
         }
         if (detailError != null) {
             _state.update { it.copy(detailError = detailError) }

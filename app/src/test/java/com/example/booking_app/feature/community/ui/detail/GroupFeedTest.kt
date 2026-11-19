@@ -394,6 +394,7 @@ class GroupFeedTest {
         assertTrue(initial.getValue("p1").canHide)
         assertTrue(initial.getValue("p1").canReport)
         assertFalse(initial.getValue("p2").canUnhide) // SYSTEM ẩn không hiện lại được (AC 6.4)
+        assertFalse(initial.getValue("p2").canReport) // Bài đã ẩn không báo cáo được (US6#1)
         assertFalse(initial.getValue("p3").canReport) // Không báo cáo bài của mình (AC 6.5)
 
         vm.onHidePostConfirmed("p1")
@@ -402,6 +403,7 @@ class GroupFeedTest {
         assertEquals(PostStatus.HIDDEN, afterHide.post.status)
         assertEquals(HiddenBy.GROUP, afterHide.post.hiddenBy)
         assertTrue(afterHide.canUnhide)
+        assertFalse(afterHide.canReport)
 
         vm.onUnhidePost("p1")
         advanceUntilIdle()

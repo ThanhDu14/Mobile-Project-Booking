@@ -2,11 +2,13 @@ package com.example.booking_app.feature.community.ui.report
 
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
+import com.example.booking_app.R
 import com.example.booking_app.core.testing.MainDispatcherRule
 import com.example.booking_app.feature.community.domain.CommunityError
 import com.example.booking_app.feature.community.domain.PostRepository
 import com.example.booking_app.feature.community.domain.model.ReportReason
 import com.example.booking_app.feature.community.domain.usecase.ReportPost
+import com.example.booking_app.feature.community.ui.common.CommunityUiText
 import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
@@ -41,6 +43,8 @@ class ReportPostViewModelTest {
 
     @Test
     fun `chon Khac bat buoc mo ta toi da 500 ky tu`() = runTest {
+        val exact500 = "a".repeat(500)
+        coEvery { posts.report("g1", "p1", ReportReason.OTHER, exact500) } returns Result.success("POST_g1_p1_me")
         val vm = viewModel()
         vm.onReasonSelected(ReportReason.OTHER)
         assertTrue(vm.state.value.showDetailField)
@@ -48,10 +52,38 @@ class ReportPostViewModelTest {
         vm.submit()
         assertEquals(ReportDetailError.REQUIRED, vm.state.value.detailError)
 
+        vm.onDetailChanged("   ")
+        vm.submit()
+        assertEquals(ReportDetailError.REQUIRED, vm.state.value.detailError)
+
         vm.onDetailChanged("a".repeat(501))
         vm.submit()
         assertEquals(ReportDetailError.TOO_LONG, vm.state.value.detailError)
         coVerify(exactly = 0) { posts.report(any(), any(), any(), any()) }
+
+        vm.onDetailChanged(exact500)
+        vm.events.test {
+            vm.submit()
+            advanceUntilIdle()
+            assertEquals(ReportPostEvent.Sent, awaitItem())
+        }
+        coVerify(exactly = 1) { posts.report("g1", "p1", ReportReason.OTHER, exact500) }
+    }
+
+    @Test
+    fun `nhap qua 500 ky tu o Khac roi doi sang ly do khac van gui thanh cong`() = runTest {
+        coEvery { posts.report("g1", "p1", ReportReason.SPAM, null) } returns Result.success("POST_g1_p1_me")
+        val vm = viewModel()
+        vm.onReasonSelected(ReportReason.OTHER)
+        vm.onDetailChanged("x".repeat(501))
+        vm.onReasonSelected(ReportReason.SPAM)
+
+        vm.events.test {
+            vm.submit()
+            advanceUntilIdle()
+            assertEquals(ReportPostEvent.Sent, awaitItem())
+        }
+        coVerify(exactly = 1) { posts.report("g1", "p1", ReportReason.SPAM, null) }
     }
 
     @Test
@@ -79,6 +111,7 @@ class ReportPostViewModelTest {
             advanceUntilIdle()
             val event = awaitItem() as ReportPostEvent.ShowError
             assertTrue(event.error is CommunityError.AlreadyReported)
+            assertEquals(R.string.community_error_already_reported, CommunityUiText.errorRes(event.error))
         }
         assertFalse(vm.state.value.submitting)
     }
