@@ -182,7 +182,13 @@ class MyDropInsViewModel @Inject constructor(
         upcomingJob = viewModelScope.launch {
             loadMyDropIns.upcoming()
                 .catch { error -> update { it.copy(error = error) } }
-                .collect { items -> update { it.copy(upcoming = items) } }
+                .collect { items ->
+                    val previous = loaded.upcoming
+                    update { it.copy(upcoming = items) }
+                    // Lượt rời "Sắp tới" (hết/đóng hàng chờ, hủy) sang "Đã qua": tải lại trang đầu để tab này cập nhật.
+                    val ids = items.map { it.sessionId }.toSet()
+                    if (previous != null && previous.any { it.sessionId !in ids }) refreshPast()
+                }
         }
         pastJob = viewModelScope.launch {
             safePast(null)
@@ -194,6 +200,17 @@ class MyDropInsViewModel @Inject constructor(
                     if (error is CancellationException) throw error
                     update { it.copy(error = error) }
                 }
+        }
+    }
+
+    private fun refreshPast() {
+        if (loaded.past == null || loaded.loadingMorePast) return
+        pastJob?.cancel()
+        pastJob = viewModelScope.launch {
+            safePast(null).onSuccess { page ->
+                update { it.copy(past = page.items, pastCursor = page.next) }
+                loadReviews()
+            }
         }
     }
 
