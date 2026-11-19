@@ -110,6 +110,7 @@ sealed interface ChatEvent {
     data class OpenPhoto(val url: String) : ChatEvent
     data class OpenVenue(val venueId: String) : ChatEvent
     data class OpenReport(val chatId: String, val messageId: String) : ChatEvent
+    data object CameraPermissionDenied : ChatEvent
 }
 
 @HiltViewModel
@@ -381,6 +382,11 @@ class ChatViewModel @Inject constructor(
         _uiState.update { it.copy(pendingImageUri = null) }
     }
 
+    /** Người dùng từ chối quyền camera: báo giải thích, vẫn cho chọn ảnh từ Photo Picker (AC 4.5). */
+    fun onCameraPermissionDenied() {
+        _events.trySend(ChatEvent.CameraPermissionDenied)
+    }
+
     fun onSendClicked() {
         val chatId = activeChatId ?: return
         val state = _uiState.value
@@ -400,8 +406,14 @@ class ChatViewModel @Inject constructor(
             }
             result.onFailure { throwable ->
                 val err = throwable.toChatError()
-                // Nếu gửi thất bại ngay ở bước kiểm tra nội dung thì khôi phục lại ô nhập.
-                _uiState.update { it.copy(composerText = text, pendingImageUri = imageUri) }
+                val invalidImage = err is ChatError.ImageTooLarge || err is ChatError.ImageUnreadable
+                // Nếu ảnh lỗi / quá 2 MB thì bỏ ảnh chọn nhưng giữ nguyên chú thích đang gõ (AC 4.3).
+                _uiState.update {
+                    it.copy(
+                        composerText = text,
+                        pendingImageUri = if (invalidImage) null else imageUri,
+                    )
+                }
                 _events.trySend(ChatEvent.ShowError(err))
             }
         }

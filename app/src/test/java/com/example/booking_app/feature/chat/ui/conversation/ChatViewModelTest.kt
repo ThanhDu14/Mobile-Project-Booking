@@ -3,6 +3,9 @@ package com.example.booking_app.feature.chat.ui.conversation
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.example.booking_app.R
+import com.example.booking_app.core.image.ImageCompressor
+import com.example.booking_app.core.image.ImageTooLargeException
+import com.example.booking_app.core.image.ImageUnreadableException
 import com.example.booking_app.core.media.SignedUrlBatch
 import com.example.booking_app.core.media.SignedUrlCache
 import com.example.booking_app.core.session.SessionManager
@@ -68,6 +71,7 @@ class ChatViewModelTest {
     }
 
     private val repository = mockk<ChatRepository>(relaxed = true)
+    private val imageCompressor = mockk<ImageCompressor>()
     private val sessionManager = mockk<SessionManager>(relaxed = true)
     private val clock = FakeClock()
     private val onlineFlow = MutableStateFlow(true)
@@ -141,6 +145,7 @@ class ChatViewModelTest {
         every { repository.estimatedServerOffsetMs() } returns serverOffsetMs
         coEvery { repository.markRead(any()) } returns Result.success(Unit)
         coEvery { repository.setViewing(any(), any()) } returns Result.success(Unit)
+        coEvery { imageCompressor.compress(any()) } returns ByteArray(1024)
         coEvery { repository.send(any()) } coAnswers {
             val entry = firstArg<OutboxEntry>()
             outboxFlow.value = outboxFlow.value + entry
@@ -152,7 +157,7 @@ class ChatViewModelTest {
             openDirectChat = OpenDirectChat(repository),
             observeMessages = ObserveMessages(repository),
             loadOlderMessages = LoadOlderMessages(repository),
-            sendMessage = SendMessage(repository, clock),
+            sendMessage = SendMessage(repository, imageCompressor, clock),
             retryMessage = RetryMessage(repository),
             discardMessage = DiscardMessage(repository),
             markChatRead = MarkChatRead(repository),
@@ -462,7 +467,7 @@ class ChatViewModelTest {
             openDirectChat = OpenDirectChat(repository),
             observeMessages = ObserveMessages(repository),
             loadOlderMessages = LoadOlderMessages(repository),
-            sendMessage = SendMessage(repository, clock),
+            sendMessage = SendMessage(repository, imageCompressor, clock),
             retryMessage = RetryMessage(repository),
             discardMessage = DiscardMessage(repository),
             markChatRead = MarkChatRead(repository),
@@ -505,5 +510,99 @@ class ChatViewModelTest {
             assertEquals(ChatEvent.ShowMessage(R.string.chat_unmuted_success), awaitItem())
             coVerify(exactly = 1) { repository.setMuted("owner1_player1", false) }
         }
+    }
+
+    // ---------- T042: US4 Gửi ảnh ----------
+
+    @Test
+    fun `tin anh hien ngay PENDING voi anh cuc bo va bam anh mo PhotoViewer`() = runTest {
+        chatFlow.value = directChat()
+        val vm = createViewModel()
+        runCurrent()
+
+        vm.onImageSelected("content://media/photo1.jpg")
+        assertTrue(vm.uiState.value.canSubmit)
+        vm.onSendClicked()
+        runCurrent()
+
+        val items = (vm.uiState.value.messages as UiState.Content).data
+        assertEquals(1, items.size)
+        assertEquals(Delivery.PENDING, items.single().delivery)
+        assertEquals("content://media/photo1.jpg", items.single().localImageUri)
+
+        // Khi tin ảnh đã lên server -> resolve signed URL và bấm vào mở PhotoViewer.
+        outboxFlow.value = emptyList()
+        messagesFlow.value = listOf(
+            ChatMessage(
+                id = "m-img-1",
+                senderId = "player1",
+                imagePath = "owner1_player1/m-img-1.jpg",
+                createdAt = Instant.ofEpochMilli(1_700_000_010_000L),
+                delivery = Delivery.SENT,
+                isMine = true,
+            ),
+        )
+        advanceUntilIdle()
+
+        vm.events.test {
+            vm.onPhotoClicked((vm.uiState.value.messages as UiState.Content).data.single())
+            assertEquals(
+                ChatEvent.OpenPhoto("https://signed/owner1_player1/m-img-1.jpg"),
+                awaitItem(),
+            )
+        }
+    }
+
+    @Test
+    fun `anh qua 2MB hoac khong phai anh bao loi va khong vao outbox`() = runTest {
+        chatFlow.value = directChat()
+        val vm = createViewModel()
+        runCurrent()
+
+        // Quá 2 MB sau nén (AC 4.3)
+        coEvery { imageCompressor.compress("content://img/huge.jpg") } throws ImageTooLargeException()
+        vm.onComposerChanged("Ảnh hóa đơn")
+        vm.onImageSelected("content://img/huge.jpg")
+        vm.events.test {
+            vm.onSendClicked()
+            runCurrent()
+            val event = awaitItem() as ChatEvent.ShowError
+            assertTrue(event.error is ChatError.ImageTooLarge)
+            assertEquals(R.string.chat_error_image_too_large, ChatUiText.errorRes(event.error))
+        }
+        assertTrue(outboxFlow.value.isEmpty())
+        assertEquals("Ảnh hóa đơn", vm.uiState.value.composerText)
+        assertNull(vm.uiState.value.pendingImageUri)
+
+        // Không phải ảnh hợp lệ (AC 4.3)
+        coEvery { imageCompressor.compress("content://file/doc.pdf") } throws ImageUnreadableException()
+        vm.onImageSelected("content://file/doc.pdf")
+        vm.events.test {
+            vm.onSendClicked()
+            runCurrent()
+            val event = awaitItem() as ChatEvent.ShowError
+            assertTrue(event.error is ChatError.ImageUnreadable)
+            assertEquals(R.string.chat_error_image_unreadable, ChatUiText.errorRes(event.error))
+        }
+        assertTrue(outboxFlow.value.isEmpty())
+    }
+
+    @Test
+    fun `tu choi quyen camera phat su kien giai thich va van chon anh thu vien duoc`() = runTest {
+        chatFlow.value = directChat()
+        val vm = createViewModel()
+        runCurrent()
+
+        vm.events.test {
+            vm.onCameraPermissionDenied()
+            assertEquals(ChatEvent.CameraPermissionDenied, awaitItem())
+        }
+
+        // Vẫn chọn ảnh từ Photo Picker và gửi bình thường (AC 4.5).
+        vm.onImageSelected("content://picker/gallery1.jpg")
+        vm.onSendClicked()
+        runCurrent()
+        assertEquals(1, outboxFlow.value.size)
+        assertEquals("content://picker/gallery1.jpg", outboxFlow.value.single().localImageUri)
     }
 }

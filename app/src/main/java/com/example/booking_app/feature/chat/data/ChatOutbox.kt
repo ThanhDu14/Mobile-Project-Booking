@@ -250,8 +250,10 @@ class ChatOutbox @Inject constructor(
             }
 
             if (!err.isRetryable) {
+                // Nếu server báo PHOTO_MISSING thì xóa imagePath để lần "Gửi lại" tải ảnh lại từ đầu.
+                val toMark = if (err is ChatError.PhotoMissing) current.copy(imagePath = null) else current
                 // Lỗi không thử lại được (BLOCKED, NOT_PARTICIPANT, INVALID_ARGUMENT, ...): FAILED ngay.
-                markEntryFailed(current, retryable = false, errorCode = err.code)
+                markEntryFailed(toMark, retryable = false, errorCode = err.code)
                 return true
             }
 

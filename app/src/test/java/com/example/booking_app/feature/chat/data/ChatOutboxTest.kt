@@ -335,4 +335,105 @@ class ChatOutboxTest {
         assertEquals(listOf("m1", "m2"), order)
         outbox.close()
     }
+
+    // ---------- T042: US4 Gửi ảnh trong outbox ----------
+
+    @Test
+    fun `tin anh tai anh truoc roi moi gui chat-send cung messageId`() = runTest {
+        val sentImagePaths = mutableListOf<String?>()
+        val transport = FakeTransport().apply {
+            sendHandler = { e ->
+                sentImagePaths.add(e.imagePath)
+                Result.success(Unit)
+            }
+        }
+        val outbox = createOutbox(transport = transport)
+
+        outbox.enqueue(entry("m-img", text = "", localImageUri = "content://img/court.jpg"))
+        advanceUntilIdle()
+
+        assertEquals(listOf("m-img"), transport.uploadedIds)
+        assertEquals(listOf("m-img"), transport.sentIds)
+        assertEquals(listOf("chat-1/m-img.jpg"), sentImagePaths)
+        assertTrue(outbox.observe("chat-1").first().isEmpty())
+        outbox.close()
+    }
+
+    @Test
+    fun `tai anh loi chuyen FAILED va gui lai tai lai roi gui cung messageId`() = runTest {
+        var uploadAttempts = 0
+        val transport = FakeTransport().apply {
+            uploadHandler = { chatId, msgId, _ ->
+                uploadAttempts++
+                if (uploadAttempts == 1) {
+                    Result.failure(ChatError.Network())
+                } else {
+                    Result.success("$chatId/$msgId.jpg")
+                }
+            }
+        }
+        val outbox = createOutbox(transport = transport)
+
+        outbox.enqueue(entry("m-img-retry", text = "Mặt sân", localImageUri = "content://img/1"))
+        advanceUntilIdle()
+
+        val failed = outbox.observe("chat-1").first()
+        assertEquals(1, failed.size)
+        assertEquals(Delivery.FAILED, failed.first().status)
+        assertTrue(transport.sentIds.isEmpty())
+
+        // Bấm "Gửi lại": tải lại ảnh và gửi tin dùng lại đúng messageId.
+        outbox.retry("chat-1", "m-img-retry")
+        advanceUntilIdle()
+
+        assertTrue(outbox.observe("chat-1").first().isEmpty())
+        assertEquals(listOf("m-img-retry", "m-img-retry"), transport.uploadedIds)
+        assertEquals(listOf("m-img-retry"), transport.sentIds)
+        outbox.close()
+    }
+
+    @Test
+    fun `tai anh loi roi bam Xoa goi discardMedia va bo khoi outbox`() = runTest {
+        val transport = FakeTransport().apply {
+            uploadHandler = { _, _, _ -> Result.failure(ChatError.Network()) }
+        }
+        val outbox = createOutbox(transport = transport)
+
+        outbox.enqueue(entry("m-img-del", text = "", localImageUri = "content://img/bad"))
+        advanceUntilIdle()
+        assertEquals(Delivery.FAILED, outbox.observe("chat-1").first().single().status)
+
+        val outcome = outbox.discard("chat-1", "m-img-del")
+        assertEquals(DiscardResult.DISCARDED, outcome)
+        assertTrue(outbox.observe("chat-1").first().isEmpty())
+        assertEquals(listOf("m-img-del"), transport.discardedMediaIds)
+        outbox.close()
+    }
+
+    @Test
+    fun `server bao PHOTO_MISSING thi xoa imagePath de gui lai tai anh tu dau`() = runTest {
+        var sendAttempts = 0
+        val transport = FakeTransport().apply {
+            sendHandler = {
+                sendAttempts++
+                if (sendAttempts == 1) Result.failure(ChatError.PhotoMissing()) else Result.success(Unit)
+            }
+        }
+        val outbox = createOutbox(transport = transport)
+
+        outbox.enqueue(entry("m-photo-miss", text = "", localImageUri = "content://img/2"))
+        advanceUntilIdle()
+
+        val failed = outbox.observe("chat-1").first().single()
+        assertEquals(Delivery.FAILED, failed.status)
+        assertEquals(null, failed.imagePath)
+
+        outbox.retry("chat-1", "m-photo-miss")
+        advanceUntilIdle()
+
+        assertEquals(listOf("m-photo-miss", "m-photo-miss"), transport.uploadedIds)
+        assertEquals(listOf("m-photo-miss", "m-photo-miss"), transport.sentIds)
+        assertTrue(outbox.observe("chat-1").first().isEmpty())
+        outbox.close()
+    }
 }

@@ -1,11 +1,17 @@
 package com.example.booking_app.feature.chat.ui.conversation
 
+import android.Manifest
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import android.widget.PopupMenu
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.core.content.getSystemService
 import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
@@ -28,7 +34,6 @@ import com.example.booking_app.core.ui.EmptyStateSpec
 import com.example.booking_app.core.ui.UiState
 import com.example.booking_app.core.ui.render
 import com.example.booking_app.databinding.FragmentChatBinding
-import com.example.booking_app.feature.chat.domain.ChatError
 import com.example.booking_app.feature.chat.domain.chatErrorOf
 import com.example.booking_app.feature.chat.domain.model.ChatMessage
 import com.example.booking_app.feature.chat.domain.model.ChatMessageRules
@@ -38,6 +43,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import java.io.File
 import javax.inject.Inject
 
 /**
@@ -55,6 +61,35 @@ class ChatFragment : Fragment(R.layout.fragment_chat) {
 
     private lateinit var adapter: MessageAdapter
     private var lastMessageCount = 0
+
+    /** URI ảnh chụp tạm chờ camera trả về (giữ qua process death, T046). */
+    private var pendingCameraUri: Uri? = null
+
+    private val pickPhoto = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        uri?.let { viewModel.onImageSelected(it.toString()) }
+    }
+
+    private val takePicture = registerForActivityResult(ActivityResultContracts.TakePicture()) { saved ->
+        val uri = pendingCameraUri
+        pendingCameraUri = null
+        if (saved && uri != null) {
+            viewModel.onImageSelected(uri.toString())
+        }
+    }
+
+    private val requestCameraPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) launchCamera() else viewModel.onCameraPermissionDenied()
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        pendingCameraUri = savedInstanceState?.getString(KEY_CAMERA_URI)?.let(Uri::parse)
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        pendingCameraUri?.let { outState.putString(KEY_CAMERA_URI, it.toString()) }
+    }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -90,6 +125,7 @@ class ChatFragment : Fragment(R.layout.fragment_chat) {
         binding.moreButton.setOnClickListener { showConversationMenu(it) }
         binding.viewVenueButton.setOnClickListener { viewModel.onVenueClicked() }
         binding.messageInput.doAfterTextChanged { viewModel.onComposerChanged(it?.toString().orEmpty()) }
+        binding.attachImageButton.setOnClickListener { showAttachOptions() }
         binding.sendButton.setOnClickListener { viewModel.onSendClicked() }
         binding.removePendingImageButton.setOnClickListener { viewModel.onPendingImageCleared() }
 
@@ -347,6 +383,68 @@ class ChatFragment : Fragment(R.layout.fragment_chat) {
             .show()
     }
 
+    private fun showAttachOptions() {
+        val options = arrayOf(
+            getString(R.string.chat_attach_camera),
+            getString(R.string.chat_attach_gallery),
+        )
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.chat_attach_title)
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> onCameraChosen()
+                    1 -> launchGallery()
+                }
+            }
+            .show()
+    }
+
+    private fun launchGallery() {
+        pickPhoto.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+    }
+
+    private fun onCameraChosen() {
+        val granted = ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.CAMERA) ==
+            PackageManager.PERMISSION_GRANTED
+        when {
+            granted -> launchCamera()
+            shouldShowRequestPermissionRationale(Manifest.permission.CAMERA) -> {
+                MaterialAlertDialogBuilder(requireContext())
+                    .setTitle(R.string.chat_camera_rationale_title)
+                    .setMessage(R.string.chat_camera_rationale_message)
+                    .setNegativeButton(R.string.chat_action_cancel, null)
+                    .setNeutralButton(R.string.chat_attach_gallery) { _, _ -> launchGallery() }
+                    .setPositiveButton(R.string.chat_action_confirm) { _, _ ->
+                        requestCameraPermission.launch(Manifest.permission.CAMERA)
+                    }
+                    .show()
+            }
+            else -> requestCameraPermission.launch(Manifest.permission.CAMERA)
+        }
+    }
+
+    private fun launchCamera() {
+        val ctx = requireContext()
+        val dir = File(ctx.cacheDir, CAMERA_DIR).apply { mkdirs() }
+        val file = File(dir, "chat_${System.currentTimeMillis()}.jpg")
+        val uri = FileProvider.getUriForFile(ctx, "${ctx.packageName}.fileprovider", file)
+        pendingCameraUri = uri
+        runCatching { takePicture.launch(uri) }.onFailure {
+            pendingCameraUri = null
+            Snackbar.make(binding.root, R.string.chat_camera_unavailable, Snackbar.LENGTH_LONG).show()
+        }
+    }
+
+    /** Từ chối quyền camera: hiện giải thích và vẫn cho mở Photo Picker (AC 4.5). */
+    private fun showCameraDenied() {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.chat_camera_rationale_title)
+            .setMessage(R.string.chat_camera_denied_fallback)
+            .setNegativeButton(R.string.chat_action_cancel, null)
+            .setPositiveButton(R.string.chat_attach_gallery) { _, _ -> launchGallery() }
+            .show()
+    }
+
     private fun handle(event: ChatEvent) {
         when (event) {
             is ChatEvent.RequireLogin -> {
@@ -379,11 +477,14 @@ class ChatFragment : Fragment(R.layout.fragment_chat) {
                     bundleOf("chatId" to event.chatId, "messageId" to event.messageId),
                 )
             }
+            ChatEvent.CameraPermissionDenied -> showCameraDenied()
         }
     }
 
     private companion object {
         const val MENU_MUTE = 1
         const val MENU_BLOCK = 2
+        const val KEY_CAMERA_URI = "chat_camera_uri"
+        const val CAMERA_DIR = "chat"
     }
 }

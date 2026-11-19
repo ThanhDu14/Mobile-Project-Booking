@@ -185,14 +185,14 @@ Task của spec khác ghi là `010-T###`, `070-T###`, `090-T###`.
   - **M2:** `download` path của tin `RECALLED`, tin `HIDDEN`, chat khác → không có URL; tin `NORMAL` của chat mình → có URL; 31 path → `INVALID_ARGUMENT`;
   - `discard` khi chưa có tin → xóa ảnh; khi tin đã có → không xóa;
   - **C7 (phần ảnh):** `chat-send` có `imagePath` chưa tải → `PHOTO_MISSING`, không có tin; path sai tiền tố → `INVALID_ARGUMENT`; ảnh hợp lệ kèm chú thích rỗng → thành công, `lastMessage.type = IMAGE`.
-- [ ] T042 [P] [US4] Bổ sung `ChatViewModelTest` và `ChatOutboxTest`: tin ảnh hiện ngay `PENDING` với ảnh cục bộ; tải ảnh lỗi → `FAILED`, "Gửi lại" tải lại rồi gửi cùng `messageId`, "Xóa" gọi `discard`; ảnh quá 2 MB sau nén hoặc không phải ảnh → báo lỗi, không vào outbox (AC 4.3); từ chối quyền camera → hiện giải thích, vẫn mở Photo Picker được (AC 4.5)
+- [X] T042 [P] [US4] Bổ sung `ChatViewModelTest` và `ChatOutboxTest`: tin ảnh hiện ngay `PENDING` với ảnh cục bộ; tải ảnh lỗi → `FAILED`, "Gửi lại" tải lại rồi gửi cùng `messageId`, "Xóa" gọi `discard`; ảnh quá 2 MB sau nén hoặc không phải ảnh → báo lỗi, không vào outbox (AC 4.3); từ chối quyền camera → hiện giải thích, vẫn mở Photo Picker được (AC 4.5)
 
 ### Implementation cho User Story 4
 
 - [X] T043 [US4] Cài `FN/chat-media-url/index.ts` theo [contract mục 3](contracts/edge-functions-chat.md#3-chat-media-url) dùng `_shared/media.ts` (T005). Sau đó phần M1, M2 của T041 phải xanh
 - [X] T044 [US4] Bổ sung `FN/chat-send/index.ts`: `imagePath` phải đúng `{chatId}/{messageId}.{jpg,png,webp}` và `objectExists` trong `chat-media`; tin ảnh cho phép `text` 0–1000 ký tự; `lastMessage.type = IMAGE`. Sau đó phần C7 của T041 phải xanh
-- [ ] T045 [US4] Cài `CH/data/SupabaseChatMediaRepository.kt` (nén bằng `ImageCompressor`, xin signed URL, PUT, phát trạng thái) và nối vào `ChatOutbox` (tải ảnh trước rồi mới gọi `chat-send`; tải lỗi → `FAILED`). Dùng `SignedUrlCache` cho ảnh hiển thị: nếu 090-T047 đã tạo trong `feature/community/data` thì chuyển lên `APP/core/media/SignedUrlCache.kt` (chỉ đổi package, cập nhật import của 090) để không import chéo feature. Cho T042 (phần outbox) xanh
-- [ ] T046 [US4] Nút ảnh trong `ChatFragment`: chọn "Chụp ảnh" (`ActivityResultContracts.TakePicture`, xin quyền camera lúc dùng, có giải thích) hoặc "Chọn ảnh" (Photo Picker `PickVisualMedia`); bong bóng ảnh trong `item_message_*.xml` (ảnh qua signed URL, `contentDescription`), bấm mở `PhotoViewerFragment` (`core/ui`). Cho T042 xanh
+- [X] T045 [US4] Cài `CH/data/SupabaseChatMediaRepository.kt` (nén bằng `ImageCompressor`, xin signed URL, PUT, phát trạng thái) và nối vào `ChatOutbox` (tải ảnh trước rồi mới gọi `chat-send`; tải lỗi → `FAILED`). Dùng `SignedUrlCache` cho ảnh hiển thị: nếu 090-T047 đã tạo trong `feature/community/data` thì chuyển lên `APP/core/media/SignedUrlCache.kt` (chỉ đổi package, cập nhật import của 090) để không import chéo feature. Cho T042 (phần outbox) xanh
+- [X] T046 [US4] Nút ảnh trong `ChatFragment`: chọn "Chụp ảnh" (`ActivityResultContracts.TakePicture`, xin quyền camera lúc dùng, có giải thích) hoặc "Chọn ảnh" (Photo Picker `PickVisualMedia`); bong bóng ảnh trong `item_message_*.xml` (ảnh qua signed URL, `contentDescription`), bấm mở `PhotoViewerFragment` (`core/ui`). Cho T042 xanh
 
 **Checkpoint**: US4 chạy độc lập; quickstart Q10, Q15 đúng.
 
