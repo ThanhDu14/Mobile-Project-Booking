@@ -95,6 +95,17 @@ T("M1 upload: hợp lệ → path {groupId}/{postId}/{index}.{ext} và signed UR
   await assertGroupInvariant(s.groupId);
 });
 
+T("M1 upload: bài đã có của người khác → 403 FORBIDDEN (không cấp URL ghi đè); bài của chính mình → 200", async () => {
+  const s = await setup("m1d");
+  const postId = await seedPost(s.groupId, { authorId: s.owner });
+  const other = await call(s.deps, s.member, { action: "upload", groupId: s.groupId, postId, files: [file(0)] });
+  assertEquals(other.status, 403);
+  assertEquals(other.body.error.code, "FORBIDDEN");
+  assertEquals(s.storage.signedUploads.length, 0);
+  const own = await call(s.deps, s.owner, { action: "upload", groupId: s.groupId, postId, files: [file(0)] });
+  assertEquals(own.status, 200);
+});
+
 // ---------- M2: download ----------
 
 T("M2 download: 3 path, 1 path của nhóm không là thành viên → đúng 2 URL; có expiresAt ~ 1 giờ", async () => {
