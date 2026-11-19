@@ -228,6 +228,7 @@ class BookingDetailFragment : Fragment(R.layout.fragment_booking_detail_060) {
         binding.labelPaidAmount.text = paidLabel
         binding.textPaidAmount.text = "-${currencyFormat.format(booking.finance.paidAmount)}"
         binding.textRemainingAmount.text = currencyFormat.format(booking.finance.remainingAmount)
+        binding.rowRemaining.isVisible = BookingPresentation.showRemaining(phase)
 
         if (booking.finance.discount > 0) {
             binding.rowDiscount.isVisible = true

@@ -68,6 +68,10 @@ object BookingPresentation {
     /** QR chỉ có ý nghĩa với đơn đã xác nhận, chưa check-in và chưa hết giờ chơi. */
     fun showQr(phase: BookingPhase): Boolean = phase == BookingPhase.UPCOMING
 
+    /** Đơn đã đóng (hủy, bị từ chối, hết hạn giữ chỗ) không còn khoản nào phải trả tại sân. */
+    fun showRemaining(phase: BookingPhase): Boolean =
+        phase != BookingPhase.CANCELLED && phase != BookingPhase.REJECTED && phase != BookingPhase.EXPIRED
+
     /** Nhãn dòng "đã trả"; null khi chưa trả đồng nào (ví dụ đơn trả tại sân). */
     fun paidLabel(finance: BookingFinance): String? = when {
         finance.paidAmount <= 0 -> null

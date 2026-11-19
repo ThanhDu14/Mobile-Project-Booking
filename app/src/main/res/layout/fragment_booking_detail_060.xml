@@ -429,6 +429,7 @@
 
                     <!-- Remaining row -->
                     <RelativeLayout
+                        android:id="@+id/rowRemaining"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content">
 

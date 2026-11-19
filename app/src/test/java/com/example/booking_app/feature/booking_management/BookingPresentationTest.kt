@@ -106,4 +106,15 @@ class BookingPresentationTest {
         val cancelled = booking(RefundPolicy.Status.CANCELLED, reason = " ")
         assertNull(BookingPresentation.note(cancelled, BookingPresentation.phase(cancelled, now), now, time))
     }
+
+    @Test
+    fun closedBookingsDoNotAskToPayAtTheVenue() {
+        // Đơn #SN-333F bị từ chối nhưng vẫn hiện "Còn trả tại sân 60.000 ₫".
+        for (status in listOf(RefundPolicy.Status.CANCELLED, RefundPolicy.Status.REJECTED, RefundPolicy.Status.EXPIRED)) {
+            assertFalse(BookingPresentation.showRemaining(BookingPresentation.phase(booking(status), now)))
+        }
+        for (status in listOf(RefundPolicy.Status.PENDING, RefundPolicy.Status.CONFIRMED, RefundPolicy.Status.COMPLETED)) {
+            assertTrue(BookingPresentation.showRemaining(BookingPresentation.phase(booking(status), now)))
+        }
+    }
 }
