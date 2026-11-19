@@ -479,4 +479,61 @@ class PostComposerViewModelTest {
         assertEquals(12, updatedDraft.captured.expectedCount)
         assertEquals("Mô tả mới", updatedDraft.captured.content)
     }
+
+    // ---------- Fix vòng 2: NEW#1, NEW#3 ----------
+
+    @Test
+    fun `sua bai du 4 anh goc go 1 anh roi them anh moi vao cung slot thi Back hien ConfirmDiscard`() = runTest {
+        stubUploadSuccess()
+        val origPaths = (0..3).map { "g1/p9/$it.jpg" }
+        val existing = post(id = "p9", content = "Đủ 4 ảnh", photoPaths = origPaths)
+        coEvery { posts.getPost("g1", "p9") } returns Result.success(existing)
+
+        val vm = viewModel(SavedStateHandle(mapOf("groupId" to "g1", "postId" to "p9")))
+        advanceUntilIdle()
+
+        // Gỡ ảnh slot 3 rồi thêm ảnh mới → cấp lại đúng slot 3, danh sách remotePath trùng hệt ảnh gốc.
+        vm.onRemovePhoto("g1/p9/3.jpg")
+        vm.onPhotosPicked(listOf("content://replace-3"))
+        advanceUntilIdle()
+
+        assertEquals(origPaths, vm.state.value.photos.map { it.remotePath })
+        assertEquals("content://replace-3", vm.state.value.photos.last().localUri)
+
+        vm.events.test {
+            vm.onBackPressed()
+            assertEquals(PostComposerEvent.ConfirmDiscard, awaitItem())
+        }
+    }
+
+    @Test
+    fun `startUpload luon invalidate SignedUrlCache cho moi anh vua UPLOADED ke ca ngoai originalPhotoPaths`() = runTest {
+        stubUploadSuccess()
+        val existing = post(id = "p9", content = "Bài cũ", photoPaths = listOf("g1/p9/0.jpg"))
+        coEvery { posts.getPost("g1", "p9") } returns Result.success(existing)
+
+        val cache = SignedUrlCache(
+            fetch = { paths ->
+                Result.success(
+                    SignedUrlBatch(
+                        paths.associateWith { "https://cdn/$it?v=old" },
+                        Instant.ofEpochMilli(now.toEpochMilli() + 60L * 60 * 1000),
+                    ),
+                )
+            },
+            clock = FakeClock { now.toEpochMilli() },
+        )
+        // Giả lập slot 1 đã từng được cache ở phiên sửa trước đó dù không còn trong originalPhotoPaths hiện tại.
+        cache.resolve(listOf("g1/p9/1.jpg"))
+        assertEquals("https://cdn/g1/p9/1.jpg?v=old", cache.peek("g1/p9/1.jpg"))
+
+        val vm = viewModel(SavedStateHandle(mapOf("groupId" to "g1", "postId" to "p9")), signedUrls = cache)
+        advanceUntilIdle()
+
+        vm.onPhotosPicked(listOf("content://new-slot-1"))
+        advanceUntilIdle()
+
+        assertEquals("g1/p9/1.jpg", vm.state.value.photos.last().remotePath)
+        assertNull(cache.peek("g1/p9/1.jpg"))
+    }
 }

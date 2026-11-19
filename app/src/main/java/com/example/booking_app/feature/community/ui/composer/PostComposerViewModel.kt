@@ -109,7 +109,6 @@ class PostComposerViewModel @Inject constructor(
     private val slotByKey = LinkedHashMap<String, Int>()
     private val originalSlots = LinkedHashSet<Int>()
     private val allocatedInSession = LinkedHashSet<Int>()
-    private val uploadedPathsInSession = LinkedHashSet<String>()
     private var hasUploadedInSession = false
     private var originalContent: String = ""
     private var originalPhotoPaths: List<String> = emptyList()
@@ -141,7 +140,6 @@ class PostComposerViewModel @Inject constructor(
                         slotByKey.clear()
                         originalSlots.clear()
                         allocatedInSession.clear()
-                        uploadedPathsInSession.clear()
                         val existingPhotos = post.photoPaths.mapIndexed { idx, path ->
                             val parsedIndex = parseSlotIndex(path) ?: idx
                             slotByKey[path] = parsedIndex
@@ -348,9 +346,10 @@ class PostComposerViewModel @Inject constructor(
     private fun hasUnsavedChanges(): Boolean {
         val current = _state.value
         if (current.isEdit) {
-            val currentPaths = current.photos.map { it.remotePath ?: it.localUri }
+            val photosChanged = current.photos.any { it.localUri != it.remotePath } ||
+                current.photos.map { it.remotePath ?: it.localUri } != originalPhotoPaths
             return current.content != originalContent ||
-                currentPaths != originalPhotoPaths ||
+                photosChanged ||
                 current.eventTitle != originalEventTitle ||
                 current.eventAt != originalEventAt ||
                 current.eventLocation != originalEventLocation ||
@@ -371,10 +370,7 @@ class PostComposerViewModel @Inject constructor(
             uploadPhotos.uploadOne(groupId, requestId, slotIndex, localUri).collect { updated ->
                 val remotePath = updated.remotePath
                 if (updated.state == DraftPhoto.State.UPLOADED && !remotePath.isNullOrBlank()) {
-                    val alreadyUploaded = !uploadedPathsInSession.add(remotePath)
-                    if (remotePath in originalPhotoPaths || alreadyUploaded) {
-                        signedUrls.invalidate(listOf(remotePath))
-                    }
+                    signedUrls.invalidate(listOf(remotePath))
                 }
                 _state.update { state ->
                     state.copy(

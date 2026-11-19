@@ -30,6 +30,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -189,11 +190,16 @@ class GroupDetailViewModel @Inject constructor(
     private var feedJob: Job? = null
     private var newPostsJob: Job? = null
     private var loadMoreJob: Job? = null
+    private val attendanceJobs = LinkedHashMap<String, Job>()
 
     private var activeFeedKey: Pair<Boolean, Boolean>? = null
     private var currentIsMod: Boolean = false
+    private var feedLoading: Boolean = false
     private var rawPosts: List<Post> = emptyList()
     private var observedNewPostIds: Set<String> = emptySet()
+    private val deletedPostIds = HashSet<String>()
+    private var mutationSeq: Long = 0L
+    private val lastMutatedSeq = HashMap<String, Long>()
     private var photoUrls: MutableMap<String, String> = LinkedHashMap()
     private var nextCursor: PageCursor? = null
     private var loadingMore: Boolean = false
@@ -276,6 +282,7 @@ class GroupDetailViewModel @Inject constructor(
         viewModelScope.launch {
             deletePost(groupId, postId).fold(
                 onSuccess = {
+                    deletedPostIds += postId
                     observedNewPostIds = observedNewPostIds - postId
                     rawPosts = rawPosts.filterNot { it.id == postId }
                     publishFeed()
@@ -293,6 +300,7 @@ class GroupDetailViewModel @Inject constructor(
         viewModelScope.launch {
             moderatePost.hide(groupId, postId).fold(
                 onSuccess = {
+                    lastMutatedSeq[postId] = ++mutationSeq
                     rawPosts = rawPosts.map { p ->
                         if (p.id == postId) p.copy(status = PostStatus.HIDDEN, hiddenBy = HiddenBy.GROUP) else p
                     }
@@ -311,6 +319,7 @@ class GroupDetailViewModel @Inject constructor(
         viewModelScope.launch {
             moderatePost.unhide(groupId, postId).fold(
                 onSuccess = {
+                    lastMutatedSeq[postId] = ++mutationSeq
                     rawPosts = rawPosts.map { p ->
                         if (p.id == postId) p.copy(status = PostStatus.VISIBLE, hiddenBy = null) else p
                     }
@@ -338,43 +347,56 @@ class GroupDetailViewModel @Inject constructor(
         }
         publishFeed()
 
-        viewModelScope.launch {
-            val result = try {
-                toggleAttendance(groupId, postId, attend = nextAttending)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                Result.failure(e)
+        attendanceJobs.remove(postId)?.cancel()
+        val job = viewModelScope.launch {
+            try {
+                val result = try {
+                    toggleAttendance(groupId, postId, attend = nextAttending)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Result.failure(e)
+                }
+                ensureActive()
+                attendanceInFlight = attendanceInFlight - postId
+                result.fold(
+                    onSuccess = { outcome ->
+                        rawPosts = rawPosts.map { p ->
+                            if (p.id == postId && p.event != null) {
+                                p.copy(event = p.event.copy(attendeeCount = outcome.attendeeCount, iAmAttending = outcome.attending))
+                            } else {
+                                p
+                            }
+                        }
+                        publishFeed()
+                    },
+                    onFailure = { err ->
+                        rawPosts = rawPosts.map { p ->
+                            if (p.id == postId && p.event != null) {
+                                p.copy(
+                                    event = p.event.copy(
+                                        iAmAttending = originalEvent.iAmAttending,
+                                        attendeeCount = (p.event.attendeeCount + if (nextAttending) -1 else 1).coerceAtLeast(0),
+                                    ),
+                                )
+                            } else {
+                                p
+                            }
+                        }
+                        publishFeed()
+                        _events.trySend(GroupDetailEvent.ShowError(err.toCommunityError()))
+                    },
+                )
+            } finally {
+                val currentJob = coroutineContext[Job]
+                if (attendanceJobs[postId] == null || attendanceJobs[postId] === currentJob) {
+                    attendanceInFlight = attendanceInFlight - postId
+                    attendanceJobs.remove(postId)
+                }
             }
-            attendanceInFlight = attendanceInFlight - postId
-            result.fold(
-                onSuccess = { outcome ->
-                    rawPosts = rawPosts.map { p ->
-                        if (p.id == postId && p.event != null) {
-                            p.copy(event = p.event.copy(attendeeCount = outcome.attendeeCount, iAmAttending = outcome.attending))
-                        } else {
-                            p
-                        }
-                    }
-                    publishFeed()
-                },
-                onFailure = { err ->
-                    rawPosts = rawPosts.map { p ->
-                        if (p.id == postId && p.event != null) {
-                            p.copy(
-                                event = p.event.copy(
-                                    iAmAttending = originalEvent.iAmAttending,
-                                    attendeeCount = (p.event.attendeeCount + if (nextAttending) -1 else 1).coerceAtLeast(0),
-                                ),
-                            )
-                        } else {
-                            p
-                        }
-                    }
-                    publishFeed()
-                    _events.trySend(GroupDetailEvent.ShowError(err.toCommunityError()))
-                },
-            )
+        }
+        if (job.isActive) {
+            attendanceJobs[postId] = job
         }
     }
 
@@ -439,8 +461,11 @@ class GroupDetailViewModel @Inject constructor(
     private fun loadFeed(isMod: Boolean) {
         cancelFeedJobs()
         currentIsMod = isMod
+        feedLoading = true
         rawPosts = emptyList()
         observedNewPostIds = emptySet()
+        deletedPostIds.clear()
+        lastMutatedSeq.clear()
         photoUrls.clear()
         nextCursor = null
         loadingMore = false
@@ -455,11 +480,13 @@ class GroupDetailViewModel @Inject constructor(
                     resolveUrls(filtered)
                     rawPosts = filtered.distinctBy { it.id }.sortedWith(POST_ORDER)
                     nextCursor = page.next
+                    feedLoading = false
                     publishFeed()
                     val after = rawPosts.firstOrNull()?.createdAt ?: Instant.EPOCH
                     listenNewPosts(isMod, after, uid)
                 },
                 onFailure = { err ->
+                    feedLoading = false
                     rawFeedState.value = RawFeedState.Error(err.toCommunityError())
                 },
             )
@@ -472,14 +499,24 @@ class GroupDetailViewModel @Inject constructor(
             posts.observeNewPosts(groupId, isMod, after)
                 .catch { /* Lỗi listener bài mới không ghi đè trang đã tải. */ }
                 .collect { incoming ->
+                    val seqBeforeSuspend = mutationSeq
                     val filtered = filterVisible(incoming, isMod, uid)
-                    val currentIds = filtered.mapTo(HashSet()) { it.id }
-                    val removedIds = observedNewPostIds - currentIds
-                    if (filtered.isEmpty() && removedIds.isEmpty()) return@collect
-                    observedNewPostIds = currentIds
                     if (filtered.isNotEmpty()) resolveUrls(filtered)
+                    val active = filtered.mapNotNull { post ->
+                        if (post.id in deletedPostIds) {
+                            null
+                        } else if ((lastMutatedSeq[post.id] ?: 0L) > seqBeforeSuspend) {
+                            rawPosts.firstOrNull { it.id == post.id } ?: post
+                        } else {
+                            post
+                        }
+                    }
+                    val currentIds = active.mapTo(HashSet()) { it.id }
+                    val removedIds = observedNewPostIds - currentIds
+                    if (active.isEmpty() && removedIds.isEmpty()) return@collect
+                    observedNewPostIds = currentIds
                     val remaining = if (removedIds.isEmpty()) rawPosts else rawPosts.filterNot { it.id in removedIds }
-                    val preserved = preserveInFlightAttendance(filtered, remaining)
+                    val preserved = preserveInFlightAttendance(active, remaining)
                     rawPosts = mergePosts(preserved, remaining)
                     publishFeed()
                 }
@@ -522,6 +559,7 @@ class GroupDetailViewModel @Inject constructor(
     }
 
     private fun publishFeed() {
+        if (feedLoading) return
         rawFeedState.value = if (rawPosts.isEmpty()) {
             RawFeedState.Empty
         } else {
@@ -538,8 +576,11 @@ class GroupDetailViewModel @Inject constructor(
 
     private fun clearFeed() {
         cancelFeedJobs()
+        feedLoading = false
         rawPosts = emptyList()
         observedNewPostIds = emptySet()
+        deletedPostIds.clear()
+        lastMutatedSeq.clear()
         photoUrls.clear()
         nextCursor = null
         loadingMore = false
@@ -551,6 +592,9 @@ class GroupDetailViewModel @Inject constructor(
         feedJob?.cancel()
         newPostsJob?.cancel()
         loadMoreJob?.cancel()
+        attendanceJobs.values.forEach { it.cancel() }
+        attendanceJobs.clear()
+        attendanceInFlight = emptySet()
     }
 
     private fun RawFeedState.toUi(permissions: GroupPermissions): FeedUiState = when (this) {

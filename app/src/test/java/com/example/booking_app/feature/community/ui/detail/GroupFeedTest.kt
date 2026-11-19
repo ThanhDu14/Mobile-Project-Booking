@@ -579,4 +579,119 @@ class GroupFeedTest {
         assertEquals("u1/avatar.jpg", domain.author.avatarPath)
         assertTrue(domain.author.isDeleted)
     }
+
+    // ---------- Fix vòng 2: NEW#2, NEW#4 ----------
+
+    @Test
+    fun `refresh bang tin khi request tham gia dang bay khong nhay Empty va so nguoi tham gia khong lech`() = runTest {
+        givenMember(GroupRole.MEMBER)
+        val futureAt = Instant.parse("2026-11-20T12:00:00Z")
+        val eventPost = post(id = "e1").copy(
+            type = PostType.EVENT,
+            event = EventInfo("Giao lưu", futureAt, "Sân A", expectedCount = 8, attendeeCount = 2, iAmAttending = false),
+        )
+        val attendGate = CompletableDeferred<Result<AttendResult>>()
+        val refreshGate = CompletableDeferred<Result<Page<Post>>>()
+        var feedCalls = 0
+        coEvery { posts.feed("g1", false, null) } coAnswers {
+            if (feedCalls++ == 0) Result.success(Page(listOf(eventPost), null)) else refreshGate.await()
+        }
+        every { posts.observeNewPosts("g1", false, any()) } returns emptyFlow()
+        coEvery { posts.attend("g1", "e1") } coAnswers { attendGate.await() }
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.events.test {
+            // Bắt đầu tham gia lạc quan: count = 3, attendanceBusy = true.
+            vm.onToggleAttendance("e1")
+            runCurrent()
+            val optimistic = ((vm.state.value as GroupDetailUiState.Content).feed as FeedUiState.Content).items.single()
+            assertTrue(optimistic.post.event!!.iAmAttending)
+            assertEquals(3, optimistic.post.event!!.attendeeCount)
+            assertTrue(optimistic.attendanceBusy)
+
+            // Làm mới bảng tin trong lúc attend đang bay → hủy attend, giữ Loading (không nháy Empty).
+            vm.refreshFeed()
+            runCurrent()
+            assertEquals(FeedUiState.Loading, (vm.state.value as GroupDetailUiState.Content).feed)
+
+            // Hoàn tất bảng tin từ server (count = 2, chưa tham gia) và kích lỗi ở gate cũ.
+            refreshGate.complete(Result.success(Page(listOf(eventPost), null)))
+            attendGate.complete(Result.failure(CommunityError.Network()))
+            advanceUntilIdle()
+
+            val refreshed = ((vm.state.value as GroupDetailUiState.Content).feed as FeedUiState.Content).items.single()
+            assertFalse(refreshed.post.event!!.iAmAttending)
+            assertEquals(2, refreshed.post.event!!.attendeeCount)
+            assertFalse(refreshed.attendanceBusy)
+            expectNoEvents()
+        }
+    }
+
+    @Test
+    fun `listenNewPosts cho resolveUrls khong de len thao tac xoa va an xay ra trong luc cho`() = runTest {
+        givenMember(GroupRole.OWNER)
+        val t1 = Instant.parse("2026-11-10T01:00:00Z")
+        val t2 = Instant.parse("2026-11-10T02:00:00Z")
+        val t3 = Instant.parse("2026-11-10T03:00:00Z")
+        val newPostsFlow = MutableSharedFlow<List<Post>>()
+        val urlGate = CompletableDeferred<Result<SignedUrlBatch>>()
+        val postToDelete = post(id = "p_del", createdAt = t2, authorId = ME, photoPaths = listOf("g1/p_del/0.jpg"))
+        val postToHide = post(id = "p_hide", createdAt = t3, authorId = "other", photoPaths = listOf("g1/p_hide/0.jpg"))
+
+        coEvery { posts.feed("g1", true, null) } returns Result.success(Page(listOf(post("old", createdAt = t1)), null))
+        every { posts.observeNewPosts("g1", true, t1) } returns newPostsFlow
+        coEvery { posts.delete("g1", "p_del") } returns Result.success(Unit)
+        coEvery { posts.hide("g1", "p_hide") } returns Result.success(Unit)
+
+        var fetchCalls = 0
+        val cache = SignedUrlCache(
+            fetch = { paths ->
+                if (fetchCalls++ == 0) {
+                    Result.success(SignedUrlBatch(paths.associateWith { "https://cdn/$it" }, Instant.ofEpochMilli(9_999_999L)))
+                } else {
+                    urlGate.await()
+                }
+            },
+            clock = FakeClock { 1_000L },
+        )
+
+        val vm = viewModel(signedUrls = cache)
+        advanceUntilIdle()
+
+        // Lần phát đầu đưa p_del và p_hide lên bảng tin.
+        newPostsFlow.emit(listOf(postToHide, postToDelete))
+        advanceUntilIdle()
+
+        // Snapshot mới có ảnh chưa cache làm resolveUrls bị tạm dừng.
+        val snapshotWithNewPhoto = listOf(
+            postToHide.copy(photoPaths = listOf("g1/p_hide/1.jpg")),
+            postToDelete.copy(photoPaths = listOf("g1/p_del/1.jpg")),
+        )
+        newPostsFlow.emit(snapshotWithNewPhoto)
+        runCurrent()
+
+        // Trong lúc đang chờ resolveUrls, người dùng xóa p_del và ẩn p_hide.
+        vm.onDeletePostConfirmed("p_del")
+        vm.onHidePostConfirmed("p_hide")
+        runCurrent()
+
+        // resolveUrls hoàn tất → p_del không bị chèn lại, p_hide giữ nguyên trạng thái đã ẩn.
+        urlGate.complete(
+            Result.success(
+                SignedUrlBatch(
+                    mapOf("g1/p_hide/1.jpg" to "https://cdn/g1/p_hide/1.jpg", "g1/p_del/1.jpg" to "https://cdn/g1/p_del/1.jpg"),
+                    Instant.ofEpochMilli(9_999_999L),
+                ),
+            ),
+        )
+        advanceUntilIdle()
+
+        val feed = (vm.state.value as GroupDetailUiState.Content).feed as FeedUiState.Content
+        assertEquals(listOf("p_hide", "old"), feed.items.map { it.post.id })
+        val hiddenItem = feed.items.first { it.post.id == "p_hide" }
+        assertEquals(PostStatus.HIDDEN, hiddenItem.post.status)
+        assertEquals(HiddenBy.GROUP, hiddenItem.post.hiddenBy)
+    }
 }
