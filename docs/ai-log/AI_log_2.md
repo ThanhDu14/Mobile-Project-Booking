@@ -2713,8 +2713,14 @@ Không có crash trong logcat suốt phiên thử.
 
 - Đơn bị từ chối vẫn hiện "Còn trả tại sân 60.000 ₫". Đã ẩn dòng này cho đơn đã hủy, bị từ chối hoặc hết hạn (`91f12de`), có test và đã thử lại trên máy.
 
-### Còn để ngỏ
+### Các điểm đã chốt sau đó
 
-- Sân "Nhut" có tọa độ (90, 90) nên hiện cách 8.794 km. Đây là dữ liệu nhập ở luồng đăng ký chủ sân (thành viên khác phụ trách), cần chủ sân sửa vị trí hoặc thêm kiểm tra tọa độ khi tạo sân.
-- Màn hình Lịch đặt ghi tiền dạng "225.000 ₫", các màn hình tìm sân và đặt sân ghi "đ".
-- Đơn "Vắng mặt" trả tại sân vẫn hiện "Còn trả tại sân"; chưa đổi vì cần chốt quy định với người phụ trách 060.
+Người dùng chọn qua câu hỏi trắc nghiệm ("Vấn đề này bạn hãy hỏi dưới dạng trắc nghiệm và để tôi chọn và khắc phục"):
+
+| Điểm | Lựa chọn | Commit |
+|---|---|---|
+| Sân "Nhut" lưu tọa độ (90, 90) | Tìm sân, bản đồ, chi tiết sân coi tọa độ ngoài Việt Nam (`VenueArea`: vĩ độ 8–24, kinh độ 102–110) là chưa có vị trí; hộp chọn vị trí của chủ sân báo lỗi. Không sửa dữ liệu Firestore | `20aabae` |
+| "₫" ở Lịch đặt, "đ" ở chỗ khác | Dùng `MoneyFormat.vnd` ("225.000 đ") cho 3 màn Lịch đặt; chuỗi màn chủ sân cũng đổi sang "đ" | `cae3a12` |
+| Đơn vắng mặt vẫn hiện "Còn trả tại sân" | Ẩn dòng này như đơn đã hủy | `28536fd` |
+
+Đã thử lại trên máy: "Nhut" không còn hiện khoảng cách, đứng cuối khi xếp gần nhất, trang chi tiết chỉ hiện địa chỉ; đơn vắng mặt ghi "225.000 đ" và không còn dòng "Còn trả tại sân". Hộp chọn vị trí của chủ sân chỉ kiểm tra bằng unit test (cần tài khoản chủ sân để thử trên máy). Chủ sân "Nhut" vẫn cần nhập lại vị trí đúng.
