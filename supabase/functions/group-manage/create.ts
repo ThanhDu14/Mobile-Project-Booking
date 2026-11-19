@@ -99,7 +99,7 @@ export const createGroup: ActionHandler = async ({ uid, body, deps }) => {
   // Cấp URL tải ảnh sau commit. Lặp lại (200) mà nhóm chưa có ảnh thì cấp lại, để app thử tải lại được.
   let avatarUpload: SignedUpload | undefined;
   if (hasAvatar && !outcome.group.avatarPath) {
-    avatarUpload = await deps.storage.createSignedUploadUrl(AVATAR_BUCKET, avatarObjectPath(groupId, ext));
+    avatarUpload = await deps.storage.createSignedUploadUrl(AVATAR_BUCKET, avatarObjectPath(groupId, ext), true);
   }
   return Response.json(
     { group: groupJson(groupId, outcome.group), ...(avatarUpload ? { avatarUpload } : {}) },
@@ -179,7 +179,7 @@ export const updateGroup: ActionHandler = async ({ uid, body, deps }) => {
 
   let avatarUpload: SignedUpload | undefined;
   if (avatar === "REPLACE") {
-    avatarUpload = await deps.storage.createSignedUploadUrl(AVATAR_BUCKET, avatarObjectPath(groupId, ext));
+    avatarUpload = await deps.storage.createSignedUploadUrl(AVATAR_BUCKET, avatarObjectPath(groupId, ext), true);
   }
   return Response.json({
     group: groupJson(groupId, outcome.group),
