@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Nav graph lồng của spec 091 (contracts/ui-screens.md mục 1, T018), include vào nav_main để
+    cả người chơi và chủ sân đều dùng được mọi deep link smashnow://chat/... không trùng lặp.
+-->
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_chat"
+    app:startDestination="@id/chatListFragment">
+
+    <!-- Danh sách "Tin nhắn" chế độ người chơi (chat nhóm + chat với chủ sân). -->
+    <fragment
+        android:id="@+id/chatListFragment"
+        android:name="com.example.booking_app.feature.chat.ui.list.ChatListFragment"
+        android:label="@string/chat_title_list">
+        <argument
+            android:name="mode"
+            android:defaultValue="PLAYER"
+            app:argType="string" />
+        <deepLink app:uri="smashnow://chat" />
+        <action
+            android:id="@+id/action_chatList_to_chat"
+            app:destination="@id/chatFragment" />
+    </fragment>
+
+    <!-- Danh sách "Tin nhắn khách hàng" chế độ quản lý sân (OwnerLink.CHAT). -->
+    <fragment
+        android:id="@+id/ownerChatListFragment"
+        android:name="com.example.booking_app.feature.chat.ui.list.ChatListFragment"
+        android:label="@string/chat_title_owner">
+        <argument
+            android:name="mode"
+            android:defaultValue="OWNER"
+            app:argType="string" />
+        <deepLink app:uri="smashnow://chat/owner" />
+        <action
+            android:id="@+id/action_ownerChatList_to_chat"
+            app:destination="@id/chatFragment" />
+    </fragment>
+
+    <!-- Cuộc trò chuyện (chat riêng với chủ sân / khách hàng, hoặc chat nhóm CLB). -->
+    <fragment
+        android:id="@+id/chatFragment"
+        android:name="com.example.booking_app.feature.chat.ui.conversation.ChatFragment"
+        android:label="@string/chat_title_list">
+        <argument
+            android:name="chatId"
+            android:defaultValue="@null"
+            app:argType="string"
+            app:nullable="true" />
+        <argument
+            android:name="groupId"
+            android:defaultValue="@null"
+            app:argType="string"
+            app:nullable="true" />
+        <argument
+            android:name="venueId"
+            android:defaultValue="@null"
+            app:argType="string"
+            app:nullable="true" />
+        <deepLink app:uri="smashnow://chat/direct?venueId={venueId}" />
+        <deepLink app:uri="smashnow://chat/group/{groupId}" />
+        <deepLink app:uri="smashnow://chat/{chatId}" />
+        <action
+            android:id="@+id/action_chat_to_reportMessage"
+            app:destination="@id/reportMessageBottomSheet" />
+        <action
+            android:id="@+id/action_chat_to_photoViewer"
+            app:destination="@id/chatPhotoViewerFragment" />
+    </fragment>
+
+    <!-- Báo cáo tin nhắn vi phạm (US5). -->
+    <dialog
+        android:id="@+id/reportMessageBottomSheet"
+        android:name="com.example.booking_app.feature.chat.ui.report.ReportMessageBottomSheet"
+        android:label="@string/chat_title_report">
+        <argument
+            android:name="chatId"
+            app:argType="string" />
+        <argument
+            android:name="messageId"
+            app:argType="string" />
+    </dialog>
+
+    <!-- Xem ảnh toàn màn hình dùng lại PhotoViewerFragment ở core/ui/photo (hoạt động cả ở nav_player và nav_owner). -->
+    <fragment
+        android:id="@+id/chatPhotoViewerFragment"
+        android:name="com.example.booking_app.core.ui.photo.PhotoViewerFragment"
+        android:label="@string/chat_title_list">
+        <argument
+            android:name="photoUrls"
+            app:argType="string[]" />
+        <argument
+            android:name="startIndex"
+            android:defaultValue="0"
+            app:argType="integer" />
+    </fragment>
+
+</navigation>
