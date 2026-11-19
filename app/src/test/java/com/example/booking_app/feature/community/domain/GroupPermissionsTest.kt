@@ -97,10 +97,12 @@ class GroupPermissionsTest {
     // ---- canReport, canEditPost ----
 
     @Test
-    fun `canReport khi khong phai bai cua minh`() {
+    fun `canReport khi khong phai bai cua minh va bai dang VISIBLE`() {
         assertTrue(perms(GroupRole.MEMBER).canReport(post(authorId = "other")))
         assertFalse(perms(GroupRole.MEMBER).canReport(post(authorId = "me")))
         assertFalse(perms(null).canReport(post()))
+        assertFalse(perms(GroupRole.OWNER).canReport(post(authorId = "other", status = PostStatus.HIDDEN, hiddenBy = HiddenBy.GROUP)))
+        assertFalse(perms(GroupRole.ADMIN).canReport(post(authorId = "other", status = PostStatus.HIDDEN, hiddenBy = HiddenBy.SYSTEM)))
     }
 
     @Test

@@ -44,7 +44,10 @@ export const uploadUrls: ActionHandler = async ({ uid, body, deps }) => {
     return postMediaPath(groupId, postId, index, validateImage(file.contentType, file.size));
   });
   await requireMember(deps, groupId, uid);
-  const uploads = await Promise.all(paths.map((p) => deps.storage.createSignedUploadUrl(GROUP_MEDIA_BUCKET, p)));
+  // Ghi đè (upsert) chỉ an toàn khi bài chưa có hoặc là bài của chính người gọi: postId lộ trên bảng tin.
+  const post = await deps.firestore.get(postPath(groupId, postId));
+  if (post && post.authorId !== uid) throw new HttpError(403, "FORBIDDEN", "Bạn không thể tải ảnh cho bài của người khác");
+  const uploads = await Promise.all(paths.map((p) => deps.storage.createSignedUploadUrl(GROUP_MEDIA_BUCKET, p, true)));
   return Response.json({ uploads });
 };
 

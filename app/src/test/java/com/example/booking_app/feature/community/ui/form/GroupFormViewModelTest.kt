@@ -11,6 +11,7 @@ import com.example.booking_app.feature.community.domain.model.GroupInput
 import com.example.booking_app.feature.community.domain.model.GroupVisibility
 import com.example.booking_app.feature.community.domain.usecase.AvatarChange
 import com.example.booking_app.feature.community.domain.usecase.CreateGroup
+import com.example.booking_app.feature.community.domain.usecase.DeleteGroup
 import com.example.booking_app.feature.community.domain.usecase.UpdateGroup
 import com.example.booking_app.feature.community.group
 import io.mockk.coEvery
@@ -38,12 +39,13 @@ class GroupFormViewModelTest {
     private val createGroup = mockk<CreateGroup>()
     private val updateGroup = mockk<UpdateGroup>()
     private val groups = mockk<GroupRepository>()
+    private val deleteGroup = DeleteGroup(groups)
     private val catalog = mockk<CatalogRepository> {
         coEvery { districts() } returns listOf(District("q10", "Quận 10", 1, true), District("q1", "Quận 1", 2, true))
     }
 
     private fun viewModel(handle: SavedStateHandle = SavedStateHandle()) =
-        GroupFormViewModel(handle, createGroup, updateGroup, groups, catalog)
+        GroupFormViewModel(handle, createGroup, updateGroup, deleteGroup, groups, catalog)
 
     private fun GroupFormViewModel.fillValid() {
         onNameChanged("CLB Cầu lông")
@@ -287,5 +289,25 @@ class GroupFormViewModelTest {
         val vm = viewModel(SavedStateHandle(mapOf("groupId" to "g1")))
         advanceUntilIdle()
         assertTrue(vm.state.value.loadError is CommunityError.GroupNotFound)
+    }
+
+    @Test
+    fun `xoa nhom go sai ten thi bao ConfirmNameMismatch, go dung ten thi goi delete va phat Deleted`() = runTest {
+        every { groups.observeGroup("g1") } returns flowOf(group(name = "CLB Quận 10"))
+        coEvery { groups.delete("g1", "CLB Quận 10", any()) } returns Result.success(Unit)
+        val vm = viewModel(SavedStateHandle(mapOf("groupId" to "g1")))
+        advanceUntilIdle()
+
+        vm.events.test {
+            vm.deleteGroup("CLB khác")
+            val err = awaitItem() as GroupFormEvent.ShowError
+            assertTrue(err.error is CommunityError.ConfirmNameMismatch)
+            coVerify(exactly = 0) { groups.delete(any(), any(), any()) }
+
+            vm.deleteGroup("CLB Quận 10")
+            advanceUntilIdle()
+            assertEquals(GroupFormEvent.Deleted, awaitItem())
+        }
+        coVerify(exactly = 1) { groups.delete("g1", "CLB Quận 10", any()) }
     }
 }

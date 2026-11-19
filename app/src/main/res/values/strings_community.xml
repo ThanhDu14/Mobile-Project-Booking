@@ -159,6 +159,7 @@
     <string name="community_error_group_not_found">Nhóm không còn tồn tại</string>
     <string name="community_error_post_not_found">Bài đăng không còn tồn tại</string>
     <string name="community_error_request_not_found">Yêu cầu không còn tồn tại</string>
+    <string name="community_error_member_not_found">Người này không còn trong nhóm</string>
     <string name="community_error_owner_limit_reached">Bạn đã làm chủ tối đa 5 nhóm</string>
     <string name="community_error_already_member">Bạn đã là thành viên của nhóm này</string>
     <string name="community_error_already_requested">Bạn đã gửi yêu cầu tham gia nhóm này</string>
@@ -227,4 +228,66 @@
     <string name="community_join_request_item_cd">%1$s xin tham gia nhóm</string>
     <string name="community_join_request_item_cd_removed">%1$s xin tham gia nhóm, từng bị mời ra</string>
     <string name="community_join_request_default_name">Người dùng</string>
+
+    <!-- US3: bảng tin và đăng bài -->
+    <string name="community_composer_content_required">Nhập nội dung bài đăng</string>
+    <string name="community_composer_content_too_long">Nội dung tối đa 2000 ký tự</string>
+    <string name="community_composer_max_photos">Tối đa 4 ảnh mỗi bài</string>
+    <string name="community_composer_photo_wait">Đợi ảnh tải lên xong hoặc bỏ ảnh lỗi</string>
+    <string name="community_composer_publishing">Đang đăng</string>
+    <string name="community_composer_photo_preview_cd">Ảnh đính kèm %1$d</string>
+    <string name="community_composer_remove_photo_cd">Gỡ ảnh %1$d</string>
+    <string name="community_composer_retry_photo_cd">Thử tải lại ảnh %1$d</string>
+    <string name="community_post_more_cd">Tùy chọn bài đăng</string>
+    <string name="community_post_author_avatar_cd">Ảnh đại diện của %1$s</string>
+    <string name="community_post_photo_cd">Ảnh %1$d/%2$d của bài đăng</string>
+    <string name="community_post_just_now">Vừa xong</string>
+    <string name="community_msg_post_deleted">Đã xóa bài đăng</string>
+    <string name="community_feed_no_comments_note">Bài đăng không có bình luận. Trao đổi thêm trong chat nhóm.</string>
+    <string name="community_feed_load_more_failed">Không tải thêm được bài. Chạm để thử lại</string>
+    <string name="community_feed_loading_more_cd">Đang tải thêm bài</string>
+    <string name="community_composer_bar_hint">Chia sẻ với nhóm…</string>
+    <string name="community_chat_coming_soon">Chat nhóm chưa khả dụng</string>
+
+    <!-- US4: sự kiện giao lưu -->
+    <string name="community_event_title_required">Nhập tiêu đề sự kiện</string>
+    <string name="community_event_title_too_long">Tiêu đề tối đa 100 ký tự</string>
+    <string name="community_event_time_required">Chọn thời gian diễn ra</string>
+    <string name="community_event_time_past">Thời gian sự kiện phải ở tương lai</string>
+    <string name="community_event_location_required">Nhập địa điểm</string>
+    <string name="community_event_location_too_long">Địa điểm tối đa 200 ký tự</string>
+    <string name="community_event_expected_invalid">Số người dự kiến từ 2 đến 100</string>
+    <string name="community_event_pick_time">Chọn ngày và giờ</string>
+    <string name="community_event_description_hint">Mô tả sự kiện (không bắt buộc)</string>
+    <string name="community_event_attending">Bạn đã tham gia</string>
+    <string name="community_event_attendees_cd">Xem danh sách %1$s</string>
+    <string name="community_event_attendee_avatar_cd">Ảnh đại diện của %1$s</string>
+    <string name="community_event_close_cd">Đóng</string>
+
+    <!-- US5: quản lý thành viên và xóa nhóm -->
+    <string name="community_title_transfer_owner">Chọn chủ nhóm mới</string>
+    <string name="community_transfer_mode_hint">Chọn một thành viên để chuyển quyền chủ nhóm trước khi bạn rời nhóm.</string>
+    <string name="community_confirm_make_admin_title">Phong %1$s làm quản trị viên?</string>
+    <string name="community_confirm_remove_admin_title">Gỡ quyền quản trị viên của %1$s?</string>
+    <string name="community_confirm_remove_message">Người này sẽ bị mời ra khỏi nhóm và phải xin duyệt nếu muốn vào lại.</string>
+    <string name="community_msg_role_updated">Đã cập nhật vai trò</string>
+    <string name="community_msg_owner_transferred">Đã chuyển quyền chủ nhóm. Bạn có thể rời nhóm ngay bây giờ.</string>
+    <string name="community_msg_member_removed">Đã mời thành viên ra khỏi nhóm</string>
+    <string name="community_msg_group_deleted">Đã xóa nhóm</string>
+    <string name="community_delete_group_hint">Gõ đúng tên nhóm \"%1$s\" để xác nhận xóa.</string>
+    <string name="community_suggest_delete_title">Bạn là thành viên duy nhất</string>
+    <string name="community_member_more_cd">Tùy chọn cho %1$s</string>
+    <string name="community_member_avatar_cd">Ảnh đại diện của %1$s</string>
+
+    <!-- US6: báo cáo và ẩn bài -->
+    <string name="community_report_note">Người đăng không biết ai đã báo cáo. Chủ nhóm và admin sẽ xem xét.</string>
+    <string name="community_report_detail_hint">Cho biết bài đăng vi phạm thế nào</string>
+    <string name="community_report_reason_required">Chọn một lý do báo cáo</string>
+    <string name="community_report_detail_required">Nhập mô tả khi chọn Khác</string>
+    <string name="community_report_detail_too_long">Mô tả tối đa 500 ký tự</string>
+    <string name="community_report_sending">Đang gửi</string>
+    <string name="community_confirm_hide_post_title">Ẩn bài đăng?</string>
+    <string name="community_confirm_hide_post_message">Thành viên khác sẽ không còn thấy bài này. Bạn có thể hiện lại sau.</string>
+    <string name="community_msg_post_hidden">Đã ẩn bài đăng</string>
+    <string name="community_msg_post_unhidden">Đã hiện lại bài đăng</string>
 </resources>

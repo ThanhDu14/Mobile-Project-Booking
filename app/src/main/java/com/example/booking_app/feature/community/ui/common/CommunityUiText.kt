@@ -26,6 +26,7 @@ object CommunityUiText {
         is CommunityError.GroupNotFound -> R.string.community_error_group_not_found
         is CommunityError.PostNotFound -> R.string.community_error_post_not_found
         is CommunityError.RequestNotFound -> R.string.community_error_request_not_found
+        is CommunityError.MemberNotFound -> R.string.community_error_member_not_found
         is CommunityError.OwnerLimitReached -> R.string.community_error_owner_limit_reached
         is CommunityError.AlreadyMember -> R.string.community_error_already_member
         is CommunityError.AlreadyRequested -> R.string.community_error_already_requested

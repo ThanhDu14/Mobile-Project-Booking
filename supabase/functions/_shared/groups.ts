@@ -123,7 +123,8 @@ export interface GroupStorage {
   list(bucket: string, prefix: string): Promise<string[]>;
   /** Trả số object đã xóa. */
   remove(bucket: string, paths: string[]): Promise<number>;
-  createSignedUploadUrl(bucket: string, path: string): Promise<SignedUpload>;
+  /** `upsert` cho phép ghi đè object cũ cùng path (ảnh đại diện, ảnh bài của chính tác giả); mặc định không. */
+  createSignedUploadUrl(bucket: string, path: string, upsert?: boolean): Promise<SignedUpload>;
   /** Path không có trong kết quả nghĩa là object không tồn tại hoặc ký lỗi. */
   createSignedUrls(bucket: string, paths: string[], expiresInSeconds: number): Promise<Record<string, string>>;
 }
@@ -165,8 +166,12 @@ export function supabaseGroupStorage(
       if (!res.ok) throw new Error(`storage remove ${res.status}: ${await res.text()}`);
       return (await res.json() as unknown[]).length;
     },
-    async createSignedUploadUrl(bucket, path) {
-      const res = await fetch(`${base}/upload/sign/${bucket}/${path}`, { method: "POST", headers, body: "{}" });
+    async createSignedUploadUrl(bucket, path, upsert = false) {
+      const res = await fetch(`${base}/upload/sign/${bucket}/${path}`, {
+        method: "POST",
+        headers: upsert ? { ...headers, "x-upsert": "true" } : headers,
+        body: "{}",
+      });
       if (!res.ok) throw new Error(`storage upload sign ${res.status}: ${await res.text()}`);
       const { url: rel } = await res.json() as { url: string };
       const signedUrl = absolute(rel);

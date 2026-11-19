@@ -24,7 +24,10 @@ import com.example.booking_app.databinding.FragmentGroupFormBinding
 import com.example.booking_app.feature.community.domain.model.GroupVisibility
 import com.example.booking_app.feature.community.ui.common.CommunityUiText
 import com.google.android.material.color.MaterialColors
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 
@@ -65,6 +68,7 @@ class GroupFormFragment : Fragment(R.layout.fragment_group_form) {
             viewModel.onVisibilityChanged(if (checkedId == R.id.visibilityPrivate) GroupVisibility.PRIVATE else GroupVisibility.PUBLIC)
         }
         binding.saveButton.setOnClickListener { viewModel.submit() }
+        binding.deleteGroupButton.setOnClickListener { confirmDeleteGroup() }
         binding.retryAvatarButton.setOnClickListener { viewModel.retryAvatar() }
         binding.defaultAvatarButton.setOnClickListener { viewModel.useDefaultAvatar() }
 
@@ -123,6 +127,8 @@ class GroupFormFragment : Fragment(R.layout.fragment_group_form) {
         binding.avatarFailureBox.isVisible = state.avatarFailure != null
         binding.retryAvatarButton.isEnabled = editable
         binding.defaultAvatarButton.isEnabled = editable
+        binding.deleteGroupButton.isVisible = state.isEdit && !state.loading && state.loadError == null
+        binding.deleteGroupButton.isEnabled = editable
     }
 
     private fun renderDistricts(binding: FragmentGroupFormBinding, state: GroupFormState) {
@@ -166,6 +172,33 @@ class GroupFormFragment : Fragment(R.layout.fragment_group_form) {
         FieldError.TOO_LONG -> R.string.community_form_name_too_long
     }
 
+    private fun confirmDeleteGroup() {
+        val groupName = viewModel.state.value.originalName.ifBlank { viewModel.state.value.name }
+        val context = requireContext()
+        val inputLayout = TextInputLayout(context).apply {
+            hint = getString(R.string.community_field_confirm_name)
+            val pad = 20.dp()
+            setPadding(pad, 8.dp(), pad, 0)
+        }
+        val editText = TextInputEditText(context).apply {
+            minHeight = 48.dp()
+            isSingleLine = true
+        }
+        inputLayout.addView(editText)
+        val message = getString(R.string.community_confirm_delete_group_message) + "\n\n" +
+            getString(R.string.community_delete_group_hint, groupName)
+
+        MaterialAlertDialogBuilder(context)
+            .setTitle(R.string.community_confirm_delete_group_title)
+            .setMessage(message)
+            .setView(inputLayout)
+            .setNegativeButton(R.string.community_action_cancel, null)
+            .setPositiveButton(R.string.community_action_delete_group) { _, _ ->
+                viewModel.deleteGroup(editText.text?.toString().orEmpty())
+            }
+            .show()
+    }
+
     private fun handle(event: GroupFormEvent, binding: FragmentGroupFormBinding) {
         val nav = findNavController()
         when (event) {
@@ -174,6 +207,12 @@ class GroupFormFragment : Fragment(R.layout.fragment_group_form) {
                 nav.navigate(GroupFormFragmentDirections.actionGroupFormToGroupDetail(event.groupId))
             }
             is GroupFormEvent.Saved -> nav.navigateUp()
+            GroupFormEvent.Deleted -> {
+                Snackbar.make(binding.root, R.string.community_msg_group_deleted, Snackbar.LENGTH_SHORT).show()
+                if (!nav.popBackStack(R.id.communityHomeFragment, false)) {
+                    nav.navigateUp()
+                }
+            }
             is GroupFormEvent.ShowError ->
                 Snackbar.make(binding.root, CommunityUiText.errorRes(event.error), Snackbar.LENGTH_LONG).show()
         }
