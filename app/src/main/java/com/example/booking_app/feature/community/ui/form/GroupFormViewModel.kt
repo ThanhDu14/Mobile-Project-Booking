@@ -13,6 +13,7 @@ import com.example.booking_app.feature.community.domain.model.GroupVisibility
 import com.example.booking_app.feature.community.domain.toCommunityError
 import com.example.booking_app.feature.community.domain.usecase.AvatarChange
 import com.example.booking_app.feature.community.domain.usecase.CreateGroup
+import com.example.booking_app.feature.community.domain.usecase.DeleteGroup
 import com.example.booking_app.feature.community.domain.usecase.UpdateGroup
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
@@ -51,6 +52,8 @@ data class GroupFormState(
     val districtError: Boolean = false,
     val saving: Boolean = false,
     val avatarFailure: AvatarFailure? = null,
+    /** Chế độ sửa: tên gốc của nhóm để xác nhận khi xóa (AC 5.6). */
+    val originalName: String = "",
     /** Chế độ sửa: đang nạp dữ liệu nhóm. */
     val loading: Boolean = false,
     /** Chế độ sửa: không nạp được nhóm (`GroupNotFound` khi nhóm không còn). */
@@ -63,6 +66,9 @@ sealed interface GroupFormEvent {
 
     /** Sửa xong: quay lại trang nhóm. */
     data class Saved(val groupId: String) : GroupFormEvent
+
+    /** Xóa nhóm xong: quay về trang Cộng đồng. */
+    data object Deleted : GroupFormEvent
 
     data class ShowError(val error: CommunityError) : GroupFormEvent
 }
@@ -77,6 +83,7 @@ class GroupFormViewModel @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val createGroup: CreateGroup,
     private val updateGroup: UpdateGroup,
+    private val deleteGroupUseCase: DeleteGroup,
     private val groups: GroupRepository,
     private val catalog: CatalogRepository,
 ) : ViewModel() {
@@ -133,6 +140,7 @@ class GroupFormViewModel @Inject constructor(
     private fun GroupFormState.prefilledWith(group: Group) = copy(
         loading = false,
         name = group.name,
+        originalName = group.name,
         description = group.description,
         districtId = group.districtId,
         visibility = group.visibility,
@@ -214,6 +222,35 @@ class GroupFormViewModel @Inject constructor(
         val failure = _state.value.avatarFailure ?: return
         _state.update { it.copy(avatarFailure = null, avatarUri = null) }
         finish(failure.groupId)
+    }
+
+    /** T063: xóa nhóm, bắt buộc gõ đúng tên nhóm (AC 5.6). */
+    fun deleteGroup(confirmName: String) {
+        val id = groupId ?: return
+        val current = _state.value
+        if (current.saving || current.loading || current.loadError != null) return
+        val expected = current.originalName.ifBlank { current.name }.trim()
+        if (confirmName.trim() != expected) {
+            _events.trySend(GroupFormEvent.ShowError(CommunityError.ConfirmNameMismatch()))
+            return
+        }
+        _state.update { it.copy(saving = true) }
+        viewModelScope.launch {
+            val result = try {
+                deleteGroupUseCase(id, confirmName.trim(), UUID.randomUUID().toString())
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+            result.fold(
+                onSuccess = { _events.trySend(GroupFormEvent.Deleted) },
+                onFailure = { err ->
+                    _state.update { it.copy(saving = false) }
+                    _events.trySend(GroupFormEvent.ShowError(err.toCommunityError()))
+                },
+            )
+        }
     }
 
     private suspend fun onResult(result: Result<Group>) {

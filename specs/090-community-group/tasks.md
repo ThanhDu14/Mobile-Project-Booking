@@ -256,15 +256,15 @@ Task của spec khác ghi là `010-T###`, `070-T###`, `081-T###`.
   - **G14:** `delete` gõ sai tên → `CONFIRM_NAME_MISMATCH`; đúng tên → `status = DELETED` ngay (không còn trong tìm kiếm), hook `deleted`, rồi hết `posts`, `attendees`, `members`, `joinRequests`, `removals`, ảnh trong `group-media` và `group-avatars`, cuối cùng hết document nhóm; giả lập lỗi giữa chừng rồi gọi lại `delete` → chạy tiếp tới hết;
   - **G15:** thành viên đang tham gia 1 sự kiện sắp tới và 1 sự kiện đã qua `leave` (và trường hợp bị `remove`) → bị bỏ khỏi sự kiện sắp tới (`attendeeCount` −1), giữ sự kiện đã qua;
   - sau mỗi ca gọi `assertGroupInvariant`.
-- [ ] T058 [P] [US5] Unit test `TEST/ui/members/GroupMembersViewModelTest.kt`: sắp chủ nhóm, quản trị viên, rồi thành viên theo `joinedAt` (AC 5.1); menu theo `GroupPermissions` của người xem; thao tác thành công làm mới danh sách; lỗi `FORBIDDEN` hiện thông báo; xóa nhóm yêu cầu gõ đúng tên
+- [X] T058 [P] [US5] Unit test `TEST/ui/members/GroupMembersViewModelTest.kt`: sắp chủ nhóm, quản trị viên, rồi thành viên theo `joinedAt` (AC 5.1); menu theo `GroupPermissions` của người xem; thao tác thành công làm mới danh sách; lỗi `FORBIDDEN` hiện thông báo; xóa nhóm yêu cầu gõ đúng tên
 
 ### Implementation cho User Story 5
 
 - [X] T059 [US5] Cài `setRole`, `transferOwner`, `remove` trong `FN/group-manage/index.ts` theo bảng [research R11](research.md#r11-vai-trò-và-các-thao-tác-quản-lý-thành-viên-fr-007-fr-009); `remove` ghi `removals/{uid}` (`removedBy`, `removedAt`). Cả `remove` và `leave` (T033) trong cùng transaction bỏ người đó khỏi `attendees` của các sự kiện chưa diễn ra trong nhóm (collection group `attendees where userId == uid, groupId == g, eventAt > now` bằng `runQueryInTx`), giảm `attendeeCount` tương ứng. Sau đó G10–G12, G15 phải xanh
 - [X] T060 [US5] Cài `delete` trong `FN/group-manage/index.ts` theo [research R13](research.md#r13-xóa-nhóm-fr-002-ac-56): transaction đặt `status = DELETED` và gọi hook `{ deleted: true }`; sau commit xóa theo lô ≤ 500 các collection con và thư mục `{groupId}/` của 2 bucket, cuối cùng gọi `purgeChat("group_" + groupId)` của spec 091 (`_shared/chats.ts`; chưa có thì bỏ qua) rồi xóa document nhóm; gọi lại khi đang `DELETED` thì chạy tiếp. Sau đó G14 phải xanh
-- [ ] T061 [US5] Cài `setRole`, `transferOwner`, `remove`, `delete`, `observeMembers` trong `CM/data/FirestoreGroupRepository.kt`; UseCase `CM/domain/usecase/ManageMember.kt`, `DeleteGroup.kt`
-- [ ] T062 [US5] Cài `CM/ui/members/GroupMembersViewModel.kt`, `CM/ui/members/GroupMembersFragment.kt` + `RES/layout/fragment_group_members.xml`, `RES/layout/item_group_member.xml` (ảnh, tên, vai trò; menu: Phong/Gỡ quản trị viên, Chuyển quyền chủ nhóm, Mời ra khỏi nhóm, mỗi thao tác có hộp thoại xác nhận). Cho T058 xanh
-- [ ] T063 [US5] Nút "Xóa nhóm" trong `GroupFormFragment` (hộp thoại bắt gõ lại tên nhóm, AC 5.6); luồng chủ nhóm "Rời nhóm" khi nhận `OwnerMustTransfer` mở `GroupMembersFragment` ở chế độ chọn người nhận quyền, hoặc gợi ý xóa nhóm khi `soleMember` (AC 5.5)
+- [X] T061 [US5] Cài `setRole`, `transferOwner`, `remove`, `delete`, `observeMembers` trong `CM/data/FirestoreGroupRepository.kt`; UseCase `CM/domain/usecase/ManageMember.kt`, `DeleteGroup.kt`
+- [X] T062 [US5] Cài `CM/ui/members/GroupMembersViewModel.kt`, `CM/ui/members/GroupMembersFragment.kt` + `RES/layout/fragment_group_members.xml`, `RES/layout/item_group_member.xml` (ảnh, tên, vai trò; menu: Phong/Gỡ quản trị viên, Chuyển quyền chủ nhóm, Mời ra khỏi nhóm, mỗi thao tác có hộp thoại xác nhận). Cho T058 xanh
+- [X] T063 [US5] Nút "Xóa nhóm" trong `GroupFormFragment` (hộp thoại bắt gõ lại tên nhóm, AC 5.6); luồng chủ nhóm "Rời nhóm" khi nhận `OwnerMustTransfer` mở `GroupMembersFragment` ở chế độ chọn người nhận quyền, hoặc gợi ý xóa nhóm khi `soleMember` (AC 5.5)
 
 **Checkpoint**: US5 chạy độc lập; G10–G12, G14, G15 xanh; quickstart Q10, Q11, Q14 đúng.
 

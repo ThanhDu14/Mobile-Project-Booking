@@ -68,6 +68,23 @@
         <action
             android:id="@+id/action_groupDetail_to_eventAttendees"
             app:destination="@id/eventAttendeesBottomSheet" />
+        <action
+            android:id="@+id/action_groupDetail_to_groupMembers"
+            app:destination="@id/groupMembersFragment" />
+    </fragment>
+
+    <!-- Danh sách thành viên và chọn người nhận quyền chủ nhóm (US5). -->
+    <fragment
+        android:id="@+id/groupMembersFragment"
+        android:name="com.example.booking_app.feature.community.ui.members.GroupMembersFragment"
+        android:label="@string/community_title_members">
+        <argument
+            android:name="groupId"
+            app:argType="string" />
+        <argument
+            android:name="selectTransferTarget"
+            android:defaultValue="false"
+            app:argType="boolean" />
     </fragment>
 
     <!-- Danh sách người tham gia sự kiện (US4). -->

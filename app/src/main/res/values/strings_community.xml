@@ -262,4 +262,19 @@
     <string name="community_event_attendees_cd">Xem danh sách %1$s</string>
     <string name="community_event_attendee_avatar_cd">Ảnh đại diện của %1$s</string>
     <string name="community_event_close_cd">Đóng</string>
+
+    <!-- US5: quản lý thành viên và xóa nhóm -->
+    <string name="community_title_transfer_owner">Chọn chủ nhóm mới</string>
+    <string name="community_transfer_mode_hint">Chọn một thành viên để chuyển quyền chủ nhóm trước khi bạn rời nhóm.</string>
+    <string name="community_confirm_make_admin_title">Phong %1$s làm quản trị viên?</string>
+    <string name="community_confirm_remove_admin_title">Gỡ quyền quản trị viên của %1$s?</string>
+    <string name="community_confirm_remove_message">Người này sẽ bị mời ra khỏi nhóm và phải xin duyệt nếu muốn vào lại.</string>
+    <string name="community_msg_role_updated">Đã cập nhật vai trò</string>
+    <string name="community_msg_owner_transferred">Đã chuyển quyền chủ nhóm. Bạn có thể rời nhóm ngay bây giờ.</string>
+    <string name="community_msg_member_removed">Đã mời thành viên ra khỏi nhóm</string>
+    <string name="community_msg_group_deleted">Đã xóa nhóm</string>
+    <string name="community_delete_group_hint">Gõ đúng tên nhóm \"%1$s\" để xác nhận xóa.</string>
+    <string name="community_suggest_delete_title">Bạn là thành viên duy nhất</string>
+    <string name="community_member_more_cd">Tùy chọn cho %1$s</string>
+    <string name="community_member_avatar_cd">Ảnh đại diện của %1$s</string>
 </resources>

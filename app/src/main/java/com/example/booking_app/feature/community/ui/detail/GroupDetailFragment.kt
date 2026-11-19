@@ -95,6 +95,7 @@ class GroupDetailFragment : Fragment(R.layout.fragment_group_detail) {
         binding.newPostButton.setOnClickListener { openComposer(postId = null, type = PostType.POST) }
         binding.newEventButton.setOnClickListener { openComposer(postId = null, type = PostType.EVENT) }
         binding.chatButton.setOnClickListener { openGroupChat(binding) }
+        binding.membersButton.setOnClickListener { openMembers(selectTransferTarget = false) }
         binding.joinButton.setOnClickListener { viewModel.onJoinClicked() }
         binding.cancelRequestButton.setOnClickListener { viewModel.onCancelRequestClicked() }
         binding.leaveButton.setOnClickListener { confirmLeave() }
@@ -129,6 +130,12 @@ class GroupDetailFragment : Fragment(R.layout.fragment_group_detail) {
         runCatching { findNavController().navigate(uri) }.onFailure {
             Snackbar.make(binding.root, R.string.community_chat_coming_soon, Snackbar.LENGTH_SHORT).show()
         }
+    }
+
+    private fun openMembers(selectTransferTarget: Boolean) {
+        val nav = findNavController()
+        if (nav.currentDestination?.id != R.id.groupDetailFragment) return
+        nav.navigate(GroupDetailFragmentDirections.actionGroupDetailToGroupMembers(viewModel.groupId, selectTransferTarget))
     }
 
     private fun render(binding: FragmentGroupDetailBinding, postAdapter: PostAdapter, state: GroupDetailUiState) {
@@ -234,6 +241,20 @@ class GroupDetailFragment : Fragment(R.layout.fragment_group_detail) {
             .show()
     }
 
+    private fun suggestDeleteGroup() {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.community_suggest_delete_title)
+            .setMessage(R.string.community_error_owner_must_transfer_sole)
+            .setNegativeButton(R.string.community_action_cancel, null)
+            .setPositiveButton(R.string.community_action_delete_group) { _, _ ->
+                val nav = findNavController()
+                if (nav.currentDestination?.id == R.id.groupDetailFragment) {
+                    nav.navigate(GroupDetailFragmentDirections.actionGroupDetailToGroupForm(viewModel.groupId))
+                }
+            }
+            .show()
+    }
+
     private fun handle(binding: FragmentGroupDetailBinding, event: GroupDetailEvent) {
         val context = requireContext()
         when (event) {
@@ -249,10 +270,11 @@ class GroupDetailFragment : Fragment(R.layout.fragment_group_detail) {
             GroupDetailEvent.RequestCancelled -> Snackbar.make(binding.root, R.string.community_msg_request_cancelled, Snackbar.LENGTH_SHORT).show()
             GroupDetailEvent.Left -> Snackbar.make(binding.root, R.string.community_msg_left, Snackbar.LENGTH_SHORT).show()
             GroupDetailEvent.PostDeleted -> Snackbar.make(binding.root, R.string.community_msg_post_deleted, Snackbar.LENGTH_SHORT).show()
-            is GroupDetailEvent.OpenTransferOwner ->
-                Snackbar.make(binding.root, R.string.community_error_owner_must_transfer, Snackbar.LENGTH_LONG).show()
-            GroupDetailEvent.SuggestDeleteGroup ->
-                Snackbar.make(binding.root, R.string.community_error_owner_must_transfer_sole, Snackbar.LENGTH_LONG).show()
+            is GroupDetailEvent.OpenTransferOwner -> {
+                Snackbar.make(binding.root, R.string.community_error_owner_must_transfer, Snackbar.LENGTH_SHORT).show()
+                openMembers(selectTransferTarget = true)
+            }
+            GroupDetailEvent.SuggestDeleteGroup -> suggestDeleteGroup()
             is GroupDetailEvent.ShowError -> Snackbar.make(binding.root, CommunityUiText.error(context, event.error), Snackbar.LENGTH_LONG).show()
         }
     }
