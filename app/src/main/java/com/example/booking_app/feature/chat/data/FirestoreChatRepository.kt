@@ -1,5 +1,6 @@
 package com.example.booking_app.feature.chat.data
 
+import com.example.booking_app.core.network.awaitWithTimeout
 import com.example.booking_app.core.session.SessionManager
 import com.example.booking_app.core.util.AppClock
 import com.example.booking_app.feature.chat.data.dto.ChatActionRequest
@@ -83,6 +84,28 @@ class FirestoreChatRepository @Inject constructor(
         mode: ChatMode,
     ): Flow<List<Pair<ChatDto, GroupHeaderInfo?>>> = callbackFlow {
         var groupListeners: List<ListenerRegistration> = emptyList()
+        var lastGroupIds: List<String> = emptyList()
+        var latestDtos: List<ChatDto> = emptyList()
+        var latestGroupsById: Map<String, GroupHeaderInfo> = emptyMap()
+        var latestHadGroupError = false
+
+        fun emitCombined() {
+            val visible = latestDtos.mapNotNull { dto ->
+                val isGroup = dto.type?.uppercase() == ChatType.GROUP.name || dto.groupId != null
+                if (!isGroup) {
+                    dto to null
+                } else {
+                    val info = dto.groupId?.let(latestGroupsById::get)
+                    if (info == null && !latestHadGroupError) {
+                        // Nhóm đã bị xóa (không thuộc [ACTIVE, LOCKED]): loại bỏ khỏi danh sách (AC 2.5).
+                        null
+                    } else {
+                        dto to info
+                    }
+                }
+            }
+            trySend(visible)
+        }
 
         val baseQuery: Query = when (mode) {
             ChatMode.OWNER -> firestore.collection(COLLECTION_CHATS)
@@ -99,6 +122,7 @@ class FirestoreChatRepository @Inject constructor(
             if (error != null) {
                 groupListeners.forEach { it.remove() }
                 groupListeners = emptyList()
+                lastGroupIds = emptyList()
                 if (error.code == FirebaseFirestoreException.Code.PERMISSION_DENIED) {
                     trySend(emptyList())
                 } else {
@@ -116,35 +140,52 @@ class FirestoreChatRepository @Inject constructor(
                     true
                 }
 
+            latestDtos = dtos
             val groupIds = dtos.mapNotNull { it.groupId?.takeIf(String::isNotBlank) }.distinct()
-            groupListeners.forEach { it.remove() }
-            groupListeners = emptyList()
 
             if (groupIds.isEmpty()) {
+                groupListeners.forEach { it.remove() }
+                groupListeners = emptyList()
+                lastGroupIds = emptyList()
+                latestGroupsById = emptyMap()
+                latestHadGroupError = false
                 trySend(dtos.map { it to null })
                 return@addSnapshotListener
             }
 
+            if (groupIds == lastGroupIds && groupListeners.isNotEmpty()) {
+                emitCombined()
+                return@addSnapshotListener
+            }
+
+            groupListeners.forEach { it.remove() }
+            groupListeners = emptyList()
+            lastGroupIds = groupIds
+
             // Bài học F1 của spec 090 (T035): đọc groups theo lô ≤ 10 bằng whereIn(documentId) KÈM status in [ACTIVE, LOCKED].
             val chunks = groupIds.chunked(WHERE_IN_LIMIT)
             val chunkResults = arrayOfNulls<Map<String, GroupHeaderInfo>>(chunks.size)
+            val chunkErrors = BooleanArray(chunks.size)
             groupListeners = chunks.mapIndexed { index, chunk ->
                 firestore.collection(COLLECTION_GROUPS)
                     .whereIn(FieldPath.documentId(), chunk)
                     .whereIn("status", VISIBLE_GROUP_STATUSES)
                     .addSnapshotListener { groupSnapshot, groupError ->
                         if (groupError != null) {
+                            chunkErrors[index] = true
                             chunkResults[index] = emptyMap()
                         } else {
+                            chunkErrors[index] = false
                             chunkResults[index] = groupSnapshot?.documents.orEmpty().associate { doc ->
                                 doc.id to groupHeaderFromMap(doc.id, doc.data.orEmpty())
                             }
                         }
                         if (chunkResults.all { it != null }) {
-                            val byGroupId = buildMap<String, GroupHeaderInfo> {
+                            latestGroupsById = buildMap {
                                 chunkResults.forEach { it?.let(::putAll) }
                             }
-                            trySend(dtos.map { dto -> dto to dto.groupId?.let(byGroupId::get) })
+                            latestHadGroupError = chunkErrors.any { it }
+                            emitCombined()
                         }
                     }
             }
@@ -211,14 +252,6 @@ class FirestoreChatRepository @Inject constructor(
                     }
                     val dto = snapshot?.takeIf { it.exists() }
                         ?.let { ParticipantDto.fromMap(it.id, it.data.orEmpty()) }
-                    if (snapshot != null && !snapshot.metadata.hasPendingWrites()) {
-                        dto?.lastReadAt?.let { serverTime ->
-                            val diff = serverTime.toEpochMilli() - clock.now()
-                            if (kotlin.math.abs(diff) < MAX_CLOCK_SKEW_SANITY_MS) {
-                                serverOffsetMs.set(diff)
-                            }
-                        }
-                    }
                     trySend(dto.toDomain())
                 }
             awaitClose { listener.remove() }
@@ -339,15 +372,22 @@ class FirestoreChatRepository @Inject constructor(
             val batch = firestore.batch()
             batch.update(chatRef, FieldPath.of("unreadCounts", uid), 0)
             batch.update(participantRef, "lastReadAt", FieldValue.serverTimestamp())
-            batch.commit().await()
+            batch.commit().awaitWithTimeout()
             // Ước lượng độ lệch giờ server từ serverTimestamp vừa ghi (research R7).
             val localAfter = clock.now()
-            runCatching {
-                val doc = participantRef.get().await()
+            try {
+                val doc = participantRef.get().awaitWithTimeout()
                 val serverTs = doc.getTimestamp("lastReadAt")?.toInstant()?.toEpochMilli()
                 if (serverTs != null) {
-                    serverOffsetMs.set(serverTs - localAfter)
+                    val diff = serverTs - localAfter
+                    if (kotlin.math.abs(diff) < MAX_CLOCK_SKEW_SANITY_MS) {
+                        serverOffsetMs.set(diff)
+                    }
                 }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                // Đọc lại serverTimestamp là thao tác best-effort để ước lượng độ lệch giờ.
             }
             Result.success(Unit)
         } catch (e: CancellationException) {

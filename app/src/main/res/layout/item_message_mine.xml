@@ -7,20 +7,26 @@
     android:layout_height="wrap_content"
     android:paddingVertical="@dimen/space_1">
 
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/startGuide"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.3" />
+
     <LinearLayout
         android:id="@+id/bubbleContainer"
-        android:layout_width="0dp"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="@drawable/bg_chat_bubble_mine"
         android:orientation="vertical"
         android:paddingHorizontal="@dimen/space_3"
         android:paddingVertical="@dimen/space_2"
+        app:layout_constrainedWidth="true"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="1.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintWidth_default="wrap"
-        app:layout_constraintWidth_percent="0.7">
+        app:layout_constraintStart_toEndOf="@id/startGuide"
+        app:layout_constraintTop_toTopOf="parent">
 
         <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/messageImage"
@@ -76,6 +82,7 @@
             android:layout_height="wrap_content"
             android:background="?attr/selectableItemBackground"
             android:gravity="center"
+            android:minWidth="@dimen/touch_min"
             android:minHeight="@dimen/touch_min"
             android:paddingHorizontal="@dimen/space_2"
             android:text="@string/chat_action_retry"
@@ -90,6 +97,7 @@
             android:layout_height="wrap_content"
             android:background="?attr/selectableItemBackground"
             android:gravity="center"
+            android:minWidth="@dimen/touch_min"
             android:minHeight="@dimen/touch_min"
             android:paddingHorizontal="@dimen/space_2"
             android:text="@string/chat_action_delete"

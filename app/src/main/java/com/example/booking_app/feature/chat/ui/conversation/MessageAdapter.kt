@@ -7,6 +7,7 @@ import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import coil3.dispose
 import coil3.load
 import coil3.request.error
 import coil3.request.placeholder
@@ -152,6 +153,7 @@ class MessageAdapter(
                 if (msg.senderDeleted) {
                     b.senderAvatarInitials.isVisible = false
                     b.senderAvatar.isVisible = true
+                    b.senderAvatar.dispose()
                     b.senderAvatar.setImageResource(R.drawable.ic_account_circle_24)
                 } else {
                     val avatarUrl = ChatUiText.publicImageUrl("avatars", msg.senderAvatarPath)
@@ -162,6 +164,8 @@ class MessageAdapter(
                         b.senderAvatar.load(avatarUrl) {
                             error(R.drawable.ic_account_circle_24)
                         }
+                    } else {
+                        b.senderAvatar.dispose()
                     }
                 }
             }

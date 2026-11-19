@@ -272,25 +272,27 @@ class ChatViewModelTest {
         runCurrent()
 
         vm.onScreenVisible()
-        runCurrent()
-        assertEquals(1, captured.size)
-        assertEquals(
-            Instant.ofEpochMilli(clock.currentMs + serverOffset + ChatViewModel.VIEWING_TTL_MS),
-            captured[0],
-        )
+        try {
+            runCurrent()
+            assertEquals(1, captured.size)
+            assertEquals(
+                Instant.ofEpochMilli(clock.currentMs + serverOffset + ChatViewModel.VIEWING_TTL_MS),
+                captured[0],
+            )
 
-        // Sau 45 giây tự gia hạn lần 2.
-        clock.currentMs += ChatViewModel.VIEWING_RENEW_INTERVAL_MS
-        advanceTimeBy(ChatViewModel.VIEWING_RENEW_INTERVAL_MS)
-        runCurrent()
-        assertEquals(2, captured.size)
-        assertEquals(
-            Instant.ofEpochMilli(clock.currentMs + serverOffset + ChatViewModel.VIEWING_TTL_MS),
-            captured[1],
-        )
-
-        // Rời màn hình: đặt viewingUntil = null.
-        vm.onScreenHidden()
+            // Sau 45 giây tự gia hạn lần 2.
+            clock.currentMs += ChatViewModel.VIEWING_RENEW_INTERVAL_MS
+            advanceTimeBy(ChatViewModel.VIEWING_RENEW_INTERVAL_MS)
+            runCurrent()
+            assertEquals(2, captured.size)
+            assertEquals(
+                Instant.ofEpochMilli(clock.currentMs + serverOffset + ChatViewModel.VIEWING_TTL_MS),
+                captured[1],
+            )
+        } finally {
+            // Rời màn hình: đặt viewingUntil = null (luôn hủy heartbeat kể cả khi assert trên fail).
+            vm.onScreenHidden()
+        }
         runCurrent()
         assertEquals(3, captured.size)
         assertNull(captured[2])
@@ -753,5 +755,125 @@ class ChatViewModelTest {
 
         assertTrue(requestedSignedPaths.isEmpty())
         assertTrue(vm.uiState.value.imageUrls.isEmpty())
+    }
+
+    // ---------- Review Argon US1 #4, #5, #7 & US2 #1, #3 ----------
+
+    @Test
+    fun `canLoadOlder khong bi chot cung false khi snapshot cache dau it hon 30 tin roi server tra du 30 tin`() = runTest {
+        chatFlow.value = directChat()
+        // Lần phát đầu từ cache cục bộ chỉ có 5 tin (< 30).
+        messagesFlow.value = (1..5).map { i -> serverMessage("c$i", "Cache $i", secondsOffset = i.toLong()) }
+        val vm = createViewModel()
+        runCurrent()
+        assertFalse(vm.uiState.value.canLoadOlder)
+
+        // Snapshot từ server trả đủ 30 tin -> canLoadOlder phải bật lại true.
+        val server30 = (1..30).map { i -> serverMessage("s$i", "Server $i", secondsOffset = i.toLong() + 100) }
+        val older10 = (1..10).map { i -> serverMessage("o$i", "Older $i", secondsOffset = i.toLong()) }
+        coEvery { repository.loadOlder("owner1_player1", server30.first().createdAt!!) } returns Result.success(older10)
+        messagesFlow.value = server30
+        runCurrent()
+        assertTrue(vm.uiState.value.canLoadOlder)
+
+        // Tải trang cũ trả về 10 tin (< 30) -> chốt reachedOldestPage = true -> canLoadOlder = false.
+        vm.loadOlder()
+        advanceUntilIdle()
+        assertFalse(vm.uiState.value.canLoadOlder)
+    }
+
+    @Test
+    fun `onLatestMessageVisible cho phep thu lai markRead khi lan truoc that bai`() = runTest {
+        chatFlow.value = directChat()
+        messagesFlow.value = listOf(serverMessage("m1", "Tin 1"))
+        val vm = createViewModel()
+        var attempt = 0
+        coEvery { repository.markRead("owner1_player1") } answers {
+            attempt++
+            if (attempt == 1) Result.failure(ChatError.Network()) else Result.success(Unit)
+        }
+        runCurrent()
+
+        vm.onLatestMessageVisible()
+        runCurrent()
+        coVerify(exactly = 1) { repository.markRead("owner1_player1") }
+
+        // Lần đầu lỗi nên marker phải được xóa -> gọi lại cho cùng tin m1 vẫn gọi markRead.
+        vm.onLatestMessageVisible()
+        runCurrent()
+        coVerify(exactly = 2) { repository.markRead("owner1_player1") }
+
+        // Sau khi thành công thì gọi lại cùng tin m1 không gọi trùng nữa.
+        vm.onLatestMessageVisible()
+        runCurrent()
+        coVerify(exactly = 2) { repository.markRead("owner1_player1") }
+    }
+
+    @Test
+    fun `mo chat that bai header null khong cho gui va Unauthenticated co callback retry`() = runTest {
+        val guestVm = createViewModel(args = mapOf(ChatViewModel.ARG_CHAT_ID to "owner1_player1"), uid = null)
+        runCurrent()
+        val unauthErr = guestVm.uiState.value.messages as UiState.Error
+        assertTrue(unauthErr.retry != null)
+        assertFalse(guestVm.uiState.value.canSend)
+
+        coEvery { repository.openDirect("v-inactive") } returns Result.failure(ChatError.VenueInactive())
+        val failVm = createViewModel(args = mapOf(ChatViewModel.ARG_VENUE_ID to "v-inactive"), uid = "player1")
+        advanceUntilIdle()
+        assertNull(failVm.uiState.value.header)
+        assertTrue(failVm.uiState.value.messages is UiState.Error)
+        assertFalse(failVm.uiState.value.canSend)
+    }
+
+    @Test
+    fun `observeGroupHeader khong dang ky lai listener khi ChatDetail phat lai cung groupId`() = runTest {
+        chatFlow.value = groupChat(groupId = "g1")
+        groupHeaderFlow.value = GroupHeaderInfo("g1", "CLB Cầu lông", memberCount = 10)
+        val vm = createViewModel(args = mapOf(ChatViewModel.ARG_GROUP_ID to "g1"))
+        runCurrent()
+
+        // Phát lại ChatDetail nhiều lần (bật/tắt muted, đổi lastReadAt) nhưng cùng groupId "g1".
+        chatFlow.value = groupChat(groupId = "g1").copy(myParticipant = Participant(muted = true))
+        runCurrent()
+        chatFlow.value = groupChat(groupId = "g1").copy(myParticipant = Participant(muted = false, lastReadAt = Instant.now()))
+        runCurrent()
+
+        verify(exactly = 1) { repository.observeGroupHeader("g1") }
+        assertEquals("CLB Cầu lông", vm.uiState.value.header?.title)
+    }
+
+    @Test
+    fun `outbox bao GROUP_LOCKED hoac CHAT_READ_ONLY khoa o nhap va onScreenHidden khong goi setViewing sau KickedOut`() = runTest {
+        chatFlow.value = groupChat(groupId = "g1")
+        groupHeaderFlow.value = GroupHeaderInfo("g1", "CLB", isLocked = false)
+        val vm = createViewModel(args = mapOf(ChatViewModel.ARG_GROUP_ID to "g1"))
+        runCurrent()
+        assertTrue(vm.uiState.value.canSend)
+
+        // Lỗi GROUP_LOCKED từ outbox khóa ô nhập ngay cả khi groupHeader chưa đồng bộ.
+        outboxFlow.value = listOf(
+            OutboxEntry("m-lock", "group_g1", "Alo", createdAtLocal = 100L, status = Delivery.FAILED, retryable = false, errorCode = "GROUP_LOCKED"),
+        )
+        runCurrent()
+        assertEquals(ComposerDisabledReason.GROUP_LOCKED, vm.uiState.value.disabledReason)
+
+        // Lỗi CHAT_READ_ONLY từ outbox chuyển sang READ_ONLY.
+        outboxFlow.value = listOf(
+            OutboxEntry("m-ro", "group_g1", "Alo", createdAtLocal = 101L, status = Delivery.FAILED, retryable = false, errorCode = "CHAT_READ_ONLY"),
+        )
+        runCurrent()
+        assertEquals(ComposerDisabledReason.READ_ONLY, vm.uiState.value.disabledReason)
+
+        // Lỗi NOT_PARTICIPANT phát KickedOut -> onScreenHidden() KHÔNG được gọi setViewing(chatId, null).
+        vm.events.test {
+            outboxFlow.value = listOf(
+                OutboxEntry("m-kick", "group_g1", "Alo", createdAtLocal = 102L, status = Delivery.FAILED, retryable = false, errorCode = "NOT_PARTICIPANT"),
+            )
+            runCurrent()
+            assertEquals(ChatEvent.KickedOut, awaitItem())
+        }
+        vm.onScreenHidden()
+        runCurrent()
+        coVerify(exactly = 0) { repository.setViewing("group_g1", null) }
     }
 }

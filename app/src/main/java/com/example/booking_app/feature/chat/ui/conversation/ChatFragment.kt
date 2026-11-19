@@ -25,6 +25,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import coil3.dispose
 import coil3.load
 import coil3.request.error
 import coil3.request.placeholder
@@ -62,7 +63,7 @@ class ChatFragment : Fragment(R.layout.fragment_chat) {
     private val binding get() = _binding!!
 
     private lateinit var adapter: MessageAdapter
-    private var lastMessageCount = 0
+    private var lastTailMessageId: String? = null
 
     /** URI ảnh chụp tạm chờ camera trả về (giữ qua process death, T046). */
     private var pendingCameraUri: Uri? = null
@@ -185,8 +186,11 @@ class ChatFragment : Fragment(R.layout.fragment_chat) {
         adapter.imageUrls = state.imageUrls
 
         val items = (state.messages as? UiState.Content)?.data.orEmpty()
-        val shouldScrollToEnd = items.size > lastMessageCount
-        lastMessageCount = items.size
+        val newTailId = items.lastOrNull()?.id
+        val shouldScrollToEnd = newTailId != null && (lastTailMessageId == null || newTailId != lastTailMessageId)
+        if (newTailId != null) {
+            lastTailMessageId = newTailId
+        }
         adapter.submitList(items) {
             val b = _binding ?: return@submitList
             if (items.isNotEmpty() && shouldScrollToEnd) {
@@ -216,6 +220,7 @@ class ChatFragment : Fragment(R.layout.fragment_chat) {
         if (header.isDeletedOtherParty) {
             binding.headerAvatarInitials.isVisible = false
             binding.headerAvatar.isVisible = true
+            binding.headerAvatar.dispose()
             binding.headerAvatar.setImageResource(R.drawable.ic_account_circle_24)
         } else {
             val avatarUrl = ChatUiText.publicImageUrl(header.avatarBucket, header.avatarPath)
@@ -226,6 +231,8 @@ class ChatFragment : Fragment(R.layout.fragment_chat) {
                 binding.headerAvatar.load(avatarUrl) {
                     error(if (header.type == ChatType.GROUP) R.drawable.ic_groups_24 else R.drawable.ic_account_circle_24)
                 }
+            } else {
+                binding.headerAvatar.dispose()
             }
         }
 
@@ -271,7 +278,8 @@ class ChatFragment : Fragment(R.layout.fragment_chat) {
 
     private fun renderComposer(state: ChatUiState) {
         val disabled = state.disabledReason
-        binding.composerContainer.isVisible = disabled == null
+        val hideForError = state.header == null && state.messages is UiState.Error
+        binding.composerContainer.isVisible = disabled == null && !hideForError
         binding.disabledBanner.isVisible = disabled != null
         if (disabled != null) {
             binding.disabledBanner.setText(
@@ -283,6 +291,7 @@ class ChatFragment : Fragment(R.layout.fragment_chat) {
             )
             return
         }
+        if (hideForError) return
 
         if (binding.messageInput.text?.toString() != state.composerText) {
             binding.messageInput.setText(state.composerText)

@@ -47,8 +47,10 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -95,7 +97,7 @@ data class ChatUiState(
     val rawCharCount: Int get() = ChatMessageRules.codePointLength(composerText)
     val isOverLimit: Boolean get() = rawCharCount > ChatMessageRules.MAX_TEXT_LENGTH
     val showCounter: Boolean get() = rawCharCount >= COUNTER_THRESHOLD || isOverLimit
-    val canSend: Boolean get() = disabledReason == null
+    val canSend: Boolean get() = header != null && disabledReason == null
     val canSubmit: Boolean
         get() = canSend && !isOverLimit && (pendingImageUri != null || ChatMessageRules.isValidText(composerText))
 
@@ -151,6 +153,9 @@ class ChatViewModel @Inject constructor(
     private var screenVisible: Boolean = false
     private var kickedEmitted: Boolean = false
     private var blockedByOther: Boolean = false
+    private var groupLockedByError: Boolean = false
+    private var readOnlyByError: Boolean = false
+    private var reachedOldestPage: Boolean = false
     private var lastMarkedMarker: String? = null
 
     private val olderMessages = MutableStateFlow<List<ChatMessage>>(emptyList())
@@ -178,7 +183,7 @@ class ChatViewModel @Inject constructor(
                 !argChatId.isNullOrBlank() -> "smashnow://chat/$argChatId"
                 else -> "smashnow://chat"
             }
-            _uiState.update { it.copy(messages = UiState.Error(ChatError.Unauthenticated().code)) }
+            _uiState.update { it.copy(messages = UiState.Error(ChatError.Unauthenticated().code, ::retryLoad)) }
             _events.trySend(ChatEvent.RequireLogin(returnTo))
             return
         }
@@ -219,6 +224,9 @@ class ChatViewModel @Inject constructor(
         lastMarkedMarker = null
         kickedEmitted = false
         blockedByOther = false
+        groupLockedByError = false
+        readOnlyByError = false
+        reachedOldestPage = false
         olderMessages.value = emptyList()
         observeJob?.cancel()
         _uiState.update { it.copy(messages = UiState.Loading, canLoadOlder = true) }
@@ -229,16 +237,17 @@ class ChatViewModel @Inject constructor(
 
         val uid = sessionManager.currentUid().orEmpty()
         val chatFlow = repository.observeChat(chatId)
-        val groupHeaderFlow = chatFlow.flatMapLatest { detail ->
-            val gid = detail?.groupId
-                ?: argGroupId
-                ?: chatId.takeIf { it.startsWith("group_") }?.removePrefix("group_")
-            if (detail?.type == ChatType.GROUP && !gid.isNullOrBlank()) {
-                repository.observeGroupHeader(gid)
-            } else {
-                flowOf(null)
+        val groupHeaderFlow = chatFlow
+            .map { detail ->
+                val gid = detail?.groupId
+                    ?: argGroupId
+                    ?: chatId.takeIf { it.startsWith("group_") }?.removePrefix("group_")
+                if (detail?.type == ChatType.GROUP && !gid.isNullOrBlank()) gid else null
             }
-        }
+            .distinctUntilChanged()
+            .flatMapLatest { gid ->
+                if (gid != null) repository.observeGroupHeader(gid) else flowOf(null)
+            }
         val messagesFlow = observeMessages(chatId)
         val outboxFlow = repository.observeOutbox(chatId)
 
@@ -273,7 +282,7 @@ class ChatViewModel @Inject constructor(
                         header = header,
                         messages = if (merged.isEmpty()) UiState.Empty else UiState.Content(merged),
                         disabledReason = disabled,
-                        canLoadOlder = state.canLoadOlder && snap.live.size >= PAGE_SIZE,
+                        canLoadOlder = !reachedOldestPage && snap.live.size >= PAGE_SIZE,
                     )
                 }
 
@@ -290,6 +299,8 @@ class ChatViewModel @Inject constructor(
         if (entries.any { it.status == Delivery.FAILED && it.errorCode == "BLOCKED" }) {
             blockedByOther = true
         }
+        groupLockedByError = entries.any { it.status == Delivery.FAILED && it.errorCode == "GROUP_LOCKED" }
+        readOnlyByError = entries.any { it.status == Delivery.FAILED && it.errorCode == "CHAT_READ_ONLY" }
     }
 
     private fun emitKickedOutOnce() {
@@ -352,8 +363,8 @@ class ChatViewModel @Inject constructor(
     }
 
     private fun computeDisabledReason(detail: ChatDetail, groupHeader: GroupHeaderInfo?): ComposerDisabledReason? = when {
-        detail.status == ChatStatus.READ_ONLY -> ComposerDisabledReason.READ_ONLY
-        detail.type == ChatType.GROUP && groupHeader?.isLocked == true -> ComposerDisabledReason.GROUP_LOCKED
+        detail.status == ChatStatus.READ_ONLY || readOnlyByError -> ComposerDisabledReason.READ_ONLY
+        detail.type == ChatType.GROUP && (groupHeader?.isLocked == true || groupLockedByError) -> ComposerDisabledReason.GROUP_LOCKED
         blockedByOther -> ComposerDisabledReason.BLOCKED
         else -> null
     }
@@ -457,7 +468,9 @@ class ChatViewModel @Inject constructor(
         if (lastMarkedMarker == marker) return
         lastMarkedMarker = marker
         viewModelScope.launch {
-            markChatRead(chatId)
+            markChatRead(chatId).onFailure {
+                if (lastMarkedMarker == marker) lastMarkedMarker = null
+            }
         }
     }
 
@@ -471,6 +484,7 @@ class ChatViewModel @Inject constructor(
         screenVisible = false
         viewingJob?.cancel()
         viewingJob = null
+        if (kickedEmitted) return
         val chatId = activeChatId ?: return
         viewModelScope.launch {
             repository.setViewing(chatId, null)
@@ -505,11 +519,14 @@ class ChatViewModel @Inject constructor(
             }
             result.fold(
                 onSuccess = { loaded ->
+                    if (loaded.size < PAGE_SIZE) {
+                        reachedOldestPage = true
+                    }
                     olderMessages.update { existing -> mergeServerMessages(loaded, existing) }
                     _uiState.update {
                         it.copy(
                             loadingOlder = false,
-                            canLoadOlder = loaded.size >= PAGE_SIZE,
+                            canLoadOlder = !reachedOldestPage,
                         )
                     }
                 },

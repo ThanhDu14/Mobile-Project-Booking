@@ -50,21 +50,27 @@
         tools:text="Trần Quốc"
         tools:visibility="visible" />
 
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/endGuide"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.7" />
+
     <LinearLayout
         android:id="@+id/bubbleContainer"
-        android:layout_width="0dp"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="@dimen/space_2"
         android:background="@drawable/bg_chat_bubble_other"
         android:orientation="vertical"
         android:paddingHorizontal="@dimen/space_3"
         android:paddingVertical="@dimen/space_2"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constrainedWidth="true"
+        app:layout_constraintEnd_toStartOf="@id/endGuide"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toEndOf="@id/avatarContainer"
         app:layout_constraintTop_toBottomOf="@id/senderName"
-        app:layout_constraintWidth_default="wrap"
-        app:layout_constraintWidth_percent="0.7"
         app:layout_goneMarginStart="0dp">
 
         <com.google.android.material.imageview.ShapeableImageView
