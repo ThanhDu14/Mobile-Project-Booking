@@ -159,6 +159,7 @@
     <string name="community_error_group_not_found">Nhóm không còn tồn tại</string>
     <string name="community_error_post_not_found">Bài đăng không còn tồn tại</string>
     <string name="community_error_request_not_found">Yêu cầu không còn tồn tại</string>
+    <string name="community_error_member_not_found">Người này không còn trong nhóm</string>
     <string name="community_error_owner_limit_reached">Bạn đã làm chủ tối đa 5 nhóm</string>
     <string name="community_error_already_member">Bạn đã là thành viên của nhóm này</string>
     <string name="community_error_already_requested">Bạn đã gửi yêu cầu tham gia nhóm này</string>

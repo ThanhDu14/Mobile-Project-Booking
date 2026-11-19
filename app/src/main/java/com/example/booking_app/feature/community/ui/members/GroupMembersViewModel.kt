@@ -35,6 +35,7 @@ data class MemberItem(
     val canRemoveAdmin: Boolean,
     val canTransferOwner: Boolean,
     val canRemove: Boolean,
+    val actionsEnabled: Boolean = true,
 ) {
     val hasActions: Boolean get() = canMakeAdmin || canRemoveAdmin || canTransferOwner || canRemove
 }
@@ -102,7 +103,7 @@ class GroupMembersViewModel @Inject constructor(
                     GroupMembersUiState.Empty
                 } else {
                     val myRole = sorted.firstOrNull { it.userId == myUid }?.role
-                    val status = group?.status ?: GroupStatus.ACTIVE
+                    val status = group?.status ?: GroupStatus.DELETED
                     val permissions = GroupPermissions(myUid, myRole, status)
                     val items = sorted.map { member ->
                         val isOther = member.userId != myUid
@@ -112,6 +113,7 @@ class GroupMembersViewModel @Inject constructor(
                             canRemoveAdmin = permissions.canManageRoles && isOther && member.role == GroupRole.ADMIN,
                             canTransferOwner = permissions.canManageRoles && isOther,
                             canRemove = permissions.canRemove(member.userId, member.role),
+                            actionsEnabled = !isBusy,
                         )
                     }
                     GroupMembersUiState.Content(items, permissions, selectTransferTarget, isBusy)
@@ -147,7 +149,14 @@ class GroupMembersViewModel @Inject constructor(
         busy.value = true
         viewModelScope.launch {
             try {
-                call(UUID.randomUUID().toString()).fold(
+                val result = try {
+                    call(UUID.randomUUID().toString())
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Result.failure(e)
+                }
+                result.fold(
                     onSuccess = {
                         onSuccess()
                         start()
@@ -156,8 +165,6 @@ class GroupMembersViewModel @Inject constructor(
                         _events.trySend(GroupMembersEvent.ShowError(err.toCommunityError()))
                     },
                 )
-            } catch (e: CancellationException) {
-                throw e
             } finally {
                 busy.value = false
             }

@@ -16,8 +16,11 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.every
 import io.mockk.mockk
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -105,6 +108,20 @@ class GroupMembersViewModelTest {
         assertFalse(adminItems.getValue("mem1").canTransferOwner)
         assertTrue(adminItems.getValue("mem1").canRemove)
 
+        // Thành viên thường: không có bất kỳ thao tác quản lý nào.
+        every { groups.observeMembers("g1") } returns flowOf(
+            listOf(
+                member("owner1", GroupRole.OWNER, 1),
+                member("admin1", GroupRole.ADMIN, 2),
+                member(ME, GroupRole.MEMBER, 3),
+                member("mem2", GroupRole.MEMBER, 4),
+            ),
+        )
+        val memberVm = viewModel()
+        advanceUntilIdle()
+        val memberItems = (memberVm.state.value as GroupMembersUiState.Content).items.associateBy { it.member.userId }
+        assertTrue(memberItems.values.none { it.hasActions })
+
         // Nhóm LOCKED: ẩn mọi thao tác quản lý.
         every { groups.observeGroup("g1") } returns flowOf(group(ownerId = ME, status = GroupStatus.LOCKED))
         every { groups.observeMembers("g1") } returns flowOf(roster)
@@ -157,5 +174,99 @@ class GroupMembersViewModelTest {
             val event = awaitItem() as GroupMembersEvent.ShowError
             assertTrue(event.error is CommunityError.Forbidden)
         }
+    }
+
+    @Test
+    fun `go quan tri vien, chuyen quyen chu nhom va moi ra khoi nhom thanh cong phat dung event`() = runTest {
+        every { groups.observeGroup("g1") } returns flowOf(group(ownerId = ME))
+        every { groups.observeMembers("g1") } returns flowOf(
+            listOf(
+                member(ME, GroupRole.OWNER, 1),
+                member("admin1", GroupRole.ADMIN, 2),
+                member("mem1", GroupRole.MEMBER, 3),
+            ),
+        )
+        coEvery { groups.setRole("g1", "admin1", GroupRole.MEMBER, any()) } returns Result.success(Unit)
+        coEvery { groups.transferOwner("g1", "admin1", any()) } returns Result.success(Unit)
+        coEvery { groups.remove("g1", "mem1", any()) } returns Result.success(Unit)
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.events.test {
+            vm.onRemoveAdminConfirmed("admin1")
+            advanceUntilIdle()
+            assertEquals(GroupMembersEvent.RoleUpdated, awaitItem())
+
+            vm.onTransferOwnerConfirmed("admin1")
+            advanceUntilIdle()
+            assertEquals(GroupMembersEvent.OwnerTransferred, awaitItem())
+
+            vm.onRemoveConfirmed("mem1")
+            advanceUntilIdle()
+            assertEquals(GroupMembersEvent.MemberRemoved, awaitItem())
+        }
+        coVerify(exactly = 1) { groups.setRole("g1", "admin1", GroupRole.MEMBER, any()) }
+        coVerify(exactly = 1) { groups.transferOwner("g1", "admin1", any()) }
+        coVerify(exactly = 1) { groups.remove("g1", "mem1", any()) }
+    }
+
+    @Test
+    fun `actionsEnabled tat tren MemberItem khi dang busy va bat lai khi hoan tat`() = runTest {
+        every { groups.observeGroup("g1") } returns flowOf(group(ownerId = ME))
+        every { groups.observeMembers("g1") } returns flowOf(
+            listOf(member(ME, GroupRole.OWNER, 1), member("u2", GroupRole.MEMBER, 2)),
+        )
+        val gate = CompletableDeferred<Result<Unit>>()
+        coEvery { groups.setRole("g1", "u2", GroupRole.ADMIN, any()) } coAnswers { gate.await() }
+
+        val vm = viewModel()
+        advanceUntilIdle()
+        assertTrue((vm.state.value as GroupMembersUiState.Content).items.all { it.actionsEnabled })
+
+        vm.onMakeAdminConfirmed("u2")
+        runCurrent()
+        val busyState = vm.state.value as GroupMembersUiState.Content
+        assertTrue(busyState.busy)
+        assertTrue(busyState.items.none { it.actionsEnabled })
+
+        gate.complete(Result.failure(CommunityError.Network()))
+        advanceUntilIdle()
+        val doneState = vm.state.value as GroupMembersUiState.Content
+        assertFalse(doneState.busy)
+        assertTrue(doneState.items.all { it.actionsEnabled })
+    }
+
+    @Test
+    fun `khong doc duoc nhom fallback DELETED khoa moi thao tac`() = runTest {
+        every { groups.observeGroup("g1") } returns flow { throw CommunityError.Network() }
+        every { groups.observeMembers("g1") } returns flowOf(
+            listOf(member(ME, GroupRole.OWNER, 1), member("u2", GroupRole.MEMBER, 2)),
+        )
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        val items = (vm.state.value as GroupMembersUiState.Content).items
+        assertTrue(items.none { it.hasActions })
+    }
+
+    @Test
+    fun `act bat ngoai le truc tiep thanh ShowError khong crash`() = runTest {
+        every { groups.observeGroup("g1") } returns flowOf(group(ownerId = ME))
+        every { groups.observeMembers("g1") } returns flowOf(
+            listOf(member(ME, GroupRole.OWNER, 1), member("u2", GroupRole.MEMBER, 2)),
+        )
+        coEvery { groups.remove("g1", "u2", any()) } throws IllegalStateException("boom")
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.events.test {
+            vm.onRemoveConfirmed("u2")
+            advanceUntilIdle()
+            assertTrue(awaitItem() is GroupMembersEvent.ShowError)
+        }
+        assertFalse((vm.state.value as GroupMembersUiState.Content).busy)
     }
 }

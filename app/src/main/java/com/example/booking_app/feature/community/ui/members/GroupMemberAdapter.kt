@@ -30,7 +30,6 @@ class GroupMemberAdapter(
 ) : ListAdapter<MemberItem, GroupMemberAdapter.ViewHolder>(Diff) {
 
     var selectTransferTarget: Boolean = false
-    var actionsEnabled: Boolean = true
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder =
         ViewHolder(ItemGroupMemberBinding.inflate(LayoutInflater.from(parent.context), parent, false))
@@ -56,17 +55,23 @@ class GroupMemberAdapter(
 
             if (selectTransferTarget) {
                 binding.moreButton.isVisible = false
-                binding.root.isClickable = item.canTransferOwner && actionsEnabled
-                binding.root.setOnClickListener {
-                    if (item.canTransferOwner && actionsEnabled) actions.onTransferOwner(member)
+                val canPick = item.canTransferOwner && item.actionsEnabled
+                if (canPick) {
+                    binding.root.setOnClickListener { actions.onTransferOwner(member) }
+                } else {
+                    binding.root.setOnClickListener(null)
                 }
+                binding.root.isClickable = canPick
             } else {
-                binding.root.isClickable = false
                 binding.root.setOnClickListener(null)
+                binding.root.isClickable = false
                 binding.moreButton.isVisible = item.hasActions
-                binding.moreButton.isEnabled = actionsEnabled
+                binding.moreButton.isEnabled = item.actionsEnabled
                 binding.moreButton.contentDescription = context.getString(R.string.community_member_more_cd, name)
-                binding.moreButton.setOnClickListener { showMenu(it, item) }
+                binding.moreButton.setOnClickListener {
+                    if (!item.actionsEnabled) return@setOnClickListener
+                    showMenu(it, item)
+                }
             }
         }
     }

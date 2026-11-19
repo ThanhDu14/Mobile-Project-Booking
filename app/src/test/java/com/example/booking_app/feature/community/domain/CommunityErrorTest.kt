@@ -1,7 +1,9 @@
 package com.example.booking_app.feature.community.domain
 
+import com.example.booking_app.R
 import com.example.booking_app.core.network.AppError
 import com.example.booking_app.core.network.FunctionHttpException
+import com.example.booking_app.feature.community.ui.common.CommunityUiText
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -27,6 +29,7 @@ class CommunityErrorTest {
             "GROUP_NOT_FOUND" to CommunityError.GroupNotFound::class,
             "POST_NOT_FOUND" to CommunityError.PostNotFound::class,
             "REQUEST_NOT_FOUND" to CommunityError.RequestNotFound::class,
+            "MEMBER_NOT_FOUND" to CommunityError.MemberNotFound::class,
             "OWNER_LIMIT_REACHED" to CommunityError.OwnerLimitReached::class,
             "ALREADY_MEMBER" to CommunityError.AlreadyMember::class,
             "ALREADY_REQUESTED" to CommunityError.AlreadyRequested::class,
@@ -37,11 +40,12 @@ class CommunityErrorTest {
             "GROUP_LOCKED" to CommunityError.GroupLocked::class,
             "BUSY" to CommunityError.Busy::class,
         )
-        assertEquals(21, expected.size)
+        assertEquals(22, expected.size)
         expected.forEach { (code, type) ->
             assertEquals(code, type, communityErrorOf(code)::class)
             assertEquals(code, communityErrorOf(code).message)
         }
+        assertEquals(R.string.community_error_member_not_found, CommunityUiText.errorRes(CommunityError.MemberNotFound()))
     }
 
     @Test

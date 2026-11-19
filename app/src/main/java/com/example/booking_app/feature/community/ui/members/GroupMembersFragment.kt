@@ -68,7 +68,6 @@ class GroupMembersFragment : Fragment(R.layout.fragment_group_members) {
             EmptyStateSpec(message = R.string.community_empty_members, icon = R.drawable.ic_groups_24),
         )
         val content = state as? GroupMembersUiState.Content
-        adapter.actionsEnabled = content?.busy != true
         adapter.submitList(content?.items.orEmpty())
     }
 
