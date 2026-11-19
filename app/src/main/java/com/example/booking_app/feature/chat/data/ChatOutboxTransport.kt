@@ -1,5 +1,6 @@
 package com.example.booking_app.feature.chat.data
 
+import com.example.booking_app.core.session.SessionManager
 import com.example.booking_app.feature.chat.data.dto.ChatSendRequest
 import com.example.booking_app.feature.chat.domain.ChatError
 import com.example.booking_app.feature.chat.domain.ChatMediaRepository
@@ -9,8 +10,10 @@ import com.example.booking_app.feature.chat.domain.toChatError
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Source
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.flow.last
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withTimeout
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -19,6 +22,7 @@ import javax.inject.Singleton
  * Tách interface để `ChatOutboxTest` test hoàn toàn trên JVM không cần Firebase/Supabase thật.
  */
 interface ChatOutboxTransport {
+    fun currentUid(): String? = null
     suspend fun send(entry: OutboxEntry): Result<Unit>
     suspend fun uploadImage(chatId: String, messageId: String, localUri: String): Result<String>
     suspend fun messageExistsOnServer(chatId: String, messageId: String): Boolean
@@ -30,7 +34,10 @@ class DefaultChatOutboxTransport @Inject constructor(
     private val sendApi: ChatSendApi,
     private val mediaRepository: ChatMediaRepository,
     private val firestore: FirebaseFirestore,
+    private val sessionManager: SessionManager,
 ) : ChatOutboxTransport {
+
+    override fun currentUid(): String? = sessionManager.currentUid()
 
     override suspend fun send(entry: OutboxEntry): Result<Unit> = try {
         sendApi.invoke(
@@ -61,11 +68,15 @@ class DefaultChatOutboxTransport @Inject constructor(
     }
 
     override suspend fun messageExistsOnServer(chatId: String, messageId: String): Boolean = try {
-        firestore.collection("chats").document(chatId)
-            .collection("messages").document(messageId)
-            .get(Source.SERVER)
-            .await()
-            .exists()
+        withTimeout(SERVER_CHECK_TIMEOUT_MS) {
+            firestore.collection("chats").document(chatId)
+                .collection("messages").document(messageId)
+                .get(Source.SERVER)
+                .await()
+                .exists()
+        }
+    } catch (_: TimeoutCancellationException) {
+        false
     } catch (e: CancellationException) {
         throw e
     } catch (_: Exception) {
@@ -73,6 +84,16 @@ class DefaultChatOutboxTransport @Inject constructor(
     }
 
     override suspend fun discardMedia(chatId: String, messageId: String) {
-        runCatching { mediaRepository.discard(chatId, messageId) }
+        try {
+            mediaRepository.discard(chatId, messageId)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (_: Exception) {
+            // Dọn ảnh rác là thao tác best-effort.
+        }
+    }
+
+    private companion object {
+        const val SERVER_CHECK_TIMEOUT_MS = 3_000L
     }
 }

@@ -53,14 +53,18 @@ class ChatOutboxTest {
     }
 
     private class FakeTransport : ChatOutboxTransport {
+        var activeUid: String? = null
         val sentIds = mutableListOf<String>()
         val uploadedIds = mutableListOf<String>()
         val discardedMediaIds = mutableListOf<String>()
+        val serverCheckIds = mutableListOf<String>()
         var serverExistingIds = mutableSetOf<String>()
         var sendHandler: suspend (OutboxEntry) -> Result<Unit> = { Result.success(Unit) }
         var uploadHandler: suspend (String, String, String) -> Result<String> = { chatId, msgId, _ ->
             Result.success("$chatId/$msgId.jpg")
         }
+
+        override fun currentUid(): String? = activeUid
 
         override suspend fun send(entry: OutboxEntry): Result<Unit> {
             sentIds.add(entry.messageId)
@@ -72,8 +76,10 @@ class ChatOutboxTest {
             return uploadHandler(chatId, messageId, localUri)
         }
 
-        override suspend fun messageExistsOnServer(chatId: String, messageId: String): Boolean =
-            messageId in serverExistingIds
+        override suspend fun messageExistsOnServer(chatId: String, messageId: String): Boolean {
+            serverCheckIds.add(messageId)
+            return messageId in serverExistingIds
+        }
 
         override suspend fun discardMedia(chatId: String, messageId: String) {
             discardedMediaIds.add(messageId)
@@ -233,20 +239,37 @@ class ChatOutboxTest {
 
     @Test
     fun `xoa khi server da co tin thi tra ALREADY_SENT va khong xoa anh`() = runTest {
-        val network = FakeNetworkMonitor(initialOnline = false)
+        val network = FakeNetworkMonitor(initialOnline = true)
+        val clock = FakeClock(1_000_000L)
         val transport = FakeTransport().apply {
-            serverExistingIds.add("m-exists")
+            // Mô phỏng lần gửi trước commit trên server rồi rớt phản hồi (research R1).
+            sendHandler = { e ->
+                serverExistingIds.add(e.messageId)
+                Result.failure(ChatError.Network())
+            }
         }
-        val outbox = createOutbox(transport = transport, network = network)
+        val outbox = createOutbox(transport = transport, network = network, clock = clock)
+        try {
+            outbox.enqueue(
+                entry(
+                    id = "m-exists",
+                    localImageUri = "content://img/1",
+                    createdAtLocal = clock.currentMs,
+                ),
+            )
+            runCurrent()
+            clock.currentMs += ChatOutbox.TIMEOUT_MS
+            advanceTimeBy(ChatOutbox.TIMEOUT_MS + 1L)
+            runCurrent()
 
-        outbox.enqueue(entry("m-exists", localImageUri = "content://img/1"))
-        runCurrent()
-
-        val result = outbox.discard("chat-1", "m-exists")
-        assertEquals(DiscardResult.ALREADY_SENT, result)
-        assertTrue(outbox.observe("chat-1").first().isEmpty())
-        assertTrue(transport.discardedMediaIds.isEmpty())
-        outbox.close()
+            val result = outbox.discard("chat-1", "m-exists")
+            advanceUntilIdle()
+            assertEquals(DiscardResult.ALREADY_SENT, result)
+            assertTrue(outbox.observe("chat-1").first().isEmpty())
+            assertTrue(transport.discardedMediaIds.isEmpty())
+        } finally {
+            outbox.close()
+        }
     }
 
     @Test
@@ -254,15 +277,19 @@ class ChatOutboxTest {
         val network = FakeNetworkMonitor(initialOnline = false)
         val transport = FakeTransport()
         val outbox = createOutbox(transport = transport, network = network)
+        try {
+            outbox.enqueue(entry("m-discard", localImageUri = "content://img/2"))
+            runCurrent()
 
-        outbox.enqueue(entry("m-discard", localImageUri = "content://img/2"))
-        runCurrent()
-
-        val result = outbox.discard("chat-1", "m-discard")
-        assertEquals(DiscardResult.DISCARDED, result)
-        assertTrue(outbox.observe("chat-1").first().isEmpty())
-        assertEquals(listOf("m-discard"), transport.discardedMediaIds)
-        outbox.close()
+            val result = outbox.discard("chat-1", "m-discard")
+            advanceUntilIdle()
+            assertEquals(DiscardResult.DISCARDED, result)
+            assertTrue(outbox.observe("chat-1").first().isEmpty())
+            assertTrue(transport.serverCheckIds.isEmpty())
+            assertEquals(listOf("m-discard"), transport.discardedMediaIds)
+        } finally {
+            outbox.close()
+        }
     }
 
     @Test
@@ -404,6 +431,7 @@ class ChatOutboxTest {
         assertEquals(Delivery.FAILED, outbox.observe("chat-1").first().single().status)
 
         val outcome = outbox.discard("chat-1", "m-img-del")
+        advanceUntilIdle()
         assertEquals(DiscardResult.DISCARDED, outcome)
         assertTrue(outbox.observe("chat-1").first().isEmpty())
         assertEquals(listOf("m-img-del"), transport.discardedMediaIds)
@@ -435,5 +463,126 @@ class ChatOutboxTest {
         assertEquals(listOf("m-photo-miss", "m-photo-miss"), transport.sentIds)
         assertTrue(outbox.observe("chat-1").first().isEmpty())
         outbox.close()
+    }
+
+    // ---------- Review Argon Setup #2, #3, #4, #6, #9 ----------
+
+    @Test
+    fun `flushRetryable gap loi mang o tin dau khong lam tin sau bi ket PENDING`() = runTest {
+        val network = FakeNetworkMonitor(initialOnline = false)
+        val clock = FakeClock(1_000_000L)
+        val transport = FakeTransport().apply {
+            sendHandler = { Result.failure(ChatError.Network()) }
+        }
+        val outbox = createOutbox(transport = transport, network = network, clock = clock)
+        try {
+            outbox.enqueue(entry("m1", createdAtLocal = clock.currentMs))
+            outbox.enqueue(entry("m2", createdAtLocal = clock.currentMs + 10L))
+            runCurrent()
+
+            clock.currentMs += ChatOutbox.TIMEOUT_MS + 100L
+            advanceTimeBy(ChatOutbox.TIMEOUT_MS + 200L)
+            runCurrent()
+
+            val beforeOnline = outbox.observe("chat-1").first()
+            assertEquals(listOf(Delivery.FAILED, Delivery.FAILED), beforeOnline.map { it.status })
+
+            // Có mạng lại nhưng request tin đầu vẫn lỗi mạng → tin 2 KHÔNG được kẹt ở PENDING.
+            network.setOnline(true)
+            advanceUntilIdle()
+
+            val afterFail = outbox.observe("chat-1").first()
+            assertEquals(2, afterFail.size)
+            assertEquals(listOf(Delivery.FAILED, Delivery.FAILED), afterFail.map { it.status })
+            assertTrue(afterFail.all { it.retryable })
+            assertEquals(listOf("m1"), transport.sentIds)
+        } finally {
+            outbox.close()
+        }
+    }
+
+    @Test
+    fun `loi mang tam thoi luc dang online tu thu lai theo backoff va gui thanh cong cung messageId`() = runTest {
+        val network = FakeNetworkMonitor(initialOnline = true)
+        val clock = FakeClock(1_000_000L)
+        var attempts = 0
+        val transport = FakeTransport().apply {
+            sendHandler = {
+                attempts++
+                if (attempts < 3) Result.failure(ChatError.Network()) else Result.success(Unit)
+            }
+        }
+        val outbox = createOutbox(transport = transport, network = network, clock = clock)
+        try {
+            outbox.enqueue(entry("m-backoff", createdAtLocal = clock.currentMs))
+            runCurrent()
+            // Lần 1 thất bại → vẫn PENDING chờ backoff.
+            assertEquals(1, attempts)
+            assertEquals(Delivery.PENDING, outbox.observe("chat-1").first().single().status)
+
+            // Qua nhịp backoff 2s (lần 2 vẫn lỗi) + 4s (lần 3 thành công).
+            advanceTimeBy(2_000L + 4_000L + 100L)
+            runCurrent()
+
+            assertTrue(outbox.observe("chat-1").first().isEmpty())
+            assertEquals(listOf("m-backoff", "m-backoff", "m-backoff"), transport.sentIds)
+        } finally {
+            outbox.close()
+        }
+    }
+
+    @Test
+    fun `mo lai app luc van offline khoi phuc bo dem 60 giay cho tin PENDING`() = runTest {
+        val store = FakeDataStore()
+        val network = FakeNetworkMonitor(initialOnline = false)
+        val clock = FakeClock(1_000_000L)
+        val transport = FakeTransport()
+
+        val first = createOutbox(store = store, transport = transport, network = network, clock = clock)
+        first.enqueue(entry("m-offline-restart", createdAtLocal = clock.currentMs))
+        runCurrent()
+        first.close()
+
+        // Giả lập app mở lại sau 20 giây, vẫn đang offline.
+        clock.currentMs += 20_000L
+        val second = createOutbox(store = store, transport = transport, network = network, clock = clock)
+        try {
+            runCurrent()
+            assertEquals(Delivery.PENDING, second.observe("chat-1").first().single().status)
+
+            // Sau thêm 40 giây (đủ 60s), timer đã khôi phục phải chuyển tin sang FAILED.
+            clock.currentMs += 40_000L
+            advanceTimeBy(40_001L)
+            runCurrent()
+
+            val failed = second.observe("chat-1").first().single()
+            assertEquals(Delivery.FAILED, failed.status)
+            assertTrue(failed.retryable)
+        } finally {
+            second.close()
+        }
+    }
+
+    @Test
+    fun `doi tai khoan tren cung may khong hien va khong gui tin outbox cua tai khoan truoc`() = runTest {
+        val store = FakeDataStore()
+        val network = FakeNetworkMonitor(initialOnline = false)
+        val transport = FakeTransport().apply { activeUid = "player1" }
+        val outbox = createOutbox(store = store, transport = transport, network = network)
+        try {
+            outbox.enqueue(entry("m-p1", text = "Tin của player1"))
+            runCurrent()
+            assertEquals(1, outbox.observe("chat-1").first().size)
+
+            // Đăng xuất player1, đăng nhập owner1 rồi có mạng lại.
+            transport.activeUid = "owner1"
+            assertTrue(outbox.observe("chat-1").first().isEmpty())
+
+            network.setOnline(true)
+            advanceUntilIdle()
+            assertTrue(transport.sentIds.isEmpty())
+        } finally {
+            outbox.close()
+        }
     }
 }

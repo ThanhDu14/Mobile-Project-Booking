@@ -16,6 +16,7 @@ data class OutboxEntry(
     /** `true` khi lỗi do mạng/`BUSY` (tự gửi lại khi có mạng); `false` khi lỗi không thử lại được. */
     val retryable: Boolean = true,
     val errorCode: String? = null,
+    val senderId: String? = null,
 )
 
 /** Kết quả khi người dùng bấm "Xóa" trên một tin trong outbox (research R1). */

@@ -1,7 +1,14 @@
 package com.example.booking_app.feature.chat.domain
 
+import com.example.booking_app.core.image.ImageTooLargeException
+import com.example.booking_app.core.image.ImageUnreadableException
 import com.example.booking_app.core.network.AppError
 import com.example.booking_app.core.network.FunctionHttpException
+import com.example.booking_app.core.network.toAppError
+import com.google.firebase.FirebaseNetworkException
+import com.google.firebase.firestore.FirebaseFirestoreException
+import io.github.jan.supabase.exceptions.HttpRequestException
+import io.mockk.mockk
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -47,5 +54,35 @@ class ChatErrorTest {
         assertFalse(ChatError.InvalidArgument().isRetryable)
         assertFalse(ChatError.ChatReadOnly().isRetryable)
         assertFalse(ChatError.GroupLocked().isRetryable)
+    }
+
+    @Test
+    fun `anh xa ngoai le nen anh, mang Firebase, Firestore va HttpRequestException`() {
+        assertTrue(ImageTooLargeException().toChatError() is ChatError.ImageTooLarge)
+        assertTrue(ImageUnreadableException().toChatError() is ChatError.ImageUnreadable)
+        assertTrue(AppError.Unknown(ImageTooLargeException()).toChatError() is ChatError.ImageTooLarge)
+        assertTrue(AppError.Unknown(ImageUnreadableException()).toChatError() is ChatError.ImageUnreadable)
+
+        val fbNet = FirebaseNetworkException("offline")
+        assertTrue(fbNet.toChatError() is ChatError.Network)
+        assertTrue(AppError.Unknown(fbNet).toChatError() is ChatError.Network)
+
+        val httpReq = HttpRequestException("dns failed", mockk(relaxed = true))
+        assertTrue(httpReq.toAppError() === AppError.Network)
+        assertTrue(httpReq.toChatError() is ChatError.Network)
+        assertTrue(AppError.Unknown(httpReq).toChatError() is ChatError.Network)
+
+        assertTrue(
+            FirebaseFirestoreException("denied", FirebaseFirestoreException.Code.PERMISSION_DENIED)
+                .toChatError() is ChatError.NotParticipant,
+        )
+        assertTrue(
+            FirebaseFirestoreException("unavailable", FirebaseFirestoreException.Code.UNAVAILABLE)
+                .toChatError() is ChatError.Network,
+        )
+        assertTrue(
+            FirebaseFirestoreException("missing", FirebaseFirestoreException.Code.NOT_FOUND)
+                .toChatError() is ChatError.ChatNotFound,
+        )
     }
 }

@@ -1,12 +1,13 @@
 package com.example.booking_app.feature.chat.domain
 
+import com.example.booking_app.core.image.ImageTooLargeException
+import com.example.booking_app.core.image.ImageUnreadableException
 import com.example.booking_app.core.network.AppError
 import com.example.booking_app.core.network.FunctionHttpException
+import com.example.booking_app.core.network.parseFunctionErrorCode
+import com.google.firebase.FirebaseNetworkException
 import com.google.firebase.firestore.FirebaseFirestoreException
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.jsonObject
-import kotlinx.serialization.json.jsonPrimitive
+import io.github.jan.supabase.exceptions.HttpRequestException
 import java.io.IOException
 
 /**
@@ -76,8 +77,6 @@ fun chatErrorOf(code: String?, httpStatus: Int? = null): ChatError = when (code)
     else -> ChatError.Unknown(code)
 }
 
-private val ChatErrorJson = Json { ignoreUnknownKeys = true }
-
 fun Throwable.toChatError(): ChatError = when (this) {
     is ChatError -> this
     AppError.Network, AppError.Timeout -> ChatError.Network()
@@ -88,20 +87,21 @@ fun Throwable.toChatError(): ChatError = when (this) {
     is AppError.Unknown -> when (val c = cause) {
         is FunctionHttpException -> c.toChatError()
         is FirebaseFirestoreException -> c.toFirestoreChatError()
-        is IOException -> ChatError.Network()
+        is FirebaseNetworkException, is IOException, is HttpRequestException -> ChatError.Network()
+        is ImageTooLargeException -> ChatError.ImageTooLarge()
+        is ImageUnreadableException -> ChatError.ImageUnreadable()
         else -> ChatError.Unknown(null)
     }
     is FunctionHttpException -> toChatError()
     is FirebaseFirestoreException -> toFirestoreChatError()
-    is IOException -> ChatError.Network()
+    is FirebaseNetworkException, is IOException, is HttpRequestException -> ChatError.Network()
+    is ImageTooLargeException -> ChatError.ImageTooLarge()
+    is ImageUnreadableException -> ChatError.ImageUnreadable()
     else -> ChatError.Unknown(null)
 }
 
-private fun FunctionHttpException.toChatError(): ChatError {
-    val error = runCatching { ChatErrorJson.parseToJsonElement(body.orEmpty()).jsonObject["error"] as? JsonObject }.getOrNull()
-    val code = error?.get("code")?.let { runCatching { it.jsonPrimitive.content }.getOrNull() }
-    return chatErrorOf(code, status)
-}
+private fun FunctionHttpException.toChatError(): ChatError =
+    chatErrorOf(parseFunctionErrorCode(body), status)
 
 private fun FirebaseFirestoreException.toFirestoreChatError(): ChatError = when (code) {
     FirebaseFirestoreException.Code.PERMISSION_DENIED -> ChatError.NotParticipant()

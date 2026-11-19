@@ -52,30 +52,40 @@ class ChatOutbox @Inject constructor(
     private val storeMutex = Mutex()
     private val chatMutexes = ConcurrentHashMap<String, Mutex>()
     private val timeoutJobs = ConcurrentHashMap<String, Job>()
+    private val retryJobs = ConcurrentHashMap<String, Job>()
+    private val retryAttempts = ConcurrentHashMap<String, Int>()
+    private val enqueuedInSession = ConcurrentHashMap.newKeySet<String>()
     private var monitorJob: Job? = null
 
     init {
         startNetworkListener()
     }
 
-    /** Quan sát các tin chưa gửi xong của [chatId] theo thứ tự `createdAtLocal`. */
+    /** Quan sát các tin chưa gửi xong của [chatId] (thuộc người dùng hiện tại) theo thứ tự `createdAtLocal`. */
     fun observe(chatId: String): Flow<List<OutboxEntry>> = dataStore.data
-        .map { prefs -> decodeMap(prefs)[chatId].orEmpty().sortedBy { it.createdAtLocal } }
+        .map { prefs ->
+            decodeMap(prefs)[chatId].orEmpty()
+                .filter(::isOwnedByCurrentUser)
+                .sortedBy { it.createdAtLocal }
+        }
         .distinctUntilChanged()
 
     /** Đưa tin mới vào outbox (`PENDING` ngay lập tức) rồi bắt đầu gửi. */
     suspend fun enqueue(entry: OutboxEntry) {
+        enqueuedInSession.add(entry.messageId)
         val pending = entry.copy(
             status = Delivery.PENDING,
             retryable = true,
             errorCode = null,
+            senderId = entry.senderId ?: transport.currentUid(),
         )
         mutateMap { map ->
             val current = map[pending.chatId].orEmpty().filterNot { it.messageId == pending.messageId }
             map[pending.chatId] = current + pending
         }
+        clearRetryState(pending.chatId)
         scheduleTimeoutIfNeeded(pending)
-        scope.launch(ioDispatcher) { drainChat(pending.chatId) }
+        scope.launch(ioDispatcher) { drainChat(pending.chatId, includeRetryableFailed = false) }
     }
 
     /** Gửi lại tin lỗi dùng lại đúng `messageId`. */
@@ -97,52 +107,60 @@ class ChatOutbox @Inject constructor(
             }
         }
         updatedEntry?.let { entry ->
+            clearRetryState(chatId)
             scheduleTimeoutIfNeeded(entry)
-            scope.launch(ioDispatcher) { drainChat(chatId) }
+            scope.launch(ioDispatcher) { drainChat(chatId, includeRetryableFailed = false) }
         }
     }
 
     /**
-     * Xóa một tin khỏi outbox. Trước khi xóa, kiểm tra `messages/{messageId}` trên server:
-     * nếu tin đã lên server (lần gửi trước commit nhưng mất phản hồi) thì bỏ khỏi outbox và trả
-     * [DiscardResult.ALREADY_SENT] thay vì xóa ảnh (research R1).
+     * Xóa một tin khỏi outbox. Trước khi xóa, kiểm tra `messages/{messageId}` trên server
+     * (khi đã từng thử gửi và đang có mạng): nếu tin đã lên server (lần gửi trước commit nhưng mất
+     * phản hồi) thì bỏ khỏi outbox và trả [DiscardResult.ALREADY_SENT] thay vì xóa ảnh (research R1).
      */
     suspend fun discard(chatId: String, messageId: String): DiscardResult {
-        val existing = getEntry(chatId, messageId)
-        val existsOnServer = transport.messageExistsOnServer(chatId, messageId)
-        removeEntry(chatId, messageId)
+        val mutex = chatMutexes.computeIfAbsent(chatId) { Mutex() }
+        val (existing, existsOnServer) = mutex.withLock {
+            val entry = getEntry(chatId, messageId)
+            val onServer = if (entry != null && entry.attempts > 0 && networkMonitor.isCurrentlyOnline()) {
+                transport.messageExistsOnServer(chatId, messageId)
+            } else {
+                false
+            }
+            removeEntry(chatId, messageId)
+            entry to onServer
+        }
         if (existsOnServer) {
             return DiscardResult.ALREADY_SENT
         }
         if (existing != null && (existing.localImageUri != null || existing.imagePath != null)) {
-            transport.discardMedia(chatId, messageId)
+            scope.launch(ioDispatcher) {
+                transport.discardMedia(chatId, messageId)
+            }
         }
         return DiscardResult.DISCARDED
     }
 
     /** Thử gửi lại tất cả tin có thể thử lại (gọi khi có mạng lại hoặc khi khởi động). */
     suspend fun flushRetryable() {
+        flushRetryableInternal(excludeMessageIds = emptySet())
+    }
+
+    private suspend fun flushRetryableInternal(excludeMessageIds: Set<String>) {
         val map = readMap()
-        val chatIdsToDrain = mutableListOf<String>()
-        mutateMap { mutable ->
-            mutable.forEach { (chatId, list) ->
-                var changed = false
-                val updated = list.map { entry ->
-                    if (entry.retryable && entry.status == Delivery.FAILED) {
-                        changed = true
-                        entry.copy(status = Delivery.PENDING, errorCode = null)
-                    } else {
-                        entry
-                    }
-                }
-                if (changed) mutable[chatId] = updated
-                if (updated.any { it.retryable && it.status == Delivery.PENDING }) {
-                    chatIdsToDrain.add(chatId)
+        val chatIdsToDrain = map.entries
+            .filter { (_, list) ->
+                list.any { entry ->
+                    entry.messageId !in excludeMessageIds &&
+                        isOwnedByCurrentUser(entry) &&
+                        entry.retryable &&
+                        (entry.status == Delivery.PENDING || entry.status == Delivery.FAILED)
                 }
             }
-        }
-        for (chatId in chatIdsToDrain.distinct()) {
-            drainChat(chatId)
+            .map { it.key }
+        for (chatId in chatIdsToDrain) {
+            clearRetryState(chatId)
+            scope.launch(ioDispatcher) { drainChat(chatId, includeRetryableFailed = true) }
         }
     }
 
@@ -154,6 +172,7 @@ class ChatOutbox @Inject constructor(
                 val list = map[chatId].orEmpty()
                 val updated = list.map { entry ->
                     if (entry.status == Delivery.PENDING && entry.retryable && now - entry.createdAtLocal >= TIMEOUT_MS) {
+                        timeoutJobs.remove(entry.messageId)?.cancel()
                         entry.copy(status = Delivery.FAILED, retryable = true, errorCode = ChatError.Network().code)
                     } else {
                         entry
@@ -170,38 +189,71 @@ class ChatOutbox @Inject constructor(
         monitorJob = null
         timeoutJobs.values.forEach { it.cancel() }
         timeoutJobs.clear()
+        cancelAllRetryJobs()
     }
 
     private fun startNetworkListener() {
         monitorJob = scope.launch(ioDispatcher) {
+            restorePendingTimeouts()
+            var isInitial = true
             networkMonitor.isOnline.collect { online ->
+                val initialEmission = isInitial
+                isInitial = false
                 if (online) {
-                    flushRetryable()
+                    if (initialEmission) {
+                        // Lúc khởi động, chỉ flush tin tồn từ phiên trước; tin vừa enqueue đã tự drainChat.
+                        flushRetryableInternal(excludeMessageIds = enqueuedInSession.toSet())
+                    } else {
+                        flushRetryable()
+                    }
+                } else {
+                    cancelAllRetryJobs()
                 }
             }
         }
     }
 
-    private suspend fun drainChat(chatId: String) {
+    private suspend fun restorePendingTimeouts() {
+        val map = readMap()
+        if (map.isEmpty()) return
+        val now = clock.now()
+        val hasExpired = map.values.flatten().any {
+            it.status == Delivery.PENDING && it.retryable && now - it.createdAtLocal >= TIMEOUT_MS
+        }
+        if (hasExpired) markExpiredAsFailed()
+        readMap().values.flatten()
+            .filter { it.status == Delivery.PENDING && it.retryable }
+            .forEach { scheduleTimeoutIfNeeded(it) }
+    }
+
+    private suspend fun drainChat(chatId: String, includeRetryableFailed: Boolean = false) {
         val mutex = chatMutexes.computeIfAbsent(chatId) { Mutex() }
         mutex.withLock {
             while (true) {
                 val next = readMap()[chatId].orEmpty()
                     .sortedBy { it.createdAtLocal }
-                    .firstOrNull { it.status == Delivery.PENDING && it.retryable }
+                    .firstOrNull { entry ->
+                        isOwnedByCurrentUser(entry) && entry.retryable &&
+                            (entry.status == Delivery.PENDING || (includeRetryableFailed && entry.status == Delivery.FAILED))
+                    }
                     ?: break
 
                 if (!networkMonitor.isCurrentlyOnline()) {
-                    if (clock.now() - next.createdAtLocal >= TIMEOUT_MS) {
-                        markEntryFailed(next, retryable = true, errorCode = ChatError.Network().code)
-                    } else {
-                        scheduleTimeoutIfNeeded(next)
-                    }
+                    reconcilePendingTimeouts(chatId)
                     break
                 }
 
-                val proceed = processEntry(next)
-                if (!proceed) break
+                val ready = if (next.status == Delivery.FAILED) {
+                    next.copy(status = Delivery.PENDING, errorCode = null).also { updateEntry(it) }
+                } else {
+                    next
+                }
+
+                val proceed = processEntry(ready)
+                if (!proceed) {
+                    reconcilePendingTimeouts(chatId)
+                    break
+                }
             }
         }
     }
@@ -237,11 +289,14 @@ class ChatOutbox @Inject constructor(
 
             val sendResult = transport.send(current)
             if (sendResult.isSuccess) {
+                clearRetryState(current.chatId)
                 removeEntry(current.chatId, current.messageId)
                 return true
             }
 
-            val err = sendResult.exceptionOrNull()?.toChatError() ?: ChatError.Unknown(null)
+            val sendEx = sendResult.exceptionOrNull()
+            if (sendEx is CancellationException) throw sendEx
+            val err = sendEx?.toChatError() ?: ChatError.Unknown(null)
 
             if (err is ChatError.Busy && busyRetries < MAX_BUSY_RETRIES) {
                 busyRetries++
@@ -260,12 +315,77 @@ class ChatOutbox @Inject constructor(
             // Lỗi do mạng hoặc BUSY quá số lần: kiểm tra mốc 60 giây.
             val elapsed = clock.now() - current.createdAtLocal
             if (elapsed >= TIMEOUT_MS) {
+                clearRetryState(current.chatId)
                 markEntryFailed(current, retryable = true, errorCode = err.code)
             } else {
                 scheduleTimeoutIfNeeded(current)
+                if (networkMonitor.isCurrentlyOnline() && !scheduleBackoffRetry(current.chatId)) {
+                    markEntryFailed(current, retryable = true, errorCode = err.code)
+                }
             }
             return false
         }
+    }
+
+    private fun scheduleBackoffRetry(chatId: String): Boolean {
+        val attemptIndex = retryAttempts[chatId] ?: 0
+        if (attemptIndex >= RETRY_BACKOFF_DELAYS_MS.size) {
+            retryAttempts.remove(chatId)
+            return false
+        }
+        val delayMs = RETRY_BACKOFF_DELAYS_MS[attemptIndex]
+        retryAttempts[chatId] = attemptIndex + 1
+        retryJobs.remove(chatId)?.cancel()
+        retryJobs[chatId] = scope.launch(ioDispatcher) {
+            delay(delayMs)
+            retryJobs.remove(chatId)
+            if (networkMonitor.isCurrentlyOnline()) {
+                drainChat(chatId, includeRetryableFailed = false)
+            }
+        }
+        return true
+    }
+
+    private suspend fun reconcilePendingTimeouts(chatId: String) {
+        val now = clock.now()
+        val pendingUnexpired = mutableListOf<OutboxEntry>()
+        mutateMap { map ->
+            val list = map[chatId] ?: return@mutateMap
+            map[chatId] = list.map { entry ->
+                if (entry.status == Delivery.PENDING && entry.retryable) {
+                    if (now - entry.createdAtLocal >= TIMEOUT_MS) {
+                        timeoutJobs.remove(entry.messageId)?.cancel()
+                        entry.copy(status = Delivery.FAILED, retryable = true, errorCode = ChatError.Network().code)
+                    } else {
+                        pendingUnexpired.add(entry)
+                        entry
+                    }
+                } else {
+                    entry
+                }
+            }
+        }
+        pendingUnexpired.forEach { entry ->
+            if (timeoutJobs[entry.messageId]?.isActive != true) {
+                scheduleTimeoutIfNeeded(entry)
+            }
+        }
+    }
+
+    private fun isOwnedByCurrentUser(entry: OutboxEntry): Boolean {
+        val activeUid = transport.currentUid() ?: return true
+        return entry.senderId == null || entry.senderId == activeUid
+    }
+
+    private fun clearRetryState(chatId: String) {
+        retryAttempts.remove(chatId)
+        retryJobs.remove(chatId)?.cancel()
+    }
+
+    private fun cancelAllRetryJobs() {
+        retryJobs.values.forEach { it.cancel() }
+        retryJobs.clear()
+        retryAttempts.clear()
     }
 
     private fun scheduleTimeoutIfNeeded(entry: OutboxEntry) {
@@ -301,10 +421,17 @@ class ChatOutbox @Inject constructor(
 
     private suspend fun removeEntry(chatId: String, messageId: String) {
         timeoutJobs.remove(messageId)?.cancel()
+        var becameEmpty = false
         mutateMap { map ->
             val filtered = map[chatId].orEmpty().filterNot { it.messageId == messageId }
-            if (filtered.isEmpty()) map.remove(chatId) else map[chatId] = filtered
+            if (filtered.isEmpty()) {
+                map.remove(chatId)
+                becameEmpty = true
+            } else {
+                map[chatId] = filtered
+            }
         }
+        if (becameEmpty) clearRetryState(chatId)
     }
 
     private suspend fun getEntry(chatId: String, messageId: String): OutboxEntry? =
@@ -333,6 +460,7 @@ class ChatOutbox @Inject constructor(
         const val TIMEOUT_MS = 60_000L
         const val MAX_BUSY_RETRIES = 3
         const val BUSY_RETRY_DELAY_MS = 200L
+        val RETRY_BACKOFF_DELAYS_MS = longArrayOf(2_000L, 4_000L, 8_000L, 16_000L, 30_000L)
         private val KEY_OUTBOX = stringPreferencesKey("outbox_by_chat")
         private val OutboxJson = Json { ignoreUnknownKeys = true; encodeDefaults = true }
     }

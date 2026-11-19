@@ -47,7 +47,12 @@ class AndroidNetworkMonitor @Inject constructor(
             }
 
             override fun onLost(network: Network) {
-                trySend(isCurrentlyOnline())
+                val active = cm.activeNetwork
+                if (active == null || active == network) {
+                    trySend(false)
+                } else {
+                    trySend(isCurrentlyOnline())
+                }
             }
 
             override fun onCapabilitiesChanged(network: Network, networkCapabilities: NetworkCapabilities) {
