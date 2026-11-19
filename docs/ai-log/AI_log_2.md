@@ -2643,3 +2643,38 @@ Chưa thử trên máy tính bảng thật; giả lập bằng mật độ màn 
 | `expire-holds` | 2 nhóm định kỳ và 38 booking HOLD quá hạn → EXPIRED; không còn slot HELD nào |
 
 Mọi trường thời gian do job ghi đều là `timestampValue` (không còn chuỗi ISO như lỗi đã sửa ở `8c59c75`).
+
+## Mục 61: Sửa 7 lỗi tìm thấy khi rà soát 020, 021, 022
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-19 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 02 – Tìm sân (020, 021, 022) |
+| Công cụ AI | Claude Code (Claude Opus 5.5) |
+| Nhánh Git | `feature/020-021-022-complete` |
+
+### Prompt chính
+
+"Bạn hãy rà soát lại code của các phần 020, 021, 022 và báo kết quả cho tôi, xem có lỗi hay mâu thuẫn gì không", sau đó "Hãy sửa lại 1,2,3 và 4,5,6 luôn nhé" và "Sửa luôn lỗi 7 rồi chạy CI và push nhé".
+
+### Các lỗi đã sửa
+
+| # | Lỗi | Cách sửa | Commit |
+|---|---|---|---|
+| 1 | Giá lẻ (gõ tay hoặc AI hiểu "dưới 55k5") làm lần tìm không lưu vào lịch sử mà không báo | Làm tròn giá về bội số 1.000 (giá thấp nhất xuống, giá cao nhất lên); hộp nhập giá báo lỗi khi dưới 1.000 đ; contract sửa từ 10.000 thành 1.000 | `45ce3f0` |
+| 2 | Máy tính bảng hiện mỗi thông báo hai lần | Chỉ hiện snackbar khi danh sách bị che hoặc đã cuộn | `c9996b1` |
+| 3 | Gửi câu hỏi AI khi micro còn nghe, kết quả đến muộn ghi đè câu hỏi | Bấm gửi thì dừng micro trước | `87a4964` |
+| 4 | Mỗi lần bấm "Vị trí của tôi" đều tải lại danh sách | Chỉ tìm lại khi vị trí đổi hơn 100 m | `701d2ef` |
+| 5 | AI yêu cầu "gần nhất" thì lịch sử lưu 2 mục | Đợi kết quả xin quyền vị trí rồi mới lưu 1 mục | `d6b4c33` |
+| 6 | Kết quả vượt 150 sân nhưng bản đồ bảo "Phóng gần hơn" | Báo "Chọn thêm khu vực" giống danh sách | `700fcdb` |
+| 7 | Trang chủ xếp các sân bằng điểm theo tên, Tìm kiếm theo id | Dùng chung `VenueOrder.byRating` (tên không phân biệt hoa thường, rồi id) | `2b732d4` |
+
+### Kiểm tra
+
+- Mỗi lỗi có unit test mới, trừ lỗi 2 (giao diện). Với lỗi 3 và 5, đã tạm bỏ bản sửa để xác nhận test fail rồi mới đặt lại.
+- `./gradlew lint testDebugUnitTest assembleDebug` qua trước khi push.
+
+### Giới hạn
+
+Điện thoại ngắt kết nối giữa chừng nên chưa thử trên máy hộp nhập giá (lỗi 1) và thông báo ở bố cục máy tính bảng (lỗi 2).
