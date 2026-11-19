@@ -300,7 +300,7 @@ Task của spec khác ghi là `010-T###`, `070-T###`, `081-T###`.
 - [ ] T070 [P] Espresso `ATEST/CreateGroupAndEventFlowTest.kt` (Emulator + seed): tạo nhóm → mở trang nhóm → tạo sự kiện → tài khoản khác tham gia → thấy "1/N người tham gia"
 - [ ] T071 [P] Kiểm tra 4 trạng thái (loading, content, empty, error + "Thử lại") trên 10 màn hình/bottom sheet (FR-020); mất mạng không crash, giữ nội dung đang soạn; chế độ tối; bố cục `w600dp` (`RES/layout-w600dp/` nếu cần, bảng tin tối đa 600dp chiều ngang); `contentDescription` cho ảnh và icon, vùng chạm ≥ 48dp
 - [ ] T072 [P] Cập nhật `docs/design/database/README.md` theo [danh sách cuối data-model.md](data-model.md#danh-sách-thay-đổi-cần-đưa-vào-docsdesigndatabasereadmemd) (mục 4.10, 4.12, 5, 6, 7, 8, 8a), **sau khi D đồng ý**
-- [ ] T073 [P] Cập nhật `docs/features/09-community-chat/README.md` (link plan, tasks spec 090; trạng thái) và cột *Spec* nhóm 09 trong `docs/features/README.md`
+- [X] T073 [P] Cập nhật `docs/features/09-community-chat/README.md` (link plan, tasks spec 090; trạng thái) và cột *Spec* nhóm 09 trong `docs/features/README.md`
 - [ ] T074 Chạy toàn bộ [quickstart.md](quickstart.md): test tự động mục 2; Q1–Q15; đo SC-001, SC-002, SC-005, SC-006; hỏi 5 người thử cho SC-008; chụp ảnh hoặc quay video minh chứng
 - [ ] T075 Chạy `./gradlew lint testDebugUnitTest assembleDebug`, `deno test -A supabase/functions`, `npx supabase test db`, `npm test` trong `firestore-tests/`; không còn cảnh báo Lint mức Error; ktlint sạch
 

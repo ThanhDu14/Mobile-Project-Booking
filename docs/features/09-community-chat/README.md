@@ -6,9 +6,9 @@
 | Vai trò sử dụng | Người chơi |
 | Thành viên phụ trách | Nguyễn Đức Duy (C) |
 | App tham khảo | Alobo |
-| Trạng thái | ⬜ Chưa bắt đầu |
+| Trạng thái | 🟨 Đang làm |
 | Nhánh Git | `feature/09-community-chat` |
-| Spec (Spec Kit) | [`specs/090-community-group/spec.md`](../../../specs/090-community-group/spec.md) (đã clarify) · [`specs/091-chat/spec.md`](../../../specs/091-chat/spec.md) (đã clarify) |
+| Spec (Spec Kit) | [`specs/090-community-group/spec.md`](../../../specs/090-community-group/spec.md) ([plan](../../../specs/090-community-group/plan.md), [tasks](../../../specs/090-community-group/tasks.md)) · [`specs/091-chat/spec.md`](../../../specs/091-chat/spec.md) (đã clarify) |
 
 ## Phạm vi chức năng
 
