@@ -2677,4 +2677,7 @@ Mọi trường thời gian do job ghi đều là `timestampValue` (không còn 
 
 ### Giới hạn
 
-Điện thoại ngắt kết nối giữa chừng nên chưa thử trên máy hộp nhập giá (lỗi 1) và thông báo ở bố cục máy tính bảng (lỗi 2).
+Thử lại trên Galaxy A54 sau khi cắm lại máy:
+- Lỗi 1: nhập "50" thì hộp giá báo lỗi; nhập "55500" thì tìm với "Từ 55.000 đ/giờ" (3 sân) và lịch sử lưu mục "≥55k". Phát hiện lỗi luôn hiện dưới ô "Giá cao nhất" dù số sai nằm ở ô "Giá thấp nhất"; đã sửa để lỗi hiện dưới đúng ô.
+- Lỗi 2 (giả lập máy tính bảng bằng `wm density 280`): "Tìm ở khu vực này" chỉ hiện thông báo trên danh sách, không kèm snackbar; khi danh sách đã cuộn thì hiện snackbar.
+- Lỗi 7: các sân bằng điểm (PAM Badminton, Minh Tâm CN1, cùng ★4,5 với 2 lượt) xếp cùng thứ tự ở Trang chủ và Tìm kiếm.
