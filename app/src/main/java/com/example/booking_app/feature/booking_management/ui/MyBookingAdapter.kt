@@ -1,5 +1,6 @@
 package com.example.booking_app.feature.booking_management.ui
 
+import com.example.booking_app.core.format.MoneyFormat
 import android.content.Intent
 import android.net.Uri
 import android.view.LayoutInflater
@@ -12,7 +13,6 @@ import com.example.booking_app.R
 import com.example.booking_app.databinding.ItemMyBooking060Binding
 import com.example.booking_app.feature.booking_management.domain.BookingDetail
 import com.example.booking_app.feature.booking_management.domain.RefundPolicy
-import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
@@ -53,7 +53,6 @@ class MyBookingAdapter(
 
         fun bind(item: BookingDetail) {
             val locale = Locale.forLanguageTag("vi-VN")
-            val currencyFormat = NumberFormat.getCurrencyInstance(locale)
             val timeFormat = SimpleDateFormat("HH:mm", locale)
             val dateFormat = SimpleDateFormat("dd/MM", locale)
 
@@ -96,14 +95,14 @@ class MyBookingAdapter(
             val courtsStr = item.items.map { it.courtName }.distinct().joinToString(", ").ifBlank { "Sân" }
             val paymentDetail = when {
                 item.finance.depositAmount > 0 && item.finance.remainingAmount > 0 ->
-                    "Đã cọc ${currencyFormat.format(item.finance.depositAmount)} • Còn ${currencyFormat.format(item.finance.remainingAmount)}"
+                    "Đã cọc ${MoneyFormat.vnd(item.finance.depositAmount)} • Còn ${MoneyFormat.vnd(item.finance.remainingAmount)}"
                 item.finance.paidAmount > 0 ->
-                    "Đã thanh toán ${currencyFormat.format(item.finance.paidAmount)}"
+                    "Đã thanh toán ${MoneyFormat.vnd(item.finance.paidAmount)}"
                 else ->
                     "Chưa thanh toán"
             }
             // Tổng tiền đơn trên thẻ (FR-010)
-            binding.textBookingDetails.text = "$courtsStr • ${currencyFormat.format(item.finance.total)} • $paymentDetail"
+            binding.textBookingDetails.text = "$courtsStr • ${MoneyFormat.vnd(item.finance.total)} • $paymentDetail"
 
             // Trạng thái theo thời điểm hiện tại: đơn quá hạn duyệt hoặc đã qua giờ chơi không còn là "chờ"/"sắp tới"
             val now = System.currentTimeMillis()

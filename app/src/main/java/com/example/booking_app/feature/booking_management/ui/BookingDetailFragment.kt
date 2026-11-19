@@ -1,5 +1,6 @@
 package com.example.booking_app.feature.booking_management.ui
 
+import com.example.booking_app.core.format.MoneyFormat
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -21,7 +22,6 @@ import com.example.booking_app.feature.booking_management.domain.RefundPolicy
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
-import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -83,7 +83,6 @@ class BookingDetailFragment : Fragment(R.layout.fragment_booking_detail_060) {
         qrBitmap: android.graphics.Bitmap?
     ) {
         val locale = Locale.forLanguageTag("vi-VN")
-        val currencyFormat = NumberFormat.getCurrencyInstance(locale)
         val timeFormat = SimpleDateFormat("HH:mm", locale)
         val dateFormat = SimpleDateFormat("dd/MM", locale)
 
@@ -221,18 +220,18 @@ class BookingDetailFragment : Fragment(R.layout.fragment_booking_detail_060) {
         // Finance Breakdown (2 columns)
         val slotsCount = booking.items.size
         binding.labelSubtotal.text = "Tiền sân ($slotsCount × 30 phút)"
-        binding.textSubtotal.text = currencyFormat.format(booking.finance.subtotal)
+        binding.textSubtotal.text = MoneyFormat.vnd(booking.finance.subtotal)
         // Ẩn dòng "đã trả" khi chưa trả đồng nào (đơn trả tại sân từng hiện "-0 ₫" kèm nhãn ví)
         val paidLabel = BookingPresentation.paidLabel(booking.finance)
         binding.rowPaid.isVisible = paidLabel != null
         binding.labelPaidAmount.text = paidLabel
-        binding.textPaidAmount.text = "-${currencyFormat.format(booking.finance.paidAmount)}"
-        binding.textRemainingAmount.text = currencyFormat.format(booking.finance.remainingAmount)
+        binding.textPaidAmount.text = "-${MoneyFormat.vnd(booking.finance.paidAmount)}"
+        binding.textRemainingAmount.text = MoneyFormat.vnd(booking.finance.remainingAmount)
         binding.rowRemaining.isVisible = BookingPresentation.showRemaining(phase)
 
         if (booking.finance.discount > 0) {
             binding.rowDiscount.isVisible = true
-            binding.textDiscount.text = "-${currencyFormat.format(booking.finance.discount)}"
+            binding.textDiscount.text = "-${MoneyFormat.vnd(booking.finance.discount)}"
         } else {
             binding.rowDiscount.isVisible = false
         }

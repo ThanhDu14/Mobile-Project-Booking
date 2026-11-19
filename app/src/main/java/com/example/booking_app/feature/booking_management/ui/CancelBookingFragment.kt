@@ -1,5 +1,6 @@
 package com.example.booking_app.feature.booking_management.ui
 
+import com.example.booking_app.core.format.MoneyFormat
 import android.os.Bundle
 import android.view.View
 import androidx.core.view.isVisible
@@ -18,7 +19,6 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
-import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -123,7 +123,6 @@ class CancelBookingFragment : Fragment(R.layout.fragment_cancel_booking_060) {
         quote: RefundPolicyQuote?
     ) {
         val locale = Locale.forLanguageTag("vi-VN")
-        val currencyFormat = NumberFormat.getCurrencyInstance(locale)
         val timeFormat = SimpleDateFormat("HH:mm", locale)
         val dateFormat = SimpleDateFormat("dd/MM", locale)
 
@@ -163,7 +162,7 @@ class CancelBookingFragment : Fragment(R.layout.fragment_cancel_booking_060) {
         binding.textCancelBookingSummary.text = "$courtsStr • $paymentMethodStr"
 
         if (quote != null) {
-            binding.textRefundAmount.text = "Bạn được hoàn  ${currencyFormat.format(quote.refundAmount)}"
+            binding.textRefundAmount.text = "Bạn được hoàn ${MoneyFormat.vnd(quote.refundAmount)}"
             val hoursLeft = (booking.startAtMillis - System.currentTimeMillis()) / 3600_000L
             val daysLeft = (hoursLeft / 24).toInt()
             val timeRemainingStr = if (daysLeft > 0) "Còn $daysLeft ngày tới giờ chơi" else "Còn $hoursLeft giờ tới giờ chơi"
