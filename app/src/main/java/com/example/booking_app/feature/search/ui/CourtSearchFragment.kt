@@ -871,9 +871,18 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
                 val min = price.min.text.toString().toLongOrNull()
                 val max = price.max.text.toString().toLongOrNull()
                 // Giá tính bằng đồng: "50" nhiều khả năng là 50.000 đ gõ thiếu, báo thay vì tìm với 50 đ.
-                val tooLow = listOfNotNull(min, max).any { it < CourtSearchCriteria.PRICE_STEP }
-                if (tooLow || (min != null && max != null && min > max)) {
-                    price.maxField.error = getString(if (tooLow) R.string.search_price_too_low else R.string.search_price_invalid)
+                val minTooLow = min != null && min < CourtSearchCriteria.PRICE_STEP
+                val maxTooLow = max != null && max < CourtSearchCriteria.PRICE_STEP
+                val reversed = min != null && max != null && min > max
+                // Báo lỗi ngay dưới ô có giá sai; giá thấp nhất lớn hơn giá cao nhất thì báo ở ô cao nhất.
+                price.minField.error = if (minTooLow) getString(R.string.search_price_too_low) else null
+                price.maxField.error = when {
+                    maxTooLow -> getString(R.string.search_price_too_low)
+                    reversed && !minTooLow -> getString(R.string.search_price_invalid)
+                    else -> null
+                }
+                if (minTooLow || maxTooLow || reversed) {
+                    (if (minTooLow) price.min else price.max).requestFocus()
                 } else {
                     viewModel.price(min, max)
                     dialog.dismiss()
