@@ -16,7 +16,7 @@ import {
   updateDoc,
   where,
 } from 'firebase/firestore';
-import { createTestEnv } from './setup';
+import { createTestEnv, seedCurrentAdmin } from './setup';
 
 let env: RulesTestEnvironment;
 
@@ -94,6 +94,7 @@ beforeAll(async () => {
 // outsider không thuộc nhóm nào; asker có yêu cầu tham gia g1.
 beforeEach(async () => {
   await env.clearFirestore();
+  await seedCurrentAdmin(env, 'admin1');
   await env.withSecurityRulesDisabled(async (ctx) => {
     const db = ctx.firestore();
     await setDoc(doc(db, 'groups/g1'), group('owner1'));
