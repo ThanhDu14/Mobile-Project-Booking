@@ -49,7 +49,7 @@ Người phụ trách viết bảng trường chi tiết, index, Rules và test 
 | `dropInSessions/{id}` | Buổi chơi vãng lai | **C** | 08 đọc; 11 tạo |
 | `dropInSessions/{id}/registrations/{uid}` | Đăng ký, hàng chờ | **C** | 08; 11 check-in |
 | `groups/{groupId}` (+ `members`, `posts`) | Nhóm/CLB và bảng tin | **C** | 09 |
-| `chats/{chatId}` (+ `messages`) | Hội thoại nhóm/riêng | **C** | 09 |
+| `chats/{chatId}` (+ `participants`, `messages`) | Hội thoại nhóm/riêng | **C** | 09 |
 | `reports/{reportId}` | Báo cáo vi phạm | **D** | 07, 09 tạo; 12 xử lý |
 | `users/{uid}/notifications/{id}` | Hộp thư thông báo | **D** | 10; mọi nhóm phát sinh qua Edge Functions |
 | `venues/{venueId}/dailyStats/{yyyyMMdd}` | Thống kê theo ngày | **D** | 11, 12 đọc 🔒 |
@@ -250,13 +250,18 @@ ID document là chính mã `code` (chữ in hoa). Mã phải duy nhất trên to
 
 ### 4.11. `chats/{chatId}` — C
 
-`type` (`GROUP`, `DIRECT`), `memberIds` (Array, dùng cho Rules và truy vấn `array-contains`), `groupId?`, `venueId?` (chat với chủ sân), `lastMessage` (Map), `updatedAt`. Chat riêng dùng ID tất định `{uidNhỏ}_{uidLớn}`. Con: `messages/{id}` (`senderId`, `text`, `imagePath`, `createdAt`, `status`).
+**Chat:** `type` 🔒 (`GROUP`, `DIRECT`), `memberIds` 🔒 (Array, dùng cho Rules và truy vấn `array-contains`; chat nhóm khớp đúng `groups/{groupId}/members`), `groupId?` 🔒 (chat nhóm), `ownerId?` 🔒 (chat riêng: chủ sân, cố định lúc tạo), `playerId?` 🔒 (chat riêng: người chơi mở chat), `venueId?` 🔒 (chat riêng: cơ sở được hỏi gần nhất), `venueSnapshot?` 🔒 (`name`, `photoPath` của cơ sở đó), `memberSnapshots?` 🔒 (chat riêng: uid → `{ displayName, avatarPath }`, `null` khi người đó xóa tài khoản), `lastMessage?` 🔒 (Map: `messageId`, `senderId`, `type` (`TEXT`, `IMAGE`), `preview` (≤ 100 ký tự đầu, hoặc "Tin nhắn đã được thu hồi"), `createdAt`), `unreadCounts` (Map uid → Int; `chat-send` tăng, chính người đó chỉ được ghi khóa của mình về 0), `status` 🔒 (`ACTIVE`, `READ_ONLY` (bên kia đã xóa tài khoản), `DELETED` (nhóm đã xóa)), `createdAt`, `updatedAt` (= `createdAt` của tin cuối; danh sách sắp `updatedAt desc`). ID: chat riêng `{uidNhỏ}_{uidLớn}`, chat nhóm `group_{groupId}`. Mọi ghi 🔒 qua Edge Function `chat-send`, `chat-action` (và hook của `group-manage`); xem [spec 091 data-model](../../../specs/091-chat/data-model.md).
+
+- `participants/{uid}`: `userId`, `chatId` (cho truy vấn collection group), `userSnapshot` 🔒 (`displayName`, `avatarPath`; nguồn của `senderSnapshot`), `joinedAt` 🔒, `lastReadAt` (phải bằng `request.time`), `muted` (tắt thông báo cuộc này), `blockedOther` (chỉ chat riêng), `viewingUntil?` (đang mở cuộc này thì không gửi thông báo; ≤ `request.time` + 10 phút). Chính người đó ghi `lastReadAt`, `muted`, `blockedOther`, `viewingUntil`; còn lại 🔒.
+- `messages/{messageId}` (`messageId` = `requestId` của lần bấm "Gửi"; mọi trường 🔒): `senderId`, `senderSnapshot?` (`displayName`, `avatarPath`; `null` khi người gửi xóa tài khoản), `senderDeleted`, `text` (tin chữ 1–1000 ký tự; tin ảnh: chú thích 0–1000), `imagePath?` (`{chatId}/{messageId}.{jpg,png,webp}` trong `chat-media`, một ảnh mỗi tin), `createdAt` (giờ server lúc commit), `status` (`NORMAL`, `RECALLED`, `HIDDEN` (admin ẩn, spec 120)), `recalledAt?`. Thu hồi trong 10 phút kể từ `createdAt`: `status = RECALLED`, `text = ""`, `imagePath = null`.
 
 ### 4.12. `reports/{reportId}` — D
 
 `reporterId`, `targetType` (`POST`, `MESSAGE`, `REVIEW`, `VENUE`, `USER`, `DROP_IN`), `targetPath` (đường dẫn document), `reason`, `detail`, `status` 🔒 (`OPEN`, `RESOLVED`, `DISMISSED`), `action` 🔒 (`NONE`, `HIDE_CONTENT`, `LOCK_USER`, `LOCK_VENUE`), `handledBy` 🔒, `handledAt` 🔒.
 
 Báo cáo bài đăng nhóm (spec 090, Edge Function `group-post`): `reportId` = `POST_{groupId}_{postId}_{uid}` (mỗi người báo một lần), `targetPath` = `groups/{groupId}/posts/{postId}`; `reason` dùng chung `SPAM`, `OFFENSIVE`, `SCAM`, `INAPPROPRIATE`, `OTHER`; `detail` ≤ 500 ký tự (bắt buộc khi `OTHER`).
+
+Báo cáo tin nhắn (spec 091, Edge Function `chat-action`): `reportId` = `MESSAGE_{chatId}_{messageId}_{uid}` (mỗi người báo một lần), `targetType = MESSAGE`, `targetPath` = `chats/{chatId}/messages/{messageId}`; `reason`, `detail` như trên.
 
 ### 4.13. `users/{uid}/notifications/{id}` — D
 
@@ -289,8 +294,10 @@ Người dùng tự làm một thao tác (tự hủy đơn, tự hủy đăng k�
 | `registrations` | `uid` | Mỗi người một đăng ký mỗi buổi |
 | `favorites` | `venueId` | Không trùng |
 | `chats` (riêng) | `{uidNhỏ}_{uidLớn}` | Không tạo hai hội thoại cho cùng một cặp |
+| `chats` (nhóm) | `group_{groupId}` | Mỗi nhóm đúng một chat |
 | `groups`, `posts` | `requestId` | Bấm nhiều lần không tạo nhóm/bài trùng |
-| `members`, `joinRequests`, `removals`, `attendees` | `uid` | Mỗi người một document mỗi nhóm/sự kiện |
+| `messages` | `requestId` (UUID) | Gửi lại (mạng chập chờn) không tạo tin trùng |
+| `members`, `joinRequests`, `removals`, `attendees`, `participants` | `uid` | Mỗi người một document mỗi nhóm/sự kiện |
 
 ## 6. Index dự kiến
 
@@ -315,6 +322,10 @@ Người phụ trách bổ sung vào `firestore.indexes.json` khi viết `plan.m
 | `dropInSessions` | `status`, `level`, `startAt` | Lọc trình độ (08) |
 | `dropInSessions` | `status`, `startAt`, `pricePerPerson` | Lọc giá tối đa (08) |
 | `chats` | `memberIds` (array-contains), `updatedAt desc` | Danh sách hội thoại (09) |
+| `chats` | `memberIds` (array-contains), `ownerId`, `type`, `updatedAt desc` | "Tin nhắn khách hàng" của chủ sân (09) |
+| `messages` (collection) | `createdAt desc` | Tải 30 tin mỗi trang (09, tự có) |
+| `messages` (collection group) | `senderId` | Ẩn danh khi xóa tài khoản (09, 011) |
+| `participants` (collection group) | `userId` | Ẩn danh khi xóa tài khoản, kiểm tra tắt thông báo (09, 011) |
 | `groups` | `status`, `memberCount desc` | Danh sách nhóm không lọc (09) |
 | `groups` | `status`, `districtId`, `memberCount desc` | Lọc khu vực (09) |
 | `groups` | `status`, `nameKeywords` (array-contains), `memberCount desc` | Tìm nhóm theo tên (09) |
@@ -359,7 +370,7 @@ Ký hiệu: R đọc, C tạo, U sửa, D xóa. "Chủ" = người sở hữu do
 | `dropInSessions` | R (kể cả khách chưa đăng nhập) | CRUD buổi sân mình | R, khóa | Ghi `registeredCount` |
 | `registrations` | R của mình (kể cả collection group theo `userId`) | R đăng ký của buổi mình | R | Ghi toàn bộ (mọi ghi qua Edge Function) |
 | `groups` | Giới thiệu nhóm (`ACTIVE`, `LOCKED`) ai cũng R, kể cả khách; bảng tin, thành viên chỉ thành viên R; `joinRequests` R của mình; mọi ghi qua Edge Function | như người chơi | R để kiểm duyệt | Ghi toàn bộ (`group-manage`, `group-post`) |
-| `chats` | Thành viên R/C | như người chơi | R để kiểm duyệt | |
+| `chats` | Người trong cuộc R; chỉ ghi `unreadCounts.{mình} = 0` và `participants/{mình}` (`lastReadAt`, `muted`, `blockedOther`, `viewingUntil`); `messages` chỉ đọc, gửi/thu hồi/báo cáo qua Edge Function | như người chơi (R chat với khách của sân mình) | R để kiểm duyệt | Ghi toàn bộ (`chat-send`, `chat-action`) |
 | `reports` | C | C | R, U | |
 | `notifications` | R, U `isRead` của mình | như người chơi | C (thông báo hệ thống) | C |
 
@@ -377,7 +388,7 @@ Mỗi dòng trên cần ít nhất một test Emulator "được phép" và mộ
 | `owner-docs` | **private** | `{uid}/{applicationId}/{tên file}` | Chủ | **Chỉ chủ và `appRole == ADMIN`**, qua signed URL hết hạn sau 5 phút | D |
 | `group-avatars` | public | `{groupId}/avatar.{jpg,png,webp}` | Chủ nhóm, qua signed upload URL của Edge Function `group-manage` (không có policy ghi trực tiếp) | Mọi người | C |
 | `group-media` | private | `{groupId}/{postId}/{n}.{ext}` | Thành viên, qua signed upload URL của Edge Function `group-media-url` | Thành viên, qua signed URL của `group-media-url` | C |
-| `chat-media` | private | `{chatId}/{tên file}` | Thành viên chat | Thành viên chat, qua signed URL | C |
+| `chat-media` | private | `{chatId}/{messageId}.{jpg,png,webp}` | Thành viên chat, qua signed upload URL của Edge Function `chat-media-url` (không có policy ghi trực tiếp) | Thành viên chat, qua signed URL của `chat-media-url` (1 giờ) | C |
 
 - Chính sách RLS chỉ đọc được JWT, không đọc được Firestore. Quyền nào cần dữ liệu Firestore (owner của `venueId` nào, thành viên của `chatId` nào) thì app gọi Edge Function `sign-upload` hoặc `sign-download`; Edge Function kiểm tra Firestore rồi trả signed URL.
 - Giới hạn: ảnh ≤ 2 MB, MIME `image/jpeg`, `image/png`, `image/webp` (đặt ở cấu hình bucket). Ảnh được nén ở client trước khi upload.
@@ -404,6 +415,9 @@ Mỗi dòng trên cần ít nhất một test Emulator "được phép" và mộ
 | `group-manage` | Nhóm/CLB: `create`, `update`, `delete`, `join`, `cancelRequest`, `leave`, `approve`, `reject`, `setRole`, `transferOwner`, `remove`; cấp signed upload URL cho ảnh đại diện | C |
 | `group-post` | Bài đăng nhóm: `create`, `update`, `delete`, `hide`, `unhide`, `attend`, `unattend`, `report` | C |
 | `group-media-url` | Signed URL ảnh bài viết `group-media`: `upload`, `download`, `discard` | C |
+| `chat-send` | Gửi tin chữ/ảnh (idempotent theo `messageId`): ghi `messages`, `lastMessage`, tăng `unreadCounts`, gửi `CHAT_MESSAGE` | C |
+| `chat-action` | Chat: `openDirect` (mở/tạo chat riêng với chủ sân), `recall`, `report` | C |
+| `chat-media-url` | Signed URL ảnh chat `chat-media`: `upload`, `download`, `discard` | C |
 | `on-review-created` | Cập nhật `ratingAvg`, `ratingCount` | C |
 | `review-owner-application` | Duyệt/từ chối chủ sân, gán `appRole=OWNER` | D |
 | `sign-upload`, `sign-download` | Cấp signed URL cho bucket cần kiểm tra Firestore | D |
