@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Thẻ sự kiện giao lưu trên bảng tin nhóm (spec 090 US4 T056; wireframe 09_community-chat_buoc2_bang-tin-nhom.png).
+    Gồm hộp ngày (T6/10), nhãn "Sự kiện", tiêu đề, thời gian (Asia/Ho_Chi_Minh) · địa điểm, mô tả, lưới ảnh (nếu có),
+    "N/M người tham gia" (bấm xem danh sách), nhãn "Vượt số dự kiến"/"Đã diễn ra", nút "Tham gia sự kiện"/"Bỏ tham gia".
+-->
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    style="?attr/materialCardViewOutlinedStyle"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="@dimen/space_3"
+    app:cardCornerRadius="@dimen/radius_md">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/space_4">
+
+        <!-- Đầu thẻ: hộp ngày, nhãn SỰ KIỆN, tiêu đề, thời gian · địa điểm, menu -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="top"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:id="@+id/eventDateBadge"
+                android:layout_width="52dp"
+                android:layout_height="56dp"
+                android:background="@drawable/bg_hero_court"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="@dimen/space_1">
+
+                <TextView
+                    android:id="@+id/eventDayOfWeek"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?attr/textAppearanceLabelSmall"
+                    android:textColor="@color/sn_on_court"
+                    tools:text="T6" />
+
+                <TextView
+                    android:id="@+id/eventDayOfMonth"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    android:textColor="@color/sn_on_court"
+                    tools:text="10" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_3"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/eventLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/community_label_event"
+                    android:textAllCaps="true"
+                    android:textAppearance="?attr/textAppearanceLabelMedium"
+                    android:textColor="?attr/colorPrimary" />
+
+                <TextView
+                    android:id="@+id/eventTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    android:textColor="?attr/colorOnSurface"
+                    tools:text="Giao lưu tối thứ Sáu" />
+
+                <TextView
+                    android:id="@+id/eventTimePlace"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:textAppearance="?attr/textAppearanceBodySmall"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    tools:text="19:00 · Sân cầu lông Hòa Bình" />
+
+                <TextView
+                    android:id="@+id/authorMeta"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:textAppearance="?attr/textAppearanceBodySmall"
+                    android:textColor="?attr/colorOnSurfaceVariant"
+                    tools:text="Trần Quốc · Đã chỉnh sửa" />
+            </LinearLayout>
+
+            <ImageButton
+                android:id="@+id/moreButton"
+                android:layout_width="@dimen/touch_min"
+                android:layout_height="@dimen/touch_min"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/community_post_more_cd"
+                android:padding="@dimen/space_3"
+                android:src="@drawable/ic_more_vert_24"
+                app:tint="?attr/colorOnSurfaceVariant" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/hiddenBadge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_2"
+            android:background="@drawable/bg_info_box"
+            android:paddingHorizontal="@dimen/space_2"
+            android:paddingVertical="@dimen/space_1"
+            android:text="@string/community_label_hidden"
+            android:textAppearance="?attr/textAppearanceLabelMedium"
+            android:textColor="?attr/colorError"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/eventDescription"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_3"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="?attr/colorOnSurface"
+            android:visibility="gone"
+            tools:text="Chia đội ngẫu nhiên, mỗi người góp 50k tiền sân và cầu."
+            tools:visibility="visible" />
+
+        <!-- Lưới tối đa 4 ảnh nếu sự kiện có ảnh -->
+        <LinearLayout
+            android:id="@+id/photoContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_3"
+            android:orientation="vertical"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/photo0"
+                    android:layout_width="0dp"
+                    android:layout_height="160dp"
+                    android:layout_weight="1"
+                    android:background="?attr/colorSurfaceVariant"
+                    android:scaleType="centerCrop"
+                    app:shapeAppearance="@style/ShapeAppearance.SmashNow.Medium" />
+
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/photo1"
+                    android:layout_width="0dp"
+                    android:layout_height="160dp"
+                    android:layout_marginStart="@dimen/space_2"
+                    android:layout_weight="1"
+                    android:background="?attr/colorSurfaceVariant"
+                    android:scaleType="centerCrop"
+                    android:visibility="gone"
+                    app:shapeAppearance="@style/ShapeAppearance.SmashNow.Medium" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/photoRow2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_2"
+                android:orientation="horizontal"
+                android:visibility="gone">
+
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/photo2"
+                    android:layout_width="0dp"
+                    android:layout_height="140dp"
+                    android:layout_weight="1"
+                    android:background="?attr/colorSurfaceVariant"
+                    android:scaleType="centerCrop"
+                    app:shapeAppearance="@style/ShapeAppearance.SmashNow.Medium" />
+
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/photo3"
+                    android:layout_width="0dp"
+                    android:layout_height="140dp"
+                    android:layout_marginStart="@dimen/space_2"
+                    android:layout_weight="1"
+                    android:background="?attr/colorSurfaceVariant"
+                    android:scaleType="centerCrop"
+                    android:visibility="gone"
+                    app:shapeAppearance="@style/ShapeAppearance.SmashNow.Medium" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Số người tham gia (bấm mở danh sách) + nhãn Vượt số dự kiến / Đã diễn ra -->
+        <LinearLayout
+            android:id="@+id/attendeesRow"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_3"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center_vertical"
+            android:minHeight="@dimen/touch_min"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/attendeeCountText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textColor="?attr/colorOnSurface"
+                tools:text="9/8 người tham gia" />
+
+            <TextView
+                android:id="@+id/overExpectedBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_info_box"
+                android:paddingHorizontal="@dimen/space_2"
+                android:paddingVertical="@dimen/space_1"
+                android:text="@string/community_label_event_over_expected"
+                android:textAppearance="?attr/textAppearanceLabelSmall"
+                android:textColor="?attr/colorOnSurface"
+                android:visibility="gone"
+                tools:visibility="visible" />
+
+            <TextView
+                android:id="@+id/pastBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_1"
+                android:background="@drawable/bg_info_box"
+                android:paddingHorizontal="@dimen/space_2"
+                android:paddingVertical="@dimen/space_1"
+                android:text="@string/community_label_event_past"
+                android:textAppearance="?attr/textAppearanceLabelSmall"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <!-- Nút Tham gia sự kiện / Bỏ tham gia (ẩn khi sự kiện đã diễn ra hoặc nhóm bị khóa) -->
+        <LinearLayout
+            android:id="@+id/attendanceActions"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_2"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            tools:visibility="visible">
+
+            <TextView
+                android:id="@+id/attendingLabel"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:drawablePadding="@dimen/space_1"
+                android:gravity="center_vertical"
+                android:text="@string/community_event_attending"
+                android:textAppearance="?attr/textAppearanceLabelLarge"
+                android:textColor="?attr/colorPrimary"
+                android:visibility="gone"
+                app:drawableStartCompat="@drawable/ic_check_20"
+                app:drawableTint="?attr/colorPrimary"
+                tools:visibility="visible" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/attendButton"
+                style="@style/Widget.SmashNow.Button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="@dimen/touch_min"
+                android:text="@string/community_action_attend"
+                android:visibility="gone" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/unattendButton"
+                style="@style/Widget.SmashNow.Button.Text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minHeight="@dimen/touch_min"
+                android:text="@string/community_action_unattend"
+                android:visibility="gone"
+                tools:visibility="visible" />
+        </LinearLayout>
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

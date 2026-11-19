@@ -262,7 +262,6 @@
                             android:layout_weight="1"
                             android:minHeight="@dimen/touch_min"
                             android:text="@string/community_action_new_event"
-                            android:visibility="gone"
                             app:icon="@drawable/ic_event_24" />
                     </LinearLayout>
 

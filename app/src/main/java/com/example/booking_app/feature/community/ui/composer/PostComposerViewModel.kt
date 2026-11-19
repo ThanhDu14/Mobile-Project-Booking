@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.booking_app.core.media.SignedUrlCache
+import com.example.booking_app.core.util.AppClock
 import com.example.booking_app.feature.community.domain.CommunityError
 import com.example.booking_app.feature.community.domain.PostRepository
 import com.example.booking_app.feature.community.domain.model.DraftPhoto
@@ -25,10 +26,12 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.Instant
 import java.util.UUID
 import javax.inject.Inject
 
 enum class PostContentError { REQUIRED, TOO_LONG }
+enum class EventTimeError { REQUIRED, PAST }
 
 data class PostComposerState(
     val isEdit: Boolean = false,
@@ -38,10 +41,20 @@ data class PostComposerState(
     val photos: List<DraftPhoto> = emptyList(),
     /** URL xem trước cho ảnh đã có từ server khi ở chế độ sửa (`remotePath -> signedUrl`). */
     val remotePhotoUrls: Map<String, String> = emptyMap(),
+    // US4: trường sự kiện giao lưu
+    val eventTitle: String = "",
+    val eventAt: Instant? = null,
+    val eventLocation: String = "",
+    val expectedCountText: String = "",
+    val eventTitleError: PostContentError? = null,
+    val eventTimeError: EventTimeError? = null,
+    val eventLocationError: PostContentError? = null,
+    val expectedCountError: Boolean = false,
     val saving: Boolean = false,
     val loading: Boolean = false,
     val loadError: CommunityError? = null,
 ) {
+    val isEvent: Boolean get() = type == PostType.EVENT
     val canAddMorePhotos: Boolean get() = !saving && photos.size < PostComposerViewModel.MAX_PHOTOS
 
     /** Nút "Đăng"/"Lưu" khóa khi đang tải hoặc còn ảnh `UPLOADING`/`FAILED` (AC 3.3). */
@@ -59,7 +72,8 @@ sealed interface PostComposerEvent {
 }
 
 /**
- * T049: soạn và sửa bài đăng. `requestId` (= `postId`) sinh một lần và giữ qua [SavedStateHandle] (AC 3.3/R9).
+ * T049 + T056: soạn và sửa bài đăng / sự kiện giao lưu. `requestId` (= `postId`) sinh một lần và giữ qua
+ * [SavedStateHandle] (AC 3.3/R9).
  */
 @HiltViewModel
 class PostComposerViewModel @Inject constructor(
@@ -69,6 +83,7 @@ class PostComposerViewModel @Inject constructor(
     private val publishPost: PublishPost,
     private val editPost: EditPost,
     private val signedUrls: SignedUrlCache,
+    private val clock: AppClock,
 ) : ViewModel() {
 
     val groupId: String = checkNotNull(savedStateHandle[ARG_GROUP_ID]) { "Thiếu groupId" }
@@ -95,6 +110,10 @@ class PostComposerViewModel @Inject constructor(
     private var hasUploadedInSession = false
     private var originalContent: String = ""
     private var originalPhotoPaths: List<String> = emptyList()
+    private var originalEventTitle: String = ""
+    private var originalEventAt: Instant? = null
+    private var originalEventLocation: String = ""
+    private var originalExpectedCountText: String = ""
 
     init {
         if (editPostId != null) loadPost()
@@ -112,6 +131,10 @@ class PostComposerViewModel @Inject constructor(
                         val urls = if (post.photoPaths.isEmpty()) emptyMap() else signedUrls.resolve(post.photoPaths)
                         originalContent = post.content
                         originalPhotoPaths = post.photoPaths
+                        originalEventTitle = post.event?.title.orEmpty()
+                        originalEventAt = post.event?.at
+                        originalEventLocation = post.event?.location.orEmpty()
+                        originalExpectedCountText = post.event?.expectedCount?.toString().orEmpty()
                         slotByKey.clear()
                         val existingPhotos = post.photoPaths.mapIndexed { idx, path ->
                             val parsedIndex = parseSlotIndex(path) ?: idx
@@ -126,6 +149,10 @@ class PostComposerViewModel @Inject constructor(
                                 content = post.content,
                                 photos = existingPhotos,
                                 remotePhotoUrls = urls,
+                                eventTitle = originalEventTitle,
+                                eventAt = originalEventAt,
+                                eventLocation = originalEventLocation,
+                                expectedCountText = originalExpectedCountText,
                             )
                         }
                     }
@@ -137,9 +164,15 @@ class PostComposerViewModel @Inject constructor(
         }
     }
 
-    fun onContentChanged(value: String) {
-        _state.update { it.copy(content = value, contentError = null) }
-    }
+    fun onContentChanged(value: String) = _state.update { it.copy(content = value, contentError = null) }
+
+    fun onEventTitleChanged(value: String) = _state.update { it.copy(eventTitle = value, eventTitleError = null) }
+
+    fun onEventAtChanged(value: Instant) = _state.update { it.copy(eventAt = value, eventTimeError = null) }
+
+    fun onEventLocationChanged(value: String) = _state.update { it.copy(eventLocation = value, eventLocationError = null) }
+
+    fun onExpectedCountChanged(value: String) = _state.update { it.copy(expectedCountText = value, expectedCountError = false) }
 
     fun onPhotosPicked(uris: List<String>) {
         if (uris.isEmpty()) return
@@ -182,24 +215,28 @@ class PostComposerViewModel @Inject constructor(
         val current = _state.value
         if (!current.canPublish) return
 
-        val trimmed = current.content.trim()
-        val contentError = when {
-            current.type == PostType.POST && trimmed.isEmpty() -> PostContentError.REQUIRED
-            trimmed.length > MAX_CONTENT_LENGTH -> PostContentError.TOO_LONG
-            else -> null
-        }
-        if (contentError != null) {
-            _state.update { it.copy(contentError = contentError) }
+        val validated = validate(current)
+        val hasError = validated.contentError != null ||
+            validated.eventTitleError != null ||
+            validated.eventTimeError != null ||
+            validated.eventLocationError != null ||
+            validated.expectedCountError
+        if (hasError) {
+            _state.value = validated
             return
         }
 
         val draft = PostDraft(
             requestId = requestId,
             type = current.type,
-            content = trimmed,
+            content = current.content.trim(),
             photos = current.photos,
+            eventTitle = current.eventTitle.trim(),
+            eventAt = current.eventAt,
+            eventLocation = current.eventLocation.trim(),
+            expectedCount = current.expectedCountText.trim().toIntOrNull(),
         )
-        _state.update { it.copy(saving = true) }
+        _state.value = validated.copy(saving = true)
         viewModelScope.launch {
             val result = try {
                 if (current.isEdit) editPost(groupId, draft) else publishPost(groupId, draft)
@@ -234,6 +271,52 @@ class PostComposerViewModel @Inject constructor(
         }
     }
 
+    private fun validate(state: PostComposerState): PostComposerState {
+        val trimmedContent = state.content.trim()
+        val contentError = when {
+            state.type == PostType.POST && trimmedContent.isEmpty() -> PostContentError.REQUIRED
+            trimmedContent.length > MAX_CONTENT_LENGTH -> PostContentError.TOO_LONG
+            else -> null
+        }
+        if (state.type != PostType.EVENT) {
+            return state.copy(
+                contentError = contentError,
+                eventTitleError = null,
+                eventTimeError = null,
+                eventLocationError = null,
+                expectedCountError = false,
+            )
+        }
+        val title = state.eventTitle.trim()
+        val titleError = when {
+            title.isEmpty() -> PostContentError.REQUIRED
+            title.length > MAX_EVENT_TITLE -> PostContentError.TOO_LONG
+            else -> null
+        }
+        val now = Instant.ofEpochMilli(clock.now())
+        val timeError = when {
+            state.eventAt == null -> EventTimeError.REQUIRED
+            !state.eventAt.isAfter(now) -> EventTimeError.PAST
+            else -> null
+        }
+        val location = state.eventLocation.trim()
+        val locationError = when {
+            location.isEmpty() -> PostContentError.REQUIRED
+            location.length > MAX_EVENT_LOCATION -> PostContentError.TOO_LONG
+            else -> null
+        }
+        val expected = state.expectedCountText.trim().toIntOrNull()
+        val expectedError = expected == null || expected !in MIN_EXPECTED_COUNT..MAX_EXPECTED_COUNT
+
+        return state.copy(
+            contentError = contentError,
+            eventTitleError = titleError,
+            eventTimeError = timeError,
+            eventLocationError = locationError,
+            expectedCountError = expectedError,
+        )
+    }
+
     fun onBackPressed() {
         if (hasUnsavedChanges()) {
             _events.trySend(PostComposerEvent.ConfirmDiscard)
@@ -258,9 +341,19 @@ class PostComposerViewModel @Inject constructor(
         val current = _state.value
         if (current.isEdit) {
             val currentPaths = current.photos.map { it.remotePath ?: it.localUri }
-            return current.content != originalContent || currentPaths != originalPhotoPaths
+            return current.content != originalContent ||
+                currentPaths != originalPhotoPaths ||
+                current.eventTitle != originalEventTitle ||
+                current.eventAt != originalEventAt ||
+                current.eventLocation != originalEventLocation ||
+                current.expectedCountText != originalExpectedCountText
         }
-        return current.content.isNotBlank() || current.photos.isNotEmpty()
+        return current.content.isNotBlank() ||
+            current.photos.isNotEmpty() ||
+            current.eventTitle.isNotBlank() ||
+            current.eventAt != null ||
+            current.eventLocation.isNotBlank() ||
+            current.expectedCountText.isNotBlank()
     }
 
     private fun startUpload(localUri: String, slotIndex: Int) {
@@ -300,5 +393,9 @@ class PostComposerViewModel @Inject constructor(
         const val KEY_REQUEST_ID = "post_request_id"
         const val MAX_PHOTOS = 4
         const val MAX_CONTENT_LENGTH = 2000
+        const val MAX_EVENT_TITLE = 100
+        const val MAX_EVENT_LOCATION = 200
+        const val MIN_EXPECTED_COUNT = 2
+        const val MAX_EXPECTED_COUNT = 100
     }
 }

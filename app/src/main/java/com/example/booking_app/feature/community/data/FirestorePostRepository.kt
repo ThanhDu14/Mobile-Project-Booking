@@ -2,6 +2,7 @@ package com.example.booking_app.feature.community.data
 
 import com.example.booking_app.core.network.toAppError
 import com.example.booking_app.core.session.SessionManager
+import com.example.booking_app.feature.community.data.dto.AttendeeDto
 import com.example.booking_app.feature.community.data.dto.GroupPostRequest
 import com.example.booking_app.feature.community.data.dto.GroupPostResponse
 import com.example.booking_app.feature.community.data.dto.PostDto
@@ -17,6 +18,7 @@ import com.example.booking_app.feature.community.domain.model.PageCursor
 import com.example.booking_app.feature.community.domain.model.Post
 import com.example.booking_app.feature.community.domain.model.PostDraft
 import com.example.booking_app.feature.community.domain.model.PostStatus
+import com.example.booking_app.feature.community.domain.model.PostType
 import com.example.booking_app.feature.community.domain.model.ReportReason
 import com.example.booking_app.feature.community.domain.toCommunityError
 import com.google.firebase.Timestamp
@@ -26,20 +28,23 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
 import java.time.Instant
 import javax.inject.Inject
 import javax.inject.Singleton
 
 /**
- * Bảng tin và bài đăng của spec 090 (T048). Đọc qua Firestore (phân trang + listener bài mới), ghi qua Edge Function
- * `group-post`. US4 (`attend`, `unattend`, `observeAttendees`) và US6 (`hide`, `unhide`, `report`) sẽ bổ sung sau.
+ * Bảng tin, bài đăng và sự kiện của spec 090 (T048 + T055). Đọc qua Firestore (phân trang + listener bài mới +
+ * người tham gia sự kiện), ghi qua Edge Function `group-post`. US6 (`hide`, `unhide`, `report`) sẽ bổ sung sau.
  */
 @Singleton
 class FirestorePostRepository @Inject constructor(
@@ -62,7 +67,7 @@ class FirestorePostRepository @Inject constructor(
                 .orderBy(FieldPath.documentId(), Query.Direction.DESCENDING)
             if (cursorTs != null && cursor != null) q = q.startAfter(cursorTs, cursor.id)
             val docs = q.limit(Page.PAGE_SIZE.toLong()).get().await().documents
-            val items = docs.mapNotNull { it.toPost() }
+            val items = attachAttendance(groupId, uid, docs.mapNotNull { it.toPost() })
             Result.success(Page(items, nextCursor(docs)))
         } else {
             var visibleQ: Query = col
@@ -74,7 +79,6 @@ class FirestorePostRepository @Inject constructor(
             val visiblePosts = visibleDocs.mapNotNull { it.toPost() }
             val next = nextCursor(visibleDocs)
 
-            // Thành viên thường: gộp bài HIDDEN của chính mình (Rules cho phép query authorId == uid).
             val ownHiddenPosts = if (uid != null) {
                 var hiddenQ: Query = col
                     .whereEqualTo("authorId", uid)
@@ -99,7 +103,7 @@ class FirestorePostRepository @Inject constructor(
                 .associateBy { it.id }
                 .values
                 .sortedWith(POST_ORDER)
-            Result.success(Page(merged, next))
+            Result.success(Page(attachAttendance(groupId, uid, merged), next))
         }
     } catch (e: CancellationException) {
         throw e
@@ -110,32 +114,43 @@ class FirestorePostRepository @Inject constructor(
     override fun observeNewPosts(groupId: String, isMod: Boolean, after: Instant): Flow<List<Post>> {
         val col = postsCollection(groupId)
         val afterTs = after.toTimestamp()
-        if (isMod) {
-            return queryPostsFlow(
+        val uid = sessionManager.currentUid()
+        val baseFlow = if (isMod) {
+            queryPostsFlow(
                 col.whereGreaterThan("createdAt", afterTs).orderBy("createdAt", Query.Direction.DESCENDING),
             )
+        } else {
+            val visibleFlow = queryPostsFlow(
+                col.whereEqualTo("status", PostStatus.VISIBLE.name)
+                    .whereGreaterThan("createdAt", afterTs)
+                    .orderBy("createdAt", Query.Direction.DESCENDING),
+            )
+            if (uid == null) {
+                visibleFlow
+            } else {
+                val hiddenFlow = queryPostsFlow(
+                    col.whereEqualTo("authorId", uid)
+                        .whereEqualTo("status", PostStatus.HIDDEN.name)
+                        .whereGreaterThan("createdAt", afterTs)
+                        .orderBy("createdAt", Query.Direction.DESCENDING),
+                )
+                combine(visibleFlow, hiddenFlow) { visible, hidden ->
+                    (visible + hidden).associateBy { it.id }.values.sortedWith(POST_ORDER)
+                }
+            }
         }
-        val uid = sessionManager.currentUid()
-        val visibleFlow = queryPostsFlow(
-            col.whereEqualTo("status", PostStatus.VISIBLE.name)
-                .whereGreaterThan("createdAt", afterTs)
-                .orderBy("createdAt", Query.Direction.DESCENDING),
-        )
-        if (uid == null) return visibleFlow
-        val hiddenFlow = queryPostsFlow(
-            col.whereEqualTo("authorId", uid)
-                .whereEqualTo("status", PostStatus.HIDDEN.name)
-                .whereGreaterThan("createdAt", afterTs)
-                .orderBy("createdAt", Query.Direction.DESCENDING),
-        )
-        return combine(visibleFlow, hiddenFlow) { visible, hidden ->
-            (visible + hidden).associateBy { it.id }.values.sortedWith(POST_ORDER)
-        }
+        return baseFlow.map { attachAttendance(groupId, uid, it) }
     }
 
     override suspend fun getPost(groupId: String, postId: String): Result<Post?> = try {
         val doc = postsCollection(groupId).document(postId).get().await()
-        Result.success(if (doc.exists()) doc.toPost() else null)
+        val post = if (doc.exists()) doc.toPost() else null
+        val enriched = if (post != null) {
+            attachAttendance(groupId, sessionManager.currentUid(), listOf(post)).firstOrNull()
+        } else {
+            null
+        }
+        Result.success(enriched)
     } catch (e: CancellationException) {
         throw e
     } catch (e: Exception) {
@@ -151,17 +166,62 @@ class FirestorePostRepository @Inject constructor(
     override suspend fun delete(groupId: String, postId: String): Result<Unit> =
         callPost(GroupPostRequest.delete(groupId, postId)) { }
 
-    // ---------- Chưa làm (US4, US6) ----------
+    // ---------- US4: tham gia sự kiện ----------
+
+    override suspend fun attend(groupId: String, postId: String): Result<AttendResult> =
+        callPost(GroupPostRequest.attend(groupId, postId)) { res ->
+            val count = res.attendeeCount ?: return@callPost null
+            AttendResult(attendeeCount = count, attending = res.attending ?: true)
+        }
+
+    override suspend fun unattend(groupId: String, postId: String): Result<AttendResult> =
+        callPost(GroupPostRequest.unattend(groupId, postId)) { res ->
+            val count = res.attendeeCount ?: return@callPost null
+            AttendResult(attendeeCount = count, attending = res.attending ?: false)
+        }
+
+    override fun observeAttendees(groupId: String, postId: String): Flow<List<Attendee>> = callbackFlow {
+        val reg = postsCollection(groupId).document(postId).collection(COLLECTION_ATTENDEES)
+            .orderBy("joinedAt", Query.Direction.ASCENDING)
+            .addSnapshotListener { snapshot, error ->
+                when {
+                    error?.code == FirebaseFirestoreException.Code.PERMISSION_DENIED -> close(CommunityError.NotMember())
+                    error != null -> close(error.toPostError())
+                    else -> trySend(
+                        snapshot?.documents.orEmpty().map { AttendeeDto.fromMap(it.id, it.data.orEmpty()).toDomain() },
+                    )
+                }
+            }
+        awaitClose { reg.remove() }
+    }
+
+    // ---------- Chưa làm (US6) ----------
 
     override suspend fun hide(groupId: String, postId: String): Result<Unit> = notImplemented()
     override suspend fun unhide(groupId: String, postId: String): Result<Unit> = notImplemented()
-    override suspend fun attend(groupId: String, postId: String): Result<AttendResult> = notImplemented()
-    override suspend fun unattend(groupId: String, postId: String): Result<AttendResult> = notImplemented()
-    override fun observeAttendees(groupId: String, postId: String): Flow<List<Attendee>> = flowOf(emptyList())
     override suspend fun report(groupId: String, postId: String, reason: ReportReason, detail: String?): Result<String> =
         notImplemented()
 
     private fun <T> notImplemented(): Result<T> = Result.failure(CommunityError.Unknown("NOT_IMPLEMENTED"))
+
+    private suspend fun attachAttendance(groupId: String, uid: String?, posts: List<Post>): List<Post> {
+        if (uid == null || posts.none { it.type == PostType.EVENT && it.event != null }) return posts
+        val col = postsCollection(groupId)
+        return coroutineScope {
+            posts.map { post ->
+                if (post.type != PostType.EVENT || post.event == null) {
+                    async { post }
+                } else {
+                    async {
+                        val attending = runCatching {
+                            col.document(post.id).collection(COLLECTION_ATTENDEES).document(uid).get().await().exists()
+                        }.getOrDefault(false)
+                        post.copy(event = post.event.copy(iAmAttending = attending))
+                    }
+                }
+            }.awaitAll()
+        }
+    }
 
     protected suspend fun <T> callPost(request: GroupPostRequest, map: (GroupPostResponse) -> T?): Result<T> {
         if (sessionManager.currentUid() == null) return Result.failure(CommunityError.Unauthenticated())
@@ -222,6 +282,7 @@ class FirestorePostRepository @Inject constructor(
     private companion object {
         const val COLLECTION_GROUPS = "groups"
         const val COLLECTION_POSTS = "posts"
+        const val COLLECTION_ATTENDEES = "attendees"
         const val MAX_BUSY_RETRIES = 2
         const val BUSY_RETRY_DELAY_MS = 500L
 

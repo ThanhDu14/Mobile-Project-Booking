@@ -17,19 +17,30 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.GridLayoutManager
 import com.example.booking_app.R
+import com.example.booking_app.core.format.TimeFormat
 import com.example.booking_app.core.ui.EmptyStateSpec
 import com.example.booking_app.core.ui.UiState
 import com.example.booking_app.core.ui.render
 import com.example.booking_app.databinding.FragmentPostComposerBinding
 import com.example.booking_app.feature.community.ui.common.CommunityUiText
+import com.google.android.material.datepicker.CalendarConstraints
+import com.google.android.material.datepicker.DateValidatorPointForward
+import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
+import com.google.android.material.timepicker.MaterialTimePicker
+import com.google.android.material.timepicker.TimeFormat as PickerTimeFormat
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import java.time.Instant
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.ZoneOffset
+import java.time.ZonedDateTime
 
 /**
- * Màn hình soạn/sửa bài đăng (T049). Dùng Photo Picker (`PickMultipleVisualMedia(4)`), hỏi "Bỏ bài đang viết?" khi
- * thoát có nội dung.
+ * Màn hình soạn/sửa bài đăng và sự kiện giao lưu (T049 + T056). Dùng Photo Picker (`PickMultipleVisualMedia(4)`),
+ * MaterialDatePicker + MaterialTimePicker theo `Asia/Ho_Chi_Minh`, hỏi "Bỏ bài đang viết?" khi thoát có nội dung.
  */
 @AndroidEntryPoint
 class PostComposerFragment : Fragment(R.layout.fragment_post_composer) {
@@ -63,6 +74,11 @@ class PostComposerFragment : Fragment(R.layout.fragment_post_composer) {
         binding.photoGrid.layoutManager = GridLayoutManager(requireContext(), PHOTO_GRID_SPAN)
         binding.photoGrid.adapter = photoAdapter
 
+        binding.eventTitleInput.doAfterTextChanged { viewModel.onEventTitleChanged(it?.toString().orEmpty()) }
+        binding.eventLocationInput.doAfterTextChanged { viewModel.onEventLocationChanged(it?.toString().orEmpty()) }
+        binding.eventExpectedInput.doAfterTextChanged { viewModel.onExpectedCountChanged(it?.toString().orEmpty()) }
+        binding.eventTimeButton.setOnClickListener { openDateTimePicker() }
+
         binding.contentInput.doAfterTextChanged { viewModel.onContentChanged(it?.toString().orEmpty()) }
         binding.pickPhotosButton.setOnClickListener {
             if (!viewModel.state.value.canAddMorePhotos) {
@@ -86,6 +102,38 @@ class PostComposerFragment : Fragment(R.layout.fragment_post_composer) {
         super.onDestroyView()
     }
 
+    private fun openDateTimePicker() {
+        val currentZoned = (viewModel.state.value.eventAt ?: Instant.now().plusSeconds(3600)).atZone(TimeFormat.ZONE)
+        val initialSelectionUtc = currentZoned.toLocalDate().atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
+        val constraints = CalendarConstraints.Builder()
+            .setValidator(DateValidatorPointForward.now())
+            .build()
+        val datePicker = MaterialDatePicker.Builder.datePicker()
+            .setTitleText(R.string.community_field_event_time)
+            .setSelection(initialSelectionUtc)
+            .setCalendarConstraints(constraints)
+            .build()
+        datePicker.addOnPositiveButtonClickListener { utcMillis ->
+            val pickedDate: LocalDate = Instant.ofEpochMilli(utcMillis).atZone(ZoneOffset.UTC).toLocalDate()
+            openTimePicker(pickedDate, currentZoned.hour, currentZoned.minute)
+        }
+        datePicker.show(childFragmentManager, TAG_DATE_PICKER)
+    }
+
+    private fun openTimePicker(date: LocalDate, hour: Int, minute: Int) {
+        val timePicker = MaterialTimePicker.Builder()
+            .setTimeFormat(PickerTimeFormat.CLOCK_24H)
+            .setHour(hour)
+            .setMinute(minute)
+            .setTitleText(R.string.community_field_event_time)
+            .build()
+        timePicker.addOnPositiveButtonClickListener {
+            val zoned = ZonedDateTime.of(date, LocalTime.of(timePicker.hour, timePicker.minute), TimeFormat.ZONE)
+            viewModel.onEventAtChanged(zoned.toInstant())
+        }
+        timePicker.show(childFragmentManager, TAG_TIME_PICKER)
+    }
+
     private fun render(
         binding: FragmentPostComposerBinding,
         photoAdapter: DraftPhotoAdapter,
@@ -99,9 +147,50 @@ class PostComposerFragment : Fragment(R.layout.fragment_post_composer) {
         binding.stateViews.render(coreState, binding.content, EmptyStateSpec(message = R.string.community_error_post_not_found))
 
         binding.toolbar.setTitle(
-            if (state.isEdit) R.string.community_title_composer_edit else R.string.community_title_composer_post,
+            when {
+                state.isEdit -> R.string.community_title_composer_edit
+                state.isEvent -> R.string.community_title_composer_event
+                else -> R.string.community_title_composer_post
+            },
         )
 
+        binding.eventFields.isVisible = state.isEvent
+        if (state.isEvent) {
+            if (binding.eventTitleInput.text?.toString() != state.eventTitle) {
+                binding.eventTitleInput.setText(state.eventTitle)
+            }
+            if (binding.eventLocationInput.text?.toString() != state.eventLocation) {
+                binding.eventLocationInput.setText(state.eventLocation)
+            }
+            if (binding.eventExpectedInput.text?.toString() != state.expectedCountText) {
+                binding.eventExpectedInput.setText(state.expectedCountText)
+            }
+            binding.eventTitleLayout.error = when (state.eventTitleError) {
+                PostContentError.REQUIRED -> getString(R.string.community_event_title_required)
+                PostContentError.TOO_LONG -> getString(R.string.community_event_title_too_long)
+                null -> null
+            }
+            binding.eventTimeButton.text = state.eventAt?.let {
+                "${TimeFormat.dayOfWeekDate(it)} · ${TimeFormat.time(it)}"
+            } ?: getString(R.string.community_event_pick_time)
+            binding.eventTimeError.isVisible = state.eventTimeError != null
+            binding.eventTimeError.text = when (state.eventTimeError) {
+                EventTimeError.REQUIRED -> getString(R.string.community_event_time_required)
+                EventTimeError.PAST -> getString(R.string.community_event_time_past)
+                null -> null
+            }
+            binding.eventLocationLayout.error = when (state.eventLocationError) {
+                PostContentError.REQUIRED -> getString(R.string.community_event_location_required)
+                PostContentError.TOO_LONG -> getString(R.string.community_event_location_too_long)
+                null -> null
+            }
+            binding.eventExpectedLayout.error =
+                if (state.expectedCountError) getString(R.string.community_event_expected_invalid) else null
+        }
+
+        binding.contentInput.setHint(
+            if (state.isEvent) R.string.community_event_description_hint else R.string.community_field_content_hint,
+        )
         if (binding.contentInput.text?.toString() != state.content) {
             binding.contentInput.setText(state.content)
         }
@@ -123,8 +212,13 @@ class PostComposerFragment : Fragment(R.layout.fragment_post_composer) {
         binding.photoGrid.isVisible = items.isNotEmpty()
         binding.photoCountLabel.text = getString(R.string.community_counter, state.photos.size, PostComposerViewModel.MAX_PHOTOS)
 
-        binding.contentInput.isEnabled = !state.saving
-        binding.pickPhotosButton.isEnabled = !state.saving
+        val editable = !state.saving
+        binding.eventTitleInput.isEnabled = editable
+        binding.eventTimeButton.isEnabled = editable
+        binding.eventLocationInput.isEnabled = editable
+        binding.eventExpectedInput.isEnabled = editable
+        binding.contentInput.isEnabled = editable
+        binding.pickPhotosButton.isEnabled = editable
         binding.publishButton.isEnabled = state.canPublish
         binding.publishButton.setText(
             when {
@@ -163,5 +257,7 @@ class PostComposerFragment : Fragment(R.layout.fragment_post_composer) {
         const val RESULT_KEY_POST_SAVED = "community_post_saved"
         const val RESULT_POST_ID = "postId"
         private const val PHOTO_GRID_SPAN = 2
+        private const val TAG_DATE_PICKER = "community_event_date"
+        private const val TAG_TIME_PICKER = "community_event_time"
     }
 }

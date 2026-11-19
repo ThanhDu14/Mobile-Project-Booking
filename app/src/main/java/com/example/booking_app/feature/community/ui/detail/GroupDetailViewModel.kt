@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.booking_app.core.media.SignedUrlCache
 import com.example.booking_app.core.session.SessionManager
+import com.example.booking_app.core.util.AppClock
 import com.example.booking_app.feature.community.domain.CommunityError
 import com.example.booking_app.feature.community.domain.GroupPermissions
 import com.example.booking_app.feature.community.domain.GroupRepository
@@ -21,6 +22,7 @@ import com.example.booking_app.feature.community.domain.toCommunityError
 import com.example.booking_app.feature.community.domain.usecase.DeletePost
 import com.example.booking_app.feature.community.domain.usecase.JoinGroup
 import com.example.booking_app.feature.community.domain.usecase.LeaveGroup
+import com.example.booking_app.feature.community.domain.usecase.ToggleAttendance
 import com.example.booking_app.feature.community.ui.common.DistrictNames
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
@@ -53,7 +55,7 @@ enum class JoinAction {
     PENDING,
 }
 
-/** Một bài hiển thị trên bảng tin (T050) kèm URL ảnh đã ký và quyền theo người xem. */
+/** Một bài hiển thị trên bảng tin (T050 + T056) kèm URL ảnh đã ký và quyền theo người xem. */
 data class PostItem(
     val post: Post,
     val photoUrls: Map<String, String> = emptyMap(),
@@ -62,6 +64,9 @@ data class PostItem(
     val canHide: Boolean = false,
     val canUnhide: Boolean = false,
     val canReport: Boolean = false,
+    val canAttend: Boolean = false,
+    val isEventPast: Boolean = false,
+    val attendanceBusy: Boolean = false,
 ) {
     /** Nhãn "Đã bị ẩn" hiện với người đăng và quản trị viên. */
     val showHiddenBadge: Boolean get() = post.isHidden
@@ -158,8 +163,10 @@ class GroupDetailViewModel @Inject constructor(
     private val joinGroup: JoinGroup,
     private val leaveGroup: LeaveGroup,
     private val deletePost: DeletePost,
+    private val toggleAttendance: ToggleAttendance,
     private val signedUrls: SignedUrlCache,
     private val districtNames: DistrictNames,
+    private val clock: AppClock,
 ) : ViewModel() {
 
     val groupId: String = checkNotNull(savedStateHandle[ARG_GROUP_ID]) { "Thiếu groupId" }
@@ -185,6 +192,7 @@ class GroupDetailViewModel @Inject constructor(
     private var nextCursor: PageCursor? = null
     private var loadingMore: Boolean = false
     private var loadMoreError: CommunityError? = null
+    private var attendanceInFlight: Set<String> = emptySet()
 
     private sealed interface RawFeedState {
         data object Loading : RawFeedState
@@ -194,6 +202,7 @@ class GroupDetailViewModel @Inject constructor(
             val canLoadMore: Boolean,
             val loadingMore: Boolean,
             val loadMoreError: CommunityError?,
+            val attendanceInFlight: Set<String>,
         ) : RawFeedState
         data object Empty : RawFeedState
         data class Error(val cause: CommunityError) : RawFeedState
@@ -255,6 +264,51 @@ class GroupDetailViewModel @Inject constructor(
                     _events.trySend(GroupDetailEvent.PostDeleted)
                 },
                 onFailure = { err ->
+                    _events.trySend(GroupDetailEvent.ShowError(err.toCommunityError()))
+                },
+            )
+        }
+    }
+
+    /** T055: tham gia / bỏ tham gia sự kiện lạc quan, lỗi thì hoàn lại. */
+    fun onToggleAttendance(postId: String) {
+        if (postId in attendanceInFlight) return
+        val current = rawPosts.firstOrNull { it.id == postId } ?: return
+        val originalEvent = current.event ?: return
+        val nextAttending = !originalEvent.iAmAttending
+        val optimisticCount = (originalEvent.attendeeCount + if (nextAttending) 1 else -1).coerceAtLeast(0)
+
+        attendanceInFlight = attendanceInFlight + postId
+        rawPosts = rawPosts.map { p ->
+            if (p.id == postId) p.copy(event = originalEvent.copy(iAmAttending = nextAttending, attendeeCount = optimisticCount)) else p
+        }
+        publishFeed()
+
+        viewModelScope.launch {
+            val result = try {
+                toggleAttendance(groupId, postId, attend = nextAttending)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+            attendanceInFlight = attendanceInFlight - postId
+            result.fold(
+                onSuccess = { outcome ->
+                    rawPosts = rawPosts.map { p ->
+                        if (p.id == postId && p.event != null) {
+                            p.copy(event = p.event.copy(attendeeCount = outcome.attendeeCount, iAmAttending = outcome.attending))
+                        } else {
+                            p
+                        }
+                    }
+                    publishFeed()
+                },
+                onFailure = { err ->
+                    rawPosts = rawPosts.map { p ->
+                        if (p.id == postId) p.copy(event = originalEvent) else p
+                    }
+                    publishFeed()
                     _events.trySend(GroupDetailEvent.ShowError(err.toCommunityError()))
                 },
             )
@@ -384,6 +438,7 @@ class GroupDetailViewModel @Inject constructor(
                 canLoadMore = nextCursor != null,
                 loadingMore = loadingMore,
                 loadMoreError = loadMoreError,
+                attendanceInFlight = attendanceInFlight,
             )
         }
     }
@@ -407,22 +462,29 @@ class GroupDetailViewModel @Inject constructor(
         RawFeedState.Loading -> FeedUiState.Loading
         RawFeedState.Empty -> FeedUiState.Empty
         is RawFeedState.Error -> FeedUiState.Error(cause)
-        is RawFeedState.Content -> FeedUiState.Content(
-            items = posts.map { post ->
-                PostItem(
-                    post = post,
-                    photoUrls = post.photoPaths.mapNotNull { path -> urls[path]?.let { path to it } }.toMap(),
-                    canEdit = permissions.canEditPost(post),
-                    canDelete = permissions.canDeletePost(post),
-                    canHide = permissions.canHide(post),
-                    canUnhide = permissions.canUnhide(post),
-                    canReport = permissions.canReport(post),
-                )
-            },
-            canLoadMore = canLoadMore,
-            loadingMore = loadingMore,
-            loadMoreError = loadMoreError,
-        )
+        is RawFeedState.Content -> {
+            val now = Instant.ofEpochMilli(clock.now())
+            FeedUiState.Content(
+                items = posts.map { post ->
+                    val past = post.event?.isPast(now) == true
+                    PostItem(
+                        post = post,
+                        photoUrls = post.photoPaths.mapNotNull { path -> urls[path]?.let { path to it } }.toMap(),
+                        canEdit = permissions.canEditPost(post),
+                        canDelete = permissions.canDeletePost(post),
+                        canHide = permissions.canHide(post),
+                        canUnhide = permissions.canUnhide(post),
+                        canReport = permissions.canReport(post),
+                        canAttend = permissions.canAttend && post.status == PostStatus.VISIBLE && post.event != null && !past,
+                        isEventPast = past,
+                        attendanceBusy = post.id in attendanceInFlight,
+                    )
+                },
+                canLoadMore = canLoadMore,
+                loadingMore = loadingMore,
+                loadMoreError = loadMoreError,
+            )
+        }
     }
 
     private fun isMod(role: GroupRole?): Boolean = role == GroupRole.OWNER || role == GroupRole.ADMIN

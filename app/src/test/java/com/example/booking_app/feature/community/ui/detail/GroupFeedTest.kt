@@ -11,6 +11,8 @@ import com.example.booking_app.feature.community.ME
 import com.example.booking_app.feature.community.domain.CommunityError
 import com.example.booking_app.feature.community.domain.GroupRepository
 import com.example.booking_app.feature.community.domain.PostRepository
+import com.example.booking_app.feature.community.domain.model.AttendResult
+import com.example.booking_app.feature.community.domain.model.EventInfo
 import com.example.booking_app.feature.community.domain.model.GroupMembership
 import com.example.booking_app.feature.community.domain.model.GroupRole
 import com.example.booking_app.feature.community.domain.model.HiddenBy
@@ -18,9 +20,11 @@ import com.example.booking_app.feature.community.domain.model.Page
 import com.example.booking_app.feature.community.domain.model.PageCursor
 import com.example.booking_app.feature.community.domain.model.Post
 import com.example.booking_app.feature.community.domain.model.PostStatus
+import com.example.booking_app.feature.community.domain.model.PostType
 import com.example.booking_app.feature.community.domain.usecase.DeletePost
 import com.example.booking_app.feature.community.domain.usecase.JoinGroup
 import com.example.booking_app.feature.community.domain.usecase.LeaveGroup
+import com.example.booking_app.feature.community.domain.usecase.ToggleAttendance
 import com.example.booking_app.feature.community.group
 import com.example.booking_app.feature.community.noopSignedUrls
 import com.example.booking_app.feature.community.post
@@ -52,6 +56,8 @@ class GroupFeedTest {
     private val session = mockk<SessionManager> { every { currentUid() } returns ME }
     private val catalog = mockk<CatalogRepository> { coEvery { districts() } returns emptyList() }
 
+    private var nowMs: Long = Instant.parse("2026-11-10T00:00:00Z").toEpochMilli()
+
     private fun viewModel(signedUrls: SignedUrlCache = noopSignedUrls()) = GroupDetailViewModel(
         SavedStateHandle(mapOf("groupId" to "g1")),
         groups,
@@ -60,8 +66,10 @@ class GroupFeedTest {
         JoinGroup(groups),
         LeaveGroup(groups),
         DeletePost(posts),
+        ToggleAttendance(posts),
         signedUrls,
         DistrictNames(catalog),
+        FakeClock { nowMs },
     )
 
     private fun givenMember(role: GroupRole = GroupRole.MEMBER) {
@@ -236,5 +244,35 @@ class GroupFeedTest {
         advanceUntilIdle()
         val feed = (vm.state.value as GroupDetailUiState.Content).feed as FeedUiState.Content
         assertEquals(listOf("p1"), feed.items.map { it.post.id })
+    }
+
+    @Test
+    fun `tham gia su kien cap nhat lac quan va hoan lai khi loi`() = runTest {
+        givenMember(GroupRole.MEMBER)
+        val futureAt = Instant.parse("2026-11-20T12:00:00Z")
+        val eventPost = post(id = "e1").copy(
+            type = PostType.EVENT,
+            event = EventInfo("Giao lưu", futureAt, "Sân A", expectedCount = 8, attendeeCount = 2, iAmAttending = false),
+        )
+        coEvery { posts.feed("g1", false, null) } returns Result.success(Page(listOf(eventPost), null))
+        every { posts.observeNewPosts("g1", false, any()) } returns emptyFlow()
+        coEvery { posts.attend("g1", "e1") } returns Result.success(AttendResult(attendeeCount = 3, attending = true))
+        coEvery { posts.unattend("g1", "e1") } returns Result.failure(CommunityError.Network())
+
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        vm.onToggleAttendance("e1")
+        advanceUntilIdle()
+        val afterJoin = ((vm.state.value as GroupDetailUiState.Content).feed as FeedUiState.Content).items.single()
+        assertTrue(afterJoin.post.event!!.iAmAttending)
+        assertEquals(3, afterJoin.post.event!!.attendeeCount)
+
+        // Bỏ tham gia bị lỗi mạng → hoàn lại trạng thái đang tham gia (3 người).
+        vm.onToggleAttendance("e1")
+        advanceUntilIdle()
+        val afterFail = ((vm.state.value as GroupDetailUiState.Content).feed as FeedUiState.Content).items.single()
+        assertTrue(afterFail.post.event!!.iAmAttending)
+        assertEquals(3, afterFail.post.event!!.attendeeCount)
     }
 }

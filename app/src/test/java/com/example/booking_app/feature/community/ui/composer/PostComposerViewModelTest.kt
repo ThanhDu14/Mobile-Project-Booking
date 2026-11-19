@@ -2,12 +2,14 @@ package com.example.booking_app.feature.community.ui.composer
 
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
+import com.example.booking_app.core.testing.FakeClock
 import com.example.booking_app.core.testing.MainDispatcherRule
 import com.example.booking_app.feature.community.domain.CommunityError
 import com.example.booking_app.feature.community.domain.GroupMediaRepository
 import com.example.booking_app.feature.community.domain.PostRepository
 import com.example.booking_app.feature.community.domain.model.DraftPhoto
 import com.example.booking_app.feature.community.domain.model.PostDraft
+import com.example.booking_app.feature.community.domain.model.PostType
 import com.example.booking_app.feature.community.domain.model.SignedUpload
 import com.example.booking_app.feature.community.domain.usecase.EditPost
 import com.example.booking_app.feature.community.domain.usecase.PublishPost
@@ -27,9 +29,11 @@ import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
+import java.time.Instant
 
 /** T042: soạn/sửa bài đăng — tối đa 4 ảnh, trạng thái từng ảnh, thử lại/bỏ ảnh, giữ requestId, bỏ bài gọi discard, mất mạng giữ nội dung. */
 class PostComposerViewModelTest {
@@ -40,6 +44,8 @@ class PostComposerViewModelTest {
     private val posts = mockk<PostRepository>()
     private val media = mockk<GroupMediaRepository>()
 
+    private val now = Instant.parse("2026-11-10T10:00:00Z")
+
     private fun viewModel(handle: SavedStateHandle = SavedStateHandle(mapOf("groupId" to "g1"))) =
         PostComposerViewModel(
             savedStateHandle = handle,
@@ -48,6 +54,7 @@ class PostComposerViewModelTest {
             publishPost = PublishPost(posts),
             editPost = EditPost(posts),
             signedUrls = noopSignedUrls(),
+            clock = FakeClock { now.toEpochMilli() },
         )
 
     private fun stubUploadSuccess() {
@@ -215,5 +222,61 @@ class PostComposerViewModelTest {
             assertTrue(awaitItem() is PostComposerEvent.Posted)
         }
         coVerify(exactly = 1) { posts.update("g1", match { it.requestId == "p9" && it.content == "Nội dung mới" }) }
+    }
+
+    // ---------- T052: chế độ EVENT ----------
+
+    @Test
+    fun `su kien thieu tieu de, dia diem, thoi gian qua khu va so du kien ngoai 2-100 deu bao loi`() = runTest {
+        val vm = viewModel(SavedStateHandle(mapOf("groupId" to "g1", "type" to PostType.EVENT.name)))
+
+        vm.submit()
+        assertEquals(PostContentError.REQUIRED, vm.state.value.eventTitleError)
+        assertEquals(EventTimeError.REQUIRED, vm.state.value.eventTimeError)
+        assertEquals(PostContentError.REQUIRED, vm.state.value.eventLocationError)
+        assertTrue(vm.state.value.expectedCountError)
+
+        // Tiêu đề > 100, thời gian quá khứ (bằng now), địa điểm > 200, số dự kiến 1 và 101.
+        vm.onEventTitleChanged("a".repeat(101))
+        vm.onEventAtChanged(now)
+        vm.onEventLocationChanged("b".repeat(201))
+        vm.onExpectedCountChanged("1")
+        vm.submit()
+
+        assertEquals(PostContentError.TOO_LONG, vm.state.value.eventTitleError)
+        assertEquals(EventTimeError.PAST, vm.state.value.eventTimeError)
+        assertEquals(PostContentError.TOO_LONG, vm.state.value.eventLocationError)
+        assertTrue(vm.state.value.expectedCountError)
+
+        vm.onExpectedCountChanged("101")
+        vm.submit()
+        assertTrue(vm.state.value.expectedCountError)
+        coVerify(exactly = 0) { posts.create(any(), any()) }
+    }
+
+    @Test
+    fun `su kien hop le voi mo ta rong van dang thanh cong`() = runTest {
+        val draftSlot = slot<PostDraft>()
+        coEvery { posts.create("g1", capture(draftSlot)) } returns Result.success(post("e1").copy(type = PostType.EVENT))
+        val vm = viewModel(SavedStateHandle(mapOf("groupId" to "g1", "type" to PostType.EVENT.name)))
+
+        val future = now.plusSeconds(3600)
+        vm.onEventTitleChanged("Giao lưu tối thứ 6")
+        vm.onEventAtChanged(future)
+        vm.onEventLocationChanged("Sân Hòa Bình")
+        vm.onExpectedCountChanged("8")
+
+        vm.events.test {
+            vm.submit()
+            advanceUntilIdle()
+            assertTrue(awaitItem() is PostComposerEvent.Posted)
+        }
+        assertNull(vm.state.value.contentError)
+        assertEquals(PostType.EVENT, draftSlot.captured.type)
+        assertEquals("Giao lưu tối thứ 6", draftSlot.captured.eventTitle)
+        assertEquals(future, draftSlot.captured.eventAt)
+        assertEquals("Sân Hòa Bình", draftSlot.captured.eventLocation)
+        assertEquals(8, draftSlot.captured.expectedCount)
+        assertEquals("", draftSlot.captured.content)
     }
 }

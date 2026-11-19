@@ -65,7 +65,23 @@
         <action
             android:id="@+id/action_groupDetail_to_postComposer"
             app:destination="@id/postComposerFragment" />
+        <action
+            android:id="@+id/action_groupDetail_to_eventAttendees"
+            app:destination="@id/eventAttendeesBottomSheet" />
     </fragment>
+
+    <!-- Danh sách người tham gia sự kiện (US4). -->
+    <dialog
+        android:id="@+id/eventAttendeesBottomSheet"
+        android:name="com.example.booking_app.feature.community.ui.event.EventAttendeesBottomSheet"
+        android:label="@string/community_title_attendees">
+        <argument
+            android:name="groupId"
+            app:argType="string" />
+        <argument
+            android:name="postId"
+            app:argType="string" />
+    </dialog>
 
     <!-- Soạn/sửa bài đăng hoặc sự kiện (US3, US4). -->
     <fragment

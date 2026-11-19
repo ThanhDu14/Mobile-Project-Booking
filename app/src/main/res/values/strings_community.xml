@@ -247,4 +247,19 @@
     <string name="community_feed_loading_more_cd">Đang tải thêm bài</string>
     <string name="community_composer_bar_hint">Chia sẻ với nhóm…</string>
     <string name="community_chat_coming_soon">Chat nhóm chưa khả dụng</string>
+
+    <!-- US4: sự kiện giao lưu -->
+    <string name="community_event_title_required">Nhập tiêu đề sự kiện</string>
+    <string name="community_event_title_too_long">Tiêu đề tối đa 100 ký tự</string>
+    <string name="community_event_time_required">Chọn thời gian diễn ra</string>
+    <string name="community_event_time_past">Thời gian sự kiện phải ở tương lai</string>
+    <string name="community_event_location_required">Nhập địa điểm</string>
+    <string name="community_event_location_too_long">Địa điểm tối đa 200 ký tự</string>
+    <string name="community_event_expected_invalid">Số người dự kiến từ 2 đến 100</string>
+    <string name="community_event_pick_time">Chọn ngày và giờ</string>
+    <string name="community_event_description_hint">Mô tả sự kiện (không bắt buộc)</string>
+    <string name="community_event_attending">Bạn đã tham gia</string>
+    <string name="community_event_attendees_cd">Xem danh sách %1$s</string>
+    <string name="community_event_attendee_avatar_cd">Ảnh đại diện của %1$s</string>
+    <string name="community_event_close_cd">Đóng</string>
 </resources>

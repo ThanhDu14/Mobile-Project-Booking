@@ -4,13 +4,15 @@ import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.example.booking_app.core.catalog.CatalogRepository
 import com.example.booking_app.core.session.SessionManager
+import com.example.booking_app.core.testing.FakeClock
+import com.example.booking_app.core.testing.MainDispatcherRule
 import com.example.booking_app.feature.community.domain.usecase.DeletePost
 import com.example.booking_app.feature.community.domain.usecase.JoinGroup
 import com.example.booking_app.feature.community.domain.usecase.LeaveGroup
+import com.example.booking_app.feature.community.domain.usecase.ToggleAttendance
 import com.example.booking_app.feature.community.emptyPostRepository
 import com.example.booking_app.feature.community.noopSignedUrls
 import com.example.booking_app.feature.community.ui.common.DistrictNames
-import com.example.booking_app.core.testing.MainDispatcherRule
 import com.example.booking_app.feature.community.ME
 import com.example.booking_app.feature.community.domain.CommunityError
 import com.example.booking_app.feature.community.domain.GroupRepository
@@ -50,8 +52,10 @@ class GroupDetailViewModelTest {
         JoinGroup(groups),
         LeaveGroup(groups),
         DeletePost(posts),
+        ToggleAttendance(posts),
         noopSignedUrls(),
         DistrictNames(catalog),
+        FakeClock { 0L },
     )
 
     @Test

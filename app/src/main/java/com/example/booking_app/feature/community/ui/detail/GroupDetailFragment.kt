@@ -62,9 +62,17 @@ class GroupDetailFragment : Fragment(R.layout.fragment_group_detail) {
                 )
             }
 
-            override fun onEditPost(postId: String) = openComposer(postId = postId, type = PostType.POST)
+            override fun onEditPost(postId: String, type: PostType) = openComposer(postId = postId, type = type)
 
             override fun onDeletePost(postId: String) = confirmDeletePost(postId)
+
+            override fun onToggleAttendance(postId: String) = viewModel.onToggleAttendance(postId)
+
+            override fun onViewAttendees(postId: String) {
+                val nav = findNavController()
+                if (nav.currentDestination?.id != R.id.groupDetailFragment) return
+                nav.navigate(GroupDetailFragmentDirections.actionGroupDetailToEventAttendees(viewModel.groupId, postId))
+            }
         })
         binding.feedList.layoutManager = LinearLayoutManager(requireContext())
         binding.feedList.adapter = postAdapter
@@ -85,6 +93,7 @@ class GroupDetailFragment : Fragment(R.layout.fragment_group_detail) {
             nav.navigate(GroupDetailFragmentDirections.actionGroupDetailToGroupForm(viewModel.groupId))
         }
         binding.newPostButton.setOnClickListener { openComposer(postId = null, type = PostType.POST) }
+        binding.newEventButton.setOnClickListener { openComposer(postId = null, type = PostType.EVENT) }
         binding.chatButton.setOnClickListener { openGroupChat(binding) }
         binding.joinButton.setOnClickListener { viewModel.onJoinClicked() }
         binding.cancelRequestButton.setOnClickListener { viewModel.onCancelRequestClicked() }
