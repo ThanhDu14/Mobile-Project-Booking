@@ -422,8 +422,11 @@ class ChatOutbox @Inject constructor(
     private suspend fun removeEntry(chatId: String, messageId: String) {
         timeoutJobs.remove(messageId)?.cancel()
         var becameEmpty = false
+        var removedLocalUri: String? = null
         mutateMap { map ->
-            val filtered = map[chatId].orEmpty().filterNot { it.messageId == messageId }
+            val current = map[chatId].orEmpty()
+            removedLocalUri = current.firstOrNull { it.messageId == messageId }?.localImageUri
+            val filtered = current.filterNot { it.messageId == messageId }
             if (filtered.isEmpty()) {
                 map.remove(chatId)
                 becameEmpty = true
@@ -432,6 +435,9 @@ class ChatOutbox @Inject constructor(
             }
         }
         if (becameEmpty) clearRetryState(chatId)
+        if (!removedLocalUri.isNullOrBlank()) {
+            transport.deleteLocalMedia(removedLocalUri)
+        }
     }
 
     private suspend fun getEntry(chatId: String, messageId: String): OutboxEntry? =

@@ -177,7 +177,8 @@ fun ChatActionResponse.toOpenDirectResult(): DirectChatResult? {
 fun ChatMediaResponse.toSignedUpload(): SignedChatUpload? {
     val p = path?.takeIf { it.isNotBlank() } ?: return null
     val url = signedUrl?.takeIf { it.isNotBlank() } ?: return null
-    return SignedChatUpload(path = p, signedUrl = url, token = token.orEmpty())
+    val t = token?.takeIf { it.isNotBlank() } ?: return null
+    return SignedChatUpload(path = p, signedUrl = url, token = t)
 }
 
 fun ChatMediaResponse.toSignedUrls(): ChatSignedUrls =

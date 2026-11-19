@@ -3,6 +3,7 @@ package com.example.booking_app.feature.chat.data
 import com.example.booking_app.core.session.SessionManager
 import com.example.booking_app.feature.chat.data.dto.ChatSendRequest
 import com.example.booking_app.feature.chat.domain.ChatError
+import com.example.booking_app.feature.chat.domain.ChatLocalMediaStore
 import com.example.booking_app.feature.chat.domain.ChatMediaRepository
 import com.example.booking_app.feature.chat.domain.model.OutboxEntry
 import com.example.booking_app.feature.chat.domain.model.UploadState
@@ -27,6 +28,7 @@ interface ChatOutboxTransport {
     suspend fun uploadImage(chatId: String, messageId: String, localUri: String): Result<String>
     suspend fun messageExistsOnServer(chatId: String, messageId: String): Boolean
     suspend fun discardMedia(chatId: String, messageId: String)
+    fun deleteLocalMedia(localUri: String?) {}
 }
 
 @Singleton
@@ -35,6 +37,7 @@ class DefaultChatOutboxTransport @Inject constructor(
     private val mediaRepository: ChatMediaRepository,
     private val firestore: FirebaseFirestore,
     private val sessionManager: SessionManager,
+    private val localMediaStore: ChatLocalMediaStore,
 ) : ChatOutboxTransport {
 
     override fun currentUid(): String? = sessionManager.currentUid()
@@ -91,6 +94,10 @@ class DefaultChatOutboxTransport @Inject constructor(
         } catch (_: Exception) {
             // Dọn ảnh rác là thao tác best-effort.
         }
+    }
+
+    override fun deleteLocalMedia(localUri: String?) {
+        localMediaStore.deleteIfOwned(localUri)
     }
 
     private companion object {

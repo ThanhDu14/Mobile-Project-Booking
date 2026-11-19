@@ -5,6 +5,7 @@ import com.example.booking_app.core.image.ImageTooLargeException
 import com.example.booking_app.core.image.ImageUnreadableException
 import com.example.booking_app.core.util.AppClock
 import com.example.booking_app.feature.chat.domain.ChatError
+import com.example.booking_app.feature.chat.domain.ChatLocalMediaStore
 import com.example.booking_app.feature.chat.domain.ChatRepository
 import com.example.booking_app.feature.chat.domain.model.ChatMessageRules
 import com.example.booking_app.feature.chat.domain.model.OutboxEntry
@@ -14,11 +15,13 @@ import javax.inject.Inject
 
 /**
  * Sinh `messageId` UUID tất định, kiểm tra quy tắc nội dung và ảnh (AC 4.3: ảnh lỗi / > 2 MB sau nén
- * thì báo lỗi ngay, không đưa vào outbox) rồi đưa vào `ChatOutbox` (T028, T045, R1).
+ * thì báo lỗi ngay, không đưa vào outbox), lưu bản nén vào bộ nhớ đệm nội bộ để chịu được tắt/mở app
+ * lúc offline và tránh nén 2 lần, rồi đưa vào `ChatOutbox` (T028, T045, R1).
  */
 class SendMessage @Inject constructor(
     private val repository: ChatRepository,
     private val imageCompressor: ImageCompressor,
+    private val localMediaStore: ChatLocalMediaStore,
     private val clock: AppClock,
 ) {
     suspend operator fun invoke(
@@ -35,8 +38,9 @@ class SendMessage @Inject constructor(
         }
         if (!valid) return Result.failure(ChatError.InvalidArgument())
 
+        var persistedImageUri: String? = null
         if (localImageUri != null) {
-            try {
+            val jpeg = try {
                 imageCompressor.compress(localImageUri)
             } catch (e: CancellationException) {
                 throw e
@@ -47,15 +51,26 @@ class SendMessage @Inject constructor(
             } catch (_: Exception) {
                 return Result.failure(ChatError.ImageUnreadable())
             }
+            persistedImageUri = try {
+                localMediaStore.saveCompressed(messageId, jpeg)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                return Result.failure(ChatError.ImageUnreadable())
+            }
+            // Nếu nguồn là file chụp tạm từ camera trong cacheDir/chat/ thì xóa bản gốc sau khi đã lưu bản nén.
+            localMediaStore.deleteIfOwned(localImageUri)
         }
 
         val entry = OutboxEntry(
             messageId = messageId,
             chatId = chatId,
             text = trimmed,
-            localImageUri = localImageUri,
+            localImageUri = persistedImageUri,
             createdAtLocal = clock.now(),
         )
-        return repository.send(entry).map { entry }
+        return repository.send(entry)
+            .onFailure { localMediaStore.deleteIfOwned(persistedImageUri) }
+            .map { entry }
     }
 }

@@ -1,13 +1,16 @@
 package com.example.booking_app.feature.chat.data
 
+import com.example.booking_app.core.image.ImageCompressionRules
 import com.example.booking_app.core.image.ImageCompressor
 import com.example.booking_app.core.image.ImageTooLargeException
 import com.example.booking_app.core.image.ImageUnreadableException
+import com.example.booking_app.core.network.DEFAULT_TIMEOUT_MS
 import com.example.booking_app.core.network.toAppError
 import com.example.booking_app.feature.chat.data.dto.ChatMediaRequest
 import com.example.booking_app.feature.chat.data.dto.toSignedUpload
 import com.example.booking_app.feature.chat.data.dto.toSignedUrls
 import com.example.booking_app.feature.chat.domain.ChatError
+import com.example.booking_app.feature.chat.domain.ChatLocalMediaStore
 import com.example.booking_app.feature.chat.domain.ChatMediaRepository
 import com.example.booking_app.feature.chat.domain.model.ChatSignedUrls
 import com.example.booking_app.feature.chat.domain.model.UploadState
@@ -16,21 +19,42 @@ import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.storage.storage
 import io.ktor.http.ContentType
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.withTimeout
 import javax.inject.Inject
 import javax.inject.Singleton
+
+/** Giao diện mỏng bọc `storage.from(bucket).uploadToSignedUrl(...)` để unit test JVM trực tiếp. */
+interface ChatStorageUploader {
+    suspend fun uploadToSignedUrl(bucket: String, path: String, token: String, bytes: ByteArray)
+}
+
+@Singleton
+class SupabaseChatStorageUploader @Inject constructor(
+    private val supabase: SupabaseClient,
+) : ChatStorageUploader {
+    override suspend fun uploadToSignedUrl(bucket: String, path: String, token: String, bytes: ByteArray) {
+        supabase.storage.from(bucket).uploadToSignedUrl(path, token, bytes) {
+            upsert = true
+            contentType = ContentType.Image.JPEG
+        }
+    }
+}
 
 /**
  * Kho ảnh riêng tư của chat trên Supabase Storage bucket `chat-media` (T045, research R8).
  *
- * Luồng tải lên: nén JPEG bằng [ImageCompressor] (≤ 1600px, ≤ 2 MB) → xin signed upload URL qua
- * Edge Function `chat-media-url` → PUT lên `chat-media` → phát [UploadState.Uploaded].
+ * Luồng tải lên: dùng bản JPEG đã nén sẵn từ [ChatLocalMediaStore] (hoặc nén bằng [ImageCompressor]
+ * nếu chưa nén) → xin signed upload URL qua Edge Function `chat-media-url` → PUT lên `chat-media`
+ * → phát [UploadState.Uploaded].
  */
 @Singleton
 class SupabaseChatMediaRepository @Inject constructor(
     private val imageCompressor: ImageCompressor,
-    private val supabase: SupabaseClient,
+    private val localMediaStore: ChatLocalMediaStore,
+    private val storageUploader: ChatStorageUploader,
     private val mediaApi: ChatMediaUrlApi,
 ) : ChatMediaRepository {
 
@@ -38,7 +62,12 @@ class SupabaseChatMediaRepository @Inject constructor(
         emit(UploadState.Uploading)
 
         val jpeg = try {
-            imageCompressor.compress(uri)
+            val precompressed = localMediaStore.readPrecompressed(uri)
+            if (precompressed != null && !ImageCompressionRules.isTooLarge(precompressed.size)) {
+                precompressed
+            } else {
+                imageCompressor.compress(uri)
+            }
         } catch (e: CancellationException) {
             throw e
         } catch (_: ImageTooLargeException) {
@@ -73,15 +102,22 @@ class SupabaseChatMediaRepository @Inject constructor(
         }
 
         try {
-            supabase.storage.from(BUCKET_CHAT_MEDIA).uploadToSignedUrl(target.path, target.token, jpeg) {
-                upsert = true
-                contentType = ContentType.Image.JPEG
+            withTimeout(DEFAULT_TIMEOUT_MS) {
+                storageUploader.uploadToSignedUrl(BUCKET_CHAT_MEDIA, target.path, target.token, jpeg)
             }
             emit(UploadState.Uploaded(target.path))
+        } catch (_: TimeoutCancellationException) {
+            emit(UploadState.Failed(ChatError.Network()))
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            emit(UploadState.Failed(e.toAppError().toChatError()))
+            // Lỗi deserialize của supabase-kt 3.6.0 (BucketApiImpl.kt:311-312): yêu cầu trường "Id",
+            // trong khi Supabase Storage trả `{ "Key": "..." }` sau khi PUT thành công.
+            if (e.message?.contains("Expected an id", ignoreCase = true) == true) {
+                emit(UploadState.Uploaded(target.path))
+            } else {
+                emit(UploadState.Failed(e.toAppError().toChatError()))
+            }
         }
     }
 

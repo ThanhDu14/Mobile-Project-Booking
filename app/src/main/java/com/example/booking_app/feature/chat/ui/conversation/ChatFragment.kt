@@ -3,9 +3,11 @@ package com.example.booking_app.feature.chat.ui.conversation
 import android.Manifest
 import android.content.ClipData
 import android.content.ClipboardManager
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
+import android.provider.Settings
 import android.view.View
 import android.widget.PopupMenu
 import androidx.activity.result.PickVisualMediaRequest
@@ -36,6 +38,7 @@ import com.example.booking_app.core.ui.EmptyStateSpec
 import com.example.booking_app.core.ui.UiState
 import com.example.booking_app.core.ui.render
 import com.example.booking_app.databinding.FragmentChatBinding
+import com.example.booking_app.feature.chat.domain.ChatLocalMediaStore
 import com.example.booking_app.feature.chat.domain.chatErrorOf
 import com.example.booking_app.feature.chat.domain.model.ChatMessage
 import com.example.booking_app.feature.chat.domain.model.ChatMessageRules
@@ -56,6 +59,7 @@ import javax.inject.Inject
 class ChatFragment : Fragment(R.layout.fragment_chat) {
 
     @Inject lateinit var authNavigator: AuthNavigator
+    @Inject lateinit var localMediaStore: ChatLocalMediaStore
 
     private val viewModel: ChatViewModel by viewModels()
 
@@ -69,14 +73,23 @@ class ChatFragment : Fragment(R.layout.fragment_chat) {
     private var pendingCameraUri: Uri? = null
 
     private val pickPhoto = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
-        uri?.let { viewModel.onImageSelected(it.toString()) }
+        uri?.let {
+            localMediaStore.deleteIfOwned(viewModel.uiState.value.pendingImageUri)
+            viewModel.onImageSelected(it.toString())
+        }
     }
 
     private val takePicture = registerForActivityResult(ActivityResultContracts.TakePicture()) { saved ->
         val uri = pendingCameraUri
         pendingCameraUri = null
         if (saved && uri != null) {
+            val previous = viewModel.uiState.value.pendingImageUri
+            if (previous != uri.toString()) {
+                localMediaStore.deleteIfOwned(previous)
+            }
             viewModel.onImageSelected(uri.toString())
+        } else {
+            localMediaStore.deleteIfOwned(uri?.toString())
         }
     }
 
@@ -130,7 +143,10 @@ class ChatFragment : Fragment(R.layout.fragment_chat) {
         binding.messageInput.doAfterTextChanged { viewModel.onComposerChanged(it?.toString().orEmpty()) }
         binding.attachImageButton.setOnClickListener { showAttachOptions() }
         binding.sendButton.setOnClickListener { viewModel.onSendClicked() }
-        binding.removePendingImageButton.setOnClickListener { viewModel.onPendingImageCleared() }
+        binding.removePendingImageButton.setOnClickListener {
+            localMediaStore.deleteIfOwned(viewModel.uiState.value.pendingImageUri)
+            viewModel.onPendingImageCleared()
+        }
 
         setFragmentResultListener(ReportMessageBottomSheet.RESULT_KEY_REPORT_SENT) { _, _ ->
             _binding?.let { b ->
@@ -448,18 +464,30 @@ class ChatFragment : Fragment(R.layout.fragment_chat) {
         pendingCameraUri = uri
         runCatching { takePicture.launch(uri) }.onFailure {
             pendingCameraUri = null
+            localMediaStore.deleteIfOwned(uri.toString())
             Snackbar.make(binding.root, R.string.chat_camera_unavailable, Snackbar.LENGTH_LONG).show()
         }
     }
 
-    /** Từ chối quyền camera: hiện giải thích và vẫn cho mở Photo Picker (AC 4.5). */
+    /** Từ chối quyền camera: hiện giải thích, mở Cài đặt nếu từ chối vĩnh viễn và vẫn cho mở Photo Picker (AC 4.5). */
     private fun showCameraDenied() {
-        MaterialAlertDialogBuilder(requireContext())
+        val builder = MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.chat_camera_rationale_title)
             .setMessage(R.string.chat_camera_denied_fallback)
             .setNegativeButton(R.string.chat_action_cancel, null)
             .setPositiveButton(R.string.chat_attach_gallery) { _, _ -> launchGallery() }
-            .show()
+        if (!shouldShowRequestPermissionRationale(Manifest.permission.CAMERA)) {
+            builder.setNeutralButton(R.string.chat_action_open_settings) { _, _ -> openAppSettings() }
+        }
+        builder.show()
+    }
+
+    private fun openAppSettings() {
+        val intent = Intent(
+            Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+            Uri.fromParts("package", requireContext().packageName, null),
+        )
+        runCatching { startActivity(intent) }
     }
 
     private fun handle(event: ChatEvent) {
@@ -478,10 +506,13 @@ class ChatFragment : Fragment(R.layout.fragment_chat) {
                 Snackbar.make(binding.root, event.resId, Snackbar.LENGTH_SHORT).show()
             }
             is ChatEvent.OpenPhoto -> {
-                findNavController().navigate(
-                    R.id.action_chat_to_photoViewer,
-                    bundleOf("photoUrls" to arrayOf(event.url), "startIndex" to 0),
-                )
+                val nav = findNavController()
+                if (nav.currentDestination?.id == R.id.chatFragment) {
+                    nav.navigate(
+                        R.id.action_chat_to_photoViewer,
+                        bundleOf("photoUrls" to arrayOf(event.url), "startIndex" to 0),
+                    )
+                }
             }
             is ChatEvent.OpenVenue -> {
                 runCatching {

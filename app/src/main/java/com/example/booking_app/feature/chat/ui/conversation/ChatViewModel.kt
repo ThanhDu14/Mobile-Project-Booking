@@ -163,8 +163,13 @@ class ChatViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
+            var wasOffline = false
             networkMonitor.isOnline.collect { online ->
                 _uiState.update { it.copy(isOffline = !online) }
+                if (online && wasOffline && currentServerMessages.isNotEmpty()) {
+                    resolveSignedImageUrls(currentServerMessages)
+                }
+                wasOffline = !online
             }
         }
         start()
@@ -375,11 +380,11 @@ class ChatViewModel @Inject constructor(
             .filter { it.status == MessageStatus.NORMAL && !it.imagePath.isNullOrBlank() }
             .mapNotNull { it.imagePath }
             .distinct()
-        val missing = paths.filter { it !in _uiState.value.imageUrls }
-        if (missing.isEmpty()) return
+        if (paths.isEmpty()) return
 
         viewModelScope.launch {
-            val resolved = signedUrlCache.resolve(missing)
+            // Truyền thẳng toàn bộ paths để SignedUrlCache tự kiểm tra hết hạn (5 phút an toàn) và chỉ gọi mạng khi cần.
+            val resolved = signedUrlCache.resolve(paths)
             if (resolved.isNotEmpty()) {
                 _uiState.update { it.copy(imageUrls = it.imageUrls + resolved) }
             }
@@ -540,8 +545,21 @@ class ChatViewModel @Inject constructor(
 
     fun onPhotoClicked(message: ChatMessage) {
         if (message.status != MessageStatus.NORMAL) return
-        val url = message.imagePath?.let { _uiState.value.imageUrls[it] } ?: message.localImageUri ?: return
-        _events.trySend(ChatEvent.OpenPhoto(url))
+        val path = message.imagePath
+        if (!path.isNullOrBlank()) {
+            viewModelScope.launch {
+                val freshUrl = signedUrlCache.resolve(listOf(path))[path]
+                if (freshUrl != null) {
+                    _uiState.update { it.copy(imageUrls = it.imageUrls + (path to freshUrl)) }
+                    _events.trySend(ChatEvent.OpenPhoto(freshUrl))
+                } else {
+                    _events.trySend(ChatEvent.ShowError(ChatError.Network()))
+                }
+            }
+        } else {
+            val local = message.localImageUri ?: return
+            _events.trySend(ChatEvent.OpenPhoto(local))
+        }
     }
 
     fun onVenueClicked() {

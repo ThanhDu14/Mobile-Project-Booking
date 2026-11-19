@@ -57,6 +57,7 @@ class ChatOutboxTest {
         val sentIds = mutableListOf<String>()
         val uploadedIds = mutableListOf<String>()
         val discardedMediaIds = mutableListOf<String>()
+        val deletedLocalUris = mutableListOf<String>()
         val serverCheckIds = mutableListOf<String>()
         var serverExistingIds = mutableSetOf<String>()
         var sendHandler: suspend (OutboxEntry) -> Result<Unit> = { Result.success(Unit) }
@@ -83,6 +84,10 @@ class ChatOutboxTest {
 
         override suspend fun discardMedia(chatId: String, messageId: String) {
             discardedMediaIds.add(messageId)
+        }
+
+        override fun deleteLocalMedia(localUri: String?) {
+            if (!localUri.isNullOrBlank()) deletedLocalUris.add(localUri)
         }
     }
 
@@ -382,6 +387,7 @@ class ChatOutboxTest {
         assertEquals(listOf("m-img"), transport.uploadedIds)
         assertEquals(listOf("m-img"), transport.sentIds)
         assertEquals(listOf("chat-1/m-img.jpg"), sentImagePaths)
+        assertEquals(listOf("content://img/court.jpg"), transport.deletedLocalUris)
         assertTrue(outbox.observe("chat-1").first().isEmpty())
         outbox.close()
     }

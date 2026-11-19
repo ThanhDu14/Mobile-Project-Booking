@@ -17,6 +17,7 @@ import com.example.booking_app.feature.chat.data.dto.ChatUserSnapshotDto
 import com.example.booking_app.feature.chat.data.dto.MessageDto
 import com.example.booking_app.feature.chat.data.dto.toDomain
 import com.example.booking_app.feature.chat.domain.ChatError
+import com.example.booking_app.feature.chat.domain.ChatLocalMediaStore
 import com.example.booking_app.feature.chat.domain.ChatRepository
 import com.example.booking_app.feature.chat.domain.model.ChatDetail
 import com.example.booking_app.feature.chat.domain.model.ChatMessage
@@ -75,6 +76,19 @@ class ChatViewModelTest {
 
     private val repository = mockk<ChatRepository>(relaxed = true)
     private val imageCompressor = mockk<ImageCompressor>()
+    private val deletedLocalUris = mutableListOf<String>()
+    private val localMediaStore = object : ChatLocalMediaStore {
+        val saved = mutableMapOf<String, ByteArray>()
+        override suspend fun saveCompressed(messageId: String, jpegBytes: ByteArray): String {
+            val uri = "file:///cache/chat/outbox_$messageId.jpg"
+            saved[uri] = jpegBytes
+            return uri
+        }
+        override suspend fun readPrecompressed(uri: String): ByteArray? = saved[uri]
+        override fun deleteIfOwned(uri: String?) {
+            if (!uri.isNullOrBlank()) deletedLocalUris.add(uri)
+        }
+    }
     private val sessionManager = mockk<SessionManager>(relaxed = true)
     private val clock = FakeClock()
     private val onlineFlow = MutableStateFlow(true)
@@ -88,10 +102,18 @@ class ChatViewModelTest {
     private val messagesFlow = MutableStateFlow<List<ChatMessage>>(emptyList())
     private val outboxFlow = MutableStateFlow<List<OutboxEntry>>(emptyList())
     private val requestedSignedPaths = mutableListOf<String>()
+    private var signedUrlVersion = 0
+    private var failSignedUrls = false
     private val signedUrlCache = SignedUrlCache(
         fetch = { paths ->
             requestedSignedPaths.addAll(paths)
-            Result.success(SignedUrlBatch(paths.associateWith { "https://signed/$it" }, null))
+            if (failSignedUrls) {
+                Result.failure(ChatError.Network())
+            } else {
+                signedUrlVersion++
+                val suffix = if (signedUrlVersion == 1) "" else "?v=$signedUrlVersion"
+                Result.success(SignedUrlBatch(paths.associateWith { "https://signed/$it$suffix" }, null))
+            }
         },
         clock = clock,
     )
@@ -164,7 +186,7 @@ class ChatViewModelTest {
             openDirectChat = OpenDirectChat(repository),
             observeMessages = ObserveMessages(repository),
             loadOlderMessages = LoadOlderMessages(repository),
-            sendMessage = SendMessage(repository, imageCompressor, clock),
+            sendMessage = SendMessage(repository, imageCompressor, localMediaStore, clock),
             retryMessage = RetryMessage(repository),
             discardMessage = DiscardMessage(repository),
             markChatRead = MarkChatRead(repository),
@@ -478,7 +500,7 @@ class ChatViewModelTest {
             openDirectChat = OpenDirectChat(repository),
             observeMessages = ObserveMessages(repository),
             loadOlderMessages = LoadOlderMessages(repository),
-            sendMessage = SendMessage(repository, imageCompressor, clock),
+            sendMessage = SendMessage(repository, imageCompressor, localMediaStore, clock),
             retryMessage = RetryMessage(repository),
             discardMessage = DiscardMessage(repository),
             markChatRead = MarkChatRead(repository),
@@ -541,7 +563,7 @@ class ChatViewModelTest {
         val items = (vm.uiState.value.messages as UiState.Content).data
         assertEquals(1, items.size)
         assertEquals(Delivery.PENDING, items.single().delivery)
-        assertEquals("content://media/photo1.jpg", items.single().localImageUri)
+        assertTrue(items.single().localImageUri!!.startsWith("file:///cache/chat/outbox_"))
 
         // Khi tin ảnh đã lên server -> resolve signed URL và bấm vào mở PhotoViewer.
         outboxFlow.value = emptyList()
@@ -559,6 +581,7 @@ class ChatViewModelTest {
 
         vm.events.test {
             vm.onPhotoClicked((vm.uiState.value.messages as UiState.Content).data.single())
+            runCurrent()
             assertEquals(
                 ChatEvent.OpenPhoto("https://signed/owner1_player1/m-img-1.jpg"),
                 awaitItem(),
@@ -616,7 +639,7 @@ class ChatViewModelTest {
         vm.onSendClicked()
         runCurrent()
         assertEquals(1, outboxFlow.value.size)
-        assertEquals("content://picker/gallery1.jpg", outboxFlow.value.single().localImageUri)
+        assertTrue(outboxFlow.value.single().localImageUri!!.startsWith("file:///cache/chat/outbox_"))
     }
 
     // ---------- T048: US5 Thu hồi, báo cáo, chặn, tin bị ẩn ----------
@@ -875,5 +898,50 @@ class ChatViewModelTest {
         vm.onScreenHidden()
         runCurrent()
         coVerify(exactly = 0) { repository.setViewing("group_g1", null) }
+    }
+
+    // ---------- Review Argon US4 #3: Làm mới signed URL khi hết hạn & khi có mạng lại ----------
+
+    @Test
+    fun `signed URL het han duoc lam moi khi bam anh va tu xin lai khi co mang lai`() = runTest {
+        val imgMsg = ChatMessage(
+            id = "m-img-exp",
+            senderId = "owner1",
+            imagePath = "owner1_player1/m-img-exp.jpg",
+            createdAt = Instant.ofEpochMilli(1_700_000_010_000L),
+            delivery = Delivery.SENT,
+            isMine = false,
+        )
+        // 1. Mở chat lúc đang mất mạng → xin signed URL lần đầu thất bại.
+        onlineFlow.value = false
+        failSignedUrls = true
+        chatFlow.value = directChat()
+        messagesFlow.value = listOf(imgMsg)
+
+        val vm = createViewModel()
+        advanceUntilIdle()
+        assertTrue(vm.uiState.value.imageUrls.isEmpty())
+
+        // 2. Có mạng lại → tự động xin lại signed URL không cần snapshot Firestore mới.
+        failSignedUrls = false
+        onlineFlow.value = true
+        advanceUntilIdle()
+        val firstUrl = vm.uiState.value.imageUrls["owner1_player1/m-img-exp.jpg"]
+        assertEquals("https://signed/owner1_player1/m-img-exp.jpg", firstUrl)
+
+        // 3. Sau 1 giờ URL hết hạn → bấm vào ảnh xin URL mới còn hạn trước khi mở PhotoViewer.
+        clock.currentMs += SignedUrlCache.DEFAULT_TTL_MS
+        vm.events.test {
+            vm.onPhotoClicked(imgMsg)
+            runCurrent()
+            assertEquals(
+                ChatEvent.OpenPhoto("https://signed/owner1_player1/m-img-exp.jpg?v=2"),
+                awaitItem(),
+            )
+        }
+        assertEquals(
+            "https://signed/owner1_player1/m-img-exp.jpg?v=2",
+            vm.uiState.value.imageUrls["owner1_player1/m-img-exp.jpg"],
+        )
     }
 }
