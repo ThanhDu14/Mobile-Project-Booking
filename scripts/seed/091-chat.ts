@@ -96,7 +96,7 @@ const p1 = await playerUid(1);
 const p2 = await playerUid(2);
 
 const names = new Map<string, string>([[owner1, "Chủ sân 1"], [owner2, "Chủ sân 2"]]);
-const nameOf = (uid: string) => names.get(uid) ?? `Người chơi ${uid.slice(-4)}`;
+const nameOf = (uid: string) => names.get(uid) ?? `Người chơi ${uid.match(/\d+$/)?.[0] ?? uid.slice(-4)}`;
 
 const writes: Write[] = [];
 for (const [uid, email, name, status] of [

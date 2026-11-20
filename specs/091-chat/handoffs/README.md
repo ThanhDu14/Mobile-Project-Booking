@@ -44,3 +44,14 @@ Deep link đã chốt trong plan: `smashnow://community/group/{groupId}` (090) v
 Hiện `admin-moderate-report/handler.ts` nhánh `HIDE_CONTENT` chỉ ghi `status = HIDDEN` lên `targetPath`, nên bài bị admin ẩn thiếu `hiddenBy = SYSTEM` (nhóm vẫn bỏ ẩn được, trái R7) và tin nhắn bị ẩn vẫn còn `text`.
 
 > **Prompt cho AI của D:** Trong `supabase/functions/admin-moderate-report/handler.ts`, nhánh `HIDE_CONTENT`: nếu `targetPath` dạng `groups/{g}/posts/{p}` thì ghi thêm `hiddenBy: "SYSTEM"`, `hiddenByUid: null`; nếu dạng `chats/{c}/messages/{m}` thì ghi thêm `text: ""`. Thêm action mới khóa nhóm (ví dụ `LOCK_GROUP`): cập nhật kiểu `ReportActionType`, mảng `validActions` và `validateActionTarget` (hiện `POST`/`MESSAGE` chỉ cho `HIDE_CONTENT`, chưa có `targetType` cho nhóm — chọn cho phép `LOCK_GROUP` trên báo cáo `POST` hoặc thêm `targetType = GROUP`). Đường ghi khóa nhóm KHÔNG phải `targetPath` (đó là đường bài) mà là `groups/{gid}` với `gid = targetPath.split("/")[1]`, ghi `status = LOCKED`. `reportId` và danh sách `reason` theo bảng trong `specs/091-chat/handoffs/README.md`. Mọi ghi qua Edge Function bằng service role (Rules chặn client).
+
+## 4. C – tạo bù chat nhóm cho nhóm cũ sau khi deploy 091
+
+Nhóm tạo trước khi deploy 091 chưa có `chats/group_{groupId}` (chat nhóm chỉ tạo trong transaction `create` của `group-manage`), nên nút "Chat nhóm" báo "Bạn không còn trong cuộc trò chuyện". C chạy một lần ngay sau khi deploy function + Rules 091:
+
+```bash
+deno run -A --config supabase/functions/deno.json scripts/admin/backfill-group-chats.ts --dry-run --service-account <file.json>
+deno run -A --config supabase/functions/deno.json scripts/admin/backfill-group-chats.ts --service-account <file.json>
+```
+
+Chạy lại an toàn (nhóm đã có chat bị bỏ qua); bỏ qua nhóm `DELETED`; người đang trong nhóm có `lastReadAt` = lúc tạo nên không bị tính chưa đọc. Test: `scripts/admin/backfill-group-chats.test.ts` (Emulator).
