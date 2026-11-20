@@ -88,4 +88,8 @@ supabase/functions/ # Chỉ dùng nếu cần giao dịch slot phía server đư
 
 ## Theo dõi độ phức tạp
 
+### Bổ sung 2026-11-20: mở thêm cơ sở
+
+Theo Quyết định 3A và FR-018 đã cập nhật, cả venue đầu tiên và venue bổ sung đều do admin review tạo. Client thêm cơ sở bằng form/review/status tái sử dụng, với mode VENUE_ADDITION và lịch sử hồ sơ riêng. ownerApplications thêm purpose tương thích hồ sơ cũ; ownerStatus/role/claims chỉ đổi khi cấp hoặc thu hồi quyền, không đổi khi xét hồ sơ bổ sung. Backend dùng transaction, UUID giữ trong draft và venue ID bằng application ID để chống gửi/duyệt lặp. Kiểm chứng gồm onboarding cũ, bổ sung, quyền bị thu hồi, race, ba job CI và điện thoại thật với backend local.
+
 Không đề xuất vi phạm Constitution hoặc dependency mới. Thay đổi slot nguyên tử phía server là yêu cầu từ nguyên tắc bảo mật và toàn vẹn booking hiện có. Việc dùng lại Edge Function nào hay bổ sung function chuyên biệt phải chờ làm rõ hợp đồng trong tài liệu research, không suy đoán trước trong kế hoạch.

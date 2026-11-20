@@ -9,7 +9,7 @@
 - `venues/{venueId}/priceRules/{id}` — `daysOfWeek`, `startTime`, `endTime`, `pricePerHour`, `label`.
 - `slots/{courtId}_{yyyyMMdd}_{HHmm}` — trường và enum hiện có theo mục 4.4 database README.
 
-Không thêm trường, collection, endpoint, enum hoặc quan hệ booking mới.
+Giữ collections và quan hệ booking; bổ sung discriminator purpose cho ownerApplications theo quyết định 2026-11-20.
 
 ## Yêu cầu phân quyền
 
@@ -58,3 +58,9 @@ Implementation note: venue đầu tiên vẫn do lifecycle duyệt của Feature
 - T007, T028, T029, T030, T031: Đã hoàn thành (Edge Function `manage-slot-blocks`, Android Data Layer `ManageSlotBlocksApi`, Calendar Grid UI shell `OwnerSlotGridAdapter` / `OwnerSlotBlockViewModel`, Firestore Emulator tests).
 - T034: Mở chờ Feature 041 hoàn thiện mã nguồn ứng dụng để kiểm chứng tích hợp chuỗi đặt cố định.
 - T038: Đã hoàn thiện tài nguyên chuỗi, accessibility, responsive phone/w600dp, 48dp touch targets; mở phần kiểm thử SLA trên thiết bị thật dùng mạng 4G.
+
+## Quyết định mở thêm cơ sở — 2026-11-20
+
+Hồ sơ bổ sung dùng purpose VENUE_ADDITION, độc lập với quyền OWNER/APPROVED. Hồ sơ cũ thiếu purpose thuộc OWNER_ONBOARDING. Duyệt tạo venues/{applicationId} một lần; từ chối/nộp lại không đổi tài khoản hoặc venue cũ. Không giới hạn số venue/hồ sơ.
+
+Hợp đồng đầy đủ: [owner-application-api.md](../../110-owner-onboarding/contracts/owner-application-api.md).

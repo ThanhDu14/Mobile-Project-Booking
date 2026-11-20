@@ -1,6 +1,6 @@
 # Đặc tả: Quản lý cơ sở và cấu hình sân
 
-**Feature**: `111-owner-venue-setup`  
+**Feature**: `111-owner-venue-setup`
 **Nguồn yêu cầu**: `docs/proposal/Proposal.html`, SmashNow Constitution và `docs/design/database/README.md`.
 
 ## Clarifications
@@ -59,7 +59,7 @@
 
 - **FR-001**: Chỉ tài khoản đã xác thực có `role = OWNER` và `ownerStatus = APPROVED` được tạo, sửa, ẩn venue; quản lý court, `priceRules` và khóa giờ.
 - **FR-002**: Owner có thể xem danh sách venue của mình, trạng thái venue và danh sách court/giá thuộc từng venue.
-- **FR-003**: Tạo venue yêu cầu tối thiểu `name`, `address`, `districtId`, `location`, `openTime`, `closeTime`, `phone`, `amenityIds`, `photoPaths`, `courtCount` và `acceptsRecurring` (mặc định bật) theo schema chung. Venue đầu tiên được tạo tự động từ hồ sơ khi admin duyệt (spec 110, 120); owner tạo thêm venue khác bằng biểu mẫu của spec này. `openTime` và `closeTime` áp dụng giống nhau mọi ngày. Các trường schema này là căn cứ dữ liệu; điều kiện bắt buộc chính xác được nêu ở Validation.
+- **FR-003**: Tạo venue yêu cầu tối thiểu `name`, `address`, `districtId`, `location`, `openTime`, `closeTime`, `phone`, `amenityIds`, `photoPaths`, `courtCount` và `acceptsRecurring` (mặc định bật) theo schema chung. Venue đầu tiên được tạo tự động từ hồ sơ khi admin duyệt (spec 110, 120); owner nộp hồ sơ VENUE_ADDITION qua form/review/status của Feature 110; chỉ admin duyệt mới tạo venue mới. `openTime` và `closeTime` áp dụng giống nhau mọi ngày. Các trường schema này là căn cứ dữ liệu; điều kiện bắt buộc chính xác được nêu ở Validation.
 - **FR-004**: Owner được sửa thông tin nghiệp vụ venue của mình. Trường 🔒 như `minPricePerHour`, `ratingAvg`, `ratingCount` và trạng thái admin khóa không được owner tự ghi.
 - **FR-005**: Ẩn venue sử dụng `venues.status = HIDDEN`; chặn booking mới nhưng không hủy hoặc làm mất booking đã xác nhận. Không xóa cứng venue có dữ liệu liên kết. Venue `LOCKED` do admin không thể được owner tự mở khóa.
 - **FR-006**: Owner có thể thêm, sửa, ẩn và sắp xếp court trong venue của mình. Schema court hiện có `name`, `surfaceType`, `isActive`, `sortOrder`; spec không đặt thêm field hay trạng thái mới.
@@ -160,3 +160,9 @@
 - Database README nói `priceRules` cùng ngày không được chồng giờ, nhưng chưa quy định cách tính khi booking chạm nhiều rule/thiếu rule; đã thống nhất ở spec 040: tính từng slot 30 phút, thiếu rule thì không đặt được.
 - Proposal mô tả lock giờ gồm bảo trì, sự kiện, khách đặt trực tiếp; enum database bổ sung `DROP_IN` cho luồng buổi vãng lai. Phạm vi spec này dùng các loại khớp schema và để `DROP_IN` cho spec vận hành.
 - Đã đối chiếu với spec 040, 041, 050, 120 ngày 2026-10-13.
+
+## Quyết định mở thêm cơ sở — 2026-11-20
+
+Hồ sơ bổ sung dùng purpose VENUE_ADDITION, độc lập với quyền OWNER/APPROVED. Hồ sơ cũ thiếu purpose thuộc OWNER_ONBOARDING. Duyệt tạo venues/{applicationId} một lần; từ chối/nộp lại không đổi tài khoản hoặc venue cũ. Không giới hạn số venue/hồ sơ.
+
+Hợp đồng gửi, đọc trạng thái, upload và review: [owner-application-api.md](../110-owner-onboarding/contracts/owner-application-api.md).

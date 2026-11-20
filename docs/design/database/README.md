@@ -118,7 +118,7 @@ Xóa tài khoản (spec 011): Edge Function `delete-account` chạy 2 giai đo�
 
 ### 4.2. `ownerApplications/{id}` — D
 
-`uid`, `venueDraft` (Map: tên, địa chỉ, `districtId`, tọa độ, số điện thoại cơ sở, số sân, giờ mở cửa, `photoPaths` ảnh cơ sở; đủ các trường bắt buộc của `venues` để tạo cơ sở khi duyệt), `representativeName`, `representativePhone`, `documentPaths` (Array, object trong bucket private `owner-docs`), `status` 🔒 (`PENDING`, `APPROVED`, `REJECTED`), `rejectReason` 🔒 (bắt buộc khi từ chối), `reviewedBy` 🔒, `reviewedAt` 🔒, `submittedAt`.
+`uid`, `purpose` (OWNER_ONBOARDING hoặc VENUE_ADDITION; thiếu trường là onboarding cũ), `venueDraft` (Map: tên, địa chỉ, `districtId`, tọa độ, số điện thoại cơ sở, số sân, giờ mở cửa, `photoPaths` ảnh cơ sở; đủ các trường bắt buộc của `venues` để tạo cơ sở khi duyệt), `representativeName`, `representativePhone`, `documentPaths` (Array, object trong bucket private `owner-docs`), `status` 🔒 (`PENDING`, `APPROVED`, `REJECTED`), `rejectReason` 🔒 (bắt buộc khi từ chối), `reviewedBy` 🔒, `reviewedAt` 🔒, `submittedAt`.
 
 Duyệt hồ sơ chạy bằng Edge Function `review-owner-application`: set custom claim `appRole=OWNER`, cập nhật `users.role/ownerStatus`, tạo `venues` từ `venueDraft`, gửi thông báo.
 
@@ -399,3 +399,9 @@ Mỗi dòng trên cần ít nhất một test Emulator "được phép" và mộ
 | 4 | "Sân yêu thích" và "sân đang theo dõi" có là một không? | C, D |
 | 5 | ~~Có bật gói Blaze không?~~ Đã chốt 05/10: không dùng Blaze; Storage và Functions chuyển sang Supabase | Cả nhóm |
 | 6 | Tìm theo tên bằng `nameKeywords` hay dùng dịch vụ tìm kiếm ngoài? | A |
+
+## Quyết định mở thêm cơ sở — 2026-11-20
+
+Hồ sơ bổ sung dùng purpose VENUE_ADDITION, độc lập với quyền OWNER/APPROVED. Hồ sơ cũ thiếu purpose thuộc OWNER_ONBOARDING. Duyệt tạo venues/{applicationId} một lần; từ chối/nộp lại không đổi tài khoản hoặc venue cũ. Không giới hạn số venue/hồ sơ.
+
+Hợp đồng chi tiết: [owner-application-api.md](../../../specs/110-owner-onboarding/contracts/owner-application-api.md).

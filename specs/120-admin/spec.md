@@ -47,9 +47,9 @@ Là Admin, tôi muốn xem hồ sơ chờ duyệt cùng giấy tờ chứng minh
 **Acceptance Scenarios**:
 
 1. **Given** Admin đã đăng nhập và có hồ sơ `PENDING`, **When** Admin mở hàng đợi và chọn hồ sơ, **Then** hệ thống hiển thị thông tin hồ sơ, trạng thái và giấy tờ mà chỉ người nộp hoặc Admin được xem.
-2. **Given** hồ sơ `PENDING` hợp lệ, **When** Admin duyệt, **Then** hồ sơ thành `APPROVED`, `users.role` thành `OWNER`, `users.ownerStatus` thành `APPROVED`, venue được tạo từ `venueDraft`, quyền owner được cập nhật ở phía máy chủ và người nộp được thông báo.
-3. **Given** hồ sơ `PENDING`, **When** Admin từ chối với lý do không rỗng, **Then** hồ sơ thành `REJECTED`, `rejectReason` được lưu, `users.role` là `PLAYER`, `users.ownerStatus` là `REJECTED`, và người nộp nhận thông báo cùng lý do.
-4. **Given** hồ sơ đã `REJECTED`, **When** người nộp xem hồ sơ theo spec 110, **Then** họ thấy lý do đã lưu và có thể sửa, nộp lại; trạng thái trở về `PENDING`, `role` vẫn là `PLAYER` và lý do cũ không còn được trình bày như quyết định hiện hành.
+2. **Given** hồ sơ OWNER_ONBOARDING `PENDING` hợp lệ, **When** Admin duyệt, **Then** hồ sơ thành `APPROVED`, `users.role` thành `OWNER`, `users.ownerStatus` thành `APPROVED`, venue được tạo từ `venueDraft`, quyền owner được cập nhật ở phía máy chủ và người nộp được thông báo.
+3. **Given** hồ sơ OWNER_ONBOARDING `PENDING`, **When** Admin từ chối với lý do không rỗng, **Then** hồ sơ thành `REJECTED`, `rejectReason` được lưu, `users.role` là `PLAYER`, `users.ownerStatus` là `REJECTED`, và người nộp nhận thông báo cùng lý do.
+4. **Given** hồ sơ OWNER_ONBOARDING đã `REJECTED`, **When** người nộp xem hồ sơ theo spec 110, **Then** họ thấy lý do đã lưu và có thể sửa, nộp lại; trạng thái trở về `PENDING`, `role` vẫn là `PLAYER` và lý do cũ không còn được trình bày như quyết định hiện hành.
 5. **Given** hồ sơ đã được quyết định hoặc thay đổi bởi một yêu cầu đồng thời, **When** Admin gửi quyết định lần nữa dựa trên trạng thái cũ, **Then** hệ thống từ chối quyết định lỗi thời và giữ dữ liệu nhất quán.
 
 ### User Story 2 - Xử lý báo cáo và vi phạm (Priority: P1)
@@ -210,17 +210,8 @@ Là Admin, tôi muốn xem số liệu toàn hệ thống, quản lý danh mục
 - Proposal mô tả `role = owner/player` dạng chữ thường, trong khi database README và các spec 010/110/111/112 dùng enum `OWNER`/`PLAYER`; spec dùng enum database.
 - Proposal nhắc Cloud Functions trong đoạn bảo mật nhưng constitution hiện hành yêu cầu Supabase Edge Functions cho thao tác nhạy cảm. Spec chỉ nêu quyền kiểm tra phía máy chủ, không chọn cách triển khai.
 
+## Quyết định mở thêm cơ sở — 2026-11-20
 
+Hồ sơ bổ sung dùng purpose VENUE_ADDITION, độc lập với quyền OWNER/APPROVED. Hồ sơ cũ thiếu purpose thuộc OWNER_ONBOARDING. Duyệt tạo venues/{applicationId} một lần; từ chối/nộp lại không đổi tài khoản hoặc venue cũ. Không giới hạn số venue/hồ sơ.
 
-
-
-
-
-
-
-
-
-
-
-
-
+Hợp đồng gửi, đọc trạng thái, upload và review: [owner-application-api.md](../110-owner-onboarding/contracts/owner-application-api.md).

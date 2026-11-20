@@ -14,7 +14,7 @@ Request:
 { "action": "STATUS" }
 ```
 
-Response is based on authoritative `users/{uid}.ownerStatus` and, when applicable, the latest application for that UID ordered by `submittedAt DESC`:
+Response is based on authoritative `users/{uid}.ownerStatus` and, when applicable, the latest OWNER_ONBOARDING application (including legacy missing purpose) for that UID ordered by `submittedAt DESC`; VENUE_ADDITION is excluded:
 
 ```json
 {
@@ -55,7 +55,7 @@ Request:
 }
 ```
 
-The function validates all applicant-owned fields and verifies every object path starts with the authenticated UID and supplied application ID. `NONE` requires the application document not to exist, then atomically creates `ownerApplications/{applicationId}` and changes `users.ownerStatus` to `PENDING`; `users.role` remains unchanged. `REJECTED` requires the same existing application ID/document owned by the UID, then atomically updates applicant fields, sets application status `PENDING`, refreshes `submittedAt`, clears `rejectReason`, and sets user status `PENDING`. `PENDING` and `APPROVED` reject submission. A retry of the exact committed payload/application ID returns the already-committed current state. A different payload or lifecycle race returns HTTP 409 `APPLICATION_CONFLICT`; callers refresh status and retain their draft.
+The function validates all applicant-owned fields and verifies every object path starts with the authenticated UID and supplied application ID. `NONE` requires the application document not to exist, then atomically creates `ownerApplications/{applicationId}` and changes `users.ownerStatus` to `PENDING`; `users.role` remains unchanged. `REJECTED` requires the same existing application ID/document owned by the UID, then atomically updates applicant fields, sets application status `PENDING`, refreshes `submittedAt`, clears `rejectReason`, and sets user status `PENDING`. Account `PENDING` and `APPROVED` reject competing OWNER_ONBOARDING submissions; additional venue submissions follow the separate contract below. A retry of the exact committed payload/application ID returns the already-committed current state. A different payload or lifecycle race returns HTTP 409 `APPLICATION_CONFLICT`; callers refresh status and retain their draft.
 
 Application IDs are generated once per new lifecycle and persisted with the local draft. Rejected resubmission reuses its document ID. After owner revocation, a new lifecycle receives a new ID. The server verifies ID format and lifecycle preconditions; document identity is not an authorization credential.
 
@@ -97,4 +97,11 @@ Feature 120 remains the only reviewer and only owner-role grantor. Its approval 
 
 ## Storage configuration
 
-`owner-docs` is private with allowed MIME types JPEG/PNG/WebP and 2 MiB object limit. Download signed URLs expire after five minutes. Upload tokens are single-use/non-upsert and their lifetime follows the configured Supabase Storage signed-upload behavior. No new Firestore collection, field, enum, index, or Android dependency is introduced by this boundary. Bucket object paths and all request fields are validated server-side.
+`owner-docs` is private with allowed MIME types JPEG/PNG/WebP and 2 MiB object limit. Download signed URLs expire after five minutes. Upload tokens are single-use/non-upsert and their lifetime follows the configured Supabase Storage signed-upload behavior. No new collection, index or Android dependency is needed; the backwards-compatible purpose discriminator distinguishes application lifecycles. Bucket object paths and all request fields are validated server-side.
+
+
+## Additional venue request contract
+
+SUBMIT and owner-docs SIGN_UPLOAD include purpose: VENUE_ADDITION; omitted purpose defaults to OWNER_ONBOARDING. Require OWNER claim plus active current OWNER/APPROVED profile. Recheck applicant ownership, immutable purpose and rights inside submission/review transactions. New UUID creates a PENDING application; REJECTED reuses the same ID and clears previous reason/review metadata. Exact repeated requests are idempotent. Pending/approved applications cannot be edited.
+STATUS with purpose VENUE_ADDITION and optional applicationId returns global ownerStatus/role plus only the requested owned application, or null for an unused draft ID. LIST with purpose VENUE_ADDITION returns all owned additions newest first, without an invented count limit. Missing purpose in legacy data means OWNER_ONBOARDING.
+Additional approval creates venues/{applicationId} once and updates application/notification only; rejection updates application/reason/notification only. Neither changes user profile nor merges claims. RECOVER_CLAIMS on an addition is a no-op. Revoked applicant rights deny pending addition approval.

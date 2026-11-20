@@ -1,6 +1,6 @@
 # Mô hình dữ liệu: Thiết lập cơ sở của chủ sân
 
-Tính năng chỉ dùng mô hình Firestore hiện có trong `docs/design/database/README.md`; không thêm collection, trường, enum hoặc quan hệ mới.
+Tính năng chỉ dùng mô hình Firestore hiện có trong `docs/design/database/README.md`; giữ collections/quan hệ; bổ sung discriminator purpose theo quyết định 2026-11-20.
 
 ## Venue — `venues/{venueId}`
 
@@ -43,3 +43,9 @@ Các trường hiện có của document slot đang bị chiếm: `venueId`, `co
 ## Ngữ cảnh phân quyền (không phải entity mới)
 
 Người dùng Firebase đã xác thực; claim role đáng tin cậy `appRole = OWNER`; trạng thái owner đã duyệt; và `venues.ownerId == uid` được server đọc. `ownerStatus` là trường được bảo vệ. Rules hiện chưa xác định nguồn có thẩm quyền cho trạng thái này; cần làm rõ trước khi triển khai.
+
+## Quyết định mở thêm cơ sở — 2026-11-20
+
+Hồ sơ bổ sung dùng purpose VENUE_ADDITION, độc lập với quyền OWNER/APPROVED. Hồ sơ cũ thiếu purpose thuộc OWNER_ONBOARDING. Duyệt tạo venues/{applicationId} một lần; từ chối/nộp lại không đổi tài khoản hoặc venue cũ. Không giới hạn số venue/hồ sơ.
+
+Hợp đồng gửi, đọc trạng thái, upload và review: [owner-application-api.md](../110-owner-onboarding/contracts/owner-application-api.md).
