@@ -56,6 +56,7 @@ Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 | 50  | 2026-11-20 | Kiểm thử kiểm duyệt và hàng chờ trên máy vivo V2247 với backend local; lưu kết quả, ảnh và kiểm tra cron có lượt chờ | 08, 09, 11, 12 |
 | 51  | 2026-11-20 | Bổ sung Rules đọc nội dung cho admin, sửa preview bài/tin nhắn và kiểm thử lại trên vivo V2247 | 09, 12 |
 | 52  | 2026-11-20 | Resolve conflict khi gộp main, giữ luồng hàng chờ 081 và tích hợp owner/admin; kiểm tra đủ ba job CI | 08, 11, 12 |
+| 53  | 2026-11-20 | Triển khai Thêm cơ sở từ form Android tới xét duyệt backend, giữ quyền OWNER và kiểm thử máy thật | 11, 12 |
 
 ---
 
@@ -5216,5 +5217,53 @@ resolve conflict dam bao giu code cua ca 2 nhanh, dam bao pass all ci
 - Kiểm tra TypeScript và toàn bộ Edge Functions chạy trên Auth/Firestore Emulator cùng Supabase Storage local. Log lượt chốt: `.gradle/merge-ci-edge-check.log`, `.gradle/merge-ci-edge.log`, `.gradle/merge-ci-edge-final.log`.
 - Không còn marker conflict hoặc file unmerged; `git diff --cached --check` pass. Cache compiler, lock sinh tự động và log trong `.gradle/` không thuộc phần source được gộp.
 - Các kiểm tra được chạy tại local theo ba job trong `.github/workflows/ci.yml`; không gọi đây là kết quả GitHub Actions. Không deploy backend/Rules hoặc thay đổi dữ liệu production trong phiên resolve conflict.
+
+---
+
+## Mục 53: Hoàn thiện Thêm cơ sở trong Cơ sở của tôi
+
+| Thông tin | Nội dung |
+| --- | --- |
+| Ngày | 2026-11-20 |
+| Người thực hiện | Minh Nhựt |
+| Nhóm tính năng liên quan | 11 (onboarding, cơ sở), 12 (xét duyệt) |
+| Công cụ AI | Codex (GPT-6), speckit-implement, humanizer |
+| Mục đích | Cho OWNER đã được duyệt mở thêm cơ sở qua hồ sơ riêng, giữ quyền và dữ liệu cơ sở cũ |
+| Nhánh Git | fix-feature/11-owner |
+
+### Prompt đã dùng
+
+> Hãy triển khai hoàn chỉnh tính năng “Thêm cơ sở” trong phần “Cơ sở của tôi”, từ Android đến backend và kiểm thử trên máy thật.
+>
+> Không dừng ở sửa nút, điều hướng hoặc hiển thị thông báo.
+
+Yêu cầu kèm theo gồm sáu quyết định nghiệp vụ, đọc Feature 110/111/120, hỗ trợ từ chối/nộp lại, bảo vệ quyền và giấy tờ, chống gửi/duyệt lặp, chạy đủ ba job CI và lưu bằng chứng máy thật. Người dùng yêu cầu tiếp tục sau khi phiên kiểm thử bị gián đoạn.
+
+### Tóm tắt phản hồi của AI
+
+- Tìm nguyên nhân ở nút chỉ ghi thông báo, backend chặn APPROVED, truy vấn hồ sơ mới nhất dùng chung cho quyền tài khoản, admin review luôn đổi role và upload chỉ nhận PLAYER.
+- Thêm purpose OWNER_ONBOARDING/VENUE_ADDITION. Hồ sơ cũ thiếu purpose vẫn là onboarding. Hồ sơ bổ sung giữ nguyên OWNER/APPROVED, claims và venue cũ; duyệt tạo đúng venues/{applicationId}, từ chối chỉ đổi hồ sơ/lý do. Server kiểm tra lại quyền applicant/admin trong transaction.
+- Tái sử dụng form/review/status với ngữ cảnh rõ ràng, thêm lịch sử hồ sơ, tách draft theo UID/ngữ cảnh, giữ UUID qua retry. Sửa loading để dữ liệu tải về không ghi đè phần vừa nhập và dùng một dropdown chọn quận. Danh sách cơ sở đọc lại từ server khi quay lại/mở ứng dụng.
+- Mở upload private cho owner hợp lệ, giữ signed URL giấy tờ 300 giây và chỉ công khai ảnh cơ sở. Truy vấn trạng thái tài khoản loại hồ sơ bổ sung; màn trạng thái làm mới quyền qua SessionManager.
+- Đồng bộ FR-018, Quyết định 3A, hợp đồng API và schema purpose trong tài liệu 110/111/120. Không thêm collection hoặc giới hạn số hồ sơ/cơ sở.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+| --- | --- | --- |
+| Luồng onboarding hiện có | Tái sử dụng theo mode | Giữ validation, review, upload, retry và đăng ký lần đầu. |
+| Trạng thái hồ sơ bổ sung | Tách khỏi ownerStatus tài khoản | Tránh hạ quyền hoặc chuyển nhầm màn OWNER khi hồ sơ mới bị từ chối. |
+| Quyền tạo venue phía client | Giữ bị chặn | Venue mới phải qua admin review và transaction/create precondition. |
+| Rules và Storage | Giữ boundary, bổ sung hồi quy | Owner chỉ đọc hồ sơ của mình; giấy tờ không public; không tự sửa metadata server. |
+| Kiểm thử máy thật | Dùng package adminlocal và backend local | Kiểm tra UI/API thật bằng tài khoản, ảnh và giấy tờ TEST, không ghi dữ liệu production. |
+| Các thay đổi hàng chờ/admin trước đó | Giữ nguyên | Chạy toàn bộ CI để phát hiện hồi quy ngoài phạm vi thêm cơ sở. |
+
+### Cách kiểm chứng
+
+Kết quả, log ba job CI, kiểm tra backend và ảnh vivo V2247 được lưu tại docs/validation/venue-addition-2026-11-20/. Xem results.json và README.md để đối chiếu lượt chốt, số test, giới hạn và môi trường. Đây là chạy local theo workflow của repo, không phải kết quả GitHub Actions. Chưa deploy hosted hoặc đo SLA/mạng 4G/tablet thật.
+
+Lượt chốt: Android BUILD SUCCESSFUL với 1.369 test, 0 lỗi và 2 skipped; Edge type check pass, 396 passed/0 failed; Rules 27 file pass, 265 passed/4 skipped. Máy thật báo OK (2 tests), có 19 ảnh. Backend xác nhận owner cũ vẫn OWNER/APPROVED và có đúng hai venue; owner mới có một venue. Giấy tờ không tải được qua URL public, ảnh cơ sở tải được sau duyệt.
+
+Trong các lượt đầu, kiểm thử phát hiện lỗi loading, bộ chọn quận chồng cửa sổ và các điều kiện chờ test chưa nhận dialog/hàng đợi rỗng/venue ngoài màn hình. Phiên làm việc cũng bị gián đoạn khiến dịch vụ local dừng và draft TEST còn lại. Các lỗi ứng dụng được sửa; fixture và bộ chờ được chỉnh trước lượt chốt. Không coi lượt test bị ngắt là đã pass.
 
 ---

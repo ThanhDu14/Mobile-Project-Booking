@@ -92,3 +92,12 @@ T007 (atomic lock/unlock server contract), T008 (trusted authority cập nhật 
     - Không can thiệp vào engine đặt cố định (giữ đúng ranh giới của Feature 041).
 
 Xem [data-model.md](data-model.md) và [contracts/firestore-boundary.md](contracts/firestore-boundary.md) về trường dữ liệu và ranh giới phân quyền.
+
+
+## Thêm cơ sở — kiểm chứng 2026-11-20
+
+OWNER/APPROVED mở Thêm cơ sở, nhập form, chọn quận và vị trí, upload ảnh/giấy tờ TEST, xem lại và gửi VENUE_ADDITION. Hồ sơ PENDING không tạo venue công khai. Admin từ chối kèm lý do, owner mở lịch sử hồ sơ để sửa/nộp lại cùng ID; admin duyệt tạo một venue mới. Kiểm tra OWNER/APPROVED và venue cũ ở từng bước, rồi đóng/mở Activity để đọc lại danh sách từ SERVER.
+
+Đã kiểm tra cả đăng ký quyền lần đầu và bổ sung trên vivo V2247 Android 15, dùng Firebase Emulator và Supabase local. Kiểm tra riêng backend xác nhận đúng hai venue của owner cũ, một venue của owner mới, giấy tờ không public và ảnh cơ sở public sau duyệt. Các test security/concurrency bao gồm ownership giả, thu hồi quyền, gửi lặp và duyệt đồng thời.
+
+Lệnh tương ứng ba job CI: gradlew.bat lint testDebugUnitTest assembleDebug --stacktrace; deno check . và deno test -A --no-check trong supabase/functions; SKIP_BLOCKED=1 vitest run trong firestore-tests. Log, số test và ảnh tại [bằng chứng kiểm chứng](../../docs/validation/venue-addition-2026-11-20/README.md), results.json là kết quả chốt. Rules giữ bốn skipped từ cấu hình CI hiện có. Không deploy hosted hoặc kết luận đạt SLA/4G/tablet thật.

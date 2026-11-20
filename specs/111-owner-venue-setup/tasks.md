@@ -101,6 +101,16 @@
 - [X] T038 [P] Verify strings/resources, accessibility, Material 3 light/dark, phone/`w600dp`, 48dp touch targets, list/calendar under 3 seconds on 4G and write acknowledgement within 1 second/completion within 3 seconds on normal network; record results in `specs/111-owner-venue-setup/quickstart.md` (FR-013; Constitution V; performance and UX success criteria)
 - [X] T039 Confirm final feature boundary and traceability against Feature 110, 112/080, 040/041/050 and 120; list any unresolved contract decision without implementing adjacent-feature business in `specs/111-owner-venue-setup/tasks.md` (FR-014; Dependencies/Open Questions)
 
+## Phase 5 — Additional venue applications (business decision 2026-11-20)
+
+- [X] T040 Align Feature 110/111/120 contracts: backwards-compatible application purpose, independent application/account states and deterministic venue identity.
+- [X] T041 Add backend regression tests for onboarding/addition, rejected resubmission, duplicate/concurrent review, ownership and revoked permissions.
+- [X] T042 Implement purpose-aware owner-applications/status/list, private uploads and admin review without changing approved owner rights for additions.
+- [X] T043 Connect venue list to reusable form/review/status, application history, isolated drafts and fresh backend venue reload.
+- [X] T044 Verify Android state/navigation regression tests and Firestore client/server boundaries.
+- [X] T045 Run all three CI jobs and real-device TEST submit/reject/resubmit/approve against local backend; save screenshots, logs and backend assertions.
+- [X] T046 Update quickstart, validation evidence and AI_log_4 with verified results and remaining limits.
+
 ## Traceability summary
 
 - **US1 / Venue** — AS1–AS2; FR-001–FR-005, FR-008a; venue validation, owner authorization, hidden/locked behavior, recurring toggle; additional venue creation routed to Feature 110 onboarding.
