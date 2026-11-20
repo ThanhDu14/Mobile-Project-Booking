@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.booking_app.core.media.SignedUrlCache
 import com.example.booking_app.core.session.SessionManager
+import com.example.booking_app.core.session.settledUid
 import com.example.booking_app.core.util.AppClock
 import com.example.booking_app.feature.community.domain.CommunityError
 import com.example.booking_app.feature.community.domain.GroupPermissions
@@ -221,7 +222,8 @@ class GroupDetailViewModel @Inject constructor(
     }
 
     init {
-        start()
+        // M4: cold start qua deep link lúc phiên chưa khôi phục thì chờ phiên chốt; đổi tài khoản thì nạp lại.
+        viewModelScope.launch { session.settledUid().collect { start() } }
     }
 
     fun retry() {

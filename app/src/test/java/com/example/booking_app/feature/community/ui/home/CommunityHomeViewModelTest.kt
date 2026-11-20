@@ -6,6 +6,7 @@ import com.example.booking_app.core.catalog.CatalogRepository
 import com.example.booking_app.core.catalog.District
 import com.example.booking_app.core.chat.UnreadChatsReader
 import com.example.booking_app.core.session.SessionManager
+import com.example.booking_app.core.testing.stubSessionFromUid
 import com.example.booking_app.feature.community.ui.common.DistrictNames
 import com.example.booking_app.core.testing.MainDispatcherRule
 import com.example.booking_app.feature.community.ME
@@ -34,7 +35,10 @@ class CommunityHomeViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val observeMyGroups = mockk<ObserveMyGroups>()
-    private val session = mockk<SessionManager> { every { currentUid() } returns ME }
+    private val session = mockk<SessionManager> {
+        every { currentUid() } returns ME
+        stubSessionFromUid()
+    }
     private val catalog = mockk<CatalogRepository> { coEvery { districts() } returns listOf(District("q10", "Quận 10", 1, true)) }
     private val unreadFlow = MutableStateFlow(0)
     private val unreadChatsReader = object : UnreadChatsReader {
@@ -144,7 +148,10 @@ class CommunityHomeViewModelTest {
     @Test
     fun `bam the nhom mo GroupDetail va khach bam Tao nhom thi can dang nhap`() = runTest {
         every { observeMyGroups() } returns flowOf(emptyList())
-        val guest = mockk<SessionManager> { every { currentUid() } returns null }
+        val guest = mockk<SessionManager> {
+            every { currentUid() } returns null
+            stubSessionFromUid()
+        }
         val vm = viewModel(sessionManager = guest)
         advanceUntilIdle()
 

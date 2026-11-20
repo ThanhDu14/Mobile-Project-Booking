@@ -41,6 +41,9 @@ class CommunityHomeFragment : Fragment(R.layout.fragment_community_home) {
 
     private val viewModel: CommunityHomeViewModel by viewModels()
 
+    /** Mục "Tin nhắn" đang hiện ở lần render trước; null sau khi view tạo lại để luôn áp lại max lifecycle. */
+    private var messagesShown: Boolean? = null
+
     @Inject lateinit var avatarSource: AccountAvatarSource
 
     @Inject lateinit var accountEntryNavigator: AccountEntryNavigator
@@ -49,6 +52,7 @@ class CommunityHomeFragment : Fragment(R.layout.fragment_community_home) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        messagesShown = null
         val binding = FragmentCommunityHomeBinding.bind(view)
         binding.header.tabTitle.setText(R.string.community_title_home)
         MainTabHeader.bind(this, binding.header, avatarSource, accountEntryNavigator)
@@ -128,11 +132,18 @@ class CommunityHomeFragment : Fragment(R.layout.fragment_community_home) {
             binding.sectionMessages.contentDescription = getString(R.string.chat_cd_messages_tab)
         }
 
-        if (showMessages && childFragmentManager.findFragmentByTag(TAG_MESSAGES) == null) {
+        val messages = childFragmentManager.findFragmentByTag(TAG_MESSAGES)
+        if (showMessages && messages == null) {
             childFragmentManager.beginTransaction()
                 .replace(R.id.messagesContainer, ChatListFragment.newEmbeddedPlayer(), TAG_MESSAGES)
                 .commit()
+        } else if (messages != null && messagesShown != showMessages) {
+            // M3: mục "Tin nhắn" bị ẩn thì dừng ChatListFragment (onStop gỡ listener Firestore).
+            childFragmentManager.beginTransaction()
+                .setMaxLifecycle(messages, if (showMessages) Lifecycle.State.RESUMED else Lifecycle.State.CREATED)
+                .commit()
         }
+        messagesShown = showMessages
     }
 
     private fun render(

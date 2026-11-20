@@ -7,7 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.booking_app.R
 import com.example.booking_app.core.media.SignedUrlCache
 import com.example.booking_app.core.session.SessionManager
-import com.example.booking_app.core.session.SessionState
+import com.example.booking_app.core.session.settledUid
 import com.example.booking_app.core.ui.UiState
 import com.example.booking_app.core.util.AppClock
 import com.example.booking_app.feature.chat.data.NetworkMonitor
@@ -49,7 +49,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -150,12 +149,15 @@ class ChatViewModel @Inject constructor(
     val events: Flow<ChatEvent> = _events.receiveAsFlow()
 
     private var activeChatId: String? = null
-    private var sessionWaitJob: Job? = null
+    private var settled = false
     private var observeJob: Job? = null
     private var viewingJob: Job? = null
     private var screenVisible: Boolean = false
     private var kickedEmitted: Boolean = false
     private var blockedByOther: Boolean = false
+
+    /** M9: đã "Xóa" tin lỗi BLOCKED khỏi outbox nhưng vẫn đang bị chặn; giữ banner tới khi thử lại hoặc đối phương nhắn. */
+    private var blockedAfterDiscard: Boolean = false
     private val ignoredBlockedOutboxIds = mutableSetOf<String>()
     private var latestOutboxEntries: List<OutboxEntry> = emptyList()
     private var lastOtherServerMessageId: String? = null
@@ -178,7 +180,14 @@ class ChatViewModel @Inject constructor(
                 wasOffline = !online
             }
         }
-        start()
+        // L4/M2: cold-start deep link mở màn chat trước khi phiên khôi phục xong (Loading/Initializing/NeedsConsent)
+        // thì chờ phiên chốt; đăng nhập xong quay về thì tự mở lại.
+        viewModelScope.launch {
+            sessionManager.settledUid().collect {
+                settled = true
+                start()
+            }
+        }
     }
 
     fun retryLoad() {
@@ -186,18 +195,12 @@ class ChatViewModel @Inject constructor(
     }
 
     private fun start() {
+        if (!settled) return
         val uid = sessionManager.currentUid()
         if (uid == null) {
-            if (sessionManager.sessionState.value is SessionState.Loading) {
-                // L4: cold-start deep link có thể mở ChatFragment trước khi FirebaseSessionManager khôi phục phiên xong.
-                _uiState.update { it.copy(messages = UiState.Loading) }
-                sessionWaitJob?.cancel()
-                sessionWaitJob = viewModelScope.launch {
-                    sessionManager.sessionState.first { it !is SessionState.Loading }
-                    start()
-                }
-                return
-            }
+            // Phiên kết thúc khi đang mở chat: gỡ listener và heartbeat của tài khoản cũ.
+            observeJob?.cancel()
+            viewingJob?.cancel()
             val returnTo = when {
                 !argVenueId.isNullOrBlank() -> "smashnow://chat/direct?venueId=$argVenueId"
                 !argGroupId.isNullOrBlank() -> "smashnow://chat/group/$argGroupId"
@@ -208,9 +211,6 @@ class ChatViewModel @Inject constructor(
             _events.trySend(ChatEvent.RequireLogin(returnTo))
             return
         }
-        sessionWaitJob?.cancel()
-        sessionWaitJob = null
-
         when {
             !argVenueId.isNullOrBlank() -> openDirectAndObserve(argVenueId)
             !argGroupId.isNullOrBlank() -> startObserving("group_$argGroupId")
@@ -247,6 +247,7 @@ class ChatViewModel @Inject constructor(
         lastMarkedMarker = null
         kickedEmitted = false
         blockedByOther = false
+        blockedAfterDiscard = false
         ignoredBlockedOutboxIds.clear()
         latestOutboxEntries = emptyList()
         lastOtherServerMessageId = null
@@ -301,6 +302,7 @@ class ChatViewModel @Inject constructor(
                 if (latestOtherId != null) {
                     if (lastOtherServerMessageId != null && latestOtherId != lastOtherServerMessageId) {
                         // Đối phương vừa gửi tin mới -> đã bỏ chặn; bỏ qua các lỗi BLOCKED cũ trong outbox.
+                        blockedAfterDiscard = false
                         snap.outbox
                             .filter { it.status == Delivery.FAILED && it.errorCode == "BLOCKED" }
                             .forEach { ignoredBlockedOutboxIds.add(it.messageId) }
@@ -337,7 +339,7 @@ class ChatViewModel @Inject constructor(
             .filter { it.status == Delivery.FAILED && it.errorCode == "BLOCKED" }
             .mapTo(HashSet()) { it.messageId }
         ignoredBlockedOutboxIds.retainAll(currentBlockedIds)
-        blockedByOther = currentBlockedIds.any { it !in ignoredBlockedOutboxIds }
+        blockedByOther = blockedAfterDiscard || currentBlockedIds.any { it !in ignoredBlockedOutboxIds }
         groupLockedByError = entries.any { it.status == Delivery.FAILED && it.errorCode == "GROUP_LOCKED" }
         readOnlyByError = entries.any { it.status == Delivery.FAILED && it.errorCode == "CHAT_READ_ONLY" }
     }
@@ -495,6 +497,7 @@ class ChatViewModel @Inject constructor(
             .forEach { ignoredBlockedOutboxIds.add(it.messageId) }
         ignoredBlockedOutboxIds.remove(messageId)
         blockedByOther = false
+        blockedAfterDiscard = false
         viewModelScope.launch {
             retryMessage(chatId, messageId).onFailure { err ->
                 _events.trySend(ChatEvent.ShowError(err.toChatError()))
@@ -504,10 +507,17 @@ class ChatViewModel @Inject constructor(
 
     fun onDiscardMessage(messageId: String) {
         val chatId = activeChatId ?: return
+        val discardingBlocked = latestOutboxEntries.any {
+            it.messageId == messageId && it.status == Delivery.FAILED && it.errorCode == "BLOCKED" &&
+                it.messageId !in ignoredBlockedOutboxIds
+        }
+        if (discardingBlocked) blockedAfterDiscard = true
         viewModelScope.launch {
             discardMessage(chatId, messageId).fold(
                 onSuccess = { outcome ->
                     if (outcome == DiscardResult.ALREADY_SENT) {
+                        // Tin thực ra đã gửi được -> không còn bị chặn.
+                        if (discardingBlocked) blockedAfterDiscard = false
                         _events.trySend(ChatEvent.ShowMessage(R.string.chat_already_sent_notice))
                     }
                 },
@@ -693,7 +703,6 @@ class ChatViewModel @Inject constructor(
     }
 
     override fun onCleared() {
-        sessionWaitJob?.cancel()
         viewingJob?.cancel()
         observeJob?.cancel()
         super.onCleared()

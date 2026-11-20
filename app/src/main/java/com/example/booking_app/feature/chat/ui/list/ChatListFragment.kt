@@ -83,6 +83,16 @@ open class ChatListFragment : Fragment(R.layout.fragment_chat_list) {
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        viewModel.setActive(true)
+    }
+
+    override fun onStop() {
+        viewModel.setActive(false)
+        super.onStop()
+    }
+
     override fun onDestroyView() {
         binding.chatList.adapter = null
         _binding = null

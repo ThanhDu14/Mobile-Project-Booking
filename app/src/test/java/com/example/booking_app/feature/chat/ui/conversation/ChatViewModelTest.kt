@@ -12,6 +12,7 @@ import com.example.booking_app.core.session.AppRole
 import com.example.booking_app.core.session.SessionManager
 import com.example.booking_app.core.session.SessionState
 import com.example.booking_app.core.testing.MainDispatcherRule
+import com.example.booking_app.core.testing.stubSessionFromUid
 import com.example.booking_app.core.ui.UiState
 import com.example.booking_app.core.util.AppClock
 import com.example.booking_app.feature.chat.data.NetworkMonitor
@@ -91,7 +92,7 @@ class ChatViewModelTest {
             if (!uri.isNullOrBlank()) deletedLocalUris.add(uri)
         }
     }
-    private val sessionManager = mockk<SessionManager>(relaxed = true)
+    private val sessionManager = mockk<SessionManager>(relaxed = true).also { it.stubSessionFromUid() }
     private val clock = FakeClock()
     private val onlineFlow = MutableStateFlow(true)
     private val networkMonitor = object : NetworkMonitor {
@@ -968,7 +969,7 @@ class ChatViewModelTest {
         }
         runCurrent()
 
-        // 1. Một tin lỗi BLOCKED -> khóa ô nhập; bấm Xóa tin lỗi -> mở khóa lại ô nhập.
+        // 1. Một tin lỗi BLOCKED -> khóa ô nhập; bấm Xóa tin lỗi vẫn giữ banner bị chặn (M9: xóa tin không phải bỏ chặn).
         outboxFlow.value = listOf(
             OutboxEntry("m-blk-1", "owner1_player1", "Alo", createdAtLocal = 100L, status = Delivery.FAILED, retryable = false, errorCode = "BLOCKED"),
         )
@@ -977,8 +978,8 @@ class ChatViewModelTest {
 
         vm.onDiscardMessage("m-blk-1")
         runCurrent()
-        assertNull(vm.uiState.value.disabledReason)
-        assertTrue(vm.uiState.value.canSend)
+        assertTrue(outboxFlow.value.isEmpty())
+        assertEquals(ComposerDisabledReason.BLOCKED, vm.uiState.value.disabledReason)
 
         // 2. Có 2 tin lỗi BLOCKED -> bấm Gửi lại tin 1 không bị tin 2 khóa ngược lại ngay.
         outboxFlow.value = listOf(
@@ -1107,6 +1108,41 @@ class ChatViewModelTest {
     @Test
     fun `cold start deep link khi phien ket thuc SignedOut moi phat RequireLogin`() = runTest {
         val sessionFlow = MutableStateFlow<SessionState>(SessionState.Loading)
+        every { sessionManager.sessionState } returns sessionFlow
+        every { sessionManager.currentUid() } answers { (sessionFlow.value as? SessionState.SignedIn)?.uid }
+
+        val vm = ChatViewModel(
+            savedStateHandle = SavedStateHandle(mapOf(ChatViewModel.ARG_GROUP_ID to "g1")),
+            repository = repository,
+            openDirectChat = OpenDirectChat(repository),
+            observeMessages = ObserveMessages(repository),
+            loadOlderMessages = LoadOlderMessages(repository),
+            sendMessage = SendMessage(repository, imageCompressor, localMediaStore, clock),
+            retryMessage = RetryMessage(repository),
+            discardMessage = DiscardMessage(repository),
+            markChatRead = MarkChatRead(repository),
+            setMuted = SetMuted(repository),
+            setBlocked = SetBlocked(repository),
+            recallMessage = RecallMessage(repository),
+            signedUrlCache = signedUrlCache,
+            networkMonitor = networkMonitor,
+            sessionManager = sessionManager,
+            clock = clock,
+        )
+        runCurrent()
+        assertEquals(UiState.Loading, vm.uiState.value.messages)
+
+        vm.events.test {
+            sessionFlow.value = SessionState.SignedOut(null)
+            runCurrent()
+            assertEquals(ChatEvent.RequireLogin("smashnow://chat/group/g1"), awaitItem())
+        }
+        assertTrue(vm.uiState.value.messages is UiState.Error)
+    }
+
+    @Test
+    fun `M2 Initializing chua chot phien khong phat RequireLogin, SignedOut moi phat`() = runTest {
+        val sessionFlow = MutableStateFlow<SessionState>(SessionState.Initializing)
         every { sessionManager.sessionState } returns sessionFlow
         every { sessionManager.currentUid() } answers { (sessionFlow.value as? SessionState.SignedIn)?.uid }
 

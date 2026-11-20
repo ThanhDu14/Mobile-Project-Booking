@@ -7,6 +7,7 @@ import com.example.booking_app.core.catalog.District
 import com.example.booking_app.core.session.SessionManager
 import com.example.booking_app.core.testing.FakeClock
 import com.example.booking_app.core.testing.MainDispatcherRule
+import com.example.booking_app.core.testing.stubSessionFromUid
 import com.example.booking_app.feature.community.ME
 import com.example.booking_app.feature.community.domain.CommunityError
 import com.example.booking_app.feature.community.domain.GroupRepository
@@ -50,7 +51,10 @@ class GroupDetailMembershipTest {
 
     private val groups = mockk<GroupRepository>()
     private var uid: String? = ME
-    private val session = mockk<SessionManager> { every { currentUid() } answers { uid } }
+    private val session = mockk<SessionManager> {
+        every { currentUid() } answers { uid }
+        stubSessionFromUid()
+    }
     private val catalog = mockk<CatalogRepository> {
         coEvery { districts() } returns listOf(District("q10", "Quận 10", 1, true))
     }

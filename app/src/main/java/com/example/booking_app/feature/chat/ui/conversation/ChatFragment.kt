@@ -150,7 +150,9 @@ class ChatFragment : Fragment(R.layout.fragment_chat) {
         ViewCompat.requestApplyInsets(binding.root)
 
         val layoutListener = View.OnLayoutChangeListener { _, _, _, _, bottom, _, _, _, oldBottom ->
-            if (bottom < oldBottom && isImeVisible && adapter.itemCount > 0) {
+            // M7: đang cuộn lên đọc tin cũ thì không kéo xuống đáy.
+            val nearLatest = layoutManager.findLastVisibleItemPosition() >= adapter.itemCount - 2
+            if (bottom < oldBottom && isImeVisible && nearLatest && adapter.itemCount > 0) {
                 binding.messageList.post {
                     val b = _binding ?: return@post
                     if (adapter.itemCount > 0) b.messageList.scrollToPosition(adapter.itemCount - 1)

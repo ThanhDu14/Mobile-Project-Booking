@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.booking_app.core.chat.UnreadChatsReader
 import com.example.booking_app.core.session.SessionManager
+import com.example.booking_app.core.session.settledUid
 import com.example.booking_app.feature.community.domain.CommunityError
 import com.example.booking_app.feature.community.domain.model.Group
 import com.example.booking_app.feature.community.domain.model.GroupStatus
@@ -81,7 +82,8 @@ class CommunityHomeViewModel @Inject constructor(
     private var job: Job? = null
 
     init {
-        start()
+        // M2: chờ phiên chốt (cold start) và tự nạp lại "Nhóm của tôi" khi đăng nhập xong quay về.
+        viewModelScope.launch { session.settledUid().collect { start() } }
         viewModelScope.launch {
             unreadChatsReader.observeUnreadChatCount()
                 .catch { emit(0) }

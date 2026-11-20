@@ -6,6 +6,7 @@ import com.example.booking_app.core.session.AppRole
 import com.example.booking_app.core.session.SessionManager
 import com.example.booking_app.core.session.SessionState
 import com.example.booking_app.core.testing.MainDispatcherRule
+import com.example.booking_app.core.testing.stubSessionFromUid
 import com.example.booking_app.core.ui.UiState
 import com.example.booking_app.feature.chat.data.dto.ChatDto
 import com.example.booking_app.feature.chat.data.dto.ChatUserSnapshotDto
@@ -42,7 +43,7 @@ class ChatListViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val repository = mockk<ChatRepository>(relaxed = true)
-    private val sessionManager = mockk<SessionManager>(relaxed = true)
+    private val sessionManager = mockk<SessionManager>(relaxed = true).also { it.stubSessionFromUid() }
     private val chatsFlow = MutableStateFlow<List<ChatSummary>>(emptyList())
 
     private fun summary(
@@ -291,5 +292,52 @@ class ChatListViewModelTest {
             expectNoEvents()
         }
         assertEquals(listOf("c1"), (vm.state.value as UiState.Content).data.map { it.id })
+    }
+
+    @Test
+    fun `M2 Initializing va NeedsConsent khong day sang dang nhap, dang nhap xong tu nap lai`() = runTest {
+        val sessionFlow = MutableStateFlow<SessionState>(SessionState.Initializing)
+        every { sessionManager.sessionState } returns sessionFlow
+        every { sessionManager.currentUid() } answers { (sessionFlow.value as? SessionState.SignedIn)?.uid }
+        chatsFlow.value = listOf(summary("c1", updatedAtSec = 10))
+        every { repository.observeChats(ChatMode.PLAYER) } returns chatsFlow
+        val vm = ChatListViewModel(
+            savedStateHandle = SavedStateHandle(mapOf(ChatListViewModel.ARG_MODE to ChatMode.PLAYER.name)),
+            repository = repository,
+            sessionManager = sessionManager,
+        )
+
+        vm.events.test {
+            runCurrent()
+            expectNoEvents()
+            assertEquals(UiState.Loading, vm.state.value)
+
+            sessionFlow.value = SessionState.SignedOut(null)
+            runCurrent()
+            assertTrue(awaitItem() is ChatListEvent.RequireLogin)
+            assertTrue(vm.state.value is UiState.Error)
+
+            sessionFlow.value = SessionState.SignedIn("player1", AppRole.PLAYER, true)
+            runCurrent()
+            expectNoEvents()
+        }
+        assertEquals(listOf("c1"), (vm.state.value as UiState.Content).data.map { it.id })
+    }
+
+    @Test
+    fun `M3 an man hinh thi go listener, hien lai thi nghe lai va giu noi dung cu`() = runTest {
+        chatsFlow.value = listOf(summary("c1", updatedAtSec = 10))
+        val vm = createViewModel()
+        runCurrent()
+        assertEquals(1, chatsFlow.subscriptionCount.value)
+
+        vm.setActive(false)
+        runCurrent()
+        assertEquals(0, chatsFlow.subscriptionCount.value)
+        assertTrue(vm.state.value is UiState.Content)
+
+        vm.setActive(true)
+        runCurrent()
+        assertEquals(1, chatsFlow.subscriptionCount.value)
     }
 }

@@ -4,7 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.booking_app.core.session.SessionManager
-import com.example.booking_app.core.session.SessionState
+import com.example.booking_app.core.session.settledUid
 import com.example.booking_app.core.ui.UiState
 import com.example.booking_app.feature.chat.domain.ChatError
 import com.example.booking_app.feature.chat.domain.ChatRepository
@@ -21,7 +21,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import java.time.Instant
@@ -57,40 +56,56 @@ class ChatListViewModel @Inject constructor(
     private val _events = Channel<ChatListEvent>(Channel.BUFFERED)
     val events: Flow<ChatListEvent> = _events.receiveAsFlow()
 
-    private var sessionWaitJob: Job? = null
     private var observeJob: Job? = null
+    private var settled = false
+    private var uid: String? = null
+    private var active = true
 
     init {
-        load()
+        // L4/M2: chỉ quyết định khi phiên đã chốt; đăng nhập xong quay về thì tự nạp lại.
+        viewModelScope.launch {
+            sessionManager.settledUid().collect { newUid ->
+                settled = true
+                uid = newUid
+                // Đổi tài khoản: không hiện danh sách của tài khoản trước.
+                if (_state.value is UiState.Content) _state.value = UiState.Loading
+                load()
+            }
+        }
     }
 
     fun retry() {
         load()
     }
 
-    private fun load() {
+    /** M3: màn hình ẩn (onStop, hoặc mục "Tin nhắn" bị ẩn trong Cộng đồng) thì gỡ listener Firestore. */
+    fun setActive(isActive: Boolean) {
+        active = isActive
+        if (!isActive) {
+            observeJob?.cancel()
+            observeJob = null
+        } else if (observeJob == null && uid != null) {
+            load(promptLogin = false)
+        }
+    }
+
+    private fun load(promptLogin: Boolean = true) {
         observeJob?.cancel()
-        val uid = sessionManager.currentUid()
-        if (uid == null) {
-            if (sessionManager.sessionState.value is SessionState.Loading) {
-                // L4: chờ phiên khôi phục xong khi cold-start qua deep link trước khi đẩy sang đăng nhập.
-                _state.value = UiState.Loading
-                sessionWaitJob?.cancel()
-                sessionWaitJob = viewModelScope.launch {
-                    sessionManager.sessionState.first { it !is SessionState.Loading }
-                    load()
-                }
-                return
-            }
-            _state.value = UiState.Error(ChatError.Unauthenticated().code, ::retry)
-            val returnTo = if (mode == ChatMode.OWNER) "smashnow://chat/owner" else "smashnow://chat"
-            _events.trySend(ChatListEvent.RequireLogin(returnTo))
+        observeJob = null
+        if (!settled) {
+            _state.value = UiState.Loading
             return
         }
-        sessionWaitJob?.cancel()
-        sessionWaitJob = null
+        val uid = uid
+        if (uid == null) {
+            _state.value = UiState.Error(ChatError.Unauthenticated().code, ::retry)
+            val returnTo = if (mode == ChatMode.OWNER) "smashnow://chat/owner" else "smashnow://chat"
+            if (promptLogin) _events.trySend(ChatListEvent.RequireLogin(returnTo))
+            return
+        }
+        if (!active) return
 
-        _state.value = UiState.Loading
+        if (_state.value !is UiState.Content) _state.value = UiState.Loading
         observeJob = viewModelScope.launch {
             repository.observeChats(mode)
                 .catch { throwable ->

@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.example.booking_app.R
 import com.example.booking_app.core.testing.MainDispatcherRule
+import com.example.booking_app.feature.chat.data.NetworkMonitor
 import com.example.booking_app.feature.chat.domain.ChatError
 import com.example.booking_app.feature.chat.domain.ChatRepository
 import com.example.booking_app.feature.chat.domain.model.ReportReason
@@ -11,6 +12,7 @@ import com.example.booking_app.feature.chat.domain.usecase.ReportMessage
 import com.example.booking_app.feature.chat.ui.common.ChatUiText
 import io.mockk.coEvery
 import io.mockk.coVerify
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
@@ -33,9 +35,12 @@ class ReportMessageViewModelTest {
 
     private val repository = mockk<ChatRepository>()
 
+    private val networkMonitor = mockk<NetworkMonitor> { every { isCurrentlyOnline() } returns true }
+
     private fun viewModel() = ReportMessageViewModel(
         savedStateHandle = SavedStateHandle(mapOf("chatId" to "c1", "messageId" to "m1")),
         reportMessage = ReportMessage(repository),
+        networkMonitor = networkMonitor,
     )
 
     @Test
@@ -171,5 +176,19 @@ class ReportMessageViewModelTest {
             assertNull(vm.state.value.submitError)
         }
         coVerify(exactly = 2) { repository.report("c1", "m1", ReportReason.SPAM, null) }
+    }
+
+    @Test
+    fun `M5 dang offline bao loi mang ngay, khong goi server`() = runTest {
+        every { networkMonitor.isCurrentlyOnline() } returns false
+        val vm = viewModel()
+        vm.onReasonSelected(ReportReason.entries.first { it != ReportReason.OTHER })
+        vm.events.test {
+            vm.submit()
+            assertTrue((awaitItem() as ReportMessageEvent.ShowError).error is ChatError.Network)
+        }
+        assertFalse(vm.state.value.submitting)
+        assertTrue(vm.state.value.submitError is ChatError.Network)
+        coVerify(exactly = 0) { repository.report(any(), any(), any(), any()) }
     }
 }

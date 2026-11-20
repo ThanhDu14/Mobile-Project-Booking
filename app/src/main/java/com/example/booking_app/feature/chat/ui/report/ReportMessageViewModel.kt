@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.booking_app.core.network.DEFAULT_TIMEOUT_MS
+import com.example.booking_app.feature.chat.data.NetworkMonitor
 import com.example.booking_app.feature.chat.domain.ChatError
 import com.example.booking_app.feature.chat.domain.model.ChatMessageRules
 import com.example.booking_app.feature.chat.domain.model.ReportReason
@@ -49,6 +50,7 @@ sealed interface ReportMessageEvent {
 class ReportMessageViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
     private val reportMessage: ReportMessage,
+    private val networkMonitor: NetworkMonitor,
 ) : ViewModel() {
 
     val chatId: String = checkNotNull(savedStateHandle[ARG_CHAT_ID]) { "Thiếu chatId" }
@@ -92,6 +94,12 @@ class ReportMessageViewModel @Inject constructor(
         }
 
         val detailToSend = trimmedDetail.takeIf { reason == ReportReason.OTHER && it.isNotEmpty() }
+        if (!networkMonitor.isCurrentlyOnline()) {
+            // M5: đang offline thì báo lỗi ngay, không bắt người dùng đợi hết timeout.
+            _state.update { it.copy(submitError = ChatError.Network()) }
+            _events.trySend(ReportMessageEvent.ShowError(ChatError.Network()))
+            return
+        }
         _state.update { it.copy(submitting = true, submitError = null) }
         viewModelScope.launch {
             val result = try {
@@ -123,6 +131,7 @@ class ReportMessageViewModel @Inject constructor(
         const val ARG_CHAT_ID = "chatId"
         const val ARG_MESSAGE_ID = "messageId"
         const val MAX_DETAIL_LENGTH = 500
-        const val SUBMIT_TIMEOUT_MS = DEFAULT_TIMEOUT_MS
+        // M5: SupabaseChatActionApi có thể gọi 2 lần (refresh token sau 401), mỗi lần tối đa DEFAULT_TIMEOUT_MS.
+        const val SUBMIT_TIMEOUT_MS = 2 * DEFAULT_TIMEOUT_MS + 5_000L
     }
 }

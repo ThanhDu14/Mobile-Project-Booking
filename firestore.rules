@@ -483,7 +483,9 @@ service cloud.firestore {
       }
 
       match /messages/{messageId} {
-        allow read: if inChatById() || isAdmin();
+        // Admin chỉ get từng tin bị báo cáo (spec 120), không list cả cuộc trò chuyện.
+        allow get: if isAdmin();
+        allow read: if inChatById();
         allow write: if false;
       }
     }
