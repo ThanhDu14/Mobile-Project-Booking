@@ -47,10 +47,7 @@ class SupabaseGroupMediaRepository @Inject constructor(
             return Result.failure(CommunityError.ImageUnreadable())
         }
         return try {
-            supabase.storage.from(BUCKET_AVATARS).uploadToSignedUrl(target.path, target.token, jpeg) {
-                upsert = true
-                contentType = ContentType.Image.JPEG
-            }
+            uploadJpeg(BUCKET_AVATARS, target, jpeg)
             Result.success(Unit)
         } catch (e: CancellationException) {
             throw e
@@ -92,15 +89,25 @@ class SupabaseGroupMediaRepository @Inject constructor(
     override fun uploadCompressed(localUri: String, jpeg: ByteArray, target: SignedUpload): Flow<DraftPhoto> = flow {
         emit(DraftPhoto(localUri = localUri, remotePath = null, state = DraftPhoto.State.UPLOADING))
         try {
-            supabase.storage.from(BUCKET_MEDIA).uploadToSignedUrl(target.path, target.token, jpeg) {
-                upsert = true
-                contentType = ContentType.Image.JPEG
-            }
+            uploadJpeg(BUCKET_MEDIA, target, jpeg)
             emit(DraftPhoto(localUri = localUri, remotePath = target.path, state = DraftPhoto.State.UPLOADED))
         } catch (e: CancellationException) {
             throw e
         } catch (_: Exception) {
             emit(DraftPhoto(localUri = localUri, remotePath = null, state = DraftPhoto.State.FAILED))
+        }
+    }
+
+    private suspend fun uploadJpeg(bucket: String, target: SignedUpload, jpeg: ByteArray) {
+        try {
+            supabase.storage.from(bucket).uploadToSignedUrl(target.path, target.token, jpeg) {
+                upsert = true
+                contentType = ContentType.Image.JPEG
+            }
+        } catch (e: Exception) {
+            // supabase-kt 3.6.0 đòi trường "Id" trong phản hồi, Storage trả `{ "Key": ... }` dù PUT đã thành công
+            // (cùng cách xử lý với OwnerVenuePhotoApi).
+            if (e.message?.contains("Expected an id", ignoreCase = true) != true) throw e
         }
     }
 
