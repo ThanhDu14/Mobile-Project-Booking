@@ -312,4 +312,34 @@ class GroupDetailMembershipTest {
 
         assertEquals(GroupDetailUiState.NotFound, vm.state.value)
     }
+
+    @Test
+    fun `tham gia nhom cong khai dang ky lai observeMembership de cap nhat thanh thanh vien ngay`() = runTest {
+        var subscribeCount = 0
+        every { groups.observeGroup("g1") } returns flowOf(
+            group(ownerId = "other", visibility = GroupVisibility.PUBLIC, status = GroupStatus.ACTIVE, districtId = "q10"),
+        )
+        every { groups.observeMembership("g1") } answers {
+            subscribeCount++
+            if (subscribeCount == 1) {
+                flowOf(GroupMembership.NONE)
+            } else {
+                flowOf(GroupMembership(GroupRole.MEMBER, pending = false))
+            }
+        }
+        coEvery { groups.join("g1", any()) } returns Result.success(JoinResult.JOINED)
+
+        val vm = viewModel()
+        advanceUntilIdle()
+        val before = vm.state.value as GroupDetailUiState.Content
+        assertEquals(JoinAction.JOIN, before.joinAction)
+        assertFalse(before.showFeed)
+
+        vm.onJoinClicked()
+        advanceUntilIdle()
+        val after = vm.state.value as GroupDetailUiState.Content
+        assertEquals(JoinAction.NONE, after.joinAction)
+        assertTrue(after.showFeed)
+        assertTrue(after.canLeave)
+    }
 }

@@ -19,6 +19,7 @@
         app:title="@string/chat_title_list" />
 
     <View
+        android:id="@+id/toolbarDivider"
         android:layout_width="match_parent"
         android:layout_height="1dp"
         android:background="?attr/colorOutlineVariant" />
@@ -97,5 +98,16 @@
             android:id="@+id/stateViews"
             layout="@layout/include_state_views" />
     </FrameLayout>
+
+    <TextView
+        android:id="@+id/listFooter"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingHorizontal="@dimen/screen_gutter"
+        android:paddingVertical="@dimen/space_3"
+        android:text="@string/chat_list_player_footer"
+        android:textAppearance="?attr/textAppearanceBodySmall"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:visibility="gone" />
 
 </LinearLayout>

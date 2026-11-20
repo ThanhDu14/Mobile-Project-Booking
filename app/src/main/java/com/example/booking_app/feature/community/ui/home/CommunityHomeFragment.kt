@@ -1,5 +1,6 @@
 package com.example.booking_app.feature.community.ui.home
 
+import android.graphics.Typeface
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
@@ -20,9 +21,11 @@ import com.example.booking_app.core.ui.UiState
 import com.example.booking_app.core.ui.header.MainTabHeader
 import com.example.booking_app.core.ui.render
 import com.example.booking_app.databinding.FragmentCommunityHomeBinding
+import com.example.booking_app.feature.chat.ui.list.ChatListFragment
 import com.example.booking_app.feature.community.ui.common.CommunityUiText
 import com.example.booking_app.feature.community.ui.search.GroupAdapter
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.color.MaterialColors
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.flow.combine
@@ -30,7 +33,8 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 /**
- * Cộng đồng (T028): tab "Nhóm của tôi" (US1) và "Khám phá" (placeholder, US2). Nút "Tạo nhóm" nằm ở header.
+ * Cộng đồng (T028 + spec 091 L3): điều khiển 2 mục "Nhóm | Tin nhắn" (kèm huy hiệu số cuộc chưa đọc);
+ * mục "Nhóm" gồm "Nhóm của tôi" và "Khám phá", mục "Tin nhắn" nhúng [ChatListFragment] chế độ PLAYER.
  */
 @AndroidEntryPoint
 class CommunityHomeFragment : Fragment(R.layout.fragment_community_home) {
@@ -48,19 +52,31 @@ class CommunityHomeFragment : Fragment(R.layout.fragment_community_home) {
         val binding = FragmentCommunityHomeBinding.bind(view)
         binding.header.tabTitle.setText(R.string.community_title_home)
         MainTabHeader.bind(this, binding.header, avatarSource, accountEntryNavigator)
-        addCreateButton(binding)
+        val createButton = addCreateButton(binding)
 
         val adapter = GroupAdapter { viewModel.onGroupClicked(it.group.id) }
         binding.groupList.layoutManager = LinearLayoutManager(requireContext())
         binding.groupList.adapter = adapter
+
+        binding.sectionGroups.setOnClickListener { viewModel.selectSection(CommunityHomeSection.GROUPS) }
+        binding.sectionMessages.setOnClickListener { viewModel.selectSection(CommunityHomeSection.MESSAGES) }
 
         binding.tabGroup.addOnButtonCheckedListener { _, checkedId, isChecked ->
             if (!isChecked) return@addOnButtonCheckedListener
             viewModel.selectTab(if (checkedId == R.id.tabDiscover) CommunityHomeTab.DISCOVER else CommunityHomeTab.MY_GROUPS)
         }
 
+        childFragmentManager.setFragmentResultListener(ChatListFragment.RESULT_KEY_OPEN_DISCOVER, viewLifecycleOwner) { _, _ ->
+            viewModel.selectSection(CommunityHomeSection.GROUPS)
+            viewModel.selectTab(CommunityHomeTab.DISCOVER)
+        }
+
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    combine(viewModel.selectedSection, viewModel.unreadChatCount) { section, unread -> section to unread }
+                        .collect { (section, unread) -> renderSection(binding, createButton, section, unread) }
+                }
                 launch {
                     combine(viewModel.myGroups, viewModel.selectedTab) { state, tab -> state to tab }
                         .collect { (state, tab) -> render(binding, adapter, state, tab) }
@@ -71,13 +87,52 @@ class CommunityHomeFragment : Fragment(R.layout.fragment_community_home) {
     }
 
     /** "Tạo nhóm" ở khu vực hành động của header dùng chung (đúng wireframe). */
-    private fun addCreateButton(binding: FragmentCommunityHomeBinding) {
+    private fun addCreateButton(binding: FragmentCommunityHomeBinding): MaterialButton {
         val button = MaterialButton(requireContext(), null, com.google.android.material.R.attr.materialIconButtonFilledTonalStyle)
         button.setText(R.string.community_action_create_group)
         button.setIconResource(R.drawable.ic_add_24)
         button.minimumHeight = resources.getDimensionPixelSize(R.dimen.touch_min)
         button.setOnClickListener { viewModel.onCreateClicked() }
         binding.header.tabActions.addView(button)
+        return button
+    }
+
+    private fun renderSection(
+        binding: FragmentCommunityHomeBinding,
+        createButton: MaterialButton,
+        section: CommunityHomeSection,
+        unreadCount: Int,
+    ) {
+        val showMessages = section == CommunityHomeSection.MESSAGES
+        binding.groupsSectionContainer.isVisible = !showMessages
+        binding.messagesContainer.isVisible = showMessages
+        createButton.isVisible = !showMessages
+
+        binding.sectionGroups.isSelected = !showMessages
+        binding.sectionMessages.isSelected = showMessages
+        binding.sectionGroups.setBackgroundResource(if (!showMessages) R.drawable.bg_community_segment_active else 0)
+        binding.sectionMessages.setBackgroundResource(if (showMessages) R.drawable.bg_community_segment_active else 0)
+
+        val activeColor = MaterialColors.getColor(binding.root, com.google.android.material.R.attr.colorOnSurface)
+        val inactiveColor = MaterialColors.getColor(binding.root, com.google.android.material.R.attr.colorOnSurfaceVariant)
+        binding.sectionGroups.setTextColor(if (!showMessages) activeColor else inactiveColor)
+        binding.sectionGroups.setTypeface(null, if (!showMessages) Typeface.BOLD else Typeface.NORMAL)
+        binding.sectionMessagesLabel.setTextColor(if (showMessages) activeColor else inactiveColor)
+        binding.sectionMessagesLabel.setTypeface(null, if (showMessages) Typeface.BOLD else Typeface.NORMAL)
+
+        binding.messagesUnreadBadge.isVisible = unreadCount > 0
+        if (unreadCount > 0) {
+            binding.messagesUnreadBadge.text = if (unreadCount > 99) getString(R.string.chat_unread_overflow) else unreadCount.toString()
+            binding.sectionMessages.contentDescription = getString(R.string.chat_cd_messages_tab_unread, unreadCount)
+        } else {
+            binding.sectionMessages.contentDescription = getString(R.string.chat_cd_messages_tab)
+        }
+
+        if (showMessages && childFragmentManager.findFragmentByTag(TAG_MESSAGES) == null) {
+            childFragmentManager.beginTransaction()
+                .replace(R.id.messagesContainer, ChatListFragment.newEmbeddedPlayer(), TAG_MESSAGES)
+                .commit()
+        }
     }
 
     private fun render(
@@ -133,5 +188,9 @@ class CommunityHomeFragment : Fragment(R.layout.fragment_community_home) {
                 authNavigator.openLogin(nav, Uri.parse("smashnow://community"))
             }
         }
+    }
+
+    private companion object {
+        const val TAG_MESSAGES = "community_messages"
     }
 }

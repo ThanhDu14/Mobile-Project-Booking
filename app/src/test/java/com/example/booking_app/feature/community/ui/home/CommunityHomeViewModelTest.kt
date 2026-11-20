@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
 import com.example.booking_app.core.catalog.CatalogRepository
 import com.example.booking_app.core.catalog.District
+import com.example.booking_app.core.chat.UnreadChatsReader
 import com.example.booking_app.core.session.SessionManager
 import com.example.booking_app.feature.community.ui.common.DistrictNames
 import com.example.booking_app.core.testing.MainDispatcherRule
@@ -35,8 +36,15 @@ class CommunityHomeViewModelTest {
     private val observeMyGroups = mockk<ObserveMyGroups>()
     private val session = mockk<SessionManager> { every { currentUid() } returns ME }
     private val catalog = mockk<CatalogRepository> { coEvery { districts() } returns listOf(District("q10", "Quận 10", 1, true)) }
+    private val unreadFlow = MutableStateFlow(0)
+    private val unreadChatsReader = object : UnreadChatsReader {
+        override fun observeUnreadChatCount() = unreadFlow
+    }
 
-    private fun viewModel() = CommunityHomeViewModel(SavedStateHandle(), observeMyGroups, session, DistrictNames(catalog))
+    private fun viewModel(
+        handle: SavedStateHandle = SavedStateHandle(),
+        sessionManager: SessionManager = session,
+    ) = CommunityHomeViewModel(handle, observeMyGroups, sessionManager, DistrictNames(catalog), unreadChatsReader)
 
     @Test
     fun `Loading roi Content co vai tro va so thanh vien`() = runTest {
@@ -137,7 +145,7 @@ class CommunityHomeViewModelTest {
     fun `bam the nhom mo GroupDetail va khach bam Tao nhom thi can dang nhap`() = runTest {
         every { observeMyGroups() } returns flowOf(emptyList())
         val guest = mockk<SessionManager> { every { currentUid() } returns null }
-        val vm = CommunityHomeViewModel(SavedStateHandle(), observeMyGroups, guest, DistrictNames(catalog))
+        val vm = viewModel(sessionManager = guest)
         advanceUntilIdle()
 
         vm.events.test {
@@ -152,8 +160,27 @@ class CommunityHomeViewModelTest {
     fun `tab duoc giu qua SavedStateHandle`() = runTest {
         every { observeMyGroups() } returns flowOf(emptyList())
         val handle = SavedStateHandle()
-        val vm = CommunityHomeViewModel(handle, observeMyGroups, session, DistrictNames(catalog))
+        val vm = viewModel(handle = handle)
         vm.selectTab(CommunityHomeTab.DISCOVER)
-        assertEquals(CommunityHomeTab.DISCOVER, CommunityHomeViewModel(handle, observeMyGroups, session, DistrictNames(catalog)).selectedTab.value)
+        assertEquals(CommunityHomeTab.DISCOVER, viewModel(handle = handle).selectedTab.value)
+    }
+
+    @Test
+    fun `muc Nhom va Tin nhan duoc giu qua SavedStateHandle va cap nhat huy hieu chua doc`() = runTest {
+        every { observeMyGroups() } returns flowOf(emptyList())
+        val handle = SavedStateHandle()
+        val vm = viewModel(handle = handle)
+        advanceUntilIdle()
+
+        assertEquals(CommunityHomeSection.GROUPS, vm.selectedSection.value)
+        assertEquals(0, vm.unreadChatCount.value)
+
+        unreadFlow.value = 4
+        advanceUntilIdle()
+        assertEquals(4, vm.unreadChatCount.value)
+
+        vm.selectSection(CommunityHomeSection.MESSAGES)
+        assertEquals(CommunityHomeSection.MESSAGES, vm.selectedSection.value)
+        assertEquals(CommunityHomeSection.MESSAGES, viewModel(handle = handle).selectedSection.value)
     }
 }

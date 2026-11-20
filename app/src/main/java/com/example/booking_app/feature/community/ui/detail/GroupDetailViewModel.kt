@@ -633,7 +633,14 @@ class GroupDetailViewModel @Inject constructor(
             _events.trySend(GroupDetailEvent.RequireLogin(deepLink()))
             return
         }
-        act(KEY_JOIN_ID, { id -> joinGroup(groupId, id) }) { _events.trySend(GroupDetailEvent.JoinOutcome(it)) }
+        act(KEY_JOIN_ID, { id -> joinGroup(groupId, id) }) { result ->
+            _events.trySend(GroupDetailEvent.JoinOutcome(result))
+            // L5: listener members/{uid} lúc chưa tham gia bị Rules PERMISSION_DENIED kết thúc;
+            // đăng ký lại observeMembership ngay sau khi JOINED để cập nhật UI (nút Chat nhóm, bảng tin).
+            if (result == JoinResult.JOINED) {
+                start()
+            }
+        }
     }
 
     fun onCancelRequestClicked() =

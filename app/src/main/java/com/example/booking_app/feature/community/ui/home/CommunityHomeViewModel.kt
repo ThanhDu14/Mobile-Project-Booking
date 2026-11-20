@@ -3,6 +3,7 @@ package com.example.booking_app.feature.community.ui.home
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.booking_app.core.chat.UnreadChatsReader
 import com.example.booking_app.core.session.SessionManager
 import com.example.booking_app.feature.community.domain.CommunityError
 import com.example.booking_app.feature.community.domain.model.Group
@@ -21,6 +22,8 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+
+enum class CommunityHomeSection { GROUPS, MESSAGES }
 
 enum class CommunityHomeTab { MY_GROUPS, DISCOVER }
 
@@ -51,13 +54,23 @@ class CommunityHomeViewModel @Inject constructor(
     private val observeMyGroups: ObserveMyGroups,
     private val session: SessionManager,
     private val districtNames: DistrictNames,
+    private val unreadChatsReader: UnreadChatsReader,
 ) : ViewModel() {
+
+    private val _selectedSection = MutableStateFlow(
+        savedStateHandle.get<String>(KEY_SECTION)?.let { runCatching { CommunityHomeSection.valueOf(it) }.getOrNull() }
+            ?: CommunityHomeSection.GROUPS,
+    )
+    val selectedSection: StateFlow<CommunityHomeSection> = _selectedSection.asStateFlow()
 
     private val _selectedTab = MutableStateFlow(
         savedStateHandle.get<String>(KEY_TAB)?.let { runCatching { CommunityHomeTab.valueOf(it) }.getOrNull() }
             ?: CommunityHomeTab.MY_GROUPS,
     )
     val selectedTab: StateFlow<CommunityHomeTab> = _selectedTab.asStateFlow()
+
+    private val _unreadChatCount = MutableStateFlow(0)
+    val unreadChatCount: StateFlow<Int> = _unreadChatCount.asStateFlow()
 
     private val _myGroups = MutableStateFlow<MyGroupsUiState>(MyGroupsUiState.Loading)
     val myGroups: StateFlow<MyGroupsUiState> = _myGroups.asStateFlow()
@@ -69,6 +82,11 @@ class CommunityHomeViewModel @Inject constructor(
 
     init {
         start()
+        viewModelScope.launch {
+            unreadChatsReader.observeUnreadChatCount()
+                .catch { emit(0) }
+                .collect { count -> _unreadChatCount.value = count.coerceAtLeast(0) }
+        }
     }
 
     fun retry() {
@@ -90,6 +108,11 @@ class CommunityHomeViewModel @Inject constructor(
         }
     }
 
+    fun selectSection(section: CommunityHomeSection) {
+        _selectedSection.value = section
+        savedStateHandle[KEY_SECTION] = section.name
+    }
+
     fun selectTab(tab: CommunityHomeTab) {
         _selectedTab.value = tab
         savedStateHandle[KEY_TAB] = tab.name
@@ -104,6 +127,7 @@ class CommunityHomeViewModel @Inject constructor(
     }
 
     private companion object {
+        const val KEY_SECTION = "section"
         const val KEY_TAB = "tab"
     }
 }

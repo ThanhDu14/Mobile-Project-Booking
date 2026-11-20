@@ -461,7 +461,7 @@ class CourtDetailFragment : Fragment() {
         binding.bottomBar.isVisible = bar != BottomBarState.Hidden
         val book = bar as? BottomBarState.Book
         binding.bookButton.isVisible = book != null
-        binding.chatButton.isVisible = book != null
+        binding.chatButton.isVisible = book != null && book.showChat
         binding.bottomSuspendedText.isVisible = bar == BottomBarState.Suspended
         binding.bottomPriceText.isVisible = book != null
         binding.bottomWindowText.isVisible = false

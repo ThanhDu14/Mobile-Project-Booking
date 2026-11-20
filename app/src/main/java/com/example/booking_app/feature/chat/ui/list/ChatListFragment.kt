@@ -3,8 +3,10 @@ package com.example.booking_app.feature.chat.ui.list
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
+import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.setFragmentResult
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -41,10 +43,15 @@ open class ChatListFragment : Fragment(R.layout.fragment_chat_list) {
 
     private lateinit var adapter: ChatAdapter
 
+    private val isEmbedded: Boolean
+        get() = arguments?.getBoolean(ARG_EMBEDDED, false) == true
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         _binding = FragmentChatListBinding.bind(view)
 
+        binding.toolbar.isVisible = !isEmbedded
+        binding.toolbarDivider.isVisible = !isEmbedded
         binding.toolbar.setTitle(
             if (viewModel.mode == ChatMode.OWNER) R.string.chat_title_owner else R.string.chat_title_list,
         )
@@ -86,6 +93,7 @@ open class ChatListFragment : Fragment(R.layout.fragment_chat_list) {
         val isEmpty = state is UiState.Empty
         binding.emptyContainer.isVisible = isEmpty
         binding.stateViews.root.isVisible = !isEmpty
+        binding.listFooter.isVisible = isEmbedded && state is UiState.Content
 
         if (isEmpty) {
             binding.chatList.isVisible = false
@@ -112,8 +120,9 @@ open class ChatListFragment : Fragment(R.layout.fragment_chat_list) {
 
     protected open fun openChat(chatId: String) {
         val nav = findNavController()
-        if (nav.currentDestination?.id == R.id.chatListFragment) {
-            nav.navigate(ChatListFragmentDirections.actionChatListToChat(chatId = chatId))
+        when (nav.currentDestination?.id) {
+            R.id.chatListFragment -> nav.navigate(ChatListFragmentDirections.actionChatListToChat(chatId = chatId))
+            R.id.communityHomeFragment -> nav.navigate(Uri.parse("smashnow://chat/${Uri.encode(chatId)}"))
         }
     }
 
@@ -121,10 +130,15 @@ open class ChatListFragment : Fragment(R.layout.fragment_chat_list) {
         when (event) {
             is ChatListEvent.OpenChat -> openChat(event.chatId)
             is ChatListEvent.RequireLogin -> {
-                authNavigator.openLogin(findNavController(), returnTo = Uri.parse(event.returnTo))
+                val returnTo = if (isEmbedded) "smashnow://community" else event.returnTo
+                authNavigator.openLogin(findNavController(), returnTo = Uri.parse(returnTo))
             }
             ChatListEvent.OpenJoinGroup -> {
-                findNavController().navigate(Uri.parse("smashnow://community"))
+                if (isEmbedded) {
+                    setFragmentResult(RESULT_KEY_OPEN_DISCOVER, bundleOf())
+                } else {
+                    findNavController().navigate(Uri.parse("smashnow://community"))
+                }
             }
             ChatListEvent.OpenFindVenue -> {
                 val nav = findNavController()
@@ -132,6 +146,19 @@ open class ChatListFragment : Fragment(R.layout.fragment_chat_list) {
                     nav.navigate(Uri.parse("smashnow://search"))
                 }
             }
+        }
+    }
+
+    companion object {
+        const val ARG_EMBEDDED = "embedded"
+        const val RESULT_KEY_OPEN_DISCOVER = "chat_list_open_discover"
+
+        /** Bản nhúng trong mục "Tin nhắn" của màn Cộng đồng (chế độ PLAYER, không hiện toolbar riêng). */
+        fun newEmbeddedPlayer(): ChatListFragment = ChatListFragment().apply {
+            arguments = bundleOf(
+                ChatListViewModel.ARG_MODE to ChatMode.PLAYER.name,
+                ARG_EMBEDDED to true,
+            )
         }
     }
 }

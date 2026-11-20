@@ -494,6 +494,7 @@ class CourtDetailViewModel @Inject constructor(
                 val venue = view.result.venue
                 val availability = s.availabilityOverride ?: venue.availability
                 val suspended = availability != VenueAvailability.ACTIVE
+                val isOwnVenue = venue.ownerId == sessionManager.currentUid()
                 val (prices, bottomPrice) = prices(s.priceRules, w)
                 base.copy(
                     availability = availability,
@@ -521,7 +522,7 @@ class CourtDetailViewModel @Inject constructor(
                     phone = PhoneDisplay.of(venue.phone),
                     distanceText = s.distanceText,
                     reviews = reviews(venue, s.latestReviews),
-                    bottomBar = if (suspended) BottomBarState.Suspended else BottomBarState.Book(bottomPrice),
+                    bottomBar = if (suspended) BottomBarState.Suspended else BottomBarState.Book(bottomPrice, showChat = !isOwnVenue),
                 )
             }
         }
