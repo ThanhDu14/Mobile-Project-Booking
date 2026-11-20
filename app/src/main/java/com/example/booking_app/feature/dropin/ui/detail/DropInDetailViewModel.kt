@@ -8,9 +8,12 @@ import com.example.booking_app.core.session.SessionState
 import com.example.booking_app.core.util.AppClock
 import com.example.booking_app.feature.dropin.domain.model.DropInRegistration
 import com.example.booking_app.feature.dropin.domain.model.DropInSession
+import com.example.booking_app.feature.dropin.domain.model.RegistrationStatus
 import com.example.booking_app.feature.dropin.domain.model.SessionStatus
+import com.example.booking_app.feature.dropin.domain.model.WaitlistPosition
 import com.example.booking_app.feature.dropin.domain.usecase.ObserveDropInSession
 import com.example.booking_app.feature.dropin.domain.usecase.ObserveMyDropInRegistration
+import com.example.booking_app.feature.dropin.ui.confirm.ConfirmMode
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
@@ -33,9 +36,10 @@ import javax.inject.Inject
 
 /**
  * Nút chính ở chi tiết buổi (contracts/ui-screens.md mục 2). Thêm [OWN_SESSION] cho chủ cơ sở xem buổi của mình:
- * không có [REGISTER] (FR-011) nhưng cũng không phải "đã đủ" hay "đã đóng".
+ * không có [REGISTER] (FR-011) nhưng cũng không phải "đã đủ" hay "đã đóng". Spec 081: [JOIN_WAITLIST] khi buổi đã đủ người
+ * và hàng chờ còn mở (còn hơn 30 phút nữa mới bắt đầu); [VIEW_WAITLIST] khi mình đang trong hàng chờ.
  */
-enum class DetailAction { REGISTER, VIEW_TICKET, FULL, CLOSED, OWN_SESSION }
+enum class DetailAction { REGISTER, VIEW_TICKET, FULL, CLOSED, OWN_SESSION, JOIN_WAITLIST, VIEW_WAITLIST }
 
 sealed interface DropInDetailUiState {
     data object Loading : DropInDetailUiState
@@ -44,6 +48,8 @@ sealed interface DropInDetailUiState {
         val session: DropInSession,
         val myRegistration: DropInRegistration?,
         val action: DetailAction,
+        /** Vị trí trong hàng chờ khi mình đang `WAITLISTED` (tính từ buổi realtime), không thì `null`. */
+        val waitlist: WaitlistPosition? = null,
     ) : DropInDetailUiState
 
     /** Buổi không tồn tại (trạng thái rỗng của màn hình chi tiết). */
@@ -53,12 +59,15 @@ sealed interface DropInDetailUiState {
 }
 
 sealed interface DropInDetailEvent {
-    /** Khách bấm "Đăng ký" (T041): mở đăng nhập kèm `returnTo`. */
-    data class RequireLogin(val sessionId: String) : DropInDetailEvent
+    /** Khách bấm "Đăng ký" hoặc "Vào hàng chờ" (T041): mở đăng nhập kèm `returnTo` đúng chế độ [mode]. */
+    data class RequireLogin(val sessionId: String, val mode: ConfirmMode = ConfirmMode.REGISTER) : DropInDetailEvent
 
-    data class OpenConfirm(val sessionId: String) : DropInDetailEvent
+    data class OpenConfirm(val sessionId: String, val mode: ConfirmMode = ConfirmMode.REGISTER) : DropInDetailEvent
 
     data class OpenTicket(val sessionId: String) : DropInDetailEvent
+
+    /** Spec 081: mở màn hình lượt chờ. */
+    data class OpenWaitlist(val sessionId: String) : DropInDetailEvent
 }
 
 /**
@@ -120,17 +129,36 @@ class DropInDetailViewModel @Inject constructor(
         _events.trySend(event)
     }
 
+    /** Spec 081: "Vào hàng chờ" (buổi đã đủ người). Khách phải đăng nhập trước, rồi mở xác nhận ở chế độ hàng chờ. */
+    fun onJoinWaitlistClicked() {
+        val content = uiState.value as? DropInDetailUiState.Content ?: return
+        if (content.action != DetailAction.JOIN_WAITLIST) return
+        val event = if (sessionManager.currentUid() == null) {
+            DropInDetailEvent.RequireLogin(sessionId, ConfirmMode.WAITLIST)
+        } else {
+            DropInDetailEvent.OpenConfirm(sessionId, ConfirmMode.WAITLIST)
+        }
+        _events.trySend(event)
+    }
+
+    /** Spec 081: "Xem lượt chờ". */
+    fun onViewWaitlistClicked() {
+        _events.trySend(DropInDetailEvent.OpenWaitlist(sessionId))
+    }
+
     fun onViewTicketClicked() {
         _events.trySend(DropInDetailEvent.OpenTicket(sessionId))
     }
 
     private fun build(session: DropInSession?, uid: String?, mine: DropInRegistration?): DropInDetailUiState {
         if (session == null) return DropInDetailUiState.NotFound
-        return DropInDetailUiState.Content(session, mine, actionFor(session, uid, mine))
+        val waitlist = mine?.takeIf { it.status == RegistrationStatus.WAITLISTED }?.let { WaitlistPosition.of(session, it) }
+        return DropInDetailUiState.Content(session, mine, actionFor(session, uid, mine), waitlist)
     }
 
     private fun actionFor(session: DropInSession, uid: String?, mine: DropInRegistration?): DetailAction {
-        val started = !Instant.ofEpochMilli(clock.now()).isBefore(session.startAt)
+        val now = Instant.ofEpochMilli(clock.now())
+        val started = !now.isBefore(session.startAt)
         val closed = started ||
             session.status == SessionStatus.CANCELLED ||
             session.status == SessionStatus.COMPLETED ||
@@ -138,7 +166,9 @@ class DropInDetailViewModel @Inject constructor(
         return when {
             mine?.isActive == true -> DetailAction.VIEW_TICKET
             closed -> DetailAction.CLOSED
+            mine?.status == RegistrationStatus.WAITLISTED -> DetailAction.VIEW_WAITLIST
             session.isOwnedBy(uid) -> DetailAction.OWN_SESSION
+            session.isWaitlistOpen(now) -> DetailAction.JOIN_WAITLIST
             session.status == SessionStatus.FULL || session.remaining <= 0 -> DetailAction.FULL
             else -> DetailAction.REGISTER
         }

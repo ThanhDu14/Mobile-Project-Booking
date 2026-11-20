@@ -50,6 +50,7 @@ class AdminReportAdapter(
         @SuppressLint("SetTextI18n")
         fun bind(item: AdminReport, sameTargetCount: Int) {
             val (typeName, iconRes) = when (item.targetType) {
+                ReportTargetType.GROUP -> "NHÓM/CLB" to R.drawable.ic_nav_admin_reports
                 ReportTargetType.POST -> "BÀI ĐĂNG" to R.drawable.ic_nav_admin_applications
                 ReportTargetType.VENUE -> "CƠ SỞ" to R.drawable.ic_nav_admin_home
                 ReportTargetType.USER -> "NGƯỜI DÙNG" to R.drawable.ic_nav_admin_users

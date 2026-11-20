@@ -35,3 +35,11 @@ npx supabase link --project-ref dbjzrpmtslncogipwpai
 ## Claim `role`
 
 Firebase ID token phải có custom claim `role: "authenticated"` thì Supabase mới coi là người dùng đã đăng nhập; thiếu claim thì request chạy với quyền `anon`. Edge Function `on-signup` (spec 010) gán claim này, và app gọi `getIdToken(true)` sau khi đăng ký để lấy token mới.
+
+## Cron đóng hàng chờ vãng lai
+
+Migration `20261120100000_cron_dropin_close.sql` bật job `dropin-close` mỗi phút. Function xác thực header `x-cron-secret`; `verify_jwt = false` để pg_cron không cần Firebase token.
+
+Trước khi áp dụng migration, deploy function `dropin-close`, cấu hình Edge secret `CRON_SECRET` và hai Vault secret `project_url`, `cron_secret`. `cron_secret` phải trùng `CRON_SECRET`; không ghi giá trị secret vào SQL được commit. Job đóng hàng chờ từ T−30 phút và chuyển buổi hết giờ sang `COMPLETED`. Chạy lại migration chỉ giữ một job cùng tên; chạy lại function không gửi trùng thông báo.
+
+`owner-cancel-session` gọi `_shared/waitlist.ts::closeWaitlistInTx` trong transaction để kết thúc các lượt chờ. `owner-update-session` chỉ gọi `promoteFromWaitlist` khi tăng sức chứa; giảm sức chứa giữ nguyên hàng chờ. Thông báo inbox được ghi cùng transaction để chỉ xuất hiện khi thay đổi đã commit.

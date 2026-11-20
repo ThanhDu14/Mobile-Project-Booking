@@ -1,0 +1,51 @@
+INSTRUMENTATION_STATUS: class=com.example.booking_app.feature.admin.HandoffDeviceInteractionTest
+INSTRUMENTATION_STATUS: current=1
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=3
+INSTRUMENTATION_STATUS: stream=
+com.example.booking_app.feature.admin.HandoffDeviceInteractionTest:
+INSTRUMENTATION_STATUS: test=ownerCapacityIncreasePromotesThenCancellationClosesWaitingEntries
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=com.example.booking_app.feature.admin.HandoffDeviceInteractionTest
+INSTRUMENTATION_STATUS: current=1
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=3
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=ownerCapacityIncreasePromotesThenCancellationClosesWaitingEntries
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=com.example.booking_app.feature.admin.HandoffDeviceInteractionTest
+INSTRUMENTATION_STATUS: current=2
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=3
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: test=moderationHidesContentLocksGroupAndDeniesOwnerDeletion
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=com.example.booking_app.feature.admin.HandoffDeviceInteractionTest
+INSTRUMENTATION_STATUS: current=2
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=3
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=moderationHidesContentLocksGroupAndDeniesOwnerDeletion
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_STATUS: class=com.example.booking_app.feature.admin.HandoffDeviceInteractionTest
+INSTRUMENTATION_STATUS: current=3
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=3
+INSTRUMENTATION_STATUS: stream=
+INSTRUMENTATION_STATUS: test=ownerCapacityDecreaseKeepsWaitingPartyInPlace
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=com.example.booking_app.feature.admin.HandoffDeviceInteractionTest
+INSTRUMENTATION_STATUS: current=3
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=3
+INSTRUMENTATION_STATUS: stream=.
+INSTRUMENTATION_STATUS: test=ownerCapacityDecreaseKeepsWaitingPartyInPlace
+INSTRUMENTATION_STATUS_CODE: 0
+INSTRUMENTATION_RESULT: stream=
+
+Time: 37,112
+
+OK (3 tests)
+
+
+INSTRUMENTATION_CODE: -1

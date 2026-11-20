@@ -86,6 +86,9 @@ object DropInUiText {
         is DropInError.OwnSession -> R.string.dropin_error_own_session
         is DropInError.AlreadyRegistered -> R.string.dropin_error_already_registered
         is DropInError.AlreadyWaitlisted -> R.string.dropin_error_already_waitlisted
+        is DropInError.SessionHasSpots -> R.string.dropin_waitlist_error_session_has_spots
+        is DropInError.WaitlistClosed -> R.string.dropin_waitlist_error_closed
+        is DropInError.AlreadyPromoted -> R.string.dropin_waitlist_error_already_promoted
         is DropInError.NotCancellable -> R.string.dropin_error_not_cancellable
         is DropInError.NotFound -> R.string.dropin_error_not_found
         is DropInError.AccountLocked -> R.string.dropin_error_account_locked

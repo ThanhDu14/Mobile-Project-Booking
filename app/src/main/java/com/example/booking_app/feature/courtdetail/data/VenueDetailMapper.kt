@@ -1,5 +1,6 @@
 package com.example.booking_app.feature.courtdetail.data
 
+import com.example.booking_app.core.location.VenueArea
 import com.example.booking_app.core.media.PhotoUrlResolver
 import com.example.booking_app.core.model.VenueRatingSummary
 import com.example.booking_app.feature.courtdetail.domain.model.LatLng
@@ -41,7 +42,7 @@ object VenueDetailMapper {
                 address = data["address"] as? String ?: "",
                 districtName = catalog?.districts?.firstOrNull { it.id == districtId }?.name,
                 location = (data["location"] as? GeoPoint)
-                    ?.takeUnless { it.latitude == 0.0 && it.longitude == 0.0 }
+                    ?.takeIf { VenueArea.contains(it.latitude, it.longitude) }
                     ?.let { LatLng(it.latitude, it.longitude) },
                 openTime = data["openTime"] as? String ?: "",
                 closeTime = data["closeTime"] as? String ?: "",

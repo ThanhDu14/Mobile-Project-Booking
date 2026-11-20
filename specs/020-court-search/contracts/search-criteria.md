@@ -9,7 +9,7 @@
 data class SearchCriteria(
     val keyword: String = "",                 // chữ người dùng gõ, chưa chuẩn hóa
     val districtId: String? = null,
-    val priceMin: Long? = null,               // VND/giờ, bội số 10_000
+    val priceMin: Long? = null,               // VND/giờ, bội số 1_000 (thanh trượt bước 10_000)
     val priceMax: Long? = null,               // null = không giới hạn trên
     val timeWindow: TimeWindow? = null,
     val amenityIds: Set<String> = emptySet(),
@@ -54,8 +54,8 @@ data class SanitizeResult(val criteria: SearchCriteria, val dropped: List<Droppe
 | `districtId` không có hoặc `isActive == false` | Bỏ quận | `UNKNOWN_DISTRICT` |
 | Mỗi `amenityId` không có hoặc ẩn | Bỏ riêng tiện ích đó | `UNKNOWN_AMENITY` |
 | Giá âm; `priceMin > priceMax` | Bỏ cả khoảng giá | `INVALID_PRICE` |
-| Giá không chia hết 10.000 | Làm tròn: `priceMin` xuống, `priceMax` lên | (không báo) |
-| `priceMax ≥ 200.000` | `priceMax = null` (không giới hạn trên, khớp thanh trượt "200.000 đ+") | (không báo) |
+| Giá không chia hết 1.000 (gõ tay, AI hiểu "dưới 55k5") | Làm tròn: `priceMin` xuống, `priceMax` lên (`CourtSearchCriteria.withRoundedPrices`, 2026-11-19; trước đây ghi 10.000, đổi theo Rules lịch sử ngày 2026-11-17) | (không báo) |
+| `priceMax ≥ 200.000` trên thanh trượt | `priceMax = null` (không giới hạn trên, khớp "200.000 đ+"); hộp nhập giá và AI giữ nguyên trần đã nhập | (không báo) |
 | `priceMin == 0` | `priceMin = null` | (không báo) |
 | `date` trước hôm nay | Bỏ khung giờ | `PAST_DATE` |
 | `date` sau hôm nay + 30 ngày (`BookingWindow.ADVANCE_DAYS`) | Bỏ khung giờ | `DATE_OUT_OF_RANGE` |

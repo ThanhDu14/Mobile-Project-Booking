@@ -14,18 +14,25 @@ object SlotPricing {
     fun priceForWindow(rules: List<PriceRule>, date: LocalDate, start: TimeOfDay, end: TimeOfDay): Long? {
         if (end <= start) return null
         val day = DayConvention.fromDayOfWeek(date.dayOfWeek)
-        val dayRules = rules.filter { day in it.daysOfWeek }
         var total = 0L
         for (slot in SlotMath.slots(start, end)) {
-            val slotEnd = slot.plusMinutes(SlotMath.STEP_MINUTES)
-            val rule = dayRules.firstOrNull { r ->
-                val rs = TimeOfDay.parse(r.startTime) ?: return@firstOrNull false
-                val re = TimeOfDay.parseEnd(r.endTime) ?: return@firstOrNull false
-                rs <= slot && slotEnd <= re
-            } ?: return null
-            total += rule.pricePerSlot
+            total += (ruleForSlot(rules, day, slot) ?: return null).pricePerSlot
         }
         return total
+    }
+
+    /**
+     * Dòng giá áp cho khung 30 phút bắt đầu ở [slot] vào ngày [day] (số theo [DayConvention.CURRENT]):
+     * khung phải nằm trọn trong `[startTime, endTime)`, nhiều dòng khớp thì dòng đầu tiên thắng, `daysOfWeek`
+     * rỗng nghĩa là không áp dụng ngày nào. Lưới giờ 040 dùng cùng hàm này để ra cùng giá với 020 và 030.
+     */
+    fun ruleForSlot(rules: List<PriceRule>, day: Int, slot: TimeOfDay): PriceRule? {
+        val slotEnd = slot.plusMinutes(SlotMath.STEP_MINUTES)
+        return rules.firstOrNull { r ->
+            val rs = TimeOfDay.parse(r.startTime) ?: return@firstOrNull false
+            val re = TimeOfDay.parseEnd(r.endTime) ?: return@firstOrNull false
+            day in r.daysOfWeek && rs <= slot && slotEnd <= re
+        }
     }
 
     /** Quy ra đ/giờ: `total × 60 / số phút`, làm tròn xuống tới đồng. */

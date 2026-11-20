@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.booking_app.core.catalog.Amenity
 import com.example.booking_app.core.catalog.CatalogRepository
 import com.example.booking_app.core.catalog.District
+import com.example.booking_app.core.location.GeoDistance
 import com.example.booking_app.core.location.LocationProvider
 import com.example.booking_app.core.network.AppError
 import com.example.booking_app.core.network.FunctionHttpException
@@ -29,7 +30,18 @@ import com.example.booking_app.feature.search.domain.ReviewClaim
 import com.example.booking_app.feature.search.domain.ReviewPreference
 import com.example.booking_app.feature.search.domain.ReviewRecommendation
 import com.example.booking_app.feature.search.domain.ReviewSource
+import com.example.booking_app.feature.search.domain.Relaxation
+import com.example.booking_app.feature.search.domain.RelaxationPlanner
+import com.example.booking_app.feature.search.domain.SearchHistory
+import com.example.booking_app.feature.search.domain.SearchHistoryEntry
+import com.example.booking_app.feature.search.domain.SearchHistoryRepository
+import com.example.booking_app.feature.search.domain.VoiceError
+import com.example.booking_app.feature.search.domain.VoiceEvent
+import com.example.booking_app.feature.search.domain.VoiceInput
 import com.example.booking_app.feature.search.domain.model.HomeVenue
+import com.example.booking_app.feature.search.domain.model.LatLng
+import com.example.booking_app.feature.search.domain.map.CourtMap
+import com.example.booking_app.feature.search.domain.map.MapViewport
 import com.google.firebase.firestore.GeoPoint
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
@@ -37,6 +49,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
@@ -49,7 +62,16 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import javax.inject.Inject
 
-enum class SearchNotice { AI_ERROR, QUOTA, LOCKED, SOURCE_UNAVAILABLE, INVALID_WINDOW, INVALID_DATE, DROPPED_FILTERS, OFF_TOPIC, LOCATION_UNAVAILABLE }
+/** Giới hạn ký tự của câu hỏi AI (khớp `counterMaxLength` của ô nhập). */
+private const val AI_INPUT_MAX = 200
+
+/** Máy tính bảng: chọn sân từ danh sách thì phóng ít nhất tới mức thấy rõ khu phố. */
+private const val LIST_FOCUS_ZOOM = 14.0
+
+/** "Vị trí của tôi" chỉ tìm lại khi vị trí mới cách vị trí đã dùng hơn mức này (khoảng cách trên thẻ làm tròn 0,1 km). */
+private const val RESEARCH_DISTANCE_METERS = 100.0
+
+enum class SearchNotice { MAP_DISTRICT_DROPPED, AI_ERROR, QUOTA, LOCKED, SOURCE_UNAVAILABLE, INVALID_WINDOW, INVALID_DATE, DROPPED_FILTERS, OFF_TOPIC, LOCATION_UNAVAILABLE, HISTORY_DATE_PAST, VOICE_NO_MATCH, VOICE_NETWORK }
 
 data class CourtSearchUiState(
     val criteria: CourtSearchCriteria = CourtSearchCriteria(),
@@ -67,23 +89,60 @@ data class CourtSearchUiState(
     /** Ô AI vừa được xóa chữ trong khi bộ lọc vẫn đang áp dụng: hiện gợi ý, không tự xóa bộ lọc. */
     val filtersKept: Boolean = false,
     val aiHistory: List<String> = emptyList(),
+    /** Lịch sử tìm kiếm trên Firestore (spec 020 US4), mới nhất trước; khách luôn rỗng. */
+    val history: List<SearchHistoryEntry> = emptyList(),
+    /** Micro ở ô AI (spec 022 US4): ẩn khi máy không có dịch vụ nhận dạng. */
+    val voiceAvailable: Boolean = false,
+    val listening: Boolean = false,
+    /** Người dùng đã từ chối quyền micro: micro mờ, bấm thì gợi ý mở cài đặt. */
+    val voiceDenied: Boolean = false,
     val aiBusy: Boolean = false,
     val reviewBusy: Boolean = false,
     val usage: AiSearchUsage? = null,
     val clarification: AiCourtParse? = null,
     val preference: ReviewPreference? = null,
     val recommendations: List<ReviewRecommendation> = emptyList(),
+    /** Gợi ý nới điều kiện khi lần tìm có lọc ra 0 sân (spec 022 US6), tối đa 3, mỗi gợi ý có ≥ 1 sân. */
+    val relaxations: List<Relaxation> = emptyList(),
     val notice: SearchNotice? = null,
+    /** "Sân gần bạn" (spec 021 US4): trạng thái vị trí và vị trí đã lấy (chỉ dùng trên máy, FR-015). */
+    val nearbyStatus: NearbyStatus = NearbyStatus.NEED_LOCATION,
+    val nearbyLocation: LatLng? = null,
 )
+
+enum class NearbyStatus { NEED_LOCATION, LOCATING, UNAVAILABLE, READY }
 
 /** Một đánh giá gốc: nguyên văn và chiều nhận định (`null` khi không rõ). */
 data class ReviewSourceItem(val comment: String, val supports: Boolean?)
+
+/** Lý do xin quyền vị trí: sắp xếp "Gần nhất" (020), "Vị trí của tôi" trên bản đồ, "Sân gần bạn" (021). */
+enum class LocationReason { SORT, MAP, NEARBY }
+
+/** Lệnh đưa bản đồ tới [center] một lần; [id] tăng mỗi lần để lệnh giống nhau vẫn được thực hiện lại. */
+data class MapFocus(val center: LatLng, val zoom: Double, val id: Int)
+
+/**
+ * Trạng thái chế độ bản đồ (spec 021), tách khỏi [CourtSearchUiState] để kéo bản đồ không vẽ lại cả màn hình.
+ * Giữ trong ViewModel nên mở chi tiết sân rồi quay lại vẫn đúng vùng, mức phóng và sân đang chọn (FR-009).
+ */
+data class CourtMapState(
+    val visible: Boolean = false,
+    val viewport: MapViewport? = null,
+    val selectedId: String? = null,
+    /** Sân được chạm trên bản đồ: thứ tự thẻ tính theo khoảng cách tới sân này và giữ nguyên khi vuốt (FR-008). */
+    val cardAnchorId: String? = null,
+    val myLocation: LatLng? = null,
+    /** Người dùng đã kéo/phóng sau lần tải gần nhất: hiện nút "Tìm ở khu vực này" khi có ích (FR-005). */
+    val moved: Boolean = false,
+    val focus: MapFocus? = null,
+)
 
 sealed interface CourtSearchEffect {
     data class Policy(val topic: String?) : CourtSearchEffect
     data class DropIn(val link: Uri) : CourtSearchEffect
     data class ChooseWindow(val date: LocalDate?) : CourtSearchEffect
-    data object RequestLocation : CourtSearchEffect
+    /** Xin quyền vị trí; [reason] quyết định làm gì khi có kết quả ([CourtSearchViewModel.locationResult]). */
+    data class RequestLocation(val reason: LocationReason = LocationReason.SORT) : CourtSearchEffect
     /** Đánh giá gốc đã qua SOURCE (kiểm tra phiên bản), hiển thị trong bottom sheet. */
     data class Sources(val venueId: String, val items: List<ReviewSourceItem>) : CourtSearchEffect
     data class Explanation(val venueId: String, val claims: List<ReviewClaim>) : CourtSearchEffect
@@ -99,6 +158,8 @@ class CourtSearchViewModel @Inject constructor(
     private val session: SessionManager,
     private val clock: AppClock,
     private val history: AiQueryHistory,
+    private val searchHistory: SearchHistoryRepository,
+    private val voice: VoiceInput,
 ) : ViewModel() {
     private val _state = MutableStateFlow(
         CourtSearchUiState(criteria = restoredCriteria(), aiInput = savedState["aiInput"] ?: ""),
@@ -112,15 +173,34 @@ class CourtSearchViewModel @Inject constructor(
     private var parseJob: Job? = null
     private var reviewJob: Job? = null
     private var usageJob: Job? = null
+    private var historyJob: Job? = null
+    private var voiceJob: Job? = null
+    private var relaxJob: Job? = null
+    private val _voiceLevel = MutableStateFlow(0f)
+
+    /** Âm lượng micro 0..1 khi đang nghe; tách khỏi [state] vì cập nhật vài chục lần mỗi giây. */
+    val voiceLevel = _voiceLevel.asStateFlow()
     private var origin: GeoPoint? = null
+
+    /**
+     * AI yêu cầu "Gần nhất" khi chưa có vị trí: chờ kết quả định vị rồi mới lưu lịch sử một lần (có vị trí thì lưu bản
+     * "Gần nhất", không có thì lưu bản theo đánh giá), thay vì lưu cả hai.
+     */
+    private var recordWhenLocated = false
+    private var focusId = 0
+
+    private val _map = MutableStateFlow(CourtMapState())
+    val map: StateFlow<CourtMapState> = _map.asStateFlow()
     private var searchGeneration = 0
 
     init {
+        _state.update { it.copy(voiceAvailable = voice.isAvailable()) }
         loadCatalog()
         viewModelScope.launch {
             session.sessionState.filter { it is SessionState.SignedIn || it is SessionState.SignedOut }
                 .map { (it as? SessionState.SignedIn)?.uid }.distinctUntilChanged().collect { uid ->
                 parseJob?.cancel()
+                stopVoice()
                 recommendJob?.cancel()
                 reviewJob?.cancel()
                 _state.update { it.copy(
@@ -130,6 +210,7 @@ class CourtSearchViewModel @Inject constructor(
                     aiHistory = uid?.let(history::read).orEmpty(),
                 ) }
                 if (uid == null) savedState["aiInput"] = ""
+                observeHistory(uid)
                 refreshUsage()
             }
         }
@@ -155,16 +236,26 @@ class CourtSearchViewModel @Inject constructor(
         change(state.value.criteria.copy(keyword = value), preference = null, debounce = true)
     }
 
-    fun district(id: String?) = change(state.value.criteria.copy(districtId = id))
+    fun district(id: String?) {
+        change(state.value.criteria.copy(districtId = id))
+        recordSearch()
+    }
 
-    fun amenities(ids: Set<String>) = change(state.value.criteria.copy(amenityIds = ids))
+    fun amenities(ids: Set<String>) {
+        change(state.value.criteria.copy(amenityIds = ids))
+        recordSearch()
+    }
 
-    fun price(min: Long?, max: Long?) = change(state.value.criteria.copy(priceMin = min, priceMax = max))
+    fun price(min: Long?, max: Long?) {
+        change(state.value.criteria.copy(priceMin = min, priceMax = max))
+        recordSearch()
+    }
 
     fun applyFilters(districtId: String?, min: Long?, max: Long?, amenities: Set<String>, window: BookingSearchWindow?): Boolean {
         if (window != null && !window.isBookableAt(now())) return false
         change(state.value.criteria.copy(districtId = districtId, priceMin = min, priceMax = max,
             amenityIds = amenities, window = window))
+        recordSearch()
         return true
     }
 
@@ -174,6 +265,7 @@ class CourtSearchViewModel @Inject constructor(
             return false
         }
         change(state.value.criteria.copy(window = window))
+        recordSearch()
         return true
     }
 
@@ -185,18 +277,22 @@ class CourtSearchViewModel @Inject constructor(
     fun sort(sort: CourtSearchSort) {
         if (sort != CourtSearchSort.NEAREST) {
             change(state.value.criteria.copy(sort = sort))
+            recordSearch()
             return
         }
         if (!location.hasPermission()) {
-            _effects.trySend(CourtSearchEffect.RequestLocation)
+            _effects.trySend(CourtSearchEffect.RequestLocation(LocationReason.SORT))
             return
         }
         viewModelScope.launch {
             val point = location.current()
-            if (point == null) _state.update { it.copy(notice = SearchNotice.LOCATION_UNAVAILABLE) }
-            else {
+            if (point == null) {
+                _state.update { it.copy(notice = SearchNotice.LOCATION_UNAVAILABLE) }
+                recordPendingAiSearch()
+            } else {
                 origin = point
                 change(state.value.criteria.copy(sort = sort))
+                recordSearch()
             }
         }
     }
@@ -205,6 +301,7 @@ class CourtSearchViewModel @Inject constructor(
         _state.update { it.copy(filtersKept = false) }
         val current = state.value.criteria
         change(CourtSearchCriteria(keyword = current.keyword, districtId = current.districtId, sort = current.sort), null)
+        recordSearch()
     }
 
     fun removePreference() {
@@ -214,6 +311,109 @@ class CourtSearchViewModel @Inject constructor(
     }
 
     fun retry() = search()
+
+    /** Bấm tìm trên bàn phím của ô tên sân: một "lần tìm" theo FR-021. */
+    fun submitKeyword() {
+        search()
+        recordSearch()
+    }
+
+    /**
+     * Lưu bộ điều kiện hiện tại vào lịch sử (FR-021): chỉ khi đã đăng nhập và có từ khóa hợp lệ
+     * hoặc ít nhất một bộ lọc. Lỗi ghi (mất mạng, Rules) không ảnh hưởng việc tìm.
+     */
+    fun recordSearch() {
+        val uid = session.currentUid() ?: return
+        val criteria = state.value.criteria
+        if (!SearchHistory.worthSaving(criteria)) return
+        val current = state.value.history
+        val prune = current.size >= SearchHistory.LIMIT && current.none { it.id == SearchHistory.idOf(criteria) }
+        viewModelScope.launch {
+            try {
+                searchHistory.record(uid, criteria, prune)
+            } catch (error: CancellationException) {
+                throw error
+            } catch (_: Exception) {
+                // History is best effort; the search itself already ran.
+            }
+        }
+    }
+
+    /**
+     * Chạy lại một mục lịch sử (FR-023, US4-3): khung giờ đã qua bị bỏ kèm thông báo "Ngày đã qua";
+     * quận/tiện ích không còn trong danh mục bị bỏ kèm thông báo chung. Mục được đưa lên đầu.
+     */
+    fun applyHistory(entry: SearchHistoryEntry) {
+        val current = state.value
+        var criteria = entry.criteria
+        var notice: SearchNotice? = null
+        val window = criteria.window
+        if (window != null && !window.isBookableAt(now())) {
+            criteria = criteria.copy(window = null)
+            notice = SearchNotice.HISTORY_DATE_PAST
+        }
+        if (current.catalogReady) {
+            val district = criteria.districtId?.takeIf { id -> current.districts.any { it.id == id } }
+            val amenities = criteria.amenityIds.filter { id -> current.amenities.any { it.id == id } }.toSet()
+            if (district != criteria.districtId || amenities != criteria.amenityIds) {
+                criteria = criteria.copy(districtId = district, amenityIds = amenities)
+                notice = notice ?: SearchNotice.DROPPED_FILTERS
+            }
+        }
+        // Vị trí không được lưu (FR-014): thiếu vị trí hiện tại thì sắp xếp theo đánh giá.
+        if (criteria.sort == CourtSearchSort.NEAREST && origin == null) {
+            criteria = criteria.copy(sort = CourtSearchSort.RATING)
+        }
+        change(criteria, preference = null)
+        notice?.let { value -> _state.update { it.copy(notice = value) } }
+        recordSearch()
+    }
+
+    fun deleteHistory(id: String) {
+        val uid = session.currentUid() ?: return
+        _state.update { it.copy(history = it.history.filterNot { entry -> entry.id == id }) }
+        viewModelScope.launch {
+            try {
+                searchHistory.delete(uid, id)
+            } catch (error: CancellationException) {
+                throw error
+            } catch (_: Exception) {
+                // The listener restores the entry if the delete did not reach the server.
+            }
+        }
+    }
+
+    fun clearHistory() {
+        val uid = session.currentUid() ?: return
+        val ids = state.value.history.map { it.id }
+        _state.update { it.copy(history = emptyList()) }
+        viewModelScope.launch {
+            try {
+                searchHistory.clear(uid, ids)
+            } catch (error: CancellationException) {
+                throw error
+            } catch (_: Exception) {
+                // The listener restores the entries if the delete did not reach the server.
+            }
+        }
+    }
+
+    private fun observeHistory(uid: String?) {
+        historyJob?.cancel()
+        _state.update { it.copy(history = emptyList()) }
+        if (uid == null) return
+        historyJob = viewModelScope.launch {
+            try {
+                searchHistory.observe(uid).collect { entries ->
+                    if (session.currentUid() == uid) _state.update { it.copy(history = entries) }
+                }
+            } catch (error: CancellationException) {
+                throw error
+            } catch (_: Exception) {
+                // Without history the search screen keeps working.
+            }
+        }
+    }
 
     fun loadMore() {
         _state.update { if (it.shownCount >= it.venues.size) it else it.copy(shownCount = it.shownCount + 20) }
@@ -230,6 +430,65 @@ class CourtSearchViewModel @Inject constructor(
         }
     }
 
+    /** Quay lại màn hình (có thể từ Cài đặt): quyền đã bật thì bỏ trạng thái micro mờ. */
+    fun voicePermissionChecked(granted: Boolean) {
+        if (granted && state.value.voiceDenied) _state.update { it.copy(voiceDenied = false) }
+    }
+
+    /** Kết quả xin quyền micro; `true` thì bắt đầu nghe luôn. */
+    fun voicePermission(granted: Boolean) {
+        _state.update { it.copy(voiceDenied = !granted) }
+        if (granted) startVoice()
+    }
+
+    /**
+     * Nghe một câu và điền vào ô AI (spec 022 US4). Không tự gửi nên không tốn lượt AI.
+     * Bấm micro lần nữa thì dừng. Lỗi nhận dạng giữ lại chữ cũ và hiện gợi ý gõ tay.
+     */
+    fun toggleVoice() {
+        if (state.value.listening) stopVoice() else startVoice()
+    }
+
+    fun stopVoice() {
+        voiceJob?.cancel()
+        voiceJob = null
+        _voiceLevel.value = 0f
+        _state.update { it.copy(listening = false) }
+    }
+
+    private fun startVoice() {
+        if (session.currentUid() == null || !state.value.voiceAvailable || state.value.aiBusy) return
+        voiceJob?.cancel()
+        val before = state.value.aiInput
+        _state.update { it.copy(listening = true, notice = null, clarification = null) }
+        voiceJob = viewModelScope.launch {
+            try {
+                voice.listen().collect { event ->
+                    when (event) {
+                        VoiceEvent.Ready -> Unit
+                        is VoiceEvent.Level -> _voiceLevel.value = event.value
+                        is VoiceEvent.Partial -> input(event.text.take(AI_INPUT_MAX))
+                        is VoiceEvent.Final -> input(event.text.take(AI_INPUT_MAX))
+                        is VoiceEvent.Error -> {
+                            input(before)
+                            _state.update { it.copy(notice = if (event.kind == VoiceError.NETWORK) {
+                                SearchNotice.VOICE_NETWORK
+                            } else SearchNotice.VOICE_NO_MATCH) }
+                        }
+                    }
+                }
+            } catch (error: CancellationException) {
+                throw error
+            } catch (_: Exception) {
+                input(before)
+                _state.update { it.copy(notice = SearchNotice.VOICE_NO_MATCH) }
+            } finally {
+                _voiceLevel.value = 0f
+                _state.update { it.copy(listening = false) }
+            }
+        }
+    }
+
     /** Xóa một câu khỏi lịch sử câu hỏi AI trên máy. */
     fun removeHistory(query: String) {
         val uid = session.currentUid() ?: return
@@ -242,8 +501,11 @@ class CourtSearchViewModel @Inject constructor(
         val current = state.value
         val query = current.aiInput.trim()
         if (current.aiBusy || current.usage?.remaining == 0 || lockSeconds(current.usage) > 0 ||
-            query.isEmpty() || query.codePointCount(0, query.length) > 200) return
+            query.isEmpty() || query.codePointCount(0, query.length) > AI_INPUT_MAX) return
         val generation = searchGeneration
+        // Gửi khi micro còn nghe: dừng trước, nếu không kết quả nhận dạng đến muộn sẽ ghi đè câu đã gửi và xóa
+        // câu hỏi chọn ngày AI vừa trả về.
+        if (current.listening) stopVoice()
         _state.update { it.copy(aiBusy = true, clarification = null, notice = null, filtersKept = false) }
         parseJob = viewModelScope.launch {
             try {
@@ -426,16 +688,25 @@ class CourtSearchViewModel @Inject constructor(
         )
         change(criteria, ReviewPreference.entries.firstOrNull { it.name == result.preference })
         if (dropped) _state.update { it.copy(notice = if ("INVALID_DATE" in result.dropped) SearchNotice.INVALID_DATE else SearchNotice.DROPPED_FILTERS) }
-        if (requestedSort == CourtSearchSort.NEAREST && origin == null) sort(requestedSort)
+        // AI-filled filters are saved like a manual search (spec 020 US4), not the question itself.
+        if (requestedSort == CourtSearchSort.NEAREST && origin == null) {
+            recordWhenLocated = true
+            sort(requestedSort)
+        } else recordSearch()
     }
 
     private fun change(
-        criteria: CourtSearchCriteria,
+        requested: CourtSearchCriteria,
         preference: ReviewPreference? = state.value.preference,
         debounce: Boolean = false,
     ) {
+        // Mọi đường vào (hộp giá, bảng lọc, AI, lịch sử, gợi ý nới) đều qua đây nên giá luôn lưu được vào lịch sử.
+        val criteria = requested.withRoundedPrices()
+        // Người dùng đổi điều kiện khác trong lúc chờ vị trí: lần lưu đang chờ không còn đúng.
+        recordWhenLocated = false
         save(criteria)
         _state.update { it.copy(criteria = criteria, preference = preference, clarification = null, notice = null) }
+        _map.update { it.copy(moved = false) }
         search(debounce)
     }
 
@@ -443,12 +714,14 @@ class CourtSearchViewModel @Inject constructor(
         searchJob?.cancel()
         recommendJob?.cancel()
         reviewJob?.cancel()
+        relaxJob?.cancel()
         val generation = ++searchGeneration
         val criteria = state.value.criteria
         val preference = state.value.preference
         _state.update { it.copy(
             venues = emptyList(), shownCount = 20, loading = true, complete = false,
             failed = false, capped = false, recommendations = emptyList(), reviewBusy = false,
+            relaxations = emptyList(),
         ) }
         searchJob = viewModelScope.launch {
             if (debounce) delay(300)
@@ -466,10 +739,187 @@ class CourtSearchViewModel @Inject constructor(
                         recommend(preference, page.venues.take(30).map { it.id }, generation)
                     }
                 }
+                val done = state.value
+                if (generation == searchGeneration && done.complete && done.venues.isEmpty() && criteria.hasFilters()) {
+                    suggestRelaxations(criteria, generation)
+                }
             } catch (error: CancellationException) {
                 throw error
             } catch (_: Exception) {
                 if (generation == searchGeneration) _state.update { it.copy(loading = false, failed = true) }
+            }
+        }
+    }
+
+    /** Bấm một gợi ý nới điều kiện: áp dụng như đổi bộ lọc bằng tay (chip đổi theo, sửa tiếp được). */
+    /** Chuyển Danh sách / Bản đồ (FR-001). Hai chế độ dùng chung tiêu chí và kết quả nên không mất bộ lọc. */
+    fun showMap(visible: Boolean) {
+        _map.update {
+            if (visible) it.copy(visible = true) else it.copy(visible = false, selectedId = null, cardAnchorId = null)
+        }
+    }
+
+    /** Bản đồ báo vùng đang xem; [byUser] khi người dùng kéo/phóng (không tự tải lại, FR-004). */
+    fun mapMoved(viewport: MapViewport, byUser: Boolean) {
+        _map.update { it.copy(viewport = viewport, moved = it.moved || byUser) }
+    }
+
+    /**
+     * Chạm marker ([fromCard] = false) đặt lại thứ tự thẻ quanh sân đó (FR-007); vuốt thẻ ([fromCard] = true) chỉ đổi
+     * marker được làm nổi bật (FR-008); `null` khi chạm vùng trống thì ẩn thẻ (FR-010).
+     */
+    fun selectVenue(id: String?, fromCard: Boolean = false) {
+        _map.update {
+            when {
+                id == null -> it.copy(selectedId = null, cardAnchorId = null)
+                fromCard -> it.copy(selectedId = id)
+                else -> it.copy(selectedId = id, cardAnchorId = id)
+            }
+        }
+    }
+
+    /**
+     * Máy tính bảng: chạm thẻ trong danh sách là chọn sân (spec 021 FR-023): marker nổi bật, thẻ tóm tắt hiện, bản đồ
+     * di tới sân với mức phóng ít nhất [LIST_FOCUS_ZOOM] (giữ mức đang xem nếu đã gần hơn).
+     */
+    fun selectFromList(id: String) {
+        val position = state.value.venues.firstOrNull { it.id == id }?.position
+        _map.update {
+            val zoom = maxOf(it.viewport?.zoom ?: CourtMap.DEFAULT_ZOOM, LIST_FOCUS_ZOOM)
+            it.copy(
+                visible = true,
+                selectedId = id,
+                cardAnchorId = id,
+                focus = position?.let { p -> MapFocus(p, zoom, ++focusId) } ?: it.focus,
+            )
+        }
+    }
+
+    /**
+     * "Tìm ở khu vực này" (FR-005): kết quả đã gồm mọi sân khớp bộ lọc nên chỉ cần bỏ lọc quận (kèm thông báo) để
+     * bản đồ hiện đủ sân trong vùng đang xem.
+     */
+    fun searchThisArea() {
+        val criteria = state.value.criteria
+        if (criteria.districtId == null) {
+            _map.update { it.copy(moved = false) }
+            return
+        }
+        change(criteria.copy(districtId = null))
+        _state.update { it.copy(notice = SearchNotice.MAP_DISTRICT_DROPPED) }
+        recordSearch()
+    }
+
+    /** "Vị trí của tôi" (FR-011, FR-012): chỉ xin quyền khi người dùng bấm. */
+    fun locateOnMap() {
+        if (!location.hasPermission()) {
+            _effects.trySend(CourtSearchEffect.RequestLocation(LocationReason.MAP))
+            return
+        }
+        viewModelScope.launch {
+            val point = location.current()
+            if (point == null) {
+                _state.update { it.copy(notice = SearchNotice.LOCATION_UNAVAILABLE) }
+                return@launch
+            }
+            val here = LatLng(point.latitude, point.longitude)
+            _map.update { it.copy(myLocation = here, focus = MapFocus(here, CourtMap.FOCUS_ZOOM, ++focusId)) }
+            // Cùng một vị trí cho "Sân gần bạn": quyền vừa cấp trên bản đồ thì dải không còn mời "Bật vị trí".
+            _state.update { it.copy(nearbyStatus = NearbyStatus.READY, nearbyLocation = here) }
+            // Vị trí chỉ dùng trên máy để tính khoảng cách (FR-014, FR-015), không lưu vào tiêu chí hay lịch sử.
+            // Mỗi lần định vị lệch vài mét: chỉ tìm lại khi thật sự đổi chỗ, không tải lại danh sách mỗi lần bấm.
+            val previous = origin
+            if (previous == null || GeoDistance.meters(previous, point) > RESEARCH_DISTANCE_METERS) {
+                origin = point
+                search()
+            }
+        }
+    }
+
+    /** Kết quả hộp thoại xin quyền vị trí, theo lý do đã xin. */
+    fun locationResult(reason: LocationReason, granted: Boolean) {
+        when (reason) {
+            LocationReason.SORT -> if (granted) sort(CourtSearchSort.NEAREST)
+                else {
+                    _state.update { it.copy(notice = SearchNotice.LOCATION_UNAVAILABLE) }
+                    recordPendingAiSearch()
+                }
+            LocationReason.MAP -> if (granted) locateOnMap()
+                else _state.update { it.copy(notice = SearchNotice.LOCATION_UNAVAILABLE) }
+            LocationReason.NEARBY -> if (granted) locateNearby()
+                else _state.update { it.copy(notice = SearchNotice.LOCATION_UNAVAILABLE) }
+        }
+    }
+
+    /** Khi màn hình hiện: đã có quyền thì lấy vị trí luôn; chưa có thì chỉ mời bật vị trí, không tự hỏi (FR-012). */
+    fun startNearby() {
+        val status = state.value.nearbyStatus
+        if (status == NearbyStatus.READY || status == NearbyStatus.LOCATING) return
+        if (location.hasPermission()) locateNearby()
+    }
+
+    /** Nút "Bật vị trí" / "Thử lại" của mục "Sân gần bạn" (FR-018). */
+    fun enableNearby() {
+        if (!location.hasPermission()) _effects.trySend(CourtSearchEffect.RequestLocation(LocationReason.NEARBY))
+        else locateNearby()
+    }
+
+    /**
+     * "Xem tất cả trên bản đồ" (FR-017): mở bản đồ quanh vị trí với [zoom]. "Tìm rộng hơn" (FR-018) gọi với [wider]:
+     * phóng vừa đủ để thấy sân gần nhất (đặt zoom cố định thì ở xa trung tâm vẫn có thể không thấy sân nào).
+     */
+    fun openNearbyMap(zoom: Double, wider: Boolean = false) {
+        val here = state.value.nearbyLocation ?: return
+        val nearest = if (wider) {
+            state.value.venues.mapNotNull { it.position?.let { p -> CourtMap.meters(here, p) } }.minOrNull()
+        } else null
+        val target = nearest?.let { CourtMap.zoomToShow(it, here.lat) } ?: zoom
+        _map.update {
+            it.copy(visible = true, myLocation = here, focus = MapFocus(here, target, ++focusId), selectedId = null, cardAnchorId = null)
+        }
+    }
+
+    private fun locateNearby() {
+        _state.update { it.copy(nearbyStatus = NearbyStatus.LOCATING) }
+        viewModelScope.launch {
+            val point = location.current()
+            if (point == null) {
+                _state.update { it.copy(nearbyStatus = NearbyStatus.UNAVAILABLE) }
+                return@launch
+            }
+            val here = LatLng(point.latitude, point.longitude)
+            _state.update { it.copy(nearbyStatus = NearbyStatus.READY, nearbyLocation = here) }
+            _map.update { it.copy(myLocation = here) }
+        }
+    }
+
+    /** Không lấy được vị trí cho yêu cầu "Gần nhất" của AI: lưu lần tìm đã chạy (theo đánh giá). */
+    private fun recordPendingAiSearch() {
+        if (!recordWhenLocated) return
+        recordWhenLocated = false
+        recordSearch()
+    }
+
+    fun applyRelaxation(relaxation: Relaxation) {
+        change(relaxation.criteria)
+        recordSearch()
+    }
+
+    /**
+     * Tính gợi ý nới điều kiện trong app (US6-2: không gọi AI, không trừ lượt). Lỗi đọc dữ liệu thì
+     * không hiện gợi ý, màn hình giữ trạng thái rỗng thường (US6-4).
+     */
+    private fun suggestRelaxations(criteria: CourtSearchCriteria, generation: Int) {
+        val probes = RelaxationPlanner.probes(criteria, now())
+        if (probes.isEmpty()) return
+        relaxJob = viewModelScope.launch {
+            try {
+                val relaxations = RelaxationPlanner.pick(probes, repository.variantPrices(probes.map { it.criteria }))
+                if (generation == searchGeneration) _state.update { it.copy(relaxations = relaxations) }
+            } catch (error: CancellationException) {
+                throw error
+            } catch (_: Exception) {
+                // Suggestions are optional; the empty state stays as is.
             }
         }
     }
@@ -538,7 +988,7 @@ class CourtSearchViewModel @Inject constructor(
             ?.takeIf { it.isBookableAt(now()) },
         sort = CourtSearchSort.entries.firstOrNull { it.name == savedState.get<String>("sort") }
             ?.takeUnless { it == CourtSearchSort.NEAREST } ?: CourtSearchSort.RATING,
-    )
+    ).withRoundedPrices()
 
     private fun save(criteria: CourtSearchCriteria) {
         savedState["keyword"] = criteria.keyword

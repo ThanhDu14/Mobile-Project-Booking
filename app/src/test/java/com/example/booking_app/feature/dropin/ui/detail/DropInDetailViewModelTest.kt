@@ -70,8 +70,13 @@ class DropInDetailViewModelTest {
     }
 
     @Test
-    fun `du nguoi thi FULL`() = runTest {
-        sessionFlow.value = session(capacity = 12, registeredCount = 12, status = SessionStatus.FULL)
+    fun `du nguoi va hang cho da dong (con 20 phut) thi FULL`() = runTest {
+        sessionFlow.value = session(
+            startAt = NOW.plusSeconds(20 * 60L),
+            capacity = 12,
+            registeredCount = 12,
+            status = SessionStatus.FULL,
+        )
         val vm = viewModel()
         advanceUntilIdle()
 

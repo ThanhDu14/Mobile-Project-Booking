@@ -62,6 +62,20 @@
                     app:chipBackgroundColor="?attr/colorTertiaryContainer"
                     app:chipStrokeWidth="0dp"
                     tools:visibility="visible" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/fromWaitlistChip"
+                    style="@style/Widget.Material3.Chip.Assist"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:clickable="false"
+                    android:focusable="false"
+                    android:text="@string/dropin_waitlist_status_promoted"
+                    android:textColor="?attr/colorOnSecondaryContainer"
+                    android:visibility="gone"
+                    app:chipBackgroundColor="?attr/colorSecondaryContainer"
+                    app:chipStrokeWidth="0dp"
+                    tools:visibility="visible" />
             </com.google.android.material.chip.ChipGroup>
 
             <TextView

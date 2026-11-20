@@ -21,6 +21,7 @@ import com.example.booking_app.feature.booking.domain.usecase.HoldSlotsTransacti
 import com.example.booking_app.feature.booking.domain.usecase.ReleaseHoldUseCase
 import com.example.booking_app.feature.booking.domain.usecase.ValidateSlotSelectionUseCase
 import io.mockk.coEvery
+import io.mockk.every
 import io.mockk.mockk
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.flowOf
@@ -41,6 +42,11 @@ class BookingSlotGridViewModelTest {
     val mainRule = MainDispatcherRule()
 
     private val repository: BookingRepository = mockk(relaxed = true)
+    // Giờ server giả: mặc định bằng giờ máy; test lệch giờ đặt serverOffset.
+    private var serverOffset = 0L
+    private val serverTime: com.example.booking_app.feature.booking.data.time.ServerTimeOffsetProvider = mockk {
+        every { now() } answers { System.currentTimeMillis() + serverOffset }
+    }
     private val sessionManager = FakeSessionManager()
     private val validateSlotSelectionUseCase = ValidateSlotSelectionUseCase()
     private val calculateTotalPriceUseCase = CalculateTotalPriceUseCase()
@@ -123,6 +129,7 @@ class BookingSlotGridViewModelTest {
             generateDailySlotsUseCase = generateDailySlotsUseCase,
             holdSlotsTransactionUseCase = holdSlotsTransactionUseCase,
             releaseHoldUseCase = releaseHoldUseCase,
+            serverTime = serverTime,
             defaultDispatcher = mainRule.dispatcher
         )
     }
@@ -168,19 +175,19 @@ class BookingSlotGridViewModelTest {
             vm.onSlotClicked(bookedSlot)
             val effect1 = awaitItem()
             assertTrue(effect1 is BookingSlotUiEffect.ShowErrorSnackbar)
-            assertEquals("Slot này đã được đặt", (effect1 as BookingSlotUiEffect.ShowErrorSnackbar).message)
+            assertEquals("Khung giờ này đã được đặt", (effect1 as BookingSlotUiEffect.ShowErrorSnackbar).message)
 
             vm.onSlotClicked(heldSlot)
             val effect2 = awaitItem()
-            assertEquals("Slot này đang được giữ", (effect2 as BookingSlotUiEffect.ShowErrorSnackbar).message)
+            assertEquals("Khung giờ này đang được giữ", (effect2 as BookingSlotUiEffect.ShowErrorSnackbar).message)
 
             vm.onSlotClicked(blockedSlot)
             val effect3 = awaitItem()
-            assertEquals("Slot này không khả dụng", (effect3 as BookingSlotUiEffect.ShowErrorSnackbar).message)
+            assertEquals("Khung giờ này không khả dụng", (effect3 as BookingSlotUiEffect.ShowErrorSnackbar).message)
 
             vm.onSlotClicked(pastSlot)
             val effect4 = awaitItem()
-            assertEquals("Slot này đã qua giờ", (effect4 as BookingSlotUiEffect.ShowErrorSnackbar).message)
+            assertEquals("Khung giờ này đã qua giờ", (effect4 as BookingSlotUiEffect.ShowErrorSnackbar).message)
 
             // Selection remains 0
             assertEquals(0, vm.uiState.value.selectedSlotsCount)
@@ -362,7 +369,9 @@ class BookingSlotGridViewModelTest {
     @Test
     fun p1_3_raceCondition_snapshotArrivesBeforeMetadata_matrixBuiltSuccessfully() = runTest {
         val busyFlow = MutableSharedFlow<BusySlotsUpdate>(replay = 1)
-        val selectedDateStr = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"))
+        // Cùng múi giờ với ViewModel (giờ Việt Nam); LocalDate.now() theo máy chạy lệch một ngày từ 17:00 UTC.
+        val selectedDateStr = java.time.LocalDate.now(com.example.booking_app.core.schedule.BookingWindow.ZONE)
+            .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"))
         val bookedSlot = TimeSlot("c1_${selectedDateStr}_0600", "c1", selectedDateStr, "0600", "0630", 40000L, SlotStatus.BOOKED)
 
         // Snapshot arrives BEFORE metadata completes
@@ -472,6 +481,20 @@ class BookingSlotGridViewModelTest {
 
         slot = vm.uiState.value.matrixRows.flatMap { it.slots }.find { it.slotId == heldSlot.slotId }
         assertEquals(SlotStatus.AVAILABLE, slot?.status)
+    }
+
+    @Test
+    fun pastSlotsFollowServerTimeNotTheDeviceClock() = runTest {
+        // Đồng hồ máy chậm 3 ngày so với server: theo giờ server, mọi khung "ngày mai" của máy đều đã qua.
+        // Trước đây lưới dùng giờ máy nên vẫn cho chọn, rồi server từ chối lúc giữ chỗ.
+        serverOffset = 3L * 24 * 60 * 60 * 1000
+        val vm = createViewModel()
+        testScheduler.advanceUntilIdle()
+        vm.selectDate(vm.uiState.value.dates[1])
+        testScheduler.advanceUntilIdle()
+
+        val statuses = vm.uiState.value.matrixRows.flatMap { row -> row.slots.map { it.status } }.toSet()
+        assertEquals(setOf(SlotStatus.PAST), statuses)
     }
 
     @Test

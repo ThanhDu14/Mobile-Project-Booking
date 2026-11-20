@@ -251,9 +251,10 @@ class GenerateDailySlotsUseCaseTest {
 
     @Test
     fun goldenTest_indexedRulesMatchesFirstOrNullExactSemantics() {
-        // Test golden: Cùng input (rule chồng lấn, daysOfWeek rỗng / cụ thể, khoảng không có rule)
-        // đảm bảo output dùng indexed rules khớp 100% với ngữ nghĩa firstOrNull tuyến tính
-        val ruleAllDays = PriceRule("r_all", emptyList(), "0600", "1200", 60_000L, "Sáng")
+        // Test golden: Cùng input (rule chồng lấn, mọi ngày / ngày cụ thể, khoảng không có rule)
+        // đảm bảo output dùng indexed rules khớp 100% với ngữ nghĩa firstOrNull tuyến tính.
+        // "Mọi ngày" ghi đủ 1–7 theo schema; daysOfWeek rỗng là không áp dụng (SharedSlotPricingTest).
+        val ruleAllDays = PriceRule("r_all", listOf(1, 2, 3, 4, 5, 6, 7), "0600", "1200", 60_000L, "Sáng")
         val ruleOverlapping1 = PriceRule("r_overlap_1", listOf(2), "1200", "1800", 80_000L, "Thắng vì đứng trước")
         val ruleOverlapping2 = PriceRule("r_overlap_2", listOf(2), "1200", "2000", 120_000L, "Thua vì đứng sau")
         val ruleNight = PriceRule("r_night", listOf(2), "2000", "2200", 100_000L, "Tối")
@@ -274,7 +275,7 @@ class GenerateDailySlotsUseCaseTest {
             currentTimeMillis = 0L
         )
 
-        // 1. Kiểm tra slot sáng (0600-0630): khớp r_all (daysOfWeek rỗng)
+        // 1. Kiểm tra slot sáng (0600-0630): khớp r_all (mọi ngày)
         val slot0600 = slots.find { it.startTime == "0600" }!!
         assertEquals(30_000L, slot0600.price)
         assertEquals(SlotStatus.AVAILABLE, slot0600.status)

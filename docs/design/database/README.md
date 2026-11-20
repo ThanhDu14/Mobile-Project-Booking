@@ -233,9 +233,9 @@ ID document là chính mã `code` (chữ in hoa). Mã phải duy nhất trên to
 
 ### 4.9. `dropInSessions/{id}` và `registrations/{uid}` — C
 
-**Buổi:** `venueId`, `ownerId`, `districtId`, `courtIds`, `date`, `startAt`, `endAt`, `timeSlot` (String: `MORNING` 05:00–11:00, `NOON` 11:00–13:00, `AFTERNOON` 13:00–18:00, `EVENING` 18:00–23:00, theo giờ bắt đầu; D ghi qua `deriveSessionFields()`), `venueSnapshot` (Map: `name`, `address`, `districtName`, chụp lúc tạo/sửa buổi; D ghi qua `deriveSessionFields()`), `level`, `capacity`, `registeredCount` 🔒, `pricePerPerson` (Long), `status` (`OPEN`, `FULL` (server đổi theo `registeredCount`), `CANCELLED` (D hủy buổi), `COMPLETED` (cron của spec 081)), `note`.
+**Buổi:** `venueId`, `ownerId`, `districtId`, `courtIds`, `date`, `startAt`, `endAt`, `timeSlot` (String: `MORNING` 05:00–11:00, `NOON` 11:00–13:00, `AFTERNOON` 13:00–18:00, `EVENING` 18:00–23:00, theo giờ bắt đầu; D ghi qua `deriveSessionFields()`), `venueSnapshot` (Map: `name`, `address`, `districtName`, chụp lúc tạo/sửa buổi; D ghi qua `deriveSessionFields()`), `level`, `capacity`, `registeredCount` 🔒, `pricePerPerson` (Long), `status` (`OPEN`, `FULL` (server đổi theo `registeredCount`), `CANCELLED` (D hủy buổi), `COMPLETED` (cron của spec 081)), `note`, `waitlistNextTicket` 🔒 (Int, bắt đầu từ 1, chỉ tăng; số thứ tự cấp cho lượt chờ kế tiếp), `waitlistTickets` 🔒 (Array\<Int>, số vé của các lượt đang chờ, tăng dần, không có danh tính), `waitlistCount` 🔒 (Int, số lượt đang chờ).
 
-**Đăng ký** (ID = `uid`; mọi trường 🔒, client chỉ đọc, ghi qua Edge Function): `userId` (String), `sessionId` (String), `venueId` (String), `sessionStartAt`, `sessionEndAt` (Timestamp, sao từ buổi), `partySize` (Int), `status` (`REGISTERED`, `WAITLISTED`, `CANCELLED`, `CHECKED_IN`), `paymentMethod` (`MOCK_PAY`, `AT_VENUE`), `paymentStatus` (`PAID`, `UNPAID`, `REFUNDED`), `pricePerPerson` (Long, giá chốt lúc đăng ký), `amount` (Long), `refundAmount` (Long?), `qrToken` (String?, `null` khi `CANCELLED`), `ticketCode` (String?, `DI-XXXXXXXX`, `null` khi `CANCELLED`), `requestId` (String), `lastAddRequestId` (String?), `cancelRequestId` (String?), `sessionChanged` (Boolean), `registeredAt` (Timestamp), `cancelledAt` (Timestamp?), `cancelledBy` (`USER`, `OWNER`, `SYSTEM`), `checkedInAt` (Timestamp?), `waitlistedAt` (Timestamp?), `createdAt`, `updatedAt` (Timestamp). Đăng ký, hủy và đẩy người từ hàng chờ lên đều chạy trong transaction trên document buổi (`registeredCount`).
+**Đăng ký** (ID = `uid`; mọi trường 🔒, client chỉ đọc, ghi qua Edge Function): `userId` (String), `sessionId` (String), `venueId` (String), `sessionStartAt`, `sessionEndAt` (Timestamp, sao từ buổi), `partySize` (Int), `status` (`REGISTERED`, `WAITLISTED`, `CANCELLED`, `CHECKED_IN`), `paymentMethod` (`MOCK_PAY`, `AT_VENUE`), `paymentStatus` (`PAID`, `UNPAID`, `REFUNDED`), `pricePerPerson` (Long, giá chốt lúc đăng ký), `amount` (Long), `refundAmount` (Long?), `qrToken` (String?, `null` khi `CANCELLED`), `ticketCode` (String?, `DI-XXXXXXXX`, `null` khi `CANCELLED`), `requestId` (String), `lastAddRequestId` (String?), `cancelRequestId` (String?), `sessionChanged` (Boolean), `registeredAt` (Timestamp), `cancelledAt` (Timestamp?), `cancelledBy` (`USER`, `OWNER`, `SYSTEM`), `checkedInAt` (Timestamp?), `waitlistedAt` (Timestamp?), `waitlistTicket` (Int?, thứ tự trong hàng chờ), `promotedAt` (Timestamp?, lúc được đẩy từ hàng chờ lên), `waitlistEndReason` (String?: `LEFT`, `AUTO_LEFT_OVERLAP`, `CLOSED`, `SESSION_CANCELLED`; lý do rời hàng chờ mà không được nhận), `createdAt`, `updatedAt` (Timestamp). Lượt chờ dùng chung document đăng ký (`status = WAITLISTED`), giá được chốt lúc vào hàng chờ. Đăng ký, hủy và đẩy người từ hàng chờ lên đều chạy trong transaction trên document buổi (`registeredCount`).
 
 ### 4.10. `groups/{groupId}` — C
 
@@ -254,7 +254,11 @@ ID document là chính mã `code` (chữ in hoa). Mã phải duy nhất trên to
 
 ### 4.12. `reports/{reportId}` — D
 
-`reporterId`, `targetType` (`POST`, `MESSAGE`, `REVIEW`, `VENUE`, `USER`, `DROP_IN`), `targetPath` (đường dẫn document), `reason`, `detail`, `status` 🔒 (`OPEN`, `RESOLVED`, `DISMISSED`), `action` 🔒 (`NONE`, `HIDE_CONTENT`, `LOCK_USER`, `LOCK_VENUE`), `handledBy` 🔒, `handledAt` 🔒.
+`reporterId`, `targetType` (`POST`, `MESSAGE`, `REVIEW`, `VENUE`, `USER`, `GROUP`, `DROP_IN`), `targetPath` (đường dẫn document), `reason`, `detail`, `status` 🔒 (`OPEN`, `RESOLVED`, `DISMISSED`), `action` 🔒 (`NONE`, `HIDE_CONTENT`, `LOCK_USER`, `LOCK_VENUE`, `LOCK_GROUP`), `handledBy` 🔒, `handledAt` 🔒.
+
+`HIDE_CONTENT`: bài nhóm ghi `hiddenBy = SYSTEM`, `hiddenByUid = null`; tin nhắn ghi `text = ""`. `LOCK_GROUP` ghi `groups/{id}.status = LOCKED`. Chủ nhóm không được xóa nhóm đang khóa; admin mở khóa qua `admin-manage-group` với `{ groupId, status: ACTIVE }` (hoặc khóa với `LOCKED`). Mọi thao tác xóa nhóm phải kiểm tra trạng thái trong transaction theo contract 090; function `group-manage` chưa có trong repo này.
+
+Preview kiểm duyệt: admin có claim ADMIN, hồ sơ hiện tại vẫn ADMIN/ACTIVE và chưa yêu cầu xóa tài khoản được `get` từng document `groups/{id}/posts/{postId}` và `chats/{id}/messages/{messageId}`, kể cả HIDDEN. Quyền này không mở `list` hay ghi trực tiếp. Quyền đọc của thành viên nhóm/người tham gia chat thuộc contract 090/091 và chưa được triển khai qua khối preview này. Màn admin đọc nội dung từ `content`, `text`, `comment` và tên từ `authorSnapshot`/`senderSnapshot`.
 
 Báo cáo bài đăng nhóm (spec 090, Edge Function `group-post`): `reportId` = `POST_{groupId}_{postId}_{uid}` (mỗi người báo một lần), `targetPath` = `groups/{groupId}/posts/{postId}`; `reason` dùng chung `SPAM`, `OFFENSIVE`, `SCAM`, `INAPPROPRIATE`, `OTHER`; `detail` ≤ 500 ký tự (bắt buộc khi `OTHER`).
 
@@ -339,6 +343,8 @@ Người phụ trách bổ sung vào `firestore.indexes.json` khi viết `plan.m
 | `registrations` (collection group) | `userId`, `sessionStartAt desc` | Tab "Đã qua" (08) |
 | `registrations` (collection group) | `qrToken` | Check-in bằng QR (Edge Function của D) |
 | `registrations` (collection group) | `ticketCode` | Check-in bằng mã vé (Edge Function của D) |
+| `registrations` | `status`, `waitlistTicket` | Lấy người chờ kế tiếp theo thứ tự (081) |
+| `dropInSessions` | `status`, `endAt` | `dropin-close` tìm buổi đã qua `endAt` để chuyển `COMPLETED` (081; bước đóng hàng chờ dùng index `status`, `startAt` sẵn có) |
 
 ## 7. Phân quyền (tóm tắt Security Rules)
 
@@ -400,7 +406,8 @@ Mỗi dòng trên cần ít nhất một test Emulator "được phép" và mộ
 | `booking-timeout` (pg_cron mỗi phút) | Đơn `PENDING` quá `approvalDeadline` → `REJECTED`, hoàn 100% vào ví giả lập, xóa slot, gửi `BOOKING_REJECTED` | D |
 | `booking-finalize` (pg_cron mỗi phút) | Đơn `CONFIRMED` đã qua giờ kết thúc: có `checkedInAt` → `COMPLETED` + `completedAt`; không có → `NO_SHOW` | B |
 | `checkin-booking` | Chủ sân check-in đơn đặt sân bằng QR hoặc mã đặt sân: kiểm tra quyền, trạng thái, khung giờ cho phép; ghi `checkedInAt`, và `paymentStatus = PAID` khi chủ sân xác nhận đã thu tiền | D |
-| `register-drop-in`, `cancel-drop-in` | Đăng ký/hủy, trả chỗ; hook hàng chờ của 081 | C |
+| `register-drop-in`, `cancel-drop-in` | Đăng ký/hủy, trả chỗ; vào/rời hàng chờ (081); hủy làm trả chỗ thì đẩy người chờ lên ngay trong cùng transaction | C |
+| `dropin-close` (pg_cron mỗi phút) | Đóng hàng chờ lúc T−30 phút (lượt chờ còn lại → `waitlistEndReason = CLOSED`, gửi `DROPIN_WAITLIST_CLOSED`); chuyển buổi đã qua sang `COMPLETED`; header `x-cron-secret` | C |
 | `_shared/dropin.ts` | Helper dùng chung cho 081, 112, `delete-account` (`deriveSessionFields`, `computeRefund`, `cancelRegistrationInTx`, `afterSpotsReleased`) | C |
 | `group-manage` | Nhóm/CLB: `create`, `update`, `delete`, `join`, `cancelRequest`, `leave`, `approve`, `reject`, `setRole`, `transferOwner`, `remove`; cấp signed upload URL cho ảnh đại diện | C |
 | `group-post` | Bài đăng nhóm: `create`, `update`, `delete`, `hide`, `unhide`, `attend`, `unattend`, `report` | C |

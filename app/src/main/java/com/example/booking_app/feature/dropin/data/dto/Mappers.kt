@@ -14,6 +14,9 @@ import com.example.booking_app.feature.dropin.domain.model.PaymentStatus
 import com.example.booking_app.feature.dropin.domain.model.RegistrationStatus
 import com.example.booking_app.feature.dropin.domain.model.SessionStatus
 import com.example.booking_app.feature.dropin.domain.model.TimeSlot
+import com.example.booking_app.feature.dropin.domain.model.WaitlistEndReason
+import com.example.booking_app.feature.dropin.domain.model.WaitlistJoinResult
+import com.example.booking_app.feature.dropin.domain.model.WaitlistPosition
 import com.google.firebase.Timestamp
 import java.io.IOException
 import java.time.Instant
@@ -68,6 +71,7 @@ fun SessionDto.toDomain(venueActive: Boolean = true, courtNames: List<String> = 
     val venue = venueId?.takeIf { it.isNotBlank() } ?: return null
     val start = startAt ?: combine(date, startTime) ?: return null
     val end = endAt ?: combine(date, endTime) ?: return null
+    val tickets = waitlistTickets.map { it.coerceIn(0L, Int.MAX_VALUE.toLong()).toInt() }
     val cap = (capacity ?: 0L).coerceIn(0L, Int.MAX_VALUE.toLong()).toInt()
     val count = (registeredCount ?: 0L).coerceIn(0L, Int.MAX_VALUE.toLong()).toInt()
     return DropInSession(
@@ -90,6 +94,8 @@ fun SessionDto.toDomain(venueActive: Boolean = true, courtNames: List<String> = 
         status = status.toEnumOrNull<SessionStatus>() ?: SessionStatus.CANCELLED,
         note = note?.takeIf { it.isNotBlank() },
         venueActive = venueActive,
+        waitlistTickets = tickets,
+        waitlistCount = tickets.size,
     )
 }
 
@@ -131,6 +137,9 @@ fun RegistrationDto.toDomain(): DropInRegistration? {
         sessionEndAt = sessionEndAt,
         registeredAt = registeredAt,
         cancelledBy = cancelledBy.toEnumOrNull<CancelledBy>(),
+        waitlistTicket = waitlistTicket?.coerceIn(0L, Int.MAX_VALUE.toLong())?.toInt(),
+        promotedAt = promotedAt,
+        waitlistEndReason = waitlistEndReason.toEnumOrNull<WaitlistEndReason>(),
     )
 }
 
@@ -160,6 +169,9 @@ fun RegistrationResultDto.toDomain(fallbackSessionId: String, uid: String): Drop
         sessionEndAt = null,
         registeredAt = registeredAt.asInstant(),
         cancelledBy = null,
+        waitlistTicket = waitlistTicket,
+        promotedAt = promotedAt.asInstant(),
+        waitlistEndReason = waitlistEndReason.toEnumOrNull<WaitlistEndReason>(),
     )
 }
 
@@ -180,8 +192,15 @@ fun dropInErrorOf(
     remaining: Int? = null,
     httpStatus: Int? = null,
     maxAdditional: Int? = null,
+    waitlistOpen: Boolean? = null,
 ): DropInError = when (code) {
-    "SESSION_FULL" -> DropInError.SessionFull(remaining = (remaining ?: 0).coerceAtLeast(0))
+    "SESSION_FULL" -> DropInError.SessionFull(
+        remaining = (remaining ?: 0).coerceAtLeast(0),
+        waitlistOpen = waitlistOpen == true,
+    )
+    "SESSION_HAS_SPOTS" -> DropInError.SessionHasSpots(remaining = (remaining ?: 0).coerceAtLeast(0))
+    "WAITLIST_CLOSED" -> DropInError.WaitlistClosed()
+    "ALREADY_PROMOTED" -> DropInError.AlreadyPromoted()
     "SESSION_STARTED" -> DropInError.SessionStarted()
     "SESSION_CANCELLED" -> DropInError.SessionCancelled()
     "VENUE_INACTIVE" -> DropInError.VenueInactive()
@@ -223,5 +242,21 @@ fun Throwable.toDropInError(): DropInError = when (this) {
 
 private fun FunctionHttpException.toDropInError(): DropInError {
     val parsed = FunctionErrorBody.parse(body)
-    return dropInErrorOf(parsed?.code, parsed?.remaining, status, parsed?.maxAdditional)
+    return dropInErrorOf(parsed?.code, parsed?.remaining, status, parsed?.maxAdditional, parsed?.waitlistOpen)
+}
+
+/**
+ * Response vào hàng chờ (spec 081 contract mục 1): lượt chờ kèm vị trí. `null` khi thiếu `waitlist.position`
+ * (response không đúng contract); `total` thiếu hoặc nhỏ hơn vị trí thì lấy bằng vị trí.
+ */
+fun RegisterDropInResponse.toWaitlistJoinResult(fallbackSessionId: String, uid: String): WaitlistJoinResult? {
+    val info = waitlist ?: return null
+    val position = info.position?.takeIf { it >= 1 } ?: return null
+    val total = maxOf(info.total ?: position, position)
+    return WaitlistJoinResult(
+        registration = registration.toDomain(fallbackSessionId, uid).let {
+            if (registration.status == null) it.copy(status = RegistrationStatus.WAITLISTED) else it
+        },
+        position = WaitlistPosition(position = position, total = total),
+    )
 }

@@ -29,6 +29,9 @@ data class SessionDto(
     val pricePerPerson: Long? = null,
     val status: String? = null,
     val note: String? = null,
+    /** Spec 081: số vé của các lượt đang chờ (chỉ server ghi). */
+    val waitlistTickets: List<Long> = emptyList(),
+    val waitlistCount: Long? = null,
 ) {
     companion object {
         /** Đọc từ `DocumentSnapshot.data`; không ném lỗi với kiểu lạ. */
@@ -58,6 +61,8 @@ data class SessionDto(
                 pricePerPerson = data["pricePerPerson"].asLong(),
                 status = data.string("status"),
                 note = data.string("note"),
+                waitlistTickets = (data["waitlistTickets"] as? List<*>)?.mapNotNull { it.asLong() }.orEmpty(),
+                waitlistCount = data["waitlistCount"].asLong(),
             )
         }
     }

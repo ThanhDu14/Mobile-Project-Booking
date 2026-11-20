@@ -472,6 +472,9 @@ verify_jwt = false
 [functions.admin-moderate-report]
 verify_jwt = false
 
+[functions.admin-manage-group]
+verify_jwt = false
+
 [functions.admin-manage-user]
 verify_jwt = false
 
@@ -491,6 +494,9 @@ verify_jwt = false
 [functions.expire-holds]
 verify_jwt = false
 
+[functions.booking-timeout]
+verify_jwt = false
+
 [functions.player-cancel-booking]
 verify_jwt = false
 
@@ -498,6 +504,9 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.cancel-drop-in]
+verify_jwt = false
+
+[functions.dropin-close]
 verify_jwt = false
 
 [functions.review]

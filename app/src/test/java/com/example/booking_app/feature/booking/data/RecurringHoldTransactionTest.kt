@@ -257,6 +257,24 @@ class RecurringHoldTransactionTest {
     }
 
     @Test
+    fun releaseRecurringHold_neverReleasesABookedSlot() = runTest {
+        val slotId = "${courtId}_20261110_1800"
+        val slotRef: DocumentReference = mockk()
+        val slotSnap: DocumentSnapshot = mockk()
+
+        every { slotsCollection.document(slotId) } returns slotRef
+        every { transaction.get(slotRef) } returns slotSnap
+        every { slotSnap.exists() } returns true
+        // Slot đã BOOKED vẫn giữ holdBy của người đặt; nhả nó sẽ mở đường đặt trùng.
+        every { slotSnap.getString("status") } returns "BOOKED"
+        every { slotSnap.getString("holdBy") } returns userId
+
+        dataSource.releaseRecurringHold(recurringGroupId = "group-123", slotIds = listOf(slotId), userId = userId)
+
+        io.mockk.verify(exactly = 0) { transaction.update(slotRef, any<Map<String, Any?>>()) }
+    }
+
+    @Test
     fun releaseRecurringHold_updatesOwnedSlots_withoutWritingServerOwnedGroup() = runTest {
         val slotId = "${courtId}_20261110_1800"
         val slotRef: DocumentReference = mockk()
@@ -265,6 +283,7 @@ class RecurringHoldTransactionTest {
         every { slotsCollection.document(slotId) } returns slotRef
         every { transaction.get(slotRef) } returns slotSnap
         every { slotSnap.exists() } returns true
+        every { slotSnap.getString("status") } returns "HELD"
         every { slotSnap.getString("holdBy") } returns userId
 
         dataSource.releaseRecurringHold(

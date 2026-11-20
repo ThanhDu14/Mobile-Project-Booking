@@ -19,7 +19,7 @@ Request: `{ "action": "...", "requestId": "uuid", ...tham số }`. Quy tắc ki�
 |---|---|---|---|
 | `create` | `name`, `description`, `districtId`, `visibility`, `hasAvatar` | `201 { group, avatarUpload? }`; `avatarUpload = { path, signedUrl, token }` khi `hasAvatar` | — |
 | `update` | `groupId`, các trường đổi (`name`, `description`, `districtId`, `visibility`), `avatar` (`KEEP`, `REPLACE`, `CONFIRM`, `REMOVE`) | `200 { group, avatarUpload?, autoApproved }` | `JOIN_APPROVED` cho người được duyệt tự động (R12) |
-| `delete` | `groupId`, `confirmName` | `200 { deleted: true }` | — |
+| `delete` | `groupId`, `confirmName`; chỉ khi `status == ACTIVE`, nhóm `LOCKED` trả `423 GROUP_LOCKED` và chờ admin mở khóa | `200 { deleted: true }` | — |
 | `join` | `groupId` | `200 { result }` với `result` là `JOINED` hoặc `REQUESTED` | `JOIN_REQUESTED` khi `REQUESTED` |
 | `cancelRequest` | `groupId` | `200` | — |
 | `leave` | `groupId` | `200` | — |

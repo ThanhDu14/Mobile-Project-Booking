@@ -94,6 +94,23 @@ class CancelDropInViewModelTest {
     }
 
     @Test
+    fun `T029 - PROMOTED_GRACE hien ly do duoc nhan tu hang cho, WAITLIST_LEAVE khong mat phi`() = runTest {
+        assertEquals(
+            CancelQuoteText.REFUND_PROMOTED_GRACE,
+            CancelQuoteText.of(CancelQuote(120_000, CancelReason.PROMOTED_GRACE)),
+        )
+        assertEquals(CancelQuoteText.FREE, CancelQuoteText.of(CancelQuote(0, CancelReason.WAITLIST_LEAVE)))
+        assertTrue(CancelQuote(0, CancelReason.WAITLIST_LEAVE).isFree)
+
+        val expected = CancelQuote(120_000, CancelReason.PROMOTED_GRACE)
+        quoteResults += Result.success(expected)
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        assertEquals(expected, (vm.uiState.value as CancelDropInUiState.Quote).quote)
+    }
+
+    @Test
     fun `dang tinh quote thi trang thai Quoting`() = runTest {
         val vm = CancelDropInViewModel(SavedStateHandle(mapOf("sessionId" to "s1")), { _, _ ->
             CompletableDeferred<Result<CancelQuote>>().await()

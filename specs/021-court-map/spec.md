@@ -17,6 +17,12 @@
 - Q: Khu vực mặc định khi không có vị trí là ở đâu? → A: Luôn mở ở trung tâm TP.HCM, mức phóng thấy được vài quận.
 - Q: Mục "Sân gần bạn" đặt ở đâu? → A: Ngay bên dưới thanh tìm kiếm trên màn hình tìm kiếm của spec 020.
 
+### Session 2026-11-18
+
+- Q: Đợt triển khai này làm tới đâu? → A: Đủ US1–US4 (bản đồ và thẻ tóm tắt, cụm marker, vuốt thẻ, "Tìm ở khu vực này", "Vị trí của tôi", "Sân gần bạn").
+- Q: Bản đồ lấy danh sách sân thế nào? → A: Dùng chung kết quả tìm kiếm của spec 020 (cùng bộ lọc, cùng repository), lọc theo vùng đang xem trên máy; không truy vấn geohash theo vùng. Vì kết quả đã gồm mọi sân khớp bộ lọc, "Tìm ở khu vực này" chỉ cần bỏ lọc quận và chỉ hiện khi đang lọc quận.
+- Q: Nút chuyển Danh sách / Bản đồ đặt ở đâu? → A: Nút nổi tròn giữa cạnh dưới màn tìm kiếm, luôn thấy khi cuộn.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Xem sân trên bản đồ và mở chi tiết (Priority: P1)

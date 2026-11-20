@@ -75,7 +75,9 @@ class RecurringBookingRepositoryImpl @Inject constructor(
         dates: List<String>
     ): Result<List<TimeSlot>> {
         return safeApiCall {
-            remoteDataSource.getBusySlotsForDates(venueId, dates).map { BookingSlotMapper.toDomain(it) }
+            remoteDataSource.getBusySlotsForDates(venueId, dates).map {
+                BookingSlotMapper.toDomain(it, nowMillis = serverTimeOffsetProvider.now())
+            }
         }
     }
 

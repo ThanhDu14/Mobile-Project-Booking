@@ -24,6 +24,7 @@ import com.example.booking_app.databinding.FragmentDropinDetailBinding
 import com.example.booking_app.feature.dropin.domain.model.DropInSession
 import com.example.booking_app.feature.dropin.domain.model.SessionStatus
 import com.example.booking_app.feature.dropin.ui.common.DropInUiText
+import com.example.booking_app.feature.dropin.ui.confirm.ConfirmMode
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
@@ -34,7 +35,7 @@ import javax.inject.Inject
  * Chi tiết buổi vãng lai (US1 T029, US2 T041; contracts/ui-screens.md mục 1–2).
  *
  * - Số chỗ cập nhật trực tiếp qua `uiState` (listener gỡ khi Fragment dừng, FR-005).
- * - Không có phần "Người tham gia" (FR-021); `waitlist_container` để trống cho spec 081.
+ * - Không có phần "Người tham gia" (FR-021); `waitlist_container` hiện "N người đang chờ" / "Bạn đang ở vị trí thứ N" (spec 081).
  * - "Đăng ký": đã đăng nhập thì sang bước xác nhận; khách thì hỏi đăng nhập rồi mở `nav_auth` kèm
  *   `returnTo = smashnow://dropin/confirm/{sessionId}`. Đăng nhập xong `MainActivity` đóng `nav_auth` (chi tiết buổi
  *   còn nguyên bên dưới) rồi mở deep link đó, nên người chơi vào thẳng bước xác nhận, Back về lại buổi.
@@ -54,6 +55,8 @@ class DropInDetailFragment : Fragment(R.layout.fragment_dropin_detail) {
 
         binding.toolbar.setNavigationOnClickListener { findNavController().popBackStack() }
         binding.registerButton.setOnClickListener { viewModel.onRegisterClicked() }
+        binding.joinWaitlistButton.setOnClickListener { viewModel.onJoinWaitlistClicked() }
+        binding.viewWaitlistButton.setOnClickListener { viewModel.onViewWaitlistClicked() }
         binding.viewTicketButton.setOnClickListener { viewModel.onViewTicketClicked() }
 
         viewLifecycleOwner.lifecycleScope.launch {
@@ -63,12 +66,15 @@ class DropInDetailFragment : Fragment(R.layout.fragment_dropin_detail) {
                     viewModel.events.collect { event ->
                         when (event) {
                             is DropInDetailEvent.OpenConfirm -> navigateSafely(
-                                DropInDetailFragmentDirections.actionDropInDetailToConfirm(event.sessionId),
+                                DropInDetailFragmentDirections.actionDropInDetailToConfirm(event.sessionId, event.mode),
                             )
                             is DropInDetailEvent.OpenTicket -> navigateSafely(
                                 DropInDetailFragmentDirections.actionDropInDetailToTicket(event.sessionId),
                             )
-                            is DropInDetailEvent.RequireLogin -> showLoginPrompt(event.sessionId)
+                            is DropInDetailEvent.OpenWaitlist -> navigateSafely(
+                                DropInDetailFragmentDirections.actionDropInDetailToWaitlist(event.sessionId),
+                            )
+                            is DropInDetailEvent.RequireLogin -> showLoginPrompt(event.sessionId, event.mode)
                         }
                     }
                 }
@@ -99,6 +105,7 @@ class DropInDetailFragment : Fragment(R.layout.fragment_dropin_detail) {
         if (state is DropInDetailUiState.Content) {
             renderSession(binding, state.session)
             renderAction(binding, state.action)
+            renderWaitlist(binding, state)
         }
     }
 
@@ -143,6 +150,8 @@ class DropInDetailFragment : Fragment(R.layout.fragment_dropin_detail) {
     private fun renderAction(binding: FragmentDropinDetailBinding, action: DetailAction) {
         binding.registerButton.isVisible = action == DetailAction.REGISTER
         binding.viewTicketButton.isVisible = action == DetailAction.VIEW_TICKET
+        binding.joinWaitlistButton.isVisible = action == DetailAction.JOIN_WAITLIST
+        binding.viewWaitlistButton.isVisible = action == DetailAction.VIEW_WAITLIST
         binding.fullChip.isVisible = action == DetailAction.FULL
         val status = when (action) {
             DetailAction.CLOSED -> R.string.dropin_detail_closed
@@ -152,24 +161,50 @@ class DropInDetailFragment : Fragment(R.layout.fragment_dropin_detail) {
         binding.actionStatus.isVisible = status != null
         status?.let { binding.actionStatus.setText(it) }
         // "Đi tối đa 4 người mỗi lượt" chỉ có nghĩa khi còn đăng ký được.
-        binding.maxPartyHint.isVisible = action == DetailAction.REGISTER
+        binding.maxPartyHint.isVisible = action == DetailAction.REGISTER || action == DetailAction.JOIN_WAITLIST
     }
 
-    /** Khách bấm "Đăng ký" (T041): hỏi trước, đồng ý thì mở đăng nhập (spec 010) kèm `returnTo`. */
-    private fun showLoginPrompt(sessionId: String) {
+    /**
+     * Spec 081: thẻ hàng chờ. Hàng chờ mở thì "N người đang chờ"; đang chờ thì "Bạn đang ở vị trí thứ N" (cập nhật trực tiếp
+     * theo `waitlistTickets` của buổi). Các trường hợp khác không hiện thẻ.
+     */
+    private fun renderWaitlist(binding: FragmentDropinDetailBinding, state: DropInDetailUiState.Content) {
+        val position = state.waitlist
+        val title = when {
+            state.action == DetailAction.VIEW_WAITLIST && position != null ->
+                getString(R.string.dropin_waitlist_detail_position, position.position)
+            state.action == DetailAction.VIEW_WAITLIST -> getString(R.string.dropin_mine_status_waitlisted)
+            state.action == DetailAction.JOIN_WAITLIST ->
+                state.session.waitlistCount.let { count ->
+                    if (count > 0) {
+                        resources.getQuantityString(R.plurals.dropin_waitlist_count, count, count)
+                    } else {
+                        getString(R.string.dropin_waitlist_empty_hint)
+                    }
+                }
+            else -> null
+        }
+        binding.waitlistCard.isVisible = title != null
+        title?.let { binding.waitlistTitle.text = it }
+        binding.waitlistNote.isVisible = state.action == DetailAction.JOIN_WAITLIST
+    }
+
+    /** Khách bấm "Đăng ký" hoặc "Vào hàng chờ" (T041): hỏi trước, đồng ý thì mở đăng nhập (spec 010) kèm `returnTo`. */
+    private fun showLoginPrompt(sessionId: String, mode: ConfirmMode) {
+        val waitlist = mode == ConfirmMode.WAITLIST
         loginPrompt?.dismiss()
         loginPrompt = MaterialAlertDialogBuilder(requireContext())
-            .setTitle(R.string.dropin_detail_login_title)
-            .setMessage(R.string.dropin_detail_login_message)
+            .setTitle(if (waitlist) R.string.dropin_waitlist_login_title else R.string.dropin_detail_login_title)
+            .setMessage(if (waitlist) R.string.dropin_waitlist_login_message else R.string.dropin_detail_login_message)
             .setNegativeButton(R.string.dropin_detail_later, null)
-            .setPositiveButton(R.string.dropin_detail_login) { _, _ -> openLogin(sessionId) }
+            .setPositiveButton(R.string.dropin_detail_login) { _, _ -> openLogin(sessionId, mode) }
             .show()
     }
 
-    private fun openLogin(sessionId: String) {
+    private fun openLogin(sessionId: String, mode: ConfirmMode) {
         val nav = findNavController()
         if (nav.currentDestination?.id != R.id.dropInDetailFragment) return
-        authNavigator.openLogin(nav, returnTo = confirmDeepLink(sessionId))
+        authNavigator.openLogin(nav, returnTo = confirmDeepLink(sessionId, mode))
     }
 
     /** Bấm liên tiếp không mở chồng hai màn hình. */
@@ -189,12 +224,13 @@ class DropInDetailFragment : Fragment(R.layout.fragment_dropin_detail) {
     }
 
     private companion object {
-        /** Deep link của `dropInConfirmFragment` trong `nav_dropin.xml`. */
-        fun confirmDeepLink(sessionId: String): Uri = Uri.Builder()
+        /** Deep link của `dropInConfirmFragment` trong `nav_dropin.xml`; chế độ hàng chờ thêm `?mode=WAITLIST`. */
+        fun confirmDeepLink(sessionId: String, mode: ConfirmMode): Uri = Uri.Builder()
             .scheme("smashnow")
             .authority("dropin")
             .appendPath("confirm")
             .appendPath(sessionId)
+            .apply { if (mode == ConfirmMode.WAITLIST) appendQueryParameter("mode", mode.name) }
             .build()
     }
 }

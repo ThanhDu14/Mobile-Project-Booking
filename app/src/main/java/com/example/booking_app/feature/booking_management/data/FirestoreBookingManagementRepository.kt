@@ -102,8 +102,8 @@ class FirestoreBookingManagementRepository @Inject constructor(
                     }
                     true
                 }.sortedWith(Comparator { d1, d2 ->
-                    val t1 = d1.getTimestamp(sort.field)?.seconds ?: 0L
-                    val t2 = d2.getTimestamp(sort.field)?.seconds ?: 0L
+                    val t1 = (d1.get(sort.field) as? Timestamp)?.seconds ?: 0L
+                    val t2 = (d2.get(sort.field) as? Timestamp)?.seconds ?: 0L
                     val cmp = if (sort.direction == Query.Direction.DESCENDING) t2.compareTo(t1) else t1.compareTo(t2)
                     if (cmp != 0) cmp else {
                         if (sort.direction == Query.Direction.DESCENDING) d2.id.compareTo(d1.id) else d1.id.compareTo(d2.id)
@@ -145,7 +145,9 @@ class FirestoreBookingManagementRepository @Inject constructor(
         }
         val nextCursor = if (docs.size > pageSize) {
             val last = page.last()
-            val timestamp = last.getTimestamp(bookingSort(tab).field)
+            // get() thay vì getTimestamp(): một đơn có trường sắp xếp sai kiểu (từng bị lưu dạng chuỗi) chỉ làm
+            // dừng phân trang, không làm hỏng cả tab.
+            val timestamp = last.get(bookingSort(tab).field) as? Timestamp
             if (timestamp != null) {
                 BookingPageCursor(timestamp, last.id).encode(tab, uid)
             } else null
@@ -157,16 +159,19 @@ class FirestoreBookingManagementRepository @Inject constructor(
     override fun observeTabInvalidations(tab: BookingTab): Flow<Unit> {
         return session.sessionState.map { session.currentUid() }.distinctUntilChanged().flatMapLatest { uid ->
             if (uid == null) flowOf(Unit) else callbackFlow {
+                // Snapshot đầu tiên chỉ là dữ liệu hiện có (màn hình vừa tải trang đầu rồi); snapshot xác nhận từ
+                // server không kèm thay đổi cũng bỏ qua. Trước đây mỗi lần mở tab tải trang đầu 2–3 lần và danh
+                // sách nhảy về đầu dù không đơn nào đổi.
+                var initial = true
                 val registration = firestore.collection("bookings")
                     .whereEqualTo("userId", uid)
-                    .addSnapshotListener { _, error ->
-                        if (session.currentUid() == uid) {
-                            if (error != null) {
-                                // Do not crash flow on snapshot error
-                            } else {
-                                trySend(Unit)
-                            }
+                    .addSnapshotListener { snapshot, error ->
+                        if (session.currentUid() != uid || error != null || snapshot == null) return@addSnapshotListener
+                        if (initial) {
+                            initial = false
+                            return@addSnapshotListener
                         }
+                        if (snapshot.documentChanges.isNotEmpty()) trySend(Unit)
                     }
                 awaitClose { registration.remove() }
             }
