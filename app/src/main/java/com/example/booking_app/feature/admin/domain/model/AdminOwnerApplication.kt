@@ -23,4 +23,5 @@ data class AdminOwnerApplication(
     val latitude: Double? = null,
     val longitude: Double? = null,
     val districtName: String = "",
+    val purpose: String = "OWNER_ONBOARDING",
 )
