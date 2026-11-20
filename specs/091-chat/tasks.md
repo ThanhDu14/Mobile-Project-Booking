@@ -228,10 +228,13 @@ Task của spec khác ghi là `010-T###`, `070-T###`, `090-T###`.
 - [X] T053 Cài `anonymizeCommunityChats(uid)` trong `FN/_shared/chats.ts` theo [research R16](research.md#r16-người-dùng-xóa-tài-khoản-edge-cases-spec-011) kèm test **A1** trong `FN/_shared/chats.test.ts`: chat riêng có uid → `status = READ_ONLY`, `memberSnapshots.{uid} = null`; tin của uid (collection group `messages where senderId == uid`, theo lô) → `senderSnapshot = null`, `senderDeleted = true`; test thêm `chat-send` vào chat đó → `CHAT_READ_ONLY` (C6). Báo A gọi hàm này trong `delete-account` (sau `anonymizeCommunityGroups` của 090)
 - [X] T054 [P] Espresso `ATEST/PlayerOwnerChatFlowTest.kt` (Emulator + seed): người chơi mở chi tiết `V1` → "Nhắn tin cho chủ sân" (giả lập deep link) → gửi tin → đăng nhập `owner1` → "Tin nhắn khách hàng" thấy cuộc kèm tên `V1`
 - [ ] T055 [P] Kiểm tra 4 trạng thái trên `ChatListFragment`, `ChatFragment`, `ReportMessageBottomSheet` (FR-017); mất mạng không crash, giữ nội dung đang soạn; chế độ tối; bố cục `w600dp` (bong bóng tin tối đa 70% chiều ngang); `contentDescription` cho ảnh, vùng chạm ≥ 48dp
+  - Một phần (20/11, [evidence](evidence/manual-test-2026-11-20.md)): mất mạng không crash, báo cáo offline có lỗi + Thử lại, chế độ tối, xoay, `w600dp`, `contentDescription` avatar đạt. Chưa ép được trạng thái loading/error của danh sách chat trên máy ảo (Firestore đọc cache).
 - [X] T056 [P] Cập nhật `docs/design/database/README.md` theo [danh sách cuối data-model.md](data-model.md#danh-sách-thay-đổi-cần-đưa-vào-docsdesigndatabasereadmemd) (mục 4.11, 4.12, 5, 6, 7, 8, 8a), **sau khi D đồng ý**
 - [X] T057 [P] Cập nhật `docs/features/09-community-chat/README.md` (link plan, tasks spec 091; trạng thái) và cột *Spec* nhóm 09 trong `docs/features/README.md`
 - [ ] T058 Chạy toàn bộ [quickstart.md](quickstart.md): test tự động mục 2; Q1–Q16; đo SC-001, SC-002, SC-006; hỏi 5 người thử cho SC-007; chụp ảnh hoặc quay video minh chứng
+  - Một phần: test tự động mục 2 xanh; Q1–Q16 chạy trên máy ảo (vòng 2 đạt, xem evidence); SC-002 đạt. Còn SC-001 (2 máy thật, 4G), Q9 FCM thật, SC-007 (5 người thử), video.
 - [ ] T059 Chạy `./gradlew lint testDebugUnitTest assembleDebug`, `./gradlew connectedDebugAndroidTest` (Emulator), `deno test -A supabase/functions`, `npx supabase test db`, `npm test` trong `firestore-tests/`; không còn cảnh báo Lint mức Error; ktlint sạch
+  - Một phần (20/11, sau merge main): `lintDebug` 0 Error, `testDebugUnitTest`, `assembleDebug`, `compileDebugAndroidTestKotlin` xanh; `firestore-tests` 302/306 (4 `[BLOCKED: D]` có từ trước); `deno test`, `npx supabase test db` xanh trước merge. `connectedDebugAndroidTest` mới chạy T024, T054; dự án chưa cấu hình ktlint.
 
 ---
 
