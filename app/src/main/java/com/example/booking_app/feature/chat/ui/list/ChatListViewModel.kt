@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.booking_app.core.session.SessionManager
+import com.example.booking_app.core.session.SessionState
 import com.example.booking_app.core.ui.UiState
 import com.example.booking_app.feature.chat.domain.ChatError
 import com.example.booking_app.feature.chat.domain.ChatRepository
@@ -20,6 +21,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import java.time.Instant
@@ -55,6 +57,7 @@ class ChatListViewModel @Inject constructor(
     private val _events = Channel<ChatListEvent>(Channel.BUFFERED)
     val events: Flow<ChatListEvent> = _events.receiveAsFlow()
 
+    private var sessionWaitJob: Job? = null
     private var observeJob: Job? = null
 
     init {
@@ -69,11 +72,23 @@ class ChatListViewModel @Inject constructor(
         observeJob?.cancel()
         val uid = sessionManager.currentUid()
         if (uid == null) {
+            if (sessionManager.sessionState.value is SessionState.Loading) {
+                // L4: chờ phiên khôi phục xong khi cold-start qua deep link trước khi đẩy sang đăng nhập.
+                _state.value = UiState.Loading
+                sessionWaitJob?.cancel()
+                sessionWaitJob = viewModelScope.launch {
+                    sessionManager.sessionState.first { it !is SessionState.Loading }
+                    load()
+                }
+                return
+            }
             _state.value = UiState.Error(ChatError.Unauthenticated().code, ::retry)
             val returnTo = if (mode == ChatMode.OWNER) "smashnow://chat/owner" else "smashnow://chat"
             _events.trySend(ChatListEvent.RequireLogin(returnTo))
             return
         }
+        sessionWaitJob?.cancel()
+        sessionWaitJob = null
 
         _state.value = UiState.Loading
         observeJob = viewModelScope.launch {

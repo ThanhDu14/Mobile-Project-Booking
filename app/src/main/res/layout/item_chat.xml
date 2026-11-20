@@ -64,6 +64,7 @@
                 android:layout_height="16dp"
                 android:layout_marginStart="@dimen/space_1"
                 android:contentDescription="@string/chat_cd_muted"
+                android:importantForAccessibility="yes"
                 android:src="@drawable/ic_notifications_off_24"
                 android:visibility="gone"
                 app:tint="?attr/colorOnSurfaceVariant"

@@ -165,7 +165,9 @@ class MessageAdapter(
                     msg.senderName?.takeIf { it.isNotBlank() } ?: ctx.getString(R.string.chat_default_user_name)
                 }
                 b.senderName.text = displayName
-                b.senderAvatar.contentDescription = ctx.getString(R.string.chat_cd_avatar, displayName)
+                val avatarCd = ctx.getString(R.string.chat_cd_avatar, displayName)
+                b.senderAvatar.contentDescription = avatarCd
+                b.senderAvatarInitials.contentDescription = avatarCd
                 if (msg.senderDeleted) {
                     b.senderAvatarInitials.isVisible = false
                     b.senderAvatar.isVisible = true

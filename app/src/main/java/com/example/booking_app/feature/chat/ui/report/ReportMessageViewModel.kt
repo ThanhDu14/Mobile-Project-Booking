@@ -3,6 +3,7 @@ package com.example.booking_app.feature.chat.ui.report
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.booking_app.core.network.DEFAULT_TIMEOUT_MS
 import com.example.booking_app.feature.chat.domain.ChatError
 import com.example.booking_app.feature.chat.domain.model.ChatMessageRules
 import com.example.booking_app.feature.chat.domain.model.ReportReason
@@ -10,6 +11,7 @@ import com.example.booking_app.feature.chat.domain.toChatError
 import com.example.booking_app.feature.chat.domain.usecase.ReportMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,6 +20,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 import javax.inject.Inject
 
 enum class ReportMessageDetailError { REQUIRED, TOO_LONG }
@@ -28,6 +31,7 @@ data class ReportMessageState(
     val reasonError: Boolean = false,
     val detailError: ReportMessageDetailError? = null,
     val submitting: Boolean = false,
+    val submitError: ChatError? = null,
 ) {
     val showDetailField: Boolean get() = selectedReason == ReportReason.OTHER
 }
@@ -57,11 +61,11 @@ class ReportMessageViewModel @Inject constructor(
     val events: Flow<ReportMessageEvent> = _events.receiveAsFlow()
 
     fun onReasonSelected(reason: ReportReason) {
-        _state.update { it.copy(selectedReason = reason, reasonError = false, detailError = null) }
+        _state.update { it.copy(selectedReason = reason, reasonError = false, detailError = null, submitError = null) }
     }
 
     fun onDetailChanged(value: String) {
-        _state.update { it.copy(detail = value, detailError = null) }
+        _state.update { it.copy(detail = value, detailError = null, submitError = null) }
     }
 
     fun submit() {
@@ -88,10 +92,14 @@ class ReportMessageViewModel @Inject constructor(
         }
 
         val detailToSend = trimmedDetail.takeIf { reason == ReportReason.OTHER && it.isNotEmpty() }
-        _state.update { it.copy(submitting = true) }
+        _state.update { it.copy(submitting = true, submitError = null) }
         viewModelScope.launch {
             val result = try {
-                reportMessage(chatId, messageId, reason, detailToSend)
+                withTimeout(SUBMIT_TIMEOUT_MS) {
+                    reportMessage(chatId, messageId, reason, detailToSend)
+                }
+            } catch (_: TimeoutCancellationException) {
+                Result.failure(ChatError.Network())
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -99,11 +107,13 @@ class ReportMessageViewModel @Inject constructor(
             }
             result.fold(
                 onSuccess = {
+                    _state.update { it.copy(submitting = false, submitError = null) }
                     _events.trySend(ReportMessageEvent.Sent)
                 },
                 onFailure = { err ->
-                    _state.update { it.copy(submitting = false) }
-                    _events.trySend(ReportMessageEvent.ShowError(err.toChatError()))
+                    val chatError = err.toChatError()
+                    _state.update { it.copy(submitting = false, submitError = chatError) }
+                    _events.trySend(ReportMessageEvent.ShowError(chatError))
                 },
             )
         }
@@ -113,5 +123,6 @@ class ReportMessageViewModel @Inject constructor(
         const val ARG_CHAT_ID = "chatId"
         const val ARG_MESSAGE_ID = "messageId"
         const val MAX_DETAIL_LENGTH = 500
+        const val SUBMIT_TIMEOUT_MS = DEFAULT_TIMEOUT_MS
     }
 }

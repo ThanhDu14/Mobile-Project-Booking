@@ -8,7 +8,9 @@ import com.example.booking_app.core.image.ImageTooLargeException
 import com.example.booking_app.core.image.ImageUnreadableException
 import com.example.booking_app.core.media.SignedUrlBatch
 import com.example.booking_app.core.media.SignedUrlCache
+import com.example.booking_app.core.session.AppRole
 import com.example.booking_app.core.session.SessionManager
+import com.example.booking_app.core.session.SessionState
 import com.example.booking_app.core.testing.MainDispatcherRule
 import com.example.booking_app.core.ui.UiState
 import com.example.booking_app.core.util.AppClock
@@ -1052,5 +1054,88 @@ class ChatViewModelTest {
         vm.onToggleBlockedConfirmed()
         runCurrent()
         coVerify(exactly = 0) { repository.setBlocked(any(), any()) }
+    }
+
+    // ---------- L4: Cold-start deep link khi SessionState đang Loading ----------
+
+    @Test
+    fun `cold start deep link cho phien khoi phuc xong roi moi mo chat khong day sang dang nhap`() = runTest {
+        val sessionFlow = MutableStateFlow<SessionState>(SessionState.Loading)
+        every { sessionManager.sessionState } returns sessionFlow
+        every { sessionManager.currentUid() } answers { (sessionFlow.value as? SessionState.SignedIn)?.uid }
+        every { repository.observeChat("group_g1") } returns chatFlow
+        every { repository.observeGroupHeader("g1") } returns groupHeaderFlow
+        every { repository.observeMessages("group_g1") } returns messagesFlow
+        every { repository.observeOutbox("group_g1") } returns outboxFlow
+        chatFlow.value = groupChat(groupId = "g1")
+        groupHeaderFlow.value = GroupHeaderInfo("g1", "CLB Q7", memberCount = 5)
+        messagesFlow.value = listOf(serverMessage("m1", "Xin chào", secondsOffset = 1))
+
+        val vm = ChatViewModel(
+            savedStateHandle = SavedStateHandle(mapOf(ChatViewModel.ARG_GROUP_ID to "g1")),
+            repository = repository,
+            openDirectChat = OpenDirectChat(repository),
+            observeMessages = ObserveMessages(repository),
+            loadOlderMessages = LoadOlderMessages(repository),
+            sendMessage = SendMessage(repository, imageCompressor, localMediaStore, clock),
+            retryMessage = RetryMessage(repository),
+            discardMessage = DiscardMessage(repository),
+            markChatRead = MarkChatRead(repository),
+            setMuted = SetMuted(repository),
+            setBlocked = SetBlocked(repository),
+            recallMessage = RecallMessage(repository),
+            signedUrlCache = signedUrlCache,
+            networkMonitor = networkMonitor,
+            sessionManager = sessionManager,
+            clock = clock,
+        )
+        runCurrent()
+
+        // Khi phiên đang Loading: hiện Loading, chưa phát RequireLogin.
+        assertEquals(UiState.Loading, vm.uiState.value.messages)
+        vm.events.test {
+            expectNoEvents()
+            sessionFlow.value = SessionState.SignedIn("player2", AppRole.PLAYER, true)
+            runCurrent()
+            expectNoEvents()
+        }
+        val content = vm.uiState.value.messages as UiState.Content
+        assertEquals(listOf("m1"), content.data.map { it.id })
+        assertEquals("CLB Q7", vm.uiState.value.header?.title)
+    }
+
+    @Test
+    fun `cold start deep link khi phien ket thuc SignedOut moi phat RequireLogin`() = runTest {
+        val sessionFlow = MutableStateFlow<SessionState>(SessionState.Loading)
+        every { sessionManager.sessionState } returns sessionFlow
+        every { sessionManager.currentUid() } answers { (sessionFlow.value as? SessionState.SignedIn)?.uid }
+
+        val vm = ChatViewModel(
+            savedStateHandle = SavedStateHandle(mapOf(ChatViewModel.ARG_GROUP_ID to "g1")),
+            repository = repository,
+            openDirectChat = OpenDirectChat(repository),
+            observeMessages = ObserveMessages(repository),
+            loadOlderMessages = LoadOlderMessages(repository),
+            sendMessage = SendMessage(repository, imageCompressor, localMediaStore, clock),
+            retryMessage = RetryMessage(repository),
+            discardMessage = DiscardMessage(repository),
+            markChatRead = MarkChatRead(repository),
+            setMuted = SetMuted(repository),
+            setBlocked = SetBlocked(repository),
+            recallMessage = RecallMessage(repository),
+            signedUrlCache = signedUrlCache,
+            networkMonitor = networkMonitor,
+            sessionManager = sessionManager,
+            clock = clock,
+        )
+        runCurrent()
+        assertEquals(UiState.Loading, vm.uiState.value.messages)
+
+        vm.events.test {
+            sessionFlow.value = SessionState.SignedOut(null)
+            runCurrent()
+            assertEquals(ChatEvent.RequireLogin("smashnow://chat/group/g1"), awaitItem())
+        }
+        assertTrue(vm.uiState.value.messages is UiState.Error)
     }
 }

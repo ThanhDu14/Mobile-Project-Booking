@@ -148,6 +148,20 @@
             </com.google.android.material.textfield.TextInputLayout>
         </LinearLayout>
 
+        <TextView
+            android:id="@+id/submitError"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_3"
+            android:background="?attr/colorErrorContainer"
+            android:paddingHorizontal="@dimen/space_3"
+            android:paddingVertical="@dimen/space_2"
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:textColor="?attr/colorOnErrorContainer"
+            android:visibility="gone"
+            tools:text="@string/chat_error_network"
+            tools:visibility="visible" />
+
         <com.google.android.material.button.MaterialButton
             android:id="@+id/submitButton"
             style="@style/Widget.SmashNow.Button"

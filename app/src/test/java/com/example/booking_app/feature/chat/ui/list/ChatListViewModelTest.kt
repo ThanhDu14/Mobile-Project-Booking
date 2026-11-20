@@ -2,7 +2,9 @@ package com.example.booking_app.feature.chat.ui.list
 
 import androidx.lifecycle.SavedStateHandle
 import app.cash.turbine.test
+import com.example.booking_app.core.session.AppRole
 import com.example.booking_app.core.session.SessionManager
+import com.example.booking_app.core.session.SessionState
 import com.example.booking_app.core.testing.MainDispatcherRule
 import com.example.booking_app.core.ui.UiState
 import com.example.booking_app.feature.chat.data.dto.ChatDto
@@ -264,5 +266,30 @@ class ChatListViewModelTest {
             listOf("c-customer"),
             (ownerVm.state.value as UiState.Content).data.map { it.id },
         )
+    }
+
+    @Test
+    fun `cold start deep link cho phien khoi phuc xong truoc khi yeu cau dang nhap`() = runTest {
+        val sessionFlow = MutableStateFlow<SessionState>(SessionState.Loading)
+        every { sessionManager.sessionState } returns sessionFlow
+        every { sessionManager.currentUid() } answers { (sessionFlow.value as? SessionState.SignedIn)?.uid }
+        chatsFlow.value = listOf(summary("c1", updatedAtSec = 10))
+        every { repository.observeChats(ChatMode.PLAYER) } returns chatsFlow
+
+        val vm = ChatListViewModel(
+            savedStateHandle = SavedStateHandle(mapOf(ChatListViewModel.ARG_MODE to ChatMode.PLAYER.name)),
+            repository = repository,
+            sessionManager = sessionManager,
+        )
+        runCurrent()
+        assertEquals(UiState.Loading, vm.state.value)
+
+        vm.events.test {
+            expectNoEvents()
+            sessionFlow.value = SessionState.SignedIn("player1", AppRole.PLAYER, true)
+            runCurrent()
+            expectNoEvents()
+        }
+        assertEquals(listOf("c1"), (vm.state.value as UiState.Content).data.map { it.id })
     }
 }

@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.booking_app.R
 import com.example.booking_app.core.media.SignedUrlCache
 import com.example.booking_app.core.session.SessionManager
+import com.example.booking_app.core.session.SessionState
 import com.example.booking_app.core.ui.UiState
 import com.example.booking_app.core.util.AppClock
 import com.example.booking_app.feature.chat.data.NetworkMonitor
@@ -48,6 +49,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
@@ -148,6 +150,7 @@ class ChatViewModel @Inject constructor(
     val events: Flow<ChatEvent> = _events.receiveAsFlow()
 
     private var activeChatId: String? = null
+    private var sessionWaitJob: Job? = null
     private var observeJob: Job? = null
     private var viewingJob: Job? = null
     private var screenVisible: Boolean = false
@@ -185,6 +188,16 @@ class ChatViewModel @Inject constructor(
     private fun start() {
         val uid = sessionManager.currentUid()
         if (uid == null) {
+            if (sessionManager.sessionState.value is SessionState.Loading) {
+                // L4: cold-start deep link có thể mở ChatFragment trước khi FirebaseSessionManager khôi phục phiên xong.
+                _uiState.update { it.copy(messages = UiState.Loading) }
+                sessionWaitJob?.cancel()
+                sessionWaitJob = viewModelScope.launch {
+                    sessionManager.sessionState.first { it !is SessionState.Loading }
+                    start()
+                }
+                return
+            }
             val returnTo = when {
                 !argVenueId.isNullOrBlank() -> "smashnow://chat/direct?venueId=$argVenueId"
                 !argGroupId.isNullOrBlank() -> "smashnow://chat/group/$argGroupId"
@@ -195,6 +208,8 @@ class ChatViewModel @Inject constructor(
             _events.trySend(ChatEvent.RequireLogin(returnTo))
             return
         }
+        sessionWaitJob?.cancel()
+        sessionWaitJob = null
 
         when {
             !argVenueId.isNullOrBlank() -> openDirectAndObserve(argVenueId)
@@ -678,6 +693,7 @@ class ChatViewModel @Inject constructor(
     }
 
     override fun onCleared() {
+        sessionWaitJob?.cancel()
         viewingJob?.cancel()
         observeJob?.cancel()
         super.onCleared()

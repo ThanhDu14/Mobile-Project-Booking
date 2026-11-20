@@ -106,6 +106,7 @@
     <string name="chat_report_detail_required">Nhập mô tả khi chọn Khác</string>
     <string name="chat_report_detail_too_long">Mô tả tối đa 500 ký tự</string>
     <string name="chat_report_send">Gửi báo cáo</string>
+    <string name="chat_report_retry">Thử lại</string>
     <string name="chat_report_sending">Đang gửi</string>
     <string name="chat_report_sent">Đã gửi báo cáo</string>
 
@@ -157,4 +158,9 @@
     <string name="chat_cd_muted">Đã tắt thông báo</string>
     <string name="chat_cd_close">Đóng</string>
     <string name="chat_cd_loading_older">Đang tải thêm tin cũ</string>
+    <string name="chat_cd_unread_count">%1$d tin nhắn chưa đọc</string>
+    <string name="chat_cd_unread_overflow">Hơn 99 tin nhắn chưa đọc</string>
+    <string name="chat_community_section_groups">Nhóm</string>
+    <string name="chat_cd_messages_tab">Tin nhắn</string>
+    <string name="chat_cd_messages_tab_unread">Tin nhắn, %1$d cuộc trò chuyện chưa đọc</string>
 </resources>

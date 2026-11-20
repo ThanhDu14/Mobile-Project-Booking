@@ -50,7 +50,9 @@ class ChatAdapter(
             }
             b.chatTitle.text = displayTitle
             val isDeletedDirect = item.type == ChatType.DIRECT && item.isReadOnly && item.title.isBlank()
-            b.avatarImage.contentDescription = ctx.getString(R.string.chat_cd_avatar, rawName)
+            val avatarCd = ctx.getString(R.string.chat_cd_avatar, rawName)
+            b.avatarImage.contentDescription = avatarCd
+            b.avatarInitials.contentDescription = avatarCd
             if (isDeletedDirect) {
                 b.avatarInitials.isVisible = false
                 b.avatarImage.isVisible = true
@@ -111,7 +113,14 @@ class ChatAdapter(
 
             val badgeText = ChatUiText.unreadBadge(item.unreadCount)
             b.unreadBadge.isVisible = badgeText != null
-            if (badgeText != null) b.unreadBadge.text = badgeText
+            if (badgeText != null) {
+                b.unreadBadge.text = badgeText
+                b.unreadBadge.contentDescription = if (item.unreadCount > 99) {
+                    ctx.getString(R.string.chat_cd_unread_overflow)
+                } else {
+                    ctx.getString(R.string.chat_cd_unread_count, item.unreadCount)
+                }
+            }
 
             b.root.setOnClickListener { onChatClick(item) }
         }

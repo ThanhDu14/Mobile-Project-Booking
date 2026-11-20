@@ -13,10 +13,13 @@ import io.mockk.coEvery
 import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -135,5 +138,38 @@ class ReportMessageViewModelTest {
         assertEquals(ReportReason.OTHER, vm.state.value.selectedReason)
         assertEquals("Tin nhắn lừa đảo", vm.state.value.detail)
         assertFalse(vm.state.value.submitting)
+        assertTrue(vm.state.value.submitError is ChatError.Network)
+    }
+
+    @Test
+    fun `gui bao cao treo qua timeout thi dung submitting hien loi mang va cho thu lai`() = runTest {
+        var attempt = 0
+        coEvery { repository.report("c1", "m1", ReportReason.SPAM, null) } coAnswers {
+            attempt++
+            if (attempt == 1) {
+                delay(ReportMessageViewModel.SUBMIT_TIMEOUT_MS + 5_000L)
+                Result.success("late")
+            } else {
+                Result.success("MESSAGE_c1_m1_me")
+            }
+        }
+        val vm = viewModel()
+        vm.onReasonSelected(ReportReason.SPAM)
+
+        vm.events.test {
+            vm.submit()
+            advanceTimeBy(ReportMessageViewModel.SUBMIT_TIMEOUT_MS + 1L)
+            val errEvent = awaitItem() as ReportMessageEvent.ShowError
+            assertTrue(errEvent.error is ChatError.Network)
+            assertFalse(vm.state.value.submitting)
+            assertTrue(vm.state.value.submitError is ChatError.Network)
+
+            // Thử lại lần 2 -> xóa lỗi cũ và gửi thành công.
+            vm.submit()
+            advanceUntilIdle()
+            assertEquals(ReportMessageEvent.Sent, awaitItem())
+            assertNull(vm.state.value.submitError)
+        }
+        coVerify(exactly = 2) { repository.report("c1", "m1", ReportReason.SPAM, null) }
     }
 }

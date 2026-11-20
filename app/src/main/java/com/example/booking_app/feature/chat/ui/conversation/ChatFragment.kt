@@ -16,6 +16,8 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.content.getSystemService
 import androidx.core.os.bundleOf
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
@@ -68,6 +70,8 @@ class ChatFragment : Fragment(R.layout.fragment_chat) {
 
     private lateinit var adapter: MessageAdapter
     private var lastTailMessageId: String? = null
+    private var isImeVisible: Boolean = false
+    private var messageListLayoutListener: View.OnLayoutChangeListener? = null
 
     /** URI ảnh chụp tạm chờ camera trả về (giữ qua process death, T046). */
     private var pendingCameraUri: Uri? = null
@@ -124,6 +128,38 @@ class ChatFragment : Fragment(R.layout.fragment_chat) {
         binding.messageList.layoutManager = layoutManager
         binding.messageList.adapter = adapter
 
+        // L1: MainActivity bật edge-to-edge và chỉ chừa systemBars; màn chat cộng thêm phần IME vượt trên thanh điều hướng
+        // để composerContainer luôn nằm trên bàn phím và danh sách tin cuộn theo.
+        val initialRootBottomPadding = binding.root.paddingBottom
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { v, insets ->
+            val imeBottom = insets.getInsets(WindowInsetsCompat.Type.ime()).bottom
+            val barsBottom = insets.getInsets(WindowInsetsCompat.Type.systemBars()).bottom
+            val extraImeBottom = (imeBottom - barsBottom).coerceAtLeast(0)
+            val imeNowVisible = extraImeBottom > 0 || insets.isVisible(WindowInsetsCompat.Type.ime())
+            val imeJustOpened = imeNowVisible && !isImeVisible
+            isImeVisible = imeNowVisible
+            v.setPadding(v.paddingLeft, v.paddingTop, v.paddingRight, initialRootBottomPadding + extraImeBottom)
+            if (imeJustOpened && adapter.itemCount > 0) {
+                binding.messageList.post {
+                    val b = _binding ?: return@post
+                    if (adapter.itemCount > 0) b.messageList.scrollToPosition(adapter.itemCount - 1)
+                }
+            }
+            insets
+        }
+        ViewCompat.requestApplyInsets(binding.root)
+
+        val layoutListener = View.OnLayoutChangeListener { _, _, _, _, bottom, _, _, _, oldBottom ->
+            if (bottom < oldBottom && isImeVisible && adapter.itemCount > 0) {
+                binding.messageList.post {
+                    val b = _binding ?: return@post
+                    if (adapter.itemCount > 0) b.messageList.scrollToPosition(adapter.itemCount - 1)
+                }
+            }
+        }
+        messageListLayoutListener = layoutListener
+        binding.messageList.addOnLayoutChangeListener(layoutListener)
+
         binding.messageList.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 val firstVisible = layoutManager.findFirstVisibleItemPosition()
@@ -173,6 +209,10 @@ class ChatFragment : Fragment(R.layout.fragment_chat) {
     }
 
     override fun onDestroyView() {
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root, null)
+        messageListLayoutListener?.let { binding.messageList.removeOnLayoutChangeListener(it) }
+        messageListLayoutListener = null
+        isImeVisible = false
         binding.messageList.adapter = null
         _binding = null
         super.onDestroyView()
@@ -232,7 +272,9 @@ class ChatFragment : Fragment(R.layout.fragment_chat) {
             else -> header.title.ifBlank { ctx.getString(R.string.chat_default_user_name) }
         }
         binding.headerTitle.text = displayTitle
-        binding.headerAvatar.contentDescription = ctx.getString(R.string.chat_cd_avatar, displayTitle)
+        val avatarCd = ctx.getString(R.string.chat_cd_avatar, displayTitle)
+        binding.headerAvatar.contentDescription = avatarCd
+        binding.headerAvatarInitials.contentDescription = avatarCd
         if (header.isDeletedOtherParty) {
             binding.headerAvatarInitials.isVisible = false
             binding.headerAvatar.isVisible = true

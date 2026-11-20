@@ -93,9 +93,17 @@ class ReportMessageBottomSheet : BottomSheetDialogFragment() {
             b.reasonGroup.getChildAt(i).isEnabled = editable
         }
         b.detailInput.isEnabled = editable
+        b.submitError.isVisible = state.submitError != null
+        if (state.submitError != null) {
+            b.submitError.text = ChatUiText.error(requireContext(), state.submitError)
+        }
         b.submitButton.isEnabled = editable
         b.submitButton.setText(
-            if (state.submitting) R.string.chat_report_sending else R.string.chat_report_send,
+            when {
+                state.submitting -> R.string.chat_report_sending
+                state.submitError != null -> R.string.chat_report_retry
+                else -> R.string.chat_report_send
+            },
         )
     }
 
