@@ -103,11 +103,11 @@ class Store {
         checkRead();
         if (collection === "priceRules") return Promise.resolve([{id:"price",path:`${options?.parent}/priceRules/price`,data:{daysOfWeek:[1,2,3,4,5,6,7],startTime:"0800",endTime:"2300",pricePerHour:100000}}]);
         assertEquals(collection, "registrations");
-        assert(options?.parent?.startsWith("dropInSessions/"));
-        const prefix = `${options!.parent}/${collection}/`;
+        assert(options?.allDescendants || options?.parent?.startsWith("dropInSessions/"));
+        const prefix = options?.allDescendants ? "dropInSessions/" : `${options!.parent}/${collection}/`;
         return Promise.resolve(
           [...this.docs].filter(([path, data]) =>
-            path.startsWith(prefix) && filters.every((filter) => {
+            path.startsWith(prefix) && path.split("/").at(-2) === collection && filters.every((filter) => {
               assertEquals(filter.op, "EQUAL");
               return data[filter.field] === filter.value;
             })
@@ -115,7 +115,7 @@ class Store {
             [path, data],
           ) => ({
             path,
-            id: path.slice(prefix.length),
+            id: path.split("/").at(-1)!,
             data: structuredClone(data),
           })),
         );
@@ -141,6 +141,34 @@ async function created() {
     path: `dropInSessions/${sessionId}`,
   };
 }
+
+Deno.test("owner capacity increase promotes fitting waitlist entries; decrease preserves queue", async () => {
+  for (const capacity of [9, 7]) {
+    const { store, sessionId, path } = await created();
+    store.docs.set(path, { ...store.docs.get(path), registeredCount: 7, waitlistTickets: [1, 2], waitlistCount: 2 });
+    for (const [uid, partySize, ticket] of [["a", 3, 1], ["b", 2, 2]] as const) store.docs.set(`${path}/registrations/${uid}`, {
+      userId: uid, sessionId, status: "WAITLISTED", partySize, waitlistTicket: ticket,
+      paymentStatus: null, paymentMethod: "AT_VENUE", amount: partySize * 50000,
+    });
+    const response = await handleOwnerUpdateSession(request({ ...draft, sessionId, capacity }), { firestore: store });
+    assertEquals(response.status, 200);
+    assertEquals(store.docs.get(`${path}/registrations/a`)!.status, "WAITLISTED");
+    assertEquals(store.docs.get(`${path}/registrations/b`)!.status, capacity === 9 ? "REGISTERED" : "WAITLISTED");
+    assertEquals(store.docs.get(path)!.registeredCount, capacity === 9 ? 9 : 7);
+    assertEquals(store.docs.get(path)!.waitlistTickets, capacity === 9 ? [1] : [1, 2]);
+  }
+});
+
+Deno.test("owner cancellation closes every waitlisted entry without promotion, charging or stale tickets", async () => {
+  const { store, sessionId, path } = await created();
+  store.docs.set(path, { ...store.docs.get(path), waitlistTickets: [1], waitlistCount: 1 });
+  store.docs.set(`${path}/registrations/a`, { userId: "a", sessionId, status: "WAITLISTED", partySize: 2, waitlistTicket: 1, paymentStatus: null });
+  assertEquals((await handleOwnerCancelSession(request({ venueId: "v1", sessionId }), { firestore: store })).status, 200);
+  const reg = store.docs.get(`${path}/registrations/a`)!;
+  assertEquals([reg.status, reg.waitlistEndReason, reg.cancelledBy, reg.paymentStatus], ["CANCELLED", "SESSION_CANCELLED", "OWNER", null]);
+  assertEquals(store.docs.get(path)!.waitlistTickets, []);
+  assertEquals([...store.docs.keys()].filter(p => p.includes("/notifications/")).length, 1);
+});
 
 Deno.test("owner create: timestamps, array courts, owner/district and derived snapshot match spec 080", async () => {
   const { store, path } = await created();
@@ -230,8 +258,9 @@ Deno.test("owner cancel: multiple paid/check-in registrations refund fully, unpa
   assertEquals([
     store.docs.get(path)!.status,
     store.docs.get(path)!.registeredCount,
-    store.docs.get(path)!.waitlistStatus,
-  ], ["CANCELLED", 0, "CLOSED"]);
+    store.docs.get(path)!.waitlistCount,
+    store.docs.get(path)!.waitlistTickets,
+  ], ["CANCELLED", 0, 0, []]);
   assert(![...store.docs.keys()].some((key) => key.startsWith("slots/")));
 });
 

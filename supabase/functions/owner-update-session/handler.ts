@@ -7,6 +7,7 @@ import {
   updateWrite,
 } from "../_shared/firestore.ts";
 import { ACTIVE_STATUSES, deriveSessionFields } from "../_shared/dropin.ts";
+import { promoteFromWaitlist } from "../_shared/waitlist.ts";
 import { parseOwnerSessionInput, validateOwnerSessionSchedule } from "../_shared/owner-dropin.ts";
 
 export interface OwnerUpdateSessionDeps {
@@ -137,6 +138,11 @@ export async function handleOwnerUpdateSession(
         ? await tx.query("registrations", [], { parent: path })
         : [];
       const now = new Date();
+      const updatedSession = { ...session, ...input, id: sessionId, registeredCount,
+        status: registeredCount >= input.capacity ? "FULL" : "OPEN" };
+      if (input.capacity > Number(session.capacity)) {
+        await promoteFromWaitlist(tx, updatedSession, now);
+      }
       tx.write(updateWrite(path, {
         ...input,
         ownerId: venue.ownerId,
@@ -146,7 +152,8 @@ export async function handleOwnerUpdateSession(
           venue,
           districtName: typeof district?.name === "string" ? district.name : "",
         }),
-        status: registeredCount >= input.capacity ? "FULL" : "OPEN",
+        registeredCount: updatedSession.registeredCount,
+        status: updatedSession.status,
         updatedAt: now,
       }));
       for (const reg of registrations) {

@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest';
 import { assertFails, assertSucceeds, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
-import { collection, doc, getDoc, getDocs, updateDoc, setDoc } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDoc, getDocs, updateDoc, setDoc } from 'firebase/firestore';
 import { createTestEnv, seedCurrentAdmin } from './setup';
 
 let env: RulesTestEnvironment;
@@ -43,6 +43,18 @@ afterAll(async () => {
 });
 
 describe('Feature 120 US2 Report Moderation Security Rules Contract', () => {
+  it('Locked group owner cannot delete, soft-delete or unlock; admin reads and uses server API for changes', async () => {
+    await env.withSecurityRulesDisabled(async ctx => {
+      await ctx.firestore().doc('groups/locked').set({ ownerId: 'group-owner', status: 'LOCKED' });
+    });
+    const ownerDb = env.authenticatedContext('group-owner', { appRole: 'PLAYER' }).firestore();
+    const adminDb = env.authenticatedContext('admin-uid', { appRole: 'ADMIN' }).firestore();
+    await assertFails(deleteDoc(doc(ownerDb, 'groups/locked')));
+    await assertFails(updateDoc(doc(ownerDb, 'groups/locked'), { status: 'DELETED' }));
+    await assertFails(updateDoc(doc(ownerDb, 'groups/locked'), { status: 'ACTIVE' }));
+    await assertSucceeds(getDoc(doc(adminDb, 'groups/locked')));
+    await assertFails(updateDoc(doc(adminDb, 'groups/locked'), { status: 'ACTIVE' }));
+  });
   it('Admin reads reports queue and details', async () => {
     const adminDb = env.authenticatedContext('admin-uid', { appRole: 'ADMIN' }).firestore();
     await assertSucceeds(getDoc(doc(adminDb, 'reports/rep-venue-1')));

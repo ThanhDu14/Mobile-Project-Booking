@@ -53,6 +53,14 @@ class AdminReportDetailFragment : Fragment(R.layout.fragment_admin_report_detail
             val isDismiss = binding.radioActionDismiss.isChecked
             if (isDismiss) {
                 showDismissConfirmation()
+            } else if (report.targetType == ReportTargetType.POST) {
+                MaterialAlertDialogBuilder(requireContext())
+                    .setTitle(R.string.admin_report_confirm_action_title)
+                    .setItems(arrayOf(getString(R.string.admin_report_action_hide_post), getString(R.string.admin_report_action_lock_group))) { _, index ->
+                        showActionConfirmation(if (index == 0) ReportAction.HIDE_CONTENT else ReportAction.LOCK_GROUP)
+                    }
+                    .setNegativeButton(R.string.admin_cancel, null)
+                    .show()
             } else {
                 val action = getApplicableAction(report.targetType) ?: ReportAction.HIDE_CONTENT
                 showActionConfirmation(action)
@@ -72,7 +80,7 @@ class AdminReportDetailFragment : Fragment(R.layout.fragment_admin_report_detail
             b.buttonSubmitConclusion.text = getString(R.string.admin_report_submit_dismiss_and_close)
         } else {
             b.buttonSubmitConclusion.text = when (targetType) {
-                ReportTargetType.VENUE, ReportTargetType.USER -> getString(R.string.admin_report_submit_lock_and_close)
+                ReportTargetType.GROUP, ReportTargetType.VENUE, ReportTargetType.USER -> getString(R.string.admin_report_submit_lock_and_close)
                 else -> getString(R.string.admin_report_submit_hide_and_close)
             }
         }
@@ -108,6 +116,7 @@ class AdminReportDetailFragment : Fragment(R.layout.fragment_admin_report_detail
         b: FragmentAdminReportDetailBinding,
     ) {
         val (typeName, _) = when (report.targetType) {
+            ReportTargetType.GROUP -> "Nhóm/CLB" to R.drawable.ic_nav_admin_reports
             ReportTargetType.POST -> "Bài đăng" to R.drawable.ic_nav_admin_applications
             ReportTargetType.VENUE -> "Cơ sở" to R.drawable.ic_nav_admin_home
             ReportTargetType.USER -> "Người dùng" to R.drawable.ic_nav_admin_users
@@ -135,6 +144,10 @@ class AdminReportDetailFragment : Fragment(R.layout.fragment_admin_report_detail
 
         // Conclusion setup based on target
         when (report.targetType) {
+            ReportTargetType.GROUP -> {
+                b.textActionTargetTitle.setText(R.string.admin_report_action_lock_group)
+                b.textActionTargetDesc.setText(R.string.admin_report_action_lock_group_desc)
+            }
             ReportTargetType.VENUE -> {
                 b.textActionTargetTitle.text = getString(R.string.admin_report_action_lock_venue)
                 b.textActionTargetDesc.text = getString(R.string.admin_report_action_lock_venue_desc)
@@ -154,6 +167,7 @@ class AdminReportDetailFragment : Fragment(R.layout.fragment_admin_report_detail
 
     private fun getApplicableAction(targetType: ReportTargetType): ReportAction? {
         return when (targetType) {
+            ReportTargetType.GROUP -> ReportAction.LOCK_GROUP
             ReportTargetType.VENUE -> ReportAction.LOCK_VENUE
             ReportTargetType.USER -> ReportAction.LOCK_USER
             ReportTargetType.POST, ReportTargetType.MESSAGE, ReportTargetType.REVIEW -> ReportAction.HIDE_CONTENT
@@ -176,7 +190,7 @@ class AdminReportDetailFragment : Fragment(R.layout.fragment_admin_report_detail
         MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.admin_report_confirm_action_title)
             .setMessage(R.string.admin_report_confirm_action_message)
-            .setPositiveButton(R.string.admin_report_submit_hide_and_close) { _, _ ->
+            .setPositiveButton(if (action == ReportAction.HIDE_CONTENT) R.string.admin_report_submit_hide_and_close else R.string.admin_report_submit_lock_and_close) { _, _ ->
                 viewModel.submitModeration(action)
             }
             .setNegativeButton(R.string.admin_cancel, null)

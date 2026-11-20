@@ -110,7 +110,7 @@ async function cancel(
   // `cancelRegistrationInTx` gom ghi bằng `tx.write`; ở đây gom lại để trả cho `runWithBackoff` commit một lần.
   const writes: Write[] = [];
   const out = await cancelRegistrationInTx(
-    { get: (path) => tx.get(path), write: (w) => void writes.push(w) },
+    { get: (path) => tx.get(path), query: (...args) => tx.query(...args), write: (w) => void writes.push(w) },
     input.sessionId,
     uid,
     "USER",

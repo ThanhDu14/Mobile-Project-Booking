@@ -4,7 +4,6 @@ import { assert, assertEquals, assertMatch } from "jsr:@std/assert@1.0.19";
 import type { DeletionHelpers } from "./account-deletion.ts";
 import {
   cancelRegistrationInTx,
-  closeWaitlistInTx,
   computeRefund,
   deriveSessionFields,
   type DropInTx,
@@ -202,14 +201,4 @@ Deno.test("cancelRegistrationInTx: buổi không còn document → vẫn hủy �
   await cancelRegistrationInTx(f.tx, SID, "u1", "SYSTEM", { now: NOW });
   assertEquals(f.written(REG_PATH)!.status, "CANCELLED");
   assertEquals(f.written(SESSION_PATH), null);
-});
-
-// ---------- closeWaitlistInTx (D dùng, giữ nguyên hành vi) ----------
-
-Deno.test("closeWaitlistInTx: giữ nguyên hành vi cũ", () => {
-  const w = closeWaitlistInTx(SID, "SESSION_CANCELLED");
-  assertEquals(w.update?.name, documentName(SESSION_PATH));
-  const fields = decodeFields(w.update!.fields);
-  assertEquals([fields.waitlistStatus, fields.closeReason], ["CLOSED", "SESSION_CANCELLED"]);
-  assertEquals(w.updateMask?.fieldPaths, ["waitlistStatus", "closeReason", "updatedAt"]);
 });

@@ -1,6 +1,7 @@
 package com.example.booking_app.feature.admin.domain.model
 
 enum class ReportTargetType {
+    GROUP,
     VENUE,
     USER,
     POST,
@@ -32,7 +33,8 @@ enum class ReportAction {
     NONE,
     HIDE_CONTENT,
     LOCK_USER,
-    LOCK_VENUE;
+    LOCK_VENUE,
+    LOCK_GROUP;
 
     companion object {
         fun fromString(value: String?): ReportAction = runCatching {

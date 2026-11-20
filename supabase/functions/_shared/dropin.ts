@@ -5,7 +5,8 @@
 // Các hàm `...InTx` chạy BÊN TRONG transaction của người gọi: chỉ đọc bằng `tx.get` và gom ghi bằng `tx.write`,
 // không tự commit. Mọi thao tác đọc nằm trước mọi thao tác ghi (transaction của `_shared/firestore.ts` không cho
 // đọc sau khi đã ghi).
-import { updateWrite, type Write } from "./firestore.ts";
+import { updateWrite, type Write, type FirestoreTransaction } from "./firestore.ts";
+import { promoteFromWaitlist } from "./waitlist.ts";
 
 // ---------- Kiểu dữ liệu (data-model.md mục 1, 2) ----------
 
@@ -91,6 +92,7 @@ export interface RegistrationDoc {
  */
 export interface DropInTx {
   get(path: string): Promise<Record<string, unknown> | null>;
+  query?: FirestoreTransaction["query"];
   write(write: Write): void;
 }
 
@@ -226,7 +228,7 @@ export async function cancelRegistrationInTx(
     registeredCount: Math.max(0, asNumber(session.registeredCount) - partySize),
     status: session.status === "FULL" ? "OPEN" : session.status,
   };
-  if (liveSession) await afterSpotsReleased(tx, released);
+  if (liveSession) await afterSpotsReleased(tx, released, now);
 
   tx.write(updateWrite(regPath, {
     status: "CANCELLED",
@@ -252,12 +254,14 @@ export async function cancelRegistrationInTx(
 }
 
 /**
- * Hook sau khi trả chỗ, chạy trong cùng transaction. Spec 080 để trống; spec 081 thay bằng logic đẩy người từ
+ * Hook sau khi trả chỗ, chạy trong cùng transaction. Spec 081 đẩy người từ
  * hàng chờ lên (081 FR-007): sửa `session.registeredCount`/`session.status` tại chỗ, ghi đăng ký được đẩy lên
  * bằng `tx.write`.
  */
-export async function afterSpotsReleased(_tx: DropInTx, _session: SessionDoc): Promise<void> {
-  // Spec 081 cài.
+export async function afterSpotsReleased(tx: DropInTx, session: SessionDoc, now = new Date()): Promise<void> {
+  if (!Number(session.waitlistCount) && !(Array.isArray(session.waitlistTickets) && session.waitlistTickets.length)) return;
+  if (!tx.query) throw new Error("Waitlist promotion requires transaction query");
+  await promoteFromWaitlist({ get: path => tx.get(path), query: (...args) => tx.query!(...args), write: w => tx.write(w) }, session, now);
 }
 
 // ---------- Sinh mã (research R5) ----------
@@ -279,17 +283,4 @@ export function newTicketCode(): string {
   let code = "DI-";
   for (const b of bytes) code += TICKET_ALPHABET[b & 31];
   return code;
-}
-
-// ---------- D (spec 112, owner-cancel-session) đang dùng: giữ nguyên chữ ký và hành vi ----------
-
-export function closeWaitlistInTx(
-  sessionId: string,
-  reason: string,
-): Write {
-  return updateWrite(`dropInSessions/${sessionId}`, {
-    waitlistStatus: "CLOSED",
-    closeReason: reason,
-    updatedAt: new Date().toISOString(),
-  });
 }

@@ -340,6 +340,13 @@ service cloud.firestore {
     }
 
     // ---------- reports (D, spec 120) ----------
+    // Community mutations go through server functions; a group owner cannot
+    // delete or unlock a LOCKED group directly, including by changing status.
+    match /groups/{groupId} {
+      allow read: if isAdmin();
+      allow write: if false;
+    }
+
     match /reports/{reportId} {
       allow read: if isAdmin();
       allow write: if false;

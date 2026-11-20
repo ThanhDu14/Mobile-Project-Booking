@@ -7,9 +7,9 @@ import {
 } from "../_shared/firestore.ts";
 import {
   cancelRegistrationInTx,
-  closeWaitlistInTx,
   registrationPath,
 } from "../_shared/dropin.ts";
+import { closeWaitlistInTx } from "../_shared/waitlist.ts";
 import { decodeFields } from "../_shared/firestore.ts";
 import { requireOwnerVenue } from "../_shared/owner-access.ts";
 
@@ -116,6 +116,11 @@ export async function handleOwnerCancelSession(
             { forceFullRefund: true, now },
           );
         }
+        await closeWaitlistInTx({
+          get: path => tx.get(path),
+          query: () => Promise.resolve(registrations.filter(reg => reg.data.status === "WAITLISTED")),
+          write: write => writes.push(write),
+        }, { ...session, id: sessionId }, "SESSION_CANCELLED", now);
         writes.push(
           updateWrite(sessionPath, {
             status: "CANCELLED",
@@ -124,7 +129,6 @@ export async function handleOwnerCancelSession(
             cancelReason: reason,
             updatedAt: now,
           }),
-          closeWaitlistInTx(sessionId, "SESSION_CANCELLED"),
         );
 
         // Release all blocked slots
