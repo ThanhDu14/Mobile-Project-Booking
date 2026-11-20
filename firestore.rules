@@ -526,7 +526,9 @@ service cloud.firestore {
       // list của thành viên thường chỉ qua khi query có where status == 'VISIBLE'
       // hoặc where authorId == uid mình (Rules không phải bộ lọc; research R6).
       match /posts/{postId} {
-        allow read: if isAdmin() || isMod()
+        // Admin chỉ get từng bài (xem bài bị báo cáo, spec 120), không list cả bảng tin.
+        allow get: if isAdmin();
+        allow read: if isMod()
             || (isMember() && (resource.data.status == 'VISIBLE'
                                || resource.data.authorId == request.auth.uid));
         allow write: if false;
