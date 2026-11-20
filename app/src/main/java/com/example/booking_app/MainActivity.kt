@@ -17,6 +17,7 @@ import androidx.navigation.NavDestination
 import androidx.navigation.NavDeepLinkRequest
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.navOptions
+import com.example.booking_app.core.chat.UnreadChatsReader
 import com.example.booking_app.core.session.AppRole
 import com.example.booking_app.core.session.GuestNotice
 import com.example.booking_app.core.session.RouteDecision
@@ -26,6 +27,8 @@ import com.example.booking_app.core.session.rootGraphFor
 import com.example.booking_app.databinding.ActivityMainBinding
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.coroutineScope
@@ -46,6 +49,11 @@ class MainActivity : AppCompatActivity() {
     private val navController: NavController by lazy {
         (supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment).navController
     }
+
+    @Inject lateinit var unreadChatsReader: UnreadChatsReader
+
+    /** Số cuộc trò chuyện chưa đọc, hiện thành huy hiệu tab Cộng đồng (spec 091 FR-011). */
+    private var unreadChats = 0
 
     /** Menu đang gắn vào BottomNav; layout khởi tạo bằng menu người chơi. */
     private var bottomNavMenu = R.menu.menu_player_bottom_nav
@@ -114,7 +122,28 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                unreadChatsReader.observeUnreadChatCount().catch { emit(0) }.collect { count ->
+                    unreadChats = count
+                    applyCommunityBadge()
+                }
+            }
+        }
         setUpBottomNav()
+    }
+
+    private fun applyCommunityBadge() {
+        if (bottomNavMenu != R.menu.menu_player_bottom_nav) return
+        if (unreadChats > 0) {
+            binding.bottomNav.getOrCreateBadge(R.id.tab_community).apply {
+                maxNumber = 99
+                number = unreadChats
+                isVisible = true
+            }
+        } else {
+            binding.bottomNav.getBadge(R.id.tab_community)?.isVisible = false
+        }
     }
 
     override fun onDestroy() {
@@ -378,6 +407,7 @@ class MainActivity : AppCompatActivity() {
             binding.bottomNav.menu.clear()
             binding.bottomNav.inflateMenu(menuRes)
             bottomNavMenu = menuRes
+            applyCommunityBadge()
         }
         binding.bottomNav.menu.findItem(tab!!).isChecked = true
         if (adminMode && (viewModel.sessionState.value as? SessionState.SignedIn)?.appRole == AppRole.ADMIN) {
@@ -393,6 +423,22 @@ class MainActivity : AppCompatActivity() {
 
         if (navController.currentDestination?.id == R.id.launcherFragment) {
             SessionRouter.startDestination(state, viewModel.welcomeSeen())?.let(::execute)
+            return
+        }
+        // M1: mở app lạnh bằng deep link, NavController dựng [launcher, màn deep link] mà không có graph gốc bên dưới
+        // (đường điều hướng thường luôn popUpTo nav_main nên launcher không còn). Màn deep link có thể đã tự mở
+        // Đăng nhập trước khi phiên về tới đây; dựng lại từ đầu rồi mở lại deep link (trừ link auth).
+        if (previous == null && hasBackStackEntry(R.id.launcherFragment)) {
+            val decision = SessionRouter.startDestination(state, viewModel.welcomeSeen()) ?: return
+            // Bước đồng ý điều khoản: dọn [launcher, màn deep link] để openConsent không mở chồng lên.
+            if (decision == RouteDecision.Consent) resetTo(R.id.nav_player)
+            execute(decision)
+            // Link auth (đăng nhập/đăng ký từ ngoài app) chỉ mở lại cho khách, không mở cho người đã đăng nhập.
+            val deepLink = intent?.data
+                ?.takeIf { it.scheme == "smashnow" && (it.host != "auth" || decision is RouteDecision.PlayerGuest) }
+            if (deepLink != null && SessionRouter.replayDeepLinkAfter(decision)) {
+                runCatching { navController.navigate(deepLink) }
+            }
             return
         }
         // Mở lại sau khi hệ thống hủy process: NavController đã khôi phục back stack, chỉ ghi nhận trạng thái.
@@ -462,7 +508,8 @@ class MainActivity : AppCompatActivity() {
             is RouteDecision.PopAuth -> {
                 navController.popBackStack(R.id.nav_auth, inclusive = true)
                 // returnTo có thể đến từ deep link ngoài app (spec 030 T005): chỉ nhận URI smashnow:// có trong graph.
-                decision.returnTo?.takeIf { it.scheme == "smashnow" }?.let { uri ->
+                // Màn vừa lộ ra được mở đúng bằng link returnTo (deep link lúc mở app) thì không mở chồng bản thứ hai.
+                decision.returnTo?.takeIf { it.scheme == "smashnow" && it != currentDeepLinkUri() }?.let { uri ->
                     runCatching { navController.navigate(uri) }
                 }
             }
@@ -500,6 +547,10 @@ class MainActivity : AppCompatActivity() {
     private fun resetTo(graphId: Int) {
         navController.navigate(graphId, null, navOptions { popUpTo(R.id.nav_main) { inclusive = true } })
     }
+
+    @Suppress("DEPRECATION")
+    private fun currentDeepLinkUri(): Uri? =
+        navController.currentBackStackEntry?.arguments?.getParcelable<Intent>(NavController.KEY_DEEP_LINK_INTENT)?.data
 
     private fun hasBackStackEntry(destinationId: Int): Boolean =
         runCatching { navController.getBackStackEntry(destinationId) }.isSuccess

@@ -51,7 +51,7 @@ sealed interface BottomPrice {
 }
 
 sealed interface BottomBarState {
-    data class Book(val price: BottomPrice) : BottomBarState
+    data class Book(val price: BottomPrice, val showChat: Boolean = true) : BottomBarState
 
     /** Cơ sở tạm ngừng: ẩn chat và "Đặt sân", hiện ghi chú (FR-021). */
     data object Suspended : BottomBarState

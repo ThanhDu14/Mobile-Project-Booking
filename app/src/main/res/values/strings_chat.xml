@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Chuỗi của spec 091 (Chat nhóm và chat với chủ sân), tiền tố chat_ (T002).
+    Gồm tiêu đề màn hình, trạng thái gửi, nhãn đặc biệt, menu thao tác, 5 lý do báo cáo,
+    màn hình trống, giải thích quyền camera và thông báo cho mọi mã lỗi ở contract mục 5.
+-->
+<resources>
+    <!-- Tiêu đề màn hình -->
+    <string name="chat_title_list">Tin nhắn</string>
+    <string name="chat_title_owner">Tin nhắn khách hàng</string>
+    <string name="chat_title_group">Chat nhóm</string>
+    <string name="chat_title_report">Báo cáo tin nhắn</string>
+
+    <!-- Trạng thái gửi tin -->
+    <string name="chat_delivery_pending">Đang gửi</string>
+    <string name="chat_delivery_sent">Đã gửi</string>
+    <string name="chat_delivery_failed">Gửi lỗi</string>
+    <string name="chat_action_retry">Gửi lại</string>
+    <string name="chat_action_delete">Xóa</string>
+    <string name="chat_action_cancel">Hủy</string>
+    <string name="chat_action_confirm">Xác nhận</string>
+    <string name="chat_action_send">Gửi</string>
+    <string name="chat_action_copy">Sao chép</string>
+    <string name="chat_action_view_venue">Xem sân</string>
+    <string name="chat_action_open_settings">Mở cài đặt</string>
+
+    <!-- Nội dung đặc biệt và nhãn trạng thái -->
+    <string name="chat_preview_image">[Hình ảnh]</string>
+    <string name="chat_preview_mine">Bạn: %1$s</string>
+    <string name="chat_preview_sender">%1$s: %2$s</string>
+    <string name="chat_message_recalled">Tin nhắn đã được thu hồi</string>
+    <string name="chat_message_hidden">Tin nhắn đã bị ẩn</string>
+    <string name="chat_deleted_user">Người dùng đã xóa</string>
+    <string name="chat_read_only">Cuộc trò chuyện chỉ đọc</string>
+    <string name="chat_badge_read_only">Chỉ đọc</string>
+    <string name="chat_badge_blocked">Đã chặn</string>
+    <string name="chat_group_locked">Nhóm đã bị tạm khóa</string>
+    <string name="chat_blocked_composer">Bạn không thể gửi tin trong cuộc trò chuyện này</string>
+    <string name="chat_removed_notice">Bạn không còn trong cuộc trò chuyện</string>
+    <string name="chat_unread_overflow">99+</string>
+    <string name="chat_role_owner_suffix">%1$s · Chủ sân</string>
+    <string name="chat_role_owner_subtitle">Chủ sân</string>
+    <string name="chat_role_customer_subtitle">Khách hàng</string>
+    <string name="chat_asking_about">Đang hỏi về</string>
+    <string name="chat_customer_asking_about">Khách đang hỏi về</string>
+    <string name="chat_venue_prefix">Hỏi về %1$s</string>
+    <string name="chat_today">Hôm nay</string>
+    <string name="chat_yesterday">Hôm qua</string>
+    <string name="chat_copied">Đã sao chép tin nhắn</string>
+    <string name="chat_already_sent_notice">Tin nhắn đã được gửi lên hệ thống</string>
+    <string name="chat_default_group_name">Nhóm</string>
+    <string name="chat_default_user_name">Người dùng</string>
+    <string name="chat_default_venue_name">Cơ sở</string>
+    <plurals name="chat_group_member_count">
+        <item quantity="other">%d thành viên</item>
+    </plurals>
+
+    <!-- Ô nhập tin -->
+    <string name="chat_input_hint_group">Nhắn tin cho nhóm</string>
+    <string name="chat_input_hint_owner">Nhắn tin cho chủ sân</string>
+    <string name="chat_input_hint_customer">Trả lời khách</string>
+    <string name="chat_input_counter">%1$d/%2$d</string>
+    <string name="chat_input_too_long">Tin nhắn tối đa 1000 ký tự</string>
+    <string name="chat_offline_banner">Đang mất kết nối mạng. Tin nhắn sẽ tự gửi khi có mạng lại.</string>
+
+    <!-- Menu thao tác -->
+    <string name="chat_menu_mute">Tắt thông báo</string>
+    <string name="chat_menu_unmute">Bật thông báo</string>
+    <string name="chat_menu_block">Chặn</string>
+    <string name="chat_menu_unblock">Bỏ chặn</string>
+    <string name="chat_menu_recall">Thu hồi</string>
+    <string name="chat_menu_report">Báo cáo</string>
+    <string name="chat_muted_success">Đã tắt thông báo cuộc trò chuyện này</string>
+    <string name="chat_unmuted_success">Đã bật thông báo cuộc trò chuyện này</string>
+    <string name="chat_blocked_success">Đã chặn người dùng này</string>
+    <string name="chat_unblocked_success">Đã bỏ chặn người dùng này</string>
+    <string name="chat_recalled_success">Đã thu hồi tin nhắn</string>
+
+    <!-- Hộp thoại xác nhận -->
+    <string name="chat_confirm_recall_title">Thu hồi tin nhắn?</string>
+    <string name="chat_confirm_recall_message">Tin nhắn sẽ được thu hồi với mọi người trong cuộc trò chuyện.</string>
+    <string name="chat_confirm_block_title">Chặn người dùng này?</string>
+    <string name="chat_confirm_block_message">Họ sẽ không thể gửi tin nhắn cho bạn trong cuộc trò chuyện này. Bạn có thể bỏ chặn bất cứ lúc nào.</string>
+    <string name="chat_confirm_unblock_title">Bỏ chặn người dùng này?</string>
+    <string name="chat_confirm_unblock_message">Họ sẽ có thể tiếp tục gửi tin nhắn cho bạn trong cuộc trò chuyện này.</string>
+
+    <!-- Gửi ảnh và quyền camera -->
+    <string name="chat_attach_title">Gửi ảnh</string>
+    <string name="chat_attach_camera">Chụp ảnh</string>
+    <string name="chat_attach_gallery">Chọn ảnh</string>
+    <string name="chat_camera_rationale_title">Cần quyền camera</string>
+    <string name="chat_camera_rationale_message">Cấp quyền camera để chụp ảnh gửi trực tiếp vào cuộc trò chuyện. Nếu không cấp, bạn vẫn có thể chọn ảnh từ thư viện hoặc nhắn tin chữ bình thường.</string>
+    <string name="chat_camera_denied_fallback">Không có quyền camera. Bạn vẫn có thể chọn ảnh từ thư viện.</string>
+    <string name="chat_camera_unavailable">Không mở được camera trên thiết bị này</string>
+
+    <!-- 5 lý do báo cáo (dùng chung chữ với spec 090) -->
+    <string name="chat_report_note">Người gửi không biết ai đã báo cáo. Quản trị viên hệ thống sẽ xem xét.</string>
+    <string name="chat_report_reason_spam">Spam</string>
+    <string name="chat_report_reason_offensive">Ngôn từ xúc phạm</string>
+    <string name="chat_report_reason_scam">Lừa đảo</string>
+    <string name="chat_report_reason_inappropriate">Nội dung không phù hợp</string>
+    <string name="chat_report_reason_other">Khác</string>
+    <string name="chat_report_detail_label">Mô tả thêm</string>
+    <string name="chat_report_detail_hint">Cho biết tin nhắn vi phạm thế nào</string>
+    <string name="chat_report_reason_required">Chọn một lý do báo cáo</string>
+    <string name="chat_report_detail_required">Nhập mô tả khi chọn Khác</string>
+    <string name="chat_report_detail_too_long">Mô tả tối đa 500 ký tự</string>
+    <string name="chat_report_send">Gửi báo cáo</string>
+    <string name="chat_report_retry">Thử lại</string>
+    <string name="chat_report_sending">Đang gửi</string>
+    <string name="chat_report_sent">Đã gửi báo cáo</string>
+
+    <!-- Trạng thái rỗng -->
+    <string name="chat_empty_player_title">Bạn chưa có cuộc trò chuyện nào</string>
+    <string name="chat_empty_player_subtitle">Tham gia một nhóm hoặc tìm sân để hỏi chủ sân.</string>
+    <string name="chat_empty_cta_join_group">Tham gia một nhóm</string>
+    <string name="chat_empty_cta_find_venue">Tìm sân để hỏi chủ sân</string>
+    <string name="chat_empty_owner_title">Chưa có tin nhắn nào từ khách hàng</string>
+    <string name="chat_empty_owner_subtitle">Khi người chơi nhắn hỏi về cơ sở của bạn, cuộc trò chuyện sẽ hiện tại đây.</string>
+    <string name="chat_empty_messages">Chưa có tin nhắn nào. Hãy bắt đầu cuộc trò chuyện!</string>
+    <string name="chat_list_player_footer">Bạn nhắn riêng được với chủ sân từ trang chi tiết sân. Trò chuyện với người chơi khác qua chat nhóm.</string>
+    <string name="chat_list_owner_footer">Tin nhắn nhóm và tin bạn gửi với tư cách người chơi nằm ở chế độ người chơi.</string>
+    <string name="chat_login_required">Vui lòng đăng nhập để nhắn tin</string>
+
+    <!-- Thông báo lỗi: đầy đủ mọi mã lỗi ở contracts/edge-functions-chat.md mục 5 -->
+    <string name="chat_error_invalid_argument">Nội dung không hợp lệ, vui lòng kiểm tra lại</string>
+    <string name="chat_error_photo_missing">Ảnh chưa được tải lên, vui lòng thử lại</string>
+    <string name="chat_error_unauthenticated">Vui lòng đăng nhập để tiếp tục</string>
+    <string name="chat_error_account_locked">Tài khoản đã bị khóa</string>
+    <string name="chat_error_not_participant">Bạn không còn trong cuộc trò chuyện</string>
+    <string name="chat_error_blocked">Bạn không thể gửi tin trong cuộc trò chuyện này</string>
+    <string name="chat_error_forbidden">Bạn không có quyền thực hiện thao tác này</string>
+    <string name="chat_error_own_venue">Bạn không thể nhắn tin cho chính mình</string>
+    <string name="chat_error_own_message">Bạn không thể báo cáo tin của chính mình</string>
+    <string name="chat_error_chat_not_found">Cuộc trò chuyện không còn</string>
+    <string name="chat_error_message_not_found">Tin nhắn không còn</string>
+    <string name="chat_error_chat_read_only">Cuộc trò chuyện chỉ đọc</string>
+    <string name="chat_error_venue_inactive">Không thể nhắn tin cho sân này lúc này</string>
+    <string name="chat_error_owner_not_approved">Không thể nhắn tin cho sân này lúc này</string>
+    <string name="chat_error_recall_window_passed">Chỉ thu hồi được trong 10 phút</string>
+    <string name="chat_error_already_reported">Bạn đã báo cáo tin này</string>
+    <string name="chat_error_group_locked">Nhóm đã bị tạm khóa</string>
+    <string name="chat_error_busy">Hệ thống đang bận, đang thử lại</string>
+    <string name="chat_error_network">Không có kết nối mạng. Kiểm tra mạng rồi thử lại.</string>
+    <string name="chat_error_image_too_large">Ảnh lớn hơn 2 MB sau khi nén</string>
+    <string name="chat_error_image_unreadable">Tệp không phải ảnh hợp lệ hoặc không đọc được</string>
+    <string name="chat_error_unknown">Đã có lỗi xảy ra, vui lòng thử lại</string>
+
+    <!-- Mô tả truy cập (contentDescription) -->
+    <string name="chat_cd_back">Quay lại</string>
+    <string name="chat_cd_more">Tùy chọn cuộc trò chuyện</string>
+    <string name="chat_cd_attach_image">Gửi ảnh</string>
+    <string name="chat_cd_send">Gửi tin nhắn</string>
+    <string name="chat_cd_remove_image">Bỏ ảnh đã chọn</string>
+    <string name="chat_cd_avatar">Ảnh đại diện của %1$s</string>
+    <string name="chat_cd_venue_photo">Ảnh cơ sở %1$s</string>
+    <string name="chat_cd_message_photo">Ảnh trong tin nhắn</string>
+    <string name="chat_cd_muted">Đã tắt thông báo</string>
+    <string name="chat_cd_close">Đóng</string>
+    <string name="chat_cd_loading_older">Đang tải thêm tin cũ</string>
+    <string name="chat_cd_unread_count">%1$d tin nhắn chưa đọc</string>
+    <string name="chat_cd_unread_overflow">Hơn 99 tin nhắn chưa đọc</string>
+    <string name="chat_community_section_groups">Nhóm</string>
+    <string name="chat_cd_messages_tab">Tin nhắn</string>
+    <string name="chat_cd_messages_tab_unread">Tin nhắn, %1$d cuộc trò chuyện chưa đọc</string>
+</resources>

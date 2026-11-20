@@ -1,6 +1,7 @@
 // `setRole`, `transferOwner`, `remove`, `delete` của `group-manage` (spec 090 T059, T060; research R11, R13).
 // Quản lý thành viên đọc/ghi `groups/{groupId}` trong transaction (R3); `delete` đặt `DELETED` trong transaction
 // rồi dọn dữ liệu NGOÀI transaction theo lô, chạy lại được khi lỗi giữa chừng.
+import { groupChatId, purgeChat } from "../_shared/chats.ts";
 import { HttpError } from "../_shared/auth.ts";
 import { createWrite, deleteWrite, type FirestoreTransaction, updateWrite, type Write } from "../_shared/firestore.ts";
 import {
@@ -156,7 +157,7 @@ export async function purgeGroup(deps: GroupDeps, groupId: string): Promise<void
   // File trực tiếp dưới `{groupId}/` (ảnh đại diện, và file lạc nếu có) ở cả 2 bucket.
   await deletePrefix(deps.storage, AVATAR_BUCKET, groupId);
   await deletePrefix(deps.storage, GROUP_MEDIA_BUCKET, groupId);
-  // TODO(spec 091): gọi `purgeChat("group_" + groupId)` của `_shared/chats.ts` tại đây (file chưa tồn tại).
+  await purgeChat(groupChatId(groupId), deps);
   await deps.firestore.commit([deleteWrite(parent, false)]);
 }
 

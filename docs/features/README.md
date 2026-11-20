@@ -15,7 +15,7 @@ Trạng thái: ⬜ Chưa bắt đầu · 🟨 Đang làm · 🟦 Đang review ·
 | 06 | [Quản lý lịch đặt](06-booking-management/) | Người chơi | B | ⬜ Chưa bắt đầu | — |
 | 07 | [Đánh giá và yêu thích](07-review-favorite/) | Người chơi | C | ⬜ Chưa bắt đầu | — |
 | 08 | [Đặt lịch vãng lai](08-drop-in/) | Người chơi | C | 🟨 Đang làm | [080](../../specs/080-drop-in-session/), [081](../../specs/081-drop-in-waitlist/) |
-| 09 | [Cộng đồng và chat](09-community-chat/) | Người chơi | C | 🟨 Đang làm | [090](../../specs/090-community-group/), [091](../../specs/091-chat/spec.md) |
+| 09 | [Cộng đồng và chat](09-community-chat/) | Người chơi | C | 🟨 Đang làm | [090](../../specs/090-community-group/), [091](../../specs/091-chat/) |
 | 10 | [Thông báo](10-notification/) | Người chơi | D | ⬜ Chưa bắt đầu | — |
 | 11 | [Quản lý sân (chủ sân)](11-court-owner/) | Chủ sân | D | ⬜ Chưa bắt đầu | — |
 | 12 | [Quản trị (admin)](12-admin/) | Admin | D | ⬜ Chưa bắt đầu | — |

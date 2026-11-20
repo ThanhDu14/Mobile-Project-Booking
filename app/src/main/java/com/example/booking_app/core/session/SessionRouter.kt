@@ -51,6 +51,17 @@ object SessionRouter {
         SessionState.Initializing, is SessionState.InitFailed -> RouteDecision.AccountSetup
     }
 
+    /**
+     * M1: mở app lạnh bằng deep link thì dưới màn deep link không có graph gốc. Sau khi dựng [decision] (graph gốc),
+     * mở lại deep link ở trên khi đích là màn chính (người chơi/khách thường, chủ sân, admin) để Back về Trang chủ và
+     * khách đăng nhập xong quay lại đúng màn (PopAuth). Màn chào, bị khóa/thu hồi, chờ khởi tạo thì bỏ deep link.
+     */
+    fun replayDeepLinkAfter(decision: RouteDecision): Boolean = when (decision) {
+        is RouteDecision.RoleHome, is RouteDecision.ResetTo -> true
+        is RouteDecision.PlayerGuest -> !decision.showLockedLogin && decision.notice == GuestNotice.NONE
+        else -> false
+    }
+
     /** Đích sau khi đăng nhập xong (`SignedOut` → `SignedIn`). */
     fun afterSignIn(appRole: AppRole, hasPlayerGraphBelowAuth: Boolean, returnTo: Uri?): RouteDecision =
         if (appRole == AppRole.PLAYER && hasPlayerGraphBelowAuth) {

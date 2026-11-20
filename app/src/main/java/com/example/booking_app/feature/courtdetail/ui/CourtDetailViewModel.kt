@@ -131,10 +131,12 @@ class CourtDetailViewModel @Inject constructor(
         .flatMapLatest { observeVenueDetail(venueId).onStart<VenueView?> { emit(null) } }
         .onEach(::onVenue)
 
-    /** `null` khi là khách. Listener `favorites` chỉ chạy khi đã đăng nhập và có người thu thập [uiState]. */
-    private val favoriteFlow: Flow<Boolean?> = sessionManager.sessionState
+    private val uidFlow: Flow<String?> = sessionManager.sessionState
         .map { (it as? SessionState.SignedIn)?.uid }
         .distinctUntilChanged()
+
+    /** `null` khi là khách. Listener `favorites` chỉ chạy khi đã đăng nhập và có người thu thập [uiState]. */
+    private val favoriteFlow: Flow<Boolean?> = uidFlow
         .flatMapLatest { uid ->
             if (uid == null) {
                 flowOf(null)
@@ -152,7 +154,8 @@ class CourtDetailViewModel @Inject constructor(
         .onEach { now -> window.update { w -> w?.takeIf { SearchWindowArgs.isUpcoming(it, now) } } }
 
     val uiState: StateFlow<CourtDetailUiState> =
-        combine(venueFlow, sections, ticker, window, favoriteFlow) { venue, s, now, w, favorite ->
+        // M8: dựng lại khi UID đổi (cold start vào sân của mình) để ẩn nút chat dù listener yêu thích chưa phát.
+        combine(venueFlow.combine(uidFlow) { venue, _ -> venue }, sections, ticker, window, favoriteFlow) { venue, s, now, w, favorite ->
             buildState(venue, s, now, w).copy(isFavorite = favorite)
         }
             .stateIn(
@@ -494,6 +497,7 @@ class CourtDetailViewModel @Inject constructor(
                 val venue = view.result.venue
                 val availability = s.availabilityOverride ?: venue.availability
                 val suspended = availability != VenueAvailability.ACTIVE
+                val isOwnVenue = venue.ownerId == sessionManager.currentUid()
                 val (prices, bottomPrice) = prices(s.priceRules, w)
                 base.copy(
                     availability = availability,
@@ -521,7 +525,7 @@ class CourtDetailViewModel @Inject constructor(
                     phone = PhoneDisplay.of(venue.phone),
                     distanceText = s.distanceText,
                     reviews = reviews(venue, s.latestReviews),
-                    bottomBar = if (suspended) BottomBarState.Suspended else BottomBarState.Book(bottomPrice),
+                    bottomBar = if (suspended) BottomBarState.Suspended else BottomBarState.Book(bottomPrice, showChat = !isOwnVenue),
                 )
             }
         }
