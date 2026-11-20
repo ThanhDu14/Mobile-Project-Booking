@@ -76,3 +76,38 @@ Thông báo đẩy FCM (Q9), SC-001 (2 máy thật, 4G), SC-007 (5 người th�
 ## 6. Khôi phục
 
 Máy bay tắt, `uimode night no`, `wm density reset` (480). Đang đăng nhập player3. Dữ liệu Emulator giữ nguyên nhưng đã thay đổi: thêm tin Q5/Q8/Q9/Q11/Q12 và 1 tin thu hồi, player7 vào G1, player4 bị mời ra G1, owner1 bỏ chặn player2, player1 đã tắt thông báo chat nhóm G1 (Q9), quyền CAMERA đã thu hồi.
+
+## Kiểm thử lại sau sửa (vòng 2)
+
+Bản debug mới (commit `a8fc555`, `97d9310`). Lưu ý: lúc bắt đầu app đang ở trạng thái khách (phiên không còn dù "dữ liệu giữ nguyên"), phải đăng nhập lại player3; mọi phép thử L4 bên dưới đều làm khi đã đăng nhập. Ảnh `r2-*.png`.
+
+| Mục | Kết quả | Ảnh | Ghi chú |
+|---|---|---|---|
+| L1 chat nhóm | Đạt | r2-l1-group-keyboard, r2-l1-group-sent | Bàn phím lên (từ y 1848), ô nhập/nút gửi bounds y 1680-1824 nằm ngay trên bàn phím; gõ, gửi được; tin cuối vẫn thấy. |
+| L1 chat riêng | Đạt | r2-l1-direct-keyboard, r2-l1-direct-sent | Như trên. |
+| L1 w600dp (density 240) | Đạt | r2-l1-w600-keyboard | Ô nhập sát trên bàn phím, thấy tin cuối. |
+| L3 mục Nhóm/Tin nhắn | Đạt | r2-l3-community, r2-l3-messages | Có "Nhóm \| Tin nhắn"; Tin nhắn hiện chat nhóm G1 + chat với chủ sân, không có cuộc nào mình là chủ. Chân trang chú thích. |
+| L3 huy hiệu | Đạt | r2-l3-unread-list, r2-l3-unread-badge-groups, r2-l3-after-read | send-as: 2 tin owner + 1 tin nhóm -> badge tab "2" (đếm số cuộc), từng cuộc "2" và "1"; mở 1 cuộc -> tab "1". Badge hiện cả khi đang ở mục Nhóm. |
+| L3 chuyển qua lại / Back / xoay / tối | Đạt | r2-l3-dark, r2-l3-rotate | Giữ mục Tin nhắn khi bật tối và xoay ngang; chuyển qua lại nhiều lần OK; Back ra Trang chủ; không crash. |
+| L4 cold start `chat/<chatId>` | Đạt | r2-l4-direct | Vào đúng màn chat, không sang Đăng nhập. |
+| L4 cold start `chat/group/demo090-g1` | Đạt | r2-l4-group | Đúng. |
+| L4 cold start `chat/owner` (owner1) | Đạt | r2-l4-owner | Vào "Tin nhắn khách hàng". `chat/<id>` của owner1 cũng đúng (r2-l4-owner-direct). |
+| L4 so sánh `venue/demo091-v1` cold | Đạt | r2-l4-venue, r2-q4-owner-venue | Vào chi tiết sân; không còn lỗi chung ở các deep link thử. |
+| L7 báo cáo khi máy bay | Đạt | r2-l7-offline-3s, r2-l7-offline-17s, r2-l7-retry-ok | Sau 3 s và 17 s vẫn hiện khung lỗi "Không có kết nối mạng. Kiểm tra mạng rồi thử lại." + nút đổi thành "Thử lại". Tắt máy bay, bấm Thử lại: sheet đóng, Firestore có `reports/MESSAGE_...` mới. |
+| Q4/L2 | Đạt | r2-q4-owner-venue, r2-q4-player-venue | owner1 ở V1 chỉ có "Đặt sân", không có nút chat; player3 vẫn thấy "Nhắn tin cho chủ sân". |
+| L9 avatar | Đạt | (ui dump) | Avatar chữ có content-desc: "Ảnh đại diện của Người chơi yer2", "Ảnh đại diện của CLB Cầu Lông Quận 7"; tài khoản "Tài khoản". |
+| L5 Tham gia nhóm | Đạt | r2-l5-before-join, r2-l5-after-join | player4 vào "Pickleball Cuối Tuần 4": chi tiết tự đổi sang có "Chat nhóm", "Rời nhóm", "Đăng bài" (2 thành viên). Xem N2. |
+| Q1/SC-002 | Đạt | r2-q1-timing | Lần chạy script: mở chi tiết V1 -> bấm chat -> gõ -> gửi, tin hiện sau tổng ~5 s (đã gồm các sleep). Thực tế người dùng ước < 30 s. |
+| T055 loading | Không kiểm được | - | Chụp ngay sau force-stop chỉ ra màn khác/đã tải xong. |
+| T055 danh sách error + Thử lại | Không kiểm được | r2-t055-list-offline | Máy bay + cold start: app dừng ở màn "Chưa chuẩn bị xong tài khoản... Thử lại" (màn phiên, không phải của danh sách chat); Thử lại sau khi có mạng vào được. Không ép được lỗi danh sách (Firestore đọc cache). |
+| Hồi quy | Đạt | r2-reg-image-preview, r2-reg-image-sent, r2-reg-recalled | Gửi chữ (nhóm+riêng), gửi ảnh (nhóm), thu hồi ảnh, chat nhóm hoạt động. `logcat -b crash`: không có crash. |
+
+### Lỗi mới / còn lại
+
+| # | Mức | Mô tả | Tái hiện |
+|---|---|---|---|
+| N1 | Thấp-Vừa (chưa chắc) | Sau khi cold start deep link chat rồi đổi `wm density reset` (activity tạo lại) và nhấn Back 2 lần, app kẹt ở màn splash "SmashNow - Đang tải" (r2-n1-back-stuck-launcher). Tái hiện lại không đổi density: Back từ chat cold-link ra danh sách Tin nhắn, bình thường. Có thể do recreate; cần kiểm lại. | force-stop > mở `smashnow://chat/<id>` > đổi density (recreate) > Back x2 |
+| N2 | Thấp (môi trường) | Nhóm "Pickleball Cuối Tuần 4" chưa có `chats/group_...` (trigger tạo chat nhóm không chạy ở local). Sau khi Tham gia, bấm "Chat nhóm" ra snackbar "Bạn không còn trong cuộc trò chuyện". Danh sách Khám phá còn hiện "1 thành viên" (cũ) sau khi vào. | player4 Tham gia nhóm mới > Chat nhóm |
+| L6, L8, L10 | - | Không sửa theo báo cáo sửa; không kiểm lại. | |
+
+Khôi phục: máy bay tắt, night no, density 480, xoay tự động bật. Đang đăng nhập player3. Dữ liệu thêm: tin r2/L1/timing, 1 ảnh thu hồi, 1 báo cáo mới, player4 vào "Pickleball Cuối Tuần 4".
