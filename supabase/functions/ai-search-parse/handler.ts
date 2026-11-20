@@ -26,6 +26,8 @@ export interface AiSearchDeps {
   authenticate(req: Request): Promise<{ uid: string; displayName?: string }>;
   providers: LlmProvider[];
   now(): Date;
+  /** LLM time budget. Production keeps the defaults (8.5 s total, 6 s for the first provider); only the eval script overrides it. */
+  timeouts?: { totalMs: number; firstMs: number };
 }
 
 type Doc = Record<string, unknown>;
@@ -48,7 +50,7 @@ function isUnlimited(uid: string): boolean {
 /** RECOMMEND does not use the LLM or AI turns, but each call reads up to ~330 Firestore documents. */
 export const recommendLimit = 20;
 const minuteMs = 60_000;
-const version = "court-search-rag-3"; // bump when parse rules change: invalidates aiSearchCache
+export const version = "court-search-rag-4"; // bump when parse rules change: invalidates aiSearchCache
 
 function usageOf(doc: Doc | null): Usage {
   const count = Math.max(0, Number(doc?.count) || 0);
@@ -170,6 +172,9 @@ async function reserveRecommend(uid: string, deps: AiSearchDeps) {
   }, 8);
 }
 
+/** Shortest time worth giving a fallback provider after the previous one timed out. */
+const minFallbackMs = 1_500;
+
 async function generate(
   uid: string,
   prompt: string,
@@ -181,8 +186,10 @@ async function generate(
     throw new HttpError(502, "AI_UNAVAILABLE", "Trợ lý chưa được cấu hình");
   }
   const started = performance.now();
+  const totalMs = deps.timeouts?.totalMs ?? 8_500;
+  const firstMs = deps.timeouts?.firstMs ?? 6_000;
   for (const [index, provider] of deps.providers.entries()) {
-    const remaining = Math.floor(8_500 - (performance.now() - started));
+    const remaining = Math.floor(totalMs - (performance.now() - started));
     if (remaining < 300) {
       throw new HttpError(504, "AI_TIMEOUT", "Trợ lý phản hồi quá chậm");
     }
@@ -193,18 +200,20 @@ async function generate(
         input,
         schema,
         // Fallback gets the rest of the 8.5 s budget: Groq gpt-oss measured ~6 s, so a 3 s cap always timed out.
-        index === 0 ? Math.min(6000, remaining) : remaining,
+        index === 0 ? Math.min(firstMs, remaining) : remaining,
       );
       return { value, day, provider: provider.name, fallback: index > 0 };
     } catch (error) {
       if (!(error instanceof ProviderError)) throw error;
+      const hasNext = index + 1 < deps.providers.length;
       if (error.status === 504) {
+        // A hung provider no longer ends the request while a fallback is ready and time is left
+        // (eval 2026-11-17: Gemini hung for the whole budget while Groq was available).
+        const left = totalMs - (performance.now() - started);
+        if (hasNext && left >= minFallbackMs) continue;
         throw new HttpError(504, "AI_TIMEOUT", "Trợ lý phản hồi quá chậm");
       }
-      if (
-        index + 1 < deps.providers.length &&
-        (error.status === 429 || error.status >= 500)
-      ) continue;
+      if (hasNext && (error.status === 429 || error.status >= 500)) continue;
       throw new HttpError(
         502,
         "AI_UNAVAILABLE",

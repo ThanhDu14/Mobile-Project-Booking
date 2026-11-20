@@ -25,10 +25,17 @@ class MyBookingsViewModelTest {
         val invalidations = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
         var lastObservedTab: BookingTab? = null
         var countsFlow: Flow<Map<BookingTab, Int>> = kotlinx.coroutines.flow.flowOf(emptyMap())
+        /** Giữ các lần tải trang sau (cursor != null) chờ tới khi hoàn tất, để mô phỏng mạng chậm. */
+        var nextPageGate: kotlinx.coroutines.CompletableDeferred<Unit>? = null
+        var nextPageCalls = 0
 
         override fun observeTabCounts(): Flow<Map<BookingTab, Int>> = countsFlow
 
         override suspend fun getPage(tab: BookingTab, cursor: String?, pageSize: Int): BookingPage {
+            if (cursor != null) {
+                nextPageCalls++
+                nextPageGate?.await()
+            }
             return pageHandler(tab, cursor, pageSize)
         }
 
@@ -119,6 +126,34 @@ class MyBookingsViewModelTest {
         content = vm.state.value as MyBookingsState.Content
         assertEquals(2, content.bookings.size)
         assertNull(content.nextCursor)
+    }
+
+    @Test
+    fun `scrolling again while the next page loads does not append it twice`() = runTest {
+        // Trên máy: tab "Đã hủy" 13 đơn, cuộn tới cuối gọi loadNextPage nhiều lần khi trang 2 chưa về,
+        // trang 2 bị nối hai lần (đơn cũ nhất hiện lặp, sai thứ tự).
+        val repo = FakeRepo()
+        repo.pageHandler = { _, cursor, _ ->
+            if (cursor == null) BookingPage((1..10).map { fakeBooking("b$it") }, "cursor-1")
+            else BookingPage(listOf(fakeBooking("b11"), fakeBooking("b12")), null)
+        }
+        val gate = kotlinx.coroutines.CompletableDeferred<Unit>()
+        repo.nextPageGate = gate
+        val vm = MyBookingsViewModel(repo)
+        vm.selectTab(BookingTab.CANCELLED)
+        advanceUntilIdle()
+
+        vm.loadNextPage()
+        advanceUntilIdle()
+        vm.loadNextPage()
+        vm.loadNextPage()
+        advanceUntilIdle()
+        gate.complete(Unit)
+        advanceUntilIdle()
+
+        val content = vm.state.value as MyBookingsState.Content
+        assertEquals(1, repo.nextPageCalls)
+        assertEquals((1..12).map { "b$it" }, content.bookings.map { it.bookingId })
     }
 
     @Test

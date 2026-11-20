@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- sw600dp đứng trước hướng màn hình khi chọn tài nguyên, nên máy tính bảng xoay ngang vẫn dùng giá trị này -->
+    <bool name="search_two_pane">true</bool>
+    <bool name="map_compact_landscape">false</bool>
+</resources>

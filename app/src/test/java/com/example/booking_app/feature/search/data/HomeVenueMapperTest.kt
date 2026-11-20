@@ -3,6 +3,8 @@ package com.example.booking_app.feature.search.data
 import com.example.booking_app.core.catalog.District
 import com.example.booking_app.core.media.PhotoUrlResolver
 import com.example.booking_app.feature.search.domain.model.HomeVenue
+import com.example.booking_app.feature.search.domain.model.LatLng
+import com.google.firebase.firestore.GeoPoint
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -41,5 +43,15 @@ class HomeVenueMapperTest {
     @Test
     fun `gia khong duong thi coi nhu chua co gia`() {
         assertNull(HomeVenueMapper.map("v3", mapOf("minPricePerHour" to 0L), districts, resolver).minPricePerHour)
+    }
+
+    @Test
+    fun `toa do hop le duoc giu, toa do 0-0 hoac thieu thi bo`() {
+        val here = HomeVenueMapper.map("v4", mapOf("location" to GeoPoint(10.8128, 106.6283)), districts, resolver)
+        assertEquals(LatLng(10.8128, 106.6283), here.position)
+        assertNull(HomeVenueMapper.map("v5", mapOf("location" to GeoPoint(0.0, 0.0)), districts, resolver).position)
+        assertNull(HomeVenueMapper.map("v6", mapOf("location" to "10.8,106.6"), districts, resolver).position)
+        // Sân "Nhut" trên production lưu (90, 90): hiện cách 8.794 km nếu không loại.
+        assertNull(HomeVenueMapper.map("v7", mapOf("location" to GeoPoint(90.0, 90.0)), districts, resolver).position)
     }
 }

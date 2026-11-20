@@ -3,12 +3,20 @@ package com.example.booking_app.feature.search.ui
 import android.Manifest
 import android.app.DatePickerDialog
 import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.net.Uri
+import android.animation.ValueAnimator
 import android.os.Bundle
+import android.view.HapticFeedbackConstants
+import android.provider.Settings
+import androidx.core.content.ContextCompat
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.os.bundleOf
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
@@ -41,9 +49,23 @@ import com.example.booking_app.databinding.ItemSearchSourceBinding
 import android.content.res.ColorStateList
 import com.google.android.material.color.MaterialColors
 import com.example.booking_app.databinding.ViewCourtSearchControlsBinding
+import com.example.booking_app.databinding.ItemSearchHistoryBinding
+import com.example.booking_app.databinding.SheetSearchHistoryBinding
+import com.example.booking_app.feature.search.domain.CourtSearchCriteria
+import com.example.booking_app.feature.search.domain.Relaxation
+import com.example.booking_app.feature.search.domain.RelaxationKind
 import com.example.booking_app.feature.search.domain.CourtSearchSort
 import com.example.booking_app.feature.search.domain.ReviewPreference
 import com.example.booking_app.feature.search.domain.model.HomeVenue
+import com.example.booking_app.feature.search.domain.map.CourtMap
+import com.example.booking_app.feature.search.domain.map.MapStatus
+import com.example.booking_app.feature.search.domain.map.MapViewport
+import com.example.booking_app.feature.search.domain.map.VisibleVenues
+import com.example.booking_app.feature.search.ui.map.CourtMapController
+import com.example.booking_app.feature.search.ui.map.MapCardAdapter
+import com.example.booking_app.feature.search.ui.map.NearbyAdapter
+import androidx.viewpager2.widget.MarginPageTransformer
+import androidx.viewpager2.widget.ViewPager2
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -52,12 +74,24 @@ import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import javax.inject.Inject
+
+/** Số chip "Tìm gần đây" trên màn tìm; "Xem tất cả" mở đủ 10 mục. */
+private const val RECENT_CHIPS = 5
+
+/** Mức phóng khi mở bản đồ từ "Sân gần bạn": thấy khoảng bán kính 5 km; "Tìm rộng hơn" thấy vài quận (spec 021). */
+private const val NEARBY_ZOOM = 13.5
+private const val WIDER_ZOOM = 12.0
+private const val LIST_PANE_PERCENT = 0.4f
+
+/** Thông báo của micro: hiện dưới ô AI thay cho dòng thông báo chung. */
+private val VOICE_NOTICES = setOf(SearchNotice.VOICE_NO_MATCH, SearchNotice.VOICE_NETWORK)
 
 @AndroidEntryPoint
 class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
@@ -67,9 +101,51 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
     @Inject lateinit var accountEntryNavigator: AccountEntryNavigator
     @Inject lateinit var authNavigator: AuthNavigator
 
+    private var locationReason = LocationReason.SORT
     private val locationPermission = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { grants ->
-        if (grants.values.any { it }) viewModel.sort(CourtSearchSort.NEAREST)
-        else view?.let { Snackbar.make(it, R.string.search_location_unavailable, Snackbar.LENGTH_SHORT).show() }
+        viewModel.locationResult(locationReason, grants.values.any { it })
+    }
+
+    /** Bản đồ tạo lần đầu khi chuyển sang chế độ bản đồ, gắn với view hiện tại (spec 021). */
+    private var mapController: CourtMapController? = null
+    private var mapCards: MapCardAdapter? = null
+    private var venueCards: VenueCardAdapter? = null
+    private var listSelection: String? = null
+
+    /** Máy tính bảng: danh sách và bản đồ cạnh nhau (spec 021 FR-023). */
+    private val twoPane: Boolean get() = resources.getBoolean(R.bool.search_two_pane)
+
+    /** Điện thoại xoay ngang: ẩn tiêu đề khi xem bản đồ, thẻ ở góc trái nên nút vị trí không cần nhích. */
+    private val compactLandscape: Boolean get() = resources.getBoolean(R.bool.map_compact_landscape)
+    private var lastFocusId: Int? = null
+
+    private val micPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        viewModel.voicePermission(granted)
+        if (!granted) showVoiceDenied()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        viewModel.voicePermissionChecked(hasMicPermission())
+    }
+
+    override fun onDestroyView() {
+        // Hiệu ứng micro gắn với view cũ; view mới bắt đầu lại từ trạng thái nghỉ.
+        micPulse?.cancel()
+        micPulse = null
+        micListening = false
+        aiFieldIdle = null
+        mapController = null
+        mapCards = null
+        venueCards = null
+        listSelection = null
+        super.onDestroyView()
+    }
+
+    override fun onStop() {
+        // Không nghe khi màn hình không còn hiển thị (spec 022 T083).
+        viewModel.stopVoice()
+        super.onStop()
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
@@ -80,7 +156,7 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
         binding.header.tabTitle.setText(R.string.nav_tab_search)
         MainTabHeader.bind(this, binding.header, avatarSource, accountEntryNavigator)
 
-        val venues = VenueCardAdapter(::openVenue)
+        val venues = VenueCardAdapter(::onVenueCard).also { venueCards = it }
         venues.stateRestorationPolicy = RecyclerView.Adapter.StateRestorationPolicy.PREVENT_WHEN_EMPTY
         binding.results.adapter = ConcatAdapter(ControlsAdapter(controls.root), venues)
         binding.results.addOnScrollListener(object : RecyclerView.OnScrollListener() {
@@ -98,7 +174,7 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
         controls.keyword.setOnEditorActionListener { _, action, _ ->
             if (action != EditorInfo.IME_ACTION_SEARCH) return@setOnEditorActionListener false
             hideKeyboard(controls.keyword)
-            viewModel.retry()
+            viewModel.submitKeyword()
             true
         }
         controls.aiInput.setOnEditorActionListener { _, action, _ ->
@@ -121,6 +197,9 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
         controls.amenities.setOnClickListener { chooseAmenities() }
         controls.sort.setOnClickListener { chooseSort() }
         controls.retry.setOnClickListener { viewModel.retry() }
+        controls.recentAll.setOnClickListener { showHistorySheet() }
+        controls.aiField.setStartIconOnClickListener { onMicClicked() }
+        controls.historyGuestHint.setOnClickListener { authNavigator.openLogin(findNavController()) }
         controls.aiToggle.setOnClickListener {
             if (viewModel.state.value.guest) authNavigator.openLogin(findNavController())
             else {
@@ -130,19 +209,56 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
             }
         }
 
+        lastFocusId = viewModel.map.value.focus?.id
+        // Máy tính bảng luôn hiện bản đồ bên cạnh danh sách (cũng thử lại nếu lần trước tile lỗi).
+        if (twoPane) viewModel.showMap(true)
+        binding.mapToggle.setOnClickListener { viewModel.showMap(!viewModel.map.value.visible) }
+        binding.map.mapFilters.setOnClickListener { showFilters() }
+        binding.map.myLocation.setOnClickListener { viewModel.locateOnMap() }
+        binding.map.searchArea.setOnClickListener { viewModel.searchThisArea() }
+        val nearby = NearbyAdapter(::openVenue)
+        controls.nearbyList.adapter = nearby
+        controls.nearbySeeMap.setOnClickListener { viewModel.openNearbyMap(NEARBY_ZOOM) }
+        controls.nearbySecondary.setOnClickListener { chooseDistrict() }
+        viewModel.startNearby()
+        binding.map.mapRetry.setOnClickListener { viewModel.retry() }
+        val cards = MapCardAdapter(::openVenue).also { mapCards = it }
+        binding.map.mapCards.adapter = cards
+        binding.map.mapCards.offscreenPageLimit = 1
+        binding.map.mapCards.setPageTransformer(MarginPageTransformer(resources.getDimensionPixelSize(R.dimen.space_2)))
+        binding.map.mapCards.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+            override fun onPageSelected(position: Int) {
+                // Vuốt thẻ: làm nổi bật marker của sân đang xem (FR-008).
+                val venue = cards.currentList.getOrNull(position) ?: return
+                if (venue.id != viewModel.map.value.selectedId) viewModel.selectVenue(venue.id, fromCard = true)
+            }
+        })
+
         var previous: CourtSearchUiState? = null
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
                     viewModel.state.collect { state ->
                         render(controls, venues, previous, state)
-                        if (state.notice != previous?.notice && state.notice != null && manager.findFirstVisibleItemPosition() > 0) {
-                            Snackbar.make(binding.root, noticeText(state.notice), Snackbar.LENGTH_LONG).show()
+                        // Thông báo nằm ở đầu danh sách: chỉ cần snackbar khi danh sách đã cuộn hoặc đang bị bản đồ che.
+                        // Máy tính bảng luôn thấy danh sách nên không hiện thêm snackbar (trước đây hiện hai lần).
+                        val listHidden = viewModel.map.value.visible && !twoPane
+                        val noticeHidden = manager.findFirstVisibleItemPosition() > 0 || listHidden
+                        if (state.notice != previous?.notice && state.notice != null && noticeHidden) {
+                            // Trên bản đồ, thiếu vị trí thì nói rõ bản đồ đang ở khu vực mặc định (FR-013).
+                            val text = if (viewModel.map.value.visible && state.notice == SearchNotice.LOCATION_UNAVAILABLE) {
+                                R.string.map_no_location
+                            } else noticeText(state.notice)
+                            Snackbar.make(binding.root, text, Snackbar.LENGTH_LONG).show()
                         }
                         previous = state
                     }
                 }
                 launch { viewModel.effects.collect(::handleEffect) }
+                launch {
+                    combine(viewModel.state, viewModel.map, ::Pair).collect { (state, map) -> renderMap(binding, state, map) }
+                }
+                launch { viewModel.voiceLevel.collect { renderVoiceLevel(controls, it) } }
                 launch {
                     viewModel.refreshUsage()
                     var day = viewModel.today()
@@ -168,20 +284,25 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
         previous: CourtSearchUiState?,
         state: CourtSearchUiState,
     ) {
+        renderNearby(binding, state)
         if (binding.keyword.text.toString() != state.criteria.keyword) binding.keyword.setText(state.criteria.keyword)
         if (binding.aiInput.text.toString() != state.aiInput) binding.aiInput.setText(state.aiInput)
         binding.aiField.isVisible = !state.guest
+        renderVoice(binding, state)
         binding.filtersKeptRow.isVisible = state.filtersKept && state.criteria.hasFilters()
         renderHistory(binding, previous, state)
+        renderRecent(binding, previous, state)
         if (state.clarification != null) aiExpanded = true
         binding.aiBody.isVisible = aiExpanded && !state.guest
         renderUsage(binding, state)
-        // Lỗi ngày hiện trong khung AI, ngay trên câu hỏi chọn ngày; các thông báo khác giữ vị trí cũ.
+        // Lỗi ngày hiện trong khung AI, ngay trên câu hỏi chọn ngày; lỗi micro hiện dưới ô AI (renderVoice);
+        // các thông báo khác giữ vị trí cũ.
         val dateNotice = state.notice == SearchNotice.INVALID_DATE
+        val inAiPanel = dateNotice || state.notice in VOICE_NOTICES
         binding.aiDateNotice.isVisible = dateNotice
         if (dateNotice) binding.aiDateNoticeText.setText(noticeText(SearchNotice.INVALID_DATE))
-        binding.notice.isVisible = state.notice != null && !dateNotice
-        state.notice?.takeIf { !dateNotice }?.let { binding.notice.setText(noticeText(it)) }
+        binding.notice.isVisible = state.notice != null && !inAiPanel
+        state.notice?.takeIf { !inAiPanel }?.let { binding.notice.setText(noticeText(it)) }
         binding.clarify.isVisible = state.clarification != null
         binding.clarifyChoices.isVisible = state.clarification != null
 
@@ -221,9 +342,268 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
         binding.resultsMessage.isVisible = message != null
         message?.let(binding.resultsMessage::setText)
         binding.retry.isVisible = state.failed
+        renderRelaxations(binding, previous, state)
         if (previous?.venues != state.venues || previous?.shownCount != state.shownCount) {
             venues.submitList(state.venues.take(state.shownCount))
         }
+    }
+
+    /** Micro ở mép trái ô AI: ẩn khi máy không hỗ trợ, mờ khi bị từ chối quyền, "Đang nghe…" khi nghe. */
+    private fun renderVoice(binding: ViewCourtSearchControlsBinding, state: CourtSearchUiState) {
+        val field = binding.aiField
+        field.isStartIconVisible = state.voiceAvailable
+        if (!state.voiceAvailable) return
+        val denied = state.voiceDenied && !state.listening
+        field.setStartIconDrawable(if (denied) R.drawable.ic_mic_off_24 else R.drawable.ic_mic_24)
+        field.startIconContentDescription = getString(when {
+            state.listening -> R.string.search_voice_stop_cd
+            denied -> R.string.search_voice_denied_cd
+            else -> R.string.search_voice_start_cd
+        })
+        val primary = MaterialColors.getColor(field, androidx.appcompat.R.attr.colorPrimary)
+        val muted = MaterialColors.getColor(field, com.google.android.material.R.attr.colorOnSurfaceVariant)
+        field.setStartIconTintList(ColorStateList.valueOf(if (state.listening) primary else muted))
+        micIcon(binding)?.alpha = if (denied) 0.38f else 1f
+        // Lỗi nhận dạng hiện ngay dưới ô (cạnh micro), không ở dòng thông báo chung bên dưới bộ lọc.
+        field.helperText = when {
+            state.listening -> getString(R.string.search_voice_listening)
+            state.notice in VOICE_NOTICES -> getString(noticeText(state.notice!!))
+            else -> null
+        }
+        field.setHelperTextColor(ColorStateList.valueOf(if (state.listening) primary else muted))
+        if (state.listening != micListening) {
+            micListening = state.listening
+            if (state.listening) startListeningEffect(binding, primary) else stopListeningEffect(binding)
+        }
+    }
+
+    private var micListening = false
+    private var micPulse: ValueAnimator? = null
+    private var aiFieldIdle: AiFieldLook? = null
+
+    /** Gợi ý và độ dày viền gốc của ô AI để trả lại sau khi nghe xong. */
+    private class AiFieldLook(val hint: CharSequence?, val width: Int)
+
+    private fun micIcon(binding: ViewCourtSearchControlsBinding): View? =
+        binding.aiField.findViewById(com.google.android.material.R.id.text_input_start_icon)
+
+    /**
+     * "Đang nghe" phải thấy được ngay (spec 022 US4): viền ô sáng màu chủ đạo, gợi ý đổi thành
+     * "Mời bạn nói…", vòng sáng sau micro "thở" liên tục và micro nhún theo âm lượng ([renderVoiceLevel]).
+     * Tắt hiệu ứng chuyển động khi người dùng tắt hoạt ảnh trong cài đặt máy.
+     */
+    private fun startListeningEffect(binding: ViewCourtSearchControlsBinding, primary: Int) {
+        val field = binding.aiField
+        if (aiFieldIdle == null) {
+            aiFieldIdle = AiFieldLook(field.hint, field.boxStrokeWidth)
+        }
+        field.hint = getString(R.string.search_voice_speak_hint)
+        field.setBoxStrokeColorStateList(ColorStateList.valueOf(primary))
+        field.boxStrokeWidth = field.boxStrokeWidthFocused
+        field.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+        field.announceForAccessibility(getString(R.string.search_voice_listening))
+        val icon = micIcon(binding) ?: return
+        icon.background = ContextCompat.getDrawable(requireContext(), R.drawable.bg_voice_pulse)?.mutate()?.apply {
+            setTint(primary)
+            alpha = 60
+        }
+        if (!ValueAnimator.areAnimatorsEnabled()) return
+        micPulse?.cancel()
+        micPulse = ValueAnimator.ofInt(40, 110).apply {
+            duration = 650
+            repeatMode = ValueAnimator.REVERSE
+            repeatCount = ValueAnimator.INFINITE
+            addUpdateListener { icon.background?.alpha = it.animatedValue as Int }
+            start()
+        }
+    }
+
+    private fun stopListeningEffect(binding: ViewCourtSearchControlsBinding) {
+        micPulse?.cancel()
+        micPulse = null
+        micIcon(binding)?.apply {
+            animate().cancel()
+            scaleX = 1f
+            scaleY = 1f
+            background = null
+        }
+        val field = binding.aiField
+        aiFieldIdle?.let { look ->
+            field.hint = look.hint
+            // Màu viền mặc định của ô Outlined trong Material 3 (theo trạng thái focus/hover).
+            ContextCompat.getColorStateList(requireContext(), com.google.android.material.R.color.m3_textfield_stroke_color)
+                ?.let(field::setBoxStrokeColorStateList)
+            field.boxStrokeWidth = look.width
+        }
+    }
+
+    /** Micro nhún theo âm lượng thu được (0..1): im lặng thì nhỏ, nói to thì phồng tới 1,25 lần (vòng sáng vẫn nằm trong ô). */
+    private fun renderVoiceLevel(binding: ViewCourtSearchControlsBinding, level: Float) {
+        if (!micListening || !ValueAnimator.areAnimatorsEnabled()) return
+        val scale = 1f + 0.25f * level
+        micIcon(binding)?.animate()?.scaleX(scale)?.scaleY(scale)?.setDuration(90)?.start()
+    }
+
+    private fun hasMicPermission(): Boolean = ContextCompat.checkSelfPermission(
+        requireContext(), Manifest.permission.RECORD_AUDIO,
+    ) == PackageManager.PERMISSION_GRANTED
+
+    /** Có quyền thì nghe/dừng; chưa có thì giải thích trước rồi mới xin; đã từ chối thì gợi ý mở Cài đặt. */
+    private fun onMicClicked() {
+        val state = viewModel.state.value
+        when {
+            state.listening || hasMicPermission() -> {
+                hideKeyboard(requireView())
+                viewModel.toggleVoice()
+            }
+            state.voiceDenied -> showVoiceDenied()
+            else -> MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.search_voice_rationale_title)
+                .setMessage(R.string.search_voice_rationale)
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton(R.string.search_voice_continue) { _, _ -> micPermission.launch(Manifest.permission.RECORD_AUDIO) }
+                .show()
+        }
+    }
+
+    private fun showVoiceDenied() {
+        val root = view ?: return
+        Snackbar.make(root, R.string.search_voice_denied, Snackbar.LENGTH_LONG)
+            .setAction(R.string.search_voice_open_settings) {
+                startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+                    .setData(Uri.fromParts("package", requireContext().packageName, null)))
+            }
+            .show()
+    }
+
+    /** "Thử nới điều kiện:" dưới thông báo rỗng (spec 022 US6); không có gợi ý thì ẩn cả khối. */
+    private fun renderRelaxations(binding: ViewCourtSearchControlsBinding, previous: CourtSearchUiState?, state: CourtSearchUiState) {
+        binding.relaxSection.isVisible = state.relaxations.isNotEmpty() && !state.loading
+        if (previous?.relaxations == state.relaxations && previous.amenities == state.amenities) return
+        binding.relaxChips.removeAllViews()
+        for (relaxation in state.relaxations) {
+            binding.relaxChips.addView(Chip(requireContext()).apply {
+                text = relaxationLabel(relaxation, state)
+                setOnClickListener { viewModel.applyRelaxation(relaxation) }
+            })
+        }
+    }
+
+    /** "Giá đến 120k · 3 sân", "20:00–22:00 · 2 sân", "Bỏ “Gửi xe” · 4 sân", "Mai 19:00–21:00 · 1 sân", "Mọi quận · 5 sân". */
+    private fun relaxationLabel(relaxation: Relaxation, state: CourtSearchUiState): String {
+        val window = relaxation.criteria.window
+        return when (relaxation.kind) {
+            RelaxationKind.PRICE -> getString(
+                R.string.search_relax_price, ((relaxation.criteria.priceMax ?: 0) / 1000).toString(), relaxation.count,
+            )
+            RelaxationKind.LATER, RelaxationKind.EARLIER -> getString(
+                R.string.search_relax_window, window!!.start.format(), window.end.format(), relaxation.count,
+            )
+            RelaxationKind.DROP_AMENITY -> getString(
+                R.string.search_relax_amenity,
+                state.amenities.firstOrNull { it.id == relaxation.amenityId }?.name ?: relaxation.amenityId.orEmpty(),
+                relaxation.count,
+            )
+            RelaxationKind.TOMORROW -> getString(
+                R.string.search_relax_tomorrow,
+                if (window!!.date == viewModel.today().plusDays(1)) getString(R.string.search_history_tomorrow) else dateLabel(window.date),
+                window.start.format(), window.end.format(), relaxation.count,
+            )
+            RelaxationKind.ALL_DISTRICTS -> getString(R.string.search_relax_all_districts, relaxation.count)
+        }
+    }
+
+    /**
+     * "Tìm gần đây" (spec 020 US4): hàng chip ngang dưới ô tên sân, chỉ khi chưa có điều kiện nào.
+     * Khách thấy gợi ý đăng nhập khi đang tìm, vì lần tìm đó không được lưu.
+     */
+    private fun renderRecent(binding: ViewCourtSearchControlsBinding, previous: CourtSearchUiState?, state: CourtSearchUiState) {
+        val idle = !state.criteria.hasFilters()
+        binding.recentSection.isVisible = !state.guest && idle && state.history.isNotEmpty()
+        binding.historyGuestHint.isVisible = state.guest && !idle
+        if (previous != null && previous.history == state.history && previous.districts == state.districts &&
+            previous.amenities == state.amenities) return
+        binding.recentChips.removeAllViews()
+        for (entry in state.history.take(RECENT_CHIPS)) {
+            binding.recentChips.addView(Chip(requireContext()).apply {
+                text = historyLabel(entry.criteria, state)
+                setChipIconResource(R.drawable.ic_history_24)
+                isChipIconVisible = true
+                setOnClickListener { viewModel.applyHistory(entry) }
+            })
+        }
+        historySheetRefresh?.invoke(state)
+    }
+
+    private var historySheetRefresh: ((CourtSearchUiState) -> Unit)? = null
+
+    /** Toàn bộ lịch sử (tối đa 10): chạm để tìm lại, ✕ để xóa một mục, "Xóa tất cả" có xác nhận. */
+    private fun showHistorySheet() {
+        val dialog = BottomSheetDialog(requireContext())
+        val sheet = SheetSearchHistoryBinding.inflate(layoutInflater)
+        dialog.setContentView(sheet.root)
+        // Mở hết ngay, kể cả màn hình ngang (mặc định chỉ hé phần tiêu đề).
+        dialog.behavior.skipCollapsed = true
+        dialog.behavior.state = BottomSheetBehavior.STATE_EXPANDED
+        fun fill(state: CourtSearchUiState) {
+            sheet.items.removeAllViews()
+            sheet.empty.isVisible = state.history.isEmpty()
+            sheet.clearAll.isEnabled = state.history.isNotEmpty()
+            for (entry in state.history) {
+                val row = ItemSearchHistoryBinding.inflate(layoutInflater, sheet.items, false)
+                val label = historyLabel(entry.criteria, state)
+                row.label.text = label
+                row.root.setOnClickListener {
+                    dialog.dismiss()
+                    viewModel.applyHistory(entry)
+                }
+                row.delete.contentDescription = getString(R.string.search_history_delete, label)
+                row.delete.setOnClickListener { viewModel.deleteHistory(entry.id) }
+                sheet.items.addView(row.root)
+            }
+        }
+        sheet.clearAll.setOnClickListener {
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.search_history_clear_title)
+                .setMessage(R.string.search_history_clear_message)
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton(R.string.search_history_clear) { _, _ ->
+                    viewModel.clearHistory()
+                    dialog.dismiss()
+                }
+                .show()
+        }
+        fill(viewModel.state.value)
+        historySheetRefresh = ::fill
+        dialog.setOnDismissListener { historySheetRefresh = null }
+        dialog.show()
+    }
+
+    /** "“Trường Chinh” · Quận 10 · ≤100k · Mai 19:00–21:00 · Gửi xe". */
+    private fun historyLabel(criteria: CourtSearchCriteria, state: CourtSearchUiState): String {
+        val parts = mutableListOf<String>()
+        criteria.keyword.trim().takeIf { it.isNotEmpty() }?.let { parts += getString(R.string.search_history_keyword, it) }
+        criteria.districtId?.let { id -> parts += state.districts.firstOrNull { it.id == id }?.name ?: id }
+        val min = criteria.priceMin?.let { (it / 1000).toString() }
+        val max = criteria.priceMax?.let { (it / 1000).toString() }
+        when {
+            min != null && max != null -> parts += getString(R.string.search_history_price_range, min, max)
+            max != null -> parts += getString(R.string.search_history_price_max, max)
+            min != null -> parts += getString(R.string.search_history_price_min, min)
+        }
+        criteria.window?.let { window ->
+            val today = viewModel.today()
+            val day = when (window.date) {
+                today -> getString(R.string.search_history_today)
+                today.plusDays(1) -> getString(R.string.search_history_tomorrow)
+                else -> dateLabel(window.date)
+            }
+            parts += "$day ${window.start.format()}–${window.end.format()}"
+        }
+        criteria.amenityIds.mapNotNull { id -> state.amenities.firstOrNull { it.id == id }?.name }
+            .takeIf { it.isNotEmpty() }?.let { parts += it.joinToString(", ") }
+        if (criteria.sort != CourtSearchSort.RATING) parts += getString(sortLabel(criteria.sort))
+        return parts.joinToString(" · ")
     }
 
     /** Lịch sử câu hỏi AI: chỉ hiện khi ô AI đang trống. Chạm để điền lại, ✕ để xóa khỏi lịch sử. */
@@ -490,9 +870,19 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
             dialog.getButton(android.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener {
                 val min = price.min.text.toString().toLongOrNull()
                 val max = price.max.text.toString().toLongOrNull()
-                if ((min != null && min <= 0) || (max != null && max <= 0) ||
-                    (min != null && max != null && min > max)) {
-                    price.maxField.error = getString(R.string.search_price_invalid)
+                // Giá tính bằng đồng: "50" nhiều khả năng là 50.000 đ gõ thiếu, báo thay vì tìm với 50 đ.
+                val minTooLow = min != null && min < CourtSearchCriteria.PRICE_STEP
+                val maxTooLow = max != null && max < CourtSearchCriteria.PRICE_STEP
+                val reversed = min != null && max != null && min > max
+                // Báo lỗi ngay dưới ô có giá sai; giá thấp nhất lớn hơn giá cao nhất thì báo ở ô cao nhất.
+                price.minField.error = if (minTooLow) getString(R.string.search_price_too_low) else null
+                price.maxField.error = when {
+                    maxTooLow -> getString(R.string.search_price_too_low)
+                    reversed && !minTooLow -> getString(R.string.search_price_invalid)
+                    else -> null
+                }
+                if (minTooLow || maxTooLow || reversed) {
+                    (if (minTooLow) price.min else price.max).requestFocus()
                 } else {
                     viewModel.price(min, max)
                     dialog.dismiss()
@@ -572,10 +962,20 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
             is CourtSearchEffect.Policy -> showPolicy(effect.topic)
             is CourtSearchEffect.Sources -> showSources(effect)
             is CourtSearchEffect.Explanation -> showExplanation(effect)
-            CourtSearchEffect.RequestLocation -> MaterialAlertDialogBuilder(requireContext())
-                .setTitle(R.string.search_location_title).setMessage(R.string.search_location_rationale)
+            is CourtSearchEffect.RequestLocation -> MaterialAlertDialogBuilder(requireContext())
+                .setTitle(when (effect.reason) {
+                    LocationReason.SORT -> R.string.search_location_title
+                    LocationReason.MAP -> R.string.map_my_location
+                    LocationReason.NEARBY -> R.string.nearby_title
+                })
+                .setMessage(when (effect.reason) {
+                    LocationReason.SORT -> R.string.search_location_rationale
+                    LocationReason.MAP -> R.string.map_location_rationale
+                    LocationReason.NEARBY -> R.string.nearby_location_rationale
+                })
                 .setNegativeButton(R.string.common_cancel, null)
                 .setPositiveButton(android.R.string.ok) { _, _ ->
+                    locationReason = effect.reason
                     locationPermission.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
                 }.show()
         }
@@ -647,9 +1047,47 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
         dialog.show()
     }
 
+    /**
+     * Máy tính bảng (spec 021 FR-023): danh sách luôn hiện, chiếm 40% khi có bản đồ và cả màn khi bản đồ lỗi; thẻ của
+     * sân đang chọn được tô nền và cuộn vào tầm nhìn khi chọn từ bản đồ.
+     */
+    private fun renderListPane(binding: FragmentCourtSearchBinding, map: CourtMapState) {
+        binding.results.isVisible = true
+        binding.mapToggle.isVisible = false
+        (binding.results.layoutParams as? ConstraintLayout.LayoutParams)?.let { params ->
+            val percent = if (map.visible) LIST_PANE_PERCENT else 1f
+            if (params.matchConstraintPercentWidth != percent) {
+                params.matchConstraintPercentWidth = percent
+                binding.results.layoutParams = params
+            }
+        }
+        val adapter = venueCards ?: return
+        val selected = if (map.visible) map.selectedId else null
+        adapter.selectedId = selected
+        if (selected == null || selected == listSelection) {
+            listSelection = selected
+            return
+        }
+        listSelection = selected
+        val manager = binding.results.layoutManager as? LinearLayoutManager ?: return
+        // Ô đầu là phần điều khiển (ô tìm, bộ lọc), thẻ sân bắt đầu từ vị trí 1.
+        val index = adapter.currentList.indexOfFirst { it.id == selected }.takeIf { it >= 0 }?.plus(1) ?: return
+        if (index !in manager.findFirstCompletelyVisibleItemPosition()..manager.findLastCompletelyVisibleItemPosition()) {
+            manager.scrollToPositionWithOffset(index, resources.getDimensionPixelSize(R.dimen.space_4))
+        }
+    }
+
+    /** Chạm thẻ trong danh sách: máy tính bảng chọn sân trên bản đồ (sân không có tọa độ thì mở chi tiết). */
+    private fun onVenueCard(venue: HomeVenue) {
+        if (twoPane && viewModel.map.value.visible && venue.position != null) viewModel.selectFromList(venue.id)
+        else openVenue(venue)
+    }
+
     private fun openVenue(venue: HomeVenue) {
         val nav = findNavController()
         if (nav.currentDestination?.id != R.id.courtSearchFragment) return
+        // Mở chi tiết sân từ kết quả cũng là một lần tìm (FR-021).
+        viewModel.recordSearch()
         val window = venue.window
         nav.navigate(R.id.action_search_to_courtDetail, bundleOf(
             "venueId" to venue.id, "date" to window?.dateKey(),
@@ -699,7 +1137,143 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
         ReviewPreference.GOOD_SERVICE -> R.string.search_rag_service
     }
 
+    /**
+     * Chế độ bản đồ (spec 021): nút nổi đổi nhãn, danh sách ẩn để TalkBack không đọc phía sau bản đồ, marker là các
+     * sân của kết quả tìm kiếm hiện tại nằm trong vùng đang xem (dùng chung bộ lọc với danh sách, FR-001, FR-002).
+     */
+    private fun renderMap(binding: FragmentCourtSearchBinding, state: CourtSearchUiState, map: CourtMapState) {
+        binding.mapToggle.setText(if (map.visible) R.string.map_toggle_list else R.string.map_toggle_map)
+        binding.mapToggle.setIconResource(if (map.visible) R.drawable.ic_list_24 else R.drawable.ic_map_24)
+        binding.map.root.isVisible = map.visible
+        // Điện thoại xoay ngang: ẩn dòng tiêu đề khi xem bản đồ để bản đồ đủ cao (FR-023).
+        binding.header.root.isVisible = !(map.visible && compactLandscape)
+        if (twoPane) renderListPane(binding, map) else binding.results.isVisible = !map.visible
+        if (!map.visible) return
+
+        val controller = mapController ?: CourtMapController(binding.map.mapHost, viewLifecycleOwner, mapListener)
+            .also {
+                mapController = it
+                it.restore(map.viewport)
+            }
+        map.focus?.takeIf { it.id != lastFocusId }?.let {
+            lastFocusId = it.id
+            controller.focus(it.center, it.zoom)
+        }
+        val viewport = map.viewport ?: controller.viewport()
+        val visible = viewport?.let { CourtMap.visible(state.venues, it) }
+        val shown = visible?.venues.orEmpty()
+        controller.showMyLocation(map.myLocation)
+        controller.render(shown, map.selectedId)
+        renderMapCards(binding, shown, map)
+        renderMapStatus(binding, state, visible)
+        // Chỉ có ích khi đang lọc theo quận: kết quả không lọc quận đã gồm mọi sân khớp bộ lọc (FR-005).
+        binding.map.searchArea.isVisible = map.moved && state.criteria.districtId != null
+
+        val active = activeFilterCount(state.criteria)
+        binding.map.mapFilters.text = if (active == 0) getString(R.string.map_filters)
+        else getString(R.string.map_filters_count, active)
+    }
+
+    /**
+     * Một dòng trạng thái nhỏ ở trên cùng, không che bản đồ (FR-019): đang tải, lỗi kèm "Thử lại", kết quả quá 150 sân,
+     * vùng đang xem quá 100 sân (FR-006), không có sân trong vùng.
+     */
+    private fun renderMapStatus(binding: FragmentCourtSearchBinding, state: CourtSearchUiState, visible: VisibleVenues?) {
+        val loading = state.loading && state.venues.isEmpty()
+        // Kết quả bị cắt ở 150 sân thì phóng gần không giúp được: nói giống danh sách là chọn khu vực.
+        val text = when (CourtMap.status(state.failed, loading, state.capped, state.complete, visible)) {
+            MapStatus.ERROR -> R.string.map_error
+            MapStatus.LOADING -> R.string.map_loading
+            MapStatus.RESULTS_CAPPED -> R.string.search_result_capped
+            MapStatus.VIEW_CAPPED -> R.string.map_capped
+            MapStatus.EMPTY -> R.string.map_empty
+            null -> null
+        }
+        binding.map.mapStatus.isVisible = text != null
+        text?.let(binding.map.mapStatusText::setText)
+        binding.map.mapLoading.isVisible = loading && !state.failed
+        binding.map.mapRetry.isVisible = state.failed
+    }
+
+    /**
+     * "Sân gần bạn" (spec 021 US4): chỉ khi chưa có từ khóa và bộ lọc (FR-015a). Có vị trí thì tối đa 10 sân trong
+     * 5 km (FR-016); không có sân thì "Tìm rộng hơn" / "Tìm theo quận"; chưa có vị trí thì mời bật (FR-018).
+     */
+    private fun renderNearby(binding: ViewCourtSearchControlsBinding, state: CourtSearchUiState) {
+        val show = !state.criteria.hasFilters() && state.criteria.keyword.isBlank()
+        binding.nearbySection.isVisible = show
+        if (!show) return
+        val here = state.nearbyLocation
+        val venues = if (state.nearbyStatus == NearbyStatus.READY && here != null) CourtMap.nearby(state.venues, here) else emptyList()
+        val waitingForVenues = state.venues.isEmpty() && !state.complete
+        (binding.nearbyList.adapter as? NearbyAdapter)?.submitList(venues)
+        binding.nearbyList.isVisible = venues.isNotEmpty()
+        binding.nearbySeeMap.isVisible = venues.isNotEmpty()
+        val message = when (state.nearbyStatus) {
+            NearbyStatus.NEED_LOCATION -> R.string.nearby_need_location
+            NearbyStatus.LOCATING -> R.string.nearby_locating
+            NearbyStatus.UNAVAILABLE -> R.string.nearby_unavailable
+            NearbyStatus.READY -> if (venues.isEmpty() && !waitingForVenues) R.string.nearby_empty else null
+        }
+        binding.nearbyMessage.isVisible = message != null
+        message?.let(binding.nearbyMessage::setText)
+        val action = when (state.nearbyStatus) {
+            NearbyStatus.NEED_LOCATION -> R.string.nearby_enable to { viewModel.enableNearby() }
+            NearbyStatus.UNAVAILABLE -> R.string.nearby_try_again to { viewModel.enableNearby() }
+            NearbyStatus.READY -> if (message != null) R.string.nearby_wider to { viewModel.openNearbyMap(WIDER_ZOOM, wider = true) } else null
+            NearbyStatus.LOCATING -> null
+        }
+        binding.nearbyAction.isVisible = action != null
+        action?.let { (text, onClick) ->
+            binding.nearbyAction.setText(text)
+            binding.nearbyAction.setOnClickListener { onClick() }
+        }
+        binding.nearbySecondary.isVisible = state.nearbyStatus == NearbyStatus.READY && message != null
+    }
+
+    /** Thẻ tóm tắt (FR-007, FR-008): thứ tự theo sân được chạm, cuộn tới sân đang chọn; ẩn khi bỏ chọn (FR-010). */
+    private fun renderMapCards(binding: FragmentCourtSearchBinding, shown: List<HomeVenue>, map: CourtMapState) {
+        val adapter = mapCards ?: return
+        val pager = binding.map.mapCards
+        val anchor = map.cardAnchorId?.takeIf { id -> shown.any { it.id == id } }
+        val here = map.myLocation
+        // Có vị trí trên máy thì thẻ luôn có khoảng cách (FR-014), kể cả khi kết quả chưa được tìm lại theo vị trí.
+        val cards = if (anchor != null && map.selectedId != null) CourtMap.cardOrder(shown, anchor).map { venue ->
+            val position = venue.position
+            if (venue.distanceMeters == null && here != null && position != null) {
+                venue.copy(distanceMeters = CourtMap.meters(here, position))
+            } else venue
+        } else emptyList()
+        pager.isVisible = cards.isNotEmpty()
+        adapter.submitList(cards) {
+            val index = cards.indexOfFirst { it.id == map.selectedId }
+            if (index >= 0 && pager.currentItem != index) pager.setCurrentItem(index, false)
+        }
+        // Nút "Vị trí của tôi" nhích lên khi thẻ hiện để không bị che. Điện thoại xoay ngang thẻ ở góc trái nên không cần.
+        val lift = if (pager.isVisible && !compactLandscape) pager.height.takeIf { it > 0 } ?: resources.getDimensionPixelSize(R.dimen.map_card_height) else 0
+        binding.map.myLocation.translationY = -lift.toFloat()
+    }
+
+    private val mapListener = object : CourtMapController.Listener {
+        override fun onViewportChanged(viewport: MapViewport, byUser: Boolean) = viewModel.mapMoved(viewport, byUser)
+        override fun onMarkerTapped(venueId: String) = viewModel.selectVenue(venueId)
+        override fun onEmptyTapped() = viewModel.selectVenue(null)
+        override fun onTilesFailed() {
+            // Bản đồ không tải được: về danh sách, giữ bộ lọc (FR-020).
+            viewModel.showMap(false)
+            view?.let { Snackbar.make(it, R.string.map_tiles_failed, Snackbar.LENGTH_LONG).show() }
+        }
+    }
+
+    private fun activeFilterCount(criteria: CourtSearchCriteria): Int = listOf(
+        criteria.districtId != null,
+        criteria.priceMin != null || criteria.priceMax != null,
+        criteria.amenityIds.isNotEmpty(),
+        criteria.window != null,
+    ).count { it }
+
     private fun noticeText(notice: SearchNotice): Int = when (notice) {
+        SearchNotice.MAP_DISTRICT_DROPPED -> R.string.map_district_dropped
         SearchNotice.AI_ERROR -> R.string.search_ai_unavailable
         SearchNotice.QUOTA -> R.string.search_ai_quota
         SearchNotice.LOCKED -> R.string.search_ai_locked
@@ -709,6 +1283,9 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
         SearchNotice.DROPPED_FILTERS -> R.string.search_ai_dropped
         SearchNotice.OFF_TOPIC -> R.string.search_ai_off_topic
         SearchNotice.LOCATION_UNAVAILABLE -> R.string.search_location_unavailable
+        SearchNotice.HISTORY_DATE_PAST -> R.string.search_history_date_past
+        SearchNotice.VOICE_NO_MATCH -> R.string.search_voice_no_match
+        SearchNotice.VOICE_NETWORK -> R.string.search_voice_network
     }
 
     private class ControlsAdapter(private val view: View) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {

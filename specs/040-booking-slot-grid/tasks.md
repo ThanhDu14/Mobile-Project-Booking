@@ -226,6 +226,16 @@ US5: Chống tạo đơn trùng lặp và xử lý mất kết nối (P3)
 
 ---
 
+## Phase 7: Lưới theo bề ngang màn hình (Clarifications 2026-11-18, FR-029, FR-030)
+
+**Mục tiêu**: Bỏ khoảng trống bên phải khi cơ sở ít sân, báo hiệu cuộn ngang khi nhiều sân, giữ tên sân khi cuộn dọc.
+
+- [x] T043 Tạo `feature/booking/ui/SlotMatrixColumns.kt`: tính độ rộng ô từ bề ngang lưới, số sân con và mật độ màn hình (dàn vừa khi ≤5 sân hoặc mọi cột ≥80dp; hé N cột rưỡi khi phải cuộn; giới hạn tùy chọn cho màn ngang).
+- [x] T044 `SlotMatrixRowAdapter.setCellWidth()` và `BookingSlotGridFragment.applyColumnWidths()`: áp độ rộng cho ô và header, tính lại khi bề ngang lưới đổi (lần vẽ đầu, xoay màn hình).
+- [x] T045 Màn ngang: ô tối đa 160dp, căn giữa lưới khi vừa màn hình; lưới rộng hơn thì canh trái để cuộn về sân đầu tiên.
+- [x] T046 Ghim hàng tên sân (`scrollStickyHeaders`) khi hàng gốc khuất phía trên, cuộn ngang hai chiều đồng bộ với lưới; gỡ listener ở `onDestroyView` vì view lưới được cache.
+- [x] T047 Unit test `TEST/feature/booking/ui/SlotMatrixColumnsTest.kt` (bề ngang 320/360/384/412/600/800dp, 1–12 sân, giới hạn 160dp) và thử trên Galaxy A54: 3, 5, 6, 12 sân ở màn dọc và màn ngang; giả lập 320dp và 600dp.
+
 ## Thứ tự Phụ thuộc & Thực thi Song song
 
 ### Sơ đồ phụ thuộc giữa các Phase:

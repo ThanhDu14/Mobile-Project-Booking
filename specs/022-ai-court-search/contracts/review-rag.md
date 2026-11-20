@@ -56,7 +56,7 @@ Vì không gửi nội dung đánh giá tới nhà cung cấp và không có vă
 ## 6. Lượt và trần
 
 - `PARSE`: trước mỗi lần gọi nhà cung cấp (kể cả dự phòng), transaction giữ một `attempts`. Kết quả hợp lệ tăng `count` (`used`). Cả hai có trần 10/ngày. Lời gọi lỗi hoặc quá giờ vẫn tính vào `attempts` (không hoàn).
-- Thứ tự nhà cung cấp: Gemini (`GEMINI_API_KEY`) → Gemini key thứ hai nếu có (`GEMINI_API_KEY_2`) → Groq (`GROQ_API_KEY`); chỉ chuyển tiếp khi lỗi 429/5xx. Mỗi lần thử giữ một `attempts`, nên một câu có thể tốn tối đa 3 lần gọi.
+- Thứ tự nhà cung cấp: Gemini (`GEMINI_API_KEY`) → Gemini key thứ hai nếu có (`GEMINI_API_KEY_2`) → Groq (`GROQ_API_KEY`); chuyển tiếp khi lỗi 429/5xx, hoặc khi nhà cung cấp trước quá giờ mà còn ít nhất 1,5 giây trong ngân sách 8,5 giây (lần gọi đầu tối đa 6 giây). Mỗi lần thử giữ một `attempts`, nên một câu có thể tốn tối đa 3 lần gọi.
 - App hiển thị `remaining = 10 − max(used, attempts)`.
 - Hết trần hoặc đang khóa → `409 QUOTA_EXCEEDED` / `409 AI_LOCKED` (chỉ áp dụng cho `PARSE`).
 - `RECOMMEND`: trần riêng 20/ngày (`recommendCount`). `SOURCE`, `EXPLAIN`, `USAGE`: không tính lượt.

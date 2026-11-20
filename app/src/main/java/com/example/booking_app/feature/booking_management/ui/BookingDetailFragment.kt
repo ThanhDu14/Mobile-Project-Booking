@@ -1,5 +1,6 @@
 package com.example.booking_app.feature.booking_management.ui
 
+import com.example.booking_app.core.format.MoneyFormat
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
@@ -21,7 +22,6 @@ import com.example.booking_app.feature.booking_management.domain.RefundPolicy
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
-import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -83,7 +83,6 @@ class BookingDetailFragment : Fragment(R.layout.fragment_booking_detail_060) {
         qrBitmap: android.graphics.Bitmap?
     ) {
         val locale = Locale.forLanguageTag("vi-VN")
-        val currencyFormat = NumberFormat.getCurrencyInstance(locale)
         val timeFormat = SimpleDateFormat("HH:mm", locale)
         val dateFormat = SimpleDateFormat("dd/MM", locale)
 
@@ -94,8 +93,18 @@ class BookingDetailFragment : Fragment(R.layout.fragment_booking_detail_060) {
         }
         binding.textBookingSubtitle.text = "#SN-$shortId"
 
-        // QR Card (Mockup 2)
-        if (qrBitmap != null && booking.checkedInAtMillis == null) {
+        val now = System.currentTimeMillis()
+        val phase = BookingPresentation.phase(booking, now)
+        val formatTime: (Long) -> String = { timeFormat.format(Date(it)) }
+
+        // Trạng thái và ghi chú cho đơn không có thẻ QR (trước đây đơn PENDING không hiện trạng thái)
+        val note = BookingPresentation.note(booking, phase, now, formatTime)
+        val showQr = qrBitmap != null && BookingPresentation.showQr(phase)
+        binding.textDetailNotice.isVisible = !showQr && phase != BookingPhase.CHECKED_IN
+        binding.textDetailNotice.text = listOfNotNull(BookingPresentation.badge(phase), note).joinToString(" · ")
+
+        // QR Card (Mockup 2): chỉ khi đơn đã xác nhận, chưa check-in và chưa qua giờ chơi
+        if (showQr) {
             binding.cardQr.isVisible = true
             binding.cardCheckedIn.isVisible = false
             binding.imageBookingQr.setImageBitmap(qrBitmap)
@@ -104,7 +113,7 @@ class BookingDetailFragment : Fragment(R.layout.fragment_booking_detail_060) {
 
             val openCheckInTime = timeFormat.format(Date(booking.startAtMillis - 30 * 60 * 1000L))
             binding.textQrInstructions.text = "Đưa mã cho chủ sân khi đến. Không quét được thì đọc mã chữ ở trên. Check-in mở từ $openCheckInTime, 30 phút trước giờ chơi."
-        } else if (booking.checkedInAtMillis != null) {
+        } else if (phase == BookingPhase.CHECKED_IN && booking.checkedInAtMillis != null) {
             // Checked In Card (Mockup 2 Check-in)
             binding.cardQr.isVisible = false
             binding.cardCheckedIn.isVisible = true
@@ -211,26 +220,29 @@ class BookingDetailFragment : Fragment(R.layout.fragment_booking_detail_060) {
         // Finance Breakdown (2 columns)
         val slotsCount = booking.items.size
         binding.labelSubtotal.text = "Tiền sân ($slotsCount × 30 phút)"
-        binding.textSubtotal.text = currencyFormat.format(booking.finance.subtotal)
-        binding.labelPaidAmount.text = if (booking.finance.depositAmount > 0) "Đã đặt cọc 30% (ví giả lập)" else "Đã thanh toán (ví giả lập)"
-        binding.textPaidAmount.text = "-${currencyFormat.format(booking.finance.paidAmount)}"
-        binding.textRemainingAmount.text = currencyFormat.format(booking.finance.remainingAmount)
+        binding.textSubtotal.text = MoneyFormat.vnd(booking.finance.subtotal)
+        // Ẩn dòng "đã trả" khi chưa trả đồng nào (đơn trả tại sân từng hiện "-0 ₫" kèm nhãn ví)
+        val paidLabel = BookingPresentation.paidLabel(booking.finance)
+        binding.rowPaid.isVisible = paidLabel != null
+        binding.labelPaidAmount.text = paidLabel
+        binding.textPaidAmount.text = "-${MoneyFormat.vnd(booking.finance.paidAmount)}"
+        binding.textRemainingAmount.text = MoneyFormat.vnd(booking.finance.remainingAmount)
+        binding.rowRemaining.isVisible = BookingPresentation.showRemaining(phase)
 
         if (booking.finance.discount > 0) {
             binding.rowDiscount.isVisible = true
-            binding.textDiscount.text = "-${currencyFormat.format(booking.finance.discount)}"
+            binding.textDiscount.text = "-${MoneyFormat.vnd(booking.finance.discount)}"
         } else {
             binding.rowDiscount.isVisible = false
         }
 
         // Cancellation Policy Text Box
-        val deadlineTime = timeFormat.format(Date(booking.startAtMillis - 240 * 60 * 1000L))
-        binding.textCancellationPolicy.text = "Chính sách hủy: hủy trước $deadlineTime hôm chơi (từ 4 giờ trở lên) được hoàn 100% tiền cọc. Hủy sau mốc đó mất tiền cọc. Đơn đã check-in không hủy được."
+        binding.textCancellationPolicy.text = BookingPresentation.cancellationPolicy(booking, formatTime)
 
         // Cancel button
         val canCancel = (booking.status == RefundPolicy.Status.PENDING || booking.status == RefundPolicy.Status.CONFIRMED) &&
                 booking.checkedInAtMillis == null &&
-                System.currentTimeMillis() < booking.startAtMillis
+                now < booking.startAtMillis
 
         binding.buttonCancelBooking.isVisible = canCancel
         binding.buttonCancelBooking.setOnClickListener {
