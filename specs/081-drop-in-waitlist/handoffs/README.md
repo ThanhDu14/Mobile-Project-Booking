@@ -1,5 +1,7 @@
 # Spec 081 (hàng chờ vãng lai) – việc cần thành viên khác làm
 
+**Trạng thái sau khi gộp ngày 20/11/2026:** nhánh `fix-feature/11-owner` đã nối hai mục của D bên dưới. `owner-cancel-session` gọi helper mới bằng transaction thật; `owner-update-session` gộp `sessionPatch` khi tăng sức chứa. Cả hai trả danh sách người nhận ra ngoài transaction để gọi hook thông báo sau commit. Helper cũng ghi inbox cùng transaction để giữ thông báo khi dịch vụ gửi chưa sẵn sàng. Các prompt bên dưới được giữ làm tài liệu bàn giao ban đầu. Luồng vào/rời hàng chờ, ân hạn hoàn tiền và các test 081 từ `main` được giữ trong bản gộp.
+
 C đã cài xong hàng chờ ở `supabase/functions/_shared/waitlist.ts`, `register-drop-in`, `cancel-drop-in`, `dropin-close`. Các việc dưới đây nằm trong file của người khác nên C không tự sửa. Mỗi mục có prompt dán thẳng cho AI của người nhận.
 
 | # | Người nhận | Việc | Ảnh hưởng nếu chưa làm |

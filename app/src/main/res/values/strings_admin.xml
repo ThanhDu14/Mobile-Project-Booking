@@ -235,4 +235,6 @@
     <string name="admin_confirm">Xác nhận</string>
     <string name="admin_venue_confirm_lock">Bạn có chắc chắn muốn khóa cơ sở này không?</string>
     <string name="admin_venue_confirm_status_title">Xác nhận thay đổi trạng thái</string>
+    <string name="admin_report_action_lock_group">Khóa nhóm</string>
+    <string name="admin_report_action_lock_group_desc">Nhóm bị khóa sẽ ngừng hoạt động. Chủ nhóm phải chờ quản trị viên mở khóa mới có thể xóa nhóm.</string>
 </resources>

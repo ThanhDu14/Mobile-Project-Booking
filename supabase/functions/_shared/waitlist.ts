@@ -5,7 +5,7 @@
 // `tx.write`, không tự commit. Mọi thao tác đọc nằm trước mọi thao tác ghi: transaction của `_shared/firestore.ts`
 // không cho đọc sau khi đã ghi, nên mỗi hàm đọc hết rồi mới ghi một lượt ở cuối.
 import { HttpError } from "./auth.ts";
-import { updateWrite, type QueryDocument, type QueryFilter, type QueryOptions, type Write } from "./firestore.ts";
+import { createWrite, updateWrite, type QueryDocument, type QueryFilter, type QueryOptions, type Write } from "./firestore.ts";
 import {
   type CancelledBy,
   type DropInTx,
@@ -59,6 +59,15 @@ export function isWaitlistOpen(session: SessionDoc, serverNow: Date): boolean {
 const byTicket = (a: QueryDocument, b: QueryDocument) =>
   asNumber(a.data.waitlistTicket, Number.MAX_SAFE_INTEGER) - asNumber(b.data.waitlistTicket, Number.MAX_SAFE_INTEGER);
 
+// Persist the inbox entry with the state change; callers may deliver push after commit.
+function inboxWrite(uid: string, sessionId: string, type: "DROPIN_SPOT_OPENED" | "DROPIN_WAITLIST_CLOSED", data: Record<string, unknown>, now: Date): Write {
+  return createWrite(`users/${uid}/notifications/${crypto.randomUUID()}`, {
+    type, title: type === "DROPIN_SPOT_OPENED" ? "Bạn đã được nhận vào buổi" : "Hàng chờ đã đóng",
+    body: type === "DROPIN_SPOT_OPENED" ? "Mở vé để xem thông tin buổi chơi." : "Lượt chờ của bạn đã kết thúc.",
+    data: { sessionId, ...data }, isRead: false, createdAt: now,
+  });
+}
+
 /**
  * Đẩy người chờ lên khi buổi có chỗ trống (081 FR-007..FR-010a; research R3–R5), trong transaction của người gọi.
  *
@@ -91,6 +100,7 @@ export async function promoteFromWaitlist(tx: WaitlistTx, session: SessionDoc, s
     for (const c of [...candidates].sort(byTicket)) {
       if (free <= 0) break;
       const partySize = asNumber(c.data.partySize, 1);
+      if (!Number.isInteger(partySize) || partySize < 1) continue;
       if (partySize > free) continue; // bỏ qua nhưng giữ vị trí
       free -= partySize;
       registeredCount += partySize;
@@ -133,6 +143,9 @@ export async function promoteFromWaitlist(tx: WaitlistTx, session: SessionDoc, s
       paymentStatus: method === "MOCK_PAY" ? "PAID" : "UNPAID",
       qrToken: newQrToken(),
       ticketCode: newTicketCode(),
+      ...(startAt ? { sessionStartAt: startAt } : {}),
+      ...(endAt ? { sessionEndAt: endAt } : {}),
+      waitlistEndReason: null,
       updatedAt: serverNow,
     }));
     const left = overlaps.get(c.id) ?? [];
@@ -145,7 +158,9 @@ export async function promoteFromWaitlist(tx: WaitlistTx, session: SessionDoc, s
         updatedAt: serverNow,
       }));
     }
-    promoted.push({ uid: c.id, autoLeftSessionIds: left.map((d) => String(d.data.sessionId ?? d.path.split("/")[1])) });
+    const autoLeftSessionIds = left.map((d) => String(d.data.sessionId ?? d.path.split("/")[1]));
+    tx.write(inboxWrite(c.id, sessionId, "DROPIN_SPOT_OPENED", { autoLeftSessionIds }, serverNow));
+    promoted.push({ uid: c.id, autoLeftSessionIds });
   }
   for (const [x, docs] of leavingBySession) {
     const doc = otherSessions.get(x);
@@ -200,6 +215,7 @@ export async function closeWaitlistInTx(
       waitlistEndReason: reason,
       updatedAt: now,
     }));
+    tx.write(inboxWrite(d.id, sessionId, "DROPIN_WAITLIST_CLOSED", { reason }, now));
   }
   tx.write(updateWrite(sessionPath(sessionId), { waitlistTickets: [], waitlistCount: 0, updatedAt: now }));
   session.waitlistTickets = [];

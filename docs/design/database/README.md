@@ -247,7 +247,11 @@ ID document là chính mã `code` (chữ in hoa). Mã phải duy nhất trên to
 
 ### 4.12. `reports/{reportId}` — D
 
-`reporterId`, `targetType` (`POST`, `MESSAGE`, `REVIEW`, `VENUE`, `USER`, `DROP_IN`), `targetPath` (đường dẫn document), `reason`, `detail`, `status` 🔒 (`OPEN`, `RESOLVED`, `DISMISSED`), `action` 🔒 (`NONE`, `HIDE_CONTENT`, `LOCK_USER`, `LOCK_VENUE`), `handledBy` 🔒, `handledAt` 🔒.
+`reporterId`, `targetType` (`POST`, `MESSAGE`, `REVIEW`, `VENUE`, `USER`, `GROUP`, `DROP_IN`), `targetPath` (đường dẫn document), `reason`, `detail`, `status` 🔒 (`OPEN`, `RESOLVED`, `DISMISSED`), `action` 🔒 (`NONE`, `HIDE_CONTENT`, `LOCK_USER`, `LOCK_VENUE`, `LOCK_GROUP`), `handledBy` 🔒, `handledAt` 🔒.
+
+`HIDE_CONTENT`: bài nhóm ghi `hiddenBy = SYSTEM`, `hiddenByUid = null`; tin nhắn ghi `text = ""`. `LOCK_GROUP` ghi `groups/{id}.status = LOCKED`. Chủ nhóm không được xóa nhóm đang khóa; admin mở khóa qua `admin-manage-group` với `{ groupId, status: ACTIVE }` (hoặc khóa với `LOCKED`). Mọi thao tác xóa nhóm phải kiểm tra trạng thái trong transaction theo contract 090; function `group-manage` chưa có trong repo này.
+
+Preview kiểm duyệt: admin có claim ADMIN, hồ sơ hiện tại vẫn ADMIN/ACTIVE và chưa yêu cầu xóa tài khoản được `get` từng document `groups/{id}/posts/{postId}` và `chats/{id}/messages/{messageId}`, kể cả HIDDEN. Quyền này không mở `list` hay ghi trực tiếp. Quyền đọc của thành viên nhóm/người tham gia chat thuộc contract 090/091 và chưa được triển khai qua khối preview này. Màn admin đọc nội dung từ `content`, `text`, `comment` và tên từ `authorSnapshot`/`senderSnapshot`.
 
 ### 4.13. `users/{uid}/notifications/{id}` — D
 

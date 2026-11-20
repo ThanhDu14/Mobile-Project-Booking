@@ -12,7 +12,7 @@ const host=Deno.env.get("FIRESTORE_EMULATOR_HOST");
 const local=!!host && /^(127\.0\.0\.1|localhost):\d+$/.test(host);
 if(local) {
   Deno.env.set("FIREBASE_PROJECT_ID","demo-owner-concurrency");
-  Deno.env.set("FIREBASE_AUTH_EMULATOR_HOST","127.0.0.1:9099");
+  Deno.env.set("FIREBASE_AUTH_EMULATOR_HOST",Deno.env.get("FIREBASE_AUTH_EMULATOR_HOST") ?? "127.0.0.1:9099");
 }
 const request=(body:Record<string,unknown>)=>bearer(emulatorToken({sub:"owner",appRole:"OWNER"}),{body:JSON.stringify({venueId:"v1",courtId:"c1",...body})});
 async function seed(suffix:string) {

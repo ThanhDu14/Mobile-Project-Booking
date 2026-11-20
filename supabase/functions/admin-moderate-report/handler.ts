@@ -4,7 +4,7 @@ import * as defaultFirestore from "../_shared/firestore.ts";
 import { updateWrite, FirestoreError } from "../_shared/firestore.ts";
 import { setUserDisabled as defaultSetUserDisabled } from "../_shared/identity.ts";
 
-export type ReportActionType = "NONE" | "HIDE_CONTENT" | "LOCK_USER" | "LOCK_VENUE";
+export type ReportActionType = "NONE" | "HIDE_CONTENT" | "LOCK_USER" | "LOCK_VENUE" | "LOCK_GROUP";
 
 export interface AdminModerateDeps {
   firestore: Pick<typeof defaultFirestore, "get" | "runTransaction">;
@@ -22,6 +22,8 @@ export function validateActionTarget(action: ReportActionType, targetType: strin
   if (action === "NONE") return null;
 
   switch (targetType) {
+    case "GROUP":
+      return action === "LOCK_GROUP" ? null : "Báo cáo nhóm chỉ có thể áp dụng Khóa nhóm (LOCK_GROUP)";
     case "VENUE":
       if (action !== "LOCK_VENUE") return "Báo cáo cơ sở chỉ có thể áp dụng Khóa cơ sở (LOCK_VENUE)";
       return null;
@@ -29,6 +31,7 @@ export function validateActionTarget(action: ReportActionType, targetType: strin
       if (action !== "LOCK_USER") return "Báo cáo người dùng chỉ có thể áp dụng Khóa tài khoản (LOCK_USER)";
       return null;
     case "POST":
+      if (action === "LOCK_GROUP") return null;
     case "MESSAGE":
     case "REVIEW":
       if (action !== "HIDE_CONTENT") return `Báo cáo ${targetType} chỉ có thể áp dụng Ẩn nội dung (HIDE_CONTENT)`;
@@ -61,7 +64,7 @@ export async function handleAdminModerateReport(
       throw new HttpError(400, "INVALID_REPORT_ID", "Mã báo cáo không hợp lệ");
     }
 
-    const validActions: ReportActionType[] = ["NONE", "HIDE_CONTENT", "LOCK_USER", "LOCK_VENUE"];
+    const validActions: ReportActionType[] = ["NONE", "HIDE_CONTENT", "LOCK_USER", "LOCK_VENUE", "LOCK_GROUP"];
     if (!validActions.includes(action)) {
       throw new HttpError(400, "INVALID_ACTION", `Hành động không hợp lệ: ${action}`);
     }
@@ -107,13 +110,30 @@ export async function handleAdminModerateReport(
         throw new HttpError(400, "INVALID_TARGET_PATH", "Báo cáo thiếu đường dẫn đối tượng vi phạm");
       }
 
+      const targetPatterns: Record<string, RegExp> = {
+        GROUP: /^groups\/[^/]+$/,
+        POST: /^groups\/[^/]+\/posts\/[^/]+$/,
+        MESSAGE: /^chats\/[^/]+\/messages\/[^/]+$/,
+        REVIEW: /^reviews\/[^/]+$/,
+        VENUE: /^venues\/[^/]+$/,
+        USER: /^users\/[^/]+$/,
+      };
+      if (!targetPatterns[targetType]?.test(targetPath)) {
+        throw new HttpError(400, "INVALID_TARGET_PATH", "Đường dẫn không khớp loại đối tượng báo cáo");
+      }
+
       const target = await tx.get(targetPath);
       if (!target) {
         throw new HttpError(404, "TARGET_NOT_FOUND", "Đối tượng báo cáo không còn tồn tại");
       }
 
-      if (action === "LOCK_VENUE") {
-        tx.write(updateWrite(targetPath, {
+      if (action === "LOCK_VENUE" || action === "LOCK_GROUP") {
+        const lockPath = action === "LOCK_GROUP" && targetType === "POST"
+          ? targetPath.split("/").slice(0, 2).join("/") : targetPath;
+        if (lockPath !== targetPath && !await tx.get(lockPath)) {
+          throw new HttpError(404, "TARGET_NOT_FOUND", "Nhóm không còn tồn tại");
+        }
+        tx.write(updateWrite(lockPath, {
           status: "LOCKED",
           updatedAt: nowIso,
         }));
@@ -126,6 +146,8 @@ export async function handleAdminModerateReport(
       } else if (action === "HIDE_CONTENT") {
         tx.write(updateWrite(targetPath, {
           status: "HIDDEN",
+          ...(targetType === "POST" ? { hiddenBy: "SYSTEM", hiddenByUid: null } : {}),
+          ...(targetType === "MESSAGE" ? { text: "" } : {}),
           updatedAt: nowIso,
         }));
       }

@@ -104,6 +104,9 @@ export async function handleDropInClose(req: Request, injected: Partial<DropInCl
           if (!session || !LIVE.includes(String(session.status)) || !endAt || endAt.getTime() >= now.getTime()) {
             return { done: false };
           }
+           // If closing failed above, leave the session live so the next cron
+           // run can retry instead of stranding WAITLISTED registrations.
+           if (hasWaitlist(session)) return { done: false };
           tx.write(updateWrite(sessionPath(doc.id), { status: "COMPLETED", updatedAt: now }));
           return { done: true };
         });
@@ -119,3 +122,6 @@ export async function handleDropInClose(req: Request, injected: Partial<DropInCl
     return toErrorResponse(e);
   }
 }
+
+// Existing owner/device callers use this spelling.
+export const handleDropinClose = handleDropInClose;
