@@ -30,8 +30,10 @@
 ```
 (chưa có) ──create──▶ ACTIVE ──delete (chủ nhóm, gõ đúng tên)──▶ DELETED ──(xóa xong dữ liệu)──▶ (không còn)
                         ▲  │
-          admin mở khóa └──┴── admin khóa (spec 120) ──▶ LOCKED (chờ admin mở khóa mới được xóa)
+          admin mở khóa └──┴── admin khóa (spec 120) ──▶ LOCKED
 ```
+
+Nhóm `LOCKED` không xóa được (`delete` trả `423 GROUP_LOCKED`, theo bảng mục 8); chủ nhóm phải chờ admin mở khóa.
 
 ## 2. `groups/{groupId}/members/{uid}`
 

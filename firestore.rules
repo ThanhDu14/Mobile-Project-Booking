@@ -485,5 +485,68 @@ service cloud.firestore {
       allow list: if (isSignedIn() && resource.data.userId == request.auth.uid)
           || isAdmin();
     }
+
+    // ---------- groups + members/joinRequests/removals/posts/attendees (C, spec 090) ----------
+    // specs/090-community-group/contracts/security-rules.md. Rules chỉ MỞ QUYỀN ĐỌC;
+    // mọi ghi đi qua Edge Function group-manage/group-post (service account, bỏ qua Rules).
+    match /groups/{groupId} {
+      // Hàm dùng groupId của match này. Người chưa đăng nhập luôn là "không phải thành viên".
+      function isMember() {
+        return isSignedIn()
+            && exists(/databases/$(database)/documents/groups/$(groupId)/members/$(request.auth.uid));
+      }
+
+      function myRole() {
+        return get(/databases/$(database)/documents/groups/$(groupId)/members/$(request.auth.uid)).data.role;
+      }
+
+      // Chủ nhóm hoặc quản trị viên (&& ngắn mạch nên không get() khi chưa là thành viên).
+      function isMod() {
+        return isMember() && myRole() in ['OWNER', 'ADMIN'];
+      }
+
+      // Trang giới thiệu: ai cũng đọc nhóm ACTIVE/LOCKED, kể cả khách chưa đăng nhập.
+      // Nhóm DELETED (hoặc doc không tồn tại) thì điều kiện lỗi/sai → bị chặn.
+      allow get, list: if resource.data.status in ['ACTIVE', 'LOCKED'];
+      allow write: if false;
+
+      match /members/{uid} {
+        allow read: if isMember() || isAdmin();
+        allow write: if false;
+      }
+
+      match /joinRequests/{uid} {
+        allow read: if isSelf(uid) || isMod() || isAdmin();
+        allow write: if false;
+      }
+
+      match /removals/{uid} {
+        allow read: if isMod() || isAdmin();
+        allow write: if false;
+      }
+
+      // list của thành viên thường chỉ qua khi query có where status == 'VISIBLE'
+      // hoặc where authorId == uid mình (Rules không phải bộ lọc; research R6).
+      match /posts/{postId} {
+        // Admin chỉ get từng bài (xem bài bị báo cáo, spec 120), không list cả bảng tin.
+        allow get: if isAdmin();
+        allow read: if isMod()
+            || (isMember() && (resource.data.status == 'VISIBLE'
+                               || resource.data.authorId == request.auth.uid));
+        allow write: if false;
+
+        match /attendees/{uid} {
+          allow read: if isMember() || isAdmin();
+          allow write: if false;
+        }
+      }
+    }
+
+    // "Nhóm của tôi": truy vấn collection group members theo userId.
+    // Match này cũng khớp groups/{gid}/members/{uid} nhưng chỉ mở list khi
+    // userId == uid mình, không mở thêm quyền ngoài điều kiện đó.
+    match /{path=**}/members/{uid} {
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
   }
 }
