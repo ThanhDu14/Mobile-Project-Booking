@@ -4,6 +4,7 @@
     Thông tin buổi, chọn số người 1..maxParty, cảnh báo (FR-012, chỉ nhắc), 2 cách thanh toán kèm dòng thanh toán giả lập
     (FR-010), tổng tiền; thanh dưới cùng có tổng và nút "Xác nhận đăng ký" (khóa khi đang gửi).
     include_state_views chồng lên vùng nội dung cho loading, không tìm thấy, lỗi (FR-024).
+    Spec 081: cùng layout dùng cho "Vào hàng chờ" (mode WAITLIST): hộp waitlistBox, nhãn tổng đổi thành "Số tiền sẽ ghi nhận".
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -163,6 +164,53 @@
                     android:textAppearance="?attr/textAppearanceBodyMedium"
                     android:textColor="?attr/colorOnSurfaceVariant"
                     tools:text="Buổi còn 3 chỗ, bạn chọn được tối đa 3 người." />
+
+                <!-- Spec 081: vào hàng chờ chưa giữ chỗ, chưa thanh toán (FR-002) -->
+                <LinearLayout
+                    android:id="@+id/waitlistBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_4"
+                    android:background="@drawable/bg_info_box"
+                    android:backgroundTint="?attr/colorTertiaryContainer"
+                    android:orientation="horizontal"
+                    android:padding="@dimen/space_4"
+                    android:visibility="gone"
+                    tools:visibility="visible">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/ic_info_24"
+                        app:tint="?attr/colorOnTertiaryContainer" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_3"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:id="@+id/waitlistNotice"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/dropin_waitlist_notice"
+                            android:textAppearance="?attr/textAppearanceBodyMedium"
+                            android:textColor="?attr/colorOnTertiaryContainer" />
+
+                        <TextView
+                            android:id="@+id/waitlistAmount"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_1"
+                            android:accessibilityLiveRegion="polite"
+                            android:textAppearance="?attr/textAppearanceTitleSmall"
+                            android:textColor="?attr/colorOnTertiaryContainer"
+                            tools:text="Số tiền sẽ ghi nhận khi được nhận: 120.000 đ" />
+                    </LinearLayout>
+                </LinearLayout>
 
                 <!-- Cảnh báo (FR-012): chỉ nhắc, không chặn -->
                 <LinearLayout
@@ -373,6 +421,7 @@
                             android:orientation="horizontal">
 
                             <TextView
+                                android:id="@+id/totalLabel"
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
@@ -411,6 +460,17 @@
                     android:visibility="gone"
                     tools:text="Buổi không còn đủ chỗ (còn 1 chỗ)"
                     tools:visibility="visible" />
+
+                <!-- Spec 081: hết chỗ mà hàng chờ còn mở -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/joinWaitlistInstead"
+                    style="?attr/materialButtonOutlinedStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_2"
+                    android:minHeight="@dimen/touch_min"
+                    android:text="@string/dropin_waitlist_join"
+                    android:visibility="gone" />
             </LinearLayout>
         </androidx.core.widget.NestedScrollView>
 

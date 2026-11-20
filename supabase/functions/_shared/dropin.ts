@@ -5,7 +5,8 @@
 // Các hàm `...InTx` chạy BÊN TRONG transaction của người gọi: chỉ đọc bằng `tx.get` và gom ghi bằng `tx.write`,
 // không tự commit. Mọi thao tác đọc nằm trước mọi thao tác ghi (transaction của `_shared/firestore.ts` không cho
 // đọc sau khi đã ghi).
-import { updateWrite, type Write } from "./firestore.ts";
+import { type QueryDocument, type QueryFilter, type QueryOptions, updateWrite, type Write } from "./firestore.ts";
+import { promoteFromWaitlist, type PromoteResult, type WaitlistTx } from "./waitlist.ts";
 
 // ---------- Kiểu dữ liệu (data-model.md mục 1, 2) ----------
 
@@ -15,7 +16,9 @@ export type RegistrationStatus = "REGISTERED" | "WAITLISTED" | "CANCELLED" | "CH
 export type PaymentMethod = "MOCK_PAY" | "AT_VENUE";
 export type PaymentStatus = "PAID" | "UNPAID" | "REFUNDED";
 export type CancelledBy = "USER" | "OWNER" | "SYSTEM";
-export type RefundReason = "EARLY" | "LATE" | "SESSION_CHANGED" | "AT_VENUE";
+export type RefundReason = "EARLY" | "LATE" | "SESSION_CHANGED" | "AT_VENUE" | "PROMOTED_GRACE" | "WAITLIST_LEAVE";
+/** Vì sao lượt chờ kết thúc mà không được nhận (spec 081 research R6). */
+export type WaitlistEndReason = "LEFT" | "AUTO_LEFT_OVERLAP" | "CLOSED" | "SESSION_CANCELLED";
 
 /**
  * Document đọc từ Firestore là `Record<string, unknown>`; các kiểu dưới đây có index signature để nhận thẳng
@@ -54,6 +57,11 @@ export interface SessionDoc {
   registeredCount?: number;
   pricePerPerson?: number;
   status?: SessionStatus | string;
+  /** Spec 081: bộ đếm cấp số vé chờ, chỉ tăng. */
+  waitlistNextTicket?: number;
+  /** Spec 081: số vé của các lượt `WAITLISTED`, tăng dần (không có danh tính). */
+  waitlistTickets?: number[];
+  waitlistCount?: number;
 }
 
 /** `dropInSessions/{sessionId}/registrations/{uid}`. */
@@ -67,7 +75,7 @@ export interface RegistrationDoc {
   partySize?: number;
   status?: RegistrationStatus | string;
   paymentMethod?: PaymentMethod | string;
-  paymentStatus?: PaymentStatus | string;
+  paymentStatus?: PaymentStatus | string | null;
   pricePerPerson?: number;
   amount?: number;
   refundAmount?: number | null;
@@ -76,11 +84,16 @@ export interface RegistrationDoc {
   requestId?: string;
   cancelRequestId?: string | null;
   sessionChanged?: boolean;
-  registeredAt?: Date;
+  registeredAt?: Date | null;
   cancelledAt?: Date | null;
   cancelledBy?: CancelledBy | null;
   checkedInAt?: Date | null;
   waitlistedAt?: Date | null;
+  /** Spec 081: số vé chờ, quyết định thứ tự. */
+  waitlistTicket?: number | null;
+  /** Spec 081: lúc được đẩy lên từ hàng chờ (có giá trị thì hiện "Được nhận từ hàng chờ"). */
+  promotedAt?: Date | null;
+  waitlistEndReason?: WaitlistEndReason | null;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -92,6 +105,11 @@ export interface RegistrationDoc {
 export interface DropInTx {
   get(path: string): Promise<Record<string, unknown> | null>;
   write(write: Write): void;
+  /**
+   * Truy vấn trong transaction. Có thì `afterSpotsReleased` đẩy người chờ lên (spec 081); không có (transaction
+   * của người gọi không hỗ trợ) thì bỏ qua việc đẩy.
+   */
+  query?(collectionId: string, filters: QueryFilter[], opts?: QueryOptions): Promise<QueryDocument[]>;
 }
 
 export const sessionPath = (sessionId: string) => `dropInSessions/${sessionId}`;
@@ -146,6 +164,9 @@ export function deriveSessionFields(input: { startAt: Date; venue: VenueDoc; dis
 /** Hủy trước giờ bắt đầu từ mốc này trở lên thì được hoàn 100% (cùng mốc với hủy đặt sân). */
 export const FREE_CANCEL_MINUTES = 240;
 
+/** Hủy trong bấy nhiêu phút sau khi được đẩy lên từ hàng chờ (sát giờ) thì được hoàn 100% (081 FR-011). */
+export const PROMOTED_GRACE_MINUTES = 30;
+
 /** Số tiền của lượt: `amount`, thiếu thì `pricePerPerson × partySize`. */
 export function registrationAmount(reg: RegistrationDoc): number {
   if (typeof reg.amount === "number") return reg.amount;
@@ -166,6 +187,15 @@ export function computeRefund(
   const amount = registrationAmount(reg);
   if (reg.sessionChanged === true) return { refundAmount: amount, reason: "SESSION_CHANGED" };
   const startAt = asDate(session.startAt) ?? asDate(reg.sessionStartAt);
+  // Spec 081 FR-011: được đẩy lên từ hàng chờ sát giờ (dưới 240 phút) thì hủy trong 30 phút đầu vẫn hoàn 100%.
+  const promotedAt = asDate(reg.promotedAt);
+  if (
+    promotedAt && startAt &&
+    startAt.getTime() - promotedAt.getTime() < FREE_CANCEL_MINUTES * 60_000 &&
+    serverNow.getTime() - promotedAt.getTime() <= PROMOTED_GRACE_MINUTES * 60_000
+  ) {
+    return { refundAmount: amount, reason: "PROMOTED_GRACE" };
+  }
   if (startAt && startAt.getTime() - serverNow.getTime() >= FREE_CANCEL_MINUTES * 60_000) {
     return { refundAmount: amount, reason: "EARLY" };
   }
@@ -205,7 +235,13 @@ export async function cancelRegistrationInTx(
   uid: string,
   cancelledBy: CancelledBy,
   opts: CancelRegistrationOptions = {},
-): Promise<{ refundAmount: number; reason?: RefundReason; session?: SessionDoc }> {
+): Promise<{
+  refundAmount: number;
+  reason?: RefundReason;
+  session?: SessionDoc;
+  /** Người được đẩy lên từ hàng chờ nhờ chỗ vừa trả (spec 081); người gọi gửi thông báo sau commit. */
+  promoted?: PromoteResult["promoted"];
+}> {
   const now = opts.now ?? new Date();
   const regPath = registrationPath(sessionId, uid);
   const reg = await tx.get(regPath) as RegistrationDoc | null;
@@ -226,7 +262,7 @@ export async function cancelRegistrationInTx(
     registeredCount: Math.max(0, asNumber(session.registeredCount) - partySize),
     status: session.status === "FULL" ? "OPEN" : session.status,
   };
-  if (liveSession) await afterSpotsReleased(tx, released);
+  const promotion = liveSession ? await afterSpotsReleased(tx, released, now) : undefined;
 
   tx.write(updateWrite(regPath, {
     status: "CANCELLED",
@@ -245,19 +281,22 @@ export async function cancelRegistrationInTx(
     tx.write(updateWrite(sessionPath(sessionId), {
       registeredCount: released.registeredCount,
       ...(released.status !== undefined ? { status: released.status } : {}),
+      // Có người được đẩy lên thì `sessionPatch` mang thêm `waitlistTickets`, `waitlistCount` (cùng một lần ghi buổi).
+      ...(promotion?.promoted.length ? { ...promotion.sessionPatch } : {}),
       updatedAt: now,
     }));
   }
-  return { refundAmount, reason: quote.reason, session: released };
+  return { refundAmount, reason: quote.reason, session: released, promoted: promotion?.promoted ?? [] };
 }
 
 /**
- * Hook sau khi trả chỗ, chạy trong cùng transaction. Spec 080 để trống; spec 081 thay bằng logic đẩy người từ
- * hàng chờ lên (081 FR-007): sửa `session.registeredCount`/`session.status` tại chỗ, ghi đăng ký được đẩy lên
- * bằng `tx.write`.
+ * Hook sau khi trả chỗ, chạy trong cùng transaction: đẩy người từ hàng chờ lên (081 FR-007, `promoteFromWaitlist`).
+ * Sửa `session.registeredCount`/`session.status`/`session.waitlist*` tại chỗ, ghi đăng ký được đẩy lên bằng
+ * `tx.write`; người gọi ghi buổi theo `sessionPatch` trả về. Transaction không có `query` thì không đẩy ai.
  */
-export async function afterSpotsReleased(_tx: DropInTx, _session: SessionDoc): Promise<void> {
-  // Spec 081 cài.
+export async function afterSpotsReleased(tx: DropInTx, session: SessionDoc, serverNow: Date): Promise<PromoteResult> {
+  if (!tx.query) return { promoted: [], sessionPatch: {} };
+  return await promoteFromWaitlist(tx as WaitlistTx, session, serverNow);
 }
 
 // ---------- Sinh mã (research R5) ----------

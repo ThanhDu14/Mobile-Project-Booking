@@ -82,7 +82,7 @@ class CancelDropInBottomSheet : BottomSheetDialogFragment() {
         binding.cancelQuoteGroup.isVisible = quote != null
         if (quote != null) {
             binding.cancelQuoteTitle.text = when (CancelQuoteText.of(quote)) {
-                CancelQuoteText.REFUND_FULL ->
+                CancelQuoteText.REFUND_FULL, CancelQuoteText.REFUND_PROMOTED_GRACE ->
                     getString(R.string.dropin_cancel_refund_full, MoneyFormat.vnd(quote.refundAmount))
                 CancelQuoteText.NO_REFUND -> getString(R.string.dropin_cancel_no_refund_title)
                 CancelQuoteText.FREE -> getString(R.string.dropin_cancel_free)
@@ -93,6 +93,8 @@ class CancelDropInBottomSheet : BottomSheetDialogFragment() {
                     CancelReason.SESSION_CHANGED -> R.string.dropin_cancel_note_changed
                     CancelReason.LATE -> R.string.dropin_cancel_note_late
                     CancelReason.AT_VENUE -> R.string.dropin_cancel_note_free
+                    CancelReason.PROMOTED_GRACE -> R.string.dropin_waitlist_cancel_note_promoted_grace
+                    CancelReason.WAITLIST_LEAVE -> R.string.dropin_waitlist_cancel_note_leave
                 },
             )
         }

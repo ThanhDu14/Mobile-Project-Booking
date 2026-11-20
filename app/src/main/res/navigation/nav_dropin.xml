@@ -7,6 +7,8 @@
     DropInListFragmentArgs(filter).toBundle(); argument "filter" khai báo cả ở graph này để Safe Args của action tới
     graph sinh tham số.
     MyDropInsFragment và CancelDropInBottomSheet (US3, US4, tuần 7) thêm sau.
+    Spec 081 (hàng chờ): DropInConfirmFragment có argument mode (REGISTER | WAITLIST); WaitlistEntryFragment là màn hình
+    lượt chờ (vào hàng chờ xong thì popUpTo màn hình xác nhận; được đẩy lên thì sang vé và bỏ màn hình lượt chờ).
 -->
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -65,6 +67,9 @@
             android:id="@+id/action_dropInDetail_to_confirm"
             app:destination="@id/dropInConfirmFragment" />
         <action
+            android:id="@+id/action_dropInDetail_to_waitlist"
+            app:destination="@id/waitlistEntryFragment" />
+        <action
             android:id="@+id/action_dropInDetail_to_ticket"
             app:destination="@id/dropInTicketFragment" />
     </fragment>
@@ -76,8 +81,25 @@
         <argument
             android:name="sessionId"
             app:argType="string" />
+        <argument
+            android:name="mode"
+            android:defaultValue="REGISTER"
+            app:argType="com.example.booking_app.feature.dropin.ui.confirm.ConfirmMode" />
         <!-- returnTo sau khi khách đăng nhập từ chi tiết buổi (T041): đăng nhập xong mở thẳng bước xác nhận. -->
         <deepLink app:uri="smashnow://dropin/confirm/{sessionId}" />
+        <!-- Khách đăng nhập từ "Vào hàng chờ": mở thẳng bước xác nhận ở chế độ hàng chờ (spec 081). -->
+        <deepLink app:uri="smashnow://dropin/confirm/{sessionId}?mode={mode}" />
+        <action
+            android:id="@+id/action_dropInConfirm_to_waitlist"
+            app:destination="@id/waitlistEntryFragment"
+            app:popUpTo="@id/dropInConfirmFragment"
+            app:popUpToInclusive="true" />
+        <!-- Đổi chế độ (buổi vừa có chỗ, hoặc hết chỗ mà hàng chờ còn mở): thay màn hình xác nhận bằng bản mới. -->
+        <action
+            android:id="@+id/action_dropInConfirm_to_confirm"
+            app:destination="@id/dropInConfirmFragment"
+            app:popUpTo="@id/dropInConfirmFragment"
+            app:popUpToInclusive="true" />
         <action
             android:id="@+id/action_dropInConfirm_to_ticket"
             app:destination="@id/dropInTicketFragment"
@@ -99,12 +121,35 @@
         <deepLink app:uri="smashnow://dropin/ticket/{sessionId}" />
     </fragment>
 
+    <!-- Lượt chờ của tôi ở một buổi (spec 081 US1, US3, US4). Được đẩy lên thì sang vé; hàng chờ đóng thì hiện kết quả cuối. -->
+    <fragment
+        android:id="@+id/waitlistEntryFragment"
+        android:name="com.example.booking_app.feature.dropin.ui.waitlist.WaitlistEntryFragment"
+        android:label="@string/dropin_waitlist_entry_title">
+        <argument
+            android:name="sessionId"
+            app:argType="string" />
+        <action
+            android:id="@+id/action_waitlist_to_ticket"
+            app:destination="@id/dropInTicketFragment"
+            app:popUpTo="@id/waitlistEntryFragment"
+            app:popUpToInclusive="true" />
+        <action
+            android:id="@+id/action_waitlist_to_list"
+            app:destination="@id/dropInListFragment"
+            app:popUpTo="@id/dropInListFragment"
+            app:popUpToInclusive="true" />
+    </fragment>
+
     <!-- Lượt vãng lai của tôi (US3, T047). Trang Tài khoản mở bằng deep link (AccountEntry.MY_DROPINS, T049). -->
     <fragment
         android:id="@+id/myDropInsFragment"
         android:name="com.example.booking_app.feature.dropin.ui.mine.MyDropInsFragment"
         android:label="@string/dropin_mine_title">
         <deepLink app:uri="smashnow://dropin/mine" />
+        <action
+            android:id="@+id/action_myDropIns_to_waitlist"
+            app:destination="@id/waitlistEntryFragment" />
         <action
             android:id="@+id/action_myDropIns_to_ticket"
             app:destination="@id/dropInTicketFragment" />

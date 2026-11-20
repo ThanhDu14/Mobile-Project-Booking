@@ -177,7 +177,7 @@ export async function commit(writes: Write[], transaction?: string): Promise<voi
 
 export interface QueryFilter {
   field: string;
-  op: "EQUAL" | "IN" | "GREATER_THAN_OR_EQUAL" | "LESS_THAN";
+  op: "EQUAL" | "IN" | "LESS_THAN" | "LESS_THAN_OR_EQUAL" | "GREATER_THAN" | "GREATER_THAN_OR_EQUAL";
   value: unknown;
 }
 
@@ -189,8 +189,11 @@ export interface QueryOptions {
   /** `true` để truy vấn collection group (mọi collection cùng tên ở mọi cấp). */
   allDescendants?: boolean;
   limit?: number;
-  orderBy?: { field: string; direction: "ASCENDING" | "DESCENDING" };
+  /** Sắp xếp kết quả (spec 081: lượt chờ theo `waitlistTicket`; 022 truyền 1 object). Thiếu thì giữ thứ tự mặc định của Firestore. */
+  orderBy?: OrderBy | OrderBy[];
 }
+
+type OrderBy = { field: string; direction?: "ASCENDING" | "DESCENDING" };
 
 export interface QueryDocument {
   id: string;
@@ -208,14 +211,17 @@ function structuredQuery(collectionId: string, filters: QueryFilter[], opts: Que
   const clauses = filters.map((f) => ({
     fieldFilter: { field: { fieldPath: f.field }, op: f.op, value: encodeValue(f.value) },
   }));
+  const orderBy = opts.orderBy === undefined ? [] : [opts.orderBy].flat();
   return {
     from: [{ collectionId, ...(opts.allDescendants ? { allDescendants: true } : {}) }],
     ...(opts.select ? { select: { fields: opts.select.map(fieldPath => ({ fieldPath })) } } : {}),
     ...(clauses.length === 0 ? {} : {
       where: clauses.length === 1 ? clauses[0] : { compositeFilter: { op: "AND", filters: clauses } },
     }),
+    ...(orderBy.length
+      ? { orderBy: orderBy.map((o) => ({ field: { fieldPath: o.field }, direction: o.direction ?? "ASCENDING" })) }
+      : {}),
     ...(opts.limit ? { limit: opts.limit } : {}),
-    ...(opts.orderBy ? { orderBy: [{ field: { fieldPath: opts.orderBy.field }, direction: opts.orderBy.direction }] } : {}),
   };
 }
 
@@ -242,7 +248,7 @@ async function queryRequest(
   });
 }
 
-/** Truy vấn có điều kiện bằng (`EQUAL`, `IN`). */
+/** Truy vấn có điều kiện (`EQUAL`, `IN`, so sánh khoảng) và sắp xếp tùy chọn. */
 export function query(collectionId: string, filters: QueryFilter[], opts: QueryOptions = {}): Promise<QueryDocument[]> {
   return queryRequest(collectionId, filters, opts);
 }

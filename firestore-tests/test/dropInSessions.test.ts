@@ -9,6 +9,7 @@ import {
   doc,
   getDoc,
   getDocs,
+  orderBy,
   query,
   serverTimestamp,
   setDoc,
@@ -247,5 +248,98 @@ describe('collection group registrations — "Lượt vãng lai của tôi"', ()
 
   it('D11 (bị chặn): chủ sân không dùng collection group để đọc đăng ký của người khác', async () => {
     await assertFails(getDocs(query(collectionGroup(owner('owner1'), 'registrations'), where('venueId', '==', 'venueA'))));
+  });
+});
+
+// ---------- Hàng chờ (spec 081, C): W1, W2 của specs/081-drop-in-waitlist/contracts/edge-functions-waitlist.md mục 7 ----------
+// Lượt chờ là document `registrations` (status WAITLISTED), nên Rules của spec 080 đã che đủ FR-006, SC-004.
+// Không thêm rule mới: client vẫn không ghi được gì.
+describe('hàng chờ (spec 081)', () => {
+  beforeEach(async () => {
+    await env.withSecurityRulesDisabled(async (ctx) => {
+      const db = ctx.firestore();
+      await setDoc(doc(db, 'dropInSessions/s1'), session('owner1', 'venueA', {
+        status: 'FULL',
+        registeredCount: 12,
+        waitlistNextTicket: 3,
+        waitlistTickets: [1, 2],
+        waitlistCount: 2,
+      }));
+      for (const [uid, ticket] of [['player3', 1], ['player4', 2]] as const) {
+        await setDoc(doc(db, `dropInSessions/s1/registrations/${uid}`), registration('s1', uid, {
+          status: 'WAITLISTED',
+          paymentStatus: null,
+          qrToken: null,
+          ticketCode: null,
+          registeredAt: null,
+          waitlistedAt: CREATED,
+          waitlistTicket: ticket,
+          promotedAt: null,
+          waitlistEndReason: null,
+        }));
+      }
+    });
+  });
+
+  it('dropInSessions read: khách chưa đăng nhập đọc buổi có waitlistTickets, waitlistCount', async () => {
+    const snap = await assertSucceeds(getDoc(doc(guest(), 'dropInSessions/s1')));
+    const data = snap.data()!;
+    if (JSON.stringify(data.waitlistTickets) !== '[1,2]' || data.waitlistCount !== 2) {
+      throw new Error('khách phải thấy waitlistTickets và waitlistCount');
+    }
+  });
+
+  it('W2 (buổi): người chơi và chủ cơ sở không tự ghi waitlistTickets, waitlistCount, waitlistNextTicket', async () => {
+    for (const db of [player('player3'), owner('owner1')]) {
+      const ref = doc(db, 'dropInSessions/s1');
+      await assertFails(updateDoc(ref, { waitlistTickets: [2] }));
+      await assertFails(updateDoc(ref, { waitlistCount: 1 }));
+      await assertFails(updateDoc(ref, { waitlistNextTicket: 99 }));
+    }
+  });
+
+  it('W1: player3 đọc lượt WAITLISTED của chính mình; player4 không đọc được lượt của player3', async () => {
+    await assertSucceeds(getDoc(doc(player('player3'), 'dropInSessions/s1/registrations/player3')));
+    await assertFails(getDoc(doc(player('player4'), 'dropInSessions/s1/registrations/player3')));
+  });
+
+  it('registrations list (chủ cơ sở): owner1 liệt kê lượt chờ theo waitlistTicket; owner2 (cơ sở khác) bị chặn', async () => {
+    const q = (db: ReturnType<typeof owner>) =>
+      query(
+        collection(db, 'dropInSessions/s1/registrations'),
+        where('status', '==', 'WAITLISTED'),
+        orderBy('waitlistTicket'),
+      );
+    const snap = await assertSucceeds(getDocs(q(owner('owner1'))));
+    if (snap.docs.map((d) => d.id).join() !== 'player3,player4') throw new Error('sai thứ tự lượt chờ');
+    await assertFails(getDocs(q(owner('owner2'))));
+  });
+
+  it('registrations list (admin): admin1 liệt kê lượt chờ của buổi bất kỳ; người chơi (PLAYER) bị chặn', async () => {
+    const q = (db: ReturnType<typeof admin>) =>
+      query(collection(db, 'dropInSessions/s1/registrations'), where('status', '==', 'WAITLISTED'));
+    await assertSucceeds(getDocs(q(admin())));
+    await assertSucceeds(getDocs(query(collection(admin(), 'dropInSessions/s2/registrations'), where('status', '==', 'WAITLISTED'))));
+    await assertFails(getDocs(q(player('player4'))));
+  });
+
+  it('W2 (lượt chờ): player3 không tự ghi waitlistTicket, waitlistedAt, status, promotedAt của lượt mình', async () => {
+    const ref = doc(player('player3'), 'dropInSessions/s1/registrations/player3');
+    await assertFails(updateDoc(ref, { waitlistTicket: 0 }));
+    await assertFails(updateDoc(ref, { waitlistedAt: serverTimestamp() }));
+    await assertFails(updateDoc(ref, { status: 'REGISTERED' }));
+    await assertFails(updateDoc(ref, { promotedAt: serverTimestamp() }));
+    await assertFails(deleteDoc(ref));
+  });
+
+  it('collection group: player3 liệt kê lượt của mình (kể cả lượt chờ); không lọc userId thì bị chặn', async () => {
+    const db = player('player3');
+    await assertSucceeds(getDocs(query(collectionGroup(db, 'registrations'), where('userId', '==', 'player3'))));
+    await assertSucceeds(getDocs(query(
+      collectionGroup(db, 'registrations'),
+      where('userId', '==', 'player3'),
+      where('status', '==', 'WAITLISTED'),
+    )));
+    await assertFails(getDocs(query(collectionGroup(db, 'registrations'), where('status', '==', 'WAITLISTED'))));
   });
 });
