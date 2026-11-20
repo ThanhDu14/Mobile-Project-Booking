@@ -259,11 +259,13 @@ class FirestoreBookingRemoteDataSource @Inject constructor(
             for (slotId in slotIds) {
                 val docRef = firestore.collection(COLLECTION_SLOTS).document(slotId)
                 val snapshot = transaction.get(docRef)
-                if (snapshot.exists()) {
-                    val holdBy = snapshot.getString("holdBy")
-                    if (holdBy == userId) {
-                        validSlotRefs.add(docRef)
-                    }
+                // Chỉ nhả slot còn đang HELD do chính mình giữ. Slot đã BOOKED vẫn giữ holdBy của người đặt;
+                // trả nó về AVAILABLE sẽ mở đường đặt trùng (Rules cũng chặn).
+                if (snapshot.exists() &&
+                    snapshot.getString("status") == "HELD" &&
+                    snapshot.getString("holdBy") == userId
+                ) {
+                    validSlotRefs.add(docRef)
                 }
             }
 

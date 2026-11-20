@@ -50,6 +50,10 @@ class BookingConfirmFragment : Fragment() {
 
     private var countDownTimer: CountDownTimer? = null
     private var holdArgs: HoldToPaymentArgs? = null
+
+    // Đang ghi đơn: chặn nhả chỗ (Back, hủy, hết giờ) để lệnh nhả không chạy sau khi slot đã BOOKED
+    private var isConfirming = false
+    private var timeoutWhileConfirming = false
     private val currencyFormatter = DecimalFormat("#,###", java.text.DecimalFormatSymbols(Locale.GERMANY))
 
     // Trạng thái chọn phương thức thanh toán display-only
@@ -98,7 +102,7 @@ class BookingConfirmFragment : Fragment() {
         // 1. Thẻ cơ sở
         binding.tvConfirmVenueName.text = args.venueName.ifEmpty { "Cơ sở ${args.venueId}" }
         binding.tvConfirmVenueAddress.text = args.venueAddress.ifEmpty {
-            if (args.districtName.isNotEmpty()) "Quận ${args.districtName}, TP. Hồ Chí Minh" else "TP. Hồ Chí Minh"
+            if (args.districtName.isNotEmpty()) "${args.districtName}, TP. Hồ Chí Minh" else "TP. Hồ Chí Minh"
         }
 
         // Tải ảnh cơ sở thật từ photoUrl (nếu có và bắt đầu bằng http)
@@ -147,11 +151,13 @@ class BookingConfirmFragment : Fragment() {
         binding.rowPayAtVenue.setOnClickListener {
             updatePaymentRadioSelection(PaymentOption.PAY_AT_VENUE, args)
         }
-        binding.rowDeposit.setOnClickListener {
-            updatePaymentRadioSelection(PaymentOption.DEPOSIT, args)
-        }
-        binding.rowWallet.setOnClickListener {
-            updatePaymentRadioSelection(PaymentOption.WALLET, args)
+        // Đặt cọc và ví giả lập cần trừ tiền phía server (050). Khi client tự ghi "đã trả", hủy sớm sẽ hoàn
+        // vào ví số tiền chưa từng trả, nên tạm khóa hai lựa chọn này; Rules cũng chỉ nhận đơn trả tại sân.
+        for (row in listOf(binding.rowDeposit, binding.rowWallet)) {
+            row.alpha = DISABLED_PAYMENT_ALPHA
+            row.setOnClickListener {
+                Snackbar.make(binding.root, R.string.booking_payment_server_only, Snackbar.LENGTH_SHORT).show()
+            }
         }
 
         // 4. Thanh số dư ví (3c: placeholder 0 đ kèm TODO(050))
@@ -188,6 +194,7 @@ class BookingConfirmFragment : Fragment() {
             }
 
             binding.btnConfirmBooking.isEnabled = false
+            isConfirming = true
             val methodStr = when (selectedPaymentOption) {
                 PaymentOption.PAY_AT_VENUE -> "AT_VENUE"
                 PaymentOption.DEPOSIT -> "DEPOSIT"
@@ -210,12 +217,21 @@ class BookingConfirmFragment : Fragment() {
                         )
                     }
                     is com.example.booking_app.feature.booking.domain.model.ConfirmBookingResult.Expired -> {
+                        isConfirming = false
+                        timeoutWhileConfirming = false
                         if (_binding != null) {
                             binding.btnConfirmBooking.isEnabled = true
                         }
                         onCountdownTimeout()
                     }
                     is com.example.booking_app.feature.booking.domain.model.ConfirmBookingResult.Error -> {
+                        isConfirming = false
+                        if (timeoutWhileConfirming) {
+                            // Hết giờ giữ chỗ trong lúc đang ghi đơn: giờ mới xử lý hết hạn
+                            timeoutWhileConfirming = false
+                            onCountdownTimeout()
+                            return@launch
+                        }
                         if (_binding != null) {
                             binding.btnConfirmBooking.isEnabled = true
                         }
@@ -392,6 +408,10 @@ class BookingConfirmFragment : Fragment() {
     private fun onCountdownTimeout() {
         countDownTimer?.cancel()
         if (!isAdded) return
+        if (isConfirming) {
+            timeoutWhileConfirming = true
+            return
+        }
 
         MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.booking_confirm_timeout_title)
@@ -406,6 +426,10 @@ class BookingConfirmFragment : Fragment() {
     }
 
     private fun handleCancelAndRelease() {
+        if (isConfirming) {
+            Toast.makeText(requireContext(), R.string.booking_confirm_in_progress, Toast.LENGTH_SHORT).show()
+            return
+        }
         countDownTimer?.cancel()
         val args = holdArgs
         val userId = sessionManager.currentUid() ?: ""
@@ -456,4 +480,9 @@ class BookingConfirmFragment : Fragment() {
         countDownTimer = null
         _binding = null
     }
+
+    private companion object {
+        const val DISABLED_PAYMENT_ALPHA = 0.45f
+    }
+
 }

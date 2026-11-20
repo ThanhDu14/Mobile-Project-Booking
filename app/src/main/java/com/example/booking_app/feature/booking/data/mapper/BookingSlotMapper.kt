@@ -52,8 +52,9 @@ object BookingSlotMapper {
         label = domain.label
     )
 
-    fun toDomain(dto: SlotDto, calculatedPrice: Long = 0L): TimeSlot {
-        val status = parseStatus(dto.status, dto.holdExpiresAt)
+    /** [nowMillis]: giờ server (ServerTimeOffsetProvider.now()) để quyết định HELD đã hết hạn chưa. */
+    fun toDomain(dto: SlotDto, calculatedPrice: Long = 0L, nowMillis: Long = System.currentTimeMillis()): TimeSlot {
+        val status = parseStatus(dto.status, dto.holdExpiresAt, nowMillis)
         return TimeSlot(
             slotId = dto.id,
             courtId = dto.courtId,
@@ -81,8 +82,8 @@ object BookingSlotMapper {
         bookingId = bookingId
     )
 
-    fun toDomain(dto: BusySlotsUpdateDto): BusySlotsUpdate = BusySlotsUpdate(
-        allBusySlots = dto.allSlots.map { toDomain(it) },
+    fun toDomain(dto: BusySlotsUpdateDto, nowMillis: Long = System.currentTimeMillis()): BusySlotsUpdate = BusySlotsUpdate(
+        allBusySlots = dto.allSlots.map { toDomain(it, nowMillis = nowMillis) },
         isInitial = dto.isInitial,
         changes = dto.changes.map { changeDto ->
             SlotChange(
@@ -91,13 +92,12 @@ object BookingSlotMapper {
                     SlotChangeTypeDto.MODIFIED -> SlotChangeType.MODIFIED
                     SlotChangeTypeDto.REMOVED -> SlotChangeType.REMOVED
                 },
-                slot = toDomain(changeDto.slot)
+                slot = toDomain(changeDto.slot, nowMillis = nowMillis)
             )
         }
     )
 
-    private fun parseStatus(statusStr: String?, holdExpiresAt: Timestamp?): SlotStatus {
-        val now = System.currentTimeMillis()
+    private fun parseStatus(statusStr: String?, holdExpiresAt: Timestamp?, now: Long): SlotStatus {
         return when (statusStr?.uppercase()) {
             "BOOKED" -> SlotStatus.BOOKED
             "BLOCKED" -> SlotStatus.BLOCKED

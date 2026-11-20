@@ -2,8 +2,8 @@
 <!--
     Chi tiết buổi vãng lai (spec 080 US1 T029, US2 T041; wireframe ui/08_drop-in_buoc2_chi-tiet-buoi.png).
     Nhãn, tên cơ sở, ngày giờ, ô số chỗ realtime, sân con, địa chỉ + chỉ đường, ghi chú của chủ sân, dòng quyền riêng tư.
-    KHÔNG có phần "Người tham gia" (FR-021). waitlist_container để trống cho spec 081.
-    Thanh dưới: giá mỗi lượt + nút "Đăng ký" / "Xem vé của bạn" / nhãn "Đã đủ người" / dòng trạng thái.
+    KHÔNG có phần "Người tham gia" (FR-021). waitlist_container chứa thẻ hàng chờ của spec 081.
+    Thanh dưới: giá mỗi lượt + nút "Đăng ký" / "Xem vé của bạn" / "Vào hàng chờ" / "Xem lượt chờ" / nhãn "Đã đủ người" / dòng trạng thái.
     include_state_views chồng lên vùng nội dung cho loading, không tìm thấy, lỗi (FR-024).
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -328,12 +328,49 @@
                         android:textColor="?attr/colorOnSurfaceVariant" />
                 </LinearLayout>
 
-                <!-- Spec 081 (hàng chờ) gắn nội dung vào đây. Spec 080 để trống. -->
+                <!-- Spec 081: hàng chờ. "N người đang chờ" / "Bạn đang ở vị trí thứ N"; ẩn khi hàng chờ không áp dụng. -->
                 <FrameLayout
                     android:id="@+id/waitlist_container"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="@dimen/space_4" />
+                    android:layout_marginTop="@dimen/space_4">
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/waitlistCard"
+                        style="?attr/materialCardViewOutlinedStyle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:visibility="gone"
+                        app:cardCornerRadius="@dimen/radius_md"
+                        tools:visibility="visible">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="@dimen/space_4">
+
+                            <TextView
+                                android:id="@+id/waitlistTitle"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:accessibilityHeading="true"
+                                android:accessibilityLiveRegion="polite"
+                                android:textAppearance="?attr/textAppearanceTitleMedium"
+                                android:textColor="?attr/colorOnSurface"
+                                tools:text="3 người đang chờ" />
+
+                            <TextView
+                                android:id="@+id/waitlistNote"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="@dimen/space_1"
+                                android:text="@string/dropin_waitlist_detail_full_note"
+                                android:textAppearance="?attr/textAppearanceBodyMedium"
+                                android:textColor="?attr/colorOnSurfaceVariant" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+                </FrameLayout>
             </LinearLayout>
         </androidx.core.widget.NestedScrollView>
 
@@ -408,6 +445,23 @@
                     android:minHeight="@dimen/touch_min"
                     android:text="@string/dropin_detail_view_ticket"
                     app:icon="@drawable/ic_confirmation_number_20"
+                    android:visibility="gone" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/joinWaitlistButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minHeight="@dimen/touch_min"
+                    android:text="@string/dropin_waitlist_join"
+                    android:visibility="gone" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/viewWaitlistButton"
+                    style="@style/Widget.Material3.Button.TonalButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minHeight="@dimen/touch_min"
+                    android:text="@string/dropin_waitlist_view"
                     android:visibility="gone" />
 
                 <com.google.android.material.chip.Chip

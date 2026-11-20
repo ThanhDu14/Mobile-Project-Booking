@@ -200,6 +200,12 @@ class DropInTicketFragment : Fragment(R.layout.fragment_dropin_ticket) {
         binding.addPartyButton.isVisible = !offline && state.addParty != null
         // Hủy cần mạng; ẩn khi buổi đã bắt đầu, đã hủy hoặc lượt không còn REGISTERED (AC 4.4).
         binding.cancelButton.isVisible = !offline && state.canCancel
+        // Hạn hủy miễn phí chỉ có nghĩa khi còn hủy được (spec 081 FR-011).
+        val freeCancelUntil = state.freeCancelUntil.takeIf { !offline && state.canCancel }
+        binding.freeCancelNote.isVisible = freeCancelUntil != null
+        freeCancelUntil?.let {
+            binding.freeCancelNote.text = getString(R.string.dropin_waitlist_free_cancel_until, TimeFormat.time(it))
+        }
     }
 
     private fun renderLabels(binding: FragmentDropinTicketBinding, labels: List<TicketLabel>) {
@@ -214,6 +220,7 @@ class DropInTicketFragment : Fragment(R.layout.fragment_dropin_ticket) {
                             TicketLabel.SESSION_CHANGED -> R.string.dropin_label_session_changed
                             TicketLabel.SESSION_CANCELLED -> R.string.dropin_label_session_cancelled
                             TicketLabel.VENUE_INACTIVE -> R.string.dropin_label_venue_inactive
+                            TicketLabel.FROM_WAITLIST -> R.string.dropin_waitlist_status_promoted
                         },
                     )
                     isCheckable = false

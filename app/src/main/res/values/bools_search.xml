@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Màn tìm sân (spec 021 FR-023): máy tính bảng hiện danh sách và bản đồ cạnh nhau -->
+    <bool name="search_two_pane">false</bool>
+    <!-- Điện thoại xoay ngang: bản đồ thấp, ẩn tiêu đề và đặt thẻ ở góc trái -->
+    <bool name="map_compact_landscape">false</bool>
+</resources>

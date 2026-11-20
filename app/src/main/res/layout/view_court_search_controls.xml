@@ -29,6 +29,131 @@
             android:maxLines="1" />
     </com.google.android.material.textfield.TextInputLayout>
 
+    <!-- Sân gần bạn (spec 021 US4): ngay dưới ô tìm kiếm, chỉ hiện khi chưa có từ khóa và bộ lọc (FR-015a). -->
+    <LinearLayout
+        android:id="@+id/nearbySection"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_3"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:accessibilityHeading="true"
+                android:text="@string/nearby_title"
+                android:textAppearance="@style/TextAppearance.SmashNow.Title" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/nearbySeeMap"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/nearby_see_map"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/nearbyList"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_2"
+            android:clipToPadding="false"
+            android:nestedScrollingEnabled="false"
+            android:orientation="horizontal"
+            android:visibility="gone"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
+        <TextView
+            android:id="@+id/nearbyMessage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_1"
+            android:accessibilityLiveRegion="polite"
+            android:textAppearance="@style/TextAppearance.SmashNow.Body"
+            android:textColor="?attr/colorOnSurfaceVariant" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_1"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/nearbyAction"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:visibility="gone" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/nearbySecondary"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_2"
+                android:text="@string/nearby_by_district"
+                android:visibility="gone" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Lịch sử tìm kiếm (spec 020 US4): chỉ hiện khi chưa có điều kiện và đã đăng nhập. -->
+    <LinearLayout
+        android:id="@+id/recentSection"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_2"
+        android:orientation="vertical"
+        android:visibility="gone">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:accessibilityHeading="true"
+                android:text="@string/search_history_title"
+                android:textAppearance="?attr/textAppearanceTitleSmall" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/recentAll"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/search_history_all" />
+        </LinearLayout>
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="none">
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/recentChips"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:chipSpacingHorizontal="8dp"
+                app:singleLine="true" />
+        </HorizontalScrollView>
+    </LinearLayout>
+    <TextView
+        android:id="@+id/historyGuestHint"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_2"
+        android:text="@string/search_history_guest"
+        android:textAppearance="?attr/textAppearanceBodySmall"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:visibility="gone" />
+
     <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -68,7 +193,9 @@
                 android:hint="@string/search_ai_hint"
                 app:counterEnabled="true"
                 app:counterMaxLength="200"
-                app:endIconMode="clear_text">
+                app:endIconMode="clear_text"
+                app:startIconContentDescription="@string/search_voice_start_cd"
+                app:startIconDrawable="@drawable/ic_mic_24">
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/aiInput"
                     android:layout_width="match_parent"
@@ -103,6 +230,8 @@
                 android:id="@+id/aiHistoryTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_3"
+                android:layout_marginBottom="@dimen/space_1"
                 android:text="@string/search_ai_history"
                 android:textAppearance="?attr/textAppearanceLabelMedium"
                 android:visibility="gone" />
@@ -294,6 +423,27 @@
         android:layout_height="wrap_content"
         android:accessibilityLiveRegion="polite"
         android:textAppearance="?attr/textAppearanceBodyMedium" />
+    <!-- Gợi ý nới điều kiện khi tìm có lọc ra 0 sân (spec 022 US6): tối đa 3 chip, bấm là áp dụng. -->
+    <LinearLayout
+        android:id="@+id/relaxSection"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_3"
+        android:orientation="vertical"
+        android:visibility="gone">
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="@dimen/space_1"
+            android:accessibilityHeading="true"
+            android:text="@string/search_relax_title"
+            android:textAppearance="?attr/textAppearanceTitleSmall" />
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/relaxChips"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            app:chipSpacingVertical="4dp" />
+    </LinearLayout>
     <com.google.android.material.button.MaterialButton
         android:id="@+id/retry"
         style="?attr/materialButtonOutlinedStyle"

@@ -19,6 +19,10 @@ import com.example.booking_app.feature.dropin.domain.usecase.CheckDropInWarnings
 import com.example.booking_app.feature.dropin.domain.usecase.CheckDropInWarningsImpl
 import com.example.booking_app.feature.dropin.domain.usecase.GetDefaultDropInFilter
 import com.example.booking_app.feature.dropin.domain.usecase.GetDefaultDropInFilterImpl
+import com.example.booking_app.feature.dropin.domain.usecase.JoinWaitlist
+import com.example.booking_app.feature.dropin.domain.usecase.JoinWaitlistImpl
+import com.example.booking_app.feature.dropin.domain.usecase.LeaveWaitlist
+import com.example.booking_app.feature.dropin.domain.usecase.LeaveWaitlistImpl
 import com.example.booking_app.feature.dropin.domain.usecase.LoadDropInPage
 import com.example.booking_app.feature.dropin.domain.usecase.LoadDropInPageImpl
 import com.example.booking_app.feature.dropin.domain.usecase.LoadMyDropIns
@@ -93,4 +97,10 @@ abstract class DropInModule {
 
     @Binds
     abstract fun bindLoadMyDropIns(impl: LoadMyDropInsImpl): LoadMyDropIns
+
+    @Binds
+    abstract fun bindJoinWaitlist(impl: JoinWaitlistImpl): JoinWaitlist
+
+    @Binds
+    abstract fun bindLeaveWaitlist(impl: LeaveWaitlistImpl): LeaveWaitlist
 }

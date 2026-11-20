@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Chế độ bản đồ, màn ngang (spec 021 FR-023): nút ở góc trên trái, thẻ gọn góc dưới trái, nút vị trí góc dưới phải
+     để thẻ không che nút. Cùng ID với bản dọc. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <FrameLayout
+        android:id="@+id/mapHost"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:contentDescription="@string/map_cd_map" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        android:layout_marginTop="@dimen/space_2"
+        android:gravity="start"
+        android:orientation="vertical"
+        android:paddingHorizontal="@dimen/space_3">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/mapFilters"
+                style="@style/Widget.Material3.Button.ElevatedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/map_filters" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/searchArea"
+                style="@style/Widget.Material3.Button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_2"
+                android:text="@string/map_search_area"
+                android:visibility="gone"
+                tools:visibility="visible" />
+        </LinearLayout>
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/mapStatus"
+            style="@style/Widget.Material3.CardView.Elevated"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_2"
+            android:visibility="gone"
+            app:cardCornerRadius="@dimen/radius_lg"
+            tools:visibility="visible">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingHorizontal="@dimen/space_4"
+                android:paddingVertical="@dimen/space_2">
+
+                <com.google.android.material.progressindicator.CircularProgressIndicator
+                    android:id="@+id/mapLoading"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="@dimen/space_2"
+                    android:indeterminate="true"
+                    android:visibility="gone"
+                    app:indicatorSize="16dp"
+                    app:trackThickness="2dp" />
+
+                <TextView
+                    android:id="@+id/mapStatusText"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:accessibilityLiveRegion="polite"
+                    android:maxWidth="280dp"
+                    android:textAppearance="@style/TextAppearance.SmashNow.Body"
+                    tools:text="@string/map_capped" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/mapRetry"
+                    style="@style/Widget.Material3.Button.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/space_1"
+                    android:text="@string/map_retry"
+                    android:visibility="gone" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+    </LinearLayout>
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/myLocation"
+        style="@style/Widget.Material3.FloatingActionButton.Small.Surface"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="@dimen/space_4"
+        android:layout_marginBottom="76dp"
+        android:contentDescription="@string/map_my_location"
+        app:srcCompat="@drawable/ic_my_location_24" />
+
+    <androidx.viewpager2.widget.ViewPager2
+        android:id="@+id/mapCards"
+        android:layout_width="@dimen/map_card_width_land"
+        android:layout_height="@dimen/map_card_height"
+        android:layout_gravity="bottom|start"
+        android:layout_marginBottom="@dimen/space_2"
+        android:visibility="gone"
+        tools:visibility="visible" />
+</FrameLayout>

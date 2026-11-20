@@ -52,6 +52,7 @@ object LocationPickerDialog {
                 val longitude = lng.text.toString().toDoubleOrNull()
                 if (latitude == null || !latitude.isFinite() || latitude !in -90.0..90.0) lat.error = context.getString(R.string.owner_location_invalid)
                 else if (longitude == null || !longitude.isFinite() || longitude !in -180.0..180.0) lng.error = context.getString(R.string.owner_location_invalid)
+                else if (!com.example.booking_app.core.location.VenueArea.contains(latitude, longitude)) lat.error = context.getString(R.string.owner_location_outside_vietnam)
                 else { onSelected(GeoPoint(latitude,longitude)); dialog.dismiss() }
             }
         }

@@ -48,6 +48,22 @@ Mỗi thành viên ghi log vào một file riêng theo số của mình; file n�
 | 42 | 2026-11-12 | Đặc tả và triển khai ban đầu đề xuất sân theo đánh giá (RAG) cho tìm kiếm 020/022 | 02 |
 | 43 | 2026-11-14 | Rà soát RAG so với spec, sửa lỗi và đồng bộ tài liệu 020/021/022 với code | 02 |
 | 44 | 2026-11-15 | Kiểm thử AI search trên máy thật, sửa lỗi, cải thiện giao diện, deploy, commit và push | 02 |
+| 45 | 2026-11-15 | Sửa CI đỏ của PR #65 (test sinh slot phụ thuộc múi giờ và thứ trong tuần) | 04, 02 |
+| 46 | 2026-11-17 | Bộ đánh giá Tìm bằng AI (42 câu), quy tắc đọc ngày/quận/giờ trong câu, dự phòng khi quá thời gian | 02 |
+| 47 | 2026-11-18 | Lịch sử tìm kiếm (020 US4), nhập bằng giọng nói (022 US4), deploy Rules, kiểm thử trên máy, mở PR và sửa CI | 02, 04 |
+| 48 | 2026-11-18 | Gợi ý nới điều kiện khi tìm không ra sân (022 US6) và cập nhật AI log | 02 |
+| 49 | 2026-11-18 | Kiểm thử gợi ý nới điều kiện (022 US6) trên máy thật | 02 |
+| 50 | 2026-11-18 | Lưới đặt sân theo bề ngang màn hình: chia đều cột, hé cột, ghim tên sân (040) | 04 |
+| 51 | 2026-11-18 | Rà soát và sửa lỗi đặt sân (040) và lịch đặt (060): Rules slot/đơn, tiền ảo trong ví, tab Đã hủy, job phía server, giao diện đơn | 04 |
+| 52 | 2026-11-18 | Deploy Firestore Rules, sửa 28 mốc thời gian lưu sai kiểu, sửa lỗi phân trang lặp ở Lịch đặt | 04 |
+| 53 | 2026-11-18 | Supabase: deploy 4 Edge Function, tìm nguyên nhân job định kỳ không chạy, chuẩn bị bật cron | 04 |
+| 54 | 2026-11-18 | Lưới 040 dùng giờ server; Lịch đặt chỉ tải lại khi có đơn đổi; đánh dấu T102 (022) | 04, 02 |
+| 55 | 2026-11-18 | Đồng bộ tasks 020 và 022 với code thực tế, cập nhật trạng thái nhóm tính năng 02 | 02 |
+| 56 | 2026-11-18 | Sửa 3 điểm phát hiện khi đối chiếu: chú thích Rules, giá lưới 040 dùng chung SlotPricing, test tìm kiếm | 02, 04 |
+| 57 | 2026-11-18 | Bản đồ sân và sân gần bạn (021 US1–US4) | 02 |
+| 58 | 2026-11-18 | Thử bản đồ sân (021) trên máy thật và sửa 5 lỗi | 02 |
+| 59 | 2026-11-18 | Bố cục máy tính bảng cho tìm sân và bản đồ (021 T074) | 02 |
+| 60 | 2026-11-19 | Bật 3 cron job trên Supabase sau khi có CRON_SECRET | 04, 06 |
 
 
 
@@ -2106,3 +2122,605 @@ Sau đợt kiểm thử trên thiết bị thật và đối chiếu kỹ lưỡ
 - Khi điều khiển bằng `adb`, một lần chạm nhầm mở trang "Xóa tài khoản"; không bấm gì và thoát ngay, tài khoản không bị ảnh hưởng. Một lần ô nhập không được xóa nên ba câu bị dính vào nhau và tốn lượt; đã xóa các câu này khỏi lịch sử.
 - Trong 26 commit, một số commit giữa có thể không build vì code 020 và 022 nằm chung file chưa từng commit; HEAD là bản đã test.
 - Chưa sửa: câu không dấu "toi mai" không nhận ra buổi tối; nút "Xóa bộ lọc" vẫn giữ Quận và từ khóa (chờ người dùng quyết định).
+
+---
+
+## Mục 45: Sửa CI đỏ của PR #65
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-15 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 04 – Đặt sân (test của spec 040), ảnh hưởng PR 02 |
+| Công cụ AI | Claude Code (Claude Opus 5.5) |
+| Nhánh Git | `feature/020-court-search-rag` |
+
+### Yêu cầu và kết quả
+
+- Prompt: "Khi test thì CI fail hãy kiểm tra giúp tôi" (kèm log CI), sau đó chọn "cách 1" trong các phương án AI đưa ra.
+- AI đọc log, xác định `GenerateDailySlotsUseCaseTest` (test đánh dấu slot `PAST`) phụ thuộc giờ và thứ trong tuần của máy chạy CI (UTC), không phải lỗi của code 020/022.
+- Sửa test cho độc lập múi giờ và ngày trong tuần (commit `ce2fb4d`); CI xanh và PR #65 được merge vào `main`.
+
+---
+
+## Mục 46: Bộ đánh giá Tìm bằng AI và quy tắc đọc điều kiện trong câu
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-17 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 02 – Tìm kiếm sân (spec 022) |
+| Công cụ AI | Claude Code (Claude Opus 5.5) |
+| Nhánh Git | `feature/020-021-022-complete` |
+
+### Prompt chính
+
+"Tôi vừa pull code từ main về, hãy giúp tôi hoàn thiện các tính năng còn lại trong feature 020, 021 và 022. Đầu tiên hãy rà soát lại xem còn thiếu gì." Sau khi AI liệt kê việc còn lại: "Bắt đầu với cái này đi" (bộ eval), "Làm thêm 2 quy tắc sau đó deploy, phần này commit tầm 3-4 commit và commit bằng tiếng Anh".
+
+### Yêu cầu và kết quả
+
+1. **Bộ eval** `scripts/ai-eval/`: 42 câu (26 câu tìm sân, 16 câu ngoại lệ), chạy `handleAiSearch` với Firestore trong bộ nhớ, nhà cung cấp LLM thật và đồng hồ cố định (2026-10-05 10:00, thứ Hai). Chấm ý định, bộ lọc, văn bản tự do, PII; xuất báo cáo `.md` và `.json` vào `docs/reports/ai-eval/`. Key do người dùng nhập bằng `read -s`, AI không đọc key.
+2. **Quy tắc tất định** trong `criteria.ts` bổ sung hoặc sửa kết quả của model: ngày `dd/mm`, thứ (`thứ 2…CN`, `t7`, `tuần sau`), quận (`Quận 10`, `q10`, `q 10`), ngày tương đối (`tối nay`, `mai`, `mốt`), khung giờ (`19h-21h`). Thứ viết bằng chữ phải có dấu để tránh nhầm "thứ tự".
+3. **Dự phòng khi quá thời gian:** nhà cung cấp đầu quá thời gian mà còn ≥ 1,5 giây thì chuyển sang nhà cung cấp kế tiếp (trước đây chỉ chuyển khi 429/5xx). Giới hạn thời gian production giữ nguyên 6 s / 8,5 s; eval có tham số `--budget-ms` riêng.
+4. **Kết quả:** từ 69,2% / 65,4% / 75,0% lên **96,2% ý định, 96,2% bộ lọc, 100% ngoại lệ, 0 vi phạm văn bản tự do, 0 vi phạm PII** (`court-search-rag-4`). Câu còn sai: "bt sang cn" (không dấu, app hỏi lại giờ).
+5. Deploy `ai-search-parse` sau khi người dùng đồng ý; 4 commit tiếng Anh.
+
+### Sai sót và giới hạn
+
+- AI thêm dòng prompt "q10 = Quận 10" làm mọi "Quận N" trả về `null`; phát hiện qua eval, sửa thành bảng viết tắt → mã quận và thêm `districtFromQuery` dự phòng.
+- Lần eval đầu toàn `AI_TIMEOUT` vì mạng của người dùng chậm hơn giới hạn 6 s; xử lý bằng tham số thời gian riêng cho eval, không nới giới hạn production.
+- Cổng 8080 của Emulator bị một tiến trình lạ chiếm; AI không tắt tiến trình đó mà dùng file cấu hình tạm với cổng khác.
+
+### Kiểm chứng
+
+- `deno test`: 13/13 không Emulator, 17/17 có Emulator. Báo cáo eval lưu trong repo.
+
+---
+
+## Mục 47: Lịch sử tìm kiếm, nhập bằng giọng nói, deploy Rules, kiểm thử trên máy và sửa CI
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-18 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 02 – Tìm kiếm sân (spec 020 US4, 022 US4); test của 04 (spec 040) |
+| Công cụ AI | Claude Code (Claude Opus 5.5), có điều khiển điện thoại qua `adb` |
+| Nhánh Git | `feature/020-021-022-complete` |
+
+### Prompt chính
+
+"Tiếp theo là nhập bằng giọng nói và lịch sử tìm kiếm, hãy làm rõ 2 cái này trước khi triển khai. Có thể hỏi tôi bằng trắc nghiệm." Người dùng trả lời trắc nghiệm: micro ở mép trái ô AI, nhận dạng ngay trong app có trạng thái "Đang nghe…", chỉ ô AI có micro, từ chối quyền thì micro mờ và có "Mở cài đặt"; lịch sử là hàng "Tìm gần đây" + sheet "Xem tất cả", tìm bằng AI lưu bộ lọc (không lưu câu hỏi), lưu trên Firestore `users/{uid}/searchHistory`.
+
+### Yêu cầu và kết quả
+
+1. **Lịch sử tìm kiếm (020 US4):**
+   - Rules và test H-1…H-15 (`firestore-tests/test/searchHistory.test.ts`); giá chấp nhận bội số 1.000 thay vì 10.000 vì AI điền được "dưới 55k" (đã sửa contract và data-model).
+   - Repository: ID tất định (20 ký tự hex đầu SHA-256 của bộ điều kiện chuẩn hóa) nên tìm lại không tạo bản trùng; transaction giữ `createdAt`; giữ 10 mục; xóa từng mục, xóa tất cả.
+   - Ghi khi bấm tìm trên bàn phím, đổi quận/giá/tiện ích/khung giờ/sắp xếp, áp dụng bảng lọc, mở chi tiết sân, áp dụng bộ lọc AI. Khách không ghi, thấy gợi ý đăng nhập.
+   - Khôi phục: khung giờ đã qua bị bỏ kèm "Ngày đã qua, vui lòng chọn lại."; quận/tiện ích không còn bị bỏ; "Gần nhất" khi chưa có vị trí chuyển về theo đánh giá.
+2. **Nhập bằng giọng nói (022 US4):** `SpeechRecognizer` tiếng Việt, kết quả tạm hiện dần; chỉ điền vào ô, không tự gửi nên không tốn lượt; hộp giải thích trước khi xin quyền; bị từ chối thì micro mờ và snackbar "Mở cài đặt"; máy không có dịch vụ nhận dạng thì ẩn micro; lỗi nhận dạng giữ chữ cũ. Theo yêu cầu "giao diện khi mic nhận âm thanh sống động hơn": vòng sáng "thở" sau micro, micro nhún theo âm lượng, viền ô màu chủ đạo, gợi ý "Mời bạn nói…", rung nhẹ và TalkBack đọc "Đang nghe"; tắt chuyển động khi máy tắt hoạt ảnh. Chính sách quyền riêng tư bổ sung micro và lịch sử.
+3. **Deploy Rules:** người dùng đồng ý ("Tôi đồng ý chạy fire rule đi"). Trước khi deploy, AI tải bộ rules đang chạy về so sánh: trùng `main`, bản mới chỉ thêm khối `searchHistory` nên không ghi đè thay đổi của thành viên khác. Deploy qua Firebase Rules API bằng tài khoản gcloud của người dùng; ghi lại mã ruleset cũ để quay lại khi cần.
+4. **Kiểm thử trên máy thật (SM-A546E) qua `adb`:** đạt lưu/khôi phục/xóa một mục/xóa tất cả (đối chiếu dữ liệu Firestore), hộp giải thích, từ chối quyền, "Mở cài đặt", cấp lại quyền, trạng thái đang nghe, không nghe rõ. Người dùng tự thử nói thật và báo đạt. Sửa 3 lỗi giao diện phát hiện khi thử: thông báo lỗi giọng nói nằm xa micro, sheet lịch sử chỉ mở hé khi xoay ngang, "Đang nghe…" dính sát "Câu hỏi gần đây" và vòng sáng lấn viền ô.
+5. **Git và PR:** commit tiếng Anh, tác giả chỉ Lê Quốc Hưng, push nhánh. Máy không có `gh` và AI không lấy token GitHub đã lưu, nên AI soạn tiêu đề/mô tả tiếng Anh và mở trang tạo PR điền sẵn để người dùng bấm tạo.
+6. **CI đỏ của PR:**
+   - Lần 1: lint `UseAppTint` trong `item_search_history.xml` (AI chỉ chạy unit test, chưa chạy lint trước khi push). Sửa sang `app:tint`.
+   - Lần 2: `BookingSlotGridViewModelTest` (spec 040) lấy ngày bằng `LocalDate.now()` theo múi giờ máy chạy, còn ViewModel dùng giờ Việt Nam; CI chạy trong 17:00–24:00 UTC nên lệch một ngày. AI tái hiện bằng `TZ=UTC`, sửa test dùng `BookingWindow.ZONE`. CI xanh cả 3 job.
+
+### Kiểm chứng
+
+- Android: 1.217 unit test, 0 lỗi; `lint testDebugUnitTest assembleDebug` chạy ở `TZ=UTC` thành công. Rules test 21/21. CI GitHub xanh (Android, Firestore Rules, Edge Functions).
+
+### Sai sót và giới hạn
+
+- Khi điều khiển `adb`, điện thoại tự xoay giữa dọc và ngang nên vài lần chạm nhầm (mở một sân, chuyển sang tab Lịch đặt và Cộng đồng); chỉ chuyển màn, không thay đổi dữ liệu.
+- Lần thử "Xóa tất cả" đã xóa lịch sử tìm kiếm của tài khoản người dùng (đây là dữ liệu AI vừa tạo khi test); người dùng tạo lại bằng cách tìm vài lần.
+- Dữ liệu review test trên Firestore vẫn giữ lại theo yêu cầu để demo.
+
+---
+
+## Mục 48: Gợi ý nới điều kiện khi tìm không ra sân (022 US6)
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-18 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 02 – Tìm kiếm sân (spec 022 US6, FR-022) |
+| Công cụ AI | Claude Code (Claude Opus 5.5) |
+| Nhánh Git | `feature/020-021-022-complete` |
+
+### Prompt chính
+
+"Tiếp với 022 US6 nhé." AI hỏi trắc nghiệm trước khi code, người dùng chọn: hiện gợi ý cho mọi lần tìm có lọc (không chỉ sau AI); nới giá tới mức gần nhất có sân; thêm "Bỏ giới hạn quận" và "Cùng giờ ngày mai"; hiển thị dạng chip dưới thông báo rỗng. Sau đó: "ok CI xanh thì tiếp tục 022 US6 nhé, à quên nãy giờ chưa cập nhật AI-log", "Phần này tầm 7-8 commit nhé", "Bạn cứ test nhé, điện thoại sẽ test sau và thông qua tôi".
+
+### Yêu cầu và kết quả
+
+1. **Domain** `Relaxation.kt`: `RelaxationPlanner.probes` lập biến thể theo thứ tự ưu tiên (giá, muộn/sớm 1 giờ, bỏ tiện ích chọn sau cùng tối đa 2, ngày mai, mọi quận), bỏ biến thể đã qua giờ hoặc quá 30 ngày; `pick` chọn tối đa 3 gợi ý có ≥ 1 sân, mỗi nhóm một gợi ý trước cho đa dạng. Giá gợi ý = giá thấp nhất trong các sân phù hợp khi bỏ trần, làm tròn lên nghìn đồng.
+2. **Repository** `variantPrices`: trả giá mỗi giờ của từng sân phù hợp cho mỗi biến thể; danh sách sân theo quận, bảng giá + sân con theo sân, lịch bận theo sân và ngày được đọc một lần, dùng chung giữa các biến thể (tốn khoảng một lần tìm).
+3. **ViewModel**: lần tìm có lọc xong mà 0 sân thì tính gợi ý; bấm gợi ý áp dụng như đổi bộ lọc tay và lưu lịch sử; tìm lần mới thì xóa gợi ý. Không gọi AI, không trừ lượt (US6-2); không có gợi ý nào có kết quả thì giữ trạng thái rỗng thường (US6-4).
+4. **Giao diện**: "Thử nới điều kiện:" và tối đa 3 chip ("Giá đến 120k · 3 sân", "20:00–22:00 · 2 sân", "Bỏ “Gửi xe” · 4 sân", "Mai 19:00–21:00 · 1 sân", "Mọi quận · 5 sân").
+5. **Tài liệu**: Clarifications 2026-11-18 và FR-022 trong spec 022; tasks Phase 8 ghi chú đồng bộ với code, T102 (thử trên máy) để mở.
+6. **AI log**: thêm các Mục 45–48.
+
+### Kiểm chứng
+
+- Test mới: `RelaxationPlannerTest` (4), `RelaxationViewModelTest` (3). Toàn bộ `lint testDebugUnitTest assembleDebug` ở `TZ=UTC`: thành công, 1.224 unit test, 0 lỗi.
+
+### Sai sót và giới hạn
+
+- Bản đầu của `pick` lọc giá theo `priceMin` thay vì trần giá cũ; AI tự phát hiện khi đọc lại và sửa trước khi chạy test. Một test giá ghi sai kỳ vọng (121.000 thay vì 120.000); code đúng, đã sửa dữ liệu test.
+- Chưa thử trên điện thoại vì máy không kết nối `adb`; người dùng sẽ tự thử (T102).
+- `variantPrices` chưa có unit test riêng ở tầng Firestore (repository dùng Firestore thật); được kiểm gián tiếp qua test ViewModel với repository giả.
+
+## Mục 49: Kiểm thử gợi ý nới điều kiện (022 US6) trên máy thật
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-18 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 02 – Tìm kiếm sân (spec 022 US6) |
+| Công cụ AI | Claude Code (Claude Opus 5.5) |
+| Nhánh Git | `feature/020-021-022-complete` |
+
+### Prompt chính
+
+"Bạn hãy tiến hành test tôi đã kết nối với máy rồi, hãy test giúp tôi và báo cáo."
+
+### Yêu cầu và kết quả
+
+AI cài bản build lên Galaxy A54 qua `adb`, đọc danh sách sân trên Firestore (chỉ đọc) để tính trước kết quả mong đợi, rồi thử từng kịch bản:
+
+1. Tân Phú, giá đến 40k → "Giá đến 50k · 1 sân", "Mọi quận · 4 sân"; bấm từng chip thì bộ lọc đổi đúng và có sân.
+2. Tân Phú, 04:00–05:00 ngày mai (sân mở 05:00) → "05:00–06:00 · 1 sân", "Mọi quận · 2 sân".
+3. Tân Phú + Gửi xe → "Bỏ “Gửi xe” · 1 sân".
+4. Câu AI "san tan phu duoi 40k" (chọn ngày 19/11) → "Giá đến 130k · 1 sân" (giá buổi tối); bấm chip không trừ lượt AI.
+5. Chỉ có từ khóa ra 0 sân → không có gợi ý.
+
+Số sân trên chip khớp số tính trước; các lần bấm gợi ý đều được lưu vào lịch sử tìm kiếm; gợi ý hiện khoảng 3 giây sau kết quả rỗng.
+
+### Sai sót và giới hạn
+
+- Chưa thử được "Cùng giờ ngày mai" vì dữ liệu không có sân kín hôm nay mà trống ngày mai; AI không tạo booking giả để tránh ghi dữ liệu thật. Phần này chỉ có unit test.
+- Thử nghiệm dùng 1 lượt AI và thêm vài mục lịch sử tìm kiếm của tài khoản thử.
+- Ghi nhận ngoài phạm vi: thông báo rỗng vẫn ghi "bỏ bớt bộ lọc" khi chỉ có từ khóa; tab Tìm kiếm mất điều kiện khi chuyển tab.
+
+## Mục 50: Lưới đặt sân theo bề ngang màn hình (040)
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-18 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 04 – Đặt sân (spec 040, FR-029, FR-030) |
+| Công cụ AI | Claude Code (Claude Opus 5.5) |
+| Nhánh Git | `feature/020-021-022-complete` |
+
+### Prompt chính
+
+"Hiện nếu vào giao diện đặt sân của 1 sân cầu lông nếu chỗ sân đó có từ 5 sân trở xuống thì sẽ bị trống 1 đoạn ở bên phải, tôi muốn giao diện phải scale theo màn hình ... các trường hợp còn lại bạn hãy test và đưa ra phương án cho tôi tham khảo." Sau đó: "Phải scale cho mọi thiết bị chứ không phải mỗi máy tôi nhé", "Làm A + C, màn ngang giới hạn 160dp nhé", "Tách 3 commit phần này".
+
+### Yêu cầu và kết quả
+
+1. **Chia đều cột** (`1cb3f0a`): `SlotMatrixColumns.cellWidthPx` tính độ rộng ô từ bề ngang thật của lưới và mật độ màn hình; ≤ 5 sân, hoặc mọi cột vừa ở 80dp, thì chia đều. Fragment tính lại khi bề ngang lưới đổi (lần vẽ đầu, xoay màn hình) và áp cho cả ô lẫn tên sân.
+2. **Hé cột và giới hạn màn ngang** (`5a601d4`): nhiều sân phải cuộn thì chọn độ rộng gần 80dp sao cho thấy đúng N cột rưỡi; màn ngang ô tối đa 160dp và căn giữa khi lưới hẹp hơn màn hình.
+3. **Ghim tên sân** (`ce5ba69`): bản sao hàng tên sân hiện ở đầu vùng nội dung khi hàng gốc cuộn khuất, cuộn ngang hai chiều đồng bộ với lưới.
+4. **Tài liệu** (`608cd3f`): Clarifications 2026-11-18, FR-029, FR-030, edge case màn hẹp/rộng, tasks Phase 7 (T043–T047).
+
+AI đưa 4 phương án cho cơ sở nhiều sân (A hé cột, B dàn vừa đến 6 sân, C ghim tên sân, D chia nhóm sân bằng tab); người dùng chọn A + C.
+
+### Kiểm chứng
+
+- `SlotMatrixColumnsTest`: bề ngang 320/360/384/412/600/800dp, 1–12 sân, giới hạn 160dp.
+- Thử trên Galaxy A54: 3, 5, 6, 12 sân ở màn dọc và màn ngang; giả lập 320dp và 600dp bằng `wm density` (đã đặt lại); chọn ô, cuộn ngang hai chiều, hàng tên sân ghim.
+- Theo yêu cầu, chưa chạy toàn bộ CI; chỉ chạy test liên quan. CI chạy khi mở/cập nhật PR.
+
+### Sai sót và giới hạn
+
+- Bản đầu có ngưỡng tối thiểu 56dp làm máy 320dp với 5 sân quay về cuộn ngang; người dùng nhắc phải đúng mọi thiết bị, AI bỏ ngưỡng.
+- Khi thêm căn giữa cho màn ngang, AI đặt `layout_gravity="center_horizontal"` trong layout; trên máy thật HorizontalScrollView vẫn căn giữa khi lưới rộng hơn màn hình, lưới 12 sân bị lệch khoảng 3,75 cột và không cuộn về Sân 1. AI phát hiện qua ảnh chụp, chuyển sang đặt căn giữa bằng code chỉ khi cả lưới vừa màn hình, rồi thử lại.
+- Ở 320dp ô đang chọn "✓ 22:00" vừa đủ nhưng sát lề.
+- Ghi nhận ngoài phạm vi: tiêu đề lưới ghi "Quận Quận 12" (lặp chữ "Quận").
+
+## Mục 51: Rà soát và sửa lỗi đặt sân (040) và lịch đặt (060)
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-18 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 04 – Đặt sân (spec 040, 060) |
+| Công cụ AI | Claude Code (Claude Opus 5.5) |
+| Nhánh Git | `feature/020-021-022-complete` |
+
+### Prompt chính
+
+"Duyệt qua 2 tính năng 040 và 060, test các tính năng tìm bug, kiểm tra phản hồi và gợi ý phương hướng khắc phục / nâng cấp." Sau báo cáo: "Bạn hãy sửa theo thứ tự cho tôi nhé (phần tranh chấp khi nào có bạn tôi thì mới test được), ưu tiên những phần nghiêm trọng trước, nhớ commit cho từng phần sửa và cập nhật AI-log luôn nhé, khoan hẵn push và PR." Với lỗi tiền ảo trong ví, người dùng chọn "chặn tạm, giữ phạm vi 040".
+
+### Cách rà soát
+
+Đọc code tầng dữ liệu và Firestore Rules, đọc Edge Function, đối chiếu dữ liệu production bằng truy vấn chỉ đọc, thử trên Galaxy A54. Lỗi tab "Đã hủy" được tìm bằng một dòng log tạm trong ViewModel (đã gỡ trước khi commit).
+
+### Lỗi tìm thấy và cách sửa
+
+| Mức | Lỗi | Bằng chứng | Commit |
+|---|---|---|---|
+| Cao | Người giữ chỗ trả được slot đã BOOKED về trống hoặc xóa nó (Rules chỉ kiểm `holdBy`); app có đường dẫn tới đó khi bấm Back hoặc hết giờ trong lúc đang xác nhận → đặt trùng | Đọc Rules và `BookingConfirmFragment` | `7ab6def`, `a61ad72` |
+| Cao | HELD → BOOKED không cần có đơn | 2 slot BOOKED trỏ tới đơn không tồn tại | `16ca013` |
+| Cao | Client tự khai số tiền đã trả/đã cọc; ví không bị trừ nhưng hủy sớm lại được hoàn → tạo tiền ảo | Ví tài khoản thử 141.000 đ = tổng tiền "hoàn" | `ec84a36` (chặn tạm) |
+| Cao | Tab "Đã hủy" báo lỗi khi có trên 10 đơn; đơn hủy bị lọc khỏi danh sách và số đếm | `player-cancel-booking` ghi thời gian dạng chuỗi (13/13 đơn) | `68a413e` |
+| Cao | Job phía server không chạy; không có job từ chối đơn quá hạn duyệt; `expire-holds` và `complete-bookings` cũng ghi thời gian dạng chuỗi | 38 HOLD, 128 HELD hết hạn; 1 PENDING quá hạn; 2 CONFIRMED đã qua giờ | `8c59c75`, `5bd86cc` |
+| Vừa | Đơn quá hạn duyệt vẫn "Chờ duyệt"; đơn 09/11 ở "Sắp tới" kèm mã QR; chi tiết đơn PENDING không có trạng thái | Thử trên máy | `c4ca310` |
+| Vừa | Thẻ thiếu tổng tiền; đơn trả tại sân hiện "-0 ₫" nhãn ví; chính sách hủy luôn nói về tiền cọc | Thử trên máy | `9ea4bd3` |
+| Thấp | Tiêu đề "Quận Quận 12"; chữ "Slot" trong thông báo | Thử trên máy | `35c3391`, `18912b0` |
+
+### Kiểm chứng
+
+- Firestore Rules trên emulator: 246/250 test qua, gồm 9 test mới cho slot và đơn; 4 test lỗi là `court-detail` "[BLOCKED: D]", lỗi sẵn với Rules gốc. Cổng 8080 bị dịch vụ khác chiếm nên chạy emulator ở cổng 8187 bằng config tạm.
+- Edge Function: 29 test qua (thêm 5 test `booking-timeout`; test cron và hủy đơn giờ bắt buộc kiểu Timestamp và đã được xác nhận là thất bại với code cũ).
+- Unit test Android của 040 và 060 qua, thêm `BookingPresentationTest` và test "không nhả slot đã BOOKED".
+- Trên máy: tab "Đã hủy" hết báo lỗi (hiện rỗng cho tới khi sửa dữ liệu), thẻ và chi tiết đơn quá hạn/đã qua giờ hiển thị đúng, tiêu đề lưới "Quận 12".
+- Theo yêu cầu, chưa chạy toàn bộ CI.
+
+### Sai sót và giới hạn
+
+- Commit `7ab6def` làm hỏng một unit test của 041 vì lúc đó AI chưa chạy unit test (chỉ chạy test Rules); phát hiện ở bước sau và bổ sung bằng `a61ad72`.
+- Lần sửa đầu trong `complete-bookings` thay `nowIso` bằng `now` trong khi biến tên là `serverNow`; test chưa bắt được vì test cũ coi chuỗi và Timestamp như nhau. AI sửa tên biến và siết test.
+- Chưa deploy 4 Edge Function (`player-cancel-booking`, `expire-holds`, `complete-bookings`, `booking-timeout`) và migration cron; cũng cần kiểm tra Vault `project_url`, `cron_secret` và `CRON_SECRET` trên Supabase vì các job hiện không chạy. Rules và sửa dữ liệu: xem Mục 52.
+- Số dư 141.000 đ trong ví tài khoản thử được giữ nguyên (dữ liệu demo).
+- Chưa làm: tạo đơn và tính giá phía server (thuộc 050), gom listener đếm tab, dùng giờ server trong lưới 040, thử tranh chấp 2 máy (chờ có người thử cùng).
+
+## Mục 52: Deploy Rules, sửa dữ liệu thời gian và lỗi phân trang Lịch đặt
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-18 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 04 – Đặt sân (spec 040, 060) |
+| Công cụ AI | Claude Code (Claude Opus 5.5) |
+| Nhánh Git | `feature/020-021-022-complete` |
+
+### Prompt chính
+
+"Ok deploy rules và chạy script sửa dữ liệu đi."
+
+### Yêu cầu và kết quả
+
+1. **Deploy Firestore Rules** qua Firebase Rules API bằng token gcloud. Trước khi deploy, AI tải bản đang chạy và so sánh: khớp với Rules trước đợt sửa (chỉ khác một dòng trống), nên phần thay đổi đúng là các sửa ở Mục 51. Ruleset mới `c5491e28-dfed-4fba-8c41-3c74722f3a4c`; ruleset cũ để quay lại khi cần: `7f017007-49fa-4028-b712-111d90c764d4`.
+2. **Sửa dữ liệu**: `scripts/admin/fix-string-timestamps.ts` chạy thử (28 document), chạy thật `--apply` (28/28: 13 đơn, 13 bản ghi hoàn tiền, 2 user), chạy thử lại còn 0.
+3. **Kiểm tra trên máy**: tab "Đã hủy" hiện số đếm 13 và lý do hủy. Khi cuộn, AI thấy đơn cũ nhất xuất hiện sai thứ tự và tìm ra lỗi mới: `loadNextPage()` không chặn khi trang sau đang tải dở, nên mỗi lần cuộn gần cuối lại tải cùng một cursor và nối trang lặp (`60c2165`). Test giữ trang 2 ở trạng thái đang tải, cuộn 3 lần: trước khi sửa gọi 3 lần, sau khi sửa 1 lần. Trên máy sau khi sửa: đủ 13 đơn, không lặp, đúng thứ tự `updatedAt` giảm dần.
+
+### Sai sót và giới hạn
+
+- Lỗi phân trang có từ trước nhưng bị che vì tab "Đã hủy" không tải được trang 2; chỉ lộ ra sau khi dữ liệu được sửa.
+- Vẫn chưa deploy 4 Edge Function và migration cron (máy chưa có Supabase CLI); cho tới khi deploy, đơn hủy mới vẫn được ghi thời gian dạng chuỗi bởi function cũ và cần chạy lại script.
+
+## Mục 53: Supabase: deploy Edge Function và chuẩn bị bật job định kỳ
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-18 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 04 – Đặt sân (spec 040, 060) |
+| Công cụ AI | Claude Code (Claude Opus 5.5) |
+| Nhánh Git | `feature/020-021-022-complete` |
+
+### Prompt chính
+
+"Tiếp theo là trên supabase." Hai câu hỏi trắc nghiệm, người dùng chọn: deploy cả 4 function; bật cả 3 job và chấp nhận 3 đơn demo đổi trạng thái theo đúng quy tắc. Sau đó: "đặt secret đợi bạn tôi nâng sau, hãy chuyển qua phần việc khác".
+
+### Kết quả
+
+1. **Tìm nguyên nhân job không chạy** (chỉ đọc): Supabase CLI trên máy đã đăng nhập sẵn vào project `smashnow`. Không có secret `CRON_SECRET` nên handler trả 401 với mọi lần gọi; `expire-holds` chưa từng được deploy; trên production mới áp 2/8 migration (không có migration cron nào), `pg_cron` và `pg_net` chưa bật, Vault chỉ có `FIREBASE_*`.
+2. **Deploy** `player-cancel-booking` v5, `complete-bookings` v4, `expire-holds` v1, `booking-timeout` v1, tất cả `verify_jwt=false`. CLI chặn lần deploy đầu vì cần hỏi người dùng, AI hỏi rồi mới chạy lại với `--yes`. Gọi `booking-timeout` không kèm secret: 401 đúng như mong đợi.
+3. **Vault**: ghi `project_url`.
+4. **CRON_SECRET**: AI viết script để người dùng tự chạy, tạo giá trị ngẫu nhiên trong shell, ghi vào secret của function và `cron_secret` trong Vault, không in giá trị ra. Lần 1 lỗi bị ẩn vì script bỏ hết output; AI sửa để in lỗi thật (giá trị secret được thay bằng `***`). Lần 2 cho thấy tài khoản vai trò Developer không có quyền đặt secret. Người dùng đã nhờ nâng quyền.
+
+### Việc còn lại
+
+- Người dùng chạy lại script sau khi được nâng quyền.
+- AI áp riêng 3 migration cron (`20261109203000`, `20261110100000`, `20261118120000`), đánh dấu đã áp, rồi kiểm tra lượt chạy đầu tiên. Không dùng `db push` vì sẽ áp cả migration của thành viên khác.
+- Báo nhóm: `server-time`, `delete-account`, `delete-account-sweeper`, `sync-account-email` chưa được deploy; migration cron xóa tài khoản và 2 bucket ảnh chưa được áp.
+
+## Mục 54: Giờ server cho lưới 040, tải lại Lịch đặt đúng lúc, đánh dấu T102
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-18 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 04 – Đặt sân (spec 040, 060); 02 – Tìm kiếm sân (spec 022) |
+| Công cụ AI | Claude Code (Claude Opus 5.5) |
+| Nhánh Git | `feature/020-021-022-complete` |
+
+### Prompt chính
+
+"Đặt secret đợi bạn tôi nâng sau, hãy chuyển qua phần việc khác khi nào xong tôi sẽ thông báo." AI chọn làm các việc còn tồn từ rà soát 040/060 (Mục 51) và ghi kết quả thử US6.
+
+### Kết quả
+
+1. **T102 (022 US6)** (`e5c11a9`): đánh dấu xong kèm các kịch bản đã thử trên máy và phần chưa thử được.
+2. **Giờ server cho lưới 040** (`9a2493d`): lệnh giữ chỗ so với giờ server nhưng lưới và mapper dùng giờ máy, nên máy chậm giờ cho chọn khung đã qua (server từ chối), máy nhanh giờ coi hold còn hạn là hết hạn. ViewModel và hai repository giờ dùng `ServerTimeOffsetProvider`. Test đặt giờ server đi trước 3 ngày, mọi khung "ngày mai" của máy phải là PAST; test thất bại với code dùng giờ máy.
+3. **Tải lại Lịch đặt** (`e511a18`): listener tải lại trang đầu ở mọi snapshot, nên mỗi lần mở tab tốn 2–3 lần đọc trang và danh sách nhảy về đầu dù không có gì đổi. Giờ bỏ qua snapshot đầu và snapshot không có thay đổi. AI không gom 2 listener như đề xuất ban đầu vì SDK Firestore đã dùng chung một kết nối theo dõi cho hai truy vấn giống hệt nhau; lợi ích nằm ở việc bớt tải lại. Test thất bại với listener cũ. Trên máy: danh sách đứng yên sau 15 giây, các tab tải bình thường.
+
+### Kiểm chứng
+
+- Unit test 040 (130) và 060 (70) qua; mỗi test mới được xác nhận là thất bại với code cũ.
+- Theo yêu cầu, chưa chạy toàn bộ CI.
+
+## Mục 55: Đồng bộ tasks 020 và 022 với code thực tế
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-18 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 02 – Tìm kiếm sân (spec 020, 022) |
+| Công cụ AI | Claude Code (Claude Opus 5.5) |
+| Nhánh Git | `feature/020-021-022-complete` |
+
+### Prompt chính
+
+Người dùng chọn "Đồng bộ tasks 020/022" trong câu hỏi trắc nghiệm về việc làm tiếp khi chờ secret Supabase.
+
+### Cách làm
+
+1. Script đổi bí danh đường dẫn trong tasks.md (`CORE/`, `SEARCH/`, `AIFN/`...) ra đường dẫn thật và kiểm tra file nào tồn tại. Kết quả cho thấy code đi theo kiến trúc khác kế hoạch: một màn tìm kiếm (`CourtSearchFragment`, `CourtSearchViewModel`, `CourtSearchCriteria`, `FirestoreCourtSearchRepository`) và Edge Function gom vào `handler.ts`, `criteria.ts`, `llm.ts`, `evidence.ts`.
+2. Vì vậy đối chiếu theo chức năng: đọc code, tên test, Rules, index, báo cáo eval, danh sách function đã deploy. Mỗi task được đánh dấu xong ("Làm khác" kèm file thật nếu khác), "Không áp dụng" khi kiến trúc mới không cần, hoặc để mở kèm phần còn thiếu. Đầu mỗi tasks.md có bảng ánh xạ kế hoạch → code.
+
+### Kết quả
+
+| Spec | Trước | Sau |
+|---|---|---|
+| 020 | 18 xong / 111 | 70 xong, 44 mở |
+| 022 | 15 xong / 116 | 97 xong, 38 mở |
+
+- `docs/features/README.md` và `02-court-search/README.md`: trạng thái 🟨 Đang làm, link spec 020/021/022, tick các mục phạm vi đã có (bản đồ 021 còn mở).
+- Commit: `0ce9da4`, `f0ea317`, `1bf6888`.
+
+### Phát hiện khi đối chiếu
+
+- Phần test phía app của tìm kiếm còn mỏng (5 test ViewModel, 5 test lọc giờ trống); nhiều task "viết test" vẫn mở.
+- App không dùng `nameKeywords` và repo không có index `venues`; tìm kiếm đọc tối đa `MAX_VENUES` sân rồi lọc trên máy.
+- Rules không có `match` cho `aiUsage` dù chú thích nói có; vẫn an toàn vì app đọc lượt qua function.
+- 040 vẫn dùng `CalculateTotalPriceUseCase` riêng thay cho `core/pricing/SlotPricing` (020 T036).
+
+### Giới hạn
+
+- Phán định "Làm khác" dựa trên đọc code và các lần thử trên máy trong phiên, không chạy lại từng kịch bản quickstart.
+
+## Mục 56: Sửa các điểm phát hiện khi đối chiếu 020/022
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-18 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 02 – Tìm kiếm sân (020, 022); 04 – Đặt sân (040) |
+| Công cụ AI | Claude Code (Claude Opus 5.5) |
+| Nhánh Git | `feature/020-021-022-complete` |
+
+### Prompt chính
+
+Người dùng dán lại 3 phát hiện ở cuối Mục 55 và hỏi "Bạn đã fix phần này chưa". AI trả lời là chưa (mới ghi nhận) rồi sửa lần lượt.
+
+### Kết quả
+
+1. **Chú thích Rules** (`e1e3576`): chú thích nói `favorites`, `notifications`, `aiUsage` có match riêng; thực tế chỉ `favorites`, `searchHistory` có, còn `notifications`, `aiUsage` do Edge Function ghi và client bị từ chối mặc định. Chỉ sửa chú thích, không cần deploy.
+2. **Giá lưới 040 dùng chung `SlotPricing`** (`bb6d04d`): thêm `SlotPricing.ruleForSlot`, bảng tra 48 khung của 040 dựng từ hàm này. Khác biệt duy nhất trước đây: 040 coi `daysOfWeek` rỗng là mọi ngày, 020/030 coi là không ngày nào. Chọn cách hiểu của phần dùng chung vì khớp schema (`docs/design/database/README.md`: 1–7, khung không có rule thì không đặt được) và màn chủ sân từ chối danh sách rỗng; 62/62 dòng giá trên production đều có ngày nên giá hiển thị không đổi. `SharedSlotPricingTest` chạy lưới trên bộ ca P1–P9; test golden cũ ghi rõ 1–7 thay vì dùng danh sách rỗng.
+3. **Test tìm kiếm** (`1eabf05`): `CourtSearchCriteriaTest` (3 test) và `CourtSearchFiltersViewModelTest` (4 test: debounce 300 ms, bỏ một chip, "Xóa bộ lọc", "Gần nhất" có/không quyền/mất vị trí). Thử phá code có chủ đích (bỏ debounce, xóa quận khi "Xóa bộ lọc"): 2 test tương ứng thất bại, sau đó trả code về như cũ. Tasks 020: 76 xong, 38 mở.
+
+### Kiểm chứng và giới hạn
+
+- Unit test của booking, pricing, chi tiết sân và tìm kiếm: 310 qua; tìm kiếm riêng 45 qua.
+- Điện thoại ngắt kết nối giữa chừng nên chưa xem lại giá trên lưới bằng máy; bộ ca giá dùng chung thay cho bước này.
+- Còn mở: test cho repository tìm kiếm (đọc Firestore) và lọc tiện ích "đủ tất cả".
+
+## Mục 57: Bản đồ sân và sân gần bạn (021 US1–US4)
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-18 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 02 – Tìm kiếm sân (spec 021) |
+| Công cụ AI | Claude Code (Claude Opus 5.5) |
+| Nhánh Git | `feature/020-021-022-complete` |
+
+### Prompt chính
+
+"Bắt đầu 021 nhé, sau đó hẵn CI sau." AI hỏi trắc nghiệm trước khi code, người dùng chọn: làm đủ US1–US4; bản đồ dùng chung kết quả tìm kiếm 020 (không truy vấn geohash); nút nổi "Bản đồ / Danh sách" giữa cạnh dưới.
+
+### Kết quả (8 commit)
+
+| Commit | Nội dung |
+|---|---|
+| `62dbb5e` | `HomeVenue.position` (LatLng) đọc từ `venues.location`; tọa độ thiếu, sai kiểu hoặc 0,0 thì bỏ khỏi bản đồ |
+| `161e758` | `CourtMap`: vùng đang xem, tối đa 100 sân gần tâm, thứ tự thẻ, gom cụm theo khoảng cách trên màn hình, sân gần bạn 5 km/10 sân |
+| `bc0af83` | Chế độ bản đồ trên màn tìm kiếm: `CourtMapController` (osmdroid), `OsmdroidSetup` dùng chung với 030, `CourtMapState` trong ViewModel, nút "Bộ lọc", lỗi tile → về danh sách, "Vị trí của tôi" (xin quyền khi bấm, `LocationReason`) |
+| `a066c0a` | Thẻ tóm tắt trong ViewPager2: chạm marker, vuốt sang sân kế bên, chạm thẻ mở chi tiết sân, chạm vùng trống ẩn thẻ |
+| `8284ad6` | Gom marker chồng nhau thành cụm có số; chạm cụm phóng vào, mức phóng tối đa thì chọn sân đầu |
+| `7f7a0a0` | "Tìm ở khu vực này" (bỏ lọc quận, chỉ hiện khi đang lọc quận) và dòng trạng thái: đang tải, lỗi kèm "Thử lại", quá 100 sân, vùng không có sân |
+| `d766808` | Chấm vị trí của tôi; thông báo bản đồ ở trung tâm TP.HCM khi không có vị trí |
+| `0f3934c` | Dải "Sân gần bạn" dưới ô tìm kiếm: tự lấy vị trí nếu đã có quyền, "Bật vị trí", "Thử lại", "Tìm rộng hơn", "Tìm theo quận", "Xem tất cả trên bản đồ" |
+
+Tài liệu (`fd36e29`): Clarifications 2026-11-18 trong spec 021; tasks 021 đối chiếu 84 task (46 xong, 38 mở); nhóm tính năng 02 đánh dấu mục bản đồ.
+
+### Kiểm chứng
+
+- Unit test mới: `CourtMapTest` (5), `CourtMapViewModelTest` (8), một ca trong `HomeVenueMapperTest`; toàn bộ test tìm kiếm qua (59).
+- Theo yêu cầu, chưa chạy toàn bộ CI.
+
+### Sai sót và giới hạn
+
+- **Chưa thử trên máy**: điện thoại ngắt kết nối suốt lúc làm, nên phần giao diện osmdroid (marker, cụm, thẻ, nút nổi, chấm vị trí) chưa được chạy thật; quickstart T080 còn mở.
+- Lần biên dịch đầu thiếu import `StateFlow` và tham chiếu drawable `ic_tune_24` không tồn tại; AI sửa (bỏ icon cho thống nhất với nút "Bộ lọc" của danh sách).
+- Chưa làm: mô tả marker cho TalkBack, bố cục máy tính bảng (FR-023), trạng thái mất mạng sau khi đã tải (FR-021), đo thời gian.
+
+## Mục 58: Thử bản đồ sân (021) trên máy thật
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-18 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 02 – Tìm kiếm sân (spec 021) |
+| Công cụ AI | Claude Code (Claude Opus 5.5) |
+| Nhánh Git | `feature/020-021-022-complete` |
+
+### Prompt chính
+
+"Hãy tiến hành test cho tôi" (sau khi cắm lại Galaxy A54).
+
+### Đã thử (chế độ tối)
+
+Chuyển Danh sách/Bản đồ; marker và cụm; chạm marker → thẻ; vuốt thẻ đổi marker nổi bật; chạm thẻ mở đúng chi tiết sân, quay lại giữ vùng xem và thẻ; chạm cụm phóng vào; "Bộ lọc · 1" sau khi chọn quận; kéo bản đồ → "Tìm ở khu vực này" → bỏ lọc quận kèm thông báo; "Vị trí của tôi" → hộp giải thích → quyền "Trong khi dùng ứng dụng" → chấm vị trí; "Sân gần bạn": chưa có quyền, tự lấy vị trí khi đã có quyền, không có sân trong 5 km, "Tìm rộng hơn".
+
+### Lỗi tìm thấy và đã sửa
+
+| Lỗi | Nguyên nhân | Commit |
+|---|---|---|
+| Mở bản đồ không có dòng trạng thái tới khi kéo; vùng mặc định không có sân demo | Vùng xem đầu tiên báo từ trong `onLayout`, đổi visibility giữa lượt bố cục bị bỏ; zoom 12,5 quá hẹp | `92e6887` (báo bằng `post`, zoom 12) |
+| Chạm marker làm app crash | ViewPager2 yêu cầu trang `match_parent` | `af84d77` |
+| Quay lại từ chi tiết sân, cụm thành các marker chồng nhau | Vẽ trước khi có kích thước, vùng báo về trùng vùng cũ nên không vẽ lại | `f979e78` |
+| Đã cấp quyền trên bản đồ nhưng "Sân gần bạn" vẫn mời "Bật vị trí"; hộp xin quyền luôn ghi "Sắp xếp sân gần bạn"; "Tìm rộng hơn" vẫn không thấy sân nào | Hai luồng vị trí không chia sẻ; tiêu đề cố định; zoom cố định | `0fa1a73` (chia sẻ vị trí, lời giải thích theo lý do, `CourtMap.zoomToShow`) |
+| Thẻ trên bản đồ thiếu khoảng cách khi vị trí lấy từ "Sân gần bạn" | Chỉ "Vị trí của tôi" tìm lại theo vị trí | `2f53eea` (tính khoảng cách tại chỗ) |
+
+### Giới hạn
+
+- Màn ngang điện thoại (FR-023), sửa theo yêu cầu "Hãy sửa màn hình ngang nhé": `layout-land` cho bản đồ và nút chuyển; nút "Bộ lọc" góc trên trái, thẻ rộng 360dp ở góc dưới trái (ảnh 72dp), nút "Danh sách" góc dưới phải, nút vị trí ngay trên nó; ẩn dòng tiêu đề khi xem bản đồ ở màn ngang. Đã thử trên máy: thẻ đủ nội dung, không che nút; chuyển danh sách và xoay về dọc bình thường. Bố cục máy tính bảng hai cột: Mục 59.
+- Chưa thử chế độ sáng, dải "Sân gần bạn" có sân (máy đang ở Dĩ An, sân gần nhất khoảng 13 km), mất mạng.
+- Quyền vị trí của app trên máy đã được cấp ("Trong khi dùng ứng dụng") trong lúc thử.
+
+## Mục 59: Bố cục máy tính bảng cho tìm sân và bản đồ (021 T074)
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-18 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 02 – Tìm kiếm sân (spec 021 FR-023) |
+| Công cụ AI | Claude Code (Claude Opus 5.5) |
+| Nhánh Git | `feature/020-021-022-complete` |
+
+### Prompt chính
+
+"Làm luôn bố cục máy tính bảng rồi chạy CI sau đó mới push PR nhé"
+
+### Kết quả
+
+- Màn hình rộng nhỏ nhất từ 600dp (`layout-sw600dp`): danh sách bên trái 40% (tối thiểu 320dp), bản đồ bên phải, không có nút chuyển chế độ. Dùng `sw600dp` thay cho `w600dp` của kế hoạch vì điện thoại xoay ngang cũng rộng khoảng 830dp.
+- Chạm thẻ trong danh sách là chọn sân: marker nổi bật, bản đồ di tới (zoom ít nhất 14), hiện thẻ tóm tắt; sân không có tọa độ thì vẫn mở chi tiết. Chạm marker thì thẻ trong danh sách được tô nền, viền và cuộn vào tầm nhìn; TalkBack đọc "Đang chọn trên bản đồ".
+- Thẻ tóm tắt rộng tối đa 420dp nhưng không vượt khung bản đồ (máy tính bảng dọc chỉ còn khoảng 300dp). Bản đồ lỗi tile thì ẩn khung bản đồ, danh sách chiếm cả màn.
+- Hai cờ tài nguyên `search_two_pane` và `map_compact_landscape` thay cho kiểm tra hướng màn hình trong code, để máy tính bảng xoay ngang vẫn giữ tiêu đề.
+
+### Kiểm tra
+
+- Unit test: `CourtMapViewModelTest.onTabletsTappingAListCardSelectsTheVenueAndMovesTheMapToIt`.
+- Trên Galaxy A54 với `adb shell wm density 280` (rộng nhỏ nhất khoảng 617dp), dọc và ngang: chọn từ danh sách, chọn từ marker, thẻ vừa khung; sau đó trả mật độ về như cũ, kiểm tra lại chế độ điện thoại.
+- Khi đổi mật độ màn hình, phát hiện app crash nếu bản đồ bị hủy ngay sau khi mở (lệnh vẽ lại hẹn sau lần bố cục đầu ở `f979e78` chạy sau `onDetach`). Đã sửa ở `3d2085d`; xoay và đổi mật độ liên tục không còn crash.
+
+### Giới hạn
+
+Chưa thử trên máy tính bảng thật; giả lập bằng mật độ màn hình nên kích thước chữ và ảnh nhỏ hơn thực tế.
+
+## Mục 60: Bật 3 cron job trên Supabase
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-19 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 04 – Đặt sân (040), 06 – Lịch đặt của tôi (060) |
+| Công cụ AI | Claude Code (Claude Opus 5.5) |
+| Nhánh Git | `feature/020-021-022-complete` |
+
+### Prompt chính
+
+"Tôi đã nâng quyền và thực hiện lệnh đặt secret"
+
+### Các bước
+
+1. Người dùng được nâng quyền project `smashnow` và tự chạy script đặt `CRON_SECRET` (secret của Edge Function và `cron_secret` trong Vault cùng một giá trị). AI không đọc giá trị: chỉ so mã SHA-256 của `vault.decrypted_secrets` với mã băm `secrets list` trả về (khớp), và kiểm tra `project_url` trỏ đúng project.
+2. Áp 3 migration bằng `db query --remote --yes -f`: `20261109203000_cron_complete_bookings` (5 phút), `20261110100000_cron_expire_holds` (mỗi phút), `20261118120000_cron_booking_timeout` (2 phút); migration tự bật `pg_cron` và `pg_net`. Sau đó `migration repair --remote --status applied` chỉ cho 3 phiên bản này. Ba migration bucket và account sweeper của thành viên khác vẫn để nguyên.
+3. Sau 6 phút: 12/12 lượt gọi trả về HTTP 200, `cron.job_run_details` đều `succeeded`.
+
+### Lượt chạy đầu
+
+| Job | Kết quả |
+|---|---|
+| `booking-timeout` | 1 booking PENDING quá hạn duyệt → REJECTED |
+| `complete-bookings` | 2 booking CONFIRMED đã qua giờ: 1 COMPLETED, 1 NO_SHOW |
+| `expire-holds` | 2 nhóm định kỳ và 38 booking HOLD quá hạn → EXPIRED; không còn slot HELD nào |
+
+Mọi trường thời gian do job ghi đều là `timestampValue` (không còn chuỗi ISO như lỗi đã sửa ở `8c59c75`).
+
+## Mục 61: Sửa 7 lỗi tìm thấy khi rà soát 020, 021, 022
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-19 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 02 – Tìm sân (020, 021, 022) |
+| Công cụ AI | Claude Code (Claude Opus 5.5) |
+| Nhánh Git | `feature/020-021-022-complete` |
+
+### Prompt chính
+
+"Bạn hãy rà soát lại code của các phần 020, 021, 022 và báo kết quả cho tôi, xem có lỗi hay mâu thuẫn gì không", sau đó "Hãy sửa lại 1,2,3 và 4,5,6 luôn nhé" và "Sửa luôn lỗi 7 rồi chạy CI và push nhé".
+
+### Các lỗi đã sửa
+
+| # | Lỗi | Cách sửa | Commit |
+|---|---|---|---|
+| 1 | Giá lẻ (gõ tay hoặc AI hiểu "dưới 55k5") làm lần tìm không lưu vào lịch sử mà không báo | Làm tròn giá về bội số 1.000 (giá thấp nhất xuống, giá cao nhất lên); hộp nhập giá báo lỗi khi dưới 1.000 đ; contract sửa từ 10.000 thành 1.000 | `45ce3f0` |
+| 2 | Máy tính bảng hiện mỗi thông báo hai lần | Chỉ hiện snackbar khi danh sách bị che hoặc đã cuộn | `c9996b1` |
+| 3 | Gửi câu hỏi AI khi micro còn nghe, kết quả đến muộn ghi đè câu hỏi | Bấm gửi thì dừng micro trước | `87a4964` |
+| 4 | Mỗi lần bấm "Vị trí của tôi" đều tải lại danh sách | Chỉ tìm lại khi vị trí đổi hơn 100 m | `701d2ef` |
+| 5 | AI yêu cầu "gần nhất" thì lịch sử lưu 2 mục | Đợi kết quả xin quyền vị trí rồi mới lưu 1 mục | `d6b4c33` |
+| 6 | Kết quả vượt 150 sân nhưng bản đồ bảo "Phóng gần hơn" | Báo "Chọn thêm khu vực" giống danh sách | `700fcdb` |
+| 7 | Trang chủ xếp các sân bằng điểm theo tên, Tìm kiếm theo id | Dùng chung `VenueOrder.byRating` (tên không phân biệt hoa thường, rồi id) | `2b732d4` |
+
+### Kiểm tra
+
+- Mỗi lỗi có unit test mới, trừ lỗi 2 (giao diện). Với lỗi 3 và 5, đã tạm bỏ bản sửa để xác nhận test fail rồi mới đặt lại.
+- `./gradlew lint testDebugUnitTest assembleDebug` qua trước khi push.
+
+### Giới hạn
+
+Thử lại trên Galaxy A54 sau khi cắm lại máy:
+- Lỗi 1: nhập "50" thì hộp giá báo lỗi; nhập "55500" thì tìm với "Từ 55.000 đ/giờ" (3 sân) và lịch sử lưu mục "≥55k". Phát hiện lỗi luôn hiện dưới ô "Giá cao nhất" dù số sai nằm ở ô "Giá thấp nhất"; đã sửa để lỗi hiện dưới đúng ô.
+- Lỗi 2 (giả lập máy tính bảng bằng `wm density 280`): "Tìm ở khu vực này" chỉ hiện thông báo trên danh sách, không kèm snackbar; khi danh sách đã cuộn thì hiện snackbar.
+- Lỗi 7: các sân bằng điểm (PAM Badminton, Minh Tâm CN1, cùng ★4,5 với 2 lượt) xếp cùng thứ tự ở Trang chủ và Tìm kiếm.
+
+## Mục 62: Duyệt lại các luồng 020, 021, 022, 040, 060 trên máy
+
+| Trường | Nội dung |
+|---|---|
+| Ngày | 2026-11-19 |
+| Người thực hiện | Lê Quốc Hưng |
+| Nhóm tính năng liên quan | 02 – Tìm sân (020, 021, 022), 04 – Đặt sân (040), 06 – Lịch đặt của tôi (060) |
+| Công cụ AI | Claude Code (Claude Opus 5.5) |
+| Nhánh Git | `feature/020-021-022-complete` |
+
+### Prompt chính
+
+"Bạn hãy duyệt qua các luồng xem đã ổn định chưa, các feature cần kiểm tra tương ứng là 020, 021, 022, 040, 060"
+
+### Đã thử trên Galaxy A54
+
+| Phần | Luồng | Kết quả |
+|---|---|---|
+| 020 | Tìm "MINH tam" (không dấu, khác hoa thường), lọc quận, giờ trống, giá; ba cách sắp xếp; chuyển tab giữ điều kiện | Đúng. Theo giá: cùng giá thì sân có đánh giá trước, "Liên hệ" cuối. Theo khoảng cách: tăng dần |
+| 022 US6 | Không có kết quả → gợi ý nới điều kiện | "Mọi quận · 2 sân" bấm vào ra đúng 2 sân |
+| 021 | Bản đồ, bấm cụm, bấm marker, vuốt thẻ, mở chi tiết rồi quay lại, "Vị trí của tôi", "Tìm rộng hơn" | Đúng; quay lại giữ vị trí, mức zoom và sân đang chọn |
+| 022 | Câu AI "toi mai quan 12 duoi 55k5 gan nhat" | Hỏi lại giờ chơi; điền Quận 12, 20/11 18:00–22:00, "Đến 56.000 đ/giờ", gần nhất; lịch sử lưu đúng 1 mục |
+| 040 | Chi tiết sân → lưới khung giờ → chọn 2 ô | 110.000 đ (giờ cao điểm), cọc 30% 33.000 đ. Không bấm "Giữ chỗ" để tránh ghi dữ liệu thật |
+| 060 | Các tab, tải thêm trang, chi tiết đơn | Tab "Đã hủy" đủ 14 đơn, khớp Firestore (13 CANCELLED + 1 REJECTED) |
+
+Không có crash trong logcat suốt phiên thử.
+
+### Lỗi tìm thấy
+
+- Đơn bị từ chối vẫn hiện "Còn trả tại sân 60.000 ₫". Đã ẩn dòng này cho đơn đã hủy, bị từ chối hoặc hết hạn (`91f12de`), có test và đã thử lại trên máy.
+
+### Các điểm đã chốt sau đó
+
+Người dùng chọn qua câu hỏi trắc nghiệm ("Vấn đề này bạn hãy hỏi dưới dạng trắc nghiệm và để tôi chọn và khắc phục"):
+
+| Điểm | Lựa chọn | Commit |
+|---|---|---|
+| Sân "Nhut" lưu tọa độ (90, 90) | Tìm sân, bản đồ, chi tiết sân coi tọa độ ngoài Việt Nam (`VenueArea`: vĩ độ 8–24, kinh độ 102–110) là chưa có vị trí; hộp chọn vị trí của chủ sân báo lỗi. Không sửa dữ liệu Firestore | `20aabae` |
+| "₫" ở Lịch đặt, "đ" ở chỗ khác | Dùng `MoneyFormat.vnd` ("225.000 đ") cho 3 màn Lịch đặt; chuỗi màn chủ sân cũng đổi sang "đ" | `cae3a12` |
+| Đơn vắng mặt vẫn hiện "Còn trả tại sân" | Ẩn dòng này như đơn đã hủy | `28536fd` |
+
+Đã thử lại trên máy: "Nhut" không còn hiện khoảng cách, đứng cuối khi xếp gần nhất, trang chi tiết chỉ hiện địa chỉ; đơn vắng mặt ghi "225.000 đ" và không còn dòng "Còn trả tại sân". Hộp chọn vị trí của chủ sân chỉ kiểm tra bằng unit test (cần tài khoản chủ sân để thử trên máy). Chủ sân "Nhut" vẫn cần nhập lại vị trí đúng.

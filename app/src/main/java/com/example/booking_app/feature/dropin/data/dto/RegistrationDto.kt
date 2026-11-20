@@ -20,6 +20,10 @@ data class RegistrationDto(
     val sessionEndAt: Instant? = null,
     val registeredAt: Instant? = null,
     val cancelledBy: String? = null,
+    /** Spec 081: lượt chờ. */
+    val waitlistTicket: Long? = null,
+    val promotedAt: Instant? = null,
+    val waitlistEndReason: String? = null,
 ) {
     companion object {
         /**
@@ -44,6 +48,9 @@ data class RegistrationDto(
                 sessionEndAt = data["sessionEndAt"].asInstant(),
                 registeredAt = data["registeredAt"].asInstant(),
                 cancelledBy = data.string("cancelledBy"),
+                waitlistTicket = data["waitlistTicket"].asLong(),
+                promotedAt = data["promotedAt"].asInstant(),
+                waitlistEndReason = data.string("waitlistEndReason"),
             )
     }
 }

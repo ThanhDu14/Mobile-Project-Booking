@@ -68,8 +68,8 @@ export async function handleCompleteBookings(
           writes.push(
             updateWrite(`bookings/${doc.id}`, {
               status: "COMPLETED",
-              completedAt: nowIso,
-              updatedAt: nowIso,
+              completedAt: serverNow,
+              updatedAt: serverNow,
             })
           );
           completed++;
@@ -77,7 +77,7 @@ export async function handleCompleteBookings(
           writes.push(
             updateWrite(`bookings/${doc.id}`, {
               status: "NO_SHOW",
-              updatedAt: nowIso,
+              updatedAt: serverNow,
             })
           );
           noShow++;

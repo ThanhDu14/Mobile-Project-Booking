@@ -26,6 +26,15 @@ class SlotMatrixRowAdapter(
 
     private var colorHolder: ColorHolder? = null
 
+    /** Độ rộng ô theo màn hình (SlotMatrixColumns); 0 = giữ độ rộng trong layout. */
+    private var cellWidthPx: Int = 0
+
+    fun setCellWidth(widthPx: Int) {
+        if (widthPx == cellWidthPx) return
+        cellWidthPx = widthPx
+        notifyItemRangeChanged(0, itemCount)
+    }
+
     private class ColorHolder(context: Context) {
         val availableBg = ContextCompat.getColor(context, R.color.booking_slot_available_bg)
         val availableStroke = ContextCompat.getColor(context, R.color.booking_slot_available_stroke)
@@ -100,6 +109,12 @@ class SlotMatrixRowAdapter(
             for (i in row.slots.indices) {
                 val slot = row.slots[i]
                 val cellBinding = cellBindings[i]
+
+                val params = cellBinding.root.layoutParams
+                if (cellWidthPx > 0 && params.width != cellWidthPx) {
+                    params.width = cellWidthPx
+                    cellBinding.root.layoutParams = params
+                }
 
                 // Định dạng giờ bắt đầu (vd "17:00")
                 val formattedTime = if (slot.startTime.length >= 4) {

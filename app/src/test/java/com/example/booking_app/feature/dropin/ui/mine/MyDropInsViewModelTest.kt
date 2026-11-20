@@ -105,6 +105,36 @@ class MyDropInsViewModelTest {
     }
 
     @Test
+    fun `Da qua tai lai khi mot luot roi khoi Sap toi`() = runTest {
+        val upcoming = MutableStateFlow(listOf(item("a", 2), item("b", 5)))
+        load.upcomingFlow = upcoming
+        load.pastResults += Result.success(Page(emptyList(), null))
+        load.pastResults += Result.success(Page(listOf(item("a", -1)), null))
+        val vm = viewModel()
+        advanceUntilIdle()
+
+        upcoming.value = listOf(item("b", 5))
+        advanceUntilIdle()
+
+        val content = vm.uiState.value as MyDropInsUiState.Content
+        assertEquals(listOf("a"), content.past.map { it.item.sessionId })
+        assertEquals(listOf<DropInCursor?>(null, null), load.pastCursors)
+    }
+
+    @Test
+    fun `Da qua khong tai lai khi Sap toi chi them luot`() = runTest {
+        val upcoming = MutableStateFlow(listOf(item("a", 2)))
+        load.upcomingFlow = upcoming
+        viewModel()
+        advanceUntilIdle()
+
+        upcoming.value = listOf(item("a", 2), item("z", 1))
+        advanceUntilIdle()
+
+        assertEquals(1, load.pastCursors.size)
+    }
+
+    @Test
     fun `Da qua moi nhat truoc va phan trang theo con tro`() = runTest {
         load.pastResults += Result.success(Page(listOf(item("p2", -48), item("p1", -2)), cursor("p2")))
         load.pastResults += Result.success(Page(listOf(item("p4", -200), item("p3", -100)), null))

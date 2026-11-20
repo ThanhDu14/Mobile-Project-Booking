@@ -3,6 +3,8 @@ package com.example.booking_app.feature.search.data
 import com.example.booking_app.core.catalog.District
 import com.example.booking_app.core.media.PhotoUrlResolver
 import com.example.booking_app.feature.search.domain.model.HomeVenue
+import com.example.booking_app.feature.search.domain.model.LatLng
+import com.google.firebase.firestore.GeoPoint
 
 /** Đổi document `venues/{id}` sang [HomeVenue]. Hàm thuần, có unit test. */
 object HomeVenueMapper {
@@ -18,6 +20,7 @@ object HomeVenueMapper {
             minPricePerHour = (data["minPricePerHour"] as? Number)?.toLong()?.takeIf { it > 0 },
             ratingAvg = (data["ratingAvg"] as? Number)?.toDouble() ?: 0.0,
             ratingCount = (data["ratingCount"] as? Number)?.toInt() ?: 0,
+            position = (data["location"] as? GeoPoint)?.let { LatLng(it.latitude, it.longitude) }?.takeIf { it.isValid },
         )
     }
 }

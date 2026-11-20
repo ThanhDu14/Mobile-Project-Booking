@@ -27,7 +27,7 @@ Deno.test("checkin-booking: rejects unauthenticated requests", async () => {
 
 
 Deno.env.set("FIREBASE_PROJECT_ID", "demo-owner-checkin");
-Deno.env.set("FIREBASE_AUTH_EMULATOR_HOST", "127.0.0.1:9099");
+Deno.env.set("FIREBASE_AUTH_EMULATOR_HOST", Deno.env.get("FIREBASE_AUTH_EMULATOR_HOST") ?? "127.0.0.1:9099");
 
 function fakeFirestore(store: Record<string, Record<string, unknown>>) {
   const commits: Write[] = [];

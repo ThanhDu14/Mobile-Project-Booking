@@ -40,7 +40,8 @@ function createMockFirestore(docs: MockDoc[]) {
           for (const [k, v] of Object.entries(fields)) {
             if (v && typeof v === "object") {
               if ("stringValue" in v) updated[k] = (v as any).stringValue;
-              else if ("timestampValue" in v) updated[k] = (v as any).timestampValue;
+              // Mốc thời gian phải là Timestamp: ghi kèm hậu tố để test phân biệt với chuỗi ISO.
+              else if ("timestampValue" in v) updated[k] = `ts:${(v as any).timestampValue}`;
               else updated[k] = v;
             }
           }
@@ -81,8 +82,8 @@ Deno.test("complete-bookings: da check-in + qua endAt -> COMPLETED (+ completedA
 
   const updated = fs.getDoc("b-checked-in")!;
   assertEquals(updated.status, "COMPLETED");
-  assertEquals(updated.completedAt, serverNow.toISOString());
-  assertEquals(updated.updatedAt, serverNow.toISOString());
+  assertEquals(updated.completedAt, `ts:${serverNow.toISOString()}`);
+  assertEquals(updated.updatedAt, `ts:${serverNow.toISOString()}`);
 });
 
 Deno.test("complete-bookings: chua check-in + qua endAt -> NO_SHOW", async () => {
@@ -115,7 +116,7 @@ Deno.test("complete-bookings: chua check-in + qua endAt -> NO_SHOW", async () =>
   const updated = fs.getDoc("b-no-checkin")!;
   assertEquals(updated.status, "NO_SHOW");
   assertEquals(updated.completedAt, undefined);
-  assertEquals(updated.updatedAt, serverNow.toISOString());
+  assertEquals(updated.updatedAt, `ts:${serverNow.toISOString()}`);
 });
 
 Deno.test("complete-bookings: CONFIRMED chua toi endAt -> giu nguyen", async () => {

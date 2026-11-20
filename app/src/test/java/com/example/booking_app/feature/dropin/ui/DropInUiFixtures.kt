@@ -1,5 +1,6 @@
 package com.example.booking_app.feature.dropin.ui
 
+import com.example.booking_app.feature.dropin.domain.model.CancelledBy
 import com.example.booking_app.feature.dropin.domain.model.DropInRegistration
 import com.example.booking_app.feature.dropin.domain.model.DropInSession
 import com.example.booking_app.feature.dropin.domain.model.Level
@@ -8,6 +9,7 @@ import com.example.booking_app.feature.dropin.domain.model.PaymentStatus
 import com.example.booking_app.feature.dropin.domain.model.RegistrationStatus
 import com.example.booking_app.feature.dropin.domain.model.SessionStatus
 import com.example.booking_app.feature.dropin.domain.model.TimeSlot
+import com.example.booking_app.feature.dropin.domain.model.WaitlistEndReason
 import java.time.Instant
 
 /** Mốc "bây giờ" cố định cho test UI vãng lai: 2026-11-11T03:00:00Z (10:00 giờ Việt Nam). */
@@ -24,6 +26,7 @@ fun session(
     venueActive: Boolean = true,
     level: Level? = Level.INTERMEDIATE,
     districtId: String = "q10",
+    waitlistTickets: List<Int> = emptyList(),
 ) = DropInSession(
     id = id,
     venueId = "v1",
@@ -44,6 +47,8 @@ fun session(
     status = status,
     note = "Mang giày đế cao su",
     venueActive = venueActive,
+    waitlistTickets = waitlistTickets,
+    waitlistCount = waitlistTickets.size,
 )
 
 fun registration(
@@ -55,6 +60,10 @@ fun registration(
     paymentStatus: PaymentStatus = PaymentStatus.PAID,
     qrToken: String? = "qr-token-123",
     sessionChanged: Boolean = false,
+    waitlistTicket: Int? = null,
+    promotedAt: Instant? = null,
+    waitlistEndReason: WaitlistEndReason? = null,
+    cancelledBy: CancelledBy? = null,
 ) = DropInRegistration(
     sessionId = sessionId,
     userId = userId,
@@ -71,5 +80,8 @@ fun registration(
     sessionStartAt = NOW.plusSeconds(3 * 3600L),
     sessionEndAt = NOW.plusSeconds(5 * 3600L),
     registeredAt = NOW,
-    cancelledBy = null,
+    cancelledBy = cancelledBy,
+    waitlistTicket = waitlistTicket,
+    promotedAt = promotedAt,
+    waitlistEndReason = waitlistEndReason,
 )
