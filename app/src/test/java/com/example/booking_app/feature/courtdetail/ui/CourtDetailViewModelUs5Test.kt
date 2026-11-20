@@ -180,6 +180,7 @@ class CourtDetailViewModelUs5Test {
     fun `chu co so o che do nguoi choi bam dat san hoac chat thi bao day la co so cua ban`() = runTest {
         val h = CourtDetailHarness(this)
         val vm = open(h, ownerId = "player1")
+        assertEquals(false, (vm.uiState.value.bottomBar as BottomBarState.Book).showChat)
         vm.effects.test {
             vm.onBookClicked()
             runCurrent()
@@ -194,6 +195,7 @@ class CourtDetailViewModelUs5Test {
     fun `nguoi choi bam chat thi mo chat`() = runTest {
         val h = CourtDetailHarness(this)
         val vm = open(h)
+        assertEquals(true, (vm.uiState.value.bottomBar as BottomBarState.Book).showChat)
         vm.effects.test {
             vm.onChatClicked()
             runCurrent()

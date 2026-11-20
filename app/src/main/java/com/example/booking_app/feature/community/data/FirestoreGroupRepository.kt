@@ -35,12 +35,13 @@ import com.google.firebase.firestore.FirebaseFirestoreException
 import com.google.firebase.firestore.ListenerRegistration
 import com.google.firebase.firestore.Query
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.tasks.await
@@ -84,6 +85,7 @@ class FirestoreGroupRepository @Inject constructor(
     }.distinctUntilChanged()
 
     /** `members/{uid}` (vai trò) gộp `joinRequests/{uid}` (đang chờ duyệt). Khách hoặc bị Rules từ chối: [GroupMembership.NONE]. */
+    @OptIn(ExperimentalCoroutinesApi::class)
     override fun observeMembership(groupId: String): Flow<GroupMembership> {
         val uid = sessionManager.currentUid() ?: return flowOf(GroupMembership.NONE)
         val group = firestore.collection(COLLECTION_GROUPS).document(groupId)
@@ -92,7 +94,11 @@ class FirestoreGroupRepository @Inject constructor(
         }
         val pending: Flow<Boolean> = documentFlow(group.collection(COLLECTION_JOIN_REQUESTS).document(uid)) { true }
             .map { it == true }
-        return combine(role, pending) { r, p -> GroupMembership(role = r, pending = p && r == null) }.distinctUntilChanged()
+            .distinctUntilChanged()
+        // M4: listener members/{uid} lúc chưa là thành viên bị Rules đóng (PERMISSION_DENIED) và không tự mở lại;
+        // đăng ký lại mỗi khi yêu cầu tham gia đổi (được duyệt/từ chối) để màn hình chuyển sang thành viên ngay.
+        return pending.flatMapLatest { p -> role.map { r -> GroupMembership(role = r, pending = p && r == null) } }
+            .distinctUntilChanged()
     }
 
     /** Phát `null` khi document không có hoặc không đọc được (PERMISSION_DENIED). */

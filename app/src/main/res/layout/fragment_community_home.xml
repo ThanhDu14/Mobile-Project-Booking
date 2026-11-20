@@ -19,60 +19,140 @@
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="@dimen/screen_gutter" />
 
-    <com.google.android.material.button.MaterialButtonToggleGroup
-        android:id="@+id/tabGroup"
+    <!-- Điều khiển 2 mục "Nhóm | Tin nhắn" kèm huy hiệu chưa đọc (spec 091 L3, wireframe 09_community-chat_buoc1_tin-nhan) -->
+    <LinearLayout
+        android:id="@+id/sectionSwitcher"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="@dimen/screen_gutter"
         android:layout_marginTop="@dimen/space_3"
-        android:contentDescription="@string/community_title_home"
-        app:checkedButton="@+id/tabMyGroups"
-        app:selectionRequired="true"
-        app:singleSelection="true">
+        android:background="@drawable/bg_community_segment_track"
+        android:orientation="horizontal"
+        android:padding="4dp">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/tabMyGroups"
-            style="@style/Widget.SmashNow.Button.Outlined"
+        <TextView
+            android:id="@+id/sectionGroups"
             android:layout_width="0dp"
-            android:layout_height="48dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:minHeight="48dp"
-            android:text="@string/community_tab_my_groups" />
+            android:background="@drawable/bg_community_segment_active"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center"
+            android:minHeight="@dimen/touch_min"
+            android:text="@string/chat_community_section_groups"
+            android:textAppearance="?attr/textAppearanceLabelLarge"
+            android:textColor="?attr/colorOnSurface" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/tabDiscover"
-            style="@style/Widget.SmashNow.Button.Outlined"
+        <LinearLayout
+            android:id="@+id/sectionMessages"
             android:layout_width="0dp"
-            android:layout_height="48dp"
+            android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:minHeight="48dp"
-            android:text="@string/community_tab_discover" />
-    </com.google.android.material.button.MaterialButtonToggleGroup>
+            android:clickable="true"
+            android:contentDescription="@string/chat_cd_messages_tab"
+            android:focusable="true"
+            android:gravity="center"
+            android:minHeight="@dimen/touch_min"
+            android:orientation="horizontal"
+            android:paddingHorizontal="@dimen/space_2">
 
-    <FrameLayout
+            <TextView
+                android:id="@+id/sectionMessagesLabel"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/chat_title_list"
+                android:textAppearance="?attr/textAppearanceLabelLarge"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+
+            <TextView
+                android:id="@+id/messagesUnreadBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_2"
+                android:background="@drawable/bg_chat_tab_unread_badge"
+                android:gravity="center"
+                android:minWidth="22dp"
+                android:paddingHorizontal="6dp"
+                android:paddingVertical="2dp"
+                android:textAppearance="?attr/textAppearanceLabelSmall"
+                android:textColor="?attr/colorOnTertiary"
+                android:visibility="gone"
+                tools:text="13"
+                tools:visibility="visible" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/groupsSectionContainer"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="1">
+        android:layout_weight="1"
+        android:orientation="vertical">
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/groupList"
+        <com.google.android.material.button.MaterialButtonToggleGroup
+            android:id="@+id/tabGroup"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:clipToPadding="false"
-            android:paddingHorizontal="@dimen/screen_gutter"
-            android:paddingTop="@dimen/space_3"
-            android:paddingBottom="@dimen/space_6"
-            tools:listitem="@layout/item_group" />
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="@dimen/screen_gutter"
+            android:layout_marginTop="@dimen/space_2"
+            android:contentDescription="@string/community_title_home"
+            app:checkedButton="@+id/tabMyGroups"
+            app:selectionRequired="true"
+            app:singleSelection="true">
 
-        <androidx.fragment.app.FragmentContainerView
-            android:id="@+id/discoverContainer"
-            android:name="com.example.booking_app.feature.community.ui.search.GroupSearchFragment"
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/tabMyGroups"
+                style="@style/Widget.SmashNow.Button.Outlined"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:minHeight="48dp"
+                android:text="@string/community_tab_my_groups" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/tabDiscover"
+                style="@style/Widget.SmashNow.Button.Outlined"
+                android:layout_width="0dp"
+                android:layout_height="48dp"
+                android:layout_weight="1"
+                android:minHeight="48dp"
+                android:text="@string/community_tab_discover" />
+        </com.google.android.material.button.MaterialButtonToggleGroup>
+
+        <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:visibility="gone" />
+            android:layout_height="0dp"
+            android:layout_weight="1">
 
-        <include
-            android:id="@+id/stateViews"
-            layout="@layout/include_state_views" />
-    </FrameLayout>
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/groupList"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:paddingHorizontal="@dimen/screen_gutter"
+                android:paddingTop="@dimen/space_3"
+                android:paddingBottom="@dimen/space_6"
+                tools:listitem="@layout/item_group" />
+
+            <androidx.fragment.app.FragmentContainerView
+                android:id="@+id/discoverContainer"
+                android:name="com.example.booking_app.feature.community.ui.search.GroupSearchFragment"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:visibility="gone" />
+
+            <include
+                android:id="@+id/stateViews"
+                layout="@layout/include_state_views" />
+        </FrameLayout>
+    </LinearLayout>
+
+    <androidx.fragment.app.FragmentContainerView
+        android:id="@+id/messagesContainer"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="@dimen/space_2"
+        android:layout_weight="1"
+        android:visibility="gone" />
 </LinearLayout>

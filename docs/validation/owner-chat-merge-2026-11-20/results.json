@@ -1,0 +1,35 @@
+{
+  "date": "2026-11-20",
+  "branch": "fix-feature/11-owner",
+  "parents": [
+    "75706b4b6ed93101978ee370b6532b5d692ffd77",
+    "17fe46858011e35eec69a01c900ff315668f8f4c"
+  ],
+  "backend": "LOCAL Firebase Emulator + Supabase",
+  "android": {
+    "status": "PASS",
+    "tests": 1628,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 2
+  },
+  "edge": {
+    "status": "PASS",
+    "typeCheck": true,
+    "passed": 499,
+    "failed": 0
+  },
+  "rules": {
+    "status": "PASS",
+    "passed": 304,
+    "skipped": 4
+  },
+  "indexAudit": {
+    "indexes": 46,
+    "fieldOverrides": 9,
+    "missingFromEitherBranch": 0
+  },
+  "aiLog4Changed": false,
+  "githubActionsRun": false,
+  "deviceRetestedAfterMerge": false
+}

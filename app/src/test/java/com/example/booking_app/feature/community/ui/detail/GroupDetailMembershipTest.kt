@@ -7,6 +7,7 @@ import com.example.booking_app.core.catalog.District
 import com.example.booking_app.core.session.SessionManager
 import com.example.booking_app.core.testing.FakeClock
 import com.example.booking_app.core.testing.MainDispatcherRule
+import com.example.booking_app.core.testing.stubSessionFromUid
 import com.example.booking_app.feature.community.ME
 import com.example.booking_app.feature.community.domain.CommunityError
 import com.example.booking_app.feature.community.domain.GroupRepository
@@ -50,7 +51,10 @@ class GroupDetailMembershipTest {
 
     private val groups = mockk<GroupRepository>()
     private var uid: String? = ME
-    private val session = mockk<SessionManager> { every { currentUid() } answers { uid } }
+    private val session = mockk<SessionManager> {
+        every { currentUid() } answers { uid }
+        stubSessionFromUid()
+    }
     private val catalog = mockk<CatalogRepository> {
         coEvery { districts() } returns listOf(District("q10", "Quận 10", 1, true))
     }
@@ -311,5 +315,35 @@ class GroupDetailMembershipTest {
         advanceUntilIdle()
 
         assertEquals(GroupDetailUiState.NotFound, vm.state.value)
+    }
+
+    @Test
+    fun `tham gia nhom cong khai dang ky lai observeMembership de cap nhat thanh thanh vien ngay`() = runTest {
+        var subscribeCount = 0
+        every { groups.observeGroup("g1") } returns flowOf(
+            group(ownerId = "other", visibility = GroupVisibility.PUBLIC, status = GroupStatus.ACTIVE, districtId = "q10"),
+        )
+        every { groups.observeMembership("g1") } answers {
+            subscribeCount++
+            if (subscribeCount == 1) {
+                flowOf(GroupMembership.NONE)
+            } else {
+                flowOf(GroupMembership(GroupRole.MEMBER, pending = false))
+            }
+        }
+        coEvery { groups.join("g1", any()) } returns Result.success(JoinResult.JOINED)
+
+        val vm = viewModel()
+        advanceUntilIdle()
+        val before = vm.state.value as GroupDetailUiState.Content
+        assertEquals(JoinAction.JOIN, before.joinAction)
+        assertFalse(before.showFeed)
+
+        vm.onJoinClicked()
+        advanceUntilIdle()
+        val after = vm.state.value as GroupDetailUiState.Content
+        assertEquals(JoinAction.NONE, after.joinAction)
+        assertTrue(after.showFeed)
+        assertTrue(after.canLeave)
     }
 }

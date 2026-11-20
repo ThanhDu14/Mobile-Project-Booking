@@ -6,6 +6,7 @@ import com.example.booking_app.core.catalog.CatalogRepository
 import com.example.booking_app.core.session.SessionManager
 import com.example.booking_app.core.testing.FakeClock
 import com.example.booking_app.core.testing.MainDispatcherRule
+import com.example.booking_app.core.testing.stubSessionFromUid
 import com.example.booking_app.feature.community.domain.usecase.DeletePost
 import com.example.booking_app.feature.community.domain.usecase.JoinGroup
 import com.example.booking_app.feature.community.domain.usecase.LeaveGroup
@@ -40,7 +41,10 @@ class GroupDetailViewModelTest {
     val mainDispatcherRule = MainDispatcherRule()
 
     private val groups = mockk<GroupRepository>()
-    private val session = mockk<SessionManager> { every { currentUid() } returns ME }
+    private val session = mockk<SessionManager> {
+        every { currentUid() } returns ME
+        stubSessionFromUid()
+    }
     private val catalog = mockk<CatalogRepository> { coEvery { districts() } returns emptyList() }
 
     private val posts = emptyPostRepository()

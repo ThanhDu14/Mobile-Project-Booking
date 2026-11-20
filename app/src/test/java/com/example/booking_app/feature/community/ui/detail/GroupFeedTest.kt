@@ -8,6 +8,7 @@ import com.example.booking_app.core.media.SignedUrlCache
 import com.example.booking_app.core.session.SessionManager
 import com.example.booking_app.core.testing.FakeClock
 import com.example.booking_app.core.testing.MainDispatcherRule
+import com.example.booking_app.core.testing.stubSessionFromUid
 import com.example.booking_app.feature.community.ME
 import com.example.booking_app.feature.community.data.FirestorePostRepository
 import com.example.booking_app.feature.community.data.dto.PostResultDto
@@ -65,7 +66,10 @@ class GroupFeedTest {
 
     private val groups = mockk<GroupRepository>()
     private val posts = mockk<PostRepository>()
-    private val session = mockk<SessionManager> { every { currentUid() } returns ME }
+    private val session = mockk<SessionManager> {
+        every { currentUid() } returns ME
+        stubSessionFromUid()
+    }
     private val catalog = mockk<CatalogRepository> { coEvery { districts() } returns emptyList() }
 
     private var nowMs: Long = Instant.parse("2026-11-10T00:00:00Z").toEpochMilli()

@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.booking_app.core.media.SignedUrlCache
 import com.example.booking_app.core.session.SessionManager
+import com.example.booking_app.core.session.settledUid
 import com.example.booking_app.core.util.AppClock
 import com.example.booking_app.feature.community.domain.CommunityError
 import com.example.booking_app.feature.community.domain.GroupPermissions
@@ -221,7 +222,8 @@ class GroupDetailViewModel @Inject constructor(
     }
 
     init {
-        start()
+        // M4: cold start qua deep link lúc phiên chưa khôi phục thì chờ phiên chốt; đổi tài khoản thì nạp lại.
+        viewModelScope.launch { session.settledUid().collect { start() } }
     }
 
     fun retry() {
@@ -633,7 +635,14 @@ class GroupDetailViewModel @Inject constructor(
             _events.trySend(GroupDetailEvent.RequireLogin(deepLink()))
             return
         }
-        act(KEY_JOIN_ID, { id -> joinGroup(groupId, id) }) { _events.trySend(GroupDetailEvent.JoinOutcome(it)) }
+        act(KEY_JOIN_ID, { id -> joinGroup(groupId, id) }) { result ->
+            _events.trySend(GroupDetailEvent.JoinOutcome(result))
+            // L5: listener members/{uid} lúc chưa tham gia bị Rules PERMISSION_DENIED kết thúc;
+            // đăng ký lại observeMembership ngay sau khi JOINED để cập nhật UI (nút Chat nhóm, bảng tin).
+            if (result == JoinResult.JOINED) {
+                start()
+            }
+        }
     }
 
     fun onCancelRequestClicked() =
