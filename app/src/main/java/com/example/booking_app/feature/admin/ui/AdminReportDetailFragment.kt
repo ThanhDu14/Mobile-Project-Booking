@@ -135,11 +135,17 @@ class AdminReportDetailFragment : Fragment(R.layout.fragment_admin_report_detail
         b.textReporterInfo.text = getString(R.string.admin_report_reporter_format, report.reporterId, dateStr)
 
         // Target Section
-        val authorName = targetSummary["authorName"]?.toString() ?: targetSummary["displayName"]?.toString() ?: targetSummary["name"]?.toString() ?: "Chưa có tên"
+        val authorSnapshot = targetSummary["authorSnapshot"] as? Map<*, *>
+        val senderSnapshot = targetSummary["senderSnapshot"] as? Map<*, *>
+        val authorName = targetSummary["authorName"]?.toString()
+            ?: authorSnapshot?.get("displayName")?.toString()
+            ?: senderSnapshot?.get("displayName")?.toString()
+            ?: targetSummary["displayName"]?.toString() ?: targetSummary["name"]?.toString() ?: "Chưa có tên"
         b.textTargetAuthorName.text = authorName
         b.textTargetAvatar.text = authorName.take(2).uppercase()
         b.textTargetContext.text = targetSummary["context"]?.toString() ?: targetSummary["email"]?.toString() ?: report.targetPath
         b.textTargetBody.text = targetSummary["content"]?.toString()
+            ?: targetSummary["text"]?.toString() ?: targetSummary["comment"]?.toString()
             ?: targetSummary["body"]?.toString() ?: targetSummary["address"]?.toString() ?: targetSummary["phone"]?.toString() ?: "Không có nội dung hoặc không đủ quyền đọc"
 
         // Conclusion setup based on target

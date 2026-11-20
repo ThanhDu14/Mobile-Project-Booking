@@ -53,6 +53,8 @@ Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 | 47  | 2026-11-13 | Rà soát và sửa Feature 120 Admin theo spec/contracts/wireframe; regression, Emulator/local integration, kiểm thử máy thật; xử lý lệch quyền ADMIN và tạo index Firebase theo yêu cầu bổ sung                       | 12             |
 | 48  | 2026-11-15 | Rà soát và sửa Feature 110, 111, 112 trên máy Android thật; thay dữ liệu mẫu bằng Firebase/Supabase, deploy backend được cho phép, kiểm thử vòng duyệt hồ sơ và vận hành chủ sân; sửa nút và dòng giờ bị vỡ bố cục | 11, 12         |
 | 49  | 2026-11-20 | Sửa kiểm duyệt và tích hợp hàng chờ theo tin nhắn của C; kiểm tra đủ ba job CI tại local, deploy và bật cron `dropin-close`                                                                                        | 08, 09, 11, 12 |
+| 50  | 2026-11-20 | Kiểm thử kiểm duyệt và hàng chờ trên máy vivo V2247 với backend local; lưu kết quả, ảnh và kiểm tra cron có lượt chờ | 08, 09, 11, 12 |
+| 51  | 2026-11-20 | Bổ sung Rules đọc nội dung cho admin, sửa preview bài/tin nhắn và kiểm thử lại trên vivo V2247 | 09, 12 |
 
 ---
 
@@ -5071,5 +5073,98 @@ phải đảm bảo pass hết 3 ci
 - Migration cron đã áp dụng thành công trên local và project Supabase đã liên kết. Truy vấn `cron.job` trên hosted backend trả `jobname = dropin-close`, `schedule = * * * * *`, `active = true`. Lời gọi thử qua `pg_net` trả HTTP 200, không timeout, với `closedSessions = 0`, `closedEntries = 0`, `completedSessions = 0`. Kết quả này xác nhận đường gọi và xác thực secret; chưa chứng minh việc đóng lượt chờ có người thật trên production.
 - `git diff --check` pass, chỉ có cảnh báo chuẩn hóa LF/CRLF. Log trong `.gradle/` là bằng chứng local, nằm ngoài phần tài liệu được Git theo dõi. Không commit/push và không chạy GitHub Actions trong phiên này; kết quả nêu trên là các job tương ứng chạy tại local.
 - Chưa kiểm thử UI mới trên thiết bị, chưa có function `group-manage` để xác minh guard xóa nhóm qua server, chưa kiểm thử thông báo push hoặc toàn bộ spec 081. Giữ rõ các giới hạn này khi bàn giao cho C.
+
+---
+
+## Mục 50: Kiểm thử kiểm duyệt và hàng chờ trên máy vivo V2247
+
+| Trường | Nội dung |
+| ------ | -------- |
+| Ngày | 2026-11-20 |
+| Người thực hiện | Minh Nhựt |
+| Nhóm tính năng liên quan | 08 (hàng chờ), 09 (nhóm/tin nhắn), 11 (vận hành chủ sân), 12 (kiểm duyệt) |
+| Công cụ AI | Codex (GPT-6) |
+| Mục đích | Kiểm tra các thay đổi ở mục 49 bằng thao tác UI trên điện thoại và đọc lại dữ liệu backend |
+| Nhánh Git | `fix-feature/11-owner` |
+
+### Prompt đã dùng
+
+```text
+test trên máy thật
+```
+
+### Tóm tắt phản hồi của AI
+
+- Nhận thiết bị vivo V2247, Android 15 qua adb. Build và cài riêng ứng dụng `com.example.booking_app.adminlocal` cùng instrumentation test, dùng Firebase Emulator và Supabase local. Tài khoản, nhóm, báo cáo và buổi chơi đều là fixture có tiền tố `device-`; không thao tác dữ liệu production.
+- Tạo ba bài kiểm thử trong `HandoffDeviceInteractionTest`, chạy MainActivity, fragment, repository và HTTP thật. Thao tác ẩn bài, ẩn tin nhắn và khóa nhóm đi qua màn hình báo cáo; kiểm tra chủ nhóm bị từ chối khi xóa trực tiếp nhóm LOCKED, sau đó gọi API bằng tài khoản admin để mở khóa.
+- Trên màn hình roster, sửa sức chứa từ 3 lên 4: bỏ qua lượt chờ 2 người, nhận lượt 1 người, có QR mới và trạng thái UNPAID. Hủy buổi qua hộp thoại có lý do: số đăng ký và hàng chờ về 0, lượt chưa được nhận giữ paymentStatus null, fixture đã trả 150.000đ được hoàn đủ. Đây là tiền thử trong backend local.
+- Giảm sức chứa của buổi khác từ 6 xuống 5 khi có 4 người đăng ký và một lượt chờ 3 người; giữ nguyên số vé 11 và trạng thái WAITLISTED. Lưu 14 ảnh từ màn hình điện thoại và đọc lại dữ liệu bằng script độc lập.
+- Kiểm tra riêng `dropin-close` trên Edge runtime local: sai secret trả 401; lượt gọi hợp lệ đóng một lượt chờ, hoàn tất một buổi đã hết giờ; gọi lại trả toàn bộ số đếm 0 và không tạo thêm thông báo. Cron không có màn hình, nên đây là kiểm tra backend riêng với các bài UI.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+| ---- | ---------- | ----- |
+| `app/src/adminLocalAndroidTest/java/com/example/booking_app/feature/admin/HandoffDeviceInteractionTest.kt` | Tạo mới | Kiểm tra các luồng vừa sửa trên máy thật, với backend local và dữ liệu đã biết. |
+| `scripts/admin/seed-handoff-device.ts` | Tạo mới | Chuẩn bị fixture, từ chối chạy nếu project hoặc host không đúng demo local. |
+| `scripts/admin/verify-handoff-device.ts` | Tạo mới | Đối chiếu dữ liệu sau UI, kiểm tra cron local và xuất kết quả không chứa token/QR. |
+| Điều kiện chờ sau khi xử lý báo cáo cuối | Chỉnh bài kiểm thử | Lượt đầu có 2/3 ca pass; ca kiểm duyệt đã xử lý xong nhưng test vẫn đợi danh sách đang mở khi danh sách đã rỗng. Đổi sang đợi thanh tab của màn hàng đợi, giữ nguyên kiểm tra dữ liệu RESOLVED. |
+| Gói instrumentation `.adminlocal.test` cũ | Thay gói test | Bản cũ khác chữ ký; chỉ gỡ gói test để cài bản mới, giữ ứng dụng chính và dữ liệu của người dùng. |
+| Mã production | Giữ nguyên | Phiên này bổ sung kiểm thử và bằng chứng; không phát hiện lỗi production cần sửa trong các ca đã chạy. |
+| [Kết quả và dữ liệu đối chiếu](../validation/handoff-2026-11-20/results.json), ảnh và log cùng thư mục | Lưu mới | Phân biệt bằng chứng máy thật, kết quả backend local và giới hạn chưa kiểm chứng. |
+
+### Cách kiểm chứng
+
+- Build APK và test APK với `:app:assembleDebug :app:assembleDebugAndroidTest`, `-PadminTestRunner=com.example.booking_app.feature.admin.AdminLocalTestRunner`, `-PadminLocalAppId=true`: thành công. [Log build](../validation/handoff-2026-11-20/logs/build.log).
+- Chạy đúng class `HandoffDeviceInteractionTest` bằng `adb shell am instrument` trên thiết bị vật lý: **3/3 pass**, 0 failure, thời gian **29,31 giây**. [Log instrumentation](../validation/handoff-2026-11-20/logs/instrumentation.log). Không dùng layout inflation thay cho thao tác tương tác.
+- Kết quả truy vấn độc lập xác nhận bài HIDDEN/SYSTEM/null, tin nhắn HIDDEN với text rỗng, nhóm được admin mở lại ACTIVE, buổi bị hủy có registeredCount 0 và hàng chờ rỗng, fixture đã trả được REFUNDED 150.000đ. Buổi giảm sức chứa giữ registeredCount 4 và vé chờ `[11]`. [JSON kết quả](../validation/handoff-2026-11-20/results.json).
+- Ảnh tiêu biểu: [roster sau promotion](../validation/handoff-2026-11-20/screenshots/owner-after-promotion.png), [chọn khóa nhóm](../validation/handoff-2026-11-20/screenshots/device-lock-actions.png), [giảm sức chứa giữ hàng chờ](../validation/handoff-2026-11-20/screenshots/owner-decrease-preserves-waitlist.png). Đã xem lại ảnh trên màn hình vivo; một số ảnh còn toast thành công của thao tác trước.
+- Giới hạn: backend trong lượt kiểm thử này là local, chưa kiểm thử UI với hosted backend. Quyền xóa nhóm được kiểm tra qua client Firestore vì chưa có `group-manage`; mở khóa qua API vì chưa có màn hình mở khóa. Màn báo cáo chưa đọc được nội dung gốc của bài/tin nhắn do Rules tương ứng chưa có trong repo, nhưng thao tác kiểm duyệt đã ghi đúng backend. Chưa kiểm tra push notification, camera hoặc giao dịch tiền thật. Không suy rộng 3 ca thành nghiệm thu toàn bộ spec 081/090/120.
+
+---
+
+## Mục 51: Bổ sung Rules và kiểm thử preview nội dung trên màn admin
+
+| Trường | Nội dung |
+| ------ | -------- |
+| Ngày | 2026-11-20 |
+| Người thực hiện | Minh Nhựt |
+| Nhóm tính năng liên quan | 09 (bài nhóm/tin nhắn), 12 (kiểm duyệt báo cáo) |
+| Công cụ AI | Codex (GPT-6) |
+| Mục đích | Sửa giới hạn preview phát hiện ở mục 50 và kiểm tra quyền truy cập, nội dung hiển thị trên máy thật |
+| Nhánh Git | `fix-feature/11-owner` |
+
+### Prompt đã dùng
+
+```text
+cập nhật rules tương ứng và test màn admin
+```
+
+### Tóm tắt phản hồi của AI
+
+- Bổ sung `get` cho từng bài trong `groups/{groupId}/posts/{postId}` và tin nhắn trong `chats/{chatId}/messages/{messageId}`, dùng hàm `isAdmin()` hiện có. Claim ADMIN phải khớp hồ sơ ADMIN/ACTIVE và tài khoản chưa yêu cầu xóa. Admin được xem bài/tin nhắn HIDDEN để kiểm duyệt; khối Rules mới không cho list hoặc ghi trực tiếp.
+- Sửa `AdminReportDetailFragment` đọc thêm `text` của tin nhắn, `comment` của đánh giá và tên trong `authorSnapshot`/`senderSnapshot`. Trước đó, dù đọc được document thì tin nhắn vẫn thiếu nội dung vì mapper chỉ xét `content`/`body`.
+- Bổ sung test Rules cho nội dung ẩn/hiện, tài khoản ngoài nhóm/chat, khách chưa đăng nhập và ADMIN có hồ sơ bị thu hồi quyền, khóa, đang xóa hoặc không tồn tại. Kiểm tra admin không thể sửa/xóa/tạo nội dung hoặc liệt kê collection bằng quyền preview.
+- Chạy lại trên vivo V2247, Android 15, với APK `.adminlocal` và backend local. Test phải đợi đúng nội dung và tên người viết hiện trên màn hình trước khi thao tác; sau khi xử lý, mở lại báo cáo đã đóng để xem bài HIDDEN và xác nhận tin nhắn có text rỗng. Đọc document từ server bằng Firebase client của admin để kiểm chứng Rules đang được áp dụng.
+- Lưu kết quả mới tại `docs/validation/admin-preview-2026-11-20/`, giữ nguyên 14 ảnh và bằng chứng của lượt trước. Hai bài owner vẫn được chạy để kiểm tra hồi quy tăng/giảm sức chứa và hủy buổi.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+| ---- | ---------- | ----- |
+| `firestore.rules` | Bổ sung quyền get có kiểm tra admin hiện tại | Cho phép đọc đúng document cần kiểm duyệt; giữ cấm ghi trực tiếp và không mở quyền liệt kê bài/tin nhắn. |
+| `firestore-tests/test/report-moderation.test.ts` | Thêm 9 ca | Kiểm tra cả quyền được phép và bị chặn, gồm claim ADMIN đã mất hiệu lực. |
+| `AdminReportDetailFragment.kt` | Chỉnh mapper nội dung và tên | Hiển thị đúng dữ liệu theo schema của bài nhóm, tin nhắn và đánh giá. |
+| `HandoffDeviceInteractionTest.kt`, fixture và script xác minh | Bổ sung assertion, tách thư mục ảnh theo lượt chạy | Bài test sẽ thất bại nếu màn admin vẫn hiện thiếu nội dung/tên; giữ ảnh cũ và lấy số test/thời gian từ log của lượt mới. |
+| Tài liệu database | Cập nhật | Ghi rõ phạm vi get dành cho preview; quyền đọc của thành viên nhóm/chat vẫn thuộc contract 090/091. |
+
+### Cách kiểm chứng
+
+- Firestore Rules: toàn bộ 26 file test pass, **234 test pass, 4 skipped** theo cấu hình CI sẵn có. Chín ca mới đều pass. [Log Rules](../validation/admin-preview-2026-11-20/logs/rules.log).
+- Android: chạy lại `lint testDebugUnitTest assembleDebug --stacktrace`, kết quả `BUILD SUCCESSFUL` sau 2 phút 4 giây. [Log kiểm tra Android](../validation/admin-preview-2026-11-20/logs/android-ci.log).
+- Build APK và test APK tách biệt thành công. Trên vivo V2247, **3/3 bài instrumentation pass**, 0 failure, thời gian **37,112 giây**. [Log thiết bị](../validation/admin-preview-2026-11-20/logs/instrumentation.log), [log build thiết bị](../validation/admin-preview-2026-11-20/logs/device-build.log).
+- Đã xem lại ảnh [preview bài nhóm](../validation/admin-preview-2026-11-20/screenshots/device-hide-detail.png), [preview tin nhắn](../validation/admin-preview-2026-11-20/screenshots/device-message-detail.png) và [tin nhắn sau khi ẩn](../validation/admin-preview-2026-11-20/screenshots/hidden-message-cleared-preview.png). Có 16 ảnh của lượt chạy mới. Nội dung và tên fixture hiện đúng; bài HIDDEN vẫn đọc được, còn tin nhắn HIDDEN có phần nội dung rỗng.
+- [Kết quả JSON](../validation/admin-preview-2026-11-20/results.json) ghi số test, quyền preview, dữ liệu đối chiếu và kiểm tra cron local; không lưu token hoặc giá trị QR. `git diff --check` pass.
+- Giới hạn: Rules được nạp và kiểm tra trên Firebase Emulator, chưa deploy lên Firebase production. Lượt này không kiểm tra quyền đọc đầy đủ của thành viên nhóm/chat, push notification hay UI trên hosted backend. Các luồng kiểm duyệt vẫn ghi qua Edge Function.
 
 ---

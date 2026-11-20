@@ -345,6 +345,18 @@ service cloud.firestore {
     match /groups/{groupId} {
       allow read: if isAdmin();
       allow write: if false;
+
+      // Moderation opens one reported document. Membership permissions belong
+      // to the community feature; this does not grant collection access.
+      match /posts/{postId} {
+        allow get: if isAdmin();
+        allow list, write: if false;
+      }
+    }
+
+    match /chats/{chatId}/messages/{messageId} {
+      allow get: if isAdmin();
+      allow list, write: if false;
     }
 
     match /reports/{reportId} {
