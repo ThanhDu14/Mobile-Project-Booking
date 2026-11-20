@@ -18,6 +18,24 @@ beforeEach(async () => {
 afterAll(async () => { await env.cleanup(); });
 
 describe('Feature 110 ownerApplications boundary', () => {
+  it('approved owner reads additions, keeps existing venue access, but cannot write application or create venue', async () => {
+    await env.withSecurityRulesDisabled(async ctx => {
+      await ctx.firestore().doc('users/owner').set({role:'OWNER',ownerStatus:'APPROVED',accountStatus:'ACTIVE'});
+      await ctx.firestore().doc('venues/existing').set({ownerId:'owner',status:'ACTIVE',name:'Existing'});
+      await ctx.firestore().doc('ownerApplications/addition').set({uid:'owner',purpose:'VENUE_ADDITION',status:'PENDING'});
+    });
+    const db=env.authenticatedContext('owner',{appRole:'OWNER'}).firestore();
+    await assertSucceeds(getDoc(doc(db,'ownerApplications/addition')));
+    await assertSucceeds(getDocs(query(collection(db,'venues'),where('ownerId','==','owner'))));
+    await assertFails(setDoc(doc(db,'ownerApplications/addition'),{status:'APPROVED'},{merge:true}));
+    await assertFails(setDoc(doc(db,'ownerApplications/new'),{uid:'owner',purpose:'VENUE_ADDITION',status:'PENDING'}));
+    await assertFails(setDoc(doc(db,'venues/new'),{ownerId:'owner',status:'ACTIVE'}));
+    await assertFails(setDoc(doc(db,'users/owner'),{ownerStatus:'PENDING'},{merge:true}));
+  });
+  it('admin clients also cannot bypass server review by creating a venue directly', async () => {
+    const db=env.authenticatedContext('admin',{appRole:'ADMIN'}).firestore();
+    await assertFails(setDoc(doc(db,'venues/bypass'),{ownerId:'applicant-a',status:'ACTIVE'}));
+  });
   it('applicant reads their own application and query scoped by uid', async () => {
     const db = env.authenticatedContext('applicant-a', { appRole: 'PLAYER' }).firestore();
     await assertSucceeds(getDoc(doc(db, 'ownerApplications/app-a')));

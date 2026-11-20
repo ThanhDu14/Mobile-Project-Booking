@@ -181,7 +181,9 @@ service cloud.firestore {
     // ---------- ownerApplications (D, spec 110/120) ----------
     // Submit/re-submit and all server-controlled status changes go through
     // owner-applications Edge Function + Firestore transaction. Clients may
-    // only read their own application; Admin review reads remain privileged.
+    // only read their own application (onboarding or additional venue).
+    // Application status is independent from account ownerStatus for additions.
+    // Admin review reads remain privileged; purpose/uid/status are server-only.
     match /ownerApplications/{applicationId} {
       allow get: if isAdmin() || (isSignedIn() && resource.data.uid == request.auth.uid);
       allow list: if isAdmin() || (isSignedIn() && resource.data.uid == request.auth.uid);
@@ -261,7 +263,7 @@ service cloud.firestore {
       // của màn "Cơ sở của tôi" chứng minh được quyền; ownsVenue(venueId) chỉ dùng được cho get.
       allow read: if isAdmin() || (resource.data.status == 'ACTIVE')
                   || (isApprovedOwner() && resource.data.ownerId == request.auth.uid);
-      allow create: if isAdmin(); // venue đầu tiên do Feature 120 tạo; owner create chờ server boundary T003.
+      allow create: if false; // Initial/additional venues are created only by trusted server review.
       allow update: if isAdmin()
                     || (ownsVenue(venueId)
                         && resource.data.status != 'LOCKED'
