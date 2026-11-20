@@ -506,6 +506,24 @@ verify_jwt = false
 [functions.cancel-drop-in]
 verify_jwt = false
 
+[functions.group-manage]
+verify_jwt = false
+
+[functions.group-post]
+verify_jwt = false
+
+[functions.group-media-url]
+verify_jwt = false
+
+[functions.chat-send]
+verify_jwt = false
+
+[functions.chat-action]
+verify_jwt = false
+
+[functions.chat-media-url]
+verify_jwt = false
+
 [functions.dropin-close]
 verify_jwt = false
 
