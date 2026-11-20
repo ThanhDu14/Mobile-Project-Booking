@@ -4,10 +4,14 @@ import { requireUser } from "../_shared/auth.ts";
 import * as firestore from "../_shared/firestore.ts";
 import { bearer, emulatorToken } from "../_shared/testing.ts";
 import {
+  dayFromQuery,
+  districtFromQuery,
   maskQuery,
   parseResult,
   partOfDayFromQuery,
   pastDayInQuery,
+  relativeDayFromQuery,
+  timeRangeFromQuery,
   vnTime,
 } from "./criteria.ts";
 import {
@@ -82,6 +86,232 @@ Deno.test("parse: a past day in the query drops the date even when the model say
   }
   assertEquals(pastDayInQuery("Tối mai Quận 10"), false);
   assertEquals(pastDayInQuery("hom quan 10"), false);
+});
+
+Deno.test("parse: a date or weekday written in the query wins over the model", () => {
+  // Monday 2026-10-05, the date used by scripts/ai-eval/cases.json.
+  const monday = "20261005";
+  assertEquals(dayFromQuery("Ngày 12/10 từ 17h đến 19h", monday), "20261012");
+  assertEquals(dayFromQuery("sân Q10 ngày 3/1/2027", monday), "20270103");
+  assertEquals(dayFromQuery("12/1 Quận 3", "20261215"), "20270112");
+  assertEquals(dayFromQuery("Thứ 7 tuần sau 9h-11h", monday), "20261017");
+  assertEquals(dayFromQuery("sáng thứ 7 ở Bình Tân", monday), "20261010");
+  assertEquals(dayFromQuery("sân tb chiều t7 <80k", monday), "20261010");
+  assertEquals(dayFromQuery("bt sang cn", monday), "20261011");
+  assertEquals(dayFromQuery("tối thứ sáu tuần tới", monday), "20261016");
+  assertEquals(dayFromQuery("thứ 2 Quận 1", monday), monday);
+  // Not a weekday or date: ordinal "thứ tự", branch name "CN1", opening hours "24/7", two weekdays.
+  assertEquals(dayFromQuery("sắp xếp theo thứ tự giá", monday), null);
+  assertEquals(dayFromQuery("sân Minh Tâm CN1 tối mai", monday), null);
+  assertEquals(dayFromQuery("sân mở cửa 24/7", monday), null);
+  assertEquals(dayFromQuery("thứ 7 hoặc chủ nhật", monday), null);
+  assertEquals(dayFromQuery("Tối mai 7h-9h Quận 10", monday), null);
+
+  // Thursday 2026-11-12 (`now`): the model said TOMORROW, the query says next Saturday.
+  const result = parseResult(
+    parseOutput,
+    "Thứ 7 tuần sau 7h-9h tối Q10",
+    catalog,
+    now,
+  );
+  assertEquals(result.filter?.date, "20261121");
+  assertEquals(result.intent, "search");
+  // A written day also replaces the weekend choice list.
+  const weekend = parseResult(
+    { ...parseOutput, dayKind: "WEEKEND" },
+    "cuối tuần này, chủ nhật 7h-9h tối Q10",
+    catalog,
+    now,
+  );
+  assertEquals(weekend.filter?.date, "20261115");
+  assertEquals(weekend.filter?.dateChoices, []);
+});
+
+Deno.test("parse: district written in the query fills a missing or unknown model district", () => {
+  const districts = {
+    districts: {
+      q1: "Quận 1",
+      q10: "Quận 10",
+      "binh-thanh": "Bình Thạnh",
+      "tan-binh": "Tân Bình",
+    },
+    amenities: {},
+  };
+  assertEquals(
+    districtFromQuery("Tối mai Quận 10 dưới 100k", districts),
+    "q10",
+  );
+  assertEquals(districtFromQuery("q10 duoi 100k toi mai", districts), "q10");
+  assertEquals(districtFromQuery("san quan1 sang mai", districts), "q1");
+  assertEquals(
+    districtFromQuery("sân Bình Thạnh chiều mai", districts),
+    "binh-thanh",
+  );
+  // Abbreviations stay with the model ("tb" can mean "trung bình"); two districts are ambiguous.
+  assertEquals(districtFromQuery("giao lưu trình độ tb", districts), null);
+  assertEquals(districtFromQuery("Quận 1 hoặc Quận 10", districts), null);
+
+  for (const districtId of [null, "Quận 10"]) {
+    const result = parseResult(
+      { ...parseOutput, districtId },
+      "Tối mai 7h-9h Quận 10",
+      districts,
+      now,
+    );
+    assertEquals(result.filter?.districtId, "q10");
+    assertEquals(result.dropped.includes("UNKNOWN_DISTRICT"), false);
+  }
+  // The model's valid id is kept.
+  assertEquals(
+    parseResult(
+      { ...parseOutput, districtId: "q1" },
+      "Tối mai 7h-9h Quận 10",
+      districts,
+      now,
+    ).filter?.districtId,
+    "q1",
+  );
+});
+
+/** In-memory deps for PARSE without Firestore: reads return nothing, writes are dropped. */
+function memoryDeps(
+  providers: AiSearchDeps["providers"],
+  timeouts: AiSearchDeps["timeouts"],
+): AiSearchDeps {
+  // Writes are built (not sent) with document names, which need a project id outside the Emulator.
+  Deno.env.set(
+    "FIREBASE_PROJECT_ID",
+    Deno.env.get("FIREBASE_PROJECT_ID") ?? "demo-smashnow",
+  );
+  const query = (collection: string) =>
+    Promise.resolve(
+      collection === "districts"
+        ? [{
+          id: "q10",
+          path: "districts/q10",
+          data: { name: "Quận 10", isActive: true },
+        }]
+        : [],
+    );
+  return {
+    db: {
+      get: () => Promise.resolve(null),
+      query,
+      commit: () => Promise.resolve(),
+      runTransaction: (operation: (tx: unknown) => Promise<unknown>) =>
+        operation({
+          get: () => Promise.resolve(null),
+          query,
+          write: () => {},
+        }),
+    } as unknown as AiSearchDeps["db"],
+    authenticate: () => Promise.resolve({ uid: "fallback-test" }),
+    providers,
+    now: () => now,
+    timeouts,
+  };
+}
+
+function parseRequest() {
+  return new Request("http://local/ai-search-parse", {
+    method: "POST",
+    body: JSON.stringify({ action: "PARSE", query }),
+  });
+}
+
+Deno.test("parse: relative day and hour range fill an empty model answer", () => {
+  const thursday = "20261112";
+  assertEquals(
+    relativeDayFromQuery("Tối mai 7h-9h Quận 10", thursday),
+    "20261113",
+  );
+  assertEquals(relativeDayFromQuery("toi mai q10", thursday), "20261113");
+  assertEquals(relativeDayFromQuery("mai 7h-9h q10", thursday), "20261113");
+  assertEquals(relativeDayFromQuery("chiều nay Gò Vấp", thursday), thursday);
+  assertEquals(relativeDayFromQuery("mốt Quận 7", thursday), "20261114");
+  // "Mai" as a name and "một" (one) are not days; two different days are ambiguous.
+  assertEquals(relativeDayFromQuery("sân Mai Anh Quận 3", thursday), null);
+  assertEquals(relativeDayFromQuery("một sân Quận 3", thursday), null);
+  assertEquals(relativeDayFromQuery("tối nay hoặc tối mai", thursday), null);
+
+  assertEquals(timeRangeFromQuery("Tối mai 7h-9h"), [420, 540]);
+  assertEquals(timeRangeFromQuery("từ 17h đến 19h"), [1020, 1140]);
+  assertEquals(timeRangeFromQuery("7h15-9h10 tối"), [435, 550]);
+  assertEquals(timeRangeFromQuery("19:00 - 21:30"), [1140, 1290]);
+  assertEquals(timeRangeFromQuery("ngày 12/10 Quận 1"), null);
+  assertEquals(timeRangeFromQuery("50k-120k"), null);
+
+  // E04 after falling back to a weaker model: no date, no hours, only the district.
+  const empty = {
+    intent: "search",
+    type: "COURT",
+    districtId: "q10",
+    dayKind: null,
+    startTime: null,
+    endTime: null,
+    amenityIds: [],
+  };
+  const result = parseResult(
+    empty,
+    "Tối mai 7h-9h Quận 10 và kể chuyện cười luôn nhé",
+    catalog,
+    now,
+  );
+  assertEquals(result.intent, "search");
+  assertEquals(result.filter?.date, "20261113");
+  assertEquals([result.filter?.start, result.filter?.end], ["1900", "2100"]);
+  // The model's own answer is never overridden by the fallback.
+  const modelSaid = parseResult(
+    {
+      ...empty,
+      dayKind: "DAY_AFTER_TOMORROW",
+      startTime: "8:00",
+      endTime: "10:00",
+    },
+    "Tối mai 7h-9h Quận 10",
+    catalog,
+    now,
+  );
+  assertEquals(modelSaid.filter?.date, "20261114");
+  assertEquals([modelSaid.filter?.start, modelSaid.filter?.end], [
+    "2000",
+    "2200",
+  ]);
+});
+
+Deno.test("parse: a timed-out provider falls back while time is left", async () => {
+  const called: string[] = [];
+  const hung = {
+    name: "gemini" as const,
+    generate: () => {
+      called.push("gemini");
+      return Promise.reject(new ProviderError(504));
+    },
+  };
+  const fallback = {
+    name: "groq" as const,
+    generate: () => {
+      called.push("groq");
+      return Promise.resolve(parseOutput);
+    },
+  };
+  const response = await handleAiSearch(
+    parseRequest(),
+    memoryDeps([hung, fallback], { totalMs: 8_500, firstMs: 6_000 }),
+  );
+  assertEquals(response.status, 200);
+  assertEquals((await response.json()).result.intent, "search");
+  assertEquals(called, ["gemini", "groq"]);
+
+  // Too little time left for a fallback: the request still ends with AI_TIMEOUT.
+  called.length = 0;
+  const late = await handleAiSearch(
+    parseRequest(),
+    memoryDeps([hung, fallback], { totalMs: 1_000, firstMs: 900 }),
+  );
+  assertEquals(late.status, 504);
+  assertEquals((await late.json()).error.code, "AI_TIMEOUT");
+  assertEquals(called, ["gemini"]);
 });
 
 Deno.test("parse: exact 30-minute request asks for another window and keeps the district", () => {

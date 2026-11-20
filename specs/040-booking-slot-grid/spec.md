@@ -19,6 +19,12 @@
 - Q: Giới hạn tối đa số lượng slot mà một người chơi được chọn trong cùng một đơn đặt là bao nhiêu? → A: Tối đa 8 slot 30 phút (tương đương tối đa 4 giờ chơi liên tục) trong một đơn đặt.
 - Q: Cơ chế khóa slot khi mở buổi giao lưu Drop-in (Thống nhất với Thành viên C & D theo Phương án 4.A)? → A: Khi chủ sân hoặc ban tổ chức mở ca giao lưu Drop-in ở spec 080/112, hệ thống ghi các slot tương ứng vào collection `slots/{courtId}_{yyyyMMdd}_{HHmm}` với `status = 'BLOCKED'` và `blockReason = 'DROP_IN'` trong Firestore Transaction. Khi đó trên lưới của spec 040, các slot này tự động hiển thị màu xám có icon khóa / nhãn "Giao lưu Drop-in" và bị vô hiệu hóa chọn đặt sân thường.
 
+### Session 2026-11-18 — Độ rộng cột lưới theo màn hình
+
+- Q: Cơ sở có từ 5 sân con trở xuống thì lưới bị trống một khoảng bên phải (mỗi cột cố định 80dp). Hiển thị thế nào? → A: Các cột chia đều toàn bộ bề ngang màn hình, rộng bằng nhau, không còn khoảng trống. Độ rộng tính theo bề ngang thật của lưới và mật độ màn hình nên đúng cho mọi thiết bị, không riêng một máy.
+- Q: Cơ sở nhiều sân con (từ 6 sân, phải cuộn ngang) thì sao? → A: Chọn phương án A + C. A: độ rộng ô gần 80dp nhất sao cho màn hình thấy đúng N cột rưỡi; cột bị cắt đôi ở mép phải báo hiệu còn sân để cuộn. C: hàng tên sân ghim trên cùng khi cuộn lưới xuống và cuộn ngang đồng bộ với lưới. Không chọn: B (dàn vừa đến 6 sân, ô quá chật trên máy 320dp) và D (chia nhóm sân bằng tab, đổi cách chọn nhiều sân).
+- Q: Màn ngang có giới hạn độ rộng ô không? → A: Có, tối đa 160dp mỗi ô; lưới hẹp hơn màn hình thì căn giữa.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Xem lưới khung giờ và chọn slot đặt sân (Priority: P1)
@@ -120,6 +126,7 @@ Trong điều kiện mạng di động chập chờn, khi người chơi bấm "
 - **Giá giờ cao điểm / cuối tuần xen kẽ**: Người chơi chọn 2 slot liên tiếp: Slot 1 rơi vào giờ thường (16:30–17:00, 40.000đ), Slot 2 rơi vào giờ cao điểm (17:00–17:30, 60.000đ). Thanh tóm tắt và màn hình xác nhận phải hiển thị tách bạch đơn giá từng slot và tính đúng tổng tiền là 100.000đ.
 - **Xung đột khung giờ giữa 2 priceRules**: Giờ bắt đầu và kết thúc của các quy tắc giá (PriceRule) bắt buộc phải tròn theo bước nhảy 30 phút (ví dụ 17:00, 17:30, 18:00...). Bảng giá theo giờ (`pricePerHour`) được quy đổi chính xác cho từng slot 30 phút (`pricePerSlot = pricePerHour / 2`). Ràng buộc này được thống nhất với Thành viên D khi cấu hình bảng giá, do đó mỗi slot 30 phút luôn có đơn giá xác định duy nhất.
 - **Thiết bị đổi giờ hệ thống (Client time spoofing)**: Người dùng cố tình chỉnh lùi giờ trên điện thoại để đặt slot đã qua. Toàn bộ việc kiểm tra slot hợp lệ và thời hạn 5 phút giữ chỗ đều căn cứ theo thời gian máy chủ (server timestamp), hoàn toàn bỏ qua giờ client.
+- **Màn hình rất hẹp hoặc rất rộng**: Máy 320dp với 5 sân con vẫn dàn vừa (ô khoảng 52dp, ô đang chọn vẫn đọc được "✓ 22:00"). Máy tính bảng hoặc màn ngang đủ chỗ cho mọi cột từ 80dp trở lên thì cũng dàn vừa, kể cả khi có hơn 5 sân; màn ngang giới hạn ô 160dp. Xoay màn hình thì độ rộng cột được tính lại.
 - **Chuyển giao sang bước thanh toán**: Khi người chơi ở màn hình xác nhận bấm "Thanh toán", đơn giữ chỗ ở trạng thái `HOLD` được chuyển giao nguyên vẹn sang spec 050 cùng với đồng hồ đếm ngược thời gian còn lại (tổng thời gian giữ chỗ không bị reset lại thành 5 phút mới).
 
 ---
@@ -156,6 +163,8 @@ Trong điều kiện mạng di động chập chờn, khi người chơi bấm "
 - **FR-026**: Hệ thống PHẢI giới hạn người chơi được chọn tối đa 8 slot 30 phút (tương đương tối đa 4 giờ chơi liên tục) trong một đơn đặt sân.
 - **FR-027**: Đơn trong spec này chỉ có hai trạng thái: giữ chỗ thành công là `HOLD`; hết 5 phút hoặc người chơi bấm "Hủy giữ chỗ"/"Quay lại" là `EXPIRED` (slot được nhả ngay, đơn không hiện trong "Lịch đặt của tôi" theo spec 060 FR-004). Các trạng thái sau thanh toán thuộc spec 050, 060, 112.
 - **FR-028**: Hệ thống PHẢI hỗ trợ hiển thị giao diện rõ ràng trên cả 2 chế độ Sáng (Light mode) và Tối (Dark mode) với độ tương phản màu đạt chuẩn nhận diện trạng thái slot.
+- **FR-029**: Độ rộng cột sân con PHẢI tính theo bề ngang thật của lưới trên từng thiết bị: từ 5 sân con trở xuống, hoặc khi mọi cột vừa màn hình ở độ rộng chuẩn 80dp, các cột chia đều toàn bộ bề ngang; nhiều sân hơn thì cuộn ngang với độ rộng gần 80dp sao cho thấy đúng N cột rưỡi. Ở màn ngang mỗi ô rộng tối đa 160dp và lưới hẹp hơn màn hình được căn giữa.
+- **FR-030**: Khi người chơi cuộn lưới xuống làm hàng tên sân khuất phía trên, hệ thống PHẢI ghim hàng tên sân ở đầu vùng nội dung, cùng độ rộng cột và cuộn ngang đồng bộ với lưới.
 
 ---
 

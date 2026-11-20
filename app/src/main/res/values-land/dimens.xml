@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Màn ngang: bản đồ thấp nên thẻ tóm tắt gọn hơn (spec 021 FR-023) -->
+    <dimen name="map_card_photo">72dp</dimen>
+    <dimen name="map_card_min_height">84dp</dimen>
+</resources>

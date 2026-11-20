@@ -96,6 +96,7 @@ class VenueDetailMapperTest {
         assertEquals(LatLng(10.8057, 106.6412), found(venue()).location)
         assertNull(found(venue("location" to null)).location)
         assertNull(found(venue("location" to GeoPoint(0.0, 0.0))).location)
+        assertNull(found(venue("location" to GeoPoint(90.0, 90.0))).location)
     }
 
     @Test

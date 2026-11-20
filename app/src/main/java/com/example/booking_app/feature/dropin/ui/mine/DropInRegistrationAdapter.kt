@@ -13,6 +13,7 @@ import com.example.booking_app.databinding.ItemDropinRegistrationBinding
 import com.example.booking_app.feature.dropin.domain.model.PaymentStatus
 import com.example.booking_app.feature.dropin.domain.model.RegistrationOutcome
 import com.example.booking_app.feature.dropin.domain.model.RegistrationStatus
+import com.example.booking_app.feature.dropin.domain.model.WaitlistEndReason
 import com.example.booking_app.feature.dropin.ui.common.DropInUiText
 import com.example.booking_app.feature.review.domain.ReviewEligibility
 
@@ -42,6 +43,7 @@ class DropInRegistrationAdapter(
             binding.statusChip.setChipIconResource(statusIcon(row))
             binding.statusChip.isChipIconVisible = row.outcome == null
             binding.changedChip.isVisible = row.showSessionChanged
+            binding.fromWaitlistChip.isVisible = row.fromWaitlist && row.outcome == null
 
             val code = registration.ticketCode
             binding.ticketCode.isVisible = code != null && row.outcome == null
@@ -63,13 +65,21 @@ class DropInRegistrationAdapter(
             val detail = context.getString(
                 R.string.dropin_mine_detail_line,
                 context.getString(R.string.dropin_mine_party, registration.partySize),
-                paymentText(context, registration.paymentStatus, registration.amount, registration.refundAmount),
+                if (registration.status == RegistrationStatus.WAITLISTED || registration.waitlistEndReason != null) {
+                    // Lượt chờ chưa từng được nhận: chưa thanh toán, chỉ ghi nhận số tiền khi được nhận (spec 081 FR-002).
+                    context.getString(R.string.dropin_waitlist_mine_amount, MoneyFormat.vnd(registration.amount))
+                } else {
+                    paymentText(context, registration.paymentStatus, registration.amount, registration.refundAmount)
+                },
             )
             binding.detailLine.text = detail
 
             // "Xem vé" chỉ cho lượt còn hiệu lực ở "Sắp tới" (đã đăng ký, chưa bị hủy).
+            val waiting = row.outcome == null && registration.status == RegistrationStatus.WAITLISTED
             val canViewTicket = row.outcome == null && registration.status == RegistrationStatus.REGISTERED
-            binding.viewTicketButton.isVisible = canViewTicket
+            binding.viewTicketButton.isVisible = canViewTicket || waiting
+            // Lượt đang chờ chưa có vé: nút mở màn hình lượt chờ (bấm thẻ cũng vậy).
+            binding.viewTicketButton.setText(if (waiting) R.string.dropin_waitlist_view else R.string.dropin_mine_view_ticket)
             binding.viewTicketButton.setOnClickListener { onClick(item.sessionId) }
 
             bindReview(row.reviewEligibility, item.sessionId)
@@ -77,6 +87,7 @@ class DropInRegistrationAdapter(
             val labels = buildList {
                 add(status)
                 if (row.showSessionChanged) add(context.getString(R.string.dropin_label_session_changed))
+                if (row.fromWaitlist && row.outcome == null) add(context.getString(R.string.dropin_waitlist_status_promoted))
             }.joinToString(", ")
             binding.root.contentDescription =
                 context.getString(R.string.dropin_mine_item_description, venue, dateTime, detail, labels)
@@ -98,9 +109,13 @@ class DropInRegistrationAdapter(
 
         private fun statusText(context: Context, row: MyDropInRow): String {
             val outcome = row.outcome
-            if (outcome != null) return context.getString(outcomeLabel(outcome))
+            if (outcome != null) {
+                return context.getString(outcomeLabel(outcome, row.item.registration.waitlistEndReason))
+            }
             return when (row.item.registration.status) {
-                RegistrationStatus.WAITLISTED -> context.getString(R.string.dropin_mine_status_waitlisted)
+                RegistrationStatus.WAITLISTED -> row.waitlistPosition
+                    ?.let { context.getString(R.string.dropin_waitlist_status_waiting, it.position) }
+                    ?: context.getString(R.string.dropin_mine_status_waitlisted)
                 else -> context.getString(R.string.dropin_mine_status_registered, row.item.registration.partySize)
             }
         }
@@ -125,12 +140,21 @@ class DropInRegistrationAdapter(
     }
 
     companion object {
-        fun outcomeLabel(outcome: RegistrationOutcome): Int = when (outcome) {
+        /** [reason] chỉ dùng để tách "Đã rời hàng chờ (trùng giờ)" khỏi "Đã rời hàng chờ" (spec 081 FR-015). */
+        fun outcomeLabel(outcome: RegistrationOutcome, reason: WaitlistEndReason? = null): Int = when (outcome) {
             RegistrationOutcome.ATTENDED -> R.string.dropin_label_attended
             RegistrationOutcome.CANCELLED_BY_ME -> R.string.dropin_label_cancelled_by_me
             RegistrationOutcome.SESSION_CANCELLED -> R.string.dropin_label_session_cancelled_short
             RegistrationOutcome.NO_SHOW -> R.string.dropin_label_no_show
             RegistrationOutcome.UPCOMING -> R.string.dropin_mine_upcoming
+            RegistrationOutcome.WAITING -> R.string.dropin_mine_status_waitlisted
+            RegistrationOutcome.LEFT_WAITLIST ->
+                if (reason == WaitlistEndReason.AUTO_LEFT_OVERLAP) {
+                    R.string.dropin_waitlist_status_left_overlap
+                } else {
+                    R.string.dropin_waitlist_status_left
+                }
+            RegistrationOutcome.NOT_ADMITTED -> R.string.dropin_waitlist_status_not_admitted
         }
     }
 }

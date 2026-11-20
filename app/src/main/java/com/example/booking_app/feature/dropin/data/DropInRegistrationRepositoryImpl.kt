@@ -8,6 +8,7 @@ import com.example.booking_app.feature.dropin.data.dto.CancelDropInRequest
 import com.example.booking_app.feature.dropin.data.dto.RegisterDropInRequest
 import com.example.booking_app.feature.dropin.data.dto.RegistrationDto
 import com.example.booking_app.feature.dropin.data.dto.toDomain
+import com.example.booking_app.feature.dropin.data.dto.toWaitlistJoinResult
 import com.example.booking_app.feature.dropin.data.dto.toDropInError
 import com.example.booking_app.feature.dropin.domain.DropInRegistrationReader
 import com.example.booking_app.feature.dropin.domain.DropInRegistrationRepository
@@ -18,6 +19,7 @@ import com.example.booking_app.feature.dropin.domain.model.DropInRegistration
 import com.example.booking_app.feature.dropin.domain.model.Page
 import com.example.booking_app.feature.dropin.domain.model.RegisterRequest
 import com.example.booking_app.feature.dropin.domain.model.UPCOMING_REGISTRATION_STATUSES
+import com.example.booking_app.feature.dropin.domain.model.WaitlistJoinResult
 import com.example.booking_app.feature.dropin.domain.model.isUpcomingAt
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentSnapshot
@@ -58,9 +60,56 @@ class DropInRegistrationRepositoryImpl @Inject constructor(
                     partySize = req.partySize,
                     paymentMethod = req.paymentMethod.name,
                     requestId = req.requestId,
+                    joinWaitlist = req.joinWaitlist,
                 ),
             )
             Result.success(response.registration.toDomain(fallbackSessionId = req.sessionId, uid = uid))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Result.failure(e.toDropInError())
+        }
+    }
+
+    /**
+     * Spec 081 US1: `register-drop-in` với `joinWaitlist: true`. Response phải có `waitlist.position`; thiếu thì coi là
+     * lỗi để người chơi thử lại cùng `requestId` (server trả `200` với lượt cũ, không tạo thêm lượt).
+     */
+    override suspend fun joinWaitlist(req: RegisterRequest): Result<WaitlistJoinResult> {
+        val uid = sessionManager.currentUid() ?: return Result.failure(DropInError.Unauthenticated())
+        return try {
+            val response = api.register(
+                RegisterDropInRequest(
+                    sessionId = req.sessionId,
+                    partySize = req.partySize,
+                    paymentMethod = req.paymentMethod.name,
+                    requestId = req.requestId,
+                    joinWaitlist = true,
+                ),
+            )
+            val joined = response.toWaitlistJoinResult(fallbackSessionId = req.sessionId, uid = uid)
+            when {
+                joined != null -> Result.success(joined)
+                // Gửi lại cùng requestId sau khi đã được đẩy lên: server trả đăng ký hiện tại, không có `waitlist`.
+                response.registration.status in ACTIVE_STATUSES -> Result.failure(DropInError.AlreadyRegistered())
+                else -> Result.failure(DropInError.Unknown("INVALID_RESPONSE"))
+            }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Result.failure(e.toDropInError())
+        }
+    }
+
+    /** Spec 081 US3: rời hàng chờ; gửi lại cùng [requestId] trả kết quả cũ, không đổi gì thêm. */
+    override suspend fun leaveWaitlist(sessionId: String, requestId: String): Result<DropInRegistration> {
+        val uid = sessionManager.currentUid() ?: return Result.failure(DropInError.Unauthenticated())
+        return try {
+            val response = api.cancel(
+                CancelDropInRequest(sessionId = sessionId, requestId = requestId, dryRun = false, expectWaitlisted = true),
+            )
+            response.registration?.toDomain(fallbackSessionId = sessionId, uid = uid)?.let { Result.success(it) }
+                ?: Result.failure(DropInError.Unknown("INVALID_RESPONSE"))
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -206,6 +255,7 @@ class DropInRegistrationRepositoryImpl @Inject constructor(
         const val FIELD_USER_ID = "userId"
         const val FIELD_STATUS = "status"
         const val FIELD_SESSION_START_AT = "sessionStartAt"
+        val ACTIVE_STATUSES = setOf("REGISTERED", "CHECKED_IN")
         val UPCOMING_STATUSES = UPCOMING_REGISTRATION_STATUSES.map { it.name }
 
         /** Buổi vãng lai dài không quá 24 giờ, nên lùi chừng này là đủ để lấy buổi đang diễn ra. */

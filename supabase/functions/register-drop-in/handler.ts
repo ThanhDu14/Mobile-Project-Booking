@@ -21,6 +21,7 @@ import {
   type SessionDoc,
   sessionPath,
 } from "../_shared/dropin.ts";
+import { isWaitlistOpen } from "../_shared/waitlist.ts";
 
 export interface Notification {
   type: "DROPIN_REGISTERED";
@@ -59,6 +60,8 @@ interface RegisterInput {
   partySize: number;
   paymentMethod: PaymentMethod;
   requestId: string;
+  /** Spec 081: vào hàng chờ của buổi đã đủ người thay vì đăng ký giữ chỗ. */
+  joinWaitlist: boolean;
 }
 
 /** `action: "ADD_PARTY"` (FR-008a): thêm người vào đăng ký đang có, tổng tối đa [MAX_PARTY]. */
@@ -96,12 +99,16 @@ function parseInput(body: Record<string, unknown>): RegisterInput | AddPartyInpu
     throw invalid("paymentMethod phải là MOCK_PAY hoặc AT_VENUE");
   }
   if (typeof body.requestId !== "string" || !UUID.test(body.requestId)) throw invalid("requestId phải là UUID");
+  if (body.joinWaitlist !== undefined && typeof body.joinWaitlist !== "boolean") {
+    throw invalid("joinWaitlist phải là boolean");
+  }
   return {
     kind: "REGISTER",
     sessionId,
     partySize,
     paymentMethod: body.paymentMethod as PaymentMethod,
     requestId: body.requestId,
+    joinWaitlist: body.joinWaitlist === true,
   };
 }
 
@@ -112,6 +119,8 @@ interface RegisterResult {
   created: boolean;
   registration: RegistrationDoc;
   session: { registeredCount: number; capacity: number; status: string };
+  /** Chỉ có khi `joinWaitlist`: vị trí của lượt chờ và tổng số lượt chờ (081 contract §1). */
+  waitlist?: { position: number; total: number } | null;
 }
 
 function sessionSummary(s: SessionDoc) {
@@ -166,7 +175,9 @@ async function register(
   input: RegisterInput,
   now: Date,
 ): Promise<{ result: RegisterResult; writes: Write[] }> {
-  const { session, startAt, venueId, regPath, existing } = await loadAndCheck(tx, uid, input.sessionId, now);
+  const checked = await loadAndCheck(tx, uid, input.sessionId, now);
+  if (input.joinWaitlist) return joinWaitlist(uid, input, now, checked);
+  const { session, startAt, venueId, regPath, existing } = checked;
 
   if (existing && (existing.status === "REGISTERED" || existing.status === "CHECKED_IN")) {
     if (existing.requestId === input.requestId) {
@@ -183,7 +194,11 @@ async function register(
   const registeredCount = asNumber(session.registeredCount);
   const remaining = Math.max(0, capacity - registeredCount);
   if (input.partySize > remaining) {
-    throw new HttpError(409, "SESSION_FULL", `Buổi không còn đủ chỗ (còn ${remaining} chỗ)`, { remaining });
+    throw new HttpError(409, "SESSION_FULL", `Buổi không còn đủ chỗ (còn ${remaining} chỗ)`, {
+      remaining,
+      // Để app hiện nút "Vào hàng chờ" (081): buổi đã đủ người và còn hơn 30 phút nữa mới bắt đầu.
+      waitlistOpen: session.status === "FULL" && isWaitlistOpen(session, now),
+    });
   }
 
   const newCount = registeredCount + input.partySize;
@@ -227,6 +242,111 @@ async function register(
     writes: [
       updateWrite(sessionPath(input.sessionId), { registeredCount: newCount, status: newStatus, updatedAt: now }),
       // Ghi cả document (không updateMask) để xóa sạch trường của lần hủy trước; precondition theo bản đã đọc.
+      {
+        update: { name: documentName(regPath), fields: encodeFields(registration) },
+        currentDocument: { exists: existing != null },
+      },
+    ],
+  };
+}
+
+/**
+ * Vào hàng chờ của buổi đã đủ người (spec 081 US1, data-model "Vào hàng chờ"): chưa giữ chỗ, chưa thanh toán.
+ * Trong cùng transaction: lượt chờ nhận số vé `waitlistNextTicket`, buổi thêm số vé vào `waitlistTickets`. Chỉ ghi
+ * `waitlist*` của buổi, không đụng `registeredCount`. Idempotent theo `requestId` như đăng ký thường.
+ */
+function joinWaitlist(
+  uid: string,
+  input: RegisterInput,
+  now: Date,
+  { session, startAt, venueId, regPath, existing }: Checked,
+): { result: RegisterResult; writes: Write[] } {
+  const tickets = Array.isArray(session.waitlistTickets)
+    ? session.waitlistTickets.filter((n): n is number => typeof n === "number")
+    : [];
+  if (existing?.status === "WAITLISTED") {
+    if (existing.requestId === input.requestId) {
+      // Gửi lại: trả bản đã lưu, không ghi gì.
+      const position = tickets.indexOf(asNumber(existing.waitlistTicket, -1)) + 1;
+      return {
+        result: {
+          created: false,
+          registration: existing,
+          session: sessionSummary(session),
+          waitlist: position > 0 ? { position, total: tickets.length } : null,
+        },
+        writes: [],
+      };
+    }
+    throw new HttpError(409, "ALREADY_WAITLISTED", "Bạn đang ở hàng chờ của buổi này");
+  }
+  if (existing && (existing.status === "REGISTERED" || existing.status === "CHECKED_IN")) {
+    if (existing.requestId === input.requestId) {
+      // Gửi lại sau khi đã được đẩy lên: trả đăng ký hiện tại.
+      return {
+        result: { created: false, registration: existing, session: sessionSummary(session), waitlist: null },
+        writes: [],
+      };
+    }
+    throw new HttpError(409, "ALREADY_REGISTERED", "Bạn đã đăng ký buổi này");
+  }
+
+  if (session.status !== "FULL") {
+    const remaining = Math.max(0, asNumber(session.capacity) - asNumber(session.registeredCount));
+    throw new HttpError(409, "SESSION_HAS_SPOTS", `Buổi còn ${remaining} chỗ, hãy đăng ký thường`, { remaining });
+  }
+  if (!isWaitlistOpen(session, now)) throw new HttpError(409, "WAITLIST_CLOSED", "Hàng chờ đã đóng");
+
+  const ticket = asNumber(session.waitlistNextTicket, 1);
+  const pricePerPerson = asNumber(session.pricePerPerson);
+  const newTickets = [...tickets, ticket];
+  const registration: RegistrationDoc = {
+    userId: uid,
+    sessionId: input.sessionId,
+    venueId,
+    sessionStartAt: startAt,
+    sessionEndAt: asDate(session.endAt) ?? undefined,
+    partySize: input.partySize,
+    status: "WAITLISTED",
+    paymentMethod: input.paymentMethod,
+    paymentStatus: null,
+    // Giá chốt lúc vào hàng chờ (Edge Cases: giá đổi khi đang chờ).
+    pricePerPerson,
+    amount: pricePerPerson * input.partySize,
+    refundAmount: null,
+    qrToken: null,
+    ticketCode: null,
+    requestId: input.requestId,
+    cancelRequestId: null,
+    sessionChanged: false,
+    registeredAt: null,
+    cancelledAt: null,
+    cancelledBy: null,
+    checkedInAt: null,
+    waitlistedAt: now,
+    waitlistTicket: ticket,
+    promotedAt: null,
+    waitlistEndReason: null,
+    createdAt: asDate(existing?.createdAt) ?? now,
+    updatedAt: now,
+  };
+  if (registration.sessionEndAt === undefined) delete registration.sessionEndAt;
+
+  return {
+    result: {
+      created: true,
+      registration,
+      session: sessionSummary(session),
+      waitlist: { position: newTickets.length, total: newTickets.length },
+    },
+    writes: [
+      updateWrite(sessionPath(input.sessionId), {
+        waitlistNextTicket: ticket + 1,
+        waitlistTickets: newTickets,
+        waitlistCount: newTickets.length,
+        updatedAt: now,
+      }),
+      // Ghi cả document để xóa sạch trường của lần hủy/rời trước (AC 3.3); precondition theo bản đã đọc.
       {
         update: { name: documentName(regPath), fields: encodeFields(registration) },
         currentDocument: { exists: existing != null },
@@ -300,6 +420,8 @@ function toResponseRegistration(r: RegistrationDoc) {
     amount: r.amount,
     ticketCode: r.ticketCode ?? null,
     registeredAt: asDate(r.registeredAt)?.toISOString() ?? null,
+    // Chỉ lượt chờ mới có (không đổi dạng response của đăng ký thường).
+    ...(r.status === "WAITLISTED" ? { waitlistedAt: asDate(r.waitlistedAt)?.toISOString() ?? null } : {}),
   };
 }
 
@@ -318,7 +440,8 @@ export async function handleRegisterDropIn(req: Request, deps: RegisterDeps = de
       );
     });
 
-    if (result.created) {
+    // Vào hàng chờ không gửi thông báo vì người chơi tự vào (contract §1).
+    if (result.created && !(input.kind === "REGISTER" && input.joinWaitlist)) {
       try {
         await deps.notify({ type: "DROPIN_REGISTERED", userId: uid, data: { sessionId: input.sessionId } });
       } catch (e) {
@@ -326,7 +449,11 @@ export async function handleRegisterDropIn(req: Request, deps: RegisterDeps = de
       }
     }
     return Response.json(
-      { registration: toResponseRegistration(result.registration), session: result.session },
+      {
+        registration: toResponseRegistration(result.registration),
+        session: result.session,
+        ...(result.waitlist !== undefined ? { waitlist: result.waitlist } : {}),
+      },
       { status: result.created ? 201 : 200 },
     );
   } catch (e) {

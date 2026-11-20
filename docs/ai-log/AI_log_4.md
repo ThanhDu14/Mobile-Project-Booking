@@ -55,6 +55,7 @@ Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 | 49  | 2026-11-20 | Sửa kiểm duyệt và tích hợp hàng chờ theo tin nhắn của C; kiểm tra đủ ba job CI tại local, deploy và bật cron `dropin-close`                                                                                        | 08, 09, 11, 12 |
 | 50  | 2026-11-20 | Kiểm thử kiểm duyệt và hàng chờ trên máy vivo V2247 với backend local; lưu kết quả, ảnh và kiểm tra cron có lượt chờ | 08, 09, 11, 12 |
 | 51  | 2026-11-20 | Bổ sung Rules đọc nội dung cho admin, sửa preview bài/tin nhắn và kiểm thử lại trên vivo V2247 | 09, 12 |
+| 52  | 2026-11-20 | Resolve conflict khi gộp main, giữ luồng hàng chờ 081 và tích hợp owner/admin; kiểm tra đủ ba job CI | 08, 11, 12 |
 
 ---
 
@@ -5166,5 +5167,54 @@ cập nhật rules tương ứng và test màn admin
 - Đã xem lại ảnh [preview bài nhóm](../validation/admin-preview-2026-11-20/screenshots/device-hide-detail.png), [preview tin nhắn](../validation/admin-preview-2026-11-20/screenshots/device-message-detail.png) và [tin nhắn sau khi ẩn](../validation/admin-preview-2026-11-20/screenshots/hidden-message-cleared-preview.png). Có 16 ảnh của lượt chạy mới. Nội dung và tên fixture hiện đúng; bài HIDDEN vẫn đọc được, còn tin nhắn HIDDEN có phần nội dung rỗng.
 - [Kết quả JSON](../validation/admin-preview-2026-11-20/results.json) ghi số test, quyền preview, dữ liệu đối chiếu và kiểm tra cron local; không lưu token hoặc giá trị QR. `git diff --check` pass.
 - Giới hạn: Rules được nạp và kiểm tra trên Firebase Emulator, chưa deploy lên Firebase production. Lượt này không kiểm tra quyền đọc đầy đủ của thành viên nhóm/chat, push notification hay UI trên hosted backend. Các luồng kiểm duyệt vẫn ghi qua Edge Function.
+
+---
+
+## Mục 52: Gộp main và giữ luồng hàng chờ, owner/admin của hai nhánh
+
+| Trường | Nội dung |
+| ------ | -------- |
+| Ngày | 2026-11-20 |
+| Người thực hiện | Minh Nhựt |
+| Nhóm tính năng liên quan | 08 (hàng chờ 081), 11 (owner operations), 12 (admin); kiểm tra hồi quy các phần mới từ main |
+| Công cụ AI | Codex (GPT-6) |
+| Mục đích | Resolve conflict, đối chiếu hành vi của cả hai nhánh và chạy các kiểm tra tương ứng CI |
+| Nhánh Git | `fix-feature/11-owner`, gộp `main` tại `8495c272` vào HEAD `f8d906ef` |
+
+### Prompt đã dùng
+
+```text
+resolve conflict dam bao giu code cua ca 2 nhanh, dam bao pass all ci
+```
+
+### Tóm tắt phản hồi của AI
+
+- Xác định merge đang dở với 7 file conflict: `dropin.ts`, `dropin.test.ts`, `waitlist.ts`, `waitlist.test.ts`, `cancel-drop-in/handler.ts`, `dropin-close/handler.ts` và `dropin-close/index.ts`. Lưu bản của hai phía trong `.gradle/merge-handoff/` để đối chiếu. Các thay đổi tự gộp từ main được giữ nguyên.
+- Giữ triển khai 081 đầy đủ của main: vào/rời hàng chờ, thứ tự vé, tự rời buổi trùng giờ, ân hạn hoàn tiền `PROMOTED_GRACE`, query có nhiều trường sắp xếp và trả `sessionPatch` để người gọi ghi buổi. Giữ các test Emulator của C, gồm ca tranh chấp lặp 20 lần.
+- Giữ phần owner/admin của nhánh hiện tại, gồm preview Rules và các action kiểm duyệt. Nối lại owner handlers theo hợp đồng helper 081: tăng sức chứa gộp `sessionPatch` sau các trường form; hủy buổi gọi `closeWaitlistInTx` bằng transaction thật và đưa hàng chờ về rỗng. Giữ cơ chế buffer để hủy nhiều đăng ký và hoàn tiền trong một transaction.
+- Kết hợp inbox ghi cùng transaction với hook gửi sau commit. Lỗi gửi được ghi log, không đổi kết quả hủy/promotion đã commit. Khi promotion cùng lúc đổi lịch buổi, lượt được nhận lấy giờ bắt đầu/kết thúc mới và giữ giá đã chốt lúc vào hàng chờ.
+- Giữ bộ test waitlist Emulator từ main tại `waitlist.test.ts`, chuyển bốn test transport của nhánh hiện tại sang `waitlist.regression.test.ts` và điều chỉnh fixture theo chữ ký mới. Bổ sung ca cron đóng hàng chờ thất bại: buổi chưa được chuyển COMPLETED để lượt sau còn thử lại, tránh bỏ sót người chờ.
+- Kiểm tra các file hai nhánh cùng sửa nhưng Git tự gộp: tài liệu database, Rules và cấu hình Supabase. Giữ quyền preview admin cùng searchHistory, kiểm tra slot/booking và cấu hình booking-timeout từ main. Hai migration cron drop-in cùng tên được giữ trong lịch sử; mỗi migration bỏ job cũ trước khi tạo lại.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+| ---- | ---------- | ----- |
+| Bảy file conflict | Gộp theo hợp đồng và hành vi | Giữ API 081 đầy đủ, phần tích hợp owner/admin và tương thích tên handler cron đang được các caller cũ dùng. |
+| `owner-update-session/handler.ts` | Điều chỉnh theo `PromoteResult` | Ghi đúng waitlistTickets/waitlistCount cùng capacity và số đăng ký; trả người nhận thông báo ra ngoài transaction. |
+| `owner-cancel-session/handler.ts` | Điều chỉnh helper và hook thông báo | Đóng lượt chờ bằng transaction thật, giữ hoàn tiền đầy đủ và thông báo sau commit. |
+| `waitlist.regression.test.ts`, test owner | Giữ, điều chỉnh và bổ sung | Không mất bộ test của nhánh hiện tại; kiểm tra gửi sau commit, lỗi gửi, đóng cron thất bại và retry. |
+| Helper legacy `closeWaitlistInTx` trong `dropin.ts` | Giữ để tương thích | Các owner handlers dùng helper mới trong `waitlist.ts`; giữ export và test legacy từ main. |
+| Các thay đổi không conflict của main và nhánh hiện tại | Giữ | Bảo toàn tính năng tìm kiếm/bản đồ, booking, hàng chờ và các sửa admin/owner đã kiểm chứng trước đó. |
+| Handoff 081 | Thêm trạng thái tích hợp hiện tại | Tránh tiếp tục hiểu các prompt bàn giao ban đầu là mô tả của owner handlers sau merge. |
+
+### Cách kiểm chứng
+
+- Android: `lint testDebugUnitTest assembleDebug --stacktrace` báo `BUILD SUCCESSFUL` sau **6 phút 38 giây**. Log local: `.gradle/merge-ci-android.log`.
+- Firestore Rules: **27 file pass, 263 test pass, 4 skipped** theo cấu hình CI sẵn có. Log local: `.gradle/merge-ci-rules.log`.
+- Test hồi quy helper/owner sau phần gộp cuối: **40 passed, 0 failed**, gồm test mới về retry cron và lỗi gửi sau commit. Log local: `.gradle/merge-regression.log`. Không cộng các test này vào tổng suite vì có ca chạy trùng.
+- Kiểm tra TypeScript và toàn bộ Edge Functions chạy trên Auth/Firestore Emulator cùng Supabase Storage local. Log lượt chốt: `.gradle/merge-ci-edge-check.log`, `.gradle/merge-ci-edge.log`, `.gradle/merge-ci-edge-final.log`.
+- Không còn marker conflict hoặc file unmerged; `git diff --cached --check` pass. Cache compiler, lock sinh tự động và log trong `.gradle/` không thuộc phần source được gộp.
+- Các kiểm tra được chạy tại local theo ba job trong `.github/workflows/ci.yml`; không gọi đây là kết quả GitHub Actions. Không deploy backend/Rules hoặc thay đổi dữ liệu production trong phiên resolve conflict.
 
 ---

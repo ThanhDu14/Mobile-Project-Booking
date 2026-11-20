@@ -494,6 +494,9 @@ verify_jwt = false
 [functions.expire-holds]
 verify_jwt = false
 
+[functions.booking-timeout]
+verify_jwt = false
+
 [functions.player-cancel-booking]
 verify_jwt = false
 

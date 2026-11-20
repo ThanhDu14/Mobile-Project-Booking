@@ -8,15 +8,17 @@ import {
 } from "../_shared/firestore.ts";
 import { ACTIVE_STATUSES, deriveSessionFields } from "../_shared/dropin.ts";
 import { promoteFromWaitlist } from "../_shared/waitlist.ts";
+import { sendDropInNotification, type WaitlistNotification } from "../_shared/dropin-notify.ts";
 import { parseOwnerSessionInput, validateOwnerSessionSchedule } from "../_shared/owner-dropin.ts";
 
 export interface OwnerUpdateSessionDeps {
   firestore: Pick<typeof defaultFirestore, "runTransaction">;
+  notify?: (notification: WaitlistNotification) => Promise<void>;
 }
 
 export async function handleOwnerUpdateSession(
   req: Request,
-  { firestore }: OwnerUpdateSessionDeps = { firestore: defaultFirestore },
+  { firestore, notify = sendDropInNotification }: OwnerUpdateSessionDeps = { firestore: defaultFirestore },
 ): Promise<Response> {
   if (req.method !== "POST") {
     return errorResponse(405, "METHOD_NOT_ALLOWED", "Chỉ hỗ trợ POST");
@@ -33,7 +35,7 @@ export async function handleOwnerUpdateSession(
       throw new HttpError(400, "INVALID_SESSION_ID", "Thiếu sessionId");
     }
     const input = parseOwnerSessionInput(body);
-    await firestore.runTransaction(async (tx) => {
+    const promoted = await firestore.runTransaction(async (tx) => {
       if (token.appRole !== "ADMIN") {
         const user = await tx.get(`users/${token.uid}`);
         if (token.appRole !== "OWNER" || user?.ownerStatus !== "APPROVED" || user.role !== "OWNER" || user.accountStatus !== "ACTIVE" || user.deletionRequestedAt != null) {
@@ -140,9 +142,9 @@ export async function handleOwnerUpdateSession(
       const now = new Date();
       const updatedSession = { ...session, ...input, id: sessionId, registeredCount,
         status: registeredCount >= input.capacity ? "FULL" : "OPEN" };
-      if (input.capacity > Number(session.capacity)) {
-        await promoteFromWaitlist(tx, updatedSession, now);
-      }
+      const promotion = input.capacity > Number(session.capacity)
+        ? await promoteFromWaitlist(tx, updatedSession, now)
+        : { promoted: [], sessionPatch: {} };
       tx.write(updateWrite(path, {
         ...input,
         ownerId: venue.ownerId,
@@ -154,6 +156,7 @@ export async function handleOwnerUpdateSession(
         }),
         registeredCount: updatedSession.registeredCount,
         status: updatedSession.status,
+        ...promotion.sessionPatch,
         updatedAt: now,
       }));
       for (const reg of registrations) {
@@ -199,7 +202,14 @@ export async function handleOwnerUpdateSession(
           sessionId,
         }));
       }
+      return promotion.promoted;
     });
+    for (const person of promoted) {
+      try {
+        await notify({ type: "DROPIN_SPOT_OPENED", userId: person.uid,
+          data: { sessionId, autoLeftSessionIds: person.autoLeftSessionIds } });
+      } catch (error) { console.warn("[owner-update-session] notification delivery failed", error); }
+    }
     return Response.json({ success: true, sessionId });
   } catch (err) {
     if (err instanceof HttpError) {

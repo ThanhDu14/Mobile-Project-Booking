@@ -108,6 +108,7 @@ class Store {
         return Promise.resolve(
           [...this.docs].filter(([path, data]) =>
             path.startsWith(prefix) && path.split("/").at(-2) === collection && filters.every((filter) => {
+              if (filter.op === "LESS_THAN") return data[filter.field] instanceof Date && (data[filter.field] as Date) < (filter.value as Date);
               assertEquals(filter.op, "EQUAL");
               return data[filter.field] === filter.value;
             })
@@ -150,12 +151,22 @@ Deno.test("owner capacity increase promotes fitting waitlist entries; decrease p
       userId: uid, sessionId, status: "WAITLISTED", partySize, waitlistTicket: ticket,
       paymentStatus: null, paymentMethod: "AT_VENUE", amount: partySize * 50000,
     });
-    const response = await handleOwnerUpdateSession(request({ ...draft, sessionId, capacity }), { firestore: store });
+    const delivered: string[] = [];
+    const response = await handleOwnerUpdateSession(request({ ...draft, sessionId, capacity }), {
+      firestore: store,
+      notify: async notification => {
+        assertEquals(store.docs.get(`${path}/registrations/${notification.userId}`)!.status, "REGISTERED", "Notification follows commit");
+        assertEquals(notification.type, "DROPIN_SPOT_OPENED");
+        assertEquals(notification.data.sessionId, sessionId);
+        delivered.push(notification.userId);
+      },
+    });
     assertEquals(response.status, 200);
     assertEquals(store.docs.get(`${path}/registrations/a`)!.status, "WAITLISTED");
     assertEquals(store.docs.get(`${path}/registrations/b`)!.status, capacity === 9 ? "REGISTERED" : "WAITLISTED");
     assertEquals(store.docs.get(path)!.registeredCount, capacity === 9 ? 9 : 7);
     assertEquals(store.docs.get(path)!.waitlistTickets, capacity === 9 ? [1] : [1, 2]);
+    assertEquals(delivered, capacity === 9 ? ["b"] : []);
   }
 });
 
@@ -163,11 +174,22 @@ Deno.test("owner cancellation closes every waitlisted entry without promotion, c
   const { store, sessionId, path } = await created();
   store.docs.set(path, { ...store.docs.get(path), waitlistTickets: [1], waitlistCount: 1 });
   store.docs.set(`${path}/registrations/a`, { userId: "a", sessionId, status: "WAITLISTED", partySize: 2, waitlistTicket: 1, paymentStatus: null });
-  assertEquals((await handleOwnerCancelSession(request({ venueId: "v1", sessionId }), { firestore: store })).status, 200);
+  const delivered: string[] = [];
+  assertEquals((await handleOwnerCancelSession(request({ venueId: "v1", sessionId }), {
+    firestore: store,
+    notify: async notification => {
+      assertEquals(store.docs.get(path)!.status, "CANCELLED", "Notification follows commit");
+      assertEquals(notification.type, "DROPIN_WAITLIST_CLOSED");
+      assertEquals(notification.data.reason, "SESSION_CANCELLED");
+      delivered.push(notification.userId);
+      throw new Error("Simulated push failure after commit");
+    },
+  })).status, 200);
   const reg = store.docs.get(`${path}/registrations/a`)!;
   assertEquals([reg.status, reg.waitlistEndReason, reg.cancelledBy, reg.paymentStatus], ["CANCELLED", "SESSION_CANCELLED", "OWNER", null]);
   assertEquals(store.docs.get(path)!.waitlistTickets, []);
   assertEquals([...store.docs.keys()].filter(p => p.includes("/notifications/")).length, 1);
+  assertEquals(delivered, ["a"]);
 });
 
 Deno.test("owner create: timestamps, array courts, owner/district and derived snapshot match spec 080", async () => {

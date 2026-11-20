@@ -1,5 +1,6 @@
 package com.example.booking_app.feature.booking_management.ui
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.booking_app.feature.booking_management.domain.BookingDetail
@@ -80,7 +81,11 @@ class MyBookingsViewModel @Inject constructor(
     }
 
     fun loadNextPage() {
-        if (cursor != null && _state.value !is MyBookingsState.Loading) loadPage(replace = false)
+        // Mỗi lần cuộn gần cuối đều gọi hàm này; khi trang sau đang tải dở thì bỏ qua, nếu không cùng một
+        // cursor được tải nhiều lần và trang đó bị nối lặp vào danh sách.
+        if (cursor != null && _state.value is MyBookingsState.Content && loadJob?.isActive != true) {
+            loadPage(replace = false)
+        }
     }
 
     private fun loadPage(replace: Boolean) {
@@ -97,11 +102,17 @@ class MyBookingsViewModel @Inject constructor(
                 throw cancelled
             } catch (error: UnsupportedOperationException) {
                 _state.value = MyBookingsState.Error("", true)
-            } catch (_: Exception) {
+            } catch (error: Exception) {
+                Log.w(TAG, "Không tải được tab $tab", error)
                 if (currentTab == tab) {
                     _state.value = MyBookingsState.Error("Không thể tải lịch đặt. Kiểm tra kết nối rồi thử lại.")
                 }
             }
         }
     }
+
+    private companion object {
+        const val TAG = "MyBookings"
+    }
+
 }

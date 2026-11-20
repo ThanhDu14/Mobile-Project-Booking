@@ -146,10 +146,133 @@ export function pastDayInQuery(query: string): boolean {
     normalize(query),
   );
 }
+
+// Monday = 1 … Sunday = 7, the same numbering as the schema. Digit forms are matched without
+// diacritics ("thu 7", "t7", "cn"); word forms keep them, because "thứ tự" (order) and "thứ tư"
+// (Wednesday) are the same once diacritics are removed.
+const weekdayDigits: Array<[RegExp, number]> = [
+  [/ (thu 2|t2) /, 1],
+  [/ (thu 3|t3) /, 2],
+  [/ (thu 4|t4) /, 3],
+  [/ (thu 5|t5) /, 4],
+  [/ (thu 6|t6) /, 5],
+  [/ (thu 7|t7) /, 6],
+  [/ (chu nhat|cn) /, 7],
+];
+const weekdayWords: Array<[RegExp, number]> = [
+  [/(?<!\p{L})thứ hai(?!\p{L})/u, 1],
+  [/(?<!\p{L})thứ ba(?!\p{L})/u, 2],
+  [/(?<!\p{L})thứ tư(?!\p{L})/u, 3],
+  [/(?<!\p{L})thứ năm(?!\p{L})/u, 4],
+  [/(?<!\p{L})thứ sáu(?!\p{L})/u, 5],
+  [/(?<!\p{L})thứ bảy(?!\p{L})/u, 6],
+];
+
+/**
+ * A day written in the query wins over the model, which often leaves the date empty for "12/10",
+ * "thứ 7 tuần sau" or "cn" (eval 2026-11-17). Explicit `dd/mm[/yyyy]` comes first, then a single
+ * weekday ("tuần sau"/"tuần tới" means next week). Two different weekdays, or none, return null so the
+ * model's answer (or the clarification flow) still applies. "24/7" is an opening-hours phrase, not a date.
+ */
+export function dayFromQuery(query: string, today: string): string | null {
+  const explicit = /(?<![\d/])(\d{1,2})\/(\d{1,2})(?:\/(\d{4}))?(?![\d/])/
+    .exec(query);
+  if (explicit && !(explicit[1] === "24" && explicit[2] === "7")) {
+    const day = explicit[1].padStart(2, "0");
+    const month = explicit[2].padStart(2, "0");
+    let year = explicit[3] ?? today.slice(0, 4);
+    if (!explicit[3] && `${year}${month}${day}` < today) {
+      year = String(Number(year) + 1);
+    }
+    const value = `${year}${month}${day}`;
+    if (addDays(value, 0) === value) return value;
+  }
+  const text = ` ${normalize(query)} `;
+  const accented = query.normalize("NFC").toLowerCase();
+  const days = [
+    ...new Set([
+      ...weekdayDigits.filter(([pattern]) => pattern.test(text)),
+      ...weekdayWords.filter(([pattern]) => pattern.test(accented)),
+    ].map(([, day]) => day)),
+  ];
+  if (days.length !== 1) return null;
+  const nextWeek = / tuan (sau|toi) /.test(text);
+  return addDays(
+    today,
+    nextWeek
+      ? 7 - weekday(today) + days[0]
+      : (days[0] - weekday(today) + 7) % 7,
+  );
+}
+/**
+ * Fallback when the model returns no date (eval 2026-11-17: the Groq fallback missed "tối mai").
+ * Only used to fill an empty answer, never to override one. "mai" needs a part-of-day or "ngày"
+ * before it, or must start the query, because "Mai" is also a name; "mốt" needs diacritics because
+ * "mot" is also "một" (one). Conflicting words return null.
+ */
+export function relativeDayFromQuery(
+  query: string,
+  today: string,
+): string | null {
+  const text = ` ${normalize(query)} `;
+  const accented = query.normalize("NFC").toLowerCase();
+  const offsets = new Set<number>();
+  if (/ (hom|toi|sang|chieu|trua) nay /.test(text)) offsets.add(0);
+  if (/ (ngay|toi|sang|chieu|trua) mai /.test(text) || /^ mai /.test(text)) {
+    offsets.add(1);
+  }
+  if (
+    /(?<!\p{L})mốt(?!\p{L})/u.test(accented) || / ngay kia /.test(text)
+  ) offsets.add(2);
+  return offsets.size === 1 ? addDays(today, [...offsets][0]) : null;
+}
+
+/**
+ * Fallback for an hour range the model left empty: "7h-9h", "7h đến 9h", "17h-19h", "7h15-9h10",
+ * "19:00-21:00". Returns minutes as written; the usual 12/24-hour handling and rounding in
+ * parseResult still apply. The first hour needs "h" or ":" so dates such as "12/10" never match.
+ */
+export function timeRangeFromQuery(query: string): [number, number] | null {
+  const match =
+    /(?<![\d:])(\d{1,2})(?:h|g|:)(\d{2})?\s*(?:-|–|đến|den|tới|toi)\s*(\d{1,2})(?:h|g|:)?(\d{2})?(?![\d])/u
+      .exec(query.normalize("NFC").toLowerCase());
+  if (!match) return null;
+  const minute = (hour: string, min: string | undefined) => {
+    const h = Number(hour);
+    const m = Number(min ?? 0);
+    return h <= 24 && m < 60 && (h < 24 || m === 0) ? h * 60 + m : null;
+  };
+  const start = minute(match[1], match[2]);
+  const end = minute(match[3], match[4]);
+  return start === null || end === null ? null : [start, end];
+}
+
 type Catalog = {
   districts: Record<string, string>;
   amenities: Record<string, string>;
 };
+
+/**
+ * Fallback when the model leaves the district empty or returns a name instead of an id (eval
+ * 2026-11-17 returned null for every "Quận N"). Matches full names ("Quận 10", "Bình Thạnh") and
+ * "qN"/"quanN" for numbered districts. Short letter abbreviations ("tb", "pn") are left to the model:
+ * "tb" also means "trung bình". Exactly one district must match.
+ */
+export function districtFromQuery(
+  query: string,
+  catalog: Catalog,
+): string | null {
+  const text = ` ${normalize(query)} `;
+  const found = Object.entries(catalog.districts).filter(([id, name]) => {
+    const full = normalize(name);
+    const forms = [full, full.replace(/ /g, "")];
+    const number = /^quan (\d{1,2})$/.exec(full)?.[1];
+    if (number) forms.push(`q${number}`, `q ${number}`);
+    if (/^q\d{1,2}$/.test(id)) forms.push(id);
+    return forms.some((form) => text.includes(` ${form} `));
+  }).map(([id]) => id);
+  return found.length === 1 ? found[0] : null;
+}
 
 export type Filter = {
   type: "COURT" | "DROP_IN";
@@ -285,10 +408,11 @@ export function parseResult(
   if (raw.venueName != null && !keyword) {
     result.dropped.push("KEYWORD_NOT_IN_QUERY");
   }
-  const district = typeof raw.districtId === "string" &&
+  const modelDistrict = typeof raw.districtId === "string" &&
       Object.hasOwn(catalog.districts, raw.districtId)
     ? raw.districtId
     : null;
+  const district = modelDistrict ?? districtFromQuery(query, catalog);
   if (raw.districtId != null && !district) {
     result.dropped.push("UNKNOWN_DISTRICT");
   }
@@ -307,14 +431,16 @@ export function parseResult(
   ) result.dropped.push("UNKNOWN_AMENITY");
 
   const past = pastDayInQuery(query);
-  let date = past ? null : resolveDate(raw, time.day);
+  const written = past ? null : dayFromQuery(query, time.day);
+  let date = past ? null : written ?? resolveDate(raw, time.day) ??
+    (raw.dayKind === "WEEKEND" ? null : relativeDayFromQuery(query, time.day));
   if (
     past || (date && (date < time.day || date > addDays(time.day, 30)))
   ) {
     date = null;
     result.dropped.push("INVALID_DATE");
   }
-  const dateChoices = !past && raw.dayKind === "WEEKEND"
+  const dateChoices = !past && !written && raw.dayKind === "WEEKEND"
     ? [
       addDays(time.day, (6 - weekday(time.day) + 7) % 7),
       addDays(time.day, (7 - weekday(time.day)) % 7),
@@ -324,6 +450,9 @@ export function parseResult(
 
   let start = parseMinute(raw.startTime);
   let end = parseMinute(raw.endTime);
+  if (start === null && end === null) {
+    [start, end] = timeRangeFromQuery(query) ?? [null, null];
+  }
   const hasExplicitTime = start !== null || end !== null;
   if (
     start !== null &&
@@ -497,6 +626,8 @@ Hôm nay ${time.day}, giờ ${
 Thứ Hai = 1, Chủ Nhật = 7. Ngày cụ thể dùng DATE và yyyyMMdd. Không tự tính ngày tương đối.
 Giờ chép dạng H:mm như cách nói, không đổi 12/24 giờ. 7h-9h → 7:00, 9:00. "tối" là EVENING.
 Giá "100k" = 100000. Tên sân phải lấy từ câu. "Gần quận" là quận, "gần tôi" là NEAREST.
+districtId luôn là mã (khóa) trong danh sách Quận, không phải tên.
+Viết tắt quận → mã: qN → qN (q10 → q10), bt → binh-thanh, tb → tan-binh, tp → tan-phu, gv → go-vap, pn → phu-nhuan, td → thu-duc. t7 là thứ 7, cn là Chủ Nhật.
 Quận: ${JSON.stringify(catalog.districts)}. Tiện ích: ${
     JSON.stringify(catalog.amenities)
   }.

@@ -38,12 +38,13 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.Duration
 import java.time.Instant
 import java.util.UUID
 import javax.inject.Inject
 
 /** Nhãn trạng thái trên vé (Chip Material 3, AC 3.5). */
-enum class TicketLabel { SESSION_CHANGED, SESSION_CANCELLED, VENUE_INACTIVE }
+enum class TicketLabel { SESSION_CHANGED, SESSION_CANCELLED, VENUE_INACTIVE, FROM_WAITLIST }
 
 /** Lý do vé không có mã QR. */
 enum class NoQrReason { SESSION_CANCELLED, INACTIVE, PENDING }
@@ -67,6 +68,10 @@ sealed interface DropInTicketUiState {
         val labels: List<TicketLabel>,
         val canCancel: Boolean,
         val addParty: AddPartyOffer? = null,
+        /** Spec 081: được nhận từ hàng chờ (`promotedAt != null`), hiện nhãn "Được nhận từ hàng chờ". */
+        val fromWaitlist: Boolean = false,
+        /** Spec 081 FR-011: hạn "Hủy miễn phí đến HH:mm" khi đang trong 30 phút `PROMOTED_GRACE`, hết hạn thì `null`. */
+        val freeCancelUntil: Instant? = null,
     ) : DropInTicketUiState
 
     /** Không có mạng (hoặc đọc realtime lỗi): hiện bản đã lưu trên máy, QR vẫn dùng được (FR-015). */
@@ -213,6 +218,7 @@ class DropInTicketViewModel @Inject constructor(
             if (cancelled) add(TicketLabel.SESSION_CANCELLED)
             else if (registration.sessionChanged) add(TicketLabel.SESSION_CHANGED)
             if (session != null && !session.venueActive) add(TicketLabel.VENUE_INACTIVE)
+            if (registration.isFromWaitlist) add(TicketLabel.FROM_WAITLIST)
         }
         val noQrReason = when {
             cancelled -> NoQrReason.SESSION_CANCELLED
@@ -232,7 +238,22 @@ class DropInTicketViewModel @Inject constructor(
             labels = labels,
             canCancel = canCancel,
             addParty = addPartyOffer(registration, session, now),
+            fromWaitlist = registration.isFromWaitlist,
+            freeCancelUntil = freeCancelUntil(registration, startAt, canCancel, now),
         )
+    }
+
+    /**
+     * Spec 081 FR-011, research R8: được đẩy lên từ hàng chờ sát giờ (`startAt − promotedAt < 240 phút`) thì hủy trong
+     * 30 phút kể từ `promotedAt` được hoàn 100%. Chỉ hiện khi còn hủy được và có tiền để hoàn (thanh toán ngay);
+     * trả tại sân luôn hủy miễn phí nên không cần hạn.
+     */
+    private fun freeCancelUntil(registration: DropInRegistration, startAt: Instant?, canCancel: Boolean, now: Instant): Instant? {
+        val promotedAt = registration.promotedAt ?: return null
+        if (!canCancel || startAt == null || registration.paymentMethod != PaymentMethod.MOCK_PAY) return null
+        if (Duration.between(promotedAt, startAt) >= PROMOTED_NEAR_START) return null
+        val deadline = promotedAt.plus(PROMOTED_GRACE)
+        return deadline.takeIf { !now.isAfter(it) }
     }
 
     /** FR-008a: lượt `REGISTERED`, buổi chưa hủy, chưa bắt đầu, cơ sở hoạt động, dưới 4 người và còn chỗ. */
@@ -392,6 +413,10 @@ class DropInTicketViewModel @Inject constructor(
 
         /** Tối đa người của một lượt (FR-006). */
         const val MAX_PARTY = 4
+
+        /** Spec 081 research R8: được đẩy lên cách giờ bắt đầu dưới 240 phút là "sát giờ"; hủy trong 30 phút được hoàn 100%. */
+        private val PROMOTED_NEAR_START: Duration = Duration.ofMinutes(240)
+        private val PROMOTED_GRACE: Duration = Duration.ofMinutes(30)
         private const val STOP_TIMEOUT_MS = 5_000L
     }
 }

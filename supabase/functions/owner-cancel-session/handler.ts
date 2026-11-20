@@ -10,16 +10,18 @@ import {
   registrationPath,
 } from "../_shared/dropin.ts";
 import { closeWaitlistInTx } from "../_shared/waitlist.ts";
+import { sendDropInNotification, type WaitlistNotification } from "../_shared/dropin-notify.ts";
 import { decodeFields } from "../_shared/firestore.ts";
 import { requireOwnerVenue } from "../_shared/owner-access.ts";
 
 export interface OwnerCancelSessionDeps {
   firestore: Pick<typeof defaultFirestore, "get" | "runTransaction">;
+  notify?: (notification: WaitlistNotification) => Promise<void>;
 }
 
 export async function handleOwnerCancelSession(
   req: Request,
-  { firestore }: OwnerCancelSessionDeps = { firestore: defaultFirestore },
+  { firestore, notify = sendDropInNotification }: OwnerCancelSessionDeps = { firestore: defaultFirestore },
 ): Promise<Response> {
   if (req.method !== "POST") {
     return errorResponse(405, "METHOD_NOT_ALLOWED", "Chỉ hỗ trợ POST");
@@ -45,7 +47,7 @@ export async function handleOwnerCancelSession(
     const now = new Date();
     const nowIso = now.toISOString();
     try {
-      await firestore.runTransaction(async (tx) => {
+      const closed = await firestore.runTransaction(async (tx) => {
         await requireOwnerVenue(tx, token.uid, venueId);
         // Lock session and registration query before collecting any writes.
         const session = await tx.get(`dropInSessions/${sessionId}`);
@@ -116,15 +118,15 @@ export async function handleOwnerCancelSession(
             { forceFullRefund: true, now },
           );
         }
-        await closeWaitlistInTx({
-          get: path => tx.get(path),
-          query: () => Promise.resolve(registrations.filter(reg => reg.data.status === "WAITLISTED")),
-          write: write => writes.push(write),
-        }, { ...session, id: sessionId }, "SESSION_CANCELLED", now);
+        const { closed } = await closeWaitlistInTx(
+          tx, { ...session, id: sessionId }, "SESSION_CANCELLED", { now },
+        );
         writes.push(
           updateWrite(sessionPath, {
             status: "CANCELLED",
             registeredCount: 0,
+            waitlistTickets: [],
+            waitlistCount: 0,
             cancelledAt: now,
             cancelReason: reason,
             updatedAt: now,
@@ -139,7 +141,12 @@ export async function handleOwnerCancelSession(
         }
 
         for (const write of writes) tx.write(write);
+        return closed;
       });
+      for (const uid of closed) {
+        try { await notify({ type: "DROPIN_WAITLIST_CLOSED", userId: uid, data: { sessionId, reason: "SESSION_CANCELLED" } }); }
+        catch (error) { console.warn("[owner-cancel-session] notification delivery failed", error); }
+      }
     } catch (e) {
       if (
         e instanceof FirestoreError &&
