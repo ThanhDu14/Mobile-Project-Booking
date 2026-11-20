@@ -1,6 +1,7 @@
 import { HttpError, requireUser, toErrorResponse } from "../_shared/auth.ts";
 import * as firestore from "../_shared/firestore.ts";
 import { publishApprovedVenuePhotos } from "../_shared/venue-photo-publication.ts";
+import { applicationPurpose, requireApprovedApplicant } from "../_shared/owner-application-purpose.ts";
 
 const ALLOWED_MIME = new Set(["image/jpeg", "image/png", "image/webp"]);
 const MAX_BYTES = 2 * 1024 * 1024;
@@ -12,7 +13,7 @@ export async function handleOwnerDocs(req: Request): Promise<Response> {
     const user = await requireUser(req);
     const body = await req.json().catch(() => ({})) as Record<string, unknown>;
     switch (body.action) {
-      case "SIGN_UPLOAD": return await signUpload(user.uid, body);
+      case "SIGN_UPLOAD": return await signUpload(user.uid, user.appRole, body);
       case "SIGN_VENUE_UPLOAD": return await signVenueUpload(user.uid, user.appRole, body);
       case "PUBLISH_VENUE_PHOTOS": return await publishVenuePhotos(user.uid,user.appRole,body);
       case "SIGN_DOWNLOAD": return await signDownload(user.uid, user.appRole, body);
@@ -68,7 +69,7 @@ async function signVenueUpload(uid: string, role: string, body: Record<string, u
   return json(200,{path,token});
 }
 
-async function signUpload(uid: string, body: Record<string, unknown>): Promise<Response> {
+async function signUpload(uid: string, role: string | null, body: Record<string, unknown>): Promise<Response> {
   const applicationId = string(body.applicationId);
   const fileName = string(body.fileName);
   const contentType = string(body.contentType).toLowerCase();
@@ -80,14 +81,23 @@ async function signUpload(uid: string, body: Record<string, unknown>): Promise<R
     throw new HttpError(400, "INVALID_FILE", "Chỉ nhận JPEG, PNG hoặc WebP tối đa 2 MB mỗi tệp");
   }
   const user = await firestore.get(`users/${uid}`);
-  if (!user || user.role !== "PLAYER") throw new HttpError(403, "ROLE_NOT_ALLOWED", "Tài khoản không thể tải hồ sơ");
+  const purpose = applicationPurpose(body.purpose);
   const app = await firestore.get(`ownerApplications/${applicationId}`);
+  if (purpose === "VENUE_ADDITION") {
+    if (role !== "OWNER") throw new HttpError(403,"ROLE_NOT_ALLOWED","Cần quyền chủ sân");
+    requireApprovedApplicant(user);
+    if (app && (app.uid !== uid || applicationPurpose(app.purpose) !== purpose)) throw new HttpError(403,"FORBIDDEN","Không có quyền sửa hồ sơ này");
+    if (app && app.status !== "REJECTED") throw new HttpError(409,"APPLICATION_NOT_EDITABLE","Hồ sơ đang xử lý hoặc đã được duyệt");
+  } else {
+  if (!user || user.role !== "PLAYER") throw new HttpError(403, "ROLE_NOT_ALLOWED", "Tài khoản không thể tải hồ sơ");
+  if (app && applicationPurpose(app.purpose) !== purpose) throw new HttpError(403,"FORBIDDEN","Loại hồ sơ không khớp");
   if (user.ownerStatus === "NONE") {
     if (app) throw new HttpError(409, "APPLICATION_CONFLICT", "Mã hồ sơ đã được sử dụng");
   } else if (user.ownerStatus === "REJECTED") {
     if (app?.uid !== uid || app.status !== "REJECTED") throw new HttpError(409, "APPLICATION_CONFLICT", "Chỉ có thể tải tệp cho hồ sơ bị từ chối hiện hành");
   } else {
     throw new HttpError(409, "APPLICATION_NOT_EDITABLE", "Hồ sơ đang được xét duyệt hoặc đã được duyệt");
+  }
   }
   const extension = contentType === "image/jpeg" ? "jpg" : contentType === "image/png" ? "png" : "webp";
   const path = `${uid}/${applicationId}/${crypto.randomUUID()}.${extension}`;
