@@ -1,3 +1,4 @@
+import { requireOwnerAuthority } from "../_shared/owner-access.ts";
 import { errorResponse, HttpError, verifyIdToken } from "../_shared/auth.ts";
 import * as defaultFirestore from "../_shared/firestore.ts";
 import { createWrite, FirestoreError } from "../_shared/firestore.ts";
@@ -29,21 +30,16 @@ async function handleInTransaction(
     const body = await req.json().catch(() => ({}));
 
     const venueId = typeof body.venueId === "string" ? body.venueId.trim() : "";
-    if (!venueId) throw new HttpError(400, "INVALID_VENUE_ID", "Thiếu venueId");
+    if (!venueId || venueId.includes("/")) throw new HttpError(400, "INVALID_VENUE_ID", "Thiếu venueId");
     const input = parseOwnerSessionInput(body);
     const { courtIds, date, startTime, slotIds } = input;
 
     // 1. Verify owner status
-    if (token.appRole !== "ADMIN") {
-      const user = await firestore.get(`users/${token.uid}`);
-      if (token.appRole !== "OWNER" || user?.ownerStatus !== "APPROVED" || user.role !== "OWNER" || user.accountStatus !== "ACTIVE" || user.deletionRequestedAt != null) {
-        throw new HttpError(403, "FORBIDDEN", "Chủ sân chưa được phê duyệt");
-      }
-    }
+    const admin = await requireOwnerAuthority(firestore, token);
 
     // 2. Verify venue & court
     const venue = await firestore.get(`venues/${venueId}`);
-    if (!venue || (venue.ownerId !== token.uid && token.appRole !== "ADMIN")) {
+    if (!venue || (venue.ownerId !== token.uid && !admin)) {
       throw new HttpError(
         404,
         "NOT_FOUND",
@@ -57,6 +53,22 @@ async function handleInTransaction(
       throw new HttpError(403, "VENUE_HIDDEN", "Cơ sở đang ở trạng thái ẩn");
     }
 
+    const sessionId = `dropin_${courtIds[0]}_${date}_${startTime}`;
+    const previous = await firestore.get(`dropInSessions/${sessionId}`);
+    if (previous) {
+      const same = previous.venueId === venueId && previous.ownerId === venue.ownerId &&
+        ["OPEN", "FULL"].includes(String(previous.status)) &&
+        ["date", "startTime", "endTime", "capacity", "pricePerPerson", "level", "note"].every(key => previous[key] === input[key as keyof typeof input]) &&
+        JSON.stringify(previous.courtIds) === JSON.stringify(courtIds) && JSON.stringify(previous.slotIds) === JSON.stringify(slotIds);
+      if (!same) throw new HttpError(409, "SESSION_CONFLICT", "Buổi chơi đã tồn tại hoặc đã thay đổi. Hãy tải lại.");
+      for (const slotId of slotIds) {
+        const slot = await firestore.get(`slots/${slotId}`);
+        if (!slot || slot.venueId !== venueId || slot.status !== "BLOCKED" || slot.blockReason !== "DROP_IN" || slot.sessionId !== sessionId) {
+          throw new HttpError(409, "SESSION_CONFLICT", "Khung giờ buổi chơi đã thay đổi. Hãy tải lại.");
+        }
+      }
+      return Response.json({success:true, sessionId, status:previous.status, slotCount:slotIds.length, alreadyCreated:true});
+    }
     const priceRules=await firestore.query("priceRules",[],{parent:`venues/${venueId}`});
     validateOwnerSessionSchedule(input,venue,priceRules.map(rule=>rule.data));
 
@@ -93,7 +105,6 @@ async function handleInTransaction(
     }
 
     // 5. Create session document and block slots atomically
-    const sessionId = `dropin_${courtIds[0]}_${date}_${startTime}`;
     const nowIso = new Date().toISOString();
 
     const sessionData = {
@@ -169,6 +180,7 @@ async function handleInTransaction(
       { status: 200, headers: { "Content-Type": "application/json" } },
     );
   } catch (err) {
+    if (err instanceof FirestoreError && err.code === "ABORTED") throw err;
     if (err instanceof HttpError) {
       return errorResponse(err.status, err.code, err.message);
     }
