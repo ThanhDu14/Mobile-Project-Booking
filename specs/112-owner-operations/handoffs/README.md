@@ -1,5 +1,7 @@
 # Feature 112 dependency handoffs
 
+> Trạng thái 2026-11-21: tài liệu handoff lịch sử. Endpoint, repository/DI, quyền parent LOCKED, waitlist và notification đã có code thực; các yêu cầu xác nhận bên dưới không còn là gate implementation hiện tại. Nguồn hiện hành: [contract](../contracts/owner-operations-boundaries.md), [mapping](../implementation-mapping.md), [kết quả kiểm chứng](../../../docs/validation/feature11-2026-11-21/README.md). Không suy ra chức năng thiếu từ tên ContractPending không được bind.
+
 These requests keep Feature 112 implementation moving without changing another feature's files or inventing deployed schema. Each receiving owner should answer in the named source contract, then update and test files they own. Feature 112 will integrate only after the answer is approved and testable.
 
 | Handoff | Receiving owner | Blocks |

@@ -169,8 +169,27 @@ Không có dependency cho phép Feature 112 tự triển khai thay nghiệp vụ
 | FR-020 and cross-cutting UI/error/offline/retry | T017–T019, T028–T030, T036–T037, T042–T043, T049–T053 |
 | SC-001–SC-009 | T009, T011–T013, T020–T023, T030–T039, T044–T056, T058 |
 
-**Ngoại lệ/gate hiện còn mở sau audit:** T004 chưa rõ hành vi với venue `HIDDEN` và response không tiết lộ target; T005 thiếu contract transaction booking; T006 thiếu owner CRUD/check-in contract và cần chốt voucher `venueId` (spec 112 FR-013 so với DB README §4.6); T007 thiếu schema/freshness `dailyStats` và quy tắc mẫu số/phân bổ; T008 phát hiện enum/field waitlist trong 080/081 chưa khớp Database README §4.9. Các task phụ thuộc tiếp tục `[ ]`; xem `contracts/owner-operations-boundaries.md` và `implementation-mapping.md`.
+**Lịch sử gate của lần audit trước:** T004–T008 từng thiếu contract venue/booking/drop-in/voucher/statistics/waitlist. Code production và hợp đồng hiện tại đã có các boundary này; đối chiếu `contracts/owner-operations-boundaries.md` và `implementation-mapping.md`. Không coi ghi chú lịch sử này là blocker hiện tại hoặc dùng checkbox cũ làm bằng chứng kiểm thử.
 
 ## Format check
 
 T001–T059 use checkbox + unique IDs; `[P]` appears only on parallelizable tasks; `[USn]` labels appear on user-story tasks; test tasks identify existing harness/command where available and explicitly gate missing test harness/path. Tests are included because the user explicitly requested Constitution-compliant coverage.
+## Phase 9: Convergence
+
+- [X] T060 Add regression tests for multi-venue drop-in form context/restoration, ambiguous create retries, refreshed statistics availability, invalid-range cancellation and owner authority; use clean local fixture namespaces (FR-001–FR-002, FR-007–FR-012, FR-017–FR-020, SC-009; Constitution IV).
+- [X] T061 Preserve selected venue and drop-in draft/court selections across form navigation, rotation/process recreation; prevent server refresh from overwriting unsaved edits and disable incomplete/duplicate submissions (FR-002, FR-007–FR-011, FR-020, SC-009).
+- [X] T062 Reconcile repeated drop-in creation with the authoritative transaction result, remove fabricated success IDs, scope roster reads to the supplied venue, and keep existing waitlist 081/cron behavior (FR-001–FR-002, FR-007–FR-012, SC-003, SC-009).
+- [X] T063 Refresh statistics availability configuration with every server snapshot, preserve historical booking evidence, cancel old report observations for invalid ranges and compare revenue/refund/occupancy/peaks against known-result fixtures (FR-015–FR-020, SC-006).
+- [X] T064 Align Feature 11 README, 110/111/112 implementation mappings/contracts/quickstarts and historical handoff status with production DI/endpoints and current decisions; preserve reviewer checklists and distinguish historical results, present verification and unmeasured SLA/usability criteria (FR-020; Constitution IV).
+- [X] T065 Run all three ci.yml jobs on clean local emulators/Supabase; exercise principal owner operations and both application lifecycles on the real phone with TEST fixtures, capture screenshots/logs/backend assertions and report unresolved checks plus suggested commit boundaries; do not commit/push/deploy hosted or update AI_log_4 (SC-001–SC-006, SC-009; Constitution IV).
+## Phase 10: Convergence
+
+- [X] T066 Enforce the user-confirmed 2026-11-21 drop-in check-in window, from 30 minutes before start until the exclusive end, in the authorized transaction; validate canonical times, preserve one-time token/status semantics and test before/at/after boundaries, cancelled/waitlisted/replay/foreign cases plus real-phone success (FR-012, SC-004; decision in current implementation session).
+## Phase 11: Convergence
+
+- [X] T067 Generate canonical half-hour slots wholly within venue hours for statistics availability and the owner block grid; round an unaligned opening time up without changing accepted venue hours, never wrap 23:59 into an infinite LocalTime loop, and test midnight/short intervals/invalid hours (111 FR-003/010; 112 FR-017–FR-019).
+## Phase 12: Convergence
+
+- [X] T068 Re-run Android CI and the physical regression/evidence after owner map integration; retain the already-passing unchanged backend/Rules gates, preserve OWNER/PLAYER/deep-link/cold-start checks, and record map tile/network verification separately (Constitution IV; partial).
+
+Verification 2026-11-21: [current local CI, physical phone and backend evidence](../../docs/validation/feature11-2026-11-21/README.md). Completion refers to implementation and the recorded checks; unmeasured reviewer/SLA/usability criteria remain separate.

@@ -1,5 +1,7 @@
 # Mô hình dữ liệu: Owner Operations
 
+> Cập nhật triển khai 2026-11-21: các gate endpoint/DI đã được đối chiếu và đóng theo [contract hiện tại](contracts/owner-operations-boundaries.md), [mapping](implementation-mapping.md) và [bằng chứng](../../docs/validation/feature11-2026-11-21/README.md). Các ghi chú cần chốt của bản planning bên dưới là lịch sử; nguồn thống kê đã chọn projection 1–30 ngày, không dailyStats; voucher venue thuộc 112; check-in drop-in dùng [startAt - 30 phút, endAt).
+
 **Ngày**: 2026-10-16 · **Spec**: [spec.md](spec.md) · **Research**: [research.md](research.md)
 
 Feature này chỉ đọc/ghi schema hiện có trong [Database README](../../docs/design/database/README.md). Không thêm collection, field, enum, quan hệ hoặc ID convention. Trường 🔒 chỉ được ghi bởi server theo README.
@@ -50,7 +52,7 @@ Schema README 4.6: `code`, `type` (`PERCENT`, `FIXED`), `value`, `maxDiscount`, 
 
 ## 7. Thống kê venue
 
-Nguồn nghiệp vụ là booking và slot thực tế, cùng `venues/{venueId}/dailyStats/{yyyyMMdd}` nếu schema đó được xác nhận. Công thức và lọc trạng thái nằm trong spec FR-016–019. Database README hiện chưa liệt kê field/schema `dailyStats`; vì vậy không khai báo entity/field aggregate hoặc giả định query cụ thể tại đây. `priceRules` chỉ hỗ trợ nhận diện giờ có thể đặt, không thay thế tiền thực tế của booking.
+Nguồn nghiệp vụ là projection owner-statistics-source từ booking/slot thực tế theo quyết định 2026-11-06, không dùng dailyStats. Response availability gồm openTime/closeTime/courtIds/priceRules được đọc cùng transaction mỗi snapshot; đây là DTO, không thêm entity/field Firestore. Công thức và lọc trạng thái theo FR-016–019. `priceRules` chỉ hỗ trợ nhận diện giờ có thể đặt, không thay thế tiền thực tế của booking.
 
 ## 8. Validation và bất biến
 
