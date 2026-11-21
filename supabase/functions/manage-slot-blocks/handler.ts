@@ -1,3 +1,4 @@
+import { requireOwnerAuthority } from "../_shared/owner-access.ts";
 import { errorResponse, HttpError, verifyIdToken } from "../_shared/auth.ts";
 import * as defaultFirestore from "../_shared/firestore.ts";
 import { createWrite, deleteWrite, updateWrite, FirestoreError } from "../_shared/firestore.ts";
@@ -30,24 +31,19 @@ async function handleInTransaction(
     const courtId = typeof body.courtId === "string" ? body.courtId.trim() : "";
     const action = typeof body.action === "string" ? body.action.trim().toUpperCase() : "";
 
-    if (!venueId) throw new HttpError(400, "INVALID_VENUE_ID", "Thiếu hoặc sai venueId");
-    if (!courtId) throw new HttpError(400, "INVALID_COURT_ID", "Thiếu hoặc sai courtId");
+    if (!venueId || venueId.includes("/")) throw new HttpError(400, "INVALID_VENUE_ID", "Thiếu hoặc sai venueId");
+    if (!courtId || courtId.includes("/")) throw new HttpError(400, "INVALID_COURT_ID", "Thiếu hoặc sai courtId");
     if (action !== "LOCK" && action !== "UNLOCK") {
       throw new HttpError(400, "INVALID_ACTION", "Hành động phải là LOCK hoặc UNLOCK");
     }
 
     // 1. Verify approved owner status
-    if (token.appRole !== "ADMIN") {
-      const user = await firestore.get(`users/${token.uid}`);
-      if (token.appRole !== "OWNER" || user?.ownerStatus !== "APPROVED" || user.role !== "OWNER" || user.accountStatus !== "ACTIVE" || user.deletionRequestedAt != null) {
-        throw new HttpError(403, "FORBIDDEN", "Chủ sân chưa được phê duyệt không thể khóa hoặc mở khóa sân");
-      }
-    }
+    const admin = await requireOwnerAuthority(firestore, token);
 
     // 2. Verify venue ownership & status
     const venue = await firestore.get(`venues/${venueId}`);
     if (!venue) throw new HttpError(404, "VENUE_NOT_FOUND", "Không tìm thấy cơ sở");
-    if (venue.ownerId !== token.uid && token.appRole !== "ADMIN") {
+    if (venue.ownerId !== token.uid && !admin) {
       throw new HttpError(403, "FORBIDDEN", "Bạn không có quyền quản lý cơ sở này");
     }
     if (venue.status === "LOCKED") {
