@@ -49,7 +49,10 @@ service cloud.firestore {
     // value so a stale or forged role claim cannot grant owner mutations.
     function isApprovedOwner() {
       return isOwner()
-          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.ownerStatus == 'APPROVED';
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', null) == 'OWNER'
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('ownerStatus', null) == 'APPROVED'
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('accountStatus', null) == 'ACTIVE'
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('deletionRequestedAt', null) == null;
     }
 
     function ownsVenue(venueId) {
@@ -264,36 +267,26 @@ service cloud.firestore {
       allow read: if isAdmin() || (resource.data.status == 'ACTIVE')
                   || (isApprovedOwner() && resource.data.ownerId == request.auth.uid);
       allow create: if false; // Initial/additional venues are created only by trusted server review.
-      allow update: if isAdmin()
-                    || (ownsVenue(venueId)
+      allow update: if !request.resource.data.diff(resource.data).affectedKeys().hasAny(['courtCount', 'minPricePerHour'])
+                    && (isAdmin() || (ownsVenue(venueId)
                         && resource.data.status != 'LOCKED'
                         && request.resource.data.ownerId == resource.data.ownerId
                         && request.resource.data.status in ['ACTIVE', 'HIDDEN']
                         && onlyChanges(['name', 'nameKeywords', 'address', 'districtId', 'location',
                                         'geohash', 'openTime', 'closeTime', 'phone', 'amenityIds',
-                                        'photoPaths', 'courtCount', 'acceptsRecurring', 'status']));
+                                        'photoPaths', 'acceptsRecurring', 'status'])));
       allow delete: if isAdmin();
 
       match /courts/{courtId} {
         allow read: if isAdmin() || (get(/databases/$(database)/documents/venues/$(venueId)).data.status == 'ACTIVE') || ownsVenue(venueId);
-        allow create: if isAdmin()
-                      || (ownsVenue(venueId)
-                          && request.resource.data.keys().hasOnly(['name', 'surfaceType', 'isActive', 'sortOrder']));
-        allow update: if isAdmin()
-                      || (ownsVenue(venueId)
-                          && onlyChanges(['name', 'surfaceType', 'isActive', 'sortOrder']));
-        allow delete: if isAdmin();
+        // Server validates court fields/current authority and updates active courtCount atomically.
+        allow write: if false;
       }
 
       match /priceRules/{ruleId} {
         allow read: if isAdmin() || (get(/databases/$(database)/documents/venues/$(venueId)).data.status == 'ACTIVE') || ownsVenue(venueId);
-        allow create: if isAdmin()
-                      || (ownsVenue(venueId)
-                          && request.resource.data.keys().hasOnly(['daysOfWeek', 'startTime', 'endTime', 'pricePerHour', 'label']));
-        allow update: if isAdmin()
-                      || (ownsVenue(venueId)
-                          && onlyChanges(['daysOfWeek', 'startTime', 'endTime', 'pricePerHour', 'label']));
-        allow delete: if isAdmin() || ownsVenue(venueId);
+        // Cross-rule overlap and the protected minimum are validated atomically by the server.
+        allow write: if false;
       }
 
       // Venue voucher mutations and usage counters are exclusively server-owned.

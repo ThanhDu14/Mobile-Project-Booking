@@ -12,7 +12,7 @@ beforeEach(async () => {
   await env.clearFirestore();
   await env.withSecurityRulesDisabled(async (ctx) => {
     const fs = ctx.firestore();
-    await fs.doc('users/owner-a').set({ ownerStatus: 'APPROVED', role: 'OWNER' });
+    await fs.doc('users/owner-a').set({ ownerStatus: 'APPROVED', role: 'OWNER', accountStatus: 'ACTIVE' });
     await fs.doc('venues/active').set({ ownerId: 'owner-a', status: 'ACTIVE', acceptsRecurring: true });
     await fs.doc('venues/hidden').set({ ownerId: 'owner-a', status: 'HIDDEN', acceptsRecurring: true });
     await fs.doc('venues/locked').set({ ownerId: 'owner-a', status: 'LOCKED', acceptsRecurring: true });

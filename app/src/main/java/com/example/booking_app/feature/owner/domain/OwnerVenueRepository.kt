@@ -18,6 +18,7 @@ interface OwnerVenueRepository {
 
     suspend fun getCourts(venueId: String): Result<List<OwnerCourt>>
     suspend fun createCourt(venueId: String, fields: CourtFields): Result<String>
+    suspend fun createCourt(venueId: String, fields: CourtFields, requestId: String): Result<String> = createCourt(venueId, fields)
     suspend fun updateCourt(venueId: String, courtId: String, fields: CourtFields): Result<Unit>
     suspend fun deactivateCourt(venueId: String, courtId: String): Result<Unit>
     suspend fun swapCourtOrder(venueId: String, first: OwnerCourt, second: OwnerCourt): Result<Unit> =

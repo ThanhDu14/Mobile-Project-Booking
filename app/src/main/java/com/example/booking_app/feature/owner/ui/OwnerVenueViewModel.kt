@@ -89,7 +89,7 @@ class OwnerVenueListViewModel @Inject constructor(
 
 @HiltViewModel
 class OwnerVenueDetailViewModel @Inject constructor(
-    savedStateHandle: SavedStateHandle,
+    private val savedStateHandle: SavedStateHandle,
     private val repository: OwnerVenueRepository,
     private val catalog: CatalogRepository? = null,
 ) : ViewModel() {
@@ -153,7 +153,17 @@ class OwnerVenueDetailViewModel @Inject constructor(
 
     fun addCourt(fields: CourtFields) {
         if (!validateCourt(fields)) return
-        courtAction { repository.createCourt(venueId, fields).map { Unit } }
+        val requestId = savedStateHandle.get<String>("courtCreateId") ?: java.util.UUID.randomUUID().toString().also {
+            savedStateHandle["courtCreateId"] = it
+        }
+        courtAction {
+            repository.createCourt(venueId, fields, requestId).onSuccess {
+                savedStateHandle.remove<String>("courtCreateId")
+            }.map { Unit }
+        }
+    }
+    fun acknowledgeCourtSaved() {
+        if (_uiState.value.message == "Đã lưu sân") _uiState.value = _uiState.value.copy(message = null)
     }
     fun updateCourt(courtId: String, fields: CourtFields) {
         if (!validateCourt(fields)) return

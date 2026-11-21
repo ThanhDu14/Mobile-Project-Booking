@@ -12,9 +12,9 @@ beforeEach(async () => {
   await env.clearFirestore();
   await env.withSecurityRulesDisabled(async (ctx) => {
     const fs = ctx.firestore();
-    await fs.doc('users/owner-a').set({ ownerStatus: 'APPROVED', role: 'OWNER' });
-    await fs.doc('users/owner-b').set({ ownerStatus: 'APPROVED', role: 'OWNER' });
-    await fs.doc('users/pending').set({ ownerStatus: 'PENDING', role: 'OWNER' });
+    await fs.doc('users/owner-a').set({ ownerStatus: 'APPROVED', role: 'OWNER', accountStatus: 'ACTIVE' });
+    await fs.doc('users/owner-b').set({ ownerStatus: 'APPROVED', role: 'OWNER', accountStatus: 'ACTIVE' });
+    await fs.doc('users/pending').set({ ownerStatus: 'PENDING', role: 'OWNER', accountStatus: 'ACTIVE' });
     await fs.doc('venues/venue-a').set({ ownerId: 'owner-a', status: 'ACTIVE', minPricePerHour: 60000 });
     await fs.doc('venues/venue-b').set({ ownerId: 'owner-b', status: 'ACTIVE', minPricePerHour: 70000 });
     await fs.doc('venues/venue-a/priceRules/rule-1').set({ daysOfWeek: [4], startTime: '0600', endTime: '0800', pricePerHour: 80000, label: 'NORMAL' });
@@ -24,11 +24,11 @@ beforeEach(async () => {
 afterAll(async () => { await env.cleanup(); });
 
 describe('Feature 111 priceRules boundary', () => {
-  it('allows approved owner CRUD only below an owned venue', async () => {
+  it('requires the atomic server boundary even for approved owner CRUD', async () => {
     const fs = env.authenticatedContext('owner-a', { appRole: 'OWNER' }).firestore();
-    await assertSucceeds(setDoc(rule(fs, 'venue-a', 'rule-2'), { daysOfWeek: [5], startTime: '0800', endTime: '0900', pricePerHour: 60000, label: 'PEAK' }));
-    await assertSucceeds(updateDoc(rule(fs), { pricePerHour: 90000 }));
-    await assertSucceeds(deleteDoc(rule(fs, 'venue-a', 'rule-2')));
+    await assertFails(setDoc(rule(fs, 'venue-a', 'rule-2'), { daysOfWeek: [5], startTime: '0800', endTime: '0900', pricePerHour: 60000, label: 'PEAK' }));
+    await assertFails(updateDoc(rule(fs), { pricePerHour: 90000 }));
+    await assertFails(deleteDoc(rule(fs, 'venue-a', 'rule-2')));
   });
 
   it('denies pending and foreign owners', async () => {
@@ -48,8 +48,8 @@ describe('Feature 111 priceRules boundary', () => {
 
   it('does not change the historical booking price snapshot', async () => {
     const fs = env.authenticatedContext('owner-a', { appRole: 'OWNER' }).firestore();
-    await assertSucceeds(updateDoc(rule(fs), { pricePerHour: 100000 }));
-    await assertSucceeds(deleteDoc(rule(fs)));
+    await assertFails(updateDoc(rule(fs), { pricePerHour: 100000 }));
+    await assertFails(deleteDoc(rule(fs)));
     await env.withSecurityRulesDisabled(async (ctx) => {
       const snapshot = await getDoc(doc(ctx.firestore(), 'bookings/history-1'));
       if (snapshot.data()?.items?.[0]?.price !== 40000) throw new Error('historical booking price changed');

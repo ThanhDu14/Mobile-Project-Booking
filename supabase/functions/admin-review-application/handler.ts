@@ -203,7 +203,8 @@ export async function handleAdminReviewApplication(
           phone: typeof draft.phone === "string" ? draft.phone.trim() : (typeof draft.representativePhone === "string" ? draft.representativePhone.trim() : ""),
           amenityIds: Array.isArray(draft.amenityIds) ? draft.amenityIds : [],
           photoPaths: publishedPhotos,
-          courtCount: typeof draft.courtCount === "number" ? draft.courtCount : 1,
+          // The declared count stays in venueDraft; no configured courts exist at approval.
+          courtCount: 0,
           minPricePerHour: 0,
           ratingAvg: 0.0,
           ratingCount: 0,

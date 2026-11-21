@@ -10,9 +10,9 @@ beforeAll(async () => { env = await createTestEnv(); });
 beforeEach(async () => {
   await env.clearFirestore();
   await env.withSecurityRulesDisabled(async (ctx) => {
-    await ctx.firestore().doc('users/owner-a').set({ ownerStatus: 'APPROVED', role: 'OWNER' });
-    await ctx.firestore().doc('users/owner-b').set({ ownerStatus: 'APPROVED', role: 'OWNER' });
-    await ctx.firestore().doc('users/pending').set({ ownerStatus: 'PENDING', role: 'OWNER' });
+    await ctx.firestore().doc('users/owner-a').set({ ownerStatus: 'APPROVED', role: 'OWNER', accountStatus: 'ACTIVE' });
+    await ctx.firestore().doc('users/owner-b').set({ ownerStatus: 'APPROVED', role: 'OWNER', accountStatus: 'ACTIVE' });
+    await ctx.firestore().doc('users/pending').set({ ownerStatus: 'PENDING', role: 'OWNER', accountStatus: 'ACTIVE' });
     await ctx.firestore().doc('venues/venue-a').set({ ownerId: 'owner-a', status: 'ACTIVE' });
     await ctx.firestore().doc('venues/venue-b').set({ ownerId: 'owner-b', status: 'ACTIVE' });
     await ctx.firestore().doc('venues/venue-a/courts/court-1').set({ name: 'Sân 1', surfaceType: 'MAT', isActive: true, sortOrder: 0 });
@@ -22,12 +22,12 @@ beforeEach(async () => {
 afterAll(async () => { await env.cleanup(); });
 
 describe('Feature 111 court management', () => {
-  it('approved owner can create, reorder and deactivate an owned court', async () => {
+  it('court mutations require the server boundary; owner can still read retained history', async () => {
     const fs = env.authenticatedContext('owner-a', { appRole: 'OWNER' }).firestore();
     const court2 = court(fs, 'venue-a', 'court-2');
-    await assertSucceeds(setDoc(court2, { name: 'Sân 2', surfaceType: 'PU', isActive: true, sortOrder: 1 }));
-    await assertSucceeds(updateDoc(court2, { sortOrder: 2, isActive: false }));
-    await assertSucceeds(updateDoc(court(fs), { isActive: false }));
+    await assertFails(setDoc(court2, { name: 'Sân 2', surfaceType: 'PU', isActive: true, sortOrder: 1 }));
+    await assertFails(updateDoc(court(fs), { sortOrder: 2, isActive: false }));
+    await assertSucceeds(getDoc(court(fs)));
     await assertSucceeds(getDoc(doc(fs, 'slots/court-1_20261029_0600')));
   });
 
