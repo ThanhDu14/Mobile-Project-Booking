@@ -41,7 +41,10 @@ export async function handleOwnerStatisticsSource(req: Request, deps: OwnerStati
     if (days < 1 || days > 30) throw new HttpError(400,"INVALID_RANGE","Chọn khoảng từ 1 đến 30 ngày");
     const dates = Array.from({length:days},(_,i)=>new Date(start.getTime()+i*86400000+7*3600000).toISOString().slice(0,10).replaceAll("-",""));
     const result = await (deps.runTransaction ?? firestore.runTransaction)(async tx => {
-      await requireOwnerVenue(tx, token.uid, venueId);
+      if (token.appRole !== "OWNER" && token.appRole !== "ADMIN") throw new HttpError(403,"FORBIDDEN","Tài khoản không có quyền quản lý cơ sở");
+      const venue = await requireOwnerVenue(tx, token, venueId);
+      const courts = await tx.query("courts",[],{parent:`venues/${venueId}`,select:["isActive"]});
+      const rules = await tx.query("priceRules",[],{parent:`venues/${venueId}`,select:["daysOfWeek","startTime","endTime","pricePerHour"]});
       const venueFilter: firestore.QueryFilter = {field:"venueId",op:"EQUAL",value:venueId};
       const lower = new Date(start.getTime()-86400000);
       const groups: firestore.QueryDocument[][] = [];
@@ -62,7 +65,9 @@ export async function handleOwnerStatisticsSource(req: Request, deps: OwnerStati
         const from=instant(row.data,"startAt"),to=instant(row.data,"endAt");
         if (!from || !to || to<=from) throw new HttpError(409,"INVALID_REPORT_DATA","Dữ liệu thời gian slot chưa đầy đủ");
         return {...pick(row.data,SLOT_FIELDS),slotId:row.id,startAt:from.toISOString(),endAt:to.toISOString()};
-      }),computedAt:new Date().toISOString()};
+      }),availability:{openTime:venue.openTime,closeTime:venue.closeTime,
+        courtIds:courts.filter(row=>row.data.isActive!==false).map(row=>row.id),
+        priceRules:rules.map(row=>pick(row.data,["daysOfWeek","startTime","endTime","pricePerHour"]))},computedAt:new Date().toISOString()};
     });
     return Response.json(result);
   } catch(error) {

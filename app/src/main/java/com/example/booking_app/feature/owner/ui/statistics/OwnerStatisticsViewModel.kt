@@ -1,5 +1,6 @@
 package com.example.booking_app.feature.owner.ui.statistics
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.booking_app.feature.owner.domain.OwnerVenueRepository
@@ -39,20 +40,26 @@ data class OwnerStatisticsUiState(
 class OwnerStatisticsViewModel @Inject constructor(
     private val venueRepository: OwnerVenueRepository,
     private val statisticsRepository: OwnerStatisticsRepository,
+    private val savedStateHandle: SavedStateHandle = SavedStateHandle(),
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(OwnerStatisticsUiState(isLoading = true))
+    private val _uiState = MutableStateFlow(OwnerStatisticsUiState(isLoading = true, selectedVenueId = savedStateHandle["selectedVenueId"] ?: savedStateHandle["venueId"]))
     val uiState = _uiState.asStateFlow()
     private var observationJob: Job? = null
 
     init { loadVenues() }
 
     fun selectVenue(venueId: String) {
+        savedStateHandle["selectedVenueId"] = venueId
         _uiState.value = _uiState.value.copy(selectedVenueId = venueId)
         loadReport()
     }
 
     fun setPeriod(period: OwnerStatisticsPeriod) {
         _uiState.value = _uiState.value.copy(period = period)
+        if (period == OwnerStatisticsPeriod.CUSTOM) {
+            setCustomRange(_uiState.value.customStartDate, _uiState.value.customEndDate)
+            return
+        }
         loadReport()
     }
 
@@ -69,13 +76,17 @@ class OwnerStatisticsViewModel @Inject constructor(
     }
 
     fun setCustomRange(start: LocalDate?, endInclusive: LocalDate?) {
+        observationJob?.cancel()
+        val valid = start != null && endInclusive != null && !start.isAfter(endInclusive) &&
+            java.time.temporal.ChronoUnit.DAYS.between(start, endInclusive) < 30
         _uiState.value = _uiState.value.copy(
             period = OwnerStatisticsPeriod.CUSTOM,
             customStartDate = start,
             customEndDate = endInclusive,
-            error = if (start == null || endInclusive == null || start.isAfter(endInclusive)) "Khoảng ngày không hợp lệ." else null,
+            result = null, isLoading = false, isEmpty = false,
+            error = if (!valid) "Chọn khoảng báo cáo hợp lệ từ 1 đến 30 ngày." else null,
         )
-        if (start != null && endInclusive != null && !start.isAfter(endInclusive)) loadReport()
+        if (valid) loadReport()
     }
 
     fun refresh() = if (_uiState.value.selectedVenueId == null) loadVenues() else loadReport()
