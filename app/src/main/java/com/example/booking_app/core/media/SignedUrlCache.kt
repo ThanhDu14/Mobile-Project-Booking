@@ -1,6 +1,8 @@
 package com.example.booking_app.core.media
 
 import com.example.booking_app.core.util.AppClock
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.time.Instant
@@ -50,6 +52,7 @@ class SignedUrlCache(
 
         for (chunk in missing.chunked(MAX_BATCH_SIZE)) {
             val batch = fetch(chunk).getOrNull() ?: continue
+            currentCoroutineContext().ensureActive()
             val expiresAtMs = batch.expiresAt?.toEpochMilli() ?: (clock.now() + DEFAULT_TTL_MS)
             mutex.withLock {
                 for ((path, url) in batch.urls) {

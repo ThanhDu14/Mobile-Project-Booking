@@ -193,3 +193,14 @@ T001–T059 use checkbox + unique IDs; `[P]` appears only on parallelizable task
 - [X] T068 Re-run Android CI and the physical regression/evidence after owner map integration; retain the already-passing unchanged backend/Rules gates, preserve OWNER/PLAYER/deep-link/cold-start checks, and record map tile/network verification separately (Constitution IV; partial).
 
 Verification 2026-11-21: [current local CI, physical phone and backend evidence](../../docs/validation/feature11-2026-11-21/README.md). Completion refers to implementation and the recorded checks; unmeasured reviewer/SLA/usability criteria remain separate.
+
+## Phase 13: Owner chat integration (091/112)
+
+- [x] T069 Add regressions for OWNER inbox badges, owner-only inbox filters, listener/session replacement and clearing private conversation state when the account changes; reproduce badge/session and outbox/permission failures before fixes, and verify navigation on the physical phone (091 FR-003–FR-005, FR-011–FR-012, FR-017).
+- [x] T070 Connect `tab_owner_messages` to the existing `smashnow://chat/owner` destination; preserve OWNER bottom navigation, single-top/Back, account return, warm/cold deep links and unread badges without duplicating the chat graph or backend (091 T018/T030/T039).
+- [x] T071 Complete OWNER inbox presentation against the 091 OwnerInbox reference: real customer/venue/preview/unread data, all/unread/venue filters, empty/loading/error/retry and the mode-separation explanation; retain PLAYER chat/group behavior (091 FR-005, FR-011, FR-017).
+- [x] T072 Clear account-scoped badge/conversation/draft/media state, cancel old listeners/work and prevent late results after sign-out/account replacement; cover this with regressions and preserve offline retries for the same account (091 FR-004, FR-008, FR-017).
+- [x] T073 Verify existing chat-action/chat-send/chat-media-url, membership/media privacy, one direct chat per player-owner pair, latest venue, idempotency, read/unread and notification envelope/deep links with relevant JVM, Deno/Emulator, Rules and Storage checks; report missing Feature 100 delivery instead of fabricating FCM success.
+- [x] T074 Build/lint and test the integrated OWNER tab and PLAYER↔OWNER chat on the connected Android phone with authorized TEST data; capture sanitized evidence, compare restart/mode/deep-link behavior and report unavailable two-device/FCM/SLA checks; do not commit/push or change reviewer checklist markers.
+
+Verification: [OWNER chat integration, physical Android, hosted TEST data and local test results](../../docs/validation/owner-chat-2026-11-21/README.md). Feature 100 FCM delivery, two-device SLA and unexecuted physical scenarios remain explicitly unverified there; the existing 091 reviewer/SLA tasks are unchanged.

@@ -25,6 +25,36 @@ import org.junit.Test
 /** T037: unit test cho [UnreadChatsReaderImpl] (US3). */
 class UnreadChatsReaderImplTest {
 
+    @Test
+    fun `account replacement clears the badge before the next snapshot and removes the old listener`() = runTest {
+        val listeners = mutableListOf<EventListener<QuerySnapshot>>()
+        every { firestore.collection("chats") } returns chatsCollection
+        every { chatsCollection.whereArrayContains("memberIds", any()) } returns query
+        every { query.addSnapshotListener(any<EventListener<QuerySnapshot>>()) } answers {
+            listeners.add(firstArg())
+            registration
+        }
+        sessionStateFlow.value = SessionState.SignedIn("first", AppRole.PLAYER, true)
+        val reader = UnreadChatsReaderImpl(firestore, sessionManager, appModeController)
+        reader.observeUnreadChatCount().test {
+            testScheduler.runCurrent()
+            listeners.first().onEvent(snapshotOf(chatDoc(mapOf("first" to 3L), ownerId = "venue-owner")), null)
+            // The first emission must be neutral while this account's snapshot is loading.
+            assertEquals(0, awaitItem())
+            assertEquals(1, awaitItem())
+            sessionStateFlow.value = SessionState.SignedIn("second", AppRole.PLAYER, true)
+            testScheduler.runCurrent()
+            assertEquals(0, awaitItem())
+            verify(exactly = 1) { registration.remove() }
+            listeners.first().onEvent(snapshotOf(chatDoc(mapOf("first" to 20L), ownerId = "venue-owner")), null)
+            testScheduler.runCurrent()
+            expectNoEvents()
+            listeners.last().onEvent(snapshotOf(chatDoc(mapOf("second" to 1L), ownerId = "another-owner")), null)
+            assertEquals(1, awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
     private val firestore = mockk<FirebaseFirestore>()
     private val chatsCollection = mockk<CollectionReference>()
     private val query = mockk<Query>()

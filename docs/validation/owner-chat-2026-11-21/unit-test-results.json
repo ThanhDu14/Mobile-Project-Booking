@@ -1,0 +1,100 @@
+﻿[
+    {
+        "suite":  "com.example.booking_app.feature.account.domain.validation.AvatarImageRuleTest",
+        "tests":  1,
+        "failures":  0,
+        "errors":  0,
+        "skipped":  0
+    },
+    {
+        "suite":  "com.example.booking_app.feature.chat.data.ChatOutboxTest",
+        "tests":  21,
+        "failures":  0,
+        "errors":  0,
+        "skipped":  0
+    },
+    {
+        "suite":  "com.example.booking_app.feature.chat.data.FirestoreChatRepositoryTest",
+        "tests":  5,
+        "failures":  0,
+        "errors":  0,
+        "skipped":  0
+    },
+    {
+        "suite":  "com.example.booking_app.feature.chat.data.SupabaseChatMediaRepositoryTest",
+        "tests":  6,
+        "failures":  0,
+        "errors":  0,
+        "skipped":  0
+    },
+    {
+        "suite":  "com.example.booking_app.feature.chat.data.UnreadChatsReaderImplTest",
+        "tests":  3,
+        "failures":  0,
+        "errors":  0,
+        "skipped":  0
+    },
+    {
+        "suite":  "com.example.booking_app.feature.chat.domain.ChatErrorTest",
+        "tests":  3,
+        "failures":  0,
+        "errors":  0,
+        "skipped":  0
+    },
+    {
+        "suite":  "com.example.booking_app.feature.chat.domain.ChatMessageTest",
+        "tests":  3,
+        "failures":  0,
+        "errors":  0,
+        "skipped":  0
+    },
+    {
+        "suite":  "com.example.booking_app.feature.chat.ui.conversation.ChatViewModelTest",
+        "tests":  32,
+        "failures":  0,
+        "errors":  0,
+        "skipped":  0
+    },
+    {
+        "suite":  "com.example.booking_app.feature.chat.ui.list.ChatListViewModelTest",
+        "tests":  12,
+        "failures":  0,
+        "errors":  0,
+        "skipped":  0
+    },
+    {
+        "suite":  "com.example.booking_app.feature.chat.ui.report.ReportMessageViewModelTest",
+        "tests":  8,
+        "failures":  0,
+        "errors":  0,
+        "skipped":  0
+    },
+    {
+        "suite":  "com.example.booking_app.feature.community.data.SignedUrlCacheTest",
+        "tests":  5,
+        "failures":  0,
+        "errors":  0,
+        "skipped":  0
+    },
+    {
+        "suite":  "com.example.booking_app.feature.courtdetail.domain.PendingActionResolverTest",
+        "tests":  1,
+        "failures":  0,
+        "errors":  0,
+        "skipped":  0
+    },
+    {
+        "suite":  "com.example.booking_app.feature.courtdetail.ui.CourtDetailViewModelUs5Test",
+        "tests":  4,
+        "failures":  0,
+        "errors":  0,
+        "skipped":  0
+    },
+    {
+        "suite":  "com.example.booking_app.feature.courtdetail.ui.CourtDetailViewModelUs6Test",
+        "tests":  1,
+        "failures":  0,
+        "errors":  0,
+        "skipped":  0
+    }
+]

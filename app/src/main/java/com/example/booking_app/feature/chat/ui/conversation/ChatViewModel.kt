@@ -40,6 +40,10 @@ import com.example.booking_app.feature.chat.domain.usecase.SetMuted
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancelChildren
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -149,6 +153,9 @@ class ChatViewModel @Inject constructor(
     val events: Flow<ChatEvent> = _events.receiveAsFlow()
 
     private var activeChatId: String? = null
+    private val sessionWorkJob = SupervisorJob(viewModelScope.coroutineContext[Job])
+    private val sessionScope = CoroutineScope(viewModelScope.coroutineContext + sessionWorkJob)
+    private var sessionUid: String? = null
     private var settled = false
     private var observeJob: Job? = null
     private var viewingJob: Job? = null
@@ -183,7 +190,22 @@ class ChatViewModel @Inject constructor(
         // L4/M2: cold-start deep link mở màn chat trước khi phiên khôi phục xong (Loading/Initializing/NeedsConsent)
         // thì chờ phiên chốt; đăng nhập xong quay về thì tự mở lại.
         viewModelScope.launch {
-            sessionManager.settledUid().collect {
+            sessionManager.settledUid().collect { uid ->
+                if (!settled || sessionUid != uid) {
+                    sessionWorkJob.cancelChildren()
+                    observeJob = null
+                    viewingJob = null
+                    activeChatId = null
+                    currentServerMessages = emptyList()
+                    olderMessages.value = emptyList()
+                    latestOutboxEntries = emptyList()
+                    ignoredBlockedOutboxIds.clear()
+                    lastMarkedMarker = null
+                    while (_events.tryReceive().isSuccess) { /* Drop old account's queued navigation. */ }
+                    _uiState.value = ChatUiState(isOffline = _uiState.value.isOffline)
+                    signedUrlCache.clear()
+                }
+                sessionUid = uid
                 settled = true
                 start()
             }
@@ -222,7 +244,7 @@ class ChatViewModel @Inject constructor(
     private fun openDirectAndObserve(venueId: String) {
         observeJob?.cancel()
         _uiState.update { it.copy(messages = UiState.Loading) }
-        observeJob = viewModelScope.launch {
+        observeJob = sessionScope.launch {
             val result = try {
                 openDirectChat(venueId)
             } catch (e: CancellationException) {
@@ -230,6 +252,7 @@ class ChatViewModel @Inject constructor(
             } catch (e: Exception) {
                 Result.failure(e)
             }
+            coroutineContext.ensureActive()
             result.fold(
                 onSuccess = { opened -> startObserving(opened.chatId) },
                 onFailure = { throwable ->
@@ -278,7 +301,7 @@ class ChatViewModel @Inject constructor(
         val messagesFlow = observeMessages(chatId)
         val outboxFlow = repository.observeOutbox(chatId)
 
-        observeJob = viewModelScope.launch {
+        observeJob = sessionScope.launch {
             combine(chatFlow, groupHeaderFlow, messagesFlow, olderMessages, outboxFlow) { detail, groupHeader, live, older, outbox ->
                 CombinedSnapshot(detail, groupHeader, live, older, outbox)
             }.catch { throwable ->
@@ -423,13 +446,14 @@ class ChatViewModel @Inject constructor(
         }
         if (activePaths.isEmpty() && removedPaths.isEmpty()) return
 
-        viewModelScope.launch {
+        sessionScope.launch {
             if (removedPaths.isNotEmpty()) {
                 signedUrlCache.invalidate(removedPaths)
             }
             if (activePaths.isNotEmpty()) {
                 // Truyền thẳng toàn bộ activePaths để SignedUrlCache tự kiểm tra hết hạn (5 phút an toàn) và chỉ gọi mạng khi cần.
                 val resolved = signedUrlCache.resolve(activePaths)
+                coroutineContext.ensureActive()
                 if (resolved.isNotEmpty()) {
                     _uiState.update { state ->
                         val filtered = resolved.filterKeys { it in activeSet }
@@ -466,7 +490,7 @@ class ChatViewModel @Inject constructor(
         val imageUri = state.pendingImageUri
         _uiState.update { it.copy(composerText = "", pendingImageUri = null) }
 
-        viewModelScope.launch {
+        sessionScope.launch {
             val result = try {
                 sendMessage(chatId = chatId, rawText = text, localImageUri = imageUri)
             } catch (e: CancellationException) {
@@ -474,6 +498,7 @@ class ChatViewModel @Inject constructor(
             } catch (e: Exception) {
                 Result.failure(e)
             }
+            coroutineContext.ensureActive()
             result.onFailure { throwable ->
                 val err = throwable.toChatError()
                 val invalidImage = err is ChatError.ImageTooLarge || err is ChatError.ImageUnreadable
@@ -498,8 +523,8 @@ class ChatViewModel @Inject constructor(
         ignoredBlockedOutboxIds.remove(messageId)
         blockedByOther = false
         blockedAfterDiscard = false
-        viewModelScope.launch {
-            retryMessage(chatId, messageId).onFailure { err ->
+        sessionScope.launch {
+            retryMessage(chatId, messageId).also { coroutineContext.ensureActive() }.onFailure { err ->
                 _events.trySend(ChatEvent.ShowError(err.toChatError()))
             }
         }
@@ -512,8 +537,8 @@ class ChatViewModel @Inject constructor(
                 it.messageId !in ignoredBlockedOutboxIds
         }
         if (discardingBlocked) blockedAfterDiscard = true
-        viewModelScope.launch {
-            discardMessage(chatId, messageId).fold(
+        sessionScope.launch {
+            discardMessage(chatId, messageId).also { coroutineContext.ensureActive() }.fold(
                 onSuccess = { outcome ->
                     if (outcome == DiscardResult.ALREADY_SENT) {
                         // Tin thực ra đã gửi được -> không còn bị chặn.
@@ -534,8 +559,8 @@ class ChatViewModel @Inject constructor(
         val marker = "$chatId:$latestServerId"
         if (lastMarkedMarker == marker) return
         lastMarkedMarker = marker
-        viewModelScope.launch {
-            markChatRead(chatId).onFailure {
+        sessionScope.launch {
+            markChatRead(chatId).also { coroutineContext.ensureActive() }.onFailure {
                 if (lastMarkedMarker == marker) lastMarkedMarker = null
             }
         }
@@ -553,14 +578,14 @@ class ChatViewModel @Inject constructor(
         viewingJob = null
         if (kickedEmitted) return
         val chatId = activeChatId ?: return
-        viewModelScope.launch {
+        sessionScope.launch {
             repository.setViewing(chatId, null)
         }
     }
 
     private fun startViewingHeartbeat(chatId: String) {
         viewingJob?.cancel()
-        viewingJob = viewModelScope.launch {
+        viewingJob = sessionScope.launch {
             while (true) {
                 val estimatedServerNowMs = clock.now() + repository.estimatedServerOffsetMs()
                 repository.setViewing(chatId, Instant.ofEpochMilli(estimatedServerNowMs + VIEWING_TTL_MS))
@@ -576,7 +601,7 @@ class ChatViewModel @Inject constructor(
         val oldestAt = currentServerMessages.firstOrNull { it.createdAt != null }?.createdAt ?: return
 
         _uiState.update { it.copy(loadingOlder = true) }
-        viewModelScope.launch {
+        sessionScope.launch {
             val result = try {
                 loadOlderMessages(chatId, oldestAt)
             } catch (e: CancellationException) {
@@ -584,6 +609,7 @@ class ChatViewModel @Inject constructor(
             } catch (e: Exception) {
                 Result.failure(e)
             }
+            coroutineContext.ensureActive()
             result.fold(
                 onSuccess = { loaded ->
                     if (loaded.size < PAGE_SIZE) {
@@ -609,8 +635,9 @@ class ChatViewModel @Inject constructor(
         if (message.status != MessageStatus.NORMAL) return
         val path = message.imagePath
         if (!path.isNullOrBlank()) {
-            viewModelScope.launch {
+            sessionScope.launch {
                 val freshUrl = signedUrlCache.resolve(listOf(path))[path]
+                coroutineContext.ensureActive()
                 if (freshUrl != null) {
                     _uiState.update { it.copy(imageUrls = it.imageUrls + (path to freshUrl)) }
                     _events.trySend(ChatEvent.OpenPhoto(freshUrl))
@@ -632,8 +659,8 @@ class ChatViewModel @Inject constructor(
     fun onToggleMuted() {
         val chatId = activeChatId ?: return
         val targetMuted = !(_uiState.value.header?.muted ?: false)
-        viewModelScope.launch {
-            setMuted(chatId, targetMuted).fold(
+        sessionScope.launch {
+            setMuted(chatId, targetMuted).also { coroutineContext.ensureActive() }.fold(
                 onSuccess = {
                     _events.trySend(
                         ChatEvent.ShowMessage(
@@ -651,8 +678,8 @@ class ChatViewModel @Inject constructor(
         val header = _uiState.value.header ?: return
         if (header.type != ChatType.DIRECT || header.isDeletedOtherParty) return
         val targetBlocked = !header.blockedOther
-        viewModelScope.launch {
-            setBlocked(chatId, targetBlocked).fold(
+        sessionScope.launch {
+            setBlocked(chatId, targetBlocked).also { coroutineContext.ensureActive() }.fold(
                 onSuccess = {
                     _events.trySend(
                         ChatEvent.ShowMessage(
@@ -678,8 +705,8 @@ class ChatViewModel @Inject constructor(
 
     fun onRecallConfirmed(messageId: String) {
         val chatId = activeChatId ?: return
-        viewModelScope.launch {
-            recallMessage(chatId, messageId).fold(
+        sessionScope.launch {
+            recallMessage(chatId, messageId).also { coroutineContext.ensureActive() }.fold(
                 onSuccess = {
                     olderMessages.update { list ->
                         list.map { msg ->

@@ -58,6 +58,7 @@ Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 | 52  | 2026-11-20 | Resolve conflict khi gộp main, giữ luồng hàng chờ 081 và tích hợp owner/admin; kiểm tra đủ ba job CI | 08, 11, 12 |
 | 53  | 2026-11-20 | Triển khai Thêm cơ sở từ form Android tới xét duyệt backend, giữ quyền OWNER và kiểm thử máy thật | 11, 12 |
 | 54  | 2026-11-21 | Tiếp tục Feature 11, tích hợp bản đồ và kiểm chứng vận hành OWNER | 11, 12 |
+| 55  | 2026-11-21 | Tích hợp tin nhắn OWNER với module chat 091, sửa lỗi phiên/outbox và kiểm thử Firebase/Supabase trên máy thật | 09, 11 |
 
 ---
 
@@ -5336,5 +5337,112 @@ Sau khi nhận bàn giao, người dùng yêu cầu cập nhật AI_log cho lầ
 - Đối chiếu backend độc lập xác nhận trạng thái booking, ví, slot, voucher, tọa độ map và số sân hoạt động. Fixture thống kê có PAID 100.000đ, DEPOSITED 30.000đ, REFUNDED 20.000đ, occupancy 2/15 = 13,333333%, peak 08:00 trong 60 phút. Hai venue mới duyệt có count 0, hồ sơ vẫn giữ số khai 2; owner cũ giữ venue và quyền, giấy tờ không public. [Backend assertions](../validation/feature11-2026-11-21/backend-assertions.json).
 - Lưu 63 ảnh TEST cùng hash APK/source, log và mô tả môi trường tại [báo cáo kiểm chứng](../validation/feature11-2026-11-21/README.md), [results.json](../validation/feature11-2026-11-21/results.json). Đã loại ảnh lỗi cũ khỏi phần bàn giao, khôi phục animation/thiết lập giữ sáng của điện thoại và kiểm tra `git diff --check`. Không sửa checklist reviewer; chưa commit, push hoặc deploy hosted trong lượt triển khai.
 - Giới hạn còn lại: chưa kiểm tra camera quét QR, push delivery, mọi nhánh lỗi mạng/process death, toàn bộ đường chat 091 hoặc tablet thật; chưa đo SLA 4G/usability. Trạng thái LOCKED của nút chọn map được rà bằng code và boundary tự động, chưa có ca bấm riêng trên điện thoại. Availability dùng cấu hình hiện tại cùng snapshot, chưa có schema lịch sử cấu hình. Count legacy được tính lại khi mutation sân kế tiếp; dữ liệu hosted chưa được backfill. Những phần này không được tính là đã nghiệm thu.
+
+---
+
+## Mục 55: Tích hợp tin nhắn OWNER và kiểm thử trao đổi PLAYER ↔ OWNER
+
+| Thông tin | Nội dung |
+| --- | --- |
+| Ngày | 2026-11-21 |
+| Người thực hiện | Minh Nhựt |
+| Nhóm tính năng liên quan | 09 (091 chat), 11 (112 vận hành chủ sân); đối chiếu 011 chế độ tài khoản, 030 nhắn chủ sân và 100 thông báo |
+| Công cụ AI | Codex (GPT-6), `$speckit-implement` |
+| Mục đích | Nối tab Tin nhắn OWNER với module chat và backend hiện có, hoàn thiện hộp thư khách hàng, sửa lỗi phân tách phiên và kiểm chứng trao đổi hai chiều trên điện thoại thật |
+| Nhánh Git | `fix-feature/11-owner` |
+
+### Prompt đã dùng
+
+```text
+$speckit-implement Hãy tích hợp hoàn chỉnh tính năng TIN NHẮN cho chế độ CHỦ SÂN trong repository hiện tại. Thực hiện trực tiếp trên code, kết nối backend thật và kiểm thử; không chỉ phân tích hoặc lập kế hoạch.
+
+1. Đọc yêu cầu và xác định phần cần tích hợp
+- Đọc AGENTS.md và hướng dẫn liên quan.
+- Đọc spec.md, plan.md, tasks.md, contracts/, handoffs/ và ui/ của:
+  - specs/091-chat
+  - specs/112-owner-operations
+- Đối chiếu phần liên quan trong spec 011 (chế độ tài khoản), 030 (nhắn chủ sân từ chi tiết sân) và 100 (thông báo).
+- Khảo sát module feature/chat, FirestoreChatRepository, SupabaseChatMediaRepository, ChatListFragment, ChatFragment, nav_chat.xml và tab_owner_messages.
+- Xác định phần đã hoạt động, phần chưa được nối vào chế độ OWNER, placeholder và lỗi tích hợp.
+
+2. Tích hợp điều hướng và danh sách tin nhắn OWNER
+- Nối tab “Tin nhắn” của OWNER với module chat hiện có; tái sử dụng repository, ViewModel, Fragment và navigation phù hợp.
+- Không xây hệ thống chat riêng cho OWNER hoặc tạo schema song song.
+- Hiển thị đúng các cuộc trò chuyện với khách hàng theo hợp đồng 091, gồm danh tính, cơ sở được hỏi gần nhất, tin cuối, thời gian và trạng thái chưa đọc.
+- Phân biệt ngữ cảnh quản lý sân và ngữ cảnh người chơi khi cùng một tài khoản chuyển chế độ.
+- Kiểm tra trạng thái tab được chọn, Back, mở lại ứng dụng và deep link; không tạo navigation graph hoặc màn hình trùng lặp.
+
+3. Hoàn thiện trao đổi PLAYER ↔ OWNER
+- PLAYER mở “Nhắn tin cho chủ sân” từ chi tiết sân, gửi tin; OWNER nhận trong danh sách và trả lời; PLAYER nhận phản hồi realtime.
+- Theo spec 091: chỉ một cuộc trò chuyện cho mỗi cặp PLAYER–OWNER, kể cả OWNER có nhiều cơ sở. Khi hỏi cơ sở khác, mở lại chat cũ và cập nhật cơ sở được hỏi gần nhất.
+- Kiểm tra gửi/nhận, lịch sử, phân trang, trạng thái đang gửi/thất bại/thử lại, đánh dấu đã đọc và bộ đếm chưa đọc theo spec.
+- Hoàn thiện gửi ảnh, báo cáo hoặc thao tác khác chỉ khi nằm trong phạm vi hợp đồng chat hiện có.
+- Chống gửi lặp, listener trùng, mất draft hoặc cập nhật nhầm cuộc trò chuyện khi điều hướng.
+
+4. Backend và phân quyền
+- Tái sử dụng chat-send, chat-action, chat-media-url và schema hiện có; Firestore/Supabase đảm nhiệm đúng trách nhiệm của dự án.
+- Không dùng mock data hoặc chỉ cập nhật trạng thái cục bộ rồi báo thành công.
+- Kiểm tra membership, danh tính người gửi và quyền truy cập media phía server; không tin ownerId/userId do client gửi để cấp quyền.
+- Đối chiếu hành vi khi venue ẩn/khóa, OWNER bị thu hồi quyền hoặc tài khoản bị khóa/xóa theo hợp đồng 091 và 011; không tự áp điều kiện vận hành booking sang chat.
+- Không nới Rules/RLS để tính năng chạy được.
+- Dừng listener và xóa state không phù hợp khi đăng xuất, đổi tài khoản hoặc chuyển chế độ; không để lộ tin nhắn của tài khoản trước.
+
+5. Thông báo và giao diện
+- Kiểm tra tích hợp CHAT_MESSAGE với spec 100 theo envelope và deep link đã chốt trong handoff 091.
+- Bấm thông báo phải mở đúng chat, đúng quyền và ngữ cảnh điều hướng; kiểm tra cả khi ứng dụng đang mở và khởi động từ thông báo.
+- Không tự triển khai lại toàn bộ hệ thống thông báo.
+- Đối chiếu giao diện với tài liệu ui/ và design system hiện có; sửa chữ bị cắt, nút vỡ dòng, bàn phím che ô nhập, loading/empty/error và retry.
+- Nếu thiếu thiết kế hoặc hợp đồng, báo rõ phần thiếu; không tự mở rộng nghiệp vụ.
+
+6. Kiểm thử và sửa lỗi
+- Nếu có thiết bị Android thật kết nối, build/cài và thao tác kiểm thử trực tiếp.
+- Dùng các tài khoản PLAYER/OWNER kiểm thử đã được phép; nếu chỉ có một thiết bị, kiểm tra luân phiên kết hợp xác minh backend.
+- Kiểm tra hai chiều gửi/nhận, nhiều cơ sở cùng OWNER không tạo chat trùng, unread/read, chuyển tài khoản/chế độ, mất mạng/thử lại và dữ liệu sau restart.
+- Chụp ảnh và lưu log đã lọc; không ghi token, signed URL private hoặc nội dung trò chuyện cá nhân vào báo cáo.
+- Chạy unit test, Deno/Emulator tests, build và lint phù hợp; không skip test hoặc bỏ qua lỗi để làm xanh.
+- Sửa lỗi thuộc phạm vi tích hợp và phụ thuộc cần thiết; giữ nguyên thay đổi sẵn có, tránh refactor không liên quan.
+
+7. Bàn giao
+- Tóm tắt luồng đã tích hợp và các lỗi đã sửa.
+- Liệt kê file thay đổi, nguồn dữ liệu/backend được sử dụng.
+- Báo kết quả test và đường dẫn ảnh/log.
+- Phân biệt rõ kiểm thử thực tế với kết luận từ đọc code/test tự động.
+- Nêu phần chưa xác minh, phụ thuộc còn thiếu và lý do cụ thể.
+- Không tự commit hoặc push.
+
+Bắt đầu bằng khảo sát module chat và đường điều hướng tab_owner_messages, sau đó triển khai và kiểm thử đến khi hoàn tất các tiêu chí có thể xác minh. Cập nhật tiến độ ngắn gọn bằng tiếng Việt.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Xác định tab `tab_owner_messages` còn trả thông báo “đang được phát triển”, trong khi `ownerChatListFragment` và module chat 091 đã tồn tại. Nối tab vào deep link `smashnow://chat/owner`, giữ menu OWNER, trạng thái tab, Back và dùng chung navigation graph.
+- Hoàn thiện hộp thư OWNER bằng subtitle, bộ lọc Tất cả/Chưa đọc/Cơ sở, empty riêng khi lọc và chú thích phân biệt chế độ. Danh tính khách, cơ sở gần nhất, preview, thời gian và unread lấy từ `ChatSummary` hiện có; bộ lọc không mở thêm listener Firestore.
+- Gắn badge đúng tab OWNER/PLAYER, phát 0 khi thay UID và bỏ badge của menu cũ. Hủy công việc theo phiên, xóa header/draft/ảnh chọn/signed URL/event cũ và chặn kết quả trả về sau khi coroutine bị hủy. Sửa outbox chỉ xử lý tin có senderId đúng tài khoản hiện tại, kiểm tra lại trước gửi sau upload hoặc chờ thử lại.
+- Sửa lỗi query inbox bị từ chối quyền nhưng hiển thị thành danh sách rỗng: trả lỗi `NOT_PARTICIPANT` để UI xử lý lỗi/retry. Không nới Rules/RLS, không thêm schema hoặc backend chat riêng và không áp điều kiện ACTIVE của booking vào chat đã tồn tại.
+- Tái sử dụng `FirestoreChatRepository`, các API `chat-action`/`chat-send`/`chat-media-url` và `SupabaseChatMediaRepository`. Người dùng đăng nhập luân phiên tài khoản kiểm thử trên vivo; AI thao tác chat của cơ sở AUDIT, đối chiếu dữ liệu server và lưu bằng chứng. Không commit, push hoặc deploy hosted trong lượt này.
+- Ghi nhận thiếu phần triển khai `send-notification` và dịch vụ nhận FCM Android của feature 100 trong repository. Giữ envelope/deep link đã chốt, kiểm tra bằng test và ADB; không báo đã nhận hoặc bấm thông báo FCM thật. Thêm và hoàn tất T069–T074 trong tasks 112 theo phạm vi tích hợp và kiểm chứng có thể thực hiện; giữ nguyên checklist reviewer và các tiêu chí SLA/usability còn mở của 091.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+| --- | --- | --- |
+| `MainActivity`, `tab_owner_messages`, `ownerChatListFragment`, `nav_chat.xml` | Nối tab và tái sử dụng destination/graph hiện có | Bỏ placeholder, giữ đúng tab và Back, tránh tạo màn hình chat OWNER trùng lặp. |
+| `ChatListViewModel`, `ChatListFragment`, layout và strings chat | Bổ sung bộ lọc và trạng thái OWNER | Hiển thị đúng khách/cơ sở/tin cuối, phân biệt rỗng thật với không có kết quả lọc và giải thích ngữ cảnh tài khoản. |
+| `UnreadChatsReaderImpl`, `ChatViewModel`, `SignedUrlCache` | Chỉnh vòng đời và state theo phiên | Không giữ badge/draft/media của tài khoản trước hoặc áp dụng kết quả bất đồng bộ đã bị hủy. |
+| `ChatOutbox` | Kiểm tra chủ sở hữu entry và kiểm tra lại trước gửi | Chặn gửi khi đã đăng xuất hoặc đổi tài khoản trong lúc upload; giữ retry của đúng tài khoản. |
+| `FirestoreChatRepository` | Chỉnh ánh xạ lỗi quyền inbox | Không biến lỗi permission thành hộp thư rỗng và làm mất khả năng báo lỗi/thử lại. |
+| Firestore, Supabase Storage và ba Edge Functions chat | Tái sử dụng backend thật | Giữ một chat cho mỗi cặp PLAYER–OWNER, dữ liệu tin/read ở Firestore và ảnh ở bucket private `chat-media`. Không tạo migration hoặc nới quyền. |
+| JVM tests, Deno/Rules tests hiện có, tasks 112 và bằng chứng | Bổ sung regression, chạy kiểm tra và ghi kết quả | Phân biệt lỗi tái hiện trước sửa, test đạt sau sửa, thao tác thật và giới hạn chưa xác minh. |
+| Hệ thống thông báo 100, schema song song, dữ liệu booking/venue legacy | Không mở rộng hoặc chỉnh sửa | Phần thông báo đầy đủ là phụ thuộc còn thiếu; hosted chỉ kiểm thử chat của cơ sở AUDIT đã được cho phép. |
+
+### Cách kiểm chứng
+
+- Trước sửa, bộ badge/session có 35 test với 2 ca mới thất bại; bộ outbox/permission có 26 test với 3 ca mới thất bại. Sau sửa, lệnh `:app:testDebugUnitTest --tests '*chat*' --tests '*SignedUrlCacheTest' :app:assembleDebug :app:lintDebug` báo BUILD SUCCESSFUL; 105 test liên quan đạt, 0 failure/error/skipped, lint 0 errors và còn 849 warnings trên repository. [Kết quả JVM](../validation/owner-chat-2026-11-21/unit-test-results.json), [log Android](../validation/owner-chat-2026-11-21/logs/android.log).
+- Deno chạy bốn file test `_shared/chats`, `chat-action`, `chat-send`, `chat-media-url` trên Firebase Auth/Firestore Emulator riêng, project `demo-smashnow`: 25 passed, 0 failed/ignored và có type check. Rules `test/chats.test.ts` đạt 15/15, không skip. Các ca bao gồm một chat/cặp, đổi cơ sở gần nhất, venue khóa/OWNER hết quyền với chat đã có, membership, gửi lặp, media và envelope `CHAT_MESSAGE`. Đây là kiểm tra local liên quan, không phải chạy toàn bộ ba job CI hoặc test tự động vào hosted. [Log Deno](../validation/owner-chat-2026-11-21/logs/deno.log), [log Rules](../validation/owner-chat-2026-11-21/logs/firestore-rules.log).
+- Trên vivo V2247 Android 15, package `com.example.booking_app`, PLAYER mở “Nhắn tin cho chủ sân” từ chi tiết AUDIT151126, gửi chữ và ảnh TEST; OWNER nhận, xem ảnh và trả lời; PLAYER thấy preview/badge 1, mở chat rồi unread về 0. Ảnh gửi chỉ là giao diện hộp thư rỗng, không phải ảnh cá nhân. Cùng tài khoản OWNER chuyển sang PLAYER không thấy chat khách hàng, chuyển lại OWNER vẫn có; đã kiểm tra tab được chọn, bộ lọc cơ sở, Back và deep link nóng/lạnh.
+- Tắt mạng tạm thời khi gửi một tin TEST: máy hiện banner mất mạng và Đang gửi; khôi phục mạng thì tin tự gửi thành công đúng một lần. Wi-Fi/mobile data được khôi phục trong `finally` và đọc lại đều bằng 1 như ban đầu. Script PowerShell báo `NativeCommandError` vì dòng tiến độ `adb pull` đi qua stderr dù ảnh đã tải thành công; kết luận dựa trên UI, ảnh và dữ liệu server. Restart bằng deep link vẫn còn đủ lịch sử, ảnh và phản hồi.
+- Đối chiếu hosted backend xác nhận 1 chat DIRECT và 4 message ID khác nhau, đều `NORMAL`: 3 tin PLAYER gồm ảnh/tin offline và 1 phản hồi OWNER. Unread OWNER lần đầu là 2, sau trả lời PLAYER là 1; cuối phiên cả hai bằng 0. Ảnh hiển thị được cho hai thành viên, HEAD không đăng nhập qua endpoint public trả 400. Chỉ lưu metadata TEST, không token/signed URL/nội dung cá nhân. [Metadata cuối](../validation/owner-chat-2026-11-21/backend-final.json).
+- Bước cuối trên OWNER: badge 1 và bộ lọc Chưa đọc hiện đúng chat TEST; đọc xong badge biến mất và bộ lọc rỗng. Kết thúc ở OWNER, chọn Tất cả. [Ảnh badge](../validation/owner-chat-2026-11-21/screenshots/owner-unread-tab-badge.png), [ảnh sau đọc](../validation/owner-chat-2026-11-21/screenshots/owner-read-clears-filter-and-badge.png). Snapshot logcat cuối phiên không có dòng khớp AndroidRuntime:E/Firestore:W trong 2000 dòng gần nhất; không coi đây là thu log liên tục cả phiên.
+- Danh sách file sửa, bảng đối chiếu yêu cầu, ảnh và log đã lọc nằm trong [báo cáo tích hợp OWNER chat](../validation/owner-chat-2026-11-21/README.md). Chưa xác minh giao nhận/bấm thông báo FCM, SLA với hai máy mở chat đồng thời, hay thao tác tay các ca phân trang trên 30 tin, timeout offline đủ 60 giây, từ chối camera, report/recall/block và khóa/xóa tài khoản hoặc thu hồi OWNER thật. Nhiều cơ sở cùng OWNER được kiểm tra bằng Deno D1/D2, chưa đổi ngữ cảnh sang venue legacy trên hosted. Không đánh đồng các test tự động đó với kiểm thử máy thật.
 
 ---

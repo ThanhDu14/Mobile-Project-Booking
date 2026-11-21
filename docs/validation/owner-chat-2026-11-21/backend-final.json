@@ -1,0 +1,52 @@
+{
+  "checkedAt": "2026-11-21T10:58:47.246Z",
+  "testChatCount": 1,
+  "chats": [
+    {
+      "chatId": "6GXTRepzvlbHeboyqZdBP5HIqSK2_wbQVCeaTGlXXql3EMt4ryBXpzvm1",
+      "ownerId": "wbQVCeaTGlXXql3EMt4ryBXpzvm1",
+      "playerId": "6GXTRepzvlbHeboyqZdBP5HIqSK2",
+      "venueId": "1b9faac0-11df-47c3-8110-bf928265fb4f",
+      "type": "DIRECT",
+      "status": "ACTIVE",
+      "unreadCounts": {
+        "6GXTRepzvlbHeboyqZdBP5HIqSK2": 0,
+        "wbQVCeaTGlXXql3EMt4ryBXpzvm1": 0
+      },
+      "testMessageCount": 4,
+      "unauthenticatedPublicMediaStatuses": [
+        400
+      ],
+      "testMessages": [
+        {
+          "id": "6f31d6e6-ffc8-4bf9-9577-e25cc72982d1",
+          "senderId": "6GXTRepzvlbHeboyqZdBP5HIqSK2",
+          "status": "NORMAL",
+          "createdAt": "2026-11-21T10:41:23.483Z",
+          "hasImage": false
+        },
+        {
+          "id": "857b67e7-e79e-4cff-a65c-64a9b7650270",
+          "senderId": "6GXTRepzvlbHeboyqZdBP5HIqSK2",
+          "status": "NORMAL",
+          "createdAt": "2026-11-21T10:55:04.419Z",
+          "hasImage": false
+        },
+        {
+          "id": "b074ea0d-6c5e-4077-a73d-683b513edbb2",
+          "senderId": "wbQVCeaTGlXXql3EMt4ryBXpzvm1",
+          "status": "NORMAL",
+          "createdAt": "2026-11-21T10:48:52.949Z",
+          "hasImage": false
+        },
+        {
+          "id": "b541a37f-cb9e-4bbf-bae6-33914d3b0657",
+          "senderId": "6GXTRepzvlbHeboyqZdBP5HIqSK2",
+          "status": "NORMAL",
+          "createdAt": "2026-11-21T10:45:12.084Z",
+          "hasImage": true
+        }
+      ]
+    }
+  ]
+}

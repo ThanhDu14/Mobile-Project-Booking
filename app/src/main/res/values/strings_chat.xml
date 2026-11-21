@@ -8,6 +8,11 @@
     <!-- Tiêu đề màn hình -->
     <string name="chat_title_list">Tin nhắn</string>
     <string name="chat_title_owner">Tin nhắn khách hàng</string>
+    <string name="chat_owner_inbox_subtitle">Người chơi hỏi về các cơ sở của bạn</string>
+    <string name="chat_owner_filter_all">Tất cả</string>
+    <string name="chat_owner_filter_unread">Chưa đọc (%1$d)</string>
+    <string name="chat_owner_filtered_empty_title">Không có cuộc trò chuyện phù hợp</string>
+    <string name="chat_owner_filtered_empty_subtitle">Thử chọn Tất cả hoặc một cơ sở khác.</string>
     <string name="chat_title_group">Chat nhóm</string>
     <string name="chat_title_report">Báo cáo tin nhắn</string>
 

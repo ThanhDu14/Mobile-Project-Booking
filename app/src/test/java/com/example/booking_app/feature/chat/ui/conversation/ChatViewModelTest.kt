@@ -69,6 +69,28 @@ import java.time.Instant
 @OptIn(ExperimentalCoroutinesApi::class)
 class ChatViewModelTest {
 
+    @Test
+    fun `sign out clears private header draft selected media and signed URLs`() = runTest {
+        val session = MutableStateFlow<SessionState>(SessionState.SignedIn("player1", AppRole.PLAYER, true))
+        every { sessionManager.sessionState } returns session
+        chatFlow.value = directChat()
+        messagesFlow.value = listOf(serverMessage("private-image", "TEST private").copy(imagePath = "owner1_player1/private.jpg"))
+        val vm = createViewModel()
+        every { sessionManager.currentUid() } answers { (session.value as? SessionState.SignedIn)?.uid }
+        runCurrent()
+        assertTrue(vm.uiState.value.header != null)
+        assertTrue(vm.uiState.value.imageUrls.isNotEmpty())
+        vm.onComposerChanged("TEST private draft")
+        vm.onImageSelected("content://test/private-image")
+        session.value = SessionState.SignedOut(null)
+        runCurrent()
+        assertNull(vm.uiState.value.header)
+        assertEquals("", vm.uiState.value.composerText)
+        assertNull(vm.uiState.value.pendingImageUri)
+        assertTrue(vm.uiState.value.imageUrls.isEmpty())
+        assertTrue(vm.uiState.value.messages is UiState.Error)
+    }
+
     @get:Rule
     val mainDispatcherRule = MainDispatcherRule()
 
