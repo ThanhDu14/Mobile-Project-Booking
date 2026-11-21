@@ -13,6 +13,9 @@ for(const uid of ["venue-test-owner","venue-test-player"]) {
   assert(app);assertEquals(app.status,"APPROVED");
   const venue=await fs.get(`venues/${app.__documentId}`);
   assertEquals(venue?.ownerId,uid);assertEquals(venue?.status,"ACTIVE");
+  assertEquals(venue?.courtCount,0);
+  assertEquals((app.venueDraft as Record<string,unknown>).courtCount,2);
+  assertEquals((await fs.query("courts",[],{parent:`venues/${app.__documentId}`})).length,0);
   const venues=await fs.query("venues",[{field:"ownerId",op:"EQUAL",value:uid}]);
   assertEquals(venues.length,uid==="venue-test-owner"?2:1);
   const documents=app.documentPaths as string[];
@@ -26,7 +29,7 @@ for(const uid of ["venue-test-owner","venue-test-player"]) {
     const response=await fetch(`${base}/storage/v1/object/public/venue-photos/${path}`);
     assertEquals(response.status,200);await response.body?.cancel();
   }
-  owners.push({uid,role:user?.role,ownerStatus:user?.ownerStatus,applicationId:app.__documentId,purpose:app.purpose,status:app.status,venueCount:venues.length,privateDocuments:documents.length});
+  owners.push({uid,role:user?.role,ownerStatus:user?.ownerStatus,applicationId:app.__documentId,purpose:app.purpose,status:app.status,venueCount:venues.length,activeCourts:venue?.courtCount,declaredCourts:2,privateDocuments:documents.length});
 }
 assertEquals((await fs.get("venues/venue-test-existing"))?.status,"ACTIVE");
 console.log(JSON.stringify({backend:"LOCAL Firebase Emulator + Supabase",owners,existingVenuePreserved:true,privateDocumentsNotPublic:true},null,2));
