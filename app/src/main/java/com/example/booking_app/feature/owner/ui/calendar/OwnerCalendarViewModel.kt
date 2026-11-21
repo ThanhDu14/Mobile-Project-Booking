@@ -1,5 +1,6 @@
 package com.example.booking_app.feature.owner.ui.calendar
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.booking_app.feature.owner.domain.OwnerVenueRepository
@@ -38,8 +39,9 @@ data class OwnerCalendarUiState(
 class OwnerCalendarViewModel @Inject constructor(
     private val repository: OwnerVenueRepository,
     private val calendarRepository: OwnerCalendarRepository,
+    private val savedStateHandle: SavedStateHandle = SavedStateHandle(),
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(OwnerCalendarUiState(isLoading = true))
+    private val _uiState = MutableStateFlow(OwnerCalendarUiState(isLoading = true, selectedVenueId = savedStateHandle["selectedVenueId"] ?: savedStateHandle["venueId"]))
     val uiState: StateFlow<OwnerCalendarUiState> = _uiState.asStateFlow()
     private var loadJob: Job? = null
 
@@ -51,6 +53,7 @@ class OwnerCalendarViewModel @Inject constructor(
     }
 
     fun selectVenue(venueId: String) {
+        savedStateHandle["selectedVenueId"] = venueId
         if (venueId == _uiState.value.selectedVenueId) return
         loadVenueCalendar(venueId)
     }
@@ -129,7 +132,7 @@ class OwnerCalendarViewModel @Inject constructor(
                 calendarRepository.observeSlots(venueId, dateKeys).collect { slotsByKey ->
                     val slots = dates.associate { date -> date to slotsByKey[date.format(SLOT_DATE_FORMAT)].orEmpty() }
                     _uiState.value = _uiState.value.copy(
-                        courts = courtsResult.getOrThrow().filter { it.isActive }.sortedBy { it.sortOrder },
+                        courts = courtsResult.getOrThrow().sortedBy { it.sortOrder },
                         slotsByDate = slots,
                         isLoading = false,
                         error = null,

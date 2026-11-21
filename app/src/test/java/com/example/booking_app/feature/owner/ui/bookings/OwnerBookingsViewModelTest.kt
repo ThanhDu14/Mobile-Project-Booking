@@ -46,6 +46,20 @@ class OwnerBookingsViewModelTest {
     @After
     fun tearDown() = Dispatchers.resetMain()
 
+    @Test fun resumeWithNavigationVenueDoesNotCancelAuthorityContextLoading() = runTest {
+        coEvery { venueRepository.getOwnedVenues() } coAnswers {
+            kotlinx.coroutines.delay(50)
+            Result.success(listOf(OwnerFixtures.venue))
+        }
+        val saved = androidx.lifecycle.SavedStateHandle(mapOf("venueId" to OwnerFixtures.venue.id))
+        val viewModel = OwnerBookingsViewModel(venueRepository, bookingRepository, saved)
+        viewModel.refresh() // Fragment.onResume, before getOwnedVenues returns.
+        advanceUntilIdle()
+        assertEquals(listOf(OwnerFixtures.venue), viewModel.uiState.value.venues)
+        assertEquals(OwnerFixtures.venue.id, viewModel.uiState.value.selectedVenueId)
+        assertFalse(viewModel.uiState.value.isLoading)
+    }
+
     @Test
     fun initLoadsOwnedVenuesAndObservesSelectedVenue() = runTest {
         val viewModel = OwnerBookingsViewModel(venueRepository, bookingRepository)
