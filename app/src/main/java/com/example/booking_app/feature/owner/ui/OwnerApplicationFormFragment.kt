@@ -42,6 +42,7 @@ class OwnerApplicationFormFragment : Fragment(R.layout.fragment_owner_applicatio
     private var bindingFields = false
     private var redirected = false
     private var flowStarted = false
+    private var locationMap: OwnerLocationMapController? = null
     private var renderedDistricts: List<com.example.booking_app.feature.account.domain.model.District>? = null
     private val photos = registerForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris -> handlePicked(uris, document = false) }
     private val documents = registerForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris -> handlePicked(uris, document = true) }
@@ -49,6 +50,8 @@ class OwnerApplicationFormFragment : Fragment(R.layout.fragment_owner_applicatio
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         _binding = FragmentOwnerApplicationFormBinding.bind(view)
         renderedDistricts = null
+        com.example.booking_app.core.ui.LocationPickerDialog.bind(this) { point -> viewModel.updateLocation(point.latitude,point.longitude) }
+        locationMap = OwnerLocationMapController(binding.locationPreview,viewLifecycleOwner,::showCoordinateDialog)
         val mode = arguments?.getString("mode") ?: "new"
         viewModel.initialize(resubmit = mode == "resubmit", forceNew = !flowStarted && savedInstanceState == null && (mode == "new" || mode == "addition"), additionalVenue = mode == "addition")
         flowStarted = true
@@ -97,6 +100,7 @@ class OwnerApplicationFormFragment : Fragment(R.layout.fragment_owner_applicatio
         binding.applicationTitle.setText(if (state.additionalVenue) R.string.owner_venue_add else R.string.owner_apply_title)
         binding.applicationRights.setText(if (state.additionalVenue) R.string.owner_additional_rights else R.string.owner_apply_player_rights)
         val editable = !state.loading && !state.busy && state.statusFresh
+        locationMap?.setEditable(editable)
         listOf(binding.venueName, binding.address, binding.venuePhone, binding.courtCount,
             binding.openTime, binding.closeTime, binding.representativeName, binding.representativePhone,
             binding.district, binding.changePin).forEach { it.isEnabled = editable }
@@ -125,6 +129,7 @@ class OwnerApplicationFormFragment : Fragment(R.layout.fragment_owner_applicatio
         }
         binding.district.setOnItemClickListener { _, _, position, _ -> state.districts.getOrNull(position)?.let { viewModel.update("districtId", it.id) } }
         binding.locationValue.text = draft.venue.location?.let { "${it.latitude}, ${it.longitude}" } ?: getString(R.string.owner_location_not_selected)
+        locationMap?.show(draft.venue.location,draft.venue.name)
         renderAttachments(binding.photoList, draft.venue.photoPaths, document = false)
         renderAttachments(binding.documentList, draft.documentPaths, document = true)
         renderUploadRows(binding.photoList, state.uploads.filterNot { it.document })
@@ -273,9 +278,9 @@ class OwnerApplicationFormFragment : Fragment(R.layout.fragment_owner_applicatio
     }
 
     private fun showCoordinateDialog() {
-        com.example.booking_app.core.ui.LocationPickerDialog.show(requireContext(), viewModel.uiState.value.draft.venue.location) { point ->
-            viewModel.updateLocation(point.latitude, point.longitude)
-        }
+        val state=viewModel.uiState.value
+        if(state.loading || state.busy || !state.statusFresh)return
+        com.example.booking_app.core.ui.LocationPickerDialog.show(this, viewModel.uiState.value.draft.venue.location)
     }
 
     private fun configureTimePicker(field: com.google.android.material.textfield.TextInputEditText, tag: String) {
@@ -296,5 +301,5 @@ class OwnerApplicationFormFragment : Fragment(R.layout.fragment_owner_applicatio
         }
     }
 
-    override fun onDestroyView() { _binding = null; super.onDestroyView() }
+    override fun onDestroyView() { locationMap=null;_binding = null; super.onDestroyView() }
 }

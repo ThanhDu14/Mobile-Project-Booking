@@ -153,8 +153,8 @@ class VenueAdditionDeviceTest {
         onView(withId(R.id.district)).perform(scrollTo(),click())
         onView(withText("TEST District")).inRoot(isPlatformPopup()).perform(click())
         onView(withId(R.id.changePin)).perform(scrollTo(),click())
-        onView(withHint(R.string.owner_latitude)).inRoot(isDialog()).perform(replaceText("10.77"),closeSoftKeyboard())
-        onView(withHint(R.string.owner_longitude)).inRoot(isDialog()).perform(replaceText("106.66"),closeSoftKeyboard())
+        onView(withId(R.id.latitude)).inRoot(isDialog()).perform(scrollTo(),replaceText("10.77"),closeSoftKeyboard())
+        onView(withId(R.id.longitude)).inRoot(isDialog()).perform(scrollTo(),replaceText("106.66"),closeSoftKeyboard())
         onView(withId(android.R.id.button1)).inRoot(isDialog()).perform(click())
         val context=InstrumentationRegistry.getInstrumentation().targetContext
         val resolver=context.contentResolver
@@ -221,11 +221,15 @@ class VenueAdditionDeviceTest {
             scenario.onActivity { activity ->
                 val controller=(activity.supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment).navController
                 ready=generateSequence(controller.currentDestination){it.parent}.any { it.id==graph }
-                if(ready) action(controller)
+                if(ready && graph != R.id.nav_owner) action(controller)
             }
             if(!ready) Thread.sleep(100)
         }
         assertTrue("Role graph must load",ready)
+        if(graph == R.id.nav_owner) {
+            waitFor(withId(R.id.calendarButton))
+            scenario.onActivity {activity -> action((activity.supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment).navController)}
+        }
     }
     private fun waitFor(matcher:Matcher<View>, dialog:Boolean = false) {
         val target = onView(isRoot())
