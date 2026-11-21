@@ -152,3 +152,13 @@ Hoàn tất các quyết định T001–T003 cần cho submit, Phase 2, rồi US
 - **FR-018** — T001, T015, T019, T021, T024, T026; luồng revoke do 120 đặt `ownerStatus=NONE` nhưng giữ application APPROVED và cho phép nộp mới đợi query/history được nhóm xác nhận.
 - **Success Criteria** — SC-001: T035 usability evaluation; SC-002: T015/T018/T020/T021; SC-003: T019/T022/T026/T028/T029; SC-004: T007/T008/T015/T018/T021/T023/T026/T029; SC-005: T002/T009/T010/T033/T034; SC-006: T001/T003/T016/T026/T028/T029; SC-007: T002/T009/T013/T016/T017/T027/T032/T033/T034.
 - Tất cả task checklist dùng format `- [ ] Tnnn [P?] [USn?] ...` với file path đích; setup/foundation/polish không gắn story label. Tests có trong kế hoạch vì Constitution yêu cầu.
+## Phase 7: Convergence
+
+- [X] T036 Revalidate initial onboarding and VENUE_ADDITION through the real Android form/upload/review/status/admin flow on local backends; verify rejection/resubmission, legacy purpose, deterministic venue creation and unchanged OWNER/APPROVED/old venues; record current evidence without claiming an unmeasured usability study (FR-001–FR-019, SC-001; Constitution II, IV).
+## Phase 8: Convergence
+
+- [X] T037 Integrate the map requested on 2026-11-21 using B's shared OsmdroidSetup/cache/tile provider and shuttlecock marker; retain map pin/coordinates through rotation, show loading/error/retry and attribution, add an inline application preview and verify real tile loading/pin selection on the physical phone (FR-001–FR-004; partial).
+
+- [X] T038 Preserve the positive declared court count in the initial/additional application draft, but initialize an approved venue's derived active courtCount to zero because no courts are configured yet; verify both approval flows still produce one venue and retain owner rights (user decision 2026-11-21).
+
+Verification 2026-11-21: [current local CI, physical phone and backend evidence](../../docs/validation/feature11-2026-11-21/README.md). Completion refers to implementation and the recorded checks; unmeasured reviewer/SLA/usability criteria remain separate.

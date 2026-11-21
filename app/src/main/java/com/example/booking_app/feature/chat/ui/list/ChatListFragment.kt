@@ -24,6 +24,7 @@ import com.example.booking_app.feature.chat.domain.chatErrorOf
 import com.example.booking_app.feature.chat.domain.model.ChatMode
 import com.example.booking_app.feature.chat.domain.model.ChatSummary
 import com.example.booking_app.feature.chat.ui.common.ChatUiText
+import com.google.android.material.chip.Chip
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -68,6 +69,9 @@ open class ChatListFragment : Fragment(R.layout.fragment_chat_list) {
         binding.chatList.addItemDecoration(DividerItemDecoration(requireContext(), lm.orientation))
 
         val isOwner = viewModel.mode == ChatMode.OWNER
+        binding.ownerSubtitle.isVisible = isOwner
+        binding.ownerFiltersScroll.isVisible = isOwner
+        binding.listFooter.setText(if (isOwner) R.string.chat_list_owner_footer else R.string.chat_list_player_footer)
         binding.emptyTitle.setText(if (isOwner) R.string.chat_empty_owner_title else R.string.chat_empty_player_title)
         binding.emptySubtitle.setText(if (isOwner) R.string.chat_empty_owner_subtitle else R.string.chat_empty_player_subtitle)
         binding.emptyJoinGroupButton.isVisible = !isOwner
@@ -78,6 +82,7 @@ open class ChatListFragment : Fragment(R.layout.fragment_chat_list) {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch { viewModel.state.collect(::render) }
+                launch { viewModel.ownerFilters.collect(::renderOwnerFilters) }
                 launch { viewModel.events.collect(::handle) }
             }
         }
@@ -103,9 +108,20 @@ open class ChatListFragment : Fragment(R.layout.fragment_chat_list) {
         val isEmpty = state is UiState.Empty
         binding.emptyContainer.isVisible = isEmpty
         binding.stateViews.root.isVisible = !isEmpty
-        binding.listFooter.isVisible = isEmbedded && state is UiState.Content
+        binding.listFooter.isVisible = (isEmbedded || viewModel.mode == ChatMode.OWNER) && state is UiState.Content
 
         if (isEmpty) {
+            val filtered = viewModel.mode == ChatMode.OWNER && viewModel.ownerFilters.value.isFiltered
+            binding.emptyTitle.setText(when {
+                filtered -> R.string.chat_owner_filtered_empty_title
+                viewModel.mode == ChatMode.OWNER -> R.string.chat_empty_owner_title
+                else -> R.string.chat_empty_player_title
+            })
+            binding.emptySubtitle.setText(when {
+                filtered -> R.string.chat_owner_filtered_empty_subtitle
+                viewModel.mode == ChatMode.OWNER -> R.string.chat_empty_owner_subtitle
+                else -> R.string.chat_empty_player_subtitle
+            })
             binding.chatList.isVisible = false
             adapter.submitList(emptyList())
             return
@@ -126,6 +142,32 @@ open class ChatListFragment : Fragment(R.layout.fragment_chat_list) {
             EmptyStateSpec(message = R.string.chat_empty_player_title, icon = R.drawable.ic_chat_24),
         )
         adapter.submitList((state as? UiState.Content)?.data.orEmpty())
+    }
+
+    private fun renderOwnerFilters(filters: OwnerInboxFilters) {
+        if (viewModel.mode != ChatMode.OWNER) return
+        binding.ownerFilters.removeAllViews()
+        fun add(label: String, selected: Boolean, select: () -> Unit) {
+            val chip = Chip(requireContext()).apply {
+                id = View.generateViewId()
+                text = label
+                isCheckable = true
+                isChecked = selected
+                setEnsureMinTouchTargetSize(true)
+                setOnClickListener { select() }
+            }
+            binding.ownerFilters.addView(chip)
+        }
+        add(getString(R.string.chat_owner_filter_all), !filters.isFiltered) { viewModel.selectOwnerFilter() }
+        add(getString(R.string.chat_owner_filter_unread, filters.unreadCount), filters.unreadOnly) {
+            viewModel.selectOwnerFilter(unreadOnly = true)
+        }
+        filters.venues.forEach { venue ->
+            add(venue.name.ifBlank { venue.id }, filters.venueId == venue.id) {
+                viewModel.selectOwnerFilter(venueId = venue.id)
+            }
+        }
+        if (viewModel.state.value is UiState.Empty) render(viewModel.state.value)
     }
 
     protected open fun openChat(chatId: String) {

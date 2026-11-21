@@ -40,3 +40,9 @@ This document records existing data/security boundaries only. It does not define
 6. How “active account” is queried for system broadcast and how large fan-out/retry is handled without adding unapproved schema.
 
 These are implementation blockers, not implied API design decisions.
+
+## Quyết định mở thêm cơ sở — 2026-11-20
+
+Hồ sơ bổ sung dùng purpose VENUE_ADDITION, độc lập với quyền OWNER/APPROVED. Hồ sơ cũ thiếu purpose thuộc OWNER_ONBOARDING. Duyệt tạo venues/{applicationId} một lần; từ chối/nộp lại không đổi tài khoản hoặc venue cũ. Không giới hạn số venue/hồ sơ.
+
+Hợp đồng đầy đủ: [owner-application-api.md](../../110-owner-onboarding/contracts/owner-application-api.md).

@@ -43,6 +43,18 @@ class OwnerVoucherViewModelTest {
     @After
     fun tearDown() = Dispatchers.resetMain()
 
+    @Test fun openingFromSecondVenuePreservesItAfterVenueListAndRefresh() = runTest {
+        val second = OwnerFixtures.venue.copy(id = "venue-second", name = "TEST Second")
+        coEvery { venueRepository.getOwnedVenues() } returns Result.success(listOf(OwnerFixtures.venue, second))
+        val saved = androidx.lifecycle.SavedStateHandle(mapOf("venueId" to second.id))
+        val viewModel = OwnerVoucherViewModel(venueRepository, voucherRepository, saved)
+        advanceUntilIdle()
+        assertEquals(second.id, viewModel.uiState.value.selectedVenueId)
+        viewModel.refresh()
+        advanceUntilIdle()
+        assertEquals(second.id, viewModel.uiState.value.selectedVenueId)
+    }
+
     @Test
     fun initLoadsOwnedVenuesAndSelectsFirst() = runTest {
         val viewModel = OwnerVoucherViewModel(venueRepository, voucherRepository)

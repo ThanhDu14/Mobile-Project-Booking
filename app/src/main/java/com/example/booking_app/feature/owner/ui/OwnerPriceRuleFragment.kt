@@ -49,7 +49,9 @@ class OwnerPriceRuleFragment : Fragment(R.layout.fragment_owner_price_rule) {
         binding.rules.adapter = adapter
         binding.retry.setOnClickListener { viewModel.load() }
         binding.labelInput.showSoftInputOnFocus=false
-        binding.labelInput.setText(priceLabels()[0])
+        editingRuleId = savedInstanceState?.getString("editingRuleId") ?: editingRuleId
+        selectedLabel = savedInstanceState?.getString("selectedLabel") ?: selectedLabel
+        binding.labelInput.setText(priceLabels()[listOf("NORMAL","PEAK","WEEKEND").indexOf(selectedLabel).coerceAtLeast(0)])
         binding.labelInput.setOnClickListener {
             MaterialAlertDialogBuilder(requireContext()).setTitle(R.string.owner_price_kind)
                 .setItems(priceLabels()) { _,index -> selectedLabel=listOf("NORMAL","PEAK","WEEKEND")[index]; binding.labelInput.setText(priceLabels()[index]) }.show()
@@ -85,6 +87,9 @@ class OwnerPriceRuleFragment : Fragment(R.layout.fragment_owner_price_rule) {
     }
 
     private fun render(state: OwnerPriceRuleUiState) {
+        binding.saveRule.isEnabled = state.isFresh && !state.isSubmitting && !state.isLoading
+        listOf(binding.daysInput,binding.startTimeInput,binding.endTimeInput,binding.priceInput,binding.labelInput)
+            .forEach { it.isEnabled = binding.saveRule.isEnabled }
         binding.progress.visibility = if (state.isLoading) View.VISIBLE else View.GONE
         binding.retry.visibility = if (state.error != null) View.VISIBLE else View.GONE
         binding.empty.visibility = if (state.isEmpty) View.VISIBLE else View.GONE
@@ -128,6 +133,12 @@ class OwnerPriceRuleFragment : Fragment(R.layout.fragment_owner_price_rule) {
             gapDialog?.dismiss()
             gapDialog = null
         }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString("editingRuleId", editingRuleId)
+        outState.putString("selectedLabel", selectedLabel)
     }
 
     private fun clearForm() {

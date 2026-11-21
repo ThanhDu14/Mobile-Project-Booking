@@ -1,0 +1,27 @@
+{
+  "backend": "LOCAL Firebase Emulator + Supabase",
+  "owners": [
+    {
+      "uid": "venue-test-owner",
+      "role": "OWNER",
+      "ownerStatus": "APPROVED",
+      "applicationId": "ba3dc31a-22f4-44f6-a7f9-19951d59fadd",
+      "purpose": "VENUE_ADDITION",
+      "status": "APPROVED",
+      "venueCount": 2,
+      "privateDocuments": 1
+    },
+    {
+      "uid": "venue-test-player",
+      "role": "OWNER",
+      "ownerStatus": "APPROVED",
+      "applicationId": "adc67566-dfc6-4e07-8870-eb00c64f01c6",
+      "purpose": "OWNER_ONBOARDING",
+      "status": "APPROVED",
+      "venueCount": 1,
+      "privateDocuments": 1
+    }
+  ],
+  "existingVenuePreserved": true,
+  "privateDocumentsNotPublic": true
+}

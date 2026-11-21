@@ -56,6 +56,9 @@ Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 | 50  | 2026-11-20 | Kiểm thử kiểm duyệt và hàng chờ trên máy vivo V2247 với backend local; lưu kết quả, ảnh và kiểm tra cron có lượt chờ | 08, 09, 11, 12 |
 | 51  | 2026-11-20 | Bổ sung Rules đọc nội dung cho admin, sửa preview bài/tin nhắn và kiểm thử lại trên vivo V2247 | 09, 12 |
 | 52  | 2026-11-20 | Resolve conflict khi gộp main, giữ luồng hàng chờ 081 và tích hợp owner/admin; kiểm tra đủ ba job CI | 08, 11, 12 |
+| 53  | 2026-11-20 | Triển khai Thêm cơ sở từ form Android tới xét duyệt backend, giữ quyền OWNER và kiểm thử máy thật | 11, 12 |
+| 54  | 2026-11-21 | Tiếp tục Feature 11, tích hợp bản đồ và kiểm chứng vận hành OWNER | 11, 12 |
+| 55  | 2026-11-21 | Tích hợp tin nhắn OWNER với module chat 091, sửa lỗi phiên/outbox và kiểm thử Firebase/Supabase trên máy thật | 09, 11 |
 
 ---
 
@@ -5216,5 +5219,230 @@ resolve conflict dam bao giu code cua ca 2 nhanh, dam bao pass all ci
 - Kiểm tra TypeScript và toàn bộ Edge Functions chạy trên Auth/Firestore Emulator cùng Supabase Storage local. Log lượt chốt: `.gradle/merge-ci-edge-check.log`, `.gradle/merge-ci-edge.log`, `.gradle/merge-ci-edge-final.log`.
 - Không còn marker conflict hoặc file unmerged; `git diff --cached --check` pass. Cache compiler, lock sinh tự động và log trong `.gradle/` không thuộc phần source được gộp.
 - Các kiểm tra được chạy tại local theo ba job trong `.github/workflows/ci.yml`; không gọi đây là kết quả GitHub Actions. Không deploy backend/Rules hoặc thay đổi dữ liệu production trong phiên resolve conflict.
+
+---
+
+## Mục 53: Hoàn thiện Thêm cơ sở trong Cơ sở của tôi
+
+| Thông tin | Nội dung |
+| --- | --- |
+| Ngày | 2026-11-20 |
+| Người thực hiện | Minh Nhựt |
+| Nhóm tính năng liên quan | 11 (onboarding, cơ sở), 12 (xét duyệt) |
+| Công cụ AI | Codex (GPT-6), speckit-implement, humanizer |
+| Mục đích | Cho OWNER đã được duyệt mở thêm cơ sở qua hồ sơ riêng, giữ quyền và dữ liệu cơ sở cũ |
+| Nhánh Git | fix-feature/11-owner |
+
+### Prompt đã dùng
+
+> Hãy triển khai hoàn chỉnh tính năng “Thêm cơ sở” trong phần “Cơ sở của tôi”, từ Android đến backend và kiểm thử trên máy thật.
+>
+> Không dừng ở sửa nút, điều hướng hoặc hiển thị thông báo.
+
+Yêu cầu kèm theo gồm sáu quyết định nghiệp vụ, đọc Feature 110/111/120, hỗ trợ từ chối/nộp lại, bảo vệ quyền và giấy tờ, chống gửi/duyệt lặp, chạy đủ ba job CI và lưu bằng chứng máy thật. Người dùng yêu cầu tiếp tục sau khi phiên kiểm thử bị gián đoạn.
+
+### Tóm tắt phản hồi của AI
+
+- Tìm nguyên nhân ở nút chỉ ghi thông báo, backend chặn APPROVED, truy vấn hồ sơ mới nhất dùng chung cho quyền tài khoản, admin review luôn đổi role và upload chỉ nhận PLAYER.
+- Thêm purpose OWNER_ONBOARDING/VENUE_ADDITION. Hồ sơ cũ thiếu purpose vẫn là onboarding. Hồ sơ bổ sung giữ nguyên OWNER/APPROVED, claims và venue cũ; duyệt tạo đúng venues/{applicationId}, từ chối chỉ đổi hồ sơ/lý do. Server kiểm tra lại quyền applicant/admin trong transaction.
+- Tái sử dụng form/review/status với ngữ cảnh rõ ràng, thêm lịch sử hồ sơ, tách draft theo UID/ngữ cảnh, giữ UUID qua retry. Sửa loading để dữ liệu tải về không ghi đè phần vừa nhập và dùng một dropdown chọn quận. Danh sách cơ sở đọc lại từ server khi quay lại/mở ứng dụng.
+- Mở upload private cho owner hợp lệ, giữ signed URL giấy tờ 300 giây và chỉ công khai ảnh cơ sở. Truy vấn trạng thái tài khoản loại hồ sơ bổ sung; màn trạng thái làm mới quyền qua SessionManager.
+- Đồng bộ FR-018, Quyết định 3A, hợp đồng API và schema purpose trong tài liệu 110/111/120. Không thêm collection hoặc giới hạn số hồ sơ/cơ sở.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+| --- | --- | --- |
+| Luồng onboarding hiện có | Tái sử dụng theo mode | Giữ validation, review, upload, retry và đăng ký lần đầu. |
+| Trạng thái hồ sơ bổ sung | Tách khỏi ownerStatus tài khoản | Tránh hạ quyền hoặc chuyển nhầm màn OWNER khi hồ sơ mới bị từ chối. |
+| Quyền tạo venue phía client | Giữ bị chặn | Venue mới phải qua admin review và transaction/create precondition. |
+| Rules và Storage | Giữ boundary, bổ sung hồi quy | Owner chỉ đọc hồ sơ của mình; giấy tờ không public; không tự sửa metadata server. |
+| Kiểm thử máy thật | Dùng package adminlocal và backend local | Kiểm tra UI/API thật bằng tài khoản, ảnh và giấy tờ TEST, không ghi dữ liệu production. |
+| Các thay đổi hàng chờ/admin trước đó | Giữ nguyên | Chạy toàn bộ CI để phát hiện hồi quy ngoài phạm vi thêm cơ sở. |
+
+### Cách kiểm chứng
+
+Kết quả, log ba job CI, kiểm tra backend và ảnh vivo V2247 được lưu tại docs/validation/venue-addition-2026-11-20/. Xem results.json và README.md để đối chiếu lượt chốt, số test, giới hạn và môi trường. Đây là chạy local theo workflow của repo, không phải kết quả GitHub Actions. Chưa deploy hosted hoặc đo SLA/mạng 4G/tablet thật.
+
+Lượt chốt: Android BUILD SUCCESSFUL với 1.369 test, 0 lỗi và 2 skipped; Edge type check pass, 396 passed/0 failed; Rules 27 file pass, 265 passed/4 skipped. Máy thật báo OK (2 tests), có 19 ảnh. Backend xác nhận owner cũ vẫn OWNER/APPROVED và có đúng hai venue; owner mới có một venue. Giấy tờ không tải được qua URL public, ảnh cơ sở tải được sau duyệt.
+
+Trong các lượt đầu, kiểm thử phát hiện lỗi loading, bộ chọn quận chồng cửa sổ và các điều kiện chờ test chưa nhận dialog/hàng đợi rỗng/venue ngoài màn hình. Phiên làm việc cũng bị gián đoạn khiến dịch vụ local dừng và draft TEST còn lại. Các lỗi ứng dụng được sửa; fixture và bộ chờ được chỉnh trước lượt chốt. Không coi lượt test bị ngắt là đã pass.
+
+---
+
+## Mục 54: Tiếp tục Feature 11, tích hợp bản đồ và kiểm chứng vận hành OWNER
+
+| Thông tin | Nội dung |
+| --- | --- |
+| Ngày | 2026-11-21 |
+| Người thực hiện | Minh Nhựt |
+| Nhóm tính năng liên quan | 11 (110, 111, 112), 12 (duyệt hồ sơ); kiểm tra hồi quy hàng chờ 081 và community/chat 090/091 |
+| Công cụ AI | Codex (GPT-6), `$speckit-converge`, `$speckit-implement`, `$humanizer:humanizer` |
+| Mục đích | Đối chiếu yêu cầu với luồng production, sửa phần vận hành OWNER còn lỗi, dùng chung bản đồ với phần B và kiểm chứng bằng CI local cùng điện thoại thật |
+| Nhánh Git | `fix-feature/11-owner` |
+
+### Prompt đã dùng
+
+> Hãy tiếp tục triển khai hoàn chỉnh Feature 11 — Quản lý sân dành cho OWNER, bao gồm:
+> - 110: Đăng ký chủ sân và hồ sơ mở thêm cơ sở.
+> - 111: Quản lý cơ sở, sân con, bảng giá, khóa/mở giờ.
+> - 112: Vận hành booking, lịch, drop-in, check-in, voucher và thống kê.
+>
+> Hãy khảo sát rồi thực hiện đến khi các luồng hoạt động đầy đủ từ Android đến backend. Không dừng ở báo cáo, sửa điều hướng hoặc thay thông báo.
+
+Yêu cầu kèm theo là đọc constitution và tài liệu liên quan, dùng `$speckit-converge` rồi `$speckit-implement`, truy vết từ màn hình tới DI và dữ liệu thực, giữ các tích hợp đã merge, chạy đủ ba job CI, dùng fixture sạch và lưu bằng chứng máy thật. Người dùng yêu cầu giữ nguyên AI_log_4 trong lúc triển khai, không tự commit, push hoặc deploy hosted.
+
+Trong quá trình thực hiện, người dùng bổ sung:
+
+> gan map vo nhu feat cua B
+
+Hai quyết định nghiệp vụ được người dùng trả lời qua câu hỏi làm rõ:
+
+- Cửa sổ check-in drop-in: "Từ 30 phút trước buổi đến khi kết thúc".
+- Cách tính `courtCount`: "Tự tính số sân đang hoạt động, cho phép bằng 0 khi tất cả ngừng hoạt động".
+
+Sau khi nhận bàn giao, người dùng yêu cầu cập nhật AI_log cho lần triển khai này bằng `$humanizer:humanizer` và tuân thủ cấu trúc file. Mục này được bổ sung theo yêu cầu mới đó.
+
+### Tóm tắt phản hồi của AI
+
+- Đọc tài liệu 110/111/112 và các hợp đồng liên quan, đối chiếu đường gọi production thay vì lấy task `[X]` hoặc tên class Placeholder/ContractPending làm kết luận. Bổ sung task theo phần thiếu, đồng bộ mapping/contracts/quickstart và giữ checklist reviewer. Luồng onboarding và mở thêm cơ sở đã có từ mục 53 được kiểm tra hồi quy, gồm giữ OWNER/APPROVED, cơ sở cũ, giấy tờ private và tạo đúng `venues/{applicationId}` khi duyệt.
+- Chuyển CRUD bảng giá qua transaction `sync-venue-price`: kiểm tra quyền hiện tại, ownership, trạng thái venue, dữ liệu rule và chồng giờ; ghi rule cùng `minPricePerHour`. Request tạo giống nhau dùng cùng ID, retry cũ không ghi đè rule đã sửa. Rules chặn client ghi vòng ngoài.
+- Thêm `owner-manage-court` và nối repository Android để thêm/sửa/đổi thứ tự sân cùng việc tính lại số sân `isActive=true`. Cho phép count bằng 0; Rules cấm client tự ghi courts/courtCount. Giữ ID tạo sân qua retry và SavedStateHandle, kiểm tra thứ tự stale, giữ booking/slot lịch sử. Khi admin duyệt, venue mới có count 0 vì chưa cấu hình sân; số khai báo dương vẫn nằm trong `venueDraft`.
+- Sửa context nhiều cơ sở và giữ draft của drop-in/voucher qua điều hướng, recreation và xoay màn hình. Khắc phục refresh booking hủy lượt tải context, voucher tự chọn lại cơ sở đầu và form nạp dữ liệu server đè phần đang sửa. Bổ sung guard gửi trùng và bỏ session ID thành công dựng tại client khi chưa có kết quả server.
+- Kiểm tra claims cùng profile hiện tại trong transaction, kể cả nhánh ADMIN; chặn quyền bị thu hồi, tài khoản khóa/đang xóa và mutation không hợp lệ trên venue HIDDEN/LOCKED. Drop-in tạo lặp đối chiếu session/slot thật; roster kiểm tra đúng venue. Check-in dùng cửa sổ từ 30 phút trước giờ bắt đầu đến trước giờ kết thúc, giữ chống replay và các helper hàng chờ 081/cron `dropin-close` đã merge.
+- Thống kê nhận cấu hình availability cùng snapshot server thay vì tải một lần. Sửa mở/xác nhận kỳ tùy chọn và hủy observation cũ khi khoảng ngày sai. Giữ sân inactive trong lịch đọc; dùng hàm sinh slot nửa giờ nằm trọn trong giờ mở cửa, tránh vòng lặp LocalTime khi giờ đóng là 23:59.
+- Gắn preview và picker bản đồ thật vào form đăng ký/thêm cơ sở và màn sửa cơ sở. Tái sử dụng `OsmdroidSetup`, MAPNIK, cache, chế độ tối và marker cầu lông của B. DialogFragment giữ ghim chưa xác nhận qua xoay, cho chạm/kéo ghim hoặc nhập tọa độ, có loading/error/retry và attribution. Sửa user agent và callback tải tile; nút vị trí chờ dữ liệu cơ sở tải xong. Tọa độ đã xác nhận được lưu qua repository hiện có và đọc lại từ server.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+| --- | --- | --- |
+| `sync-venue-price`, `SyncVenuePriceApi`, owner venue repository và Rules | Chỉnh sửa boundary ghi giá | Ghi rule/minimum cùng transaction, kiểm tra overlap và xử lý retry mà không để ghi một phần. |
+| `owner-manage-court`, `OwnerCourtApi`, `admin-review-application`, validation và Rules | Bổ sung, chỉnh sửa theo quyết định người dùng | Tính count từ sân hoạt động, cho phép 0, bảo vệ bộ đếm và giữ lịch sử; tách số khai hồ sơ khỏi số sân đã cấu hình. |
+| Dashboard, ViewModel, repository và form booking/calendar/drop-in/voucher/statistics | Chỉnh context, draft và trạng thái tải | Giữ đúng venue đang chọn, tránh mất dữ liệu nhập hoặc dùng kết quả cũ sau lỗi. |
+| `_shared/owner-access.ts`, owner session/check-in handlers | Chỉnh kiểm tra quyền và idempotency | Dùng quyền/trạng thái hiện tại trong transaction, trả kết quả server thật và áp dụng cửa sổ check-in đã chốt. |
+| `owner-statistics-source`, statistics repository, `OwnerOperatingSlots` | Chỉnh nguồn cấu hình và cách sinh slot | Đối chiếu được tiền/occupancy/peak với fixture, không treo ở giờ đóng 23:59 và không làm mất hàng lịch sử. |
+| `LocationPickerDialog`, `LocationPickerFragment`, `OwnerLocationMapController`, layout phone/w600dp | Tái sử dụng cấu hình map chung của B | Có tile thật, giữ ghim qua xoay, hỗ trợ xác nhận/hủy và lưu GeoPoint; không nhập UI riêng của feature khác. |
+| Luồng onboarding/addition, owner-docs và tích hợp 081/090/091/admin đã merge | Giữ và kiểm tra hồi quy | Bảo toàn quyền OWNER, venue cũ, giấy tờ private và các hành vi liên feature. |
+| Unit/Edge/Rules tests, instrumentation, seed/verify scripts và tài liệu | Bổ sung, cập nhật | Kiểm tra race/retry/quyền, chạy UI với dữ liệu TEST và lưu bằng chứng có đối chiếu backend. |
+| Tạo venue từ client, ghi trực tiếp aggregate, giới hạn mới về số cơ sở/hồ sơ, deploy hosted | Không thực hiện | Giữ hợp đồng xét duyệt, dữ liệu server quản lý và phạm vi người dùng đã cho phép. |
+
+### Cách kiểm chứng
+
+- Chạy local theo ba job trong `.github/workflows/ci.yml`. Android `lint testDebugUnitTest assembleDebug --stacktrace` báo BUILD SUCCESSFUL: 247 suites, 1.639 test, 0 failure, 2 skipped; lint 0 errors, 850 warnings. Edge `deno check .` pass và toàn bộ suite có 513 passed, 0 failed. Rules có 30 file pass, 311 test pass, 4 skipped với `SKIP_BLOCKED=1`. Đây là job tương đương chạy local, chưa phải kết quả GitHub Actions. [Kết quả CI](../validation/feature11-2026-11-21/ci-results.json).
+- Các ca tự động kiểm tra overlap/court mutation đồng thời, gửi tạo lặp, retry sau khi dữ liệu đã sửa, ownership giả, quyền bị thu hồi, tài khoản đang xóa, venue LOCKED và các mốc thời gian check-in/replay. Fixture dùng namespace emulator riêng, dọn trước lượt chạy; các test tranh chấp cũ được giữ trong toàn suite. [Log Edge](../validation/feature11-2026-11-21/edge-tests.log), [log Rules](../validation/feature11-2026-11-21/firestore-rules.log).
+- Trên vivo V2247 Android 15, APK riêng `com.example.booking_app.adminlocal` chạy với Firebase Auth/Firestore Emulator project `demo-admin-repair` và Supabase local `http://127.0.0.1:54321`. Chín ca hồi quy và một ca cold start đều pass, tổng 10 ca độc lập. Instrumentation thao tác view thật và gọi repository/backend; riêng OS file picker được Espresso Intents cấp ảnh TEST. Không cộng hai ca map đã chạy riêng vào tổng. [Log hồi quy](../validation/feature11-2026-11-21/device-tests.log), [log cold start](../validation/feature11-2026-11-21/cold-start-test.log).
+- Kiểm thử máy thật gồm cả hai luồng hồ sơ, từ chối/nộp lại/duyệt và signed-document preview; sửa/ngừng/đổi thứ tự sân, count 2 lên 3 rồi về 2, về 0 và kích hoạt lại thành 2; lưu cơ sở khi count 0. Đã chọn ghim trên tile thật, xoay dialog giữ tọa độ, lưu rồi mở lại đọc GeoPoint từ SERVER; tọa độ ngoài Việt Nam bị chặn và hủy không ghi thay đổi. Tile lấy từ OpenStreetMap qua mạng/cache chung với B, dữ liệu ứng dụng vẫn ở backend local.
+- Các luồng vận hành đã bấm trên điện thoại gồm duyệt/từ chối/hủy booking, hoàn ví TEST 130.000đ, check-in xác nhận thu tiền và từ chối replay, khóa/mở slot, lịch ngày/tuần, drop-in hai sân ở cơ sở thứ hai, sửa sức chứa/check-in và voucher sửa/tắt không đổi usedCount. Force-stop rồi chạy runner mới không đăng nhập lại; danh sách đủ ba venue, chuyển OWNER/PLAYER/OWNER, deep link và Back vẫn giữ đúng tài khoản. Các ca admin/hàng chờ đã merge cũng được chạy lại; cron local retry không tạo hiệu ứng trùng.
+- Đối chiếu backend độc lập xác nhận trạng thái booking, ví, slot, voucher, tọa độ map và số sân hoạt động. Fixture thống kê có PAID 100.000đ, DEPOSITED 30.000đ, REFUNDED 20.000đ, occupancy 2/15 = 13,333333%, peak 08:00 trong 60 phút. Hai venue mới duyệt có count 0, hồ sơ vẫn giữ số khai 2; owner cũ giữ venue và quyền, giấy tờ không public. [Backend assertions](../validation/feature11-2026-11-21/backend-assertions.json).
+- Lưu 63 ảnh TEST cùng hash APK/source, log và mô tả môi trường tại [báo cáo kiểm chứng](../validation/feature11-2026-11-21/README.md), [results.json](../validation/feature11-2026-11-21/results.json). Đã loại ảnh lỗi cũ khỏi phần bàn giao, khôi phục animation/thiết lập giữ sáng của điện thoại và kiểm tra `git diff --check`. Không sửa checklist reviewer; chưa commit, push hoặc deploy hosted trong lượt triển khai.
+- Giới hạn còn lại: chưa kiểm tra camera quét QR, push delivery, mọi nhánh lỗi mạng/process death, toàn bộ đường chat 091 hoặc tablet thật; chưa đo SLA 4G/usability. Trạng thái LOCKED của nút chọn map được rà bằng code và boundary tự động, chưa có ca bấm riêng trên điện thoại. Availability dùng cấu hình hiện tại cùng snapshot, chưa có schema lịch sử cấu hình. Count legacy được tính lại khi mutation sân kế tiếp; dữ liệu hosted chưa được backfill. Những phần này không được tính là đã nghiệm thu.
+
+---
+
+## Mục 55: Tích hợp tin nhắn OWNER và kiểm thử trao đổi PLAYER ↔ OWNER
+
+| Thông tin | Nội dung |
+| --- | --- |
+| Ngày | 2026-11-21 |
+| Người thực hiện | Minh Nhựt |
+| Nhóm tính năng liên quan | 09 (091 chat), 11 (112 vận hành chủ sân); đối chiếu 011 chế độ tài khoản, 030 nhắn chủ sân và 100 thông báo |
+| Công cụ AI | Codex (GPT-6), `$speckit-implement` |
+| Mục đích | Nối tab Tin nhắn OWNER với module chat và backend hiện có, hoàn thiện hộp thư khách hàng, sửa lỗi phân tách phiên và kiểm chứng trao đổi hai chiều trên điện thoại thật |
+| Nhánh Git | `fix-feature/11-owner` |
+
+### Prompt đã dùng
+
+```text
+$speckit-implement Hãy tích hợp hoàn chỉnh tính năng TIN NHẮN cho chế độ CHỦ SÂN trong repository hiện tại. Thực hiện trực tiếp trên code, kết nối backend thật và kiểm thử; không chỉ phân tích hoặc lập kế hoạch.
+
+1. Đọc yêu cầu và xác định phần cần tích hợp
+- Đọc AGENTS.md và hướng dẫn liên quan.
+- Đọc spec.md, plan.md, tasks.md, contracts/, handoffs/ và ui/ của:
+  - specs/091-chat
+  - specs/112-owner-operations
+- Đối chiếu phần liên quan trong spec 011 (chế độ tài khoản), 030 (nhắn chủ sân từ chi tiết sân) và 100 (thông báo).
+- Khảo sát module feature/chat, FirestoreChatRepository, SupabaseChatMediaRepository, ChatListFragment, ChatFragment, nav_chat.xml và tab_owner_messages.
+- Xác định phần đã hoạt động, phần chưa được nối vào chế độ OWNER, placeholder và lỗi tích hợp.
+
+2. Tích hợp điều hướng và danh sách tin nhắn OWNER
+- Nối tab “Tin nhắn” của OWNER với module chat hiện có; tái sử dụng repository, ViewModel, Fragment và navigation phù hợp.
+- Không xây hệ thống chat riêng cho OWNER hoặc tạo schema song song.
+- Hiển thị đúng các cuộc trò chuyện với khách hàng theo hợp đồng 091, gồm danh tính, cơ sở được hỏi gần nhất, tin cuối, thời gian và trạng thái chưa đọc.
+- Phân biệt ngữ cảnh quản lý sân và ngữ cảnh người chơi khi cùng một tài khoản chuyển chế độ.
+- Kiểm tra trạng thái tab được chọn, Back, mở lại ứng dụng và deep link; không tạo navigation graph hoặc màn hình trùng lặp.
+
+3. Hoàn thiện trao đổi PLAYER ↔ OWNER
+- PLAYER mở “Nhắn tin cho chủ sân” từ chi tiết sân, gửi tin; OWNER nhận trong danh sách và trả lời; PLAYER nhận phản hồi realtime.
+- Theo spec 091: chỉ một cuộc trò chuyện cho mỗi cặp PLAYER–OWNER, kể cả OWNER có nhiều cơ sở. Khi hỏi cơ sở khác, mở lại chat cũ và cập nhật cơ sở được hỏi gần nhất.
+- Kiểm tra gửi/nhận, lịch sử, phân trang, trạng thái đang gửi/thất bại/thử lại, đánh dấu đã đọc và bộ đếm chưa đọc theo spec.
+- Hoàn thiện gửi ảnh, báo cáo hoặc thao tác khác chỉ khi nằm trong phạm vi hợp đồng chat hiện có.
+- Chống gửi lặp, listener trùng, mất draft hoặc cập nhật nhầm cuộc trò chuyện khi điều hướng.
+
+4. Backend và phân quyền
+- Tái sử dụng chat-send, chat-action, chat-media-url và schema hiện có; Firestore/Supabase đảm nhiệm đúng trách nhiệm của dự án.
+- Không dùng mock data hoặc chỉ cập nhật trạng thái cục bộ rồi báo thành công.
+- Kiểm tra membership, danh tính người gửi và quyền truy cập media phía server; không tin ownerId/userId do client gửi để cấp quyền.
+- Đối chiếu hành vi khi venue ẩn/khóa, OWNER bị thu hồi quyền hoặc tài khoản bị khóa/xóa theo hợp đồng 091 và 011; không tự áp điều kiện vận hành booking sang chat.
+- Không nới Rules/RLS để tính năng chạy được.
+- Dừng listener và xóa state không phù hợp khi đăng xuất, đổi tài khoản hoặc chuyển chế độ; không để lộ tin nhắn của tài khoản trước.
+
+5. Thông báo và giao diện
+- Kiểm tra tích hợp CHAT_MESSAGE với spec 100 theo envelope và deep link đã chốt trong handoff 091.
+- Bấm thông báo phải mở đúng chat, đúng quyền và ngữ cảnh điều hướng; kiểm tra cả khi ứng dụng đang mở và khởi động từ thông báo.
+- Không tự triển khai lại toàn bộ hệ thống thông báo.
+- Đối chiếu giao diện với tài liệu ui/ và design system hiện có; sửa chữ bị cắt, nút vỡ dòng, bàn phím che ô nhập, loading/empty/error và retry.
+- Nếu thiếu thiết kế hoặc hợp đồng, báo rõ phần thiếu; không tự mở rộng nghiệp vụ.
+
+6. Kiểm thử và sửa lỗi
+- Nếu có thiết bị Android thật kết nối, build/cài và thao tác kiểm thử trực tiếp.
+- Dùng các tài khoản PLAYER/OWNER kiểm thử đã được phép; nếu chỉ có một thiết bị, kiểm tra luân phiên kết hợp xác minh backend.
+- Kiểm tra hai chiều gửi/nhận, nhiều cơ sở cùng OWNER không tạo chat trùng, unread/read, chuyển tài khoản/chế độ, mất mạng/thử lại và dữ liệu sau restart.
+- Chụp ảnh và lưu log đã lọc; không ghi token, signed URL private hoặc nội dung trò chuyện cá nhân vào báo cáo.
+- Chạy unit test, Deno/Emulator tests, build và lint phù hợp; không skip test hoặc bỏ qua lỗi để làm xanh.
+- Sửa lỗi thuộc phạm vi tích hợp và phụ thuộc cần thiết; giữ nguyên thay đổi sẵn có, tránh refactor không liên quan.
+
+7. Bàn giao
+- Tóm tắt luồng đã tích hợp và các lỗi đã sửa.
+- Liệt kê file thay đổi, nguồn dữ liệu/backend được sử dụng.
+- Báo kết quả test và đường dẫn ảnh/log.
+- Phân biệt rõ kiểm thử thực tế với kết luận từ đọc code/test tự động.
+- Nêu phần chưa xác minh, phụ thuộc còn thiếu và lý do cụ thể.
+- Không tự commit hoặc push.
+
+Bắt đầu bằng khảo sát module chat và đường điều hướng tab_owner_messages, sau đó triển khai và kiểm thử đến khi hoàn tất các tiêu chí có thể xác minh. Cập nhật tiến độ ngắn gọn bằng tiếng Việt.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Xác định tab `tab_owner_messages` còn trả thông báo “đang được phát triển”, trong khi `ownerChatListFragment` và module chat 091 đã tồn tại. Nối tab vào deep link `smashnow://chat/owner`, giữ menu OWNER, trạng thái tab, Back và dùng chung navigation graph.
+- Hoàn thiện hộp thư OWNER bằng subtitle, bộ lọc Tất cả/Chưa đọc/Cơ sở, empty riêng khi lọc và chú thích phân biệt chế độ. Danh tính khách, cơ sở gần nhất, preview, thời gian và unread lấy từ `ChatSummary` hiện có; bộ lọc không mở thêm listener Firestore.
+- Gắn badge đúng tab OWNER/PLAYER, phát 0 khi thay UID và bỏ badge của menu cũ. Hủy công việc theo phiên, xóa header/draft/ảnh chọn/signed URL/event cũ và chặn kết quả trả về sau khi coroutine bị hủy. Sửa outbox chỉ xử lý tin có senderId đúng tài khoản hiện tại, kiểm tra lại trước gửi sau upload hoặc chờ thử lại.
+- Sửa lỗi query inbox bị từ chối quyền nhưng hiển thị thành danh sách rỗng: trả lỗi `NOT_PARTICIPANT` để UI xử lý lỗi/retry. Không nới Rules/RLS, không thêm schema hoặc backend chat riêng và không áp điều kiện ACTIVE của booking vào chat đã tồn tại.
+- Tái sử dụng `FirestoreChatRepository`, các API `chat-action`/`chat-send`/`chat-media-url` và `SupabaseChatMediaRepository`. Người dùng đăng nhập luân phiên tài khoản kiểm thử trên vivo; AI thao tác chat của cơ sở AUDIT, đối chiếu dữ liệu server và lưu bằng chứng. Không commit, push hoặc deploy hosted trong lượt này.
+- Ghi nhận thiếu phần triển khai `send-notification` và dịch vụ nhận FCM Android của feature 100 trong repository. Giữ envelope/deep link đã chốt, kiểm tra bằng test và ADB; không báo đã nhận hoặc bấm thông báo FCM thật. Thêm và hoàn tất T069–T074 trong tasks 112 theo phạm vi tích hợp và kiểm chứng có thể thực hiện; giữ nguyên checklist reviewer và các tiêu chí SLA/usability còn mở của 091.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+| --- | --- | --- |
+| `MainActivity`, `tab_owner_messages`, `ownerChatListFragment`, `nav_chat.xml` | Nối tab và tái sử dụng destination/graph hiện có | Bỏ placeholder, giữ đúng tab và Back, tránh tạo màn hình chat OWNER trùng lặp. |
+| `ChatListViewModel`, `ChatListFragment`, layout và strings chat | Bổ sung bộ lọc và trạng thái OWNER | Hiển thị đúng khách/cơ sở/tin cuối, phân biệt rỗng thật với không có kết quả lọc và giải thích ngữ cảnh tài khoản. |
+| `UnreadChatsReaderImpl`, `ChatViewModel`, `SignedUrlCache` | Chỉnh vòng đời và state theo phiên | Không giữ badge/draft/media của tài khoản trước hoặc áp dụng kết quả bất đồng bộ đã bị hủy. |
+| `ChatOutbox` | Kiểm tra chủ sở hữu entry và kiểm tra lại trước gửi | Chặn gửi khi đã đăng xuất hoặc đổi tài khoản trong lúc upload; giữ retry của đúng tài khoản. |
+| `FirestoreChatRepository` | Chỉnh ánh xạ lỗi quyền inbox | Không biến lỗi permission thành hộp thư rỗng và làm mất khả năng báo lỗi/thử lại. |
+| Firestore, Supabase Storage và ba Edge Functions chat | Tái sử dụng backend thật | Giữ một chat cho mỗi cặp PLAYER–OWNER, dữ liệu tin/read ở Firestore và ảnh ở bucket private `chat-media`. Không tạo migration hoặc nới quyền. |
+| JVM tests, Deno/Rules tests hiện có, tasks 112 và bằng chứng | Bổ sung regression, chạy kiểm tra và ghi kết quả | Phân biệt lỗi tái hiện trước sửa, test đạt sau sửa, thao tác thật và giới hạn chưa xác minh. |
+| Hệ thống thông báo 100, schema song song, dữ liệu booking/venue legacy | Không mở rộng hoặc chỉnh sửa | Phần thông báo đầy đủ là phụ thuộc còn thiếu; hosted chỉ kiểm thử chat của cơ sở AUDIT đã được cho phép. |
+
+### Cách kiểm chứng
+
+- Trước sửa, bộ badge/session có 35 test với 2 ca mới thất bại; bộ outbox/permission có 26 test với 3 ca mới thất bại. Sau sửa, lệnh `:app:testDebugUnitTest --tests '*chat*' --tests '*SignedUrlCacheTest' :app:assembleDebug :app:lintDebug` báo BUILD SUCCESSFUL; 105 test liên quan đạt, 0 failure/error/skipped, lint 0 errors và còn 849 warnings trên repository. [Kết quả JVM](../validation/owner-chat-2026-11-21/unit-test-results.json), [log Android](../validation/owner-chat-2026-11-21/logs/android.log).
+- Deno chạy bốn file test `_shared/chats`, `chat-action`, `chat-send`, `chat-media-url` trên Firebase Auth/Firestore Emulator riêng, project `demo-smashnow`: 25 passed, 0 failed/ignored và có type check. Rules `test/chats.test.ts` đạt 15/15, không skip. Các ca bao gồm một chat/cặp, đổi cơ sở gần nhất, venue khóa/OWNER hết quyền với chat đã có, membership, gửi lặp, media và envelope `CHAT_MESSAGE`. Đây là kiểm tra local liên quan, không phải chạy toàn bộ ba job CI hoặc test tự động vào hosted. [Log Deno](../validation/owner-chat-2026-11-21/logs/deno.log), [log Rules](../validation/owner-chat-2026-11-21/logs/firestore-rules.log).
+- Trên vivo V2247 Android 15, package `com.example.booking_app`, PLAYER mở “Nhắn tin cho chủ sân” từ chi tiết AUDIT151126, gửi chữ và ảnh TEST; OWNER nhận, xem ảnh và trả lời; PLAYER thấy preview/badge 1, mở chat rồi unread về 0. Ảnh gửi chỉ là giao diện hộp thư rỗng, không phải ảnh cá nhân. Cùng tài khoản OWNER chuyển sang PLAYER không thấy chat khách hàng, chuyển lại OWNER vẫn có; đã kiểm tra tab được chọn, bộ lọc cơ sở, Back và deep link nóng/lạnh.
+- Tắt mạng tạm thời khi gửi một tin TEST: máy hiện banner mất mạng và Đang gửi; khôi phục mạng thì tin tự gửi thành công đúng một lần. Wi-Fi/mobile data được khôi phục trong `finally` và đọc lại đều bằng 1 như ban đầu. Script PowerShell báo `NativeCommandError` vì dòng tiến độ `adb pull` đi qua stderr dù ảnh đã tải thành công; kết luận dựa trên UI, ảnh và dữ liệu server. Restart bằng deep link vẫn còn đủ lịch sử, ảnh và phản hồi.
+- Đối chiếu hosted backend xác nhận 1 chat DIRECT và 4 message ID khác nhau, đều `NORMAL`: 3 tin PLAYER gồm ảnh/tin offline và 1 phản hồi OWNER. Unread OWNER lần đầu là 2, sau trả lời PLAYER là 1; cuối phiên cả hai bằng 0. Ảnh hiển thị được cho hai thành viên, HEAD không đăng nhập qua endpoint public trả 400. Chỉ lưu metadata TEST, không token/signed URL/nội dung cá nhân. [Metadata cuối](../validation/owner-chat-2026-11-21/backend-final.json).
+- Bước cuối trên OWNER: badge 1 và bộ lọc Chưa đọc hiện đúng chat TEST; đọc xong badge biến mất và bộ lọc rỗng. Kết thúc ở OWNER, chọn Tất cả. [Ảnh badge](../validation/owner-chat-2026-11-21/screenshots/owner-unread-tab-badge.png), [ảnh sau đọc](../validation/owner-chat-2026-11-21/screenshots/owner-read-clears-filter-and-badge.png). Snapshot logcat cuối phiên không có dòng khớp AndroidRuntime:E/Firestore:W trong 2000 dòng gần nhất; không coi đây là thu log liên tục cả phiên.
+- Danh sách file sửa, bảng đối chiếu yêu cầu, ảnh và log đã lọc nằm trong [báo cáo tích hợp OWNER chat](../validation/owner-chat-2026-11-21/README.md). Chưa xác minh giao nhận/bấm thông báo FCM, SLA với hai máy mở chat đồng thời, hay thao tác tay các ca phân trang trên 30 tin, timeout offline đủ 60 giây, từ chối camera, report/recall/block và khóa/xóa tài khoản hoặc thu hồi OWNER thật. Nhiều cơ sở cùng OWNER được kiểm tra bằng Deno D1/D2, chưa đổi ngữ cảnh sang venue legacy trên hosted. Không đánh đồng các test tự động đó với kiểm thử máy thật.
 
 ---

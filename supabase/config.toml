@@ -533,5 +533,8 @@ verify_jwt = false
 [functions.owner-statistics-source]
 verify_jwt = false
 
+[functions.owner-manage-court]
+verify_jwt = false
+
 [functions.ai-search-parse]
 verify_jwt = false

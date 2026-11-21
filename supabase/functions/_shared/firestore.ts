@@ -350,7 +350,7 @@ async function rollbackTransaction(transaction: string): Promise<void> {
 }
 
 /** Fetches the latest application for a UID without requiring a composite index. */
-export async function latestOwnerApplication(uid: string): Promise<Record<string, unknown> | null> {
+export async function listOwnerApplications(uid: string): Promise<Record<string, unknown>[]> {
   const res = await request(`${apiBase()}/${databaseRoot()}/documents:runQuery`, {
     method: "POST",
     body: JSON.stringify({
@@ -366,9 +366,17 @@ export async function latestOwnerApplication(uid: string): Promise<Record<string
     .map((row) => row.document)
     .filter((doc): doc is NonNullable<typeof doc> => !!doc)
     .map((doc) => ({ ...decodeFields(doc.fields ?? {}), __documentId: doc.name.split("/").pop() }));
-  if (docs.length === 0) return null;
-  docs.sort((a, b) => String(b.submittedAt ?? "").localeCompare(String(a.submittedAt ?? "")));
-  return docs[0];
+  const submitted = (doc: Record<string, unknown>) => {
+    const value = doc.submittedAt;
+    return value instanceof Date ? value.getTime() : typeof value === "string" ? Date.parse(value) || 0 : 0;
+  };
+  docs.sort((a, b) => submitted(b) - submitted(a) || String(a.__documentId).localeCompare(String(b.__documentId)));
+  return docs;
+}
+
+export async function latestOwnerApplication(uid: string): Promise<Record<string, unknown> | null> {
+  const docs = await listOwnerApplications(uid);
+  return docs.find(doc => doc.purpose == null || doc.purpose === "OWNER_ONBOARDING") ?? null;
 }
 
 /** Tạo document mới; đã có thì `commit` ném `ALREADY_EXISTS`. */

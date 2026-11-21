@@ -8,9 +8,14 @@ const verifyToken = () => Promise.resolve({uid:"owner",appRole:"OWNER"} as Verif
 function dependencies(role="OWNER") {
   let queries=0;
   const tx: FirestoreTransaction = {
-    get: path=>Promise.resolve(path==="users/owner" ? {role,ownerStatus:"APPROVED",accountStatus:"ACTIVE"} : {ownerId:"owner"}),
+    get: path=>Promise.resolve(path==="users/owner" ? {role,ownerStatus:"APPROVED",accountStatus:"ACTIVE"} : {ownerId:"owner",openTime:"0600",closeTime:"2200"}),
     query: (collection,filters,options)=>{
       queries++;
+      if (collection === "courts") {
+        assertEquals(options?.parent,"venues/v1");
+        return Promise.resolve([{id:"c1",path:"venues/v1/courts/c1",data:{isActive:true}}]);
+      }
+      if (collection === "priceRules") return Promise.resolve([{id:"p1",path:"venues/v1/priceRules/p1",data:{daysOfWeek:[1,2,3,4,5,6,7],startTime:"0600",endTime:"2200",pricePerHour:60000}}]);
       assert(filters.some(f=>f.field==="venueId" && f.value==="v1"));
       assert(options?.select?.length);
       assert(!options.select.includes("qrToken"));
@@ -37,7 +42,9 @@ Deno.test("statistics projection is venue-scoped, deduplicated and never returns
   assertEquals(body.bookings[0].total,100000);
   const json=JSON.stringify(body);
   for(const secret of ["qrToken","MUST_NOT_LEAVE_SERVER","private-player","userName","Private"]) assert(!json.includes(secret));
-  assertEquals(deps.queryCount,4);
+  assertEquals(deps.queryCount,6);
+  assertEquals(body.availability.courtIds,["c1"]);
+  assertEquals(body.availability.priceRules[0].pricePerHour,60000);
 });
 
 Deno.test("statistics rejects current PLAYER authority before reading any financial data",async()=>{

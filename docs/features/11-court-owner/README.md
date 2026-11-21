@@ -1,48 +1,20 @@
-# Nhóm 11 — Quản lý sân (chủ sân)
+# Feature 11 — Quản lý sân dành cho OWNER
 
-| Thuộc tính | Giá trị |
+Các spec: [110 đăng ký/hồ sơ bổ sung](../../../specs/110-owner-onboarding/spec.md), [111 cơ sở/sân/giá/khóa giờ](../../../specs/111-owner-venue-setup/spec.md), [112 vận hành](../../../specs/112-owner-operations/spec.md). Phụ trách D. Code Android MVVM/XML/Hilt; Firestore là dữ liệu nghiệp vụ, Supabase Functions/Storage là boundary server/upload.
+
+| Phạm vi | Triển khai |
 |---|---|
-| Mã nhóm | `11` |
-| Vai trò sử dụng | Chủ sân |
-| Thành viên phụ trách | D |
-| App tham khảo | Tự thiết kế (app tham khảo không có / không cho dùng thử) |
-| Trạng thái | ⬜ Chưa bắt đầu |
-| Nhánh Git | `feature/11-<ten-tinh-nang>` |
-| Spec (Spec Kit) | _Chưa tạo — chạy `/speckit-specify` rồi dán link `specs/NNN-.../spec.md` vào đây_ |
+| Onboarding và thêm nhiều cơ sở | Form/upload/review/status/admin approve/reject/resubmit; purpose OWNER_ONBOARDING hoặc VENUE_ADDITION; missing purpose vẫn onboarding |
+| Cơ sở/sân con | Server-confirmed owned list, sửa/ẩn, recurring toggle; owner-manage-court transaction tạo/sửa/tắt/đổi thứ tự và tính courtCount từ số sân hoạt động, cho phép 0; không hard-delete lịch sử |
+| Bảng giá | Validation/coverage/overlap; server transaction cho rule và minPricePerHour; Rules chặn client bypass |
+| Khóa/mở giờ | manage-slot-blocks nguyên tử; giữ HOLD/BOOKED/DROP_IN và ownership |
+| Booking/check-in | Queue/deadline/detail, approve/reject/cancel/refund, QR/mã chữ và xác nhận thu tiền; server chống replay |
+| Lịch và drop-in | Ngày/tuần, nhiều court, roster/check-in; capacity/waitlist helper 081 và dropin-close |
+| Voucher | CRUD/toggle venue, uniqueness toàn hệ thống, counters do server quản lý |
+| Thống kê | Projection bookings/slots + availability cùng snapshot; revenue/refund, occupancy/peak; custom range ≤30 ngày |
 
-## Phạm vi chức năng
+Mở thêm cơ sở cần admin duyệt trước khi công khai, tạo đúng venues/{applicationId}. Hồ sơ bổ sung pending/rejected/resubmit không đổi OWNER/APPROVED, claims hoặc venue cũ. Không đặt giới hạn số cơ sở/hồ sơ. Owner-docs private; signed URL kiểm tra quyền hiện tại. Chuyển OWNER/PLAYER, session và chat/community đã merge được giữ.
 
-Lấy từ [Proposal](../../proposal/Proposal.html), mục 5.
+[Mapping production 112](../../../specs/112-owner-operations/implementation-mapping.md) và [báo cáo kiểm chứng hiện tại](../../validation/feature11-2026-11-21/README.md) chỉ rõ phần sửa, ba job CI, máy thật, backend local và giới hạn còn lại. Các tên Placeholder/ContractPending không phản ánh production binding; không dùng checklist đã tick thay bằng chứng.
 
-- [ ] Đăng ký chủ sân: hồ sơ cơ sở (tên, địa chỉ ghim bản đồ, số sân, giờ mở cửa, người đại diện, SĐT), ảnh cơ sở và giấy tờ
-- [ ] Theo dõi trạng thái duyệt; khi chờ duyệt chỉ dùng như người chơi
-- [ ] Sau khi được duyệt: nhận thông báo và mở khóa chức năng quản lý
-- [ ] Thêm, sửa, ẩn cơ sở; quản lý từng sân con
-- [ ] Ghim vị trí cơ sở trên bản đồ hoặc nhập địa chỉ để lấy tọa độ
-- [ ] Thiết lập bảng giá theo khung giờ và ngày trong tuần
-- [ ] Khóa giờ (bảo trì, sự kiện, khách đặt trực tiếp)
-- [ ] Duyệt hoặc từ chối đơn đặt
-- [ ] Xem lịch tổng hợp theo ngày, tuần
-- [ ] Mở buổi vãng lai; xem và duyệt danh sách đăng ký, check-in bằng QR
-- [ ] Tạo voucher khuyến mãi
-- [ ] Thống kê doanh thu, tỉ lệ lấp đầy, khung giờ đông nhất (biểu đồ)
-
-## Ảnh chụp tham khảo
-
-Lưu ở [`screenshots/`](screenshots/) và đặt tên theo dạng `11_court-owner_buocX_mo-ta.png`.
-
-| Bước | Ảnh | Mô tả |
-|---|---|---|
-| 1 | | |
-
-## Ghi chú thiết kế / quyết định
-
-- 
-
-## Kiểm thử và minh chứng (Definition of Done)
-
-- [ ] Có đủ các chức năng nhỏ ở trên và xử lý lỗi cơ bản
-- [ ] Giao diện đúng thiết kế, hiển thị tốt trên ít nhất 2 kích thước màn hình
-- [ ] Đã được review và merge vào `develop`
-- [ ] Có kịch bản kiểm thử và ảnh/video minh chứng
-- [ ] Có log AI (nếu dùng AI) trong [`docs/ai-log/`](../../ai-log/)
+Không khẳng định đã đạt SLA 4G hoặc usability khi chưa đo; không ghi nhận merge/deploy chỉ từ build local.

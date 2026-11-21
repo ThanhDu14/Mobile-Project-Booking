@@ -1,5 +1,6 @@
 package com.example.booking_app.feature.owner.ui.bookings
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.booking_app.feature.owner.domain.OwnerVenueRepository
@@ -42,9 +43,10 @@ data class OwnerBookingsUiState(
 class OwnerBookingsViewModel @Inject constructor(
     private val venueRepository: OwnerVenueRepository,
     private val bookingRepository: OwnerBookingRepository,
+    private val savedStateHandle: SavedStateHandle = SavedStateHandle(),
 ) : ViewModel() {
     private val queue = OwnerBookingQueue()
-    private val _uiState = MutableStateFlow(OwnerBookingsUiState(isLoading = true))
+    private val _uiState = MutableStateFlow(OwnerBookingsUiState(isLoading = true, selectedVenueId = savedStateHandle["selectedVenueId"] ?: savedStateHandle["venueId"]))
     val uiState: StateFlow<OwnerBookingsUiState> = _uiState.asStateFlow()
     private var observationJob: Job? = null
     private var tickerJob: Job? = null
@@ -70,10 +72,11 @@ class OwnerBookingsViewModel @Inject constructor(
 
     fun refresh() {
         val venueId = _uiState.value.selectedVenueId
-        if (venueId == null) loadVenues() else observeBookings(venueId)
+        if (venueId == null || _uiState.value.venues.isEmpty()) loadVenues() else observeBookings(venueId)
     }
 
     fun selectVenue(venueId: String) {
+        savedStateHandle["selectedVenueId"] = venueId
         if (venueId != _uiState.value.selectedVenueId) observeBookings(venueId)
     }
 

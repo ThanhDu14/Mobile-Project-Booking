@@ -1,5 +1,7 @@
 # Kế hoạch triển khai: Thiết lập cơ sở của chủ sân
 
+> Triển khai hiện tại 2026-11-21 và giới hạn kiểm chứng: [báo cáo Feature 11](../../docs/validation/feature11-2026-11-21/README.md). Giữ kiến trúc gốc; tham chiếu contract hiện hành thay các gate planning đã được đóng.
+
 **Nhánh**: `111-owner-venue-setup` | **Ngày**: 2026-10-16 | **Đặc tả**: [spec.md](spec.md)
 
 **Đầu vào**: `specs/111-owner-venue-setup/spec.md`
@@ -87,5 +89,9 @@ supabase/functions/ # Chỉ dùng nếu cần giao dịch slot phía server đư
 6. **Lỗi và khôi phục**: Ánh xạ validation trường, quyền, xung đột/trạng thái cũ, lỗi mạng/kết quả chưa rõ và lỗi server vào trạng thái giao diện. Nếu không rõ thao tác ghi đã thành công chưa, tải lại dữ liệu có thẩm quyền trước khi thử lại; cache chỉ để hiển thị, không dùng để cấp quyền. Giữ nội dung biểu mẫu khi lỗi.
 
 ## Theo dõi độ phức tạp
+
+### Bổ sung 2026-11-20: mở thêm cơ sở
+
+Theo Quyết định 3A và FR-018 đã cập nhật, cả venue đầu tiên và venue bổ sung đều do admin review tạo. Client thêm cơ sở bằng form/review/status tái sử dụng, với mode VENUE_ADDITION và lịch sử hồ sơ riêng. ownerApplications thêm purpose tương thích hồ sơ cũ; ownerStatus/role/claims chỉ đổi khi cấp hoặc thu hồi quyền, không đổi khi xét hồ sơ bổ sung. Backend dùng transaction, UUID giữ trong draft và venue ID bằng application ID để chống gửi/duyệt lặp. Kiểm chứng gồm onboarding cũ, bổ sung, quyền bị thu hồi, race, ba job CI và điện thoại thật với backend local.
 
 Không đề xuất vi phạm Constitution hoặc dependency mới. Thay đổi slot nguyên tử phía server là yêu cầu từ nguyên tắc bảo mật và toàn vẹn booking hiện có. Việc dùng lại Edge Function nào hay bổ sung function chuyên biệt phải chờ làm rõ hợp đồng trong tài liệu research, không suy đoán trước trong kế hoạch.

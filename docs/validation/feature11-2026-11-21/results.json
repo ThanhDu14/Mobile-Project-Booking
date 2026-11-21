@@ -1,0 +1,64 @@
+{
+  "verifiedAt": "2026-11-21T05:06:08.815Z",
+  "head": "a4dd9be647c0efda6c44560f0c39b96b57e4a3cc",
+  "dirty": true,
+  "ci": {
+    "scope": "Local equivalents of .github/workflows/ci.yml; GitHub Actions not triggered",
+    "head": "a4dd9be647c0efda6c44560f0c39b96b57e4a3cc",
+    "android": {
+      "status": "PASS",
+      "command": "gradlew lint testDebugUnitTest assembleDebug --stacktrace",
+      "suites": 247,
+      "tests": 1639,
+      "failures": 0,
+      "skipped": 2,
+      "lint": "0 errors, 850 warnings"
+    },
+    "edge": {
+      "status": "PASS",
+      "typecheck": "deno check .",
+      "command": "deno test -A --no-check",
+      "passed": 513,
+      "failed": 0
+    },
+    "rules": {
+      "status": "PASS",
+      "files": 30,
+      "passed": 311,
+      "skipped": 4,
+      "environment": {
+        "SKIP_BLOCKED": "1",
+        "project": "demo-smashnow"
+      }
+    }
+  },
+  "physical": {
+    "device": "vivo V2247",
+    "android": 15,
+    "applicationId": "com.example.booking_app.adminlocal",
+    "backend": "Firebase Auth/Firestore Emulator demo-admin-repair + Supabase local 127.0.0.1:54321",
+    "maps": "OpenStreetMap MAPNIK network tiles and shared cache",
+    "regressions": 9,
+    "coldStart": 1,
+    "passed": 10,
+    "failed": 0,
+    "screenshots": 63,
+    "productionFragmentsAndRepositories": true,
+    "osFilePicker": "TEST image returned by Espresso Intents; actual upload and private download exercised",
+    "settingsRestored": true
+  },
+  "apk": {
+    "appSha256": "030c1e65614419a49e569976c4476fd2e0a1feecdb01d25dab48caa3fe07777e",
+    "testSha256": "4bb8c72a806211be547855878d8504939aee387be12b76531593d59314612462"
+  },
+  "backendAssertions": "backend-assertions.json",
+  "sourceHashes": "source-hashes.json",
+  "limitations": [
+    "GitHub Actions not triggered; local equivalents only",
+    "No hosted deployment/backfill or hosted device test",
+    "Optical camera QR scan and push delivery not verified",
+    "Not all network failure branches or process death types exercised on phone",
+    "No measured 4G SLA, participant usability study or physical tablet verification",
+    "Legacy courtCount repairs on next court mutation; hosted backfill still required"
+  ]
+}

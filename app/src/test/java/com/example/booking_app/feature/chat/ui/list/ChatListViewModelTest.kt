@@ -270,6 +270,29 @@ class ChatListViewModelTest {
     }
 
     @Test
+    fun `owner filters unread and venue without opening another listener`() = runTest {
+        chatsFlow.value = listOf(
+            summary("read", updatedAtSec = 30).copy(ownerId = "owner1", venueId = "v1", venueName = "Cơ sở A"),
+            summary("unread", updatedAtSec = 20, unreadCount = 2).copy(ownerId = "owner1", venueId = "v2", venueName = "Cơ sở B"),
+            summary("other-owner", updatedAtSec = 40, unreadCount = 5).copy(ownerId = "owner2"),
+        )
+        val vm = createViewModel(mode = ChatMode.OWNER, uid = "owner1")
+        runCurrent()
+        assertEquals(1, vm.ownerFilters.value.unreadCount)
+        assertEquals(listOf("v1", "v2"), vm.ownerFilters.value.venues.map { it.id })
+        vm.selectOwnerFilter(unreadOnly = true)
+        assertEquals(listOf("unread"), (vm.state.value as UiState.Content).data.map { it.id })
+        vm.selectOwnerFilter(venueId = "v1")
+        assertEquals(listOf("read"), (vm.state.value as UiState.Content).data.map { it.id })
+        chatsFlow.value = chatsFlow.value.filter { it.id != "read" }
+        runCurrent()
+        assertEquals(UiState.Empty, vm.state.value)
+        assertEquals(1, chatsFlow.subscriptionCount.value)
+        vm.selectOwnerFilter()
+        assertEquals(listOf("unread"), (vm.state.value as UiState.Content).data.map { it.id })
+    }
+
+    @Test
     fun `cold start deep link cho phien khoi phuc xong truoc khi yeu cau dang nhap`() = runTest {
         val sessionFlow = MutableStateFlow<SessionState>(SessionState.Loading)
         every { sessionManager.sessionState } returns sessionFlow

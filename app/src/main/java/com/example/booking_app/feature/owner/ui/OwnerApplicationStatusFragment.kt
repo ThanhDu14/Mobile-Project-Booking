@@ -22,7 +22,6 @@ import com.example.booking_app.feature.owner.domain.OwnerApplicationState
 import androidx.core.content.ContextCompat
 import coil3.load
 import coil3.request.crossfade
-import com.google.firebase.auth.FirebaseAuth
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
@@ -30,7 +29,6 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.tasks.await
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -48,6 +46,10 @@ class OwnerApplicationStatusFragment : Fragment(R.layout.fragment_owner_applicat
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         _binding = FragmentOwnerApplicationStatusBinding.bind(view)
+        arguments?.getString("applicationId")?.let {
+            viewModel.initialize(additionalVenue = true, applicationId = it)
+        }
+        if (arguments?.getString("applicationId") == null && arguments?.getString("mode") != "current") viewModel.initialize(forceNew = true)
         binding.backButton.setOnClickListener { findNavController().navigateUp() }
         binding.statusAction.setOnClickListener { continueForCurrentState() }
         binding.statusMessage.setOnClickListener { viewModel.refreshStatus() }
@@ -62,7 +64,7 @@ class OwnerApplicationStatusFragment : Fragment(R.layout.fragment_owner_applicat
     private fun render(ui: OwnerApplicationUiState) {
         if (_binding == null) return
         binding.statusProgress.isVisible = ui.loading
-        val status = ui.status?.ownerStatus
+        val status = ui.applicationState
         state = status
         role = ui.status?.role
         if (ui.message != null && ui.status == null) {
@@ -83,7 +85,7 @@ class OwnerApplicationStatusFragment : Fragment(R.layout.fragment_owner_applicat
                 applyBannerColors(R.color.sn_lamp_container, R.color.sn_on_lamp_container, R.drawable.ic_hourglass_24)
                 binding.statusTitle.setText(R.string.owner_status_pending)
                 binding.statusSubtitle.text = app?.submittedAt?.let { getString(R.string.owner_submitted_at, formatDate(it), getString(R.string.owner_status_pending_message)) } ?: getString(R.string.owner_status_pending_message)
-                binding.statusAction.setText(R.string.owner_continue_player)
+                binding.statusAction.setText(if (ui.additionalVenue) R.string.owner_continue_management else R.string.owner_continue_player)
                 binding.rejectReason.isVisible = false
                 binding.timeline.isVisible = true
                 bindSubmittedInfo(app?.draft)
@@ -104,7 +106,7 @@ class OwnerApplicationStatusFragment : Fragment(R.layout.fragment_owner_applicat
             OwnerApplicationState.APPROVED -> {
                 applyBannerColors(R.color.sn_court_container, R.color.sn_on_court_container, R.drawable.ic_check_20)
                 binding.statusTitle.setText(R.string.owner_status_approved)
-                binding.statusSubtitle.setText(R.string.owner_status_approved_message)
+                binding.statusSubtitle.setText(if (ui.additionalVenue) R.string.owner_additional_approved_message else R.string.owner_status_approved_message)
                 binding.statusAction.setText(R.string.owner_continue_management)
                 binding.rejectReason.isVisible = false
                 binding.timeline.isVisible = false
@@ -277,9 +279,9 @@ class OwnerApplicationStatusFragment : Fragment(R.layout.fragment_owner_applicat
             viewModel.refreshStatus()
             return
         }
-        if ((state == OwnerApplicationState.APPROVED && role != "OWNER") ||
+        if (!viewModel.uiState.value.additionalVenue && ((state == OwnerApplicationState.APPROVED && role != "OWNER") ||
             (state != null && state != OwnerApplicationState.APPROVED && role != "PLAYER")
-        ) {
+        )) {
             viewModel.refreshStatus()
             return
         }
@@ -287,10 +289,11 @@ class OwnerApplicationStatusFragment : Fragment(R.layout.fragment_owner_applicat
             OwnerApplicationState.NONE, null -> findNavController().navigate(R.id.action_ownerApplicationStatus_to_form, Bundle().apply { putString("mode", "new") })
             OwnerApplicationState.REJECTED -> findNavController().navigate(R.id.action_ownerApplicationStatus_to_form, Bundle().apply { putString("mode", "resubmit") })
             OwnerApplicationState.PENDING -> {
-                if (!findNavController().popBackStack(R.id.accountFragment, false)) findNavController().navigateUp()
+                if (viewModel.uiState.value.additionalVenue) findNavController().navigate("smashnow://owner/venues".toUri())
+                else if (!findNavController().popBackStack(R.id.accountFragment, false)) findNavController().navigateUp()
             }
             OwnerApplicationState.APPROVED -> viewLifecycleOwner.lifecycleScope.launch {
-                runCatching { FirebaseAuth.getInstance().currentUser?.getIdToken(true)?.await() }
+                runCatching { viewModel.refreshSession() }
                 findNavController().navigate("smashnow://owner/venues".toUri())
             }
         }

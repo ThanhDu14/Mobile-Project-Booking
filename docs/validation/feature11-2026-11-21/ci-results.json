@@ -1,0 +1,30 @@
+{
+  "scope": "Local equivalents of .github/workflows/ci.yml; GitHub Actions not triggered",
+  "head": "a4dd9be647c0efda6c44560f0c39b96b57e4a3cc",
+  "android": {
+    "status": "PASS",
+    "command": "gradlew lint testDebugUnitTest assembleDebug --stacktrace",
+    "suites": 247,
+    "tests": 1639,
+    "failures": 0,
+    "skipped": 2,
+    "lint": "0 errors, 850 warnings"
+  },
+  "edge": {
+    "status": "PASS",
+    "typecheck": "deno check .",
+    "command": "deno test -A --no-check",
+    "passed": 513,
+    "failed": 0
+  },
+  "rules": {
+    "status": "PASS",
+    "files": 30,
+    "passed": 311,
+    "skipped": 4,
+    "environment": {
+      "SKIP_BLOCKED": "1",
+      "project": "demo-smashnow"
+    }
+  }
+}

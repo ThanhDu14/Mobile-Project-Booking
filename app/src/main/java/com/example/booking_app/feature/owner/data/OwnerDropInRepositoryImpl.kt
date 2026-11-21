@@ -6,6 +6,7 @@ import com.example.booking_app.feature.owner.domain.dropin.OwnerDropInRegistrati
 import com.example.booking_app.feature.owner.domain.dropin.OwnerDropInRepository
 import com.example.booking_app.feature.owner.domain.dropin.OwnerDropInSession
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Source
 import com.google.firebase.firestore.ListenerRegistration
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.functions.functions
@@ -107,9 +108,11 @@ class OwnerDropInRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getRoster(venueId: String, sessionId: String): Result<List<OwnerDropInRegistration>> = runCatching {
+        val session = firestore.collection("dropInSessions").document(sessionId).get(Source.SERVER).await()
+        check(session.exists() && session.getString("venueId") == venueId) { "Buổi chơi không thuộc cơ sở đã chọn." }
         val snapshot = firestore.collection("dropInSessions").document(sessionId)
             .collection("registrations")
-            .get()
+            .get(Source.SERVER)
             .await()
 
         snapshot.documents.map { doc ->
@@ -124,7 +127,6 @@ class OwnerDropInRepositoryImpl @Inject constructor(
     }
 
     override suspend fun createSession(draft: OwnerDropInDraft): Result<String> = runCatching {
-        val courtId = draft.courtIds.firstOrNull() ?: ""
         val response = functionErrors.invokeWithAuthRetry {
             supabase.functions.invoke(
                 "owner-create-session",
@@ -142,7 +144,9 @@ class OwnerDropInRepositoryImpl @Inject constructor(
             )
         }
         val jsonObj = Json.parseToJsonElement(response.bodyAsText()).jsonObject
-        jsonObj["sessionId"]?.jsonPrimitive?.content ?: "dropin_${courtId}_${draft.date}"
+        checkNotNull(jsonObj["sessionId"]?.jsonPrimitive?.content?.takeIf { it.isNotBlank() }) {
+            "Chưa xác nhận được mã buổi chơi. Hãy tải lại hoặc gửi lại cùng nội dung."
+        }
     }
 
     override suspend fun updateSession(venueId: String, sessionId: String, draft: OwnerDropInDraft): Result<Unit> = runCatching {

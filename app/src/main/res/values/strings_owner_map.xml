@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="owner_map_loading">Đang tải bản đồ…</string>
+    <string name="owner_map_retry">Tải lại bản đồ</string>
+    <string name="owner_map_failed">Chưa tải được bản đồ. Bạn có thể thử lại hoặc nhập tọa độ.</string>
+    <string name="owner_map_unselected">Chưa chọn vị trí. Chạm để ghim cơ sở.</string>
+    <string name="owner_map_preview_description">Bản đồ vị trí %1$s. Chạm để đổi ghim.</string>
+    <string name="owner_map_attribution">© OpenStreetMap contributors</string>
+    <string name="owner_map_pin_hint">Chạm bản đồ hoặc kéo ghim để chọn vị trí.</string>
+</resources>

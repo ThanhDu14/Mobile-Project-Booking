@@ -1,5 +1,7 @@
 # Nghiên cứu kỹ thuật: Feature 112
 
+> Cập nhật triển khai 2026-11-21: các gate endpoint/DI đã được đối chiếu và đóng theo [contract hiện tại](contracts/owner-operations-boundaries.md), [mapping](implementation-mapping.md) và [bằng chứng](../../docs/validation/feature11-2026-11-21/README.md). Các ghi chú cần chốt của bản planning bên dưới là lịch sử; nguồn thống kê đã chọn projection 1–30 ngày, không dailyStats; voucher venue thuộc 112; check-in drop-in dùng [startAt - 30 phút, endAt).
+
 **Ngày**: 2026-10-16 · **Nguồn chính**: `spec.md`, Constitution, Database README, spec 110/111/040/041/050/060/080/081/100/120, hướng dẫn phân công W1–W2.
 
 ## R1 — Quyền owner và ranh giới server

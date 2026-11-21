@@ -101,3 +101,9 @@ Thu hồi owner không đổi application `APPROVED` hoặc venue status. Đối
 1. Field schema cho `districts`, `amenities`, `systemStats`, `dailyStats` chưa có trong README; metrics, aggregate timestamp/source và CRUD category semantics chưa xác định.
 2. `DROP_IN` report target chưa có hide behavior được nêu.
 3. Claim + Firestore multi-document writes + notification không có transaction chung; server recovery/idempotency chưa được đặc tả.
+
+## Quyết định mở thêm cơ sở — 2026-11-20
+
+Hồ sơ bổ sung dùng purpose VENUE_ADDITION, độc lập với quyền OWNER/APPROVED. Hồ sơ cũ thiếu purpose thuộc OWNER_ONBOARDING. Duyệt tạo venues/{applicationId} một lần; từ chối/nộp lại không đổi tài khoản hoặc venue cũ. Không giới hạn số venue/hồ sơ.
+
+Hợp đồng gửi, đọc trạng thái, upload và review: [owner-application-api.md](../110-owner-onboarding/contracts/owner-application-api.md).

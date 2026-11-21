@@ -48,7 +48,8 @@ export async function handleOwnerCancelSession(
     const nowIso = now.toISOString();
     try {
       const closed = await firestore.runTransaction(async (tx) => {
-        await requireOwnerVenue(tx, token.uid, venueId);
+        const venue = await requireOwnerVenue(tx, token, venueId);
+        if (venue.status !== "ACTIVE") throw new HttpError(403,"VENUE_UNAVAILABLE","Cơ sở đang ẩn hoặc bị khóa");
         // Lock session and registration query before collecting any writes.
         const session = await tx.get(`dropInSessions/${sessionId}`);
         if (!session || session.venueId !== venueId) {

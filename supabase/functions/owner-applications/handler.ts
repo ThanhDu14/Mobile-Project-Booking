@@ -1,9 +1,10 @@
 import { HttpError, requireUser, toErrorResponse } from "../_shared/auth.ts";
 import * as defaultFirestore from "../_shared/firestore.ts";
 import { updateWrite, createWrite, FirestoreError } from "../_shared/firestore.ts";
+import { applicationPurpose, requireApprovedApplicant } from "../_shared/owner-application-purpose.ts";
 
 export interface OwnerApplicationDeps {
-  firestore: Pick<typeof defaultFirestore, "get" | "latestOwnerApplication" | "runTransaction">;
+  firestore: Pick<typeof defaultFirestore, "get" | "latestOwnerApplication" | "listOwnerApplications" | "runTransaction">;
   verifyObjects(paths: string[]): Promise<boolean>;
 }
 
@@ -29,7 +30,14 @@ export async function handleOwnerApplications(
   try {
     const user = await requireUser(req);
     const body = await req.json().catch(() => ({})) as Record<string, unknown>;
-    if (body.action === "STATUS") return await readStatus(user.uid, deps.firestore);
+    const purpose = applicationPurpose(body.purpose);
+    if (purpose === "VENUE_ADDITION" && user.appRole !== "OWNER") throw new HttpError(403, "ROLE_NOT_ALLOWED", "Cần quyền chủ sân để mở thêm cơ sở");
+    if (body.action === "STATUS") return await readStatus(user.uid, body, deps.firestore);
+    if (body.action === "LIST") {
+      requireApprovedApplicant(await deps.firestore.get(`users/${user.uid}`));
+      const applications = (await deps.firestore.listOwnerApplications(user.uid)).filter(app => app.purpose === "VENUE_ADDITION");
+      return json(200, { applications: applications.map(({__documentId, ...app}) => ({applicationId: __documentId, ...app})) });
+    }
     if (body.action === "SUBMIT") return await submit(user.uid, body, deps);
     throw new HttpError(400, "INVALID_ACTION", "Thao tác hồ sơ không hợp lệ");
   } catch (error) {
@@ -40,7 +48,7 @@ export async function handleOwnerApplications(
   }
 }
 
-async function readStatus(uid: string, firestore: OwnerApplicationDeps["firestore"]): Promise<Response> {
+async function readStatus(uid: string, body: Record<string, unknown>, firestore: OwnerApplicationDeps["firestore"]): Promise<Response> {
   const user = await firestore.get(`users/${uid}`);
   if (!user) throw new HttpError(404, "USER_NOT_FOUND", "Không tìm thấy tài khoản");
   const ownerStatus = enumValue(user.ownerStatus, ["NONE", "PENDING", "APPROVED", "REJECTED"] as const);
@@ -48,17 +56,24 @@ async function readStatus(uid: string, firestore: OwnerApplicationDeps["firestor
   if (!ownerStatus || !role) throw new HttpError(409, "OWNER_STATE_INVALID", "Trạng thái tài khoản chưa nhất quán");
   const expectedRole = ownerStatus === "APPROVED" ? "OWNER" : "PLAYER";
   if (role !== expectedRole) throw new HttpError(409, "OWNER_STATE_INVALID", "Vai trò và trạng thái chủ sân chưa được đồng bộ");
-  const app = await firestore.latestOwnerApplication(uid);
+  const purpose = applicationPurpose(body.purpose);
+  const id = string(body.applicationId);
+  if (id && !UUID.test(id)) throw new HttpError(400, "INVALID_APPLICATION_ID", "Mã hồ sơ không hợp lệ");
+  if (purpose === "VENUE_ADDITION") requireApprovedApplicant(user);
+  const app = purpose === "VENUE_ADDITION"
+    ? id ? await firestore.get(`ownerApplications/${id}`) : null
+    : await firestore.latestOwnerApplication(uid);
   if (app && app.uid !== uid) throw new HttpError(409, "OWNER_STATE_INVALID", "Hồ sơ không khớp tài khoản");
   const appStatus = app?.status;
-  if (ownerStatus === "PENDING" && appStatus !== "PENDING" || ownerStatus === "REJECTED" && appStatus !== "REJECTED" || ownerStatus === "APPROVED" && appStatus !== "APPROVED") {
+  if (app && applicationPurpose(app.purpose) !== purpose) throw new HttpError(403,"FORBIDDEN","Loại hồ sơ không khớp");
+  if (purpose === "OWNER_ONBOARDING" && (ownerStatus === "PENDING" && appStatus !== "PENDING" || ownerStatus === "REJECTED" && appStatus !== "REJECTED" || ownerStatus === "APPROVED" && appStatus !== "APPROVED")) {
     throw new HttpError(409, "OWNER_STATE_INVALID", "Trạng thái hồ sơ chưa được đồng bộ");
   }
   const { __documentId, ...application } = app ?? {};
   return json(200, {
     ownerStatus,
     role,
-    application: app ? { applicationId: __documentId, ...application } : null,
+    application: app ? { applicationId: purpose === "VENUE_ADDITION" ? id : __documentId, ...application } : null,
   });
 }
 
@@ -68,6 +83,7 @@ async function submit(
   deps: OwnerApplicationDeps,
 ): Promise<Response> {
   const firestore = deps.firestore;
+  const purpose = applicationPurpose(body.purpose);
   const applicationId = string(body.applicationId);
   if (!UUID.test(applicationId)) throw new HttpError(400, "INVALID_APPLICATION_ID", "Mã hồ sơ không hợp lệ");
   const draft = parseDraft(body, uid, applicationId);
@@ -89,6 +105,23 @@ async function submit(
         throw new HttpError(403, "ROLE_NOT_ALLOWED", "Tài khoản không thể đăng ký hồ sơ chủ sân");
       }
       if (district?.isActive !== true) throw new HttpError(400, "INVALID_DISTRICT", "Quận/huyện không còn hoạt động");
+      if (user.accountStatus !== "ACTIVE" || user.deletionRequestedAt != null) throw new HttpError(403,"FORBIDDEN","Tài khoản không còn hoạt động");
+      if (app && (app.uid !== uid || applicationPurpose(app.purpose) !== purpose)) throw new HttpError(403,"FORBIDDEN","Không có quyền sửa hồ sơ này");
+
+      if (purpose === "VENUE_ADDITION") {
+        requireApprovedApplicant(user);
+        if (app && app.status !== "REJECTED") {
+          if (["PENDING", "APPROVED"].includes(String(app.status)) && payloadMatches(app, draft)) return { ownerStatus: "APPROVED", alreadyCommitted: true };
+          throw new HttpError(409,"APPLICATION_CONFLICT","Hồ sơ đang xử lý hoặc đã được duyệt");
+        }
+        if (!app) tx.write(createWrite(`ownerApplications/${applicationId}`, {uid, purpose, ...draft, status:"PENDING"}, ["submittedAt"]));
+        else {
+          const write = updateWrite(`ownerApplications/${applicationId}`, {...draft,status:"PENDING"}, ["submittedAt"]);
+          write.updateMask?.fieldPaths.push("rejectReason", "reviewedBy", "reviewedAt");
+          tx.write(write);
+        }
+        return {ownerStatus:"APPROVED",alreadyCommitted:false};
+      }
 
       if (user.ownerStatus === "PENDING" || user.ownerStatus === "APPROVED") {
         const roleMatchesStatus = user.ownerStatus === "PENDING" ? user.role === "PLAYER" : user.role === "OWNER";
@@ -103,6 +136,7 @@ async function submit(
         if (app) throw new HttpError(409, "APPLICATION_CONFLICT", "Mã hồ sơ đã được sử dụng; hãy làm mới trạng thái");
         tx.write(createWrite(`ownerApplications/${applicationId}`, {
           uid,
+          purpose,
           ...draft,
           status: "PENDING",
         }, ["submittedAt"]));
@@ -133,8 +167,9 @@ async function submit(
       // A competing request may have committed. Resolve it from trusted state.
       const current = await firestore.get(`ownerApplications/${applicationId}`);
       const user = await firestore.get(`users/${uid}`);
-      if (current?.uid === uid && user?.ownerStatus === current.status && payloadMatches(current, draft)) {
-        return json(200, { ownerStatus: current.status, alreadyCommitted: true, applicationId });
+      if (current?.uid === uid && applicationPurpose(current.purpose) === purpose &&
+          (purpose === "VENUE_ADDITION" ? user?.role === "OWNER" && user.ownerStatus === "APPROVED" && user.accountStatus === "ACTIVE" && user.deletionRequestedAt == null : user?.ownerStatus === current.status) && payloadMatches(current, draft)) {
+        return json(200, { ownerStatus: user!.ownerStatus, alreadyCommitted: true, applicationId });
       }
       throw new HttpError(409, "APPLICATION_CONFLICT", "Hồ sơ đã thay đổi bởi một yêu cầu khác");
     }

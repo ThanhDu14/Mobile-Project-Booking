@@ -8,6 +8,7 @@
     <com.google.android.material.button.MaterialButton
         android:id="@+id/addVenue" android:layout_width="match_parent" android:layout_height="wrap_content"
         android:text="@string/owner_venue_add" android:minHeight="52dp" android:layout_marginBottom="12dp" />
+    <com.google.android.material.button.MaterialButton android:id="@+id/venueApplications" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="48dp" android:text="@string/owner_venue_applications" />
     <ProgressBar android:id="@+id/progress" android:layout_width="wrap_content" android:layout_height="wrap_content"
         android:layout_gravity="center_horizontal" />
     <TextView android:id="@+id/empty" android:layout_width="match_parent" android:layout_height="wrap_content"

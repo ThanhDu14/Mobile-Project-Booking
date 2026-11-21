@@ -105,7 +105,7 @@ Tên enum trong database giữ nguyên dạng IN HOA theo [đặc tả CSDL](../
 - **FR-015**: App PHẢI có trạng thái tải, trạng thái chưa có hồ sơ, lỗi tải dữ liệu, lỗi xác thực, lỗi tải tệp và hành động thử lại phù hợp.
 - **FR-016**: Khi tải tệp hoặc nộp hồ sơ đang xử lý, app PHẢI báo tiến trình/trạng thái, khóa thao tác gửi lặp và không làm mất dữ liệu biểu mẫu khi có lỗi có thể khôi phục.
 - **FR-017**: Khi trạng thái hồ sơ thay đổi trong lúc biểu mẫu đang mở, app PHẢI làm mới trạng thái trước khi chấp nhận thao tác và thông báo nếu thao tác không còn hợp lệ.
-- **FR-018**: Khi người dùng đang `ownerStatus = APPROVED`, luồng đăng ký mới không được tạo thêm hồ sơ. Nếu quyền chủ sân đã bị admin thu hồi (`ownerStatus = NONE`, spec 120), người dùng được nộp một hồ sơ mới; hồ sơ cũ giữ `APPROVED` để lưu lịch sử. Chỉnh sửa vận hành cơ sở thuộc spec 111 và không yêu cầu duyệt lại; thay đổi người đại diện hoặc giấy tờ chứng minh PHẢI được admin duyệt lại trước khi có hiệu lực.
+- **FR-018**: OWNER/APPROVED được nộp hồ sơ VENUE_ADDITION để mở thêm cơ sở. PENDING/REJECTED/nộp lại không đổi quyền tài khoản hoặc venue cũ. Admin duyệt tạo đúng một venue mới; từ chối chỉ cập nhật hồ sơ/lý do. Hồ sơ OWNER_ONBOARDING (gồm hồ sơ cũ thiếu purpose) vẫn phục vụ cấp quyền lần đầu hoặc đăng ký lại sau thu hồi. Không giới hạn số venue/hồ sơ.
 - **FR-019**: Khi `ownerStatus = PENDING`, người nộp KHÔNG ĐƯỢC sửa hoặc rút hồ sơ; app PHẢI giữ nội dung đã gửi cho tới khi có quyết định.
 
 ### Validation
@@ -190,3 +190,9 @@ Tên enum trong database giữ nguyên dạng IN HOA theo [đặc tả CSDL](../
 - **SC-005**: Trong mọi kịch bản kiểm thử riêng tư, chỉ người nộp và admin xem được giấy tờ chứng minh; người dùng khác không thể đọc tệp kể cả khi biết đường dẫn.
 - **SC-006**: 100% tình huống nhấn gửi lặp hoặc thử lại sau mất mạng tạo tối đa một hồ sơ cho cùng lần nộp.
 - **SC-007**: Khi lỗi mạng hoặc tải tệp, người dùng nhận được hướng xử lý và có thể tiếp tục mà không nhập lại toàn bộ hồ sơ.
+
+## Quyết định mở thêm cơ sở — 2026-11-20
+
+Hồ sơ bổ sung dùng purpose VENUE_ADDITION, độc lập với quyền OWNER/APPROVED. Hồ sơ cũ thiếu purpose thuộc OWNER_ONBOARDING. Duyệt tạo venues/{applicationId} một lần; từ chối/nộp lại không đổi tài khoản hoặc venue cũ. Không giới hạn số venue/hồ sơ.
+
+FR-005/008/009/011 mô tả cấp quyền OWNER_ONBOARDING. Với hồ sơ bổ sung, FR-018 giữ quyền hiện tại; PENDING không sửa được, REJECTED sửa/nộp lại cùng ID. Hồ sơ bổ sung không tham gia truy vấn hồ sơ quyền mới nhất.

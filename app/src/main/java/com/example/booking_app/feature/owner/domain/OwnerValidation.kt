@@ -61,7 +61,7 @@ object OwnerValidation {
         }
         if (!phonePattern.matches(input.phone)) add(OwnerFieldError("phone", "Số điện thoại Việt Nam không hợp lệ"))
         if (input.photoPaths.isEmpty()) add(OwnerFieldError("photoPaths", "Cần ít nhất một ảnh"))
-        if (input.courtCount <= 0) add(OwnerFieldError("courtCount", "Số sân phải là số nguyên dương"))
+        if (input.courtCount < 0) add(OwnerFieldError("courtCount", "Số sân không được âm"))
     }
 
     fun court(input: CourtInput): List<OwnerFieldError> = buildList {

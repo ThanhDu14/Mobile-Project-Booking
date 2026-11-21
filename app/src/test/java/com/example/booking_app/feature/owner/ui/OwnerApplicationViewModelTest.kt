@@ -27,6 +27,38 @@ import org.junit.Test
 class OwnerApplicationViewModelTest {
     @get:Rule val mainDispatcherRule = MainDispatcherRule()
 
+    @Test fun additionalApplicationUsesOwnStatusAndResubmissionWithoutChangingOwnerStatus() = runTest(mainDispatcherRule.dispatcher) {
+        val repository = FakeRepository().apply {
+            currentStatus = status(OwnerApplicationState.APPROVED, snapshot("addition", OwnerApplicationState.REJECTED, validDraft(), "TEST reason"))
+        }
+        val model = viewModel(repository)
+        model.initialize(additionalVenue = true, applicationId = "addition")
+        advanceUntilIdle()
+        assertEquals(OwnerApplicationState.REJECTED, model.uiState.value.applicationState)
+        assertEquals(OwnerApplicationState.APPROVED, model.uiState.value.status?.ownerStatus)
+        assertEquals("OWNER", model.uiState.value.status?.role)
+        model.initialize(resubmit = true)
+        model.submit()
+        advanceUntilIdle()
+        assertEquals(1, repository.submitCalls)
+        assertEquals("addition", repository.submittedApplicationId)
+    }
+
+    @Test fun approvedOwnerCanStartAdditionalDraftButPendingAdditionCannotBeSubmittedAgain() = runTest(mainDispatcherRule.dispatcher) {
+        val repository = FakeRepository().apply { currentStatus = status(OwnerApplicationState.APPROVED) }
+        val model = viewModel(repository)
+        model.initialize(additionalVenue = true, forceNew = true)
+        advanceUntilIdle()
+        assertEquals(OwnerApplicationState.NONE, model.uiState.value.applicationState)
+        fillDraft(model, validDraft())
+        repository.currentStatus = status(OwnerApplicationState.APPROVED, snapshot(model.uiState.value.applicationId, OwnerApplicationState.PENDING, validDraft()))
+        model.submit()
+        advanceUntilIdle()
+        assertEquals(0, repository.submitCalls)
+        assertEquals(OwnerApplicationState.PENDING, model.uiState.value.applicationState)
+        assertEquals("OWNER", model.uiState.value.status?.role)
+    }
+
     @Test
     fun failedDistrictLoadCanRetryWithoutLosingDraft() = runTest(mainDispatcherRule.dispatcher) {
         var offline = true

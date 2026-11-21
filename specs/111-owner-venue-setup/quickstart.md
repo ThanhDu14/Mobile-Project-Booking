@@ -1,6 +1,6 @@
 # Hướng dẫn nhanh: Kiểm tra thiết lập cơ sở của chủ sân
 
-Tài liệu này mô tả các tình huống kiểm tra sau khi triển khai. Chỉ chạy với fake cục bộ và Firebase Emulator Suite, không chạy trên dự án thật. Repo hiện mới có mã khởi tạo; tên task build/kiểm thử còn tùy cấu hình Gradle và Emulator khi được triển khai, vì vậy cần xác nhận từ cấu hình thực tế thay vì tự suy đoán.
+Tài liệu này mô tả các tình huống kiểm tra sau khi triển khai. Chỉ chạy với fake cục bộ và Firebase Emulator Suite, không chạy trên dự án thật. Implementation hiện tại dùng OwnerModule production bindings, manage-slot-blocks và transaction sync-venue-price. Chạy ./gradlew lint testDebugUnitTest assembleDebug; Edge deno check . / deno test -A --no-check và Rules SKIP_BLOCKED=1 npm test theo ci.yml. Xem [bằng chứng current](../../docs/validation/feature11-2026-11-21/README.md); các mốc gate của bản planning là lịch sử.
 
 ## Điều kiện chuẩn bị
 
@@ -92,3 +92,20 @@ T007 (atomic lock/unlock server contract), T008 (trusted authority cập nhật 
     - Không can thiệp vào engine đặt cố định (giữ đúng ranh giới của Feature 041).
 
 Xem [data-model.md](data-model.md) và [contracts/firestore-boundary.md](contracts/firestore-boundary.md) về trường dữ liệu và ranh giới phân quyền.
+
+## Bản đồ cơ sở — tích hợp 2026-11-21
+
+Form đăng ký/thêm cơ sở và sửa cơ sở dùng chung `core/map/OsmdroidSetup` với phần tìm sân/chi tiết sân của B: MAPNIK, cache trong ứng dụng, user agent SmashNow, marker cầu lông và chế độ tối. Không đổi user agent thành tên gói Android vì OSM có thể trả ảnh chặn thay cho bản đồ.
+
+Mở vị trí, chạm bản đồ hoặc kéo ghim, xác nhận rồi lưu cơ sở. Hủy dialog không sửa tọa độ. Dialog giữ vị trí chưa xác nhận khi xoay; màn sửa đọc lại GeoPoint qua repository hiện có sau khi mở lại. Venue LOCKED vô hiệu hóa nút chọn và vùng chạm trên bản đồ; Firestore Rules vẫn chặn ghi. Khi tile lỗi, có thử lại và vẫn nhập được tọa độ hợp lệ trong Việt Nam.
+
+`OwnerMapDeviceTest` kiểm tra tile thật, chạm chọn ghim, xoay dialog, lưu/đọc lại từ SERVER và hủy tọa độ ngoài Việt Nam trên điện thoại. Xem [bằng chứng hiện tại](../../docs/validation/feature11-2026-11-21/README.md).
+
+
+## Thêm cơ sở — kiểm chứng 2026-11-20
+
+OWNER/APPROVED mở Thêm cơ sở, nhập form, chọn quận và vị trí, upload ảnh/giấy tờ TEST, xem lại và gửi VENUE_ADDITION. Hồ sơ PENDING không tạo venue công khai. Admin từ chối kèm lý do, owner mở lịch sử hồ sơ để sửa/nộp lại cùng ID; admin duyệt tạo một venue mới. Kiểm tra OWNER/APPROVED và venue cũ ở từng bước, rồi đóng/mở Activity để đọc lại danh sách từ SERVER.
+
+Đã kiểm tra cả đăng ký quyền lần đầu và bổ sung trên vivo V2247 Android 15, dùng Firebase Emulator và Supabase local. Kiểm tra riêng backend xác nhận đúng hai venue của owner cũ, một venue của owner mới, giấy tờ không public và ảnh cơ sở public sau duyệt. Các test security/concurrency bao gồm ownership giả, thu hồi quyền, gửi lặp và duyệt đồng thời.
+
+Lệnh tương ứng ba job CI: gradlew.bat lint testDebugUnitTest assembleDebug --stacktrace; deno check . và deno test -A --no-check trong supabase/functions; SKIP_BLOCKED=1 vitest run trong firestore-tests. Log, số test và ảnh tại [bằng chứng kiểm chứng](../../docs/validation/venue-addition-2026-11-20/README.md), results.json là kết quả chốt. Rules giữ bốn skipped từ cấu hình CI hiện có. Không deploy hosted hoặc kết luận đạt SLA/4G/tablet thật.

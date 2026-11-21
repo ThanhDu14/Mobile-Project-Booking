@@ -185,7 +185,7 @@ console.log(JSON.stringify(
     },
     limitations: [
       "Not a hosted-backend UI test",
-      "Group deletion API is absent; direct client deletion was tested",
+      "Locked-group deletion was checked through Rules; group-manage is covered separately by the community suite",
       "Admin unlock uses API because there is no unlock screen",
       "No push-delivery or camera test",
     ],

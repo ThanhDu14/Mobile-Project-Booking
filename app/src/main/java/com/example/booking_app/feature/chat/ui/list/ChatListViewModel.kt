@@ -33,12 +33,23 @@ sealed interface ChatListEvent {
     data object OpenFindVenue : ChatListEvent
 }
 
+data class OwnerInboxVenue(val id: String, val name: String)
+
+data class OwnerInboxFilters(
+    val unreadOnly: Boolean = false,
+    val venueId: String? = null,
+    val venues: List<OwnerInboxVenue> = emptyList(),
+    val unreadCount: Int = 0,
+) {
+    val isFiltered: Boolean get() = unreadOnly || venueId != null
+}
+
 /**
  * ViewModel danh sách cuộc trò chuyện cho cả chế độ `PLAYER` ("Tin nhắn") và `OWNER` ("Tin nhắn khách hàng").
  */
 @HiltViewModel
 class ChatListViewModel @Inject constructor(
-    savedStateHandle: SavedStateHandle,
+    private val savedStateHandle: SavedStateHandle,
     private val repository: ChatRepository,
     private val sessionManager: SessionManager,
 ) : ViewModel() {
@@ -53,6 +64,10 @@ class ChatListViewModel @Inject constructor(
     private val _state = MutableStateFlow<UiState<List<ChatSummary>>>(UiState.Loading)
     val state: StateFlow<UiState<List<ChatSummary>>> = _state.asStateFlow()
 
+    private val _ownerFilters = MutableStateFlow(OwnerInboxFilters())
+    val ownerFilters: StateFlow<OwnerInboxFilters> = _ownerFilters.asStateFlow()
+    private var latestChats: List<ChatSummary> = emptyList()
+
     private val _events = Channel<ChatListEvent>(Channel.BUFFERED)
     val events: Flow<ChatListEvent> = _events.receiveAsFlow()
 
@@ -65,6 +80,18 @@ class ChatListViewModel @Inject constructor(
         // L4/M2: chỉ quyết định khi phiên đã chốt; đăng nhập xong quay về thì tự nạp lại.
         viewModelScope.launch {
             sessionManager.settledUid().collect { newUid ->
+                latestChats = emptyList()
+                val sameAccount = savedStateHandle.get<String>(FILTER_UID) == newUid && newUid != null
+                _ownerFilters.value = OwnerInboxFilters(
+                    unreadOnly = sameAccount && savedStateHandle.get<Boolean>(FILTER_UNREAD) == true,
+                    venueId = if (sameAccount) savedStateHandle[FILTER_VENUE] else null,
+                )
+                savedStateHandle[FILTER_UID] = newUid
+                if (!sameAccount) {
+                    savedStateHandle[FILTER_UNREAD] = false
+                    savedStateHandle[FILTER_VENUE] = null
+                }
+                while (_events.tryReceive().isSuccess) { /* discard events for the previous account */ }
                 settled = true
                 uid = newUid
                 // Đổi tài khoản: không hiện danh sách của tài khoản trước.
@@ -122,9 +149,34 @@ class ChatListViewModel @Inject constructor(
                             }
                         }
                         .sortedByDescending { it.updatedAt ?: Instant.EPOCH }
-                    _state.value = if (visible.isEmpty()) UiState.Empty else UiState.Content(visible)
+                    latestChats = visible
+                    if (mode == ChatMode.OWNER) {
+                        _ownerFilters.value = _ownerFilters.value.copy(
+                            venues = visible.mapNotNull { chat ->
+                                chat.venueId?.let { OwnerInboxVenue(it, chat.venueName.orEmpty()) }
+                            }.distinctBy { it.id },
+                            unreadCount = visible.count { it.unreadCount > 0 },
+                        )
+                    }
+                    publishChats()
                 }
         }
+    }
+
+    fun selectOwnerFilter(unreadOnly: Boolean = false, venueId: String? = null) {
+        if (mode != ChatMode.OWNER) return
+        _ownerFilters.value = _ownerFilters.value.copy(unreadOnly = unreadOnly, venueId = venueId)
+        savedStateHandle[FILTER_UNREAD] = unreadOnly
+        savedStateHandle[FILTER_VENUE] = venueId
+        if (_state.value is UiState.Content || _state.value is UiState.Empty) publishChats()
+    }
+
+    private fun publishChats() {
+        val filter = _ownerFilters.value
+        val visible = if (mode == ChatMode.OWNER) latestChats.filter {
+            (!filter.unreadOnly || it.unreadCount > 0) && (filter.venueId == null || it.venueId == filter.venueId)
+        } else latestChats
+        _state.value = if (visible.isEmpty()) UiState.Empty else UiState.Content(visible)
     }
 
     fun onChatClicked(chatId: String) {
@@ -141,5 +193,8 @@ class ChatListViewModel @Inject constructor(
 
     companion object {
         const val ARG_MODE = "mode"
+        private const val FILTER_UID = "owner_filter_uid"
+        private const val FILTER_UNREAD = "owner_filter_unread"
+        private const val FILTER_VENUE = "owner_filter_venue"
     }
 }

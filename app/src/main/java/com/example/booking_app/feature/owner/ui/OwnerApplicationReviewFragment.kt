@@ -27,8 +27,9 @@ class OwnerApplicationReviewFragment : Fragment(R.layout.fragment_owner_applicat
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         _binding = FragmentOwnerApplicationReviewBinding.bind(view)
+        viewModel.initialize(additionalVenue = arguments?.getBoolean("additionalVenue") == true, applicationId = arguments?.getString("applicationId"))
         binding.backButton.setOnClickListener { findNavController().navigateUp() }
-        val edit = View.OnClickListener { findNavController().navigate(R.id.action_ownerApplicationReview_to_form) }
+        val edit = View.OnClickListener { findNavController().popBackStack() }
         binding.editVenue.setOnClickListener(edit)
         binding.editRepresentative.setOnClickListener(edit)
         binding.editFiles.setOnClickListener(edit)
@@ -57,9 +58,12 @@ class OwnerApplicationReviewFragment : Fragment(R.layout.fragment_owner_applicat
                     binding.submitButton.isEnabled = !state.busy && !state.loading
                     binding.reviewMessage.isVisible = state.message != null || state.errors.isNotEmpty()
                     binding.reviewMessage.text = state.message ?: state.errors.firstOrNull()?.message.orEmpty()
-                    if (!navigating && !state.busy && state.status?.ownerStatus == com.example.booking_app.feature.owner.domain.OwnerApplicationState.PENDING) {
+                    if (!navigating && !state.busy && state.applicationState == com.example.booking_app.feature.owner.domain.OwnerApplicationState.PENDING) {
                         navigating = true
-                        findNavController().navigate(R.id.action_ownerApplicationReview_to_status)
+                        findNavController().navigate(R.id.action_ownerApplicationReview_to_status, Bundle().apply {
+                            putString("mode", "current")
+                            if (state.additionalVenue) putString("applicationId", state.applicationId)
+                        })
                     }
                 }
             }

@@ -1,5 +1,7 @@
 # Kế hoạch triển khai: Đăng ký làm chủ sân
 
+> Triển khai hiện tại 2026-11-21 và giới hạn kiểm chứng: [báo cáo Feature 11](../../docs/validation/feature11-2026-11-21/README.md). Giữ kiến trúc gốc; tham chiếu contract hiện hành thay các gate planning đã được đóng.
+
 ## Cập nhật quyết định được duyệt (2026-11-05)
 
 Các mục quyết định còn bỏ ngỏ bên dưới phản ánh ảnh chụp tại thời điểm lập plan và được supersede bởi `contracts/owner-onboarding-boundaries.md`. Repo đã có Hilt, Coroutines/Flow, Navigation, Material, Firebase Auth/Firestore, Supabase Functions/Storage, Ktor và test libraries; Feature 110 không thêm dependency. Implementation dùng Edge Function xác thực Firebase token và Firestore REST transaction, private `owner-docs` staging, application ID ổn định trong mỗi lifecycle, orphan cleanup sau 30 ngày và thứ tự recovery trong `contracts/owner-application-api.md`. Map provider tạm hoãn; interactive marker chờ Feature 021 xác nhận.

@@ -1,5 +1,7 @@
 # Kế hoạch triển khai: Owner Operations
 
+> Cập nhật triển khai 2026-11-21: các gate endpoint/DI đã được đối chiếu và đóng theo [contract hiện tại](contracts/owner-operations-boundaries.md), [mapping](implementation-mapping.md) và [bằng chứng](../../docs/validation/feature11-2026-11-21/README.md). Các ghi chú cần chốt của bản planning bên dưới là lịch sử; nguồn thống kê đã chọn projection 1–30 ngày, không dailyStats; voucher venue thuộc 112; check-in drop-in dùng [startAt - 30 phút, endAt).
+
 **Nhánh**: `feature/112-owner-operations-plan` | **Ngày**: 2026-10-16 | **Đặc tả**: [spec.md](spec.md)
 
 **Đầu vào**: [Đặc tả Feature 112](spec.md). Quy trình setup-plan theo nhánh đã trả về Feature 100; do đó tài liệu này được đặt theo `SPECIFY_FEATURE_DIRECTORY=specs/112-owner-operations` như chỉ định, không sử dụng đường dẫn setup sai.

@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.booking_app.feature.owner.domain.OwnerValidation
+import com.example.booking_app.feature.owner.domain.OwnerOperatingSlots
 import com.example.booking_app.feature.owner.domain.OwnerVenueRepository
 import com.example.booking_app.feature.owner.domain.OwnerWriteGate
 import com.example.booking_app.feature.owner.domain.SlotBlockInput
@@ -152,15 +153,17 @@ class OwnerSlotBlockViewModel @Inject constructor(
                 _uiState.value = _uiState.value.copy(isLoadingGrid=false,isStale=true,error=it.message ?: "Không tải được giờ hoạt động")
                 return@launch
             }
-            val open = venue.openTime.take(2).toIntOrNull()?.times(60)?.plus(venue.openTime.takeLast(2).toIntOrNull() ?: 0) ?: 0
-            val close = venue.closeTime.take(2).toIntOrNull()?.times(60)?.plus(venue.closeTime.takeLast(2).toIntOrNull() ?: 0) ?: 0
+            val times = runCatching { OwnerOperatingSlots.startMinutes(venue.openTime, venue.closeTime) }.getOrElse {
+                _uiState.value = _uiState.value.copy(isLoadingGrid=false,isStale=true,error=it.message)
+                return@launch
+            }
             val res = repository.getSlots(venueId, date)
             res.fold(
                 onSuccess = { slots ->
                     val busyMap = slots.filter { it.courtId == courtId }.associateBy { it.id }
                     val allowedOwnerReasons = setOf("MAINTENANCE", "EVENT", "WALK_IN")
 
-                    val items = (open until close step 30).map { minutes ->
+                    val items = times.map { minutes ->
                         val startH = minutes / 60
                         val startM = minutes % 60
                         val endMin = minutes + 30

@@ -75,4 +75,21 @@ class OwnerStatisticsViewModelTest {
             return flowOf(null)
         }
     }
+
+    @Test fun invalidRangeCancelsOldObservationAndDoesNotDisplayItsNextResult() = runTest {
+        val reports = kotlinx.coroutines.flow.MutableSharedFlow<OwnerStatisticsResult?>()
+        val repository = object : OwnerStatisticsRepository {
+            override fun observe(venueId: String, query: OwnerStatisticsQuery) = reports
+        }
+        val viewModel = OwnerStatisticsViewModel(venueRepository, repository)
+        advanceUntilIdle()
+        val date = java.time.LocalDate.parse("2026-11-20")
+        viewModel.setCustomRange(date, date.minusDays(1))
+        advanceUntilIdle()
+        reports.emit(null)
+        advanceUntilIdle()
+        assertFalse(viewModel.uiState.value.error.isNullOrBlank())
+        assertFalse(viewModel.uiState.value.isLoading)
+        assertFalse(viewModel.uiState.value.isEmpty)
+    }
 }

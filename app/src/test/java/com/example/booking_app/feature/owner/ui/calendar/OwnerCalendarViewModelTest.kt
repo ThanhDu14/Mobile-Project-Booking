@@ -42,7 +42,8 @@ class OwnerCalendarViewModelTest {
 
         val state = viewModel.uiState.value
         assertEquals(OwnerFixtures.VENUE_A, state.selectedVenueId)
-        assertEquals(listOf(OwnerFixtures.courts.first()), state.courts)
+        // A disabled court remains visible so existing bookings and blocks retain their calendar row.
+        assertEquals(OwnerFixtures.courts, state.courts)
         assertEquals(setOf(state.selectedDate), state.slotsByDate.keys)
         assertFalse(state.isLoading)
         assertTrue(state.isEmpty)

@@ -62,6 +62,12 @@ export async function handleOwnerCreateVoucher(
       const existing = await tx.get(path);
       const now = new Date();
       if (action === "CREATE") {
+        if (existing) {
+          const comparable = (value: unknown) => value instanceof Date ? value.getTime() :
+            typeof value === "string" && /^\d{4}-\d{2}-\d{2}T/.test(value) ? new Date(value).getTime() : value;
+          if (Object.entries(fields).every(([key,value])=>comparable(existing[key]) === comparable(value))) return;
+          throw new HttpError(409, "VOUCHER_EXISTS", "Mã voucher đã tồn tại hoặc đã thay đổi. Hãy tải lại.");
+        }
         const system = await tx.get(`systemVouchers/${code}`);
         const venues = await tx.query("vouchers", [{ field: "code", op: "EQUAL", value: code }], { allDescendants: true, limit: 1 });
         if (existing || system || venues.length) throw new HttpError(409, "VOUCHER_EXISTS", "Mã voucher đã tồn tại trên hệ thống");

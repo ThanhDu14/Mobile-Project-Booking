@@ -18,3 +18,9 @@ These interfaces implement the explicitly requested repairs. They use the existi
 ## Remaining design evidence boundary
 
 `ui/12_admin_buoc8_chi-tiet-nguoi-dung.png` is an ERR_CONNECTION_REFUSED page. It is **not** a user-detail design. The existing list/action flow can show schema-backed account data in a standard dialog, but no visual compliance with step 8 is asserted. An actual artboard is still needed for a dedicated detail screen.
+
+## Quyết định mở thêm cơ sở — 2026-11-20
+
+Hồ sơ bổ sung dùng purpose VENUE_ADDITION, độc lập với quyền OWNER/APPROVED. Hồ sơ cũ thiếu purpose thuộc OWNER_ONBOARDING. Duyệt tạo venues/{applicationId} một lần; từ chối/nộp lại không đổi tài khoản hoặc venue cũ. Không giới hạn số venue/hồ sơ.
+
+Hợp đồng đầy đủ: [owner-application-api.md](../../110-owner-onboarding/contracts/owner-application-api.md).

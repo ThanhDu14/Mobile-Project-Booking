@@ -1,0 +1,306 @@
+{
+  "head": "a4dd9be647c0efda6c44560f0c39b96b57e4a3cc",
+  "dirty": true,
+  "files": [
+    {
+      "path": "app/src/adminLocalAndroidTest/java/com/example/booking_app/feature/admin/HandoffDeviceInteractionTest.kt",
+      "sha256": "ebe6ba410c013a337126476bc6391a7d94fa6e928bb369c29887354df980fd9b"
+    },
+    {
+      "path": "app/src/adminLocalAndroidTest/java/com/example/booking_app/feature/admin/OwnerColdStartDeviceTest.kt",
+      "sha256": "2f6eed3469178fd113dd26a133b07ae4576e91b08f71b637bc8c4a14fbd15555"
+    },
+    {
+      "path": "app/src/adminLocalAndroidTest/java/com/example/booking_app/feature/admin/OwnerFeature11DeviceTest.kt",
+      "sha256": "604776d5f203935f9158a5ac23c9c0cb976302425a82b50e8d2e62b3a9832fdf"
+    },
+    {
+      "path": "app/src/adminLocalAndroidTest/java/com/example/booking_app/feature/admin/OwnerMapDeviceTest.kt",
+      "sha256": "bbf16bd930337a674e1113e3c5bdb1792c87a1bc21733dee3ed7a0cb672b88ba"
+    },
+    {
+      "path": "app/src/adminLocalAndroidTest/java/com/example/booking_app/feature/admin/VenueAdditionDeviceTest.kt",
+      "sha256": "e2ffc5dc7511535fc268316ae275c2068f2e5e978d9a006e88c6336157059a38"
+    },
+    {
+      "path": "app/src/main/java/com/example/booking_app/core/ui/LocationPickerDialog.kt",
+      "sha256": "3bf463628a3e336688320dccb11bd3041682989e858d1fb7590836889f402704"
+    },
+    {
+      "path": "app/src/main/java/com/example/booking_app/core/ui/LocationPickerFragment.kt",
+      "sha256": "476342312df2efddede8b1b5e2a3b30198b913f27cd6940f016ac5d14a8b5bdb"
+    },
+    {
+      "path": "app/src/main/java/com/example/booking_app/feature/auth/ui/home/OwnerHomePlaceholderFragment.kt",
+      "sha256": "d4d9e6667a918c055990159eff40946faa618731bac44078c095b0eac50d900d"
+    },
+    {
+      "path": "app/src/main/java/com/example/booking_app/feature/owner/data/FirestoreOwnerStatisticsRepository.kt",
+      "sha256": "8eb76d6fde55b4b9e6ed5c0435e89e9fb6d5a6e32fc282fa837f47b1ddd9e476"
+    },
+    {
+      "path": "app/src/main/java/com/example/booking_app/feature/owner/data/FirestoreOwnerVenueDataSource.kt",
+      "sha256": "6a3714ab2d945f08ecb96ba00cc0f1595ba4a970432cceb128c4f8dc739730c7"
+    },
+    {
+      "path": "app/src/main/java/com/example/booking_app/feature/owner/data/OwnerBookingRepositoryImpl.kt",
+      "sha256": "3858c1c5d31870c30697490dd5af41aeaaaa2f52fd728f8bf8fc1bd474e62a6d"
+    },
+    {
+      "path": "app/src/main/java/com/example/booking_app/feature/owner/data/OwnerCourtApi.kt",
+      "sha256": "114cc6dfa6ff448062e8d6bbbc5fa3a07a442ab3fd6eb12eaf57924f655085f7"
+    },
+    {
+      "path": "app/src/main/java/com/example/booking_app/feature/owner/data/OwnerDropInRepositoryImpl.kt",
+      "sha256": "1c7fb88c7b055afa03665b19ff688f7fba42faf4683de6997b4a601cd0652a6c"
+    },
+    {
+      "path": "app/src/main/java/com/example/booking_app/feature/owner/data/OwnerVenueRepositoryImpl.kt",
+      "sha256": "ecd1b179694a2beb101fb9250162ef7e21fb7afa9e362d4fda5194058f329c29"
+    },
+    {
+      "path": "app/src/main/java/com/example/booking_app/feature/owner/data/SyncVenuePriceApi.kt",
+      "sha256": "dc7982fd48f57aeb44390461bee97bc69a0cc3a76320cc0c8ffa00f6ff8c7e4b"
+    },
+    {
+      "path": "app/src/main/java/com/example/booking_app/feature/owner/domain/OwnerOperatingSlots.kt",
+      "sha256": "911d3cb303e278c3dd2dabc35aa3be03eb9ac7cdeb744909eaa6e1b40bbc00d2"
+    },
+    {
+      "path": "app/src/main/java/com/example/booking_app/feature/owner/domain/OwnerValidation.kt",
+      "sha256": "c43b37774bd17635a79ff69128db5b2107c049386e40f7d3c4e035c66f25dff0"
+    },
+    {
+      "path": "app/src/main/java/com/example/booking_app/feature/owner/domain/OwnerVenueRepository.kt",
+      "sha256": "93459a03207c05bc0b4f3baf572f3587b231ead10c623f71e91afbbb79d00844"
+    },
+    {
+      "path": "app/src/main/java/com/example/booking_app/feature/owner/ui/OwnerApplicationFormFragment.kt",
+      "sha256": "f26fc98d03b8c64243d0502160b37230f606d5bcdc30eab66cf7c67809d35de5"
+    },
+    {
+      "path": "app/src/main/java/com/example/booking_app/feature/owner/ui/OwnerLocationMapController.kt",
+      "sha256": "9e9e8416ce46cf6495e670317aaa8b1641585f5f3868f4c34ae758066e00cade"
+    },
+    {
+      "path": "app/src/main/java/com/example/booking_app/feature/owner/ui/OwnerPriceRuleFragment.kt",
+      "sha256": "a6c976a8241bcffa2a4675f6c7e8790285242325620e45655cffc32f52997f85"
+    },
+    {
+      "path": "app/src/main/java/com/example/booking_app/feature/owner/ui/OwnerSlotBlockViewModel.kt",
+      "sha256": "930cf99949a570d4d9a181a0219c3fd73a7387b9c8de652d173cd54acfbcc3f7"
+    },
+    {
+      "path": "app/src/main/java/com/example/booking_app/feature/owner/ui/OwnerVenueDetailFragment.kt",
+      "sha256": "5849e5f20edb94c38b5a170363d41d0f18e81cdd67a37df60f6be91f7f8a4131"
+    },
+    {
+      "path": "app/src/main/java/com/example/booking_app/feature/owner/ui/OwnerVenueViewModel.kt",
+      "sha256": "8328e6c1b7e7269bb5490efc505e7c07f3f4a8821ee9641293e2b378d4829ef0"
+    },
+    {
+      "path": "app/src/main/java/com/example/booking_app/feature/owner/ui/bookings/OwnerBookingsViewModel.kt",
+      "sha256": "8577d77badf0eaee7b79852507a478bbf411aec403afd383e0ab42687fc08b6d"
+    },
+    {
+      "path": "app/src/main/java/com/example/booking_app/feature/owner/ui/calendar/OwnerCalendarViewModel.kt",
+      "sha256": "26b8748de39df5c20a4d89fb0cb5e91eabdb2eaca516d89a64ec06b515780c05"
+    },
+    {
+      "path": "app/src/main/java/com/example/booking_app/feature/owner/ui/dropin/OwnerDropInFormFragment.kt",
+      "sha256": "24a14a650050dffbc93b8bbdcabd5f8c30542213af46636b037bba31b340851d"
+    },
+    {
+      "path": "app/src/main/java/com/example/booking_app/feature/owner/ui/dropin/OwnerDropInFragment.kt",
+      "sha256": "bcc8d8ce83087561530a9963c8edd6389f9aaf668b00bc38f590acc1e8649f6c"
+    },
+    {
+      "path": "app/src/main/java/com/example/booking_app/feature/owner/ui/dropin/OwnerDropInViewModel.kt",
+      "sha256": "f11e067001c3c297c6f7997bf1d461021db87794c7620785131dafe849c4edbe"
+    },
+    {
+      "path": "app/src/main/java/com/example/booking_app/feature/owner/ui/statistics/OwnerStatisticsFragment.kt",
+      "sha256": "8ea29c32dcbfc9e3f9e72957a4d3de941a8048414f3d59cbc37aaf30ed7b7a5f"
+    },
+    {
+      "path": "app/src/main/java/com/example/booking_app/feature/owner/ui/statistics/OwnerStatisticsViewModel.kt",
+      "sha256": "8f5900b4e8e66784f0a1a5d1b486011c25155b625b08b36e6b6e96c86ac29eb7"
+    },
+    {
+      "path": "app/src/main/java/com/example/booking_app/feature/owner/ui/vouchers/OwnerVoucherFormFragment.kt",
+      "sha256": "8cea0f0a4b05494ad00913e6dded15f923f538651808e4a4f77b5aa90894938e"
+    },
+    {
+      "path": "app/src/main/java/com/example/booking_app/feature/owner/ui/vouchers/OwnerVoucherViewModel.kt",
+      "sha256": "d5ab7fe5db731e9b3fc80c320f8409ba85f9311c449f5c1fe9fe5a989e0204a3"
+    },
+    {
+      "path": "app/src/main/java/com/example/booking_app/feature/owner/ui/vouchers/OwnerVouchersFragment.kt",
+      "sha256": "a50986c56bb149a78c0a8b1f51a28261d27dfa8463967a70ab8b88cb413b57bd"
+    },
+    {
+      "path": "app/src/main/res/layout-w600dp/fragment_owner_application_form.xml",
+      "sha256": "6e84ed9b2a41810462d7aec292205931fdb290cc2a32d48bf46f6ecd3c8fc11d"
+    },
+    {
+      "path": "app/src/main/res/layout-w600dp/fragment_owner_venue_detail.xml",
+      "sha256": "01aec411e4c1e001ecdacefec575a4471cc4f5b0faffa478507e22c3b08a1213"
+    },
+    {
+      "path": "app/src/main/res/layout/dialog_location_picker.xml",
+      "sha256": "48c6164d24d80322c225465683aab0f351e9d27c0f3b65a779976b922fcc5653"
+    },
+    {
+      "path": "app/src/main/res/layout/fragment_owner_application_form.xml",
+      "sha256": "3911b6512f9f64effef2283e0cc8a2b480a3a129fe26e39779a1d941b2cebc99"
+    },
+    {
+      "path": "app/src/main/res/layout/fragment_owner_venue_detail.xml",
+      "sha256": "7a5b500418c9173de0d50e7b03f2690d84f9dc2d5935b7b9f5e3dfcb9f074c52"
+    },
+    {
+      "path": "app/src/main/res/layout/view_owner_location_preview.xml",
+      "sha256": "82f563a18312f016e054beff70a0f917b26c6baaea303c10b945d0fd3c89329e"
+    },
+    {
+      "path": "app/src/main/res/values/strings_owner_map.xml",
+      "sha256": "2c36c934d414fec846dce48258f540e67c8d69a846b97d5f3d076886918675b6"
+    },
+    {
+      "path": "app/src/test/java/com/example/booking_app/feature/owner/OwnerOperatingSlotsTest.kt",
+      "sha256": "ba0320ca41216fdc7372064e6039c1a110a838ddeafbb6be3cfc9bfc62ff0b97"
+    },
+    {
+      "path": "app/src/test/java/com/example/booking_app/feature/owner/domain/OwnerValidationTest.kt",
+      "sha256": "e53c7e7de04f66cb5f5900562a969e471164eed0a52ec830ea593e7a1326577e"
+    },
+    {
+      "path": "app/src/test/java/com/example/booking_app/feature/owner/ui/OwnerVenueViewModelTest.kt",
+      "sha256": "826dbefc21207b9466736e1132b6807c06f27ec98c67738a2a9e2778c7ddd6d2"
+    },
+    {
+      "path": "app/src/test/java/com/example/booking_app/feature/owner/ui/bookings/OwnerBookingsViewModelTest.kt",
+      "sha256": "febb7c03e1c6a062b9d1d726c7e0693a4aae0fa9a047f5867624ebc56540f1c1"
+    },
+    {
+      "path": "app/src/test/java/com/example/booking_app/feature/owner/ui/calendar/OwnerCalendarViewModelTest.kt",
+      "sha256": "171ab04f733d8dff805a2367dd8e6a398c3688845015a6f6c331d62c6b9f8f0a"
+    },
+    {
+      "path": "app/src/test/java/com/example/booking_app/feature/owner/ui/dropin/OwnerDropInViewModelTest.kt",
+      "sha256": "1532aeb4957036a223413a7efa59465af5f2f196edf3e1b50e3ccdd6eb529cbe"
+    },
+    {
+      "path": "app/src/test/java/com/example/booking_app/feature/owner/ui/statistics/OwnerStatisticsViewModelTest.kt",
+      "sha256": "bba85ee2b339cb64de05e89c9d17f26307f22b57746c62eedb167db4d0ca7cfb"
+    },
+    {
+      "path": "app/src/test/java/com/example/booking_app/feature/owner/ui/vouchers/OwnerVoucherViewModelTest.kt",
+      "sha256": "48235d476788da39185eb14caf6c07354b07ddc734749057001c01516fb541f9"
+    },
+    {
+      "path": "firestore-tests/test/dropInSessions.test.ts",
+      "sha256": "40cbc0118b9dcf3f6c6576c70bc302c7db2c349e79842f7d2fa301adc136fb59"
+    },
+    {
+      "path": "firestore-tests/test/owner-courts.test.ts",
+      "sha256": "451567878a5d812574f5cfa24c6db975ce439c7fc5f37dfa5186cf2ac9a0ce2e"
+    },
+    {
+      "path": "firestore-tests/test/owner-current-authority.test.ts",
+      "sha256": "11a7c3fdfdadcb79b87ace7cb630cf025ade5b50f9299c736c0505cf61043532"
+    },
+    {
+      "path": "firestore-tests/test/owner-fixtures.ts",
+      "sha256": "6320ccc39e4dfc4518423d26517752c92775e6e02a43a3913299d09d1ba0fc3d"
+    },
+    {
+      "path": "firestore-tests/test/owner-operations.test.ts",
+      "sha256": "b875e24d947ca273fa881c8586287c115fb5d6d7a4835e994d61cf000d4668f4"
+    },
+    {
+      "path": "firestore-tests/test/owner-price-rules.test.ts",
+      "sha256": "e3e4c5e55e9ee81cfaea070ec4d8d6a7e049f4c19b00ae8b5ff1a36c351a555d"
+    },
+    {
+      "path": "firestore-tests/test/owner-public-availability.test.ts",
+      "sha256": "822255445489d3a122dc9ff4e34e6c9e766bd6e803847f56e4d2795a30616d0b"
+    },
+    {
+      "path": "firestore-tests/test/owner-venue-authorization.test.ts",
+      "sha256": "65fae61af0cc85ce6a890b3d7df642c6b8e72ccceb6debcba69ad9a0d2b76033"
+    },
+    {
+      "path": "firestore.rules",
+      "sha256": "0238d95c995821bccc83f81b6e8feaa2bd02f366a27785a3e176196b9c8e5d6d"
+    },
+    {
+      "path": "supabase/config.toml",
+      "sha256": "9aa0e626239fb55b214ce8bfb6f43be6ab7e074aa4a26ec41776d0d36e037d59"
+    },
+    {
+      "path": "supabase/functions/_shared/owner-access.ts",
+      "sha256": "4ed8a8866d2d1a34e9da12419a7509501ca884596ee9818778a2585fde259901"
+    },
+    {
+      "path": "supabase/functions/admin-review-application/handler.ts",
+      "sha256": "54926f5dc19175fcbf8d3151916d8b5dfe3691b10358b5474986b2d52cd1efc8"
+    },
+    {
+      "path": "supabase/functions/manage-slot-blocks/handler.ts",
+      "sha256": "2714491fe7106ddf03c2c875785f45342bd8e18ce144876c14774cf50351cc3e"
+    },
+    {
+      "path": "supabase/functions/owner-cancel-session/handler.ts",
+      "sha256": "a989153a88873c5774f980c0a49cc6d80149b1ad79f9c5399836361000b15881"
+    },
+    {
+      "path": "supabase/functions/owner-checkin-dropin-registration/handler.ts",
+      "sha256": "a04ff96968dfaaa0e7a9dd098573673c073ee85f51b71acdccd2775caf4fa82a"
+    },
+    {
+      "path": "supabase/functions/owner-create-session/handler.ts",
+      "sha256": "614cbb767c2268be97f9311c0490c8f6b214faec02ce0177ac84d143e763d27a"
+    },
+    {
+      "path": "supabase/functions/owner-create-voucher/handler.ts",
+      "sha256": "9a9cfbb46db81730f9b9aa173911ac8daedad68a81c0cdbc306150c590253095"
+    },
+    {
+      "path": "supabase/functions/owner-feature11.emulator.test.ts",
+      "sha256": "4a8362a13924ad52d5afaa2610113d486f60c6adfd3631668dfdabb73a34800f"
+    },
+    {
+      "path": "supabase/functions/owner-manage-court/handler.ts",
+      "sha256": "73621ce0c627b8b1abcc885aea424fdd80cb7460eb8aef304d4672a1649e772b"
+    },
+    {
+      "path": "supabase/functions/owner-manage-court/index.ts",
+      "sha256": "9cae99d053ff706703d952891ff3e68195d58d2af7f305082040fdb40c810ffd"
+    },
+    {
+      "path": "supabase/functions/owner-statistics-source/handler.test.ts",
+      "sha256": "d42ac707ddd42018ee8b1a56fca83d2852e1216720fb8d4eece94a01609e7ff5"
+    },
+    {
+      "path": "supabase/functions/owner-statistics-source/handler.ts",
+      "sha256": "0f6aec8e3f33edea38e2b4e26cc3a15e9cb6112134bc47af3e7cb139ac173b95"
+    },
+    {
+      "path": "supabase/functions/owner-update-session/handler.test.ts",
+      "sha256": "27adba178c9ea0c6e006ef2646c2215303b7ce285251e9ebd08bac47f19dc2ca"
+    },
+    {
+      "path": "supabase/functions/owner-update-session/handler.ts",
+      "sha256": "cbc62998d2a0d80ed03192ae9f7de9395c56ea0c6b929af24b0f7cfd32a41cc9"
+    },
+    {
+      "path": "supabase/functions/sync-venue-price/handler.ts",
+      "sha256": "8e0249532dbe08a37d3986f0e84262e4f4b90d092169f173c3501e4a2379f59d"
+    },
+    {
+      "path": "supabase/functions/sync-venue-price/mutations.ts",
+      "sha256": "57580672e791cde153a9115a9b9885718244f172682c6275f41a75502bf1b892"
+    }
+  ]
+}

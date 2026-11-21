@@ -57,6 +57,7 @@ class OwnerVouchersFragment : Fragment(R.layout.fragment_owner_vouchers) {
     }
 
     private fun render(state: OwnerVoucherUiState) {
+        binding.createVoucher.isEnabled = !state.isLoading && state.venues.any { it.id == state.selectedVenueId }
         binding.loading.isVisible = state.isLoading
         binding.errorText.isVisible = !state.isLoading && state.error != null
         binding.errorText.text = state.error?.let { error ->
