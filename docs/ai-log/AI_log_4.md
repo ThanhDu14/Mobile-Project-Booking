@@ -57,6 +57,7 @@ Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 | 51  | 2026-11-20 | Bổ sung Rules đọc nội dung cho admin, sửa preview bài/tin nhắn và kiểm thử lại trên vivo V2247 | 09, 12 |
 | 52  | 2026-11-20 | Resolve conflict khi gộp main, giữ luồng hàng chờ 081 và tích hợp owner/admin; kiểm tra đủ ba job CI | 08, 11, 12 |
 | 53  | 2026-11-20 | Triển khai Thêm cơ sở từ form Android tới xét duyệt backend, giữ quyền OWNER và kiểm thử máy thật | 11, 12 |
+| 54  | 2026-11-21 | Tiếp tục Feature 11, tích hợp bản đồ và kiểm chứng vận hành OWNER | 11, 12 |
 
 ---
 
@@ -5265,5 +5266,75 @@ Kết quả, log ba job CI, kiểm tra backend và ảnh vivo V2247 được lư
 Lượt chốt: Android BUILD SUCCESSFUL với 1.369 test, 0 lỗi và 2 skipped; Edge type check pass, 396 passed/0 failed; Rules 27 file pass, 265 passed/4 skipped. Máy thật báo OK (2 tests), có 19 ảnh. Backend xác nhận owner cũ vẫn OWNER/APPROVED và có đúng hai venue; owner mới có một venue. Giấy tờ không tải được qua URL public, ảnh cơ sở tải được sau duyệt.
 
 Trong các lượt đầu, kiểm thử phát hiện lỗi loading, bộ chọn quận chồng cửa sổ và các điều kiện chờ test chưa nhận dialog/hàng đợi rỗng/venue ngoài màn hình. Phiên làm việc cũng bị gián đoạn khiến dịch vụ local dừng và draft TEST còn lại. Các lỗi ứng dụng được sửa; fixture và bộ chờ được chỉnh trước lượt chốt. Không coi lượt test bị ngắt là đã pass.
+
+---
+
+## Mục 54: Tiếp tục Feature 11, tích hợp bản đồ và kiểm chứng vận hành OWNER
+
+| Thông tin | Nội dung |
+| --- | --- |
+| Ngày | 2026-11-21 |
+| Người thực hiện | Minh Nhựt |
+| Nhóm tính năng liên quan | 11 (110, 111, 112), 12 (duyệt hồ sơ); kiểm tra hồi quy hàng chờ 081 và community/chat 090/091 |
+| Công cụ AI | Codex (GPT-6), `$speckit-converge`, `$speckit-implement`, `$humanizer:humanizer` |
+| Mục đích | Đối chiếu yêu cầu với luồng production, sửa phần vận hành OWNER còn lỗi, dùng chung bản đồ với phần B và kiểm chứng bằng CI local cùng điện thoại thật |
+| Nhánh Git | `fix-feature/11-owner` |
+
+### Prompt đã dùng
+
+> Hãy tiếp tục triển khai hoàn chỉnh Feature 11 — Quản lý sân dành cho OWNER, bao gồm:
+> - 110: Đăng ký chủ sân và hồ sơ mở thêm cơ sở.
+> - 111: Quản lý cơ sở, sân con, bảng giá, khóa/mở giờ.
+> - 112: Vận hành booking, lịch, drop-in, check-in, voucher và thống kê.
+>
+> Hãy khảo sát rồi thực hiện đến khi các luồng hoạt động đầy đủ từ Android đến backend. Không dừng ở báo cáo, sửa điều hướng hoặc thay thông báo.
+
+Yêu cầu kèm theo là đọc constitution và tài liệu liên quan, dùng `$speckit-converge` rồi `$speckit-implement`, truy vết từ màn hình tới DI và dữ liệu thực, giữ các tích hợp đã merge, chạy đủ ba job CI, dùng fixture sạch và lưu bằng chứng máy thật. Người dùng yêu cầu giữ nguyên AI_log_4 trong lúc triển khai, không tự commit, push hoặc deploy hosted.
+
+Trong quá trình thực hiện, người dùng bổ sung:
+
+> gan map vo nhu feat cua B
+
+Hai quyết định nghiệp vụ được người dùng trả lời qua câu hỏi làm rõ:
+
+- Cửa sổ check-in drop-in: "Từ 30 phút trước buổi đến khi kết thúc".
+- Cách tính `courtCount`: "Tự tính số sân đang hoạt động, cho phép bằng 0 khi tất cả ngừng hoạt động".
+
+Sau khi nhận bàn giao, người dùng yêu cầu cập nhật AI_log cho lần triển khai này bằng `$humanizer:humanizer` và tuân thủ cấu trúc file. Mục này được bổ sung theo yêu cầu mới đó.
+
+### Tóm tắt phản hồi của AI
+
+- Đọc tài liệu 110/111/112 và các hợp đồng liên quan, đối chiếu đường gọi production thay vì lấy task `[X]` hoặc tên class Placeholder/ContractPending làm kết luận. Bổ sung task theo phần thiếu, đồng bộ mapping/contracts/quickstart và giữ checklist reviewer. Luồng onboarding và mở thêm cơ sở đã có từ mục 53 được kiểm tra hồi quy, gồm giữ OWNER/APPROVED, cơ sở cũ, giấy tờ private và tạo đúng `venues/{applicationId}` khi duyệt.
+- Chuyển CRUD bảng giá qua transaction `sync-venue-price`: kiểm tra quyền hiện tại, ownership, trạng thái venue, dữ liệu rule và chồng giờ; ghi rule cùng `minPricePerHour`. Request tạo giống nhau dùng cùng ID, retry cũ không ghi đè rule đã sửa. Rules chặn client ghi vòng ngoài.
+- Thêm `owner-manage-court` và nối repository Android để thêm/sửa/đổi thứ tự sân cùng việc tính lại số sân `isActive=true`. Cho phép count bằng 0; Rules cấm client tự ghi courts/courtCount. Giữ ID tạo sân qua retry và SavedStateHandle, kiểm tra thứ tự stale, giữ booking/slot lịch sử. Khi admin duyệt, venue mới có count 0 vì chưa cấu hình sân; số khai báo dương vẫn nằm trong `venueDraft`.
+- Sửa context nhiều cơ sở và giữ draft của drop-in/voucher qua điều hướng, recreation và xoay màn hình. Khắc phục refresh booking hủy lượt tải context, voucher tự chọn lại cơ sở đầu và form nạp dữ liệu server đè phần đang sửa. Bổ sung guard gửi trùng và bỏ session ID thành công dựng tại client khi chưa có kết quả server.
+- Kiểm tra claims cùng profile hiện tại trong transaction, kể cả nhánh ADMIN; chặn quyền bị thu hồi, tài khoản khóa/đang xóa và mutation không hợp lệ trên venue HIDDEN/LOCKED. Drop-in tạo lặp đối chiếu session/slot thật; roster kiểm tra đúng venue. Check-in dùng cửa sổ từ 30 phút trước giờ bắt đầu đến trước giờ kết thúc, giữ chống replay và các helper hàng chờ 081/cron `dropin-close` đã merge.
+- Thống kê nhận cấu hình availability cùng snapshot server thay vì tải một lần. Sửa mở/xác nhận kỳ tùy chọn và hủy observation cũ khi khoảng ngày sai. Giữ sân inactive trong lịch đọc; dùng hàm sinh slot nửa giờ nằm trọn trong giờ mở cửa, tránh vòng lặp LocalTime khi giờ đóng là 23:59.
+- Gắn preview và picker bản đồ thật vào form đăng ký/thêm cơ sở và màn sửa cơ sở. Tái sử dụng `OsmdroidSetup`, MAPNIK, cache, chế độ tối và marker cầu lông của B. DialogFragment giữ ghim chưa xác nhận qua xoay, cho chạm/kéo ghim hoặc nhập tọa độ, có loading/error/retry và attribution. Sửa user agent và callback tải tile; nút vị trí chờ dữ liệu cơ sở tải xong. Tọa độ đã xác nhận được lưu qua repository hiện có và đọc lại từ server.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+| --- | --- | --- |
+| `sync-venue-price`, `SyncVenuePriceApi`, owner venue repository và Rules | Chỉnh sửa boundary ghi giá | Ghi rule/minimum cùng transaction, kiểm tra overlap và xử lý retry mà không để ghi một phần. |
+| `owner-manage-court`, `OwnerCourtApi`, `admin-review-application`, validation và Rules | Bổ sung, chỉnh sửa theo quyết định người dùng | Tính count từ sân hoạt động, cho phép 0, bảo vệ bộ đếm và giữ lịch sử; tách số khai hồ sơ khỏi số sân đã cấu hình. |
+| Dashboard, ViewModel, repository và form booking/calendar/drop-in/voucher/statistics | Chỉnh context, draft và trạng thái tải | Giữ đúng venue đang chọn, tránh mất dữ liệu nhập hoặc dùng kết quả cũ sau lỗi. |
+| `_shared/owner-access.ts`, owner session/check-in handlers | Chỉnh kiểm tra quyền và idempotency | Dùng quyền/trạng thái hiện tại trong transaction, trả kết quả server thật và áp dụng cửa sổ check-in đã chốt. |
+| `owner-statistics-source`, statistics repository, `OwnerOperatingSlots` | Chỉnh nguồn cấu hình và cách sinh slot | Đối chiếu được tiền/occupancy/peak với fixture, không treo ở giờ đóng 23:59 và không làm mất hàng lịch sử. |
+| `LocationPickerDialog`, `LocationPickerFragment`, `OwnerLocationMapController`, layout phone/w600dp | Tái sử dụng cấu hình map chung của B | Có tile thật, giữ ghim qua xoay, hỗ trợ xác nhận/hủy và lưu GeoPoint; không nhập UI riêng của feature khác. |
+| Luồng onboarding/addition, owner-docs và tích hợp 081/090/091/admin đã merge | Giữ và kiểm tra hồi quy | Bảo toàn quyền OWNER, venue cũ, giấy tờ private và các hành vi liên feature. |
+| Unit/Edge/Rules tests, instrumentation, seed/verify scripts và tài liệu | Bổ sung, cập nhật | Kiểm tra race/retry/quyền, chạy UI với dữ liệu TEST và lưu bằng chứng có đối chiếu backend. |
+| Tạo venue từ client, ghi trực tiếp aggregate, giới hạn mới về số cơ sở/hồ sơ, deploy hosted | Không thực hiện | Giữ hợp đồng xét duyệt, dữ liệu server quản lý và phạm vi người dùng đã cho phép. |
+
+### Cách kiểm chứng
+
+- Chạy local theo ba job trong `.github/workflows/ci.yml`. Android `lint testDebugUnitTest assembleDebug --stacktrace` báo BUILD SUCCESSFUL: 247 suites, 1.639 test, 0 failure, 2 skipped; lint 0 errors, 850 warnings. Edge `deno check .` pass và toàn bộ suite có 513 passed, 0 failed. Rules có 30 file pass, 311 test pass, 4 skipped với `SKIP_BLOCKED=1`. Đây là job tương đương chạy local, chưa phải kết quả GitHub Actions. [Kết quả CI](../validation/feature11-2026-11-21/ci-results.json).
+- Các ca tự động kiểm tra overlap/court mutation đồng thời, gửi tạo lặp, retry sau khi dữ liệu đã sửa, ownership giả, quyền bị thu hồi, tài khoản đang xóa, venue LOCKED và các mốc thời gian check-in/replay. Fixture dùng namespace emulator riêng, dọn trước lượt chạy; các test tranh chấp cũ được giữ trong toàn suite. [Log Edge](../validation/feature11-2026-11-21/edge-tests.log), [log Rules](../validation/feature11-2026-11-21/firestore-rules.log).
+- Trên vivo V2247 Android 15, APK riêng `com.example.booking_app.adminlocal` chạy với Firebase Auth/Firestore Emulator project `demo-admin-repair` và Supabase local `http://127.0.0.1:54321`. Chín ca hồi quy và một ca cold start đều pass, tổng 10 ca độc lập. Instrumentation thao tác view thật và gọi repository/backend; riêng OS file picker được Espresso Intents cấp ảnh TEST. Không cộng hai ca map đã chạy riêng vào tổng. [Log hồi quy](../validation/feature11-2026-11-21/device-tests.log), [log cold start](../validation/feature11-2026-11-21/cold-start-test.log).
+- Kiểm thử máy thật gồm cả hai luồng hồ sơ, từ chối/nộp lại/duyệt và signed-document preview; sửa/ngừng/đổi thứ tự sân, count 2 lên 3 rồi về 2, về 0 và kích hoạt lại thành 2; lưu cơ sở khi count 0. Đã chọn ghim trên tile thật, xoay dialog giữ tọa độ, lưu rồi mở lại đọc GeoPoint từ SERVER; tọa độ ngoài Việt Nam bị chặn và hủy không ghi thay đổi. Tile lấy từ OpenStreetMap qua mạng/cache chung với B, dữ liệu ứng dụng vẫn ở backend local.
+- Các luồng vận hành đã bấm trên điện thoại gồm duyệt/từ chối/hủy booking, hoàn ví TEST 130.000đ, check-in xác nhận thu tiền và từ chối replay, khóa/mở slot, lịch ngày/tuần, drop-in hai sân ở cơ sở thứ hai, sửa sức chứa/check-in và voucher sửa/tắt không đổi usedCount. Force-stop rồi chạy runner mới không đăng nhập lại; danh sách đủ ba venue, chuyển OWNER/PLAYER/OWNER, deep link và Back vẫn giữ đúng tài khoản. Các ca admin/hàng chờ đã merge cũng được chạy lại; cron local retry không tạo hiệu ứng trùng.
+- Đối chiếu backend độc lập xác nhận trạng thái booking, ví, slot, voucher, tọa độ map và số sân hoạt động. Fixture thống kê có PAID 100.000đ, DEPOSITED 30.000đ, REFUNDED 20.000đ, occupancy 2/15 = 13,333333%, peak 08:00 trong 60 phút. Hai venue mới duyệt có count 0, hồ sơ vẫn giữ số khai 2; owner cũ giữ venue và quyền, giấy tờ không public. [Backend assertions](../validation/feature11-2026-11-21/backend-assertions.json).
+- Lưu 63 ảnh TEST cùng hash APK/source, log và mô tả môi trường tại [báo cáo kiểm chứng](../validation/feature11-2026-11-21/README.md), [results.json](../validation/feature11-2026-11-21/results.json). Đã loại ảnh lỗi cũ khỏi phần bàn giao, khôi phục animation/thiết lập giữ sáng của điện thoại và kiểm tra `git diff --check`. Không sửa checklist reviewer; chưa commit, push hoặc deploy hosted trong lượt triển khai.
+- Giới hạn còn lại: chưa kiểm tra camera quét QR, push delivery, mọi nhánh lỗi mạng/process death, toàn bộ đường chat 091 hoặc tablet thật; chưa đo SLA 4G/usability. Trạng thái LOCKED của nút chọn map được rà bằng code và boundary tự động, chưa có ca bấm riêng trên điện thoại. Availability dùng cấu hình hiện tại cùng snapshot, chưa có schema lịch sử cấu hình. Count legacy được tính lại khi mutation sân kế tiếp; dữ liệu hosted chưa được backfill. Những phần này không được tính là đã nghiệm thu.
 
 ---
