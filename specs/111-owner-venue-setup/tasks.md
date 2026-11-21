@@ -120,3 +120,20 @@
 - **US5 / Public availability** — AS3–AS5, AS9–AS11; FR-005, FR-007, FR-009, FR-011; integrates 030/040/041/050 without altering their logic.
 - **Phase 2 Status (2026-10-30):** T008, T011, T022, T023 completed and verified via unit tests, build, lint, and emulator tests.
 - **Phase 4 Status (2026-10-30):** All 39/39 tasks completed. T034 (Recurring contract and emulator test verified) and T038 (Accessibility unit tests, lint, and 4G SLA measurement protocol documented in quickstart.md) closed.
+## Phase 8: Convergence
+
+- [X] T047 Add failing regression tests for current-profile owner revocation/deletion/LOCKED venue court writes and concurrent overlapping price mutations, repeated creation, invalid payloads and atomic minPricePerHour synchronization (FR-001, FR-006, FR-008–FR-009; Constitution II–IV).
+- [X] T048 Implement server-transaction price-rule CRUD and aggregate synchronization, server-side overlap/field validation, stable create identity/retry reconciliation, and wire the production Android repository; prevent client bypass of the atomic boundary and preserve booking snapshots (FR-008–FR-009; Decision 2A; Constitution II–III).
+- [X] T049 Enforce current OWNER/APPROVED/ACTIVE/non-deleting authority and non-LOCKED parent venue for court writes in Firestore Rules, preserving ACTIVE/HIDDEN configuration policy and admin behavior; test revoked authority, foreign IDs and protected fields (FR-001, FR-006–FR-007; Constitution II).
+## Phase 9: Convergence
+
+- [X] T050 Preserve a per-attempt court creation ID across retry/process restoration, reconcile existing documents without overwriting concurrent changes, validate court fields at the Rules boundary, and retain historical calendar rows for deactivated courts; test duplicate taps, lost-response retry and invalid server writes (FR-001, FR-006–FR-007, FR-013; Constitution II–IV).
+## Phase 10: Convergence
+
+- [X] T051 Reuse the same map setup and owner preview/picker for venue location editing, persist selected GeoPoint through the existing authorized repository and show it after reload; test real-map selection, cancel/draft behavior and locked venue controls without importing another feature's UI (FR-003, FR-013; partial).
+
+## Phase 11: Confirmed active court count
+
+- [X] T052 Implement the user's 2026-11-21 decision: courtCount is the number of active configured courts and may be zero. Move court create/update/reorder behind an authorized server transaction that recomputes the count, rejects stale create/order retries and preserves booking/slot history; deny direct client court/count mutations, allow venue editing at zero, and verify concurrent mutations plus physical create/deactivate counts. Keep the declared onboarding count in venueDraft.
+
+Verification 2026-11-21: [current local CI, physical phone and backend evidence](../../docs/validation/feature11-2026-11-21/README.md). Completion refers to implementation and the recorded checks; unmeasured reviewer/SLA/usability criteria remain separate.

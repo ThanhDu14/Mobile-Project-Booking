@@ -1,5 +1,7 @@
 # Kế hoạch triển khai: Thiết lập cơ sở của chủ sân
 
+> Triển khai hiện tại 2026-11-21 và giới hạn kiểm chứng: [báo cáo Feature 11](../../docs/validation/feature11-2026-11-21/README.md). Giữ kiến trúc gốc; tham chiếu contract hiện hành thay các gate planning đã được đóng.
+
 **Nhánh**: `111-owner-venue-setup` | **Ngày**: 2026-10-16 | **Đặc tả**: [spec.md](spec.md)
 
 **Đầu vào**: `specs/111-owner-venue-setup/spec.md`

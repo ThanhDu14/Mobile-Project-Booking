@@ -1,6 +1,6 @@
 # Hướng dẫn nhanh: Kiểm tra thiết lập cơ sở của chủ sân
 
-Tài liệu này mô tả các tình huống kiểm tra sau khi triển khai. Chỉ chạy với fake cục bộ và Firebase Emulator Suite, không chạy trên dự án thật. Repo hiện mới có mã khởi tạo; tên task build/kiểm thử còn tùy cấu hình Gradle và Emulator khi được triển khai, vì vậy cần xác nhận từ cấu hình thực tế thay vì tự suy đoán.
+Tài liệu này mô tả các tình huống kiểm tra sau khi triển khai. Chỉ chạy với fake cục bộ và Firebase Emulator Suite, không chạy trên dự án thật. Implementation hiện tại dùng OwnerModule production bindings, manage-slot-blocks và transaction sync-venue-price. Chạy ./gradlew lint testDebugUnitTest assembleDebug; Edge deno check . / deno test -A --no-check và Rules SKIP_BLOCKED=1 npm test theo ci.yml. Xem [bằng chứng current](../../docs/validation/feature11-2026-11-21/README.md); các mốc gate của bản planning là lịch sử.
 
 ## Điều kiện chuẩn bị
 
@@ -92,6 +92,14 @@ T007 (atomic lock/unlock server contract), T008 (trusted authority cập nhật 
     - Không can thiệp vào engine đặt cố định (giữ đúng ranh giới của Feature 041).
 
 Xem [data-model.md](data-model.md) và [contracts/firestore-boundary.md](contracts/firestore-boundary.md) về trường dữ liệu và ranh giới phân quyền.
+
+## Bản đồ cơ sở — tích hợp 2026-11-21
+
+Form đăng ký/thêm cơ sở và sửa cơ sở dùng chung `core/map/OsmdroidSetup` với phần tìm sân/chi tiết sân của B: MAPNIK, cache trong ứng dụng, user agent SmashNow, marker cầu lông và chế độ tối. Không đổi user agent thành tên gói Android vì OSM có thể trả ảnh chặn thay cho bản đồ.
+
+Mở vị trí, chạm bản đồ hoặc kéo ghim, xác nhận rồi lưu cơ sở. Hủy dialog không sửa tọa độ. Dialog giữ vị trí chưa xác nhận khi xoay; màn sửa đọc lại GeoPoint qua repository hiện có sau khi mở lại. Venue LOCKED vô hiệu hóa nút chọn và vùng chạm trên bản đồ; Firestore Rules vẫn chặn ghi. Khi tile lỗi, có thử lại và vẫn nhập được tọa độ hợp lệ trong Việt Nam.
+
+`OwnerMapDeviceTest` kiểm tra tile thật, chạm chọn ghim, xoay dialog, lưu/đọc lại từ SERVER và hủy tọa độ ngoài Việt Nam trên điện thoại. Xem [bằng chứng hiện tại](../../docs/validation/feature11-2026-11-21/README.md).
 
 
 ## Thêm cơ sở — kiểm chứng 2026-11-20

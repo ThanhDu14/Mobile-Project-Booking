@@ -79,7 +79,7 @@
 - `location` phải có tọa độ hợp lệ; `districtId` phải tham chiếu danh mục hiện có. Không cho nhập giá trị danh mục không tồn tại.
 - `openTime`, `closeTime`, `startTime`, `endTime` phải là giờ `HHmm`; khoảng thời gian phải có điểm kết thúc sau điểm bắt đầu và không kéo qua nửa đêm. Khoảng qua nửa đêm phải được tách thành hai khoảng thuộc hai ngày liên tiếp.
 - `openTime` và `closeTime` là cùng một cặp giờ hoạt động cho mọi ngày trong tuần; không cấu hình lịch đóng cửa theo thứ trong feature này.
-- `courtCount` phải là số nguyên dương và nhất quán với số court hoạt động theo quy tắc sản phẩm; giới hạn tối đa chưa được quy định.
+- Quyết định người dùng 2026-11-21: `venues.courtCount` do server tính bằng số court có `isActive=true`, cho phép bằng 0 khi chưa cấu hình hoặc tất cả ngừng hoạt động. Số sân khai trong hồ sơ vẫn là số nguyên dương ở `venueDraft.courtCount`; không áp giới hạn tối đa. Thêm/sửa/trạng thái/thứ tự sân và bộ đếm được ghi trong cùng transaction.
 - Court yêu cầu `name`, `surfaceType` trong `WOOD`, `PU`, `MAT`; `sortOrder` hợp lệ theo thứ tự hiển thị. Không được tạo court rỗng hoặc trùng hiển thị gây nhầm lẫn trong cùng venue.
 - `daysOfWeek` phải chứa ngày hợp lệ 1–7; `pricePerHour` là số nguyên VND dương, chia hết cho 2.000; `label` chỉ nhận `NORMAL`, `PEAK`, `WEEKEND`.
 - Thời điểm bắt đầu và kết thúc khóa giờ phải nằm trên mốc 00 hoặc 30 phút; khoảng được quy đổi đầy đủ thành các slot 30 phút liên tiếp, không làm tròn âm thầm.

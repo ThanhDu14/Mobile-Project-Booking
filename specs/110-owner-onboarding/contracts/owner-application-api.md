@@ -4,6 +4,8 @@ This API contract implements the approved decisions in `owner-onboarding-boundar
 
 All functions accept `POST` JSON and return JSON. Errors use the shared shape `{ "error": { "code": "...", "message": "..." } }`. Supabase gateway JWT verification remains disabled for these functions because Firebase tokens are verified by shared `_shared/auth.ts`; function handlers must call the verifier themselves. No privileged Supabase/Firebase secret is shipped in the app.
 
+Decision confirmed by the user on 2026-11-21: the positive declared `venueDraft.courtCount` stays in the application. Approval creates a venue with derived `courtCount=0`, because no actual courts have been configured yet. Feature 111's `owner-manage-court` transaction maintains the count of active courts thereafter, allowing zero; clients cannot write this aggregate.
+
 ## `owner-applications`
 
 ### Read current state
