@@ -5,6 +5,7 @@
     <!-- Chụp ảnh đại diện (spec 011 FR-003, FR-024): xin lúc bấm "Chụp ảnh". Chọn từ thư viện dùng
          Photo Picker nên không khai báo READ_MEDIA_IMAGES. -->
     <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <uses-feature
         android:name="android.hardware.camera"

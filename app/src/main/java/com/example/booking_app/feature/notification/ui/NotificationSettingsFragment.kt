@@ -1,6 +1,9 @@
 package com.example.booking_app.feature.notification.ui
 
 import android.content.Intent
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.view.View
@@ -8,6 +11,8 @@ import android.view.LayoutInflater
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
@@ -41,14 +46,46 @@ val notificationGroups = listOf(
 @AndroidEntryPoint
 class NotificationSettingsFragment : Fragment(R.layout.fragment_notification_settings) {
     private val model: NotificationSettingsViewModel by viewModels()
+    private var permissionDenied = false
+    private val requestPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        permissionDenied = !granted
+        updatePermissionStatus()
+    }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        permissionDenied = savedInstanceState?.getBoolean("notification.permissionDenied") ?: false
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putBoolean("notification.permissionDenied", permissionDenied)
+    }
+
+    private fun permissionAction(): NotificationPermissionAction {
+        if (permissionDenied || Build.VERSION.SDK_INT < 33) return NotificationPermissionAction.SETTINGS
+        return notificationPermissionAction(Build.VERSION.SDK_INT,
+            ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED)
+    }
+
+    private fun updatePermissionStatus() {
+        view?.let {
+            val b = FragmentNotificationSettingsBinding.bind(it)
+            val denied = !NotificationManagerCompat.from(requireContext()).areNotificationsEnabled()
+            b.permission.isVisible = denied
+            b.osSettings.isVisible = denied
+            b.osSettings.setText(if (permissionAction() == NotificationPermissionAction.REQUEST)
+                R.string.notification_permission_enable else R.string.notification_permission_settings)
+        }
+    }
+
+    private fun openSystemSettings() {
+        startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, requireContext().packageName))
+    }
+
     override fun onResume() {
         super.onResume()
-        view?.let { view ->
-            val binding = FragmentNotificationSettingsBinding.bind(view)
-            val denied = !NotificationManagerCompat.from(requireContext()).areNotificationsEnabled()
-            binding.permission.isVisible = denied
-            binding.osSettings.isVisible = denied
-        }
+        updatePermissionStatus()
     }
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         val b = FragmentNotificationSettingsBinding.bind(view)
@@ -62,7 +99,9 @@ class NotificationSettingsFragment : Fragment(R.layout.fragment_notification_set
         b.toolbar.setNavigationOnClickListener { androidx.navigation.fragment.NavHostFragment.findNavController(this).navigateUp() }
         b.retry.setOnClickListener { model.retry() }
         b.osSettings.setOnClickListener {
-            startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, requireContext().packageName))
+            if (Build.VERSION.SDK_INT >= 33 && permissionAction() == NotificationPermissionAction.REQUEST) {
+                requestPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+            } else openSystemSettings()
         }
         val rows = mutableListOf<Pair<PreferenceGroup, ItemNotificationPreferenceBinding>>()
         for ((section, groups) in notificationGroups.groupBy { it.section }) {
@@ -105,9 +144,7 @@ class NotificationSettingsFragment : Fragment(R.layout.fragment_notification_set
                     b.error.isVisible = state.error
                     b.retry.isVisible = state.error
                     b.scroll.isVisible = state.values.isNotEmpty()
-                    val denied = !NotificationManagerCompat.from(requireContext()).areNotificationsEnabled()
-                    b.permission.isVisible = denied
-                    b.osSettings.isVisible = denied
+                    updatePermissionStatus()
                     rows.forEach { (group, row) ->
                         val locked = BOOKING_NEW in group.types
                         row.check.isEnabled = !locked && !state.busy

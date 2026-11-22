@@ -38,4 +38,5 @@
     <string name="notification_system_pref">Thông báo hệ thống</string>
     <string name="notification_permission_off">Thông báo đẩy đang bị hệ điều hành chặn. Hộp thư vẫn hoạt động.</string>
     <string name="notification_permission_settings">Mở cài đặt hệ thống</string>
+    <string name="notification_permission_enable">Bật thông báo đẩy</string>
 </resources>
