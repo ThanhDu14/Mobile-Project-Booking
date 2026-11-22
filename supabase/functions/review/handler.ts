@@ -18,7 +18,7 @@ import {
 import { applyDelta, computeOverall, parseRatings, type Ratings, starBucket, type VenueRating } from "../_shared/reviews.ts";
 
 export interface Notification {
-  type: "REVIEW_NEW" | "REVIEW_REPLY";
+  type: "REVIEW_NEW" | "REVIEW_REPLIED";
   recipientUid: string;
   data: Record<string, string>;
 }
@@ -524,7 +524,7 @@ async function reply(uid: string, appRole: AppRole, body: Record<string, unknown
 
   if (result.first && result.recipientUid) {
     await notifyQuietly(deps, {
-      type: "REVIEW_REPLY",
+      type: "REVIEW_REPLIED",
       recipientUid: result.recipientUid,
       data: { reviewId, venueId: result.venueId },
     });
