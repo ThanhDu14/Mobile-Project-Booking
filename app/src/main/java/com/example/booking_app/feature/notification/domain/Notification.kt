@@ -8,7 +8,8 @@ enum class NotificationType {
     REVIEW_REPLIED, REVIEW_NEW, REVIEW_REMINDER, GROUP_ACTIVITY, CHAT_MESSAGE, SYSTEM;
 
     companion object {
-        fun fromStoredValue(value: String): NotificationType? = entries.firstOrNull { it.name == value }
+        fun fromStoredValue(value: String): NotificationType? =
+            if (value == "REVIEW_REPLY") REVIEW_REPLIED else entries.firstOrNull { it.name == value }
     }
 }
 
