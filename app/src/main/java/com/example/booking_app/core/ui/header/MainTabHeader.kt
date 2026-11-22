@@ -22,6 +22,16 @@ object MainTabHeader {
         avatarSource: AccountAvatarSource,
         accountEntryNavigator: AccountEntryNavigator,
     ) {
+        if (header.tabActions.findViewWithTag<android.view.View>("notification-entry") == null) {
+            header.tabActions.addView(androidx.appcompat.widget.AppCompatImageButton(fragment.requireContext(), null, android.R.attr.borderlessButtonStyle).apply {
+                tag = "notification-entry"
+                setImageResource(com.example.booking_app.R.drawable.ic_notifications_none_24)
+                contentDescription = context.getString(com.example.booking_app.R.string.notification_title)
+                val size = resources.getDimensionPixelSize(com.example.booking_app.R.dimen.touch_min)
+                layoutParams = android.widget.LinearLayout.LayoutParams(size, size)
+                setOnClickListener { fragment.findNavController().navigate(android.net.Uri.parse("smashnow://notifications")) }
+            })
+        }
         header.accountAvatar.setOnClickListener { accountEntryNavigator.open(fragment.findNavController()) }
         val owner = fragment.viewLifecycleOwner
         owner.lifecycleScope.launch {

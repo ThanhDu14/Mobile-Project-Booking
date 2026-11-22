@@ -15,5 +15,6 @@
     <include app:graph="@navigation/nav_owner" />
     <include app:graph="@navigation/nav_admin" />
     <include app:graph="@navigation/nav_chat" />
+    <include app:graph="@navigation/nav_notification" />
 
 </navigation>

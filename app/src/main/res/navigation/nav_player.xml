@@ -35,6 +35,7 @@
         android:id="@+id/bookingDetailFragment"
         android:name="com.example.booking_app.feature.booking_management.ui.BookingDetailFragment"
         android:label="@string/my_bookings_060_detail_title">
+        <deepLink app:uri="smashnow://notifications/booking/{bookingId}" />
         <argument
             android:name="bookingId"
             app:argType="string" />
