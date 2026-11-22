@@ -16,9 +16,9 @@ description: "Task list for Feature 100 – Notification"
 
 **Purpose**: Discovery only. T001–T003 inspect and report existing build/test conventions; they do not add dependencies, initialize services, or create implementation scaffolding. Any actual setup work must be defined after project-wide dependency and harness choices are confirmed.
 
-- [ ] T001 [P] Inventory the existing Gradle version catalog and Android test harness, and record missing notification prerequisites without selecting or adding dependencies in `gradle/libs.versions.toml` and `app/build.gradle.kts` (Constitution I, IV, VII)
-- [ ] T002 [P] Inventory the existing Firestore Emulator harness and Rules test entry points, recording setup gaps without creating test infrastructure in `firestore-tests/`
-- [ ] T003 [P] Inventory existing Supabase Edge Function and Deno conventions, recording setup gaps without creating functions or selecting dependencies in `supabase/functions/`
+- [X] T001 [P] Inventory the existing Gradle version catalog and Android test harness, and record missing notification prerequisites without selecting or adding dependencies in `gradle/libs.versions.toml` and `app/build.gradle.kts` (Constitution I, IV, VII)
+- [X] T002 [P] Inventory the existing Firestore Emulator harness and Rules test entry points, recording setup gaps without creating test infrastructure in `firestore-tests/`
+- [X] T003 [P] Inventory existing Supabase Edge Function and Deno conventions, recording setup gaps without creating functions or selecting dependencies in `supabase/functions/`
 
 ---
 
@@ -32,7 +32,7 @@ description: "Task list for Feature 100 – Notification"
 - [ ] T007 NEEDS DECISION: record and resolve the conflict between DB README §7 (Admin C), DB §4.13, Feature 120, and server-authoritative SYSTEM delivery; do not change schema, Rules, or Admin authorization until the document owners agree, then update the owning contract in `specs/100-notification/contracts/firestore-security.md` (blocks only SYSTEM authorization/fan-out T049 and any Rules change that depends on the Admin permission decision; own-user inbox Rules can proceed)
 - [ ] T008 NEEDS DECISION: obtain Feature 091 confirmation of the chat foreground-presence source and multi-device behavior; record it in `specs/100-notification/contracts/event-integration.md` (FR-011; blocks only deciding/implementing CHAT_MESSAGE push suppression in T048, not inbox persistence)
 - [ ] T009 NEEDS DECISION: obtain Feature 120 confirmation of the authoritative active-account predicate and SYSTEM fan-out behavior; record it in `specs/100-notification/contracts/event-integration.md` (FR-011; blocks only recipient selection/fan-out in T049; do not substitute an inferred predicate)
-- [ ] T010 NEEDS DECISION: agree inbox page size/query shape and listener versus one-shot refresh strategy; record in `specs/100-notification/research.md` (FR-003; blocks final paged query in T030 only; defer index T055 until query shape is known)
+- [X] T010 NEEDS DECISION: agree inbox page size/query shape and listener versus one-shot refresh strategy; record in `specs/100-notification/research.md` (FR-003; blocks final paged query in T030 only; defer index T055 until query shape is known)
 - [ ] T011 NEEDS DECISION: obtain Feature 011 agreement on FCM token registration, refresh, logout/account-switch, multi-token, and invalid-token lifecycle; record in `specs/100-notification/contracts/firestore-security.md` (blocks token lifecycle T051 and its Rules coverage T052; does not block inbox work)
 - [ ] T012 NEEDS DECISION: agree preference behavior for existing users/missing keys and whether DataStore is cache only; record in `specs/100-notification/data-model.md` (FR-012; blocks legacy/default fallback behavior in T036 and T039 only; the specified new-account default and BOOKING_NEW lock remain fixed)
 - [ ] T013 NEEDS DECISION: confirm available deep-link identifiers for each relevant type with producer features and record them in `specs/100-notification/contracts/event-integration.md` (FR-013; blocks complete routing in T035 for types whose identifiers are unconfirmed; implement confirmed routes independently)
@@ -89,15 +89,15 @@ description: "Task list for Feature 100 – Notification"
 
 ### Tests for User Story 3
 
-- [ ] T026 [P] [US3] Add Firebase Emulator Rules allow/deny tests for own inbox read, cross-user/unauthenticated denial, isRead-only update, create/delete denial in `firestore-tests/test/notification-security.test.ts`
+- [X] T026 [P] [US3] Add Firebase Emulator Rules allow/deny tests for own inbox read, cross-user/unauthenticated denial, isRead-only update, create/delete denial in `firestore-tests/test/notification-security.test.ts`
 - [ ] T027 [P] [US3] Add unit tests for notification mapping, ordered page loading, read-one/read-all repository behavior, and source-link authorization fallback in `app/src/test/java/com/example/booking_app/feature/notification/`
 - [ ] T028 [US3] Add UI tests for inbox loading, content, empty, error/retry, and read states in both light and dark themes and on phone and `w600dp` layouts in `app/src/androidTest/java/com/example/booking_app/feature/notification/` (FR-009; Constitution V)
 
 ### Implementation for User Story 3
 
-- [ ] T029 [P] [US3] Create notification domain model, type mapping, and repository/use-case interfaces matching the 19 spec types and persisted fields in `app/src/main/java/com/example/booking_app/feature/notification/domain/`
+- [X] T029 [P] [US3] Create notification domain model, type mapping, and repository/use-case interfaces matching the 19 spec types and persisted fields in `app/src/main/java/com/example/booking_app/feature/notification/domain/`
 - [ ] T030 [US3] Implement paged, newest-first own-user Firestore inbox repository and mark-one/mark-all-isRead operations in `app/src/main/java/com/example/booking_app/feature/notification/data/`
-- [ ] T031 [US3] Implement Firestore Rules for own-user inbox reads and isRead-only updates, denying client create/delete and cross-user access in `firestore.rules`
+- [X] T031 [US3] Implement Firestore Rules for own-user inbox reads and isRead-only updates, denying client create/delete and cross-user access in `firestore.rules`
 - [ ] T032 [US3] Implement inbox ViewModel StateFlow states and lifecycle-bound repository collection in `app/src/main/java/com/example/booking_app/feature/notification/ui/`
 - [ ] T033 [P] [US3] Implement Vietnamese XML inbox layout, notification row, empty/error/retry/loading resources, and accessible read indicators in `app/src/main/res/layout/` and `app/src/main/res/values/`
 - [ ] T034 [US3] Implement inbox Fragment, list adapter with ListAdapter/DiffUtil, read actions, and navigation entry in `app/src/main/java/com/example/booking_app/feature/notification/ui/` and `app/src/main/res/navigation/`
@@ -114,13 +114,13 @@ description: "Task list for Feature 100 – Notification"
 ### Tests for User Story 4
 
 - [ ] T036 [P] [US4] Add unit tests for default and legacy preference mapping, per-type writes, BOOKING_NEW locked-on behavior, and failure state in `app/src/test/java/com/example/booking_app/feature/notification/`
-- [ ] T037 [US4] Add Emulator Rules tests proving users can update only their own notificationPrefs while protected profile fields and other users remain unchanged in `firestore-tests/test/notification-security.test.ts`
+- [X] T037 [US4] Add Emulator Rules tests proving users can update only their own notificationPrefs while protected profile fields and other users remain unchanged in `firestore-tests/test/notification-security.test.ts`
 - [ ] T038 [US4] Add UI tests for settings loading/content/error/retry and locked BOOKING_NEW toggle in both light and dark themes and on phone and `w600dp` layouts in `app/src/androidTest/java/com/example/booking_app/feature/notification/` (FR-009, FR-012; Constitution V)
 
 ### Implementation for User Story 4
 
 - [ ] T039 [US4] Implement preference model and repository operations on `users/{uid}.notificationPrefs` with agreed defaults/cache behavior in `app/src/main/java/com/example/booking_app/feature/notification/data/`
-- [ ] T040 [US4] Extend Firestore user Rules to permit only the current user's notificationPrefs updates without weakening existing protected-field rules in `firestore.rules`
+- [X] T040 [US4] Extend Firestore user Rules to permit only the current user's notificationPrefs updates without weakening existing protected-field rules in `firestore.rules`
 - [ ] T041 [P] [US4] Implement Vietnamese XML notification settings layout/resources with a non-editable BOOKING_NEW state in `app/src/main/res/layout/` and `app/src/main/res/values/`
 - [ ] T042 [US4] Implement settings ViewModel and Fragment with per-type updates, retry/error states, and OS permission status separated from stored preferences in `app/src/main/java/com/example/booking_app/feature/notification/ui/`
 - [ ] T043 [US4] Apply saved per-type push eligibility in server delivery while always retaining inbox creation and always allowing BOOKING_NEW push eligibility in `supabase/functions/send-notification/`
