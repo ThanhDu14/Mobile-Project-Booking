@@ -60,6 +60,7 @@ Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 | 54  | 2026-11-21 | Tiếp tục Feature 11, tích hợp bản đồ và kiểm chứng vận hành OWNER                                                                                                                                                  | 11, 12         |
 | 55  | 2026-11-21 | Tích hợp tin nhắn OWNER với module chat 091, sửa lỗi phiên/outbox và kiểm thử Firebase/Supabase trên máy thật                                                                                                      | 09, 11         |
 | 56  | 2026-11-22 | Triển khai domain, repository inbox/preference và Rules Feature 100; kiểm thử, ghi quyết định và đề xuất job phục hồi push                                                                                         | 10             |
+| 57  | 2026-11-22 | Tiếp tục Feature 100: inbox/settings Android, route an toàn và kiểm thử phone/w600dp light/dark; lưu ảnh và kết quả                                                                                                | 10             |
 
 ---
 
@@ -5519,5 +5520,72 @@ Khi hoàn tất, tóm tắt phần đã triển khai, kết quả kiểm thử, 
 - Lần chạy CLI trong sandbox lỗi quyền truy cập registry/cache; lần chạy ngoài sandbox với Java mặc định bị chặn vì firebase-tools yêu cầu Java 21 trở lên. Chạy lại bằng JBR 25 của Android Studio thì Emulator đạt. Không dùng project Firebase thật để chạy test.
 - Đã chạy `git diff --check`. Bằng chứng và giới hạn được ghi trong [implementation review](../../specs/100-notification/implementation-review.md); thiết kế chờ duyệt nằm trong [delivery-state proposal](../../specs/100-notification/delivery-state-proposal.md).
 - Chưa chạy connected UI tests, đối chiếu screenshot phone/w600dp ở light/dark, Supabase local delivery/reminder, FCM thật hoặc đầy đủ quickstart. Hai màn hình, các trạng thái tương tác và điều hướng chưa được triển khai. DataStore cache, lifecycle token đầy đủ, event identity và schema phục hồi còn việc cần chốt hoặc kiểm chứng. Không tính việc mở ảnh tham khảo là bằng chứng UI đã đạt.
+
+---
+
+## Mục 57: Tiếp tục Feature 100, hoàn thiện inbox/settings và kiểm thử Android
+
+| Thông tin                | Nội dung                                                                                                                                     |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-11-22                                                                                                                                   |
+| Người thực hiện          | Minh Nhựt                                                                                                                                   |
+| Nhóm tính năng liên quan | 10 (100 thông báo); đối chiếu 011 tài khoản, booking/drop-in, 070 đánh giá, 091 chat và các nguồn owner/admin                                |
+| Công cụ AI               | Codex (GPT-6), `$speckit-implement`, `$humanizer:humanizer`                                                                                  |
+| Mục đích                 | Hoàn thiện luồng Android xem và cài đặt thông báo, kiểm thử repository/state/route, đối chiếu ảnh trên điện thoại và ghi rõ phần còn bị chặn |
+| Nhánh Git                | `feat/100-notification`                                                                                                                      |
+
+### Prompt đã dùng
+
+```text
+$speckit-implement
+
+Tiếp tục Feature 100 từ tiến độ hiện tại. Đọc specs/100-notification/implementation-review.md, tasks.md và code đã có trước khi sửa.
+
+Ưu tiên hoàn thiện luồng Android xem thông báo và cài đặt thông báo:
+
+1. Kiểm tra hai Firestore repository hiện có. Bổ sung kiểm thử hành vi cho phân trang 30 mục, thứ tự mới nhất trước, đánh dấu một/tất cả đã đọc qua nhiều trang, lỗi mạng và đổi tài khoản. Kiểm thử preference mặc định, cập nhật từng loại và BOOKING_NEW luôn bật. Chỉ đóng T027/T030/T036/T039 khi phần việc tương ứng đã đủ bằng chứng; giữ rõ phần còn phụ thuộc quyết định DataStore trong T012.
+
+2. Triển khai inbox và settings: DI, ViewModel, Fragment, adapter, XML resources và navigation theo T032–T034, T041–T042. Đọc ui/README.md và mở trực tiếp hai PNG trong specs/100-notification/ui/ trước khi làm giao diện. Giữ bố cục và các nhóm cài đặt như ảnh, theo lựa chọn đã ghi trong implementation-review.md. Áp dụng hành vi nhóm đã được duyệt, lưu preference theo từng type và giữ BOOKING_NEW không thể tắt.
+
+3. Hoàn thiện loading, content, empty, error/retry và trạng thái đã đọc/chưa đọc. Với T035, triển khai route có identifier và quyền truy cập đã xác nhận; dùng chi tiết title/body đã lưu làm fallback khi nguồn không còn khả dụng. Ghi rõ loại thông báo nào còn thiếu contract.
+
+4. Bổ sung kiểm thử UI theo T028/T038. Chạy trên phone và w600dp ở light/dark, chụp hai màn hình rồi đối chiếu với ảnh gốc. Sửa sai lệch và lưu bằng chứng cùng kết quả kiểm thử.
+
+Các quyết định đã duyệt về phân trang, fallback preference và hành vi nhóm được ghi trong implementation-review.md; tiếp tục dùng chúng. Delivery-state-proposal.md vẫn là đề xuất chờ duyệt schema. Tiếp tục phần Android độc lập trong khi giữ nguyên trạng thái chặn của backend.
+
+Chạy kiểm thử phù hợp, assembleDebug và lintDebug sau thay đổi. Cập nhật tasks.md và implementation-review.md theo kết quả thực tế. Khi kết thúc, báo task đã hoàn thành, kết quả kiểm thử, đường dẫn screenshot và phần còn bị chặn.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Rà lại code và quyết định đã duyệt, mở trực tiếp hai PNG gốc. Chuyển hai repository sang `SessionManager`, dùng đọc SERVER, kiểm tra UID sau thao tác bất đồng bộ và từ chối cursor của tài khoản cũ. Bổ sung test cho query 30 mục, thứ tự, mark-one/mark-all qua nhiều trang, lỗi mạng và preference.
+- Thêm DI, ViewModel StateFlow, Fragment, ListAdapter/DiffUtil, XML/resources và navigation cho inbox/settings. Màn hình có loading, content, empty và error/retry; thao tác lưu lỗi giữ giá trị trước đó. Cài đặt hệ điều hành được hiển thị riêng với preference trong hồ sơ.
+- Giữ các nhóm cài đặt như ảnh và hành vi nhóm đã duyệt. Khi phát hiện ảnh chỉ bao phủ 15/19 type, AI nêu phần thiếu; người dùng duyệt thêm hàng Kết quả hồ sơ chủ sân trong nhóm Chủ sân và hàng Thông báo hệ thống cuối màn hình. Hai hàng này bao phủ ba OWNER type còn lại và SYSTEM; BOOKING_NEW vẫn khóa bật.
+- Nối nút chuông trong header chung, deep link settings từ tài khoản và toolbar inbox. Giữ footer ở inbox, ẩn khi vào settings. Route cho bốn loại kết quả/nhắc booking, bốn loại drop-in và CHAT_MESSAGE đọc lại nguồn từ SERVER, kiểm tra quyền rồi mở màn liên quan; các trường hợp chưa đủ contract dùng title/body đã lưu.
+- Kiểm thử máy thật tìm ra lỗi tải thành công vẫn giữ `loading=true`, làm spinner không tắt và che trạng thái rỗng. AI sửa state và thêm test hồi quy. Sau khi mở ảnh chụp, tiếp tục chỉnh inset, kích thước icon 40dp, khoảng cách hàng và tint để icon hiện đúng ở light/dark.
+- Cập nhật thêm T027, T028, T030, T032 đến T034, T036, T038, T041 và T042, đưa tiến độ lên 19/56 task. T012/T039 còn phần quyết định DataStore cache; T035 còn mười type chưa đủ hợp đồng route. Ghi nhận producer admin đang lưu createdAt dạng chuỗi ISO, trái contract Timestamp; luồng dữ liệu thực cần được chuẩn hóa trước khi nghiệm thu.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần                                                                                      | Quyết định                                   | Lý do                                                                                                                      |
+| ----------------------------------------------------------------------------------------- | -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Hai Firestore repository và `SessionManager`                                              | Chỉnh cách lấy UID, bổ sung kiểm thử hành vi | Dùng phiên chung, giữ query 30 mục mới nhất trước, chặn kết quả/cursor của tài khoản cũ và đánh dấu đọc qua toàn bộ trang. |
+| `NotificationModule`, `NotificationSession`, ViewModel và Fragment inbox/settings         | Bổ sung DI, state và xử lý sự kiện           | Tách Firebase khỏi UI, thu thập flow theo lifecycle, giữ giá trị trước lỗi và thử lại đúng thao tác.                       |
+| `NotificationAdapter`, XML và resources notification                                      | Bổ sung theo ảnh và theme ứng dụng           | Hiển thị đọc/chưa đọc, đủ trạng thái tải/rỗng/lỗi, dùng lại typography, màu DayNight và gutter phone/w600dp.               |
+| `notificationGroups` và hai hàng cài đặt bổ sung                                          | Triển khai theo duyệt của người dùng         | Bao phủ đủ 19 type, lưu từng key, hỗ trợ trạng thái nhóm trung gian và giữ BOOKING_NEW riêng, luôn bật.                    |
+| `MainTabHeader`, `MainActivity`, `nav_main.xml`, `nav_player.xml`, `nav_notification.xml` | Nối điểm vào, deep link và footer            | Mở inbox từ nút chuông, mở settings từ toolbar/tài khoản; giữ menu điều hướng dùng chung và Back đúng inbox.               |
+| `FirestoreNotificationRouteResolver` và fallback title/body                               | Bổ sung route cho nguồn đã xác nhận          | Đọc lại source bằng SERVER, kiểm tra quyền/ownership/membership; dùng chi tiết đã lưu khi không mở được nguồn.             |
+| JVM tests, `NotificationUiTest`, host debug và `validate-device.ps1`                      | Bổ sung kiểm thử và lưu bằng chứng           | Kiểm tra repository/state/route, thao tác Fragment và MainActivity thật với dữ liệu TEST, chụp ảnh và khôi phục density.   |
+| `tasks.md`, `implementation-review.md`, contract/data-model và `validation/`              | Cập nhật tiến độ, quyết định và kết quả      | Đánh dấu task đã đủ bằng chứng; giữ rõ DataStore, route còn thiếu và vấn đề kiểu createdAt từ producer.                    |
+| Backend delivery/reminder, schema job, Rules và index                                     | Giữ phạm vi Android của lượt này             | Delivery-state vẫn chờ duyệt; việc chuẩn hóa dữ liệu producer và nghiệm thu luồng backend còn mở.                          |
+
+### Cách kiểm chứng
+
+- Lệnh `testDebugUnitTest assembleDebug lintDebug` cuối cùng báo BUILD SUCCESSFUL: 252 suite, 1.666 ca, 0 failure/error và 2 skipped. Hai ca trong `DataStoreSessionPrefsTest` có điều kiện bỏ qua Windows từ trước vì thao tác đổi tên file đích của bộ test; lượt này giữ nguyên điều kiện đó. Năm suite notification có 21/21 ca đạt, không skip. Lint có 0 errors và 856 warnings. [Kết quả tổng hợp](../../specs/100-notification/validation/results.json), [tóm tắt build](../../specs/100-notification/validation/android-build-summary.log).
+- Ban đầu chưa có thiết bị/AVD; sau khi người dùng kết nối vivo V2247 Android 15, chạy package TEST riêng `com.example.booking_app.adminlocal`. Bộ 8 ca chạy trên phone 393dp và w600dp 720dp, mỗi cấu hình có light/dark, tổng 32/32 ca đạt. w600dp dùng density 240 trên cùng điện thoại, không phải tablet vật lý. Các ca kiểm tra tải/rỗng/lỗi/retry, đọc một/tất cả, lỗi lưu, nhóm trung gian, BOOKING_NEW khóa bật, hai hàng mới, navigation/Back và điểm vào/footer của MainActivity.
+- Repository thông báo, UID stream và resolver trong UI test dùng fake. Phần core dùng cấu hình demo/local với project `demo-admin-repair`; ca MainActivity chạy phần core ở chế độ khách cùng dữ liệu thông báo giả. Kiểm thử quyền nguồn trong JVM dùng SDK mock. Kết quả UI chưa nghiệm thu đọc inbox/nguồn từ backend thực; lượt này không chạy server delivery/reminder, FCM thật hay triển khai schema job.
+- Ca rỗng thất bại ở lượt đầu. AI ban đầu nhận định assertion chạy sớm, nhưng bước chờ vẫn tái hiện lỗi; kiểm tra state mới xác định được `loading=true` còn sót sau tải thành công. Đã giữ [log thất bại ban đầu](../../specs/100-notification/validation/device/phone-light/initial-failure.log) và [log tái hiện lỗi loading](../../specs/100-notification/validation/device/phone-light/loading-regression-failure.log); các file `instrumentation.log` của bốn cấu hình là kết quả đạt trên bản cuối.
+- Mở ảnh gốc và ảnh TEST để đối chiếu header, hàng xanh chưa đọc, hàng đã đọc, chấm vàng, icon, typography, card và checkbox. Đã lưu 20 PNG gồm ảnh Fragment, khung MainActivity và phần cài đặt bổ sung sau tương tác. Menu mẫu có Tài khoản, còn menu hiện hành dùng Tìm kiếm và avatar tài khoản; giữ menu chung theo ứng dụng và ghi rõ khác biệt. Hai hàng mới có duyệt riêng của người dùng; tài liệu UI gốc giữ nguyên. [Ảnh inbox phone light](../../specs/100-notification/validation/device/phone-light/notification-393dp-light-inbox-shell.png), [ảnh settings đủ nhóm ở w600dp dark](../../specs/100-notification/validation/device/tablet-dark/notification-720dp-dark-settings.png), [báo cáo đối chiếu](../../specs/100-notification/validation/android-2026-11-22.md).
+- Lưu hash ảnh và APK TEST, kiểm tra hash sau khi ghi kết quả. Khôi phục density về 440, không còn override; kích thước vẫn 1080x2388 và font scale 1.0. [Metadata thiết bị và APK](../../specs/100-notification/validation/device-metadata.json). Đã chạy `git diff --check`; checklist reviewer và trạng thái chặn backend/schema được giữ nguyên.
 
 ---
