@@ -1,0 +1,12 @@
+﻿> Task :app:lintAnalyzeDebugUnitTest
+> Task :app:testDebugUnitTest
+
+> Task :app:lintReportDebug
+Wrote HTML report to file:///F:/CSC_HCMUS/Mobile/datcau/app/build/reports/lint-results-debug.html
+Wrote SARIF report to file:///F:/CSC_HCMUS/Mobile/datcau/app/build/reports/lint-results-debug.sarif
+
+> Task :app:lintDebug
+
+BUILD SUCCESSFUL in 4m 23s
+64 actionable tasks: 37 executed, 27 up-to-date
+Configuration cache entry reused.
