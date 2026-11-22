@@ -1,0 +1,165 @@
+{
+  "owner": {
+    "project": "demo-admin-repair",
+    "backend": "local",
+    "owner": {
+      "role": "OWNER",
+      "status": "APPROVED",
+      "venues": 3
+    },
+    "courts": {
+      "count": 3,
+      "activeCount": 2,
+      "editedCourtActive": false,
+      "editedCourtOrder": 1
+    },
+    "map": {
+      "latitude": 10.700602212386968,
+      "longitude": 106.60187114368784
+    },
+    "minPricePerHour": 60000,
+    "bookingStates": {
+      "approve": "CONFIRMED",
+      "reject": "REJECTED",
+      "cancel": "CANCELLED"
+    },
+    "refundedWallet": 130000,
+    "bookingCheckedIn": true,
+    "manualBlocksReleased": 2,
+    "dropIn": {
+      "capacity": 10,
+      "courts": 2,
+      "slotsPreserved": 4,
+      "checkedIn": true
+    },
+    "voucher": {
+      "value": 15,
+      "isActive": false,
+      "usedCount": 0,
+      "correctVenue": true
+    },
+    "statistics": {
+      "paid": 100000,
+      "deposited": 30000,
+      "refunded": 20000,
+      "occupancyPercent": 13.333333333333334,
+      "peakHour": 8,
+      "peakMinutes": 60,
+      "qrPrivate": true
+    }
+  },
+  "onboarding": {
+    "backend": "LOCAL Firebase Emulator + Supabase",
+    "owners": [
+      {
+        "uid": "venue-test-owner",
+        "role": "OWNER",
+        "ownerStatus": "APPROVED",
+        "applicationId": "5118b347-0827-4612-bceb-733accfac665",
+        "purpose": "VENUE_ADDITION",
+        "status": "APPROVED",
+        "venueCount": 2,
+        "activeCourts": 0,
+        "declaredCourts": 2,
+        "privateDocuments": 1
+      },
+      {
+        "uid": "venue-test-player",
+        "role": "OWNER",
+        "ownerStatus": "APPROVED",
+        "applicationId": "702917ce-29f8-4b73-9121-7ce3f71c6a3b",
+        "purpose": "OWNER_ONBOARDING",
+        "status": "APPROVED",
+        "venueCount": 1,
+        "activeCourts": 0,
+        "declaredCourts": 2,
+        "privateDocuments": 1
+      }
+    ],
+    "existingVenuePreserved": true,
+    "privateDocumentsNotPublic": true
+  },
+  "handoff": {
+    "scope": "Physical vivo V2247 / Android 15; isolated adminlocal APK; Firebase Emulator + Supabase local",
+    "uiTests": {
+      "passed": 3,
+      "failed": 0,
+      "durationSeconds": 29.31
+    },
+    "moderation": {
+      "postStatus": "HIDDEN",
+      "hiddenBy": "SYSTEM",
+      "hiddenByUid": null,
+      "messageStatus": "HIDDEN",
+      "messageText": "",
+      "groupAfterAdminUnlock": "ACTIVE",
+      "ownerDeletion": "PERMISSION_DENIED (device instrumentation)"
+    },
+    "owner": {
+      "increasedThenCancelled": {
+        "status": "CANCELLED",
+        "registeredCount": 0,
+        "waitlistTickets": [],
+        "registrations": [
+          {
+            "uid": "device-existing",
+            "status": "CANCELLED",
+            "paymentStatus": "REFUNDED",
+            "refundAmount": 150000,
+            "waitlistEndReason": null,
+            "hasQrToken": false
+          },
+          {
+            "uid": "device-party-a",
+            "status": "CANCELLED",
+            "paymentStatus": null,
+            "waitlistEndReason": "SESSION_CANCELLED",
+            "hasQrToken": false
+          },
+          {
+            "uid": "device-party-b",
+            "status": "CANCELLED",
+            "paymentStatus": "UNPAID",
+            "refundAmount": 0,
+            "waitlistEndReason": null,
+            "hasQrToken": false
+          }
+        ]
+      },
+      "decreased": {
+        "capacity": 5,
+        "registeredCount": 4,
+        "waitlistTickets": [
+          11
+        ]
+      }
+    },
+    "cronLocal": {
+      "invalidSecretStatus": 401,
+      "first": {
+        "status": 200,
+        "body": {
+          "closedSessions": 1,
+          "closedEntries": 1,
+          "completedSessions": 1
+        }
+      },
+      "retry": {
+        "status": 200,
+        "body": {
+          "closedSessions": 0,
+          "closedEntries": 0,
+          "completedSessions": 0
+        }
+      },
+      "closedRegistrationReason": "CLOSED",
+      "notificationsForClosedEntry": 1
+    },
+    "limitations": [
+      "Not a hosted-backend UI test",
+      "Locked-group deletion was checked through Rules; group-manage is covered separately by the community suite",
+      "Admin unlock uses API because there is no unlock screen",
+      "No push-delivery or camera test"
+    ]
+  }
+}

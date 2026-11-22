@@ -26,13 +26,12 @@ class FirestoreAccountDataSource @Inject constructor(
         val registration = firestore.collection("ownerApplications")
             .whereEqualTo("uid", uid)
             .orderBy("submittedAt", Query.Direction.DESCENDING)
-            .limit(1)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     close(error.toAccountError())
                     return@addSnapshotListener
                 }
-                val doc = snapshot?.documents?.firstOrNull()
+                val doc = snapshot?.documents?.firstOrNull { it.getString("purpose") in listOf(null, "OWNER_ONBOARDING") }
                 trySend(
                     doc?.let {
                         OwnerApplicationSummary(

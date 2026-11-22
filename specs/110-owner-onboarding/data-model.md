@@ -1,6 +1,6 @@
 # Mô hình dữ liệu: Feature 110 — Đăng ký làm chủ sân
 
-Tài liệu này ánh xạ nghiệp vụ đã duyệt vào mô hình CSDL chung. Không định nghĩa trường mới hoặc chọn cách định danh hồ sơ. Các tên trường/kiểu dưới đây chỉ lấy từ `docs/design/database/README.md` hoặc đặc tả tính năng.
+Tài liệu này ánh xạ nghiệp vụ đã duyệt vào mô hình CSDL chung, gồm purpose phân biệt hồ sơ theo FR-018 và UUID ổn định qua gửi lại.
 
 ## Các thực thể hiện có trong phạm vi
 
@@ -14,13 +14,14 @@ Các trường liên quan:
 | `ownerStatus` 🔒 | String: `NONE`, `PENDING`, `APPROVED`, `REJECTED` | Nguồn trạng thái chính theo spec 011/110. Chỉ luồng gửi/xét duyệt phía máy chủ được tin cậy mới cập nhật. |
 | `ownerRevokedReason` 🔒 | String? | Account flow có thể hiển thị sau khi bị thu hồi quyền theo spec 011; không phải lý do từ chối hồ sơ. |
 
-Quan hệ: UID Firebase đã xác thực xác định người nộp (`ownerApplications.uid`). `role` vẫn là `PLAYER` trong lúc chờ duyệt và sau khi nộp lại. Feature 120 đặt `APPROVED`/`OWNER` khi duyệt; khi thu hồi quyền, `ownerStatus` có thể trở lại `NONE` trong khi hồ sơ `APPROVED` cũ vẫn được giữ.
+Đối với OWNER_ONBOARDING, UID Firebase đã xác thực xác định người nộp (`ownerApplications.uid`). `role` vẫn là `PLAYER` trong lúc chờ duyệt và sau khi nộp lại. Feature 120 đặt `APPROVED`/`OWNER` khi duyệt; khi thu hồi quyền, `ownerStatus` có thể trở lại `NONE` trong khi hồ sơ `APPROVED` cũ vẫn được giữ.
 
 ### `ownerApplications/{id}` (thực thể dùng chung hiện có)
 
 | Trường | Kiểu/giá trị hiện có | Nguồn và cách dùng |
 |---|---|---|
 | `uid` | String | UID Firebase của người nộp. |
+| `purpose` 🔒 | OWNER_ONBOARDING hoặc VENUE_ADDITION | Server xác minh quyền và ghi khi tạo, không đổi khi nộp lại. Thiếu trường là onboarding cũ. |
 | `venueDraft` | Map: tên venue, địa chỉ, `districtId`, tọa độ, điện thoại venue, số sân, giờ mở cửa, `photoPaths` | Thông tin venue ban đầu và đường dẫn ảnh; Feature 120 tạo venue từ draft khi duyệt. Không bổ sung trường trong map này. |
 | `representativeName` | String | Trường biểu mẫu người đại diện. |
 | `representativePhone` | String | Trường biểu mẫu số điện thoại người đại diện. |
@@ -49,7 +50,7 @@ Giới hạn Storage: giấy tờ JPEG/PNG/WebP, tối đa 2 MB mỗi ảnh (Fea
 | `NONE` | Chưa có hồ sơ hiện hành (có thể còn hồ sơ `APPROVED` cũ sau thu hồi quyền) | Bắt đầu gửi hồ sơ mới nếu máy chủ xác nhận đủ điều kiện. |
 | `PENDING` | Đang chờ xét duyệt | Chỉ xem trạng thái; không sửa hoặc rút. `role` vẫn là `PLAYER`. |
 | `REJECTED` | Hồ sơ hiện tại bị từ chối, có `rejectReason` | Xem, sửa các trường người nộp sở hữu và nộp lại sau khi làm mới trạng thái. Không sửa trường review do máy chủ quản lý. |
-| `APPROVED` | Hồ sơ được duyệt | Không tạo hồ sơ mới qua luồng này. `role=OWNER`; vận hành tiếp thuộc 111/112. |
+| `APPROVED` | Hồ sơ được duyệt | Được tạo hồ sơ VENUE_ADDITION độc lập theo FR-018. `role=OWNER`; vận hành tiếp thuộc 111/112. |
 
 Giá trị lưu của `ownerApplications.status` viết hoa (`PENDING`, `APPROVED`, `REJECTED`); nhãn trên giao diện có thể Việt hóa. Quan hệ giữa trạng thái này và `users.ownerStatus` do luồng gửi/xét duyệt đáng tin cậy duy trì, không phải chuyển trạng thái phía client.
 
@@ -66,14 +67,18 @@ Giá trị lưu của `ownerApplications.status` viết hoa (`PENDING`, `APPROVE
 ## Index và tác động schema
 
 - README CSDL đã liệt kê index ghép `ownerApplications.status`, `submittedAt` cho hàng đợi hồ sơ admin. Chưa quy định index truy vấn hồ sơ hiện hành theo applicant.
-- Kế hoạch không đề xuất collection, trường, enum hay index mới. Trước khi thêm index, xác nhận liệu truy vấn hiện có có thể xác định hồ sơ hiện hành sau nộp lại/thu hồi quyền hay không.
+- Giữ collections/index; thêm purpose OWNER_ONBOARDING hoặc VENUE_ADDITION (thiếu trường là onboarding cũ). Trước khi thêm index, xác nhận liệu truy vấn hiện có có thể xác định hồ sơ hiện hành sau nộp lại/thu hồi quyền hay không.
 
 ## Quyết định mô hình được duyệt
 
 - Mỗi lifecycle có một `ownerApplications/{applicationId}` document. ID sinh một lần và giữ trong draft cục bộ để retry; sau revoke, chu kỳ mới nhận ID mới. Resubmit cập nhật document `REJECTED` hiện tại.
 - Trạng thái hiện hành lấy từ server-owned `users.ownerStatus`; application liên quan được query theo `uid ASC, submittedAt DESC` qua index hiện có. Các application `APPROVED` của chu kỳ cũ được giữ.
-- Submit/resubmit đi qua Edge Function xác minh Firebase token và Firestore transaction. Không thêm schema field, collection, enum hay index; client không ghi trường được bảo vệ.
+- Submit/resubmit đi qua Edge Function xác minh Firebase token và Firestore transaction. Server ghi purpose bất biến theo loại hồ sơ; giữ collections/index và chặn client ghi trường được bảo vệ.
 - Xóa tài khoản tiếp tục theo Feature 011, gồm ownerApplications của UID và `owner-docs/{uid}/`. Orphan object được server sweeper xóa sau 30 ngày; draft biểu mẫu lưu cục bộ đến khi user xóa/logout/account deletion.
 - Feature 120 tạo venue đầu tiên với ID bằng application ID khi duyệt. Sau revoke và lifecycle mới, venue mới được tạo; không nối ngầm venue cũ.
 
 Map provider chưa được chọn; tọa độ vẫn thuộc `venueDraft`, nhưng interactive marker bị hoãn tới khi Feature 021 xác nhận provider.
+
+## Quyết định mở thêm cơ sở — 2026-11-20
+
+Hồ sơ bổ sung dùng purpose VENUE_ADDITION, độc lập với quyền OWNER/APPROVED. Hồ sơ cũ thiếu purpose thuộc OWNER_ONBOARDING. Duyệt tạo venues/{applicationId} một lần; từ chối/nộp lại không đổi tài khoản hoặc venue cũ. Không giới hạn số venue/hồ sơ.

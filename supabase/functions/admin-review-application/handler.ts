@@ -5,6 +5,7 @@ import { createWrite, updateWrite, FirestoreError, FirestoreGeoPoint } from "../
 import { mergeClaims as defaultMergeClaims } from "../_shared/identity.ts";
 import { reconcileAdminClaims } from "../_shared/admin-claims.ts";
 import { publishApprovedVenuePhotos } from "../_shared/venue-photo-publication.ts";
+import { applicationPurpose, requireApprovedApplicant } from "../_shared/owner-application-purpose.ts";
 
 export interface AdminReviewDeps {
   firestore: Pick<typeof defaultFirestore, "get" | "runTransaction">;
@@ -100,7 +101,7 @@ export async function handleAdminReviewApplication(
       if (application.status !== "APPROVED" && application.status !== "REJECTED") throw new HttpError(409,"APPLICATION_CONFLICT","Hồ sơ chưa có quyết định để phục hồi quyền");
       const uid = String(application.uid ?? application.applicantId ?? "");
       if (!uid) throw new HttpError(400,"INVALID_APPLICATION","Hồ sơ thiếu người nộp");
-      await reconcileAdminClaims(uid,deps.firestore.get,deps.mergeClaims);
+      if (applicationPurpose(application.purpose) !== "VENUE_ADDITION") await reconcileAdminClaims(uid,deps.firestore.get,deps.mergeClaims);
       return json(200,{success:true,applicationId,status:application.status,claimsSynced:true});
     }
     if (decision !== "APPROVE" && decision !== "REJECT") {
@@ -112,11 +113,13 @@ export async function handleAdminReviewApplication(
 
     const nowIso = new Date().toISOString();
     let targetApplicantUid = "";
+    let addition = false;
     let publishedPhotos: string[] = [];
     let stagedPhotoPaths: string[] = [];
     if (decision === "APPROVE") {
       const application = await deps.firestore.get(`ownerApplications/${applicationId}`);
       if (application?.status === "PENDING") {
+        if (applicationPurpose(application.purpose) === "VENUE_ADDITION") requireApprovedApplicant(await deps.firestore.get(`users/${application.uid}`));
         const draft = (application.venueDraft ?? {}) as Record<string,unknown>;
         stagedPhotoPaths = Array.isArray(draft.photoPaths) ? draft.photoPaths as string[] : [];
         const documents = Array.isArray(application.documentPaths) ? application.documentPaths as string[] : [];
@@ -125,7 +128,10 @@ export async function handleAdminReviewApplication(
     }
 
     const outcome = await deps.firestore.runTransaction(async (tx) => {
-      const app = await tx.get(`ownerApplications/${applicationId}`);
+      const [app, currentAdmin] = await Promise.all([
+        tx.get(`ownerApplications/${applicationId}`), tx.get(`users/${user.uid}`),
+      ]);
+      requireCurrentAdmin({profile: currentAdmin});
       if (!app) {
         throw new HttpError(404, "APPLICATION_NOT_FOUND", "Không tìm thấy hồ sơ");
       }
@@ -135,6 +141,7 @@ export async function handleAdminReviewApplication(
         throw new HttpError(400, "INVALID_APPLICATION", "Hồ sơ không có thông tin người nộp");
       }
       targetApplicantUid = applicantUid;
+      addition = applicationPurpose(app.purpose) === "VENUE_ADDITION";
       if (app.status === "PENDING" && (typeof expectedSubmittedAt !== "string" || !Number.isFinite(Date.parse(expectedSubmittedAt)))) {
         throw new HttpError(400, "MISSING_APPLICATION_VERSION", "Vui lòng tải lại hồ sơ trước khi quyết định");
       }
@@ -157,6 +164,8 @@ export async function handleAdminReviewApplication(
         throw new HttpError(409, "APPLICATION_CONFLICT", "Hồ sơ đã được xử lý bởi quản trị viên khác");
       }
 
+      if (addition) requireApprovedApplicant(applicant);
+
       const notificationId = crypto.randomUUID();
 
       if (decision === "APPROVE") {
@@ -166,7 +175,7 @@ export async function handleAdminReviewApplication(
           reviewedAt: nowIso,
         }));
 
-        tx.write(updateWrite(`users/${applicantUid}`, {
+        if (!addition) tx.write(updateWrite(`users/${applicantUid}`, {
           role: "OWNER",
           ownerStatus: "APPROVED",
           updatedAt: nowIso,
@@ -194,7 +203,8 @@ export async function handleAdminReviewApplication(
           phone: typeof draft.phone === "string" ? draft.phone.trim() : (typeof draft.representativePhone === "string" ? draft.representativePhone.trim() : ""),
           amenityIds: Array.isArray(draft.amenityIds) ? draft.amenityIds : [],
           photoPaths: publishedPhotos,
-          courtCount: typeof draft.courtCount === "number" ? draft.courtCount : 1,
+          // The declared count stays in venueDraft; no configured courts exist at approval.
+          courtCount: 0,
           minPricePerHour: 0,
           ratingAvg: 0.0,
           ratingCount: 0,
@@ -221,7 +231,7 @@ export async function handleAdminReviewApplication(
           reviewedAt: nowIso,
         }));
 
-        tx.write(updateWrite(`users/${applicantUid}`, {
+        if (!addition) tx.write(updateWrite(`users/${applicantUid}`, {
           role: "PLAYER",
           ownerStatus: "REJECTED",
           updatedAt: nowIso,
@@ -240,7 +250,7 @@ export async function handleAdminReviewApplication(
       return { success: true, status: targetStatus, applicationId };
     });
 
-    await reconcileAdminClaims(targetApplicantUid, deps.firestore.get, deps.mergeClaims);
+    if (!addition) await reconcileAdminClaims(targetApplicantUid, deps.firestore.get, deps.mergeClaims);
 
     return json(200, outcome);
   } catch (error) {

@@ -39,6 +39,7 @@ class OwnerVenueDetailFragment : Fragment(R.layout.fragment_owner_venue_detail) 
     private var editingCourtId: String? = null
     private var rendering = false
     private var renderedPhotos: List<String>? = null
+    private var locationMap: OwnerLocationMapController? = null
     @Inject lateinit var photoUrls: PhotoUrlResolver
     private val photoPicker = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         if (uri != null) viewLifecycleOwner.lifecycleScope.launch {
@@ -70,6 +71,10 @@ class OwnerVenueDetailFragment : Fragment(R.layout.fragment_owner_venue_detail) 
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         _binding = FragmentOwnerVenueDetailBinding.bind(view)
+        editingCourtId = savedInstanceState?.getString("editingCourtId") ?: editingCourtId
+        renderedPhotos = null
+        LocationPickerDialog.bind(this) { point -> readFields()?.let { viewModel.updateDraft(it.copy(location=point)) } }
+        locationMap = OwnerLocationMapController(binding.locationPreview,viewLifecycleOwner,::pickLocation)
         binding.courts.adapter = courtAdapter
         binding.courtSurface.setAdapter(ArrayAdapter(requireContext(),android.R.layout.simple_list_item_1,listOf("MAT","PU","WOOD")))
         binding.courtSurface.threshold = 0
@@ -84,9 +89,7 @@ class OwnerVenueDetailFragment : Fragment(R.layout.fragment_owner_venue_detail) 
         binding.venueFields.isVisible = !courtsOnly
         binding.screenTitle.setText(if (courtsOnly) R.string.owner_courts_title else R.string.owner_venue_info)
         binding.addPhoto.setOnClickListener { photoPicker.launch("image/*") }
-        binding.location.setOnClickListener {
-            readFields()?.let { fields -> LocationPickerDialog.show(requireContext(),fields.location) { point -> viewModel.updateDraft(fields.copy(location=point)) } }
-        }
+        binding.location.setOnClickListener { pickLocation() }
         binding.district.setOnItemClickListener { _,_,position,_ ->
             viewModel.uiState.value.districts.getOrNull(position)?.let { district -> readFields()?.let { viewModel.updateDraft(it.copy(districtId=district.id)) } }
         }
@@ -154,12 +157,17 @@ class OwnerVenueDetailFragment : Fragment(R.layout.fragment_owner_venue_detail) 
         else {
             val court = viewModel.uiState.value.courts.firstOrNull { it.id == id }
             if (court != null) viewModel.updateCourt(id, CourtFields(name, surface, court.isActive, court.sortOrder))
-            editingCourtId = null
         }
     }
 
     private fun render(state: OwnerVenueDetailUiState) {
         rendering = true
+        if (state.message == "Đã lưu sân" && !state.isSubmitting) {
+            editingCourtId = null
+            binding.courtName.text?.clear()
+            binding.courtSurface.setText("MAT", false)
+            viewModel.acknowledgeCourtSaved()
+        }
         binding.progress.visibility = if (state.isLoading || state.isSubmitting) View.VISIBLE else View.GONE
         binding.retry.visibility = if (state.error != null) View.VISIBLE else View.GONE
         binding.message.text = when (state.errorKind) {
@@ -168,6 +176,9 @@ class OwnerVenueDetailFragment : Fragment(R.layout.fragment_owner_venue_detail) 
             else -> if (state.isSubmitting) getString(R.string.owner_processing) else state.error ?: state.message.orEmpty()
         }
         binding.freshness.text = if (state.isFresh) getString(R.string.owner_data_fresh) else if (state.error != null) getString(R.string.owner_data_not_fresh) else ""
+        val canPickLocation = state.venue != null && !state.isLoading && !state.isSubmitting && state.venue.status != "LOCKED"
+        binding.location.isEnabled = canPickLocation
+        locationMap?.setEditable(canPickLocation)
         state.venue?.let {
             val draft = state.draft
             if (!binding.name.hasFocus()) binding.name.setText(draft?.name ?: it.name)
@@ -180,8 +191,11 @@ class OwnerVenueDetailFragment : Fragment(R.layout.fragment_owner_venue_detail) 
             binding.active.isChecked = (draft?.status ?: it.status) == "ACTIVE"
             binding.save.isEnabled = !state.isSubmitting && it.status != "LOCKED"
             binding.addCourt.isEnabled = !state.isSubmitting && it.status != "LOCKED"
+            binding.courtName.isEnabled = !state.isSubmitting && it.status != "LOCKED"
+            binding.courtSurface.isEnabled = !state.isSubmitting && it.status != "LOCKED"
             binding.addPhoto.isEnabled = !state.isSubmitting && it.status != "LOCKED"
             binding.location.text = (draft?.location ?: it.location)?.let { point -> "${getString(R.string.owner_map_location)}\n${point.latitude}, ${point.longitude}" } ?: getString(R.string.owner_map_location)
+            locationMap?.show(draft?.location ?: it.location,draft?.name ?: it.name)
             val district = draft?.districtId ?: it.districtId
             binding.district.setAdapter(ArrayAdapter(requireContext(),android.R.layout.simple_list_item_1,state.districts.map { entry -> entry.name }))
             binding.district.setText(state.districts.firstOrNull { entry -> entry.id == district }?.name ?: district,false)
@@ -211,5 +225,16 @@ class OwnerVenueDetailFragment : Fragment(R.layout.fragment_owner_venue_detail) 
         rendering = false
     }
 
-    override fun onDestroyView() { _binding = null; super.onDestroyView() }
+    override fun onDestroyView() { locationMap=null;_binding = null; super.onDestroyView() }
+
+    private fun pickLocation() {
+        val state=viewModel.uiState.value
+        if (state.isLoading || state.isSubmitting || state.venue == null || state.venue.status == "LOCKED") return
+        readFields()?.let { LocationPickerDialog.show(this,it.location) }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString("editingCourtId", editingCourtId)
+    }
 }

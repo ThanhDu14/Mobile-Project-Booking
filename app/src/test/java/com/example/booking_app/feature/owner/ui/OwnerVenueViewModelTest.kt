@@ -35,6 +35,31 @@ class OwnerVenueViewModelTest {
     @Before fun setUp() { Dispatchers.setMain(dispatcher); repository = FakeOwnerRepository() }
     @After fun tearDown() { Dispatchers.resetMain() }
 
+    @Test fun courtRetryAfterUnknownResultRetainsIdentityAcrossViewModelRecreation() = runTest {
+        val source = mockk<OwnerVenueRepository>()
+        val venue = com.example.booking_app.feature.owner.fixture.OwnerFixtures.venue
+        coEvery { source.getVenue(venue.id) } returns Result.success(venue)
+        coEvery { source.getCourts(venue.id) } returns Result.success(emptyList())
+        val ids = mutableListOf<String>()
+        coEvery { source.createCourt(venue.id, any(), any()) } coAnswers {
+            ids += thirdArg<String>()
+            if (ids.size == 1) Result.failure(java.io.IOException("response lost")) else Result.success(ids.last())
+        }
+        val state = SavedStateHandle(mapOf("venueId" to venue.id))
+        val fields = CourtFields("TEST", "PU", true, 0)
+        val first = OwnerVenueDetailViewModel(state, source)
+        advanceUntilIdle()
+        first.addCourt(fields)
+        advanceUntilIdle()
+        val restored = OwnerVenueDetailViewModel(state, source)
+        advanceUntilIdle()
+        restored.addCourt(fields)
+        advanceUntilIdle()
+        assertEquals(2, ids.size)
+        assertEquals(ids[0], ids[1])
+        assertEquals(null, state.get<String>("courtCreateId"))
+    }
+
     @Test fun listLoadsOwnedVenuesAndExposesEmptyState() = runTest {
         repository.venues = emptyList()
         val vm = OwnerVenueListViewModel(repository)

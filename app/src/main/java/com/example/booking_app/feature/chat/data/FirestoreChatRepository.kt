@@ -127,7 +127,7 @@ class FirestoreChatRepository @Inject constructor(
                 lastGroupIds = emptyList()
                 groupsLoaded = false
                 if (error.code == FirebaseFirestoreException.Code.PERMISSION_DENIED) {
-                    trySend(emptyList())
+                    close(ChatError.NotParticipant())
                 } else {
                     close(error.toChatError())
                 }

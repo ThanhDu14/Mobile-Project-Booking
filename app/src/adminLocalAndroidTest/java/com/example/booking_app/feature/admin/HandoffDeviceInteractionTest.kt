@@ -172,11 +172,14 @@ class HandoffDeviceInteractionTest {
             scenario.onActivity { activity ->
                 val controller = (activity.supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment).navController
                 ready = generateSequence(controller.currentDestination) { it.parent }.any { it.id == R.id.nav_owner }
-                if (ready) controller.navigate(R.id.ownerDropInFragment)
             }
             if (!ready) Thread.sleep(100)
         }
         assertTrue("Owner graph must load", ready)
+        waitFor(withId(R.id.calendarButton))
+        scenario.onActivity { activity ->
+            (activity.supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment).navController.navigate(R.id.ownerDropInFragment)
+        }
         waitFor(withId(R.id.createSession))
         scenario.onActivity { activity ->
             (activity.supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment).navController.navigate(

@@ -54,17 +54,17 @@ class OwnerHomePlaceholderFragment : Fragment(R.layout.fragment_home_placeholder
             MaterialAlertDialogBuilder(requireContext()).setTitle(R.string.owner_venues_title)
                 .setItems(venues.map { it.name }.toTypedArray()) { _, index -> viewModel.selectVenue(venues[index].id) }.show()
         }
-        binding.pendingBannerCard.setOnClickListener { findNavController().navigate(R.id.ownerBookingsFragment) }
+        binding.pendingBannerCard.setOnClickListener { findNavController().navigate(R.id.ownerBookingsFragment, Bundle().apply { putString("venueId", viewModel.state.value.selectedVenueId) }) }
         binding.actionScanQrCard.setOnClickListener { findNavController().navigate(R.id.ownerBookingCheckInFragment) }
         binding.actionLockHoursCard.setOnClickListener {
             viewModel.state.value.selectedVenueId?.let { id ->
                 findNavController().navigate(R.id.ownerSlotBlockFragment, Bundle().apply { putString("venueId", id); putString("courtId","") })
             }
         }
-        binding.calendarButton.setOnClickListener { findNavController().navigate(R.id.ownerCalendarFragment) }
-        binding.dropInButton.setOnClickListener { findNavController().navigate(R.id.ownerDropInFragment) }
-        binding.vouchersButton.setOnClickListener { findNavController().navigate(R.id.ownerVouchersFragment) }
-        binding.statisticsButton.setOnClickListener { findNavController().navigate(R.id.ownerStatisticsFragment) }
+        binding.calendarButton.setOnClickListener { findNavController().navigate(R.id.ownerCalendarFragment, Bundle().apply { putString("venueId", viewModel.state.value.selectedVenueId) }) }
+        binding.dropInButton.setOnClickListener { findNavController().navigate(R.id.ownerDropInFragment, Bundle().apply { putString("venueId", viewModel.state.value.selectedVenueId) }) }
+        binding.vouchersButton.setOnClickListener { findNavController().navigate(R.id.ownerVouchersFragment, Bundle().apply { putString("venueId", viewModel.state.value.selectedVenueId) }) }
+        binding.statisticsButton.setOnClickListener { findNavController().navigate(R.id.ownerStatisticsFragment, Bundle().apply { putString("venueId", viewModel.state.value.selectedVenueId) }) }
         binding.venuesButton.setOnClickListener { findNavController().navigate(R.id.ownerVenueListFragment) }
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {

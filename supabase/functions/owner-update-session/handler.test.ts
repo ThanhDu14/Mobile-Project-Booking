@@ -286,6 +286,9 @@ Deno.test("owner cancel: multiple paid/check-in registrations refund fully, unpa
   assert(![...store.docs.keys()].some((key) => key.startsWith("slots/")));
 });
 
+// Credential/state cases run inside the agreed check-in window. Boundary cases live in owner-feature11.emulator.test.ts.
+const checkInAtStart = (store: Store, path: string) => ({firestore: store, clock: () => new Date((store.docs.get(path)!.startAt as Date).getTime())});
+
 Deno.test("owner check-in reads nested uid registration and rejects repeated/waitlisted check-in", async () => {
   const { store, sessionId, path } = await created();
   store.docs.set(`${path}/registrations/u1`, {
@@ -296,7 +299,7 @@ Deno.test("owner check-in reads nested uid registration and rejects repeated/wai
   });
   const body = { venueId: "v1", sessionId, credential: "A".repeat(43) };
   assertEquals(
-    (await handleOwnerCheckinDropIn(request(body), { firestore: store }))
+    (await handleOwnerCheckinDropIn(request(body), checkInAtStart(store, path)))
       .status,
     200,
   );
@@ -304,7 +307,7 @@ Deno.test("owner check-in reads nested uid registration and rejects repeated/wai
     store.docs.get(`${path}/registrations/u1`)!.checkedInAt instanceof Date,
   );
   assertEquals(
-    (await handleOwnerCheckinDropIn(request(body), { firestore: store }))
+    (await handleOwnerCheckinDropIn(request(body), checkInAtStart(store, path)))
       .status,
     409,
   );
@@ -317,7 +320,7 @@ Deno.test("owner check-in reads nested uid registration and rejects repeated/wai
   assertEquals(
     (await handleOwnerCheckinDropIn(
       request({ ...body, credential: "DI-ABCDEFGH" }),
-      { firestore: store },
+      checkInAtStart(store, path),
     )).status,
     409,
   );
@@ -339,7 +342,7 @@ Deno.test("owner check-in resolves a normalized manual ticket to its UID without
   });
   const response = await handleOwnerCheckinDropIn(
     request({ venueId: "v1", sessionId, credential: "  di-23456789  " }),
-    { firestore: store },
+    checkInAtStart(store, path),
   );
   assertEquals(response.status, 200);
   const result = await response.json();
@@ -376,7 +379,7 @@ Deno.test("owner check-in rejects UID/malformed credentials and never resolves a
   ) {
     const response = await handleOwnerCheckinDropIn(
       request({ venueId: "v1", sessionId, credential }),
-      { firestore: store },
+      checkInAtStart(store, path),
     );
     assertEquals(response.status, status);
     assertEquals(store.docs, before);
@@ -386,7 +389,7 @@ Deno.test("owner check-in rejects UID/malformed credentials and never resolves a
   assertEquals(
     (await handleOwnerCheckinDropIn(
       request({ venueId: "v1", sessionId, credential: "a".repeat(43) }),
-      { firestore: store },
+      checkInAtStart(store, path),
     )).status,
     404,
   );
@@ -413,7 +416,7 @@ Deno.test("owner check-in denies foreign/unapproved owners and mismatched venue 
     const before = structuredClone(store.docs);
     const response = await handleOwnerCheckinDropIn(
       request({ venueId: "v1", sessionId, credential: "DI-ABCDEFGH" }),
-      { firestore: store },
+      checkInAtStart(store, path),
     );
     assertEquals(response.status, scenario === "unapproved" ? 403 : 404);
     assertEquals(store.docs, before);
@@ -447,7 +450,7 @@ Deno.test("owner check-in rejects used/cancelled/waitlisted registrations and cl
     assertEquals(
       (await handleOwnerCheckinDropIn(
         request({ venueId: "v1", sessionId, credential: "DI-ABCDEFGH" }),
-        { firestore: store },
+        checkInAtStart(store, path),
       )).status,
       409,
     );
@@ -476,7 +479,7 @@ Deno.test("owner check-in fails closed for duplicate credentials or mismatched r
     assertEquals(
       (await handleOwnerCheckinDropIn(
         request({ venueId: "v1", sessionId, credential: "DI-ABCDEFGH" }),
-        { firestore: store },
+        checkInAtStart(store, path),
       )).status,
       404,
     );
@@ -500,7 +503,7 @@ Deno.test("owner update moves courts/time atomically, recomputes fields, marks r
       endTime: "0900",
       pricePerPerson: 60000,
     }),
-    { firestore: store },
+    checkInAtStart(store, path),
   );
   assertEquals(response.status, 200);
   const session = store.docs.get(path)!;
@@ -532,11 +535,11 @@ Deno.test("owner cancel and check-in enforce current authority and reject foreig
       store.docs.set(`slots/${slotId}`, { status: "BOOKED", venueId: "v1", bookingId: "other" });
     }
     const before = structuredClone(store.docs);
-    const cancellation = await handleOwnerCancelSession(request({ venueId: "v1", sessionId, reason: "Test" }), { firestore: store });
+    const cancellation = await handleOwnerCancelSession(request({ venueId: "v1", sessionId, reason: "Test" }), checkInAtStart(store, path));
     assertEquals(cancellation.status, scenario === "owner" ? 404 : scenario === "slot" ? 409 : 403);
     assertEquals(store.docs, before);
     if (scenario !== "slot") {
-      const checkin = await handleOwnerCheckinDropIn(request({ venueId: "v1", sessionId, credential: "A".repeat(43) }), { firestore: store });
+      const checkin = await handleOwnerCheckinDropIn(request({ venueId: "v1", sessionId, credential: "A".repeat(43) }), checkInAtStart(store, path));
       assertEquals(checkin.status, scenario === "owner" ? 404 : 403);
       assertEquals(store.docs, before);
     }
@@ -561,7 +564,7 @@ Deno.test("owner update rejects slot conflict, low capacity, wrong owner, closed
     const before = structuredClone(store.docs);
     const response = await handleOwnerUpdateSession(
       request({ ...draft, sessionId, courtIds: ["c2"] }),
-      { firestore: store },
+      checkInAtStart(store, path),
     );
     assertEquals(response.status, scenario === "owner" ? 404 : 409);
     assertEquals(store.docs, before);
@@ -578,7 +581,7 @@ Deno.test("owner update keeps own slots when only capacity changes and transitio
   assertEquals(
     (await handleOwnerUpdateSession(
       request({ ...draft, sessionId, capacity: 10 }),
-      { firestore: store },
+      checkInAtStart(store, path),
     )).status,
     200,
   );

@@ -10,9 +10,9 @@ beforeEach(async () => {
   await env.clearFirestore();
   await env.withSecurityRulesDisabled(async (ctx) => {
     const fs = ctx.firestore();
-    await ctx.firestore().doc('users/owner-a').set({ ownerStatus: 'APPROVED', role: 'OWNER' });
-    await ctx.firestore().doc('users/owner-b').set({ ownerStatus: 'APPROVED', role: 'OWNER' });
-    await ctx.firestore().doc('users/pending').set({ ownerStatus: 'PENDING', role: 'OWNER' });
+    await ctx.firestore().doc('users/owner-a').set({ ownerStatus: 'APPROVED', role: 'OWNER', accountStatus: 'ACTIVE' });
+    await ctx.firestore().doc('users/owner-b').set({ ownerStatus: 'APPROVED', role: 'OWNER', accountStatus: 'ACTIVE' });
+    await ctx.firestore().doc('users/pending').set({ ownerStatus: 'PENDING', role: 'OWNER', accountStatus: 'ACTIVE' });
     await ctx.firestore().doc('venues/venue-a').set({ ownerId: 'owner-a', name: 'A', status: 'ACTIVE' });
     await ctx.firestore().doc('venues/venue-hidden').set({ ownerId: 'owner-a', name: 'Hidden', status: 'HIDDEN' });
     await ctx.firestore().doc('venues/venue-b').set({ ownerId: 'owner-b', name: 'B', status: 'ACTIVE' });

@@ -264,6 +264,7 @@ class ChatOutbox @Inject constructor(
      */
     private suspend fun processEntry(initial: OutboxEntry): Boolean {
         var current = initial
+        if (!isOwnedByCurrentUser(current)) return false
 
         // Bước 1: tải ảnh lên trước nếu có ảnh cục bộ mà chưa có remote imagePath (US4).
         if (current.localImageUri != null && current.imagePath == null) {
@@ -287,6 +288,8 @@ class ChatOutbox @Inject constructor(
         // Bước 2: gọi `chat-send`, tự thử lại nếu `503 BUSY`.
         var busyRetries = 0
         while (true) {
+            // An upload or backoff can finish after the user switches accounts.
+            if (!isOwnedByCurrentUser(current)) return false
             // Kiểm tra tin có bị người dùng xóa giữa chừng không.
             if (getEntry(current.chatId, current.messageId) == null) return true
 
@@ -383,8 +386,8 @@ class ChatOutbox @Inject constructor(
     }
 
     private fun isOwnedByCurrentUser(entry: OutboxEntry): Boolean {
-        val activeUid = transport.currentUid() ?: return true
-        return entry.senderId == null || entry.senderId == activeUid
+        val activeUid = transport.currentUid() ?: return false
+        return entry.senderId == activeUid
     }
 
     private fun clearRetryState(chatId: String) {

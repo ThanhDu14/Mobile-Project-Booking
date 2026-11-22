@@ -117,6 +117,7 @@ class AdminApplicationDetailFragment : Fragment(R.layout.fragment_admin_applicat
             (diffMs / (1000 * 60 * 60)).coerceAtLeast(0)
         } else 0
         b.textDetailWaitTime.text = getString(R.string.admin_submitted_wait_time, dateStr, "${waitHours} giờ")
+        if (app.purpose == "VENUE_ADDITION") b.textDetailWaitTime.append("\n" + getString(R.string.owner_venue_applications))
 
         when (app.status) {
             "APPROVED" -> {

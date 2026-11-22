@@ -1,14 +1,14 @@
 # Mô hình dữ liệu: Thiết lập cơ sở của chủ sân
 
-Tính năng chỉ dùng mô hình Firestore hiện có trong `docs/design/database/README.md`; không thêm collection, trường, enum hoặc quan hệ mới.
+Tính năng chỉ dùng mô hình Firestore hiện có trong `docs/design/database/README.md`; giữ collections/quan hệ; bổ sung discriminator purpose theo quyết định 2026-11-20.
 
 ## Venue — `venues/{venueId}`
 
-Các trường owner quản lý trong phạm vi tính năng: `name`, `address`, `districtId`, `location` (GeoPoint), `openTime`, `closeTime`, `phone`, `amenityIds`, `photoPaths`, `courtCount`, `acceptsRecurring` và `status` (`ACTIVE`, `HIDDEN`) trong phạm vi owner. `ownerId` do logic server đáng tin cậy gán/xác minh và owner không được sửa. `minPricePerHour`, `ratingAvg`, `ratingCount` và trạng thái `LOCKED` do admin đặt là các trường được bảo vệ. Tuân theo quy tắc hiện có cho `createdAt`/`updatedAt`.
+Các trường owner quản lý trong phạm vi tính năng: `name`, `address`, `districtId`, `location` (GeoPoint), `openTime`, `closeTime`, `phone`, `amenityIds`, `photoPaths`, `acceptsRecurring` và `status` (`ACTIVE`, `HIDDEN`). `ownerId` do server gán/xác minh và owner không được sửa. `courtCount`, `minPricePerHour`, `ratingAvg`, `ratingCount` và trạng thái `LOCKED` là các trường được bảo vệ. Tuân theo quy tắc hiện có cho `createdAt`/`updatedAt`.
 
 **Quan hệ**: Thuộc `users/{uid}` qua `ownerId`; chứa subcollection sân và bảng giá; được booking và slot tham chiếu.
 
-**Validation**: Chuỗi bắt buộc không rỗng; district/amenity phải tồn tại; vị trí hợp lệ; có ít nhất một đường dẫn ảnh; số điện thoại Việt Nam hợp lệ; `openTime < closeTime` theo HHmm, không qua nửa đêm; giờ giống nhau mọi ngày; `courtCount` là số nguyên dương và nhất quán với số sân hoạt động theo quy tắc sản phẩm. Giới hạn tối đa và cách xác định nhất quán chính xác chưa được quy định.
+**Validation**: Chuỗi bắt buộc không rỗng; district/amenity phải tồn tại; vị trí hợp lệ; có ít nhất một đường dẫn ảnh; số điện thoại Việt Nam hợp lệ; `openTime < closeTime` theo HHmm, không qua nửa đêm; giờ giống nhau mọi ngày. Quyết định người dùng 2026-11-21: `courtCount` là số court `isActive=true`, server tính trong transaction, có thể bằng 0, không có giới hạn tối đa. Số khai báo dương trong `venueDraft` được giữ riêng; venue mới duyệt có 0 court thực.
 
 **Trạng thái/hành vi**: Owner có thể ẩn venue hoạt động bằng `HIDDEN`. Không xóa cứng dữ liệu có liên kết. `LOCKED` do admin quản lý. Venue ẩn/khóa không nhận booking mới; booking đã xác nhận giữ nguyên. Quy tắc đọc của người chơi trong README hiện chỉ nêu `ACTIVE`; cần xác nhận cách owner đọc venue ẩn/khóa khi thiết kế Rules.
 
@@ -43,3 +43,13 @@ Các trường hiện có của document slot đang bị chiếm: `venueId`, `co
 ## Ngữ cảnh phân quyền (không phải entity mới)
 
 Người dùng Firebase đã xác thực; claim role đáng tin cậy `appRole = OWNER`; trạng thái owner đã duyệt; và `venues.ownerId == uid` được server đọc. `ownerStatus` là trường được bảo vệ. Rules hiện chưa xác định nguồn có thẩm quyền cho trạng thái này; cần làm rõ trước khi triển khai.
+
+## Quyết định mở thêm cơ sở — 2026-11-20
+
+Hồ sơ bổ sung dùng purpose VENUE_ADDITION, độc lập với quyền OWNER/APPROVED. Hồ sơ cũ thiếu purpose thuộc OWNER_ONBOARDING. Duyệt tạo venues/{applicationId} một lần; từ chối/nộp lại không đổi tài khoản hoặc venue cũ. Không giới hạn số venue/hồ sơ.
+
+Hợp đồng gửi, đọc trạng thái, upload và review: [owner-application-api.md](../110-owner-onboarding/contracts/owner-application-api.md).
+
+## Transaction boundary — 2026-11-21
+
+Price-rule CRUD and protected minPricePerHour use one sync-venue-price transaction; no new stored fields. CREATE retry identity is server-derived from the normalized rule; legacy random rule IDs remain readable/updatable. Court creation retains a UUID per attempt and preserves it on unknown results. Rules validate current role/account/approval, non-LOCKED parent and court fields; priceRules writes are server-only. See contracts/firestore-boundary.md.

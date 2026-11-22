@@ -7,6 +7,7 @@ import com.example.booking_app.feature.owner.domain.booking.OwnerBookingDetail
 import com.example.booking_app.feature.owner.domain.booking.OwnerBookingRepository
 import com.example.booking_app.feature.owner.domain.booking.OwnerBookingStatus
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Source
 import com.google.firebase.firestore.ListenerRegistration
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.functions.functions
@@ -81,7 +82,7 @@ class OwnerBookingRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getBooking(venueId: String, bookingId: String): Result<OwnerBookingDetail> = runCatching {
-        val doc = firestore.collection("bookings").document(bookingId).get().await()
+        val doc = firestore.collection("bookings").document(bookingId).get(Source.SERVER).await()
         check(doc.exists() && doc.getString("venueId") == venueId) { "Không tìm thấy đơn đặt trong cơ sở" }
         val statusStr = doc.getString("status")?.uppercase() ?: error("Đơn thiếu trạng thái")
         val status = OwnerBookingStatus.valueOf(statusStr)

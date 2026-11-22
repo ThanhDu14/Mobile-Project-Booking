@@ -150,4 +150,19 @@ class OwnerDropInViewModelTest {
             return Result.success(Unit)
         }
     }
+
+    @Test fun navigationAndRestoredSelectionKeepSecondVenue() = runTest {
+        val second = OwnerFixtures.venue.copy(id = "venue-second", name = "TEST Second")
+        coEvery { venueRepository.getOwnedVenues() } returns Result.success(listOf(OwnerFixtures.venue, second))
+        coEvery { venueRepository.getCourts(second.id) } returns Result.success(emptyList())
+        val saved = androidx.lifecycle.SavedStateHandle(mapOf("venueId" to second.id))
+        val viewModel = OwnerDropInViewModel(venueRepository, dropInRepository, saved)
+        advanceUntilIdle()
+        assertEquals(second.id, viewModel.uiState.value.selectedVenueId)
+        viewModel.selectVenue(OwnerFixtures.venue.id)
+        advanceUntilIdle()
+        val restored = OwnerDropInViewModel(venueRepository, dropInRepository, saved)
+        advanceUntilIdle()
+        assertEquals(OwnerFixtures.venue.id, restored.uiState.value.selectedVenueId)
+    }
 }

@@ -53,7 +53,7 @@ class ChatOutboxTest {
     }
 
     private class FakeTransport : ChatOutboxTransport {
-        var activeUid: String? = null
+        var activeUid: String? = "player1"
         val sentIds = mutableListOf<String>()
         val uploadedIds = mutableListOf<String>()
         val discardedMediaIds = mutableListOf<String>()
@@ -613,6 +613,41 @@ class ChatOutboxTest {
             assertTrue(failed.retryable)
         } finally {
             second.close()
+        }
+    }
+
+    @Test
+    fun `signed out outbox stays private and is not retried`() = runTest {
+        val network = FakeNetworkMonitor(initialOnline = false)
+        val transport = FakeTransport()
+        val outbox = createOutbox(transport = transport, network = network)
+        try {
+            outbox.enqueue(entry("signed-out"))
+            runCurrent()
+            transport.activeUid = null
+            assertTrue(outbox.observe("chat-1").first().isEmpty())
+            network.setOnline(true)
+            runCurrent()
+            assertTrue(transport.sentIds.isEmpty())
+        } finally {
+            outbox.close()
+        }
+    }
+
+    @Test
+    fun `account changes during image upload do not send as the new account`() = runTest {
+        val uploaded = CompletableDeferred<Result<String>>()
+        val transport = FakeTransport().apply { uploadHandler = { _, _, _ -> uploaded.await() } }
+        val outbox = createOutbox(transport = transport)
+        try {
+            outbox.enqueue(entry("upload-switch", localImageUri = "content://test/image"))
+            runCurrent()
+            transport.activeUid = "owner1"
+            uploaded.complete(Result.success("chat-1/upload-switch.jpg"))
+            runCurrent()
+            assertTrue(transport.sentIds.isEmpty())
+        } finally {
+            outbox.close()
         }
     }
 

@@ -1,9 +1,8 @@
 package com.example.booking_app.feature.owner.data
 
 import com.example.booking_app.feature.owner.domain.statistics.*
-import com.google.firebase.firestore.*
+import com.example.booking_app.feature.owner.domain.OwnerOperatingSlots
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -37,11 +36,15 @@ private data class StatisticsSlotWire(
 @Serializable
 private data class StatisticsSnapshot(
     val bookings: List<StatisticsBookingWire>, val slots: List<StatisticsSlotWire>, val computedAt: String,
+    val availability: StatisticsAvailabilityWire,
 )
+@Serializable
+private data class StatisticsPriceWire(val daysOfWeek: List<Int>, val startTime: String, val endTime: String, val pricePerHour: Long)
+@Serializable
+private data class StatisticsAvailabilityWire(val openTime: String, val closeTime: String, val courtIds: List<String>, val priceRules: List<StatisticsPriceWire>)
 
 /** Venue-scoped source; revenue comes from bookings, availability from courts and price rules. */
 class FirestoreOwnerStatisticsRepository @Inject constructor(
-    private val firestore: FirebaseFirestore,
     private val supabase: SupabaseClient,
     private val functionErrors: FunctionErrors,
 ) : OwnerStatisticsRepository {
@@ -49,37 +52,29 @@ class FirestoreOwnerStatisticsRepository @Inject constructor(
         val days = ChronoUnit.DAYS.between(query.startDate, query.endDateInclusive) + 1
         require(days in 1..30) { "Chọn khoảng báo cáo từ 1 đến 30 ngày" }
         val zone = ZoneId.of(query.timeZoneId)
-        val start = query.startDate.atStartOfDay(zone).toInstant()
         val end = query.endDateInclusive.plusDays(1).atStartOfDay(zone).toInstant()
-        val venueRef = firestore.collection("venues").document(venueId)
-        val venue = venueRef.get(Source.SERVER).await()
-        val courts = venueRef.collection("courts").get(Source.SERVER).await().documents.filter { it.getBoolean("isActive") != false }
-        val rules = venueRef.collection("priceRules").get(Source.SERVER).await().documents
-        val open = LocalTime.parse(venue.getString("openTime"), TIME)
-        val close = LocalTime.parse(venue.getString("closeTime"), TIME)
         val dates = (0 until days).map { query.startDate.plusDays(it) }
-        val available = buildList {
-            dates.forEach { date -> courts.forEach { court ->
-                var time = open
-                while (time < close && time.plusMinutes(30) <= close) {
-                    val next = time.plusMinutes(30)
-                    val priced = rules.any { rule ->
-                        val weekdays = (rule.get("daysOfWeek") as? List<*>)?.filterIsInstance<Number>()?.map { it.toInt() }.orEmpty()
-                        val from = rule.getString("startTime").orEmpty()
-                        val to = rule.getString("endTime").orEmpty()
-                        date.dayOfWeek.value in weekdays && time.format(TIME) >= from && next.format(TIME) <= to && (rule.getLong("pricePerHour") ?: 0) > 0
-                    }
-                    if (priced) add(StatisticsSlotRecord("${court.id}_${date.format(DATE)}_${time.format(TIME)}", court.id, "AVAILABLE",
-                        startAt = date.atTime(time).atZone(zone).toInstant(), endAt = date.atTime(next).atZone(zone).toInstant()))
-                    time = next
-                }
-            } }
-        }
         while (currentCoroutineContext().isActive) {
             val snapshot = functionErrors.invokeWithAuthRetry {
                 supabase.functions.invoke("owner-statistics-source", body = StatisticsRequest(
                     venueId, query.startDate.toString(), query.endDateInclusive.toString()))
             }.body<StatisticsSnapshot>()
+            val times = OwnerOperatingSlots.startMinutes(snapshot.availability.openTime, snapshot.availability.closeTime)
+            val courts = snapshot.availability.courtIds
+            val rules = snapshot.availability.priceRules
+            val available = buildList {
+                dates.forEach { date -> courts.forEach { court ->
+                    times.forEach { minute ->
+                        val time = LocalTime.of(minute / 60, minute % 60)
+                        val next = time.plusMinutes(30)
+                        val priced = rules.any { rule ->
+                            date.dayOfWeek.value in rule.daysOfWeek && time.format(TIME) >= rule.startTime && next.format(TIME) <= rule.endTime && rule.pricePerHour > 0
+                        }
+                        if (priced) add(StatisticsSlotRecord("${court}_${date.format(DATE)}_${time.format(TIME)}", court, "AVAILABLE",
+                            startAt = date.atTime(time).atZone(zone).toInstant(), endAt = date.atTime(next).atZone(zone).toInstant()))
+                    }
+                } }
+            }
             val bookings = snapshot.bookings
             val statuses = bookings.associate { it.bookingId to it.status }
             val actualSlots = snapshot.slots.map { slot ->

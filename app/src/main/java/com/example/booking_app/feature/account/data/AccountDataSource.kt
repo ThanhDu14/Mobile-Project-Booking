@@ -11,7 +11,8 @@ interface AccountDataSource {
     suspend fun update(uid: String, fields: Map<String, Any?>)
 
     /**
-     * Listener `ownerApplications where uid == [uid] order by submittedAt desc limit 1` (research R6).
+     * Listener scoped to uid; selects the latest onboarding application, including legacy records.
+     * Additional venue applications never determine account onboarding state.
      * Rules chặn thì flow kết thúc bằng `AccountError.PermissionDenied`.
      */
     fun observeLatestOwnerApplication(uid: String): Flow<OwnerApplicationSummary?>

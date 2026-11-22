@@ -17,6 +17,8 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -48,7 +50,10 @@ class UnreadChatsReaderImpl @Inject constructor(
             if (uid.isNullOrBlank()) {
                 flowOf(0)
             } else {
-                combine(observeUnreadCandidatesForUser(uid), appModeController.mode) { candidates, mode ->
+                flow {
+                    // Never show the previous account's badge while the new listener is loading.
+                    emit(0)
+                    emitAll(combine(observeUnreadCandidatesForUser(uid), appModeController.mode) { candidates, mode ->
                     candidates.count { doc ->
                         if (doc.unreadCount <= 0L) return@count false
                         when (mode) {
@@ -56,6 +61,7 @@ class UnreadChatsReaderImpl @Inject constructor(
                             AppMode.PLAYER -> doc.ownerId != uid
                         }
                     }
+                    })
                 }
             }
         }

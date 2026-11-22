@@ -1,3 +1,4 @@
+import { requireOwnerAuthority } from "../_shared/owner-access.ts";
 import { errorResponse, HttpError, verifyIdToken } from "../_shared/auth.ts";
 import * as defaultFirestore from "../_shared/firestore.ts";
 import {
@@ -30,21 +31,16 @@ export async function handleOwnerUpdateSession(
     const sessionId = typeof body.sessionId === "string"
       ? body.sessionId.trim()
       : "";
-    if (!venueId) throw new HttpError(400, "INVALID_VENUE_ID", "Thiếu venueId");
-    if (!sessionId) {
+    if (!venueId || venueId.includes("/")) throw new HttpError(400, "INVALID_VENUE_ID", "Thiếu venueId");
+    if (!sessionId || sessionId.includes("/")) {
       throw new HttpError(400, "INVALID_SESSION_ID", "Thiếu sessionId");
     }
     const input = parseOwnerSessionInput(body);
     const promoted = await firestore.runTransaction(async (tx) => {
-      if (token.appRole !== "ADMIN") {
-        const user = await tx.get(`users/${token.uid}`);
-        if (token.appRole !== "OWNER" || user?.ownerStatus !== "APPROVED" || user.role !== "OWNER" || user.accountStatus !== "ACTIVE" || user.deletionRequestedAt != null) {
-          throw new HttpError(403, "FORBIDDEN", "Chủ sân chưa được phê duyệt");
-        }
-      }
+      const admin = await requireOwnerAuthority(tx, token);
       const venue = await tx.get(`venues/${venueId}`);
       if (
-        !venue || (venue.ownerId !== token.uid && token.appRole !== "ADMIN")
+        !venue || (venue.ownerId !== token.uid && !admin)
       ) {
         throw new HttpError(
           404,

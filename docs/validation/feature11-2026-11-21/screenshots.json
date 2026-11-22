@@ -1,0 +1,254 @@
+[
+  {
+    "path": "screenshots/01-court-created.png",
+    "sha256": "8af40d1ffffbdb9ba1902d3f8d2bcfd862f619fd9c5f5e055fcafe4cd8269763"
+  },
+  {
+    "path": "screenshots/01-court-edit-rotation-order-inactive.png",
+    "sha256": "5a3cc4828ef11608a511f8dc6f4cf407ef35ae7320f1199d62e1625bc2e207c8"
+  },
+  {
+    "path": "screenshots/01-zero-active-courts-venue-edit.png",
+    "sha256": "a6a84addf78823ed28aacfe43476b3c41dfbe3cab090bcf4252df4587463e28a"
+  },
+  {
+    "path": "screenshots/02-atomic-pricing.png",
+    "sha256": "435eada630dc2fcfba0899dcf6e4a1128c658b71cd90b79701ccff3f53e386aa"
+  },
+  {
+    "path": "screenshots/03-booking-deadlines.png",
+    "sha256": "e717ec5fe2292bec95195cc6080ef0c0ce48d416f08019d05e62205398ad78a0"
+  },
+  {
+    "path": "screenshots/04-decisions-and-refunds.png",
+    "sha256": "9a56d836ae1a5385db5d87002b2a535ae8cddb62613a0bb544267c425cbdebed"
+  },
+  {
+    "path": "screenshots/05-booking-payment-confirmation.png",
+    "sha256": "1f71bd1b3904f8e22871a22ca4c834e8c12a7fa2dfa71d7210cf2681e6b9e68e"
+  },
+  {
+    "path": "screenshots/06-booking-checked-in.png",
+    "sha256": "77c7d11886a9337d7d4e577c7d6255c9536fabae5ecb8f5c3ff2d8cf23b9be3a"
+  },
+  {
+    "path": "screenshots/07-checkin-replay-denied.png",
+    "sha256": "49445d0f806cfef167118e3ccde779d981c47b9e9523a1a2261aa6df1031cb18"
+  },
+  {
+    "path": "screenshots/08-slots-locked.png",
+    "sha256": "6d000d4ca58efdc1f7584674909dc15fa238774a18c9d985d9fdb1121f19b475"
+  },
+  {
+    "path": "screenshots/09-calendar-day.png",
+    "sha256": "880a89b27a543b36b4cfc5455385d5e810df7b357e76678a9480b46f3c828b47"
+  },
+  {
+    "path": "screenshots/09-calendar-week.png",
+    "sha256": "7bca7e5d1f454e50778fcbc8ac5f0e59c1bd909f451aaf454b1b9889a300c432"
+  },
+  {
+    "path": "screenshots/09-slots-unlocked.png",
+    "sha256": "017c10160211cf8651d35bd3d92919bccfd79cd3850917539ef15e642de1c088"
+  },
+  {
+    "path": "screenshots/10-dropin-two-courts-draft.png",
+    "sha256": "7185116b84714f66c7c87fb30efa1bd75e4d0ac6b2227f7dd2fdf6554bc8cbef"
+  },
+  {
+    "path": "screenshots/11-draft-landscape.png",
+    "sha256": "d481178a827432caf88f46f0d8d37232acbcbc440d55ed464e9f1e5f93e66d1b"
+  },
+  {
+    "path": "screenshots/11-draft-restored.png",
+    "sha256": "2a85ae0bc31f666b0f729c4104043507dd950c6b4f253688145992ccd69ce612"
+  },
+  {
+    "path": "screenshots/12-second-venue-edited.png",
+    "sha256": "e8b9a54eb9cf036b80797b54f9fe03fd331204d4f7cf9af4ff7724c73b429f93"
+  },
+  {
+    "path": "screenshots/13-dropin-ticket-checkin.png",
+    "sha256": "557ac89bdba20704629b85e70018ecea7bd01e7bbcac47e9dcca1d1518dc414d"
+  },
+  {
+    "path": "screenshots/14-voucher-created.png",
+    "sha256": "28eb30658f1cf49c67453241b81c07bb33343a8da47176c5660734da6073b918"
+  },
+  {
+    "path": "screenshots/14-voucher-edited-disabled.png",
+    "sha256": "0931f90bd1e4c5f6437efd04721fb646f66a501f755bfea1a50e4103b1c0bc91"
+  },
+  {
+    "path": "screenshots/15-statistics-paid-deposit-refund.png",
+    "sha256": "c2950b02dc4fa98ba31133e076f7f4b9cee32b5e3b4d8326db4c84ff5596e4ae"
+  },
+  {
+    "path": "screenshots/16-statistics-occupancy-peaks.png",
+    "sha256": "c2950b02dc4fa98ba31133e076f7f4b9cee32b5e3b4d8326db4c84ff5596e4ae"
+  },
+  {
+    "path": "screenshots/17-cold-start-owner-venues.png",
+    "sha256": "6df6271a4a759221bfc5658e426980d96dbde6cf8e103b294a08ee40982dc6c6"
+  },
+  {
+    "path": "screenshots/18-owner-mode-deep-link.png",
+    "sha256": "ae4c7d804b7edc2eddd50f5fb702df51e379c85d9b842882b6337267e0ca8a70"
+  },
+  {
+    "path": "screenshots/20-application-map-pin.png",
+    "sha256": "c1999996daa320fba5e6c630c720193875055e043f152bde8fb5f864692e597c"
+  },
+  {
+    "path": "screenshots/21-map-pin-dialog-landscape.png",
+    "sha256": "de87e8a5bd9722c5e3034d9778b5aba1ed81e8aa50319fa7e0ed243c72743169"
+  },
+  {
+    "path": "screenshots/22-application-map-preview.png",
+    "sha256": "f49bda0b585f8a0c142200f6a7989e8ad3d3e151a82203ad17af39d4c73cbc34"
+  },
+  {
+    "path": "screenshots/23-venue-map-server-reload.png",
+    "sha256": "33648ce199a2b02d6c7a6cbf44e0c85298f30a456c5907efdb58fbdae24fc48d"
+  },
+  {
+    "path": "screenshots/onboarding/01-existing-venue.png",
+    "sha256": "4efcf261b40a331be2b8dbb15ed140f0020ed438ce79ea584c0a032b7a01e7b8"
+  },
+  {
+    "path": "screenshots/onboarding/02-form-with-test-uploads-TEST_Additional_Venue.png",
+    "sha256": "732e040669d0f990bab0a30c6837ff7b44fa455218ee4209e1138de917c35ae8"
+  },
+  {
+    "path": "screenshots/onboarding/02-form-with-test-uploads-TEST_First_Venue.png",
+    "sha256": "667d82c0f305c087f599f28b06ed3df129663e83c186b7c42e6aa0e9fd4d0657"
+  },
+  {
+    "path": "screenshots/onboarding/03-review-TEST_Additional_Venue.png",
+    "sha256": "5e1d00409de1a6ee0aeec857511231741d17c278ab2fc9a57bedfe4303e70045"
+  },
+  {
+    "path": "screenshots/onboarding/03-review-TEST_First_Venue.png",
+    "sha256": "9f90fced23236a4fb2a385377a5e86da829853ea9018e96387e58b86d6959330"
+  },
+  {
+    "path": "screenshots/onboarding/04-addition-pending.png",
+    "sha256": "1b0f0c20b7f0ab9544fdaec946b943335ed2a9f4544ca4f688464da0eec9050c"
+  },
+  {
+    "path": "screenshots/onboarding/04-private-document-preview.png",
+    "sha256": "e632daee133e315374812081cb48ceb110d8a073866b709f1df055d3fc71b593"
+  },
+  {
+    "path": "screenshots/onboarding/05-admin-addition-review.png",
+    "sha256": "a55aaf636181ce71c2aa742e16bc6f7d3617452e4c3d5e4aee08d2275e5cb751"
+  },
+  {
+    "path": "screenshots/onboarding/06-application-history.png",
+    "sha256": "d3d106634b8b487f6f7de2880ebf1137c89852462b18a840e50423d0f81968cc"
+  },
+  {
+    "path": "screenshots/onboarding/07-addition-rejected.png",
+    "sha256": "8bf758d541190ecba97371f42c72372523749bcd550e7fd689ea6701d3cdc532"
+  },
+  {
+    "path": "screenshots/onboarding/08-addition-resubmitted.png",
+    "sha256": "a075900b2c6fb2ce9348d55e0df153512aeb3873755e486b771eb6d63503ad54"
+  },
+  {
+    "path": "screenshots/onboarding/09-admin-approve-TEST_Additional_Venue_Revised.png",
+    "sha256": "3513ec0c41435dc88b4d3c92433eea24dd86d41b220e77fda346c8d36242f630"
+  },
+  {
+    "path": "screenshots/onboarding/09-admin-approve-TEST_First_Venue.png",
+    "sha256": "0c917c38aa1cb1be675581d1afd4002360907b55d0d9427b28d6fa26d9ceaf16"
+  },
+  {
+    "path": "screenshots/onboarding/10-two-venues-after-approval.png",
+    "sha256": "4831baf208964b4cdf669075f65876a30519ceff3c851a238191145e6810a0af"
+  },
+  {
+    "path": "screenshots/onboarding/11-two-venues-after-relaunch.png",
+    "sha256": "4831baf208964b4cdf669075f65876a30519ceff3c851a238191145e6810a0af"
+  },
+  {
+    "path": "screenshots/onboarding/12-initial-onboarding-pending.png",
+    "sha256": "a34dc48c765397c237464ee0d27955077cc10a607d48568e714f32a6440099cb"
+  },
+  {
+    "path": "screenshots/onboarding/13-initial-onboarding-approved.png",
+    "sha256": "4efcf261b40a331be2b8dbb15ed140f0020ed438ce79ea584c0a032b7a01e7b8"
+  },
+  {
+    "path": "screenshots/onboarding/approved-new-venue-0.png",
+    "sha256": "4efcf261b40a331be2b8dbb15ed140f0020ed438ce79ea584c0a032b7a01e7b8"
+  },
+  {
+    "path": "screenshots/onboarding/approved-new-venue-1.png",
+    "sha256": "4efcf261b40a331be2b8dbb15ed140f0020ed438ce79ea584c0a032b7a01e7b8"
+  },
+  {
+    "path": "screenshots/waitlist-admin/device-hide-actions.png",
+    "sha256": "cb0a303b96028110eb33d7b32d76690e9eed834134469a808f3fc25e49c98310"
+  },
+  {
+    "path": "screenshots/waitlist-admin/device-hide-detail.png",
+    "sha256": "9cd93c46cd4ed163f3cf40b2d4231950e8cf287c1f5f19ea1a60d069b822a5ec"
+  },
+  {
+    "path": "screenshots/waitlist-admin/device-hide-resolved.png",
+    "sha256": "14894f90343ce55896d369bab62e923e9703a8cff0a03a2c6038bea7a1ff6fd8"
+  },
+  {
+    "path": "screenshots/waitlist-admin/device-lock-actions.png",
+    "sha256": "6f7db3fbb86283383d8403bcf0f3cda28c625827207e2703cc3b513fd4689a47"
+  },
+  {
+    "path": "screenshots/waitlist-admin/device-lock-detail.png",
+    "sha256": "c7944aad11f0921b474c6727432c15dafb9c305b622fbfc2322d6632d3ef9323"
+  },
+  {
+    "path": "screenshots/waitlist-admin/device-lock-resolved.png",
+    "sha256": "9be9924809084306f09f39df49f11640d400d4dbdd6e30ba7c6a58228a93897f"
+  },
+  {
+    "path": "screenshots/waitlist-admin/device-message-detail.png",
+    "sha256": "cd5b1a95c8cd04e2425b76aa4b76bda7f5a81db5b34c33806b3d6c3694257c0d"
+  },
+  {
+    "path": "screenshots/waitlist-admin/device-message-resolved.png",
+    "sha256": "7f3c8943f9814fb78fd4e59379174d26eeae881dcbcc1c6b06565746c8659f4a"
+  },
+  {
+    "path": "screenshots/waitlist-admin/hidden-message-cleared-preview.png",
+    "sha256": "675e4364ad4e3c6db83db02bf6add7d20afdf617bc5ee84bfa6c30f1a9d6423d"
+  },
+  {
+    "path": "screenshots/waitlist-admin/hidden-post-preview.png",
+    "sha256": "66ba7e9b0bf6b2060868c332cab43e089c9b94410ce69008428c503a21bca61f"
+  },
+  {
+    "path": "screenshots/waitlist-admin/owner-after-promotion.png",
+    "sha256": "579a4fb2d249b906f35a5daeeaf68fcd32eeccdb7fa3237b404d39a8deeecd39"
+  },
+  {
+    "path": "screenshots/waitlist-admin/owner-before-increase.png",
+    "sha256": "f8613cd9edbcf490bc27a59ec47957b756610b802f7f5db23c001db439d54b74"
+  },
+  {
+    "path": "screenshots/waitlist-admin/owner-cancel-confirmation.png",
+    "sha256": "867a90608aa1532058849de6d0283fd62e41ebb7807ce85a0bca0652ab65514a"
+  },
+  {
+    "path": "screenshots/waitlist-admin/owner-capacity-four.png",
+    "sha256": "95272465f8fe35100e67d26c3acfd82a663e9218063b822d87ba5fe2eeb4de8d"
+  },
+  {
+    "path": "screenshots/waitlist-admin/owner-decrease-preserves-waitlist.png",
+    "sha256": "4aac7f5016c744706df741f5ee0f4430c4d673f081240f89e1f4a21295663d54"
+  },
+  {
+    "path": "screenshots/waitlist-admin/owner-session-cancelled.png",
+    "sha256": "15f770f18f22ca8b0dfcb8c21d567d1d1b9151e0304b4795cda3c8e29bad52ef"
+  }
+]

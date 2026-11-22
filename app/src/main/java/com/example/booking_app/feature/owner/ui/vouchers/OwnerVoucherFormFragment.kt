@@ -36,6 +36,8 @@ class OwnerVoucherFormFragment : Fragment(R.layout.fragment_owner_voucher_form) 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         _binding = FragmentOwnerVoucherFormBinding.bind(view)
+        populated = savedInstanceState?.getBoolean("populated") ?: populated
+        binding.code.isEnabled = editingCode == null
         binding.type.adapter = ArrayAdapter.createFromResource(requireContext(), R.array.owner_voucher_types, android.R.layout.simple_spinner_dropdown_item)
         listOf(binding.code, binding.value, binding.maxDiscount, binding.minOrder).forEach { input ->
             input.doAfterTextChanged { renderPreview() }
@@ -70,8 +72,8 @@ class OwnerVoucherFormFragment : Fragment(R.layout.fragment_owner_voucher_form) 
                         }
                         return@collect
                     }
-                    binding.loading.isVisible = state.isSaving
-                    binding.save.isEnabled = !state.isSaving
+                    binding.loading.isVisible = state.isSaving || state.isLoading
+                    binding.save.isEnabled = !state.isSaving && !state.isLoading && (editingCode == null || populated)
                     binding.validationText.isVisible = state.validationErrors.isNotEmpty()
                     binding.validationText.text = state.validationErrors.joinToString("\n")
                     binding.errorText.isVisible = state.error != null
@@ -88,6 +90,11 @@ class OwnerVoucherFormFragment : Fragment(R.layout.fragment_owner_voucher_form) 
     override fun onDestroyView() {
         _binding = null
         super.onDestroyView()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putBoolean("populated", populated)
     }
 
     private fun submitForm() {

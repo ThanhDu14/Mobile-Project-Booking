@@ -3,6 +3,7 @@ package com.example.booking_app.feature.owner.ui
 import android.os.Bundle
 import android.view.View
 import androidx.fragment.app.Fragment
+import androidx.core.net.toUri
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -41,13 +42,16 @@ class OwnerVenueListFragment : Fragment(R.layout.fragment_owner_venue_list) {
         _binding = FragmentOwnerVenueListBinding.bind(view)
         binding.venues.adapter = adapter
         binding.retry.setOnClickListener { viewModel.load() }
-        binding.addVenue.setOnClickListener { binding.formMessage.setText(R.string.owner_venue_add_server_only) }
+        binding.addVenue.setOnClickListener { findNavController().navigate("smashnow://owner/apply?mode=addition".toUri()) }
+        binding.venueApplications.setOnClickListener { findNavController().navigate("smashnow://owner/venue-applications".toUri()) }
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect(::render)
             }
         }
     }
+
+    override fun onResume() { super.onResume(); viewModel.load() }
 
     private fun render(state: OwnerVenueListUiState) {
         binding.progress.visibility = if (state.isLoading) View.VISIBLE else View.GONE

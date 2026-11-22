@@ -47,9 +47,17 @@ class FirestoreOwnerVenueDataSource @Inject constructor(
             .get(com.google.firebase.firestore.Source.SERVER).await().documents.map(::toCourt).sortedBy { it.sortOrder }
     }
 
-    suspend fun createCourt(venueId: String, fields: CourtFields): String {
-        val ref = firestore.collection(VENUES).document(venueId).collection(COURTS).document()
-        ref.set(fields.toMap()).await()
+    suspend fun createCourt(venueId: String, fields: CourtFields, requestId: String = java.util.UUID.randomUUID().toString()): String {
+        val ref = firestore.collection(VENUES).document(venueId).collection(COURTS).document(requestId)
+        firestore.runTransaction { transaction ->
+            val existing = transaction.get(ref)
+            if (existing.exists()) {
+                check(toCourt(existing) == OwnerCourt(ref.id, fields.name, fields.surfaceType, fields.isActive, fields.sortOrder)) {
+                    "Sân đã được tạo và thay đổi. Hãy tải lại trước khi thử lại."
+                }
+                transaction.update(ref, fields.toMap()) // Re-evaluate current authority in Rules even on a retry.
+            } else transaction.set(ref, fields.toMap())
+        }.await()
         return ref.id
     }
 
@@ -128,7 +136,7 @@ class FirestoreOwnerVenueDataSource @Inject constructor(
         "name" to name, "address" to address, "districtId" to districtId,
         "location" to location, "openTime" to openTime, "closeTime" to closeTime,
         "phone" to phone, "amenityIds" to amenityIds, "photoPaths" to photoPaths,
-        "courtCount" to courtCount, "acceptsRecurring" to acceptsRecurring, "status" to status
+        "acceptsRecurring" to acceptsRecurring, "status" to status
     )
 
     private fun CourtFields.toMap() = mapOf(

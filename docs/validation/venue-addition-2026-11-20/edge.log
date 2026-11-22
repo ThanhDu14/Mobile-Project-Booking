@@ -1,0 +1,2303 @@
+running 20 tests from ./_shared/auth.test.ts
+Emulator: token của Auth Emulator được chấp nhận, trả đủ trường, có log cảnh báo ... ok (143ms)
+Emulator: token số điện thoại có phone, không có email ...
+------- output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- output end -----
+Emulator: token số điện thoại có phone, không có email ... ok (4ms)
+thiếu header Authorization → 401 UNAUTHENTICATED ... ok (5ms)
+thật: token hợp lệ được chấp nhận ... ok (836ms)
+thật: sai chữ ký → 401 ... ok (309ms)
+thật: hết hạn → 401 ... ok (713ms)
+thật: sai aud → 401 ... ok (375ms)
+thật: sai iss → 401 ... ok (821ms)
+thật: token không ký của Emulator bị từ chối khi không bật Emulator ... ok (354ms)
+requireUser: thiếu appRole → 403 NOT_INITIALIZED ...
+------- output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- output end -----
+requireUser: thiếu appRole → 403 NOT_INITIALIZED ... ok (599µs)
+requireUser: accountStatus LOCKED → 403 ACCOUNT_LOCKED ...
+------- output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- output end -----
+requireUser: accountStatus LOCKED → 403 ACCOUNT_LOCKED ... ok (15ms)
+requireUser: ACTIVE → trả người dùng có appRole ...
+------- output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- output end -----
+requireUser: ACTIVE → trả người dùng có appRole ... ok (12ms)
+requireRole: PLAYER gọi chức năng ADMIN → 403 FORBIDDEN ... ok (515µs)
+requireRole: đúng một trong các vai trò thì không ném ... ok (89µs)
+errorResponse: đúng dạng { error: { code, message, ...extra } } ... ok (613µs)
+requireUser: users/{uid}.deletionRequestedAt có giá trị → 403 ACCOUNT_DELETING ...
+------- output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- output end -----
+requireUser: users/{uid}.deletionRequestedAt có giá trị → 403 ACCOUNT_DELETING ... ok (10ms)
+requireUser(allowDeleting): đang xóa vẫn trả người dùng kèm profile ...
+------- output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- output end -----
+requireUser(allowDeleting): đang xóa vẫn trả người dùng kèm profile ... ok (14ms)
+requireUser(allowDeleting): users/{uid} đã bị xóa → profile = null, không lỗi ...
+------- output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- output end -----
+requireUser(allowDeleting): users/{uid} đã bị xóa → profile = null, không lỗi ... ok (13ms)
+requireUser: lời gọi cũ không có users/{uid} vẫn trả người dùng như 010 ...
+------- output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- output end -----
+requireUser: lời gọi cũ không có users/{uid} vẫn trả người dùng như 010 ... ok (9ms)
+verifyIdToken: authTime lấy từ claim auth_time (giây) ...
+------- output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- output end -----
+verifyIdToken: authTime lấy từ claim auth_time (giây) ... ok (552µs)
+running 20 tests from ./_shared/dropin.test.ts
+computeRefund: 239 phút → LATE 0; 240 và 241 phút → EARLY hoàn 100% ... ok (743µs)
+computeRefund: sessionChanged còn 30 phút → SESSION_CHANGED hoàn 100% ... ok (98µs)
+computeRefund: AT_VENUE → refundAmount 0, reason AT_VENUE (sớm hay muộn đều vậy) ... ok (118µs)
+computeRefund: thiếu amount thì tính pricePerPerson × partySize; thiếu startAt của buổi thì dùng sessionStartAt ... ok (115µs)
+deriveSessionFields: timeSlot đúng biên 05:00/11:00/13:00/18:00 theo giờ Việt Nam ... ok (198µs)
+deriveSessionFields: date yyyyMMdd theo Asia/Ho_Chi_Minh (khác ngày UTC), venueSnapshot ... ok (104µs)
+newQrToken: 43 ký tự base64url, không trùng sau 10.000 lần ... ok (24ms)
+newTicketCode: đúng ^DI-[A-HJ-NP-Z2-9]{8}$ ... ok (2ms)
+cancelRegistrationInTx: hủy sớm → CANCELLED, xóa mã, hoàn 100%, REFUNDED, trả chỗ, FULL → OPEN ... ok (1ms)
+cancelRegistrationInTx: hủy muộn → refund 0, paymentStatus giữ PAID; buổi OPEN giữ OPEN ... ok (286µs)
+cancelRegistrationInTx: forceFullRefund (chủ sân hủy buổi) → hoàn 100% dù muộn; buổi CANCELLED giữ CANCELLED ... ok (202µs)
+cancelRegistrationInTx: AT_VENUE → refund 0, paymentStatus giữ UNPAID ... ok (299µs)
+cancelRegistrationInTx: không có đăng ký / đã CANCELLED / WAITLISTED → không ghi gì, refund 0 ... ok (177µs)
+cancelRegistrationInTx khớp chữ ký helper của delete-account (A) ... ok (65µs)
+cancelRegistrationInTx: buổi không còn document → vẫn hủy đăng ký, không ghi buổi ... ok (139µs)
+closeWaitlistInTx: giữ nguyên hành vi cũ ... ok (114µs)
+Q12: được đẩy lên lúc T−2 giờ, PAID, hủy sau 20 / 30 / 31 / 40 phút → 100% / 100% / LATE / LATE ... ok (93µs)
+Q12: được đẩy lên lúc T−5 giờ (không sát giờ) → theo chính sách 080 (còn ≥ 240 phút → 100% EARLY) ... ok (62µs)
+Q12: được đẩy lên AT_VENUE (UNPAID) → refundAmount 0, reason AT_VENUE ... ok (57µs)
+cancelRegistrationInTx trả `promoted` rỗng khi tx không có query; không đụng tới waitlist ... ok (148µs)
+running 1 test from ./_shared/firestore-list.test.ts
+R120-07: list follows page tokens and preserves document ID over stored UID ... ok (7ms)
+running 3 tests from ./_shared/firestore-transaction.test.ts
+Firestore transaction: yields after ABORTED so a contended lock can be released ... ok (97ms)
+Firestore transaction: exhausted ABORTED attempts roll back and remain errors ... ok (92ms)
+Firestore transaction: permission errors are not retried or swallowed ... ok (733µs)
+running 6 tests from ./_shared/identity.test.ts
+getCustomClaims: người dùng mới chưa có claim → {} ... ok (25ms)
+setCustomClaims rồi getCustomClaims đọc lại đúng ... ok (15ms)
+mergeClaims giữ nguyên role đã có ... ok (17ms)
+claim JSON từ 1000 byte trở lên bị từ chối, claim cũ giữ nguyên ... ok (12ms)
+setUserDisabled: true thì đăng nhập trả USER_DISABLED, false thì đăng nhập lại được ... ok (20ms)
+deleteUser: người dùng không còn trên Auth; gọi lần 2 (USER_NOT_FOUND) coi như xong ... ok (20ms)
+running 10 tests from ./_shared/reviews.test.ts
+computeOverall: trung bình 3 tiêu chí, làm tròn 1 chữ số ... ok (591µs)
+starBucket: round(overall), nằm trong 1–5 ... ok (76µs)
+parseRatings: đủ 3 khóa, số nguyên 1–5; sai thì null ... ok (198µs)
+create (VISIBLE): ratingCount +1, ratingSums + điểm mới ... ok (247µs)
+update (VISIBLE): count giữ nguyên, − điểm cũ + điểm mới ... ok (168µs)
+delete (VISIBLE): count −1, − điểm cũ; còn 0 đánh giá thì ratingAvg = 0 ... ok (142µs)
+delete (HIDDEN) và sửa đánh giá HIDDEN: tổng điểm không đổi ... ok (162µs)
+ẩn (VISIBLE → HIDDEN) −1; hiện lại (HIDDEN → VISIBLE) +1 ... ok (120µs)
+venue chưa có ratingSums (dữ liệu seed cũ): suy ra từ ratingAvg × ratingCount ... ok (75µs)
+không bao giờ ra số âm khi dữ liệu lệch ... ok (73µs)
+running 4 tests from ./_shared/reviews.visibility.test.ts
+ẩn đánh giá VISIBLE: status = HIDDEN, ratingCount −1, ratingSums − điểm ... ok (40ms)
+hiện lại đánh giá HIDDEN: ratingCount +1, ratingSums + điểm ... ok (35ms)
+trạng thái đã đúng hoặc đánh giá không tồn tại → không ghi gì ... ok (25ms)
+ẩn đánh giá cuối cùng → ratingCount 0, ratingAvg 0 ... ok (29ms)
+running 5 tests from ./_shared/waitlist.regression.test.ts
+waitlist promotion skips oversized party, preserves price, creates ticket, removes overlaps atomically ... ok (2ms)
+waitlist closes all entries without charging and sends exactly one inbox notification per entry ... ok (689µs)
+promotion respects exact T-30 cutoff and cancelled sessions ... ok (405µs)
+dropin-close authenticates, closes at T-30, completes ended sessions and is idempotent ... ok (11ms)
+dropin-close retries a failed close before marking an ended session completed ...
+------- post-test output -------
+[dropin-close] đóng hàng chờ s thất bại Error: Transient close failure
+    at Object.runTransaction (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/_shared/waitlist.regression.test.ts:240:33)
+    at handleDropInClose (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/dropin-close/handler.ts:63:45)
+    at async file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/_shared/waitlist.regression.test.ts:248:23
+    at async innerWrapped (ext:cli/40_test.js:300:5)
+    at async exitSanitizer (ext:cli/40_test.js:201:27)
+    at async outerWrapped (ext:cli/40_test.js:239:22)
+----- post-test output end -----
+dropin-close retries a failed close before marking an ended session completed ... ok (1ms)
+running 13 tests from ./_shared/waitlist.test.ts
+Q4: chờ A(2), B(1); trả 1 chỗ → B lên, A giữ vị trí 1; trả tiếp 2 chỗ → A lên; registeredCount luôn 10 ... ok (121ms)
+Q5: MOCK_PAY → PAID, AT_VENUE → UNPAID; có qrToken, ticketCode, promotedAt = registeredAt = serverNow; amount theo giá lúc vào ... ok (83ms)
+Q8: người chờ cả W1 và W2 (trùng giờ), được đẩy lên W1 → lượt W2 AUTO_LEFT_OVERLAP, vé bị bỏ khỏi W2 ... ok (136ms)
+Q8b: hai người được đẩy lên cùng tự rời một buổi X → một lần ghi buổi X, vé bỏ đúng cả hai ... ok (101ms)
+Q9: còn 25 phút trước giờ bắt đầu, có người chờ → không đẩy ai; chỗ trống giữ cho đăng ký thường (OPEN) ... ok (75ms)
+Q9b: còn đúng 30 phút → hàng chờ đã đóng; còn 31 phút → vẫn đẩy lên ... ok (82ms)
+Q13: tăng capacity thêm 3 rồi gọi promoteFromWaitlist → đẩy lên tối đa 3 chỗ theo thứ tự vé ... ok (106ms)
+Hàng chờ có người nhưng không ai vừa → promoted = [], buổi OPEN, vị trí giữ nguyên (AC 2.8) ... ok (91ms)
+Giảm capacity (không gọi promoteFromWaitlist) → waitlistTickets và vị trí giữ nguyên ... ok (30ms)
+leaveWaitlistInTx(LEFT, SYSTEM) (delete-account): lượt CANCELLED, vé bị bỏ, người sau lên vị trí, không phát sinh tiền ... ok (50ms)
+leaveWaitlistInTx trên lượt đã REGISTERED → ALREADY_PROMOTED, không ghi gì; lượt không có → bỏ qua ... ok (37ms)
+Q11: closeWaitlistInTx(SESSION_CANCELLED) → lượt chờ CANCELLED, cancelledBy OWNER; không có tiền (SC-005) ... ok (68ms)
+closeWaitlistInTx(CLOSED) → cancelledBy SYSTEM; hàng chờ trống thì closed = [] ... ok (44ms)
+running 4 tests from ./admin-broadcast-notification/handler.test.ts
+R120-07: retry after partial batch sends once to all explicitly active document IDs ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[toErrorResponse] FirestoreError: {"error":{"status":"UNAVAILABLE"}}
+    at toError (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/_shared/firestore.ts:109:10)
+    at async Object.commit (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/_shared/firestore.ts:170:22)
+    at async handleAdminBroadcastNotification (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/admin-broadcast-notification/handler.ts:81:30)
+    at async file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/admin-broadcast-notification/handler.test.ts:11:17
+    at async adminFixture (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/_shared/admin-testing.ts:50:5)
+    at async innerWrapped (ext:cli/40_test.js:300:5)
+    at async exitSanitizer (ext:cli/40_test.js:201:27)
+    at async outerWrapped (ext:cli/40_test.js:239:22) {
+  code: "UNKNOWN",
+  status: 503
+}
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+R120-07: retry after partial batch sends once to all explicitly active document IDs ... ok (38ms)
+admin-broadcast-notification: rejects non-POST ... ok (407µs)
+admin-broadcast-notification: rejects unauthenticated request ... ok (383µs)
+admin-broadcast-notification: validateBroadcastContent checks non-empty title and body ... ok (280µs)
+running 3 tests from ./admin-integration.local.test.ts
+R120 local Firebase: decisions, claim recovery, race, controls, moderation, voucher and broadcast ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[toErrorResponse] FirestoreError: Injected mid-batch failure
+    at Object.commit (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/admin-integration.local.test.ts:128:29)
+    at handleAdminBroadcastNotification (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/admin-broadcast-notification/handler.ts:81:51)
+    at async file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/admin-integration.local.test.ts:127:16
+    at async innerWrapped (ext:cli/40_test.js:300:5)
+    at async exitSanitizer (ext:cli/40_test.js:201:27)
+    at async outerWrapped (ext:cli/40_test.js:239:22) {
+  code: "UNKNOWN",
+  status: 503
+}
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+R120 local Firebase: decisions, claim recovery, race, controls, moderation, voucher and broadcast ... ok (1s)
+R120 voucher global: simultaneous system and venue code has one winner ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+R120 voucher global: simultaneous system and venue code has one winner ... ok (2s)
+R120 local Storage: both signed documents, denial, download and expiry ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+R120 local Storage: both signed documents, denial, download and expiry ... ok (2s)
+running 6 tests from ./admin-manage-user/handler.test.ts
+R120-08: exact email beyond scan window is found without unrelated user pages ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+R120-08: exact email beyond scan window is found without unrelated user pages ... ok (10ms)
+R120-08: LIST searches name/email/phone, filters, follows cursors and sanitizes ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+R120-08: LIST searches name/email/phone, filters, follows cursors and sanitizes ... ok (3ms)
+R120-08: email lookup returns document identity and email ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+R120-08: email lookup returns document identity and email ... ok (1ms)
+admin-manage-user: rejects non-POST ... ok (233µs)
+admin-manage-user: rejects unauthenticated request ... ok (980µs)
+admin-manage-user: sanitizeUserRecord filters sensitive fields ... ok (119µs)
+running 3 tests from ./admin-manage-venue/handler.test.ts
+admin-manage-venue: rejects non-POST ... ok (7ms)
+admin-manage-venue: rejects unauthenticated request ... ok (1ms)
+admin-manage-venue: validateVenueStatus accepts only LOCKED, ACTIVE, HIDDEN ... ok (279µs)
+running 6 tests from ./admin-manage-voucher/handler.test.ts
+R120-15: edit preserves counters and rejects limits below usage ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+R120-15: edit preserves counters and rejects limits below usage ... ok (11ms)
+R120-06: canonical PERCENT contract is accepted ... ok (148µs)
+R120-06: rejects invalid dates, absent timezone, non-finite and fractional amounts ... ok (602µs)
+admin-manage-voucher: rejects non-POST ... ok (166µs)
+admin-manage-voucher: rejects unauthenticated request ... ok (493µs)
+admin-manage-voucher: validateVoucherInput validates valid input and rejects invalid ... ok (252µs)
+running 6 tests from ./admin-moderate-report/handler.test.ts
+admin-moderate-report: rejects non-POST ... ok (7ms)
+admin-moderate-report: rejects unauthenticated requests ... ok (1ms)
+admin-moderate-report: validateActionTarget correctly maps target types ... ok (133µs)
+moderation persists system post hiding, clears message text, locks group atomically and retries safely ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+moderation persists system post hiding, clears message text, locks group atomically and retries safely ... ok (6ms)
+moderation rejects a target path belonging to another collection without resolving report ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+moderation rejects a target path belonging to another collection without resolving report ... ok (1ms)
+LOCK_GROUP on a post report locks the parent group and preserves the post ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+LOCK_GROUP on a post report locks the parent group and preserves the post ... ok (661µs)
+running 15 tests from ./admin-review-application/handler.test.ts
+venue addition APPROVE preserves approved owner and existing venues; retry is idempotent ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+venue addition APPROVE preserves approved owner and existing venues; retry is idempotent ... ok (11ms)
+venue addition REJECT preserves approved owner and existing venues; retry is idempotent ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+venue addition REJECT preserves approved owner and existing venues; retry is idempotent ... ok (1ms)
+pending venue addition cannot restore revoked owner rights ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+pending venue addition cannot restore revoked owner rights ... ok (1ms)
+native submitted Timestamp preserves milliseconds when validating the review version ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+native submitted Timestamp preserves milliseconds when validating the review version ... ok (1ms)
+R120-05: another current admin can recover claims after reopening a decided application ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+R120-05: another current admin can recover claims after reopening a decided application ... ok (517µs)
+R120-05: revoked admin claim cannot mutate or recover another account ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+R120-05: revoked admin claim cannot mutate or recover another account ... ok (416µs)
+R120-04/05: committed approve retry repairs failed claim without duplicate effects ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+R120-04/05: committed approve retry repairs failed claim without duplicate effects ... ok (1ms)
+R120-04: stale submitted version cannot approve a resubmission ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+R120-04: stale submitted version cannot approve a resubmission ... ok (471µs)
+R120-04: missing snapshot version cannot decide a pending application ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+R120-04: missing snapshot version cannot decide a pending application ... ok (461µs)
+R120-05: retry after owner revocation reconciles PLAYER, never old OWNER ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+R120-05: retry after owner revocation reconciles PLAYER, never old OWNER ... ok (465µs)
+R120-04: REJECT retry maps REJECTED, opposing decision conflicts ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+R120-04: REJECT retry maps REJECTED, opposing decision conflicts ... ok (702µs)
+admin-review-application: rejects non-POST ... ok (117µs)
+admin-review-application: rejects unauthenticated requests ... ok (437µs)
+admin-review-application: generateKeywords strips accents and generates prefixes ... ok (334µs)
+admin-review-application: geohash encodes coordinates correctly ... ok (68µs)
+running 3 tests from ./admin-revoke-owner/handler.test.ts
+admin-revoke-owner: rejects non-POST ... ok (6ms)
+admin-revoke-owner: rejects unauthenticated request ... ok (969µs)
+admin-revoke-owner: validateRevokeReason trims whitespace and rejects empty ... ok (299µs)
+running 17 tests from ./ai-search-parse/handler.test.ts
+parse: Vietnamese date, time and preference are separate from hard filters ... ok (20ms)
+parse: part of day written in the query overrides the model ... ok (729µs)
+parse: a past day in the query drops the date even when the model says today ... ok (533µs)
+parse: a date or weekday written in the query wins over the model ... ok (1ms)
+parse: district written in the query fills a missing or unknown model district ... ok (1ms)
+parse: relative day and hour range fill an empty model answer ... ok (1ms)
+parse: a timed-out provider falls back while time is left ... ok (15ms)
+parse: exact 30-minute request asks for another window and keeps the district ... ok (785µs)
+RAG: select only applicable public evidence and explain both sides without contact data ... ok (925µs)
+RAG: owner reply or rating edit keeps the source version, comment edit changes it ... ok (321µs)
+RAG: recommendation quotes the matching clause with contacts masked ... ok (480µs)
+RAG: retrieval only queries public venue reviews ... ok (103µs)
+RAG: ten labelled review examples prioritize the supporting court ... ok (1ms)
+Emulator: reserve every provider attempt including fallback ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+Emulator: reserve every provider attempt including fallback ... ok (50ms)
+Emulator: competing requests cannot spend the final attempt twice ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+Emulator: competing requests cannot spend the final attempt twice ... ok (2s)
+Emulator: hidden source cannot produce an explanation and explanation spends no AI turn ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+Emulator: hidden source cannot produce an explanation and explanation spends no AI turn ... ok (90ms)
+Emulator: RECOMMEND has its own daily cap ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+Emulator: RECOMMEND has its own daily cap ... ok (23ms)
+running 5 tests from ./booking-timeout/handler.test.ts
+booking-timeout: requires POST and the cron secret ... ok (7ms)
+booking-timeout: rejects an overdue unpaid booking and frees only its own slots ... ok (2ms)
+booking-timeout: refunds a paid booking with an atomic wallet increment and a ledger ... ok (645µs)
+booking-timeout: does not refund twice when a refund ledger already exists ... ok (552µs)
+booking-timeout: leaves bookings that are still within the deadline ... ok (336µs)
+running 10 tests from ./cancel-drop-in/index.test.ts
+E4: cùng requestId gọi 5 lần song song → trả chỗ 1 lần, hoàn tiền 1 lần, kết quả giống nhau ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+E4: cùng requestId gọi 5 lần song song → trả chỗ 1 lần, hoàn tiền 1 lần, kết quả giống nhau ... ok (2s)
+E5: còn 239 / 240 / 241 phút → hoàn 0 / 100% / 100% ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+E5: còn 239 / 240 / 241 phút → hoàn 0 / 100% / 100% ... ok (63ms)
+E6: sessionChanged = true, còn 30 phút → hoàn 100% SESSION_CHANGED ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+E6: sessionChanged = true, còn 30 phút → hoàn 100% SESSION_CHANGED ... ok (21ms)
+E7: lượt AT_VENUE → refundAmount 0, reason AT_VENUE, paymentStatus giữ UNPAID ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+E7: lượt AT_VENUE → refundAmount 0, reason AT_VENUE, paymentStatus giữ UNPAID ... ok (20ms)
+E10: token người khác → 404 NOT_FOUND, đăng ký không đổi ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+E10: token người khác → 404 NOT_FOUND, đăng ký không đổi ... ok (15ms)
+E12 + E13: buổi FULL, một người hủy → OPEN; qrToken và ticketCode bằng null ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+E12 + E13: buổi FULL, một người hủy → OPEN; qrToken và ticketCode bằng null ... ok (30ms)
+CHECKED_IN → 409 NOT_CANCELLABLE; buổi đã bắt đầu → 409 SESSION_STARTED ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+CHECKED_IN → 409 NOT_CANCELLABLE; buổi đã bắt đầu → 409 SESSION_STARTED ... ok (41ms)
+dryRun: true chỉ trả quote, không ghi gì ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+dryRun: true chỉ trả quote, không ghi gì ... ok (27ms)
+Không gọi send-notification; requestId sai → 400 INVALID_ARGUMENT ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+Không gọi send-notification; requestId sai → 400 INVALID_ARGUMENT ... ok (20ms)
+T051: buổi FULL, 1 người hủy (2 chỗ) cùng lúc 3 người đăng ký → đúng 2 người vào, không vượt sức chứa (×10) ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[T051 #1] lượt đầu ok=2 cuối ok=2 full=1 registeredCount=6/6 FULL
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[T051 #2] lượt đầu ok=2 cuối ok=2 full=1 registeredCount=6/6 FULL
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[T051 #3] lượt đầu ok=2 cuối ok=2 full=1 registeredCount=6/6 FULL
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[T051 #4] lượt đầu ok=2 cuối ok=2 full=1 registeredCount=6/6 FULL
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[T051 #5] lượt đầu ok=2 cuối ok=2 full=1 registeredCount=6/6 FULL
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[T051 #6] lượt đầu ok=2 cuối ok=2 full=1 registeredCount=6/6 FULL
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[T051 #7] lượt đầu ok=2 cuối ok=2 full=1 registeredCount=6/6 FULL
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[T051 #8] lượt đầu ok=2 cuối ok=2 full=1 registeredCount=6/6 FULL
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[T051 #9] lượt đầu ok=2 cuối ok=2 full=1 registeredCount=6/6 FULL
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[T051 #10] lượt đầu ok=2 cuối ok=2 full=1 registeredCount=6/6 FULL
+----- post-test output end -----
+T051: buổi FULL, 1 người hủy (2 chỗ) cùng lúc 3 người đăng ký → đúng 2 người vào, không vượt sức chứa (×10) ... ok (13s)
+running 10 tests from ./cancel-drop-in/waitlist.test.ts
+Q6: 5 lượt hủy đồng thời, 10 người chờ (partySize 1–3) → không vượt sức chứa, không đẩy trùng, đúng thứ tự (×20) ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+'Q6: 5 lượt hủy đồng thời, 10 người chờ (partySize 1–3) → không vượt sức chứa, không đẩy trùng, đúng thứ tự (×20)' has been running for over (1m0s)
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+runs=20 overCapacity=0 doublePromoted=0 orderViolations=0
+----- post-test output end -----
+Q6: 5 lượt hủy đồng thời, 10 người chờ (partySize 1–3) → không vượt sức chứa, không đẩy trùng, đúng thứ tự (×20) ... ok (1m8s)
+FR-009: 1 lượt hủy cùng lúc 3 người chưa chờ đăng ký thường → người chờ A luôn được đẩy lên, cả 3 nhận SESSION_FULL (×20) ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+FR-009: 1 lượt hủy cùng lúc 3 người chưa chờ đăng ký thường → người chờ A luôn được đẩy lên, cả 3 nhận SESSION_FULL (×20) ... ok (4s)
+Hủy có đẩy lên: response có promotedCount (không lộ danh tính), gửi DROPIN_SPOT_OPENED sau commit; lỗi gửi bị bỏ qua ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[cancel-drop-in] gửi DROPIN_SPOT_OPENED thất bại Error: send-notification down
+    at Object.notify (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/cancel-drop-in/waitlist.test.ts:33:44)
+    at handleCancelDropIn (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/cancel-drop-in/handler.ts:259:26)
+    at async cancel (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/cancel-drop-in/waitlist.test.ts:69:17)
+    at async file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/cancel-drop-in/waitlist.test.ts:225:16
+    at async innerWrapped (ext:cli/40_test.js:300:5)
+    at async exitSanitizer (ext:cli/40_test.js:201:27)
+    at async outerWrapped (ext:cli/40_test.js:239:22)
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+Hủy có đẩy lên: response có promotedCount (không lộ danh tính), gửi DROPIN_SPOT_OPENED sau commit; lỗi gửi bị bỏ qua ... ok (92ms)
+Rời hàng chờ (expectWaitlisted) → CANCELLED, USER, LEFT; 0 đ, paymentStatus vẫn null; vị trí người sau tăng; không thông báo ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+Rời hàng chờ (expectWaitlisted) → CANCELLED, USER, LEFT; 0 đ, paymentStatus vẫn null; vị trí người sau tăng; không thông báo ... ok (25ms)
+Rời hàng chờ: dryRun → quote 0 đ WAITLIST_LEAVE và không ghi gì ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+Rời hàng chờ: dryRun → quote 0 đ WAITLIST_LEAVE và không ghi gì ... ok (18ms)
+Rời hàng chờ: token người khác (không có lượt) → 404 NOT_FOUND, hàng chờ không đổi (AC 3.4) ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+Rời hàng chờ: token người khác (không có lượt) → 404 NOT_FOUND, hàng chờ không đổi (AC 3.4) ... ok (15ms)
+Rời hàng chờ: cùng cancelRequestId gửi lại 3 lần song song → kết quả cũ, vé bỏ đúng một lần ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+Rời hàng chờ: cùng cancelRequestId gửi lại 3 lần song song → kết quả cũ, vé bỏ đúng một lần ... ok (2s)
+Rời rồi vào lại → số vé mới ở cuối hàng (AC 3.3) ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+Rời rồi vào lại → số vé mới ở cuối hàng (AC 3.3) ... ok (34ms)
+expectWaitlisted nhưng lượt đã REGISTERED (đã được đẩy lên) → 409 ALREADY_PROMOTED, không hủy nhầm ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+expectWaitlisted nhưng lượt đã REGISTERED (đã được đẩy lên) → 409 ALREADY_PROMOTED, không hủy nhầm ... ok (40ms)
+Q7: rời hàng chờ cùng lúc bị đẩy lên (song song ×20) → đúng một kết quả: LEFT hoặc REGISTERED + ALREADY_PROMOTED ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+'Q7: rời hàng chờ cùng lúc bị đẩy lên (song song ×20) → đúng một kết quả: LEFT hoặc REGISTERED + ALREADY_PROMOTED' has been running for over (1m0s)
+runs=20 overCapacity=0 doublePromoted=0 orderViolations=0 (Q7: left=5 promoted=15)
+----- post-test output end -----
+Q7: rời hàng chờ cùng lúc bị đẩy lên (song song ×20) → đúng một kết quả: LEFT hoặc REGISTERED + ALREADY_PROMOTED ... ok (1m2s)
+running 9 tests from ./checkin-booking/handler.test.ts
+checkin-booking: rejects non-POST requests ... ok (6ms)
+checkin-booking: rejects unauthenticated requests ... ok (1ms)
+checkin-booking: tra theo qrToken không cần venueId, lấy venueId từ đơn ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+checkin-booking: tra theo qrToken không cần venueId, lấy venueId từ đơn ... ok (1ms)
+checkin-booking: check-in bằng mã đơn không cần venueId ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+checkin-booking: check-in bằng mã đơn không cần venueId ... ok (673µs)
+checkin-booking: đơn của cơ sở người khác trả BOOKING_NOT_FOUND, không ghi gì ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+checkin-booking: đơn của cơ sở người khác trả BOOKING_NOT_FOUND, không ghi gì ... ok (660µs)
+checkin-booking: venueId gửi lên khác cơ sở của đơn → BOOKING_NOT_FOUND ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+checkin-booking: venueId gửi lên khác cơ sở của đơn → BOOKING_NOT_FOUND ... ok (813µs)
+checkin-booking: mã không tồn tại → BOOKING_NOT_FOUND ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+checkin-booking: mã không tồn tại → BOOKING_NOT_FOUND ... ok (1ms)
+checkin-booking: preview cash still owed does not check in; explicit confirmation updates amounts ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+checkin-booking: preview cash still owed does not check in; explicit confirmation updates amounts ... ok (1ms)
+checkin-booking: ended booking and blocked current owner cannot mutate ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+checkin-booking: ended booking and blocked current owner cannot mutate ... ok (691µs)
+running 5 tests from ./complete-bookings/handler.test.ts
+complete-bookings: da check-in + qua endAt -> COMPLETED (+ completedAt) ... ok (7ms)
+complete-bookings: chua check-in + qua endAt -> NO_SHOW ... ok (494µs)
+complete-bookings: CONFIRMED chua toi endAt -> giu nguyen ... ok (296µs)
+complete-bookings: PENDING va HOLD khong bi anh huong ... ok (196µs)
+complete-bookings: chay lai lan 2 (idempotent) -> khong doi gi ... ok (386µs)
+running 5 tests from ./delete-account-sweeper/handler.test.ts
+X16: thiếu hoặc sai x-cron-secret → 401 ... ok (42ms)
+bản ghi COMMITTED có bước FAILED → chạy lại tới DONE, bước SKIPPED không bị chạy lại ... ok (59ms)
+mỗi lần tối đa 5 bản ghi COMMITTED, theo requestedAt tăng dần ... ok (264ms)
+lượt quét cuối: DONE và finalSweepAfter <= now → xóa lại subcollection một lần, ghi steps.finalSweep ... ok (51ms)
+attempts >= 20 → ghi log mức error ... ok (39ms)
+running 20 tests from ./delete-account/handler.test.ts
+X1: người chơi không có đơn, preview → myBookings rỗng, ownerImpact null, có impactVersion ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+X1: người chơi không có đơn, preview → myBookings rỗng, ownerImpact null, có impactVersion ... ok (42ms)
+X2: 2 đơn sắp tới → refundAmount 0 (chưa trả) và 60.000 (cọc, còn > 4 giờ); đơn đã qua, đã hủy không tính ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+X2: 2 đơn sắp tới → refundAmount 0 (chưa trả) và 60.000 (cọc, còn > 4 giờ); đơn đã qua, đã hủy không tính ... ok (35ms)
+preview liệt kê lượt vãng lai sắp tới và số lượt chờ ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+preview liệt kê lượt vãng lai sắp tới và số lượt chờ ... ok (29ms)
+X3: confirm đúng → 200 DELETED, đơn hủy, slot xóa, users/Auth/ảnh/favorites không còn, state DONE ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+X3: confirm đúng → 200 DELETED, đơn hủy, slot xóa, users/Auth/ảnh/favorites không còn, state DONE ... ok (116ms)
+X4: auth_time cũ hơn 5 phút → 403 REAUTH_REQUIRED, không có gì đổi ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+X4: auth_time cũ hơn 5 phút → 403 REAUTH_REQUIRED, không có gì đổi ... ok (31ms)
+X5: confirmText = "xoa" → 400 CONFIRM_TEXT_MISMATCH; " xóa " thì hợp lệ ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+X5: confirmText = "xoa" → 400 CONFIRM_TEXT_MISMATCH; " xóa " thì hợp lệ ... ok (139ms)
+X6: thêm đơn sau preview rồi confirm với impactVersion cũ → 409 IMPACT_CHANGED kèm preview mới ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+X6: thêm đơn sau preview rồi confirm với impactVersion cũ → 409 IMPACT_CHANGED kèm preview mới ... ok (56ms)
+X7: helper ném lỗi ở đơn thứ 2 → 500, không đơn nào bị hủy, tài khoản nguyên vẹn ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[delete-account] transaction chốt lỗi Error
+----- post-test output end -----
+X7: helper ném lỗi ở đơn thứ 2 → 500, không đơn nào bị hủy, tài khoản nguyên vẹn ... ok (58ms)
+X8: chủ sân → cơ sở ẩn, đơn và buổi của khách hủy hoàn 100%, 4 thông báo khác khóa (SC-008) ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+X8: chủ sân → cơ sở ẩn, đơn và buổi của khách hủy hoàn 100%, 4 thông báo khác khóa (SC-008) ... ok (140ms)
+X9: lỗi ở anonymizeReviews lần đầu → 202, bước FAILED, Auth đã tắt; sweeper chạy tiếp tới DONE ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+X9: lỗi ở anonymizeReviews lần đầu → 202, bước FAILED, Auth đã tắt; sweeper chạy tiếp tới DONE ... ok (116ms)
+X10: confirm 2 lần liên tiếp, 2 lần song song, và sau khi users đã xóa → idempotent ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+X10: confirm 2 lần liên tiếp, 2 lần song song, và sau khi users đã xóa → idempotent ... ok (4s)
+X11: appRole = ADMIN → 403 ADMIN_SELF_DELETE ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+X11: appRole = ADMIN → 403 ADMIN_SELF_DELETE ... ok (22ms)
+X12: sau khi chốt (và sau khi xóa xong), function khác dùng requireUser với token cũ → 403 ACCOUNT_DELETING ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+X12: sau khi chốt (và sau khi xóa xong), function khác dùng requireUser với token cũ → 403 ACCOUNT_DELETING ... ok (68ms)
+X13: đánh giá sau khi xóa → userId null, authorDeleted true, tên null ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+X13: đánh giá sau khi xóa → userId null, authorDeleted true, tên null ... ok (138ms)
+X14: 250 đơn đã cọc (ước tính 505 > 450) → 422 DELETE_TOO_LARGE, không có gì đổi ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+X14: 250 đơn đã cọc (ước tính 505 > 450) → 422 DELETE_TOO_LARGE, không có gì đổi ... ok (184ms)
+X14 biên: 220 đơn đã cọc (ước tính 445) → xóa được ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+X14 biên: 220 đơn đã cọc (ước tính 445) → xóa được ... ok (367ms)
+X15: đơn đã check-in hoặc đã qua không bị hủy; đơn đã qua được ẩn danh ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+X15: đơn đã check-in hoặc đã qua không bị hủy; đơn đã qua được ẩn danh ... ok (195ms)
+chưa có helper của B: người có đơn sắp tới → 500, không có gì đổi (FR-021) ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[delete-account] thiếu helper cancelBookingInTx
+----- post-test output end -----
+chưa có helper của B: người có đơn sắp tới → 500, không có gì đổi (FR-021) ... ok (79ms)
+chưa có helper: người không có đơn vẫn xóa được, bước của nhóm khác ghi SKIPPED ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+chưa có helper: người không có đơn vẫn xóa được, bước của nhóm khác ghi SKIPPED ... ok (117ms)
+action lạ → 400 INVALID_ARGUMENT; confirm thiếu impactVersion → 400 ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+action lạ → 400 INVALID_ARGUMENT; confirm thiếu impactVersion → 400 ... ok (16ms)
+running 4 tests from ./dropin-close/index.test.ts
+Q10: buổi tới mốc T−30 có 2 lượt chờ → cả 2 CLOSED, không tiền, 2 thông báo; buổi qua endAt → COMPLETED; chạy lại không đổi gì ... ok (99ms)
+Mốc đúng 30 phút: còn 30 phút → đóng; còn 31 phút → chưa; buổi OPEN có người chờ cũng được đóng ... ok (33ms)
+Buổi CANCELLED/COMPLETED không bị đụng tới; lỗi gửi thông báo không hoàn tác việc đóng ...
+------- post-test output -------
+[dropin-close] gửi DROPIN_WAITLIST_CLOSED thất bại Error: send-notification down
+    at Object.notify (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/dropin-close/index.test.ts:39:46)
+    at handleDropInClose (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/dropin-close/handler.ts:79:24)
+    at async file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/dropin-close/index.test.ts:103:17
+    at async innerWrapped (ext:cli/40_test.js:300:5)
+    at async exitSanitizer (ext:cli/40_test.js:201:27)
+    at async outerWrapped (ext:cli/40_test.js:239:22)
+----- post-test output end -----
+Buổi CANCELLED/COMPLETED không bị đụng tới; lỗi gửi thông báo không hoàn tác việc đóng ... ok (44ms)
+Q14: thiếu hoặc sai CRON_SECRET → 401, không ghi gì; GET → 405 ... ok (19ms)
+running 6 tests from ./expire-holds/handler.test.ts
+expire-holds: requires POST and a configured cron secret ... ok (9ms)
+expire-holds: atomically expires stale single booking and only its held slots ... ok (1ms)
+expire-holds: does not update a booking confirmed after the stale scan ... ok (645µs)
+expire-holds: skips a slot renewed after the stale scan ... ok (322µs)
+expire-holds: leaves legacy holds without expiry untouched ... ok (291µs)
+expire-holds: atomically expires recurring group, sessions, and matching held slots ... ok (640µs)
+running 2 tests from ./manage-slot-blocks/handler.test.ts
+manage-slot-blocks: rejects non-POST requests ... ok (11ms)
+manage-slot-blocks: rejects invalid action ... ok (1ms)
+running 15 tests from ./on-signup/handler.test.ts
+S1: người dùng email mới → 200 CREATED, document đủ trường, claim đủ ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+S1: người dùng email mới → 200 CREATED, document đủ trường, claim đủ ... ok (47ms)
+S2 + gọi liên tiếp: 5 lần → CREATED rồi 4 lần ALREADY_INITIALIZED, createdAt giữ nguyên ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+S2 + gọi liên tiếp: 5 lần → CREATED rồi 4 lần ALREADY_INITIALIZED, createdAt giữ nguyên ... ok (67ms)
+S3 + gọi đồng thời: 10 lời gọi song song, chạy 10 vòng, mỗi vòng đúng 1 document và claim đúng ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+S3 + gọi đồng thời: 10 lời gọi song song, chạy 10 vòng, mỗi vòng đúng 1 document và claim đúng ... ok (20s)
+S4: document đã có nhưng gán claim lỗi → lần sau bổ sung claim, không cần termsAccepted ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[toErrorResponse] Error: Identity Toolkit lỗi
+    at Object.setCustomClaims (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/on-signup/handler.test.ts:87:45)
+    at handleOnSignup (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/on-signup/handler.ts:97:22)
+    at async call (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/on-signup/handler.test.ts:15:15)
+    at async file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/on-signup/handler.test.ts:90:17
+    at async innerWrapped (ext:cli/40_test.js:300:5)
+    at async exitSanitizer (ext:cli/40_test.js:201:27)
+    at async outerWrapped (ext:cli/40_test.js:239:22)
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+S4: document đã có nhưng gán claim lỗi → lần sau bổ sung claim, không cần termsAccepted ... ok (25ms)
+S5: người dùng mới, termsAccepted false → 400 TERMS_REQUIRED, không document, không claim ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+S5: người dùng mới, termsAccepted false → 400 TERMS_REQUIRED, không document, không claim ... ok (21ms)
+S6: displayName 1 hoặc 51 ký tự → 400 INVALID_DISPLAY_NAME ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+S6: displayName 1 hoặc 51 ký tự → 400 INVALID_DISPLAY_NAME ... ok (12ms)
+displayName được trim; bỏ trống thì dùng tên trong token ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+displayName được trim; bỏ trống thì dùng tên trong token ... ok (26ms)
+S7: đã có appRole OWNER hoặc ADMIN → giữ nguyên, chỉ thêm role ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+S7: đã có appRole OWNER hoặc ADMIN → giữ nguyên, chỉ thêm role ... ok (32ms)
+S8: chế độ thật — token giả hoặc thiếu token → 401 ... ok (80ms)
+S9: accountStatus LOCKED → 403 ACCOUNT_LOCKED, claim không đổi ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+S9: accountStatus LOCKED → 403 ACCOUNT_LOCKED, claim không đổi ... ok (14ms)
+S10: body có role ADMIN, walletBalance 1e9 → bị bỏ qua ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+S10: body có role ADMIN, walletBalance 1e9 → bị bỏ qua ... ok (19ms)
+S11: đăng nhập số điện thoại → email null, phone +84… ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+S11: đăng nhập số điện thoại → email null, phone +84… ... ok (19ms)
+S12: email trong body khác token → dùng email của token, đã lowercase ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+S12: email trong body khác token → dùng email của token, đã lowercase ... ok (17ms)
+token không có email lẫn phone_number → 400 MISSING_CONTACT ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+token không có email lẫn phone_number → 400 MISSING_CONTACT ... ok (14ms)
+GET → 405 METHOD_NOT_ALLOWED ... ok (405µs)
+running 10 tests from ./owner-applications/handler.test.ts
+owner-applications rejects non-POST ... ok (7ms)
+additional venues have independent lifecycles, do not hide onboarding, and cannot be forged ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+additional venues have independent lifecycles, do not hide onboarding, and cannot be forged ... ok (88ms)
+concurrent additional submit/review creates one application and one venue; revocation during publication wins ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+concurrent additional submit/review creates one application and one venue; revocation during publication wins ... ok (8s)
+owner-applications creates once and returns committed result after retry ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+owner-applications creates once and returns committed result after retry ... ok (23ms)
+owner-applications rejects changed payload and competing lifecycle IDs ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+owner-applications rejects changed payload and competing lifecycle IDs ... ok (31ms)
+owner-applications serializes concurrent lifecycle submissions ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+owner-applications serializes concurrent lifecycle submissions ... ok (2s)
+owner-applications resubmits the same rejected document and clears its old reason ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+owner-applications resubmits the same rejected document and clears its old reason ... ok (17ms)
+owner-applications ignores client role and rejects invalid files/paths ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+owner-applications ignores client role and rejects invalid files/paths ... ok (18ms)
+owner-applications serves authoritative current status ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+owner-applications serves authoritative current status ... ok (13ms)
+owner-applications refuses inconsistent ownerStatus and trusted role ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+owner-applications refuses inconsistent ownerStatus and trusted role ... ok (11ms)
+running 5 tests from ./owner-approve-booking/handler.test.ts
+owner-approve-booking: rejects non-POST requests ... ok (6ms)
+owner-approve-booking: rejects unauthenticated requests ... ok (1ms)
+owner-approve-booking: PENDING hop le -> CONFIRMED + qrToken non-empty + confirmedAt set ... ok (1ms)
+owner-approve-booking: approve don da CONFIRMED -> 409 va khong doi token ... ok (476µs)
+owner-approve-booking: approve qua approvalDeadline -> 409 va khong set token ... ok (370µs)
+running 3 tests from ./owner-cancel-booking/handler.test.ts
+owner-cancel-booking: rejects non-POST requests ... ok (7ms)
+owner-cancel-booking: rejects unauthenticated requests ... ok (1ms)
+owner-cancel-booking: rejects empty reason ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+owner-cancel-booking: rejects empty reason ... ok (738µs)
+running 2 tests from ./owner-cancel-session/handler.test.ts
+owner-cancel-session: rejects non-POST requests ... ok (7ms)
+owner-cancel-session: rejects unauthenticated requests ... ok (1ms)
+running 2 tests from ./owner-checkin-dropin-registration/handler.test.ts
+owner-checkin-dropin: rejects non-POST requests ... ok (6ms)
+owner-checkin-dropin: rejects unauthenticated requests ... ok (1ms)
+running 2 tests from ./owner-create-session/handler.test.ts
+owner-create-session: rejects non-POST requests ... ok (6ms)
+owner-create-session: rejects unauthenticated requests ... ok (976µs)
+running 6 tests from ./owner-create-voucher/handler.test.ts
+voucher validation rejects NaN, decimals, invalid dates and limits ... ok (1ms)
+voucher mutations check current ownership and preserve usage counters ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+voucher mutations check current ownership and preserve usage counters ... ok (11ms)
+stale owner claim and locked/deleting accounts cannot mutate vouchers ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+stale owner claim and locked/deleting accounts cannot mutate vouchers ... ok (1ms)
+Firestore GeoPoint encoding preserves native geographic type ... ok (350µs)
+owner-create-voucher: rejects non-POST requests ... ok (176µs)
+owner-create-voucher: rejects unauthenticated requests ... ok (425µs)
+running 1 test from ./owner-docs/handler.test.ts
+owner-docs enforces applicant/admin paths and signs only authorized staged objects ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+owner-docs enforces applicant/admin paths and signs only authorized staged objects ... ok (77ms)
+running 3 tests from ./owner-photos.test.ts
+approved owner signs only bounded images under an owned venue; others cannot sign ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+approved owner signs only bounded images under an owned venue; others cannot sign ... ok (11ms)
+publication copies only declared venue photos and rejects private documents ... ok (848µs)
+legacy repair migrates only venue photos and preserves private evidence ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+legacy repair migrates only venue photos and preserves private evidence ... ok (2ms)
+running 3 tests from ./owner-reject-booking/handler.test.ts
+owner-reject-booking: rejects non-POST requests ... ok (6ms)
+owner-reject-booking: rejects unauthenticated requests ... ok (1ms)
+owner-reject-booking: rejects empty reason ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+owner-reject-booking: rejects empty reason ... ok (638µs)
+running 3 tests from ./owner-statistics-source/handler.test.ts
+statistics projection is venue-scoped, deduplicated and never returns QR or player identity ... ok (8ms)
+statistics rejects current PLAYER authority before reading any financial data ... ok (713µs)
+statistics rejects invalid calendar dates, reversed periods and more than 30 days ... ok (607µs)
+running 10 tests from ./owner-transactions.emulator.test.ts
+owner slot transaction: concurrent LOCK requests have exactly one winner ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+owner slot transaction: concurrent LOCK requests have exactly one winner ... ok (2s)
+owner slot transaction: any booked slot rolls back the entire range ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+owner slot transaction: any booked slot rolls back the entire range ... ok (14ms)
+owner slot transaction: rejects forged unlock from a different venue ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+owner slot transaction: rejects forged unlock from a different venue ... ok (11ms)
+owner slot transaction: can block AVAILABLE then safely unlock without losing a booking ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+owner slot transaction: can block AVAILABLE then safely unlock without losing a booking ... ok (24ms)
+owner booking transaction: approve/reject race commits exactly one decision ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+owner booking transaction: approve/reject race commits exactly one decision ... ok (2s)
+owner booking transaction: full refund is credited once; unpaid at-venue is never credited ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+owner booking transaction: full refund is credited once; unpaid at-venue is never credited ... ok (4s)
+owner booking transaction: mismatched slot cannot be deleted or refunded ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+owner booking transaction: mismatched slot cannot be deleted or refunded ... ok (15ms)
+statistics projection: real Firestore range/select queries exclude QR and identity ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+statistics projection: real Firestore range/select queries exclude QR and identity ... ok (25ms)
+owner reject requires an explicit reason and preserves the booking until supplied ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+owner reject requires an explicit reason and preserves the booking until supplied ... ok (16ms)
+booking check-in: preview is read-only and concurrent payment confirmations have one winner ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+booking check-in: preview is read-only and concurrent payment confirmations have one winner ... ok (4s)
+running 15 tests from ./owner-update-session/handler.test.ts
+owner capacity increase promotes fitting waitlist entries; decrease preserves queue ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+owner capacity increase promotes fitting waitlist entries; decrease preserves queue ... ok (13ms)
+owner cancellation closes every waitlisted entry without promotion, charging or stale tickets ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[owner-cancel-session] notification delivery failed Error: Simulated push failure after commit
+    at notify (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/owner-update-session/handler.test.ts:185:13)
+    at handleOwnerCancelSession (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/owner-cancel-session/handler.ts:147:21)
+    at async file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/owner-update-session/handler.test.ts:178:17
+    at async innerWrapped (ext:cli/40_test.js:300:5)
+    at async exitSanitizer (ext:cli/40_test.js:201:27)
+    at async outerWrapped (ext:cli/40_test.js:239:22)
+----- post-test output end -----
+owner cancellation closes every waitlisted entry without promotion, charging or stale tickets ... ok (3ms)
+owner create: timestamps, array courts, owner/district and derived snapshot match spec 080 ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+owner create: timestamps, array courts, owner/district and derived snapshot match spec 080 ... ok (692µs)
+owner create rejects unsupported levels, impossible dates and off-grid times without writes ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+owner create rejects unsupported levels, impossible dates and off-grid times without writes ... ok (1ms)
+owner cancel: multiple paid/check-in registrations refund fully, unpaid stays unpaid, waitlist closes ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+owner cancel: multiple paid/check-in registrations refund fully, unpaid stays unpaid, waitlist closes ... ok (1ms)
+owner check-in reads nested uid registration and rejects repeated/waitlisted check-in ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+owner check-in reads nested uid registration and rejects repeated/waitlisted check-in ... ok (4ms)
+owner check-in resolves a normalized manual ticket to its UID without exposing credentials ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+owner check-in resolves a normalized manual ticket to its UID without exposing credentials ... ok (733µs)
+owner check-in rejects UID/malformed credentials and never resolves another session or root collection ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+owner check-in rejects UID/malformed credentials and never resolves another session or root collection ... ok (1ms)
+owner check-in denies foreign/unapproved owners and mismatched venue context without writes ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+owner check-in denies foreign/unapproved owners and mismatched venue context without writes ... ok (1ms)
+owner check-in rejects used/cancelled/waitlisted registrations and closed sessions ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+owner check-in rejects used/cancelled/waitlisted registrations and closed sessions ... ok (3ms)
+owner check-in fails closed for duplicate credentials or mismatched registration identity ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+owner check-in fails closed for duplicate credentials or mismatched registration identity ... ok (1ms)
+owner update moves courts/time atomically, recomputes fields, marks registrations and preserves paid amount ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+owner update moves courts/time atomically, recomputes fields, marks registrations and preserves paid amount ... ok (1ms)
+owner cancel and check-in enforce current authority and reject foreign slots without writes ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+owner cancel and check-in enforce current authority and reject foreign slots without writes ... ok (2ms)
+owner update rejects slot conflict, low capacity, wrong owner, closed session with no partial writes ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+owner update rejects slot conflict, low capacity, wrong owner, closed session with no partial writes ... ok (3ms)
+owner update keeps own slots when only capacity changes and transitions FULL to OPEN ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+owner update keeps own slots when only capacity changes and transitions FULL to OPEN ... ok (801µs)
+running 5 tests from ./player-cancel-booking/handler.test.ts
+player-cancel-booking: rejects non-POST requests ... ok (7ms)
+player-cancel-booking: rejects unauthenticated requests ... ok (1ms)
+player-cancel-booking: rejects invalid token before reading ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+player-cancel-booking: rejects invalid token before reading ... ok (933µs)
+player-cancel-booking: successfully cancels PENDING booking and releases slots ... ok (1ms)
+player-cancel-booking: works when invoked by Deno.serve with info as 2nd arg ... ok (451µs)
+running 29 tests from ./register-drop-in/handler.test.ts
+201 MOCK_PAY: response đúng contract, không có qrToken; đăng ký đủ trường 🔒; buổi +partySize ... ok (8ms)
+AT_VENUE → paymentStatus UNPAID; amount = pricePerPerson × partySize ... ok (1ms)
+registeredCount == capacity sau khi đăng ký → status FULL ... ok (970µs)
+E3: cùng requestId gửi 5 lần song song → 1×201, 4×200 cùng vé, đếm tăng 1 lần, thông báo 1 lần ... ok (1ms)
+cùng requestId khi đã CHECKED_IN hoặc buổi đã FULL → 200 trả bản cũ ... ok (1ms)
+đã REGISTERED, requestId khác → 409 ALREADY_REGISTERED; WAITLISTED → 409 ALREADY_WAITLISTED ... ok (1ms)
+E11: ghi đè bản CANCELLED cũ → 201, qrToken/ticketCode mới, xóa trường hủy ... ok (711µs)
+E8: buổi đã bắt đầu → 409 SESSION_STARTED (kể cả đúng startAt) ... ok (788µs)
+E8: buổi CANCELLED/COMPLETED → 409 SESSION_CANCELLED ... ok (432µs)
+E8: cơ sở HIDDEN/LOCKED/không còn → 409 VENUE_INACTIVE ... ok (634µs)
+E8: chủ sân tự đăng ký buổi của mình → 403 OWN_SESSION ... ok (337µs)
+không có buổi → 404 SESSION_NOT_FOUND ... ok (341µs)
+không đủ chỗ → 409 SESSION_FULL kèm remaining, không ghi gì ... ok (525µs)
+E9: partySize 0/5/1.5/"2", paymentMethod sai, requestId không phải UUID, thiếu sessionId → 400 INVALID_ARGUMENT ... ok (1ms)
+partySize 1 và 4 hợp lệ ... ok (483µs)
+không có token → 401 UNAUTHENTICATED; GET → 405 ... ok (509µs)
+ACCOUNT_LOCKED từ authenticate được trả nguyên ... ok (276µs)
+gửi thông báo lỗi → vẫn 201 ...
+------- post-test output -------
+[register-drop-in] gửi DROPIN_REGISTERED thất bại Error: send-notification 500
+    at Object.notify (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/register-drop-in/handler.test.ts:144:48)
+    at handleRegisterDropIn (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/register-drop-in/handler.ts:446:20)
+    at async call (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/register-drop-in/handler.test.ts:160:15)
+    at async file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/register-drop-in/handler.test.ts:427:17
+    at async innerWrapped (ext:cli/40_test.js:300:5)
+    at async exitSanitizer (ext:cli/40_test.js:201:27)
+    at async outerWrapped (ext:cli/40_test.js:239:22)
+----- post-test output end -----
+gửi thông báo lỗi → vẫn 201 ... ok (644µs)
+ABORTED 2 lần rồi thành công → 201, đếm chỉ tăng 1 lần ... ok (469µs)
+hết 8 lần thử → 503 BUSY, không gửi thông báo ... ok (381µs)
+createKeyedSerializer: cùng khóa chạy lần lượt (kể cả task trước lỗi), khác khóa chạy song song ... ok (156µs)
+ADD_PARTY: thêm 1 người → 200, partySize 3, amount cộng thêm, buổi +1, giữ QR và mã vé ... ok (455µs)
+ADD_PARTY: AT_VENUE thì vẫn UNPAID; đủ chỗ cuối → buổi FULL ... ok (290µs)
+ADD_PARTY: cùng requestId gửi lại → 200, chỉ cộng một lần ... ok (384µs)
+ADD_PARTY: tổng vượt 4 người → 409 PARTY_LIMIT kèm maxAdditional, không ghi gì ... ok (770µs)
+ADD_PARTY: không đủ chỗ → 409 SESSION_FULL kèm remaining ... ok (2ms)
+ADD_PARTY: chưa đăng ký, đã hủy hoặc đã check-in → 409 NOT_REGISTERED ... ok (855µs)
+ADD_PARTY: buổi đã bắt đầu, bị hủy, cơ sở ngừng → mã lỗi như đăng ký ... ok (1ms)
+ADD_PARTY: additional 0/4/1.5, requestId sai, action lạ → 400 INVALID_ARGUMENT ... ok (556µs)
+running 4 tests from ./register-drop-in/index.test.ts
+E1: capacity 12, đã có 7, 20 người song song → 5×201, 15×409 SESSION_FULL, 12/12 FULL (×10) ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[E1 #1] success=5 full=15 registeredCount=12/12
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[E1 #2] success=5 full=15 registeredCount=12/12
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[E1 #3] success=5 full=15 registeredCount=12/12
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[E1 #4] success=5 full=15 registeredCount=12/12
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[E1 #5] success=5 full=15 registeredCount=12/12
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[E1 #6] success=5 full=15 registeredCount=12/12
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[E1 #7] success=5 full=15 registeredCount=12/12
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[E1 #8] success=5 full=15 registeredCount=12/12
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[E1 #9] success=5 full=15 registeredCount=12/12
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[E1 #10] success=5 full=15 registeredCount=12/12
+----- post-test output end -----
+E1: capacity 12, đã có 7, 20 người song song → 5×201, 15×409 SESSION_FULL, 12/12 FULL (×10) ... ok (46s)
+E2: còn 3 chỗ, 2 nhóm 2 người song song → 1 thành công, người kia SESSION_FULL remaining=1 (×10) ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[E2 #1] success=1 full=1 registeredCount=11/12
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[E2 #2] success=1 full=1 registeredCount=11/12
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[E2 #3] success=1 full=1 registeredCount=11/12
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[E2 #4] success=1 full=1 registeredCount=11/12
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[E2 #5] success=1 full=1 registeredCount=11/12
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[E2 #6] success=1 full=1 registeredCount=11/12
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[E2 #7] success=1 full=1 registeredCount=11/12
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[E2 #8] success=1 full=1 registeredCount=11/12
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[E2 #9] success=1 full=1 registeredCount=11/12
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[E2 #10] success=1 full=1 registeredCount=11/12
+----- post-test output end -----
+E2: còn 3 chỗ, 2 nhóm 2 người song song → 1 thành công, người kia SESSION_FULL remaining=1 (×10) ... ok (25s)
+E3: cùng requestId 5 lần song song → 1×201, 4×200, đếm +1, thông báo 1 lần; trường thời gian là Timestamp ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+E3: cùng requestId 5 lần song song → 1×201, 4×200, đếm +1, thông báo 1 lần; trường thời gian là Timestamp ... ok (2s)
+requireUser thật: tài khoản LOCKED → 403 ACCOUNT_LOCKED; không token → 401 ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+requireUser thật: tài khoản LOCKED → 403 ACCOUNT_LOCKED; không token → 401 ... ok (5ms)
+running 8 tests from ./register-drop-in/waitlist.test.ts
+Q1: 3 người lần lượt vào hàng chờ buổi FULL → vị trí 1, 2, 3; registeredCount không đổi; lượt chờ chưa có tiền/QR ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+Q1: 3 người lần lượt vào hàng chờ buổi FULL → vị trí 1, 2, 3; registeredCount không đổi; lượt chờ chưa có tiền/QR ... ok (57ms)
+Q2: cùng requestId 5 lần song song → 1×201, 4×200, waitlistCount tăng 1 lần ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+Q2: cùng requestId 5 lần song song → 1×201, 4×200, waitlistCount tăng 1 lần ... ok (2s)
+Q3: buổi OPEN → SESSION_HAS_SPOTS kèm remaining; còn đúng 30 phút → WAITLIST_CLOSED; còn 31 phút vào được ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+Q3: buổi OPEN → SESSION_HAS_SPOTS kèm remaining; còn đúng 30 phút → WAITLIST_CLOSED; còn 31 phút vào được ... ok (42ms)
+Q3: chủ buổi → OWN_SESSION; buổi CANCELLED → SESSION_CANCELLED; cơ sở HIDDEN → VENUE_INACTIVE ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+Q3: chủ buổi → OWN_SESSION; buổi CANCELLED → SESSION_CANCELLED; cơ sở HIDDEN → VENUE_INACTIVE ... ok (30ms)
+Đã WAITLISTED với requestId khác → ALREADY_WAITLISTED; đã REGISTERED → ALREADY_REGISTERED ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+Đã WAITLISTED với requestId khác → ALREADY_WAITLISTED; đã REGISTERED → ALREADY_REGISTERED ... ok (26ms)
+Bản CANCELLED cũ → ghi đè và nhận số vé mới ở cuối hàng (AC 3.3) ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+Bản CANCELLED cũ → ghi đè và nhận số vé mới ở cuối hàng (AC 3.3) ... ok (17ms)
+partySize 0 hoặc 5 → INVALID_ARGUMENT; thiếu requestId → INVALID_ARGUMENT ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+partySize 0 hoặc 5 → INVALID_ARGUMENT; thiếu requestId → INVALID_ARGUMENT ... ok (14ms)
+Đăng ký thường vào buổi FULL → SESSION_FULL có waitlistOpen true; còn ≤ 30 phút → false ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+Đăng ký thường vào buổi FULL → SESSION_FULL có waitlistOpen true; còn ≤ 30 phút → false ... ok (23ms)
+running 12 tests from ./review/create-dropin.test.ts
+create buổi vãng lai hợp lệ: reviews/{sessionId}_{uid}, DROP_IN, cộng điểm venue, thông báo chủ ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+create buổi vãng lai hợp lệ: reviews/{sessionId}_{uid}, DROP_IN, cộng điểm venue, thông báo chủ ... ok (37ms)
+E14: đăng ký REGISTERED / CANCELLED / NO_SHOW / không có đăng ký → 409 NOT_CHECKED_IN ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+E14: đăng ký REGISTERED / CANCELLED / NO_SHOW / không có đăng ký → 409 NOT_CHECKED_IN ... ok (66ms)
+buổi chưa kết thúc (now < endAt) → 409 NOT_CHECKED_IN ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+buổi chưa kết thúc (now < endAt) → 409 NOT_CHECKED_IN ... ok (14ms)
+quá 7 ngày sau endAt → 409 REVIEW_WINDOW_CLOSED; đúng 7 ngày vẫn được ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+quá 7 ngày sau endAt → 409 REVIEW_WINDOW_CLOSED; đúng 7 ngày vẫn được ... ok (20ms)
+buổi không tồn tại → 404 NOT_FOUND ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+buổi không tồn tại → 404 NOT_FOUND ... ok (14ms)
+chủ cơ sở tự đánh giá buổi của mình → 403 OWN_VENUE ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+chủ cơ sở tự đánh giá buổi của mình → 403 OWN_VENUE ... ok (15ms)
+E15: lần 2 khác nội dung → 409 ALREADY_REVIEWED; cùng nội dung → 200, không cộng điểm lần 2 ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+E15: lần 2 khác nội dung → 409 ALREADY_REVIEWED; cùng nội dung → 200, không cộng điểm lần 2 ... ok (32ms)
+ảnh phải có tiền tố {uid}/{sessionId}_{uid}/ ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+ảnh phải có tiền tố {uid}/{sessionId}_{uid}/ ... ok (20ms)
+gửi cả bookingId và sessionId, hoặc không gửi cái nào → 400 INVALID_ARGUMENT ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+gửi cả bookingId và sessionId, hoặc không gửi cái nào → 400 INVALID_ARGUMENT ... ok (16ms)
+update review DROP_IN: tổng điểm venue = − cũ + mới, hạn sửa tính từ endAt ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+update review DROP_IN: tổng điểm venue = − cũ + mới, hạn sửa tính từ endAt ... ok (29ms)
+delete review DROP_IN: trừ điểm venue và xóa ảnh trong {uid}/{sessionId}_{uid}/ ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+delete review DROP_IN: trừ điểm venue và xóa ảnh trong {uid}/{sessionId}_{uid}/ ... ok (22ms)
+discardPhotos nhận sessionId: xóa ảnh nháp, giữ ảnh đã thuộc review; sai tiền tố → 400 ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+discardPhotos nhận sessionId: xóa ảnh nháp, giữ ảnh đã thuộc review; sai tiền tố → 400 ... ok (23ms)
+running 14 tests from ./review/create.test.ts
+create thành công: 201, review đủ trường, tổng điểm +1, gửi REVIEW_NEW cho chủ sân ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+create thành công: 201, review đủ trường, tổng điểm +1, gửi REVIEW_NEW cho chủ sân ... ok (37ms)
+đơn không phải của mình → 403 NOT_OWNER; đơn không tồn tại → 404 NOT_FOUND ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+đơn không phải của mình → 403 NOT_OWNER; đơn không tồn tại → 404 NOT_FOUND ... ok (21ms)
+đơn CONFIRMED → 409 BOOKING_NOT_COMPLETED ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+đơn CONFIRMED → 409 BOOKING_NOT_COMPLETED ... ok (13ms)
+completedAt 8 ngày trước → 409 REVIEW_WINDOW_CLOSED; đúng 7 ngày vẫn được ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+completedAt 8 ngày trước → 409 REVIEW_WINDOW_CLOSED; đúng 7 ngày vẫn được ... ok (20ms)
+chủ sân đánh giá cơ sở của mình → 403 OWN_VENUE ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+chủ sân đánh giá cơ sở của mình → 403 OWN_VENUE ... ok (15ms)
+tài khoản bị khóa → 403 ACCOUNT_LOCKED ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+tài khoản bị khóa → 403 ACCOUNT_LOCKED ... ok (12ms)
+dữ liệu sai → 400 INVALID_ARGUMENT, không ghi gì ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+dữ liệu sai → 400 INVALID_ARGUMENT, không ghi gì ... ok (28ms)
+action lạ hoặc thiếu → 400 INVALID_ARGUMENT; không có token → 401 ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+action lạ hoặc thiếu → 400 INVALID_ARGUMENT; không có token → 401 ... ok (12ms)
+gửi lại cùng nội dung → 200, không cộng điểm lần 2; khác nội dung → 409 ALREADY_REVIEWED ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+gửi lại cùng nội dung → 200, không cộng điểm lần 2; khác nội dung → 409 ALREADY_REVIEWED ... ok (24ms)
+gửi trùng đồng thời (bấm Gửi 3 lần): chỉ 1 đánh giá, ratingCount = 1 ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+gửi trùng đồng thời (bấm Gửi 3 lần): chỉ 1 đánh giá, ratingCount = 1 ... ok (4s)
+SC-005: 10 lời gọi song song cho 10 đơn của cùng venue → ratingCount +10, ratingSums đúng tổng ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+SC-005: 10 lời gọi song song cho 10 đơn của cùng venue → ratingCount +10, ratingSums đúng tổng ... ok (10s)
+gửi thông báo lỗi → đánh giá vẫn được lưu, trả 201 ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[review] gửi REVIEW_NEW thất bại Error: send-notification 500
+    at Object.notify (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/review/create.test.ts:166:71)
+    at notifyQuietly (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/review/handler.ts:148:16)
+    at create (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/review/handler.ts:332:11)
+    at async handleReview (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/review/handler.ts:91:16)
+    at async call (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/review/testing.ts:59:15)
+    at async file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/review/create.test.ts:167:13
+    at async innerWrapped (ext:cli/40_test.js:300:5)
+    at async exitSanitizer (ext:cli/40_test.js:201:27)
+    at async outerWrapped (ext:cli/40_test.js:239:22)
+----- post-test output end -----
+gửi thông báo lỗi → đánh giá vẫn được lưu, trả 201 ... ok (35ms)
+create kèm 3 ảnh đã tải lên → 201, hasPhotos = true ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+create kèm 3 ảnh đã tải lên → 201, hasPhotos = true ... ok (14ms)
+create: > 3 ảnh hoặc path sai tiền tố → 400; path chưa có trong Storage → 409 PHOTO_MISSING ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+create: > 3 ảnh hoặc path sai tiền tố → 400; path chưa có trong Storage → 409 PHOTO_MISSING ... ok (18ms)
+running 4 tests from ./review/discard.test.ts
+discardPhotos xóa ảnh của mình chưa thuộc đánh giá nào ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+discardPhotos xóa ảnh của mình chưa thuộc đánh giá nào ... ok (23ms)
+discardPhotos không xóa ảnh đã thuộc đánh giá đã lưu ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+discardPhotos không xóa ảnh đã thuộc đánh giá đã lưu ... ok (20ms)
+discardPhotos: path của người khác hoặc đơn khác → 400, không xóa gì ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+discardPhotos: path của người khác hoặc đơn khác → 400, không xóa gì ... ok (13ms)
+discardPhotos với path không còn trong Storage → deleted = 0 ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+discardPhotos với path không còn trong Storage → deleted = 0 ... ok (10ms)
+running 5 tests from ./review/reply.test.ts
+chủ đúng cơ sở phản hồi lần đầu: hasOwnerReply = true, gửi REVIEW_REPLY, tổng điểm không đổi ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+chủ đúng cơ sở phản hồi lần đầu: hasOwnerReply = true, gửi REVIEW_REPLY, tổng điểm không đổi ... ok (41ms)
+sửa phản hồi lần 2: editedAt có giá trị, repliedAt giữ nguyên, không gửi thông báo lại ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+sửa phản hồi lần 2: editedAt có giá trị, repliedAt giữ nguyên, không gửi thông báo lại ... ok (41ms)
+chủ cơ sở khác, người chơi, chủ chưa duyệt → 403 NOT_OWNER ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+chủ cơ sở khác, người chơi, chủ chưa duyệt → 403 NOT_OWNER ... ok (57ms)
+text rỗng hoặc > 500 ký tự → 400; đánh giá không tồn tại → 404 ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+text rỗng hoặc > 500 ký tự → 400; đánh giá không tồn tại → 404 ... ok (51ms)
+người viết đã xóa tài khoản (userId = null): phản hồi được, không gửi thông báo ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+người viết đã xóa tài khoản (userId = null): phản hồi được, không gửi thông báo ... ok (39ms)
+running 8 tests from ./review/update-delete.test.ts
+sửa trong hạn: editedAt đặt, tổng điểm = − cũ + mới, ownerReply giữ nguyên ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+sửa trong hạn: editedAt đặt, tổng điểm = − cũ + mới, ownerReply giữ nguyên ... ok (61ms)
+sửa quá hạn → 409 REVIEW_WINDOW_CLOSED; người khác sửa → 403 NOT_OWNER; không tồn tại → 404 ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+sửa quá hạn → 409 REVIEW_WINDOW_CLOSED; người khác sửa → 403 NOT_OWNER; không tồn tại → 404 ... ok (34ms)
+sửa: dữ liệu sai → 400; ảnh mới chưa có trong Storage → 409 PHOTO_MISSING ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+sửa: dữ liệu sai → 400; ảnh mới chưa có trong Storage → 409 PHOTO_MISSING ... ok (42ms)
+sửa: ảnh bị bỏ khỏi photoPaths bị xóa khỏi Storage sau commit ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+sửa: ảnh bị bỏ khỏi photoPaths bị xóa khỏi Storage sau commit ... ok (23ms)
+sửa đánh giá HIDDEN: tổng điểm không đổi ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+sửa đánh giá HIDDEN: tổng điểm không đổi ... ok (22ms)
+xóa VISIBLE: ratingCount −1, ảnh trong {uid}/{reviewId}/ bị xóa ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+xóa VISIBLE: ratingCount −1, ảnh trong {uid}/{reviewId}/ bị xóa ... ok (38ms)
+xóa HIDDEN: tổng điểm không đổi ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+xóa HIDDEN: tổng điểm không đổi ... ok (27ms)
+xóa quá hạn vẫn được; người khác xóa → 403; sau khi xóa, tạo lại trong hạn được ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+xóa quá hạn vẫn được; người khác xóa → 403; sau khi xóa, tạo lại trong hạn được ... ok (45ms)
+running 5 tests from ./sync-account-email/handler.test.ts
+E1: token có email mới đã xác minh → users.email = email mới chữ thường, updated: true ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+E1: token có email mới đã xác minh → users.email = email mới chữ thường, updated: true ... ok (51ms)
+E2: gọi lại khi email đã đồng bộ → updated: false ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+E2: gọi lại khi email đã đồng bộ → updated: false ... ok (9ms)
+E3: email chưa xác minh → không ghi, updated: false ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+E3: email chưa xác minh → không ghi, updated: false ... ok (13ms)
+chống giả: trường email trong body bị bỏ qua ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+chống giả: trường email trong body bị bỏ qua ... ok (10ms)
+token không hợp lệ → 401 UNAUTHENTICATED ... ok (1ms)
+running 1 test from ./sync-venue-price/handler.test.ts
+sync-venue-price: calculates minimum pricePerHour and updates venue ... ok (389µs)
+
+ok | 396 passed | 0 failed (5m18s)

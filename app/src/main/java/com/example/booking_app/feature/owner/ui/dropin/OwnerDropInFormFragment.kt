@@ -35,17 +35,21 @@ class OwnerDropInFormFragment : Fragment(R.layout.fragment_owner_dropin_form) {
     private var settingSpinners = false
     private var populated = false
     private var navigatedAfterSave = false
+    private var retainedDraft: Bundle? = null
     private val sessionId get() = arguments?.getString("sessionId")
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         _binding = FragmentOwnerDropinFormBinding.bind(view)
+        venues = emptyList()
+        courts = emptyList()
         binding.venueSpinner.onItemSelectedListener = SpinnerListener { index ->
             if (!settingSpinners) venues.getOrNull(index)?.id?.let(viewModel::selectVenue)
         }
         binding.courtSpinner.onItemSelectedListener = SpinnerListener { index -> courts.getOrNull(index)?.id?.let { courtId = it } }
         binding.save.setOnClickListener { submitForm() }
         binding.levelSpinner.adapter = ArrayAdapter.createFromResource(requireContext(), R.array.owner_dropin_levels, android.R.layout.simple_spinner_dropdown_item)
+        (savedInstanceState?.getBundle("draft") ?: retainedDraft)?.let(::restoreDraft)
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) { viewModel.uiState.collect(::render) }
         }
@@ -57,8 +61,33 @@ class OwnerDropInFormFragment : Fragment(R.layout.fragment_owner_dropin_form) {
     }
 
     override fun onDestroyView() {
+        _binding?.let { retainedDraft = captureDraft() }
         _binding = null
         super.onDestroyView()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putBundle("draft", if (_binding != null) captureDraft() else retainedDraft)
+    }
+
+    private fun captureDraft() = Bundle().apply {
+        putStringArrayList("values", arrayListOf(binding.date.text.toString(), binding.startTime.text.toString(),
+            binding.endTime.text.toString(), binding.capacity.text.toString(), binding.price.text.toString(), binding.note.text.toString()))
+        putStringArrayList("courts", ArrayList(selectedCourtIds))
+        putInt("level", binding.levelSpinner.selectedItemPosition)
+        putBoolean("populated", populated)
+    }
+
+    private fun restoreDraft(draft: Bundle) {
+        draft.getStringArrayList("values")?.let { values ->
+            listOf(binding.date,binding.startTime,binding.endTime,binding.capacity,binding.price,binding.note)
+                .forEachIndexed { index, field -> values.getOrNull(index)?.let(field::setText) }
+        }
+        selectedCourtIds.clear()
+        selectedCourtIds.addAll(draft.getStringArrayList("courts").orEmpty())
+        binding.levelSpinner.setSelection(draft.getInt("level"))
+        populated = draft.getBoolean("populated")
     }
 
     private fun render(state: OwnerDropInUiState) {
@@ -101,8 +130,13 @@ class OwnerDropInFormFragment : Fragment(R.layout.fragment_owner_dropin_form) {
                 populated=true
             }
         }
-        binding.loading.isVisible = state.isSaving
-        binding.save.isEnabled = !state.isSaving
+        val ready = !state.isLoading && courts.isNotEmpty() && (sessionId == null || populated)
+        binding.loading.isVisible = state.isSaving || state.isLoading
+        binding.save.isEnabled = ready && !state.isSaving
+        listOf(binding.date,binding.startTime,binding.endTime,binding.capacity,binding.price,binding.note,
+            binding.levelSpinner,binding.courtChoices).forEach { it.isEnabled = ready && !state.isSaving }
+        binding.venueSpinner.isEnabled = sessionId == null && !state.isSaving && state.venues.isNotEmpty()
+        for (index in 0 until binding.courtChoices.childCount) binding.courtChoices.getChildAt(index).isEnabled = ready && !state.isSaving
         binding.errorText.isVisible = state.error != null
         binding.errorText.text = state.error?.let { error ->
             if (error.contains("Hợp đồng", true)) getString(R.string.owner_dropin_contract_error) else error

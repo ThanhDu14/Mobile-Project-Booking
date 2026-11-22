@@ -94,8 +94,8 @@ beforeEach(async () => {
   await seedCurrentAdmin(env, 'admin1');
   await env.withSecurityRulesDisabled(async (ctx) => {
     const db = ctx.firestore();
-    await setDoc(doc(db, 'users/owner1'), { appRole: 'OWNER', ownerStatus: 'APPROVED' });
-    await setDoc(doc(db, 'users/owner2'), { appRole: 'OWNER', ownerStatus: 'APPROVED' });
+    await setDoc(doc(db, 'users/owner1'), { role: 'OWNER', ownerStatus: 'APPROVED', accountStatus: 'ACTIVE' });
+    await setDoc(doc(db, 'users/owner2'), { role: 'OWNER', ownerStatus: 'APPROVED', accountStatus: 'ACTIVE' });
     await setDoc(doc(db, 'dropInSessions/s1'), session('owner1', 'venueA'));
     await setDoc(doc(db, 'dropInSessions/s2'), session('owner2', 'venueB', { status: 'FULL' }));
     await setDoc(doc(db, 'dropInSessions/s1/registrations/playerA'), registration('s1', 'playerA'));

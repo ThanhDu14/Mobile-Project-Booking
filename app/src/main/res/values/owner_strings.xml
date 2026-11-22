@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="owner_back">Quay lại</string>
+    <string name="owner_additional_approved_message">Cơ sở mới đã được duyệt. Bạn có thể quản lý cơ sở trong Cơ sở của tôi.</string>
+    <string name="owner_additional_rights">Cơ sở mới cần được duyệt trước khi công khai. Quyền chủ sân và các cơ sở hiện có của bạn vẫn giữ nguyên.</string>
+    <string name="owner_venue_applications">Hồ sơ mở thêm cơ sở</string>
+    <string name="owner_applications_empty">Bạn chưa gửi hồ sơ mở thêm cơ sở.</string>
+    <string name="owner_application_row">%1$s · %2$s</string>
     <string name="owner_venues_title">Cơ sở của tôi</string>
     <string name="owner_venues_empty">Chưa có cơ sở nào được cấp cho tài khoản này.</string>
     <string name="owner_venue_add">Thêm cơ sở</string>
