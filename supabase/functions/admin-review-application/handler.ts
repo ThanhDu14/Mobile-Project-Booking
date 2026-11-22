@@ -221,7 +221,7 @@ export async function handleAdminReviewApplication(
           body: `Chúc mừng! Hồ sơ đăng ký cơ sở ${venueName} của bạn đã được phê duyệt.`,
           data: { applicationId, venueId: applicationId },
           isRead: false,
-          createdAt: nowIso,
+          createdAt: new Date(nowIso),
         }));
       } else {
         tx.write(updateWrite(`ownerApplications/${applicationId}`, {
@@ -243,7 +243,7 @@ export async function handleAdminReviewApplication(
           body: `Hồ sơ đăng ký của bạn không được duyệt. Lý do: ${rejectReason}`,
           data: { applicationId, rejectReason },
           isRead: false,
-          createdAt: nowIso,
+          createdAt: new Date(nowIso),
         }));
       }
 

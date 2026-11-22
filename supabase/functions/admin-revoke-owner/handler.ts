@@ -84,7 +84,7 @@ export async function handleAdminRevokeOwner(
         body: `Quyền chủ sân của bạn đã bị thu hồi bởi quản trị viên. Lý do: ${trimmedReason}`,
         data: { reason: trimmedReason },
         isRead: false,
-        createdAt: nowIso,
+        createdAt: new Date(nowIso),
       }));
 
       // NOTE: Per FR-009 / US3 AC5: ownerApplications và venues được giữ nguyên, không thay đổi tự động

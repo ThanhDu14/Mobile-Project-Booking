@@ -75,7 +75,7 @@ export async function handleAdminBroadcastNotification(
             if (existing.title !== title || existing.body !== body) throw new HttpError(409, "REQUEST_CONFLICT", "Mã yêu cầu đã dùng cho nội dung khác");
             return null;
           }
-          return createWrite(path, { type: "SYSTEM", title, body, data: {}, isRead: false, createdAt: nowIso });
+          return createWrite(path, { type: "SYSTEM", title, body, data: {}, isRead: false, createdAt: new Date(nowIso) });
         }))).filter((w): w is NonNullable<typeof w> => w !== null);
         try {
           if (writes.length) await deps.firestore.commit(writes);
