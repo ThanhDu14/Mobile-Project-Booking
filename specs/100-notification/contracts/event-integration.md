@@ -2,6 +2,8 @@
 
 ## Nguyên tắc
 
+Android routing update (2026-11-22): booking result/reminder types use data.bookingId, existing booking detail, Source.SERVER read and userId == current UID; the four DROPIN types use data.sessionId and existing smashnow://dropin/session/{sessionId} after server read; CHAT_MESSAGE uses data.chatId and existing smashnow://chat/{chatId} after server read and memberIds check. Rules enforce current source permissions. Missing/forbidden source, missing identifier, account change or unavailable destination falls back to saved title/body. BOOKING_NEW, PROMOTION, OWNER_*, REVIEW_*, GROUP_ACTIVITY and SYSTEM use saved detail pending confirmed source routing contracts. T013/T035 remain open for those types. This does not approve a backend event envelope or schema.
+
 - Feature nguồn giữ trách nhiệm nghiệp vụ; không ghi notification inbox trực tiếp từ client.
 - Nhóm D sở hữu pipeline: nhận sự kiện, xác định recipient đã thỏa thuận, tạo `users/{uid}/notifications/{id}` rồi đánh giá push.
 - Event names, transport, payload schema, event identifier và retry envelope chưa được thống nhất. Bảng dưới là mapping nghiệp vụ, không phải API contract hoàn chỉnh.

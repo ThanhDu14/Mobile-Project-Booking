@@ -51,3 +51,5 @@ DB README chưa liệt kê index của notifications. Query `createdAt desc` v�
 ## Approved preference behavior — 2026-11-22
 
 User approved missing-key fallback for new/existing profiles: all types true except PROMOTION; BOOKING_NEW forced true. Group checkbox: ON if all enabled, OFF if all disabled, MIXED otherwise. Tapping MIXED enables the whole group. Persist individual keys and preserve unrelated types. Firestore authoritative; DataStore cache role remains outstanding.
+
+User approval during Android continuation: add the three owner-application result types as one row in the existing owner group, and SYSTEM as a final row. The UI now exposes all 19 map keys through approved groups; no persisted schema changes.

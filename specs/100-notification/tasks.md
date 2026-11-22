@@ -90,17 +90,17 @@ description: "Task list for Feature 100 – Notification"
 ### Tests for User Story 3
 
 - [X] T026 [P] [US3] Add Firebase Emulator Rules allow/deny tests for own inbox read, cross-user/unauthenticated denial, isRead-only update, create/delete denial in `firestore-tests/test/notification-security.test.ts`
-- [ ] T027 [P] [US3] Add unit tests for notification mapping, ordered page loading, read-one/read-all repository behavior, and source-link authorization fallback in `app/src/test/java/com/example/booking_app/feature/notification/`
-- [ ] T028 [US3] Add UI tests for inbox loading, content, empty, error/retry, and read states in both light and dark themes and on phone and `w600dp` layouts in `app/src/androidTest/java/com/example/booking_app/feature/notification/` (FR-009; Constitution V)
+- [X] T027 [P] [US3] Add unit tests for notification mapping, ordered page loading, read-one/read-all repository behavior, and source-link authorization fallback in `app/src/test/java/com/example/booking_app/feature/notification/`
+- [X] T028 [US3] Add UI tests for inbox loading, content, empty, error/retry, and read states in both light and dark themes and on phone and `w600dp` layouts in `app/src/androidTest/java/com/example/booking_app/feature/notification/` (FR-009; Constitution V)
 
 ### Implementation for User Story 3
 
 - [X] T029 [P] [US3] Create notification domain model, type mapping, and repository/use-case interfaces matching the 19 spec types and persisted fields in `app/src/main/java/com/example/booking_app/feature/notification/domain/`
-- [ ] T030 [US3] Implement paged, newest-first own-user Firestore inbox repository and mark-one/mark-all-isRead operations in `app/src/main/java/com/example/booking_app/feature/notification/data/`
+- [X] T030 [US3] Implement paged, newest-first own-user Firestore inbox repository and mark-one/mark-all-isRead operations in `app/src/main/java/com/example/booking_app/feature/notification/data/`
 - [X] T031 [US3] Implement Firestore Rules for own-user inbox reads and isRead-only updates, denying client create/delete and cross-user access in `firestore.rules`
-- [ ] T032 [US3] Implement inbox ViewModel StateFlow states and lifecycle-bound repository collection in `app/src/main/java/com/example/booking_app/feature/notification/ui/`
-- [ ] T033 [P] [US3] Implement Vietnamese XML inbox layout, notification row, empty/error/retry/loading resources, and accessible read indicators in `app/src/main/res/layout/` and `app/src/main/res/values/`
-- [ ] T034 [US3] Implement inbox Fragment, list adapter with ListAdapter/DiffUtil, read actions, and navigation entry in `app/src/main/java/com/example/booking_app/feature/notification/ui/` and `app/src/main/res/navigation/`
+- [X] T032 [US3] Implement inbox ViewModel StateFlow states and lifecycle-bound repository collection in `app/src/main/java/com/example/booking_app/feature/notification/ui/`
+- [X] T033 [P] [US3] Implement Vietnamese XML inbox layout, notification row, empty/error/retry/loading resources, and accessible read indicators in `app/src/main/res/layout/` and `app/src/main/res/values/`
+- [X] T034 [US3] Implement inbox Fragment, list adapter with ListAdapter/DiffUtil, read actions, and navigation entry in `app/src/main/java/com/example/booking_app/feature/notification/ui/` and `app/src/main/res/navigation/`
 - [ ] T035 [US3] Implement notification tap routing that rechecks source existence/access and falls back to persisted title/body detail in `app/src/main/java/com/example/booking_app/feature/notification/ui/`
 
 ---
@@ -113,16 +113,16 @@ description: "Task list for Feature 100 – Notification"
 
 ### Tests for User Story 4
 
-- [ ] T036 [P] [US4] Add unit tests for default and legacy preference mapping, per-type writes, BOOKING_NEW locked-on behavior, and failure state in `app/src/test/java/com/example/booking_app/feature/notification/`
+- [X] T036 [P] [US4] Add unit tests for default and legacy preference mapping, per-type writes, BOOKING_NEW locked-on behavior, and failure state in `app/src/test/java/com/example/booking_app/feature/notification/`
 - [X] T037 [US4] Add Emulator Rules tests proving users can update only their own notificationPrefs while protected profile fields and other users remain unchanged in `firestore-tests/test/notification-security.test.ts`
-- [ ] T038 [US4] Add UI tests for settings loading/content/error/retry and locked BOOKING_NEW toggle in both light and dark themes and on phone and `w600dp` layouts in `app/src/androidTest/java/com/example/booking_app/feature/notification/` (FR-009, FR-012; Constitution V)
+- [X] T038 [US4] Add UI tests for settings loading/content/error/retry and locked BOOKING_NEW toggle in both light and dark themes and on phone and `w600dp` layouts in `app/src/androidTest/java/com/example/booking_app/feature/notification/` (FR-009, FR-012; Constitution V)
 
 ### Implementation for User Story 4
 
 - [ ] T039 [US4] Implement preference model and repository operations on `users/{uid}.notificationPrefs` with agreed defaults/cache behavior in `app/src/main/java/com/example/booking_app/feature/notification/data/`
 - [X] T040 [US4] Extend Firestore user Rules to permit only the current user's notificationPrefs updates without weakening existing protected-field rules in `firestore.rules`
-- [ ] T041 [P] [US4] Implement Vietnamese XML notification settings layout/resources with a non-editable BOOKING_NEW state in `app/src/main/res/layout/` and `app/src/main/res/values/`
-- [ ] T042 [US4] Implement settings ViewModel and Fragment with per-type updates, retry/error states, and OS permission status separated from stored preferences in `app/src/main/java/com/example/booking_app/feature/notification/ui/`
+- [X] T041 [P] [US4] Implement Vietnamese XML notification settings layout/resources with a non-editable BOOKING_NEW state in `app/src/main/res/layout/` and `app/src/main/res/values/`
+- [X] T042 [US4] Implement settings ViewModel and Fragment with per-type updates, retry/error states, and OS permission status separated from stored preferences in `app/src/main/java/com/example/booking_app/feature/notification/ui/`
 - [ ] T043 [US4] Apply saved per-type push eligibility in server delivery while always retaining inbox creation and always allowing BOOKING_NEW push eligibility in `supabase/functions/send-notification/`
 
 ---
@@ -234,5 +234,14 @@ Backend booking MVP sequence:
 
 - **NEEDS DECISION (I1)**: DB README §7 lists Admin `C` on notifications, while spec 100 and DB §4.13 describe server-authoritative creation; Feature 120 requires SYSTEM through Feature 100's server path and says admin does not write inbox from client. T007 records this conflict. Do not modify schema, Rules, or Admin authorization until the CSDL, Feature 120, and notification owners agree. Directly affected: SYSTEM authorization/fan-out T049 and any Rules change specifically based on Admin notification creation; own-user inbox access is not blocked.
 - **NEEDS DECISION (U1)**: Event transport/payload/event identity (T004) and atomic inbox/reminder idempotency (T005) are unspecified. They directly gate producer adapters, shared writer, and reminder deduplication named in Dependencies; they do not block independent Android inbox/settings work.
-- **NEEDS DECISION (U1/U2)**: Retry/recovery and any delivery-state schema (T006), reminder deduplication state (T005), query/page/index strategy (T010), chat presence/multi-device behavior (T008, Feature 091), active-account predicate (T009, Feature 120), token lifecycle (T011), legacy preference fallback (T012), and push privacy (T014) remain open. No new field, collection, or status is approved by this task list.
+- **NEEDS DECISION (U1/U2)**: Retry/recovery and any delivery-state schema (T006), reminder deduplication state (T005), index necessity after the approved T010 query (single-field cursor pagination), chat presence/multi-device behavior (T008, Feature 091), active-account predicate (T009, Feature 120), token lifecycle (T011), DataStore cache role (T012; missing-key fallback is approved), and push privacy (T014) remain open. No new field, collection, or status is approved by this task list.
 - DB README §7/§4.13 and Feature 120 have an authorization conflict; tasks do not resolve it. Database notification fields and types remain authoritative; tasks add no fields, collections, or statuses. Any delivery-state/schema change requires explicit approval and an update by the database document owners.
+
+## Android verification checkpoint (2026-11-22)
+
+- Completed in this increment: T027, T028, T030, T032, T033, T034, T036, T038, T041, T042. Evidence: validation/results.json and validation/android-2026-11-22.md.
+- T030 is verified for the authoritative Timestamp schema. Existing admin producer ISO-string createdAt writes/data must be normalized before T056 end-to-end inbox acceptance; this is not silently reinterpreted on Android.
+- T035 remains partial: nine confirmed types route after SERVER/access checks; the remaining ten use saved title/body pending complete identifier/destination contracts (see implementation-review.md).
+- T012/T039 remain partial for the undecided DataStore cache role. Firestore persistence, defaults, per-key/group writes, mandatory BOOKING_NEW and failure/retry are implemented/tested; no cache policy was invented.
+- Delivery-state-proposal.md remains a schema proposal. No backend decision task is marked resolved by this Android work.
+- Final verification: 252 JVM suites, 1,666 tests, 0 failures/errors, 2 pre-existing Windows skips; 21 notification tests pass. Device matrix: 8 tests x 4 variants = 32 pass. assembleDebug/lintDebug pass; lint has 0 errors, 856 warnings. Reviewer checklists unchanged.
