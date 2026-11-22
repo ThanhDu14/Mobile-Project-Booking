@@ -74,3 +74,9 @@
 10. Deep-link keys/behavior cho mọi type, đặc biệt `GROUP_ACTIVITY`, `OWNER_*`, `SYSTEM`; title/body lưu đủ chi tiết fallback và chính sách nội dung nhạy cảm trên lock screen.
 11. Quy tắc cập nhật notification khi event nguồn bị đổi/hủy sau khi đã tạo; offline read/settings write conflict behavior.
 12. Chính sách permission/data ownership: Admin notification create qua callable server hay Security Rules; cập nhật DB README/120 nếu cần do người sở hữu tài liệu.
+
+## Approved implementation decisions — 2026-11-22
+
+User approved T010: own-user query, 30 items/page, createdAt descending, snapshot cursor, one-shot load and explicit refresh. Mark-all traverses all pages. This supersedes historical undecided query notes. No composite index presumed for the single-field query.
+
+User requested durable delivery-state/job design: see delivery-state-proposal.md. Schema approval remains pending.

@@ -47,3 +47,7 @@ Type và sender/recipient/event criteria giữ nguyên theo spec §Danh mục ty
 ## Indexes
 
 DB README chưa liệt kê index của notifications. Query `createdAt desc` với uid parent scope là mục tiêu. Xác nhận query shape và Emulator index error trước khi thêm `firestore.indexes.json`; không giả định thêm filter `isRead`/type nếu UI chưa yêu cầu.
+
+## Approved preference behavior — 2026-11-22
+
+User approved missing-key fallback for new/existing profiles: all types true except PROMOTION; BOOKING_NEW forced true. Group checkbox: ON if all enabled, OFF if all disabled, MIXED otherwise. Tapping MIXED enables the whole group. Persist individual keys and preserve unrelated types. Firestore authoritative; DataStore cache role remains outstanding.
