@@ -1,6 +1,6 @@
-import { afterAll, beforeAll, beforeEach, describe, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { assertFails, assertSucceeds, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
-import { collection, deleteDoc, doc, getDoc, getDocs, serverTimestamp, setDoc, Timestamp, updateDoc, writeBatch } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDoc, getDocs, limit, orderBy, query, startAfter, serverTimestamp, setDoc, Timestamp, updateDoc, writeBatch } from 'firebase/firestore';
 import { createTestEnv } from './setup';
 import { seedUser } from './fixtures';
 
@@ -22,6 +22,44 @@ beforeEach(async () => {
 afterAll(async () => { await env.cleanup(); });
 
 describe('notification inbox ownership', () => {
+  it('legacy string dates break chronology and a createdAt-only Timestamp repair restores it', async () => {
+    const legacyDate = '2026-01-01T00:00:00.000Z';
+    await env.withSecurityRulesDisabled(async ctx => {
+      await setDoc(doc(ctx.firestore(), `${inbox}/legacy`), { ...item, isRead: true, createdAt: legacyDate });
+      await setDoc(doc(ctx.firestore(), `${inbox}/current`), { ...item, createdAt: Timestamp.fromDate(new Date('2026-11-22T00:00:00.000Z')) });
+    });
+    const newest = query(collection(dbFor('alice'), inbox), orderBy('createdAt', 'desc'), limit(30));
+    expect((await getDocs(newest)).docs.slice(0, 2).map(d => d.id)).toEqual(['legacy', 'current']);
+    await env.withSecurityRulesDisabled(async ctx => {
+      await updateDoc(doc(ctx.firestore(), `${inbox}/legacy`), { createdAt: Timestamp.fromDate(new Date(legacyDate)) });
+    });
+    expect((await getDocs(newest)).docs.slice(0, 2).map(d => d.id)).toEqual(['current', 'legacy']);
+    const repaired = (await getDoc(doc(dbFor('alice'), `${inbox}/legacy`))).data()!;
+    expect(repaired.isRead).toBe(true);
+    expect(repaired.body).toBe(item.body);
+    expect(repaired.createdAt.toDate().toISOString()).toBe(legacyDate);
+  });
+  it('approved parent query pages 30 items newest first through equal timestamps without duplicates', async () => {
+    await env.withSecurityRulesDisabled(async ctx => {
+      const batch = writeBatch(ctx.firestore());
+      batch.delete(doc(ctx.firestore(), `${inbox}/one`));
+      batch.delete(doc(ctx.firestore(), `${inbox}/two`));
+      for (let i = 0; i < 65; i++) batch.set(doc(ctx.firestore(), `${inbox}/n${String(i).padStart(2, '0')}`), {
+        ...item, createdAt: Timestamp.fromMillis(Math.floor(i / 2) * 1000),
+      });
+      await batch.commit();
+    });
+    const db = dbFor('alice');
+    const base = query(collection(db, inbox), orderBy('createdAt', 'desc'), limit(30));
+    const first = await assertSucceeds(getDocs(base));
+    const second = await assertSucceeds(getDocs(query(base, startAfter(first.docs[29]))));
+    const third = await assertSucceeds(getDocs(query(base, startAfter(second.docs[29]))));
+    expect([first.size, second.size, third.size]).toEqual([30, 30, 5]);
+    const docs = [...first.docs, ...second.docs, ...third.docs];
+    expect(new Set(docs.map(d => d.id)).size).toBe(65);
+    const times = docs.map(d => d.data().createdAt.toMillis());
+    expect(times).toEqual([...times].sort((a, b) => b - a));
+  });
   it('owner can read and list own inbox and mark one/all read', async () => {
     const db = dbFor('alice');
     await assertSucceeds(getDoc(doc(db, `${inbox}/one`)));
