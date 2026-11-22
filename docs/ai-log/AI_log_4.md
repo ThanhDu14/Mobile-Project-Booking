@@ -61,6 +61,7 @@ Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 | 55  | 2026-11-21 | Tích hợp tin nhắn OWNER với module chat 091, sửa lỗi phiên/outbox và kiểm thử Firebase/Supabase trên máy thật                                                                                                      | 09, 11         |
 | 56  | 2026-11-22 | Triển khai domain, repository inbox/preference và Rules Feature 100; kiểm thử, ghi quyết định và đề xuất job phục hồi push                                                                                         | 10             |
 | 57  | 2026-11-22 | Tiếp tục Feature 100: inbox/settings Android, route an toàn và kiểm thử phone/w600dp light/dark; lưu ảnh và kết quả                                                                                                | 10             |
+| 58  | 2026-11-22 | Tiếp tục Feature 100: routing review, quyền thông báo, kiểm thử xóa tài khoản/index, sửa Timestamp và bổ sung đề xuất delivery từng token | 10             |
 
 ---
 
@@ -5587,5 +5588,78 @@ Chạy kiểm thử phù hợp, assembleDebug và lintDebug sau thay đổi. C�
 - Ca rỗng thất bại ở lượt đầu. AI ban đầu nhận định assertion chạy sớm, nhưng bước chờ vẫn tái hiện lỗi; kiểm tra state mới xác định được `loading=true` còn sót sau tải thành công. Đã giữ [log thất bại ban đầu](../../specs/100-notification/validation/device/phone-light/initial-failure.log) và [log tái hiện lỗi loading](../../specs/100-notification/validation/device/phone-light/loading-regression-failure.log); các file `instrumentation.log` của bốn cấu hình là kết quả đạt trên bản cuối.
 - Mở ảnh gốc và ảnh TEST để đối chiếu header, hàng xanh chưa đọc, hàng đã đọc, chấm vàng, icon, typography, card và checkbox. Đã lưu 20 PNG gồm ảnh Fragment, khung MainActivity và phần cài đặt bổ sung sau tương tác. Menu mẫu có Tài khoản, còn menu hiện hành dùng Tìm kiếm và avatar tài khoản; giữ menu chung theo ứng dụng và ghi rõ khác biệt. Hai hàng mới có duyệt riêng của người dùng; tài liệu UI gốc giữ nguyên. [Ảnh inbox phone light](../../specs/100-notification/validation/device/phone-light/notification-393dp-light-inbox-shell.png), [ảnh settings đủ nhóm ở w600dp dark](../../specs/100-notification/validation/device/tablet-dark/notification-720dp-dark-settings.png), [báo cáo đối chiếu](../../specs/100-notification/validation/android-2026-11-22.md).
 - Lưu hash ảnh và APK TEST, kiểm tra hash sau khi ghi kết quả. Khôi phục density về 440, không còn override; kích thước vẫn 1080x2388 và font scale 1.0. [Metadata thiết bị và APK](../../specs/100-notification/validation/device-metadata.json). Đã chạy `git diff --check`; checklist reviewer và trạng thái chặn backend/schema được giữ nguyên.
+
+---
+
+## Mục 58: Tiếp tục Feature 100, hoàn thiện quyền thông báo và kiểm chứng producer
+
+| Thông tin                | Nội dung |
+| ------------------------ | -------- |
+| Ngày                     | 2026-11-22 |
+| Người thực hiện          | Minh Nhựt |
+| Nhóm tính năng liên quan | 10 (100 thông báo); đối chiếu 011 tài khoản, 070 đánh giá, 090 nhóm, 091 chat và các nguồn owner/admin |
+| Công cụ AI               | Codex (GPT-6), `$speckit-implement`, `$humanizer:humanizer` |
+| Mục đích                 | Bổ sung routing và quyền Android, kiểm chứng xóa tài khoản/index, sửa kiểu createdAt ở producer và chuẩn bị các đề xuất backend còn thiếu |
+| Nhánh Git                | `feat/100-notification` |
+
+### Prompt đã dùng
+
+```text
+$speckit-implement
+
+Tiếp tục Feature 100 từ trạng thái hiện tại trong specs/100-notification/implementation-review.md và tasks.md. Đọc phần Android continuation và validation/android-2026-11-22.md trước khi làm. Hiện đã hoàn thành 19/56 task.
+
+Ưu tiên phần còn thiếu có thể triển khai độc lập:
+
+1. Rà soát T013/T035, đối chiếu producer, payload và navigation hiện có để hoàn thiện routing cho các loại còn thiếu. Kiểm tra quyền truy cập trước khi mở nguồn; fallback về title/body đã lưu nếu nguồn không còn khả dụng. Ghi rõ contract chưa xác nhận, đặc biệt REVIEW_REPLY/REVIEW_REPLIED và routing hồ sơ chủ sân.
+
+2. Triển khai T050: xin quyền POST_NOTIFICATIONS theo quy ước ứng dụng, xử lý từ chối và quay lại từ cài đặt hệ thống. Inbox và preference vẫn hoạt động khi chưa được cấp quyền. Bổ sung kiểm thử cho các nhánh này.
+
+3. Kiểm tra T054 bằng harness local/emulator: xóa tài khoản phải dọn inbox, token và preference liên quan. Với T055, xác minh query đã duyệt có cần index bổ sung hay không và ghi kết luận có bằng chứng.
+
+4. Điều tra các producer ghi notification.createdAt dạng chuỗi. Xác định phạm vi ảnh hưởng, bổ sung kiểm thử và sửa producer theo contract Timestamp hiện hành. Chuẩn bị phương án chuyển đổi dữ liệu cũ có thể review; chưa chạy migration trên dữ liệu thật.
+
+Với backend và các mục NEEDS DECISION:
+- Đối chiếu code/contract mới nhất để tìm quyết định đã được xác nhận.
+- delivery-state-proposal.md vẫn chờ duyệt schema; không coi việc chọn hướng delivery job là phê duyệt collection/fields.
+- Hoàn thiện đề xuất còn thiếu, gồm theo dõi thành công/thất bại theo từng token, event identity và ranh giới transaction của producer.
+- Tiếp tục phần độc lập. Khi cần người dùng quyết định, trình bày lựa chọn cụ thể, phương án đề xuất và task được mở khóa.
+
+Giữ UI theo specs/100-notification/ui/ và các ngoại lệ đã được duyệt trong báo cáo validation. Chạy kiểm thử phù hợp với thay đổi; chỉ chạy lại ma trận UI khi có thay đổi ảnh hưởng giao diện.
+
+Cập nhật tasks.md và implementation-review.md theo bằng chứng thực tế. Cuối lượt báo rõ task hoàn thành thêm, kết quả kiểm thử, phần còn bị chặn và quyết định cần chốt để triển khai backend.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Đọc lại tài liệu và code, mở hai ảnh UI gốc. Bổ sung route REVIEW_REMINDER qua bookingId và route phản hồi đánh giá qua reviewId/venueId. Trước khi mở nguồn, đọc từ SERVER và kiểm tra quyền của phiên hiện tại; review bị ẩn, nguồn bị xóa hoặc không còn quyền thì dùng title/body đã lưu.
+- Phát hiện producer và contract tích hợp 070 dùng REVIEW_REPLY trong khi spec dùng REVIEW_REPLIED. Sau khi người dùng duyệt, đổi producer sang tên chuẩn và cho Android đọc/routing tên cũ. Mười một type đã có route nguồn; T013/T035 còn mở vì một số loại chưa đủ identifier hoặc màn đích. SYSTEM dùng chi tiết đã lưu.
+- Thêm xin quyền Android 13+ tại nút trong màn cài đặt. Khi từ chối, giữ cảnh báo trên màn hình và chuyển nút sang mở cài đặt hệ thống. Preference và inbox vẫn dùng được; trạng thái quyền cập nhật khi quay về ứng dụng. Lưu trạng thái từ chối qua việc tạo lại Fragment, giữ riêng quyết định DataStore cache còn thiếu.
+- Kiểm thử luồng delete-account trên emulator với 405 thông báo, vượt một batch dọn dẹp. Profile chứa token/preference và toàn bộ inbox được xóa, dữ liệu của người khác còn nguyên. Query 30 mục dùng index đơn mặc định; không cần thêm index. Contract Broadcast hiện có của Feature 120 xác nhận điều kiện ACTIVE, không đang xóa và cách retry fan-out, đủ bằng chứng đóng T009.
+- Sửa riêng createdAt của notification ở ba producer admin, bao phủ SYSTEM và ba OWNER type, sang Timestamp. Thêm kiểm thử handler, tái hiện lỗi thứ tự khi trộn chuỗi/Timestamp và chuẩn bị planner sửa dữ liệu cũ offline với điều kiện updateTime. Chưa đọc hoặc chuyển đổi dữ liệu thật.
+- Bổ sung đề xuất receipt từng token, retry khi chỉ một phần thiết bị gửi thành công và ranh giới transaction của từng producer. Job/receipt schema cùng các quyết định identity, token, chat, quyền Admin và nội dung lock screen vẫn chờ duyệt. Hoàn thành thêm T009, T050, T054, T055, đưa tiến độ từ 19/56 lên 23/56 task.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+| ---- | ---------- | ----- |
+| `FirestoreNotificationRouteResolver`, `NotificationType` và route tests | Thêm route review và đọc tên sự kiện cũ | Dùng identifier đã xác nhận, kiểm tra lại nguồn/quyền và giữ fallback cho dữ liệu cũ hoặc nguồn không còn truy cập được. |
+| Producer `review`, reply tests và contract tích hợp 070 | Chuẩn hóa REVIEW_REPLIED theo duyệt của người dùng | Thống nhất tên với spec; Android vẫn nhận REVIEW_REPLY đã lưu. |
+| `NotificationSettingsFragment`, permission policy, manifest và resource | Thêm xin quyền, xử lý từ chối và quay về từ OS settings | Quyền hệ điều hành không ngăn người dùng đọc inbox hoặc sửa preference. |
+| `NotificationPermissionUiTest` và `validate-permission.ps1` | Thêm kiểm thử máy thật trên package cô lập | Kiểm tra từ chối/cấp quyền, tạo lại màn hình, mở cài đặt thật và cập nhật trạng thái khi quay về. |
+| Delete-account và Firestore query tests | Thêm ca dọn nhiều batch, phân trang có Timestamp trùng và dữ liệu cũ sai kiểu | Xác minh dọn đúng tài khoản, không lặp mục qua trang và thấy rõ ảnh hưởng của chuỗi thời gian. |
+| Ba handler admin và producer regression tests | Sửa riêng notification.createdAt sang Date/Timestamp | Giữ thời điểm gốc, retry không nhân đôi thông báo hoặc đặt lại isRead. |
+| `plan-timestamp-repair.ts`, planner tests và đề xuất chuyển đổi | Chuẩn bị kế hoạch offline để review | Chỉ sửa createdAt với precondition updateTime; giữ nguyên nội dung và trạng thái đọc, chưa thực thi trên dữ liệu thật. |
+| `delivery-state-proposal.md` | Bổ sung receipt từng token và bảng identity/transaction | Làm rõ giới hạn phục hồi sau crash, phần đã gửi thành công và những quyết định từng producer còn thiếu; chưa tạo storage mới. |
+| `tasks.md`, `implementation-review.md` và `validation/` | Cập nhật task cùng bằng chứng cuối | Phân biệt phần đã kiểm chứng với routing, DataStore và backend còn bị chặn; giữ nguyên hai PNG và tài liệu UI gốc. |
+
+### Cách kiểm chứng
+
+- `testDebugUnitTest assembleDebug lintDebug` đạt trên code ứng dụng cuối: 253 suite, 1.671 ca, 0 failure/error, 2 skip Windows cũ của DataStore session. Sáu suite notification có 26/26 ca đạt. Lint có 0 lỗi, 856 cảnh báo; thêm guard API 33 để tránh cảnh báo quyền không có ở Android cũ. Sau chỉnh harness chụp ảnh, build instrumentation và lint cũng đạt. [Kết quả tổng hợp](../../specs/100-notification/validation/continuation-results.json), [tóm tắt kiểm chứng](../../specs/100-notification/validation/continuation-verification.log).
+- Deno đạt 21/21 ca delete-account trên Auth/Firestore Emulator, 28/28 ca producer/admin/planner và 5/5 ca review reply. Firestore Rules/profile/query đạt 28/28, gồm phân trang 65 mục thành 30/30/5 không trùng và ca sửa riêng createdAt khôi phục thứ tự. Test dùng project demo, emulator loopback hoặc transport REST giả, không gửi FCM thật. Pre-33 có kiểm thử policy JVM, chưa chạy trên thiết bị Android cũ riêng.
+- Trên vivo V2247 Android 15, package `com.example.booking_app.adminlocal` đạt 8/8 ca UI regression phone/light và hai ca permission. Hai ca mới kiểm tra từ chối vẫn sửa preference/mở inbox được, tạo lại màn hình giữ nút OS settings, quay về sau cấp quyền cập nhật đúng và cấp quyền từ hộp thoại Android giữ mặc định PROMOTION/BOOKING_NEW. Repository và dữ liệu UI dùng fake; quyền Android và trang cài đặt hệ thống là thật. Ma trận phone/w600dp light/dark của lượt trước được giữ vì bố cục không đổi.
+- Giữ log các lượt thất bại do chờ UI từ chối, lồng ActivityScenario và nhận diện sai package cài đặt vivo. Đã sửa harness dùng một ActivityScenario cùng Fragment back stack và nhận diện trang quyền OEM. Một lượt bị gián đoạn do điện thoại được sử dụng; chạy lại sau khi người dùng xác nhận thời điểm. Lint từng gặp lỗi detector ExperimentalDetector; các lượt sau đạt mà không tắt detector hoặc thêm skip.
+- Mở trực tiếp ảnh sau kiểm thử, phát hiện ảnh quay về bị chụp giữa animation, rồi thêm thời gian chờ và chụp lại. Bốn ảnh cuối có SHA-256 trong file kết quả; ảnh lỗi chẩn đoán được tách khỏi bằng chứng cuối. [Ảnh từ chối quyền](../../specs/100-notification/validation/continuation-device/notification-permission-denied.png), [inbox khi chưa có quyền](../../specs/100-notification/validation/continuation-device/notification-permission-denied-inbox.png), [quay về từ cài đặt](../../specs/100-notification/validation/continuation-device/notification-permission-granted-return.png), [báo cáo validation](../../specs/100-notification/validation/continuation-2026-11-22.md).
+- Đối chiếu code và contract để đóng T009; T007 vẫn chờ giải quyết mâu thuẫn quyền Admin trong CSDL. T013/T035 còn thiếu contract route, T012/T039 còn quyết định DataStore cache. [Đề xuất delivery](../../specs/100-notification/delivery-state-proposal.md) và [đề xuất chuyển đổi Timestamp](../../specs/100-notification/timestamp-repair-proposal.md) ghi rõ phần chưa duyệt. Chưa triển khai job/receipt, chưa deploy backend hoặc chạy migration dữ liệu thật; chưa nghiệm thu toàn bộ Feature 100.
 
 ---
