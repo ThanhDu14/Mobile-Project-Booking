@@ -5,7 +5,7 @@ import com.example.booking_app.feature.notification.domain.Notification
 import com.example.booking_app.feature.notification.domain.NotificationCursor
 import com.example.booking_app.feature.notification.domain.NotificationPage
 import com.example.booking_app.feature.notification.domain.NotificationRepository
-import com.google.firebase.auth.FirebaseAuth
+import com.example.booking_app.core.session.SessionManager
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Query
@@ -13,20 +13,20 @@ import com.google.firebase.firestore.Source
 import javax.inject.Inject
 
 class FirestoreNotificationRepository @Inject constructor(
-    private val auth: FirebaseAuth,
+    private val session: SessionManager,
     private val firestore: FirebaseFirestore,
 ) : NotificationRepository {
     private data class Cursor(val uid: String, val snapshot: DocumentSnapshot) : NotificationCursor
 
-    private fun uid(): String = checkNotNull(auth.currentUser?.uid) { "Authentication required" }
+    private fun uid(): String = checkNotNull(session.currentUid()) { "Authentication required" }
     private fun inbox(uid: String) = firestore.collection("users").document(uid).collection("notifications")
     private fun ensureSession(expected: String) { check(uid() == expected) { "Account changed" } }
 
     override suspend fun loadPage(after: NotificationCursor?): NotificationPage {
         val uid = uid()
+        if (after != null) require(after is Cursor && after.uid == uid)
         var query = inbox(uid).orderBy("createdAt", Query.Direction.DESCENDING).limit(PAGE_SIZE)
         if (after != null) {
-            require(after is Cursor && after.uid == uid)
             query = query.startAfter(after.snapshot)
         }
         val docs = query.get(Source.SERVER).awaitWithTimeout().documents

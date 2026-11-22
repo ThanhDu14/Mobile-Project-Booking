@@ -4,17 +4,17 @@ import com.example.booking_app.core.network.awaitWithTimeout
 import com.example.booking_app.feature.notification.domain.NotificationPreferences
 import com.example.booking_app.feature.notification.domain.NotificationPreferencesRepository
 import com.example.booking_app.feature.notification.domain.NotificationType
-import com.google.firebase.auth.FirebaseAuth
+import com.example.booking_app.core.session.SessionManager
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.Source
 import javax.inject.Inject
 
 class FirestoreNotificationPreferencesRepository @Inject constructor(
-    private val auth: FirebaseAuth,
+    private val session: SessionManager,
     private val firestore: FirebaseFirestore,
 ) : NotificationPreferencesRepository {
-    private fun uid() = checkNotNull(auth.currentUser?.uid) { "Authentication required" }
+    private fun uid() = checkNotNull(session.currentUid()) { "Authentication required" }
 
     override suspend fun load(): Map<NotificationType, Boolean> {
         val uid = uid()
