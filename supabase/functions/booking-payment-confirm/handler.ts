@@ -5,7 +5,6 @@
 import { errorResponse, HttpError, requireUser, toErrorResponse } from "../_shared/auth.ts";
 import * as defaultFirestore from "../_shared/firestore.ts";
 import {
-  createWrite,
   documentName,
   encodeFields,
   type FirestoreTransaction,
@@ -13,21 +12,28 @@ import {
   type Write,
 } from "../_shared/firestore.ts";
 import { readJsonObject, runWithBackoff, UUID } from "../_shared/dropin-tx.ts";
-import { type PaymentBreakdown, paymentBreakdown } from "../_shared/payment-calc.ts";
+import { normalizeVoucherCode } from "../_shared/payment-voucher.ts";
+import { parseSlotId } from "../_shared/slot-pricing.ts";
 import {
-  checkVoucher,
-  commitWrites,
-  type LoadedVoucher,
-  loadRedemption,
-  loadUserUsageCount,
-  loadVoucher,
-  normalizeVoucherCode,
-  releaseWrites,
-  reserveWrites,
-  type VoucherRef,
-  type VoucherScope,
-} from "../_shared/payment-voucher.ts";
-import { type ParsedSlot, parseSlotId, type PriceRule, slotPrice, toPriceRule } from "../_shared/slot-pricing.ts";
+  approvalDeadline,
+  asDate,
+  asString,
+  deactivateCode,
+  type Doc,
+  evaluateVoucher,
+  forbidden,
+  heldVoucher,
+  holdExpired,
+  itemsOf,
+  loadOrder,
+  notificationWrite,
+  paymentFields,
+  priceBreakdown,
+  type Receipt,
+  receiptOf,
+} from "../_shared/payment-order.ts";
+
+export { receiptLines } from "../_shared/payment-order.ts";
 
 export interface ConfirmDeps {
   firestore: Pick<typeof defaultFirestore, "runTransaction">;
@@ -35,22 +41,6 @@ export interface ConfirmDeps {
   authenticate: (req: Request) => Promise<{ uid: string }>;
   now: () => Date;
   sleep?: (ms: number) => Promise<void>;
-}
-
-/** Hóa đơn trả cho app (data-model §2 `PaymentReceipt`). */
-export interface Receipt {
-  bookingId: string;
-  recurringGroupId: string | null;
-  venueName: string;
-  items: string[];
-  option: string;
-  status: string;
-  subtotal: number;
-  discount: number;
-  total: number;
-  paidAmount: number;
-  remainingAmount: number;
-  voucherCode: string | null;
 }
 
 interface ConfirmResult {
@@ -70,14 +60,9 @@ interface Input {
   expectedTotal: number;
 }
 
-type Doc = Record<string, unknown>;
-
 const MAX_SLOTS = 48;
-const APPROVAL_WINDOW_MS = 60 * 60_000;
 
 const invalid = (message: string) => new HttpError(400, "INVALID_ARGUMENT", message);
-const holdExpired = () => new HttpError(409, "HOLD_EXPIRED", "Đã hết thời gian giữ chỗ");
-const forbidden = () => new HttpError(403, "FORBIDDEN", "Đơn này không thuộc về bạn");
 
 function parseInput(body: Doc): Input {
   if (typeof body.requestId !== "string" || !UUID.test(body.requestId)) {
@@ -128,306 +113,6 @@ function parseInput(body: Doc): Input {
     slotIds,
     voucherCode,
     expectedTotal,
-  };
-}
-
-// ---------- Đọc chung ----------
-
-const asDate = (
-  v: unknown,
-): Date | null => (v instanceof Date && !Number.isNaN(v.getTime()) ? v : null);
-const asNumber = (
-  v: unknown,
-): number => (typeof v === "number" && Number.isFinite(v) ? v : 0);
-const asString = (
-  v: unknown,
-): string | null => (typeof v === "string" && v ? v : null);
-
-interface PricedSlot extends ParsedSlot {
-  courtName: string;
-  price: number;
-}
-
-interface OrderContext {
-  venue: Doc;
-  ownerId: string;
-  venueSnapshot: Doc;
-  slots: PricedSlot[];
-}
-
-/**
- * Cơ sở còn hoạt động, mọi slot đang `HELD` cho đúng người và đúng đơn (`holderKey`), chưa hết hạn; kèm giá
- * tính lại từ bảng giá và tên sân.
- */
-async function loadOrder(
-  tx: FirestoreTransaction,
-  uid: string,
-  venueId: string,
-  holderKey: string,
-  slotIds: string[],
-  now: Date,
-): Promise<OrderContext> {
-  const venue = await tx.get(`venues/${venueId}`);
-  if (!venue) {
-    throw new HttpError(404, "VENUE_NOT_FOUND", "Không tìm thấy cơ sở");
-  }
-  if (venue.status != null && venue.status !== "ACTIVE") {
-    throw new HttpError(409, "VENUE_INACTIVE", "Cơ sở tạm ngừng hoạt động");
-  }
-  const parsed = slotIds.map((id) => {
-    const p = parseSlotId(id);
-    if (!p) throw holdExpired();
-    return p;
-  });
-  const slotDocs = await Promise.all(
-    parsed.map((p) => tx.get(`slots/${p.slotId}`)),
-  );
-  slotDocs.forEach((s) => {
-    const expiresAt = asDate(s?.holdExpiresAt);
-    const bookingId = asString(s?.bookingId);
-    const ok = s != null && s.status === "HELD" && s.holdBy === uid &&
-      (s.venueId == null || s.venueId === venueId) &&
-      (bookingId == null || bookingId === holderKey) && expiresAt != null &&
-      expiresAt.getTime() > now.getTime();
-    if (!ok) throw holdExpired();
-  });
-
-  const rules = (await tx.query("priceRules", [], { parent: `venues/${venueId}` }))
-    .map((d) => toPriceRule(d.data))
-    .filter((r): r is PriceRule => r != null);
-  const courtIds = [...new Set(parsed.map((p) => p.courtId))];
-  const courts = await Promise.all(
-    courtIds.map((c) => tx.get(`venues/${venueId}/courts/${c}`)),
-  );
-  const courtNames = new Map(courtIds.map((c, i) => {
-    const doc = courts[i];
-    const name = asString(doc?.name) ?? `Sân ${c}`;
-    const surface = asString(doc?.surfaceType);
-    return [c, surface ? `${name} · ${surface}` : name];
-  }));
-
-  const slots = parsed
-    .map((p) => {
-      const price = slotPrice(rules, p);
-      if (price == null) {
-        throw new HttpError(
-          409,
-          "NO_PRICE",
-          "Khung giờ không có trong bảng giá của cơ sở",
-        );
-      }
-      return { ...p, courtName: courtNames.get(p.courtId)!, price };
-    })
-    .sort((a, b) =>
-      a.startAt.getTime() - b.startAt.getTime() ||
-      a.courtId.localeCompare(b.courtId)
-    );
-
-  return {
-    venue,
-    ownerId: asString(venue.ownerId) ?? "",
-    venueSnapshot: {
-      name: asString(venue.name) ?? `Cơ sở ${venueId}`,
-      address: asString(venue.address) ?? "",
-      phone: asString(venue.phone),
-      photoUrl: asString(venue.photoUrl) ??
-        asString((venue.photoUrls as unknown[] | undefined)?.[0]),
-    },
-    slots,
-  };
-}
-
-interface VoucherOutcome {
-  voucher: LoadedVoucher | null;
-  writes: Write[];
-}
-
-/**
- * Kiểm voucher cho đơn có khóa `key`. Lượt đang giữ tạm cho đơn này (`RESERVED`, khi đổi từ chuyển khoản) được
- * chốt thành `USED` mà không đếm lại; mã khác mã đang giữ thì nhả lượt cũ. Mã mới thì kiểm đủ điều kiện và giữ
- * luôn ở `USED` (đơn chốt ngay).
- */
-async function evaluateVoucher(
-  tx: FirestoreTransaction,
-  uid: string,
-  venueId: string,
-  key: string,
-  code: string | null,
-  held: VoucherRef | null,
-  subtotal: number,
-  now: Date,
-): Promise<VoucherOutcome> {
-  const writes: Write[] = [];
-  if (held && held.code !== code) {
-    writes.push(
-      ...releaseWrites(held, key, await loadRedemption(tx, held, key)),
-    );
-  }
-  if (!code) return { voucher: null, writes };
-
-  const voucher = await loadVoucher(tx, venueId, code);
-  const redemption = voucher ? await loadRedemption(tx, voucher, key) : null;
-  if (voucher && redemption?.userId === uid) {
-    writes.push(...commitWrites(voucher, key, redemption));
-    return { voucher, writes };
-  }
-  const usage = voucher ? await loadUserUsageCount(tx, voucher, uid) : 0;
-  const check = checkVoucher(voucher, usage, subtotal, now);
-  if (!check.ok) {
-    const extra: Doc = { reason: check.reason };
-    if (check.reason === "MIN_ORDER") extra.minOrderTotal = check.minOrderTotal;
-    throw new HttpError(
-      422,
-      "VOUCHER_INVALID",
-      "Mã khuyến mãi không dùng được",
-      extra,
-    );
-  }
-  writes.push(...reserveWrites(voucher!, uid, key, "USED"));
-  return { voucher, writes };
-}
-
-function priceBreakdown(
-  subtotal: number,
-  voucher: LoadedVoucher | null,
-  expectedTotal: number,
-): PaymentBreakdown {
-  const breakdown = paymentBreakdown(subtotal, voucher);
-  if (breakdown.total !== expectedTotal) {
-    throw new HttpError(409, "PRICE_CHANGED", "Giá đơn đã thay đổi", {
-      breakdown,
-    });
-  }
-  return breakdown;
-}
-
-function heldVoucher(doc: Doc | null, venueId: string): VoucherRef | null {
-  const code = asString(doc?.voucherCode);
-  const scope = doc?.voucherScope === "VENUE" || doc?.voucherScope === "SYSTEM"
-    ? doc.voucherScope as VoucherScope
-    : null;
-  return code && scope ? { scope, venueId, code } : null;
-}
-
-function itemsOf(slots: PricedSlot[]): Doc[] {
-  return slots.map((s) => ({
-    slotId: s.slotId,
-    courtId: s.courtId,
-    courtName: s.courtName,
-    startAt: s.startAt,
-    endAt: s.endAt,
-    price: s.price,
-  }));
-}
-
-function paymentFields(
-  subtotal: number,
-  discount: number,
-  total: number,
-  voucher: LoadedVoucher | null,
-): Doc {
-  return {
-    subtotal,
-    discount,
-    total,
-    voucherCode: voucher?.code ?? null,
-    voucherScope: voucher?.scope ?? null,
-    paymentMethod: "AT_VENUE",
-    paymentStatus: total === 0 ? "PAID" : "UNPAID",
-    amountDue: 0,
-    depositAmount: 0,
-    paidAmount: 0,
-    remainingAmount: total,
-  };
-}
-
-function approvalDeadline(now: Date, startAt: Date): Date {
-  return new Date(
-    Math.min(now.getTime() + APPROVAL_WINDOW_MS, startAt.getTime()),
-  );
-}
-
-function notificationWrite(
-  ownerId: string,
-  key: string,
-  venueName: string,
-  recurring: boolean,
-  now: Date,
-): Write[] {
-  if (!ownerId) return [];
-  return [createWrite(`users/${ownerId}/notifications/booking_new_${key}`, {
-    type: "BOOKING_NEW",
-    title: "Có đơn đặt sân mới",
-    body: recurring
-      ? `Đơn đặt cố định mới tại ${venueName}, cần duyệt trong 60 phút`
-      : `Đơn đặt sân mới tại ${venueName}, cần duyệt trong 60 phút`,
-    data: recurring ? { recurringGroupId: key } : { bookingId: key },
-    isRead: false,
-    createdAt: now,
-  })];
-}
-
-function deactivateCode(doc: Doc | null): Write[] {
-  const code = asString(doc?.paymentCode);
-  return code ? [updateWrite(`paymentCodes/${code}`, { active: false })] : [];
-}
-
-// ---------- Hóa đơn ----------
-
-const VN_OFFSET_MS = 7 * 60 * 60_000;
-const pad = (n: number) => String(n).padStart(2, "0");
-
-function vnParts(d: Date) {
-  const t = new Date(d.getTime() + VN_OFFSET_MS);
-  return {
-    date: `${pad(t.getUTCDate())}/${pad(t.getUTCMonth() + 1)}/${t.getUTCFullYear()}`,
-    time: `${pad(t.getUTCHours())}:${pad(t.getUTCMinutes())}`,
-  };
-}
-
-/** Gộp các slot liền nhau cùng sân thành một dòng: "Sân 1 · Thảm PVC · 20/11/2026 18:00–19:00". */
-export function receiptLines(items: Doc[]): string[] {
-  const sorted = items
-    .map((i) => ({
-      name: String(i.courtName ?? "Sân"),
-      start: asDate(i.startAt),
-      end: asDate(i.endAt),
-    }))
-    .filter((i): i is { name: string; start: Date; end: Date } => i.start != null && i.end != null)
-    .sort((a, b) => a.name.localeCompare(b.name) || a.start.getTime() - b.start.getTime());
-  const groups: { name: string; start: Date; end: Date }[] = [];
-  for (const i of sorted) {
-    const last = groups[groups.length - 1];
-    if (
-      last && last.name === i.name && last.end.getTime() === i.start.getTime()
-    ) last.end = i.end;
-    else groups.push({ ...i });
-  }
-  return groups
-    .sort((a, b) => a.start.getTime() - b.start.getTime())
-    .map((g) => `${g.name} · ${vnParts(g.start).date} ${vnParts(g.start).time}–${vnParts(g.end).time}`);
-}
-
-function receiptOf(
-  id: string,
-  groupId: string | null,
-  payment: Doc,
-  venueName: string,
-  items: Doc[],
-): Receipt {
-  return {
-    bookingId: id,
-    recurringGroupId: groupId,
-    venueName,
-    items: receiptLines(items),
-    option: String(payment.paymentMethod ?? "AT_VENUE"),
-    status: String(payment.paymentStatus ?? "UNPAID"),
-    subtotal: asNumber(payment.subtotal),
-    discount: asNumber(payment.discount),
-    total: asNumber(payment.total),
-    paidAmount: asNumber(payment.paidAmount),
-    remainingAmount: asNumber(payment.remainingAmount),
-    voucherCode: asString(payment.voucherCode),
   };
 }
 
