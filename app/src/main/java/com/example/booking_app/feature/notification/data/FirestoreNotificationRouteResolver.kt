@@ -17,6 +17,7 @@ class FirestoreNotificationRouteResolver @Inject constructor(
         if (NotificationType.fromStoredValue(item.type) == NotificationType.REVIEW_REPLIED) {
             return resolveReviewReply(item, uid)
         }
+        if (NotificationType.fromStoredValue(item.type) == NotificationType.GROUP_ACTIVITY) return resolveGroup(item, uid)
         val candidate = when (NotificationType.fromStoredValue(item.type)) {
             NotificationType.BOOKING_CONFIRMED, NotificationType.BOOKING_REJECTED,
             NotificationType.BOOKING_CANCELLED, NotificationType.BOOKING_REMINDER ->
@@ -36,6 +37,32 @@ class FirestoreNotificationRouteResolver @Inject constructor(
             if (candidate.first == "bookings" && source.getString("userId") != uid) return null
             if (candidate.first == "chats" && uid !in ((source.get("memberIds") as? List<*>) ?: emptyList<Any>())) return null
             candidate.third + java.net.URLEncoder.encode(id, "UTF-8").replace("+", "%20")
+        } catch (e: CancellationException) { throw e
+        } catch (_: Exception) { null }
+    }
+
+    private suspend fun resolveGroup(item: Notification, uid: String): String? {
+        val event = item.data["event"] as? String ?: return null
+        if (event !in setOf("JOIN_REQUESTED", "JOIN_APPROVED", "JOIN_REJECTED", "REMOVED", "EVENT_CREATED", "EVENT_UPDATED")) return null
+        val groupId = item.data["groupId"] as? String ?: return null
+        if (groupId.isBlank() || '/' in groupId) return null
+        val postId = if (event.startsWith("EVENT_")) item.data["postId"] as? String else null
+        if (event.startsWith("EVENT_") && (postId.isNullOrBlank() || '/' in postId)) return null
+        return try {
+            val group = firestore.collection("groups").document(groupId)
+            val source = group.get(Source.SERVER).awaitWithTimeout()
+            if (session.currentUid() != uid || !source.exists() || source.getString("status") !in setOf("ACTIVE", "LOCKED")) return null
+            if (event == "JOIN_REQUESTED") {
+                val member = group.collection("members").document(uid).get(Source.SERVER).awaitWithTimeout()
+                if (session.currentUid() != uid || !member.exists() || member.getString("role") !in setOf("OWNER", "ADMIN")) return null
+            }
+            if (postId != null) {
+                // Current Firestore Rules enforce membership and post visibility on this SERVER read.
+                val post = group.collection("posts").document(postId).get(Source.SERVER).awaitWithTimeout()
+                if (session.currentUid() != uid || !post.exists()) return null
+            }
+            val route = "smashnow://community/group/" + java.net.URLEncoder.encode(groupId, "UTF-8").replace("+", "%20")
+            route + if (event == "JOIN_REQUESTED") "/requests" else ""
         } catch (e: CancellationException) { throw e
         } catch (_: Exception) { null }
     }
