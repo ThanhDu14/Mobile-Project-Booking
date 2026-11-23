@@ -127,7 +127,7 @@ description: "Danh sách task triển khai spec 050 – Thanh toán và Khuyến
 - [x] T037 [P] [US4] `FN/owner-mark-refunded/handler.test.ts`: không phải chủ `venueId` → 403; `PENDING → DONE` + `doneAt`, đơn liên quan `paymentStatus = REFUNDED`; gọi lại khi đã `DONE` trả lại kết quả cũ
 - [x] T038 [P] [US4] `FN/refund-report/handler.test.ts`: không phải `userId` → 403; `PENDING` chưa đủ 3 ngày → 409; đủ điều kiện tạo `reports` (`targetType = VENUE`, `targetPath = venues/{venueId}`, `reason = REFUND_NOT_RECEIVED`, `refundId`, `bookingId`, `amount`) và đặt `reportedAt`; lần hai → 409
 - [x] T039 [P] [US4] `FN/refund-reminders/handler.test.ts`: sai `x-cron-secret` → 401; chỉ nhắc refund `PENDING` quá 24 giờ và `remindedAt == null`; ghi `users/{ownerId}/notifications` loại `REFUND_REMINDER`; không nhắc lần hai
-- [ ] T040 [P] [US4] `TEST/ui/TransferViewModelTest.kt`: hiện `TransferInstruction`; listener báo `Confirmed` → `OpenReceipt`; báo `Expired` → `expired = true`, hiện `payment_hold_expired`; đồng hồ đếm theo `holdExpiresAtMillis` của server
+- [x] T040 [P] [US4] `TEST/ui/TransferViewModelTest.kt`: hiện `TransferInstruction`; listener báo `Confirmed` → `OpenReceipt`; báo `Expired` → `expired = true`, hiện `payment_hold_expired`; đồng hồ đếm theo `holdExpiresAtMillis` của server
 
 ### Cài đặt
 
@@ -136,9 +136,9 @@ description: "Danh sách task triển khai spec 050 – Thanh toán và Khuyến
 - [x] T043 [P] [US4] `FN/owner-mark-refunded/{handler.ts,index.ts}`. T037 xanh
 - [x] T044 [P] [US4] `FN/refund-report/{handler.ts,index.ts}`. T038 xanh
 - [x] T045 [P] [US4] `FN/refund-reminders/{handler.ts,index.ts}` + migration `supabase/migrations/<timestamp>_schedule_refund_reminders.sql` (pg_cron mỗi giờ, header `x-cron-secret`, theo mẫu migration của `expire-holds`). T039 xanh
-- [ ] T046 [US4] `PaymentRepositoryImpl.startTransfer` + `observe(bookingId, isRecurring)` (`callbackFlow` trên `bookings/{id}` hoặc `recurringGroups/{id}`, hủy listener khi ngừng thu), `PAY/domain/usecase/StartTransferUseCase.kt`, `ObserveBookingPaymentUseCase.kt`
-- [ ] T047 [US4] `PAY/ui/TransferFragment.kt` + `TransferViewModel.kt` + `RES/layout/fragment_payment_transfer.xml`: banner `payment_sandbox_banner`, ảnh QR (Coil, `contentDescription`), số tiền, ngân hàng, số tài khoản, tên chủ tài khoản, mã thanh toán (nút sao chép số tài khoản và mã), đồng hồ, nút "Đổi sang thanh toán tại sân" (back về `PaymentFragment`). T040 xanh
-- [ ] T048 [US4] `PaymentViewModel`: chọn chuyển khoản + xác nhận → `StartTransferUseCase` → `OpenTransfer`; đổi sang tại sân khi đơn đang chờ chuyển khoản gọi `ConfirmAtVenueUseCase` với cùng `requestId`
+- [x] T046 [US4] `PaymentRepositoryImpl.startTransfer` + `observe(bookingId, isRecurring)` (`callbackFlow` trên `bookings/{id}` hoặc `recurringGroups/{id}`, hủy listener khi ngừng thu), `PAY/domain/usecase/StartTransferUseCase.kt`, `ObserveBookingPaymentUseCase.kt`
+- [x] T047 [US4] `PAY/ui/TransferFragment.kt` + `TransferViewModel.kt` + `RES/layout/fragment_payment_transfer.xml`: banner `payment_sandbox_banner`, ảnh QR (Coil, `contentDescription`), số tiền, ngân hàng, số tài khoản, tên chủ tài khoản, mã thanh toán (nút sao chép số tài khoản và mã), đồng hồ, nút "Đổi sang thanh toán tại sân" (back về `PaymentFragment`). T040 xanh
+- [x] T048 [US4] `PaymentViewModel`: chọn chuyển khoản + xác nhận → `StartTransferUseCase` → `OpenTransfer`; đổi sang tại sân khi đơn đang chờ chuyển khoản gọi `ConfirmAtVenueUseCase` với cùng `requestId`
 - [ ] T049 [US4] Đặt secret và cấu hình SePay theo [quickstart.md §1](quickstart.md) (`supabase secrets set SEPAY_WEBHOOK_SECRET`, webhook URL, cấu trúc mã `SNP` + 8), deploy 6 function, chạy kịch bản 2–4 trên cloud
 
 **Checkpoint**: Chuyển khoản sandbox chạy được đầu–cuối; khoản cần hoàn được tạo và đóng được.

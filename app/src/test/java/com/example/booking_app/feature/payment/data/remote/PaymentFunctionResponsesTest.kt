@@ -48,4 +48,22 @@ class PaymentFunctionResponsesTest {
         assertEquals(AppError.Locked, PaymentFunctionResponses.mapFailure(AppError.Locked))
         assertTrue(PaymentFunctionResponses.mapFailure(http(500, "oops")) is PaymentError.Unknown)
     }
+
+    @Test
+    fun `doc phan hoi booking-payment-transfer`() {
+        val i = PaymentFunctionResponses.parseTransfer(
+            """{"bookingId":"b1","recurringGroupId":null,"paymentCode":"SNPAAAA2222","amountDue":36000,
+            "holdExpiresAt":"2026-11-20T03:15:00.000Z","qrUrl":"https://qr.sepay.vn/img?acc=1","sandbox":true,
+            "payoutAccount":{"bankShortName":"MBBank","accountNumber":"0123456789","accountHolderName":"NGUYEN VAN A"}}""",
+        )
+        assertEquals("SNPAAAA2222", i.paymentCode)
+        assertEquals(36_000L, i.amountDue)
+        assertEquals(1_795_144_500_000L, i.holdExpiresAtMillis)
+        assertEquals("MBBank", i.payoutAccount.bankShortName)
+        assertEquals(null, i.recurringGroupId)
+        assertTrue(
+            PaymentFunctionResponses.mapFailure(http(422, """{"error":{"code":"TRANSFER_NOT_SUPPORTED","message":"x"}}"""))
+                is PaymentError.TransferNotSupported,
+        )
+    }
 }

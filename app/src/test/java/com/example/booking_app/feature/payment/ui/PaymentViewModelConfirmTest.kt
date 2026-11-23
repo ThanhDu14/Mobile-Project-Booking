@@ -7,12 +7,14 @@ import com.example.booking_app.core.testing.FakeClock
 import com.example.booking_app.core.testing.MainDispatcherRule
 import com.example.booking_app.feature.payment.domain.PaymentCalculator
 import com.example.booking_app.feature.payment.domain.VoucherRules
+import com.example.booking_app.feature.payment.domain.model.BookingPaymentState
 import com.example.booking_app.feature.payment.domain.model.ConfirmRequest
 import com.example.booking_app.feature.payment.domain.model.PaymentError
 import com.example.booking_app.feature.payment.domain.model.PaymentOption
 import com.example.booking_app.feature.payment.domain.model.PaymentReceipt
 import com.example.booking_app.feature.payment.domain.model.PaymentStatus
 import com.example.booking_app.feature.payment.domain.model.PayoutAccount
+import com.example.booking_app.feature.payment.domain.model.TransferInstruction
 import com.example.booking_app.feature.payment.domain.model.Voucher
 import com.example.booking_app.feature.payment.domain.model.VoucherScope
 import com.example.booking_app.feature.payment.domain.model.VoucherType
@@ -21,7 +23,10 @@ import com.example.booking_app.feature.payment.domain.repository.VenuePayoutRepo
 import com.example.booking_app.feature.payment.domain.repository.VoucherRepository
 import com.example.booking_app.feature.payment.domain.usecase.ConfirmAtVenueUseCase
 import com.example.booking_app.feature.payment.domain.usecase.PreviewVoucherUseCase
+import com.example.booking_app.feature.payment.domain.usecase.StartTransferUseCase
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -75,6 +80,14 @@ class PaymentViewModelConfirmTest {
         }
         override suspend fun receipt(bookingId: String, isRecurring: Boolean): Result<PaymentReceipt> =
             Result.failure(UnsupportedOperationException())
+
+        val transfers = mutableListOf<Pair<ConfirmRequest, PaymentOption>>()
+        val transferResults = ArrayDeque<Result<TransferInstruction>>()
+        override suspend fun startTransfer(req: ConfirmRequest, option: PaymentOption): Result<TransferInstruction> {
+            transfers += req to option
+            return transferResults.removeFirst()
+        }
+        override fun observe(bookingId: String, isRecurring: Boolean): Flow<BookingPaymentState> = emptyFlow()
     }
 
     private class FakePayout(private val account: PayoutAccount?) : VenuePayoutRepository {
@@ -100,6 +113,7 @@ class PaymentViewModelConfirmTest {
             vouchers,
             FakePayout(account),
             ConfirmAtVenueUseCase(payments),
+            StartTransferUseCase(payments),
             messages,
         )
     }
@@ -260,16 +274,59 @@ class PaymentViewModelConfirmTest {
         assertEquals(PaymentOption.AT_VENUE, vm.uiState.value.selected)
     }
 
+    private val instruction = TransferInstruction(
+        bookingId = "req-1", paymentCode = "SNPAAAA2222", amountDue = 60_000, holdExpiresAtMillis = now + 15 * 60_000,
+        qrUrl = "https://qr.sepay.vn/img?acc=0123456789&bank=970422&amount=60000&des=SNPAAAA2222", payoutAccount = payout,
+    )
+
     @Test
-    fun `chon chuyen khoan o US2 chua goi server, bao buoc tiep theo`() = runTest {
+    fun `chon coc 30 phan tram thi goi StartTransfer cung requestId va mo man chuyen khoan`() = runTest {
         val vm = viewModel()
         advanceUntilIdle()
-        vm.select(PaymentOption.TRANSFER_FULL)
+        vm.select(PaymentOption.TRANSFER_DEPOSIT)
+        payments.transferResults += Result.success(instruction)
 
         vm.effects.test {
             vm.confirm()
-            assertEquals(PaymentEffect.ShowMessage(messages.string(PaymentMessages.Key.TRANSFER_COMING)), awaitItem())
+            assertEquals(PaymentEffect.OpenTransfer(instruction, isRecurring = false), awaitItem())
         }
+        val (req, option) = payments.transfers.single()
+        assertEquals(PaymentOption.TRANSFER_DEPOSIT, option)
+        assertEquals("req-1", req.requestId)
+        assertEquals(200_000L, req.expectedTotal)
         assertTrue(payments.requests.isEmpty())
+        assertFalse(vm.uiState.value.submitting)
+    }
+
+    @Test
+    fun `quay lai tu man chuyen khoan va doi sang tai san thi chot cung requestId`() = runTest {
+        val vm = viewModel()
+        advanceUntilIdle()
+        vm.select(PaymentOption.TRANSFER_FULL)
+        payments.transferResults += Result.success(instruction)
+        vm.confirm()
+        advanceUntilIdle()
+
+        vm.select(PaymentOption.AT_VENUE)
+        payments.results += Result.success(receipt())
+        vm.confirm()
+        advanceUntilIdle()
+
+        assertEquals("req-1", payments.requests.single().requestId)
+    }
+
+    @Test
+    fun `server bao co so khong nhan chuyen khoan thi an lua chon va ve tai san`() = runTest {
+        val vm = viewModel()
+        advanceUntilIdle()
+        vm.select(PaymentOption.TRANSFER_FULL)
+        payments.transferResults += Result.failure(PaymentError.TransferNotSupported())
+
+        vm.effects.test {
+            vm.confirm()
+            assertEquals(PaymentEffect.ShowMessage(messages.string(PaymentMessages.Key.TRANSFER_UNSUPPORTED)), awaitItem())
+        }
+        assertFalse(vm.uiState.value.transferSupported)
+        assertEquals(PaymentOption.AT_VENUE, vm.uiState.value.selected)
     }
 }

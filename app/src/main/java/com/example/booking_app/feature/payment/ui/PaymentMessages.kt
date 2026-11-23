@@ -25,7 +25,8 @@ interface PaymentMessages {
         NO_PRICE(R.string.payment_no_price, "payment_no_price"),
         CONFIRM_NETWORK(R.string.payment_confirm_network, "payment_confirm_network"),
         CONFIRM_FAILED(R.string.payment_confirm_failed, "payment_confirm_failed"),
-        TRANSFER_COMING(R.string.payment_transfer_coming, "payment_transfer_coming"),
+        TRANSFER_UNSUPPORTED(R.string.payment_transfer_unsupported, "payment_transfer_unsupported"),
+        COPIED(R.string.payment_copied, "payment_copied"),
     }
 
     fun string(key: Key, vararg args: Any): String

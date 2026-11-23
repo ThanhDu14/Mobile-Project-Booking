@@ -7,9 +7,12 @@ import com.example.booking_app.core.testing.FakeClock
 import com.example.booking_app.core.testing.MainDispatcherRule
 import com.example.booking_app.feature.payment.domain.VoucherRules
 import com.example.booking_app.feature.payment.domain.model.AppliedVoucher
+import com.example.booking_app.feature.payment.domain.model.BookingPaymentState
 import com.example.booking_app.feature.payment.domain.model.ConfirmRequest
+import com.example.booking_app.feature.payment.domain.model.PaymentOption
 import com.example.booking_app.feature.payment.domain.model.PaymentReceipt
 import com.example.booking_app.feature.payment.domain.model.PayoutAccount
+import com.example.booking_app.feature.payment.domain.model.TransferInstruction
 import com.example.booking_app.feature.payment.domain.model.Voucher
 import com.example.booking_app.feature.payment.domain.model.VoucherScope
 import com.example.booking_app.feature.payment.domain.model.VoucherType
@@ -18,6 +21,8 @@ import com.example.booking_app.feature.payment.domain.repository.VenuePayoutRepo
 import com.example.booking_app.feature.payment.domain.repository.VoucherRepository
 import com.example.booking_app.feature.payment.domain.usecase.ConfirmAtVenueUseCase
 import com.example.booking_app.feature.payment.domain.usecase.PreviewVoucherUseCase
+import com.example.booking_app.feature.payment.domain.usecase.StartTransferUseCase
+import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
@@ -92,6 +97,15 @@ class PaymentViewModelVoucherTest {
         repo: VoucherRepository = FakeRepo(vouchers),
     ): PaymentViewModel {
         val clock = FakeClock { now }
+        // US1 không chốt đơn: kho thanh toán chỉ để thỏa constructor.
+        val payments = object : PaymentRepository {
+            override suspend fun confirmAtVenue(req: ConfirmRequest) = Result.failure<PaymentReceipt>(IllegalStateException())
+            override suspend fun receipt(bookingId: String, isRecurring: Boolean) =
+                Result.failure<PaymentReceipt>(IllegalStateException())
+            override suspend fun startTransfer(req: ConfirmRequest, option: PaymentOption) =
+                Result.failure<TransferInstruction>(IllegalStateException())
+            override fun observe(bookingId: String, isRecurring: Boolean) = emptyFlow<BookingPaymentState>()
+        }
         return PaymentViewModel(
             handle,
             PreviewVoucherUseCase(repo, clock),
@@ -99,11 +113,8 @@ class PaymentViewModelVoucherTest {
             object : VenuePayoutRepository {
                 override suspend fun payoutAccount(venueId: String) = Result.success<PayoutAccount?>(null)
             },
-            ConfirmAtVenueUseCase(object : PaymentRepository {
-                override suspend fun confirmAtVenue(req: ConfirmRequest) = Result.failure<PaymentReceipt>(IllegalStateException())
-                override suspend fun receipt(bookingId: String, isRecurring: Boolean) =
-                    Result.failure<PaymentReceipt>(IllegalStateException())
-            }),
+            ConfirmAtVenueUseCase(payments),
+            StartTransferUseCase(payments),
             messages,
         )
     }

@@ -16,6 +16,8 @@ data class TransferInstruction(
     val holdExpiresAtMillis: Long,
     val qrUrl: String,
     val payoutAccount: PayoutAccount,
+    /** Khác `null` với đơn định kỳ (= `bookingId`). */
+    val recurringGroupId: String? = null,
 )
 
 /** Trạng thái đơn/nhóm lấy từ listener realtime khi đang chờ chuyển khoản. */

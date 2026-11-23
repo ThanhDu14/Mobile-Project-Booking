@@ -10,12 +10,14 @@ import com.example.booking_app.feature.payment.domain.model.ConfirmRequest
 import com.example.booking_app.feature.payment.domain.model.PaymentError
 import com.example.booking_app.feature.payment.domain.model.PaymentOption
 import com.example.booking_app.feature.payment.domain.model.PaymentReceipt
+import com.example.booking_app.feature.payment.domain.model.TransferInstruction
 import com.example.booking_app.feature.payment.domain.model.Voucher
 import com.example.booking_app.feature.payment.domain.model.VoucherCheck
 import com.example.booking_app.feature.payment.domain.repository.VenuePayoutRepository
 import com.example.booking_app.feature.payment.domain.repository.VoucherRepository
 import com.example.booking_app.feature.payment.domain.usecase.ConfirmAtVenueUseCase
 import com.example.booking_app.feature.payment.domain.usecase.PreviewVoucherUseCase
+import com.example.booking_app.feature.payment.domain.usecase.StartTransferUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
@@ -29,15 +31,17 @@ import kotlinx.coroutines.launch
 import java.util.UUID
 import javax.inject.Inject
 
-/** Sự kiện một lần cho `PaymentFragment` (data-model §3). `OpenTransfer` thêm ở US4. */
+/** Sự kiện một lần cho `PaymentFragment` và `TransferFragment` (data-model §3). */
 sealed interface PaymentEffect {
+    data class OpenTransfer(val instruction: TransferInstruction, val isRecurring: Boolean) : PaymentEffect
     data class OpenReceipt(val receipt: PaymentReceipt) : PaymentEffect
     data class ShowMessage(val text: String) : PaymentEffect
 }
 
 /**
  * Màn thanh toán spec 050. US1: tóm tắt đơn + xem trước voucher (chỉ đọc). US2: chọn cách trả, chốt đơn trả tại sân
- * qua `booking-payment-confirm`. Chuyển khoản (US4) và đồng hồ giữ chỗ (US3) thêm sau.
+ * qua `booking-payment-confirm`. US4: chuyển khoản qua `booking-payment-transfer` rồi mở màn QR; quay lại đổi sang
+ * tại sân thì chốt bằng cùng `requestId` (server tắt mã cũ). Đồng hồ giữ chỗ (US3) thêm sau.
  */
 @HiltViewModel
 class PaymentViewModel @Inject constructor(
@@ -46,6 +50,7 @@ class PaymentViewModel @Inject constructor(
     private val voucherRepository: VoucherRepository,
     private val payoutRepository: VenuePayoutRepository,
     private val confirmAtVenue: ConfirmAtVenueUseCase,
+    private val startTransfer: StartTransferUseCase,
     private val messages: PaymentMessages,
 ) : ViewModel() {
 
@@ -180,19 +185,16 @@ class PaymentViewModel @Inject constructor(
 
     /**
      * Bấm nút xác nhận. Chỉ một lời gọi chạy cùng lúc (bấm liên tục không gọi thêm), đã chốt hoặc đã hết hạn thì
-     * bỏ qua. Tổng 0đ luôn chốt như trả tại sân (server ghi `PAID`).
+     * bỏ qua. Tổng 0đ luôn chốt như trả tại sân (server ghi `PAID`). Chuyển khoản thì mở màn QR; người chơi quay lại
+     * vẫn bấm được (gọi lại nhận cùng mã) hoặc đổi sang trả tại sân với cùng `requestId`.
      */
     fun confirm() {
         val args = args ?: return
         val state = _uiState.value
         val breakdown = state.breakdown ?: return
         if (state.submitting || state.expired || confirmed || state.applyingVoucher) return
-        if (breakdown.isFree && state.selected != PaymentOption.AT_VENUE) {
-            _uiState.update { it.copy(selected = PaymentOption.AT_VENUE) }
-        } else if (state.selected != PaymentOption.AT_VENUE) {
-            _effects.trySend(PaymentEffect.ShowMessage(messages.string(PaymentMessages.Key.TRANSFER_COMING)))
-            return
-        }
+        val option = if (breakdown.isFree) PaymentOption.AT_VENUE else state.selected
+        if (option != state.selected) _uiState.update { it.copy(selected = option) }
         val request = ConfirmRequest(
             requestId = requestId,
             recurringGroupId = if (args.isRecurring) requestId else null,
@@ -203,14 +205,25 @@ class PaymentViewModel @Inject constructor(
         )
         _uiState.update { it.copy(submitting = true) }
         viewModelScope.launch {
-            val result = confirmAtVenue(request)
-            val receipt = result.getOrNull()
-            if (receipt != null) {
-                confirmed = true
-                _uiState.update { it.copy(submitting = false) }
-                _effects.send(PaymentEffect.OpenReceipt(receipt))
+            if (option == PaymentOption.AT_VENUE) {
+                val result = confirmAtVenue(request)
+                val receipt = result.getOrNull()
+                if (receipt != null) {
+                    confirmed = true
+                    _uiState.update { it.copy(submitting = false) }
+                    _effects.send(PaymentEffect.OpenReceipt(receipt))
+                } else {
+                    onConfirmFailed(result.exceptionOrNull() ?: PaymentError.Unknown())
+                }
             } else {
-                onConfirmFailed(result.exceptionOrNull() ?: PaymentError.Unknown())
+                val result = startTransfer(request, option)
+                val instruction = result.getOrNull()
+                if (instruction != null) {
+                    _uiState.update { it.copy(submitting = false) }
+                    _effects.send(PaymentEffect.OpenTransfer(instruction, args.isRecurring))
+                } else {
+                    onConfirmFailed(result.exceptionOrNull() ?: PaymentError.Unknown())
+                }
             }
         }
     }
@@ -232,6 +245,10 @@ class PaymentViewModel @Inject constructor(
                 text
             }
             is PaymentError.NoPrice -> messages.string(PaymentMessages.Key.NO_PRICE)
+            is PaymentError.TransferNotSupported -> {
+                _uiState.update { it.copy(transferSupported = false, selected = PaymentOption.AT_VENUE) }
+                messages.string(PaymentMessages.Key.TRANSFER_UNSUPPORTED)
+            }
             is PaymentError.Network -> messages.string(PaymentMessages.Key.CONFIRM_NETWORK)
             else -> messages.string(PaymentMessages.Key.CONFIRM_FAILED)
         }

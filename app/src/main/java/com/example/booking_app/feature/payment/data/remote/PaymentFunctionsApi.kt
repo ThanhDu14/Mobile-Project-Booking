@@ -1,5 +1,6 @@
 package com.example.booking_app.feature.payment.data.remote
 
+import android.util.Log
 import com.example.booking_app.core.network.AppError
 import com.example.booking_app.core.network.FunctionErrors
 import com.example.booking_app.core.network.FunctionHttpException
@@ -10,8 +11,11 @@ import com.example.booking_app.feature.payment.domain.model.PaymentError
 import com.example.booking_app.feature.payment.domain.model.PaymentOption
 import com.example.booking_app.feature.payment.domain.model.PaymentReceipt
 import com.example.booking_app.feature.payment.domain.model.PaymentStatus
+import com.example.booking_app.feature.payment.domain.model.PayoutAccount
+import com.example.booking_app.feature.payment.domain.model.TransferInstruction
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.functions.functions
+import io.ktor.client.statement.HttpResponse
 import io.ktor.client.statement.bodyAsText
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.TimeoutCancellationException
@@ -20,13 +24,42 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
+import java.time.Instant
 import javax.inject.Inject
 
 /** Các Edge Function thanh toán spec 050 (contracts/edge-functions.md). Lỗi là [PaymentError]. */
 interface PaymentFunctionsApi {
     /** `booking-payment-confirm` (§1). */
     suspend fun confirm(req: ConfirmRequest): PaymentReceipt
+
+    /** `booking-payment-transfer` (§2). */
+    suspend fun startTransfer(req: ConfirmRequest, option: PaymentOption): TransferInstruction
 }
+
+@Serializable
+internal data class TransferBody(
+    val requestId: String,
+    val recurringGroupId: String?,
+    val venueId: String,
+    val slotIds: List<String>,
+    val voucherCode: String?,
+    val option: String,
+    val expectedTotal: Long,
+)
+
+@Serializable
+internal data class PayoutDto(val bankShortName: String, val accountNumber: String, val accountHolderName: String)
+
+@Serializable
+internal data class TransferResponseDto(
+    val bookingId: String,
+    val recurringGroupId: String? = null,
+    val paymentCode: String,
+    val amountDue: Long,
+    val holdExpiresAt: String,
+    val qrUrl: String,
+    val payoutAccount: PayoutDto,
+)
 
 @Serializable
 internal data class ConfirmBody(
@@ -74,6 +107,19 @@ object PaymentFunctionResponses {
     private val json = Json { ignoreUnknownKeys = true }
 
     fun parseConfirm(body: String): PaymentReceipt = json.decodeFromString<ConfirmResponseDto>(body).receipt.toDomain()
+
+    fun parseTransfer(body: String): TransferInstruction = json.decodeFromString<TransferResponseDto>(body).let {
+        TransferInstruction(
+            bookingId = it.bookingId,
+            paymentCode = it.paymentCode,
+            amountDue = it.amountDue,
+            holdExpiresAtMillis = Instant.parse(it.holdExpiresAt).toEpochMilli(),
+            qrUrl = it.qrUrl,
+            // `bankBin` chỉ server cần để dựng QR; app hiển thị tên ngân hàng và số tài khoản.
+            payoutAccount = PayoutAccount("", it.payoutAccount.bankShortName, it.payoutAccount.accountNumber, it.payoutAccount.accountHolderName),
+            recurringGroupId = it.recurringGroupId,
+        )
+    }
 
     fun mapFailure(error: Throwable): Throwable = when (error) {
         is PaymentError -> error
@@ -128,25 +174,36 @@ class SupabasePaymentFunctionsApi @Inject constructor(
 
     override suspend fun confirm(req: ConfirmRequest): PaymentReceipt {
         val body = ConfirmBody(req.requestId, req.recurringGroupId, req.venueId, req.slotIds, req.voucherCode, req.expectedTotal)
-        val text = try {
-            functionErrors.invokeWithAuthRetry {
-                val response = try {
-                    withTimeout(TIMEOUT_MS) { supabase.functions.invoke(CONFIRM, body = body) }
-                } catch (e: TimeoutCancellationException) {
-                    throw AppError.Timeout
-                }
-                response.bodyAsText()
+        return PaymentFunctionResponses.parseConfirm(call(CONFIRM) { supabase.functions.invoke(CONFIRM, body = body) })
+    }
+
+    override suspend fun startTransfer(req: ConfirmRequest, option: PaymentOption): TransferInstruction {
+        val body = TransferBody(
+            req.requestId, req.recurringGroupId, req.venueId, req.slotIds, req.voucherCode, option.name, req.expectedTotal,
+        )
+        return PaymentFunctionResponses.parseTransfer(call(TRANSFER) { supabase.functions.invoke(TRANSFER, body = body) })
+    }
+
+    /** Gọi function qua `FunctionErrors` (tự làm mới token, báo khóa tài khoản), ánh xạ lỗi sang [PaymentError]. */
+    private suspend fun call(name: String, invoke: suspend () -> HttpResponse): String = try {
+        functionErrors.invokeWithAuthRetry {
+            val response = try {
+                withTimeout(TIMEOUT_MS) { invoke() }
+            } catch (e: TimeoutCancellationException) {
+                throw AppError.Timeout
             }
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            throw PaymentFunctionResponses.mapFailure(e)
+            response.bodyAsText()
         }
-        return PaymentFunctionResponses.parseConfirm(text)
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        throw PaymentFunctionResponses.mapFailure(e).also { if (it is PaymentError.Unknown) Log.w(TAG, "$name thất bại", e) }
     }
 
     private companion object {
+        const val TAG = "PaymentFunctions"
         const val CONFIRM = "booking-payment-confirm"
+        const val TRANSFER = "booking-payment-transfer"
         /** Transaction ghi nhiều document, có thể cold start: rộng hơn mặc định 15 giây. */
         const val TIMEOUT_MS = 30_000L
     }

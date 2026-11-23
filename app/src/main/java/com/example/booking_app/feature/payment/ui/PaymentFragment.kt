@@ -25,7 +25,7 @@ import kotlinx.coroutines.launch
 
 /**
  * Màn thanh toán spec 050. US1: tóm tắt đơn + áp/gỡ voucher. US2: chọn cách trả, chốt đơn trả tại sân rồi mở
- * hóa đơn. Chuyển khoản (US4) mở màn QR sau.
+ * hóa đơn. US4: chuyển khoản mở màn QR (`TransferFragment`).
  */
 @AndroidEntryPoint
 class PaymentFragment : Fragment() {
@@ -77,6 +77,25 @@ class PaymentFragment : Fragment() {
     private fun handle(effect: PaymentEffect) {
         when (effect) {
             is PaymentEffect.ShowMessage -> Snackbar.make(binding.root, effect.text, Snackbar.LENGTH_LONG).show()
+            is PaymentEffect.OpenTransfer -> {
+                val nav = findNavController()
+                if (nav.currentDestination?.id != R.id.paymentFragment) return
+                val i = effect.instruction
+                nav.navigate(
+                    R.id.action_payment_to_transfer,
+                    bundleOf(
+                        "bookingId" to i.bookingId,
+                        "isRecurring" to effect.isRecurring,
+                        "paymentCode" to i.paymentCode,
+                        "amountDue" to i.amountDue,
+                        "holdExpiresAtMillis" to i.holdExpiresAtMillis,
+                        "qrUrl" to i.qrUrl,
+                        "bankShortName" to i.payoutAccount.bankShortName,
+                        "accountNumber" to i.payoutAccount.accountNumber,
+                        "accountHolderName" to i.payoutAccount.accountHolderName,
+                    ),
+                )
+            }
             is PaymentEffect.OpenReceipt -> findNavController().navigate(
                 R.id.action_payment_to_receipt,
                 bundleOf(
