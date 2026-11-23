@@ -21,9 +21,15 @@ Affected old documents can be any historical record of those four types emitted 
 Example offline invocation (no real snapshot supplied or migration executed):
 
 ```powershell
-deno run --allow-read=notification-snapshot.json scripts/notification/plan-timestamp-repair.ts notification-snapshot.json > notification-repair-plan.json
+deno run --allow-read=notification-snapshot.json scripts/notification/plan-timestamp-repair.ts notification-snapshot.json expected-project-id > notification-repair-plan.json
 ```
 
 `plan-timestamp-repair.test.ts` verifies field mask, original instant, updateTime precondition, invalid calendar/zone rejection, native-date preservation and path/duplicate guards. Producer regression tests exercise actual handlers and REST encoding/decoding, including idempotent retry and preserved read state.
 
 The local Firestore `notification-security.test.ts` additionally reproduces an older ISO-string record sorting before a newer native Timestamp in a descending query. Updating only that fixture's createdAt to the same instant as Timestamp restores chronology and leaves body/isRead unchanged. This is an emulator fixture conversion only, not execution of a real-data migration.
+
+## Planner review, 23/11/2026
+
+Three new regressions initially failed: mixed-project snapshots were accepted, conflicting duplicate versions silently used the first snapshot, and nonempty but invalid updateTime produced a write. The planner now validates the entire input before planning, rejects mixed/incorrect projects and conflicting duplicates, and validates REST object/value shapes. Exact duplicates still skip safely. The CLI requires an explicit expected project ID; the result also records projectId for manifest review.
+
+Concurrency timestamps accept canonical UTC with up to nine fractional digits; calendar validity is checked without rounding the precondition placed in the plan. Original string createdAt remains limited to the Date.toISOString() form emitted by affected producers. Nanosecond updateTime is preserved byte-for-byte. Invalid preconditions are skipped rather than emitted. The planner remains read-only/offline; neither migration execution nor hosted inventory was added.
