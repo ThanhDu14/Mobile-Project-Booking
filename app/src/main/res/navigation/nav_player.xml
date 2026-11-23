@@ -70,6 +70,10 @@
         <argument
             android:name="args"
             app:argType="com.example.booking_app.core.navigation.HoldToPaymentArgs" />
+        <!-- Spec 050: chốt đơn ở màn thanh toán (nav_payment). -->
+        <action
+            android:id="@+id/action_bookingConfirm_to_payment"
+            app:destination="@id/nav_payment" />
     </fragment>
 
     <fragment
@@ -92,6 +96,9 @@
         <argument
             android:name="args"
             app:argType="com.example.booking_app.core.navigation.HoldToPaymentArgs" />
+        <action
+            android:id="@+id/action_recurringConfirm_to_payment"
+            app:destination="@id/nav_payment" />
     </fragment>
 
     <!-- Trang Tài khoản của spec 011 (research R14). Mở từ avatar ở header dùng chung của mọi tab (US8),

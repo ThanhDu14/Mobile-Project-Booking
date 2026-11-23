@@ -46,16 +46,9 @@ class BookingConfirmFragment : Fragment() {
     @Inject
     lateinit var serverTimeOffsetProvider: ServerTimeOffsetProvider
 
-    @Inject
-    lateinit var confirmHoldToBookingUseCase: com.example.booking_app.feature.booking.domain.usecase.ConfirmHoldToBookingUseCase
-
     private var countDownTimer: CountDownTimer? = null
     private var holdArgs: HoldToPaymentArgs? = null
     private val currencyFormatter = DecimalFormat("#,###", java.text.DecimalFormatSymbols(Locale.GERMANY))
-
-    // Trạng thái chọn phương thức thanh toán display-only
-    private enum class PaymentOption { PAY_AT_VENUE, DEPOSIT, WALLET }
-    private var selectedPaymentOption = PaymentOption.PAY_AT_VENUE
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -132,97 +125,28 @@ class BookingConfirmFragment : Fragment() {
             findNavController().popBackStack()
         }
 
-        // 3. Phương thức thanh toán (3b: 3 radio options)
-        val depositAmount = calculateDepositAmount(args.subtotalAmount)
-        binding.tvDepositDescription.text = getString(
-            R.string.booking_payment_deposit_desc,
-            currencyFormatter.format(depositAmount)
-        )
-        binding.tvWalletDescription.text = getString(
-            R.string.booking_payment_wallet_desc,
-            currencyFormatter.format(args.subtotalAmount)
-        )
+        // 3–6. Cách thanh toán, voucher và chốt đơn chuyển sang màn thanh toán spec 050 (nav_payment, T034).
+        // Màn này giữ vai trò xem lại: sân/slot, đồng hồ giữ chỗ, tạm tính. Ẩn các phần cũ (ví giả lập, chọn cách
+        // trả, hàng voucher) để không có hai nơi chọn cách trả.
+        binding.tvPaymentSectionTitle.visibility = View.GONE
+        binding.cardPaymentMethods.visibility = View.GONE
+        binding.layoutWalletBalance.visibility = View.GONE
+        binding.layoutVoucherRow.visibility = View.GONE
 
-        updatePaymentRadioSelection(PaymentOption.PAY_AT_VENUE, args)
-
-        binding.rowPayAtVenue.setOnClickListener {
-            updatePaymentRadioSelection(PaymentOption.PAY_AT_VENUE, args)
-        }
-        binding.rowDeposit.setOnClickListener {
-            updatePaymentRadioSelection(PaymentOption.DEPOSIT, args)
-        }
-        binding.rowWallet.setOnClickListener {
-            updatePaymentRadioSelection(PaymentOption.WALLET, args)
-        }
-
-        // 4. Thanh số dư ví (3c: placeholder 0 đ kèm TODO(050))
-        binding.tvWalletBalance.text = getString(R.string.booking_wallet_balance_format, "0")
-        binding.btnTopUpWallet.setOnClickListener {
-            // TODO(050): Tích hợp màn hình nạp ví giả lập khi feature 050 hoàn thiện
-            Snackbar.make(binding.root, "Nạp ví giả lập sẽ được tích hợp ở feature 050.", Snackbar.LENGTH_SHORT).show()
-        }
-
-        // 5. Hàng mã giảm giá (3d: display-only kèm TODO(050))
-        binding.layoutVoucherRow.setOnClickListener {
-            // TODO(050): Tích hợp bottom sheet áp dụng mã giảm giá khi feature 050 hoàn thiện
-            Snackbar.make(binding.root, "Áp dụng mã giảm giá sẽ được tích hợp ở feature 050.", Snackbar.LENGTH_SHORT).show()
-        }
-
-        // 6. Thẻ breakdown (3e: Tạm tính, Giảm giá 0đ, Tổng cộng)
         binding.tvBreakdownSlotsLabel.text = getString(R.string.booking_breakdown_subtotal_format, args.slotIds.size)
         binding.tvBreakdownSubtotal.text = "${currencyFormatter.format(args.subtotalAmount)} đ"
-        binding.tvBreakdownDiscount.text = "0 đ" // TODO(050): Trừ tiền voucher khi feature 050 hoàn thiện
+        binding.tvBreakdownDiscount.text = "0 đ"
         binding.tvBreakdownTotal.text = "${currencyFormatter.format(args.subtotalAmount)} đ"
 
-        // 7. Bottom bar (3g)
+        // 7. Bottom bar: tạm tính + nút sang màn thanh toán (không nhả giữ chỗ khi rời màn).
+        binding.tvBottomPaymentLabel.text = getString(R.string.payment_subtotal)
+        binding.tvBottomTotalPrice.text = "${currencyFormatter.format(args.subtotalAmount)} đ"
+        binding.tvBottomPaymentSubtext.visibility = View.GONE
+        binding.btnConfirmBooking.text = getString(R.string.booking_continue_to_payment)
         binding.btnConfirmBooking.setOnClickListener {
-            val args = holdArgs ?: return@setOnClickListener
-            if (args.isRecurring) {
-                Toast.makeText(requireContext(), "Đặt cố định chưa hỗ trợ tạo đơn lẻ", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            val userId = sessionManager.currentUid()
-            if (userId.isNullOrEmpty()) {
-                Toast.makeText(requireContext(), "Vui lòng đăng nhập để tiếp tục", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            binding.btnConfirmBooking.isEnabled = false
-            val methodStr = when (selectedPaymentOption) {
-                PaymentOption.PAY_AT_VENUE -> "AT_VENUE"
-                PaymentOption.DEPOSIT -> "DEPOSIT"
-                PaymentOption.WALLET -> "MOCK_WALLET"
-            }
-
-            viewLifecycleOwner.lifecycleScope.launch {
-                val result = confirmHoldToBookingUseCase(args, methodStr, userId)
-                when (result) {
-                    is com.example.booking_app.feature.booking.domain.model.ConfirmBookingResult.Success -> {
-                        countDownTimer?.cancel()
-                        val navOptions = androidx.navigation.NavOptions.Builder()
-                            .setPopUpTo(R.id.bookingSlotGridFragment, true)
-                            .build()
-                        val bundle = android.os.Bundle().apply { putString("initialTab", "PENDING") }
-                        findNavController().navigate(
-                            R.id.myBookingsFragment,
-                            bundle,
-                            navOptions
-                        )
-                    }
-                    is com.example.booking_app.feature.booking.domain.model.ConfirmBookingResult.Expired -> {
-                        if (_binding != null) {
-                            binding.btnConfirmBooking.isEnabled = true
-                        }
-                        onCountdownTimeout()
-                    }
-                    is com.example.booking_app.feature.booking.domain.model.ConfirmBookingResult.Error -> {
-                        if (_binding != null) {
-                            binding.btnConfirmBooking.isEnabled = true
-                        }
-                        Snackbar.make(binding.root, "Không thể xác nhận đặt sân: ${result.message}", Snackbar.LENGTH_LONG).show()
-                    }
-                }
+            val nav = findNavController()
+            if (nav.currentDestination?.id == R.id.bookingConfirmFragment) {
+                nav.navigate(R.id.action_bookingConfirm_to_payment, Bundle().apply { putParcelable("args", args) })
             }
         }
 
@@ -230,34 +154,6 @@ class BookingConfirmFragment : Fragment() {
         binding.btnConfirmBack.setOnClickListener {
             handleCancelAndRelease()
         }
-    }
-
-    private fun updatePaymentRadioSelection(option: PaymentOption, args: HoldToPaymentArgs) {
-        selectedPaymentOption = option
-        binding.rbPayAtVenue.isChecked = (option == PaymentOption.PAY_AT_VENUE)
-        binding.rbDeposit.isChecked = (option == PaymentOption.DEPOSIT)
-        binding.rbWallet.isChecked = (option == PaymentOption.WALLET)
-
-        val (amount, subtextResId) = when (option) {
-            PaymentOption.PAY_AT_VENUE -> {
-                0L to R.string.booking_bottom_pay_at_venue_subtext
-            }
-            PaymentOption.DEPOSIT -> {
-                calculateDepositAmount(args.subtotalAmount) to R.string.booking_bottom_deposit_subtext
-            }
-            PaymentOption.WALLET -> {
-                args.subtotalAmount to R.string.booking_bottom_wallet_subtext
-            }
-        }
-
-        binding.tvBottomPaymentLabel.text = getString(R.string.booking_bottom_pay_now_label)
-        binding.tvBottomTotalPrice.text = "${currencyFormatter.format(amount)} đ"
-        binding.tvBottomPaymentSubtext.text = getString(subtextResId)
-    }
-
-    private fun calculateDepositAmount(subtotal: Long): Long {
-        val rawDeposit = (subtotal * 30L) / 100L
-        return ((rawDeposit + 500L) / 1000L) * 1000L
     }
 
     private fun displaySelectedSlots(args: HoldToPaymentArgs) {

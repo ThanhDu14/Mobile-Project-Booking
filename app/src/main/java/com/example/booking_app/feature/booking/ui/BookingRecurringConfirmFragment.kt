@@ -98,12 +98,13 @@ class BookingRecurringConfirmFragment : Fragment() {
             confirmCancelAndRelease()
         }
 
+        // Spec 050 (T034): chốt cả nhóm ở màn thanh toán; giữ chỗ không bị nhả khi rời màn này.
         binding.btnContinueToPayment.setOnClickListener {
-            Toast.makeText(
-                requireContext(),
-                R.string.booking_confirm_display_only_notice,
-                Toast.LENGTH_SHORT
-            ).show()
+            val args = holdArgs ?: return@setOnClickListener
+            val nav = findNavController()
+            if (nav.currentDestination?.id == R.id.bookingRecurringConfirmFragment) {
+                nav.navigate(R.id.action_recurringConfirm_to_payment, Bundle().apply { putParcelable("args", args) })
+            }
         }
     }
 
