@@ -40,6 +40,25 @@
             android:textAppearance="@style/TextAppearance.SmashNow.Title"
             android:textColor="@color/sn_ink"
             android:textSize="18sp" />
+
+        <!-- US3: giữ chỗ còn mm:ss, theo hạn server cấp lúc giữ chỗ -->
+        <TextView
+            android:id="@+id/tvHoldCountdown"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:background="@drawable/bg_wordmark_pill"
+            android:backgroundTint="@color/sn_lamp_container"
+            android:drawablePadding="4dp"
+            android:gravity="center_vertical"
+            android:paddingHorizontal="10dp"
+            android:paddingVertical="4dp"
+            android:textColor="@color/sn_on_lamp_container"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:visibility="gone"
+            app:drawableStartCompat="@drawable/ic_timer_24"
+            app:drawableTint="@color/sn_on_lamp_container" />
     </LinearLayout>
 
     <!-- FR-004: dòng giả lập nổi bật trên mọi màn thanh toán -->

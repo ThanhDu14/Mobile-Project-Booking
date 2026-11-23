@@ -65,6 +65,8 @@ class PaymentFragment : Fragment() {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch { viewModel.uiState.collect(::render) }
                 launch { viewModel.effects.collect(::handle) }
+                // Đồng hồ chỉ tick khi màn đang hiển thị (STARTED).
+                launch { viewModel.countdown.collect(::renderCountdown) }
             }
         }
     }
@@ -72,6 +74,12 @@ class PaymentFragment : Fragment() {
     override fun onDestroyView() {
         _binding = null
         super.onDestroyView()
+    }
+
+    private fun renderCountdown(seconds: Long) {
+        val pill = _binding?.tvHoldCountdown ?: return
+        pill.isVisible = seconds > 0
+        pill.text = getString(R.string.transfer_countdown, "%02d:%02d".format(seconds / 60, seconds % 60))
     }
 
     private fun handle(effect: PaymentEffect) {

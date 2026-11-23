@@ -1,6 +1,7 @@
 import { errorResponse, toErrorResponse } from "../_shared/auth.ts";
 import * as defaultFirestore from "../_shared/firestore.ts";
-import { deleteWrite, updateWrite } from "../_shared/firestore.ts";
+import { deleteWrite, type FirestoreTransaction, updateWrite, type Write } from "../_shared/firestore.ts";
+import { loadRedemption, releaseWrites, type VoucherRef } from "../_shared/payment-voucher.ts";
 
 export interface ExpireHoldsDeps {
   firestore?: Pick<typeof defaultFirestore, "query" | "runTransaction">;
@@ -28,6 +29,30 @@ function millis(value: unknown): number | null {
     return Number.isFinite(seconds) ? seconds * 1000 : null;
   }
   return null;
+}
+
+/**
+ * Spec 050 (US3, T051): đơn/nhóm hết hạn thì nhả lượt voucher đang giữ tạm (`RESERVED`; lượt `USED` giữ nguyên) và
+ * tắt mã thanh toán, trong cùng transaction với việc chuyển `EXPIRED`. Tiền về sau đó theo mã cũ thành
+ * `LATE_TRANSFER` ở `sepay-webhook`.
+ */
+async function paymentReleaseWrites(
+  tx: FirestoreTransaction,
+  doc: Record<string, unknown>,
+  key: string,
+): Promise<Write[]> {
+  const writes: Write[] = [];
+  const code = typeof doc.voucherCode === "string" && doc.voucherCode ? doc.voucherCode : null;
+  const scope = doc.voucherScope === "VENUE" || doc.voucherScope === "SYSTEM" ? doc.voucherScope : null;
+  const venueId = typeof doc.venueId === "string" ? doc.venueId : "";
+  if (code && scope && (scope === "SYSTEM" || venueId)) {
+    const ref: VoucherRef = { scope, venueId, code };
+    writes.push(...releaseWrites(ref, key, await loadRedemption(tx, ref, key)));
+  }
+  if (typeof doc.paymentCode === "string" && doc.paymentCode) {
+    writes.push(updateWrite(`paymentCodes/${doc.paymentCode}`, { active: false }));
+  }
+  return writes;
 }
 
 /** Server cleanup for elapsed 040 holds and 041 recurring groups. */
@@ -104,6 +129,7 @@ export async function handleExpireHolds(
               updatedAt: nowIso,
             }),
             ...ownedSlots.map((id) => deleteWrite(`slots/${id}`, false)),
+            ...await paymentReleaseWrites(tx, current, doc.id),
           ],
         };
       });
@@ -164,6 +190,7 @@ export async function handleExpireHolds(
               })
             ),
           ...deletable.map((id) => deleteWrite(`slots/${id}`, false)),
+          ...await paymentReleaseWrites(tx, currentGroup, group.id),
         ];
         if (writes.length > 499) return { result: 0, writes: [] };
         return { result: sessions.length, writes };
@@ -208,6 +235,7 @@ export async function handleExpireHolds(
                 status: "EXPIRED",
                 updatedAt: nowIso,
               }),
+              ...await paymentReleaseWrites(tx, booking, bookingId),
             );
           }
         }

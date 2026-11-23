@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.booking_app.core.navigation.HoldToPaymentArgs
+import com.example.booking_app.feature.payment.domain.HoldClock
 import com.example.booking_app.feature.payment.domain.PaymentCalculator
 import com.example.booking_app.feature.payment.domain.model.AppliedVoucher
 import com.example.booking_app.feature.payment.domain.model.ConfirmRequest
@@ -21,7 +22,12 @@ import com.example.booking_app.feature.payment.domain.usecase.StartTransferUseCa
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -41,7 +47,7 @@ sealed interface PaymentEffect {
 /**
  * Màn thanh toán spec 050. US1: tóm tắt đơn + xem trước voucher (chỉ đọc). US2: chọn cách trả, chốt đơn trả tại sân
  * qua `booking-payment-confirm`. US4: chuyển khoản qua `booking-payment-transfer` rồi mở màn QR; quay lại đổi sang
- * tại sân thì chốt bằng cùng `requestId` (server tắt mã cũ). Đồng hồ giữ chỗ (US3) thêm sau.
+ * tại sân thì chốt bằng cùng `requestId` (server tắt mã cũ). US3: đồng hồ giữ chỗ [countdown].
  */
 @HiltViewModel
 class PaymentViewModel @Inject constructor(
@@ -51,6 +57,7 @@ class PaymentViewModel @Inject constructor(
     private val payoutRepository: VenuePayoutRepository,
     private val confirmAtVenue: ConfirmAtVenueUseCase,
     private val startTransfer: StartTransferUseCase,
+    private val clock: HoldClock,
     private val messages: PaymentMessages,
 ) : ViewModel() {
 
@@ -69,6 +76,23 @@ class PaymentViewModel @Inject constructor(
 
     private val _effects = Channel<PaymentEffect>(Channel.BUFFERED)
     val effects: Flow<PaymentEffect> = _effects.receiveAsFlow()
+
+    /**
+     * Số giây giữ chỗ còn lại, đếm theo `holdExpiresAtMillis` mà 040/041 nhận từ server (không tạo hạn mới) và giờ
+     * server (`HoldClock`). Chỉ tick khi màn đang thu (dừng khi màn ngừng hiển thị); về 0 thì khóa nút và báo hết hạn.
+     */
+    val countdown: StateFlow<Long> = flow {
+        val expiresAt = args?.holdExpiresAtMillis ?: return@flow
+        while (true) {
+            val remainingMs = expiresAt - clock.nowMillis()
+            val seconds = if (remainingMs <= 0) 0 else (remainingMs + 999) / 1000
+            emit(seconds)
+            if (seconds == 0L) return@flow
+            delay(remainingMs - (seconds - 1) * 1000)
+        }
+    }
+        .onEach(::onTick)
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(), _uiState.value.holdRemainingSeconds)
 
     private var applyJob: Job? = null
     private var confirmed = false
@@ -225,6 +249,14 @@ class PaymentViewModel @Inject constructor(
                     onConfirmFailed(result.exceptionOrNull() ?: PaymentError.Unknown())
                 }
             }
+        }
+    }
+
+    private fun onTick(seconds: Long) {
+        _uiState.update { it.copy(holdRemainingSeconds = seconds) }
+        if (seconds == 0L && !confirmed && !_uiState.value.expired) {
+            _uiState.update { it.copy(expired = true) }
+            _effects.trySend(PaymentEffect.ShowMessage(messages.string(PaymentMessages.Key.HOLD_EXPIRED)))
         }
     }
 

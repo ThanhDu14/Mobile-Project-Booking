@@ -5,6 +5,7 @@ import app.cash.turbine.test
 import com.example.booking_app.core.navigation.HoldToPaymentArgs
 import com.example.booking_app.core.testing.FakeClock
 import com.example.booking_app.core.testing.MainDispatcherRule
+import com.example.booking_app.feature.payment.domain.HoldClock
 import com.example.booking_app.feature.payment.domain.PaymentCalculator
 import com.example.booking_app.feature.payment.domain.VoucherRules
 import com.example.booking_app.feature.payment.domain.model.BookingPaymentState
@@ -114,6 +115,7 @@ class PaymentViewModelConfirmTest {
             FakePayout(account),
             ConfirmAtVenueUseCase(payments),
             StartTransferUseCase(payments),
+            HoldClock { now },
             messages,
         )
     }

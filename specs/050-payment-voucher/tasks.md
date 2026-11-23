@@ -151,10 +151,10 @@ description: "Danh sách task triển khai spec 050 – Thanh toán và Khuyến
 
 **Independent Test**: Kịch bản 5 và 7 ở [quickstart.md §3](quickstart.md); đơn tại sân để hết 5 phút → nút khóa, server từ chối.
 
-- [ ] T050 [P] [US3] Bổ sung `FN/expire-holds/handler.test.ts`: đơn `HOLD` + `AWAITING_TRANSFER` hết hạn → `EXPIRED`, xóa slot, redemption `RESERVED` bị xóa và `usedCount`/`userUsage.count` giảm 1, `paymentCodes/{code}.active = false`; tương tự cho nhóm định kỳ; đơn còn hạn không đổi
-- [ ] T051 [US3] Sửa `FN/expire-holds/handler.ts` dùng `releaseWrites` của `payment-voucher.ts` và ghi `paymentCodes.active = false` trong cùng transaction. T050 xanh
-- [ ] T052 [P] [US3] `TEST/ui/PaymentCountdownTest.kt`: đếm theo `holdExpiresAtMillis` (không khởi tạo 5 phút mới), dùng giờ server (`ServerTimeOffsetProvider` đang có); chạm 0 → `expired = true`, nút khóa, hiện `payment_hold_expired`
-- [ ] T053 [US3] Cài đồng hồ trong `PaymentViewModel` và `TransferViewModel` (ticker 1 giây, dừng khi màn ngừng thu). T052 xanh
+- [x] T050 [P] [US3] Bổ sung `FN/expire-holds/handler.test.ts`: đơn `HOLD` + `AWAITING_TRANSFER` hết hạn → `EXPIRED`, xóa slot, redemption `RESERVED` bị xóa và `usedCount`/`userUsage.count` giảm 1, `paymentCodes/{code}.active = false`; tương tự cho nhóm định kỳ; đơn còn hạn không đổi
+- [x] T051 [US3] Sửa `FN/expire-holds/handler.ts` dùng `releaseWrites` của `payment-voucher.ts` và ghi `paymentCodes.active = false` trong cùng transaction. T050 xanh
+- [x] T052 [P] [US3] `TEST/ui/PaymentCountdownTest.kt`: đếm theo `holdExpiresAtMillis` (không khởi tạo 5 phút mới), dùng giờ server (`ServerTimeOffsetProvider` đang có); chạm 0 → `expired = true`, nút khóa, hiện `payment_hold_expired`
+- [x] T053 [US3] Cài đồng hồ trong `PaymentViewModel` và `TransferViewModel` (ticker 1 giây, dừng khi màn ngừng thu). T052 xanh
 
 ---
 
