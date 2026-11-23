@@ -19,4 +19,5 @@ abstract class NotificationModule {
     @Binds abstract fun routes(impl: FirestoreNotificationRouteResolver): NotificationRouteResolver
     @Binds abstract fun inbox(impl: FirestoreNotificationRepository): NotificationRepository
     @Binds abstract fun preferences(impl: FirestoreNotificationPreferencesRepository): NotificationPreferencesRepository
+    @Binds abstract fun cache(impl: DataStoreNotificationPreferenceCache): NotificationPreferenceCache
 }

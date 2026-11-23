@@ -68,5 +68,8 @@ enum class GroupState { OFF, ON, MIXED }
 
 interface NotificationPreferencesRepository {
     suspend fun load(): Map<NotificationType, Boolean>
+    suspend fun loadSnapshot(): NotificationPreferenceSnapshot = NotificationPreferenceSnapshot(load())
     suspend fun setEnabled(types: Set<NotificationType>, enabled: Boolean)
 }
+
+data class NotificationPreferenceSnapshot(val values: Map<NotificationType, Boolean>, val fromCache: Boolean = false)
