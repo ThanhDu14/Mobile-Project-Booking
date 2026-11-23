@@ -13,4 +13,50 @@
     <string name="payment_hold_expired">Đã hết thời gian giữ chỗ</string>
     <string name="receipt_mock_note">Giao dịch giả lập phục vụ học tập - Không thu tiền thật</string>
     <string name="payment_late_refund">Đơn không thành công, chủ sân sẽ hoàn tiền</string>
+    <!-- Màn thanh toán: tóm tắt đơn (US1) -->
+    <string name="payment_order_summary">Tóm tắt đơn</string>
+    <string name="payment_slots_count">%1$d khung giờ</string>
+    <string name="payment_recurring_sessions">Đặt cố định · %1$d buổi</string>
+    <string name="payment_subtotal">Tạm tính</string>
+    <string name="payment_discount">Giảm giá</string>
+    <string name="payment_discount_with_code">Giảm giá (%1$s)</string>
+    <string name="payment_total">Tổng cộng</string>
+    <string name="payment_free_badge">Miễn phí</string>
+    <string name="payment_free_note">Mã khuyến mãi đã trừ hết tiền sân, bạn không cần thanh toán.</string>
+    <string name="payment_amount_vnd">%1$sđ</string>
+    <string name="payment_amount_minus_vnd">-%1$sđ</string>
+    <string name="payment_missing_order">Không tìm thấy thông tin đơn giữ chỗ. Vui lòng chọn lại khung giờ.</string>
+    <string name="payment_back_to_booking">Quay lại chọn giờ</string>
+    <string name="payment_confirm_coming">Chọn cách trả và xác nhận đơn sẽ có ở bước tiếp theo</string>
+    <string name="payment_confirm_button">Xác nhận đặt sân</string>
+
+    <!-- Voucher (US1, FR-005 – FR-008) -->
+    <string name="payment_voucher_title">Mã khuyến mãi</string>
+    <string name="payment_voucher_hint">Nhập mã khuyến mãi</string>
+    <string name="payment_voucher_apply">Áp dụng</string>
+    <string name="payment_voucher_remove">Gỡ bỏ</string>
+    <string name="payment_voucher_choose">Chọn mã có sẵn</string>
+    <string name="payment_voucher_applied">Đã áp dụng %1$s · giảm %2$sđ</string>
+    <string name="payment_voucher_min_order">Đơn hàng chưa đạt giá trị tối thiểu %1$sđ</string>
+    <string name="payment_voucher_expired_or_out">Mã khuyến mãi đã hết hạn hoặc hết lượt sử dụng</string>
+    <string name="payment_voucher_per_user">Bạn đã sử dụng hết lượt của mã khuyến mãi này</string>
+    <string name="payment_voucher_not_found">Mã khuyến mãi không tồn tại</string>
+    <string name="payment_voucher_empty_code">Vui lòng nhập mã khuyến mãi</string>
+    <string name="payment_voucher_check_failed">Không kiểm tra được mã, vui lòng thử lại</string>
+
+    <!-- Bottom sheet chọn voucher -->
+    <string name="payment_voucher_picker_title">Mã khuyến mãi khả dụng</string>
+    <string name="payment_voucher_list_failed">Không tải được danh sách mã khuyến mãi</string>
+    <string name="payment_voucher_list_empty">Chưa có mã khuyến mãi nào cho cơ sở này</string>
+    <string name="payment_voucher_retry">Thử lại</string>
+    <string name="payment_voucher_scope_venue">Của cơ sở</string>
+    <string name="payment_voucher_scope_system">SmashNow</string>
+    <string name="payment_voucher_percent">Giảm %1$d%%</string>
+    <string name="payment_voucher_percent_cap">Giảm %1$d%%, tối đa %2$sđ</string>
+    <string name="payment_voucher_fixed">Giảm %1$sđ</string>
+    <string name="payment_voucher_min_order_label">Đơn từ %1$sđ</string>
+    <string name="payment_voucher_no_min">Không yêu cầu đơn tối thiểu</string>
+    <string name="payment_voucher_valid_to">HSD %1$s</string>
+    <string name="payment_voucher_not_eligible">Chưa đủ điều kiện</string>
+    <string name="payment_voucher_use">Dùng</string>
 </resources>

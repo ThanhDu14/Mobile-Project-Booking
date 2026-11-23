@@ -73,14 +73,14 @@ description: "Danh sách task triển khai spec 050 – Thanh toán và Khuyến
 
 ### Test
 
-- [ ] T018 [P] [US1] `TEST/domain/PreviewVoucherUseCaseTest.kt`: `isActive = false`/ngoài `validFrom..validTo` → `Expired`; `subtotal < minOrderTotal` → `MinOrderNotMet(minOrderTotal)`; `usedCount >= usageLimit` → `OutOfUses`; voucher cơ sở ưu tiên hơn hệ thống khi trùng mã
-- [ ] T019 [P] [US1] `TEST/ui/PaymentViewModelVoucherTest.kt` (Turbine): áp mã hợp lệ cập nhật `breakdown`; gỡ mã về giá gốc; lỗi hiện ở `voucherError` với câu đúng spec ("Đơn hàng chưa đạt giá trị tối thiểu 200.000đ", "Mã khuyến mãi đã hết hạn hoặc hết lượt sử dụng"); tổng 0đ thì `isFree = true`
+- [x] T018 [P] [US1] `TEST/domain/PreviewVoucherUseCaseTest.kt`: `isActive = false`/ngoài `validFrom..validTo` → `Expired`; `subtotal < minOrderTotal` → `MinOrderNotMet(minOrderTotal)`; `usedCount >= usageLimit` → `OutOfUses`; voucher cơ sở ưu tiên hơn hệ thống khi trùng mã
+- [x] T019 [P] [US1] `TEST/ui/PaymentViewModelVoucherTest.kt` (Turbine): áp mã hợp lệ cập nhật `breakdown`; gỡ mã về giá gốc; lỗi hiện ở `voucherError` với câu đúng spec ("Đơn hàng chưa đạt giá trị tối thiểu 200.000đ", "Mã khuyến mãi đã hết hạn hoặc hết lượt sử dụng"); tổng 0đ thì `isFree = true`
 
 ### Cài đặt
 
-- [ ] T020 [P] [US1] `PAY/domain/repository/VoucherRepository.kt` + `PAY/data/FirestoreVoucherRepository.kt`: `available(venueId)` đọc song song `venues/{venueId}/vouchers` và `systemVouchers` (`isActive == true`, còn hạn); `findByCode` theo thứ tự cơ sở rồi hệ thống; map `type` `PERCENT`/`FIXED`, `value`, `maxDiscount`, `minOrderTotal`, `validFrom`, `validTo`, `usageLimit`, `usedCount`, `perUserLimit`
-- [ ] T021 [US1] `PAY/domain/usecase/PreviewVoucherUseCase.kt`. T018 xanh
-- [ ] T022 [US1] `PAY/ui/PaymentViewModel.kt` phần tóm tắt + voucher: nhận `HoldToPaymentArgs` qua `SavedStateHandle`, giữ `requestId` (= `bookingId` của args), state theo `PaymentUiState` ([data-model.md §3](data-model.md)). T019 xanh
+- [x] T020 [P] [US1] `PAY/domain/repository/VoucherRepository.kt` + `PAY/data/FirestoreVoucherRepository.kt`: `available(venueId)` đọc song song `venues/{venueId}/vouchers` và `systemVouchers` (`isActive == true`, còn hạn); `findByCode` theo thứ tự cơ sở rồi hệ thống; map `type` `PERCENT`/`FIXED`, `value`, `maxDiscount`, `minOrderTotal`, `validFrom`, `validTo`, `usageLimit`, `usedCount`, `perUserLimit`
+- [x] T021 [US1] `PAY/domain/usecase/PreviewVoucherUseCase.kt`. T018 xanh
+- [x] T022 [US1] `PAY/ui/PaymentViewModel.kt` phần tóm tắt + voucher: nhận `HoldToPaymentArgs` qua `SavedStateHandle`, giữ `requestId` (= `bookingId` của args), state theo `PaymentUiState` ([data-model.md §3](data-model.md)). T019 xanh
 - [ ] T023 [P] [US1] Layout `RES/layout/fragment_payment.xml`: banner `payment_mock_banner`, thẻ tóm tắt (tên cơ sở, địa chỉ, danh sách slot/buổi, tạm tính), ô nhập mã + nút Áp dụng/Gỡ, dòng giảm giá, tổng; đủ 4 trạng thái
 - [ ] T024 [P] [US1] `PAY/ui/VoucherPickerBottomSheet.kt` + `PAY/ui/VoucherAdapter.kt` (`ListAdapter` + `DiffUtil`) + `RES/layout/bottomsheet_voucher_picker.xml`, `RES/layout/item_payment_voucher.xml`
 - [ ] T025 [US1] `PAY/ui/PaymentFragment.kt`: ViewBinding, thu state bằng `repeatOnLifecycle(STARTED)`, nối bottom sheet; `PAY/data/di/PaymentModule.kt` bind repository

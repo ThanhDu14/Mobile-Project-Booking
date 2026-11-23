@@ -32,8 +32,11 @@ object PaymentCalculator {
         return if (rounded == 0L) total else minOf(rounded, total)
     }
 
-    fun breakdown(subtotal: Long, voucher: Voucher?): PaymentBreakdown {
-        val discount = voucher?.let { discount(subtotal, it.type, it.value, it.maxDiscount) } ?: 0L
+    fun breakdown(subtotal: Long, voucher: Voucher?): PaymentBreakdown =
+        breakdown(subtotal, voucher?.let { discount(subtotal, it.type, it.value, it.maxDiscount) } ?: 0L)
+
+    /** Bảng tiền khi đã có số tiền giảm (`AppliedVoucher.discount`, tính bằng [discount]). */
+    fun breakdown(subtotal: Long, discount: Long): PaymentBreakdown {
         val total = (subtotal - discount).coerceAtLeast(0L)
         return PaymentBreakdown(
             subtotal = subtotal,
