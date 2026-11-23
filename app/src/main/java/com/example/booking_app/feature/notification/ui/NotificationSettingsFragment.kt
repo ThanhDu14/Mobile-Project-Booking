@@ -142,13 +142,14 @@ class NotificationSettingsFragment : Fragment(R.layout.fragment_notification_set
                 model.state.collect { state ->
                     b.progress.isVisible = state.loading || state.busy
                     b.error.isVisible = state.error
+                    b.error.setText(if (state.readOnly) R.string.notification_cached_settings else R.string.notification_error)
                     b.retry.isVisible = state.error
                     b.scroll.isVisible = state.values.isNotEmpty()
                     updatePermissionStatus()
                     rows.forEach { (group, row) ->
                         val locked = BOOKING_NEW in group.types
-                        row.check.isEnabled = !locked && !state.busy
-                        row.root.isEnabled = !locked && !state.busy
+                        row.check.isEnabled = !locked && !state.busy && !state.readOnly
+                        row.root.isEnabled = !locked && !state.busy && !state.readOnly
                         if (state.values.isNotEmpty()) row.check.checkedState = when (NotificationPreferences.groupState(group.types, state.values)) {
                             GroupState.ON -> MaterialCheckBox.STATE_CHECKED
                             GroupState.OFF -> MaterialCheckBox.STATE_UNCHECKED

@@ -39,4 +39,5 @@
     <string name="notification_permission_off">Thông báo đẩy đang bị hệ điều hành chặn. Hộp thư vẫn hoạt động.</string>
     <string name="notification_permission_settings">Mở cài đặt hệ thống</string>
     <string name="notification_permission_enable">Bật thông báo đẩy</string>
+    <string name="notification_cached_settings">Đang dùng cài đặt đã lưu trên máy. Kết nối lại và thử lại để chỉnh sửa.</string>
 </resources>

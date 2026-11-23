@@ -89,6 +89,7 @@ data class PreferenceState(
     val values: Map<NotificationType, Boolean> = emptyMap(),
     val busy: Boolean = false,
     val error: Boolean = false,
+    val readOnly: Boolean = false,
 )
 @HiltViewModel
 class NotificationSettingsViewModel @Inject constructor(
@@ -114,17 +115,19 @@ class NotificationSettingsViewModel @Inject constructor(
         if (uid == null || mutableState.value.busy) return
         job = viewModelScope.launch {
             mutableState.value = PreferenceState()
-            try { mutableState.value = PreferenceState(loading = false, values = repository.load())
+            try {
+                val snapshot = repository.loadSnapshot()
+                mutableState.value = PreferenceState(loading = false, values = snapshot.values, error = snapshot.fromCache, readOnly = snapshot.fromCache)
             } catch (e: CancellationException) { throw e
             } catch (_: Exception) { mutableState.value = PreferenceState(loading = false, error = true) }
         }
     }
     fun toggle(types: Set<NotificationType>) {
-        if (NotificationType.BOOKING_NEW in types || mutableState.value.values.isEmpty()) return
+        if (NotificationType.BOOKING_NEW in types || mutableState.value.values.isEmpty() || mutableState.value.readOnly) return
         save(types, NotificationPreferences.groupState(types, mutableState.value.values) != GroupState.ON)
     }
     private fun save(types: Set<NotificationType>, enabled: Boolean) {
-        if (uid == null || mutableState.value.busy) return
+        if (uid == null || mutableState.value.busy || mutableState.value.readOnly) return
         job = viewModelScope.launch {
             mutableState.update { it.copy(busy = true, error = false) }
             try {

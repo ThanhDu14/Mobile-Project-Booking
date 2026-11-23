@@ -48,7 +48,7 @@ class NotificationViewModelTest {
     @Test fun `settings failed save preserves value and retry applies group only`() = runTest {
         Dispatchers.setMain(StandardTestDispatcher(testScheduler))
         val repository = mockk<NotificationPreferencesRepository>()
-        coEvery { repository.load() } returns NewAccountNotificationPreferences.defaults()
+        coEvery { repository.loadSnapshot() } returns NotificationPreferenceSnapshot(NewAccountNotificationPreferences.defaults())
         val group = setOf(NotificationType.BOOKING_CONFIRMED, NotificationType.BOOKING_REJECTED)
         coEvery { repository.setEnabled(group, false) } throws IllegalStateException("offline") andThen Unit
         val model = NotificationSettingsViewModel(repository, session)
@@ -62,6 +62,29 @@ class NotificationViewModelTest {
             assertTrue(model.state.value.values.getValue(NotificationType.BOOKING_NEW))
             model.toggle(setOf(NotificationType.BOOKING_NEW)); runCurrent()
             coVerify(exactly = 2) { repository.setEnabled(any(), any()) }
+        } finally { Dispatchers.resetMain() }
+    }
+    @Test fun `cached preferences are read only and retry reloads server before editing`() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        val repository = mockk<NotificationPreferencesRepository>()
+        coEvery { repository.loadSnapshot() } returns NotificationPreferenceSnapshot(NewAccountNotificationPreferences.defaults(), true) andThen
+            NotificationPreferenceSnapshot(NewAccountNotificationPreferences.defaults())
+        coEvery { repository.setEnabled(any(), any()) } returns Unit
+        val model = NotificationSettingsViewModel(repository, session)
+        try {
+            runCurrent()
+            assertTrue(model.state.value.readOnly)
+            assertTrue(model.state.value.error)
+            model.toggle(setOf(NotificationType.PROMOTION)); runCurrent()
+            coVerify(exactly = 0) { repository.setEnabled(any(), any()) }
+            model.retry(); runCurrent()
+            assertFalse(model.state.value.readOnly)
+            assertFalse(model.state.value.error)
+            model.toggle(setOf(NotificationType.PROMOTION)); runCurrent()
+            coVerify(exactly = 1) { repository.setEnabled(setOf(NotificationType.PROMOTION), true) }
+            states.value = "bob"; runCurrent()
+            states.value = null; runCurrent()
+            assertTrue(model.state.value.values.isEmpty())
         } finally { Dispatchers.resetMain() }
     }
 }
