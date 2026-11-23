@@ -62,3 +62,8 @@ T013/T035 remain partial for BOOKING_NEW, PROMOTION, REVIEW_NEW and OWNER_* (SYS
 3. Tap chỉ chuyển identifier đã biết; app tải lại nguồn và kiểm tra quyền hiện tại. Nếu nguồn mất/không được phép, hiển thị chi tiết từ title/body đã lưu.
 4. Không đổi state machine, owner nghiệp vụ hay kết quả của feature nguồn để phục vụ notification.
 5. Không có event envelope, function request/response, retry schedule, idempotency key hoặc dead-letter schema nào được chốt ở đây. D và từng producer phải đồng thuận trước implementation.
+
+
+## Quyết định 23/11/2026 — backend/FCM
+
+Người dùng đã duyệt D1, D2-W1, T1, C1, P1 và S1 trong [backend-decision-package.md](../backend-decision-package.md). Schema/giới hạn chính xác được ghi tại tài liệu đó và docs/design/database/README.md. Phần đề xuất cũ xung đột được thay bằng các quyết định này, đặc biệt: không tạo lại job cho inbox có sẵn sau retention; không backfill push. Các producer ngoài W1/source outbox/generation vẫn chưa duyệt. Đây là phê duyệt contract, chưa phải bằng chứng triển khai hay deploy.

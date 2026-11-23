@@ -24,3 +24,10 @@ These interfaces implement the explicitly requested repairs. They use the existi
 Hồ sơ bổ sung dùng purpose VENUE_ADDITION, độc lập với quyền OWNER/APPROVED. Hồ sơ cũ thiếu purpose thuộc OWNER_ONBOARDING. Duyệt tạo venues/{applicationId} một lần; từ chối/nộp lại không đổi tài khoản hoặc venue cũ. Không giới hạn số venue/hồ sơ.
 
 Hợp đồng đầy đủ: [owner-application-api.md](../../110-owner-onboarding/contracts/owner-application-api.md).
+
+
+## Feature 100 — phê duyệt 23/11/2026
+
+D2-W1/S1: SYSTEM qua server ADMIN claim + ACTIVE ADMIN profile, scan recipient ACTIVE/không deleting giữ nguyên. Tối đa100 recipient/source transaction, re-read profile, inbox và job. Inbox tồn tại khớp giữ isRead/createdAt và không backfill job cũ. Kết quả hồ sơ enqueue theo applicationId/submittedAt/decision cùng transaction, không đổi claim recovery. OWNER_REVOKED còn thiếu request identity.
+
+Nguồn: [gói quyết định đã duyệt](../../100-notification/backend-decision-package.md). Chỉ áp dụng phạm vi ID được duyệt; chưa deploy.

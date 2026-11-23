@@ -107,3 +107,10 @@ Feature 120 remains the only reviewer and only owner-role grantor. Its approval 
 SUBMIT and owner-docs SIGN_UPLOAD include purpose: VENUE_ADDITION; omitted purpose defaults to OWNER_ONBOARDING. Require OWNER claim plus active current OWNER/APPROVED profile. Recheck applicant ownership, immutable purpose and rights inside submission/review transactions. New UUID creates a PENDING application; REJECTED reuses the same ID and clears previous reason/review metadata. Exact repeated requests are idempotent. Pending/approved applications cannot be edited.
 STATUS with purpose VENUE_ADDITION and optional applicationId returns global ownerStatus/role plus only the requested owned application, or null for an unused draft ID. LIST with purpose VENUE_ADDITION returns all owned additions newest first, without an invented count limit. Missing purpose in legacy data means OWNER_ONBOARDING.
 Additional approval creates venues/{applicationId} once and updates application/notification only; rejection updates application/reason/notification only. Neither changes user profile nor merges claims. RECOVER_CLAIMS on an addition is a no-op. Revoked applicant rights deny pending addition approval.
+
+
+## Feature 100 — quyết định đã duyệt 23/11/2026
+
+D2-W1: kết quả duyệt/từ chối enqueue job cạnh UUID inbox trong source transaction theo applicationId/submittedAt/decision. Không đổi API/status hoặc claim recovery. Chỉ dùng approved current-recipient gate; OWNER_REVOKED identity và purpose-aware Android result routing còn chờ contract riêng.
+
+Nguồn: [backend decision package](../../100-notification/backend-decision-package.md). Chưa deploy hoặc migration dữ liệu thật.

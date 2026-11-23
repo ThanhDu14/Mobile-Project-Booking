@@ -61,3 +61,8 @@ User explicitly approved Firestore as authority with a DataStore cache scoped to
 Reuse the existing session DataStore. Cache keys use a `user_cache.notification.<sha256(uid)>.` prefix; the cache stores only resolved per-type booleans and a presence marker. A local `user_cache_epoch` invalidates operations started before sign-out. `DataStoreSessionPrefs.clearOnSignOut()` clears the user-cache namespace and increments the epoch. This path runs for ACCOUNT_DELETED even though authenticated SignOutHooks are skipped; welcome/session recovery behavior outside the cache remains unchanged. These are local cache keys, not Firestore fields or an FCM token store.
 
 Preference writes use a Firestore transaction that reads the existing profile and updates only selected dotted preference keys plus updatedAt, instead of direct update(). Client transactions fail offline and do not persist an offline mutation queue ([Firebase transaction behavior](https://firebase.google.com/docs/firestore/manage-data/transactions)). Cache IO failure must not turn an acknowledged server success into a preference error. BOOKING_NEW remains true and PROMOTION defaults false even when restoring cached values.
+
+
+## Quyết định 23/11/2026 — backend/FCM
+
+Người dùng đã duyệt D1, D2-W1, T1, C1, P1 và S1 trong [backend-decision-package.md](backend-decision-package.md). Schema/giới hạn chính xác được ghi tại tài liệu đó và docs/design/database/README.md. Phần đề xuất cũ xung đột được thay bằng các quyết định này, đặc biệt: không tạo lại job cho inbox có sẵn sau retention; không backfill push. Các producer ngoài W1/source outbox/generation vẫn chưa duyệt. Đây là phê duyệt contract, chưa phải bằng chứng triển khai hay deploy.

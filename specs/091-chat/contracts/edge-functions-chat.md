@@ -102,3 +102,10 @@ export async function anonymizeCommunityChats(uid: string): Promise<void>
 | M1 | `upload` khi không trong cuộc / `image/gif` / 3 MB | `NOT_PARTICIPANT` / `INVALID_ARGUMENT` / `INVALID_ARGUMENT` | US4 |
 | M2 | `download` path của tin `RECALLED`, `HIDDEN`, chat khác | Không trả URL | AC 4.4, FR-015 |
 | A1 | `anonymizeCommunityChats` | Chat riêng `READ_ONLY`, `memberSnapshots.{uid} = null`; tin của uid `senderDeleted = true` | Edge Cases (R16) |
+
+
+## Feature 100 — phê duyệt 23/11/2026
+
+C1: chat-send callback không loại recipient muted/viewing trước inbox. Worker xét participant.muted và per-installation presence khi quyết định push. Callback sau commit vẫn best effort cho tới khi source enqueue/fanout được duyệt riêng; không tuyên bố chat inbox đã durable.
+
+Nguồn: [gói quyết định đã duyệt](../../100-notification/backend-decision-package.md). Chỉ áp dụng phạm vi ID được duyệt; chưa deploy.

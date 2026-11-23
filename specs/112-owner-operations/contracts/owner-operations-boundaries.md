@@ -37,3 +37,10 @@ POST owner-statistics-source: {venueId,startDate,endDate}, ISO local dates, 1–
 Không dùng dailyStats. Tiền lấy từ PAID total, DEPOSITED depositAmount, REFUNDED refundAmount riêng; không lấy giá cấu hình làm doanh thu. Occupancy loại BLOCKED/deduplicate slot ID, numerator CONFIRMED/COMPLETED/NO_SHOW; peak bucket 60 phút Asia/Ho_Chi_Minh. Booking cũ còn là bằng chứng sau khi court tắt/giá đổi. Không có version lịch sử giờ mở/giá trong schema nên availability lịch sử dùng cấu hình hiện tại và slots còn lưu; không khẳng định tái dựng được cấu hình đã xóa.
 
 Báo cáo quá giới hạn dữ liệu yêu cầu chọn kỳ ngắn hơn; lỗi không hiển thị thành empty hoặc số liệu mới. Ngày hiện tại ghi partial, refresh lấy cả cấu hình và dữ liệu mới.
+
+
+## Feature 100 — quyết định đã duyệt 23/11/2026
+
+D2-W1: owner-booking-command và booking-timeout giữ UUID inbox cũ, enqueue job bookingId/canonical terminal type trong cùng source transaction. Helper đọc recipient ACTIVE/không deleting trước mọi write; owner reject và timeout chia sẻ cùng identity BOOKING_REJECTED. Owner-update-session/cancel/dropin-close không gọi lại callback waitlist sau commit. Không đổi refund/state machine, không thêm BOOKING_NEW/reminder hoặc generation của DROPIN_CHANGED.
+
+Nguồn: [backend decision package](../../100-notification/backend-decision-package.md). Chưa deploy hoặc migration dữ liệu thật.

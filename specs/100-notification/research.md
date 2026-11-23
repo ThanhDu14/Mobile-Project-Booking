@@ -86,3 +86,8 @@ User requested durable delivery-state/job design: see delivery-state-proposal.md
 The user approved DataStore as a UID-scoped cache only: Firestore authority, update cache after server success, read-only fallback on failed server loading, retry to restore editing, no offline mutation queue, and cleanup on logout/account deletion. See data-model.md for the local namespace/epoch implementation and the distinction between network failure and missing/forbidden profiles. T012's outstanding cache policy is now confirmed; T039 closure requires implementation verification.
 
 The user separately approved GROUP_ACTIVITY Android routing according to Feature 090's existing subtype catalog. Moderator membership is required for requests; event posts must be readable/existing; removed/deleted/unknown targets fall back as specified in contracts/event-integration.md. This confirms Android routing only, not producer event transport, fanout, identity or delivery storage. Other missing source routes remain partial.
+
+
+## Backend/FCM decisions approved 23/11/2026
+
+D1, D2-W1, T1, C1, P1 and S1 were explicitly approved by the user in backend-decision-package.md. That document and CSDL now govern retry/lease/receipt retention, W1 transaction identities, token lifecycle, account-wide chat suppression, generic data-only push and server-only SYSTEM. T004/T005 remain partial for producer identities/reminders outside W1. Approval is separate from implementation/verification and does not authorize deploy or live migration.

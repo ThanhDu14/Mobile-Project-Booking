@@ -6,7 +6,7 @@ Yêu cầu Rules, chưa phải Rules code. Nguồn: DB README §4.13/§7, spec 1
 |---|---|---|---|---|
 | Signed-in user, own uid | Chỉ `users/{uid}/notifications/{id}` của mình | Deny | Chỉ document của mình, affected keys chỉ `isRead` | Deny |
 | User khác / unauthenticated | Deny | Deny | Deny | Deny |
-| Admin client | Không đọc xuyên user | Deny mặc định; SYSTEM gửi qua server trong khi chờ giải quyết DB §7 | Chỉ `isRead` trên hộp thư mình | Deny |
+| Admin client | Không đọc xuyên user | Deny; SYSTEM chỉ gửi qua server (S1 đã duyệt 23/11) | Chỉ `isRead` trên hộp thư mình | Deny |
 | Trusted server/Edge Function | Server access | Tạo sau khi xác thực event/recipient/type | Không có update field được định nghĩa; không suy diễn schema delivery | Account deletion theo lifecycle server |
 
 User preference write tách riêng trên `users/{uid}` và chỉ được sửa `notificationPrefs`, bảo toàn field hồ sơ khác. Token write theo `fcmTokens` và lifecycle đã thống nhất. Exact profile `diff().affectedKeys()` phải được tích hợp với Rules user hiện có, không ghi đè quy tắc nhóm khác.
@@ -28,3 +28,7 @@ Edge Function dùng service account bypass Rules, do đó phải xác minh ngu�
 
 Code bỏ qua lỗi thông thường và SessionManager giới hạn tổng hook năm giây; việc deleteToken được thử gọi không chứng minh mọi lần rotate/provider invalidation đã thành công. Chưa có contract đủ cho đăng ký/refresh, chuyển UID sau detach thất bại, chính sách quyền OS, kích thước/format token list hay giới hạn add/remove. T011/T051/T052 vẫn partial. Chi tiết lựa chọn và bằng chứng nằm trong ../decision-review-2026-11-23.md; không đổi Rules token theo suy đoán.
 
+
+## Approved backend/FCM contract, 23/11/2026
+
+User approved D1, D2-W1, T1, C1, P1 and S1 in [backend-decision-package.md](../backend-decision-package.md). This resolves the historical T007/T008/T011/T014 decisions above; it does not establish all producer identities in T004/T005. CSDL §7 now explicitly denies Admin client create; SYSTEM remains authenticated Edge Function only. Both delivery parent/receipt paths are server-only, including ADMIN reads. Token mutation and presence Rules follow the exact T1/C1 scope in the approved package. Existing own-inbox/isRead/preference policy remains in effect. No deployment or live migration is authorized.

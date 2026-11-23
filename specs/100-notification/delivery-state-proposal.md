@@ -1,6 +1,6 @@
-# Delivery-state/job proposal — pending schema approval
+# Delivery-state/job design history — D1/D2-W1 approved 23/11/2026
 
-Requested by user on 2026-11-22: design durable delivery-state/job instead of accepting best-effort push. This document proposes a schema; it does not authorize creating it or changing database/security contracts.
+Requested by user on 2026-11-22. **The user approved D1 and D2-W1 on 23/11/2026 in [backend-decision-package.md](backend-decision-package.md). That frozen decision supersedes conflicting historical proposals below**, including job ID, per-token fields, initialization, and never recreating jobs for existing inbox after retention. CSDL and owning contracts have been updated. Approval excludes other producer generations/outboxes, deploy and live migration; implementation evidence is recorded separately.
 
 ## Transaction boundary
 
@@ -128,3 +128,8 @@ An FCM call already in flight cannot be recalled by deletion or a changed prefer
 ### Tests required after approval
 
 Use a fake FCM sender and local emulator transactions to exercise crash before send, success before receipt commit, expired SENDING recovery, stale lease completion, one token's transient failure after another succeeds, budget exhaustion, invalid-token removal preserving other/refreshed tokens, initialization across pages, and deletion racing enqueue/completion. Existing T054 verifies current inbox/profile cleanup only and does not cover this proposed storage. Verify the owned-lease and recipient read sets against actual producer transactions, not a post-commit callback stub. No tests against real FCM or hosted data are authorized.
+
+
+## Quyết định 23/11/2026 — backend/FCM
+
+Người dùng đã duyệt D1, D2-W1, T1, C1, P1 và S1 trong [backend-decision-package.md](backend-decision-package.md). Schema/giới hạn chính xác được ghi tại tài liệu đó và docs/design/database/README.md. Phần đề xuất cũ xung đột được thay bằng các quyết định này, đặc biệt: không tạo lại job cho inbox có sẵn sau retention; không backfill push. Các producer ngoài W1/source outbox/generation vẫn chưa duyệt. Đây là phê duyệt contract, chưa phải bằng chứng triển khai hay deploy.

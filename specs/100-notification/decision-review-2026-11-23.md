@@ -48,3 +48,8 @@ REVIEW_REPLIED is canonical with the previously approved REVIEW_REPLY read/routi
 4. Approve T014 generic lock-screen text plus authenticated inbox identifier (recommended), or explicitly permit title/body display. Payload, channel handling and token registration must use the same agreement before closing T053.
 
 For the cache and group routing approved here, no shared Firestore schema or source feature permission changes are needed. For the unresolved items, keep their tasks open and continue independent validation.
+
+
+## Quyết định 23/11/2026 — backend/FCM
+
+Người dùng đã duyệt D1, D2-W1, T1, C1, P1 và S1 trong [backend-decision-package.md](backend-decision-package.md). Schema/giới hạn chính xác được ghi tại tài liệu đó và docs/design/database/README.md. Phần đề xuất cũ xung đột được thay bằng các quyết định này, đặc biệt: không tạo lại job cho inbox có sẵn sau retention; không backfill push. Các producer ngoài W1/source outbox/generation vẫn chưa duyệt. Đây là phê duyệt contract, chưa phải bằng chứng triển khai hay deploy.

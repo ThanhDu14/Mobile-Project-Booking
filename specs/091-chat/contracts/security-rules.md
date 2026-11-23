@@ -66,3 +66,10 @@ match /{path=**}/participants/{uid} {
 | S2 | `authenticated` `insert` vào `chat-media/{chatId}/...` | Bị chặn |
 | S3 | `anon` `select` | 0 dòng |
 | S4 | Cấu hình bucket `file_size_limit = 2097152`, đúng 3 MIME | Đúng |
+
+
+## Feature 100 — phê duyệt 23/11/2026
+
+C1: thêm chats/{chatId}/participants/{uid}/presence/{installationId} đúng field viewingUntil Timestamp, own UID + current membership, tối đa request.time+10 phút. Lease 60 giây/renew45, leave chỉ xóa installation mình; không còn ghi aggregate viewingUntil từ client mới. Dọn presence khi purge/account deletion. Bất kỳ lease sống nào suppress push cho cả tài khoản; muted/viewing vẫn có inbox. Durable chat enqueue/fanout chưa được duyệt.
+
+Nguồn: [gói quyết định đã duyệt](../../100-notification/backend-decision-package.md). Chỉ áp dụng phạm vi ID được duyệt; chưa deploy.
