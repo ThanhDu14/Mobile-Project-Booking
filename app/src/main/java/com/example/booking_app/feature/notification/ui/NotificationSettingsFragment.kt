@@ -45,11 +45,13 @@ val notificationGroups = listOf(
 
 @AndroidEntryPoint
 class NotificationSettingsFragment : Fragment(R.layout.fragment_notification_settings) {
+    @javax.inject.Inject lateinit var tokenCoordinator: com.example.booking_app.feature.notification.data.NotificationTokenCoordinator
     private val model: NotificationSettingsViewModel by viewModels()
     private var permissionDenied = false
     private val requestPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         permissionDenied = !granted
         updatePermissionStatus()
+        tokenCoordinator.requestSync()
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

@@ -21,3 +21,11 @@ abstract class NotificationModule {
     @Binds abstract fun preferences(impl: FirestoreNotificationPreferencesRepository): NotificationPreferencesRepository
     @Binds abstract fun cache(impl: DataStoreNotificationPreferenceCache): NotificationPreferenceCache
 }
+
+/** Platform bindings stay available when UI tests replace the feature repositories. */
+@Module
+@InstallIn(SingletonComponent::class)
+abstract class NotificationDeviceModule {
+    @Binds abstract fun installation(impl: NotificationDevicePrefs): com.example.booking_app.core.session.InstallationIdentity
+    @Binds abstract fun registrationGuard(impl: NotificationTokenCoordinator): com.example.booking_app.core.session.FcmRegistrationGuard
+}

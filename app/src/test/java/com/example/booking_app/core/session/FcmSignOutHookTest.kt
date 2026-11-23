@@ -11,6 +11,13 @@ class FcmSignOutHookTest {
     private val tokens = FakeFcmTokenSource(log)
     private val store = FakeFcmTokenStore(log)
     private val hook = FcmSignOutHook(tokens, store)
+    @Test fun `registration pauses before detach and metadata failure does not skip existing cleanup`() = runTest {
+        val guard = dagger.Lazy<FcmRegistrationGuard> { object : FcmRegistrationGuard {
+            override suspend fun pauseRegistration(uid: String) { log += "pause:$uid"; error("metadata failure") }
+        } }
+        FcmSignOutHook(tokens, store, guard).beforeSignOut("u1")
+        assertEquals(listOf("pause:u1", "token", "remove:u1:tok-1", "deleteToken"), log)
+    }
 
     @Test
     fun `go token khoi users roi xoa token cua may`() = runTest {

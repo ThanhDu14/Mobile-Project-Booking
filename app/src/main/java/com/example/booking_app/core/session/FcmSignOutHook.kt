@@ -18,17 +18,23 @@ interface FcmTokenStore {
     suspend fun removeToken(uid: String, token: String)
 }
 
+/** Feature-owned registration pauses before the existing token removal hook. */
+interface FcmRegistrationGuard { suspend fun pauseRegistration(uid: String) }
+
 /**
- * Đăng xuất thì máy này không nhận thông báo của tài khoản nữa (spec 011 FR-007, research R5):
+ * Cố gắng gỡ đăng ký push của máy này khi đăng xuất (spec 011 FR-007, research R5; 100 T1/P1):
  * gỡ token khỏi `users/{uid}` (Rules P15) rồi xóa token trên máy. Mọi bước bỏ qua lỗi: mất mạng vẫn xóa token
- * trên máy, token cũ còn trong `fcmTokens` sẽ bị `send-notification` gỡ khi FCM trả `UNREGISTERED`.
+ * trên máy, token cũ còn trong `fcmTokens` sẽ bị delivery worker gỡ khi FCM trả `UNREGISTERED`.
+ * Detach/rotation có thể thất bại; data cũ vẫn có thể tới máy. Feature 100 kiểm UID/quyền OS trước hiển thị.
  */
 class FcmSignOutHook @Inject constructor(
     private val tokenSource: FcmTokenSource,
     private val tokenStore: FcmTokenStore,
+    private val registrationGuard: dagger.Lazy<FcmRegistrationGuard>? = null,
 ) : SignOutHook {
 
     override suspend fun beforeSignOut(uid: String) {
+        ignoringErrors { registrationGuard?.get()?.pauseRegistration(uid) }
         val token = ignoringErrors { tokenSource.token() }
         if (token != null) ignoringErrors { tokenStore.removeToken(uid, token) }
         ignoringErrors { tokenSource.deleteToken() }
