@@ -158,7 +158,12 @@ T(`Q6: 5 lượt hủy đồng thời, 10 người chờ (partySize 1–3) → k
     if (Number(session.registeredCount) > 10 || held > 10) overCapacity++;
     // Không ai được thông báo "được nhận" hai lần (thông báo chỉ gửi sau commit thành công).
     const perUid = new Map<string, number>();
-    for (const n of sent) perUid.set(n.userId, (perUid.get(n.userId) ?? 0) + 1);
+    for (const uid of s.waitlistUids) {
+      const inbox = await firestore.query("notifications", [], { parent: `users/${uid}` });
+      for (const n of inbox.filter(n => n.data.type === "DROPIN_SPOT_OPENED" && (n.data.data as any).sessionId === s.sessionId)) {
+        perUid.set(uid, (perUid.get(uid) ?? 0) + 1);
+      }
+    }
     doublePromoted += [...perUid.values()].filter((c) => c > 1).length;
     const promoted = regs
       .filter((d) => d.data.promotedAt instanceof Date)
@@ -166,7 +171,8 @@ T(`Q6: 5 lượt hủy đồng thời, 10 người chờ (partySize 1–3) → k
       .sort((a, b) => a - b);
     const expected = simulate(parties, 5);
     if (JSON.stringify(promoted) !== JSON.stringify(expected)) orderViolations++;
-    assertEquals(sent.length, expected.length, "mỗi người được đẩy lên nhận đúng một thông báo");
+    assertEquals([...perUid.values()].reduce((a, b) => a + b, 0), expected.length, "mỗi người được đẩy lên nhận đúng một inbox");
+    assertEquals(sent, [], "helper owns delivery; no duplicate callback");
     assertEquals(rs.reduce((n, r) => n + Number(r.body.promotedCount), 0), expected.length, "promotedCount cộng lại");
     await assertWaitlistInvariant(s.sessionId);
   }
@@ -215,7 +221,12 @@ T("Hủy có đẩy lên: response có promotedCount (không lộ danh tính), g
   assertEquals(r.body.promotedCount, 1);
   assert(!JSON.stringify(r.body).includes(u), "không lộ danh tính người được đẩy lên");
   assertEquals(r.body.session, { registeredCount: 2, capacity: 2, status: "FULL" });
-  assertEquals(sent, [{ type: "DROPIN_SPOT_OPENED", userId: u, data: { sessionId: a.sessionId, autoLeftSessionIds: [b.sessionId] } }]);
+  assertEquals(sent, []);
+  const inbox = await firestore.query("notifications", [], { parent: `users/${u}` });
+  const notification = inbox.find(n => n.data.type === "DROPIN_SPOT_OPENED" && (n.data.data as any).sessionId === a.sessionId)!;
+  assertEquals(notification.data.data, { sessionId: a.sessionId, autoLeftSessionIds: [b.sessionId] });
+  const jobs = await firestore.query("notificationDeliveries", [{ field: "recipientUid", op: "EQUAL", value: u }]);
+  assertEquals(jobs.length, 1);
   assertEquals((await regOf(b.sessionId, u)).waitlistEndReason, "AUTO_LEFT_OVERLAP");
 
   // Gửi thông báo lỗi: hủy và đẩy lên vẫn thành công.

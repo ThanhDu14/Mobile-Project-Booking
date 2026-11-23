@@ -200,12 +200,7 @@ export async function handleOwnerUpdateSession(
       }
       return promotion.promoted;
     });
-    for (const person of promoted) {
-      try {
-        await notify({ type: "DROPIN_SPOT_OPENED", userId: person.uid,
-          data: { sessionId, autoLeftSessionIds: person.autoLeftSessionIds } });
-      } catch (error) { console.warn("[owner-update-session] notification delivery failed", error); }
-    }
+    // Waitlist helper enqueued inbox + delivery atomically. No duplicate post-commit callback (100 D2-W1).
     return Response.json({ success: true, sessionId });
   } catch (err) {
     if (err instanceof HttpError) {

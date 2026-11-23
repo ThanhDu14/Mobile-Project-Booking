@@ -89,6 +89,7 @@ function fixture() {
   };
   store.docs.set("dropInSessions/s", session);
   for (const [uid, partySize, ticket] of [["a", 2, 1], ["b", 1, 2]] as const) {
+    store.docs.set(`users/${uid}`, { accountStatus: "ACTIVE" });
     store.docs.set(`dropInSessions/s/registrations/${uid}`, {
       userId: uid,
       sessionId: "s",
@@ -146,6 +147,9 @@ Deno.test("waitlist promotion skips oversized party, preserves price, creates ti
     "AUTO_LEFT_OVERLAP",
   );
   assertEquals(store.docs.get("dropInSessions/other")!.waitlistCount, 0);
+  const jobs = [...store.docs.entries()].filter(([path]) => path.startsWith("notificationDeliveries/"));
+  assertEquals(jobs.length, 1);
+  assertEquals(jobs[0][1].recipientUid, "b");
   const snapshot = structuredClone(store.docs);
   await store.runTransaction((tx) => promoteFromWaitlist(tx, session, now));
   assertEquals(store.docs, snapshot);

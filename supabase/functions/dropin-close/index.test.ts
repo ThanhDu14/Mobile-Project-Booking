@@ -63,10 +63,13 @@ T("Q10: buổi tới mốc T−30 có 2 lượt chờ → cả 2 CLOSED, không 
   }
   const sa = await sessionOf(a.sessionId);
   assertEquals([sa.waitlistTickets, sa.waitlistCount, sa.status], [[], 0, "FULL"]);
-  assertEquals(
-    sent.map((n) => [n.type, n.userId, n.data]).sort((x, y) => String(x[1]).localeCompare(String(y[1]))),
-    a.waitlistUids.map((u) => ["DROPIN_WAITLIST_CLOSED", u, { sessionId: a.sessionId, reason: "CLOSED" }]),
-  );
+  assertEquals(sent, []); // No duplicate post-commit callback.
+  for (const uid of a.waitlistUids) {
+    const inbox = await firestore.query("notifications", [], { parent: `users/${uid}` });
+    assertEquals(inbox.filter(n => n.data.type === "DROPIN_WAITLIST_CLOSED" && (n.data.data as any).sessionId === a.sessionId).length, 1);
+    const jobs = await firestore.query("notificationDeliveries", [{ field: "recipientUid", op: "EQUAL", value: uid }]);
+    assertEquals(jobs.length, 1);
+  }
   // Buổi còn xa không bị đụng tới; buổi đã qua endAt thành COMPLETED.
   assertEquals((await sessionOf(b.sessionId)).waitlistTickets, [1]);
   assertEquals((await regOf(b.sessionId, b.waitlistUids[0])).status, "WAITLISTED");
