@@ -20,10 +20,25 @@ Set-Location firestore-tests
 npm test -- --run
 Set-Location ..
 supabase start
-supabase functions serve send-notification --env-file supabase/.env.local
+# Supabase runtime/cron execution additionally needs Docker; see the backend harness below.
 ```
 
-For Deno tests, run the command documented by the implemented function (expected `deno test`); do not invent a package script. Existing repo currently has a Vitest Firestore test scaffold but no notification tests/functions, so commands may need to be aligned with the final harness before this guide is executable.
+The implemented W1 transport is an internal transaction helper plus notification-delivery worker, not a new generic send-notification event envelope. Legacy callback transports outside W1 remain pending. Do not serve an invented HTTP envelope to make these scenarios appear complete.
+
+### Approved backend harness (23/11/2026)
+
+Deno must be on PATH, or pass -DenoExecutable to scripts/notification/validate-backend.ps1. Fake suite uses --allow-env only, without network permission. Emulator suite requires explicit demo-* project/localhost hosts and injects fake FCM; the HTTP entrypoint refuses an emulator invocation without a fake sender.
+
+```powershell
+./scripts/notification/validate-backend.ps1 -Suite Fake
+$env:FIREBASE_PROJECT_ID = 'demo-f100-backend'
+$env:FIRESTORE_EMULATOR_HOST = '127.0.0.1:8080'
+$env:FIREBASE_AUTH_EMULATOR_HOST = '127.0.0.1:9099'
+npx.cmd --yes firebase-tools@15 emulators:exec --project demo-f100-backend --only auth,firestore 'powershell -ExecutionPolicy Bypass -File scripts/notification/validate-backend.ps1 -Suite Emulator'
+# -Suite Affected runs worker/SYSTEM plus presence cleanup when only these changed.
+```
+
+Run Rules suites notification-delivery-security, notification-security, users-profile and chats in firestore-tests against the Firestore emulator. Validation/backend-2026-11-23.md records executed commands, outputs and limitations. Cron SQL is reviewable but was not applied; a local Supabase runtime needs Docker and a fake-sender composition, not removal of the no-real-FCM guard.
 
 ## Scenarios and expected outcomes
 
