@@ -68,6 +68,23 @@ class NotificationViewModel @Inject constructor(
     }
     fun markAll() = read(null)
     fun tap(item: Notification) = read(item)
+    fun openPush(recipientUid: String, id: String) {
+        if (recipientUid != currentUid || id.isBlank() || '/' in id || mutableState.value.busy) return
+        val expected = currentUid
+        job = viewModelScope.launch {
+            mutableState.update { it.copy(busy = true) }
+            try {
+                val item = repository.loadById(id)
+                if (currentUid != expected) return@launch
+                mutableState.update { it.copy(busy = false) }
+                if (item != null) read(item)
+            } catch (e: CancellationException) { throw e
+            } catch (_: Exception) {
+                retryAction = { openPush(recipientUid, id) }
+                mutableState.update { it.copy(busy = false, error = true) }
+            }
+        }
+    }
     private fun read(item: Notification?) {
         if (mutableState.value.busy || currentUid == null) return
         job = viewModelScope.launch {

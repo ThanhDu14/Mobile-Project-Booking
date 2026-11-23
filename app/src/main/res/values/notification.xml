@@ -41,4 +41,5 @@
     <string name="notification_permission_enable">Bật thông báo đẩy</string>
     <string name="notification_cached_settings">Đang dùng cài đặt đã lưu trên máy. Kết nối lại và thử lại để chỉnh sửa.</string>
     <string name="notification_channel_description">Thông báo từ SmashNow</string>
+    <string name="notification_push_generic">Bạn có thông báo mới</string>
 </resources>

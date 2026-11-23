@@ -33,6 +33,8 @@ data class NotificationPage(
 
 interface NotificationRepository {
     suspend fun loadPage(after: NotificationCursor? = null): NotificationPage
+    /** Own-user server lookup for an authenticated push tap; absent item opens the inbox. */
+    suspend fun loadById(id: String): Notification? = null
     suspend fun markRead(id: String)
     /** Covers the entire inbox, including items outside the currently displayed page. */
     suspend fun markAllRead()

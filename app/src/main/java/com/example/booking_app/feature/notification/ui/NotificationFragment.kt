@@ -20,6 +20,7 @@ import com.example.booking_app.feature.notification.domain.Notification
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.first
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -27,9 +28,19 @@ import java.time.format.DateTimeFormatter
 @AndroidEntryPoint
 class NotificationFragment : Fragment(R.layout.fragment_notification) {
     private val model: NotificationViewModel by viewModels()
+    private var pushConsumed = false
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         val b = FragmentNotificationBinding.bind(view)
         val adapter = NotificationAdapter(model::tap)
+        pushConsumed = savedInstanceState?.getBoolean("pushConsumed") == true
+        val pushId = arguments?.getString("notificationId").orEmpty()
+        if (pushId.isNotEmpty() && !pushConsumed) {
+            viewLifecycleOwner.lifecycleScope.launch {
+                model.state.first { !it.loading && !it.busy }
+                pushConsumed = true
+                model.openPush(arguments?.getString("recipientUid").orEmpty(), pushId)
+            }
+        }
         b.list.layoutManager = LinearLayoutManager(requireContext())
         b.list.adapter = adapter
         b.toolbar.setNavigationOnClickListener { findNavController().navigateUp() }
@@ -72,6 +83,10 @@ class NotificationFragment : Fragment(R.layout.fragment_notification) {
                 } }
             }
         }
+    }
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putBoolean("pushConsumed", pushConsumed)
     }
 }
 

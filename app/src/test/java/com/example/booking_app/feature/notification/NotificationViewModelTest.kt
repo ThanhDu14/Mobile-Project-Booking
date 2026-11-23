@@ -6,6 +6,7 @@ import com.example.booking_app.feature.notification.ui.*
 import io.mockk.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.*
 import org.junit.Assert.*
 import org.junit.Test
@@ -16,6 +17,27 @@ class NotificationViewModelTest {
     private val states = MutableStateFlow<String?>("alice")
     init { every { session.uids } returns states }
     private fun item() = Notification("one", "SYSTEM", "Title", "Body", emptyMap(), false, 1)
+    @Test fun `push tap loads own saved detail beyond first page and rejects foreign UID`() = runTest {
+        Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        val repository = mockk<NotificationRepository>()
+        val resolver = mockk<NotificationRouteResolver>()
+        coEvery { repository.loadPage(any()) } returns NotificationPage(emptyList(), null)
+        coEvery { repository.loadById("one") } throws IllegalStateException("offline") andThen item()
+        coEvery { repository.markRead("one") } returns Unit
+        coEvery { resolver.resolve(any()) } returns null
+        val model = NotificationViewModel(repository, session, resolver)
+        try {
+            runCurrent()
+            model.openPush("bob", "one"); runCurrent()
+            coVerify(exactly = 0) { repository.loadById(any()) }
+            model.openPush("alice", "one"); runCurrent(); assertTrue(model.state.value.error)
+            val event = async { model.open.first() }
+            model.retry(); runCurrent()
+            assertEquals("Body", event.await().item.body)
+            assertNull(event.await().route)
+            coVerify(exactly = 1) { repository.markRead("one") }
+        } finally { Dispatchers.resetMain() }
+    }
     @Test fun `inbox load error retry read and account switch clear state`() = runTest {
         Dispatchers.setMain(StandardTestDispatcher(testScheduler))
         val repository = mockk<NotificationRepository>()

@@ -33,12 +33,15 @@ class NotificationTestRunner : AndroidJUnitRunner() {
 }
 
 object NotificationUiFixture {
+    var pushItem: Notification? = null
+    val lookedUp = mutableListOf<String>()
+    val marked = mutableListOf<String>()
     var response = CompletableDeferred<NotificationPage>()
     var failSave = false
     var fromCache = false
     var values = NewAccountNotificationPreferences.defaults()
     var preferences = CompletableDeferred<Map<NotificationType, Boolean>>().apply { complete(values) }
-    fun reset() { response = CompletableDeferred(); values = NewAccountNotificationPreferences.defaults(); failSave = false; fromCache = false; preferences = CompletableDeferred<Map<NotificationType, Boolean>>().apply { complete(values) } }
+    fun reset() { pushItem = null; lookedUp.clear(); marked.clear(); response = CompletableDeferred(); values = NewAccountNotificationPreferences.defaults(); failSave = false; fromCache = false; preferences = CompletableDeferred<Map<NotificationType, Boolean>>().apply { complete(values) } }
 }
 @Module
 @TestInstallIn(components = [SingletonComponent::class], replaces = [NotificationModule::class])
@@ -46,7 +49,8 @@ object NotificationUiModule {
     @Provides fun session(): NotificationSession = object : NotificationSession { override val uids = MutableStateFlow<String?>("test-user") }
     @Provides fun repository(): NotificationRepository = object : NotificationRepository {
         override suspend fun loadPage(after: NotificationCursor?) = NotificationUiFixture.response.await()
-        override suspend fun markRead(id: String) {}
+        override suspend fun loadById(id: String): Notification? { NotificationUiFixture.lookedUp += id; return NotificationUiFixture.pushItem }
+        override suspend fun markRead(id: String) { NotificationUiFixture.marked += id }
         override suspend fun markAllRead() {}
     }
     @Provides fun preferences(): NotificationPreferencesRepository = object : NotificationPreferencesRepository {
@@ -229,6 +233,27 @@ class NotificationUiTest {
                 nav.navigate(android.net.Uri.parse("smashnow://notifications/settings"))
             }
             awaitDisplayed(withText(R.string.notification_note))
+        }
+    }
+    @Test fun pushDeepLinkLoadsSavedItemOutsideFirstPageAndRejectsForeignAccount() {
+        start(navigation = true).use { scenario ->
+            NotificationUiFixture.response.complete(NotificationPage(emptyList(), null))
+            NotificationUiFixture.pushItem = Notification("push-id", "SYSTEM", "Saved push title", "Saved push body", emptyMap(), false, 1)
+            scenario.onActivity { activity ->
+                val nav = (activity.supportFragmentManager.fragments.single() as androidx.navigation.fragment.NavHostFragment).navController
+                nav.navigate(android.net.Uri.parse("smashnow://notifications/test-user/push-id"))
+            }
+            awaitDisplayed(withText("Saved push body"))
+            onView(withText("Saved push title")).check(matches(isDisplayed()))
+            org.junit.Assert.assertEquals(listOf("push-id"), NotificationUiFixture.lookedUp)
+            org.junit.Assert.assertEquals(listOf("push-id"), NotificationUiFixture.marked)
+            onView(withText(android.R.string.ok)).perform(click())
+            scenario.onActivity { activity ->
+                val nav = (activity.supportFragmentManager.fragments.single() as androidx.navigation.fragment.NavHostFragment).navController
+                nav.navigate(android.net.Uri.parse("smashnow://notifications/foreign/other-id"))
+            }
+            awaitDisplayed(withText(R.string.notification_empty))
+            org.junit.Assert.assertEquals(listOf("push-id"), NotificationUiFixture.lookedUp)
         }
     }
     @Test fun mainActivityNotificationEntryAndShell() {

@@ -22,6 +22,16 @@ class FirestoreNotificationRepository @Inject constructor(
     private fun inbox(uid: String) = firestore.collection("users").document(uid).collection("notifications")
     private fun ensureSession(expected: String) { check(uid() == expected) { "Account changed" } }
 
+    override suspend fun loadById(id: String): Notification? {
+        require(id.isNotBlank() && '/' !in id)
+        val uid = uid()
+        val doc = inbox(uid).document(id).get(Source.SERVER).awaitWithTimeout()
+        ensureSession(uid)
+        return if (doc.exists()) Notification(doc.id, doc.getString("type").orEmpty(), doc.getString("title").orEmpty(),
+            doc.getString("body").orEmpty(), (doc.get("data") as? Map<*, *>)?.entries?.mapNotNull { (k, v) -> (k as? String)?.let { it to v } }?.toMap().orEmpty(),
+            doc.getBoolean("isRead") == true, doc.getTimestamp("createdAt")?.toDate()?.time ?: 0) else null
+    }
+
     override suspend fun loadPage(after: NotificationCursor?): NotificationPage {
         val uid = uid()
         if (after != null) require(after is Cursor && after.uid == uid)

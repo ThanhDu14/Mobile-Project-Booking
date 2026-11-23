@@ -23,6 +23,19 @@ class FirestoreNotificationRepositoryTest {
     private val inbox = mockk<CollectionReference>()
     private val query = mockk<Query>()
     private var uid: String? = "alice"
+    @Test fun `push lookup is server only and rejects result after account changes`() = runTest {
+        val ref = mockk<DocumentReference>()
+        val doc = document(1)
+        every { inbox.document("one") } returns ref
+        every { doc.exists() } returns true
+        every { ref.get(Source.SERVER) } returns Tasks.forResult(doc)
+        assertEquals("Body", FirestoreNotificationRepository(session, fs).loadById("one")?.body)
+        val pending = TaskCompletionSource<DocumentSnapshot>()
+        every { ref.get(Source.SERVER) } returns pending.task
+        val request = async { runCatching { FirestoreNotificationRepository(session, fs).loadById("one") } }
+        testScheduler.runCurrent(); uid = "bob"; pending.setResult(doc)
+        assertTrue(request.await().isFailure)
+    }
     init {
         every { session.currentUid() } answers { uid }
         every { fs.collection("users").document("alice") } returns user
