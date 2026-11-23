@@ -2,7 +2,7 @@
 <!--
     Màn thanh toán spec 050 (T023). 4 trạng thái: loading (progress), nội dung (content),
     lỗi (errorGroup: không có dữ liệu đơn), miễn phí (tổng 0đ: freeBadge + freeNote + nút "Miễn phí").
-    Phần chọn cách trả (US2) và đồng hồ giữ chỗ (US3) thêm vào sau.
+    Cách thanh toán (US2) ẩn khi miễn phí. Đồng hồ giữ chỗ (US3) thêm vào sau.
 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -479,6 +479,218 @@
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
+
+                <!-- Cách thanh toán (US2): tại sân, hoặc chuyển khoản cọc 30% / trả đủ khi cơ sở có tài khoản nhận tiền -->
+                <LinearLayout
+                    android:id="@+id/methodsSection"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="20dp"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/payment_method_title"
+                        android:textAppearance="@style/TextAppearance.SmashNow.Title"
+                        android:textColor="@color/sn_ink"
+                        android:textSize="16sp" />
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        app:cardBackgroundColor="@color/sn_surface_raised"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="0dp"
+                        app:strokeColor="@color/sn_line"
+                        app:strokeWidth="1dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:paddingVertical="4dp">
+
+                        <LinearLayout
+                            android:id="@+id/rowAtVenue"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="?attr/selectableItemBackground"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_vertical"
+                            android:minHeight="56dp"
+                            android:orientation="horizontal"
+                            android:paddingHorizontal="12dp"
+                            android:paddingVertical="8dp">
+
+                            <com.google.android.material.radiobutton.MaterialRadioButton
+                                android:id="@+id/rbAtVenue"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:clickable="false"
+                                android:focusable="false"
+                                android:minWidth="0dp"
+                                android:minHeight="0dp" />
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="4dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:text="@string/payment_option_at_venue"
+                                    android:textColor="@color/sn_ink"
+                                    android:textSize="14sp" />
+
+                                <TextView
+                                    android:id="@+id/tvAtVenueDesc"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:textAppearance="@style/TextAppearance.SmashNow.Caption"
+                                    android:textColor="@color/sn_ink_muted" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                            <View
+                                android:layout_width="match_parent"
+                                android:layout_height="1dp"
+                                android:layout_marginHorizontal="12dp"
+                                android:background="@color/sn_line" />
+
+                            <LinearLayout
+                                android:id="@+id/transferGroup"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginStart="16dp"
+                                    android:layout_marginTop="10dp"
+                                    android:text="@string/payment_option_transfer"
+                                    android:textAppearance="@style/TextAppearance.SmashNow.Caption"
+                                    android:textColor="@color/sn_ink_muted"
+                                    android:textStyle="bold" />
+
+                        <LinearLayout
+                            android:id="@+id/rowDeposit"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="?attr/selectableItemBackground"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_vertical"
+                            android:minHeight="56dp"
+                            android:orientation="horizontal"
+                            android:paddingHorizontal="12dp"
+                            android:paddingVertical="8dp">
+
+                            <com.google.android.material.radiobutton.MaterialRadioButton
+                                android:id="@+id/rbDeposit"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:clickable="false"
+                                android:focusable="false"
+                                android:minWidth="0dp"
+                                android:minHeight="0dp" />
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="4dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:text="@string/payment_option_deposit"
+                                    android:textColor="@color/sn_ink"
+                                    android:textSize="14sp" />
+
+                                <TextView
+                                    android:id="@+id/tvDepositDesc"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:textAppearance="@style/TextAppearance.SmashNow.Caption"
+                                    android:textColor="@color/sn_ink_muted" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:id="@+id/rowFull"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="?attr/selectableItemBackground"
+                            android:clickable="true"
+                            android:focusable="true"
+                            android:gravity="center_vertical"
+                            android:minHeight="56dp"
+                            android:orientation="horizontal"
+                            android:paddingHorizontal="12dp"
+                            android:paddingVertical="8dp">
+
+                            <com.google.android.material.radiobutton.MaterialRadioButton
+                                android:id="@+id/rbFull"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:clickable="false"
+                                android:focusable="false"
+                                android:minWidth="0dp"
+                                android:minHeight="0dp" />
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="4dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:fontFamily="sans-serif-medium"
+                                    android:text="@string/payment_option_full"
+                                    android:textColor="@color/sn_ink"
+                                    android:textSize="14sp" />
+
+                                <TextView
+                                    android:id="@+id/tvFullDesc"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:textAppearance="@style/TextAppearance.SmashNow.Caption"
+                                    android:textColor="@color/sn_ink_muted" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                            </LinearLayout>
+
+                            <TextView
+                                android:id="@+id/tvTransferUnsupported"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:paddingHorizontal="16dp"
+                                android:paddingVertical="12dp"
+                                android:text="@string/payment_transfer_unsupported"
+                                android:textColor="@color/sn_ink_muted"
+                                android:textSize="13sp"
+                                android:visibility="gone" />
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+                </LinearLayout>
+
                 <TextView
                     android:id="@+id/tvFreeNote"
                     android:layout_width="match_parent"
@@ -513,9 +725,10 @@
             android:orientation="vertical">
 
             <TextView
+                android:id="@+id/tvBottomLabel"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/payment_total"
+                android:text="@string/payment_bottom_at_venue"
                 android:textAppearance="@style/TextAppearance.SmashNow.Caption"
                 android:textColor="@color/sn_ink_muted" />
 
@@ -529,7 +742,6 @@
                 tools:text="170.000đ" />
         </LinearLayout>
 
-        <!-- US2 bật nút này; US1 chỉ báo bước tiếp theo -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnConfirm"
             style="@style/Widget.Material3.Button"

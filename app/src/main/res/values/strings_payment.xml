@@ -28,8 +28,44 @@
     <string name="payment_amount_minus_vnd">-%1$sđ</string>
     <string name="payment_missing_order">Không tìm thấy thông tin đơn giữ chỗ. Vui lòng chọn lại khung giờ.</string>
     <string name="payment_back_to_booking">Quay lại chọn giờ</string>
-    <string name="payment_confirm_coming">Chọn cách trả và xác nhận đơn sẽ có ở bước tiếp theo</string>
     <string name="payment_confirm_button">Xác nhận đặt sân</string>
+    <string name="payment_confirm_free_button">Xác nhận (miễn phí)</string>
+    <string name="payment_transfer_button">Chuyển khoản %1$sđ</string>
+
+    <!-- Cách thanh toán (US2, FR-009 – FR-012) -->
+    <string name="payment_method_title">Cách thanh toán</string>
+    <string name="payment_option_at_venue">Thanh toán tại sân</string>
+    <string name="payment_option_at_venue_desc">Trả toàn bộ %1$sđ khi đến sân</string>
+    <string name="payment_option_transfer">Chuyển khoản cho chủ sân (VietQR)</string>
+    <string name="payment_option_deposit">Đặt cọc 30%%</string>
+    <string name="payment_option_deposit_desc">Chuyển trước %1$sđ, còn lại %2$sđ trả tại sân</string>
+    <string name="payment_option_full">Trả đủ</string>
+    <string name="payment_option_full_desc">Chuyển trước toàn bộ %1$sđ</string>
+    <string name="payment_bottom_at_venue">Trả tại sân</string>
+    <string name="payment_bottom_deposit">Cọc 30%% · chuyển khoản</string>
+    <string name="payment_bottom_full">Trả đủ · chuyển khoản</string>
+    <string name="payment_submitting">Đang xác nhận…</string>
+    <string name="payment_price_changed">Giá đơn vừa thay đổi, vui lòng xem lại tổng tiền rồi xác nhận lại</string>
+    <string name="payment_no_price">Khung giờ không còn trong bảng giá của cơ sở. Vui lòng chọn lại giờ</string>
+    <string name="payment_confirm_network">Không kết nối được máy chủ, vui lòng thử lại</string>
+    <string name="payment_confirm_failed">Không xác nhận được đơn, vui lòng thử lại</string>
+    <string name="payment_transfer_coming">Thanh toán chuyển khoản sẽ có ở bước tiếp theo. Bạn có thể chọn Thanh toán tại sân</string>
+
+    <!-- Hóa đơn / Phiếu đặt sân (T033) -->
+    <string name="receipt_title_paid">Hóa đơn điện tử</string>
+    <string name="receipt_title_unpaid">Phiếu đặt sân</string>
+    <string name="receipt_pending_note">Đơn đang chờ chủ sân duyệt (tối đa 60 phút)</string>
+    <string name="receipt_booking_code">Mã đơn</string>
+    <string name="receipt_group_code">Mã nhóm đặt cố định</string>
+    <string name="receipt_payment_method">Cách thanh toán</string>
+    <string name="receipt_status_unpaid">Chưa thanh toán</string>
+    <string name="receipt_status_paid">Đã thanh toán</string>
+    <string name="receipt_status_deposited">Đã đặt cọc</string>
+    <string name="receipt_paid_amount">Đã trả</string>
+    <string name="receipt_remaining_amount">Còn lại trả tại sân</string>
+    <string name="receipt_view_bookings">Xem lịch đặt của tôi</string>
+    <string name="receipt_load_failed">Không tải được hóa đơn</string>
+    <string name="receipt_retry">Thử lại</string>
 
     <!-- Voucher (US1, FR-005 – FR-008) -->
     <string name="payment_voucher_title">Mã khuyến mãi</string>

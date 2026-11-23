@@ -20,6 +20,12 @@ interface PaymentMessages {
         VOUCHER_CHECK_FAILED(R.string.payment_voucher_check_failed, "payment_voucher_check_failed"),
         VOUCHER_LIST_FAILED(R.string.payment_voucher_list_failed, "payment_voucher_list_failed"),
         MISSING_ORDER(R.string.payment_missing_order, "payment_missing_order"),
+        HOLD_EXPIRED(R.string.payment_hold_expired, "payment_hold_expired"),
+        PRICE_CHANGED(R.string.payment_price_changed, "payment_price_changed"),
+        NO_PRICE(R.string.payment_no_price, "payment_no_price"),
+        CONFIRM_NETWORK(R.string.payment_confirm_network, "payment_confirm_network"),
+        CONFIRM_FAILED(R.string.payment_confirm_failed, "payment_confirm_failed"),
+        TRANSFER_COMING(R.string.payment_transfer_coming, "payment_transfer_coming"),
     }
 
     fun string(key: Key, vararg args: Any): String

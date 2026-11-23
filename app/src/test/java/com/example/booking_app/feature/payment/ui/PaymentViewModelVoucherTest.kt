@@ -7,10 +7,16 @@ import com.example.booking_app.core.testing.FakeClock
 import com.example.booking_app.core.testing.MainDispatcherRule
 import com.example.booking_app.feature.payment.domain.VoucherRules
 import com.example.booking_app.feature.payment.domain.model.AppliedVoucher
+import com.example.booking_app.feature.payment.domain.model.ConfirmRequest
+import com.example.booking_app.feature.payment.domain.model.PaymentReceipt
+import com.example.booking_app.feature.payment.domain.model.PayoutAccount
 import com.example.booking_app.feature.payment.domain.model.Voucher
 import com.example.booking_app.feature.payment.domain.model.VoucherScope
 import com.example.booking_app.feature.payment.domain.model.VoucherType
+import com.example.booking_app.feature.payment.domain.repository.PaymentRepository
+import com.example.booking_app.feature.payment.domain.repository.VenuePayoutRepository
 import com.example.booking_app.feature.payment.domain.repository.VoucherRepository
+import com.example.booking_app.feature.payment.domain.usecase.ConfirmAtVenueUseCase
 import com.example.booking_app.feature.payment.domain.usecase.PreviewVoucherUseCase
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceUntilIdle
@@ -86,7 +92,20 @@ class PaymentViewModelVoucherTest {
         repo: VoucherRepository = FakeRepo(vouchers),
     ): PaymentViewModel {
         val clock = FakeClock { now }
-        return PaymentViewModel(handle, PreviewVoucherUseCase(repo, clock), repo, messages)
+        return PaymentViewModel(
+            handle,
+            PreviewVoucherUseCase(repo, clock),
+            repo,
+            object : VenuePayoutRepository {
+                override suspend fun payoutAccount(venueId: String) = Result.success<PayoutAccount?>(null)
+            },
+            ConfirmAtVenueUseCase(object : PaymentRepository {
+                override suspend fun confirmAtVenue(req: ConfirmRequest) = Result.failure<PaymentReceipt>(IllegalStateException())
+                override suspend fun receipt(bookingId: String, isRecurring: Boolean) =
+                    Result.failure<PaymentReceipt>(IllegalStateException())
+            }),
+            messages,
+        )
     }
 
     @Test

@@ -9,10 +9,13 @@ sealed class PaymentError(message: String? = null, cause: Throwable? = null) : E
     class PriceChanged(val breakdown: PaymentBreakdown) : PaymentError("PRICE_CHANGED")
 
     /** 422 `VOUCHER_INVALID` với lý do `NOT_FOUND`/`EXPIRED`/`MIN_ORDER`/`OUT_OF_USES`/`PER_USER_LIMIT`. */
-    class VoucherInvalid(val reason: String) : PaymentError("VOUCHER_INVALID: $reason")
+    class VoucherInvalid(val reason: String, val minOrderTotal: Long = 0L) : PaymentError("VOUCHER_INVALID: $reason")
 
     /** 422 `TRANSFER_NOT_SUPPORTED`: cơ sở chưa có `payoutAccount`. */
     class TransferNotSupported : PaymentError("TRANSFER_NOT_SUPPORTED")
+
+    /** 409 `NO_PRICE`: khung giờ không còn trong bảng giá của cơ sở. */
+    class NoPrice : PaymentError("NO_PRICE")
 
     class Network(cause: Throwable? = null) : PaymentError("NETWORK", cause)
 
