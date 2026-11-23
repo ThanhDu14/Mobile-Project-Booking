@@ -63,6 +63,7 @@ Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 | 57  | 2026-11-22 | Tiếp tục Feature 100: inbox/settings Android, route an toàn và kiểm thử phone/w600dp light/dark; lưu ảnh và kết quả                                                                                                | 10             |
 | 58  | 2026-11-22 | Tiếp tục Feature 100: routing review, quyền thông báo, kiểm thử xóa tài khoản/index, sửa Timestamp và bổ sung đề xuất delivery từng token | 10             |
 | 59  | 2026-11-23 | Tiếp tục Feature 100: cache DataStore theo UID, routing nhóm, rà token/delivery, sửa planner và kiểm thử phone/w600dp light/dark | 10             |
+| 60  | 2026-11-23 | Tiếp tục Feature 100: chốt quyết định backend/FCM, triển khai W1, token/presence, push an toàn và kiểm chứng tiến độ 36/56 | 10             |
 
 ---
 
@@ -5735,5 +5736,91 @@ Cập nhật tasks.md và implementation-review.md theo kết quả thực tế.
 - Chạy chín ca UI trên vivo V2247 Android 15 với package `com.example.booking_app.adminlocal`: phone 393dp và w600dp 720dp, mỗi cấu hình light/dark, tổng 36/36 đạt. Ca mới kiểm tra cảnh báo cache, checkbox bị khóa và retry mở lại chỉnh sửa. w600dp dùng density 240 trên cùng điện thoại; sau lượt cuối readback là 440, không override, kích thước 1080x2388, font scale 1.0.
 - Mở hai PNG gốc và ảnh sau test để đối chiếu. Giữ bố cục, theme, nhóm và các ngoại lệ đã được duyệt; cache dùng khu vực lỗi/thử lại cùng checkbox disabled của Material. Lưu 24 PNG và SHA-256. [Cache phone light](../../specs/100-notification/validation/device-2026-11-23/phone-light/notification-393dp-light-settings-cache.png), [cache w600dp dark](../../specs/100-notification/validation/device-2026-11-23/tablet-dark/notification-720dp-dark-settings-cache.png), [báo cáo đối chiếu](../../specs/100-notification/validation/continuation-2026-11-23.md). Repository/UID stream/resolver trong UI test vẫn dùng fake; điện thoại không được dùng để nghiệm thu pipeline backend hoặc lỗi đĩa thật.
 - Kiểm tra lại đủ 25/56 marker task, hash của 24 ảnh, các link báo cáo và `git diff --check`. [Decision review](../../specs/100-notification/decision-review-2026-11-23.md) ghi phần token và route chưa chốt; [đề xuất delivery](../../specs/100-notification/delivery-state-proposal.md) giữ trạng thái chưa duyệt. Checklist reviewer không đổi. Chưa commit, push, deploy, gửi FCM thật hoặc chạy migration dữ liệu thật.
+
+---
+
+## Mục 60: Tiếp tục Feature 100, triển khai backend W1 và luồng FCM đã được duyệt
+
+| Thông tin                | Nội dung |
+| ------------------------ | -------- |
+| Ngày                     | 2026-11-23 |
+| Người thực hiện          | Minh Nhựt |
+| Nhóm tính năng liên quan | 10 (100 thông báo); phối hợp 011 tài khoản, 081 hàng chờ, 091 chat, 110 hồ sơ chủ sân, 112 vận hành và 120 quản trị |
+| Công cụ AI               | Codex (GPT-6), `$speckit-implement`, `$humanizer:humanizer` |
+| Mục đích                 | Chốt quyết định backend/FCM trước khi triển khai, nối producer W1, kiểm chứng bằng fake/emulator và ghi phần còn thiếu contract |
+| Nhánh Git                | `feat/100-notification` |
+
+### Prompt đã dùng
+
+```text
+$speckit-implement
+
+Tiếp tục Feature 100 theo tiến độ hiện tại, đã hoàn thành 25/56 task.
+
+Đọc:
+- specs/100-notification/tasks.md
+- specs/100-notification/implementation-review.md, ưu tiên cập nhật ngày 23/11
+- specs/100-notification/decision-review-2026-11-23.md
+- specs/100-notification/delivery-state-proposal.md
+- Các contract liên quan của feature nguồn.
+
+Mục tiêu lượt này là mở đường triển khai backend và FCM, đồng thời hoàn thiện phần độc lập còn lại.
+
+1. Rà soát các quyết định đang chặn implementation bằng code và contract mới nhất. Giữ các phê duyệt đã được ghi nhận; phân biệt rõ đề xuất với quyết định đã duyệt.
+
+2. Chuẩn bị gói quyết định cụ thể cho backend:
+   - Schema delivery job và receipt theo từng token, retry, lease recovery, retention và account deletion.
+   - Event identity và transaction enqueue của từng producer; bảo toàn inbox hiện có, tránh tạo thông báo trùng.
+   - Vòng đời token khi đăng nhập, refresh, logout, đổi tài khoản và từ chối/cấp lại quyền hệ điều hành.
+   - Chat foreground suppression trên nhiều thiết bị.
+   - Nội dung lock screen và quyền tạo thông báo SYSTEM.
+
+Mỗi quyết định cần nêu phương án đề xuất, ảnh hưởng tới code/schema, giới hạn và task được mở khóa. Chỉ hỏi những điểm chưa được phê duyệt, gom các câu hỏi liên quan để người dùng dễ trả lời. Hoàn thiện tài liệu đủ để review trước khi xin duyệt.
+
+3. Trong lúc chờ quyết định, tiếp tục phần không phụ thuộc:
+   - Tách phần notification channel có thể làm theo quy ước hiện hành khỏi phần payload còn chờ T014.
+   - Rà soát routing còn thiếu trong T013/T035. Chỉ triển khai khi destination, identifier và quyền truy cập đã được xác nhận; giữ fallback title/body cho phần chưa đủ contract.
+   - Bổ sung kiểm thử cho thay đổi thực tế, tránh chạy lại các bộ kiểm thử đã qua nếu không có ảnh hưởng mới.
+
+Sau khi nhận phê duyệt, cập nhật contract và tài liệu CSDL liên quan rồi triển khai các task vừa được mở khóa bằng harness local/emulator. Không coi prompt này là phê duyệt schema, token policy hoặc migration dữ liệu thật.
+
+Giữ UI theo specs/100-notification/ui/ và các ngoại lệ đã được duyệt. Cập nhật tasks.md cùng implementation-review.md theo bằng chứng. Kết thúc bằng phần đã làm thêm, kết quả kiểm thử và quyết định còn cần chốt. Không tự commit, push, deploy hoặc chạy migration dữ liệu thật.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Đọc code và contract hiện hành, lập `backend-decision-package.md` rồi gom thành ba câu hỏi. Người dùng duyệt D1/D2-W1, T1/P1 với giới hạn đã nêu và C1/P1/S1. AI ghi quyết định vào contract Feature 100/CSDL trước phần code phụ thuộc, sau đó đối chiếu và cập nhật contract của các feature nguồn trong quá trình triển khai. Các identity, generation và outbox ngoài W1 vẫn chờ duyệt.
+- Thêm helper chuẩn bị inbox và delivery job trong transaction nguồn. Owner booking, timeout, promotion/closure hàng chờ, kết quả duyệt hồ sơ và SYSTEM giữ inbox hiện có, không tạo thêm qua một callback thứ hai. Job dùng identity đã duyệt; inbox còn tồn tại sau retention không được tự tạo lại job. Legacy hàng chờ thiếu ticket chỉ giữ inbox cho người nhận hợp lệ.
+- Triển khai worker với receipt từng token, lease hai phút, nonce kiểm tra quyền xử lý và tối đa sáu lần gửi cho mỗi token. Worker giữ kết quả token đã thành công khi token khác cần retry, tôn trọng Retry-After và chỉ gỡ đúng token khi FCM trả UNREGISTERED. Khởi tạo receipt theo trang 100 mục, giữ kết quả terminal bảy ngày và xóa child trước parent. Transaction khởi tạo đọc lại trạng thái user để tránh tạo receipt sau khi tài khoản bắt đầu bị xóa.
+- Thêm coordinator đăng ký/refresh token bằng transaction, kiểm tra UID và epoch, giữ token máy khác. Khi đổi UID phải xoay token trước đăng ký; retry lỗi đăng ký dùng lại lần xoay SDK đã thành công để tránh lặp onNewToken. Hook đăng xuất cũ dừng registration trước bước gỡ token, không thêm hook gỡ trùng. Metadata cục bộ chỉ lưu UID/hash/trạng thái xoay cùng installationId và đã loại khỏi backup. Inbox và preference vẫn hoạt động khi chưa được cấp quyền OS.
+- Đổi chat presence sang lease theo installation. Rời một máy chỉ xóa lease của máy đó; worker ngăn push cho cả tài khoản khi bất kỳ máy nào đang xem chat. Muted/viewing vẫn nằm trong danh sách người nhận inbox. Có cleanup presence khi xóa participant, purge và xóa tài khoản. Callback chat còn chạy sau commit và chưa có durable enqueue/fanout, nên T048 vẫn mở.
+- Tạo channel theo quy ước Android và giữ cấu hình channel đã có. Payload FCM chỉ chứa recipientUid/notificationId; service kiểm tra UID/quyền OS, hiển thị nội dung generic PRIVATE và dùng PendingIntent bất biến. Chạm push tải inbox của đúng tài khoản từ SERVER, kể cả thông báo ngoài trang đầu, rồi dùng resolver và title/body đã lưu. Giữ BOOKING_NEW luôn bật, PROMOTION mặc định tắt; tắt push không ngăn lưu inbox.
+- Hoàn thành thêm T006, T007, T008, T011, T014, T017, T020, T049, T051, T052 và T053, đưa tiến độ lên 36/56. T004/T005 còn thiếu quyết định ngoài W1; T013/T035 vẫn thiếu contract cho BOOKING_NEW, PROMOTION, REVIEW_NEW và OWNER_*. Người dùng yêu cầu trình bày tin nhắn trực tiếp trong cuộc hội thoại, nêu việc A/B/C cần cập nhật và phần còn phải chốt contract. File tin nhắn riêng đã được bỏ, chưa gửi cho ai.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+| ---- | ---------- | ----- |
+| `backend-decision-package.md`, CSDL và contract nguồn | Ghi phạm vi đã duyệt, giữ riêng phần ngoài W1 | Có căn cứ triển khai schema, token policy, presence và SYSTEM; tránh coi phê duyệt một đợt là phê duyệt toàn bộ producer. |
+| `notification-enqueue.ts` và các producer W1 | Nối inbox/job trong transaction, giữ UUID inbox cũ | Tránh trùng thông báo và tránh mất enqueue khi tiến trình chết sau commit nghiệp vụ. |
+| `notification-worker.ts`, `notification-fcm.ts` và `notification-delivery/` | Thêm xử lý theo từng token và endpoint có cron secret | Phục hồi partial success/crash, giới hạn retry và giữ inbox khi FCM lỗi; không tạo HTTP event envelope cho callback chưa được duyệt. |
+| `FcmSignOutHook`, `NotificationTokenEngine` và coordinator/store | Phối hợp registration với session và hook đăng xuất hiện có | Kiểm tra đổi tài khoản, giữ token máy khác, tránh ghi chờ offline và tránh vòng lặp xoay token khi đăng ký lỗi. |
+| `FirestoreChatRepository`, chat helpers và Rules presence | Tách lease theo installation, thêm cleanup và kiểm tra suppression | Một máy rời chat không xóa trạng thái máy đang xem; vẫn giữ giới hạn callback chat chưa bền vững. |
+| Channel, messaging service, push renderer và inbox lookup/navigation | Hiển thị push generic và tải lại đúng inbox khi chạm | Không đưa title/body nguồn lên lock screen, kiểm tra UID trước hiển thị và trước truy vấn, giữ fallback khi không mở được nguồn. |
+| Rules token/job/receipt và `firestore.indexes.json` | Thêm quyền theo quyết định cùng index cho query worker thực tế | Client, kể cả ADMIN, không truy cập job/receipt; token mutation bảo toàn phạm vi own-user và hỗ trợ removal legacy. |
+| Account deletion và cron SQL | Thêm dọn receipt/job; chuẩn bị lịch worker để review | Cleanup phải bao phủ storage mới. SQL chưa được áp dụng vì Supabase local cần Docker daemon đang chưa hoạt động. |
+| `validate-backend.ps1`, tests và `validation/backend-2026-11-23/` | Lưu harness, log, kết quả và screenshot | Có thể đối chiếu từng kiểm tra đã chạy, phân biệt fake/emulator với dữ liệu thật và ma trận UI cũ. |
+| Tin nhắn phối hợp A/B/C | Bỏ file riêng, trình bày trực tiếp trong cuộc hội thoại | Nêu rõ code/contract mỗi người cần cập nhật, tách phần đã duyệt khỏi phần cần chốt trước khi triển khai. |
+
+### Cách kiểm chứng
+
+- JVM liên quan đạt 64/64 qua 12 suite, không failure/error/skip. Phạm vi gồm notification, FcmSignOutHook và FirestoreChatRepository; không chạy lại toàn bộ 1.682 test của lượt trước. `assembleDebug` và `lintDebug` đạt, lint có 0 lỗi và 858 cảnh báo. APK app/test cô lập cũng build thành công.
+- Backend fake đạt 64/64. Kiểm tra handler W1 và REST codec, duplicate replay, Timestamp, partial token failure, retry/lease, retention, giới hạn target, profile đổi trạng thái và HTTP/auth adapter. Harness fake chạy không có quyền mạng; log lỗi được chủ động tạo trong fixture được giữ để đối chiếu.
+- Auth/Firestore emulator đạt một ca worker transaction, một ca account deletion mở rộng và 42 ca nguồn/waitlist/chat ở lượt đầu. Sau thay đổi liên quan, bảy ca worker/SYSTEM/presence đạt ở lượt kiểm tra cuối. Account deletion dọn 405 inbox và 205 receipt cùng parent job, giữ tài khoản không liên quan. SYSTEM được kiểm tra với ADMIN hiện tại, nhiều role ACTIVE, retry và FCM lỗi nhưng inbox vẫn còn.
+- Rules emulator đạt 48/48 qua bốn suite: token rotate/remove, từ chối UID khác và mutation không hợp lệ, removal legacy, quyền job/receipt kể cả ADMIN, lease của hai installation cùng các ca hồi quy inbox/profile/chat. [Báo cáo kiểm chứng](../../specs/100-notification/validation/backend-2026-11-23.md), [kết quả và hash](../../specs/100-notification/validation/backend-2026-11-23/results.json).
+- Trên vivo V2247 Android 15, package `com.example.booking_app.adminlocal` đạt 14/14 ca channel/renderer/inbox/settings và 1/1 ca deep link push mới. Ca chạm push mở được nội dung đã lưu ngoài trang đầu, đánh dấu đã đọc và không truy vấn UID khác. Repository/session trong UI test dùng fake; không gửi FCM thật hoặc đọc dữ liệu hosted để nghiệm thu.
+- Mở lại hai PNG gốc và screenshot phone light để so sánh. Không đổi layout/theme nên giữ bằng chứng ma trận phone/w600dp light/dark của lượt trước, không tính thành kết quả mới. Lượt này lưu sáu ảnh 393dp/light cùng hash. [Inbox](../../specs/100-notification/validation/backend-2026-11-23/device-phone/notification-393dp-light-inbox.png), [settings](../../specs/100-notification/validation/backend-2026-11-23/device-phone/notification-393dp-light-settings.png). Các ngoại lệ UI đã ghi nhận được giữ nguyên; tài liệu và PNG gốc không đổi.
+- Kiểm tra Docker cả trong và ngoài sandbox xác nhận daemon chưa hoạt động, nên chưa chạy Supabase local runtime hoặc cron SQL. File `20261123220000_cron_notification_delivery.sql` mới được chuẩn bị để review. T056 cùng các adapter/routing còn thiếu contract tiếp tục mở; không báo hoàn tất cả Feature 100. [Gói quyết định](../../specs/100-notification/backend-decision-package.md). Tin nhắn phối hợp được trình bày trực tiếp trong cuộc hội thoại theo yêu cầu của người dùng.
+- Đếm lại 36/56 marker task, kiểm tra checklist 24/24 và `git diff --check`. Chưa commit, push, deploy, áp dụng index trên production hoặc chạy migration dữ liệu thật.
 
 ---
