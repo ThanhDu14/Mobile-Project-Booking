@@ -25,6 +25,9 @@ for (const decision of ["APPROVE", "REJECT"] as const) {
     assertEquals(retry.status, 200); await retry.body?.cancel();
     assertEquals(records.get(path)?.createdAt, notification.createdAt);
     assertEquals([...records.keys()].filter(p => p.includes("/notifications/")).length, 1);
+    const jobs = [...records.entries()].filter(([p]) => p.startsWith("notificationDeliveries/"));
+    assertEquals(jobs.length, 1);
+    assertEquals(jobs[0][1].notificationId, path.split("/").pop());
   }));
 }
 
@@ -42,6 +45,7 @@ Deno.test("notification Timestamp: revoke creates one dated inbox entry across r
 }));
 
 Deno.test("notification Timestamp: SYSTEM fanout dates every recipient and preserves read state on retry", () => adminFixture(async ({ records, request }) => {
+  for (const uid of ["a", "b"]) records.set(`users/${uid}`, { accountStatus: "ACTIVE" });
   const deps = { firestore: { ...fs, list: async () => [
     ...["a", "b"].map(__documentId => ({ __documentId, accountStatus: "ACTIVE" })),
     { __documentId: "deleting", accountStatus: "ACTIVE", deletionRequestedAt: new Date() },

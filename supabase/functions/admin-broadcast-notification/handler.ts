@@ -1,10 +1,10 @@
 import { requireCurrentAdmin } from "../_shared/admin-authorization.ts";
 import { HttpError, requireRole, requireUser, toErrorResponse } from "../_shared/auth.ts";
 import * as defaultFirestore from "../_shared/firestore.ts";
-import { createWrite, FirestoreError } from "../_shared/firestore.ts";
+import { activeRecipient, prepareNotification } from "../_shared/notification-enqueue.ts";
 
 export interface AdminBroadcastDeps {
-  firestore: Pick<typeof defaultFirestore, "list" | "commit" | "get">;
+  firestore: Pick<typeof defaultFirestore, "list" | "runTransaction">;
 }
 
 function json(status: number, data: unknown): Response {
@@ -60,31 +60,24 @@ export async function handleAdminBroadcastNotification(
     }
 
     const nowIso = new Date().toISOString();
-    const batchSize = 300;
+    const batchSize = 100;
     let sentCount = 0;
 
     for (let i = 0; i < activeUsers.length; i += batchSize) {
       const chunk = activeUsers.slice(i, i + batchSize);
-      for (let attempt = 0; attempt < 3; attempt++) {
-        const writes = (await Promise.all(chunk.map(async (user) => {
+      const count = await deps.firestore.runTransaction(async tx => {
+        const groups = await Promise.all(chunk.map(async (user) => {
           const uid = String(user.__documentId ?? "");
           if (!uid) throw new HttpError(503, "MISSING_RECIPIENT_ID", "Không thể xác định người nhận");
-          const path = `users/${uid}/notifications/${notificationId}`;
-          const existing = await deps.firestore.get(path);
-          if (existing) {
-            if (existing.title !== title || existing.body !== body) throw new HttpError(409, "REQUEST_CONFLICT", "Mã yêu cầu đã dùng cho nội dung khác");
-            return null;
-          }
-          return createWrite(path, { type: "SYSTEM", title, body, data: {}, isRead: false, createdAt: new Date(nowIso) });
-        }))).filter((w): w is NonNullable<typeof w> => w !== null);
-        try {
-          if (writes.length) await deps.firestore.commit(writes);
-          sentCount += chunk.length;
-          break;
-        } catch (error) {
-          if (!(error instanceof FirestoreError) || error.code !== "ALREADY_EXISTS" || attempt === 2) throw error;
-        }
-      }
+          if (!activeRecipient(await tx.get(`users/${uid}`))) return null;
+          return await prepareNotification(tx, "system", JSON.stringify([admin.uid, requestId]), uid, notificationId,
+            { type: "SYSTEM", title, body, data: {} }, new Date(nowIso));
+        }));
+        const eligible = groups.filter((g): g is NonNullable<typeof g> => g !== null);
+        for (const write of eligible.flat()) tx.write(write);
+        return eligible.length;
+      });
+      sentCount += count;
     }
 
     return json(200, { success: true, count: sentCount });
