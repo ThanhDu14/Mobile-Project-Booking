@@ -108,6 +108,16 @@ service cloud.firestore {
                 && request.resource.data.displayName.size() <= 50);
       }
 
+      function validFcmTokens() {
+        let old = resource.data.get('fcmTokens', []);
+        let next = request.resource.data.get('fcmTokens', []);
+        let added = next.removeAll(old);
+        let removed = old.toSet().difference(next.toSet());
+        return !changed('fcmTokens') || (next is list && old is list
+            && added.size() <= 1 && removed.size() <= 1
+            && (added.size() == 0 || (added[0] is string && added[0].size() > 0 && added[0].size() <= 4096)));
+      }
+
       // [011] contracts/security-rules.md §1
       function changed(field) {
         return field in request.resource.data.diff(resource.data).affectedKeys();
@@ -149,7 +159,7 @@ service cloud.firestore {
       allow update: if isSelf(uid) && isInitialized()
                     && onlyChanges(selfEditableFields())
                     && request.resource.data.updatedAt == request.time
-                    && validDisplayName() && validLevel() && validDistricts() && validAvatarPath();
+                    && validDisplayName() && validLevel() && validDistricts() && validAvatarPath() && validFcmTokens();
     }
 
     // ---------- districts (A, spec 011; contracts/security-rules.md §2) ----------
@@ -546,6 +556,11 @@ service cloud.firestore {
     // ---------- chats + participants/messages (C, spec 091) ----------
     // specs/091-chat/contracts/security-rules.md. Tin nhắn ghi qua Edge Function chat-send/chat-action;
     // client chỉ ghi chats.unreadCounts.{mình} = 0 và participants/{mình} (lastReadAt, muted, blockedOther, viewingUntil).
+    // Feature 100 D1: service-account only; Admin clients have no delivery/receipt access.
+    match /notificationDeliveries/{path=**} {
+      allow read, write: if false;
+    }
+
     match /chats/{chatId} {
       function inChat() {
         return isSignedIn() && request.auth.uid in resource.data.memberIds;
@@ -564,6 +579,14 @@ service cloud.firestore {
       allow create, delete: if false;
 
       match /participants/{uid} {
+        match /presence/{installationId} {
+          allow read: if isSelf(uid) && inChatById();
+          allow create, update: if isSelf(uid) && inChatById()
+              && request.resource.data.keys().hasOnly(['viewingUntil'])
+              && request.resource.data.viewingUntil is timestamp
+              && request.resource.data.viewingUntil <= request.time + duration.value(10, 'm');
+          allow delete: if isSelf(uid) && inChatById();
+        }
         allow get: if isSelf(uid) || isAdmin();
         allow update: if isSelf(uid) && inChatById()
             && request.resource.data.diff(resource.data).affectedKeys()
