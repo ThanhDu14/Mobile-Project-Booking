@@ -104,6 +104,10 @@ function test(name: string, fn: (ctx: Ctx) => Promise<void>, setupData?: Record<
 // ---------- preview ----------
 
 test("F100 T054: deletion drains multiple notification batches and removes tokens/preferences without touching another user", async (ctx) => {
+    const jobPath = `notificationDeliveries/delete-${ctx.uid}`;
+    await commit([createWrite(jobPath, { recipientUid: ctx.uid, state: "LEASED" }),
+      createWrite("notificationDeliveries/unrelated", { recipientUid: "unrelated", state: "PENDING" }),
+      ...Array.from({ length: 205 }, (_, i) => createWrite(`${jobPath}/tokens/h${i}`, { state: "SENDING" }))]);
   const notifications = Array.from({ length: 405 }, (_, i) => createWrite(`users/${ctx.uid}/notifications/n${i}`, {
     type: "SYSTEM", title: "Saved", body: "Details", data: {}, isRead: i % 2 === 0, createdAt: new Date(),
   }));
@@ -118,6 +122,9 @@ test("F100 T054: deletion drains multiple notification batches and removes token
   assertEquals(response.body.status, "DELETED");
   assertEquals(await get(`users/${ctx.uid}`), null); // Removes both token array and preference map.
   assertEquals(await docsIn("notifications", `users/${ctx.uid}`), []);
+    assertEquals(await get(jobPath), null);
+    assertEquals(await docsIn("tokens", jobPath), []);
+    assertEquals((await get("notificationDeliveries/unrelated"))?.state, "PENDING");
   const unrelated = await get("users/unrelated");
   assertEquals(unrelated?.fcmTokens, ["unrelated-token"]);
   assertEquals(unrelated?.notificationPrefs, { PROMOTION: true });

@@ -475,6 +475,19 @@ const BATCH = 400;
 const isUserNotFound = (e: unknown) => e instanceof Error && e.message.includes("USER_NOT_FOUND");
 
 export async function deleteSubcollections(uid: string, deps: DeletionDeps): Promise<void> {
+  // D1: the profile is already marked deleting. Drain child receipts before parents and repeat on finalSweep.
+  for (;;) {
+    const jobs = await deps.firestore.query("notificationDeliveries", [{ field: "recipientUid", op: "EQUAL", value: uid }], { limit: 50 });
+    if (!jobs.length) break;
+    for (const job of jobs) {
+      for (;;) {
+        const receipts = await deps.firestore.query("tokens", [], { parent: job.path, limit: 100 });
+        if (!receipts.length) break;
+        await deps.firestore.commit(receipts.map(d => deleteWrite(d.path, false)));
+      }
+      await deps.firestore.commit([deleteWrite(job.path, false)]);
+    }
+  }
   for (const name of SUBCOLLECTIONS) {
     for (;;) {
       const docs = await deps.firestore.query(name, [], { parent: `users/${uid}`, limit: BATCH });
