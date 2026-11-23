@@ -1,5 +1,6 @@
 import { errorResponse, toErrorResponse } from "../_shared/auth.ts";
 import * as defaultFirestore from "../_shared/firestore.ts";
+import { prepareNotification } from "../_shared/notification-enqueue.ts";
 import { createWrite, deleteWrite, encodeValue, updateWrite, type Write } from "../_shared/firestore.ts";
 
 /**
@@ -131,16 +132,14 @@ export async function handleBookingTimeout(req: Request, injected: BookingTimeou
             }),
           );
         }
-        writes.push(createWrite(`users/${userId}/notifications/${crypto.randomUUID()}`, {
+        writes.push(...await prepareNotification(tx, "booking", JSON.stringify([doc.id, "BOOKING_REJECTED"]), userId, crypto.randomUUID(), {
           type: "BOOKING_REJECTED",
           title: "Đơn đặt chưa được duyệt",
           body: refundAmount > 0
             ? `${TIMEOUT_REASON}. Đã hoàn ${refundAmount} đ vào ví.`
             : `${TIMEOUT_REASON}. Khung giờ đã được mở lại, bạn có thể đặt sân khác.`,
           data: { bookingId: doc.id, venueId: typeof current.venueId === "string" ? current.venueId : null },
-          isRead: false,
-          createdAt: now,
-        }));
+        }, now));
         return { result: true, writes };
       });
       if (done) rejected++;

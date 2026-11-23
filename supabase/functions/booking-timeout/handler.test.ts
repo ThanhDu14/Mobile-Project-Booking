@@ -14,6 +14,9 @@ function request(method = "POST", secret = cronSecret) {
 
 /** Firestore giả: `docs` theo đường dẫn, gom các lần commit để kiểm tra. */
 function fakeFirestore(docs: Record<string, Record<string, unknown>>) {
+  for (const [path, data] of Object.entries(docs)) if (path.startsWith("bookings/") && typeof data.userId === "string") {
+    docs[`users/${data.userId}`] ??= { accountStatus: "ACTIVE" };
+  }
   const commits: any[][] = [];
   return {
     commits,

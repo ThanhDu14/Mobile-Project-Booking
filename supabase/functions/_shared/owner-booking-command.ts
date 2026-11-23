@@ -1,5 +1,6 @@
 import { HttpError, errorResponse, verifyIdToken, type VerifiedToken } from "./auth.ts";
 import * as fs from "./firestore.ts";
+import { prepareNotification } from "./notification-enqueue.ts";
 
 export interface OwnerBookingDependencies {
   firestore?: Pick<typeof fs,"get"|"commit"|"runTransaction">;
@@ -70,6 +71,14 @@ export async function ownerBookingCommand(req:Request,decision:Decision,deps:Own
         }
       }
       const at=new Date(now);
+      const notificationWrites = await prepareNotification(tx, "booking", JSON.stringify([bookingId,
+        decision === "APPROVE" ? "BOOKING_CONFIRMED" : decision === "REJECT" ? "BOOKING_REJECTED" : "BOOKING_CANCELLED"]),
+        customerId, crypto.randomUUID(), {
+          type:decision==="APPROVE"?"BOOKING_CONFIRMED":decision==="REJECT"?"BOOKING_REJECTED":"BOOKING_CANCELLED",
+          title:decision==="APPROVE"?"Đơn đặt đã được xác nhận":"Đơn đặt đã được từ chối hoặc hủy",
+          body:decision==="APPROVE"?"Chủ sân đã duyệt đơn của bạn.":`${reason}. Đã hoàn ${refundAmount} đ vào ví.`,
+          data:{bookingId,venueId},
+        }, at);
       const status=decision==="APPROVE"?"CONFIRMED":decision==="REJECT"?"REJECTED":"CANCELLED";
       const fields:Record<string,unknown>={status,updatedAt:at};
       if(decision==="APPROVE") { fields.qrToken=crypto.randomUUID();fields.confirmedAt=at; }
@@ -82,12 +91,7 @@ export async function ownerBookingCommand(req:Request,decision:Decision,deps:Own
         tx.write(fs.createWrite(ledgerPath,{bookingId,userId:customerId,requestId:`owner_${decision}_${bookingId}`,refundAmount,penaltyAmount:0,createdAt:at}));
       }
       tx.write(fs.updateWrite(path,fields));
-      tx.write(fs.createWrite(`users/${customerId}/notifications/${crypto.randomUUID()}`,{
-        type:decision==="APPROVE"?"BOOKING_CONFIRMED":decision==="REJECT"?"BOOKING_REJECTED":"BOOKING_CANCELLED",
-        title:decision==="APPROVE"?"Đơn đặt đã được xác nhận":"Đơn đặt đã được từ chối hoặc hủy",
-        body:decision==="APPROVE"?"Chủ sân đã duyệt đơn của bạn.":`${reason}. Đã hoàn ${refundAmount} đ vào ví.`,
-        data:{bookingId,venueId},isRead:false,createdAt:at,
-      }));
+      for (const write of notificationWrites) tx.write(write);
       return {success:true,bookingId,status,refundAmount,confirmedAt:decision==="APPROVE"?at.toISOString():undefined};
     });
     return Response.json(result);
