@@ -208,7 +208,10 @@ class PaymentViewModelConfirmTest {
 
         vm.effects.test {
             vm.confirm()
-            assertEquals(PaymentEffect.ShowMessage(messages.string(PaymentMessages.Key.CONFIRM_NETWORK)), awaitItem())
+            assertEquals(
+                PaymentEffect.ShowMessage(messages.string(PaymentMessages.Key.CONFIRM_NETWORK), retryable = true),
+                awaitItem(),
+            )
             vm.confirm()
             assertTrue(awaitItem() is PaymentEffect.OpenReceipt)
         }

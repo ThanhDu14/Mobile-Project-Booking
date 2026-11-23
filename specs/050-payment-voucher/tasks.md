@@ -164,9 +164,9 @@ description: "Danh sách task triển khai spec 050 – Thanh toán và Khuyến
 
 **Independent Test**: Kịch bản 3 và 7 ở [quickstart.md §3](quickstart.md); test handler bên dưới.
 
-- [ ] T054 [P] [US5] Test đồng thời `FN/booking-payment-transfer/concurrency.test.ts`: hai tài khoản cùng giữ lượt cuối của voucher `usageLimit = 1` → đúng một 200, một 422 `OUT_OF_USES` (Firestore giả mô phỏng xung đột transaction và thử lại như `_shared/testing.ts`)
-- [ ] T055 [P] [US5] Test `FN/sepay-webhook/handler.test.ts` bổ sung: cùng `id` gửi 3 lần song song → một `CONFIRMED`, hai `DUPLICATE`, đơn chỉ cập nhật một lần
-- [ ] T056 [P] [US5] `TEST/ui/PaymentViewModelIdempotencyTest.kt`: 5 lần bấm trong 500 ms chỉ gọi use case một lần; mất mạng → nút "Thử lại" dùng lại cùng `requestId`
+- [x] T054 [P] [US5] Test đồng thời `FN/booking-payment-transfer/concurrency.test.ts`: hai tài khoản cùng giữ lượt cuối của voucher `usageLimit = 1` → đúng một 200, một 422 `OUT_OF_USES` (Firestore giả mô phỏng xung đột transaction và thử lại như `_shared/testing.ts`)
+- [x] T055 [P] [US5] Test `FN/sepay-webhook/handler.test.ts` bổ sung: cùng `id` gửi 3 lần song song → một `CONFIRMED`, hai `DUPLICATE`, đơn chỉ cập nhật một lần
+- [x] T056 [P] [US5] `TEST/ui/PaymentViewModelIdempotencyTest.kt`: 5 lần bấm trong 500 ms chỉ gọi use case một lần; mất mạng → nút "Thử lại" dùng lại cùng `requestId`
 
 ---
 

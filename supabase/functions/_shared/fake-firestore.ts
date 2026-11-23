@@ -1,6 +1,8 @@
 // Firestore giả trong bộ nhớ cho unit test các Edge Function thanh toán (spec 050). Chỉ dùng trong test.
 // Áp dụng `Write` giống REST: precondition `exists`, `updateMask` (gộp) hoặc ghi đè cả document,
-// transform `REQUEST_TIME` và `increment`; transaction chạy lần lượt; `query` hỗ trợ `parent` và bộ lọc EQUAL/IN.
+// transform `REQUEST_TIME` và `increment`; `query` hỗ trợ `parent` và bộ lọc EQUAL/IN.
+// Mặc định transaction chạy lần lượt. `optimistic: true` (test tranh chấp, spec 050 US5): transaction chạy xen nhau,
+// lúc commit nếu document đã đọc bị transaction khác đổi thì báo ABORTED và thử lại tới `maxAttempts`, như Firestore.
 import {
   decodeFields,
   decodeValue,
@@ -15,15 +17,26 @@ import {
 
 export type Doc = Record<string, unknown>;
 
+export interface FakeFirestoreOptions {
+  optimistic?: boolean;
+}
+
 export class FakeFirestore {
   docs = new Map<string, Doc>();
+  /** Phiên bản của từng document, tăng mỗi lần bị ghi (chế độ optimistic dùng để phát hiện xung đột). */
+  private versions = new Map<string, number>();
+  /** Số lần commit bị từ chối vì xung đột (chế độ optimistic). */
+  aborts = 0;
   /** Số lần `runTransaction` được gọi. */
   transactions = 0;
   /** Số lần commit có ghi ít nhất một thao tác. */
   commits = 0;
   private lock: Promise<unknown> = Promise.resolve();
 
-  constructor(private readonly now: () => Date) {}
+  constructor(
+    private readonly now: () => Date,
+    private readonly options: FakeFirestoreOptions = {},
+  ) {}
 
   seed(path: string, data: Doc): void {
     this.docs.set(path, structuredClone(data));
@@ -90,6 +103,10 @@ export class FakeFirestore {
       }
       next.set(path, doc);
     }
+    for (const w of writes) {
+      const path = (w.update?.name ?? w.delete ?? "").substring(prefix.length);
+      this.versions.set(path, (this.versions.get(path) ?? 0) + 1);
+    }
     this.docs = next;
     if (writes.length > 0) this.commits++;
   }
@@ -98,8 +115,9 @@ export class FakeFirestore {
     operation: (
       tx: FirestoreTransaction,
     ) => Promise<T | { result: T; writes: Write[] }>,
-    _maxAttempts?: number,
+    maxAttempts = 5,
   ): Promise<T> => {
+    if (this.options.optimistic) return this.runOptimistic(operation, maxAttempts);
     const run = async (): Promise<T> => {
       this.transactions++;
       const writes: Write[] = [];
@@ -109,13 +127,51 @@ export class FakeFirestore {
         write: (w) => void writes.push(w),
       };
       const out = await operation(tx);
-      const wrapped = out !== null && typeof out === "object" &&
-        "writes" in (out as object);
-      this.apply(wrapped ? (out as { writes: Write[] }).writes : writes);
-      return wrapped ? (out as { result: T }).result : out as T;
+      return this.finish(out, writes);
     };
     const p = this.lock.then(run, run);
     this.lock = p.catch(() => undefined);
     return p;
   };
+
+  private async runOptimistic<T>(
+    operation: (tx: FirestoreTransaction) => Promise<T | { result: T; writes: Write[] }>,
+    maxAttempts: number,
+  ): Promise<T> {
+    for (let attempt = 1;; attempt++) {
+      this.transactions++;
+      const seen = new Map<string, number>();
+      const note = (path: string) => {
+        if (!seen.has(path)) seen.set(path, this.versions.get(path) ?? 0);
+      };
+      // Nhường lượt trước mỗi lần đọc để các transaction đồng thời thật sự xen nhau.
+      const yieldTurn = () => new Promise<void>((resolve) => setTimeout(resolve, 0));
+      const writes: Write[] = [];
+      const tx: FirestoreTransaction = {
+        get: async (path) => {
+          await yieldTurn();
+          note(path);
+          return this.read(path);
+        },
+        query: async (collectionId, filters, opts) => {
+          await yieldTurn();
+          const rows = this.query(collectionId, filters, opts);
+          rows.forEach((r) => note(r.path));
+          return rows;
+        },
+        write: (w) => void writes.push(w),
+      };
+      const out = await operation(tx);
+      const conflict = [...seen].some(([path, version]) => (this.versions.get(path) ?? 0) !== version);
+      if (!conflict) return this.finish(out, writes);
+      this.aborts++;
+      if (attempt >= maxAttempts) throw new FirestoreError("ABORTED", 409, "Transaction bị tranh chấp");
+    }
+  }
+
+  private finish<T>(out: T | { result: T; writes: Write[] }, writes: Write[]): T {
+    const wrapped = out !== null && typeof out === "object" && "writes" in (out as object);
+    this.apply(wrapped ? (out as { writes: Write[] }).writes : writes);
+    return wrapped ? (out as { result: T }).result : out as T;
+  }
 }

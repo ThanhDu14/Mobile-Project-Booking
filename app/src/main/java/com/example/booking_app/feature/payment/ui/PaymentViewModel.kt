@@ -41,7 +41,8 @@ import javax.inject.Inject
 sealed interface PaymentEffect {
     data class OpenTransfer(val instruction: TransferInstruction, val isRecurring: Boolean) : PaymentEffect
     data class OpenReceipt(val receipt: PaymentReceipt) : PaymentEffect
-    data class ShowMessage(val text: String) : PaymentEffect
+    /** `retryable`: lỗi tạm thời (mất mạng), Snackbar có nút "Thử lại" gọi lại `confirm()` với cùng `requestId`. */
+    data class ShowMessage(val text: String, val retryable: Boolean = false) : PaymentEffect
 }
 
 /**
@@ -284,7 +285,7 @@ class PaymentViewModel @Inject constructor(
             is PaymentError.Network -> messages.string(PaymentMessages.Key.CONFIRM_NETWORK)
             else -> messages.string(PaymentMessages.Key.CONFIRM_FAILED)
         }
-        if (message != null) _effects.send(PaymentEffect.ShowMessage(message))
+        if (message != null) _effects.send(PaymentEffect.ShowMessage(message, retryable = error is PaymentError.Network))
     }
 
     private fun PaymentError.VoucherInvalid.toCheck(): VoucherCheck = when (reason) {

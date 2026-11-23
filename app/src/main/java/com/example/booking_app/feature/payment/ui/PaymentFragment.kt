@@ -84,7 +84,9 @@ class PaymentFragment : Fragment() {
 
     private fun handle(effect: PaymentEffect) {
         when (effect) {
-            is PaymentEffect.ShowMessage -> Snackbar.make(binding.root, effect.text, Snackbar.LENGTH_LONG).show()
+            is PaymentEffect.ShowMessage -> Snackbar.make(binding.root, effect.text, Snackbar.LENGTH_LONG).apply {
+                if (effect.retryable) setAction(R.string.receipt_retry) { viewModel.confirm() }
+            }.show()
             is PaymentEffect.OpenTransfer -> {
                 val nav = findNavController()
                 if (nav.currentDestination?.id != R.id.paymentFragment) return

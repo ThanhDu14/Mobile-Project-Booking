@@ -80,8 +80,8 @@ const slot = (bookingId = BID, extra: Doc = {}): Doc => ({
   ...extra,
 });
 
-function setup(seed: Record<string, Doc> = {}, opts: { noDefault?: boolean } = {}) {
-  const fs = new FakeFirestore(() => NOW);
+function setup(seed: Record<string, Doc> = {}, opts: { noDefault?: boolean; optimistic?: boolean } = {}) {
+  const fs = new FakeFirestore(() => NOW, { optimistic: opts.optimistic });
   fs.seed("venues/v1", { ownerId: "owner1", name: "Sân Ánh Dương" });
   if (!opts.noDefault) {
     fs.seed(`paymentCodes/${CODE}`, {
@@ -301,4 +301,18 @@ Deno.test("lỗi Firestore → 500 để SePay gửi lại", async () => {
   const env = setup();
   env.deps.firestore = { runTransaction: () => Promise.reject(new Error("boom")) } as unknown as FakeFirestore;
   assertEquals((await send(env)).status, 500);
+});
+
+// T055 (spec 050 US5): SePay gửi lại cùng giao dịch 3 lần song song.
+Deno.test("cùng id gửi 3 lần song song: một CONFIRMED, hai DUPLICATE, đơn chỉ cập nhật một lần", async () => {
+  const env = setup({}, { optimistic: true });
+  const results = await Promise.all([send(env), send(env), send(env)]);
+  assertEquals(results.map((r) => r.status), [200, 200, 200]);
+  const outcomes = results.map((r) => r.json.outcome).sort();
+  assertEquals(outcomes, ["CONFIRMED", "DUPLICATE", "DUPLICATE"]);
+  assertEquals(env.fs.read(`bookings/${BID}`)!.status, "PENDING");
+  assertEquals(env.fs.read(`bookings/${BID}`)!.paidAmount, 36_000);
+  assertEquals(env.fs.children("sepayTransactions").length, 1);
+  assertEquals(env.fs.children(`users/owner1/notifications`).length, 1);
+  assert(env.fs.aborts > 0);
 });
