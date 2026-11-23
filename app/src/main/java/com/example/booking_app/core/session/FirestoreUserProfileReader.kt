@@ -47,7 +47,6 @@ class FirestoreUserProfileReader @Inject constructor(
             accountStatus = getString("accountStatus"),
             email = getString("email"),
             phone = getString("phone"),
-            walletBalance = getLong("walletBalance") ?: 0L,
             ownerStatus = getString("ownerStatus") ?: "NONE",
             ownerRevokedReason = getString("ownerRevokedReason"),
             deletionRequestedAt = getTimestamp("deletionRequestedAt")?.toInstant(),

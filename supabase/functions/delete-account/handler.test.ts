@@ -105,9 +105,9 @@ test("X1: người chơi không có đơn, preview → myBookings rỗng, ownerI
   assertEquals(p.myDropIns, []);
   assertEquals(p.waitlistCount, 0);
   assertEquals(p.ownerImpact, null);
-  assertEquals(p.walletBalance, 50000);
+  assertEquals("walletBalance" in p, false); // spec 050 bỏ ví
   assert(String(p.impactVersion).startsWith("sha256:"));
-}, { walletBalance: 50000 });
+});
 
 test("X2: 2 đơn sắp tới → refundAmount 0 (chưa trả) và 60.000 (cọc, còn > 4 giờ); đơn đã qua, đã hủy không tính", async (ctx) => {
   await seedBooking("b-pending", { userId: ctx.uid, status: "PENDING", startInHours: 30 });

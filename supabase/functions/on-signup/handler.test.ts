@@ -40,7 +40,6 @@ Deno.test("S1: người dùng email mới → 200 CREATED, document đủ trư�
     accountStatus: "ACTIVE",
     fcmTokens: [],
     notificationPrefs: {},
-    walletBalance: 0,
   });
   for (const t of [termsAcceptedAt, createdAt, updatedAt]) {
     assertInstanceOf(t, Date);
@@ -173,7 +172,8 @@ Deno.test("S10: body có role ADMIN, walletBalance 1e9 → bị bỏ qua", async
   const r = await call(idToken, { ...ACCEPT, role: "ADMIN", appRole: "ADMIN", walletBalance: 1e9, accountStatus: "X" });
   assertEquals(r.body, { status: "CREATED", appRole: "PLAYER" });
   const doc = (await get(`users/${uid}`))!;
-  assertEquals([doc.role, doc.walletBalance, doc.accountStatus], ["PLAYER", 0, "ACTIVE"]);
+  // Spec 050 bỏ ví: không tạo `walletBalance`, giá trị client gửi lên cũng bị bỏ qua.
+  assertEquals([doc.role, doc.walletBalance, doc.accountStatus], ["PLAYER", undefined, "ACTIVE"]);
   assertEquals(await getCustomClaims(uid), { role: "authenticated", appRole: "PLAYER" });
 });
 

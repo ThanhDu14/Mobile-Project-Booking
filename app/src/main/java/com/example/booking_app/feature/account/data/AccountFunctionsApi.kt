@@ -54,7 +54,6 @@ internal data class DeleteAccountRequest(
 @Serializable
 internal data class PreviewDto(
     val impactVersion: String,
-    val walletBalance: Long = 0,
     val myBookings: List<BookingDto> = emptyList(),
     val myDropIns: List<DropInDto> = emptyList(),
     val waitlistCount: Int = 0,
@@ -144,7 +143,6 @@ object DeleteAccountResponses {
         ownerImpact = ownerImpact?.let {
             OwnerImpact(it.venueCount, it.guestBookingCount, it.guestDropInCount, it.guestCount)
         },
-        walletBalance = walletBalance,
     )
 }
 

@@ -136,15 +136,6 @@
                         tools:visibility="visible" />
 
                     <TextView
-                        android:id="@+id/walletNotice"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/space_3"
-                        android:textAppearance="?attr/textAppearanceBodyMedium"
-                        android:textColor="?attr/colorOnSurfaceVariant"
-                        tools:text="@string/account_delete_wallet_notice" />
-
-                    <TextView
                         style="@style/Widget.SmashNow.DeleteSectionTitle"
                         android:text="@string/account_delete_removed_title" />
 
@@ -159,10 +150,6 @@
                     <TextView
                         style="@style/Widget.SmashNow.DeleteRemovedRow"
                         android:text="@string/account_delete_removed_notifications" />
-
-                    <TextView
-                        style="@style/Widget.SmashNow.DeleteRemovedRow"
-                        android:text="@string/account_delete_removed_wallet" />
 
                     <TextView
                         style="@style/Widget.SmashNow.DeleteRemovedRow"

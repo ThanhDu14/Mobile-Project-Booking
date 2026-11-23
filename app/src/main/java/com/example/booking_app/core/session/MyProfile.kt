@@ -17,8 +17,6 @@ data class MyProfile(
     // [011] research R1
     val email: String? = null,
     val phone: String? = null,
-    /** Số dư ví giả lập, VND (FR-001a). */
-    val walletBalance: Long = 0,
     /** `NONE`, `PENDING`, `APPROVED`, `REJECTED` (research R6). */
     val ownerStatus: String = "NONE",
     val ownerRevokedReason: String? = null,
