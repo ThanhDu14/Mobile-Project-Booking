@@ -35,9 +35,10 @@ class NotificationTestRunner : AndroidJUnitRunner() {
 object NotificationUiFixture {
     var response = CompletableDeferred<NotificationPage>()
     var failSave = false
+    var fromCache = false
     var values = NewAccountNotificationPreferences.defaults()
     var preferences = CompletableDeferred<Map<NotificationType, Boolean>>().apply { complete(values) }
-    fun reset() { response = CompletableDeferred(); values = NewAccountNotificationPreferences.defaults(); failSave = false; preferences = CompletableDeferred<Map<NotificationType, Boolean>>().apply { complete(values) } }
+    fun reset() { response = CompletableDeferred(); values = NewAccountNotificationPreferences.defaults(); failSave = false; fromCache = false; preferences = CompletableDeferred<Map<NotificationType, Boolean>>().apply { complete(values) } }
 }
 @Module
 @TestInstallIn(components = [SingletonComponent::class], replaces = [NotificationModule::class])
@@ -50,6 +51,7 @@ object NotificationUiModule {
     }
     @Provides fun preferences(): NotificationPreferencesRepository = object : NotificationPreferencesRepository {
         override suspend fun load() = NotificationUiFixture.preferences.await()
+        override suspend fun loadSnapshot() = NotificationPreferenceSnapshot(load(), NotificationUiFixture.fromCache)
         override suspend fun setEnabled(types: Set<NotificationType>, enabled: Boolean) {
             if (NotificationUiFixture.failSave) error("offline")
             NotificationUiFixture.values = NotificationUiFixture.values + types.associateWith { enabled }
@@ -115,6 +117,23 @@ class NotificationUiTest {
             onView(withId(R.id.retry)).perform(click())
             awaitDisplayed(withText(R.string.notification_empty))
             onView(withText(R.string.notification_empty)).check(matches(isDisplayed()))
+        }
+    }
+    @Test fun cachedSettingsDisableWritesAndRetryRestoresEditing() {
+        start(settings = true, pending = true).use {
+            NotificationUiFixture.fromCache = true
+            NotificationUiFixture.preferences.complete(NotificationUiFixture.values)
+            awaitDisplayed(withText(R.string.notification_cached_settings))
+            onView(withText(R.string.notification_cached_settings)).check(matches(isDisplayed()))
+            onView(allOf(withId(R.id.check), withContentDescription(R.string.notification_promotion)))
+                .check(matches(org.hamcrest.Matchers.not(isEnabled())))
+            screenshot("settings-cache")
+            NotificationUiFixture.fromCache = false
+            onView(withId(R.id.retry)).perform(click())
+            awaitDisplayed(allOf(withId(R.id.check), withContentDescription(R.string.notification_promotion), isEnabled()))
+            onView(allOf(withId(R.id.check), withContentDescription(R.string.notification_promotion))).check(matches(isEnabled()))
+            onView(withText(R.string.notification_promotion)).perform(click())
+            org.junit.Assert.assertTrue(NotificationUiFixture.values.getValue(NotificationType.PROMOTION))
         }
     }
     @Test fun inboxContentReadAndScreenshot() {
