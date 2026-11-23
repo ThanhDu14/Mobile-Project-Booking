@@ -28,8 +28,8 @@ class CalculateRefundQuoteUseCase {
             result == null -> "Không đủ điều kiện hủy theo giờ máy chủ ước tính. Máy chủ quyết định kết quả cuối cùng."
             status == RefundPolicy.Status.PENDING -> "Đơn chờ duyệt dự kiến được hoàn toàn bộ tiền đã trả. Máy chủ quyết định kết quả cuối cùng."
             early -> "Hủy sớm dự kiến được hoàn toàn bộ tiền đã trả. Máy chủ quyết định kết quả cuối cùng."
-            paymentMethod == RefundPolicy.PaymentMethod.DEPOSIT -> "Hủy trễ dự kiến mất tiền cọc. Máy chủ quyết định kết quả cuối cùng."
-            paymentMethod == RefundPolicy.PaymentMethod.MOCK_WALLET -> "Hủy trễ dự kiến phạt 30% tiền đã trả, làm tròn xuống bội 1.000 đồng. Máy chủ quyết định kết quả cuối cùng."
+            paymentMethod == RefundPolicy.PaymentMethod.TRANSFER_DEPOSIT -> "Hủy trễ dự kiến mất tiền cọc. Máy chủ quyết định kết quả cuối cùng."
+            paymentMethod == RefundPolicy.PaymentMethod.TRANSFER_FULL -> "Hủy trễ dự kiến phạt 30% tiền đã trả, làm tròn xuống bội 1.000 đồng. Máy chủ quyết định kết quả cuối cùng."
             else -> "Thanh toán tại sân không phát sinh tiền hoàn. Máy chủ quyết định kết quả cuối cùng."
         }
         return RefundPolicyQuote(

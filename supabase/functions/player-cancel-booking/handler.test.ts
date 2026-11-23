@@ -4,13 +4,17 @@ import { handlePlayerCancelBooking } from "./handler.ts";
 Deno.env.set("FIREBASE_PROJECT_ID", "demo-smashnow");
 
 Deno.test("player-cancel-booking: rejects non-POST requests", async () => {
-  const res = await handlePlayerCancelBooking(new Request("https://localhost/player-cancel-booking", { method: "GET" }));
+  const res = await handlePlayerCancelBooking(
+    new Request("https://localhost/player-cancel-booking", { method: "GET" }),
+  );
   assertEquals(res.status, 405);
 });
 
 Deno.test("player-cancel-booking: rejects unauthenticated requests", async () => {
   const req = new Request("https://localhost/player-cancel-booking", {
-    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ bookingId: "b1" }),
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ bookingId: "b1" }),
   });
   assertEquals((await handlePlayerCancelBooking(req)).status, 401);
 });
@@ -24,7 +28,10 @@ Deno.test("player-cancel-booking: rejects invalid token before reading", async (
   });
   const response = await handlePlayerCancelBooking(req, {
     firestore: {
-      get: async () => { reads++; return null; },
+      get: async () => {
+        reads++;
+        return null;
+      },
       commit: async () => {},
     },
   });
@@ -61,6 +68,7 @@ Deno.test("player-cancel-booking: successfully cancels PENDING booking and relea
         if (path === "bookings/b-pending") {
           return {
             userId: "user-1",
+            venueId: "venue-1",
             status: "PENDING",
             paidAmount: 57000,
             paymentMethod: "DEPOSIT",
@@ -68,8 +76,6 @@ Deno.test("player-cancel-booking: successfully cancels PENDING booking and relea
             items: [{ slotId: "court-1_20261110_0500" }, { slotId: "court-1_20261110_0530" }],
           };
         }
-        if (path === "refunds/refund_b-pending") return null;
-        if (path === "users/user-1") return { walletBalance: 10000 };
         return null;
       },
       commit: async (writes: any[]) => {
@@ -84,7 +90,7 @@ Deno.test("player-cancel-booking: successfully cancels PENDING booking and relea
   assertEquals(data.refundAmount, 57000);
   assertEquals(data.penaltyAmount, 0);
 
-  // Check committed writes: booking update, 2 slot deletes, user balance update, refund doc create
+  // Check committed writes: booking update, 2 slot deletes, refund doc create (spec 050: không còn cộng ví)
   const slotDeletes = committedWrites.filter((w) => w.delete && w.delete.includes("slots/"));
   assertEquals(slotDeletes.length, 2);
 });
@@ -102,3 +108,148 @@ Deno.test("player-cancel-booking: works when invoked by Deno.serve with info as 
   assertEquals(res.status, 401);
 });
 
+// ---------- Spec 050 (T058): bỏ ví, hoàn tiền thủ công qua refunds PENDING ----------
+
+import { decodeFields, documentName, type Write } from "../_shared/firestore.ts";
+
+const PLAYER = {
+  uid: "user-1",
+  appRole: "PLAYER" as const,
+  email: "p@smashnow.vn",
+  emailVerified: true,
+  phone: null,
+  name: "P",
+  signInProvider: "password",
+};
+
+function cancelRequest(bookingId = "b1") {
+  return new Request("https://localhost/player-cancel-booking", {
+    method: "POST",
+    headers: { Authorization: "Bearer valid", "Content-Type": "application/json" },
+    body: JSON.stringify({ bookingId, reason: "Bận việc", requestId: "req-1" }),
+  });
+}
+
+/** Chạy hủy với một đơn giả, trả về status, body và các write đã commit (theo đường dẫn). */
+async function runCancel(booking: Record<string, unknown>) {
+  const writes: Write[] = [];
+  let commits = 0;
+  const res = await handlePlayerCancelBooking(cancelRequest(), {
+    verifyToken: () => Promise.resolve(PLAYER),
+    firestore: {
+      get: (path: string) => Promise.resolve(path === "bookings/b1" ? booking : null),
+      commit: (ws: Write[]) => {
+        commits++;
+        writes.push(...ws);
+        return Promise.resolve();
+      },
+    },
+  });
+  const prefix = documentName("");
+  const byPath = new Map<string, Write>();
+  for (const w of writes) byPath.set((w.update?.name ?? w.delete ?? "").substring(prefix.length), w);
+  const fields = (path: string) => {
+    const w = byPath.get(path);
+    return w?.update ? decodeFields(w.update.fields) : undefined;
+  };
+  return { status: res.status, body: await res.json(), byPath, fields, commits };
+}
+
+const HOUR = 3_600_000;
+const baseBooking = (over: Record<string, unknown>) => ({
+  userId: "user-1",
+  venueId: "v1",
+  status: "CONFIRMED",
+  startAt: new Date(Date.now() + 10 * HOUR).toISOString(),
+  slotIds: ["c1_20261124_0700"],
+  ...over,
+});
+
+Deno.test("T058: đơn PENDING đã trả đủ → hoàn 100%, refund PENDING, paymentStatus REFUND_PENDING, không đụng ví", async () => {
+  const r = await runCancel(baseBooking({
+    status: "PENDING",
+    paymentMethod: "TRANSFER_FULL",
+    paymentStatus: "PAID",
+    paidAmount: 57000,
+  }));
+  assertEquals(r.status, 200);
+  assertEquals([r.body.refundAmount, r.body.penaltyAmount], [57000, 0]);
+  const booking = r.fields("bookings/b1")!;
+  assertEquals([booking.status, booking.paymentStatus, booking.cancelledBy], ["CANCELLED", "REFUND_PENDING", "USER"]);
+  assertEquals("refundStatus" in booking, false);
+  const refund = r.fields("refunds/refund_b1")!;
+  assertEquals(
+    [
+      refund.bookingId,
+      refund.venueId,
+      refund.userId,
+      refund.amount,
+      refund.penaltyAmount,
+      refund.reason,
+      refund.status,
+    ],
+    ["b1", "v1", "user-1", 57000, 0, "CANCELLED", "PENDING"],
+  );
+  assertEquals([...r.byPath.keys()].some((p) => p.startsWith("users/")), false);
+  assertEquals(r.byPath.has("slots/c1_20261124_0700"), true);
+});
+
+Deno.test("T058: CONFIRMED trả đủ, hủy muộn (< 4 giờ) → phạt 30% làm tròn nghìn, hoàn phần còn lại", async () => {
+  const r = await runCancel(baseBooking({
+    paymentMethod: "TRANSFER_FULL",
+    paymentStatus: "PAID",
+    paidAmount: 105000,
+    startAt: new Date(Date.now() + 2 * HOUR).toISOString(),
+  }));
+  assertEquals([r.body.refundAmount, r.body.penaltyAmount], [74000, 31000]);
+  assertEquals(r.fields("refunds/refund_b1")?.amount, 74000);
+  assertEquals(r.fields("refunds/refund_b1")?.penaltyAmount, 31000);
+});
+
+Deno.test("T058: CONFIRMED cọc 30%, hủy muộn → mất cọc, không tạo refund, giữ paymentStatus", async () => {
+  const r = await runCancel(baseBooking({
+    paymentMethod: "TRANSFER_DEPOSIT",
+    paymentStatus: "DEPOSITED",
+    paidAmount: 30000,
+    startAt: new Date(Date.now() + 1 * HOUR).toISOString(),
+  }));
+  assertEquals([r.body.refundAmount, r.body.penaltyAmount], [0, 30000]);
+  assertEquals(r.byPath.has("refunds/refund_b1"), false);
+  assertEquals("paymentStatus" in r.fields("bookings/b1")!, false);
+});
+
+Deno.test("T058: CONFIRMED cọc 30%, hủy sớm (≥ 4 giờ) → hoàn đủ cọc", async () => {
+  const r = await runCancel(
+    baseBooking({ paymentMethod: "TRANSFER_DEPOSIT", paymentStatus: "DEPOSITED", paidAmount: 30000 }),
+  );
+  assertEquals([r.body.refundAmount, r.body.penaltyAmount], [30000, 0]);
+  assertEquals(r.fields("refunds/refund_b1")?.reason, "CANCELLED");
+});
+
+Deno.test("T058: trả tại sân → không refund, không đổi paymentStatus", async () => {
+  const r = await runCancel(baseBooking({ paymentMethod: "AT_VENUE", paymentStatus: "UNPAID", paidAmount: 0 }));
+  assertEquals([r.status, r.body.refundAmount, r.body.penaltyAmount], [200, 0, 0]);
+  assertEquals(r.byPath.has("refunds/refund_b1"), false);
+  assertEquals("paymentStatus" in r.fields("bookings/b1")!, false);
+});
+
+Deno.test("T058: dữ liệu cũ MOCK_WALLET/DEPOSIT tính như TRANSFER_FULL/TRANSFER_DEPOSIT", async () => {
+  const late = { startAt: new Date(Date.now() + 2 * HOUR).toISOString() };
+  const wallet = await runCancel(baseBooking({ paymentMethod: "MOCK_WALLET", paidAmount: 100000, ...late }));
+  assertEquals([wallet.body.refundAmount, wallet.body.penaltyAmount], [70000, 30000]);
+  const deposit = await runCancel(baseBooking({ paymentMethod: "DEPOSIT", paidAmount: 30000, ...late }));
+  assertEquals([deposit.body.refundAmount, deposit.body.penaltyAmount], [0, 30000]);
+});
+
+Deno.test("T058: gọi lại khi đơn đã do người chơi hủy → 200 cùng số tiền, không commit thêm", async () => {
+  const r = await runCancel(baseBooking({
+    status: "CANCELLED",
+    cancelledBy: "USER",
+    cancelledAt: "2026-11-23T04:00:00.000Z",
+    refundAmount: 57000,
+    penaltyAmount: 0,
+  }));
+  assertEquals(r.status, 200);
+  assertEquals([r.body.refundAmount, r.body.penaltyAmount, r.body.cancelledAt], [57000, 0, "2026-11-23T04:00:00.000Z"]);
+  assertEquals(r.commits, 0);
+});

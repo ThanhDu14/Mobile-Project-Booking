@@ -288,9 +288,9 @@ class FirestoreBookingManagementRepository @Inject constructor(
         val explanation = when {
             !isEligible -> "Đơn đặt sân hiện tại không đủ điều kiện hủy."
             detail.status == RefundPolicy.Status.PENDING -> "Đơn đang chờ duyệt: hoàn lại 100% số tiền đã trả."
-            isEarly -> "Hủy trước 4 giờ: hoàn lại 100% số tiền đã thanh toán vào ví giả lập."
-            detail.finance.paymentMethod == RefundPolicy.PaymentMethod.DEPOSIT -> "Hủy trễ (dưới 4 giờ): mất 100% số tiền đã cọc."
-            detail.finance.paymentMethod == RefundPolicy.PaymentMethod.MOCK_WALLET -> "Hủy trễ (dưới 4 giờ): phạt 30% số tiền đã trả, hoàn 70% còn lại vào ví giả lập."
+            isEarly -> "Hủy trước 4 giờ: chủ sân hoàn lại 100% số tiền đã chuyển khoản."
+            detail.finance.paymentMethod == RefundPolicy.PaymentMethod.TRANSFER_DEPOSIT -> "Hủy trễ (dưới 4 giờ): mất 100% số tiền đã cọc."
+            detail.finance.paymentMethod == RefundPolicy.PaymentMethod.TRANSFER_FULL -> "Hủy trễ (dưới 4 giờ): phạt 30% số tiền đã trả, chủ sân hoàn lại phần còn lại."
             else -> "Hủy trước giờ chơi: không phát sinh hoàn tiền."
         }
 

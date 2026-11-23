@@ -1,6 +1,29 @@
 import { errorResponse, HttpError, verifyIdToken } from "../_shared/auth.ts";
 import * as defaultFirestore from "../_shared/firestore.ts";
-import { createWrite, deleteWrite, FirestoreError, updateWrite } from "../_shared/firestore.ts";
+import { deleteWrite, FirestoreError, updateWrite } from "../_shared/firestore.ts";
+import { refundCreateWrite, refundIdFor } from "../_shared/refunds.ts";
+
+// Spec 050 (T058): không còn ví. Đơn đã trả bị hủy → `paymentStatus = REFUND_PENDING` và `refunds/refund_{bookingId}`
+// `PENDING` để chủ sân hoàn thủ công. Số tiền hoàn/phạt vẫn theo `RefundPolicy` của 060.
+
+/** Tên cũ (`DEPOSIT`, `MOCK_WALLET`) của đơn tạo trước spec 050 quy về cách trả mới. */
+function normalizeMethod(raw: unknown): "AT_VENUE" | "TRANSFER_DEPOSIT" | "TRANSFER_FULL" {
+  switch (raw) {
+    case "TRANSFER_DEPOSIT":
+    case "DEPOSIT":
+      return "TRANSFER_DEPOSIT";
+    case "TRANSFER_FULL":
+    case "MOCK_WALLET":
+      return "TRANSFER_FULL";
+    default:
+      return "AT_VENUE";
+  }
+}
+
+/** 30% làm tròn xuống hàng nghìn. */
+function latePenaltyFull(paid: number): number {
+  return Math.floor((paid * 0.3) / 1000) * 1000;
+}
 
 export interface PlayerCancelBookingDeps {
   firestore?: Pick<typeof defaultFirestore, "get" | "commit">;
@@ -29,25 +52,21 @@ export async function handlePlayerCancelBooking(
     if (!bookingId) throw new HttpError(400, "INVALID_BOOKING_ID", "Thiếu hoặc sai bookingId");
     if (!reason) throw new HttpError(400, "INVALID_REASON", "Lý do hủy bắt buộc không được để trống");
 
-    // These independent reads avoid two sequential Firestore network round trips.
-    const [booking, existingRefund] = await Promise.all([
-      firestore.get(`bookings/${bookingId}`),
-      firestore.get(`refunds/refund_${bookingId}`),
-    ]);
+    const booking = await firestore.get(`bookings/${bookingId}`);
     if (!booking || (booking.userId !== token.uid && token.appRole !== "ADMIN")) {
       throw new HttpError(404, "BOOKING_NOT_FOUND", "Không tìm thấy đơn đặt sân");
     }
 
-    // Idempotency: nếu đơn đã có bản ghi hoàn tiền với requestId tương ứng.
-    if (existingRefund) {
+    // Gọi lại sau khi đã hủy (mất mạng, bấm lại): trả kết quả đã lưu trên đơn.
+    if (booking.status === "CANCELLED" && booking.cancelledBy === "USER") {
       return new Response(
         JSON.stringify({
           success: true,
           bookingId,
           status: "CANCELLED",
-          refundAmount: Number(existingRefund.refundAmount || 0),
-          penaltyAmount: Number(existingRefund.penaltyAmount || 0),
-          cancelledAt: existingRefund.createdAt ?? new Date().toISOString(),
+          refundAmount: Number(booking.refundAmount || 0),
+          penaltyAmount: Number(booking.penaltyAmount || 0),
+          cancelledAt: booking.cancelledAt instanceof Date ? booking.cancelledAt.toISOString() : booking.cancelledAt,
         }),
         { status: 200, headers: { "Content-Type": "application/json" } },
       );
@@ -78,7 +97,7 @@ export async function handlePlayerCancelBooking(
     let refundAmount = 0;
     let penaltyAmount = 0;
     const paidAmount = Number(booking.paidAmount || booking.depositAmount || 0);
-    const paymentMethod = String(booking.paymentMethod || "AT_VENUE");
+    const paymentMethod = normalizeMethod(booking.paymentMethod);
 
     if (booking.status === "PENDING") {
       refundAmount = paidAmount;
@@ -91,15 +110,15 @@ export async function handlePlayerCancelBooking(
         penaltyAmount = 0;
       } else {
         // Hủy trễ < 240 phút
-        if (paymentMethod === "AT_VENUE") {
-          refundAmount = 0;
-          penaltyAmount = 0;
-        } else if (paymentMethod === "DEPOSIT") {
+        if (paymentMethod === "TRANSFER_DEPOSIT") {
           refundAmount = 0;
           penaltyAmount = paidAmount;
-        } else if (paymentMethod === "MOCK_WALLET") {
-          penaltyAmount = Math.floor((paidAmount * 0.3) / 1000) * 1000;
+        } else if (paymentMethod === "TRANSFER_FULL") {
+          penaltyAmount = latePenaltyFull(paidAmount);
           refundAmount = paidAmount - penaltyAmount;
+        } else {
+          refundAmount = 0;
+          penaltyAmount = 0;
         }
       }
     }
@@ -113,7 +132,7 @@ export async function handlePlayerCancelBooking(
         cancelledBy: "USER",
         refundAmount,
         penaltyAmount,
-        refundStatus: "COMPLETED",
+        ...(refundAmount > 0 ? { paymentStatus: "REFUND_PENDING" } : {}),
         updatedAt: nowIso,
       }),
     ];
@@ -136,29 +155,18 @@ export async function handlePlayerCancelBooking(
       writes.push(deleteWrite(`slots/${slotId}`, false));
     }
 
-    // Hoàn tiền ví giả lập nếu có
+    // Khoản chủ sân phải chuyển trả (hoàn thủ công, spec 050). Đã có thì commit báo ALREADY_EXISTS → 409.
     if (refundAmount > 0) {
-      const user = await firestore.get(`users/${booking.userId}`);
-      const currentBalance = Number(user?.walletBalance || 0);
-      writes.push(
-        updateWrite(`users/${booking.userId}`, {
-          walletBalance: currentBalance + refundAmount,
-          updatedAt: nowIso,
-        }),
-      );
-    }
-
-    // Ghi nhận idempotency refund record
-    writes.push(
-      createWrite(`refunds/refund_${bookingId}`, {
+      writes.push(refundCreateWrite({
+        id: refundIdFor({ bookingId }),
         bookingId,
-        userId: booking.userId,
-        requestId,
-        refundAmount,
+        venueId: String(booking.venueId ?? ""),
+        userId: String(booking.userId),
+        amount: refundAmount,
         penaltyAmount,
-        createdAt: nowIso,
-      }),
-    );
+        reason: "CANCELLED",
+      }));
+    }
 
     try {
       await firestore.commit(writes);

@@ -1,5 +1,6 @@
 package com.example.booking_app.feature.booking_management.ui
 
+import com.example.booking_app.feature.booking_management.domain.RefundPolicy
 import android.os.Bundle
 import android.view.View
 import androidx.core.view.isVisible
@@ -159,7 +160,11 @@ class CancelBookingFragment : Fragment(R.layout.fragment_cancel_booking_060) {
         binding.textCancelBookingTime.text = "$dayPrefix • $startStr – $endStr"
 
         val courtsStr = booking.items.map { it.courtName }.distinct().joinToString(", ").ifBlank { "Sân" }
-        val paymentMethodStr = if (booking.finance.depositAmount > 0) "Đặt cọc 30% bằng ví giả lập" else "Thanh toán bằng ví giả lập"
+        val paymentMethodStr = when (booking.finance.paymentMethod) {
+            RefundPolicy.PaymentMethod.TRANSFER_DEPOSIT -> "Chuyển khoản cọc 30%"
+            RefundPolicy.PaymentMethod.TRANSFER_FULL -> "Chuyển khoản trả đủ"
+            RefundPolicy.PaymentMethod.AT_VENUE -> "Thanh toán tại sân"
+        }
         binding.textCancelBookingSummary.text = "$courtsStr • $paymentMethodStr"
 
         if (quote != null) {

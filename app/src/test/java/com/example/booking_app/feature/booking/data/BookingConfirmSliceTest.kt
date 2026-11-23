@@ -128,7 +128,7 @@ class BookingConfirmSliceTest {
         assertEquals(54_000L, booking.finance.depositAmount)
         assertEquals(54_000L, booking.finance.paidAmount)
         assertEquals(126_000L, booking.finance.remainingAmount)
-        assertEquals(RefundPolicy.PaymentMethod.DEPOSIT, booking.finance.paymentMethod)
+        assertEquals(RefundPolicy.PaymentMethod.TRANSFER_DEPOSIT, booking.finance.paymentMethod)
         assertEquals(PaymentStatus.DEPOSITED, booking.finance.paymentStatus)
     }
 
@@ -150,7 +150,7 @@ class BookingConfirmSliceTest {
         assertEquals(0L, booking.finance.depositAmount)
         assertEquals(180_000L, booking.finance.paidAmount)
         assertEquals(0L, booking.finance.remainingAmount)
-        assertEquals(RefundPolicy.PaymentMethod.MOCK_WALLET, booking.finance.paymentMethod)
+        assertEquals(RefundPolicy.PaymentMethod.TRANSFER_FULL, booking.finance.paymentMethod)
         assertEquals(PaymentStatus.PAID, booking.finance.paymentStatus)
     }
 
