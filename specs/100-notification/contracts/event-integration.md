@@ -44,6 +44,19 @@ Current routing covers eleven canonical types (plus the approved legacy alias). 
 
 Proposed next routing decisions: confirm a bookingId-specific owner detail destination with current venue ownership checks; confirm applicationId-specific read-only result detail for applicant UID (including historical/revoked applications) without silently changing app mode; confirm 090's subtype catalog and requests-only-for-current-moderator routing. No new navigation argument, source permission or subtype is implemented by these proposals.
 
+### Group routing approved by user, 23/11/2026
+
+The user approved the Android mapping below after review of Feature 090 research R15, its UI contract and current Rules. This approval is limited to routing; transport, fan-out, retries and event identity remain undecided.
+
+| data.event | Destination and current access check |
+|---|---|
+| JOIN_REQUESTED | SERVER group must exist as ACTIVE/LOCKED; SERVER members/currentUid must exist with OWNER or ADMIN role; open existing group requests URI |
+| JOIN_APPROVED, JOIN_REJECTED, REMOVED | SERVER group must exist as ACTIVE/LOCKED and be readable; open existing group detail/intro URI; continued membership is not required for a public intro |
+| EVENT_CREATED, EVENT_UPDATED | Require groupId and postId; SERVER group and post must exist/readable under current group/post Rules, then open group feed URI |
+| EVENT_DELETED, unknown subtype, invalid identifier, deleted/forbidden source or changed account | Saved title/body detail; do not open a different event or bypass source Rules |
+
+T013/T035 remain partial for BOOKING_NEW, PROMOTION, REVIEW_NEW and OWNER_* (SYSTEM deliberately uses saved detail). Existing OwnerApplicationStatusFragment accepts applicationId only by treating it as VENUE_ADDITION; nav_account's URI has no identifier and missing purpose means OWNER_ONBOARDING. This is not a general historical onboarding/result contract. An unqualified application URI could open the wrong submission; do not reuse it for every owner result without a purpose/target decision.
+
 1. Inbox persistence độc lập với kết quả FCM.
 2. Push xét preference theo type, ngoại lệ `BOOKING_NEW`, quyền OS, token hợp lệ và suppression khi đang xem đúng chat. OS có thể chặn hiển thị dù preference bật.
 3. Tap chỉ chuyển identifier đã biết; app tải lại nguồn và kiểm tra quyền hiện tại. Nếu nguồn mất/không được phép, hiển thị chi tiết từ title/body đã lưu.

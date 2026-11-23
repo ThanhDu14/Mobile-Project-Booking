@@ -20,5 +20,11 @@ User preference write tách riêng trên `users/{uid}` và chỉ được sửa 
 - Token chỉ được ghi cho tài khoản mình theo lifecycle được chốt.
 - Admin client không giả mạo SYSTEM item trừ khi contract DB/120 được duyệt rõ.
 
-Edge Function dùng service account bypass Rules, do đó phải xác minh nguồn, recipient, type và field trước khi ghi. `firestore.rules` hiện chỉ có helper chung, chưa có match notification/user; phối hợp sửa file chia sẻ. CSDL §7 ghi Admin C notifications trong khi §4.13/120 mô tả server-authoritative creation; cần thống nhất trước khi code.
+Edge Function dùng service account bypass Rules, do đó phải xác minh nguồn, recipient, type và field trước khi ghi. Rules hiện đã có own-user inbox/isRead và preference validation, được kiểm thử trên emulator; mô tả discovery chỉ có helper chung không còn phản ánh code hiện tại. CSDL §7 vẫn ghi Admin C notifications trong khi §4.13/120 mô tả server-authoritative creation; T007 giữ mở cho phần quyền này.
+
+## Feature 011 token handoff audit, 23/11/2026
+
+011 research R5, contracts/ui-screens.md và security-rules P15 xác nhận logout dùng FcmSignOutHook: arrayRemove đúng token máy hiện tại trước khi mất auth, rồi gọi FirebaseMessaging.deleteToken; không xóa token thiết bị khác. ACCOUNT_DELETED bỏ qua authenticated hooks, server xóa token/profile và local session cleanup vẫn chạy. Không đăng ký hook FCM thứ hai ở Feature 100.
+
+Code bỏ qua lỗi thông thường và SessionManager giới hạn tổng hook năm giây; việc deleteToken được thử gọi không chứng minh mọi lần rotate/provider invalidation đã thành công. Chưa có contract đủ cho đăng ký/refresh, chuyển UID sau detach thất bại, chính sách quyền OS, kích thước/format token list hay giới hạn add/remove. T011/T051/T052 vẫn partial. Chi tiết lựa chọn và bằng chứng nằm trong ../decision-review-2026-11-23.md; không đổi Rules token theo suy đoán.
 

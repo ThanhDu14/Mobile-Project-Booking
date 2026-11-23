@@ -80,3 +80,9 @@
 User approved T010: own-user query, 30 items/page, createdAt descending, snapshot cursor, one-shot load and explicit refresh. Mark-all traverses all pages. This supersedes historical undecided query notes. No composite index presumed for the single-field query.
 
 User requested durable delivery-state/job design: see delivery-state-proposal.md. Schema approval remains pending.
+
+## Approved Android continuation decisions — 2026-11-23
+
+The user approved DataStore as a UID-scoped cache only: Firestore authority, update cache after server success, read-only fallback on failed server loading, retry to restore editing, no offline mutation queue, and cleanup on logout/account deletion. See data-model.md for the local namespace/epoch implementation and the distinction between network failure and missing/forbidden profiles. T012's outstanding cache policy is now confirmed; T039 closure requires implementation verification.
+
+The user separately approved GROUP_ACTIVITY Android routing according to Feature 090's existing subtype catalog. Moderator membership is required for requests; event posts must be readable/existing; removed/deleted/unknown targets fall back as specified in contracts/event-integration.md. This confirms Android routing only, not producer event transport, fanout, identity or delivery storage. Other missing source routes remain partial.
