@@ -23,6 +23,7 @@
     <string name="payment_total">Tổng cộng</string>
     <string name="payment_free_badge">Miễn phí</string>
     <string name="payment_free_note">Mã khuyến mãi đã trừ hết tiền sân, bạn không cần thanh toán.</string>
+    <string name="payment_item_bullet">• %1$s</string>
     <string name="payment_amount_vnd">%1$sđ</string>
     <string name="payment_amount_minus_vnd">-%1$sđ</string>
     <string name="payment_missing_order">Không tìm thấy thông tin đơn giữ chỗ. Vui lòng chọn lại khung giờ.</string>
