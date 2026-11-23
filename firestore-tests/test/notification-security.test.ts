@@ -1,7 +1,9 @@
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { assertFails, assertSucceeds, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
-import { collection, deleteDoc, doc, getDoc, getDocs, limit, orderBy, query, startAfter, serverTimestamp, setDoc, Timestamp, updateDoc, writeBatch } from 'firebase/firestore';
-import { createTestEnv } from './setup';
+import { collection, connectFirestoreEmulator, deleteDoc, doc, getDoc, getDocs, getFirestore, limit, orderBy, query, runTransaction, startAfter, serverTimestamp, setDoc, terminate, Timestamp, updateDoc, writeBatch } from 'firebase/firestore';
+import { deleteApp, initializeApp } from 'firebase/app';
+import { createServer } from 'node:net';
+import { createTestEnv, PROJECT_ID } from './setup';
 import { seedUser } from './fixtures';
 
 let env: RulesTestEnvironment;
@@ -22,6 +24,34 @@ beforeEach(async () => {
 afterAll(async () => { await env.cleanup(); });
 
 describe('notification inbox ownership', () => {
+  it('unreachable transaction transport cannot change preferences and online transaction updates one key', async () => {
+    const db = dbFor('alice');
+    const profile = doc(db, 'users/alice');
+    const save = () => runTransaction(db, async tx => {
+      const current = await tx.get(profile);
+      expect(current.exists()).toBe(true);
+      tx.update(profile, { 'notificationPrefs.PROMOTION': true, updatedAt: serverTimestamp() });
+    }, { maxAttempts: 1 });
+    // disableNetwork() does not disable the JS transaction RPC transport. Use a closed loopback port.
+    const portProbe = createServer();
+    await new Promise<void>(resolve => portProbe.listen(0, '127.0.0.1', resolve));
+    const port = (portProbe.address() as { port: number }).port;
+    await new Promise<void>((resolve, reject) => portProbe.close(error => error ? reject(error) : resolve()));
+    const app = initializeApp({ projectId: PROJECT_ID }, `notification-offline-${port}`);
+    const offline = getFirestore(app);
+    connectFirestoreEmulator(offline, '127.0.0.1', port, { mockUserToken: { sub: 'alice', appRole: 'PLAYER' } });
+    try {
+      await expect(runTransaction(offline, async tx => {
+        const target = doc(offline, 'users/alice');
+        await tx.get(target);
+        tx.update(target, { 'notificationPrefs.PROMOTION': true, updatedAt: serverTimestamp() });
+      }, { maxAttempts: 1 })).rejects.toMatchObject({ code: 'unavailable' });
+    } finally { await terminate(offline); await deleteApp(app); }
+    const unchanged = (await getDoc(profile)).data()!;
+    expect(unchanged.notificationPrefs?.PROMOTION).not.toBe(true);
+    await assertSucceeds(save());
+    expect((await getDoc(profile)).data()!.notificationPrefs.PROMOTION).toBe(true);
+  });
   it('legacy string dates break chronology and a createdAt-only Timestamp repair restores it', async () => {
     const legacyDate = '2026-01-01T00:00:00.000Z';
     await env.withSecurityRulesDisabled(async ctx => {
