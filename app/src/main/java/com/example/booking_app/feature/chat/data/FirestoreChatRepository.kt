@@ -56,6 +56,7 @@ class FirestoreChatRepository @Inject constructor(
     private val outbox: ChatOutbox,
     private val sessionManager: SessionManager,
     private val clock: AppClock,
+    private val installation: com.example.booking_app.core.session.InstallationIdentity? = null,
 ) : ChatRepository {
 
     /** Độ lệch ước lượng `serverMs - localMs` cập nhật sau mỗi lần ghi `lastReadAt = serverTimestamp()`. */
@@ -410,10 +411,12 @@ class FirestoreChatRepository @Inject constructor(
         val uid = sessionManager.currentUid() ?: return Result.failure(ChatError.Unauthenticated())
         return try {
             val value = until?.let { Timestamp(it.epochSecond, it.nano) }
-            firestore.collection(COLLECTION_CHATS).document(chatId)
+            val presence = firestore.collection(COLLECTION_CHATS).document(chatId)
                 .collection(COLLECTION_PARTICIPANTS).document(uid)
-                .update("viewingUntil", value)
-                .awaitWithTimeout()
+                .collection("presence").document(checkNotNull(installation).installationId())
+            if (value == null) presence.delete().awaitWithTimeout()
+            else presence.set(mapOf("viewingUntil" to value)).awaitWithTimeout()
+            check(sessionManager.currentUid() == uid)
             Result.success(Unit)
         } catch (e: CancellationException) {
             throw e

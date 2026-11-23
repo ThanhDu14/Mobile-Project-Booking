@@ -153,7 +153,7 @@ T("C7 ảnh: chưa tải → PHOTO_MISSING; path sai → INVALID_ARGUMENT; ảnh
   await assertChatInvariant(s.chatId);
 });
 
-T("C8 thông báo: chỉ người không muted và không đang xem nhận CHAT_MESSAGE", async () => {
+T("C8 notification inbox callback includes muted/viewing recipients; push suppression happens at delivery", async () => {
   const tag = "c8";
   const [a, b, c, d] = ["a", "b", "c", "d"].map((n) => u(tag, n));
   const gid = await seedGroup({ owner: a, members: [b, c, d] });
@@ -167,11 +167,11 @@ T("C8 thông báo: chỉ người không muted và không đang xem nhận CHAT_
   ]);
   const messageId = crypto.randomUUID();
   assertEquals((await send(deps, a, { chatId, messageId, text: "hello" })).status, 201);
-  assertEquals(notifications.recipients(), [d]);
-  assertEquals(notifications.sent[0], { type: "CHAT_MESSAGE", recipientUid: d, data: { chatId, messageId } });
+  assertEquals(notifications.recipients().sort(), [b, c, d].sort());
+  assertEquals(notifications.sent.every(n => n.type === "CHAT_MESSAGE" && n.data.chatId === chatId && n.data.messageId === messageId), true);
   // gửi lại (200) không thông báo lần nữa; unreadCounts không phụ thuộc muted
   await send(deps, a, { chatId, messageId, text: "hello" });
-  assertEquals(notifications.sent.length, 1);
+  assertEquals(notifications.sent.length, 3);
   assertEquals((await firestore.get(chatPath(chatId)))?.unreadCounts, { [a]: 0, [b]: 1, [c]: 1, [d]: 1 });
   // lỗi gửi thông báo bị bỏ qua
   const failing = makeChatDeps({ notify: () => Promise.reject(new Error("boom")) }).deps;

@@ -108,16 +108,11 @@ async function send({ uid, body, deps }: ChatContext): Promise<Response> {
   return Response.json({ message: messageJson(messageId, saved ?? {}) }, { status: 201 });
 }
 
-/** Sau commit: `CHAT_MESSAGE` cho người không `muted` và không đang mở cuộc (`viewingUntil > now`); lỗi bỏ qua (R7). */
+/** Legacy post-commit callback. Inbox recipients include muted/viewing users (100 C1).
+ * Push suppression belongs to delivery, not recipient selection. Durable enqueue is still pending. */
 async function notifyRecipients(deps: ChatDeps, chatId: string, messageId: string, others: string[]): Promise<void> {
   try {
-    const now = deps.now().getTime();
-    const parts = await deps.firestore.query("participants", [], { parent: chatPath(chatId) });
-    const quiet = new Set(parts.filter((p) => {
-      const v = p.data.viewingUntil;
-      return p.data.muted === true || (v instanceof Date && v.getTime() > now);
-    }).map((p) => p.id));
-    await Promise.all(others.filter((o) => !quiet.has(o)).map(async (recipientUid) => {
+    await Promise.all(others.map(async (recipientUid) => {
       try {
         await deps.notify({ type: "CHAT_MESSAGE", recipientUid, data: { chatId, messageId } });
       } catch (e) {
