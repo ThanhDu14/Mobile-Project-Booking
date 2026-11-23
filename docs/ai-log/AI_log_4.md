@@ -62,6 +62,7 @@ Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 | 56  | 2026-11-22 | Triển khai domain, repository inbox/preference và Rules Feature 100; kiểm thử, ghi quyết định và đề xuất job phục hồi push                                                                                         | 10             |
 | 57  | 2026-11-22 | Tiếp tục Feature 100: inbox/settings Android, route an toàn và kiểm thử phone/w600dp light/dark; lưu ảnh và kết quả                                                                                                | 10             |
 | 58  | 2026-11-22 | Tiếp tục Feature 100: routing review, quyền thông báo, kiểm thử xóa tài khoản/index, sửa Timestamp và bổ sung đề xuất delivery từng token | 10             |
+| 59  | 2026-11-23 | Tiếp tục Feature 100: cache DataStore theo UID, routing nhóm, rà token/delivery, sửa planner và kiểm thử phone/w600dp light/dark | 10             |
 
 ---
 
@@ -5661,5 +5662,78 @@ Cập nhật tasks.md và implementation-review.md theo bằng chứng thực t�
 - Giữ log các lượt thất bại do chờ UI từ chối, lồng ActivityScenario và nhận diện sai package cài đặt vivo. Đã sửa harness dùng một ActivityScenario cùng Fragment back stack và nhận diện trang quyền OEM. Một lượt bị gián đoạn do điện thoại được sử dụng; chạy lại sau khi người dùng xác nhận thời điểm. Lint từng gặp lỗi detector ExperimentalDetector; các lượt sau đạt mà không tắt detector hoặc thêm skip.
 - Mở trực tiếp ảnh sau kiểm thử, phát hiện ảnh quay về bị chụp giữa animation, rồi thêm thời gian chờ và chụp lại. Bốn ảnh cuối có SHA-256 trong file kết quả; ảnh lỗi chẩn đoán được tách khỏi bằng chứng cuối. [Ảnh từ chối quyền](../../specs/100-notification/validation/continuation-device/notification-permission-denied.png), [inbox khi chưa có quyền](../../specs/100-notification/validation/continuation-device/notification-permission-denied-inbox.png), [quay về từ cài đặt](../../specs/100-notification/validation/continuation-device/notification-permission-granted-return.png), [báo cáo validation](../../specs/100-notification/validation/continuation-2026-11-22.md).
 - Đối chiếu code và contract để đóng T009; T007 vẫn chờ giải quyết mâu thuẫn quyền Admin trong CSDL. T013/T035 còn thiếu contract route, T012/T039 còn quyết định DataStore cache. [Đề xuất delivery](../../specs/100-notification/delivery-state-proposal.md) và [đề xuất chuyển đổi Timestamp](../../specs/100-notification/timestamp-repair-proposal.md) ghi rõ phần chưa duyệt. Chưa triển khai job/receipt, chưa deploy backend hoặc chạy migration dữ liệu thật; chưa nghiệm thu toàn bộ Feature 100.
+
+---
+
+## Mục 59: Tiếp tục Feature 100, cache DataStore theo UID và routing nhóm
+
+| Thông tin                | Nội dung |
+| ------------------------ | -------- |
+| Ngày                     | 2026-11-23 |
+| Người thực hiện          | Minh Nhựt |
+| Nhóm tính năng liên quan | 10 (100 thông báo); đối chiếu 011 tài khoản, 090 nhóm, 070 đánh giá, 091 chat và các nguồn owner/admin |
+| Công cụ AI               | Codex (GPT-6), `$speckit-implement`, `$humanizer:humanizer` |
+| Mục đích                 | Triển khai cache và routing đã được duyệt, rà lifecycle token và thiết kế delivery, kiểm chứng planner offline cùng giao diện |
+| Nhánh Git                | `feat/100-notification` |
+
+### Prompt đã dùng
+
+```text
+$speckit-implement
+
+Tiếp tục Feature 100 từ tiến độ 23/56 task. Đọc hướng dẫn repository, constitution, tasks.md, implementation-review.md và validation/continuation-2026-11-22.md trước khi sửa code. Kiểm tra implementation hiện có để tái sử dụng và xác định phần còn thiếu.
+
+Ưu tiên:
+
+1. Rà soát T013/T035 với producer, payload, navigation và quyền truy cập hiện hành. Hoàn thiện route đã đủ contract; ghi rõ phần còn thiếu của BOOKING_NEW, PROMOTION, REVIEW_NEW, GROUP_ACTIVITY và OWNER_*. Giữ REVIEW_REPLIED là tên chuẩn, tương thích REVIEW_REPLY cũ khi đọc/routing. Nguồn không còn truy cập được phải fallback về title/body đã lưu.
+
+2. Đối chiếu các task NEEDS DECISION với contract mới nhất. Với quyết định chưa có, trình bày lựa chọn cụ thể, phương án đề xuất, thay đổi contract/schema cần thiết và task được mở khóa. Tiếp tục phần độc lập trong lúc chờ phản hồi.
+
+3. Hoàn thiện phần thiết kế backend trong delivery-state-proposal.md: kiểm tra receipt từng token, retry/lease, partial success, event identity, ranh giới transaction và cleanup khi xóa tài khoản. Phân biệt producer đang ghi inbox trong transaction với callback sau commit. Đề xuất vẫn chưa được duyệt schema; không tự tạo collection, fields, event protocol hoặc worker.
+
+4. Làm rõ phần DataStore cache còn thiếu trong T012/T039 và lifecycle token T011/T051/T052 bằng code/contract Feature 011. Không tự đặt chính sách cache, logout/account-switch hoặc quyền ghi token.
+
+5. Rà soát timestamp-repair-proposal.md và planner offline. Bổ sung kiểm thử nếu phát hiện thiếu sót; chưa đọc hoặc chạy migration trên dữ liệu thật.
+
+Giữ UI và các ngoại lệ đã được duyệt trong specs/100-notification/ui/ và báo cáo validation. Nếu sửa giao diện, đọc ui/README.md, mở trực tiếp hai PNG gốc và đối chiếu screenshot sau thay đổi. Chỉ chạy lại ma trận phone/w600dp light/dark khi thay đổi ảnh hưởng giao diện.
+
+Bổ sung kiểm thử hành vi cho phần triển khai mới. Chạy kiểm thử phù hợp, assembleDebug và lintDebug; dùng emulator/fake cho backend. Chỉ đánh dấu [X] khi toàn bộ phần việc của task đã được kiểm chứng. Giữ nguyên các task còn thiếu contract hoặc bằng chứng.
+
+Cập nhật tasks.md và implementation-review.md theo kết quả thực tế. Cuối lượt báo task hoàn thành thêm, kết quả kiểm thử, đường dẫn bằng chứng, phần còn bị chặn và quyết định cần chốt tiếp theo. Không tự commit, push, deploy hoặc chạy migration thật.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Rà tài liệu và code hiện tại, kiểm tra checklist đạt 24/24. Người dùng duyệt routing GROUP_ACTIVITY theo catalog 090 và chính sách DataStore cache trong lượt này. Hai quyết định chỉ áp dụng cho Android; schema delivery và giao thức sự kiện vẫn chờ duyệt.
+- Bổ sung routing nhóm bằng đọc SERVER. JOIN_REQUESTED cần membership OWNER/ADMIN hiện tại; quyết định tham gia hoặc mời ra mở trang nhóm còn đọc được; sự kiện tạo/sửa phải có bài nguồn còn tồn tại và có quyền đọc. Sự kiện đã xóa, subtype không biết, identifier sai hoặc phiên đổi tài khoản dùng title/body đã lưu. Giữ tên chuẩn REVIEW_REPLIED và alias đọc/routing REVIEW_REPLY cũ.
+- Thêm cache preference theo UID vào DataStore đang có. Firestore là nguồn chuẩn; chỉ dùng cache khi đọc server lỗi mạng/timeout, hiện cảnh báo và khóa chỉnh sửa. Retry server thành công mở lại checkbox. BOOKING_NEW luôn bật, PROMOTION mặc định tắt. Cache cập nhật sau server thành công và không biến lỗi quyền hoặc profile mất thành dữ liệu tải thành công.
+- Chuyển ghi preference sang transaction, chỉ sửa các key được chọn và updatedAt, để tránh queue ghi offline của direct update(). Dọn namespace cache qua đường session cleanup hiện có, gồm cả ACCOUNT_DELETED khi hook có auth bị bỏ qua. Epoch cục bộ chặn request bắt đầu trước logout ghi lại cache đã xóa; dữ liệu welcome và password-reset được giữ theo quy ước cũ.
+- Tái hiện ba lỗi planner: nhận snapshot lẫn project, giữ bản đầu khi duplicate mâu thuẫn và chấp nhận updateTime sai. Đã thêm kiểm tra toàn bộ đầu vào, project pin bắt buộc ở CLI, kiểm tra REST Value và giữ nguyên độ chính xác nanosecond của precondition. Planner vẫn chỉ xuất kế hoạch offline; ca CLI dùng snapshot demo tự tạo.
+- Đối chiếu Feature 011 xác nhận FcmSignOutHook và quyền arrayRemove P15 đã có. Giới hạn năm giây cho cả hook và cách bỏ qua lỗi không đủ để cam kết detach/rotate luôn hoàn tất. Registration, refresh, chuyển UID, chính sách quyền OS và Rules token chi tiết còn thiếu quyết định; AI ghi lựa chọn và task được mở khóa, giữ nguyên các phần này.
+- Bổ sung thiết kế delivery về receipt SENDING sau crash, nonce riêng mỗi lần claim, khởi tạo target theo trang và chống tái tạo job sau xóa tài khoản. Chưa tạo collection, worker hoặc field server mới. Hoàn thành T012/T039, đưa tiến độ lên 25/56; T013/T035 còn thiếu contract cho các route khác và T056 chưa nghiệm thu toàn bộ luồng backend.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+| ---- | ---------- | ----- |
+| `FirestoreNotificationRouteResolver` và `NotificationGroupRouteTest` | Thêm route nhóm theo duyệt của người dùng | Kiểm tra nhóm, membership quản trị và bài nguồn; giữ fallback khi không mở được nội dung. |
+| `NotificationPreferenceCache.kt`, `NotificationModule` và model snapshot | Thêm cache có UID và thông tin nguồn dữ liệu | Tách giá trị đã lưu khỏi kết quả server để UI biết lúc nào phải khóa chỉnh sửa. |
+| `FirestoreNotificationPreferencesRepository` | Thêm cache fallback và chuyển mutation sang transaction | Firestore giữ quyền quyết định, bảo toàn key khác và tránh ghi chờ offline. |
+| `DataStoreSessionPrefs.clearOnSignOut()` | Dọn namespace cache và tăng epoch | Xóa dữ liệu cục bộ cả khi xóa tài khoản, ngăn request cũ ghi lại sau cleanup, giữ các key phiên khác theo quy ước. |
+| `NotificationSettingsViewModel`, Fragment và resource cảnh báo | Hiển thị cache ở chế độ chỉ đọc, retry để chỉnh sửa | Người dùng thấy cài đặt đã lưu và biết cần tải server lại; nhóm/checkbox/theme giữ theo thiết kế đã duyệt. |
+| JVM, Rules/transport và `NotificationUiTest` | Thêm ca cache, quyền nhóm và transaction lỗi mạng | Kiểm chứng UID isolation, cleanup, lỗi đọc/ghi, trạng thái chỉ đọc và mở lại chỉnh sửa sau retry. |
+| Planner Timestamp, tests và đề xuất chuyển đổi | Kiểm tra project, duplicate, kiểu dữ liệu và updateTime | Kế hoạch có thể review trước khi thực thi; giữ đúng thời điểm và precondition, chưa đọc hoặc sửa dữ liệu thật. |
+| `delivery-state-proposal.md` và `decision-review-2026-11-23.md` | Bổ sung thiết kế, bằng chứng và lựa chọn chưa chốt | Làm rõ token lifecycle, transaction của producer và giới hạn phục hồi; giữ schema chưa duyệt ở dạng đề xuất. |
+| `tasks.md`, `implementation-review.md`, data-model/research/plan và `validation/` | Ghi quyết định, task và bằng chứng mới | Đóng T012/T039 sau kiểm chứng, lưu rõ phần còn mở và ma trận UI mới, giữ nguyên tài liệu/ảnh UI gốc. |
+
+### Cách kiểm chứng
+
+- Lệnh `testDebugUnitTest assembleDebug lintDebug` đạt: 255 suite, 1.682 ca, 0 failure/error và 2 skip Windows cũ. Tám suite notification có 37/37 ca đạt, không skip. Lint có 0 lỗi, 856 cảnh báo. Build app/test cô lập cũng đạt; không thêm dependency, tắt detector hoặc bỏ test mới. [Kết quả tổng hợp](../../specs/100-notification/validation/continuation-2026-11-23-results.json), [tóm tắt kiểm chứng](../../specs/100-notification/validation/continuation-2026-11-23-verification.log).
+- Sáu ca cache dùng production cache trên DataStore trong bộ nhớ, kiểm tra UID isolation, logout/deletion cleanup, epoch của request cũ, fallback, transaction và lỗi IO. ViewModel test kiểm tra khóa ghi khi dùng cache, retry và reset theo tài khoản; bốn ca route nhóm kiểm tra quyền quản trị, nguồn bài, subtype đã xóa/không biết và đổi phiên. Firebase SDK trong JVM được mock, không đọc backend thật.
+- Firestore notification/profile/query/group đạt 53/53 trên emulator demo-smashnow. Ca đầu dùng disableNetwork() nhưng transaction JS vẫn thành công vì RPC chưa bị ngắt. Đã sửa harness sang client demo trỏ cổng loopback đóng, xác nhận UNAVAILABLE và preference server không đổi, rồi kiểm tra transaction online cập nhật một key. Kết quả này kiểm chứng transport lỗi thực sự, giữ riêng với bộ test Android dùng SDK mock.
+- Planner Deno đạt 6/6. Kiểm thử mới tái hiện lỗi trước khi sửa, gồm project sai/lẫn, duplicate mâu thuẫn, REST Value không hợp lệ và updateTime sai. Precondition có chín chữ số phần lẻ được giữ nguyên. CLI chạy với snapshot demo tự tạo và project pin, xuất một write đề xuất trong chế độ REVIEW_ONLY_NO_COMMIT, không có quyền mạng hoặc bước gửi commit.
+- Chạy chín ca UI trên vivo V2247 Android 15 với package `com.example.booking_app.adminlocal`: phone 393dp và w600dp 720dp, mỗi cấu hình light/dark, tổng 36/36 đạt. Ca mới kiểm tra cảnh báo cache, checkbox bị khóa và retry mở lại chỉnh sửa. w600dp dùng density 240 trên cùng điện thoại; sau lượt cuối readback là 440, không override, kích thước 1080x2388, font scale 1.0.
+- Mở hai PNG gốc và ảnh sau test để đối chiếu. Giữ bố cục, theme, nhóm và các ngoại lệ đã được duyệt; cache dùng khu vực lỗi/thử lại cùng checkbox disabled của Material. Lưu 24 PNG và SHA-256. [Cache phone light](../../specs/100-notification/validation/device-2026-11-23/phone-light/notification-393dp-light-settings-cache.png), [cache w600dp dark](../../specs/100-notification/validation/device-2026-11-23/tablet-dark/notification-720dp-dark-settings-cache.png), [báo cáo đối chiếu](../../specs/100-notification/validation/continuation-2026-11-23.md). Repository/UID stream/resolver trong UI test vẫn dùng fake; điện thoại không được dùng để nghiệm thu pipeline backend hoặc lỗi đĩa thật.
+- Kiểm tra lại đủ 25/56 marker task, hash của 24 ảnh, các link báo cáo và `git diff --check`. [Decision review](../../specs/100-notification/decision-review-2026-11-23.md) ghi phần token và route chưa chốt; [đề xuất delivery](../../specs/100-notification/delivery-state-proposal.md) giữ trạng thái chưa duyệt. Checklist reviewer không đổi. Chưa commit, push, deploy, gửi FCM thật hoặc chạy migration dữ liệu thật.
 
 ---
