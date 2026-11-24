@@ -12,6 +12,9 @@ export async function sha256(value: string): Promise<string> {
   return Array.from(new Uint8Array(bytes), b => b.toString(16).padStart(2, "0")).join("");
 }
 export const activeRecipient = (u: Record<string, unknown> | null) => !!u && u.accountStatus === "ACTIVE" && !u.deletionRequestedAt;
+export async function notificationInboxId(family: string, identity: string, uid: string, type: string): Promise<string> {
+  return `n_${await sha256(JSON.stringify([family, identity, uid, type]))}`;
+}
 export interface InboxContent { type: string; title: string; body: string; data: Record<string, unknown> }
 
 /** Read phase only. Caller appends returned writes after ALL source reads, in the SAME transaction.

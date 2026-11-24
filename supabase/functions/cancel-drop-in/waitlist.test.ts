@@ -267,7 +267,17 @@ T("Rời hàng chờ (expectWaitlisted) → CANCELLED, USER, LEFT; 0 đ, payment
   // Người đứng sau (vé 3) từ vị trí 3 lên vị trí 2.
   assertEquals((session.waitlistTickets as number[]).indexOf(3) + 1, 2);
   assertEquals(sent, []);
+  assertEquals((await firestore.query("notifications", [], { parent: `users/${s.waitlistUids[1]}` })).length, 0);
   await assertWaitlistInvariant(s.sessionId);
+});
+
+T("T021 self-cancellation never creates inbox/job for the cancelling player", async () => {
+  await seedBase();
+  const s = await seedFullSession({ id: `${RUN}-t021-self`, capacity: 2, registered: [2], waitlist: [], startInMinutes: 24 * 60 });
+  const uid = s.registeredUids[0];
+  assertEquals((await cancel(uid, s.sessionId)).status, 200);
+  assertEquals((await firestore.query("notifications", [], { parent: `users/${uid}` })).length, 0);
+  assertEquals((await firestore.query("notificationDeliveries", [{ field: "recipientUid", op: "EQUAL", value: uid }])).length, 0);
 });
 
 T("Rời hàng chờ: dryRun → quote 0 đ WAITLIST_LEAVE và không ghi gì", async () => {
