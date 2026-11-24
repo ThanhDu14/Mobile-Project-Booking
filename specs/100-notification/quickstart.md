@@ -36,6 +36,8 @@ $env:FIRESTORE_EMULATOR_HOST = '127.0.0.1:8080'
 $env:FIREBASE_AUTH_EMULATOR_HOST = '127.0.0.1:9099'
 npx.cmd --yes firebase-tools@15 emulators:exec --project demo-f100-backend --only auth,firestore 'powershell -ExecutionPolicy Bypass -File scripts/notification/validate-backend.ps1 -Suite Emulator'
 # -Suite Affected runs worker/SYSTEM plus presence cleanup when only these changed.
+# -Suite Continuation runs D3 registration, R1 review, H1 direct chat and affected waitlist/source integration.
+# Run review Rules too: vitest run test/reviews.test.ts test/notification-security.test.ts test/notification-delivery-security.test.ts
 ```
 
 Run Rules suites notification-delivery-security, notification-security, users-profile and chats in firestore-tests against the Firestore emulator. Validation/backend-2026-11-23.md records executed commands, outputs and limitations. Cron SQL is reviewable but was not applied; a local Supabase runtime needs Docker and a fake-sender composition, not removal of the no-real-FCM guard.

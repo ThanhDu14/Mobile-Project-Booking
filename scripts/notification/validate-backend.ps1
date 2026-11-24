@@ -1,5 +1,5 @@
 param(
-    [ValidateSet('Fake', 'Emulator', 'Affected', 'Booking')][string]$Suite = 'Fake',
+    [ValidateSet('Fake', 'Emulator', 'Affected', 'Booking', 'Continuation')][string]$Suite = 'Fake',
     [string]$DenoExecutable = 'deno'
 )
 $ErrorActionPreference = 'Stop'
@@ -17,6 +17,10 @@ try {
     }
     if ($Suite -eq 'Booking') {
         & $DenoExecutable test --allow-env --allow-net supabase/functions/booking-reminders/handler.test.ts
+        exit $LASTEXITCODE
+    }
+    if ($Suite -eq 'Continuation') {
+        & $DenoExecutable test --allow-env --allow-net supabase/functions/register-drop-in/index.test.ts supabase/functions/register-drop-in/waitlist.test.ts supabase/functions/review/ supabase/functions/chat-send/index.test.ts supabase/functions/_shared/chats.test.ts supabase/functions/cancel-drop-in/waitlist.test.ts supabase/functions/dropin-close/index.test.ts
         exit $LASTEXITCODE
     }
     & $DenoExecutable test --allow-env --allow-net supabase/functions/_shared/notification-emulator.test.ts

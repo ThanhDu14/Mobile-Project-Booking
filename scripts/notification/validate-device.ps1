@@ -20,18 +20,26 @@ if (-not $SkipInstall) {
 }
 $density = (& $adb -s $Device shell wm density) -join "`n"
 $previousOverride = if ($density -match 'Override density:\s*(\d+)') { $Matches[1] } else { $null }
+$physicalDensity = if ($density -match 'Physical density:\s*(\d+)') { $Matches[1] } else { throw 'Cannot read physical density' }
+$permission = 'android.permission.POST_NOTIFICATIONS'
+$packageState = (& $adb -s $Device shell dumpsys package $package) -join "`n"
+if ($packageState -notmatch 'android[.]permission[.]POST_NOTIFICATIONS:\s*granted=(true|false),\s*flags=\[([^\]]*)\]') { throw 'Cannot snapshot notification permission' }
+$wasGranted = $Matches[1] -eq 'true'
+$originalFlags = $Matches[2]
+$expectedTests = (Select-String -Path app/src/androidTest/java/com/example/booking_app/feature/notification/NotificationUiTest.kt -Pattern '@Test fun').Count
 $theme = if ($Variant.EndsWith('dark')) { 'dark' } else { 'light' }
 try {
     if ($Variant.StartsWith('tablet')) {
         & $adb -s $Device shell wm density 240
         if ($LASTEXITCODE -ne 0) { throw 'Cannot apply tablet density' }
     }
+    else { & $adb -s $Device shell wm density $physicalDensity }
     & $adb -s $Device shell input keyevent KEYCODE_WAKEUP
     & $adb -s $Device shell pm grant $package android.permission.POST_NOTIFICATIONS
     $result = (& $adb -s $Device shell am instrument -w -r -e class com.example.booking_app.feature.notification.NotificationUiTest -e notificationTheme $theme -e localSupabaseKey notification-local-placeholder "$package.test/com.example.booking_app.feature.notification.NotificationTestRunner") -join "`n"
     [System.IO.File]::WriteAllText((Join-Path $evidence 'instrumentation.log'), $result)
     $result
-    if ($result -notmatch 'OK \(9 tests\)') { throw 'Notification UI instrumentation did not pass all nine tests' }
+    if ($result -notmatch "OK \($expectedTests tests\)") { throw "Notification UI instrumentation did not pass all $expectedTests tests" }
     # Query names produced by the test instead of assuming the OEM rounds dp identically.
     $remote = "/sdcard/Android/data/$package/files"
     $files = & $adb -s $Device shell ls "$remote/notification-*dp-$theme-*.png"
@@ -45,4 +53,9 @@ try {
 } finally {
     if ($null -ne $previousOverride) { & $adb -s $Device shell wm density $previousOverride }
     else { & $adb -s $Device shell wm density reset }
+    $operation = if ($wasGranted) { 'grant' } else { 'revoke' }
+    & $adb -s $Device shell pm $operation $package $permission
+    & $adb -s $Device shell pm clear-permission-flags $package $permission user-set user-fixed
+    if ($originalFlags -match 'USER_SET') { & $adb -s $Device shell pm set-permission-flags $package $permission user-set }
+    if ($originalFlags -match 'USER_FIXED') { & $adb -s $Device shell pm set-permission-flags $package $permission user-fixed }
 }
