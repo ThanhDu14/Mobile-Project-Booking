@@ -33,6 +33,10 @@ class NotificationTestRunner : AndroidJUnitRunner() {
 }
 
 object NotificationUiFixture {
+    val uids = MutableStateFlow<String?>("test-user")
+    var allItems: List<Notification>? = null
+    var allReadCalls = 0
+    data class Cursor(val offset: Int) : NotificationCursor
     var pushItem: Notification? = null
     val lookedUp = mutableListOf<String>()
     val marked = mutableListOf<String>()
@@ -41,17 +45,25 @@ object NotificationUiFixture {
     var fromCache = false
     var values = NewAccountNotificationPreferences.defaults()
     var preferences = CompletableDeferred<Map<NotificationType, Boolean>>().apply { complete(values) }
-    fun reset() { pushItem = null; lookedUp.clear(); marked.clear(); response = CompletableDeferred(); values = NewAccountNotificationPreferences.defaults(); failSave = false; fromCache = false; preferences = CompletableDeferred<Map<NotificationType, Boolean>>().apply { complete(values) } }
+    fun reset() { uids.value = "test-user"; allItems = null; allReadCalls = 0; pushItem = null; lookedUp.clear(); marked.clear(); response = CompletableDeferred(); values = NewAccountNotificationPreferences.defaults(); failSave = false; fromCache = false; preferences = CompletableDeferred<Map<NotificationType, Boolean>>().apply { complete(values) } }
 }
 @Module
 @TestInstallIn(components = [SingletonComponent::class], replaces = [NotificationModule::class])
 object NotificationUiModule {
-    @Provides fun session(): NotificationSession = object : NotificationSession { override val uids = MutableStateFlow<String?>("test-user") }
+    @Provides fun session(): NotificationSession = object : NotificationSession { override val uids = NotificationUiFixture.uids }
     @Provides fun repository(): NotificationRepository = object : NotificationRepository {
-        override suspend fun loadPage(after: NotificationCursor?) = NotificationUiFixture.response.await()
+        override suspend fun loadPage(after: NotificationCursor?): NotificationPage {
+            val items = NotificationUiFixture.allItems ?: return NotificationUiFixture.response.await()
+            val offset = (after as? NotificationUiFixture.Cursor)?.offset ?: 0
+            return NotificationPage(items.drop(offset).take(30),
+                if (offset + 30 < items.size) NotificationUiFixture.Cursor(offset + 30) else null)
+        }
         override suspend fun loadById(id: String): Notification? { NotificationUiFixture.lookedUp += id; return NotificationUiFixture.pushItem }
         override suspend fun markRead(id: String) { NotificationUiFixture.marked += id }
-        override suspend fun markAllRead() {}
+        override suspend fun markAllRead() {
+            NotificationUiFixture.allReadCalls++
+            NotificationUiFixture.allItems = NotificationUiFixture.allItems?.map { it.copy(isRead = true) }
+        }
     }
     @Provides fun preferences(): NotificationPreferencesRepository = object : NotificationPreferencesRepository {
         override suspend fun load() = NotificationUiFixture.preferences.await()
@@ -121,6 +133,42 @@ class NotificationUiTest {
             onView(withId(R.id.retry)).perform(click())
             awaitDisplayed(withText(R.string.notification_empty))
             onView(withText(R.string.notification_empty)).check(matches(isDisplayed()))
+        }
+    }
+    @Test fun inboxPagesThirtyThenSixtyThenSixtyFiveAndMarksUnloadedRowsRead() {
+        start().use {
+            val items = (1..65).map { n -> Notification("paged-$n", "SYSTEM", "Paged $n", "Saved detail $n", emptyMap(), false, 1791018000000L - n) }
+            NotificationUiFixture.allItems = items
+            NotificationUiFixture.response.complete(NotificationPage(items.take(30), NotificationUiFixture.Cursor(30)))
+            awaitDisplayed(withText("Paged 1"))
+            onView(withId(R.id.list)).check { view, _ -> org.junit.Assert.assertEquals(30, (view as androidx.recyclerview.widget.RecyclerView).adapter!!.itemCount) }
+            onView(withId(R.id.more)).perform(click())
+            awaitDisplayed(allOf(withId(R.id.unread), withText("60 chưa đọc")))
+            onView(withText("Paged 1")).perform(click())
+            awaitDisplayed(withText("Saved detail 1"))
+            onView(withId(android.R.id.button1)).perform(click())
+            org.junit.Assert.assertEquals(listOf("paged-1"), NotificationUiFixture.marked)
+            onView(withId(R.id.markAll)).perform(click())
+            awaitDisplayed(allOf(withId(R.id.unread), withText("0 chưa đọc")))
+            onView(withId(R.id.more)).perform(click())
+            onView(withId(R.id.list)).check { view, _ -> org.junit.Assert.assertEquals(65, (view as androidx.recyclerview.widget.RecyclerView).adapter!!.itemCount) }
+            onView(withId(R.id.unread)).check(matches(withText("0 chưa đọc")))
+            org.junit.Assert.assertEquals(1, NotificationUiFixture.allReadCalls)
+        }
+    }
+    @Test fun logoutClearsInboxAndNewAccountCannotSeePreviousRows() {
+        start().use {
+            NotificationUiFixture.response.complete(NotificationPage(listOf(Notification("old", "SYSTEM", "Old account item", "Saved", emptyMap(), false, 1)), null))
+            awaitDisplayed(withText("Old account item"))
+            NotificationUiFixture.uids.value = null
+            awaitDisplayed(withText(R.string.notification_empty))
+            onView(withId(R.id.list)).check(matches(org.hamcrest.Matchers.not(isDisplayed())))
+            onView(withId(R.id.list)).check { view, _ -> org.junit.Assert.assertEquals(0, (view as androidx.recyclerview.widget.RecyclerView).adapter!!.itemCount) }
+            NotificationUiFixture.response = CompletableDeferred<NotificationPage>().apply { complete(NotificationPage(emptyList(), null)) }
+            NotificationUiFixture.uids.value = "new-account"
+            awaitDisplayed(withText(R.string.notification_empty))
+            onView(withId(R.id.list)).check(matches(org.hamcrest.Matchers.not(isDisplayed())))
+            onView(withId(R.id.list)).check { view, _ -> org.junit.Assert.assertEquals(0, (view as androidx.recyclerview.widget.RecyclerView).adapter!!.itemCount) }
         }
     }
     @Test fun cachedSettingsDisableWritesAndRetryRestoresEditing() {
@@ -243,6 +291,12 @@ class NotificationUiTest {
                 val nav = (activity.supportFragmentManager.fragments.single() as androidx.navigation.fragment.NavHostFragment).navController
                 nav.navigate(android.net.Uri.parse("smashnow://notifications/test-user/push-id"))
             }
+            // Auto-open can create a dialog while Espresso is selecting the previous activity root.
+            // Wait for the focused window to contain its text before asking Espresso for that root.
+            val automation = InstrumentationRegistry.getInstrumentation().uiAutomation
+            val deadline = android.os.SystemClock.uptimeMillis() + 8000
+            while (automation.rootInActiveWindow?.findAccessibilityNodeInfosByText("Saved push body").isNullOrEmpty()
+                && android.os.SystemClock.uptimeMillis() < deadline) Thread.sleep(25)
             awaitDisplayed(withText("Saved push body"))
             onView(withText("Saved push title")).check(matches(isDisplayed()))
             org.junit.Assert.assertEquals(listOf("push-id"), NotificationUiFixture.lookedUp)

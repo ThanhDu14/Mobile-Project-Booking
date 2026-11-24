@@ -59,7 +59,12 @@ class NotificationFragment : Fragment(R.layout.fragment_notification) {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch { model.state.collect { s ->
-                    adapter.submitList(s.items)
+                    // Account reset must not leave old rows visible during async diff/removal animations.
+                    b.list.isVisible = s.items.isNotEmpty()
+                    if (s.items.isEmpty()) {
+                        adapter.submitList(null)
+                        b.list.itemAnimator?.endAnimations()
+                    } else adapter.submitList(s.items)
                     b.progress.isVisible = s.loading || s.busy
                     b.message.isVisible = s.error || (!s.loading && s.items.isEmpty())
                     b.message.setText(if (s.error) R.string.notification_error else R.string.notification_empty)
