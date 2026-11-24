@@ -85,7 +85,7 @@ Mỗi mục ghi: **Quyết định** · **Lý do** · **Phương án đã cân n
 **Quyết định:** Edge Function `review` gọi `send-notification` (của D) sau khi transaction thành công:
 - `REVIEW_NEW` → chủ cơ sở, khi có đánh giá mới.
 - `REVIEW_REPLY` → người viết, khi chủ sân phản hồi lần đầu.
-- `REVIEW_REMINDER` → người chơi, do `booking-reminders` (D) gửi khi đơn sang `COMPLETED` (và nhắc lại 1 lần sau 5 ngày nếu chưa đánh giá).
+- `REVIEW_REMINDER` → người đặt đủ điều kiện review, ghi inbox/job trong transaction `complete-bookings` khi đơn chuyển sang `COMPLETED` và chưa có review. RR1 được duyệt ngày 24/11/2026 quy định một lần mỗi booking ID, không backfill và không nhắc lại sau 5 ngày.
 
 Lỗi gửi thông báo không làm hỏng việc ghi đánh giá (ghi log và bỏ qua).
 

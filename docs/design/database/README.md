@@ -288,6 +288,10 @@ Các `type` (đã chốt 13/10 theo yêu cầu của các spec nguồn; thêm lo
 | `CHAT_MESSAGE` | 09 |
 | `SYSTEM` | 12 |
 
+O2 thêm journal server-only `users/{uid}/ownerRevocationCommands/{requestId}`. Mỗi UUID là một lần gọi thu hồi, lưu `actorUid`, `reasonHash` và `createdAt` (Timestamp). Journal được ghi cùng role/inbox/job và được dọn khi xóa tài khoản.
+
+D4 thêm journal server-only `dropInSessions/{sessionId}/notificationCommands/{requestId}` gồm `actorUid`, `fingerprint`, `result`, `createdAt`. Transaction giữ journal theo vòng đời session. Khi không đủ ngân sách ghi từng inbox trong transaction nguồn, ghi `notificationFanouts/{eventId}` với identity, family, actorUid, content, createdAt, state, cursor và pageCount, kèm các trang `recipients/{page}` (tối đa 100 UID). Mỗi transaction worker ghi inbox/job và tiến cursor cùng lúc. Trang snapshot được dọn sau 7 ngày kể từ khi hoàn tất. Thiết kế này mới triển khai cho D4.
+
 Người dùng tự làm một thao tác (tự hủy đơn, tự hủy đăng ký vãng lai, tự vào hàng chờ) thì không nhận thông báo cho thao tác đó; app hiện kết quả ngay trên màn hình.
 
 ## 5. ID tất định

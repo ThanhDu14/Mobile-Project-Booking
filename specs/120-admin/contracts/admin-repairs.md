@@ -28,6 +28,10 @@ Hợp đồng đầy đủ: [owner-application-api.md](../../110-owner-onboardin
 
 ## Feature 100 — phê duyệt 23/11/2026
 
-D2-W1/S1: SYSTEM qua server ADMIN claim + ACTIVE ADMIN profile, scan recipient ACTIVE/không deleting giữ nguyên. Tối đa100 recipient/source transaction, re-read profile, inbox và job. Inbox tồn tại khớp giữ isRead/createdAt và không backfill job cũ. Kết quả hồ sơ enqueue theo applicationId/submittedAt/decision cùng transaction, không đổi claim recovery. OWNER_REVOKED còn thiếu request identity.
+D2-W1/S1: SYSTEM qua server ADMIN claim + ACTIVE ADMIN profile, scan recipient ACTIVE/không deleting giữ nguyên. Tối đa100 recipient/source transaction, re-read profile, inbox và job. Inbox tồn tại khớp giữ isRead/createdAt và không backfill job cũ. Kết quả hồ sơ enqueue theo applicationId/submittedAt/decision cùng transaction, không đổi claim recovery.
 
 Nguồn: [gói quyết định đã duyệt](../../100-notification/backend-decision-package.md). Chỉ áp dụng phạm vi ID được duyệt; chưa deploy.
+
+O2 duyệt 24/11/2026. `admin-revoke-owner` nhận UUID `requestId` cùng `uid` và `reason`. Transaction kiểm tra ADMIN hiện tại và journal `users/{uid}/ownerRevocationCommands/{requestId}` trước khi đổi role. Journal chỉ server đọc/ghi, lưu actorUid, reasonHash, createdAt và được dọn khi xóa tài khoản. Cùng actor/lý do trả thành công khi replay, khác actor/lý do trả 409. Role, journal, inbox và delivery job cùng transaction. Claims reconcile theo profile hiện tại kể cả khi replay.
+
+Android giữ UUID của yêu cầu lỗi trong vòng đời ViewModel; app và Edge Function cần được đồng bộ khi phát hành vì các caller cũ chưa gửi requestId.

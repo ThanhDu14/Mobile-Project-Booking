@@ -20,14 +20,14 @@ Initial Android routing baseline (2026-11-22; superseded for reviews by the cont
 | `BOOKING_REMINDER` | Một lần, 2 giờ trước `startAt` sớm nhất của booking CONFIRMED | Người đặt | 040/060; `booking-reminders` pg_cron |
 | `DROPIN_REGISTERED` | Đăng ký thành công | Người đăng ký | 080/112 |
 | `DROPIN_SPOT_OPENED` | Waitlisted registration được chuyển thành đăng ký | Người vừa được nhận chỗ | 081; nếu bị rời waitlist buổi trùng giờ, thể hiện trong cùng thông báo theo spec 081 |
-| `DROPIN_CHANGED` | Buổi đổi giờ/hủy | Chỉ người đã đăng ký; không waitlisted | 080/112 |
+| `DROPIN_CHANGED` | Buổi đổi startAt/endAt hoặc hủy | Snapshot REGISTERED trước mutation, trừ actor | 080/112/D4: sessionId/requestId/type, payload `{sessionId}`, cùng transaction nguồn hoặc snapshot outbox |
 | `DROPIN_WAITLIST_CLOSED` | Waitlist đóng trước giờ chơi mà chưa được nhận, hoặc session bị hủy | Người còn WAITLISTED | 081 |
 | `PROMOTION` | Voucher sân theo dõi phát hành | Follower đủ điều kiện dùng voucher theo Feature 05 | 050/070/112; yêu thích=theo dõi |
 | `OWNER_APPROVED`, `OWNER_REJECTED` | Admin quyết định hồ sơ | Người nộp hồ sơ | 110/120 |
-| `OWNER_REVOKED` | Admin thu hồi quyền, kèm lý do | Owner bị thu hồi | 011/120 |
+| `OWNER_REVOKED` | Admin thu hồi quyền, kèm lý do | Tài khoản hoạt động bị thu hồi | 011/120/O2: UID/requestId/type, cùng transaction với journal và đổi role |
 | `REVIEW_REPLIED` | Owner phản hồi review | Người viết review | 070 |
 | `REVIEW_NEW` | Review mới | Chủ cơ sở | 070 |
-| `REVIEW_REMINDER` | Booking sang COMPLETED | Người đặt đủ điều kiện review theo 070 | 060/070; thời điểm/one-time theo 070 |
+| `REVIEW_REMINDER` | Booking sang COMPLETED trong `complete-bookings` | Người đặt đủ điều kiện review theo 070 và chưa có review | RR1 duyệt 24/11: cùng transaction nguồn, identity bookingId/type, `{bookingId}`, một lần, không backfill |
 | `GROUP_ACTIVITY` | Join request, quyết định, remove, event create/edit/delete | Thành viên liên quan theo spec 090 | 090; `data.event` nêu subtype, subtype schema chưa chốt |
 | `CHAT_MESSAGE` | Tin mới trong chat | Thành viên nhận, không gồm sender | 091; inbox luôn tạo; push suppress khi recipient đang xem đúng chat |
 | `SYSTEM` | Admin gửi hệ thống | Tài khoản có accountStatus ACTIVE và không deletionRequestedAt | 120 admin-repairs.md Broadcast xác nhận scan/fan-out/retry; T007 authorization và T006 durable push vẫn mở |

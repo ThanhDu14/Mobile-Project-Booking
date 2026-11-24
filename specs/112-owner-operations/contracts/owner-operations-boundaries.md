@@ -21,6 +21,7 @@ Vận hành booking/drop-in/voucher yêu cầu venue ACTIVE. Cấu hình venue/c
 - Retry CREATE cùng nội dung đối chiếu session và slots đang thuộc nó, trả sessionId cũ; không ghi đè session đã sửa/hủy hoặc slot bị thay đổi.
 - owner-update-session thêm sessionId; capacity không thấp hơn registeredCount; tăng chỗ gọi promoteFromWaitlist của 081; giữ giá đăng ký cũ và thông báo thay đổi.
 - owner-cancel-session: venueId/sessionId/reason; closeWaitlistInTx và cancelRegistrationInTx, hoàn tiền/nhả đúng slots nguyên tử. Không thay helper 081 hoặc cron dropin-close.
+- D4: cả update và cancel nhận `requestId` UUID dùng lại khi retry. Transaction nguồn ghi journal theo session/requestId để trả lại kết quả trước đó hoặc từ chối khi payload khác. DROPIN_CHANGED gửi cho REGISTERED trước mutation khi đổi startAt/endAt hoặc hủy. Người thao tác, người chờ và người mới được promote trong cùng thao tác không nhận DROPIN_CHANGED. WAITLIST_CLOSED vẫn do helper 081 ghi.
 - owner-checkin-dropin-registration: venueId/sessionId/credential. QR raw 43 ký tự hoặc ticket DI-XXXXXXXX theo alphabet 080; không dùng credential làm UID. Chỉ đăng ký REGISTERED của đúng session, session OPEN/FULL, trong [startAt - 30 phút, endAt), chuyển CHECKED_IN một lần. Clock chỉ server quyết định; mã lặp/sai/ngoài cửa sổ bị từ chối.
 - Roster phải xác nhận session.venueId từ server trước khi đọc registrations. Không duyệt từng người đăng ký.
 
