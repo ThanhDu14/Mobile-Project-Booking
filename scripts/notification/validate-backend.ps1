@@ -1,5 +1,5 @@
 param(
-    [ValidateSet('Fake', 'Emulator', 'Affected')][string]$Suite = 'Fake',
+    [ValidateSet('Fake', 'Emulator', 'Affected', 'Booking')][string]$Suite = 'Fake',
     [string]$DenoExecutable = 'deno'
 )
 $ErrorActionPreference = 'Stop'
@@ -14,6 +14,10 @@ try {
         $env:FIRESTORE_EMULATOR_HOST -notmatch '^(127\.0\.0\.1|localhost):\d+$' -or
         $env:FIREBASE_AUTH_EMULATOR_HOST -notmatch '^(127\.0\.0\.1|localhost):\d+$') {
         throw 'Emulator suites require an explicit demo-* project and localhost Auth/Firestore hosts.'
+    }
+    if ($Suite -eq 'Booking') {
+        & $DenoExecutable test --allow-env --allow-net supabase/functions/booking-reminders/handler.test.ts
+        exit $LASTEXITCODE
     }
     & $DenoExecutable test --allow-env --allow-net supabase/functions/_shared/notification-emulator.test.ts
     if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
