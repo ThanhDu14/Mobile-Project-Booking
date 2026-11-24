@@ -1,5 +1,6 @@
 import * as fs from "./firestore.ts";
 import { activeRecipient, sha256 } from "./notification-enqueue.ts";
+import { earliestBookingStart } from "./booking-notification.ts";
 
 type Doc = Record<string, unknown>;
 export type DeliveryStore = Pick<typeof fs, "runTransaction" | "query" | "listPage" | "commit">;
@@ -91,6 +92,16 @@ export async function runDeliveryWorker(store: DeliveryStore, send: Sender, cloc
         for (const token of tokens(user)) if (await sha256(token) === hash) { raw = token; break; }
         if (!activeRecipient(user) || !inbox || !enabled || !raw) {
           tx.write(fs.updateWrite(receiptPath, { state: "SKIPPED", lastErrorCode: "INELIGIBLE", updatedAt: at })); return null;
+        }
+        if (inbox.type === "BOOKING_REMINDER") {
+          const data = inbox.data as Doc, id = data?.bookingId;
+          const booking = typeof id === "string" && id && !id.includes("/") ? await tx.get(`bookings/${id}`) : null;
+          const start = booking && earliestBookingStart(booking);
+          if (!booking || booking.userId !== uid || booking.status !== "CONFIRMED" || !start || start <= at ||
+            !(data.reminderStartAt instanceof Date) || start.getTime() !== data.reminderStartAt.getTime() ||
+            !(booking.startAt instanceof Date) || booking.startAt.getTime() !== start.getTime()) {
+            tx.write(fs.updateWrite(receiptPath, { state: "SKIPPED", lastErrorCode: "BOOKING_CHANGED", updatedAt: at })); return null;
+          }
         }
         if (inbox.type === "CHAT_MESSAGE") {
           const chatId = (inbox.data as Doc)?.chatId;
