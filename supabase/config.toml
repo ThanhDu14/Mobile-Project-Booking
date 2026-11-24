@@ -542,3 +542,6 @@ verify_jwt = false
 # Authenticated by x-cron-secret inside the handler; schedule every minute after deployment review.
 [functions.notification-delivery]
 verify_jwt = false
+
+[functions.booking-reminders]
+verify_jwt = false
