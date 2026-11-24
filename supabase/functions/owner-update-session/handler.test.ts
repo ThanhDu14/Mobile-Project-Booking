@@ -43,7 +43,7 @@ const request = (body: Record<string, unknown>) =>
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify({ requestId: crypto.randomUUID(), ...body }),
   });
 type Doc = Record<string, unknown>;
 class Store {
@@ -152,6 +152,7 @@ Deno.test("owner capacity increase promotes fitting waitlist entries; decrease p
       paymentStatus: null, paymentMethod: "AT_VENUE", amount: partySize * 50000,
     });
     const delivered: string[] = [];
+    store.docs.set("users/b", { accountStatus: "ACTIVE" });
     const response = await handleOwnerUpdateSession(request({ ...draft, sessionId, capacity }), {
       firestore: store,
       notify: async notification => {
@@ -166,7 +167,9 @@ Deno.test("owner capacity increase promotes fitting waitlist entries; decrease p
     assertEquals(store.docs.get(`${path}/registrations/b`)!.status, capacity === 9 ? "REGISTERED" : "WAITLISTED");
     assertEquals(store.docs.get(path)!.registeredCount, capacity === 9 ? 9 : 7);
     assertEquals(store.docs.get(path)!.waitlistTickets, capacity === 9 ? [1] : [1, 2]);
-    assertEquals(delivered, capacity === 9 ? ["b"] : []);
+    assertEquals(delivered, []);
+    assertEquals([...store.docs.entries()].filter(([p, d]) => p.startsWith("users/b/notifications/") &&
+      d.type === "DROPIN_SPOT_OPENED").length, capacity === 9 ? 1 : 0);
   }
 });
 
@@ -175,6 +178,7 @@ Deno.test("owner cancellation closes every waitlisted entry without promotion, c
   store.docs.set(path, { ...store.docs.get(path), waitlistTickets: [1], waitlistCount: 1 });
   store.docs.set(`${path}/registrations/a`, { userId: "a", sessionId, status: "WAITLISTED", partySize: 2, waitlistTicket: 1, paymentStatus: null });
   const delivered: string[] = [];
+  store.docs.set("users/a", { accountStatus: "ACTIVE" });
   assertEquals((await handleOwnerCancelSession(request({ venueId: "v1", sessionId }), {
     firestore: store,
     notify: async notification => {
@@ -189,7 +193,35 @@ Deno.test("owner cancellation closes every waitlisted entry without promotion, c
   assertEquals([reg.status, reg.waitlistEndReason, reg.cancelledBy, reg.paymentStatus], ["CANCELLED", "SESSION_CANCELLED", "OWNER", null]);
   assertEquals(store.docs.get(path)!.waitlistTickets, []);
   assertEquals([...store.docs.keys()].filter(p => p.includes("/notifications/")).length, 1);
-  assertEquals(delivered, ["a"]);
+  assertEquals(delivered, []);
+});
+
+Deno.test("D4 changes and cancellation notify only previous registered players and keep replay results", async () => {
+  const { store, sessionId, path } = await created();
+  store.docs.set(path, { ...store.docs.get(path), registeredCount: 1, waitlistTickets: [1], waitlistCount: 1 });
+  for (const [uid, status] of [["player", "REGISTERED"], ["waiter", "WAITLISTED"], ["owner", "REGISTERED"]]) {
+    store.docs.set(`${path}/registrations/${uid}`, { userId: uid, status, partySize: 1, paymentMethod: "AT_VENUE", waitlistTicket: 1 });
+    if (uid !== "owner") store.docs.set(`users/${uid}`, { accountStatus: "ACTIVE" });
+  }
+  const body = { ...draft, sessionId, requestId: crypto.randomUUID(), startTime: "1830", endTime: "1930" };
+  const deps = { firestore: store };
+  const update = (fields: Record<string, unknown>) => handleOwnerUpdateSession(request(fields), deps);
+  const cancel = (fields: Record<string, unknown>) => handleOwnerCancelSession(request(fields), deps);
+  assertEquals((await update(body)).status, 200);
+  assertEquals((await update(body)).status, 200);
+  assertEquals((await update({ ...body, note: "Different" })).status, 409);
+  assertEquals((await update({ ...body, requestId: crypto.randomUUID(), note: "Note only" })).status, 200);
+  const cancellation = { venueId: "v1", sessionId, requestId: crypto.randomUUID() };
+  const first = await cancel(cancellation);
+  const replay = await cancel(cancellation);
+  assertEquals([first.status, replay.status], [200, 200]);
+  assertEquals(await first.json(), await replay.json());
+  const changes = [...store.docs.entries()].filter(([p, d]) => p.includes("/notifications/") && d.type === "DROPIN_CHANGED");
+  assertEquals(changes.length, 2);
+  assert(changes.every(([p, d]) => p.startsWith("users/player/notifications/") &&
+    (d.data as Record<string, unknown>).sessionId === sessionId));
+  assertEquals([...store.docs.entries()].filter(([p, d]) => p.startsWith("users/waiter/notifications/") &&
+    d.type === "DROPIN_WAITLIST_CLOSED").length, 1);
 });
 
 Deno.test("owner create: timestamps, array courts, owner/district and derived snapshot match spec 080", async () => {

@@ -10,9 +10,10 @@ import {
   registrationPath,
 } from "../_shared/dropin.ts";
 import { closeWaitlistInTx } from "../_shared/waitlist.ts";
-import { sendDropInNotification, type WaitlistNotification } from "../_shared/dropin-notify.ts";
+import type { WaitlistNotification } from "../_shared/dropin-notify.ts";
 import { decodeFields } from "../_shared/firestore.ts";
 import { requireOwnerVenue } from "../_shared/owner-access.ts";
+import { prepareDropInChanged, readDropInCommand, requireDropInCommandId } from "../_shared/dropin-change-notification.ts";
 
 export interface OwnerCancelSessionDeps {
   firestore: Pick<typeof defaultFirestore, "get" | "runTransaction">;
@@ -21,7 +22,7 @@ export interface OwnerCancelSessionDeps {
 
 export async function handleOwnerCancelSession(
   req: Request,
-  { firestore, notify = sendDropInNotification }: OwnerCancelSessionDeps = { firestore: defaultFirestore },
+  { firestore }: OwnerCancelSessionDeps = { firestore: defaultFirestore },
 ): Promise<Response> {
   if (req.method !== "POST") {
     return errorResponse(405, "METHOD_NOT_ALLOWED", "Chỉ hỗ trợ POST");
@@ -47,7 +48,9 @@ export async function handleOwnerCancelSession(
     const now = new Date();
     const nowIso = now.toISOString();
     try {
-      const closed = await firestore.runTransaction(async (tx) => {
+      const response = await firestore.runTransaction(async (transaction) => {
+        const writes: defaultFirestore.Write[] = [];
+        const tx = { ...transaction, write: (write: defaultFirestore.Write) => { writes.push(write); } };
         const venue = await requireOwnerVenue(tx, token, venueId);
         if (venue.status !== "ACTIVE") throw new HttpError(403,"VENUE_UNAVAILABLE","Cơ sở đang ẩn hoặc bị khóa");
         // Lock session and registration query before collecting any writes.
@@ -60,6 +63,9 @@ export async function handleOwnerCancelSession(
           );
         }
 
+        const requestId = requireDropInCommandId(body.requestId);
+        const command = await readDropInCommand(tx, sessionId, requestId, token.uid, ["CANCEL", venueId, reason], now);
+        if (command.previous) return command.previous;
         if (session.status === "CANCELLED") {
           throw new HttpError(
             409,
@@ -95,7 +101,6 @@ export async function handleOwnerCancelSession(
             reg.data,
           ]),
         ]);
-        const writes: defaultFirestore.Write[] = [];
         const bufferedTx = {
           get: (path: string) => Promise.resolve(documents.get(path) ?? null),
           write: (write: defaultFirestore.Write) => {
@@ -119,7 +124,7 @@ export async function handleOwnerCancelSession(
             { forceFullRefund: true, now },
           );
         }
-        const { closed } = await closeWaitlistInTx(
+        await closeWaitlistInTx(
           tx, { ...session, id: sessionId }, "SESSION_CANCELLED", { now },
         );
         writes.push(
@@ -141,13 +146,14 @@ export async function handleOwnerCancelSession(
           }
         }
 
-        for (const write of writes) tx.write(write);
-        return closed;
+        const result = { success: true, sessionId, status: "CANCELLED", cancelledAt: nowIso };
+        writes.push(command.journal(result));
+        writes.push(...await prepareDropInChanged(tx, writes, registrations,
+          { sessionId, requestId, actorUid: token.uid, cancelled: true, now }));
+        for (const write of writes) transaction.write(write);
+        return result;
       });
-      for (const uid of closed) {
-        try { await notify({ type: "DROPIN_WAITLIST_CLOSED", userId: uid, data: { sessionId, reason: "SESSION_CANCELLED" } }); }
-        catch (error) { console.warn("[owner-cancel-session] notification delivery failed", error); }
-      }
+      return Response.json(response);
     } catch (e) {
       if (
         e instanceof FirestoreError &&
@@ -162,15 +168,6 @@ export async function handleOwnerCancelSession(
       throw e;
     }
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        sessionId,
-        status: "CANCELLED",
-        cancelledAt: nowIso,
-      }),
-      { status: 200, headers: { "Content-Type": "application/json" } },
-    );
   } catch (err) {
     if (err instanceof HttpError) {
       return errorResponse(err.status, err.code, err.message);

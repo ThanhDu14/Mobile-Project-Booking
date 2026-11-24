@@ -490,6 +490,7 @@ Deno.test({
         level: "BEGINNER",
         note: "TEST",
         sessionId: "not-created",
+        requestId: crypto.randomUUID(),
         action: "LOCK",
         slotIds: ["c1_20991201_0800"],
         blockReason: "MAINTENANCE",
