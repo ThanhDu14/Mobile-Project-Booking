@@ -69,6 +69,12 @@ afterAll(async () => {
 });
 
 describe('reviews', () => {
+  it('R1 notificationGeneration is server-only for player, owner and admin', async () => {
+    for (const db of [player(), owner(), admin()]) {
+      await assertFails(updateDoc(doc(db, 'reviews/b-visible'), { notificationGeneration: 'client-forged' }));
+      await assertFails(setDoc(doc(db, 'reviews/forged'), { ...review('forged', 'player1', 'VISIBLE'), notificationGeneration: 'client-forged' }));
+    }
+  });
   it('R1: người chơi đọc và liệt kê đánh giá VISIBLE của một sân', async () => {
     const db = player();
     await assertSucceeds(getDoc(doc(db, 'reviews/b-visible')));

@@ -4,7 +4,7 @@ import { assert, assertEquals } from "jsr:@std/assert@1.0.19";
 import { commit, createWrite, get } from "../_shared/firestore.ts";
 import { handleReview, type ReviewDeps } from "./handler.ts";
 import { bearer } from "../_shared/testing.ts";
-import { call, DAY, deps, NOW, RATINGS, seed, sent, storage, tokenOf } from "./testing.ts";
+import { call, DAY, deps, NOW, RATINGS, seed, inbox, sent, storage, tokenOf } from "./testing.ts";
 
 const HOUR = 60 * 60 * 1000;
 const END_1D = new Date(NOW.getTime() - DAY); // buổi đã kết thúc 1 ngày trước
@@ -70,7 +70,8 @@ Deno.test("create buổi vãng lai hợp lệ: reviews/{sessionId}_{uid}, DROP_I
   const venue = await get("venues/venueA");
   assertEquals(venue?.ratingSums, { court: 5, cleanliness: 4, service: 3, overall10: 40 });
   assertEquals([venue?.ratingCount, venue?.ratingAvg], [1, 4]);
-  assertEquals(sent, [{ type: "REVIEW_NEW", recipientUid: "owner1", data: { reviewId: "s1_player1", venueId: "venueA" } }]);
+  assertEquals(sent, []);
+  assertEquals((await inbox("owner1", "REVIEW_NEW")).map(n => n.data.data), [{ reviewId: "s1_player1", venueId: "venueA" }]);
 });
 
 Deno.test("E14: đăng ký REGISTERED / CANCELLED / NO_SHOW / không có đăng ký → 409 NOT_CHECKED_IN", async () => {
@@ -132,7 +133,8 @@ Deno.test("E15: lần 2 khác nội dung → 409 ALREADY_REVIEWED; cùng nội d
   const again = await call("player1", create("s1"));
   assertEquals([again.status, again.body.review.id], [200, "s1_player1"]);
   assertEquals((await get("venues/venueA"))?.ratingCount, 1);
-  assertEquals(sent.length, 1);
+  assertEquals((await inbox("owner1", "REVIEW_NEW")).length, 1);
+  assertEquals(sent, []);
 
   const different = await call("player1", create("s1", { ratings: { court: 1, cleanliness: 1, service: 1 } }));
   assertEquals([different.status, different.body.error.code], [409, "ALREADY_REVIEWED"]);
