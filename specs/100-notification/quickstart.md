@@ -58,6 +58,8 @@ Run Rules suites notification-delivery-security, notification-security, users-pr
 
 ## Required gates
 
+Để chạy repository thật trên điện thoại USB, build APK và APK test với `-PadminLocalAppId=true` và `-PadminTestRunner=com.example.booking_app.feature.notification.NotificationTestRunner`. Từ root, chạy `npx.cmd --yes firebase-tools@15 emulators:exec --project demo-admin-repair --only auth,firestore 'powershell -ExecutionPolicy Bypass -File scripts/notification/validate-device-emulator.ps1'`. Harness tạo hai tài khoản demo có claim PLAYER, kiểm tra inbox/preferences/route bằng SDK và Rules, rồi gỡ các USB reverse port mà nó đã mở.
+
 - Firestore Rules tests on Emulator for own/other uid, isRead-only mutation, preference/token scope.
 - Server tests for event validation, idempotency, fan-out, preference routing, SYSTEM recipients, reminder eligibility, and FCM retry behavior.
 - ViewModel/repository tests for pagination, states, preferences and retry; Espresso smoke for inbox/settings.
