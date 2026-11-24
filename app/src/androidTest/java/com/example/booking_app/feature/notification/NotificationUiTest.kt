@@ -291,17 +291,23 @@ class NotificationUiTest {
                 val nav = (activity.supportFragmentManager.fragments.single() as androidx.navigation.fragment.NavHostFragment).navController
                 nav.navigate(android.net.Uri.parse("smashnow://notifications/test-user/push-id"))
             }
-            // Auto-open can create a dialog while Espresso is selecting the previous activity root.
-            // Wait for the focused window to contain its text before asking Espresso for that root.
+            // The auto-open dialog owns focus while Espresso may still select the activity root.
             val automation = InstrumentationRegistry.getInstrumentation().uiAutomation
             val deadline = android.os.SystemClock.uptimeMillis() + 8000
-            while (automation.rootInActiveWindow?.findAccessibilityNodeInfosByText("Saved push body").isNullOrEmpty()
-                && android.os.SystemClock.uptimeMillis() < deadline) Thread.sleep(25)
-            awaitDisplayed(withText("Saved push body"))
-            onView(withText("Saved push title")).check(matches(isDisplayed()))
+            var dialog = automation.rootInActiveWindow
+            while (dialog?.findAccessibilityNodeInfosByText("Saved push body").isNullOrEmpty()
+                && android.os.SystemClock.uptimeMillis() < deadline) {
+                Thread.sleep(25)
+                dialog = automation.rootInActiveWindow
+            }
+            val visibleDialog = checkNotNull(dialog)
+            org.junit.Assert.assertTrue(visibleDialog.findAccessibilityNodeInfosByText("Saved push body").any { it.isVisibleToUser })
+            org.junit.Assert.assertTrue(visibleDialog.findAccessibilityNodeInfosByText("Saved push title").any { it.isVisibleToUser })
             org.junit.Assert.assertEquals(listOf("push-id"), NotificationUiFixture.lookedUp)
             org.junit.Assert.assertEquals(listOf("push-id"), NotificationUiFixture.marked)
-            onView(withText(android.R.string.ok)).perform(click())
+            val close = visibleDialog.findAccessibilityNodeInfosByViewId("android:id/button1").single()
+            org.junit.Assert.assertTrue(close.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK))
+            awaitDisplayed(withText(R.string.notification_empty))
             scenario.onActivity { activity ->
                 val nav = (activity.supportFragmentManager.fragments.single() as androidx.navigation.fragment.NavHostFragment).navController
                 nav.navigate(android.net.Uri.parse("smashnow://notifications/foreign/other-id"))
