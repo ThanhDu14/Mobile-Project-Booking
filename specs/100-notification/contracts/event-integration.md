@@ -67,3 +67,7 @@ T013/T035 remain partial for BOOKING_NEW, PROMOTION, REVIEW_NEW and OWNER_* (SYS
 ## Quyết định 23/11/2026 — backend/FCM
 
 Người dùng đã duyệt D1, D2-W1, T1, C1, P1 và S1 trong [backend-decision-package.md](../backend-decision-package.md). Schema/giới hạn chính xác được ghi tại tài liệu đó và docs/design/database/README.md. Phần đề xuất cũ xung đột được thay bằng các quyết định này, đặc biệt: không tạo lại job cho inbox có sẵn sau retention; không backfill push. Các producer ngoài W1/source outbox/generation vẫn chưa duyệt. Đây là phê duyệt contract, chưa phải bằng chứng triển khai hay deploy.
+
+## Booking decisions approved 24/11/2026
+
+User approved B1 (payment source will be supplied later) and B2 with the stated limits in specs/100-notification/booking-decision-package-2026-11-24.md. B1 authorizes the internal helper contract, not a replacement payment flow; actual HOLD-to-PENDING producer integration remains blocked. B2 authorizes one reminder per booking ID, invocation-local paginated CONFIRMED/startAt window, late catch-up only before start, data.reminderStartAt Timestamp, same-transaction recheck/enqueue, and delivery-time source/time recheck. After a reminder exists, reschedule does not generate a second inbox; stale push is skipped. No booking marker, collection or reschedule API is added. Full field/query/identity semantics are in the approved package; no deploy/live migration is authorized.

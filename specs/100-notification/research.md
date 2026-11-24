@@ -91,3 +91,7 @@ The user separately approved GROUP_ACTIVITY Android routing according to Feature
 ## Backend/FCM decisions approved 23/11/2026
 
 D1, D2-W1, T1, C1, P1 and S1 were explicitly approved by the user in backend-decision-package.md. That document and CSDL now govern retry/lease/receipt retention, W1 transaction identities, token lifecycle, account-wide chat suppression, generic data-only push and server-only SYSTEM. T004/T005 remain partial for producer identities/reminders outside W1. Approval is separate from implementation/verification and does not authorize deploy or live migration.
+
+## Booking decisions approved 24/11/2026
+
+User approved B1 (payment source will be supplied later) and B2 with the stated limits in specs/100-notification/booking-decision-package-2026-11-24.md. B1 authorizes the internal helper contract, not a replacement payment flow; actual HOLD-to-PENDING producer integration remains blocked. B2 authorizes one reminder per booking ID, invocation-local paginated CONFIRMED/startAt window, late catch-up only before start, data.reminderStartAt Timestamp, same-transaction recheck/enqueue, and delivery-time source/time recheck. After a reminder exists, reschedule does not generate a second inbox; stale push is skipped. No booking marker, collection or reschedule API is added. Full field/query/identity semantics are in the approved package; no deploy/live migration is authorized.
