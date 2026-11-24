@@ -1,0 +1,56 @@
+{
+  "date": "2026-11-24",
+  "completed": 41,
+  "total": 56,
+  "newlyClosed": [
+    "T021",
+    "T043"
+  ],
+  "jvm": {
+    "suites": 12,
+    "tests": 64,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "lint": {
+    "errors": 0,
+    "warnings": 858
+  },
+  "backend": {
+    "registrationFake": 29,
+    "regressionFake": 65,
+    "sourceEmulator": 89,
+    "finalSource": 12,
+    "rules": 25,
+    "selfAction": 5,
+    "overlappingRuns": true
+  },
+  "device": {
+    "uiVariants": 4,
+    "uiPerVariant": 12,
+    "uiTotal": 48,
+    "channelRendererHandler": 6,
+    "deniedHandler": 1,
+    "permission": 2,
+    "total": 57,
+    "realFcm": false
+  },
+  "blocked": [
+    "T004",
+    "T005",
+    "T013",
+    "T018",
+    "T022",
+    "T023",
+    "T024",
+    "T025",
+    "T035",
+    "T044",
+    "T045",
+    "T046",
+    "T047",
+    "T048",
+    "T056"
+  ]
+}

@@ -1,0 +1,132 @@
+i  emulators: Starting emulators: auth, firestore
+i  emulators: Detected demo project ID "demo-notification-continuation", emulated services will use a demo configuration and attempts to access non-emulated services for this project will fail.
+i  firestore: Firestore Emulator logging to firestore-debug.log
++  firestore: Firestore Emulator was started in standard edition.
++  firestore: Firestore Emulator UI websocket is running on 9150.
+i  Running script: powershell -ExecutionPolicy Bypass -File .gradle/notification-final-emulator.ps1
+npx.cmd : Check supabase/functions/register-drop-in/waitlist.test.ts
+At line:2 char:105
++ ... $env:PATH"; npx.cmd --yes firebase-tools@15 emulators:exec --project  ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Check supabase/...aitlist.test.ts:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+Check supabase/functions/review/notification.test.ts
+running 8 tests from ./supabase/functions/register-drop-in/waitlist.test.ts
+Q1: 3 người lần lượt vào hàng chờ buổi FULL → vị trí 1, 2, 3; registeredCount không đổi; lượt chờ chưa có tiền/QR ...
+------- output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- output end -----
+Q1: 3 người lần lượt vào hàng chờ buổi FULL → vị trí 1, 2, 3; registeredCount không đổi; lượt chờ chưa có tiền/QR ... ok (4s)
+Q2: cùng requestId 5 lần song song → 1×201, 4×200, waitlistCount tăng 1 lần ...
+------- output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- output end -----
+Q2: cùng requestId 5 lần song song → 1×201, 4×200, waitlistCount tăng 1 lần ... ok (2s)
+Q3: buổi OPEN → SESSION_HAS_SPOTS kèm remaining; còn đúng 30 phút → WAITLIST_CLOSED; còn 31 phút vào được ...
+------- output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- output end -----
+Q3: buổi OPEN → SESSION_HAS_SPOTS kèm remaining; còn đúng 30 phút → WAITLIST_CLOSED; còn 31 phút vào được ... ok (378ms)
+Q3: chủ buổi → OWN_SESSION; buổi CANCELLED → SESSION_CANCELLED; cơ sở HIDDEN → VENUE_INACTIVE ...
+------- output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- output end -----
+Q3: chủ buổi → OWN_SESSION; buổi CANCELLED → SESSION_CANCELLED; cơ sở HIDDEN → VENUE_INACTIVE ... ok (270ms)
+Đã WAITLISTED với requestId khác → ALREADY_WAITLISTED; đã REGISTERED → ALREADY_REGISTERED ...
+------- output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- output end -----
+Đã WAITLISTED với requestId khác → ALREADY_WAITLISTED; đã REGISTERED → ALREADY_REGISTERED ... ok (147ms)
+Bản CANCELLED cũ → ghi đè và nhận số vé mới ở cuối hàng (AC 3.3) ...
+------- output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- output end -----
+Bản CANCELLED cũ → ghi đè và nhận số vé mới ở cuối hàng (AC 3.3) ... ok (150ms)
+partySize 0 hoặc 5 → INVALID_ARGUMENT; thiếu requestId → INVALID_ARGUMENT ...
+------- output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- output end -----
+partySize 0 hoặc 5 → INVALID_ARGUMENT; thiếu requestId → INVALID_ARGUMENT ... ok (72ms)
+Đăng ký thường vào buổi FULL → SESSION_FULL có waitlistOpen true; còn ≤ 30 phút → false ...
+------- output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- output end -----
+Đăng ký thường vào buổi FULL → SESSION_FULL có waitlistOpen true; còn ≤ 30 phút → false ... ok (160ms)
+running 4 tests from ./supabase/functions/review/notification.test.ts
+R1: delete/recreate has a fresh generation; create replay and reply edits never duplicate ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+R1: delete/recreate has a fresh generation; create replay and reply edits never duplicate ... ok (586ms)
+R1: legacy first reply assigns generation, excludes actor and inactive/deleting recipient, no backfill ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+R1: legacy first reply assigns generation, excludes actor and inactive/deleting recipient, no backfill ... ok (551ms)
+R1: source transaction failure commits neither review/rating nor inbox/job ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[toErrorResponse] Error: injected failure after source and notification preparation
+    at file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/review/notification.test.ts:39:11
+    at async Module.runTransaction (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/_shared/firestore.ts:328:23)
+    at async runWithBackoff (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/review/handler.ts:65:14)
+    at async create (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/review/handler.ts:219:18)
+    at async handleReview (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/review/handler.ts:92:16)
+    at async call (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/review/testing.ts:63:15)
+    at async file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/review/notification.test.ts:41:17
+    at async innerWrapped (ext:cli/40_test.js:300:5)
+    at async exitSanitizer (ext:cli/40_test.js:201:27)
+    at async outerWrapped (ext:cli/40_test.js:239:22)
+----- post-test output end -----
+R1: source transaction failure commits neither review/rating nor inbox/job ... ok (143ms)
+R1: fake FCM failure after source commit retries the job, preserves inbox and never repeats accepted token ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+R1: fake FCM failure after source commit retries the job, preserves inbox and never repeats accepted token ... ok (841ms)
+
+ok | 12 passed | 0 failed (10s)
+
+
+ RUN  v5.1.0 F:/CSC_HCMUS/Mobile/datcau/firestore-tests
+
+
+ Test Files  3 passed (3)
+      Tests  25 passed (25)
+   Start at  10:56:17
+   Duration  12.74s (tests 74%, import 24%, transform 1%)
+
++  Script exited successfully (code 0)
+i  emulators: Shutting down emulators.
+i  firestore: Stopping Firestore Emulator
+!  Firestore Emulator has exited upon receiving signal: SIGINT
+i  auth: Stopping Authentication Emulator
+i  hub: Stopping emulator hub
+i  logging: Stopping Logging Emulator

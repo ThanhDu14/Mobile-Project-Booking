@@ -1,0 +1,20 @@
+channels-renderer-handler passed (6)
+denied-handler passed (1)
+grantedPermissionHidesNoticeWithoutChangingPreferences passed (1)
+deniedPermissionKeepsPreferencesAndInboxAndRefreshesAfterSystemSettingsGrant passed (1)
+powershell : /sdcard/Android/data/com.example.booking_app.adminlocal/files/notification-permission-denied-inbox.png: 1 
+file pulled, 0 skipped. 14.9 MB/s (60576 bytes in 0.004s)
+At line:2 char:1
++ powershell -ExecutionPolicy Bypass -File scripts/notification/validat ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (/sdcard/Android...ytes in 0.004s):String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+/sdcard/Android/data/com.example.booking_app.adminlocal/files/notification-permission-denied.png: 1 file pulled, 0 
+skipped. 18.7 MB/s (196997 bytes in 0.010s)
+/sdcard/Android/data/com.example.booking_app.adminlocal/files/notification-permission-failure.png: 1 file pulled, 0 
+skipped. 6.6 MB/s (57766 bytes in 0.008s)
+/sdcard/Android/data/com.example.booking_app.adminlocal/files/notification-permission-granted-prompt.png: 1 file 
+pulled, 0 skipped. 22.1 MB/s (200093 bytes in 0.009s)
+/sdcard/Android/data/com.example.booking_app.adminlocal/files/notification-permission-granted-return.png: 1 file 
+pulled, 0 skipped. 22.5 MB/s (200532 bytes in 0.008s)

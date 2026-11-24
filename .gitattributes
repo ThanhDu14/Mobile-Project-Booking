@@ -1,0 +1,2 @@
+# Preserve captured evidence bytes so SHA-256 remains valid across checkouts.
+/specs/100-notification/validation/continuation-2026-11-24/** -text

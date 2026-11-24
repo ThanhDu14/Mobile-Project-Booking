@@ -1,0 +1,110 @@
+[
+  {
+    "file": "TEST-com.example.booking_app.core.session.FcmSignOutHookTest.xml",
+    "name": "com.example.booking_app.core.session.FcmSignOutHookTest",
+    "tests": "5",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0",
+    "timestamp": "2026-11-24T04:01:29.711Z"
+  },
+  {
+    "file": "TEST-com.example.booking_app.feature.chat.data.FirestoreChatRepositoryTest.xml",
+    "name": "com.example.booking_app.feature.chat.data.FirestoreChatRepositoryTest",
+    "tests": "6",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0",
+    "timestamp": "2026-11-24T04:01:30.729Z"
+  },
+  {
+    "file": "TEST-com.example.booking_app.feature.notification.data.FirestoreTokenRegistrationStoreTest.xml",
+    "name": "com.example.booking_app.feature.notification.data.FirestoreTokenRegistrationStoreTest",
+    "tests": "4",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0",
+    "timestamp": "2026-11-24T04:01:42.376Z"
+  },
+  {
+    "file": "TEST-com.example.booking_app.feature.notification.data.NotificationTokenEngineTest.xml",
+    "name": "com.example.booking_app.feature.notification.data.NotificationTokenEngineTest",
+    "tests": "10",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0",
+    "timestamp": "2026-11-24T04:01:42.464Z"
+  },
+  {
+    "file": "TEST-com.example.booking_app.feature.notification.FirestoreNotificationRepositoryTest.xml",
+    "name": "com.example.booking_app.feature.notification.FirestoreNotificationRepositoryTest",
+    "tests": "10",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0",
+    "timestamp": "2026-11-24T04:01:38.957Z"
+  },
+  {
+    "file": "TEST-com.example.booking_app.feature.notification.NotificationContractTest.xml",
+    "name": "com.example.booking_app.feature.notification.NotificationContractTest",
+    "tests": "5",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0",
+    "timestamp": "2026-11-24T04:01:40.900Z"
+  },
+  {
+    "file": "TEST-com.example.booking_app.feature.notification.NotificationGroupRouteTest.xml",
+    "name": "com.example.booking_app.feature.notification.NotificationGroupRouteTest",
+    "tests": "4",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0",
+    "timestamp": "2026-11-24T04:01:40.912Z"
+  },
+  {
+    "file": "TEST-com.example.booking_app.feature.notification.NotificationGroupsTest.xml",
+    "name": "com.example.booking_app.feature.notification.NotificationGroupsTest",
+    "tests": "1",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0",
+    "timestamp": "2026-11-24T04:01:41.008Z"
+  },
+  {
+    "file": "TEST-com.example.booking_app.feature.notification.NotificationPermissionTest.xml",
+    "name": "com.example.booking_app.feature.notification.NotificationPermissionTest",
+    "tests": "3",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0",
+    "timestamp": "2026-11-24T04:01:41.019Z"
+  },
+  {
+    "file": "TEST-com.example.booking_app.feature.notification.NotificationPreferenceCacheTest.xml",
+    "name": "com.example.booking_app.feature.notification.NotificationPreferenceCacheTest",
+    "tests": "6",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0",
+    "timestamp": "2026-11-24T04:01:41.025Z"
+  },
+  {
+    "file": "TEST-com.example.booking_app.feature.notification.NotificationRouteTest.xml",
+    "name": "com.example.booking_app.feature.notification.NotificationRouteTest",
+    "tests": "5",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0",
+    "timestamp": "2026-11-24T04:01:41.247Z"
+  },
+  {
+    "file": "TEST-com.example.booking_app.feature.notification.NotificationViewModelTest.xml",
+    "name": "com.example.booking_app.feature.notification.NotificationViewModelTest",
+    "tests": "5",
+    "failures": "0",
+    "errors": "0",
+    "skipped": "0",
+    "timestamp": "2026-11-24T04:01:41.417Z"
+  }
+]

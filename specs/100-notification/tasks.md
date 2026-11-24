@@ -70,7 +70,7 @@ description: "Task list for Feature 100 – Notification"
 
 ### Tests for User Story 2
 
-- [ ] T021 [P] [US2] Add Edge Function tests for registered versus waitlisted recipients, waitlist closure, and self-action exclusions in `supabase/functions/send-notification/`
+- [X] T021 [P] [US2] Add Edge Function tests for registered versus waitlisted recipients, waitlist closure, and self-action exclusions in `supabase/functions/send-notification/` (D3 confirmation exception approved 24/11; registration fake29, source emulator89 plus final12 and self-action5; inbox/job assertions cover registration replay/rejoin, silent waitlist/add-party/self-cancel, promotion and closure. See validation/continuation-2026-11-24.md.)
 - [ ] T022 [P] [US2] Add Edge Function tests proving PROMOTION reaches only followers eligible under Feature 050 voucher rules in `supabase/functions/send-notification/`
 
 ### Implementation for User Story 2
@@ -123,7 +123,7 @@ description: "Task list for Feature 100 – Notification"
 - [X] T040 [US4] Extend Firestore user Rules to permit only the current user's notificationPrefs updates without weakening existing protected-field rules in `firestore.rules`
 - [X] T041 [P] [US4] Implement Vietnamese XML notification settings layout/resources with a non-editable BOOKING_NEW state in `app/src/main/res/layout/` and `app/src/main/res/values/`
 - [X] T042 [US4] Implement settings ViewModel and Fragment with per-type updates, retry/error states, and OS permission status separated from stored preferences in `app/src/main/java/com/example/booking_app/feature/notification/ui/`
-- [ ] T043 [US4] Apply saved per-type push eligibility in server delivery while always retaining inbox creation and always allowing BOOKING_NEW push eligibility in `supabase/functions/send-notification/`
+- [X] T043 [US4] Apply saved per-type push eligibility in server delivery while always retaining inbox creation and always allowing BOOKING_NEW push eligibility in `supabase/functions/send-notification/` (D1 worker checks preferences before target freeze and each send; all19 types × missing/off/on verified with fake FCM, preserved inbox, BOOKING_NEW forced and PROMOTION default off; worker19/19 and full fake65/65 pass 24/11.)
 
 ---
 
@@ -274,3 +274,11 @@ Backend booking MVP sequence:
 ## Booking continuation, 24/11/2026
 
 User approved B1 contract with the payment source deferred and B2 once-per-booking reminder semantics. T015/T016/T019 verified: 39/56 total. See booking-decision-package-2026-11-24.md and validation/booking-2026-11-24.md. T018 remains partial until the actual HOLD-to-PENDING transaction is supplied; a helper harness does not replace payment integration. T004/T005 remain open outside B1/B2, T013/T035 unchanged. SQL migration is prepared but not applied; Supabase local remains blocked by Docker. No UI matrix rerun, deploy or real FCM. Shared Firestore cursor support preserves raw Timestamp/reference precision; status/startAt/__name__ index matches the actual query.
+
+## D3/R1/H1 and device continuation, 24/11/2026
+
+- **41/56 verified**, newly closing T021 and T043. D3/R1/H1 explicitly approved by user in continuation-decisions-2026-11-24.md; CSDL/source contracts updated before implementation.
+- T023/T025 now include transactional DROPIN_REGISTERED, replay/rejoin and silent self actions; DROPIN_CHANGED and promotion still prevent full closure. T044/T046 now include transactional review create/first reply and server-only generation/recreate/legacy behavior; revocation, reminder and group sources remain missing as applicable. T045/T048 now include DIRECT atomic message/inbox/job and sender exclusion; GROUP still has an unconfirmed durable fanout contract and stays open.
+- T004/T005 stay partial for remaining source identities/fanout. B1 payment source remains absent in T018. T013/T035 have no newly confirmed destination: twelve canonical source routes plus legacy REVIEW_REPLY; BOOKING_NEW/PROMOTION/REVIEW_NEW/OWNER_* retain saved detail until contracts are confirmed.
+- Physical UI testing found and fixed transient old rows on logout (async RecyclerView removal). Added 30/30/5 paging, read-all over an unloaded page and account switch checks, plus real handler local injection/OS permission cases. Final phone/w600dp light/dark passes48/48; channel/handler/permission9/9; 24 UI and four permission PNGs compared, density/permission flags restored. Initial failures are retained separately.
+- Validation: registration fake29, regression fake65, affected source emulator89, final R1/waitlist12, Rules25 and self-action5 pass (overlapping executions). Focused JVM64/12 suites, assembleDebug, final isolated app/instrumentation build and lintDebug pass; lint0 errors/858 existing warnings. See validation/continuation-2026-11-24.md and its results/log/hash folder. Docker remains unavailable; Supabase local/cron SQL and full-catalog T056 remain unverified. No real FCM, hosted migration, deploy, commit or push.
