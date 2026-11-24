@@ -59,6 +59,27 @@ T("C1 tin chữ hợp lệ: NORMAL, createdAt server, lastMessage đúng, unread
   await assertChatInvariant(s.chatId);
 });
 
+T("H1 DIRECT: atomic inbox/job survives muted/viewing, excludes sender; replay and callback failure cannot duplicate", async () => {
+  const s = await direct("h1");
+  await firestore.commit([firestore.updateWrite(participantPath(s.chatId, s.o), { muted: true, viewingUntil: new Date(Date.now() + 60000) })]);
+  const messageId = crypto.randomUUID();
+  const deps = { ...s.deps, notify: () => Promise.reject(new Error("must not call legacy callback")) };
+  const body = { chatId: s.chatId, messageId, text: "Private text" };
+  assertEquals((await send(deps, s.p, body)).status, 201);
+  assertEquals((await send(deps, s.p, body)).status, 200);
+  const inbox = await firestore.query("notifications", [], { parent: `users/${s.o}` });
+  assertEquals(inbox.length, 1);
+  assertEquals(inbox[0].data.type, "CHAT_MESSAGE");
+  assertEquals(inbox[0].data.body, "Bạn có tin nhắn mới.");
+  assertEquals(inbox[0].data.data, { chatId: s.chatId, messageId });
+  assert(inbox[0].data.createdAt instanceof Date);
+  assertEquals((await firestore.query("notifications", [], { parent: `users/${s.p}` })).length, 0);
+  const jobs = await firestore.query("notificationDeliveries", [{ field: "recipientUid", op: "EQUAL", value: s.o }]);
+  assertEquals(jobs.length, 1);
+  assertEquals(jobs[0].data.notificationId, inbox[0].id);
+  assertEquals(s.notifications.sent, []);
+});
+
 T("C2 cùng messageId 5 lần (song song và lặp lại): 1 tin, unreadCounts +1 đúng một lần", async () => {
   const s = await direct("c2");
   const messageId = crypto.randomUUID();

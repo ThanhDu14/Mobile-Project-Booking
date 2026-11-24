@@ -19,6 +19,7 @@ import { createWrite } from "../_shared/firestore.ts";
 import { invalid, requireId, requireUuid } from "../_shared/group-tx.ts";
 import { groupPath } from "../_shared/groups.ts";
 import { CHAT_MEDIA_BUCKET } from "../_shared/media.ts";
+import { notificationInboxId, prepareNotification } from "../_shared/notification-enqueue.ts";
 
 export const MAX_TEXT = 1000;
 const PREVIEW_LEN = 100;
@@ -77,6 +78,14 @@ async function send({ uid, body, deps }: ChatContext): Promise<Response> {
       throw new HttpError(400, "PHOTO_MISSING", "Ảnh chưa được tải lên");
     }
     const mine = await tx.get(participantPath(chatId, uid));
+    const others = memberIds.filter((m) => m !== uid);
+    const notificationWrites = chat.type === "DIRECT" ? (await Promise.all(others.map(async (recipientUid) => {
+      const identity = JSON.stringify([chatId, messageId, recipientUid, "CHAT_MESSAGE"]);
+      return await prepareNotification(tx, "chat", identity, recipientUid,
+        await notificationInboxId("chat", identity, recipientUid, "CHAT_MESSAGE"), {
+          type: "CHAT_MESSAGE", title: "Tin nhắn mới", body: "Bạn có tin nhắn mới.", data: { chatId, messageId },
+        }, deps.now());
+    }))).flat() : [];
     writes.push(createWrite(messagePath(chatId, messageId), {
       senderId: uid,
       senderSnapshot: mine?.userSnapshot ?? null,
@@ -88,7 +97,6 @@ async function send({ uid, body, deps }: ChatContext): Promise<Response> {
     }, ["createdAt"]));
     const type = imagePath ? "IMAGE" : "TEXT";
     const preview = text === "" ? "[Hình ảnh]" : Array.from(text).slice(0, PREVIEW_LEN).join("");
-    const others = memberIds.filter((m) => m !== uid);
     writes.push(patchWrite(
       chatPath(chatId),
       { lastMessage: { messageId, senderId: uid, type, preview } },
@@ -99,17 +107,18 @@ async function send({ uid, body, deps }: ChatContext): Promise<Response> {
         ...others.map((o) => incrementBy1(fieldPath("unreadCounts", o))),
       ],
     ));
-    return { created: true as const, memberIds, others };
+    writes.push(...notificationWrites);
+    return { created: true as const, memberIds, others, direct: chat.type === "DIRECT" };
   });
 
   if (!out.created) return Response.json({ message: out.message }, { status: 200 });
   const saved = await deps.firestore.get(messagePath(chatId, messageId));
-  await notifyRecipients(deps, chatId, messageId, out.others);
+  if (!out.direct) await notifyRecipients(deps, chatId, messageId, out.others);
   return Response.json({ message: messageJson(messageId, saved ?? {}) }, { status: 201 });
 }
 
 /** Legacy post-commit callback. Inbox recipients include muted/viewing users (100 C1).
- * Push suppression belongs to delivery, not recipient selection. Durable enqueue is still pending. */
+ * GROUP only: durable fanout is pending. DIRECT uses H1 transaction enqueue above. */
 async function notifyRecipients(deps: ChatDeps, chatId: string, messageId: string, others: string[]): Promise<void> {
   try {
     await Promise.all(others.map(async (recipientUid) => {
