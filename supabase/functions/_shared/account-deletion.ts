@@ -469,7 +469,7 @@ export const CLEANUP_STEPS = [
 export type CleanupStep = typeof CLEANUP_STEPS[number] | "finalSweep";
 type StepResult = "DONE" | "SKIPPED";
 
-const SUBCOLLECTIONS = ["favorites", "searchHistory", "aiUsage", "notifications"];
+const SUBCOLLECTIONS = ["favorites", "searchHistory", "aiUsage", "notifications", "ownerRevocationCommands"];
 const BATCH = 400;
 
 const isUserNotFound = (e: unknown) => e instanceof Error && e.message.includes("USER_NOT_FOUND");

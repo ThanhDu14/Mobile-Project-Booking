@@ -111,7 +111,9 @@ test("F100 T054: deletion drains multiple notification batches and removes token
   const notifications = Array.from({ length: 405 }, (_, i) => createWrite(`users/${ctx.uid}/notifications/n${i}`, {
     type: "SYSTEM", title: "Saved", body: "Details", data: {}, isRead: i % 2 === 0, createdAt: new Date(),
   }));
-  await commit(notifications);
+  await commit([...notifications, createWrite(`users/${ctx.uid}/ownerRevocationCommands/test`, {
+    actorUid: "admin", reasonHash: "fixture", createdAt: new Date(),
+  })]);
   await seedUser("unrelated", { fcmTokens: ["unrelated-token"], notificationPrefs: { PROMOTION: true } });
   await commit([createWrite("users/unrelated/notifications/keep", {
     type: "SYSTEM", title: "Keep", body: "Unrelated", data: {}, isRead: false, createdAt: new Date(),
@@ -122,6 +124,7 @@ test("F100 T054: deletion drains multiple notification batches and removes token
   assertEquals(response.body.status, "DELETED");
   assertEquals(await get(`users/${ctx.uid}`), null); // Removes both token array and preference map.
   assertEquals(await docsIn("notifications", `users/${ctx.uid}`), []);
+  assertEquals(await docsIn("ownerRevocationCommands", `users/${ctx.uid}`), []);
     assertEquals(await get(jobPath), null);
     assertEquals(await docsIn("tokens", jobPath), []);
     assertEquals((await get("notificationDeliveries/unrelated"))?.state, "PENDING");

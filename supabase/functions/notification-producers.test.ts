@@ -34,10 +34,21 @@ for (const decision of ["APPROVE", "REJECT"] as const) {
 Deno.test("notification Timestamp: revoke creates one dated inbox entry across retry", () => adminFixture(async ({ records, request }) => {
   records.set("users/player", { role: "OWNER", ownerStatus: "APPROVED", accountStatus: "ACTIVE" });
   const deps = { firestore: fs, mergeClaims: async () => {} };
+  const body = { uid: "player", reason: "Policy", requestId: crypto.randomUUID() };
   for (let attempt = 0; attempt < 2; attempt++) {
-    const response = await handleAdminRevokeOwner(request({ uid: "player", reason: "Policy" }), deps);
+    const response = await handleAdminRevokeOwner(request(body), deps);
     assertEquals(response.status, 200); await response.body?.cancel();
   }
+  records.set("users/player", { role: "OWNER", ownerStatus: "APPROVED", accountStatus: "ACTIVE" });
+  const replay = await handleAdminRevokeOwner(request(body), deps);
+  assertEquals(replay.status, 200);
+  assertEquals((await replay.json()).alreadyCommitted, true);
+  assertEquals(records.get("users/player")?.role, "OWNER");
+  const conflict = await handleAdminRevokeOwner(request({ ...body, reason: "Different" }), deps);
+  assertEquals(conflict.status, 409);
+  await conflict.body?.cancel();
+  const jobs = [...records.keys()].filter(p => p.startsWith("notificationDeliveries/"));
+  assertEquals(jobs.length, 1);
   const notifications = [...records.entries()].filter(([path]) => path.includes("/notifications/"));
   assertEquals(notifications.length, 1);
   assertEquals(notifications[0][1].type, "OWNER_REVOKED");

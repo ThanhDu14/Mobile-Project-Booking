@@ -99,7 +99,7 @@ Deno.test("R120 local Firebase: decisions, claim recovery, race, controls, moder
   await status(await venue(request({venueId:"approve-local",status:"ACTIVE"},"player-local","OWNER")),403);
   await status(await user(request({action:"SET_ACCOUNT_STATUS",uid:"reject-local",accountStatus:"LOCKED"})));
   await status(await user(request({action:"SET_ACCOUNT_STATUS",uid:"reject-local",accountStatus:"ACTIVE"})));
-  await status(await revoke(request({uid:"player-local",reason:"Policy"})));
+  await status(await revoke(request({uid:"player-local",reason:"Policy",requestId:crypto.randomUUID()})));
   assertEquals((await getCustomClaims("player-local")).appRole,"PLAYER");
   await status(await review(request(approveBody)));
   assertEquals((await getCustomClaims("player-local")).appRole,"PLAYER");
