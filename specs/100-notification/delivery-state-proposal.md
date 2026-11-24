@@ -133,3 +133,7 @@ Use a fake FCM sender and local emulator transactions to exercise crash before s
 ## Quyết định 23/11/2026 — backend/FCM
 
 Người dùng đã duyệt D1, D2-W1, T1, C1, P1 và S1 trong [backend-decision-package.md](backend-decision-package.md). Schema/giới hạn chính xác được ghi tại tài liệu đó và docs/design/database/README.md. Phần đề xuất cũ xung đột được thay bằng các quyết định này, đặc biệt: không tạo lại job cho inbox có sẵn sau retention; không backfill push. Các producer ngoài W1/source outbox/generation vẫn chưa duyệt. Đây là phê duyệt contract, chưa phải bằng chứng triển khai hay deploy.
+
+## Phạm vi được duyệt thêm ngày 24/11/2026
+
+B1/B2 và D3/R1/H1 đã được người dùng duyệt riêng; xem booking-decision-package-2026-11-24.md và continuation-decisions-2026-11-24.md. REGISTERED, review create/first reply và DIRECT chat dùng prepareNotification trong transaction nguồn, cùng schema D1 đã duyệt. R1 thêm review.notificationGeneration; không tạo event envelope hay outbox chung. GROUP chat vẫn callback sau commit, chưa có durable fanout. DROPIN_CHANGED, GROUP_ACTIVITY, PROMOTION, OWNER_REVOKED và REVIEW_REMINDER vẫn thiếu quyết định nguồn; BOOKING_NEW có helper nhưng thiếu transaction payment để nối vào. Phần đề xuất cũ của các nguồn này không được xem là phê duyệt.

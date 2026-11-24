@@ -121,3 +121,7 @@ P1 mở T014 và payload phần T053; T1 cần P1 để bảo vệ account switc
 4. C1/S1: cập nhật nguồn 091 và quyền SYSTEM theo đúng lựa chọn. Inbox luôn bền vững độc lập suppression/FCM.
 
 Mọi phần triển khai sau duyệt dùng demo Firebase/Auth emulator, fake FCM và Supabase local khi cần; không tự commit, push, deploy hoặc migration dữ liệu thật. Gói này không duyệt source outbox hoặc các field generation/request mới trong các dòng ngoài W1.
+
+## Phê duyệt tiếp nối ngày 24/11/2026
+
+Người dùng đã duyệt B1/B2 theo booking-decision-package-2026-11-24.md, sau đó duyệt riêng D3/R1/H1 theo continuation-decisions-2026-11-24.md. Các dòng ngoài W1 ở trên chỉ được thay thế cho đúng phần REGISTERED, review create/first reply và DIRECT chat trong gói mới. GROUP chat, GROUP_ACTIVITY, PROMOTION, DROPIN_CHANGED, OWNER_REVOKED và REVIEW_REMINDER vẫn chờ contract riêng. B1 chưa có transaction payment nguồn; không tạo flow thanh toán thay thế.

@@ -109,3 +109,7 @@ export async function anonymizeCommunityChats(uid: string): Promise<void>
 C1: chat-send callback không loại recipient muted/viewing trước inbox. Worker xét participant.muted và per-installation presence khi quyết định push. Callback sau commit vẫn best effort cho tới khi source enqueue/fanout được duyệt riêng; không tuyên bố chat inbox đã durable.
 
 Nguồn: [gói quyết định đã duyệt](../../100-notification/backend-decision-package.md). Chỉ áp dụng phạm vi ID được duyệt; chưa deploy.
+
+## Approved notification continuation, 24/11/2026
+
+User explicitly approved D3, R1 and H1 in specs/100-notification/continuation-decisions-2026-11-24.md. D3 treats DROPIN_REGISTERED as the explicit confirmation exception to generic self-action exclusion: transaction identity sessionId/uid/requestId/type, deterministic inbox, no callback; join/leave waitlist/add-party/self-cancel stay silent. Stale reused request IDs with an existing event inbox are rejected before source writes. R1 adds reviews.notificationGeneration String UUID, server-only, renewed on recreate and retained on edit; legacy generation is assigned on first reply without backfill. REVIEW_NEW and first REVIEW_REPLIED enqueue in source transaction, actor excluded, data reviewId/venueId. H1 applies atomic message/inbox/job only to DIRECT chat, identity chatId/messageId/recipient/type; GROUP fanout remains unapproved. Use existing D1 job/receipts, C1 suppression and P1 payload. No outbox, group-size policy, deployment or live migration is approved. Full scope/limits are recorded in the decision package.
