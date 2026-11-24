@@ -64,6 +64,7 @@ Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 | 58  | 2026-11-22 | Tiếp tục Feature 100: routing review, quyền thông báo, kiểm thử xóa tài khoản/index, sửa Timestamp và bổ sung đề xuất delivery từng token | 10             |
 | 59  | 2026-11-23 | Tiếp tục Feature 100: cache DataStore theo UID, routing nhóm, rà token/delivery, sửa planner và kiểm thử phone/w600dp light/dark | 10             |
 | 60  | 2026-11-23 | Tiếp tục Feature 100: chốt quyết định backend/FCM, triển khai W1, token/presence, push an toàn và kiểm chứng tiến độ 36/56 | 10             |
+| 61  | 2026-11-24 | Tiếp tục Feature 100: kiểm chứng booking W1, chốt B1/B2, triển khai reminder và xác minh tiến độ 39/56 | 10             |
 
 ---
 
@@ -5822,5 +5823,81 @@ Giữ UI theo specs/100-notification/ui/ và các ngoại lệ đã được duy
 - Mở lại hai PNG gốc và screenshot phone light để so sánh. Không đổi layout/theme nên giữ bằng chứng ma trận phone/w600dp light/dark của lượt trước, không tính thành kết quả mới. Lượt này lưu sáu ảnh 393dp/light cùng hash. [Inbox](../../specs/100-notification/validation/backend-2026-11-23/device-phone/notification-393dp-light-inbox.png), [settings](../../specs/100-notification/validation/backend-2026-11-23/device-phone/notification-393dp-light-settings.png). Các ngoại lệ UI đã ghi nhận được giữ nguyên; tài liệu và PNG gốc không đổi.
 - Kiểm tra Docker cả trong và ngoài sandbox xác nhận daemon chưa hoạt động, nên chưa chạy Supabase local runtime hoặc cron SQL. File `20261123220000_cron_notification_delivery.sql` mới được chuẩn bị để review. T056 cùng các adapter/routing còn thiếu contract tiếp tục mở; không báo hoàn tất cả Feature 100. [Gói quyết định](../../specs/100-notification/backend-decision-package.md). Tin nhắn phối hợp được trình bày trực tiếp trong cuộc hội thoại theo yêu cầu của người dùng.
 - Đếm lại 36/56 marker task, kiểm tra checklist 24/24 và `git diff --check`. Chưa commit, push, deploy, áp dụng index trên production hoặc chạy migration dữ liệu thật.
+
+---
+
+## Mục 61: Tiếp tục Feature 100, kiểm chứng booking W1 và triển khai nhắc lịch
+
+| Thông tin                | Nội dung |
+| ------------------------ | -------- |
+| Ngày                     | 2026-11-24 |
+| Người thực hiện          | Minh Nhựt |
+| Nhóm tính năng liên quan | 10 (100 thông báo); phối hợp 050 thanh toán, 060 quản lý lịch đặt và 112 vận hành chủ sân |
+| Công cụ AI               | Codex (GPT-6), `$speckit-implement`, `$humanizer:humanizer` |
+| Mục đích                 | Rà nguồn booking, chốt contract B1/B2, triển khai reminder và kiểm chứng bằng emulator cùng FCM fake |
+| Nhánh Git                | `feat/100-notification` |
+
+### Prompt đã dùng
+
+```text
+$speckit-implement
+
+Tiếp tục Feature 100 từ tiến độ 36/56 task trong specs/100-notification/tasks.md.
+
+Đọc phần Backend/FCM continuation mới nhất trong implementation-review.md, backend-decision-package.md, contracts/ và validation/backend-2026-11-23.md trước khi sửa code.
+
+Giữ các quyết định đã được duyệt: D1, D2-W1, T1, C1, P1, S1. Tái sử dụng shared writer, delivery worker và FCM coordinator hiện có.
+
+Ưu tiên hoàn thiện luồng booking theo T015/T016/T018/T019:
+
+1. Rà soát phần booking đã triển khai trong W1 và xác định chính xác phần còn thiếu. Bổ sung kiểm thử cho recipient/type, tự hủy không phát thông báo, timeout/refund, replay và lỗi FCM sau khi inbox đã commit.
+
+2. Với BOOKING_NEW, tìm transaction chuyển booking sang PENDING trong payment/booking flow. Chuẩn bị contract event identity và enqueue ngay trong transaction đó, giữ inbox ID hiện có và tránh callback tạo trùng.
+
+3. Với BOOKING_REMINDER, hoàn thiện phương án query, thời điểm hai giờ trước items.startAt sớm nhất, kiểm tra CONFIRMED và dedup khi scheduler chạy lại hoặc chạy đồng thời. Nêu rõ cách xử lý booking đổi giờ, chạy trễ và event identity.
+
+Kiểm tra phê duyệt hiện có trước khi triển khai hai producer trên. Nếu còn thiếu quyết định ngoài W1, hoàn thiện đề xuất đủ để review rồi hỏi gộp những điểm cần chốt. Tiếp tục kiểm thử và phần độc lập trong lúc chờ; không coi D1/D2-W1 là phê duyệt toàn bộ producer.
+
+Sau khi được duyệt, cập nhật contract trước code phụ thuộc rồi triển khai trọn luồng bằng emulator và fake FCM. Chỉ đóng task khi toàn bộ yêu cầu của task đã được kiểm chứng.
+
+Kiểm tra lại khả năng chạy Supabase local. Nếu Docker đã sẵn sàng, xác minh cron migration và endpoint trong môi trường local; nếu vẫn thiếu Docker, ghi rõ phần chưa kiểm chứng và tiếp tục harness độc lập.
+
+Giữ UI theo specs/100-notification/ui/ cùng các ngoại lệ đã duyệt. Với T013/T035, chỉ bổ sung route có destination và quyền truy cập đã xác nhận; phần còn thiếu dùng saved detail.
+
+Chạy kiểm thử phù hợp với phạm vi thay đổi. Cập nhật tasks.md và implementation-review.md, báo số task hoàn thành thêm, bằng chứng kiểm thử và blocker còn lại. Không tự deploy, gửi push thật hoặc chạy migration dữ liệu thật.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Rà code booking, payment contract và phần đã triển khai trong W1. Checkout có owner booking command, booking-timeout và player-cancel-booking; chưa có transaction payment chuyển HOLD sang PENDING. HoldToPaymentArgs chỉ là DTO, các script seed PENDING phục vụ fixture. AI ghi rõ nguồn còn thiếu và giữ T018 mở.
+- Lập `booking-decision-package-2026-11-24.md` rồi hỏi gộp B1/B2. Người dùng duyệt B1, nguồn payment sẽ cung cấp sau, và duyệt B2 với các giới hạn đã nêu. Sau đó cập nhật CSDL và contract nguồn trước phần code phụ thuộc. Các phê duyệt D1/D2-W1/T1/C1/P1/S1 được giữ nguyên.
+- Thêm helper BOOKING_NEW lấy chủ sân từ venue trong transaction, kiểm tra venue và owner hiện tại, giữ inbox ID do caller cung cấp hoặc dùng ID tất định. Kiểm thử mô phỏng xác nhận inbox/job cùng rollback với thay đổi nguồn. Helper chưa được nối vào payment producer thật; không tạo flow thanh toán thay thế.
+- Triển khai scheduler reminder có cron authentication. Query cửa sổ hai giờ cho đơn CONFIRMED, phân trang 100 mục theo startAt và document ID, rồi đọc lại booking/recipient trong transaction. Lấy thời điểm sớm nhất từ items, kiểm tra khớp startAt dẫn xuất và loại dữ liệu không hợp lệ. Tick chạy trễ chỉ tạo nhắc khi chưa bắt đầu chơi.
+- Dùng một identity reminder cho suốt đời booking ID. Trước nhắc đầu tiên lấy giờ mới nhất; sau khi đã có inbox, đổi giờ không tạo nhắc thứ hai. Worker kiểm tra lại người đặt, trạng thái và thời gian trước mỗi token; bỏ push cũ khi nguồn đã đổi nhưng giữ inbox đã lưu. Inbox còn tồn tại cũng ngăn tạo lại job sau retention.
+- Giữ cursor Timestamp/reference thô từ REST để không mất nanosecond khi phân trang, thêm index khớp query và chuẩn bị cron SQL. Trong kiểm thử bổ sung, ba ca ban đầu lỗi do fixture bị lọc sau giới hạn query; đã sửa cách cô lập fixture trước giới hạn, còn ca 205 đơn dùng query production không bọc.
+- Hoàn thành T015/T016/T019, đưa tiến độ lên 39/56. T018 chờ nguồn payment, T013/T035 giữ các route còn thiếu contract ở saved detail. UI không đổi. Tin đề nghị B cung cấp file/commit và nối helper vào transaction được trình bày trực tiếp trong cuộc hội thoại, không tạo file tin nhắn riêng.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+| ---- | ---------- | ----- |
+| Gói quyết định booking, CSDL và contract 050/060/100 | Ghi phê duyệt B1/B2 trước triển khai | Chốt identity, recipient, lịch nhắc, đổi giờ và chạy trễ; giữ riêng phần payment chưa có nguồn. |
+| `booking-notification.ts` | Thêm helper BOOKING_NEW và hàm lấy giờ sớm nhất | Tái sử dụng shared writer, lấy owner từ server và không đoán transaction payment. |
+| `booking-reminders/handler.ts` và `index.ts` | Thêm scheduler theo B2 | Kiểm tra nguồn trong cùng transaction enqueue, chống trùng khi replay hoặc chạy đồng thời. |
+| `_shared/firestore.ts` | Bổ sung cursor query tùy chọn, giữ Timestamp/reference thô | Phân trang ổn định qua nhiều document trùng thời gian và không làm tròn nanosecond. |
+| `notification-worker.ts` | Kiểm tra lại nguồn của BOOKING_REMINDER trước gửi | Tránh gửi nhắc cũ sau đổi giờ, hủy hoặc qua giờ bắt đầu; inbox vẫn giữ nội dung đã lưu. |
+| `firestore.indexes.json`, config và cron SQL | Thêm index và cấu hình endpoint/lịch chạy để review | Khớp query thực tế; SQL chưa áp dụng vì Docker daemon chưa hoạt động. |
+| `booking-reminders/handler.test.ts` | Thêm kiểm thử W1, helper B1 và reminder B2 | Kiểm tra recipient/type, tự hủy, hoàn tiền, replay, rollback, concurrency và lỗi FCM trên emulator. |
+| `validate-backend.ps1` và `validation/booking-2026-11-24/` | Thêm suite Booking, lưu log và hash | Có lệnh tái hiện và phân biệt các ca đã qua với lỗi fixture ban đầu. |
+| `tasks.md`, `implementation-review.md` và báo cáo booking | Ghi 39/56 task, bằng chứng và phần bị chặn | Không đóng T018 bằng kết quả transaction mô phỏng, không tính ma trận UI cũ thành kiểm thử mới. |
+
+### Cách kiểm chứng
+
+- Bộ booking đạt 14/14 trên Auth/Firestore emulator, dùng project demo và FCM fake. Các ca kiểm tra APPROVE/REJECT/CANCEL, recipient/type, timeout/refund một lần, replay và tự hủy không tạo inbox/job cho chính người hủy. Ca B1 kiểm tra owner hợp lệ, giữ ID caller và rollback trong transaction mô phỏng; chưa chứng minh payment integration thật.
+- Kiểm tra reminder ở đúng mốc hai giờ, tick chạy trễ, sau giờ bắt đầu, items không theo thứ tự, các trạng thái ngoài CONFIRMED, dữ liệu sai và recipient không hoạt động. Hai scheduler chạy đồng thời chỉ tạo một inbox; reschedule và job retention không tạo nhắc thứ hai. Ca query REST phân trang 205 đơn có Timestamp trùng nhau với nanosecond xác nhận không bỏ sót người nhận.
+- Ba ca bổ sung ban đầu thất bại vì fixture scope được lọc sau limit, đã được sửa trước khi chạy lại đạt 14/14. Ca gửi reminder hợp lệ chạy riêng đạt 1/1, 14 ca còn lại được lọc: hai token fake mỗi token được nhận một lần qua worker replay, inbox vẫn chưa đọc. Tổng bằng chứng booking gồm 15 ca riêng biệt, không cộng các lượt chạy lại.
+- Bộ hồi quy shared Firestore/delivery đạt 22/22. Deno check/test biên dịch helper, handler và test. `assembleDebug` cùng `lintDebug` đạt; lint có 0 lỗi và 858 cảnh báo. Không chạy lại JVM/Rules/UI matrix vì không thay Android hoặc quyền client. [Báo cáo kiểm chứng](../../specs/100-notification/validation/booking-2026-11-24.md), [kết quả và hash](../../specs/100-notification/validation/booking-2026-11-24/results.json).
+- Kiểm tra Docker trong và ngoài sandbox vẫn báo thiếu daemon, nên Supabase local runtime, pg_cron/pg_net/Vault và cron SQL chưa được xác minh. File `20261124100000_cron_booking_reminders.sql` mới được chuẩn bị, chưa áp dụng. Kiểm thử Deno/emulator không được tính thành kiểm chứng triển khai HTTP trên Supabase.
+- Đếm lại 39/56 marker task và kiểm tra `git diff --check`; checklist giữ 24/24, không có extension hook. Scheduler trả budgetExhausted khi hết ngân sách 90 giây; chưa cam kết xử lý mọi backlog trong một lượt. T056 còn mở cho nghiệm thu runtime đầy đủ. [Contract B1/B2](../../specs/100-notification/booking-decision-package-2026-11-24.md) ghi phần đã duyệt và T018 chờ nguồn payment. Chưa commit, push, deploy, gửi FCM thật hoặc chạy migration dữ liệu thật.
 
 ---
