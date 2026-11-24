@@ -1,0 +1,51 @@
+﻿deno.exe : Check supabase/functions/owner-update-session/handler.test.ts
+At line:2 char:1
++ & 'C:/Users/ACER/AppData/Local/npm-cache/_npx/05b6ef7b13673c57/node_m ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Check supabase/...handler.test.ts:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+Check supabase/functions/owner-cancel-session/handler.test.ts
+Check supabase/functions/_shared/notification-worker.test.ts
+running 16 tests from ./supabase/functions/owner-update-session/handler.test.ts
+owner capacity increase promotes fitting waitlist entries; decrease preserves queue ... ok (33ms)
+owner cancellation closes every waitlisted entry without promotion, charging or stale tickets ... ok (5ms)
+D4 changes and cancellation notify only previous registered players and keep replay results ... ok (18ms)
+owner create: timestamps, array courts, owner/district and derived snapshot match spec 080 ... ok (2ms)
+owner create rejects unsupported levels, impossible dates and off-grid times without writes ... ok (6ms)
+owner cancel: multiple paid/check-in registrations refund fully, unpaid stays unpaid, waitlist closes ... ok (21ms)
+owner check-in reads nested uid registration and rejects repeated/waitlisted check-in ... ok (6ms)
+owner check-in resolves a normalized manual ticket to its UID without exposing credentials ... ok (3ms)
+owner check-in rejects UID/malformed credentials and never resolves another session or root collection ... ok (9ms)
+owner check-in denies foreign/unapproved owners and mismatched venue context without writes ... ok (8ms)
+owner check-in rejects used/cancelled/waitlisted registrations and closed sessions ... ok (18ms)
+owner check-in fails closed for duplicate credentials or mismatched registration identity ... ok (10ms)
+owner update moves courts/time atomically, recomputes fields, marks registrations and preserves paid amount ... ok (9ms)
+owner cancel and check-in enforce current authority and reject foreign slots without writes ... ok (15ms)
+owner update rejects slot conflict, low capacity, wrong owner, closed session with no partial writes ... ok (18ms)
+owner update keeps own slots when only capacity changes and transitions FULL to OPEN ... ok (3ms)
+running 2 tests from ./supabase/functions/owner-cancel-session/handler.test.ts
+owner-cancel-session: rejects non-POST requests ... ok (15ms)
+owner-cancel-session: rejects unauthenticated requests ... ok (2ms)
+running 19 tests from ./supabase/functions/_shared/notification-worker.test.ts
+T043: all 19 types retain inbox; defaults, saved preferences and mandatory BOOKING_NEW govern push ... ok (50ms)
+enqueue: canonical identity dedups UUID replay and never backfills retained-away job ... ok (1ms)
+enqueue: inactive/deleting recipient and invalid type never create inbox/job ... ok (1ms)
+enqueue: persists exactly six inbox fields and rejects non-map data ... ok (671µs)
+worker: partial success retries only failed token and honors Retry-After ... ok (2ms)
+worker: expired SENDING consumes reservation, caps six attempts, does not resend SENT ... ok (1ms)
+worker: recovers unknown SENDING below budget with a fresh attempt ... ok (1ms)
+worker: promotion default off, forced booking new, inbox remains regardless preference ... ok (970µs)
+worker: unregistered removes only exact token; permanent provider failures preserve token ... ok (676µs)
+worker: target initialization resumes beyond 100 and never adds tokens registered later ... ok (325ms)
+worker: deletion racing send cannot resurrect job/receipt; child-first account cleanup ... ok (1ms)
+worker: terminal retention keeps pending jobs and removes children before parent ... ok (1ms)
+worker: initialization observes deletion gate before creating receipt children ... ok (550µs)
+worker: chat suppression is account-wide across installations without dropping inbox ... ok (842µs)
+worker: target budget failure is explicit, never truncated into partial delivery ... ok (382ms)
+retention cleanup resumes at 100 child receipts per job without deleting parent early ... ok (2ms)
+FCM adapter: data-only payload and typed UNREGISTERED vs invalid arguments and Retry-After ... ok (13ms)
+worker HTTP entrypoint: POST and cron auth required; emulator cannot use real FCM ... ok (3ms)
+worker HTTP authorized harness uses fake FCM and refuses emulator calls without it ... ok (2ms)
+
+ok | 37 passed | 0 failed (1s)

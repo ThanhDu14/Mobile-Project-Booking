@@ -75,7 +75,7 @@ description: "Task list for Feature 100 – Notification"
 
 ### Implementation for User Story 2
 
-- [ ] T023 [US2] Implement DROPIN_REGISTERED, DROPIN_SPOT_OPENED, DROPIN_CHANGED, and DROPIN_WAITLIST_CLOSED adapters from the agreed Features 080/081/112 events in `supabase/functions/send-notification/`
+- [X] T023 [US2] Implement DROPIN_REGISTERED, DROPIN_SPOT_OPENED, DROPIN_CHANGED, and DROPIN_WAITLIST_CLOSED adapters from the agreed Features 080/081/112 events (D3/W1 plus D4 in source handlers. Verified inline change/cancel, request replay, waitlist separation and oversized snapshot continuation.)
 - [ ] T024 [US2] Implement PROMOTION recipient resolution using Feature 070 favorites as follows and Feature 050 eligibility rules in `supabase/functions/send-notification/`
 - [ ] T025 [US2] Apply agreed inbox idempotency and push delivery policy to drop-in and promotion events in `supabase/functions/send-notification/`
 
@@ -140,7 +140,7 @@ description: "Task list for Feature 100 – Notification"
 
 ### Implementation for User Story 5
 
-- [ ] T046 [US5] Implement OWNER_APPROVED, OWNER_REJECTED, OWNER_REVOKED, REVIEW_REPLIED, REVIEW_NEW, and REVIEW_REMINDER adapters per Features 070/110/120 contracts in `supabase/functions/send-notification/`
+- [X] T046 [US5] Implement OWNER_APPROVED, OWNER_REJECTED, OWNER_REVOKED, REVIEW_REPLIED, REVIEW_NEW, and REVIEW_REMINDER adapters per Features 070/110/120 contracts (D2-W1/R1 plus O2 and RR1 in the existing source handlers. Verified replay after reapproval, concurrent completion, and journal cleanup on demo emulators.)
 - [ ] T047 [US5] Implement GROUP_ACTIVITY event mapping with agreed `data.event` subtype and recipient rules in `supabase/functions/send-notification/`
 - [ ] T048 [US5] Implement CHAT_MESSAGE inbox fan-out and push suppression using agreed Feature 091 presence contract in `supabase/functions/send-notification/`
 - [X] T049 [US5] Implement SYSTEM server-authoritative fan-out to agreed active PLAYER and OWNER accounts per Feature 120 contract in `supabase/functions/send-notification/`
@@ -282,3 +282,10 @@ User approved B1 contract with the payment source deferred and B2 once-per-booki
 - T004/T005 stay partial for remaining source identities/fanout. B1 payment source remains absent in T018. T013/T035 have no newly confirmed destination: twelve canonical source routes plus legacy REVIEW_REPLY; BOOKING_NEW/PROMOTION/REVIEW_NEW/OWNER_* retain saved detail until contracts are confirmed.
 - Physical UI testing found and fixed transient old rows on logout (async RecyclerView removal). Added 30/30/5 paging, read-all over an unloaded page and account switch checks, plus real handler local injection/OS permission cases. Final phone/w600dp light/dark passes48/48; channel/handler/permission9/9; 24 UI and four permission PNGs compared, density/permission flags restored. Initial failures are retained separately.
 - Validation: registration fake29, regression fake65, affected source emulator89, final R1/waitlist12, Rules25 and self-action5 pass (overlapping executions). Focused JVM64/12 suites, assembleDebug, final isolated app/instrumentation build and lintDebug pass; lint0 errors/858 existing warnings. See validation/continuation-2026-11-24.md and its results/log/hash folder. Docker remains unavailable; Supabase local/cron SQL and full-catalog T056 remain unverified. No real FCM, hosted migration, deploy, commit or push.
+
+## O2/RR1 and real repository on device, 24/11/2026
+
+- **43/56 verified**. T023 closed after implementing D4. T046 closed after implementing O2 revoke and RR1 completion. T044 is partial until GROUP_ACTIVITY tests cover every subtype.
+- D4 source journal and snapshot fanout verified. F1 group chat and GROUP_ACTIVITY wiring, including paged recipients for oversized groups, remain open in T045/T047/T048. P2 approved, pending Feature 050 per-user usage counter contract. T022/T024/T025 remain open.
+- B1 remains a prepared helper. Checkout still lacks the payment transaction that changes HOLD to PENDING. T013/T035 retain saved detail for source destinations without a confirmed contract.
+- T056 has new Auth/Firestore Emulator transport evidence on vivo via USB reverse and real SDK repositories. Supabase local/cron remains blocked by Docker. See validation/source-device-2026-11-24.md.
