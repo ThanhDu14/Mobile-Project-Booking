@@ -50,14 +50,14 @@ description: "Task list for Feature 100 – Notification"
 
 ### Tests for User Story 1
 
-- [ ] T015 [P] [US1] Add Edge Function tests for booking recipient/type mapping, user-initiated cancellation exclusion, timeout refund details, duplicate event replay, and FCM failure after inbox persistence (assert the inbox record remains available) in `supabase/functions/send-notification/` (FR-011, FR-014; SC-001, SC-005)
-- [ ] T016 [P] [US1] Add reminder scheduler tests for CONFIRMED eligibility, earliest item start, two-hour timing, and duplicate scheduler runs under the approved idempotency decision in `supabase/functions/booking-reminders/` (FR-010, FR-014)
+- [X] T015 [P] [US1] Add Edge Function tests for booking recipient/type mapping, user-initiated cancellation exclusion, timeout refund details, duplicate event replay, and FCM failure after inbox persistence (assert the inbox record remains available) in `supabase/functions/send-notification/` (FR-011, FR-014; SC-001, SC-005)
+- [X] T016 [P] [US1] Add reminder scheduler tests for CONFIRMED eligibility, earliest item start, two-hour timing, and duplicate scheduler runs under the approved idempotency decision in `supabase/functions/booking-reminders/` (FR-010, FR-014)
 
 ### Implementation for User Story 1
 
 - [X] T017 [US1] Implement shared notification event validation and server-side inbox writer using only agreed event identity and persisted fields in `supabase/functions/_shared/`
 - [ ] T018 [US1] Implement booking event adapters for BOOKING_CONFIRMED, BOOKING_REJECTED, BOOKING_CANCELLED, and BOOKING_NEW with agreed producer contracts in `supabase/functions/send-notification/`
-- [ ] T019 [US1] Implement booking reminder query and scheduler for one BOOKING_REMINDER at two hours before earliest `items[].startAt` only while booking is CONFIRMED in `supabase/functions/booking-reminders/`
+- [X] T019 [US1] Implement booking reminder query and scheduler for one BOOKING_REMINDER at two hours before earliest `items[].startAt` only while booking is CONFIRMED in `supabase/functions/booking-reminders/`
 - [X] T020 [US1] Implement push eligibility and FCM HTTP v1 delivery for booking events, keeping the already-persisted inbox record available when FCM fails and applying only the approved retry contract in `supabase/functions/send-notification/` (FR-007; US1 scenario 4)
 
 ---
@@ -270,3 +270,7 @@ Backend booking MVP sequence:
 - T013/T035 remain partial: twelve canonical source routes plus REVIEW_REPLY read compatibility; BOOKING_NEW, PROMOTION, REVIEW_NEW and OWNER_* still lack confirmed destination/identifier/access contracts. SYSTEM uses saved detail. Push taps now load the authenticated user's inbox ID before existing routing/fallback.
 - T054 evidence extended with 205 receipt children, parent job cleanup and unrelated-account preservation; no worker may recreate a deleted parent. T055 keeps the inbox default single-field index conclusion; three delivery state/time indexes were added for actual worker due/expired/retention queries, with no production deployment claim.
 - Validation: 64 targeted JVM tests, 64 backend fake tests, 48 Rules tests, initial worker/deletion + 42 source emulator tests, final 7 affected integration tests, device14 + push-tap1. Final assembleDebug/lintDebug pass (0 errors, 858 warnings). Supabase local/cron SQL remains unrun because Docker daemon is unavailable; T056 remains open. No full UI matrix rerun because layout/theme did not change. See validation/backend-2026-11-23.md and its evidence folder. Coordination requests are presented directly in the conversation.
+
+## Booking continuation, 24/11/2026
+
+User approved B1 contract with the payment source deferred and B2 once-per-booking reminder semantics. T015/T016/T019 verified: 39/56 total. See booking-decision-package-2026-11-24.md and validation/booking-2026-11-24.md. T018 remains partial until the actual HOLD-to-PENDING transaction is supplied; a helper harness does not replace payment integration. T004/T005 remain open outside B1/B2, T013/T035 unchanged. SQL migration is prepared but not applied; Supabase local remains blocked by Docker. No UI matrix rerun, deploy or real FCM. Shared Firestore cursor support preserves raw Timestamp/reference precision; status/startAt/__name__ index matches the actual query.
