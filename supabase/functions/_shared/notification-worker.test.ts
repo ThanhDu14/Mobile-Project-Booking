@@ -1,6 +1,6 @@
 import { assertEquals, assertRejects } from "jsr:@std/assert@1.0.19";
 import * as fs from "./firestore.ts";
-import { prepareNotification, sha256 } from "./notification-enqueue.ts";
+import { NOTIFICATION_TYPES, prepareNotification, sha256 } from "./notification-enqueue.ts";
 import { runDeliveryWorker, cleanupDeliveries, type DeliveryStore, type Sender } from "./notification-worker.ts";
 import { httpV1Sender } from "./notification-fcm.ts";
 import { handleNotificationDelivery } from "../notification-delivery/handler.ts";
@@ -49,6 +49,28 @@ function memory() {
   }
   return { store, docs, enqueue };
 }
+Deno.test("T043: all 19 types retain inbox; defaults, saved preferences and mandatory BOOKING_NEW govern push", async () => {
+  for (const type of NOTIFICATION_TYPES) {
+    for (const setting of [undefined, false, true]) {
+      const m = memory();
+      await m.enqueue(type);
+      const user = m.docs.get("users/u")!;
+      user.notificationPrefs = setting === undefined ? {} : { [type]: setting };
+      const inbox = m.docs.get("users/u/notifications/inbox")!;
+      const start = new Date(at.getTime() + 3600_000);
+      inbox.data = { bookingId: "b", reminderStartAt: start, chatId: "c" };
+      m.docs.set("bookings/b", { userId: "u", status: "CONFIRMED", startAt: start, items: [{ startAt: start }] });
+      m.docs.set("chats/c", { memberIds: ["u", "sender"] });
+      m.docs.set("chats/c/participants/u", { muted: false });
+      const sent: string[] = [];
+      await runDeliveryWorker(m.store, async token => { sent.push(token); return { kind: "accepted" }; }, () => at);
+      const enabled = type === "BOOKING_NEW" || (setting ?? type !== "PROMOTION");
+      assertEquals(sent.length, enabled ? 2 : 0, `${type}/${setting}`);
+      assertEquals(m.docs.get("users/u/notifications/inbox"), inbox);
+      assertEquals(inbox.isRead, false);
+    }
+  }
+});
 Deno.test("enqueue: canonical identity dedups UUID replay and never backfills retained-away job", async () => {
   const m = memory(), job = await m.enqueue();
   const original = m.docs.get("users/u/notifications/inbox")!; original.isRead = true;
