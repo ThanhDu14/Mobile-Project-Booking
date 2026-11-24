@@ -182,6 +182,9 @@ export interface QueryFilter {
 }
 
 export interface QueryOptions {
+  /** Invocation-local cursor values matching explicit orderBy, including document reference. */
+  startAfter?: QueryCursorValue[];
+  withCursor?: boolean;
   /** Explicit server-side projection; omitted keeps existing query behavior. */
   select?: string[];
   /** Đường dẫn document cha, ví dụ `users/abc` để đọc `users/abc/favorites`. Mặc định là gốc. */
@@ -193,9 +196,13 @@ export interface QueryOptions {
   orderBy?: OrderBy | OrderBy[];
 }
 
+/** Explicit document-reference cursor, not a stored Firestore field. */
+export type QueryCursorValue = FirestoreValue | { referenceValue: string };
+
 type OrderBy = { field: string; direction?: "ASCENDING" | "DESCENDING" };
 
 export interface QueryDocument {
+  cursorValues?: QueryCursorValue[];
   id: string;
   /** Đường dẫn tương đối, ví dụ `dropInSessions/s1/registrations/u1`. */
   path: string;
@@ -214,6 +221,7 @@ function structuredQuery(collectionId: string, filters: QueryFilter[], opts: Que
   const orderBy = opts.orderBy === undefined ? [] : [opts.orderBy].flat();
   return {
     from: [{ collectionId, ...(opts.allDescendants ? { allDescendants: true } : {}) }],
+    ...(opts.startAfter ? { startAt: { values: opts.startAfter, before: false } } : {}),
     ...(opts.select ? { select: { fields: opts.select.map(fieldPath => ({ fieldPath })) } } : {}),
     ...(clauses.length === 0 ? {} : {
       where: clauses.length === 1 ? clauses[0] : { compositeFilter: { op: "AND", filters: clauses } },
@@ -244,7 +252,9 @@ async function queryRequest(
   return rows.flatMap((row) => {
     if (!row.document) return [];
     const path = relativePath(row.document.name);
-    return [{ id: path.substring(path.lastIndexOf("/") + 1), path, data: decodeFields(row.document.fields ?? {}) }];
+    const cursorValues = opts.withCursor && opts.orderBy ? [opts.orderBy].flat().map(o =>
+      o.field === "__name__" ? { referenceValue: row.document!.name } : row.document!.fields![o.field]) : undefined;
+    return [{ id: path.substring(path.lastIndexOf("/") + 1), path, data: decodeFields(row.document.fields ?? {}), ...(cursorValues ? { cursorValues } : {}) }];
   });
 }
 
