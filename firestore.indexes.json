@@ -1,6 +1,14 @@
 {
   "indexes": [
     {
+      "collectionGroup": "notificationFanouts",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "family", "order": "ASCENDING" },
+        { "fieldPath": "cleanupAfter", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "districts",
       "queryScope": "COLLECTION",
       "fields": [

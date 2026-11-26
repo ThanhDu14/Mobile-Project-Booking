@@ -560,6 +560,12 @@ service cloud.firestore {
     match /notificationDeliveries/{path=**} {
       allow read, write: if false;
     }
+    match /notificationFanouts/{path=**} {
+      allow read, write: if false;
+    }
+    match /groups/{groupId}/notificationCommands/{requestId} {
+      allow read, write: if false;
+    }
 
     match /chats/{chatId} {
       function inChat() {

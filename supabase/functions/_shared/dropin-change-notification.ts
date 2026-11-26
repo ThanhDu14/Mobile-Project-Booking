@@ -82,7 +82,9 @@ type FanoutStore = Pick<typeof fs, "query" | "runTransaction">;
 
 /** Each page writes inbox/jobs and advances its cursor atomically. FCM runs in the D1 worker. */
 export async function processDropInChangeFanouts(store: FanoutStore, now: Date): Promise<number> {
-  const jobs = await store.query("notificationFanouts", [{ field: "state", op: "EQUAL", value: "PENDING" }], { limit: 5 });
+  const jobs = await store.query("notificationFanouts", [
+    { field: "family", op: "EQUAL", value: family }, { field: "state", op: "EQUAL", value: "PENDING" },
+  ], { limit: 5 });
   let processed = 0;
   for (const job of jobs) {
     if (job.data.family !== family) continue;
@@ -107,6 +109,7 @@ export async function processDropInChangeFanouts(store: FanoutStore, now: Date):
     if (advanced) processed++;
   }
   const expired = await store.query("notificationFanouts", [
+    { field: "family", op: "EQUAL", value: family },
     { field: "cleanupAfter", op: "LESS_THAN_OR_EQUAL", value: now },
   ], { limit: 5 });
   for (const job of expired) {

@@ -12,11 +12,11 @@ import {
   type GroupRole,
   loadGroupForWrite,
   memberPath,
-  notifyGroupActivity,
   postPath,
   removalPath,
 } from "../_shared/groups.ts";
 import { asNumber, inGroupTx, invalid, requireId } from "../_shared/group-tx.ts";
+import { enqueueGroupFanout, groupActivity, groupCommandId, groupNotificationCommand } from "../_shared/group-notification.ts";
 import { deletePrefix, GROUP_MEDIA_BUCKET, postMediaPrefix } from "../_shared/media.ts";
 import { AVATAR_BUCKET } from "./common.ts";
 import { dropUpcomingAttendance } from "./membership.ts";
@@ -92,11 +92,12 @@ export const transferOwner: ActionHandler = async ({ uid, body, deps }) => {
 
 /**
  * OWNER mời ai cũng được trừ chính mình; ADMIN chỉ mời MEMBER (đích OWNER/ADMIN → `FORBIDDEN`); MEMBER → `FORBIDDEN`.
- * Ghi `removals/{uid}`, bỏ người đó khỏi sự kiện chưa diễn ra, hook `removed` cùng transaction; `REMOVED` sau commit.
+ * Ghi `removals/{uid}`, bỏ người đó khỏi sự kiện chưa diễn ra, chạy hook và ghi outbox cùng transaction.
  */
 export const removeMember: ActionHandler = async ({ uid, body, deps }) => {
   const groupId = requireId(body, "groupId");
   const userId = requireId(body, "userId");
+  const requestId = groupCommandId(body);
 
   await inGroupTx(deps, groupId, async (tx, writes) => {
     const now = deps.now();
@@ -104,6 +105,8 @@ export const removeMember: ActionHandler = async ({ uid, body, deps }) => {
     const caller = await callerRole(tx, groupId, uid);
     if (caller === "MEMBER") throw forbidden("Chỉ chủ nhóm hoặc quản trị viên được mời thành viên ra khỏi nhóm");
     if (userId === uid) throw invalid("Không thể tự mời mình ra khỏi nhóm (hãy dùng rời nhóm)");
+    const command = await groupNotificationCommand<boolean>(tx, groupId, requestId, uid, ["remove", userId], now);
+    if (command.previous) return;
     const target = await targetRole(tx, groupId, userId);
     if (caller === "ADMIN" && target !== "MEMBER") {
       throw forbidden("Quản trị viên chỉ được mời thành viên thường ra khỏi nhóm");
@@ -117,9 +120,13 @@ export const removeMember: ActionHandler = async ({ uid, body, deps }) => {
       updateWrite(groupPath(groupId), { memberCount: Math.max(0, asNumber(group.memberCount) - 1), updatedAt: now }),
     );
     await deps.onMembershipChanged(tx, groupId, { removed: [userId] });
+    writes.push(command.write(true));
+    await enqueueGroupFanout(tx, writes, {
+      groupId, actorUid: uid, sourceId: requestId, audience: "TARGET", recipients: [userId], now,
+      content: groupActivity("REMOVED", groupId),
+    });
   });
 
-  await notifyGroupActivity(deps, "REMOVED", [userId], { groupId });
   return ok();
 };
 
@@ -153,7 +160,7 @@ export async function purgeGroup(deps: GroupDeps, groupId: string): Promise<void
     }
     await deps.firestore.commit(posts.map((p) => deleteWrite(p.path, false)));
   }
-  for (const c of ["members", "joinRequests", "removals"]) await drainCollection(deps, c, parent);
+  for (const c of ["members", "joinRequests", "removals", "notificationCommands"]) await drainCollection(deps, c, parent);
   // File trực tiếp dưới `{groupId}/` (ảnh đại diện, và file lạc nếu có) ở cả 2 bucket.
   await deletePrefix(deps.storage, AVATAR_BUCKET, groupId);
   await deletePrefix(deps.storage, GROUP_MEDIA_BUCKET, groupId);

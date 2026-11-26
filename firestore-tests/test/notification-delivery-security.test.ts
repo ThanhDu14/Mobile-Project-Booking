@@ -14,6 +14,9 @@ beforeEach(async () => {
     await setDoc(doc(db, 'users/admin'), { role: 'ADMIN', accountStatus: 'ACTIVE' });
     await setDoc(doc(db, 'notificationDeliveries/job'), { recipientUid: 'alice', state: 'PENDING' });
     await setDoc(doc(db, 'notificationDeliveries/job/tokens/hash'), { state: 'PENDING' });
+    await setDoc(doc(db, 'notificationFanouts/event'), { state: 'PENDING' });
+    await setDoc(doc(db, 'notificationFanouts/event/recipients/0'), { uids: ['alice'] });
+    await setDoc(doc(db, 'groups/group/notificationCommands/request'), { actorUid: 'alice' });
     await setDoc(doc(db, 'chats/c'), { memberIds: ['alice', 'bob'] });
     await setDoc(doc(db, 'chats/c/participants/alice'), { userId: 'alice' });
   });
@@ -22,12 +25,14 @@ afterAll(async () => { await env.cleanup(); });
 describe('Feature 100 approved backend security', () => {
   it('jobs and token receipts are inaccessible to every client including current ADMIN', async () => {
     for (const db of [player(), player('bob'), player('admin', 'ADMIN'), env.unauthenticatedContext().firestore()]) {
-      for (const path of ['notificationDeliveries/job', 'notificationDeliveries/job/tokens/hash']) {
+      for (const path of ['notificationDeliveries/job', 'notificationDeliveries/job/tokens/hash',
+        'notificationFanouts/event', 'notificationFanouts/event/recipients/0', 'groups/group/notificationCommands/request']) {
         await assertFails(getDoc(doc(db, path)));
         await assertFails(setDoc(doc(db, path), { recipientUid: 'alice' }));
         await assertFails(deleteDoc(doc(db, path)));
       }
       await assertFails(getDocs(collection(db, 'notificationDeliveries')));
+      await assertFails(getDocs(collection(db, 'notificationFanouts')));
     }
   });
   it('own token register/rotate/remove preserves another device; foreign UID and bulk mutations denied', async () => {

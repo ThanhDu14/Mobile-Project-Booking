@@ -227,10 +227,28 @@ export async function assertGroupInvariant(groupId: string): Promise<void> {
 /** Thông báo đã gửi (thay `deps.notify`). */
 export class NotificationRecorder {
   readonly sent: GroupNotification[] = [];
+  private readonly captured = new Set<string>();
+  callbackCalls = 0;
   readonly notify = (n: GroupNotification): Promise<void> => {
+    this.callbackCalls++;
     this.sent.push(n);
     return Promise.resolve();
   };
+  async capture(groupId: string): Promise<void> {
+    const fanouts = await firestore.query("notificationFanouts", [{ field: "groupId", op: "EQUAL", value: groupId }]);
+    for (const fanout of fanouts) {
+      if (this.captured.has(fanout.id)) continue;
+      const content = fanout.data.content as Pick<GroupNotification, "type" | "data">;
+      if (content.type !== "GROUP_ACTIVITY") continue;
+      assertEquals(fanout.data.mode, "SNAPSHOT");
+      const pages = await firestore.query("recipients", [], { parent: fanout.path });
+      for (const page of pages) {
+        for (const recipientUid of page.data.uids as string[]) this.sent.push({ ...content, recipientUid });
+      }
+      this.captured.add(fanout.id);
+    }
+    assertEquals(this.callbackCalls, 0);
+  }
   /** Người nhận của các thông báo có `data.event` đã cho. */
   recipients(event: string): string[] {
     return this.sent.filter((n) => n.data.event === event).map((n) => n.recipientUid);

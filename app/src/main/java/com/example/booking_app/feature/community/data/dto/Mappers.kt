@@ -204,6 +204,7 @@ fun PostDraft.toCreateRequest(groupId: String): GroupPostRequest = GroupPostRequ
 fun PostDraft.toUpdateRequest(groupId: String): GroupPostRequest = GroupPostRequest.update(
     groupId = groupId,
     postId = requestId,
+    requestId = editRequestId,
     content = content.trim(),
     photoPaths = photos.mapNotNull { it.remotePath },
     eventTitle = eventTitle.takeIf { type == PostType.EVENT }?.trim(),

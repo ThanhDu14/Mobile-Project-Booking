@@ -65,7 +65,7 @@ sealed interface GroupMembersEvent {
  */
 @HiltViewModel
 class GroupMembersViewModel @Inject constructor(
-    savedStateHandle: SavedStateHandle,
+    private val savedStateHandle: SavedStateHandle,
     private val groups: GroupRepository,
     private val session: SessionManager,
     private val manageMember: ManageMember,
@@ -140,17 +140,19 @@ class GroupMembersViewModel @Inject constructor(
         }
 
     fun onRemoveConfirmed(userId: String) =
-        act({ reqId -> manageMember.remove(groupId, userId, reqId) }) {
+        act({ reqId -> manageMember.remove(groupId, userId, reqId) }, retryKey = "remove_member_$userId") {
             _events.trySend(GroupMembersEvent.MemberRemoved)
         }
 
-    private fun act(call: suspend (String) -> Result<Unit>, onSuccess: () -> Unit) {
+    private fun act(call: suspend (String) -> Result<Unit>, retryKey: String? = null, onSuccess: () -> Unit) {
         if (busy.value) return
         busy.value = true
         viewModelScope.launch {
             try {
                 val result = try {
-                    call(UUID.randomUUID().toString())
+                    val requestId = retryKey?.let { savedStateHandle.get<String>(it) }
+                        ?: UUID.randomUUID().toString().also { if (retryKey != null) savedStateHandle[retryKey] = it }
+                    call(requestId)
                 } catch (e: CancellationException) {
                     throw e
                 } catch (e: Exception) {
@@ -158,11 +160,16 @@ class GroupMembersViewModel @Inject constructor(
                 }
                 result.fold(
                     onSuccess = {
+                        if (retryKey != null) savedStateHandle.remove<String>(retryKey)
                         onSuccess()
                         start()
                     },
                     onFailure = { err ->
-                        _events.trySend(GroupMembersEvent.ShowError(err.toCommunityError()))
+                        val error = err.toCommunityError()
+                        if (retryKey != null && error !is CommunityError.Network && error !is CommunityError.Busy) {
+                            savedStateHandle.remove<String>(retryKey)
+                        }
+                        _events.trySend(GroupMembersEvent.ShowError(error))
                     },
                 )
             } finally {

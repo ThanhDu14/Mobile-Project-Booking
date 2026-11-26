@@ -9,11 +9,11 @@ import {
   type GroupDeps,
   groupPath,
   loadGroupForWrite,
-  notifyGroupActivity,
   postPath,
   userSnapshot,
 } from "../_shared/groups.ts";
 import { deletePrefix, GROUP_MEDIA_BUCKET, MAX_POST_PHOTOS, postMediaPrefix } from "../_shared/media.ts";
+import { enqueueGroupFanout, groupActivity, groupCommandId, groupNotificationCommand } from "../_shared/group-notification.ts";
 
 export const MAX_CONTENT_LENGTH = 2000;
 
@@ -133,15 +133,6 @@ export const createPost: ActionHandler = async ({ uid, body, deps }) => {
   const content = isEvent && body.content === undefined ? "" : parseContent(body.content, isEvent ? 0 : 1);
   const photoPaths = parsePhotoPaths(body.photoPaths ?? [], groupId, postId);
 
-  const event = isEvent
-    ? {
-      title: parseText(body.eventTitle, "eventTitle", MAX_EVENT_TITLE),
-      at: parseEventAt(body.eventAt, deps.now()),
-      location: parseText(body.eventLocation, "eventLocation", MAX_EVENT_LOCATION),
-      expected: parseExpectedCount(body.expectedCount),
-    }
-    : null;
-
   const outcome = await inGroupTx(deps, groupId, async (tx, writes) => {
     await loadGroupForWrite(tx, groupId);
     if (await getMembership(tx, groupId, uid) === null) throw notMember();
@@ -154,9 +145,18 @@ export const createPost: ActionHandler = async ({ uid, body, deps }) => {
       }
       return { created: false, post: existing };
     }
+    const now = deps.now();
+    const command = await groupNotificationCommand<Record<string, unknown>>(tx, groupId, postId, uid,
+      ["create", body.type, content, photoPaths, body.eventTitle, body.eventAt, body.eventLocation, body.expectedCount], now);
+    if (command.previous) return { created: false, post: command.previous };
+    const event = isEvent ? {
+      title: parseText(body.eventTitle, "eventTitle", MAX_EVENT_TITLE),
+      at: parseEventAt(body.eventAt, now),
+      location: parseText(body.eventLocation, "eventLocation", MAX_EVENT_LOCATION),
+      expected: parseExpectedCount(body.expectedCount),
+    } : null;
 
     await assertPhotosExist(deps, groupId, postId, photoPaths);
-    const now = deps.now();
     const post = {
       groupId,
       authorId: uid,
@@ -178,16 +178,15 @@ export const createPost: ActionHandler = async ({ uid, body, deps }) => {
       updatedAt: now,
     };
     writes.push(createWrite(postPath(groupId, postId), post));
+    if (event) {
+      writes.push(command.write(post));
+      await enqueueGroupFanout(tx, writes, {
+        groupId, actorUid: uid, sourceId: postId, audience: "MEMBERS", now,
+        content: groupActivity("EVENT_CREATED", groupId, postId),
+      });
+    }
     return { created: true, post };
   });
-  if (outcome.created && event) {
-    // EVENT_CREATED cho mọi thành viên hiện tại trừ người đăng, gửi sau commit (lỗi chỉ ghi log).
-    const members = await deps.firestore.query("members", [], { parent: groupPath(groupId) });
-    await notifyGroupActivity(deps, "EVENT_CREATED", members.map((m) => m.id).filter((id) => id !== uid), {
-      groupId,
-      postId,
-    });
-  }
   return Response.json({ post: postJson(postId, outcome.post) }, { status: outcome.created ? 201 : 200 });
 };
 
@@ -196,23 +195,26 @@ export const createPost: ActionHandler = async ({ uid, body, deps }) => {
 export const updatePost: ActionHandler = async ({ uid, body, deps }) => {
   const groupId = requireId(body, "groupId");
   const postId = requireUuid(body, "postId");
+  const requestId = groupCommandId(body);
   const newPaths = body.photoPaths === undefined ? undefined : parsePhotoPaths(body.photoPaths, groupId, postId);
 
-  let obsolete: string[] = [];
-  let toNotify: string[] = [];
-  const post = await inGroupTx(deps, groupId, async (tx, writes) => {
+  const { post, obsolete } = await inGroupTx(deps, groupId, async (tx, writes) => {
     await loadGroupForWrite(tx, groupId);
     if (await getMembership(tx, groupId, uid) === null) throw notMember();
+    const now = deps.now();
+    const command = await groupNotificationCommand<Record<string, unknown>>(tx, groupId, requestId, uid,
+      ["update", postId, body.content, newPaths, body.eventTitle, body.eventAt, body.eventLocation, body.expectedCount], now);
+    if (command.previous) return { post: command.previous, obsolete: [] };
     const current = await tx.get(postPath(groupId, postId));
     if (!current) throw new HttpError(404, "POST_NOT_FOUND", "Bài viết không còn tồn tại");
     // Chỉ người đăng được sửa (chủ nhóm cũng không sửa bài người khác, FR-013); bài đang ẩn người đăng vẫn sửa được.
     if (current.authorId !== uid) throw forbidden();
     const isEvent = current.type === "EVENT";
-    const now = deps.now();
     // Kiểm tra trường theo loại bài (cần `current.type`); lỗi ở đây ném trước khi ghi gì.
     const content = body.content === undefined ? undefined : parseContent(body.content, isEvent ? 0 : 1);
 
     const oldPaths = Array.isArray(current.photoPaths) ? current.photoPaths as string[] : [];
+    let obsolete: string[] = [];
     const changes: Record<string, unknown> = {};
     if (content !== undefined) changes.content = content;
     if (newPaths !== undefined) {
@@ -241,14 +243,19 @@ export const updatePost: ActionHandler = async ({ uid, body, deps }) => {
           for (const a of attendees) writes.push(updateWrite(a.path, { eventAt: at }));
         }
       }
-      if (notable) toNotify = attendees.map((a) => a.id).filter((id) => id !== uid);
+      if (notable) {
+        await enqueueGroupFanout(tx, writes, {
+          groupId, actorUid: uid, sourceId: requestId, audience: "ATTENDEES", now,
+          recipients: attendees.map(a => a.id), content: groupActivity("EVENT_UPDATED", groupId, postId),
+        });
+      }
     }
     changes.editedAt = now;
     changes.updatedAt = now;
-    writes.push(updateWrite(postPath(groupId, postId), changes));
-    return { ...current, ...changes };
+    const post = { ...current, ...changes };
+    writes.push(updateWrite(postPath(groupId, postId), changes), command.write(post));
+    return { post, obsolete };
   });
-  await notifyGroupActivity(deps, "EVENT_UPDATED", toNotify, { groupId, postId });
 
   if (obsolete.length > 0) await cleanQuietly("ảnh bị bỏ", () => deps.storage.remove(GROUP_MEDIA_BUCKET, obsolete));
   return Response.json({ post: postJson(postId, post) });
@@ -259,11 +266,14 @@ export const updatePost: ActionHandler = async ({ uid, body, deps }) => {
 export const deletePost: ActionHandler = async ({ uid, body, deps }) => {
   const groupId = requireId(body, "groupId");
   const postId = requireUuid(body, "postId");
+  const requestId = groupCommandId(body);
 
-  let toNotify: string[] = [];
   await inGroupTx(deps, groupId, async (tx, writes) => {
     await loadGroupForWrite(tx, groupId);
     if (await getMembership(tx, groupId, uid) === null) throw notMember();
+    const now = deps.now();
+    const command = await groupNotificationCommand<boolean>(tx, groupId, requestId, uid, ["delete", postId], now);
+    if (command.previous) return;
     const current = await tx.get(postPath(groupId, postId));
     if (!current) throw new HttpError(404, "POST_NOT_FOUND", "Bài viết không còn tồn tại");
     if (current.authorId !== uid) throw forbidden();
@@ -273,11 +283,14 @@ export const deletePost: ActionHandler = async ({ uid, body, deps }) => {
     writes.push(deleteWrite(postPath(groupId, postId)));
     // Chỉ báo khi là sự kiện chưa diễn ra; danh sách lấy trước khi xóa.
     const at = asDate(current.eventAt);
-    if (current.type === "EVENT" && at && at.getTime() > deps.now().getTime()) {
-      toNotify = attendees.map((a) => a.id).filter((id) => id !== uid);
+    if (current.type === "EVENT" && at && at.getTime() > now.getTime()) {
+      await enqueueGroupFanout(tx, writes, {
+        groupId, actorUid: uid, sourceId: requestId, audience: "ATTENDEES", now,
+        recipients: attendees.map(a => a.id), content: groupActivity("EVENT_DELETED", groupId, postId),
+      });
     }
+    writes.push(command.write(true));
   });
-  await notifyGroupActivity(deps, "EVENT_DELETED", toNotify, { groupId, postId });
 
   await cleanQuietly(
     "xóa bài",

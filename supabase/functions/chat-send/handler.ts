@@ -20,9 +20,11 @@ import { invalid, requireId, requireUuid } from "../_shared/group-tx.ts";
 import { groupPath } from "../_shared/groups.ts";
 import { CHAT_MEDIA_BUCKET } from "../_shared/media.ts";
 import { notificationInboxId, prepareNotification } from "../_shared/notification-enqueue.ts";
+import { enqueueGroupFanout } from "../_shared/group-notification.ts";
 
 export const MAX_TEXT = 1000;
 const PREVIEW_LEN = 100;
+const MAX_CHAT_TRANSFORMS = 500;
 const IMAGE_EXTS = ["jpg", "png", "webp"];
 const len = (s: string) => Array.from(s).length;
 
@@ -79,12 +81,14 @@ async function send({ uid, body, deps }: ChatContext): Promise<Response> {
     }
     const mine = await tx.get(participantPath(chatId, uid));
     const others = memberIds.filter((m) => m !== uid);
+    const now = deps.now();
+    const content = {
+      type: "CHAT_MESSAGE", title: "Tin nhắn mới", body: "Bạn có tin nhắn mới.", data: { chatId, messageId },
+    };
     const notificationWrites = chat.type === "DIRECT" ? (await Promise.all(others.map(async (recipientUid) => {
       const identity = JSON.stringify([chatId, messageId, recipientUid, "CHAT_MESSAGE"]);
       return await prepareNotification(tx, "chat", identity, recipientUid,
-        await notificationInboxId("chat", identity, recipientUid, "CHAT_MESSAGE"), {
-          type: "CHAT_MESSAGE", title: "Tin nhắn mới", body: "Bạn có tin nhắn mới.", data: { chatId, messageId },
-        }, deps.now());
+        await notificationInboxId("chat", identity, recipientUid, "CHAT_MESSAGE"), content, now);
     }))).flat() : [];
     writes.push(createWrite(messagePath(chatId, messageId), {
       senderId: uid,
@@ -97,40 +101,41 @@ async function send({ uid, body, deps }: ChatContext): Promise<Response> {
     }, ["createdAt"]));
     const type = imagePath ? "IMAGE" : "TEXT";
     const preview = text === "" ? "[Hình ảnh]" : Array.from(text).slice(0, PREVIEW_LEN).join("");
+    const fields = ["lastMessage.messageId", "lastMessage.senderId", "lastMessage.type", "lastMessage.preview"];
+    const patch: Record<string, unknown> = { lastMessage: { messageId, senderId: uid, type, preview } };
+    const transforms = [requestTime("lastMessage.createdAt"), requestTime("updatedAt")];
+    if (transforms.length + others.length <= MAX_CHAT_TRANSFORMS) {
+      transforms.push(...others.map(recipient => incrementBy1(fieldPath("unreadCounts", recipient))));
+    } else {
+      // This transaction already reads the chat. A replacement map preserves increments
+      // on conflict retries and avoids Firestore's per-document field transform limit.
+      const counts = { ...chat.unreadCounts as Record<string, unknown> };
+      const increments = Object.fromEntries(others.map(recipient => {
+        const previous = Object.hasOwn(counts, recipient) ? counts[recipient] : null;
+        return [recipient, (typeof previous === "number" ? previous : 0) + 1];
+      }));
+      fields.push("unreadCounts");
+      patch.unreadCounts = { ...counts, ...increments };
+    }
     writes.push(patchWrite(
       chatPath(chatId),
-      { lastMessage: { messageId, senderId: uid, type, preview } },
-      ["lastMessage.messageId", "lastMessage.senderId", "lastMessage.type", "lastMessage.preview"],
-      [
-        requestTime("lastMessage.createdAt"),
-        requestTime("updatedAt"),
-        ...others.map((o) => incrementBy1(fieldPath("unreadCounts", o))),
-      ],
+      patch,
+      fields,
+      transforms,
     ));
     writes.push(...notificationWrites);
-    return { created: true as const, memberIds, others, direct: chat.type === "DIRECT" };
+    if (chat.type === "GROUP" && chat.groupId && others.length) {
+      await enqueueGroupFanout(tx, writes, {
+        groupId: chat.groupId, actorUid: uid, sourceId: messageId, audience: "MEMBERS", content, now,
+        recipients: others,
+      });
+    }
+    return { created: true as const };
   });
 
   if (!out.created) return Response.json({ message: out.message }, { status: 200 });
   const saved = await deps.firestore.get(messagePath(chatId, messageId));
-  if (!out.direct) await notifyRecipients(deps, chatId, messageId, out.others);
   return Response.json({ message: messageJson(messageId, saved ?? {}) }, { status: 201 });
-}
-
-/** Legacy post-commit callback. Inbox recipients include muted/viewing users (100 C1).
- * GROUP only: durable fanout is pending. DIRECT uses H1 transaction enqueue above. */
-async function notifyRecipients(deps: ChatDeps, chatId: string, messageId: string, others: string[]): Promise<void> {
-  try {
-    await Promise.all(others.map(async (recipientUid) => {
-      try {
-        await deps.notify({ type: "CHAT_MESSAGE", recipientUid, data: { chatId, messageId } });
-      } catch (e) {
-        console.warn(`[chat] gửi CHAT_MESSAGE cho ${recipientUid} thất bại`, e);
-      }
-    }));
-  } catch (e) {
-    console.warn("[chat] không gửi được thông báo", e);
-  }
 }
 
 export function handleChatSend(req: Request, deps: ChatDeps = defaultChatDeps()): Promise<Response> {

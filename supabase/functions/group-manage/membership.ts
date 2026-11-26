@@ -1,6 +1,6 @@
 // `join`, `cancelRequest`, `approve`, `reject`, `leave` của `group-manage` (spec 090 T033; data-model mục 8,
 // research R3, R11, R15). Mọi thao tác đọc và ghi `groups/{groupId}` trong transaction để các request cùng nhóm
-// tranh chấp đúng một document (R3); thông báo chỉ gửi SAU khi commit.
+// tranh chấp đúng một document (R3); outbox thông báo ghi cùng transaction nguồn.
 import { HttpError } from "../_shared/auth.ts";
 import { createWrite, deleteWrite, updateWrite } from "../_shared/firestore.ts";
 import {
@@ -12,42 +12,27 @@ import {
   joinRequestPath,
   loadGroupForWrite,
   memberPath,
-  notifyGroupActivity,
   postPath,
   removalPath,
   userSnapshot,
 } from "../_shared/groups.ts";
-import { UUID } from "../_shared/dropin-tx.ts";
 import { asNumber, inGroupTx, requireId } from "../_shared/group-tx.ts";
+import { enqueueGroupFanout, groupActivity, groupCommandId, groupNotificationCommand } from "../_shared/group-notification.ts";
 import type { FirestoreTransaction, Write } from "../_shared/firestore.ts";
 
 const ok = () => Response.json({ ok: true });
-
-/** Chủ nhóm và quản trị viên của nhóm (người nhận `JOIN_REQUESTED`). Lỗi truy vấn chỉ ghi log. */
-async function managerUids(deps: GroupDeps, groupId: string): Promise<string[]> {
-  try {
-    const rows = await deps.firestore.query("members", [{ field: "role", op: "IN", value: ["OWNER", "ADMIN"] }], {
-      parent: groupPath(groupId),
-    });
-    return rows.map((r) => r.id);
-  } catch (e) {
-    console.warn(`[group-manage] không lấy được người quản lý nhóm ${groupId} để thông báo`, e);
-    return [];
-  }
-}
 
 // ---------- join ----------
 
 export const joinGroup: ActionHandler = async ({ uid, body, deps }) => {
   const groupId = requireId(body, "groupId");
-  // `requestId` lưu vào yêu cầu để app nhận lại đúng yêu cầu của mình; thiếu thì tự sinh.
-  const requestId = typeof body.requestId === "string" && UUID.test(body.requestId)
-    ? body.requestId.toLowerCase()
-    : crypto.randomUUID();
+  const requestId = groupCommandId(body);
 
   const result = await inGroupTx(deps, groupId, async (tx, writes) => {
     const now = deps.now();
     const group = await loadGroupForWrite(tx, groupId);
+    const command = await groupNotificationCommand<"JOINED" | "REQUESTED">(tx, groupId, requestId, uid, ["join"], now);
+    if (command.previous) return command.previous;
     const member = await tx.get(memberPath(groupId, uid));
     const request = await tx.get(joinRequestPath(groupId, uid));
     const removal = await tx.get(removalPath(groupId, uid));
@@ -69,6 +54,7 @@ export const joinGroup: ActionHandler = async ({ uid, body, deps }) => {
         updateWrite(groupPath(groupId), { memberCount: asNumber(group.memberCount) + 1, updatedAt: now }),
       );
       await deps.onMembershipChanged(tx, groupId, { added: [uid] });
+      writes.push(command.write("JOINED"));
       return "JOINED" as const;
     }
     writes.push(
@@ -84,12 +70,13 @@ export const joinGroup: ActionHandler = async ({ uid, body, deps }) => {
         updatedAt: now,
       }),
     );
+    writes.push(command.write("REQUESTED"));
+    await enqueueGroupFanout(tx, writes, {
+      groupId, actorUid: uid, sourceId: requestId, audience: "MANAGERS", now,
+      content: groupActivity("JOIN_REQUESTED", groupId),
+    });
     return "REQUESTED" as const;
   });
-
-  if (result === "REQUESTED") {
-    await notifyGroupActivity(deps, "JOIN_REQUESTED", await managerUids(deps, groupId), { groupId });
-  }
   return Response.json({ result });
 };
 
@@ -120,6 +107,7 @@ function reviewHandler(approve: boolean): ActionHandler {
   return async ({ uid, body, deps }) => {
     const groupId = requireId(body, "groupId");
     const userId = requireId(body, "userId");
+    const requestId = groupCommandId(body);
 
     await inGroupTx(deps, groupId, async (tx, writes) => {
       const now = deps.now();
@@ -129,6 +117,9 @@ function reviewHandler(approve: boolean): ActionHandler {
       if (role === "MEMBER") {
         throw new HttpError(403, "FORBIDDEN", "Chỉ chủ nhóm hoặc quản trị viên được duyệt yêu cầu");
       }
+      const event = approve ? "JOIN_APPROVED" : "JOIN_REJECTED";
+      const command = await groupNotificationCommand<boolean>(tx, groupId, requestId, uid, [event, userId], now);
+      if (command.previous) return;
       const request = await tx.get(joinRequestPath(groupId, userId));
       if (!request) throw new HttpError(404, "REQUEST_NOT_FOUND", "Yêu cầu tham gia không còn tồn tại");
 
@@ -155,9 +146,13 @@ function reviewHandler(approve: boolean): ActionHandler {
       }
       writes.push(updateWrite(groupPath(groupId), groupPatch));
       if (approve) await deps.onMembershipChanged(tx, groupId, { added: [userId] });
+      writes.push(command.write(true));
+      await enqueueGroupFanout(tx, writes, {
+        groupId, actorUid: uid, sourceId: requestId, audience: "TARGET", recipients: [userId], now,
+        content: groupActivity(event, groupId),
+      });
     });
 
-    await notifyGroupActivity(deps, approve ? "JOIN_APPROVED" : "JOIN_REJECTED", [userId], { groupId });
     return ok();
   };
 }

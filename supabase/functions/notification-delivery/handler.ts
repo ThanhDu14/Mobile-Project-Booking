@@ -2,6 +2,7 @@ import * as fs from "../_shared/firestore.ts";
 import { httpV1Sender } from "../_shared/notification-fcm.ts";
 import { cleanupDeliveries, runDeliveryWorker, type DeliveryStore, type Sender } from "../_shared/notification-worker.ts";
 import { processDropInChangeFanouts } from "../_shared/dropin-change-notification.ts";
+import { processGroupFanouts } from "../_shared/group-notification.ts";
 
 export async function handleNotificationDelivery(req: Request, deps: {
   store?: DeliveryStore; send?: Sender; cronSecret?: string; now?: () => Date;
@@ -14,8 +15,15 @@ export async function handleNotificationDelivery(req: Request, deps: {
   try {
     const store = deps.store ?? fs, clock = deps.now ?? (() => new Date());
     const result = await runDeliveryWorker(store, deps.send ?? httpV1Sender(), clock);
-    const dropInPages = await processDropInChangeFanouts(store, clock());
     const cleaned = await cleanupDeliveries(store, clock());
-    return Response.json({ ...result, cleaned, dropInPages });
+    const fanouts = await Promise.allSettled([
+      processDropInChangeFanouts(store, clock()), processGroupFanouts(store, clock()),
+    ]);
+    const [dropIn, group] = fanouts;
+    if (dropIn.status === "rejected") throw dropIn.reason;
+    if (group.status === "rejected") throw group.reason;
+    return Response.json({
+      ...result, cleaned, dropInPages: dropIn.value, groupPages: group.value,
+    });
   } catch { return Response.json({ error: "DELIVERY_UNAVAILABLE" }, { status: 503 }); }
 }

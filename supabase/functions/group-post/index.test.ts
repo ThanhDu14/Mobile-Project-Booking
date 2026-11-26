@@ -22,8 +22,8 @@ const tokenOf = (uid: string) => emulatorToken({ sub: uid, user_id: uid, appRole
 
 type Setup = Awaited<ReturnType<typeof setup>>;
 
-async function call(s: Setup, uid: string, body: unknown) {
-  const r = await handleGroupPost(bearer(tokenOf(uid), { body: JSON.stringify(body) }), s.deps);
+async function call(s: Setup, uid: string, body: Record<string, unknown>) {
+  const r = await handleGroupPost(bearer(tokenOf(uid), { body: JSON.stringify({ requestId: crypto.randomUUID(), ...body }) }), s.deps);
   return { status: r.status, body: await r.json() };
 }
 
@@ -381,13 +381,17 @@ T("P5 create EVENT hợp lệ → 201, attendeeCount 0, EVENT_CREATED gửi mọ
   const doc = await get(postPath(s.groupId, postId));
   assert(doc?.eventAt instanceof Date);
   assertEquals(doc?.attendeeCount, 0);
-  assertEquals(s.notifications.recipients("EVENT_CREATED").sort(), [s.owner, s.member, s.member2].sort());
-  assert(s.notifications.sent.every((n) => n.data.groupId === s.groupId && n.data.postId === postId));
+  await s.notifications.capture(s.groupId);
+assertEquals(s.notifications.recipients("EVENT_CREATED").sort(), [s.owner, s.member, s.member2].sort());
+  await s.notifications.capture(s.groupId);
+assert(s.notifications.sent.every((n) => n.data.groupId === s.groupId && n.data.postId === postId));
 
   // Gửi lại cùng requestId: trả bài cũ, không gửi thêm thông báo.
-  s.notifications.reset();
+  await s.notifications.capture(s.groupId);
+s.notifications.reset();
   assertEquals((await call(s, s.admin, eventBody(s, postId))).status, 200);
-  assertEquals(s.notifications.sent.length, 0);
+  await s.notifications.capture(s.groupId);
+assertEquals(s.notifications.sent.length, 0);
   await assertGroupInvariant(s.groupId);
 });
 
@@ -396,7 +400,8 @@ T("P5 create POST thường không gửi EVENT_CREATED và bỏ qua trường s�
   const r = await call(s, s.member, createBody(s, crypto.randomUUID(), { eventTitle: "x", expectedCount: 5 }));
   assertEquals(r.status, 201);
   assertEquals(r.body.post.eventTitle, null);
-  assertEquals(s.notifications.sent.length, 0);
+  await s.notifications.capture(s.groupId);
+assertEquals(s.notifications.sent.length, 0);
 });
 
 T("P6 20 thành viên attend song song, lặp 10 lần → attendeeCount = 20, đúng 20 attendees, không trùng", async () => {
@@ -525,10 +530,12 @@ T(
     const docs = await attendeeDocs(s, postId);
     assertEquals(docs.length, 3);
     for (const d of docs) assertEquals((d.data.eventAt as Date).toISOString(), eventAt);
-    assertEquals(s.notifications.recipients("EVENT_UPDATED").sort(), [s.member2, s.admin].sort());
+    await s.notifications.capture(s.groupId);
+assertEquals(s.notifications.recipients("EVENT_UPDATED").sort(), [s.member2, s.admin].sort());
 
     // Đổi địa điểm cũng gửi; tiêu đề và expectedCount cập nhật được.
-    s.notifications.reset();
+    await s.notifications.capture(s.groupId);
+s.notifications.reset();
     const r2 = await call(s, s.member, {
       action: "update",
       groupId: s.groupId,
@@ -543,7 +550,8 @@ T(
       "Tên mới",
       12,
     ]);
-    assertEquals(s.notifications.recipients("EVENT_UPDATED").sort(), [s.member2, s.admin].sort());
+    await s.notifications.capture(s.groupId);
+assertEquals(s.notifications.recipients("EVENT_UPDATED").sort(), [s.member2, s.admin].sort());
     await assertGroupInvariant(s.groupId);
   },
 );
@@ -553,7 +561,8 @@ T("P8 update chỉ đổi mô tả → không gửi; eventAt quá khứ/sai → 
   const postId = await seedPost(s.groupId, { type: "EVENT", authorId: s.member, attendees: [s.member2] });
   const r = await call(s, s.member, { action: "update", groupId: s.groupId, postId, content: "Mô tả mới" });
   assertEquals([r.status, r.body.post.content], [200, "Mô tả mới"]);
-  assertEquals(s.notifications.sent.length, 0);
+  await s.notifications.capture(s.groupId);
+assertEquals(s.notifications.sent.length, 0);
   // Mô tả rỗng được phép với sự kiện.
   assertEquals((await call(s, s.member, { action: "update", groupId: s.groupId, postId, content: "" })).status, 200);
 
@@ -571,7 +580,8 @@ T("P8 update chỉ đổi mô tả → không gửi; eventAt quá khứ/sai → 
   }
   const f = await call(s, s.owner, { action: "update", groupId: s.groupId, postId, content: "x" });
   assertEquals([f.status, f.body.error.code], [403, "FORBIDDEN"]);
-  assertEquals(s.notifications.sent.length, 0);
+  await s.notifications.capture(s.groupId);
+assertEquals(s.notifications.sent.length, 0);
   await assertGroupInvariant(s.groupId);
 });
 
@@ -586,9 +596,11 @@ T("P8 delete sự kiện chưa diễn ra → xóa attendees, EVENT_DELETED cho n
   assertEquals(r.status, 200);
   assertEquals(await get(postPath(s.groupId, upcoming)), null);
   assertEquals((await attendeeDocs(s, upcoming)).length, 0);
-  assertEquals(s.notifications.recipients("EVENT_DELETED").sort(), [s.member2, s.admin].sort());
+  await s.notifications.capture(s.groupId);
+assertEquals(s.notifications.recipients("EVENT_DELETED").sort(), [s.member2, s.admin].sort());
 
-  s.notifications.reset();
+  await s.notifications.capture(s.groupId);
+s.notifications.reset();
   const past = await seedPost(s.groupId, {
     type: "EVENT",
     authorId: s.member,
@@ -598,7 +610,8 @@ T("P8 delete sự kiện chưa diễn ra → xóa attendees, EVENT_DELETED cho n
   r = await call(s, s.member, { action: "delete", groupId: s.groupId, postId: past });
   assertEquals(r.status, 200);
   assertEquals((await attendeeDocs(s, past)).length, 0);
-  assertEquals(s.notifications.sent.length, 0);
+  await s.notifications.capture(s.groupId);
+assertEquals(s.notifications.sent.length, 0);
   await assertGroupInvariant(s.groupId);
 });
 
@@ -738,8 +751,8 @@ T("P11 nhóm LOCKED: mọi action ghi của group-post và join → 423 GROUP_LO
   await locked(owner, { action: "unattend", postId: event });
   assertEquals((await postDoc(s, postId)).status, "VISIBLE");
 
-  const manage = async (uid: string, body: unknown) => {
-    const r = await handleGroupManage(bearer(tokenOf(uid), { body: JSON.stringify(body) }), s.deps);
+  const manage = async (uid: string, body: Record<string, unknown>) => {
+    const r = await handleGroupManage(bearer(tokenOf(uid), { body: JSON.stringify({ requestId: crypto.randomUUID(), ...body }) }), s.deps);
     return { status: r.status, body: await r.json() };
   };
   const join = await manage(outsider, { action: "join", groupId });

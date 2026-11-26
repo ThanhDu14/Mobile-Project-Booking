@@ -33,7 +33,7 @@ interface PostRepository {
     /** Sửa bài `draft.requestId` (là `postId`); [draft.photos] là bộ ảnh mới. */
     suspend fun update(groupId: String, draft: PostDraft): Result<Post>
 
-    suspend fun delete(groupId: String, postId: String): Result<Unit>
+    suspend fun delete(groupId: String, postId: String, requestId: String): Result<Unit>
 
     suspend fun hide(groupId: String, postId: String): Result<Unit>
 

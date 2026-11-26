@@ -15,6 +15,8 @@
 
 Request: `{ "action": "...", "requestId": "uuid", ...tham số }`. Quy tắc kiểm tra từng action: [data-model mục 8](../data-model.md#8-quy-tắc-kiểm-tra-chính).
 
+Feature 100 F1 dùng UUID ổn định của `join`, `approve`, `reject`, `remove` và `update` khi truyền visibility. Replay cùng actor/payload trả kết quả đã ghi, đổi actor/payload với cùng UUID trả `409 REQUEST_ID_CONFLICT`. Caller cũ chưa gửi UUID vẫn có thể đột biến nguồn theo API cũ, với fanout cho từng mutation được commit.
+
 | `action` | Tham số | Kết quả | Thông báo |
 |---|---|---|---|
 | `create` | `name`, `description`, `districtId`, `visibility`, `hasAvatar` | `201 { group, avatarUpload? }`; `avatarUpload = { path, signedUrl, token }` khi `hasAvatar` | — |
@@ -36,6 +38,8 @@ Request: `{ "action": "...", "requestId": "uuid", ...tham số }`. Quy tắc ki�
 **Mọi action đổi danh sách thành viên** (`create`, `join` khi `JOINED`, `approve`, `update` có tự duyệt, `leave`, `remove`, `delete`) gọi `onGroupMembershipChanged` trong cùng transaction (mục 4).
 
 ## 2. `group-post`
+
+Với `update` và `delete`, gửi `requestId` UUID riêng với `postId` và giữ nguyên qua retry. Ghi command journal và outbox cùng transaction nguồn. `create` dùng `requestId == postId`. Bản app cũ thiếu UUID ở `update`/`delete` dùng ID do server cấp cho mỗi lần thực thi.
 
 | `action` | Tham số | Kết quả | Thông báo |
 |---|---|---|---|

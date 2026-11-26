@@ -478,8 +478,8 @@ class GroupFeedTest {
             Page(listOf(post("p1", authorId = ME, edited = true), post("p2", authorId = ME)), null),
         )
         every { posts.observeNewPosts("g1", false, any()) } returns emptyFlow()
-        coEvery { posts.delete("g1", "p1") } returns Result.success(Unit)
-        coEvery { posts.delete("g1", "p2") } returns Result.failure(CommunityError.Network())
+        coEvery { posts.delete("g1", "p1", any()) } returns Result.success(Unit)
+        coEvery { posts.delete("g1", "p2", any()) } returns Result.failure(CommunityError.Network())
 
         val vm = viewModel()
         advanceUntilIdle()
@@ -646,7 +646,7 @@ class GroupFeedTest {
 
         coEvery { posts.feed("g1", true, null) } returns Result.success(Page(listOf(post("old", createdAt = t1)), null))
         every { posts.observeNewPosts("g1", true, t1) } returns newPostsFlow
-        coEvery { posts.delete("g1", "p_del") } returns Result.success(Unit)
+        coEvery { posts.delete("g1", "p_del", any()) } returns Result.success(Unit)
         coEvery { posts.hide("g1", "p_hide") } returns Result.success(Unit)
 
         var fetchCalls = 0

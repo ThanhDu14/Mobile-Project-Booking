@@ -48,27 +48,10 @@ export interface ChatDeps {
   firestore: Pick<typeof defaultFirestore, "runTransaction" | "get" | "query" | "commit">;
   storage: GroupStorage;
   authenticate: (req: Request) => Promise<{ uid: string }>;
-  /** Gửi thông báo sau commit; lỗi bị bỏ qua ở caller. */
-  notify: (n: ChatNotification) => Promise<void>;
+  /** Former callback, kept as a regression-test seam. */
+  notify?: (n: ChatNotification) => Promise<void>;
   now: () => Date;
   sleep?: (ms: number) => Promise<void>;
-}
-
-/** Gọi `send-notification` của D (spec 100) bằng service role. */
-export async function sendChatNotification(n: ChatNotification): Promise<void> {
-  const url = Deno.env.get("SUPABASE_URL");
-  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!url || !key) {
-    console.warn("[chat] thiếu SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY, bỏ qua thông báo");
-    return;
-  }
-  const res = await fetch(`${url}/functions/v1/send-notification`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify(n),
-  });
-  await res.body?.cancel();
-  if (!res.ok) throw new Error(`send-notification ${res.status}`);
 }
 
 export function defaultChatDeps(): ChatDeps {
@@ -76,7 +59,6 @@ export function defaultChatDeps(): ChatDeps {
     firestore: defaultFirestore,
     storage: supabaseGroupStorage(),
     authenticate: (req) => requireUser(req),
-    notify: sendChatNotification,
     now: () => new Date(),
   };
 }
