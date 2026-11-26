@@ -1,0 +1,37 @@
+[
+    {
+        "slug":  "booking-payment-confirm",
+        "version":  2,
+        "status":  "ACTIVE"
+    },
+    {
+        "slug":  "group-manage",
+        "version":  2,
+        "status":  "ACTIVE"
+    },
+    {
+        "slug":  "notification-delivery",
+        "version":  1,
+        "status":  "ACTIVE"
+    },
+    {
+        "slug":  "group-post",
+        "version":  2,
+        "status":  "ACTIVE"
+    },
+    {
+        "slug":  "chat-send",
+        "version":  2,
+        "status":  "ACTIVE"
+    },
+    {
+        "slug":  "owner-create-voucher",
+        "version":  7,
+        "status":  "ACTIVE"
+    },
+    {
+        "slug":  "booking-reminders",
+        "version":  1,
+        "status":  "ACTIVE"
+    }
+]

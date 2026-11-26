@@ -1,0 +1,4 @@
+/functions/v1/chat-send 201
+/functions/v1/chat-send 200
+/functions/v1/group-post 201
+/functions/v1/notification-delivery 200

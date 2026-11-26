@@ -26,8 +26,8 @@ description: "Task list for Feature 100 – Notification"
 
 **Purpose**: Record unresolved integration decisions. Only directly dependent implementation tasks wait for each decision; independent work can continue. Do not invent event, idempotency, or delivery schemas.
 
-- [ ] T004 NEEDS DECISION: agree and record source event transport, minimal payload, producer/resolver responsibility, and event identity with producer features in `specs/100-notification/contracts/event-integration.md` (FR-002; blocks only event adapters T018, T023, T024, T046–T049)
-- [ ] T005 NEEDS DECISION: agree and record how to enforce one inbox record per `(business event, recipient uid, type)` and prevent duplicate reminder processing without assuming new fields/collections in `specs/100-notification/research.md` and `docs/design/database/README.md` (FR-014; blocks shared inbox writer T017 and reminder scheduling/deduplication T019; unrelated Android inbox/UI work can proceed)
+- [X] T004 NEEDS DECISION: agree and record source event transport, minimal payload, producer/resolver responsibility, and event identity with producer features in `specs/100-notification/contracts/event-integration.md` (FR-002; blocks only event adapters T018, T023, T024, T046–T049) Đã đối chiếu toàn bộ 19 type với producer và resolver, gồm F1/P2/B1.
+- [X] T005 NEEDS DECISION: agree and record how to enforce one inbox record per `(business event, recipient uid, type)` and prevent duplicate reminder processing without assuming new fields/collections in `specs/100-notification/research.md` and `docs/design/database/README.md` (FR-014; blocks shared inbox writer T017 and reminder scheduling/deduplication T019; unrelated Android inbox/UI work can proceed) Đã đối chiếu event identity, UID/type, replay và quy tắc reminder một lần.
 - [X] T006 NEEDS DECISION: agree and record FCM retry/backoff, partial fan-out recovery, invalid-token cleanup, and whether delivery-state schema is needed in `specs/100-notification/research.md` and `docs/design/database/README.md` (blocks retry/recovery implementation in T020, T025, T048–T049; do not add fields/collections/statuses before approval)
 - [X] T007 NEEDS DECISION: record and resolve the conflict between DB README §7 (Admin C), DB §4.13, Feature 120, and server-authoritative SYSTEM delivery; do not change schema, Rules, or Admin authorization until the document owners agree, then update the owning contract in `specs/100-notification/contracts/firestore-security.md` (blocks only SYSTEM authorization/fan-out T049 and any Rules change that depends on the Admin permission decision; own-user inbox Rules can proceed)
 - [X] T008 NEEDS DECISION: obtain Feature 091 confirmation of the chat foreground-presence source and multi-device behavior; record it in `specs/100-notification/contracts/event-integration.md` (FR-011; blocks only deciding/implementing CHAT_MESSAGE push suppression in T048, not inbox persistence)
@@ -35,7 +35,7 @@ description: "Task list for Feature 100 – Notification"
 - [X] T010 NEEDS DECISION: agree inbox page size/query shape and listener versus one-shot refresh strategy; record in `specs/100-notification/research.md` (FR-003; blocks final paged query in T030 only; defer index T055 until query shape is known)
 - [X] T011 NEEDS DECISION: obtain Feature 011 agreement on FCM token registration, refresh, logout/account-switch, multi-token, and invalid-token lifecycle; record in `specs/100-notification/contracts/firestore-security.md` (blocks token lifecycle T051 and its Rules coverage T052; does not block inbox work)
 - [X] T012 NEEDS DECISION: agree preference behavior for existing users/missing keys and whether DataStore is cache only; record in `specs/100-notification/data-model.md` (missing-key defaults approved 22/11; UID-scoped read-only DataStore fallback, server authority, no offline mutation queue and logout/deletion cleanup explicitly approved by user 23/11)
-- [ ] T013 NEEDS DECISION: confirm available deep-link identifiers for each relevant type with producer features and record them in `specs/100-notification/contracts/event-integration.md` (FR-013; blocks complete routing in T035 for types whose identifiers are unconfirmed; implement confirmed routes independently)
+- [X] T013 NEEDS DECISION: confirm available deep-link identifiers for each relevant type with producer features and record them in `specs/100-notification/contracts/event-integration.md` (FR-013; blocks complete routing in T035 for types whose identifiers are unconfirmed; implement confirmed routes independently) Người dùng đã chốt chi tiết đã lưu cho các type chưa có đích chuyên biệt.
 - [X] T014 NEEDS DECISION: confirm push payload privacy and lock-screen content policy with project owners; record in `specs/100-notification/research.md` (Constitution VI; blocks final user-visible push content only, not inbox persistence)
 
 **Checkpoint**: Resolve each NEEDS DECISION only before the tasks explicitly named as blocked by it. These decisions do not block unrelated stories or confirmed portions of a task; do not invent event protocols, schema, account predicates, or permission rules.
@@ -56,7 +56,7 @@ description: "Task list for Feature 100 – Notification"
 ### Implementation for User Story 1
 
 - [X] T017 [US1] Implement shared notification event validation and server-side inbox writer using only agreed event identity and persisted fields in `supabase/functions/_shared/`
-- [ ] T018 [US1] Implement booking event adapters for BOOKING_CONFIRMED, BOOKING_REJECTED, BOOKING_CANCELLED, and BOOKING_NEW with agreed producer contracts in `supabase/functions/send-notification/`
+- [X] T018 [US1] Implement booking event adapters for BOOKING_CONFIRMED, BOOKING_REJECTED, BOOKING_CANCELLED, and BOOKING_NEW with agreed producer contracts in `supabase/functions/send-notification/` B1 đã gọi helper trong checkout và webhook Feature 050. Đã kiểm tra rollback, owner và replay.
 - [X] T019 [US1] Implement booking reminder query and scheduler for one BOOKING_REMINDER at two hours before earliest `items[].startAt` only while booking is CONFIRMED in `supabase/functions/booking-reminders/`
 - [X] T020 [US1] Implement push eligibility and FCM HTTP v1 delivery for booking events, keeping the already-persisted inbox record available when FCM fails and applying only the approved retry contract in `supabase/functions/send-notification/` (FR-007; US1 scenario 4)
 
@@ -71,13 +71,13 @@ description: "Task list for Feature 100 – Notification"
 ### Tests for User Story 2
 
 - [X] T021 [P] [US2] Add Edge Function tests for registered versus waitlisted recipients, waitlist closure, and self-action exclusions in `supabase/functions/send-notification/` (D3 confirmation exception approved 24/11; registration fake29, source emulator89 plus final12 and self-action5; inbox/job assertions cover registration replay/rejoin, silent waitlist/add-party/self-cancel, promotion and closure. See validation/continuation-2026-11-24.md.)
-- [ ] T022 [P] [US2] Add Edge Function tests proving PROMOTION reaches only followers eligible under Feature 050 voucher rules in `supabase/functions/send-notification/`
+- [X] T022 [P] [US2] Add Edge Function tests proving PROMOTION reaches only followers eligible under Feature 050 voucher rules in `supabase/functions/send-notification/` Emulator bao phủ follower, quyền tài khoản, thời điểm follow, lượt tổng/UID và preference.
 
 ### Implementation for User Story 2
 
 - [X] T023 [US2] Implement DROPIN_REGISTERED, DROPIN_SPOT_OPENED, DROPIN_CHANGED, and DROPIN_WAITLIST_CLOSED adapters from the agreed Features 080/081/112 events (D3/W1 plus D4 in source handlers. Verified inline change/cancel, request replay, waitlist separation and oversized snapshot continuation.)
-- [ ] T024 [US2] Implement PROMOTION recipient resolution using Feature 070 favorites as follows and Feature 050 eligibility rules in `supabase/functions/send-notification/`
-- [ ] T025 [US2] Apply agreed inbox idempotency and push delivery policy to drop-in and promotion events in `supabase/functions/send-notification/`
+- [X] T024 [US2] Implement PROMOTION recipient resolution using Feature 070 favorites as follows and Feature 050 eligibility rules in `supabase/functions/send-notification/` P2 dùng favorites Feature 070 và bộ đếm RESERVED/USED Feature 050.
+- [X] T025 [US2] Apply agreed inbox idempotency and push delivery policy to drop-in and promotion events in `supabase/functions/send-notification/` Drop-in và promotion dùng D1, với inbox/job và cursor nguyên tử khi gửi theo trang.
 
 ---
 
@@ -101,7 +101,7 @@ description: "Task list for Feature 100 – Notification"
 - [X] T032 [US3] Implement inbox ViewModel StateFlow states and lifecycle-bound repository collection in `app/src/main/java/com/example/booking_app/feature/notification/ui/`
 - [X] T033 [P] [US3] Implement Vietnamese XML inbox layout, notification row, empty/error/retry/loading resources, and accessible read indicators in `app/src/main/res/layout/` and `app/src/main/res/values/`
 - [X] T034 [US3] Implement inbox Fragment, list adapter with ListAdapter/DiffUtil, read actions, and navigation entry in `app/src/main/java/com/example/booking_app/feature/notification/ui/` and `app/src/main/res/navigation/`
-- [ ] T035 [US3] Implement notification tap routing that rechecks source existence/access and falls back to persisted title/body detail in `app/src/main/java/com/example/booking_app/feature/notification/ui/`
+- [X] T035 [US3] Implement notification tap routing that rechecks source existence/access and falls back to persisted title/body detail in `app/src/main/java/com/example/booking_app/feature/notification/ui/` Đã kiểm tra route có quyền và chi tiết đã lưu theo quyết định ngày 26/11.
 
 ---
 
@@ -135,14 +135,14 @@ description: "Task list for Feature 100 – Notification"
 
 ### Tests for User Story 5
 
-- [ ] T044 [P] [US5] Add Edge Function tests for owner approval/rejection/revocation, review reply/new/reminder, and GROUP_ACTIVITY recipient/subtype mapping in `supabase/functions/send-notification/`
-- [ ] T045 [P] [US5] Add Edge Function tests for CHAT_MESSAGE sender exclusion, inbox persistence, agreed foreground suppression, and SYSTEM active-account fan-out in `supabase/functions/send-notification/`
+- [X] T044 [P] [US5] Add Edge Function tests for owner approval/rejection/revocation, review reply/new/reminder, and GROUP_ACTIVITY recipient/subtype mapping in `supabase/functions/send-notification/` Đủ bảy subtype GROUP_ACTIVITY, cùng các kiểm thử nguồn owner/review đã nghiệm thu.
+- [X] T045 [P] [US5] Add Edge Function tests for CHAT_MESSAGE sender exclusion, inbox persistence, agreed foreground suppression, and SYSTEM active-account fan-out in `supabase/functions/send-notification/` GROUP và DIRECT loại sender, giữ inbox và áp dụng suppression. Hồi quy SYSTEM đạt.
 
 ### Implementation for User Story 5
 
 - [X] T046 [US5] Implement OWNER_APPROVED, OWNER_REJECTED, OWNER_REVOKED, REVIEW_REPLIED, REVIEW_NEW, and REVIEW_REMINDER adapters per Features 070/110/120 contracts (D2-W1/R1 plus O2 and RR1 in the existing source handlers. Verified replay after reapproval, concurrent completion, and journal cleanup on demo emulators.)
-- [ ] T047 [US5] Implement GROUP_ACTIVITY event mapping with agreed `data.event` subtype and recipient rules in `supabase/functions/send-notification/`
-- [ ] T048 [US5] Implement CHAT_MESSAGE inbox fan-out and push suppression using agreed Feature 091 presence contract in `supabase/functions/send-notification/`
+- [X] T047 [US5] Implement GROUP_ACTIVITY event mapping with agreed `data.event` subtype and recipient rules in `supabase/functions/send-notification/` Đủ các nguồn nhóm, gồm tự duyệt, snapshot người tham dự và quét nhóm lớn.
+- [X] T048 [US5] Implement CHAT_MESSAGE inbox fan-out and push suppression using agreed Feature 091 presence contract in `supabase/functions/send-notification/` GROUP/DIRECT nối D1/C1, kiểm chứng replay, hai worker, retry và phục hồi.
 - [X] T049 [US5] Implement SYSTEM server-authoritative fan-out to agreed active PLAYER and OWNER accounts per Feature 120 contract in `supabase/functions/send-notification/`
 
 ---
@@ -157,7 +157,7 @@ description: "Task list for Feature 100 – Notification"
 - [X] T053 Implement notification channel setup and minimal agreed push payload handling in `app/src/main/java/com/example/booking_app/feature/notification/data/`
 - [X] T054 Verify account deletion removes notification subcollection and related notification preferences/tokens per Feature 011 contract in `supabase/functions/delete-account/` (Auth/Firestore emulator: 405 inbox rows across batches, user profile/token/preference removal, unrelated user preserved; 21/21 tests pass)
 - [X] T055 [P] Verify/add the agreed notification query index in `firestore.indexes.json` (no addition needed: parent collection createdAt DESC uses default single-field index, no notification exemption; 65 rows including tied timestamps page 30/30/5 on emulator; see validation/continuation-2026-11-22.md)
-- [ ] T056 Validate the notification journeys and failure cases documented in `specs/100-notification/quickstart.md` against Android, Firebase Emulator, and Supabase local harnesses
+- [X] T056 Validate the notification journeys and failure cases documented in `specs/100-notification/quickstart.md` against Android, Firebase Emulator, and Supabase local harnesses. Bằng chứng tổng hợp gồm SDK trên vivo, bốn cấu hình UI, local payload injection và pg_cron/pg_net với fake FCM. [Kết quả kiểm thử](validation/f1-2026-11-26/README.md)
 
 ---
 

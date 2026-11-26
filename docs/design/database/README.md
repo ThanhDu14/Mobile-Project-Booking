@@ -476,3 +476,11 @@ User approved B1 (payment source will be supplied later) and B2 with the stated 
 ## Approved notification continuation, 24/11/2026
 
 User explicitly approved D3, R1 and H1 in specs/100-notification/continuation-decisions-2026-11-24.md. D3 treats DROPIN_REGISTERED as the explicit confirmation exception to generic self-action exclusion: transaction identity sessionId/uid/requestId/type, deterministic inbox, no callback; join/leave waitlist/add-party/self-cancel stay silent. Stale reused request IDs with an existing event inbox are rejected before source writes. R1 adds reviews.notificationGeneration String UUID, server-only, renewed on recreate and retained on edit; legacy generation is assigned on first reply without backfill. REVIEW_NEW and first REVIEW_REPLIED enqueue in source transaction, actor excluded, data reviewId/venueId. H1 applies atomic message/inbox/job only to DIRECT chat, identity chatId/messageId/recipient/type; GROUP fanout remains unapproved. Use existing D1 job/receipts, C1 suppression and P1 payload. No outbox, group-size policy, deployment or live migration is approved. Full scope/limits are recorded in the decision package.
+
+## Cập nhật notification ngày 26/11/2026
+
+F1 bổ sung family `group` vào `notificationFanouts`, với groupId, audience, mode và cursor after cho quét theo document ID. Snapshot dùng 100 UID/trang, dọn trang sau 7 ngày và giữ marker. Journal server-only `groups/{groupId}/notificationCommands/{requestId}` ghi actor, fingerprint, kết quả và thời điểm.
+
+P2 thêm `publishedAt` server-only cho voucher sân mới. Null đăng ký vào lịch phát, Timestamp chốt lần phát duy nhất cùng outbox family `promotion`. Voucher legacy thiếu field giữ nguyên. Worker đọc favorite, quyền tài khoản và các bộ đếm Feature 050 `usedCount` và `userUsage/{uid}.count`, tính cả lượt RESERVED/USED.
+
+B1 ghi inbox/job cùng PENDING, slot và redemption trong checkout Feature 050. Giữ ID inbox `booking_new_{requestKey}` và một thông báo cho cả nhóm định kỳ theo bookingId của buổi sớm nhất.

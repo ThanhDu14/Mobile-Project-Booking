@@ -95,3 +95,9 @@ D1, D2-W1, T1, C1, P1 and S1 were explicitly approved by the user in backend-dec
 ## Booking decisions approved 24/11/2026
 
 User approved B1 (payment source will be supplied later) and B2 with the stated limits in specs/100-notification/booking-decision-package-2026-11-24.md. B1 authorizes the internal helper contract, not a replacement payment flow; actual HOLD-to-PENDING producer integration remains blocked. B2 authorizes one reminder per booking ID, invocation-local paginated CONFIRMED/startAt window, late catch-up only before start, data.reminderStartAt Timestamp, same-transaction recheck/enqueue, and delivery-time source/time recheck. After a reminder exists, reschedule does not generate a second inbox; stale push is skipped. No booking marker, collection or reschedule API is added. Full field/query/identity semantics are in the approved package; no deploy/live migration is authorized.
+
+## Đối chiếu producer và replay ngày 26/11/2026
+
+Các producer booking kết quả/timeout dùng bookingId/type. B1 giữ inbox ID checkout hiện có và dùng bookingId của buổi sớm nhất cho đơn định kỳ. B2 và RR1 dùng bookingId/type cho mỗi reminder một lần. D3 dùng session/UID/requestId, D4 dùng session/requestId/type, W1 giữ identity đã chốt của waitlist. Owner review và revoke giữ identity nguồn đã chốt, R1 dùng reviewId/generation/type. SYSTEM dùng adminUid/requestId.
+
+F1 dùng groupId, type, subtype hoặc chatId và ID nguồn. P2 dùng venueId/code/type và publishedAt để bảo toàn lần phát đầu. Worker ghép family, identity, UID và type cho ID inbox/job. Cursor và writes cùng commit ở mọi nhánh phân trang. Điều kiện reminder B2, RR1 và audit chi tiết nguồn được lưu trong [event-integration](contracts/event-integration.md).

@@ -22,15 +22,28 @@ Initial Android routing baseline (2026-11-22; superseded for reviews by the cont
 | `DROPIN_SPOT_OPENED` | Waitlisted registration được chuyển thành đăng ký | Người vừa được nhận chỗ | 081; nếu bị rời waitlist buổi trùng giờ, thể hiện trong cùng thông báo theo spec 081 |
 | `DROPIN_CHANGED` | Buổi đổi startAt/endAt hoặc hủy | Snapshot REGISTERED trước mutation, trừ actor | 080/112/D4: sessionId/requestId/type, payload `{sessionId}`, cùng transaction nguồn hoặc snapshot outbox |
 | `DROPIN_WAITLIST_CLOSED` | Waitlist đóng trước giờ chơi mà chưa được nhận, hoặc session bị hủy | Người còn WAITLISTED | 081 |
-| `PROMOTION` | Voucher sân theo dõi phát hành | Follower đủ điều kiện dùng voucher theo Feature 05 | 050/070/112; yêu thích=theo dõi |
+| `PROMOTION` | Voucher sân theo dõi phát hành | Follower đủ điều kiện tại thời điểm worker xét | P2: owner-create-voucher hoặc cron, khóa venueId/code/type, payload `{venueId,code}` |
 | `OWNER_APPROVED`, `OWNER_REJECTED` | Admin quyết định hồ sơ | Người nộp hồ sơ | 110/120 |
 | `OWNER_REVOKED` | Admin thu hồi quyền, kèm lý do | Tài khoản hoạt động bị thu hồi | 011/120/O2: UID/requestId/type, cùng transaction với journal và đổi role |
 | `REVIEW_REPLIED` | Owner phản hồi review | Người viết review | 070 |
 | `REVIEW_NEW` | Review mới | Chủ cơ sở | 070 |
 | `REVIEW_REMINDER` | Booking sang COMPLETED trong `complete-bookings` | Người đặt đủ điều kiện review theo 070 và chưa có review | RR1 duyệt 24/11: cùng transaction nguồn, identity bookingId/type, `{bookingId}`, một lần, không backfill |
-| `GROUP_ACTIVITY` | Join request, quyết định, remove, event create/edit/delete | Thành viên liên quan theo spec 090 | 090; `data.event` nêu subtype, subtype schema chưa chốt |
+| `GROUP_ACTIVITY` | Join request, quyết định, remove, event create/edit/delete | Thành viên liên quan theo spec 090 | 090/F1; `data.event` dùng bảy subtype đã chốt |
 | `CHAT_MESSAGE` | Tin mới trong chat | Thành viên nhận, không gồm sender | 091; inbox luôn tạo; push suppress khi recipient đang xem đúng chat |
 | `SYSTEM` | Admin gửi hệ thống | Tài khoản có accountStatus ACTIVE và không deletionRequestedAt | 120 admin-repairs.md Broadcast xác nhận scan/fan-out/retry; T007 authorization và T006 durable push vẫn mở |
+
+## F1 và destination đã xác nhận ngày 26/11/2026
+
+- `GROUP_ACTIVITY` ghi outbox trong transaction group-manage/group-post. `JOIN_REQUESTED` gửi OWNER/ADMIN, `JOIN_APPROVED` và `JOIN_REJECTED` gửi người xin, `REMOVED` gửi người bị mời ra. Đổi nhóm PRIVATE sang PUBLIC gửi `JOIN_APPROVED` cho đúng các yêu cầu được tự duyệt. `EVENT_CREATED` gửi thành viên. `EVENT_UPDATED` gửi người tham dự khi đổi giờ/địa điểm. `EVENT_DELETED` gửi snapshot người tham dự nếu sự kiện còn ở tương lai. Loại actor. Payload là `{event, groupId, postId?}`.
+- `CHAT_MESSAGE` DIRECT dùng H1. GROUP ghi outbox cùng transaction tin nhắn, khóa nguồn là chatId/messageId. Payload là `{chatId, messageId}`. Loại sender, xác minh membership lúc materialize, giữ inbox khi mute/đang xem. D1 kiểm tra lại membership chat, mute và presence C1 ngay trước lần thử gửi.
+- Với nguồn có tập người nhận trực tiếp hoặc dữ liệu sắp bị xóa, ghi snapshot tối đa 100 UID/trang. Với tập thành viên/quản trị có hơn 400 mục hoặc vượt ngân sách 400 writes/8 MiB ước lượng, worker quét theo document ID, tối đa 100 mục/trang. Quét kiểm tra `joinedAt <= createdAt`, role hiện tại nếu cần quyền quản lý và membership chat hiện tại. Snapshot cũng kiểm tra lại membership/role đối với tập thành viên. Thông báo đích cố định đến người nhận được nêu trong giao dịch nguồn, kể cả sau khi họ rời nhóm. Mọi nhánh kiểm tra profile ACTIVE và deletion gate.
+- Identity F1 bao gồm groupId, type, subtype hoặc chatId và sourceId. SourceId là postId lúc tạo, messageId lúc gửi hoặc UUID command. Journal theo groupId/requestId giữ actor, fingerprint và kết quả. Request mới giữ UUID qua retry. Cuộc gọi từ bản app cũ thiếu UUID vẫn thực hiện theo hành vi cũ và mỗi mutation được chấp nhận có một job riêng. Worker tiến cursor cùng transaction ghi inbox/job. Dọn trang snapshot sau 7 ngày và giữ marker hoàn tất.
+- Ngày 26/11, người dùng chọn hiển thị title/body đã lưu cho `BOOKING_NEW`, `PROMOTION`, `REVIEW_NEW`, `OWNER_APPROVED` và `OWNER_REJECTED`. `OWNER_REVOKED`, `SYSTEM` và subtype `EVENT_DELETED` dùng cùng chi tiết đã lưu. Các route hiện có giữ mapping và kiểm tra quyền trong bảng Group routing và phần routing của tài liệu này.
+
+### Đối chiếu B1 và P2
+
+- B1 dùng checkout và webhook từ nhánh Feature 050. Helper chạy trong pha đọc của transaction, trước writes PENDING, và giữ ID inbox `booking_new_{requestKey}`. Đơn định kỳ dùng bookingId thật và hạn duyệt của buổi sớm nhất. Hạn đã qua bỏ lượt thông báo để giữ hành vi thanh toán.
+- P2 dùng `loadUserUsageCount` và `checkVoucher` của checkout. `userUsage/{uid}.count` gồm RESERVED và USED, mặc định 0 khi thiếu doc. Điểm cuối `validTo` là bao gồm. Null `publishedAt` đăng ký voucher mới vào lịch, Timestamp chốt một lần phát. Voucher legacy thiếu field giữ nguyên. Worker xét favorite còn tồn tại với createdAt không muộn hơn lúc phát, profile PLAYER ACTIVE và quota hiện tại.
 
 ## Push delivery rules
 
