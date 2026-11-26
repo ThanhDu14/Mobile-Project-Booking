@@ -224,7 +224,7 @@ Deno.test("worker HTTP authorized harness uses fake FCM and refuses emulator cal
     const response = await handleNotificationDelivery(request(), { store: m.store, cronSecret: "secret", send: async () => ({ kind: "accepted" }) });
     assertEquals(response.status, 200);
     assertEquals(await response.json(), {
-      claims: 0, requests: 0, cleaned: 0, dropInPages: 0, groupPages: 0,
+      claims: 0, requests: 0, cleaned: 0, dropInPages: 0, groupPages: 0, vouchersPublished: 0, promotionPages: 0,
     });
     assertEquals((await handleNotificationDelivery(request(), { store: m.store, cronSecret: "secret" })).status, 503);
   } finally { if (previous === undefined) Deno.env.delete("FIRESTORE_EMULATOR_HOST"); else Deno.env.set("FIRESTORE_EMULATOR_HOST", previous); }

@@ -215,9 +215,9 @@ function relativePath(name: string): string {
 }
 
 function structuredQuery(collectionId: string, filters: QueryFilter[], opts: QueryOptions) {
-  const clauses = filters.map((f) => ({
-    fieldFilter: { field: { fieldPath: f.field }, op: f.op, value: encodeValue(f.value) },
-  }));
+  const clauses = filters.map((f) => f.op === "EQUAL" && f.value === null
+    ? { unaryFilter: { field: { fieldPath: f.field }, op: "IS_NULL" } }
+    : { fieldFilter: { field: { fieldPath: f.field }, op: f.op, value: encodeValue(f.value) } });
   const orderBy = opts.orderBy === undefined ? [] : [opts.orderBy].flat();
   return {
     from: [{ collectionId, ...(opts.allDescendants ? { allDescendants: true } : {}) }],

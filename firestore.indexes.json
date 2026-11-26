@@ -1,6 +1,16 @@
 {
   "indexes": [
     {
+      "collectionGroup": "vouchers",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        { "fieldPath": "isActive", "order": "ASCENDING" },
+        { "fieldPath": "publishedAt", "order": "ASCENDING" },
+        { "fieldPath": "validFrom", "order": "ASCENDING" },
+        { "fieldPath": "validTo", "order": "ASCENDING" }
+      ]
+    },
+    {
       "collectionGroup": "notificationFanouts",
       "queryScope": "COLLECTION",
       "fields": [

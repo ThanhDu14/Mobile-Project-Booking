@@ -3,6 +3,7 @@ import { httpV1Sender } from "../_shared/notification-fcm.ts";
 import { cleanupDeliveries, runDeliveryWorker, type DeliveryStore, type Sender } from "../_shared/notification-worker.ts";
 import { processDropInChangeFanouts } from "../_shared/dropin-change-notification.ts";
 import { processGroupFanouts } from "../_shared/group-notification.ts";
+import { processPromotionFanouts, publishDueVouchers } from "../_shared/promotion-notification.ts";
 
 export async function handleNotificationDelivery(req: Request, deps: {
   store?: DeliveryStore; send?: Sender; cronSecret?: string; now?: () => Date;
@@ -18,12 +19,15 @@ export async function handleNotificationDelivery(req: Request, deps: {
     const cleaned = await cleanupDeliveries(store, clock());
     const fanouts = await Promise.allSettled([
       processDropInChangeFanouts(store, clock()), processGroupFanouts(store, clock()),
+      publishDueVouchers(store, clock()).then(async published => ({ published, pages: await processPromotionFanouts(store, clock()) })),
     ]);
-    const [dropIn, group] = fanouts;
+    const [dropIn, group, promotion] = fanouts;
     if (dropIn.status === "rejected") throw dropIn.reason;
     if (group.status === "rejected") throw group.reason;
+    if (promotion.status === "rejected") throw promotion.reason;
     return Response.json({
       ...result, cleaned, dropInPages: dropIn.value, groupPages: group.value,
+      vouchersPublished: promotion.value.published, promotionPages: promotion.value.pages,
     });
   } catch { return Response.json({ error: "DELIVERY_UNAVAILABLE" }, { status: 503 }); }
 }
