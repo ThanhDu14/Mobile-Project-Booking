@@ -227,9 +227,9 @@ describe('slot integrity after booking (review 2026-11-18)', () => {
     await assertFails(updateDoc(doc(player('player1'), SLOT), { status: 'BOOKED', holdExpiresAt: null }));
   });
 
-  it('holder can mark a HELD slot BOOKED together with their PENDING booking', async () => {
+  it('holder cannot bypass checkout by batching a BOOKED slot with a PENDING booking', async () => {
     await seedSlot('HELD');
-    await assertSucceeds(confirmBatch(player('player1'), 'req-01'));
+    await assertFails(confirmBatch(player('player1'), 'req-01'));
   });
 
   it('booking id must match the id given when the slot was held', async () => {

@@ -5,7 +5,7 @@ export const bookingEventIdentity = (id: string, type: string) => JSON.stringify
 export async function bookingInboxId(family: string, identity: string, uid: string, type: string) {
   return `n_${await sha256(JSON.stringify([family, identity, uid, type]))}`;
 }
-/** B1 read-phase helper only. The actual payment transaction is not in this checkout. */
+/** B1 read phase of the payment transaction. */
 export async function prepareBookingNew(tx: Pick<fs.FirestoreTransaction, "get">, id: string, booking: Record<string, unknown>, now: Date, existingInboxId?: string) {
   if (!id || id.includes("/") || booking.status !== "PENDING" || typeof booking.venueId !== "string" || booking.venueId.includes("/")) throw new Error("INVALID_PENDING_BOOKING");
   const venue = await tx.get(`venues/${booking.venueId}`);
@@ -14,7 +14,8 @@ export async function prepareBookingNew(tx: Pick<fs.FirestoreTransaction, "get">
   const owner = await tx.get(`users/${uid}`);
   if (owner?.role !== "OWNER" || owner.ownerStatus !== "APPROVED") return [];
   const deadline = booking.approvalDeadline;
-  if (!(deadline instanceof Date) || !Number.isFinite(deadline.getTime()) || deadline <= now) throw new Error("INVALID_APPROVAL_DEADLINE");
+  if (!(deadline instanceof Date) || !Number.isFinite(deadline.getTime())) throw new Error("INVALID_APPROVAL_DEADLINE");
+  if (deadline <= now) return [];
   const identity = bookingEventIdentity(id, "BOOKING_NEW");
   return await prepareNotification(tx, "booking", identity, uid,
     existingInboxId ?? await bookingInboxId("booking", identity, uid, "BOOKING_NEW"), {

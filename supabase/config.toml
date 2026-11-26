@@ -545,3 +545,12 @@ verify_jwt = false
 
 [functions.booking-reminders]
 verify_jwt = false
+
+[functions.booking-payment-confirm]
+verify_jwt = false
+
+[functions.booking-payment-transfer]
+verify_jwt = false
+
+[functions.sepay-webhook]
+verify_jwt = false

@@ -151,8 +151,7 @@ class BookingConfirmFragment : Fragment() {
         binding.rowPayAtVenue.setOnClickListener {
             updatePaymentRadioSelection(PaymentOption.PAY_AT_VENUE, args)
         }
-        // Đặt cọc và ví giả lập cần trừ tiền phía server (050). Khi client tự ghi "đã trả", hủy sớm sẽ hoàn
-        // vào ví số tiền chưa từng trả, nên tạm khóa hai lựa chọn này; Rules cũng chỉ nhận đơn trả tại sân.
+        // Màn này xác nhận thanh toán tại sân qua Edge Function. Cọc/chuyển khoản có luồng riêng ở Feature 050.
         for (row in listOf(binding.rowDeposit, binding.rowWallet)) {
             row.alpha = DISABLED_PAYMENT_ALPHA
             row.setOnClickListener {

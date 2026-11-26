@@ -349,18 +349,6 @@ service cloud.firestore {
                         && resource.data.status == 'HELD'
                         && resource.data.holdBy == request.auth.uid
                       )
-                      // Xác nhận đặt sân: slot HELD còn hạn của chính mình sang BOOKED, giữ nguyên mã đã gắn lúc
-                      // giữ chỗ, và đơn PENDING của chính mình với mã đó phải được tạo trong cùng transaction.
-                      || (
-                        request.resource.data.status == 'BOOKED'
-                        && resource.data.status == 'HELD'
-                        && resource.data.holdBy == request.auth.uid
-                        && resource.data.holdExpiresAt > request.time
-                        && request.resource.data.bookingId == resource.data.bookingId
-                        && existsAfter(/databases/$(database)/documents/bookings/$(resource.data.bookingId))
-                        && getAfter(/databases/$(database)/documents/bookings/$(resource.data.bookingId)).data.userId == request.auth.uid
-                        && getAfter(/databases/$(database)/documents/bookings/$(resource.data.bookingId)).data.status == 'PENDING'
-                      )
                     );
 
       allow delete: if isAdmin()
@@ -391,28 +379,10 @@ service cloud.firestore {
       // chạy ở Edge Function `checkin-booking`, client không query qrToken trên toàn collection.
       allow read: if isSignedIn() && (resource == null || resource.data.userId == request.auth.uid
           || isAdmin() || ownsVenue(resource.data.venueId));
-      // Lát cắt test 050: Cho phép player tạo đơn PENDING của chính mình để test 060 bằng data real.
-      // Khi 050 có server confirmation thì phải thu hồi rule này về phía server.
+      // Client tạo HOLD. Checkout đồng bộ slot, voucher và BOOKING_NEW từ server.
       allow create: if isPlayer()
           && request.resource.data.userId == request.auth.uid
-          && (
-            request.resource.data.status == 'HOLD'
-            || (
-              request.resource.data.status == 'PENDING'
-              // Chưa có thanh toán phía server (050): client chỉ được tạo đơn trả tại sân, chưa trả đồng nào.
-              // Nếu cho client tự khai paidAmount/depositAmount, hủy sớm sẽ "hoàn" số tiền chưa từng trả vào ví.
-              && request.resource.data.paymentMethod == 'AT_VENUE'
-              && request.resource.data.paidAmount == 0
-              && request.resource.data.depositAmount == 0
-              && request.resource.data.remainingAmount == request.resource.data.total
-              && request.resource.data.subtotal is number && request.resource.data.subtotal >= 0
-              && request.resource.data.discount is number && request.resource.data.discount >= 0
-              && request.resource.data.total is number && request.resource.data.total == request.resource.data.subtotal - request.resource.data.discount
-              && request.resource.data.depositAmount is number && request.resource.data.depositAmount >= 0
-              && request.resource.data.paidAmount is number && request.resource.data.paidAmount >= 0
-              && request.resource.data.remainingAmount is number && request.resource.data.remainingAmount >= 0
-            )
-          );
+          && request.resource.data.status == 'HOLD';
       // Confirmation/refund are server-owned. Clients may only expire their own
       // unconfirmed HOLD; cancellation must use the server transaction.
       allow update: if isPlayer() && resource.data.userId == request.auth.uid
