@@ -43,9 +43,12 @@ class NotificationRouteTest {
         every { ref.get(Source.SERVER) } returns Tasks.forException(IllegalStateException("permission denied"))
         assertNull(resolver.resolve(item("BOOKING_CONFIRMED")))
     }
-    @Test fun `unknown contracts and missing identifier use detail without source fetch`() = runTest {
-        assertNull(resolver.resolve(item("OWNER_APPROVED")))
-        assertNull(resolver.resolve(item("SYSTEM")))
+    @Test fun `saved detail types and missing identifiers avoid source fetch`() = runTest {
+        val savedTypes = listOf("BOOKING_NEW", "PROMOTION", "REVIEW_NEW", "OWNER_APPROVED",
+            "OWNER_REJECTED", "OWNER_REVOKED", "SYSTEM")
+        val identifiers = mapOf("bookingId" to "b", "venueId" to "v", "reviewId" to "r",
+            "applicationId" to "a", "purpose" to "OWNER_ONBOARDING", "code" to "DEMO")
+        for (type in savedTypes) assertNull(resolver.resolve(item(type).copy(data = identifiers)))
         assertNull(resolver.resolve(item("CHAT_MESSAGE")))
         verify(exactly = 0) { ref.get(Source.SERVER) }
     }

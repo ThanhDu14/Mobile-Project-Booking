@@ -30,8 +30,8 @@ import java.util.UUID
 /** Run against demo emulators with USB reverse ports 8080 and 9099. */
 class NotificationEmulatorDeviceTest {
     @Test
-    fun serverPagingPreferencesRoutingAndAccountSwitch() = runBlocking {
-        withTimeout(90_000) {
+    fun serverPagingPreferencesRoutingAndAccountSwitch(): Unit = runBlocking {
+        withTimeout(150_000) {
             val context = ApplicationProvider.getApplicationContext<Context>()
             assumeTrue(InstrumentationRegistry.getArguments().getString("notificationEmulator") == "true")
             check(context.packageName.endsWith(".adminlocal"))
@@ -56,7 +56,17 @@ class NotificationEmulatorDeviceTest {
             val prefs = FirestoreNotificationPreferencesRepository(session, db)
             val password = "Notification-Test-Only"
             val aliceEmail = "alice-$runId@example.test"
-            suspend fun createPlayer(email: String): String {
+            val instrumentThread = Thread.currentThread()
+            val watchdog = Thread {
+                try {
+                    Thread.sleep(30_000)
+                    android.util.Log.w("NotificationAcceptance", "Slow device journey\n" +
+                        instrumentThread.stackTrace.take(28).joinToString("\n"))
+                } catch (_: InterruptedException) {
+                    // The journey finished before the diagnostic timer.
+                }
+            }.apply { isDaemon = true; start() }
+            suspend fun createUser(email: String, role: String = "PLAYER"): String {
                 val uid = auth.createUserWithEmailAndPassword(email, password).await().user!!.uid
                 val endpoint = URL("http://127.0.0.1:9099/identitytoolkit.googleapis.com/v1/projects/$project/accounts:update")
                 val connection = endpoint.openConnection() as HttpURLConnection
@@ -68,60 +78,203 @@ class NotificationEmulatorDeviceTest {
                     connection.setRequestProperty("Authorization", "Bearer owner")
                     connection.doOutput = true
                     val payload = JSONObject().put("localId", uid)
-                        .put("customAttributes", JSONObject().put("appRole", "PLAYER").toString())
+                        .put("customAttributes", JSONObject().put("appRole", role).toString())
                     connection.outputStream.use { it.write(payload.toString().toByteArray()) }
-                    check(connection.responseCode == 200) { "Failed to set demo PLAYER claim" }
+                    check(connection.responseCode == 200) { "Failed to set demo account claim" }
                 } finally {
                     connection.disconnect()
                 }
-                assertEquals("PLAYER", auth.currentUser!!.getIdToken(true).await().claims["appRole"])
-                seed.put("users/$uid", mapOf("role" to "PLAYER", "accountStatus" to "ACTIVE"))
+                assertEquals(role, auth.currentUser!!.getIdToken(true).await().claims["appRole"])
+                seed.put("users/$uid", mapOf("role" to role, "accountStatus" to "ACTIVE") +
+                    if (role == "OWNER") mapOf("ownerStatus" to "APPROVED") else emptyMap())
                 return uid
             }
             try {
-                val alice = createPlayer(aliceEmail)
-                val booking = "notification-$runId"
-                seed.put("bookings/$booking", mapOf("userId" to alice, "status" to "CONFIRMED", "venueId" to "demo-venue"))
-                for (i in 0..30) {
-                    seed.put("users/$alice/notifications/item-$i", mapOf(
-                        "type" to "BOOKING_CONFIRMED", "title" to "Demo booking $i", "body" to "Saved details",
-                        "data" to mapOf("bookingId" to booking), "isRead" to false,
-                        "createdAt" to Instant.ofEpochSecond(1_700_000_000L + i),
-                    ))
+                val phase = InstrumentationRegistry.getArguments().getString("notificationProducerPhase")
+                val bobEmail = "bob-$runId@example.test"
+                val alice = createUser(aliceEmail)
+                val bob: String
+                if (phase == "payment" || phase == "group") {
+                    session.signOut()
+                    bob = createUser(bobEmail)
+                    if (phase == "group") auth.signInWithEmailAndPassword(aliceEmail, password).await()
+                } else {
+                    val booking = "notification-$runId"
+                    seed.put("bookings/$booking", mapOf("userId" to alice, "status" to "CONFIRMED", "venueId" to "demo-venue"))
+                    for (i in 0..30) {
+                        seed.put("users/$alice/notifications/item-$i", mapOf(
+                            "type" to "BOOKING_CONFIRMED", "title" to "Demo booking $i", "body" to "Saved details",
+                            "data" to mapOf("bookingId" to booking), "isRead" to false,
+                            "createdAt" to Instant.ofEpochSecond(1_700_000_000L + i),
+                        ))
+                    }
+                    val first = inbox.loadPage()
+                    assertEquals((30 downTo 1).map { "item-$it" }, first.items.map { it.id })
+                    val next = checkNotNull(first.nextCursor)
+                    val offPage = inbox.loadById("item-0")!!
+                    assertEquals(listOf(offPage), inbox.loadPage(next).items)
+                    assertEquals("smashnow://notifications/booking/$booking", routes.resolve(offPage))
+                    seed.delete("bookings/$booking")
+                    assertNull(routes.resolve(offPage))
+                    assertEquals("Saved details", offPage.body)
+                    inbox.markRead("item-30")
+                    assertTrue(inbox.loadById("item-30")!!.isRead)
+                    assertFalse(inbox.loadById("item-0")!!.isRead)
+                    inbox.markAllRead()
+                    assertTrue(inbox.loadPage().items.all { it.isRead })
+                    assertTrue(inbox.loadById("item-0")!!.isRead)
+                    assertFalse(prefs.load().getValue(NotificationType.PROMOTION))
+                    prefs.setEnabled(setOf(NotificationType.PROMOTION), true)
+                    assertTrue(prefs.load().getValue(NotificationType.PROMOTION))
+                    session.signOut()
+                    assertTrue(runCatching { inbox.loadPage() }.exceptionOrNull() is IllegalStateException)
+                    bob = createUser(bobEmail)
+                    seed.put("bookings/$booking", mapOf("userId" to bob, "status" to "CONFIRMED", "venueId" to "demo-venue"))
+                    assertTrue(inbox.loadPage().items.isEmpty())
+                    assertNull(inbox.loadById("item-0"))
+                    assertTrue(runCatching { inbox.loadPage(next) }.exceptionOrNull() is IllegalArgumentException)
+                    assertFalse(prefs.load().getValue(NotificationType.PROMOTION))
+                    auth.signInWithEmailAndPassword(aliceEmail, password).await()
+                    assertNull(routes.resolve(offPage))
+                    assertTrue(prefs.load().getValue(NotificationType.PROMOTION))
                 }
-                val first = inbox.loadPage()
-                assertEquals((30 downTo 1).map { "item-$it" }, first.items.map { it.id })
-                val next = checkNotNull(first.nextCursor)
-                val offPage = inbox.loadById("item-0")!!
-                assertEquals(listOf(offPage), inbox.loadPage(next).items)
-                assertEquals("smashnow://notifications/booking/$booking", routes.resolve(offPage))
-                seed.delete("bookings/$booking")
-                assertNull(routes.resolve(offPage))
-                assertEquals("Saved details", offPage.body)
-                inbox.markRead("item-30")
-                assertTrue(inbox.loadById("item-30")!!.isRead)
-                assertFalse(inbox.loadById("item-0")!!.isRead)
-                inbox.markAllRead()
-                assertTrue(inbox.loadPage().items.all { it.isRead })
-                assertTrue(inbox.loadById("item-0")!!.isRead)
-                assertFalse(prefs.load().getValue(NotificationType.PROMOTION))
-                prefs.setEnabled(setOf(NotificationType.PROMOTION), true)
-                assertTrue(prefs.load().getValue(NotificationType.PROMOTION))
-                session.signOut()
-                assertTrue(runCatching { inbox.loadPage() }.exceptionOrNull() is IllegalStateException)
-                val bob = createPlayer("bob-$runId@example.test")
-                seed.put("bookings/$booking", mapOf("userId" to bob, "status" to "CONFIRMED", "venueId" to "demo-venue"))
-                assertTrue(inbox.loadPage().items.isEmpty())
-                assertNull(inbox.loadById("item-0"))
-                assertTrue(runCatching { inbox.loadPage(next) }.exceptionOrNull() is IllegalArgumentException)
-                assertFalse(prefs.load().getValue(NotificationType.PROMOTION))
-                auth.signInWithEmailAndPassword(aliceEmail, password).await()
-                assertNull(routes.resolve(offPage))
-                assertTrue(prefs.load().getValue(NotificationType.PROMOTION))
+                InstrumentationRegistry.getArguments().getString("notificationProducerSecret")?.let { secret ->
+                    val joined = Instant.now().minusSeconds(60)
+                    if (phase != "payment") {
+                        val group = UUID.randomUUID().toString()
+                        val chat = "group_$group"
+                        val message = UUID.randomUUID().toString()
+                        val post = UUID.randomUUID().toString()
+                        seed.put("groups/$group", mapOf("ownerId" to alice, "status" to "ACTIVE", "visibility" to "PRIVATE", "memberCount" to 2))
+                        for ((uid, role) in listOf(alice to "OWNER", bob to "MEMBER")) {
+                            seed.put("groups/$group/members/$uid", mapOf("role" to role, "joinedAt" to joined))
+                        }
+                        seed.put("chats/$chat", mapOf(
+                            "type" to "GROUP", "status" to "ACTIVE", "groupId" to group,
+                            "memberIds" to listOf(alice, bob), "unreadCounts" to mapOf(alice to 0, bob to 0),
+                        ))
+                        seed.put("chats/$chat/participants/$bob", mapOf("muted" to true, "userId" to bob))
+                        val token = auth.currentUser!!.getIdToken(false).await().token!!
+                        val send = JSONObject().put("chatId", chat).put("messageId", message).put("text", "F1 demo")
+                        assertEquals(201, callProducer("chat-send", secret, token, send))
+                        assertEquals(200, callProducer("chat-send", secret, token, send))
+                        val event = JSONObject().put("action", "create").put("groupId", group).put("requestId", post)
+                            .put("type", "EVENT").put("eventTitle", "F1 demo").put("eventLocation", "Sân demo")
+                            .put("eventAt", Instant.now().plusSeconds(3600).toString()).put("expectedCount", 4)
+                        assertEquals(201, callProducer("group-post", secret, token, event))
+                        assertEquals(200, callProducer("notification-delivery?group=$group", secret, token, JSONObject()))
+                        assertFalse(inbox.loadPage().items.any { it.data["chatId"] == chat || it.data["groupId"] == group })
+
+                        session.signOut()
+                        assertNull(session.currentUid())
+                        auth.signInWithEmailAndPassword(bobEmail, password).await()
+                        android.util.Log.i("NotificationAcceptance", "F1 receiver signed in")
+                        val items = inbox.loadPage().items
+                        val chatItem = items.single { it.type == "CHAT_MESSAGE" && it.data["chatId"] == chat }
+                        val eventItem = items.single { it.type == "GROUP_ACTIVITY" && it.data["groupId"] == group }
+                        assertEquals(message, chatItem.data["messageId"])
+                        assertEquals("EVENT_CREATED", eventItem.data["event"])
+                        assertEquals(post, eventItem.data["postId"])
+                        android.util.Log.i("NotificationAcceptance", "F1 receiver found both source notifications")
+                        assertEquals("smashnow://chat/$chat", routes.resolve(chatItem))
+                        assertEquals("smashnow://community/group/$group", routes.resolve(eventItem))
+                        android.util.Log.i("NotificationAcceptance", "F1 routes resolved before permission change")
+                        val removal = JSONObject().put("action", "remove").put("groupId", group)
+                            .put("userId", bob).put("requestId", UUID.randomUUID().toString())
+                        assertEquals(200, callProducer("group-manage", secret, token, removal))
+                        android.util.Log.i("NotificationAcceptance", "F1 producer removed receiver from the group and chat")
+                        assertNull(routes.resolve(chatItem))
+                        assertNull(routes.resolve(eventItem))
+                        assertTrue(inbox.loadById(chatItem.id)!!.body.isNotBlank())
+                        assertTrue(inbox.loadById(eventItem.id)!!.body.isNotBlank())
+                        session.signOut()
+                        auth.signInWithEmailAndPassword(aliceEmail, password).await()
+                        assertNull(inbox.loadById(chatItem.id))
+                        assertNull(inbox.loadById(eventItem.id))
+                        android.util.Log.i("NotificationAcceptance", "F1 real SDK: producer, replay, group/chat routes, lost access and UID isolation")
+                    }
+                    if (phase == "group") return@let
+
+                    session.signOut()
+                    val ownerEmail = "owner-$runId@example.test"
+                    android.util.Log.i("NotificationAcceptance", "P2/B1 begin with isolated emulator accounts")
+                    val owner = createUser(ownerEmail, "OWNER")
+                    val ownerToken = auth.currentUser!!.getIdToken(false).await().token!!
+                    val venue = UUID.randomUUID().toString()
+                    val code = "P" + venue.replace("-", "").take(12).uppercase()
+                    seed.put("venues/$venue", mapOf("status" to "ACTIVE", "ownerId" to owner, "name" to "Sân demo"))
+                    seed.put("users/$bob/favorites/$venue", mapOf("venueId" to venue, "createdAt" to joined))
+                    val voucher = JSONObject().put("venueId", venue).put("code", code).put("type", "FIXED")
+                        .put("value", 10_000).put("maxDiscount", 10_000).put("minOrderTotal", 0)
+                        .put("usageLimit", 10).put("perUserLimit", 1).put("isActive", true)
+                        .put("validFrom", joined.toString()).put("validTo", Instant.now().plusSeconds(3600).toString())
+                    assertEquals(200, callProducer("owner-create-voucher", secret, ownerToken, voucher))
+                    assertEquals(200, callProducer("notification-delivery?venue=$venue", secret, ownerToken, JSONObject()))
+
+                    session.signOut()
+                    auth.signInWithEmailAndPassword(bobEmail, password).await()
+                    val promo = inbox.loadPage().items.single { it.type == "PROMOTION" && it.data["venueId"] == venue }
+                    assertEquals(code, promo.data["code"])
+                    assertNull(routes.resolve(promo))
+                    assertTrue(promo.body.contains(code))
+                    val court = UUID.randomUUID().toString()
+                    val slot = "${court}_20300102_1800"
+                    val hold = UUID.randomUUID().toString()
+                    seed.put("venues/$venue/courts/$court", mapOf("name" to "Sân số 1"))
+                    seed.put("venues/$venue/priceRules/base", mapOf(
+                        "daysOfWeek" to emptyList<String>(), "startTime" to "0600", "endTime" to "2200", "pricePerHour" to 120_000,
+                    ))
+                    seed.put("slots/$slot", mapOf(
+                        "venueId" to venue, "courtId" to court, "status" to "HELD", "holdBy" to bob,
+                        "bookingId" to hold, "holdExpiresAt" to Instant.now().plusSeconds(300),
+                    ))
+                    seed.put("bookings/$hold", mapOf(
+                        "venueId" to venue, "userId" to bob, "status" to "HOLD", "items" to listOf(mapOf("slotId" to slot)),
+                    ))
+                    val checkout = JSONObject().put("requestId", hold).put("venueId", venue)
+                        .put("slotIds", org.json.JSONArray(listOf(slot))).put("voucherCode", code).put("expectedTotal", 50_000)
+                    val playerToken = auth.currentUser!!.getIdToken(false).await().token!!
+                    assertEquals(200, callProducer("booking-payment-confirm", secret, playerToken, checkout))
+                    assertEquals(200, callProducer("booking-payment-confirm", secret, playerToken, checkout))
+                    assertNull(inbox.loadById("booking_new_$hold"))
+
+                    session.signOut()
+                    auth.signInWithEmailAndPassword(ownerEmail, password).await()
+                    assertNull(inbox.loadById(promo.id))
+                    val newBooking = checkNotNull(inbox.loadById("booking_new_$hold"))
+                    assertEquals("BOOKING_NEW", newBooking.type)
+                    assertEquals(hold, newBooking.data["bookingId"])
+                    assertNull(routes.resolve(newBooking))
+                    android.util.Log.i("NotificationAcceptance", "P2 and B1 real SDK: favorite voucher, checkout replay, saved details and UID isolation")
+                }
+            } catch (failure: Throwable) {
+                android.util.Log.e("NotificationAcceptance", "Device journey failed", failure)
+                throw failure
             } finally {
+                watchdog.interrupt()
                 auth.signOut()
                 app.delete()
             }
+        }
+    }
+
+    private fun callProducer(name: String, key: String, token: String, body: JSONObject): Int {
+        val connection = URL("http://127.0.0.1:18765/functions/v1/$name").openConnection() as HttpURLConnection
+        return try {
+            connection.requestMethod = "POST"
+            connection.connectTimeout = 5_000
+            connection.readTimeout = 15_000
+            connection.setRequestProperty("Content-Type", "application/json")
+            connection.setRequestProperty("Connection", "close")
+            connection.setRequestProperty("Authorization", "Bearer $token")
+            connection.setRequestProperty("x-cron-secret", key)
+            connection.doOutput = true
+            connection.outputStream.use { it.write(body.toString().toByteArray()) }
+            connection.responseCode.also { code ->
+                if (code in 200..299) connection.inputStream.use { it.readBytes() }
+            }
+        } finally {
+            connection.disconnect()
         }
     }
 }
