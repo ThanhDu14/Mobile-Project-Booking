@@ -66,6 +66,7 @@ Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 | 60  | 2026-11-23 | Tiếp tục Feature 100: chốt quyết định backend/FCM, triển khai W1, token/presence, push an toàn và kiểm chứng tiến độ 36/56 | 10             |
 | 61  | 2026-11-24 | Tiếp tục Feature 100: kiểm chứng booking W1, chốt B1/B2, triển khai reminder và xác minh tiến độ 39/56 | 10             |
 | 62  | 2026-11-24 | Tiếp tục Feature 100: D3/R1/H1, kiểm thử vivo và xác minh tiến độ 41/56 | 10             |
+| 63  | 2026-11-26 | Hoàn tất Feature 100 từ 43/56 đến 56/56, kiểm thử vivo và triển khai production theo giai đoạn | 10             |
 
 ---
 
@@ -5985,5 +5986,82 @@ Kết thúc bằng số task hoàn thành trên tổng số, các task vừa đ�
 - Mở hai PNG gốc và screenshot inbox/settings của cả bốn cấu hình để đối chiếu. Lưu 24 ảnh UI và bốn ảnh permission. Giữ các khác biệt đã ghi nhận về font/icon native, thời gian fixture, thanh hệ thống và sidebar của thiết bị; không sửa tài liệu UI để bổ sung ngoại lệ. [Inbox phone light](../../specs/100-notification/validation/continuation-2026-11-24/device/phone-light/notification-393dp-light-inbox.png), [settings phone light](../../specs/100-notification/validation/continuation-2026-11-24/device/phone-light/notification-393dp-light-settings.png); bảng ảnh đủ bốn cấu hình nằm trong báo cáo.
 - Kiểm tra lại sau ma trận: density trở về 440, không còn override; grant và các cờ POST_NOTIFICATIONS của ứng dụng kiểm thử khớp trước khi chạy. [Trạng thái cuối](../../specs/100-notification/validation/continuation-2026-11-24/device/device-final.txt). UI test dùng repository/session fake; inject payload vào handler dùng chung với FCM service chỉ xác minh xử lý local, chưa chứng minh nhận push qua FCM thật hoặc transport repository từ điện thoại tới emulator.
 - Kiểm tra Docker ngoài sandbox vẫn báo thiếu pipe daemon `dockerDesktopLinuxEngine`. Supabase local endpoint và cron SQL chưa chạy, migration chưa áp dụng; T056 tiếp tục mở. Còn 15 task chưa hoàn tất vì thiếu nguồn/contract hoặc bằng chứng, gồm payment BOOKING_NEW, các producer/fanout chưa duyệt và routing nguồn. Checklist giữ nguyên, không có extension hook. Chưa commit, push, deploy, đọc dữ liệu hosted, gửi FCM thật hoặc chạy migration thật.
+
+---
+
+## Mục 63: Hoàn tất Feature 100, kiểm thử vivo và triển khai production theo giai đoạn
+
+| Thông tin                | Nội dung |
+| ------------------------ | -------- |
+| Ngày                     | 2026-11-26 |
+| Người thực hiện          | Minh Nhựt |
+| Nhóm tính năng liên quan | 10 (100 thông báo), phối hợp 050 thanh toán/voucher, 070 sân yêu thích, 090 nhóm và 091 chat |
+| Công cụ AI               | Codex (GPT-6), `$speckit-implement` |
+| Mục đích                 | Hoàn tất F1/P2/B1 và routing, kiểm chứng trên emulator và điện thoại thật, triển khai backend theo phạm vi được duyệt |
+| Nhánh Git                | `feat/100-notification` |
+
+### Prompt đã dùng
+
+```text
+Tiếp tục Feature 100 từ tiến độ hiện tại: 43/56 task. Mục tiêu là hoàn thành tối đa task đủ điều kiện và kiểm thử trên điện thoại thật.
+
+Đọc tasks.md, cập nhật mới nhất trong implementation-review.md và remaining-source-proposals-2026-11-24.md. Giữ toàn bộ quyết định đã duyệt, đặc biệt D4/F1, P2, O2 và RR1. Không hỏi lại những phần đã được phê duyệt.
+
+Ưu tiên F1 để hoàn thiện T044/T045/T047/T048:
+- Nối producer GROUP chat và GROUP_ACTIVITY với durable fanout/worker.
+- Thực hiện nhánh quét theo trang cho nhóm lớn theo phương án đã duyệt.
+- Kiểm chứng recipient/subtype, loại trừ sender, membership/permission, replay, hai worker đồng thời, retry và phục hồi sau lỗi.
+- Inbox vẫn được lưu cho muted/viewing recipients; worker áp dụng suppression theo contract.
+- Loại bỏ callback trùng ở các đường đã chuyển sang durable delivery.
+- Chỉ đóng từng task khi toàn bộ phạm vi của task đã được kiểm chứng.
+
+Sau đó tiếp tục các phần còn lại:
+1. P2/T022/T024/T025: kiểm tra contract và implementation bộ đếm lượt theo UID của Feature 050. Nếu đã đủ, triển khai PROMOTION và kiểm thử eligibility/replay. Nếu còn thiếu, nêu chính xác contract cần bổ sung rồi tiếp tục phần độc lập.
+2. T018: kiểm tra lại transaction HOLD → PENDING. Nếu đã có, tích hợp helper B1 trong transaction. Nếu vẫn thiếu, giữ task partial và ghi điểm tích hợp cụ thể.
+3. T013/T035: hoàn thiện các route có destination, identifier và quyền truy cập được xác nhận. Phần chưa đủ contract giữ fallback title/body; gom các quyết định còn thiếu thành một đợt hỏi sớm.
+4. Rà soát T004/T005 theo toàn bộ producer còn lại, cập nhật bằng chứng và chỉ đóng khi đủ phạm vi.
+
+Tiếp tục kiểm thử trên điện thoại thật bằng app cô lập và dữ liệu demo:
+- Dùng SDK/repository thật kết nối Auth/Firestore Emulator qua USB như harness hiện có.
+- Kiểm tra các luồng mới, notification tap, mất quyền, logout/đổi tài khoản và không hiển thị dữ liệu tài khoản cũ.
+- Phân biệt kết quả device-to-emulator, local payload injection và nhận FCM thật.
+- Lưu log/screenshot; khôi phục density và thiết lập kiểm thử sau khi chạy.
+
+Giữ UI theo specs/100-notification/ui/ và các ngoại lệ đã duyệt. Chạy lại cấu hình UI bị ảnh hưởng khi có thay đổi.
+
+Kiểm tra Docker/Supabase local. Nếu đã chạy được, kiểm chứng cron và các hành trình còn thiếu trong T056. Nếu chưa được, báo giới hạn cụ thể và tiếp tục các harness khác.
+
+Sửa lỗi, kiểm thử lại và cập nhật tasks.md cùng implementation-review.md. Tiếp tục sang nhóm đủ điều kiện tiếp theo, không dừng sau một nhóm nhỏ.
+
+Tự deploy, chạy migration dữ liệu thật (xin quyền) , không gửi push thật, commit hoặc push Git.
+
+Cuối lượt báo số task hoàn thành, task vừa đóng, kết quả điện thoại thật, đường dẫn bằng chứng và blocker còn lại.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Từ mốc 43/56 sau khi nghiệm thu D4/O2/RR1, chuyển GROUP chat và bảy subtype GROUP_ACTIVITY sang durable outbox, bỏ callback cũ ở các đường đã chuyển. Nhánh snapshot cố định tập người nhận, nhánh quét theo trang xử lý nhóm lớn. Worker loại actor, kiểm tra membership và quyền hiện tại, ghi inbox/job cùng cursor trong một transaction. C1 áp dụng suppression ở đường push cho recipient mute hoặc đang xem chat.
+- Tìm thấy checkout thật trong nhánh Feature 050 và xác minh bộ đếm theo UID gồm cả lượt RESERVED và USED. P2 dùng bộ đếm này cùng favorite hiện tại, mốc follow, quyền và quota. `publishedAt` chốt lần phát đầu tiên qua producer hoặc cron và ngăn phát lại.
+- Nối B1 vào transaction checkout trả tại sân và webhook xác nhận chuyển khoản. Giữ inbox ID của checkout và tạo inbox/job cùng các ghi PENDING và BOOKED. APK của nhánh chuyển checkout tại sân sang Edge Function. Webhook SePay có bằng chứng kiểm thử local.
+- Người dùng chọn giữ chi tiết title/body đã lưu cho BOOKING_NEW, REVIEW_NEW, OWNER_APPROVED/REJECTED và PROMOTION. Các route có hợp đồng kiểm tra quyền hiện tại trước khi mở. Hoàn tất 13 task và cập nhật tiến độ 56/56 trong [tasks](../../specs/100-notification/tasks.md) và [implementation review](../../specs/100-notification/implementation-review.md).
+- Deploy và hậu kiểm bảy Edge Function, Firestore indexes và Rules notification. Hai migration cron được áp dụng trên production sau phê duyệt, với cả hai job tạm dừng. Quyền checkout trực tiếp trên production được giữ cho APK cũ cho đến đợt chuyển đổi ứng dụng. Thay đổi Git được giữ ở working tree.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+| ---- | ---------- | ----- |
+| Producer GROUP chat/GROUP_ACTIVITY, outbox và worker | Dùng F1 với snapshot và quét theo trang, bỏ callback cũ | Giữ replay an toàn, kiểm tra đúng người nhận và lưu inbox khi push bị suppression. |
+| Producer PROMOTION và lịch phát voucher | Dùng hợp đồng checkout Feature 050 và `publishedAt` | Xét đúng lượt khả dụng theo UID và chỉ phát lần đầu cho follower đủ điều kiện. |
+| Checkout tại sân, webhook và Rules trong repo | Nối helper B1 trong transaction, giữ inbox ID, chuyển APK nhánh này sang Edge Function | Booking, slot, redemption và notification được ghi cùng nhau. |
+| Routing và chi tiết dự phòng | Giữ route đã xác nhận và lưu quyết định title/body | Dùng được nội dung thông báo khi nguồn thiếu, quyền bị thu hồi hoặc đích chưa được chốt. |
+| Harness thiết bị và backend demo | Tách phase nhóm và payment, lưu log và ảnh | Đối chiếu kết quả Firebase SDK qua USB với ma trận UI, payload injection và fake FCM. |
+| Deploy và cron production | Giới hạn Rules production ở notification, token và presence, giữ hai cron tạm dừng | Tiếp tục hỗ trợ APK cũ trong giai đoạn triển khai và giữ kiểm thử push ở môi trường demo. |
+
+### Cách kiểm chứng
+
+- F1 đạt 70 ca producer/emulator, gồm nhóm 505 thành viên, xóa sự kiện có 501 người tham dự, kiểm tra quyền, replay, rollback và hai worker chạy đồng thời. P2/B1 đạt 3 ca emulator, bộ payment/worker đạt 86 ca và bộ D4/B2/F1 đạt 19 ca có chồng lấp. Firestore Rules đạt 52 ca. Build APK cô lập, APK instrumentation và unit test Android đạt. [Báo cáo và log](../../specs/100-notification/validation/f1-2026-11-26/README.md#backend)
+- Vivo V2247 xác nhận F1 bằng Firebase SDK thật qua USB, gồm inbox, route, fallback khi mất quyền và tách UID. Lượt chạy lại dùng `group-manage` bị dừng khi chờ instrumentation. Lượt riêng P2/B1 đạt JUnit 1/1, gồm voucher follower, replay checkout, chi tiết đã lưu và tách tài khoản PLAYER/OWNER. [Mốc F1 và P2/B1](../../specs/100-notification/validation/f1-2026-11-26/device-acceptance.txt), [JUnit P2/B1](../../specs/100-notification/validation/f1-2026-11-26/device-producers-payment.log)
+- Bốn cấu hình phone/w600dp sáng/tối đạt 48 ca UI. Thêm 9 ca quyền, channel và payload injection cục bộ. Lưu 28 screenshot, khôi phục density 440 và trạng thái quyền, gỡ USB reverse thử nghiệm. Push được kiểm chứng bằng fake sender và payload injection cục bộ. [Bằng chứng thiết bị](../../specs/100-notification/validation/f1-2026-11-26/README.md#điện-thoại-thật)
+- Supabase local chạy hai lượt cho mỗi cron qua pg_cron/pg_net, cả bốn lượt trả HTTP 200 từ handler demo. Đã dọn cron và khóa Vault tạm. Hậu kiểm production cho thấy bảy Edge Function ACTIVE, hai phiên bản migration có trong lịch sử, cả hai cron có `active=false` và endpoint trả 401 khi thiếu secret. Rollout APK checkout và thu hồi quyền ghi PENDING trực tiếp trên production còn cần thực hiện đồng bộ. [Cron local](../../specs/100-notification/validation/f1-2026-11-26/supabase-cron.log), [Hậu kiểm production](../../specs/100-notification/validation/f1-2026-11-26/README.md#production)
 
 ---
