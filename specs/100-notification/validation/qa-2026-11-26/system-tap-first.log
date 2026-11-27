@@ -1,0 +1,41 @@
+INSTRUMENTATION_STATUS: class=com.example.booking_app.feature.notification.NotificationUiTest
+INSTRUMENTATION_STATUS: current=1
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=1
+INSTRUMENTATION_STATUS: stream=
+com.example.booking_app.feature.notification.NotificationUiTest:
+INSTRUMENTATION_STATUS: test=systemNotificationTapOpensMainActivityInEachLifecycleState
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=com.example.booking_app.feature.notification.NotificationUiTest
+INSTRUMENTATION_STATUS: current=1
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=1
+INSTRUMENTATION_STATUS: stack=java.lang.AssertionError: Missing Bạn có thông báo mới in com.android.systemui
+	at com.example.booking_app.feature.notification.NotificationUiTest.awaitAccessibilityText(NotificationUiTest.kt:378)
+	at com.example.booking_app.feature.notification.NotificationUiTest.systemNotificationTapOpensMainActivityInEachLifecycleState$tapNotification(NotificationUiTest.kt:340)
+	at com.example.booking_app.feature.notification.NotificationUiTest.systemNotificationTapOpensMainActivityInEachLifecycleState(NotificationUiTest.kt:354)
+
+INSTRUMENTATION_STATUS: stream=
+Error in systemNotificationTapOpensMainActivityInEachLifecycleState(com.example.booking_app.feature.notification.NotificationUiTest):
+java.lang.AssertionError: Missing Bạn có thông báo mới in com.android.systemui
+	at com.example.booking_app.feature.notification.NotificationUiTest.awaitAccessibilityText(NotificationUiTest.kt:378)
+	at com.example.booking_app.feature.notification.NotificationUiTest.systemNotificationTapOpensMainActivityInEachLifecycleState$tapNotification(NotificationUiTest.kt:340)
+	at com.example.booking_app.feature.notification.NotificationUiTest.systemNotificationTapOpensMainActivityInEachLifecycleState(NotificationUiTest.kt:354)
+
+INSTRUMENTATION_STATUS: test=systemNotificationTapOpensMainActivityInEachLifecycleState
+INSTRUMENTATION_STATUS_CODE: -2
+INSTRUMENTATION_RESULT: stream=
+
+Time: 13,739
+There was 1 failure:
+1) systemNotificationTapOpensMainActivityInEachLifecycleState(com.example.booking_app.feature.notification.NotificationUiTest)
+java.lang.AssertionError: Missing Bạn có thông báo mới in com.android.systemui
+	at com.example.booking_app.feature.notification.NotificationUiTest.awaitAccessibilityText(NotificationUiTest.kt:378)
+	at com.example.booking_app.feature.notification.NotificationUiTest.systemNotificationTapOpensMainActivityInEachLifecycleState$tapNotification(NotificationUiTest.kt:340)
+	at com.example.booking_app.feature.notification.NotificationUiTest.systemNotificationTapOpensMainActivityInEachLifecycleState(NotificationUiTest.kt:354)
+
+FAILURES!!!
+Tests run: 1,  Failures: 1
+
+
+INSTRUMENTATION_CODE: -1

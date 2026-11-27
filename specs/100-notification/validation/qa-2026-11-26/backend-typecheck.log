@@ -1,0 +1,21 @@
+deno.exe : Check supabase/functions/_shared/group-notification.emulator.test.ts
+At line:2 char:203
++ ... /deno.exe"; & $deno check --no-lock supabase/functions/_shared/group- ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Check supabase/...mulator.test.ts:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+Check supabase/functions/_shared/promotion-notification.emulator.test.ts
+Check supabase/functions/_shared/notification-emulator.test.ts
+Check supabase/functions/booking-payment-confirm/notification.emulator.test.ts
+Check supabase/functions/booking-reminders/handler.test.ts
+Check supabase/functions/complete-bookings/emulator.test.ts
+Check supabase/functions/admin-revoke-owner/emulator.test.ts
+Check supabase/functions/owner-update-session/dropin-change.emulator.test.ts
+Check supabase/functions/register-drop-in/index.test.ts
+Check supabase/functions/register-drop-in/waitlist.test.ts
+Check supabase/functions/review/notification.test.ts
+Check supabase/functions/chat-send/index.test.ts
+Check supabase/functions/_shared/chats.test.ts
+Check supabase/functions/cancel-drop-in/waitlist.test.ts
+Check supabase/functions/dropin-close/index.test.ts

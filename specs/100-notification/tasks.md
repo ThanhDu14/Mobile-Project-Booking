@@ -119,7 +119,7 @@ description: "Task list for Feature 100 – Notification"
 
 ### Implementation for User Story 4
 
-- [X] T039 [US4] Implement preference model and repository operations on `users/{uid}.notificationPrefs` with agreed defaults/cache behavior in `app/src/main/java/com/example/booking_app/feature/notification/data/` (UID DataStore cache, sign-out epoch, server-only transactions, read-only fallback/retry; JVM, Rules/transport and 36/36 device matrix verified 23/11)
+- [X] T039 [US4] Implement preference model and repository operations on `users/{uid}.notificationPrefs` with agreed defaults/cache behavior in `app/src/main/java/com/example/booking_app/feature/notification/data/`. Hồi quy 27/11 xác nhận DataStore cache chỉ đọc khi SDK offline, ghi yêu cầu profile có thể đọc từ server, tải lại khi kết nối và xóa cache khi đổi UID. [SDK trên vivo](validation/qa-2026-11-26/sdk-core-final.log)
 - [X] T040 [US4] Extend Firestore user Rules to permit only the current user's notificationPrefs updates without weakening existing protected-field rules in `firestore.rules`
 - [X] T041 [P] [US4] Implement Vietnamese XML notification settings layout/resources with a non-editable BOOKING_NEW state in `app/src/main/res/layout/` and `app/src/main/res/values/`
 - [X] T042 [US4] Implement settings ViewModel and Fragment with per-type updates, retry/error states, and OS permission status separated from stored preferences in `app/src/main/java/com/example/booking_app/feature/notification/ui/`
@@ -157,7 +157,7 @@ description: "Task list for Feature 100 – Notification"
 - [X] T053 Implement notification channel setup and minimal agreed push payload handling in `app/src/main/java/com/example/booking_app/feature/notification/data/`
 - [X] T054 Verify account deletion removes notification subcollection and related notification preferences/tokens per Feature 011 contract in `supabase/functions/delete-account/` (Auth/Firestore emulator: 405 inbox rows across batches, user profile/token/preference removal, unrelated user preserved; 21/21 tests pass)
 - [X] T055 [P] Verify/add the agreed notification query index in `firestore.indexes.json` (no addition needed: parent collection createdAt DESC uses default single-field index, no notification exemption; 65 rows including tied timestamps page 30/30/5 on emulator; see validation/continuation-2026-11-22.md)
-- [X] T056 Validate the notification journeys and failure cases documented in `specs/100-notification/quickstart.md` against Android, Firebase Emulator, and Supabase local harnesses. Bằng chứng tổng hợp gồm SDK trên vivo, bốn cấu hình UI, local payload injection và pg_cron/pg_net với fake FCM. [Kết quả kiểm thử](validation/f1-2026-11-26/README.md)
+- [ ] T056 Validate the notification journeys and failure cases documented in `specs/100-notification/quickstart.md` against Android, Firebase Emulator, and Supabase local harnesses. Mở lại sau hồi quy 26–27/11 vì chưa xác nhận chạm trực tiếp từ khay thông báo vivo. Đã xác nhận `PendingIntent` của notification cục bộ ở foreground, background và khi mở lại Activity. Các lớp SDK qua USB, UI, backend và cron có bằng chứng riêng. [Ma trận kiểm thử](validation/qa-2026-11-26/README.md)
 
 ---
 

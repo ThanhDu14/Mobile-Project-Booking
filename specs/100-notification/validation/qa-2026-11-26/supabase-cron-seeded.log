@@ -1,0 +1,13 @@
+booking-reminders|* * * * *|t
+notification-delivery|* * * * *|t
+200|{"claims":0,"requests":0,"cleaned":0,"dropInPages":0,"groupPages":0,"vouchersPublished":0,"promotionPages":0}|
+200|{"scanned":1,"created":1,"skipped":0,"budgetExhausted":false}|
+200|{"scanned":1,"created":0,"skipped":1,"budgetExhausted":false}|
+200|{"claims":1,"requests":1,"cleaned":0,"dropInPages":0,"groupPages":0,"vouchersPublished":0,"promotionPages":0}|
+booking-reminders|succeeded|2
+notification-delivery|succeeded|2
+t
+t
+remaining temporary jobs|0
+remaining temporary vault keys|0
+Replay preserved one BOOKING_REMINDER, one SENT job, and one SENT fake token receipt with acceptedAt.

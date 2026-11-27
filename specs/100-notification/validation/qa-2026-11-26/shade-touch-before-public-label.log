@@ -1,0 +1,41 @@
+INSTRUMENTATION_STATUS: class=com.example.booking_app.feature.notification.NotificationUiTest
+INSTRUMENTATION_STATUS: current=1
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=1
+INSTRUMENTATION_STATUS: stream=
+com.example.booking_app.feature.notification.NotificationUiTest:
+INSTRUMENTATION_STATUS: test=postedNotificationIntentOpensMainActivityInEachLifecycleState
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=com.example.booking_app.feature.notification.NotificationUiTest
+INSTRUMENTATION_STATUS: current=1
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=1
+INSTRUMENTATION_STATUS: stack=java.lang.AssertionError: Expected text was not shown: Feature 100 local tap foreground. Active window: com.android.systemui
+	at com.example.booking_app.feature.notification.NotificationUiTest.awaitWindowWithText(NotificationUiTest.kt:406)
+	at com.example.booking_app.feature.notification.NotificationUiTest.postedNotificationIntentOpensMainActivityInEachLifecycleState$tapNotification(NotificationUiTest.kt:351)
+	at com.example.booking_app.feature.notification.NotificationUiTest.postedNotificationIntentOpensMainActivityInEachLifecycleState(NotificationUiTest.kt:379)
+
+INSTRUMENTATION_STATUS: stream=
+Error in postedNotificationIntentOpensMainActivityInEachLifecycleState(com.example.booking_app.feature.notification.NotificationUiTest):
+java.lang.AssertionError: Expected text was not shown: Feature 100 local tap foreground. Active window: com.android.systemui
+	at com.example.booking_app.feature.notification.NotificationUiTest.awaitWindowWithText(NotificationUiTest.kt:406)
+	at com.example.booking_app.feature.notification.NotificationUiTest.postedNotificationIntentOpensMainActivityInEachLifecycleState$tapNotification(NotificationUiTest.kt:351)
+	at com.example.booking_app.feature.notification.NotificationUiTest.postedNotificationIntentOpensMainActivityInEachLifecycleState(NotificationUiTest.kt:379)
+
+INSTRUMENTATION_STATUS: test=postedNotificationIntentOpensMainActivityInEachLifecycleState
+INSTRUMENTATION_STATUS_CODE: -2
+INSTRUMENTATION_RESULT: stream=
+
+Time: 13,532
+There was 1 failure:
+1) postedNotificationIntentOpensMainActivityInEachLifecycleState(com.example.booking_app.feature.notification.NotificationUiTest)
+java.lang.AssertionError: Expected text was not shown: Feature 100 local tap foreground. Active window: com.android.systemui
+	at com.example.booking_app.feature.notification.NotificationUiTest.awaitWindowWithText(NotificationUiTest.kt:406)
+	at com.example.booking_app.feature.notification.NotificationUiTest.postedNotificationIntentOpensMainActivityInEachLifecycleState$tapNotification(NotificationUiTest.kt:351)
+	at com.example.booking_app.feature.notification.NotificationUiTest.postedNotificationIntentOpensMainActivityInEachLifecycleState(NotificationUiTest.kt:379)
+
+FAILURES!!!
+Tests run: 1,  Failures: 1
+
+
+INSTRUMENTATION_CODE: -1

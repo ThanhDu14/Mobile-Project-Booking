@@ -1,0 +1,141 @@
+deno.exe : Check supabase/functions/delete-account/handler.test.ts
+At line:2 char:337
++ ... roject.log; & $deno test --allow-env --allow-net=127.0.0.1 supabase/f ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Check supabase/...handler.test.ts:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+running 21 tests from ./supabase/functions/delete-account/handler.test.ts
+F100 T054: deletion drains multiple notification batches and removes tokens/preferences without touching another user ...
+------- output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- output end -----
+F100 T054: deletion drains multiple notification batches and removes tokens/preferences without touching another user ... ok (1s)
+X1: người chơi không có đơn, preview → myBookings rỗng, ownerImpact null, có impactVersion ...
+------- output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- output end -----
+X1: người chơi không có đơn, preview → myBookings rỗng, ownerImpact null, có impactVersion ... ok (71ms)
+X2: 2 đơn sắp tới → refundAmount 0 (chưa trả) và 60.000 (cọc, còn > 4 giờ); đơn đã qua, đã hủy không tính ...
+------- output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- output end -----
+X2: 2 đơn sắp tới → refundAmount 0 (chưa trả) và 60.000 (cọc, còn > 4 giờ); đơn đã qua, đã hủy không tính ... ok (167ms)
+preview liệt kê lượt vãng lai sắp tới và số lượt chờ ...
+------- output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- output end -----
+preview liệt kê lượt vãng lai sắp tới và số lượt chờ ... ok (81ms)
+X3: confirm đúng → 200 DELETED, đơn hủy, slot xóa, users/Auth/ảnh/favorites không còn, state DONE ...
+------- output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- output end -----
+X3: confirm đúng → 200 DELETED, đơn hủy, slot xóa, users/Auth/ảnh/favorites không còn, state DONE ... ok (274ms)
+X4: auth_time cũ hơn 5 phút → 403 REAUTH_REQUIRED, không có gì đổi ...
+------- output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- output end -----
+X4: auth_time cũ hơn 5 phút → 403 REAUTH_REQUIRED, không có gì đổi ... ok (69ms)
+X5: confirmText = "xoa" → 400 CONFIRM_TEXT_MISMATCH; " xóa " thì hợp lệ ...
+------- output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- output end -----
+X5: confirmText = "xoa" → 400 CONFIRM_TEXT_MISMATCH; " xóa " thì hợp lệ ... ok (230ms)
+X6: thêm đơn sau preview rồi confirm với impactVersion cũ → 409 IMPACT_CHANGED kèm preview mới ...
+------- output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- output end -----
+X6: thêm đơn sau preview rồi confirm với impactVersion cũ → 409 IMPACT_CHANGED kèm preview mới ... ok (157ms)
+X7: helper ném lỗi ở đơn thứ 2 → 500, không đơn nào bị hủy, tài khoản nguyên vẹn ...
+------- output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[delete-account] transaction chốt lỗi Error
+----- output end -----
+X7: helper ném lỗi ở đơn thứ 2 → 500, không đơn nào bị hủy, tài khoản nguyên vẹn ... ok (131ms)
+X8: chủ sân → cơ sở ẩn, đơn và buổi của khách hủy hoàn 100%, 4 thông báo khác khóa (SC-008) ...
+------- output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- output end -----
+X8: chủ sân → cơ sở ẩn, đơn và buổi của khách hủy hoàn 100%, 4 thông báo khác khóa (SC-008) ... ok (312ms)
+X9: lỗi ở anonymizeReviews lần đầu → 202, bước FAILED, Auth đã tắt; sweeper chạy tiếp tới DONE ...
+------- output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- output end -----
+X9: lỗi ở anonymizeReviews lần đầu → 202, bước FAILED, Auth đã tắt; sweeper chạy tiếp tới DONE ... ok (223ms)
+X10: confirm 2 lần liên tiếp, 2 lần song song, và sau khi users đã xóa → idempotent ...
+------- output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- output end -----
+X10: confirm 2 lần liên tiếp, 2 lần song song, và sau khi users đã xóa → idempotent ... ok (2s)
+X11: appRole = ADMIN → 403 ADMIN_SELF_DELETE ...
+------- output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- output end -----
+X11: appRole = ADMIN → 403 ADMIN_SELF_DELETE ... ok (65ms)
+X12: sau khi chốt (và sau khi xóa xong), function khác dùng requireUser với token cũ → 403 ACCOUNT_DELETING ...
+------- output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- output end -----
+X12: sau khi chốt (và sau khi xóa xong), function khác dùng requireUser với token cũ → 403 ACCOUNT_DELETING ... ok (134ms)
+X13: đánh giá sau khi xóa → userId null, authorDeleted true, tên null ...
+------- output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- output end -----
+X13: đánh giá sau khi xóa → userId null, authorDeleted true, tên null ... ok (168ms)
+X14: 250 đơn đã cọc (ước tính 505 > 450) → 422 DELETE_TOO_LARGE, không có gì đổi ...
+------- output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- output end -----
+X14: 250 đơn đã cọc (ước tính 505 > 450) → 422 DELETE_TOO_LARGE, không có gì đổi ... ok (388ms)
+X14 biên: 220 đơn đã cọc (ước tính 445) → xóa được ...
+------- output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- output end -----
+X14 biên: 220 đơn đã cọc (ước tính 445) → xóa được ... ok (921ms)
+X15: đơn đã check-in hoặc đã qua không bị hủy; đơn đã qua được ẩn danh ...
+------- output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- output end -----
+X15: đơn đã check-in hoặc đã qua không bị hủy; đơn đã qua được ẩn danh ... ok (240ms)
+chưa có helper của B: người có đơn sắp tới → 500, không có gì đổi (FR-021) ...
+------- output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[delete-account] thiếu helper cancelBookingInTx
+----- output end -----
+chưa có helper của B: người có đơn sắp tới → 500, không có gì đổi (FR-021) ... ok (112ms)
+chưa có helper: người không có đơn vẫn xóa được, bước của nhóm khác ghi SKIPPED ...
+------- output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- output end -----
+chưa có helper: người không có đơn vẫn xóa được, bước của nhóm khác ghi SKIPPED ... ok (191ms)
+action lạ → 400 INVALID_ARGUMENT; confirm thiếu impactVersion → 400 ...
+------- output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- output end -----
+action lạ → 400 INVALID_ARGUMENT; confirm thiếu impactVersion → 400 ... ok (42ms)
+
+ok | 21 passed | 0 failed (7s)
+
