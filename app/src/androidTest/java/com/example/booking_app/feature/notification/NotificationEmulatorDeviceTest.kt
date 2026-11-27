@@ -1,37 +1,55 @@
 package com.example.booking_app.feature.notification
 
 import android.content.Context
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.platform.app.InstrumentationRegistry
 import com.example.booking_app.core.session.AppRole
+import com.example.booking_app.core.session.DataStoreSessionPrefs
 import com.example.booking_app.core.session.SessionManager
 import com.example.booking_app.core.session.SessionState
 import com.example.booking_app.feature.notification.data.FirestoreNotificationPreferencesRepository
+import com.example.booking_app.feature.notification.data.DataStoreNotificationPreferenceCache
 import com.example.booking_app.feature.notification.data.FirestoreNotificationRepository
 import com.example.booking_app.feature.notification.data.FirestoreNotificationRouteResolver
+import com.example.booking_app.feature.notification.domain.Notification
+import com.example.booking_app.feature.notification.domain.NotificationPage
 import com.example.booking_app.feature.notification.domain.NotificationType
 import com.example.booking_app.testing.EmulatorAdmin
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import dagger.hilt.android.testing.HiltAndroidRule
+import dagger.hilt.android.testing.HiltAndroidTest
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.tasks.await
 import kotlinx.coroutines.withTimeout
 import org.junit.Assert.*
 import org.junit.Assume.assumeTrue
+import org.junit.Rule
 import org.junit.Test
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
+import java.io.File
 import java.time.Instant
 import java.util.UUID
 
 /** Run against demo emulators with USB reverse ports 8080 and 9099. */
+@HiltAndroidTest
 class NotificationEmulatorDeviceTest {
+    @get:Rule val hilt = HiltAndroidRule(this)
+
     @Test
     fun serverPagingPreferencesRoutingAndAccountSwitch(): Unit = runBlocking {
         withTimeout(150_000) {
+            android.util.Log.i("NotificationAcceptance", "Starting emulator SDK journey")
             val context = ApplicationProvider.getApplicationContext<Context>()
             assumeTrue(InstrumentationRegistry.getArguments().getString("notificationEmulator") == "true")
             check(context.packageName.endsWith(".adminlocal"))
@@ -42,18 +60,26 @@ class NotificationEmulatorDeviceTest {
             val app = FirebaseApp.initializeApp(context, options, "notification-device-$runId")
             val auth = FirebaseAuth.getInstance(app).apply { useEmulator("127.0.0.1", 9099) }
             val db = FirebaseFirestore.getInstance(app).apply { useEmulator("127.0.0.1", 8080) }
+            val cacheFile = File(context.cacheDir, "notification-$runId.preferences_pb")
+            val cacheScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+            val store = PreferenceDataStoreFactory.create(scope = cacheScope) { cacheFile }
+            val sessionPrefs = DataStoreSessionPrefs(store)
             val session = object : SessionManager {
                 override val sessionState = MutableStateFlow<SessionState>(SessionState.SignedOut(null))
                 override val isGuest = MutableStateFlow(false)
                 override suspend fun refresh(forceTokenRefresh: Boolean) {}
-                override suspend fun signOut() = auth.signOut()
+                override suspend fun signOut() {
+                    auth.signOut()
+                    sessionPrefs.clearOnSignOut()
+                }
                 override fun currentUid() = auth.currentUser?.uid
                 override fun currentAppRole() = auth.currentUser?.let { AppRole.PLAYER }
             }
             val seed = EmulatorAdmin(project, "127.0.0.1:8080")
             val inbox = FirestoreNotificationRepository(session, db)
             val routes = FirestoreNotificationRouteResolver(db, session)
-            val prefs = FirestoreNotificationPreferencesRepository(session, db)
+            val cache = DataStoreNotificationPreferenceCache(store, session)
+            val prefs = FirestoreNotificationPreferencesRepository(session, db, cache)
             val password = "Notification-Test-Only"
             val aliceEmail = "alice-$runId@example.test"
             val instrumentThread = Thread.currentThread()
@@ -89,10 +115,16 @@ class NotificationEmulatorDeviceTest {
                     if (role == "OWNER") mapOf("ownerStatus" to "APPROVED") else emptyMap())
                 return uid
             }
+            // Keep the test package in the foreground during the SDK journey on physical devices.
+            hilt.inject()
+            NotificationUiFixture.reset()
+            NotificationUiFixture.response.complete(NotificationPage(emptyList(), null))
+            val activity = ActivityScenario.launch(NotificationTestActivity::class.java)
             try {
                 val phase = InstrumentationRegistry.getArguments().getString("notificationProducerPhase")
                 val bobEmail = "bob-$runId@example.test"
                 val alice = createUser(aliceEmail)
+                android.util.Log.i("NotificationAcceptance", "Demo SDK account and profile ready")
                 val bob: String
                 if (phase == "payment" || phase == "group") {
                     session.signOut()
@@ -101,19 +133,27 @@ class NotificationEmulatorDeviceTest {
                 } else {
                     val booking = "notification-$runId"
                     seed.put("bookings/$booking", mapOf("userId" to alice, "status" to "CONFIRMED", "venueId" to "demo-venue"))
-                    for (i in 0..30) {
+                    for (i in 0..64) {
                         seed.put("users/$alice/notifications/item-$i", mapOf(
                             "type" to "BOOKING_CONFIRMED", "title" to "Demo booking $i", "body" to "Saved details",
                             "data" to mapOf("bookingId" to booking), "isRead" to false,
                             "createdAt" to Instant.ofEpochSecond(1_700_000_000L + i),
                         ))
                     }
+                    android.util.Log.i("NotificationAcceptance", "Core seeded 65 inbox rows")
                     val first = inbox.loadPage()
-                    assertEquals((30 downTo 1).map { "item-$it" }, first.items.map { it.id })
+                    assertEquals((64 downTo 35).map { "item-$it" }, first.items.map { it.id })
                     val next = checkNotNull(first.nextCursor)
+                    val second = inbox.loadPage(next)
+                    assertEquals((34 downTo 5).map { "item-$it" }, second.items.map { it.id })
+                    val third = inbox.loadPage(checkNotNull(second.nextCursor))
+                    assertEquals((4 downTo 0).map { "item-$it" }, third.items.map { it.id })
+                    assertNull(third.nextCursor)
                     val offPage = inbox.loadById("item-0")!!
-                    assertEquals(listOf(offPage), inbox.loadPage(next).items)
+                    assertEquals(offPage, third.items.last())
                     assertEquals("smashnow://notifications/booking/$booking", routes.resolve(offPage))
+                    assertCatalogRoutes(seed, routes, booking, alice)
+                    android.util.Log.i("NotificationAcceptance", "Core checked source and saved-detail routes")
                     seed.delete("bookings/$booking")
                     assertNull(routes.resolve(offPage))
                     assertEquals("Saved details", offPage.body)
@@ -121,11 +161,34 @@ class NotificationEmulatorDeviceTest {
                     assertTrue(inbox.loadById("item-30")!!.isRead)
                     assertFalse(inbox.loadById("item-0")!!.isRead)
                     inbox.markAllRead()
-                    assertTrue(inbox.loadPage().items.all { it.isRead })
+                    val firstRead = inbox.loadPage()
+                    assertTrue(firstRead.items.all { it.isRead })
+                    val secondRead = inbox.loadPage(checkNotNull(firstRead.nextCursor))
+                    assertTrue(secondRead.items.all { it.isRead })
+                    assertTrue(inbox.loadPage(checkNotNull(secondRead.nextCursor)).items.all { it.isRead })
                     assertTrue(inbox.loadById("item-0")!!.isRead)
                     assertFalse(prefs.load().getValue(NotificationType.PROMOTION))
+                    assertTrue(prefs.load().getValue(NotificationType.BOOKING_NEW))
+                    assertTrue(runCatching { prefs.setEnabled(setOf(NotificationType.BOOKING_NEW), false) }.isFailure)
                     prefs.setEnabled(setOf(NotificationType.PROMOTION), true)
                     assertTrue(prefs.load().getValue(NotificationType.PROMOTION))
+                    android.util.Log.i("NotificationAcceptance", "Core server state saved, disabling SDK network")
+                    db.disableNetwork().await()
+                    try {
+                        val offline = prefs.loadSnapshot()
+                        assertTrue(offline.fromCache)
+                        assertTrue(offline.values.getValue(NotificationType.PROMOTION))
+                        android.util.Log.i("NotificationAcceptance", "Core loaded read-only preference cache while offline")
+                        assertTrue(runCatching { prefs.setEnabled(setOf(NotificationType.PROMOTION), false) }.isFailure)
+                        assertTrue(runCatching { inbox.loadPage() }.isFailure)
+                    } finally {
+                        db.enableNetwork().await()
+                    }
+                    val online = prefs.loadSnapshot()
+                    assertFalse(online.fromCache)
+                    assertTrue(online.values.getValue(NotificationType.PROMOTION))
+                    android.util.Log.i("NotificationAcceptance", "Core loaded server settings after reconnect")
+                    assertTrue(inbox.loadPage().items.all { it.isRead })
                     session.signOut()
                     assertTrue(runCatching { inbox.loadPage() }.exceptionOrNull() is IllegalStateException)
                     bob = createUser(bobEmail)
@@ -135,8 +198,10 @@ class NotificationEmulatorDeviceTest {
                     assertTrue(runCatching { inbox.loadPage(next) }.exceptionOrNull() is IllegalArgumentException)
                     assertFalse(prefs.load().getValue(NotificationType.PROMOTION))
                     auth.signInWithEmailAndPassword(aliceEmail, password).await()
+                    assertNull(cache.read(alice, cache.epoch()))
                     assertNull(routes.resolve(offPage))
                     assertTrue(prefs.load().getValue(NotificationType.PROMOTION))
+                    android.util.Log.i("NotificationAcceptance", "Core SDK: paging, reads, offline cache, reconnect, source and account isolation")
                 }
                 InstrumentationRegistry.getArguments().getString("notificationProducerSecret")?.let { secret ->
                     val joined = Instant.now().minusSeconds(60)
@@ -253,9 +318,49 @@ class NotificationEmulatorDeviceTest {
             } finally {
                 watchdog.interrupt()
                 auth.signOut()
+                cacheScope.cancel()
+                cacheFile.delete()
                 app.delete()
+                activity.close()
             }
         }
+    }
+
+    private suspend fun assertCatalogRoutes(
+        seed: EmulatorAdmin,
+        routes: FirestoreNotificationRouteResolver,
+        booking: String,
+        uid: String,
+    ) {
+        val venue = "$booking-venue"
+        val session = "$booking-drop-in"
+        val review = "$booking-review"
+        seed.put("venues/$venue", mapOf("status" to "ACTIVE"))
+        seed.put("dropInSessions/$session", mapOf("status" to "OPEN", "venueId" to venue))
+        seed.put("reviews/$review", mapOf("status" to "VISIBLE", "userId" to uid, "venueId" to venue, "hasOwnerReply" to true))
+        fun item(type: NotificationType, vararg refs: Pair<String, String>) =
+            Notification(type.name, type.name, "Saved route title", "Saved route body", refs.toMap(), false, 1)
+        for (type in listOf(NotificationType.BOOKING_REJECTED, NotificationType.BOOKING_CANCELLED, NotificationType.BOOKING_REMINDER)) {
+            assertEquals(type.name, "smashnow://notifications/booking/$booking", routes.resolve(item(type, "bookingId" to booking)))
+        }
+        val reminder = item(NotificationType.REVIEW_REMINDER, "bookingId" to booking)
+        assertEquals("smashnow://review/write/$booking", routes.resolve(reminder))
+        val dropIn = listOf(NotificationType.DROPIN_REGISTERED, NotificationType.DROPIN_SPOT_OPENED,
+            NotificationType.DROPIN_CHANGED, NotificationType.DROPIN_WAITLIST_CLOSED)
+            .map { item(it, "sessionId" to session) }
+        for (notification in dropIn) {
+            assertEquals(notification.type, "smashnow://dropin/session/$session", routes.resolve(notification))
+        }
+        val reply = item(NotificationType.REVIEW_REPLIED, "reviewId" to review, "venueId" to venue)
+        assertEquals("smashnow://review/venue/$venue", routes.resolve(reply))
+        for (type in listOf(NotificationType.BOOKING_NEW, NotificationType.REVIEW_NEW, NotificationType.PROMOTION,
+            NotificationType.OWNER_APPROVED, NotificationType.OWNER_REJECTED, NotificationType.OWNER_REVOKED, NotificationType.SYSTEM)) {
+            assertNull(type.name, routes.resolve(item(type, "bookingId" to booking, "venueId" to venue, "reviewId" to review)))
+        }
+        seed.delete("dropInSessions/$session")
+        for (notification in dropIn) assertNull(notification.type, routes.resolve(notification))
+        seed.delete("reviews/$review")
+        assertNull(routes.resolve(reply))
     }
 
     private fun callProducer(name: String, key: String, token: String, body: JSONObject): Int {

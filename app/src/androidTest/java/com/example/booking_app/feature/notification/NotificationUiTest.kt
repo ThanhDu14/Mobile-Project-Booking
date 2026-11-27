@@ -316,6 +316,101 @@ class NotificationUiTest {
             org.junit.Assert.assertEquals(listOf("push-id"), NotificationUiFixture.lookedUp)
         }
     }
+
+    @Test fun postedNotificationIntentOpensMainActivityInEachLifecycleState() {
+        start().close()
+        auth.signOut()
+        runBlocking { sessionPrefs.setWelcomeSeen() }
+        NotificationUiFixture.response.complete(NotificationPage(emptyList(), null))
+        val instrumentation = InstrumentationRegistry.getInstrumentation()
+        val context = instrumentation.targetContext
+        val automation = instrumentation.uiAutomation
+        val manager = context.getSystemService(android.app.NotificationManager::class.java)
+        val renderer = com.example.booking_app.feature.notification.data.NotificationPushRenderer(context)
+        com.example.booking_app.feature.notification.data.NotificationChannels(context).ensureCreated()
+        val tapFromShade = InstrumentationRegistry.getArguments().getString("notificationTapFromShade") == "true"
+
+        fun tapNotification(state: String) {
+            val title = "Saved $state title"
+            val body = "Saved $state detail"
+            val id = "tap-$state"
+            NotificationUiFixture.pushItem = Notification(id, "SYSTEM", title, body, emptyMap(), false, 1)
+            val push = com.example.booking_app.feature.notification.data.NotificationPush("test-user", id)
+            val label = "Feature 100 local tap $state"
+            val notification = renderer.build(push)
+            val postedNotification = if (tapFromShade) {
+                val publicVersion = android.app.Notification.Builder.recoverBuilder(context, notification.publicVersion)
+                    .setContentText(label).build()
+                android.app.Notification.Builder.recoverBuilder(context, notification)
+                    .setContentText(label).setPublicVersion(publicVersion).build()
+            } else notification
+            manager.notify(id, 1, postedNotification)
+            val postedDeadline = android.os.SystemClock.uptimeMillis() + 3_000
+            while (manager.activeNotifications.none { it.tag == id } && android.os.SystemClock.uptimeMillis() < postedDeadline) Thread.sleep(50)
+            val posted = manager.activeNotifications.single { it.tag == id }.notification
+            if (tapFromShade) {
+                // Pull from the left, where devices with split system panels open notifications.
+                val metrics = context.resources.displayMetrics
+                val x = metrics.widthPixels / 4
+                automation.executeShellCommand("input swipe $x 1 $x ${metrics.heightPixels / 2} 450").use { }
+                val entry = awaitWindowWithText(label).findAccessibilityNodeInfosByText(label).first { it.isVisibleToUser }
+                val target = generateSequence(entry) { it.parent }.first { it.isClickable }
+                org.junit.Assert.assertTrue(target.performAction(android.view.accessibility.AccessibilityNodeInfo.ACTION_CLICK))
+            } else {
+                val options = android.app.ActivityOptions.makeBasic()
+                if (android.os.Build.VERSION.SDK_INT >= 34) {
+                    options.pendingIntentBackgroundActivityStartMode = android.app.ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
+                }
+                automation.adoptShellPermissionIdentity("android.permission.START_ACTIVITIES_FROM_BACKGROUND")
+                try {
+                    posted.contentIntent.send(context, 0, null, null, null, null, options.toBundle())
+                } finally {
+                    automation.dropShellPermissionIdentity()
+                }
+            }
+            awaitWindowWithText(body)
+            org.junit.Assert.assertTrue(id in NotificationUiFixture.lookedUp)
+            org.junit.Assert.assertTrue(id in NotificationUiFixture.marked)
+            val config = context.resources.configuration
+            val theme = InstrumentationRegistry.getArguments().getString("notificationTheme", "light")
+            val screenshot = java.io.File(context.getExternalFilesDir(null), "notification-${config.screenWidthDp}dp-$theme-tap-$state.png")
+            screenshot.outputStream().use { automation.takeScreenshot().compress(android.graphics.Bitmap.CompressFormat.PNG, 100, it) }
+            android.util.Log.i("NotificationAcceptance", "Posted notification opened and marked read: $state (shade=$tapFromShade)")
+        }
+
+        try {
+            ActivityScenario.launch(com.example.booking_app.MainActivity::class.java).use {
+                awaitDisplayed(withContentDescription(R.string.notification_title))
+                tapNotification("foreground")
+            }
+            ActivityScenario.launch(com.example.booking_app.MainActivity::class.java).use {
+                awaitDisplayed(withContentDescription(R.string.notification_title))
+                org.junit.Assert.assertTrue(automation.performGlobalAction(android.accessibilityservice.AccessibilityService.GLOBAL_ACTION_HOME))
+                tapNotification("background")
+            }
+            tapNotification("reopened")
+        } finally {
+            listOf("foreground", "background", "reopened").forEach { manager.cancel("tap-$it", 1) }
+            if (tapFromShade) automation.executeShellCommand("cmd statusbar collapse").use { }
+            instrumentation.runOnMainSync {
+                val monitor = androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry.getInstance()
+                monitor.getActivitiesInStage(androidx.test.runner.lifecycle.Stage.RESUMED)
+                    .filterIsInstance<com.example.booking_app.MainActivity>().forEach { it.finish() }
+            }
+        }
+    }
+
+    private fun awaitWindowWithText(value: String): android.view.accessibility.AccessibilityNodeInfo {
+        val automation = InstrumentationRegistry.getInstrumentation().uiAutomation
+        val deadline = android.os.SystemClock.uptimeMillis() + 8_000
+        while (android.os.SystemClock.uptimeMillis() < deadline) {
+            val root = automation.rootInActiveWindow
+            if (root?.findAccessibilityNodeInfosByText(value)?.any { it.isVisibleToUser } == true) return root
+            Thread.sleep(50)
+        }
+        throw AssertionError("Expected text was not shown: $value. Active window: ${automation.rootInActiveWindow?.packageName}")
+    }
+
     @Test fun mainActivityNotificationEntryAndShell() {
         start().close()
         org.junit.Assert.assertEquals("demo-admin-repair", auth.app.options.projectId)

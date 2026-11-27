@@ -44,7 +44,7 @@ try {
     $remote = "/sdcard/Android/data/$package/files"
     $files = & $adb -s $Device shell ls "$remote/notification-*dp-$theme-*.png"
     foreach ($file in $files) {
-        if ($file -match '^/sdcard/Android/data/com[.]example[.]booking_app[.]adminlocal/files/notification-(?<width>[0-9]+)dp-(light|dark)-(inbox|settings)(-shell|-extra|-cache)?[.]png$') {
+        if ($file -match '^/sdcard/Android/data/com[.]example[.]booking_app[.]adminlocal/files/notification-(?<width>[0-9]+)dp-(light|dark)-((inbox|settings)(-shell|-extra|-cache)?|tap-(foreground|background|reopened))[.]png$') {
             if (([int]$Matches.width -ge 600) -ne $Variant.StartsWith('tablet')) { continue }
             $pull = Start-Process -FilePath $adb -ArgumentList @('-s', $Device, 'pull', $file, $evidence) -WindowStyle Hidden -Wait -PassThru -RedirectStandardOutput (Join-Path $evidence 'pull.stdout.log') -RedirectStandardError (Join-Path $evidence 'pull.stderr.log')
             if ($pull.ExitCode -ne 0) { throw 'Screenshot pull failed' }

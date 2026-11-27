@@ -33,8 +33,8 @@ try {
     }
     $remote = "/sdcard/Android/data/$package/files"
     foreach ($name in @('denied', 'denied-inbox', 'granted-prompt', 'granted-return')) {
-        & $adb -s $Device pull "$remote/notification-permission-$name.png" $evidence
-        if ($LASTEXITCODE -ne 0) { throw 'Cannot pull permission screenshot' }
+        $pull = Start-Process -FilePath $adb -ArgumentList @('-s', $Device, 'pull', "$remote/notification-permission-$name.png", "`"$evidence`"") -WindowStyle Hidden -Wait -PassThru -RedirectStandardOutput (Join-Path $evidence 'pull.stdout.log') -RedirectStandardError (Join-Path $evidence 'pull.stderr.log')
+        if ($pull.ExitCode -ne 0) { throw "Cannot pull permission screenshot: $name" }
     }
 } finally {
     $operation = if ($wasGranted) { 'grant' } else { 'revoke' }
