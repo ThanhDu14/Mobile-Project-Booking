@@ -1,5 +1,7 @@
 # Feature Specification: Chi tiết sân
 
+> **Quyết định 27/11/2026 — quyền đọc cơ sở:** Giữ Rules hiện hành: khách và người chơi chỉ đọc cơ sở ACTIVE; admin và chủ sân hợp lệ có quyền riêng. Không công khai thông tin, sân con hoặc bảng giá của cơ sở HIDDEN/LOCKED/DELETED. Rules từ chối cả cơ sở không tồn tại, vì vậy client không thể phân biệt các trường hợp chỉ dựa vào `PERMISSION_DENIED`. Quyết định này thay các mô tả cũ mâu thuẫn về US6, FR-021–FR-023 và đề xuất R10 bên dưới. Giao diện hiện chưa phân biệt được các trường hợp; cần thiết kế trạng thái không truy cập được và kiểm thử riêng, không suy ra lý do chính xác từ lỗi quyền.
+
 **Feature Branch**: `feature/03-court-detail`
 
 **Created**: 2026-10-06

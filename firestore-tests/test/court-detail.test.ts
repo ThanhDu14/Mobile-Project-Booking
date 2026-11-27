@@ -1,6 +1,5 @@
 // VD-1 → VD-10 của specs/030-court-detail/contracts/security-rules.md §2 (spec 030, A).
-// Spec 030 chỉ đọc: Rules của `venues`, `courts`, `priceRules` thuộc D, `reviews` thuộc C. File này kiểm chứng
-// Rules đề nghị ở research R10; ca nào còn đỏ do chờ D/C sửa Rules thì tên ghi [BLOCKED: D] / [BLOCKED: C].
+// Spec 030 chỉ đọc: kiểm chứng chính sách hiện hành, công khai dữ liệu cơ sở ACTIVE.
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { assertFails, assertSucceeds, type RulesTestEnvironment } from '@firebase/rules-unit-testing';
 import {
@@ -118,10 +117,10 @@ describe('Chi tiết sân – quyền đọc (spec 030)', () => {
     await assertSucceeds(getDocs(collection(db, 'venues/v-active/priceRules')));
   });
 
-  it('VD-1b [BLOCKED: D]: khách đọc courts, priceRules của cơ sở tạm ngừng (R10: read if true)', async () => {
+  it('VD-1b: khách không đọc courts, priceRules của cơ sở tạm ngừng', async () => {
     const db = guest();
-    await assertSucceeds(getDocs(collection(db, 'venues/v-hidden/courts')));
-    await assertSucceeds(getDocs(collection(db, 'venues/v-hidden/priceRules')));
+    await assertFails(getDocs(collection(db, 'venues/v-hidden/courts')));
+    await assertFails(getDocs(collection(db, 'venues/v-hidden/priceRules')));
   });
 
   it('VD-2: khách get venues/v-hidden, v-locked bị chặn', async () => {
@@ -130,16 +129,15 @@ describe('Chi tiết sân – quyền đọc (spec 030)', () => {
     await assertFails(getDoc(doc(db, 'venues/v-locked')));
   });
 
-  it('VD-3 [BLOCKED: D]: khách get venues/v-missing được, exists == false', async () => {
-    const snap = await assertSucceeds(getDoc(doc(guest(), 'venues/v-missing')));
-    expect(snap.exists()).toBe(false);
+  it('VD-3: khách không có quyền đọc cơ sở không tồn tại', async () => {
+    await assertFails(getDoc(doc(guest(), 'venues/v-missing')));
   });
 
-  it('VD-4 [BLOCKED: D]: người chơi đã khởi tạo get v-hidden, v-locked, v-deleted', async () => {
+  it('VD-4: người chơi không đọc được cơ sở không hoạt động', async () => {
     const db = player();
-    await assertSucceeds(getDoc(doc(db, 'venues/v-hidden')));
-    await assertSucceeds(getDoc(doc(db, 'venues/v-locked')));
-    await assertSucceeds(getDoc(doc(db, 'venues/v-deleted')));
+    await assertFails(getDoc(doc(db, 'venues/v-hidden')));
+    await assertFails(getDoc(doc(db, 'venues/v-locked')));
+    await assertFails(getDoc(doc(db, 'venues/v-deleted')));
   });
 
   it('VD-5: người chơi list venues không lọc status bị chặn', async () => {
@@ -182,8 +180,7 @@ describe('Chi tiết sân – quyền đọc (spec 030)', () => {
     }
   });
 
-  it('VD-10 [BLOCKED: D]: khách get venues/v-deleted được, status == DELETED', async () => {
-    const snap = await assertSucceeds(getDoc(doc(guest(), 'venues/v-deleted')));
-    expect(snap.get('status')).toBe('DELETED');
+  it('VD-10: khách không đọc được cơ sở đã xóa', async () => {
+    await assertFails(getDoc(doc(guest(), 'venues/v-deleted')));
   });
 });
