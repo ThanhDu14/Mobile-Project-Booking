@@ -65,7 +65,10 @@ class FirestoreNotificationPreferencesRepository @Inject constructor(
         val fields = types.associate { "notificationPrefs.${it.name}" to enabled }.toMutableMap<String, Any>()
         fields["updatedAt"] = FieldValue.serverTimestamp()
         val ref = firestore.collection("users").document(uid)
-        // Client transactions fail offline; direct update() would queue a persistent offline write.
+        // Transactions use their own RPCs and can bypass the SDK's disabled watch/write network.
+        val serverProfile = ref.get(Source.SERVER).awaitWithTimeout()
+        check(uid() == uid) { "Account changed" }
+        check(serverProfile.exists()) { "Profile unavailable" }
         val values = firestore.runTransaction { tx ->
             check(uid() == uid) { "Account changed" }
             val profile = tx.get(ref)

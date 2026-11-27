@@ -130,6 +130,7 @@ class FirestoreNotificationRepositoryTest {
         val profile = mockk<DocumentSnapshot>()
         every { profile.exists() } returns true
         every { profile.get("notificationPrefs") } returns emptyMap<String, Boolean>()
+        every { user.get(Source.SERVER) } returns Tasks.forResult(profile)
         every { tx.get(user) } returns profile
         every { tx.update(user, any<Map<String, Any>>()) } returns tx
         every { fs.runTransaction(any<Transaction.Function<Map<NotificationType, Boolean>>>()) } answers {
@@ -144,8 +145,9 @@ class FirestoreNotificationRepositoryTest {
     }
     @Test fun `preference write errors propagate and switched account result is rejected`() = runTest {
         val repo = FirestoreNotificationPreferencesRepository(session, fs)
-        every { fs.runTransaction(any<Transaction.Function<Map<NotificationType, Boolean>>>()) } returns Tasks.forException(FirebaseNetworkException("offline"))
+        every { user.get(Source.SERVER) } returns Tasks.forException(FirebaseNetworkException("offline"))
         try { repo.setEnabled(setOf(NotificationType.PROMOTION), true); fail() } catch (_: AppError.Network) {}
+        verify(exactly = 0) { fs.runTransaction(any<Transaction.Function<Map<NotificationType, Boolean>>>()) }
         every { user.get(Source.SERVER) } answers { uid = "bob"; Tasks.forResult(mockk()) }
         try { repo.load(); fail() } catch (_: IllegalStateException) {}
     }

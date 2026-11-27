@@ -4,6 +4,7 @@ import com.google.android.gms.tasks.TaskCompletionSource
 import com.google.firebase.FirebaseNetworkException
 import com.google.firebase.FirebaseTooManyRequestsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
+import com.google.firebase.firestore.FirebaseFirestoreException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
@@ -48,6 +49,22 @@ class TaskAwaitTest {
         val source = TaskCompletionSource<String>()
         source.setException(FirebaseNetworkException("offline"))
         assertSame(AppError.Network, expectError { source.task.awaitWithTimeout() })
+    }
+
+    @Test
+    fun `phan biet loi ket noi Firestore voi mat quyen`() = runTest {
+        fun failure(code: FirebaseFirestoreException.Code) = TaskCompletionSource<String>().apply {
+            setException(FirebaseFirestoreException("Firestore request failed", code))
+        }.task
+        assertSame(AppError.Network, expectError {
+            failure(FirebaseFirestoreException.Code.UNAVAILABLE).awaitWithTimeout()
+        })
+        assertSame(AppError.Timeout, expectError {
+            failure(FirebaseFirestoreException.Code.DEADLINE_EXCEEDED).awaitWithTimeout()
+        })
+        assertTrue(expectError {
+            failure(FirebaseFirestoreException.Code.PERMISSION_DENIED).awaitWithTimeout()
+        } is AppError.Unknown)
     }
 
     @Test

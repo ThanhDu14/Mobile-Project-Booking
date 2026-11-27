@@ -84,6 +84,7 @@ class NotificationPreferenceCacheTest {
     }
     @Test fun `successful transaction updates cache and failed transaction preserves confirmed values`() = runTest {
         val tx = mockk<Transaction>()
+        every { user.get(Source.SERVER) } returns Tasks.forResult(profile)
         every { tx.get(user) } returns profile
         every { tx.update(user, any<Map<String, Any>>()) } returns tx
         every { fs.runTransaction(any<Transaction.Function<Map<NotificationType, Boolean>>>()) } answers {
