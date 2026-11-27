@@ -67,6 +67,7 @@ Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 | 61  | 2026-11-24 | Tiếp tục Feature 100: kiểm chứng booking W1, chốt B1/B2, triển khai reminder và xác minh tiến độ 39/56 | 10             |
 | 62  | 2026-11-24 | Tiếp tục Feature 100: D3/R1/H1, kiểm thử vivo và xác minh tiến độ 41/56 | 10             |
 | 63  | 2026-11-26 | Hoàn tất Feature 100 từ 43/56 đến 56/56, kiểm thử vivo và triển khai production theo giai đoạn | 10             |
+| 64  | 2026-11-27 | Kiểm thử hồi quy Feature 100 trên vivo, sửa hai lỗi Settings offline và mở lại T056 | 10             |
 
 ---
 
@@ -6063,5 +6064,71 @@ Cuối lượt báo số task hoàn thành, task vừa đóng, kết quả đi�
 - Vivo V2247 xác nhận F1 bằng Firebase SDK thật qua USB, gồm inbox, route, fallback khi mất quyền và tách UID. Lượt chạy lại dùng `group-manage` bị dừng khi chờ instrumentation. Lượt riêng P2/B1 đạt JUnit 1/1, gồm voucher follower, replay checkout, chi tiết đã lưu và tách tài khoản PLAYER/OWNER. [Mốc F1 và P2/B1](../../specs/100-notification/validation/f1-2026-11-26/device-acceptance.txt), [JUnit P2/B1](../../specs/100-notification/validation/f1-2026-11-26/device-producers-payment.log)
 - Bốn cấu hình phone/w600dp sáng/tối đạt 48 ca UI. Thêm 9 ca quyền, channel và payload injection cục bộ. Lưu 28 screenshot, khôi phục density 440 và trạng thái quyền, gỡ USB reverse thử nghiệm. Push được kiểm chứng bằng fake sender và payload injection cục bộ. [Bằng chứng thiết bị](../../specs/100-notification/validation/f1-2026-11-26/README.md#điện-thoại-thật)
 - Supabase local chạy hai lượt cho mỗi cron qua pg_cron/pg_net, cả bốn lượt trả HTTP 200 từ handler demo. Đã dọn cron và khóa Vault tạm. Hậu kiểm production cho thấy bảy Edge Function ACTIVE, hai phiên bản migration có trong lịch sử, cả hai cron có `active=false` và endpoint trả 401 khi thiếu secret. Rollout APK checkout và thu hồi quyền ghi PENDING trực tiếp trên production còn cần thực hiện đồng bộ. [Cron local](../../specs/100-notification/validation/f1-2026-11-26/supabase-cron.log), [Hậu kiểm production](../../specs/100-notification/validation/f1-2026-11-26/README.md#production)
+
+---
+
+## Mục 64: Kiểm thử hồi quy Feature 100 trên vivo và sửa Settings offline
+
+| Thông tin                | Nội dung |
+| ------------------------ | -------- |
+| Ngày                     | 2026-11-27 |
+| Người thực hiện          | Minh Nhựt |
+| Nhóm tính năng liên quan | 10 (100 thông báo) |
+| Công cụ AI               | Codex (GPT-6), `$speckit-implement` |
+| Mục đích                 | Kiểm thử hồi quy Feature 100 trên điện thoại thật, sửa lỗi phát hiện và cập nhật trạng thái theo bằng chứng |
+| Nhánh Git                | `feat/100-notification` |
+
+### Prompt đã dùng
+
+```text
+Kiểm thử toàn bộ Feature 100 trên điện thoại thật đang kết nối và sửa các lỗi phát hiện được.
+
+Đọc spec, tasks.md, quickstart.md, implementation-review.md và các quyết định đã duyệt trong specs/100-notification/. Lập danh sách kiểm thử bao phủ các yêu cầu, ghi rõ phần đã triển khai và phần còn thiếu hoặc bị chặn.
+
+Build và cài bản mới nhất vào ứng dụng kiểm thử cô lập. Dùng tài khoản demo và SDK/repository thật kết nối môi trường local/emulator khi có thể.
+
+Kiểm tra đầy đủ:
+- Inbox: tải, phân trang, thứ tự, trạng thái rỗng, lỗi/retry, đọc một và đọc tất cả qua nhiều trang.
+- Settings: các nhóm bật/tắt, BOOKING_NEW luôn bật, mặc định PROMOTION, lưu và tải lại, cache offline và đồng bộ sau khi có mạng.
+- Permission, channel, hiển thị thông báo và thao tác chạm khi app đang mở, chạy nền hoặc được mở lại.
+- Routing của các loại thông báo, kiểm tra quyền truy cập, nguồn bị xóa và fallback chi tiết.
+- Đăng xuất, đăng nhập và đổi tài khoản; không để lộ inbox, cache hoặc thông báo của tài khoản trước.
+- Các sự kiện booking, reminder, drop-in/waitlist, promotion, review, owner, group/chat và SYSTEM trong phạm vi đã triển khai.
+- Replay, thông báo trùng, retry, lỗi gửi push và suppression khi muted/đang xem chat; inbox vẫn phải được lưu theo spec.
+- UI light/dark, phone và w600dp; đối chiếu với specs/100-notification/ui/ cùng các ngoại lệ đã duyệt.
+
+Với mỗi lỗi, tái hiện, tìm nguyên nhân, sửa code và chạy lại ca lỗi cùng kiểm thử hồi quy liên quan. Tiếp tục đến khi các lỗi trong phạm vi đã được xử lý hoặc có blocker cụ thể. Giữ nguyên yêu cầu kiểm thử; mọi sửa đổi kỳ vọng phải có căn cứ từ spec hoặc quyết định đã duyệt.
+
+Chạy các bộ unit, Rules, backend và integration liên quan. Kiểm tra Supabase local/cron nếu môi trường hỗ trợ. Phân biệt rõ bằng chứng từ fake, local payload injection, điện thoại kết nối emulator và nhận push qua FCM thật.
+
+Lưu log, screenshot và kết quả của bản code cuối cùng. Khôi phục density, permission và các thiết lập thiết bị đã thay đổi khi kết thúc.
+
+Không tự deploy, chạy migration dữ liệu thật, gửi push thật, commit hoặc push Git. Nếu thiếu quyền hay cấu hình để kiểm thử một phần, báo chính xác phần đó và tiếp tục những phần còn chạy được.
+
+Cập nhật tasks.md và implementation-review.md theo bằng chứng. Báo cáo cuối gồm phạm vi đã kiểm thử, lỗi đã sửa, kết quả trên điện thoại thật, đường dẫn bằng chứng và các ca chưa thể kiểm chứng. Chỉ báo hoàn tất khi mọi ca trong phạm vi đều có kết quả rõ ràng.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Lập ma trận theo spec và các quyết định đã duyệt. Build APK cô lập `com.example.booking_app.adminlocal` và chạy trên vivo V2247 bằng tài khoản demo, kết nối Auth/Firestore Emulator qua USB reverse.
+- Tái hiện hai lỗi Settings bằng SDK thật. Firestore `UNAVAILABLE` bị phân loại thành lỗi không xác định khiến Settings bỏ qua cache. Sau khi dùng được cache, transaction vẫn có thể ghi khi mạng của SDK bị tắt. Sửa ánh xạ lỗi và yêu cầu đọc profile từ server thành công, kiểm tra lại UID trước khi bắt đầu transaction. Ca hồi quy xác nhận cache chỉ đọc, tải lại từ server khi kết nối và xóa cache cũ khi đổi UID.
+- Xác nhận đọc một và đọc tất cả qua 65 mục inbox, điều hướng khi nguồn còn quyền hoặc fallback khi nguồn bị xóa hay mất quyền. F1 chạy qua producer thu hồi thành viên. P2/B1 kiểm tra voucher follower, replay checkout và inbox của chủ sân.
+- Cập nhật tiến độ **55/56**. Mở lại T056 vì bộ kiểm thử mở được khay SystemUI nhưng chưa tìm thấy mục demo để chạm trực tiếp. `PendingIntent` của thông báo cục bộ đã mở đúng chi tiết và đánh dấu đã đọc ở cả ba trạng thái. FCM thật nằm ngoài lượt kiểm thử. [Tasks](../../specs/100-notification/tasks.md) và [implementation review](../../specs/100-notification/implementation-review.md)
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+| ---- | ---------- | ----- |
+| `TaskAwait.kt` và repository Settings | Ánh xạ `UNAVAILABLE` sang lỗi mạng, `DEADLINE_EXCEEDED` sang timeout. Đọc profile từ server trước khi ghi | Cho phép đọc cache khi mất kết nối, giữ lỗi quyền riêng và chặn transaction ghi lúc SDK offline. |
+| Kiểm thử Android và harness lấy ảnh | Dùng SDK thật cho ba hành trình, repository giả cho ma trận UI. Kiểm tra mã thoát khi `adb pull` | Tách bằng chứng theo lớp và lưu đủ ảnh quyền. |
+| Quyết định nguồn và routing | Giữ các hợp đồng đã duyệt và fallback chi tiết đã lưu | Đối chiếu hồi quy theo đúng hành vi được duyệt. |
+| `tasks.md` và `implementation-review.md` | Ghi kết quả T039 và mở lại T056 | Phản ánh ca chạm trực tiếp từ khay vivo còn thiếu bằng chứng. |
+
+### Cách kiểm chứng
+
+- Build APK cô lập và instrumentation đạt. JVM ghi 1.702 ca, 2 bỏ qua, 0 failure/error. Lint 0 lỗi và 851 cảnh báo. Firestore Rules đạt 61 ca. Các bộ backend fake và Emulator kiểm tra producer, replay, cạnh tranh giữa hai worker, retry và suppression. [Ma trận và log](../../specs/100-notification/validation/qa-2026-11-26/README.md)
+- Vivo đạt 3/3 hành trình SDK, 52/52 ca UI qua phone/w600dp sáng/tối và 9/9 ca quyền, channel, payload injection cục bộ. Lưu 40 ảnh và SHA-256 APK. Density trở về 440, cờ quyền thông báo khớp trạng thái ban đầu và USB reverse thử nghiệm đã được gỡ. [SDK](../../specs/100-notification/validation/qa-2026-11-26/sdk-milestones.log) và [trạng thái thiết bị](../../specs/100-notification/validation/qa-2026-11-26/device-after.txt)
+- Supabase local chạy hai lượt mỗi cron qua pg_cron/pg_net với booking demo. Xác nhận đúng một inbox reminder, một job gửi và một receipt gửi giả lập. Các cron, khóa Vault và fixture tạm đã được dọn. [Cron local với dữ liệu demo](../../specs/100-notification/validation/qa-2026-11-26/supabase-cron-seeded.log)
+- Kiểm thử `PendingIntent` đạt ở foreground, background và khi mở lại Activity. Lượt kiểm thử chạm trực tiếp ghi nhận SystemUI mở nhưng chưa thấy mục demo. [PendingIntent](../../specs/100-notification/validation/qa-2026-11-26/posted-pending-intent-final.log) và [khay SystemUI](../../specs/100-notification/validation/qa-2026-11-26/shade-touch-final.log)
 
 ---
