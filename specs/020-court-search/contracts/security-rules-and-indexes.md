@@ -8,12 +8,12 @@ Lý do: [research R11, R13](../research.md#r13-quyền-đọc-cho-khách-chưa-�
 
 ```text
 match /districts/{id} {
-  allow read: if true;
+  allow read: if !isSignedIn() || isInitialized();
   allow write: if isAdmin();          // spec 120 bổ sung kiểm tra trường
 }
 
 match /amenities/{id} {
-  allow read: if true;
+  allow read: if !isSignedIn() || isInitialized();
   allow write: if isAdmin();
 }
 

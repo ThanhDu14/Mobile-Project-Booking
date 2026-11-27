@@ -54,7 +54,7 @@ Ghi chú:
 
 ```text
 match /districts/{id} {
-  allow get, list: if isInitialized();
+  allow get, list: if !isSignedIn() || isInitialized();
   allow write: if isAdmin();    // spec 120 làm màn hình; có thể chuyển sang Edge Function nếu D muốn
 }
 ```
@@ -90,7 +90,8 @@ match /accountDeletions/{uid} {
 | P17 | Chủ tài khoản | `deletionRequestedAt = serverTimestamp()` | Bị chặn |
 | P18 | Chủ tài khoản | `walletBalance` / `ownerStatus` / `role` (lặp lại U9–U12 của 010 để chắc chắn sau khi sửa) | Bị chặn |
 | D1 | Người đã khởi tạo | `list districts where isActive == true` | Được phép |
-| D2 | Chưa có `appRole` | `get districts/q1` | Bị chặn |
+| D2 | Đã đăng nhập, chưa có `appRole` | `get districts/q1` | Bị chặn |
+| D2b | Khách chưa đăng nhập | Đọc `districts`, `amenities` | Được phép; không được ghi |
 | D3 | Người chơi | `set districts/q99` | Bị chặn |
 | D4 | Admin | `set districts/q99` | Được phép |
 | A1 | Chủ tài khoản | `get accountDeletions/{mình}` | Bị chặn |

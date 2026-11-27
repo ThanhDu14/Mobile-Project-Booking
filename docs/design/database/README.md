@@ -371,7 +371,7 @@ Ký hiệu: R đọc, C tạo, U sửa, D xóa. "Chủ" = người sở hữu do
 |---|---|---|---|---|
 | `users` | R **của mình**, U của mình trừ 🔒; không C/D | như người chơi | R; khóa/mở khóa qua Edge Function `set-account-status` | Tạo document (`on-signup`), ghi 🔒 |
 | `aiUsage`, `aiSearchCache` | R `aiUsage` của mình; không ghi | như người chơi | R | Ghi toàn bộ |
-| `districts` | R (đã khởi tạo) | như người chơi | R; ghi | — |
+| `districts`, `amenities` | R (khách hoặc đã khởi tạo) | như người chơi | R; ghi | — |
 | `accountDeletions` | Không | Không | Không | Chỉ server (`delete-account`, `delete-account-sweeper`) |
 | `ownerApplications` | C, R của mình; U khi `REJECTED` (nộp lại) | R của mình | R, duyệt qua Edge Function | Ghi 🔒 |
 | `venues`, `courts`, `priceRules` | R khi `ACTIVE` | CRUD cơ sở của mình (trừ 🔒) | R, khóa | Ghi 🔒 |

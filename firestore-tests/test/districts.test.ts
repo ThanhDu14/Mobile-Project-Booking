@@ -21,6 +21,7 @@ beforeEach(async () => {
     await setDoc(doc(db, 'users/player1'), seedUser('player1'));
     await setDoc(doc(db, 'districts/q1'), seedDistrict('Quận 1', 1));
     await setDoc(doc(db, 'districts/q-cu'), seedDistrict('Quận cũ', 99, false));
+    await setDoc(doc(db, 'amenities/parking'), { name: 'Gửi xe', isActive: true });
     await setDoc(doc(db, 'accountDeletions/player1'), { state: 'COMMITTED' });
   });
 });
@@ -39,9 +40,16 @@ describe('districts/{id}', () => {
     await assertSucceeds(getDoc(doc(player(), 'districts/q-cu')));
   });
 
-  it('D2: chưa có appRole thì không get được', async () => {
+  it('D2: tài khoản chưa có appRole không get được', async () => {
     await assertFails(getDoc(doc(env.authenticatedContext('newbie').firestore(), 'districts/q1')));
-    await assertFails(getDoc(doc(env.unauthenticatedContext().firestore(), 'districts/q1')));
+  });
+
+  it('khách đọc được danh mục công khai nhưng không thể ghi', async () => {
+    const guest = env.unauthenticatedContext().firestore();
+    for (const name of ['districts', 'amenities']) {
+      await assertSucceeds(getDocs(collection(guest, name)));
+      await assertFails(setDoc(doc(guest, name, 'new'), { name: 'test' }));
+    }
   });
 
   it('D3: người chơi không ghi được', async () => {
