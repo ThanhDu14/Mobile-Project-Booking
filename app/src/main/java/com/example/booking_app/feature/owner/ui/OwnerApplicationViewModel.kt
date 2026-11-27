@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.booking_app.feature.account.domain.DistrictRepository
 import com.example.booking_app.feature.account.domain.model.District
 import com.example.booking_app.feature.owner.domain.OwnerApplicationDraft
+import com.example.booking_app.feature.owner.domain.OwnerApplicationPurpose
 import com.example.booking_app.feature.owner.domain.OwnerApplicationFieldError
 import com.example.booking_app.feature.owner.domain.OwnerApplicationSnapshot
 import com.example.booking_app.feature.owner.domain.OwnerApplicationState
@@ -31,6 +32,7 @@ data class OwnerPendingUpload(
 )
 
 data class OwnerApplicationUiState(
+    val additionalVenue: Boolean = false,
     val loading: Boolean = true,
     val status: OwnerApplicationStatus? = null,
     val statusFresh: Boolean = false,
@@ -42,6 +44,8 @@ data class OwnerApplicationUiState(
     val busy: Boolean = false,
     val uploads: List<OwnerPendingUpload> = emptyList(),
 ) {
+    val applicationState: OwnerApplicationState?
+        get() = if (additionalVenue) status?.application?.status ?: status?.let { OwnerApplicationState.NONE } else status?.ownerStatus
     companion object {
         fun emptyDraft() = OwnerApplicationDraft(
             venue = OwnerVenueDraft("", "", "", null, "", null, "", "", emptyList()),
@@ -56,6 +60,7 @@ data class OwnerApplicationUiState(
 class OwnerApplicationViewModel @Inject constructor(
     private val repository: OwnerOnboardingRepository,
     private val districtRepository: DistrictRepository,
+    private val sessionManager: com.example.booking_app.core.session.SessionManager? = null,
 ) : ViewModel() {
     private val _uiState = MutableStateFlow(OwnerApplicationUiState())
     val uiState: StateFlow<OwnerApplicationUiState> = _uiState.asStateFlow()
@@ -63,32 +68,47 @@ class OwnerApplicationViewModel @Inject constructor(
     private var originalPaths: Set<String> = emptySet()
     private val retryableUploads = mutableMapOf<String, PendingUploadBytes>()
 
-    fun initialize(resubmit: Boolean = false, forceNew: Boolean = false) {
-        if (initialized) return
+    private var purpose = OwnerApplicationPurpose.OWNER_ONBOARDING
+    private var contextId: String? = null
+    private var editingRejected = false
+
+    fun initialize(resubmit: Boolean = false, forceNew: Boolean = false, additionalVenue: Boolean = false, applicationId: String? = null) {
+        if (initialized && !forceNew && (applicationId == null || contextId == applicationId || _uiState.value.applicationId == applicationId)) {
+            if (resubmit) restoreRejected()
+            return
+        }
         initialized = true
+        purpose = if (additionalVenue) OwnerApplicationPurpose.VENUE_ADDITION else OwnerApplicationPurpose.OWNER_ONBOARDING
+        contextId = applicationId
+        originalPaths = emptySet()
+        editingRejected = false
+        retryableUploads.clear()
+        _uiState.value = OwnerApplicationUiState(additionalVenue = additionalVenue)
         viewModelScope.launch {
-            val statusResult = repository.refreshStatus()
+            val statusResult = currentStatus()
             val status = statusResult.getOrNull()
-            val districts = runCatching { districtRepository.activeDistricts() }.getOrDefault(emptyList())
-            var applicationId = UUID.randomUUID().toString()
+            val districtsResult = loadDistricts()
+            var draftId = applicationId ?: UUID.randomUUID().toString()
             var draft = OwnerApplicationUiState.emptyDraft()
             when {
-                status?.ownerStatus == OwnerApplicationState.REJECTED && status.application != null -> {
-                    applicationId = status.application.applicationId
+                (if (additionalVenue) status?.application?.status else status?.ownerStatus) == OwnerApplicationState.REJECTED && status?.application != null -> {
+                    draftId = status.application.applicationId
                     draft = status.application.draft
                     originalPaths = draft.venue.photoPaths.toSet() + draft.documentPaths
+                    editingRejected = true
                 }
-                status?.ownerStatus == OwnerApplicationState.NONE -> {
-                    val local = repository.loadLocalDraft().getOrNull()
-                    if (local != null) {
+                additionalVenue && status?.application == null || status?.ownerStatus == OwnerApplicationState.NONE -> {
+                    val local = repository.loadDraft(purpose).getOrNull()
+                    if (local != null && (applicationId == null || applicationId == local.first)) {
                         // A locally saved ID must not be reused once its lifecycle already exists
                         // on the server (for example, an approved owner was later revoked).
-                        applicationId = if (local.first == status.application?.applicationId) {
+                        val existing = if (additionalVenue) repository.applicationStatus(purpose, local.first).getOrNull()?.application else status?.application
+                        draftId = if (local.first == existing?.applicationId) {
                             UUID.randomUUID().toString()
                         } else {
                             local.first
                         }
-                        draft = local.second
+                        if (!additionalVenue || local.first != existing?.applicationId) draft = local.second
                     }
                 }
                 status?.ownerStatus == OwnerApplicationState.PENDING -> Unit
@@ -99,24 +119,50 @@ class OwnerApplicationViewModel @Inject constructor(
                     loading = false,
                     status = status,
                     statusFresh = statusResult.isSuccess,
-                    applicationId = applicationId,
+                    applicationId = draftId,
                     draft = draft,
-                    districts = districts,
+                    districts = districtsResult.getOrDefault(emptyList()),
                     message = if (statusResult.isFailure) {
                         statusResult.exceptionOrNull()?.message ?: "Không thể tải trạng thái. Chạm để thử lại."
-                    } else null,
+                    } else districtsResult.exceptionOrNull()?.message,
                 )
             }
+            if (additionalVenue) contextId = draftId
             persistDraft()
         }
     }
 
+    private fun restoreRejected() {
+        if (editingRejected) return
+        val app = _uiState.value.status?.application ?: return
+        if (app.status == OwnerApplicationState.REJECTED) {
+            editingRejected = true
+            originalPaths = app.draft.venue.photoPaths.toSet() + app.draft.documentPaths
+            _uiState.update { it.copy(applicationId = app.applicationId, draft = app.draft) }
+        }
+    }
+
+    private suspend fun currentStatus() = repository.applicationStatus(purpose, contextId)
+
+    suspend fun refreshSession() { sessionManager?.refresh(forceTokenRefresh = true) }
+
     fun refreshStatus() = viewModelScope.launch {
         _uiState.update { it.copy(loading = true, statusFresh = false, message = null) }
-        repository.refreshStatus().onSuccess { status ->
-            _uiState.update { it.copy(loading = false, status = status, statusFresh = true) }
+        val districtsResult = loadDistricts()
+        currentStatus().onSuccess { status ->
+            _uiState.update { it.copy(loading = false, status = status, statusFresh = true,
+                districts = districtsResult.getOrDefault(it.districts), message = districtsResult.exceptionOrNull()?.message) }
         }.onFailure { error ->
             _uiState.update { it.copy(loading = false, statusFresh = false, message = error.message ?: "Không thể làm mới trạng thái") }
+        }
+    }
+
+    private suspend fun loadDistricts(): Result<List<District>> {
+        return try {
+            Result.success(districtRepository.activeDistricts().also { require(it.isNotEmpty()) })
+        } catch (error: Exception) {
+            if (error is kotlinx.coroutines.CancellationException) throw error
+            Result.failure(IllegalStateException("Không tải được quận/huyện. Chạm vào quận/huyện để thử lại.", error))
         }
     }
 
@@ -187,7 +233,7 @@ class OwnerApplicationViewModel @Inject constructor(
                 uploads = state.uploads.filterNot { it.id == id } + OwnerPendingUpload(id, pending.fileName, pending.document),
             )
         }
-        repository.upload(pending.fileName, pending.mime, pending.bytes, applicationId).onSuccess { upload ->
+        repository.uploadApplication(pending.fileName, pending.mime, pending.bytes, applicationId, purpose).onSuccess { upload ->
             retryableUploads.remove(id)
             _uiState.update { state ->
                 val draft = if (pending.document) state.draft.copy(documentPaths = state.draft.documentPaths + upload.path)
@@ -233,13 +279,16 @@ class OwnerApplicationViewModel @Inject constructor(
         val current = _uiState.value
         if (!validate()) return@launch
         _uiState.update { it.copy(loading = true, statusFresh = false, message = null) }
-        val latestResult = repository.refreshStatus()
+        val latestResult = currentStatus()
         val latest = latestResult.getOrNull()
         if (latest == null) {
             _uiState.update { it.copy(loading = false, statusFresh = false, message = "Không thể xác minh trạng thái hồ sơ. Hãy thử lại trước khi nộp.") }
             return@launch
         }
-        val lifecycleAllowed = when (latest.ownerStatus) {
+        val lifecycleAllowed = if (current.additionalVenue) {
+            latest.role == "OWNER" && latest.ownerStatus == OwnerApplicationState.APPROVED &&
+                (latest.application == null || latest.application.applicationId == current.applicationId && latest.application.status == OwnerApplicationState.REJECTED)
+        } else when (latest.ownerStatus) {
             OwnerApplicationState.NONE -> latest.role == "PLAYER" && latest.application?.applicationId != current.applicationId
             OwnerApplicationState.REJECTED -> latest.role == "PLAYER" && latest.application?.applicationId == current.applicationId
             OwnerApplicationState.PENDING, OwnerApplicationState.APPROVED -> false
@@ -257,14 +306,14 @@ class OwnerApplicationViewModel @Inject constructor(
         _uiState.update { it.copy(loading = false, status = latest, statusFresh = true) }
         val fresh = _uiState.value
         _uiState.update { it.copy(busy = true, message = null) }
-        repository.submit(fresh.applicationId, fresh.draft).onSuccess { status ->
+        repository.submitApplication(fresh.applicationId, fresh.draft, purpose).onSuccess { status ->
             val kept = fresh.draft.venue.photoPaths.toSet() + fresh.draft.documentPaths
             (originalPaths - kept).forEach { repository.deleteStaged(it) }
             originalPaths = kept
             _uiState.update { it.copy(busy = false, status = status, statusFresh = true) }
         }.onFailure { error ->
             // On an ambiguous response, read authoritative state before offering another submit.
-            val latest = repository.refreshStatus().getOrNull()
+            val latest = currentStatus().getOrNull()
             _uiState.update {
                 it.copy(
                     busy = false,
@@ -286,7 +335,8 @@ class OwnerApplicationViewModel @Inject constructor(
     private fun persistDraft() {
         val state = _uiState.value
         if (state.loading) return
-        viewModelScope.launch { repository.saveLocalDraft(state.applicationId, state.draft) }
+        val draftPurpose = purpose
+        viewModelScope.launch { repository.saveDraft(state.applicationId, state.draft, draftPurpose) }
     }
 
     private data class PendingUploadBytes(

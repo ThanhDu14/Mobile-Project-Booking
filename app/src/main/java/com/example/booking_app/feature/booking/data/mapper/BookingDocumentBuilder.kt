@@ -28,7 +28,7 @@ object BookingDocumentBuilder {
         validateSlotGaps(args.slotIds)
 
         val fullAddress = args.venueAddress.ifEmpty {
-            if (args.districtName.isNotEmpty()) "Quận ${args.districtName}, TP. Hồ Chí Minh" else "TP. Hồ Chí Minh"
+            if (args.districtName.isNotEmpty()) "${args.districtName}, TP. Hồ Chí Minh" else "TP. Hồ Chí Minh"
         }
 
         val venueSnapshot = hashMapOf<String, Any?>(

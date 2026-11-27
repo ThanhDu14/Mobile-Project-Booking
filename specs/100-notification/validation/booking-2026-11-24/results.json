@@ -1,0 +1,72 @@
+{
+    "date":  "2026-11-24",
+    "progress":  "39/56",
+    "approved":  [
+                     "B1 source pending",
+                     "B2"
+                 ],
+    "closed":  [
+                   "T015",
+                   "T016",
+                   "T019"
+               ],
+    "blocked":  "T018 actual payment transaction absent",
+    "bookingEmulator":  {
+                            "verified":  14,
+                            "additionalPositive":  1,
+                            "initialFailedFixtures":  3,
+                            "ignoredInVerifiedRun":  0
+                        },
+    "regressions":  22,
+    "android":  "assembleDebug lintDebug PASS",
+    "lintErrors":  0,
+    "lintWarnings":  858,
+    "environment":  {
+                        "FIREBASE_PROJECT_ID":  "demo-f100-booking-24 / demo-f100-booking-positive",
+                        "FIRESTORE_EMULATOR_HOST":  "127.0.0.1:8080",
+                        "FIREBASE_AUTH_EMULATOR_HOST":  "127.0.0.1:9099",
+                        "DenoExecutable":  "C:/Users/ACER/AppData/Local/npm-cache/_npx/05b6ef7b13673c57/node_modules/deno/deno.exe"
+                    },
+    "commands":  [
+                     "deno test --allow-env --allow-net supabase/functions/booking-reminders/handler.test.ts",
+                     "deno test --allow-env --allow-net --filter \"B2 valid reminder\" supabase/functions/booking-reminders/handler.test.ts",
+                     "deno test --allow-env supabase/functions/_shared/notification-worker.test.ts supabase/functions/_shared/firestore-transaction.test.ts supabase/functions/_shared/firestore-list.test.ts",
+                     "gradlew.bat assembleDebug lintDebug"
+                 ],
+    "notRun":  [
+                   "Docker/Supabase local cron SQL: daemon unavailable",
+                   "actual payment producer integration: source absent",
+                   "UI matrix/JVM suites: no Android code changes",
+                   "real push/deploy/live migration/commit/push"
+               ],
+    "files":  [
+                  {
+                      "name":  "booking-android-build.log",
+                      "sha256":  "275f9e7d9b1491f624bdcfcbd58788ea5e9c43f6b9dd46f58bf2b2e15bf44d95"
+                  },
+                  {
+                      "name":  "booking-check.log",
+                      "sha256":  "6a1b765ed05e56a71006eb864b598e7e03f2da4605fe59acf284f58e0ffe2296"
+                  },
+                  {
+                      "name":  "booking-emulator-final.log",
+                      "sha256":  "a88b8a79b0bba0faf08a9174384f0e1ab563e81d1acf5cea44bd5208fa493874"
+                  },
+                  {
+                      "name":  "booking-emulator-verified.log",
+                      "sha256":  "f7c7036bf7ce2fdc78735aeada8981c0c3049103d08a7565a8ac3dd58b42eb8b"
+                  },
+                  {
+                      "name":  "booking-emulator.log",
+                      "sha256":  "0d59154e6c9ed5c70d463079075a582dbedb153a56ac19619ef26ea1ca679ad7"
+                  },
+                  {
+                      "name":  "booking-positive.log",
+                      "sha256":  "e906b0c17259c0def45012b106400afaee81712c9c1dfac1919152a2fc544676"
+                  },
+                  {
+                      "name":  "booking-regressions.log",
+                      "sha256":  "805816c034a6b074b870c9d620dd1cb1e518fc6d85155ce1a563afa2453f880f"
+                  }
+              ]
+}

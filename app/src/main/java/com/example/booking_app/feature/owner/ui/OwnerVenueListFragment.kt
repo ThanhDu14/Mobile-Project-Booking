@@ -3,6 +3,7 @@ package com.example.booking_app.feature.owner.ui
 import android.os.Bundle
 import android.view.View
 import androidx.fragment.app.Fragment
+import androidx.core.net.toUri
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -23,20 +24,34 @@ class OwnerVenueListFragment : Fragment(R.layout.fragment_owner_venue_list) {
     private val adapter = OwnerVenueAdapter(
         onOpen = { venue -> findNavController().navigate(OwnerVenueListFragmentDirections.actionOwnerVenueListToDetail(venue.id)) },
         onHide = { viewModel.hide(it.id) },
-        onToggleRecurring = { viewModel.toggleRecurring(it) }
+        onToggleRecurring = { viewModel.toggleRecurring(it) },
+        onNavigate = { venue, section ->
+            val destination = when(section) {
+                "prices" -> R.id.ownerPriceRuleFragment
+                "slots" -> R.id.ownerSlotBlockFragment
+                "courts" -> R.id.ownerVenueDetailFragment
+                "dropin" -> R.id.ownerDropInFragment
+                "vouchers" -> R.id.ownerVouchersFragment
+                else -> R.id.ownerStatisticsFragment
+            }
+            findNavController().navigate(destination,Bundle().apply { putString("venueId",venue.id); putString("section",section); putString("courtId","") })
+        },
     )
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         _binding = FragmentOwnerVenueListBinding.bind(view)
         binding.venues.adapter = adapter
         binding.retry.setOnClickListener { viewModel.load() }
-        binding.addVenue.setOnClickListener { binding.formMessage.setText(R.string.owner_venue_add_server_only) }
+        binding.addVenue.setOnClickListener { findNavController().navigate("smashnow://owner/apply?mode=addition".toUri()) }
+        binding.venueApplications.setOnClickListener { findNavController().navigate("smashnow://owner/venue-applications".toUri()) }
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect(::render)
             }
         }
     }
+
+    override fun onResume() { super.onResume(); viewModel.load() }
 
     private fun render(state: OwnerVenueListUiState) {
         binding.progress.visibility = if (state.isLoading) View.VISIBLE else View.GONE

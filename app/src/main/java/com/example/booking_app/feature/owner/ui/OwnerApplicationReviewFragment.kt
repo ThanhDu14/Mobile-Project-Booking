@@ -4,7 +4,7 @@ import android.os.Bundle
 import android.view.View
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.activityViewModels
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -19,13 +19,17 @@ import kotlinx.coroutines.launch
 class OwnerApplicationReviewFragment : Fragment(R.layout.fragment_owner_application_review) {
     private var _binding: FragmentOwnerApplicationReviewBinding? = null
     private val binding get() = checkNotNull(_binding)
-    private val viewModel: OwnerApplicationViewModel by activityViewModels()
+    private val viewModel: OwnerApplicationViewModel by viewModels(
+        ownerProducer = { findNavController().getBackStackEntry(R.id.nav_account) },
+        factoryProducer = { defaultViewModelProviderFactory },
+    )
     private var navigating = false
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         _binding = FragmentOwnerApplicationReviewBinding.bind(view)
+        viewModel.initialize(additionalVenue = arguments?.getBoolean("additionalVenue") == true, applicationId = arguments?.getString("applicationId"))
         binding.backButton.setOnClickListener { findNavController().navigateUp() }
-        val edit = View.OnClickListener { findNavController().navigate(R.id.action_ownerApplicationReview_to_form) }
+        val edit = View.OnClickListener { findNavController().popBackStack() }
         binding.editVenue.setOnClickListener(edit)
         binding.editRepresentative.setOnClickListener(edit)
         binding.editFiles.setOnClickListener(edit)
@@ -54,9 +58,12 @@ class OwnerApplicationReviewFragment : Fragment(R.layout.fragment_owner_applicat
                     binding.submitButton.isEnabled = !state.busy && !state.loading
                     binding.reviewMessage.isVisible = state.message != null || state.errors.isNotEmpty()
                     binding.reviewMessage.text = state.message ?: state.errors.firstOrNull()?.message.orEmpty()
-                    if (!navigating && !state.busy && state.status?.ownerStatus == com.example.booking_app.feature.owner.domain.OwnerApplicationState.PENDING) {
+                    if (!navigating && !state.busy && state.applicationState == com.example.booking_app.feature.owner.domain.OwnerApplicationState.PENDING) {
                         navigating = true
-                        findNavController().navigate(R.id.action_ownerApplicationReview_to_status)
+                        findNavController().navigate(R.id.action_ownerApplicationReview_to_status, Bundle().apply {
+                            putString("mode", "current")
+                            if (state.additionalVenue) putString("applicationId", state.applicationId)
+                        })
                     }
                 }
             }

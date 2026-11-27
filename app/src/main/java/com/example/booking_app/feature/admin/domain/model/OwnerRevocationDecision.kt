@@ -3,6 +3,7 @@ package com.example.booking_app.feature.admin.domain.model
 data class OwnerRevocationDecision(
     val uid: String,
     val reason: String,
+    val requestId: String = java.util.UUID.randomUUID().toString(),
 ) {
     fun validate(): String? {
         if (uid.isBlank()) return "Mã người dùng không được để trống"

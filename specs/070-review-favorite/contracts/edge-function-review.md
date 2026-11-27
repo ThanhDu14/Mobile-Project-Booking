@@ -107,3 +107,8 @@ export async function applyReviewVisibility(tx: Transaction, reviewId: string, v
 ```
 
 Đổi `status` giữa `VISIBLE`/`HIDDEN` và cộng/trừ `ratingSums`, `ratingCount`, `ratingAvg` của cơ sở trong transaction `tx` của người gọi. Không làm gì nếu trạng thái đã đúng.
+
+
+## R1 approved 24/11/2026
+
+User approved R1 in specs/100-notification/continuation-decisions-2026-11-24.md: server-only reviews.notificationGeneration UUID on create/recreate, retained on edit; assign on first legacy reply without backfill. REVIEW_NEW and first REVIEW_REPLIED enqueue with source transaction, actor excluded, current venue owner checked. Replace corresponding callbacks; existing six inbox fields and D1 jobs reused. Reminder/revocation/group fanout remain outside scope.

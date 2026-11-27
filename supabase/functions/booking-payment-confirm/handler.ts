@@ -12,6 +12,7 @@ import {
   type Write,
 } from "../_shared/firestore.ts";
 import { readJsonObject, runWithBackoff, UUID } from "../_shared/dropin-tx.ts";
+import { prepareBookingNew } from "../_shared/booking-notification.ts";
 import { normalizeVoucherCode } from "../_shared/payment-voucher.ts";
 import { parseSlotId } from "../_shared/slot-pricing.ts";
 import {
@@ -26,7 +27,6 @@ import {
   holdExpired,
   itemsOf,
   loadOrder,
-  notificationWrite,
   paymentFields,
   priceBreakdown,
   type Receipt,
@@ -222,6 +222,7 @@ async function confirmSingle(
     createdAt: asDate(existing?.createdAt) ?? now,
     updatedAt: now,
   };
+  const notifications = await prepareBookingNew(tx, id, doc, now, `booking_new_${id}`);
 
   return {
     result: bookingResult(id, doc),
@@ -240,13 +241,7 @@ async function confirmSingle(
       ),
       ...voucher.writes,
       ...deactivateCode(existing),
-      ...notificationWrite(
-        order.ownerId,
-        id,
-        String(order.venueSnapshot.name),
-        false,
-        now,
-      ),
+      ...notifications,
     ],
   };
 }
@@ -366,7 +361,10 @@ async function confirmRecurring(
     pendingAt: now,
     updatedAt: now,
   };
-  const venueName = String(order.venueSnapshot.name);
+  const first = [...sessions].sort((a, b) =>
+    (a.patch.startAt as Date).getTime() - (b.patch.startAt as Date).getTime() || a.id.localeCompare(b.id)
+  )[0];
+  const notifications = await prepareBookingNew(tx, first.id, { ...first.data, venueId }, now, `booking_new_${id}`);
   return {
     result: groupResult(
       id,
@@ -384,7 +382,7 @@ async function confirmRecurring(
       ),
       ...voucher.writes,
       ...deactivateCode(group),
-      ...notificationWrite(order.ownerId, id, venueName, true, now),
+      ...notifications,
     ],
   };
 }

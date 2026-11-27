@@ -4,7 +4,7 @@ import com.example.booking_app.feature.owner.data.ManageSlotBlocksApi
 import com.example.booking_app.feature.owner.data.OwnerBookingRepositoryImpl
 import com.example.booking_app.feature.owner.data.BookingCheckInRepositoryImpl
 import com.example.booking_app.feature.owner.data.OwnerDropInRepositoryImpl
-import com.example.booking_app.feature.owner.data.ContractPendingOwnerVoucherRepository
+import com.example.booking_app.feature.owner.data.FirestoreOwnerVoucherRepository
 import com.example.booking_app.feature.owner.data.FirestoreOwnerStatisticsRepository
 import com.example.booking_app.feature.owner.data.OwnerOnboardingDataSource
 import com.example.booking_app.feature.owner.data.OwnerVenueRepositoryImpl
@@ -55,7 +55,7 @@ abstract class OwnerModule {
 
     @Binds
     @Singleton
-    abstract fun bindOwnerVoucherRepository(impl: ContractPendingOwnerVoucherRepository): OwnerVoucherRepository
+    abstract fun bindOwnerVoucherRepository(impl: FirestoreOwnerVoucherRepository): OwnerVoucherRepository
 
     @Binds
     @Singleton

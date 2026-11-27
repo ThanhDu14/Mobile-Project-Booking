@@ -1,0 +1,40 @@
+deno.exe : Check supabase/functions/register-drop-in/handler.test.ts
+At line:2 char:1
++ & 'C:/Users/ACER/AppData/Local/npm-cache/_npx/05b6ef7b13673c57/node_m ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Check supabase/...handler.test.ts:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+running 29 tests from ./supabase/functions/register-drop-in/handler.test.ts
+201 MOCK_PAY: response đúng contract, không có qrToken; đăng ký đủ trường 🔒; buổi +partySize ... ok (17ms)
+AT_VENUE → paymentStatus UNPAID; amount = pricePerPerson × partySize ... ok (2ms)
+registeredCount == capacity sau khi đăng ký → status FULL ... ok (1ms)
+E3: cùng requestId gửi 5 lần song song → 1×201, 4×200 cùng vé, đếm tăng 1 lần, thông báo 1 lần ... ok (2ms)
+cùng requestId khi đã CHECKED_IN hoặc buổi đã FULL → 200 trả bản cũ ... ok (507µs)
+đã REGISTERED, requestId khác → 409 ALREADY_REGISTERED; WAITLISTED → 409 ALREADY_WAITLISTED ... ok (1ms)
+E11: ghi đè bản CANCELLED cũ → 201, qrToken/ticketCode mới, xóa trường hủy ... ok (659µs)
+E8: buổi đã bắt đầu → 409 SESSION_STARTED (kể cả đúng startAt) ... ok (680µs)
+E8: buổi CANCELLED/COMPLETED → 409 SESSION_CANCELLED ... ok (343µs)
+E8: cơ sở HIDDEN/LOCKED/không còn → 409 VENUE_INACTIVE ... ok (458µs)
+E8: chủ sân tự đăng ký buổi của mình → 403 OWN_SESSION ... ok (223µs)
+không có buổi → 404 SESSION_NOT_FOUND ... ok (159µs)
+không đủ chỗ → 409 SESSION_FULL kèm remaining, không ghi gì ... ok (671µs)
+E9: partySize 0/5/1.5/"2", paymentMethod sai, requestId không phải UUID, thiếu sessionId → 400 INVALID_ARGUMENT ... ok (1ms)
+partySize 1 và 4 hợp lệ ... ok (839µs)
+không có token → 401 UNAUTHENTICATED; GET → 405 ... ok (1ms)
+ACCOUNT_LOCKED từ authenticate được trả nguyên ... ok (417µs)
+gửi thông báo lỗi → vẫn 201 ... ok (1ms)
+ABORTED 2 lần rồi thành công → 201, đếm chỉ tăng 1 lần ... ok (1ms)
+hết 8 lần thử → 503 BUSY, không gửi thông báo ... ok (500µs)
+createKeyedSerializer: cùng khóa chạy lần lượt (kể cả task trước lỗi), khác khóa chạy song song ... ok (192µs)
+ADD_PARTY: thêm 1 người → 200, partySize 3, amount cộng thêm, buổi +1, giữ QR và mã vé ... ok (610µs)
+ADD_PARTY: AT_VENUE thì vẫn UNPAID; đủ chỗ cuối → buổi FULL ... ok (519µs)
+ADD_PARTY: cùng requestId gửi lại → 200, chỉ cộng một lần ... ok (400µs)
+ADD_PARTY: tổng vượt 4 người → 409 PARTY_LIMIT kèm maxAdditional, không ghi gì ... ok (480µs)
+ADD_PARTY: không đủ chỗ → 409 SESSION_FULL kèm remaining ... ok (254µs)
+ADD_PARTY: chưa đăng ký, đã hủy hoặc đã check-in → 409 NOT_REGISTERED ... ok (498µs)
+ADD_PARTY: buổi đã bắt đầu, bị hủy, cơ sở ngừng → mã lỗi như đăng ký ... ok (478µs)
+ADD_PARTY: additional 0/4/1.5, requestId sai, action lạ → 400 INVALID_ARGUMENT ... ok (603µs)
+
+ok | 29 passed | 0 failed (55ms)
+

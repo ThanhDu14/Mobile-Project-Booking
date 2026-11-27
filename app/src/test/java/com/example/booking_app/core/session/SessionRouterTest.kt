@@ -4,7 +4,9 @@ import android.net.Uri
 import com.example.booking_app.core.network.AppError
 import io.mockk.mockk
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class SessionRouterTest {
@@ -120,5 +122,18 @@ class SessionRouterTest {
                 )
             }
         }
+    }
+
+    @Test
+    fun `M1 mo app lanh bang deep link chi mo lai deep link khi dich la man chinh`() {
+        assertTrue(SessionRouter.replayDeepLinkAfter(RouteDecision.RoleHome(AppRole.PLAYER)))
+        assertTrue(SessionRouter.replayDeepLinkAfter(RouteDecision.ResetTo(AppRole.OWNER)))
+        assertTrue(SessionRouter.replayDeepLinkAfter(RouteDecision.PlayerGuest(showLockedLogin = false)))
+        assertFalse(SessionRouter.replayDeepLinkAfter(RouteDecision.PlayerGuest(showLockedLogin = true)))
+        assertFalse(SessionRouter.replayDeepLinkAfter(RouteDecision.PlayerGuest(false, GuestNotice.SESSION_REVOKED)))
+        assertFalse(SessionRouter.replayDeepLinkAfter(RouteDecision.PlayerGuest(false, GuestNotice.ACCOUNT_DELETED)))
+        assertFalse(SessionRouter.replayDeepLinkAfter(RouteDecision.Welcome))
+        assertFalse(SessionRouter.replayDeepLinkAfter(RouteDecision.Consent))
+        assertFalse(SessionRouter.replayDeepLinkAfter(RouteDecision.AccountSetup))
     }
 }

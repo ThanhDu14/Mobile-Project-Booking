@@ -1,6 +1,7 @@
 package com.example.booking_app.feature.owner.ui.dropin
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.viewModelScope
 import com.example.booking_app.feature.owner.domain.OwnerVenueRepository
 import com.example.booking_app.feature.owner.domain.dropin.OwnerDropInDraft
@@ -36,8 +37,10 @@ data class OwnerDropInUiState(
 class OwnerDropInViewModel @Inject constructor(
     private val venueRepository: OwnerVenueRepository,
     private val dropInRepository: OwnerDropInRepository,
+    private val savedStateHandle: SavedStateHandle = SavedStateHandle(),
 ) : ViewModel() {
-    private val _uiState = MutableStateFlow(OwnerDropInUiState(isLoading = true))
+    private val _uiState = MutableStateFlow(OwnerDropInUiState(isLoading = true,
+        selectedVenueId = savedStateHandle["selectedVenueId"] ?: savedStateHandle["venueId"]))
     val uiState = _uiState.asStateFlow()
     private var venuesJob: Job? = null
     private var sessionJob: Job? = null
@@ -50,6 +53,7 @@ class OwnerDropInViewModel @Inject constructor(
     }
 
     fun selectVenue(venueId: String) {
+        savedStateHandle["selectedVenueId"] = venueId
         if (venueId != _uiState.value.selectedVenueId) {
             _uiState.value = _uiState.value.copy(selectedVenueId = venueId, sessions = emptyList(), courts = emptyList())
         }
@@ -58,13 +62,14 @@ class OwnerDropInViewModel @Inject constructor(
     }
 
     fun create(draft: OwnerDropInDraft) {
+        if (_uiState.value.isSaving) return
         val errors = OwnerDropInDraftValidation.validate(draft)
         if (errors.isNotEmpty()) {
             _uiState.value = _uiState.value.copy(validationErrors = errors, error = null, completedMessage = null)
             return
         }
+        _uiState.value = _uiState.value.copy(isSaving = true, error = null, validationErrors = emptyList(), completedMessage = null)
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isSaving = true, error = null, completedMessage = null)
             dropInRepository.createSession(draft)
                 .onSuccess {
                     _uiState.value = _uiState.value.copy(isSaving = false, validationErrors = emptyList(), completedMessage = "Đã tạo buổi")
@@ -73,6 +78,29 @@ class OwnerDropInViewModel @Inject constructor(
                 .onFailure { failure ->
                     _uiState.value = _uiState.value.copy(isSaving = false, error = failure.message ?: "Không tạo được buổi")
                 }
+        }
+    }
+
+    fun update(sessionId: String, draft: OwnerDropInDraft) {
+        if (_uiState.value.isSaving) return
+        val registered = _uiState.value.sessions.firstOrNull { it.sessionId == sessionId }?.registeredCount ?: 0
+        val errors = OwnerDropInDraftValidation.validate(draft,registered)
+        if (errors.isNotEmpty()) { _uiState.value = _uiState.value.copy(validationErrors=errors); return }
+        _uiState.value = _uiState.value.copy(isSaving=true,error=null,completedMessage=null,validationErrors=emptyList())
+        viewModelScope.launch {
+            dropInRepository.updateSession(draft.venueId,sessionId,draft)
+                .onSuccess { _uiState.value = _uiState.value.copy(isSaving=false,completedMessage="Đã cập nhật buổi") }
+                .onFailure { _uiState.value = _uiState.value.copy(isSaving=false,error=it.message ?: "Không sửa được buổi") }
+        }
+    }
+
+    fun cancel(venueId: String, sessionId: String, reason: String) {
+        if (_uiState.value.isSaving) return
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isSaving=true,error=null,completedMessage=null)
+            dropInRepository.cancelSession(venueId,sessionId,reason)
+                .onSuccess { _uiState.value = _uiState.value.copy(isSaving=false,completedMessage="Đã hủy buổi") }
+                .onFailure { _uiState.value = _uiState.value.copy(isSaving=false,error=it.message ?: "Không hủy được buổi") }
         }
     }
 
@@ -86,6 +114,7 @@ class OwnerDropInViewModel @Inject constructor(
     }
 
     fun checkIn(venueId: String, sessionId: String, credential: String) {
+        if (_uiState.value.isSaving) return
         if (credential.isBlank()) {
             _uiState.value = _uiState.value.copy(error = "Nhập hoặc quét mã đăng ký.")
             return
@@ -93,7 +122,7 @@ class OwnerDropInViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isSaving = true, error = null)
             dropInRepository.checkIn(venueId, sessionId, credential.trim())
-                .onSuccess { _uiState.value = _uiState.value.copy(isSaving = false, completedMessage = "Đã check-in") }
+                .onSuccess { _uiState.value = _uiState.value.copy(isSaving = false, completedMessage = "Đã check-in"); loadRoster(venueId,sessionId) }
                 .onFailure { failure -> _uiState.value = _uiState.value.copy(isSaving = false, error = failure.message ?: "Không check-in được") }
         }
     }

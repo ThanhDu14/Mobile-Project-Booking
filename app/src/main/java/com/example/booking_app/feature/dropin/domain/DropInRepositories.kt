@@ -7,6 +7,7 @@ import com.example.booking_app.feature.dropin.domain.model.DropInRegistration
 import com.example.booking_app.feature.dropin.domain.model.DropInSession
 import com.example.booking_app.feature.dropin.domain.model.Page
 import com.example.booking_app.feature.dropin.domain.model.RegisterRequest
+import com.example.booking_app.feature.dropin.domain.model.WaitlistJoinResult
 import kotlinx.coroutines.flow.Flow
 
 /** Đọc buổi vãng lai (T012, research R6). */
@@ -30,6 +31,18 @@ interface DropInRegistrationRepository {
 
     /** US4: hủy lượt của mình; gửi lại cùng [requestId] không trả chỗ hai lần. */
     suspend fun cancel(sessionId: String, requestId: String): Result<DropInRegistration>
+
+    /**
+     * Spec 081 US1: vào hàng chờ của buổi đã đủ người (`register-drop-in` với `joinWaitlist = true`). Chưa giữ chỗ, chưa
+     * thanh toán; gửi lại cùng `requestId` không tạo lượt thứ hai (FR-003).
+     */
+    suspend fun joinWaitlist(req: RegisterRequest): Result<WaitlistJoinResult>
+
+    /**
+     * Spec 081 US3: rời hàng chờ (`cancel-drop-in` với `expectWaitlisted = true`), luôn 0 đ. Lượt đã được đẩy lên thì
+     * thất bại với `AlreadyPromoted` và không hủy đăng ký (FR-013).
+     */
+    suspend fun leaveWaitlist(sessionId: String, requestId: String): Result<DropInRegistration>
 
     /** Đăng ký của chính mình ở buổi này; `null` khi chưa có hoặc là khách. */
     fun observeMine(sessionId: String): Flow<DropInRegistration?>

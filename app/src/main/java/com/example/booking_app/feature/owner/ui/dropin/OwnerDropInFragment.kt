@@ -37,7 +37,8 @@ class OwnerDropInFragment : Fragment(R.layout.fragment_owner_dropin) {
         super.onViewCreated(view, savedInstanceState)
         _binding = FragmentOwnerDropinBinding.bind(view)
         binding.refresh.setOnClickListener { viewModel.refresh() }
-        binding.createSession.setOnClickListener { findNavController().navigate(R.id.action_ownerDropIn_to_form) }
+        binding.createSession.setOnClickListener { findNavController().navigate(R.id.action_ownerDropIn_to_form,
+            Bundle().apply { putString("venueId", viewModel.uiState.value.selectedVenueId) }) }
         binding.venueSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onNothingSelected(parent: AdapterView<*>?) = Unit
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {

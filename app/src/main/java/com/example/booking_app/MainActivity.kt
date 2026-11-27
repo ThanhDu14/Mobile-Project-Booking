@@ -17,6 +17,7 @@ import androidx.navigation.NavDestination
 import androidx.navigation.NavDeepLinkRequest
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.navOptions
+import com.example.booking_app.core.chat.UnreadChatsReader
 import com.example.booking_app.core.session.AppRole
 import com.example.booking_app.core.session.GuestNotice
 import com.example.booking_app.core.session.RouteDecision
@@ -26,6 +27,8 @@ import com.example.booking_app.core.session.rootGraphFor
 import com.example.booking_app.databinding.ActivityMainBinding
 import com.google.android.material.snackbar.Snackbar
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.coroutineScope
@@ -46,6 +49,11 @@ class MainActivity : AppCompatActivity() {
     private val navController: NavController by lazy {
         (supportFragmentManager.findFragmentById(R.id.nav_host_fragment) as NavHostFragment).navController
     }
+
+    @Inject lateinit var unreadChatsReader: UnreadChatsReader
+
+    /** Số cuộc chưa đọc theo chế độ hiện tại: Cộng đồng của PLAYER hoặc Tin nhắn của OWNER. */
+    private var unreadChats = 0
 
     /** Menu đang gắn vào BottomNav; layout khởi tạo bằng menu người chơi. */
     private var bottomNavMenu = R.menu.menu_player_bottom_nav
@@ -114,7 +122,32 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                unreadChatsReader.observeUnreadChatCount().catch { emit(0) }.collect { count ->
+                    unreadChats = count
+                    applyChatBadge()
+                }
+            }
+        }
         setUpBottomNav()
+    }
+
+    private fun applyChatBadge() {
+        val tab = when (bottomNavMenu) {
+            R.menu.menu_player_bottom_nav -> R.id.tab_community
+            R.menu.menu_owner_bottom_nav -> R.id.tab_owner_messages
+            else -> return
+        }
+        if (unreadChats > 0) {
+            binding.bottomNav.getOrCreateBadge(tab).apply {
+                maxNumber = 99
+                number = unreadChats
+                isVisible = true
+            }
+        } else {
+            binding.bottomNav.removeBadge(tab)
+        }
     }
 
     override fun onDestroy() {
@@ -131,8 +164,8 @@ class MainActivity : AppCompatActivity() {
     /**
      * Một BottomNav cho cả hai chế độ, đổi menu theo graph gốc: BottomNav người chơi trong `nav_player`, OwnerNav
      * trong `nav_owner`. Chỉ hiện ở màn gốc của tab và ở trang Tài khoản. Người chơi đã nối Trang chủ, Vãng lai (Tìm kiếm,
-     * Cộng đồng chờ spec 020/090), Lịch đặt là màn tạm; chủ sân mới nối Hôm nay (màn tạm) và Cơ sở (Đơn đặt,
-     * Lịch sân, Tin nhắn chờ spec 112). Tab chưa có màn hình báo "đang phát triển". Không có tab Tài khoản: trang
+     * Cộng đồng), Lịch đặt; chủ sân có Hôm nay, Đơn đặt, Lịch sân, Tin nhắn khách hàng và Cơ sở.
+     * Tin nhắn dùng chung graph chat 091. Không có tab Tài khoản: trang
      * Tài khoản mở từ avatar ở header dùng chung (spec 011 US8) và giữ sáng tab đã mở nó.
      */
     private fun setUpBottomNav() {
@@ -141,7 +174,11 @@ class MainActivity : AppCompatActivity() {
         binding.bottomNav.setOnItemSelectedListener { item ->
             when (item.itemId) {
                 R.id.tab_home -> {
-                    navController.popBackStack(R.id.homeFragment, false)
+                    navController.popBackStack(R.id.homeFragment, false, true)
+                    true
+                }
+                R.id.tab_search -> {
+                    openCourtSearch()
                     true
                 }
                 R.id.tab_bookings -> {
@@ -152,12 +189,20 @@ class MainActivity : AppCompatActivity() {
                     openDropIn()
                     true
                 }
+                R.id.tab_community -> {
+                    openCommunity()
+                    true
+                }
                 R.id.tab_owner_today -> {
                     navController.popBackStack(R.id.ownerHomePlaceholderFragment, false)
                     true
                 }
                 R.id.tab_owner_venues -> {
                     openOwnerVenues()
+                    true
+                }
+                R.id.tab_owner_messages -> {
+                    openOwnerMessages()
                     true
                 }
                 R.id.tab_owner_schedule -> {
@@ -244,10 +289,13 @@ class MainActivity : AppCompatActivity() {
             if (navController.currentDestination?.id != R.id.accountFragment) return@setOnItemReselectedListener
             when (item.itemId) {
                 R.id.tab_home -> navController.popBackStack(R.id.homeFragment, false)
+                R.id.tab_search -> navController.popBackStack(R.id.courtSearchFragment, false)
                 R.id.tab_bookings -> openMyBookings()
                 R.id.tab_drop_in -> openDropIn()
+                R.id.tab_community -> openCommunity()
                 R.id.tab_owner_today -> navController.popBackStack(R.id.ownerHomePlaceholderFragment, false)
                 R.id.tab_owner_venues -> openOwnerVenues()
+                R.id.tab_owner_messages -> openOwnerMessages()
             }
         }
         navController.addOnDestinationChangedListener { _, destination, _ -> updateBottomNav(destination) }
@@ -259,15 +307,35 @@ class MainActivity : AppCompatActivity() {
             null,
             navOptions {
                 launchSingleTop = true
-                popUpTo(R.id.homeFragment)
+                popUpTo(R.id.homeFragment) { saveState = true }
             },
         )
+    }
+
+    private fun openCourtSearch() {
+        navController.navigate(R.id.courtSearchFragment, null, navOptions {
+            launchSingleTop = true
+            restoreState = true
+            popUpTo(R.id.homeFragment) { saveState = true }
+        })
     }
 
     /** Tab Vãng lai (spec 080 T015): danh sách buổi, màn gốc `dropInListFragment` của graph `nav_dropin`. */
     private fun openDropIn() {
         navController.navigate(
             R.id.nav_dropin,
+            null,
+            navOptions {
+                launchSingleTop = true
+                popUpTo(R.id.homeFragment) { saveState = true }
+            },
+        )
+    }
+
+    /** Tab Cộng đồng (spec 090 T019): màn gốc `communityHomeFragment` của graph `nav_community`. */
+    private fun openCommunity() {
+        navController.navigate(
+            R.id.nav_community,
             null,
             navOptions {
                 launchSingleTop = true
@@ -280,6 +348,16 @@ class MainActivity : AppCompatActivity() {
         navController.navigate(
             R.id.ownerVenueListFragment,
             null,
+            navOptions {
+                launchSingleTop = true
+                popUpTo(R.id.ownerHomePlaceholderFragment)
+            },
+        )
+    }
+
+    private fun openOwnerMessages() {
+        navController.navigate(
+            deepLink("smashnow://chat/owner"),
             navOptions {
                 launchSingleTop = true
                 popUpTo(R.id.ownerHomePlaceholderFragment)
@@ -305,23 +383,28 @@ class MainActivity : AppCompatActivity() {
                 R.id.ownerCalendarFragment -> R.id.tab_owner_schedule
                 R.id.ownerBookingsFragment -> R.id.tab_owner_bookings
                 R.id.ownerVenueListFragment -> R.id.tab_owner_venues
+                R.id.ownerChatListFragment -> R.id.tab_owner_messages
                 // Không có tab Tài khoản: giữ sáng tab đã mở trang này (avatar ở Hôm nay → Hôm nay).
                 R.id.accountFragment ->
-                    if (navController.previousBackStackEntry?.destination?.id == R.id.ownerVenueListFragment) {
-                        R.id.tab_owner_venues
-                    } else {
-                        R.id.tab_owner_today
+                    when (navController.previousBackStackEntry?.destination?.id) {
+                        R.id.ownerVenueListFragment -> R.id.tab_owner_venues
+                        R.id.ownerChatListFragment -> R.id.tab_owner_messages
+                        else -> R.id.tab_owner_today
                     }
                 else -> null
             }
             else -> when (destination.id) {
                 R.id.homeFragment -> R.id.tab_home
+                R.id.courtSearchFragment -> R.id.tab_search
                 R.id.myBookingsFragment -> R.id.tab_bookings
                 R.id.dropInListFragment -> R.id.tab_drop_in
+                R.id.communityHomeFragment -> R.id.tab_community
                 // Giữ sáng tab đã mở trang Tài khoản.
                 R.id.accountFragment -> when (navController.previousBackStackEntry?.destination?.id) {
+                    R.id.courtSearchFragment -> R.id.tab_search
                     R.id.myBookingsFragment -> R.id.tab_bookings
                     R.id.dropInListFragment -> R.id.tab_drop_in
+                    R.id.communityHomeFragment -> R.id.tab_community
                     else -> R.id.tab_home
                 }
                 else -> null
@@ -332,7 +415,8 @@ class MainActivity : AppCompatActivity() {
             ownerMode -> R.id.nav_owner
             else -> R.id.nav_player
         }
-        val visible = tab != null && hasBackStackEntry(currentRootId)
+        val notificationInbox = destination.id == R.id.notificationFragment
+        val visible = (tab != null || notificationInbox) && hasBackStackEntry(currentRootId)
         binding.bottomNavContainer.isVisible = visible
         if (!visible) return
         val menuRes = when {
@@ -341,11 +425,14 @@ class MainActivity : AppCompatActivity() {
             else -> R.menu.menu_player_bottom_nav
         }
         if (bottomNavMenu != menuRes) {
+            binding.bottomNav.removeBadge(R.id.tab_community)
+            binding.bottomNav.removeBadge(R.id.tab_owner_messages)
             binding.bottomNav.menu.clear()
             binding.bottomNav.inflateMenu(menuRes)
             bottomNavMenu = menuRes
+            applyChatBadge()
         }
-        binding.bottomNav.menu.findItem(tab!!).isChecked = true
+        tab?.let { binding.bottomNav.menu.findItem(it)?.isChecked = true }
         if (adminMode && (viewModel.sessionState.value as? SessionState.SignedIn)?.appRole == AppRole.ADMIN) {
             adminAppsViewModel.loadQueue()
             adminReportsViewModel.loadReports()
@@ -359,6 +446,22 @@ class MainActivity : AppCompatActivity() {
 
         if (navController.currentDestination?.id == R.id.launcherFragment) {
             SessionRouter.startDestination(state, viewModel.welcomeSeen())?.let(::execute)
+            return
+        }
+        // M1: mở app lạnh bằng deep link, NavController dựng [launcher, màn deep link] mà không có graph gốc bên dưới
+        // (đường điều hướng thường luôn popUpTo nav_main nên launcher không còn). Màn deep link có thể đã tự mở
+        // Đăng nhập trước khi phiên về tới đây; dựng lại từ đầu rồi mở lại deep link (trừ link auth).
+        if (previous == null && hasBackStackEntry(R.id.launcherFragment)) {
+            val decision = SessionRouter.startDestination(state, viewModel.welcomeSeen()) ?: return
+            // Bước đồng ý điều khoản: dọn [launcher, màn deep link] để openConsent không mở chồng lên.
+            if (decision == RouteDecision.Consent) resetTo(R.id.nav_player)
+            execute(decision)
+            // Link auth (đăng nhập/đăng ký từ ngoài app) chỉ mở lại cho khách, không mở cho người đã đăng nhập.
+            val deepLink = intent?.data
+                ?.takeIf { it.scheme == "smashnow" && (it.host != "auth" || decision is RouteDecision.PlayerGuest) }
+            if (deepLink != null && SessionRouter.replayDeepLinkAfter(decision)) {
+                runCatching { navController.navigate(deepLink) }
+            }
             return
         }
         // Mở lại sau khi hệ thống hủy process: NavController đã khôi phục back stack, chỉ ghi nhận trạng thái.
@@ -428,7 +531,8 @@ class MainActivity : AppCompatActivity() {
             is RouteDecision.PopAuth -> {
                 navController.popBackStack(R.id.nav_auth, inclusive = true)
                 // returnTo có thể đến từ deep link ngoài app (spec 030 T005): chỉ nhận URI smashnow:// có trong graph.
-                decision.returnTo?.takeIf { it.scheme == "smashnow" }?.let { uri ->
+                // Màn vừa lộ ra được mở đúng bằng link returnTo (deep link lúc mở app) thì không mở chồng bản thứ hai.
+                decision.returnTo?.takeIf { it.scheme == "smashnow" && it != currentDeepLinkUri() }?.let { uri ->
                     runCatching { navController.navigate(uri) }
                 }
             }
@@ -466,6 +570,10 @@ class MainActivity : AppCompatActivity() {
     private fun resetTo(graphId: Int) {
         navController.navigate(graphId, null, navOptions { popUpTo(R.id.nav_main) { inclusive = true } })
     }
+
+    @Suppress("DEPRECATION")
+    private fun currentDeepLinkUri(): Uri? =
+        navController.currentBackStackEntry?.arguments?.getParcelable<Intent>(NavController.KEY_DEEP_LINK_INTENT)?.data
 
     private fun hasBackStackEntry(destinationId: Int): Boolean =
         runCatching { navController.getBackStackEntry(destinationId) }.isSuccess

@@ -1,0 +1,9 @@
+﻿phone-light: 9/9 PASS
+phone-dark: 9/9 PASS
+tablet-light: 9/9 PASS
+tablet-dark: 9/9 PASS
+Android aggregate: BUILD SUCCESSFUL in 4m 30s
+Isolated app/instrumentation build: BUILD SUCCESSFUL in 2m 2s
+Rules/profile/query/group: Tests  53 passed (53)
+Offline planner: ok | 6 passed | 0 failed (91ms)
+Offline CLI: synthetic demo snapshot only; expected-project pin; one planned write; no network/commit

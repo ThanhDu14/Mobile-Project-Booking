@@ -26,7 +26,7 @@ Các lựa chọn dưới đây được chủ dự án xác nhận theo Design 
 
 - Dùng Firestore transaction phía server để đồng bộ application với `users.ownerStatus`; không dựa vào khóa nút hoặc client read-before-write.
 - Application ID được sinh một lần cho chu kỳ nộp, giữ lại qua retry và dùng lại khi resubmit hồ sơ `REJECTED`. Server xác minh UID, trạng thái và application trước khi tạo/cập nhật.
-- `NONE` → tạo application và chuyển user sang `PENDING` nguyên tử. `REJECTED` → cập nhật cùng application và chuyển user sang `PENDING` nguyên tử. `PENDING`/`APPROVED` → không tạo application cạnh tranh.
+- `NONE` → tạo application và chuyển user sang `PENDING` nguyên tử. `REJECTED` → cập nhật cùng application và chuyển user sang `PENDING` nguyên tử. `PENDING`/`APPROVED` → không tạo application OWNER_ONBOARDING cạnh tranh; OWNER/APPROVED được tạo VENUE_ADDITION độc lập.
 - Retry cùng application ID phải đọc trạng thái authoritative và trả kết quả đã commit nếu request đã thành công; trạng thái hoặc nội dung đổi bởi thiết bị/Admin khác phải trả conflict, giữ draft client.
 - Không thêm idempotency/version field ở bước này. Firestore REST helper cần có transaction/read-your-writes/precondition hỗ trợ trước khi tích hợp.
 - **Cần xác nhận tiếp:** ánh xạ application sang venue ID và recovery/idempotency của claim, venue, notification trong Feature 120; xem mục cuối.
@@ -85,3 +85,9 @@ Hợp đồng cuối cùng phải quy định việc truyền/làm mới Firebas
 ## Trạng thái các quyết định
 
 T001–T005 và ba quyết định bổ sung về venue identity, recovery và retention đã được chốt. Map provider được tạm hoãn. Các endpoint/payload, mã lỗi và cơ chế reconciliation cụ thể phải được ghi vào contract API/review riêng trước khi Android/backend cùng tích hợp; không suy diễn chúng từ sơ đồ ranh giới này.
+
+## Quyết định mở thêm cơ sở — 2026-11-20
+
+Hồ sơ bổ sung dùng purpose VENUE_ADDITION, độc lập với quyền OWNER/APPROVED. Hồ sơ cũ thiếu purpose thuộc OWNER_ONBOARDING. Duyệt tạo venues/{applicationId} một lần; từ chối/nộp lại không đổi tài khoản hoặc venue cũ. Không giới hạn số venue/hồ sơ.
+
+Xem [owner-application-api.md](owner-application-api.md) cho request và phân quyền.

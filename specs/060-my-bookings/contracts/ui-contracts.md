@@ -50,3 +50,7 @@ Security Rules giới hạn dữ liệu nhạy cảm cho chủ đơn và các qu
 - Hợp đồng redemption voucher nhóm 050, endpoint hủy và transaction ví/slot/voucher, nguồn giờ server và điều hướng thực tế cần được xác minh hoặc bổ sung. Chưa có bằng chứng hoàn tất thì để bị chặn; không coi code hủy cũ thiếu hoàn tiền là hoàn thiện.
 - Timeout/từ chối và hoàn tiền 050/112, check-in 112, chuyển COMPLETED/NO_SHOW phía server và khóa review 070 là các phụ thuộc cần xác minh tích hợp.
 - Danh sách công việc và kiểm thử chưa nghiệm thu xem [tasks.md](../tasks.md).
+
+## Booking decisions approved 24/11/2026
+
+User approved B1 (payment source will be supplied later) and B2 with the stated limits in specs/100-notification/booking-decision-package-2026-11-24.md. B1 authorizes the internal helper contract, not a replacement payment flow; actual HOLD-to-PENDING producer integration remains blocked. B2 authorizes one reminder per booking ID, invocation-local paginated CONFIRMED/startAt window, late catch-up only before start, data.reminderStartAt Timestamp, same-transaction recheck/enqueue, and delivery-time source/time recheck. After a reminder exists, reschedule does not generate a second inbox; stale push is skipped. No booking marker, collection or reschedule API is added. Full field/query/identity semantics are in the approved package; no deploy/live migration is authorized.

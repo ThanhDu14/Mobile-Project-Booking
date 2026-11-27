@@ -27,6 +27,61 @@ import org.junit.Test
 class OwnerApplicationViewModelTest {
     @get:Rule val mainDispatcherRule = MainDispatcherRule()
 
+    @Test fun additionalApplicationUsesOwnStatusAndResubmissionWithoutChangingOwnerStatus() = runTest(mainDispatcherRule.dispatcher) {
+        val repository = FakeRepository().apply {
+            currentStatus = status(OwnerApplicationState.APPROVED, snapshot("addition", OwnerApplicationState.REJECTED, validDraft(), "TEST reason"))
+        }
+        val model = viewModel(repository)
+        model.initialize(additionalVenue = true, applicationId = "addition")
+        advanceUntilIdle()
+        assertEquals(OwnerApplicationState.REJECTED, model.uiState.value.applicationState)
+        assertEquals(OwnerApplicationState.APPROVED, model.uiState.value.status?.ownerStatus)
+        assertEquals("OWNER", model.uiState.value.status?.role)
+        model.initialize(resubmit = true)
+        model.submit()
+        advanceUntilIdle()
+        assertEquals(1, repository.submitCalls)
+        assertEquals("addition", repository.submittedApplicationId)
+    }
+
+    @Test fun approvedOwnerCanStartAdditionalDraftButPendingAdditionCannotBeSubmittedAgain() = runTest(mainDispatcherRule.dispatcher) {
+        val repository = FakeRepository().apply { currentStatus = status(OwnerApplicationState.APPROVED) }
+        val model = viewModel(repository)
+        model.initialize(additionalVenue = true, forceNew = true)
+        advanceUntilIdle()
+        assertEquals(OwnerApplicationState.NONE, model.uiState.value.applicationState)
+        fillDraft(model, validDraft())
+        repository.currentStatus = status(OwnerApplicationState.APPROVED, snapshot(model.uiState.value.applicationId, OwnerApplicationState.PENDING, validDraft()))
+        model.submit()
+        advanceUntilIdle()
+        assertEquals(0, repository.submitCalls)
+        assertEquals(OwnerApplicationState.PENDING, model.uiState.value.applicationState)
+        assertEquals("OWNER", model.uiState.value.status?.role)
+    }
+
+    @Test
+    fun failedDistrictLoadCanRetryWithoutLosingDraft() = runTest(mainDispatcherRule.dispatcher) {
+        var offline = true
+        val districts = object : DistrictRepository {
+            override suspend fun activeDistricts(): List<District> {
+                if (offline) error("offline")
+                return listOf(District("d1", "Quận thử", 1))
+            }
+            override suspend fun districtsByIds(ids: Collection<String>) = activeDistricts().associateBy { it.id }
+        }
+        val viewModel = OwnerApplicationViewModel(FakeRepository(), districts)
+        viewModel.initialize()
+        advanceUntilIdle()
+        assertTrue(viewModel.uiState.value.message!!.contains("quận/huyện"))
+        viewModel.update("venueName", "AUDIT draft")
+        offline = false
+        viewModel.refreshStatus()
+        advanceUntilIdle()
+        assertEquals("d1", viewModel.uiState.value.districts.single().id)
+        assertEquals("AUDIT draft", viewModel.uiState.value.draft.venue.name)
+        assertEquals(null, viewModel.uiState.value.message)
+    }
+
     @Test
     fun newLifecycleRestoresLocalDraftEvenWhenOpenedFromApplyAction() = runTest(mainDispatcherRule.dispatcher) {
         val draft = validDraft().copy(representativeName = "Draft chưa gửi")

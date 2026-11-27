@@ -4,13 +4,14 @@ import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import android.widget.FrameLayout
 import android.content.ContentValues
 import android.os.Environment
 import android.provider.MediaStore
 import androidx.core.net.toUri
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.activityViewModels
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -21,7 +22,6 @@ import com.example.booking_app.feature.owner.domain.OwnerApplicationState
 import androidx.core.content.ContextCompat
 import coil3.load
 import coil3.request.crossfade
-import com.google.firebase.auth.FirebaseAuth
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
@@ -29,7 +29,6 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.tasks.await
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -38,12 +37,19 @@ import java.time.format.DateTimeFormatter
 class OwnerApplicationStatusFragment : Fragment(R.layout.fragment_owner_application_status) {
     private var _binding: FragmentOwnerApplicationStatusBinding? = null
     private val binding get() = checkNotNull(_binding)
-    private val viewModel: OwnerApplicationViewModel by activityViewModels()
+    private val viewModel: OwnerApplicationViewModel by viewModels(
+        ownerProducer = { findNavController().getBackStackEntry(R.id.nav_account) },
+        factoryProducer = { defaultViewModelProviderFactory },
+    )
     private var state: OwnerApplicationState? = null
     private var role: String? = null
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         _binding = FragmentOwnerApplicationStatusBinding.bind(view)
+        arguments?.getString("applicationId")?.let {
+            viewModel.initialize(additionalVenue = true, applicationId = it)
+        }
+        if (arguments?.getString("applicationId") == null && arguments?.getString("mode") != "current") viewModel.initialize(forceNew = true)
         binding.backButton.setOnClickListener { findNavController().navigateUp() }
         binding.statusAction.setOnClickListener { continueForCurrentState() }
         binding.statusMessage.setOnClickListener { viewModel.refreshStatus() }
@@ -58,7 +64,7 @@ class OwnerApplicationStatusFragment : Fragment(R.layout.fragment_owner_applicat
     private fun render(ui: OwnerApplicationUiState) {
         if (_binding == null) return
         binding.statusProgress.isVisible = ui.loading
-        val status = ui.status?.ownerStatus
+        val status = ui.applicationState
         state = status
         role = ui.status?.role
         if (ui.message != null && ui.status == null) {
@@ -79,7 +85,7 @@ class OwnerApplicationStatusFragment : Fragment(R.layout.fragment_owner_applicat
                 applyBannerColors(R.color.sn_lamp_container, R.color.sn_on_lamp_container, R.drawable.ic_hourglass_24)
                 binding.statusTitle.setText(R.string.owner_status_pending)
                 binding.statusSubtitle.text = app?.submittedAt?.let { getString(R.string.owner_submitted_at, formatDate(it), getString(R.string.owner_status_pending_message)) } ?: getString(R.string.owner_status_pending_message)
-                binding.statusAction.setText(R.string.owner_continue_player)
+                binding.statusAction.setText(if (ui.additionalVenue) R.string.owner_continue_management else R.string.owner_continue_player)
                 binding.rejectReason.isVisible = false
                 binding.timeline.isVisible = true
                 bindSubmittedInfo(app?.draft)
@@ -100,7 +106,7 @@ class OwnerApplicationStatusFragment : Fragment(R.layout.fragment_owner_applicat
             OwnerApplicationState.APPROVED -> {
                 applyBannerColors(R.color.sn_court_container, R.color.sn_on_court_container, R.drawable.ic_check_20)
                 binding.statusTitle.setText(R.string.owner_status_approved)
-                binding.statusSubtitle.setText(R.string.owner_status_approved_message)
+                binding.statusSubtitle.setText(if (ui.additionalVenue) R.string.owner_additional_approved_message else R.string.owner_status_approved_message)
                 binding.statusAction.setText(R.string.owner_continue_management)
                 binding.rejectReason.isVisible = false
                 binding.timeline.isVisible = false
@@ -125,12 +131,12 @@ class OwnerApplicationStatusFragment : Fragment(R.layout.fragment_owner_applicat
     private fun renderDocuments(applicationId: String?, paths: List<String>, statusFresh: Boolean) {
         binding.statusDocuments.removeAllViews()
         binding.statusDocuments.isVisible = applicationId != null && paths.isNotEmpty()
-        paths.forEach { path ->
+        paths.forEachIndexed { index, path ->
             binding.statusDocuments.addView(MaterialButton(requireContext(), null, android.R.attr.borderlessButtonStyle).apply {
                 setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_BodyMedium)
                 setTextColor(ContextCompat.getColor(requireContext(), R.color.sn_court))
-                text = getString(R.string.owner_view_document, path.substringAfterLast('/'))
-                contentDescription = getString(R.string.owner_view_document_named, path.substringAfterLast('/'))
+                text = getString(R.string.owner_view_document_number, index + 1)
+                contentDescription = text
                 minHeight = resources.getDimensionPixelSize(R.dimen.touch_target_min)
                 icon = ContextCompat.getDrawable(requireContext(), R.drawable.ic_description_24)
                 iconTint = ContextCompat.getColorStateList(requireContext(), R.color.sn_court)
@@ -143,7 +149,7 @@ class OwnerApplicationStatusFragment : Fragment(R.layout.fragment_owner_applicat
     private fun openDocument(applicationId: String, path: String) {
         viewLifecycleOwner.lifecycleScope.launch {
             binding.statusProgress.isVisible = true
-            viewModel.signedDocumentUrl(applicationId, path).onSuccess { signedUrl ->
+            viewModel.downloadDocument(applicationId, path).onSuccess { bytes ->
                 if (_binding == null) return@onSuccess
                 binding.statusProgress.isVisible = false
                 val image = ImageView(requireContext()).apply {
@@ -153,11 +159,17 @@ class OwnerApplicationStatusFragment : Fragment(R.layout.fragment_owner_applicat
                         ViewGroup.LayoutParams.MATCH_PARENT,
                         resources.getDimensionPixelSize(R.dimen.owner_document_preview_height),
                     )
-                    load(signedUrl) { crossfade(true) }
+                    load(bytes) { crossfade(true) }
+                }
+                // AlertDialog replaces the custom view's LayoutParams. Keep the image's
+                // fixed height on a child so the preview cannot collapse to zero height.
+                val preview = FrameLayout(requireContext()).apply {
+                    addView(image, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                        resources.getDimensionPixelSize(R.dimen.owner_document_preview_height)))
                 }
                 MaterialAlertDialogBuilder(requireContext())
-                    .setTitle(path.substringAfterLast('/'))
-                    .setView(image)
+                    .setTitle(R.string.owner_document_preview)
+                    .setView(preview)
                     .setNegativeButton(R.string.common_cancel, null)
                     .setPositiveButton(R.string.owner_download_document) { _, _ -> downloadDocument(applicationId, path) }
                     .show()
@@ -267,9 +279,9 @@ class OwnerApplicationStatusFragment : Fragment(R.layout.fragment_owner_applicat
             viewModel.refreshStatus()
             return
         }
-        if ((state == OwnerApplicationState.APPROVED && role != "OWNER") ||
+        if (!viewModel.uiState.value.additionalVenue && ((state == OwnerApplicationState.APPROVED && role != "OWNER") ||
             (state != null && state != OwnerApplicationState.APPROVED && role != "PLAYER")
-        ) {
+        )) {
             viewModel.refreshStatus()
             return
         }
@@ -277,10 +289,11 @@ class OwnerApplicationStatusFragment : Fragment(R.layout.fragment_owner_applicat
             OwnerApplicationState.NONE, null -> findNavController().navigate(R.id.action_ownerApplicationStatus_to_form, Bundle().apply { putString("mode", "new") })
             OwnerApplicationState.REJECTED -> findNavController().navigate(R.id.action_ownerApplicationStatus_to_form, Bundle().apply { putString("mode", "resubmit") })
             OwnerApplicationState.PENDING -> {
-                if (!findNavController().popBackStack(R.id.accountFragment, false)) findNavController().navigateUp()
+                if (viewModel.uiState.value.additionalVenue) findNavController().navigate("smashnow://owner/venues".toUri())
+                else if (!findNavController().popBackStack(R.id.accountFragment, false)) findNavController().navigateUp()
             }
             OwnerApplicationState.APPROVED -> viewLifecycleOwner.lifecycleScope.launch {
-                runCatching { FirebaseAuth.getInstance().currentUser?.getIdToken(true)?.await() }
+                runCatching { viewModel.refreshSession() }
                 findNavController().navigate("smashnow://owner/venues".toUri())
             }
         }

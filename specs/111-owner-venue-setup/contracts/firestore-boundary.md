@@ -1,6 +1,16 @@
 # Ranh giới Firestore: Thiết lập cơ sở của chủ sân
 
-Đây là hợp đồng ranh giới dữ liệu/bảo mật, không phải API HTTP/callable mới. Giao diện server cho thao tác đổi slot chưa được thống nhất; không suy diễn endpoint từ tài liệu này.
+Hợp đồng dữ liệu và endpoint đã triển khai. `manage-slot-blocks` xử lý slot; `sync-venue-price` xử lý bảng giá và minimum trong transaction. Các mô tả gate cũ bên dưới là lịch sử, được thay thế bởi trạng thái hiện tại ngày 2026-11-21.
+
+## Boundary hiện tại — 2026-11-21
+
+- Price rule CREATE/UPDATE/DELETE đi qua `POST sync-venue-price`, body `{venueId,action,ruleId?,rule?}`; `rule` chỉ gồm daysOfWeek/startTime/endTime/pricePerHour/label. Không đổi schema Firestore.
+- Cùng transaction đọc claims/profile OWNER/APPROVED/ACTIVE/non-deleting (ADMIN phải còn role ADMIN), ownership, parent không LOCKED và toàn bộ rule hiện tại; validate mốc 30 phút, giá dương chia hết 2.000, enum và overlap. Ghi rule và minPricePerHour cùng commit; không rule thì minimum null.
+- CREATE có ID từ SHA-256 payload chuẩn hóa, retry giống hệt trả cùng rule; CREATE cũ sau khi rule đã được sửa trả conflict. UPDATE dùng ruleId hiện có; DELETE lặp an toàn. Response `{venueId,ruleId,minPricePerHour}`. SYNC không action vẫn được hỗ trợ và kiểm tra quyền như trên.
+- Rules cấm mọi client ghi priceRules/minPricePerHour, kể cả bypass Android. Booking items cũ không đổi. ACTIVE/HIDDEN cho cấu hình; LOCKED chặn owner. Admin court maintenance giữ quyền hiện có.
+- Court create giữ UUID theo lần thử trong SavedStateHandle. `POST owner-manage-court` xử lý CREATE/UPDATE/REORDER, kiểm tra profile/ownership hiện tại, parent không LOCKED, field validation và thứ tự mong đợi trong transaction. Retry không ghi đè sân đã đổi, không giới hạn tên trùng/số sân. Rules chặn mọi client ghi courts/courtCount. Court inactive vẫn giữ hàng lịch/lịch sử.
+- Quyết định người dùng 2026-11-21: `venues.courtCount` bằng số court `isActive=true`, có thể bằng 0. Mỗi mutation sân tính lại từ collection thực và ghi cùng transaction trên parent, nên retry/concurrent mutations không làm lệch số. Số khai báo dương vẫn giữ ở application `venueDraft`; khi duyệt, venue mới có courtCount=0 vì chưa cấu hình court. Venue legacy được sửa count trong lần mutation sân kế tiếp; dữ liệu hosted chưa được backfill trong lượt local này.
+- Venue creation chỉ qua review Feature 110/120, `venues/{applicationId}`; Decision 3A và discriminator purpose không thay đổi.
 
 ## Đường dẫn và trường hiện có
 
@@ -9,7 +19,7 @@
 - `venues/{venueId}/priceRules/{id}` — `daysOfWeek`, `startTime`, `endTime`, `pricePerHour`, `label`.
 - `slots/{courtId}_{yyyyMMdd}_{HHmm}` — trường và enum hiện có theo mục 4.4 database README.
 
-Không thêm trường, collection, endpoint, enum hoặc quan hệ booking mới.
+Giữ collections và quan hệ booking; bổ sung discriminator purpose cho ownerApplications theo quyết định 2026-11-20.
 
 ## Yêu cầu phân quyền
 
@@ -30,11 +40,11 @@ Implementation note: venue đầu tiên vẫn do lifecycle duyệt của Feature
 ## Hợp đồng đã thống nhất (Quyết định 1A, 2A, 3A, 4A — 2026-10-30)
 
 1. **Đồng bộ bảng giá và `minPricePerHour` (Quyết định 2A — T008, T022, T023)**:
-   - Approved Owner tạo, sửa, xóa `priceRules` trực tiếp trên subcollection `venues/{venueId}/priceRules/{id}` tuân thủ Security Rules hiện có.
+   - Quyết định ban đầu cho client ghi rule đã được thay bằng transaction server ở boundary hiện tại; không dùng đường ghi client này nữa.
    - Trường bảo vệ `venues.minPricePerHour` được cập nhật đồng bộ bởi Edge Function `sync-venue-price` chạy với quyền service role:
      - Giá trị = `min(priceRules.pricePerHour)` nếu cơ sở có ít nhất một bảng giá.
      - Giá trị = `null` nếu cơ sở xóa hết toàn bộ bảng giá (khớp với hợp đồng tại `specs/020-court-search/data-model.md`).
-     - Client không tự ghi trường 🔒 này; sau khi mutation `priceRules` thành công, client gọi `sync-venue-price` để đồng bộ.
+     - Client không tự ghi trường 🔒 hoặc rule; mutation và minimum được đồng bộ trong cùng transaction `sync-venue-price`.
 
 2. **Vòng đời cơ sở và thêm cơ sở mới (Quyết định 3A — T011)**:
    - Feature 111 chỉ quản lý các cơ sở đã được duyệt và có quyền sở hữu hợp lệ (`venues.ownerId == uid`).
@@ -58,3 +68,13 @@ Implementation note: venue đầu tiên vẫn do lifecycle duyệt của Feature
 - T007, T028, T029, T030, T031: Đã hoàn thành (Edge Function `manage-slot-blocks`, Android Data Layer `ManageSlotBlocksApi`, Calendar Grid UI shell `OwnerSlotGridAdapter` / `OwnerSlotBlockViewModel`, Firestore Emulator tests).
 - T034: Mở chờ Feature 041 hoàn thiện mã nguồn ứng dụng để kiểm chứng tích hợp chuỗi đặt cố định.
 - T038: Đã hoàn thiện tài nguyên chuỗi, accessibility, responsive phone/w600dp, 48dp touch targets; mở phần kiểm thử SLA trên thiết bị thật dùng mạng 4G.
+
+## Quyết định mở thêm cơ sở — 2026-11-20
+
+Hồ sơ bổ sung dùng purpose VENUE_ADDITION, độc lập với quyền OWNER/APPROVED. Hồ sơ cũ thiếu purpose thuộc OWNER_ONBOARDING. Duyệt tạo venues/{applicationId} một lần; từ chối/nộp lại không đổi tài khoản hoặc venue cũ. Không giới hạn số venue/hồ sơ.
+
+Hợp đồng đầy đủ: [owner-application-api.md](../../110-owner-onboarding/contracts/owner-application-api.md).
+
+## API sân con
+
+`POST /functions/v1/owner-manage-court`, Firebase ID token. CREATE/UPDATE: `{venueId,action,courtId,court:{name,surfaceType,isActive,sortOrder}}`. REORDER: `{venueId,action:"REORDER",courtId,secondCourtId,firstOrder,secondOrder}`. Response `{venueId,courtId,courtCount}`. ID do client giữ ổn định cho một lần tạo; server xác minh quyền và nội dung, không tin ownerId từ request. Không DELETE sân hoặc slot/booking lịch sử. HIDDEN cho bảo trì cấu hình; LOCKED chặn owner. Request sai trả 400, mất quyền 403/404, retry tạo đã bị sửa hoặc thứ tự stale trả 409. Các mutation cạnh tranh cùng ghi parent để serialize việc tính count.

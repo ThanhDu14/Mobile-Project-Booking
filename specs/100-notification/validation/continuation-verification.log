@@ -1,0 +1,9 @@
+﻿Production Android: BUILD SUCCESSFUL in 2m 42s
+Final instrumentation build: BUILD SUCCESSFUL in 12s
+Final instrumentation lint: BUILD SUCCESSFUL in 14s
+Account deletion: ok | 21 passed | 0 failed (17s)
+Rules/query: Tests  28 passed (28)
+Producer/planner: ok | 28 passed | 0 failed (612ms)
+Review reply: ok | 5 passed | 0 failed (2s)
+Baseline UI: OK (8 tests)
+Permission scenarios: 2/2 PASS

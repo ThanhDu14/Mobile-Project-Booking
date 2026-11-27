@@ -6,6 +6,7 @@ import com.example.booking_app.feature.owner.domain.dropin.OwnerDropInRegistrati
 import com.example.booking_app.feature.owner.domain.dropin.OwnerDropInRepository
 import com.example.booking_app.feature.owner.domain.dropin.OwnerDropInSession
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Source
 import com.google.firebase.firestore.ListenerRegistration
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.functions.functions
@@ -38,6 +39,7 @@ private data class CreateDropInWireRequest(
 private data class UpdateDropInWireRequest(
     val venueId: String,
     val sessionId: String,
+    val requestId: String,
     val courtIds: List<String>,
     val date: String,
     val startTime: String,
@@ -53,6 +55,7 @@ private data class CancelDropInWireRequest(
     val venueId: String,
     val sessionId: String,
     val reason: String,
+    val requestId: String,
 )
 
 @Serializable
@@ -76,8 +79,8 @@ class OwnerDropInRepositoryImpl @Inject constructor(
                     close(error)
                 } else if (snapshot != null) {
                     val sessions = snapshot.documents.mapNotNull { doc ->
-                        val startTimestamp = doc.getTimestamp("startAt")
-                        val endTimestamp = doc.getTimestamp("endAt")
+                        val startTimestamp = ownerTimestamp(doc.get("startAt"))
+                        val endTimestamp = ownerTimestamp(doc.get("endAt"))
 
                         val startInstant = startTimestamp?.toDate()?.toInstant() ?: Instant.now()
                         val endInstant = endTimestamp?.toDate()?.toInstant() ?: Instant.now()
@@ -95,6 +98,8 @@ class OwnerDropInRepositoryImpl @Inject constructor(
                             registeredCount = doc.getLong("registeredCount")?.toInt() ?: 0,
                             pricePerPersonVnd = doc.getLong("pricePerPerson") ?: 0L,
                             status = doc.getString("status") ?: "OPEN",
+                            level = doc.getString("level") ?: "BEGINNER",
+                            note = doc.getString("note").orEmpty(),
                         )
                     }
                     trySend(sessions)
@@ -105,9 +110,11 @@ class OwnerDropInRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getRoster(venueId: String, sessionId: String): Result<List<OwnerDropInRegistration>> = runCatching {
+        val session = firestore.collection("dropInSessions").document(sessionId).get(Source.SERVER).await()
+        check(session.exists() && session.getString("venueId") == venueId) { "Buổi chơi không thuộc cơ sở đã chọn." }
         val snapshot = firestore.collection("dropInSessions").document(sessionId)
             .collection("registrations")
-            .get()
+            .get(Source.SERVER)
             .await()
 
         snapshot.documents.map { doc ->
@@ -122,7 +129,6 @@ class OwnerDropInRepositoryImpl @Inject constructor(
     }
 
     override suspend fun createSession(draft: OwnerDropInDraft): Result<String> = runCatching {
-        val courtId = draft.courtIds.firstOrNull() ?: ""
         val response = functionErrors.invokeWithAuthRetry {
             supabase.functions.invoke(
                 "owner-create-session",
@@ -140,16 +146,24 @@ class OwnerDropInRepositoryImpl @Inject constructor(
             )
         }
         val jsonObj = Json.parseToJsonElement(response.bodyAsText()).jsonObject
-        jsonObj["sessionId"]?.jsonPrimitive?.content ?: "dropin_${courtId}_${draft.date}"
+        checkNotNull(jsonObj["sessionId"]?.jsonPrimitive?.content?.takeIf { it.isNotBlank() }) {
+            "Chưa xác nhận được mã buổi chơi. Hãy tải lại hoặc gửi lại cùng nội dung."
+        }
     }
 
+    private val updateRequestIds = java.util.concurrent.ConcurrentHashMap<Triple<String, String, OwnerDropInDraft>, String>()
+    private val cancelRequestIds = java.util.concurrent.ConcurrentHashMap<Triple<String, String, String>, String>()
+
     override suspend fun updateSession(venueId: String, sessionId: String, draft: OwnerDropInDraft): Result<Unit> = runCatching {
+        val key = Triple(venueId, sessionId, draft)
+        val requestId = updateRequestIds.computeIfAbsent(key) { java.util.UUID.randomUUID().toString() }
         functionErrors.invokeWithAuthRetry {
             supabase.functions.invoke(
                 "owner-update-session",
                 body = UpdateDropInWireRequest(
                     venueId = venueId,
                     sessionId = sessionId,
+                    requestId = requestId,
                     courtIds = draft.courtIds,
                     date = draft.date,
                     startTime = draft.startTime.replace(":", ""),
@@ -161,10 +175,13 @@ class OwnerDropInRepositoryImpl @Inject constructor(
                 ),
             )
         }
+        updateRequestIds.remove(key, requestId)
         Unit
     }
 
     override suspend fun cancelSession(venueId: String, sessionId: String, reason: String): Result<Unit> = runCatching {
+        val key = Triple(venueId, sessionId, reason)
+        val requestId = cancelRequestIds.computeIfAbsent(key) { java.util.UUID.randomUUID().toString() }
         functionErrors.invokeWithAuthRetry {
             supabase.functions.invoke(
                 "owner-cancel-session",
@@ -172,9 +189,12 @@ class OwnerDropInRepositoryImpl @Inject constructor(
                     venueId = venueId,
                     sessionId = sessionId,
                     reason = reason,
+                    requestId = requestId,
                 ),
             )
         }
+        cancelRequestIds.remove(key, requestId)
+        Unit
     }
 
     override suspend fun checkIn(venueId: String, sessionId: String, credential: String): Result<Unit> = runCatching {

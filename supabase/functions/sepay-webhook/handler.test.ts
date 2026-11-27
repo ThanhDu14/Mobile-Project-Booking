@@ -82,7 +82,8 @@ const slot = (bookingId = BID, extra: Doc = {}): Doc => ({
 
 function setup(seed: Record<string, Doc> = {}, opts: { noDefault?: boolean; optimistic?: boolean } = {}) {
   const fs = new FakeFirestore(() => NOW, { optimistic: opts.optimistic });
-  fs.seed("venues/v1", { ownerId: "owner1", name: "Sân Ánh Dương" });
+  fs.seed("venues/v1", { ownerId: "owner1", name: "Sân Ánh Dương", status: "ACTIVE" });
+  fs.seed("users/owner1", { role: "OWNER", ownerStatus: "APPROVED", accountStatus: "ACTIVE" });
   if (!opts.noDefault) {
     fs.seed(`paymentCodes/${CODE}`, {
       code: CODE,

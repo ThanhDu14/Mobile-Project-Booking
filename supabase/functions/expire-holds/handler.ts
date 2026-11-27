@@ -126,7 +126,7 @@ export async function handleExpireHolds(
           writes: [
             updateWrite(`bookings/${doc.id}`, {
               status: "EXPIRED",
-              updatedAt: nowIso,
+              updatedAt: now,
             }),
             ...ownedSlots.map((id) => deleteWrite(`slots/${id}`, false)),
             ...await paymentReleaseWrites(tx, current, doc.id),
@@ -180,13 +180,13 @@ export async function handleExpireHolds(
         const writes = [
           updateWrite(`recurringGroups/${group.id}`, {
             status: "EXPIRED",
-            updatedAt: nowIso,
+            updatedAt: now,
           }),
           ...sessions.filter((s) => s.data.status === "HOLD")
             .map((s) =>
               updateWrite(`bookings/${s.id}`, {
                 status: "EXPIRED",
-                updatedAt: nowIso,
+                updatedAt: now,
               })
             ),
           ...deletable.map((id) => deleteWrite(`slots/${id}`, false)),
@@ -233,7 +233,7 @@ export async function handleExpireHolds(
             writes.push(
               updateWrite(`bookings/${bookingId}`, {
                 status: "EXPIRED",
-                updatedAt: nowIso,
+                updatedAt: now,
               }),
               ...await paymentReleaseWrites(tx, booking, bookingId),
             );

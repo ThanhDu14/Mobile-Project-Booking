@@ -52,13 +52,17 @@ enum class CancelQuoteText {
     /** "Không được hoàn tiền". */
     NO_REFUND,
 
-    /** "Không mất phí" (lượt trả tại sân, chưa trả gì). */
+    /** Spec 081 FR-011: "Bạn vừa được nhận từ hàng chờ, hủy trong 30 phút được hoàn 100%". */
+    REFUND_PROMOTED_GRACE,
+
+    /** "Không mất phí" (lượt trả tại sân, chưa trả gì; rời hàng chờ). */
     FREE,
     ;
 
     companion object {
         fun of(quote: CancelQuote): CancelQuoteText = when (quote.reason) {
-            CancelReason.AT_VENUE -> FREE
+            CancelReason.AT_VENUE, CancelReason.WAITLIST_LEAVE -> FREE
+            CancelReason.PROMOTED_GRACE -> if (quote.refundAmount > 0) REFUND_PROMOTED_GRACE else NO_REFUND
             CancelReason.LATE -> NO_REFUND
             CancelReason.EARLY, CancelReason.SESSION_CHANGED -> if (quote.refundAmount > 0) REFUND_FULL else NO_REFUND
         }

@@ -4,4 +4,6 @@
     <cache-path name="avatar" path="avatar/" />
     <!-- Ảnh chụp cho đánh giá (spec 070 US2), xóa khi rời màn hình viết đánh giá. -->
     <cache-path name="review" path="review/" />
+    <!-- Ảnh chụp để gửi trong chat (spec 091 US4). -->
+    <cache-path name="chat" path="chat/" />
 </paths>

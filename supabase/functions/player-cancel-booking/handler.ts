@@ -123,17 +123,20 @@ export async function handlePlayerCancelBooking(
       }
     }
 
-    const nowIso = new Date().toISOString();
+    // Ghi mốc thời gian bằng Date để REST lưu thành Timestamp. Chuỗi ISO bị lưu thành string, làm app
+    // không sắp xếp và phân trang được tab "Đã hủy" (rà soát 060 ngày 2026-11-18).
+    const cancelledAt = new Date();
+    const nowIso = cancelledAt.toISOString();
     const writes: defaultFirestore.Write[] = [
       updateWrite(`bookings/${bookingId}`, {
         status: "CANCELLED",
-        cancelledAt: nowIso,
+        cancelledAt,
         cancelReason: reason,
         cancelledBy: "USER",
         refundAmount,
         penaltyAmount,
         ...(refundAmount > 0 ? { paymentStatus: "REFUND_PENDING" } : {}),
-        updatedAt: nowIso,
+        updatedAt: cancelledAt,
       }),
     ];
 

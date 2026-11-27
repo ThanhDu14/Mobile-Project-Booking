@@ -74,3 +74,7 @@ Lỗi từ Edge Function được ánh xạ thành `PaymentError` (sealed): `Hol
 | `payment_hold_expired` | "Đã hết thời gian giữ chỗ" |
 | `receipt_mock_note` | "Giao dịch giả lập phục vụ học tập - Không thu tiền thật" |
 | `payment_late_refund` | "Đơn không thành công, chủ sân sẽ hoàn tiền" |
+
+## Booking decisions approved 24/11/2026
+
+User approved B1 (payment source will be supplied later) and B2 with the stated limits in specs/100-notification/booking-decision-package-2026-11-24.md. B1 authorizes the internal helper contract, not a replacement payment flow; actual HOLD-to-PENDING producer integration remains blocked. B2 authorizes one reminder per booking ID, invocation-local paginated CONFIRMED/startAt window, late catch-up only before start, data.reminderStartAt Timestamp, same-transaction recheck/enqueue, and delivery-time source/time recheck. After a reminder exists, reschedule does not generate a second inbox; stale push is skipped. No booking marker, collection or reschedule API is added. Full field/query/identity semantics are in the approved package; no deploy/live migration is authorized.

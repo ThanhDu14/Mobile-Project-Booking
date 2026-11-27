@@ -1,8 +1,13 @@
 package com.example.booking_app.feature.booking.domain.usecase
 
+import com.example.booking_app.core.pricing.DayConvention
+import com.example.booking_app.core.pricing.SlotPricing
+import com.example.booking_app.core.schedule.TimeOfDay
 import com.example.booking_app.feature.booking.domain.model.PriceRule
+import com.example.booking_app.core.pricing.PriceRule as CorePriceRule
 import com.example.booking_app.feature.booking.domain.model.SlotStatus
 import com.example.booking_app.feature.booking.domain.model.TimeSlot
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -10,12 +15,10 @@ import java.util.Locale
 import javax.inject.Inject
 
 /**
- * P1-2: Index bảng giá theo (dayOfWeek, time) -> PriceRule để tra cứu O(1) cho mỗi slot 30 phút.
- * Giữ nguyên 100% ngữ nghĩa matching của firstOrNull:
- * - daysOfWeek rỗng = mọi ngày trong tuần;
- * - slot nằm trọn trong [startTime, endTime];
- * - nếu nhiều rule cùng khớp thì rule đầu tiên trong list thắng;
- * - không rule nào khớp thì giá 0 và slot thành BLOCKED với reason NO_PRICE_RULE.
+ * P1-2: Bảng tra 48 khung 30 phút trong ngày -> PriceRule để mỗi slot tra O(1).
+ * Việc chọn dòng giá cho từng khung dùng chung [SlotPricing.ruleForSlot] với 020 (thẻ kết quả) và 030
+ * (chi tiết sân) để ba màn hình ra cùng một giá (SC-002): khung nằm trọn trong dòng giá, dòng đầu tiên
+ * thắng, `daysOfWeek` rỗng là không áp dụng. Không dòng nào khớp thì slot BLOCKED với NO_PRICE_RULE.
  */
 class IndexedPriceRules(
     private val rulesBySlotIndex: Array<PriceRule?>
@@ -30,30 +33,16 @@ class IndexedPriceRules(
             if (priceRules.isEmpty()) {
                 return IndexedPriceRules(emptyArray())
             }
-
-            // Parse trước giờ bắt đầu/kết thúc (phút) của từng rule một lần duy nhất
-            val parsedRules = priceRules.map { rule ->
-                val dayMatch = rule.daysOfWeek.isEmpty() || rule.daysOfWeek.contains(isoDayOfWeek)
-                val start = toMinutes(rule.startTime)
-                val end = toMinutes(rule.endTime)
-                Triple(rule, dayMatch, start to end)
+            val shared = priceRules.map {
+                CorePriceRule(it.id, it.daysOfWeek, it.startTime, it.endTime, it.pricePerHour, it.label)
             }
-
-            // 48 slot trong 24 giờ (mỗi slot 30 phút: 00:00 -> 24:00)
-            val table = Array<PriceRule?>(48) { slotIndex ->
-                val currentMin = slotIndex * GenerateDailySlotsUseCase.SLOT_DURATION_MINUTES
-                val nextMin = currentMin + GenerateDailySlotsUseCase.SLOT_DURATION_MINUTES
-                parsedRules.firstOrNull { (rule, dayMatch, range) ->
-                    dayMatch && currentMin >= range.first && nextMin <= range.second
-                }?.first
+            val day = DayConvention.fromDayOfWeek(DayOfWeek.of(isoDayOfWeek))
+            // 48 khung trong 24 giờ (00:00 -> 24:00); map ngược về đúng dòng giá của 040 theo vị trí
+            val table = Array(48) { slotIndex ->
+                val slot = TimeOfDay(slotIndex * GenerateDailySlotsUseCase.SLOT_DURATION_MINUTES)
+                SlotPricing.ruleForSlot(shared, day, slot)?.let { priceRules[shared.indexOf(it)] }
             }
             return IndexedPriceRules(table)
-        }
-
-        private fun toMinutes(hhmm: String): Int {
-            val h = hhmm.substring(0, 2).toIntOrNull() ?: 0
-            val m = hhmm.substring(2, 4).toIntOrNull() ?: 0
-            return h * 60 + m
         }
     }
 }

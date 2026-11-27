@@ -46,3 +46,6 @@ enum class PaymentMethod { MOCK_PAY, AT_VENUE }
 enum class PaymentStatus { PAID, UNPAID, REFUNDED }
 
 enum class CancelledBy { USER, OWNER, SYSTEM }
+
+/** Lý do một lượt chờ kết thúc mà không được nhận (spec 081 data-model mục 2, research R6). */
+enum class WaitlistEndReason { LEFT, AUTO_LEFT_OVERLAP, CLOSED, SESSION_CANCELLED }

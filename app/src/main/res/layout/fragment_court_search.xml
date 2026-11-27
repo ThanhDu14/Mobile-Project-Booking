@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <include
+        android:id="@+id/header"
+        layout="@layout/view_main_tab_header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/screen_gutter" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <!-- paddingBottom chừa chỗ cho nút nổi Bản đồ / Danh sách -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/results"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingHorizontal="@dimen/screen_gutter"
+            android:paddingBottom="88dp" />
+
+        <include
+            android:id="@+id/map"
+            layout="@layout/view_court_search_map"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone" />
+
+        <!-- Nút nổi chuyển Danh sách / Bản đồ (spec 021 FR-001), luôn thấy khi cuộn -->
+        <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+            android:id="@+id/mapToggle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|center_horizontal"
+            android:layout_marginBottom="@dimen/space_4"
+            android:text="@string/map_toggle_map"
+            app:icon="@drawable/ic_map_24" />
+    </FrameLayout>
+</LinearLayout>

@@ -60,8 +60,8 @@ beforeEach(async () => {
   await env.clearFirestore();
   await env.withSecurityRulesDisabled(async (ctx) => {
     const db = ctx.firestore();
-    await setDoc(doc(db, 'users/owner-a'), { role: 'OWNER', ownerStatus: 'APPROVED' });
-    await setDoc(doc(db, 'users/owner-b'), { role: 'OWNER', ownerStatus: 'APPROVED' });
+    await setDoc(doc(db, 'users/owner-a'), { role: 'OWNER', ownerStatus: 'APPROVED', accountStatus: 'ACTIVE' });
+    await setDoc(doc(db, 'users/owner-b'), { role: 'OWNER', ownerStatus: 'APPROVED', accountStatus: 'ACTIVE' });
     await setDoc(doc(db, `venues/${VENUE}`), { ownerId: 'owner-a', status: 'ACTIVE', name: 'Sân A' });
     await setDoc(doc(db, `venues/${OTHER_VENUE}`), { ownerId: 'owner-b', status: 'ACTIVE', name: 'Sân B' });
     await setDoc(doc(db, `venues/${VENUE}/vouchers/GIAM20`), {

@@ -145,7 +145,7 @@ class AccountFragment : Fragment(R.layout.fragment_account) {
                 binding.ownerBody.text = section.submittedAt
                     ?.let { getString(R.string.account_owner_pending_body, formatSubmittedAt(it)) }
                     ?: getString(R.string.account_owner_pending_no_date)
-                null
+                R.string.owner_view_application to OwnerLink.APPLICATION
             }
             is OwnerSection.Rejected -> {
                 ownerTitle(binding, R.string.account_owner_rejected_title, R.drawable.ic_error_24, error = true)
@@ -181,7 +181,10 @@ class AccountFragment : Fragment(R.layout.fragment_account) {
             renderingMode = false
         }
         val ownerRows = ownerLinkViews(binding)
-        ownerRows.forEach { (link, row) -> row.isVisible = mode != null && link in state.ownerLinks }
+        ownerRows.forEach { (link, row) ->
+            val applicantRead = link == OwnerLink.APPLICATION && state.ownerSection is OwnerSection.Rejected
+            row.isVisible = (mode != null || applicantRead) && link in state.ownerLinks
+        }
         binding.ownerGroup.isVisible = ownerRows.any { it.second.isVisible }
         binding.ownerGroupLabel.isVisible = binding.ownerGroup.isVisible
         binding.playerGroupLabel.isVisible = binding.ownerGroup.isVisible && binding.activityGroup.isVisible

@@ -1,9 +1,11 @@
+import { requireOwnerAuthority } from "../_shared/owner-access.ts";
 import { errorResponse, HttpError, verifyIdToken } from "../_shared/auth.ts";
 import * as defaultFirestore from "../_shared/firestore.ts";
 import { createWrite, deleteWrite, updateWrite, FirestoreError } from "../_shared/firestore.ts";
+import { ownerTransaction } from "../_shared/owner-transaction.ts";
 
 export interface ManageSlotBlocksDeps {
-  firestore: Pick<typeof defaultFirestore, "get" | "commit">;
+  firestore: Pick<typeof defaultFirestore, "get" | "commit" | "runTransaction">;
 }
 
 const ALLOWED_OWNER_REASONS = new Set(["MAINTENANCE", "EVENT", "WALK_IN"]);
@@ -11,6 +13,13 @@ const ALLOWED_OWNER_REASONS = new Set(["MAINTENANCE", "EVENT", "WALK_IN"]);
 export async function handleManageSlotBlocks(
   req: Request,
   { firestore }: ManageSlotBlocksDeps = { firestore: defaultFirestore },
+): Promise<Response> {
+  return await ownerTransaction(req, firestore, (request, source) => handleInTransaction(request, { firestore: source }));
+}
+
+async function handleInTransaction(
+  req: Request,
+  { firestore }: { firestore: Pick<typeof defaultFirestore, "get" | "commit"> },
 ): Promise<Response> {
   if (req.method !== "POST") return errorResponse(405, "METHOD_NOT_ALLOWED", "Chỉ hỗ trợ POST");
 
@@ -22,24 +31,19 @@ export async function handleManageSlotBlocks(
     const courtId = typeof body.courtId === "string" ? body.courtId.trim() : "";
     const action = typeof body.action === "string" ? body.action.trim().toUpperCase() : "";
 
-    if (!venueId) throw new HttpError(400, "INVALID_VENUE_ID", "Thiếu hoặc sai venueId");
-    if (!courtId) throw new HttpError(400, "INVALID_COURT_ID", "Thiếu hoặc sai courtId");
+    if (!venueId || venueId.includes("/")) throw new HttpError(400, "INVALID_VENUE_ID", "Thiếu hoặc sai venueId");
+    if (!courtId || courtId.includes("/")) throw new HttpError(400, "INVALID_COURT_ID", "Thiếu hoặc sai courtId");
     if (action !== "LOCK" && action !== "UNLOCK") {
       throw new HttpError(400, "INVALID_ACTION", "Hành động phải là LOCK hoặc UNLOCK");
     }
 
     // 1. Verify approved owner status
-    if (token.appRole !== "ADMIN") {
-      const user = await firestore.get(`users/${token.uid}`);
-      if (user?.ownerStatus !== "APPROVED") {
-        throw new HttpError(403, "FORBIDDEN", "Chủ sân chưa được phê duyệt không thể khóa hoặc mở khóa sân");
-      }
-    }
+    const admin = await requireOwnerAuthority(firestore, token);
 
     // 2. Verify venue ownership & status
     const venue = await firestore.get(`venues/${venueId}`);
     if (!venue) throw new HttpError(404, "VENUE_NOT_FOUND", "Không tìm thấy cơ sở");
-    if (venue.ownerId !== token.uid && token.appRole !== "ADMIN") {
+    if (venue.ownerId !== token.uid && !admin) {
       throw new HttpError(403, "FORBIDDEN", "Bạn không có quyền quản lý cơ sở này");
     }
     if (venue.status === "LOCKED") {
@@ -56,7 +60,9 @@ export async function handleManageSlotBlocks(
     // 4. Handle LOCK
     if (action === "LOCK") {
       const date = typeof body.date === "string" ? body.date.trim() : "";
-      if (!/^\d{8}$/.test(date)) {
+      const dateIso=`${date.slice(0,4)}-${date.slice(4,6)}-${date.slice(6,8)}`;
+      const parsedDate=new Date(`${dateIso}T00:00:00Z`);
+      if (!/^\d{8}$/.test(date) || !Number.isFinite(parsedDate.getTime()) || parsedDate.toISOString().slice(0,10)!==dateIso) {
         throw new HttpError(400, "INVALID_DATE", "Ngày phải có định dạng yyyyMMdd");
       }
 
@@ -70,7 +76,7 @@ export async function handleManageSlotBlocks(
       }
 
       const slotIds = Array.isArray(body.slotIds)
-        ? body.slotIds.map((s: unknown) => String(s).trim()).filter(Boolean)
+        ? [...new Set<string>((body.slotIds as unknown[]).map(s => String(s).trim()).filter(Boolean))]
         : [];
       if (slotIds.length === 0 || slotIds.length > 48) {
         throw new HttpError(400, "INVALID_SLOT_IDS", "Danh sách khung giờ phải từ 1 đến 48 slot");
@@ -85,6 +91,13 @@ export async function handleManageSlotBlocks(
             "INVALID_SLOT_ID_PREFIX",
             `Slot ID ${slotId} không khớp với sân ${courtId} và ngày ${date}`,
           );
+        }
+        const time=slotId.substring(prefix.length);
+        const endMinute=Number(time.slice(0,2))*60+Number(time.slice(2))+30;
+        const close=String(venue.closeTime ?? "");
+        const closeMinute=Number(close.slice(0,2))*60+Number(close.slice(2));
+        if(!/^(?:[01]\d|2[0-3])(?:00|30)$/.test(time) || time<String(venue.openTime ?? "") || !Number.isFinite(closeMinute) || endMinute>closeMinute) {
+          throw new HttpError(400,"OUTSIDE_OPENING_HOURS","Chọn khung 30 phút trong giờ hoạt động của cơ sở");
         }
       }
 
@@ -104,11 +117,11 @@ export async function handleManageSlotBlocks(
           if (status === "BLOCKED") {
             throw new HttpError(409, "SLOT_ALREADY_BLOCKED", `Khung giờ ${slotId} đã bị khóa trước đó`);
           }
-          if (status === "HELD") {
+          if (status === "HELD" || status === "HOLD") {
             const holdExpiry = slot.holdExpiresAt instanceof Date
               ? slot.holdExpiresAt.getTime()
-              : 0;
-            if (holdExpiry > now) {
+              : typeof slot.holdExpiresAt === "string" ? Date.parse(slot.holdExpiresAt) : NaN;
+            if (!Number.isFinite(holdExpiry) || holdExpiry > now) {
               throw new HttpError(409, "SLOT_HELD", `Khung giờ ${slotId} đang được giữ chỗ`);
             }
             isExpiredHold = true;
@@ -127,11 +140,13 @@ export async function handleManageSlotBlocks(
           date,
           startTime: timePart,
           endTime,
+          startAt: new Date(`${date.slice(0,4)}-${date.slice(4,6)}-${date.slice(6,8)}T${timePart.slice(0,2)}:${timePart.slice(2)}:00+07:00`),
+          endAt: new Date(new Date(`${date.slice(0,4)}-${date.slice(4,6)}-${date.slice(6,8)}T${timePart.slice(0,2)}:${timePart.slice(2)}:00+07:00`).getTime() + 30 * 60_000),
           status: "BLOCKED",
           blockReason,
         };
 
-        if (isExpiredHold) {
+        if (slot && (isExpiredHold || slot.status === "AVAILABLE")) {
           writes.push(updateWrite(`slots/${slotId}`, slotData));
         } else {
           writes.push(createWrite(`slots/${slotId}`, slotData));
@@ -163,7 +178,7 @@ export async function handleManageSlotBlocks(
 
     // 5. Handle UNLOCK
     const slotIds = Array.isArray(body.slotIds)
-      ? body.slotIds.map((s: unknown) => String(s).trim()).filter(Boolean)
+      ? [...new Set<string>((body.slotIds as unknown[]).map(s => String(s).trim()).filter(Boolean))]
       : [];
     if (slotIds.length === 0 || slotIds.length > 48) {
       throw new HttpError(400, "INVALID_SLOT_IDS", "Danh sách khung giờ mở khóa phải từ 1 đến 48 slot");
@@ -172,9 +187,14 @@ export async function handleManageSlotBlocks(
     const writes: defaultFirestore.Write[] = [];
 
     for (const slotId of slotIds) {
+      if(slotId.includes("/")) throw new HttpError(400,"INVALID_SLOT_ID","Khung giờ không hợp lệ");
       const slot = await firestore.get(`slots/${slotId}`);
       if (!slot) {
         throw new HttpError(409, "SLOT_NOT_FOUND", `Khung giờ ${slotId} không tồn tại hoặc đã được mở`);
+      }
+
+      if (slot.venueId !== venueId || slot.courtId !== courtId) {
+        throw new HttpError(403, "FORBIDDEN", "Khung giờ không thuộc sân đang quản lý");
       }
 
       const status = slot.status as string | undefined;

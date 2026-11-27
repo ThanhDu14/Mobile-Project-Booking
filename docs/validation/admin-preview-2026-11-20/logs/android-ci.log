@@ -1,0 +1,97 @@
+Reusing configuration cache.
+> Task :app:preBuild UP-TO-DATE
+> Task :app:generateDebugAssets UP-TO-DATE
+> Task :app:preDebugAndroidTestBuild SKIPPED
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:preDebugUnitTestBuild UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:extractProguardFiles UP-TO-DATE
+> Task :app:javaPreCompileDebugUnitTest UP-TO-DATE
+> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :app:generateDebugGlobalSynthetics UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests
+> Task :app:desugarDebugFileDependencies UP-TO-DATE
+> Task :app:generateDebugBuildConfig
+> Task :app:dataBindingMergeDependencyArtifactsDebug UP-TO-DATE
+> Task :app:checkDebugDuplicateClasses UP-TO-DATE
+> Task :app:mergeDebugJniLibFolders UP-TO-DATE
+> Task :app:mergeLibDexDebug UP-TO-DATE
+> Task :app:writeDebugAppMetadata UP-TO-DATE
+> Task :app:writeDebugSigningConfigVersions UP-TO-DATE
+> Task :app:validateSigningDebug UP-TO-DATE
+> Task :app:mergeDebugAssets UP-TO-DATE
+> Task :app:compressDebugAssets UP-TO-DATE
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:mergeExtDexDebug UP-TO-DATE
+> Task :app:mergeDebugNativeLibs UP-TO-DATE
+> Task :app:stripDebugDebugSymbols UP-TO-DATE
+> Task :app:processDebugGoogleServices
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:extractDeepLinksDebug
+> Task :app:processDebugNavigationResources
+> Task :app:compileDebugNavigationResources UP-TO-DATE
+
+> Task :app:processDebugMainManifest
+F:\CSC_HCMUS\Mobile\datcau\app\src\debug\AndroidManifest.xml Warning:
+	The navigation file with ID "nav_account" is included multiple times in the navigation graph, but only deep links on the first instance will be triggered at runtime. Consider consolidating these instances into a single <include> at a higher level of your navigation graph hierarchy.
+
+> Task :app:processDebugManifest
+> Task :app:processDebugManifestForPackage
+> Task :app:generateSafeArgsDebug
+> Task :app:packageDebugResources
+> Task :app:parseDebugLocalResources
+> Task :app:generateDebugRFile
+> Task :app:mergeDebugResources
+> Task :app:dataBindingGenBaseClassesDebug
+> Task :app:processDebugResources
+> Task :app:kspDebugKotlin
+> Task :app:compileDebugKotlin
+> Task :app:processDebugJavaRes UP-TO-DATE
+> Task :app:mergeDebugJavaResource UP-TO-DATE
+> Task :app:compileDebugJavaWithJavac
+> Task :app:hiltSyncDebug
+> Task :app:hiltAggregateDepsDebug UP-TO-DATE
+> Task :app:hiltJavaCompileDebug UP-TO-DATE
+> Task :app:generateDebugLintReportModel
+> Task :app:transformDebugClassesWithAsm
+> Task :app:dexBuilderDebug
+> Task :app:mergeProjectDexDebug
+> Task :app:packageDebug
+> Task :app:assembleDebug
+> Task :app:createDebugApkListingFileRedirect
+> Task :app:bundleDebugClassesToCompileJar
+> Task :app:bundleDebugClassesToRuntimeJar
+> Task :app:generateDebugUnitTestLintModel
+> Task :app:generateDebugAndroidTestLintModel
+> Task :app:kspDebugUnitTestKotlin
+> Task :app:compileDebugUnitTestKotlin UP-TO-DATE
+> Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :app:processDebugUnitTestJavaRes UP-TO-DATE
+> Task :app:hiltSyncDebugUnitTest
+> Task :app:hiltAggregateDepsDebugUnitTest UP-TO-DATE
+> Task :app:hiltJavaCompileDebugUnitTest NO-SOURCE
+> Task :app:transformDebugUnitTestClassesWithAsm
+.\gradlew.bat : OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap
+classpath has been appended
+At line:2 char:105
++ ... $env:PATH"; .\gradlew.bat lint testDebugUnitTest assembleDebug --stac ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (OpenJDK 64-Bit ...s been appended:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+> Task :app:lintAnalyzeDebug
+> Task :app:lintAnalyzeDebugAndroidTest
+> Task :app:lintAnalyzeDebugUnitTest
+> Task :app:testDebugUnitTest
+
+> Task :app:lintReportDebug
+Wrote HTML report to file:///F:/CSC_HCMUS/Mobile/datcau/app/build/reports/lint-results-debug.html
+Wrote SARIF report to file:///F:/CSC_HCMUS/Mobile/datcau/app/build/reports/lint-results-debug.sarif
+
+> Task :app:lintDebug
+> Task :app:lint
+
+BUILD SUCCESSFUL in 2m 4s
+64 actionable tasks: 36 executed, 28 up-to-date
+Configuration cache entry reused.

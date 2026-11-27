@@ -15,6 +15,13 @@
             app:destination="@id/nav_court_detail" />
     </fragment>
     <fragment
+        android:id="@+id/courtSearchFragment"
+        android:name="com.example.booking_app.feature.search.ui.CourtSearchFragment"
+        android:label="@string/nav_tab_search">
+        <deepLink app:uri="smashnow://search" />
+        <action android:id="@+id/action_search_to_courtDetail" app:destination="@id/nav_court_detail" />
+    </fragment>
+    <fragment
         android:id="@+id/myBookingsFragment"
         android:name="com.example.booking_app.feature.booking_management.ui.MyBookingsFragment"
         android:label="@string/my_bookings_060_title">
@@ -28,6 +35,7 @@
         android:id="@+id/bookingDetailFragment"
         android:name="com.example.booking_app.feature.booking_management.ui.BookingDetailFragment"
         android:label="@string/my_bookings_060_detail_title">
+        <deepLink app:uri="smashnow://notifications/booking/{bookingId}" />
         <argument
             android:name="bookingId"
             app:argType="string" />
@@ -55,6 +63,9 @@
             android:name="venueId"
             app:argType="string"
             android:defaultValue="demo-truong-chinh-909" />
+        <argument android:name="date" app:argType="string" app:nullable="true" android:defaultValue="@null" />
+        <argument android:name="startTime" app:argType="string" app:nullable="true" android:defaultValue="@null" />
+        <argument android:name="endTime" app:argType="string" app:nullable="true" android:defaultValue="@null" />
         <action
             android:id="@+id/action_bookingSlotGrid_to_bookingConfirm"
             app:destination="@id/bookingConfirmFragment" />
@@ -123,6 +134,9 @@
     <action
         android:id="@+id/action_global_dropIn"
         app:destination="@id/nav_dropin" />
+
+    <!-- Cộng đồng (spec 090): tab "Cộng đồng", deep link smashnow://community/... -->
+    <include app:graph="@navigation/nav_community" />
 
     <!-- Xem ảnh toàn màn hình dùng chung (core/ui/photo, spec 030 T019); 070 dùng cho ảnh đánh giá. -->
     <fragment

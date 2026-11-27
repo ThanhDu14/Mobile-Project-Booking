@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Bong bóng tin nhắn của người khác (bên trái, hiện tên + ảnh trong chat nhóm, tối đa 70% chiều ngang). -->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingVertical="@dimen/space_1">
+
+    <FrameLayout
+        android:id="@+id/avatarContainer"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
+        android:layout_marginEnd="@dimen/space_2"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@id/bubbleContainer"
+        app:layout_constraintStart_toStartOf="parent"
+        tools:visibility="visible">
+
+        <TextView
+            android:id="@+id/senderAvatarInitials"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@drawable/bg_account_avatar_initials"
+            android:gravity="center"
+            android:textAppearance="?attr/textAppearanceLabelSmall"
+            android:textColor="?attr/colorOnPrimaryContainer"
+            tools:text="TQ" />
+
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/senderAvatar"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="centerCrop"
+            app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full" />
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/senderName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/space_2"
+        android:layout_marginBottom="2dp"
+        android:textAppearance="?attr/textAppearanceLabelSmall"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:visibility="gone"
+        app:layout_constraintStart_toEndOf="@id/avatarContainer"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_goneMarginStart="0dp"
+        tools:text="Trần Quốc"
+        tools:visibility="visible" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/endGuide"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.7" />
+
+    <LinearLayout
+        android:id="@+id/bubbleContainer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/space_2"
+        android:background="@drawable/bg_chat_bubble_other"
+        android:orientation="vertical"
+        android:paddingHorizontal="@dimen/space_3"
+        android:paddingVertical="@dimen/space_2"
+        app:layout_constrainedWidth="true"
+        app:layout_constraintEnd_toStartOf="@id/endGuide"
+        app:layout_constraintHorizontal_bias="0.0"
+        app:layout_constraintStart_toEndOf="@id/avatarContainer"
+        app:layout_constraintTop_toBottomOf="@id/senderName"
+        app:layout_goneMarginStart="0dp">
+
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/messageImage"
+            android:layout_width="200dp"
+            android:layout_height="160dp"
+            android:layout_marginBottom="@dimen/space_1"
+            android:contentDescription="@string/chat_cd_message_photo"
+            android:scaleType="centerCrop"
+            android:visibility="gone"
+            app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Medium" />
+
+        <TextView
+            android:id="@+id/messageText"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="?attr/colorOnSurface"
+            tools:text="Còn em nhé, anh giữ giúp sân 4 đến 21:00." />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/messageTime"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/space_2"
+        android:layout_marginTop="2dp"
+        android:textAppearance="?attr/textAppearanceLabelSmall"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        app:layout_constraintStart_toEndOf="@id/avatarContainer"
+        app:layout_constraintTop_toBottomOf="@id/bubbleContainer"
+        app:layout_goneMarginStart="0dp"
+        tools:text="20:30" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

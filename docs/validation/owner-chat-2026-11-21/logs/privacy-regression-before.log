@@ -1,0 +1,86 @@
+Calculating task graph as no cached configuration is available for tasks: :app:testDebugUnitTest --tests *ChatOutboxTest --tests *FirestoreChatRepositoryTest
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:preDebugUnitTestBuild UP-TO-DATE
+> Task :app:processDebugGoogleServices UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:generateSafeArgsDebug UP-TO-DATE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:generateDebugBuildConfig UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:javaPreCompileDebugUnitTest UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :app:processDebugNavigationResources UP-TO-DATE
+> Task :app:compileDebugNavigationResources UP-TO-DATE
+> Task :app:dataBindingMergeDependencyArtifactsDebug UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:processDebugMainManifest UP-TO-DATE
+> Task :app:generateDebugRFile UP-TO-DATE
+> Task :app:processDebugManifest UP-TO-DATE
+> Task :app:processDebugManifestForPackage UP-TO-DATE
+> Task :app:dataBindingGenBaseClassesDebug UP-TO-DATE
+> Task :app:processDebugResources UP-TO-DATE
+> Task :app:kspDebugKotlin UP-TO-DATE
+> Task :app:compileDebugKotlin UP-TO-DATE
+> Task :app:processDebugJavaRes UP-TO-DATE
+> Task :app:compileDebugJavaWithJavac UP-TO-DATE
+> Task :app:hiltSyncDebug UP-TO-DATE
+> Task :app:hiltAggregateDepsDebug UP-TO-DATE
+> Task :app:hiltJavaCompileDebug UP-TO-DATE
+> Task :app:bundleDebugClassesToCompileJar UP-TO-DATE
+> Task :app:transformDebugClassesWithAsm UP-TO-DATE
+> Task :app:bundleDebugClassesToRuntimeJar UP-TO-DATE
+> Task :app:kspDebugUnitTestKotlin
+> Task :app:compileDebugUnitTestKotlin
+> Task :app:processDebugUnitTestJavaRes UP-TO-DATE
+> Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :app:hiltSyncDebugUnitTest
+> Task :app:hiltAggregateDepsDebugUnitTest UP-TO-DATE
+> Task :app:hiltJavaCompileDebugUnitTest NO-SOURCE
+> Task :app:transformDebugUnitTestClassesWithAsm
+
+> Task :app:testDebugUnitTest
+
+ChatOutboxTest > signed out outbox stays private and is not retried FAILED
+    java.lang.AssertionError at ChatOutboxTest.kt:620
+
+ChatOutboxTest > account changes during image upload do not send as the new account FAILED
+    java.lang.AssertionError at ChatOutboxTest.kt:638
+
+.\gradlew.bat : OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap
+classpath has been appended
+At line:2 char:98
++ ... tudio/jbr'; .\gradlew.bat :app:testDebugUnitTest --tests '*ChatOutbox ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (OpenJDK 64-Bit ...s been appended:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+
+> Task :app:testDebugUnitTest
+
+FirestoreChatRepositoryTest > owner inbox permission failure is an error rather than an empty inbox FAILED
+    app.cash.turbine.TurbineAssertionError at FirestoreChatRepositoryTest.kt:55
+        Caused by: app.cash.turbine.TurbineTimeoutCancellationException at channel.kt:123
+            Caused by: app.cash.turbine.TurbineTimeoutCancellationException at FirestoreChatRepositoryTest.kt:55
+
+26 tests completed, 3 failed
+
+> Task :app:testDebugUnitTest FAILED
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':app:testDebugUnitTest'.
+> There were failing tests. See the report at:
+file:///F:/CSC_HCMUS/Mobile/datcau/app/build/reports/tests/testDebugUnitTest/index.html
+
+* Try:
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+
+BUILD FAILED in 32s
+37 actionable tasks: 4 executed, 33 up-to-date
+Configuration cache entry stored.

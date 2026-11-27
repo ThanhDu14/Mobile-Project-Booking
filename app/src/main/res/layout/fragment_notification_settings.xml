@@ -1,0 +1,13 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:background="@color/sn_surface">
+ <com.google.android.material.appbar.MaterialToolbar android:id="@+id/toolbar" android:layout_width="match_parent" android:layout_height="?attr/actionBarSize" app:title="@string/notification_settings_title" app:titleTextAppearance="@style/TextAppearance.SmashNow.TitleLarge" app:navigationIcon="@drawable/ic_arrow_back_24" app:navigationContentDescription="@string/notification_back"/>
+ <ProgressBar android:id="@+id/progress" android:layout_width="@dimen/touch_min" android:layout_height="@dimen/touch_min" android:layout_gravity="center"/>
+ <TextView android:id="@+id/error" android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="@dimen/space_4" android:text="@string/notification_error" android:accessibilityLiveRegion="polite"/>
+ <com.google.android.material.button.MaterialButton android:id="@+id/retry" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_gravity="center" android:text="@string/notification_retry"/>
+ <androidx.core.widget.NestedScrollView android:id="@+id/scroll" android:layout_width="match_parent" android:layout_height="0dp" android:layout_weight="1" android:fillViewport="true">
+ <LinearLayout android:id="@+id/groups" android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="vertical" android:padding="@dimen/screen_gutter">
+ <TextView android:id="@+id/note" android:layout_width="match_parent" android:layout_height="wrap_content" android:padding="@dimen/space_4" android:background="@drawable/notification_note_background" android:text="@string/notification_note" android:textAppearance="@style/TextAppearance.SmashNow.Body" android:textColor="@color/sn_ink_muted"/>
+ <TextView android:id="@+id/permission" android:layout_width="match_parent" android:layout_height="wrap_content" android:paddingVertical="@dimen/space_2" android:text="@string/notification_permission_off"/>
+ <com.google.android.material.button.MaterialButton android:id="@+id/osSettings" style="@style/Widget.Material3.Button.TextButton" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="@string/notification_permission_settings"/>
+ </LinearLayout>
+ </androidx.core.widget.NestedScrollView>
+</LinearLayout>

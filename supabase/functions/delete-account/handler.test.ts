@@ -3,7 +3,7 @@
 import { assert, assertEquals, assertExists } from "jsr:@std/assert@1.0.19";
 import { requireUser } from "../_shared/auth.ts";
 import { type DeletionDeps, defaultDeletionDeps, supabaseStorageAdmin } from "../_shared/account-deletion.ts";
-import { commit, deleteWrite, get } from "../_shared/firestore.ts";
+import { commit, createWrite, deleteWrite, get, projectId } from "../_shared/firestore.ts";
 import { bearer, clearEmulators, emulatorToken, signInEmail, signUpEmail } from "../_shared/testing.ts";
 import { handleSweeper } from "../delete-account-sweeper/handler.ts";
 import { handleDeleteAccount } from "./handler.ts";
@@ -39,6 +39,10 @@ let counter = 0;
 
 /** Xóa Emulator, tạo người dùng Auth thật + `users/{uid}`, Storage giả có 2 ảnh của người này và 1 ảnh người khác. */
 async function setup(userData: Record<string, unknown> = {}): Promise<Ctx> {
+  assert(projectId().startsWith("demo-"), "Account deletion tests require an isolated demo project");
+  for (const key of ["FIRESTORE_EMULATOR_HOST", "FIREBASE_AUTH_EMULATOR_HOST"]) {
+    assert(/^127\.0\.0\.1:\d+$/.test(Deno.env.get(key) ?? ""), `${key} must be local`);
+  }
   await clearEmulators();
   const email = `xoa${++counter}@example.com`;
   const { uid } = await signUpEmail(email);
@@ -98,6 +102,37 @@ function test(name: string, fn: (ctx: Ctx) => Promise<void>, setupData?: Record<
 }
 
 // ---------- preview ----------
+
+test("F100 T054: deletion drains multiple notification batches and removes tokens/preferences without touching another user", async (ctx) => {
+    const jobPath = `notificationDeliveries/delete-${ctx.uid}`;
+    await commit([createWrite(jobPath, { recipientUid: ctx.uid, state: "LEASED" }),
+      createWrite("notificationDeliveries/unrelated", { recipientUid: "unrelated", state: "PENDING" }),
+      ...Array.from({ length: 205 }, (_, i) => createWrite(`${jobPath}/tokens/h${i}`, { state: "SENDING" }))]);
+  const notifications = Array.from({ length: 405 }, (_, i) => createWrite(`users/${ctx.uid}/notifications/n${i}`, {
+    type: "SYSTEM", title: "Saved", body: "Details", data: {}, isRead: i % 2 === 0, createdAt: new Date(),
+  }));
+  await commit([...notifications, createWrite(`users/${ctx.uid}/ownerRevocationCommands/test`, {
+    actorUid: "admin", reasonHash: "fixture", createdAt: new Date(),
+  })]);
+  await seedUser("unrelated", { fcmTokens: ["unrelated-token"], notificationPrefs: { PROMOTION: true } });
+  await commit([createWrite("users/unrelated/notifications/keep", {
+    type: "SYSTEM", title: "Keep", body: "Unrelated", data: {}, isRead: false, createdAt: new Date(),
+  })]);
+  assertEquals((await docsIn("notifications", `users/${ctx.uid}`)).length, 405);
+  const response = await confirm(ctx);
+  assertEquals(response.status, 200);
+  assertEquals(response.body.status, "DELETED");
+  assertEquals(await get(`users/${ctx.uid}`), null); // Removes both token array and preference map.
+  assertEquals(await docsIn("notifications", `users/${ctx.uid}`), []);
+  assertEquals(await docsIn("ownerRevocationCommands", `users/${ctx.uid}`), []);
+    assertEquals(await get(jobPath), null);
+    assertEquals(await docsIn("tokens", jobPath), []);
+    assertEquals((await get("notificationDeliveries/unrelated"))?.state, "PENDING");
+  const unrelated = await get("users/unrelated");
+  assertEquals(unrelated?.fcmTokens, ["unrelated-token"]);
+  assertEquals(unrelated?.notificationPrefs, { PROMOTION: true });
+  assertEquals((await docsIn("notifications", "users/unrelated")).length, 1);
+}, { fcmTokens: ["test-token-a", "test-token-b"], notificationPrefs: { PROMOTION: true, CHAT_MESSAGE: false } });
 
 test("X1: người chơi không có đơn, preview → myBookings rỗng, ownerImpact null, có impactVersion", async (ctx) => {
   const p = await preview(ctx);

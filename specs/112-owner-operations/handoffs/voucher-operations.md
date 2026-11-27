@@ -1,5 +1,7 @@
 # Handoff: venue voucher ownership and schema
 
+> Trạng thái 2026-11-21: tài liệu handoff lịch sử. Endpoint, repository/DI, quyền parent LOCKED, waitlist và notification đã có code thực; các yêu cầu xác nhận bên dưới không còn là gate implementation hiện tại. Nguồn hiện hành: [contract](../contracts/owner-operations-boundaries.md), [mapping](../implementation-mapping.md), [kết quả kiểm chứng](../../../docs/validation/feature11-2026-11-21/README.md). Không suy ra chức năng thiếu từ tên ContractPending không được bind.
+
 **Feature owners:** Feature 111 (venue configuration), Feature 050 (application/redemption and payment), database owner.  
 **Feature 112 consumer:** list/create/edit/enable-disable venue vouchers; never apply vouchers or mutate redemption counters.
 

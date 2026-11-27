@@ -41,10 +41,12 @@ class OwnerStatisticsFragment : Fragment(R.layout.fragment_owner_statistics) {
         binding.periodGroup.isSingleSelection = true
         binding.day.setOnClickListener { viewModel.setPeriod(OwnerStatisticsPeriod.DAY) }
         binding.week.setOnClickListener { viewModel.setPeriod(OwnerStatisticsPeriod.WEEK) }
-        binding.custom.setOnClickListener { applyCustomRange() }
+        binding.custom.setOnClickListener { viewModel.setPeriod(OwnerStatisticsPeriod.CUSTOM) }
         binding.previous.setOnClickListener { viewModel.movePeriod(-1) }
         binding.next.setOnClickListener { viewModel.movePeriod(1) }
-        binding.refresh.setOnClickListener { viewModel.refresh() }
+        binding.refresh.setOnClickListener {
+            if (viewModel.uiState.value.period == OwnerStatisticsPeriod.CUSTOM) applyCustomRange() else viewModel.refresh()
+        }
         binding.venueSpinner.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
             override fun onNothingSelected(parent: AdapterView<*>?) = Unit
             override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
@@ -74,6 +76,7 @@ class OwnerStatisticsFragment : Fragment(R.layout.fragment_owner_statistics) {
         binding.custom.isChecked = state.period == OwnerStatisticsPeriod.CUSTOM
         binding.navigationRow.isVisible = state.period != OwnerStatisticsPeriod.CUSTOM
         binding.customRange.isVisible = state.period == OwnerStatisticsPeriod.CUSTOM
+        binding.refresh.setText(if (state.period == OwnerStatisticsPeriod.CUSTOM) R.string.confirm else R.string.common_retry)
         binding.periodLabel.text = when (state.period) {
             OwnerStatisticsPeriod.DAY -> state.selectedDate.format(DATE_FORMAT)
             OwnerStatisticsPeriod.WEEK -> {
@@ -105,13 +108,13 @@ class OwnerStatisticsFragment : Fragment(R.layout.fragment_owner_statistics) {
     }
 
     private fun renderResult(result: OwnerStatisticsResult) {
-        binding.revenue.text = getString(
-            R.string.owner_statistics_revenue,
-            NUMBER_FORMAT.format(result.revenue.depositedVnd),
-            NUMBER_FORMAT.format(result.revenue.paidVnd),
-            result.revenue.refundedBookingCount,
-            NUMBER_FORMAT.format(result.revenue.refundedVnd),
-        )
+        binding.revenue.text = getString(R.string.owner_amount_vnd, NUMBER_FORMAT.format(result.revenue.paidVnd))
+        binding.revenueSubtitle.setText(R.string.owner_stats_paid_explanation)
+        binding.depositAmount.text = getString(R.string.owner_amount_vnd, NUMBER_FORMAT.format(result.revenue.depositedVnd))
+        binding.depositBookingCount.isVisible = false
+        binding.refundCount.text = getString(R.string.owner_stats_refund_count, result.revenue.refundedBookingCount)
+        binding.refundAmount.text = getString(R.string.owner_amount_vnd, NUMBER_FORMAT.format(result.revenue.refundedVnd))
+        binding.occupancyProgress.progress = result.occupancyPercent.toInt().coerceIn(0,100)
         binding.occupancy.text = getString(R.string.owner_statistics_occupancy, result.occupancyPercent)
         val freshness = result.computedAt.atZone(LOCAL_ZONE).format(DATE_TIME_FORMAT)
         binding.freshness.text = getString(if (result.isPartialPeriod) R.string.owner_statistics_partial_freshness else R.string.owner_statistics_freshness, freshness)

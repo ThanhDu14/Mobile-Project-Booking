@@ -1,5 +1,5 @@
 import { assertEquals } from "jsr:@std/assert@1.0.19";
-import { commit, createWrite, updateWrite } from "../_shared/firestore.ts";
+import { commit, createWrite, updateWrite, documentName } from "../_shared/firestore.ts";
 import { bearer, clearEmulators, emulatorToken } from "../_shared/testing.ts";
 import { handleOwnerDocs } from "./handler.ts";
 
@@ -36,6 +36,22 @@ Deno.test("owner-docs enforces applicant/admin paths and signs only authorized s
     const uploadBody = await upload.json();
     assertEquals(String(uploadBody.path).startsWith(`${uid}/${applicationId}/`), true);
     assertEquals(uploadBody.token, "upload-token");
+
+    await commit([updateWrite(`users/${uid}`,{role:"OWNER",ownerStatus:"APPROVED"})]);
+    const additionalUpload={action:"SIGN_UPLOAD",purpose:"VENUE_ADDITION",applicationId,fileName:"license.jpg",contentType:"image/jpeg",sizeBytes:1024};
+    const ownerUpload=await handleOwnerDocs(bearer(token(uid,"OWNER"),{body:JSON.stringify(additionalUpload)}));
+    assertEquals(ownerUpload.status,200);
+    assertEquals(String((await ownerUpload.json()).path).startsWith(`${uid}/${applicationId}/`),true);
+    await commit([createWrite(`ownerApplications/${applicationId}`,{uid,purpose:"VENUE_ADDITION",status:"PENDING",documentPaths:[documentPath]})]);
+    const frozen=await handleOwnerDocs(bearer(token(uid,"OWNER"),{body:JSON.stringify(additionalUpload)}));
+    assertEquals(frozen.status,409); await frozen.body?.cancel();
+    await commit([updateWrite(`ownerApplications/${applicationId}`,{status:"REJECTED"})]);
+    const resubmitUpload=await handleOwnerDocs(bearer(token(uid,"OWNER"),{body:JSON.stringify(additionalUpload)}));
+    assertEquals(resubmitUpload.status,200); await resubmitUpload.body?.cancel();
+    await commit([updateWrite(`users/${uid}`,{role:"PLAYER",ownerStatus:"NONE"})]);
+    const revoked=await handleOwnerDocs(bearer(token(uid,"OWNER"),{body:JSON.stringify(additionalUpload)}));
+    assertEquals(revoked.status,403); await revoked.body?.cancel();
+    await commit([{delete:documentName(`ownerApplications/${applicationId}`)}]);
 
     const invalidMime = await handleOwnerDocs(bearer(token(), {
       body: JSON.stringify({ action: "SIGN_UPLOAD", applicationId, fileName: "license.pdf", contentType: "application/pdf", sizeBytes: 1024 }),

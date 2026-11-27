@@ -55,6 +55,7 @@ data class AdminManageUserResponse(
 data class AdminRevokeOwnerRequest(
     val uid: String,
     val reason: String,
+    val requestId: String,
 )
 
 @Serializable
@@ -149,6 +150,7 @@ class AdminUserVenueRepositoryImpl @Inject constructor(
                 body = AdminRevokeOwnerRequest(
                     uid = decision.uid,
                     reason = decision.reason.trim(),
+                    requestId = decision.requestId,
                 ),
             ).body<AdminRevokeOwnerResponse>()
         }

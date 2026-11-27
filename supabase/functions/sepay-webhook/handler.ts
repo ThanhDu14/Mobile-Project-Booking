@@ -1,6 +1,7 @@
 import * as defaultFirestore from "../_shared/firestore.ts";
 import { createWrite, type FirestoreTransaction, updateWrite, type Write } from "../_shared/firestore.ts";
-import { approvalDeadline, asDate, asNumber, asString, type Doc, notificationWrite } from "../_shared/payment-order.ts";
+import { approvalDeadline, asDate, asNumber, asString, type Doc } from "../_shared/payment-order.ts";
+import { prepareBookingNew } from "../_shared/booking-notification.ts";
 import { commitWrites, loadRedemption, type VoucherRef } from "../_shared/payment-voucher.ts";
 import { refundCreateWrite, refundIdFor } from "../_shared/refunds.ts";
 import { parseSepayTransaction, type SepayTransaction, verifySepaySignature } from "../_shared/sepay.ts";
@@ -61,7 +62,8 @@ async function loadTarget(tx: FirestoreTransaction, code: Doc): Promise<Target |
     const doc = await tx.get(`recurringGroups/${groupId}`);
     const sessions = (await tx.query("bookings", [{ field: "recurringGroupId", op: "EQUAL", value: groupId }]))
       .map((d) => ({ id: d.id, data: d.data }))
-      .sort((a, b) => (asDate(a.data.startAt)?.getTime() ?? 0) - (asDate(b.data.startAt)?.getTime() ?? 0));
+      .sort((a, b) => (asDate(a.data.startAt)?.getTime() ?? 0) - (asDate(b.data.startAt)?.getTime() ?? 0) ||
+        a.id.localeCompare(b.id));
     const slotIds = sessions.flatMap((s) => ((s.data.slotIds as unknown[] | undefined) ?? []).map(String));
     return { path: `recurringGroups/${groupId}`, key: groupId, recurring: true, doc, sessions, slotIds };
   }
@@ -100,11 +102,13 @@ async function confirmWrites(
   const total = asNumber(doc.total);
   const paid = asNumber(doc.amountDue);
   const paymentStatus = paid >= total ? "PAID" : "DEPOSITED";
-  const venue = await tx.get(`venues/${venueId}`);
   const ref = heldVoucherRef(doc, venueId);
   const voucher = ref ? commitWrites(ref, t.key, await loadRedemption(tx, ref, t.key)) : [];
   const paidFields = { paymentStatus, paidAt: now, sepayTransactionId: sepay.id, holdExpiresAt: null, updatedAt: now };
-  const venueName = asString((doc.venueSnapshot as Doc | undefined)?.name) ?? asString(venue?.name) ?? "";
+  const first = t.recurring ? t.sessions[0] : { id: t.key, data: doc };
+  const notifications = first ? await prepareBookingNew(tx, first.id, {
+    venueId, status: "PENDING", approvalDeadline: approvalDeadline(now, asDate(first.data.startAt) ?? now),
+  }, now, `booking_new_${t.key}`) : [];
 
   const docWrites: Write[] = [];
   if (t.recurring) {
@@ -148,7 +152,7 @@ async function confirmWrites(
     ...t.slotIds.map((id) => updateWrite(`slots/${id}`, { status: "BOOKED", holdExpiresAt: null })),
     updateWrite(`paymentCodes/${paymentCode}`, { active: false }),
     ...voucher,
-    ...notificationWrite(asString(venue?.ownerId) ?? "", t.key, venueName, t.recurring, now),
+    ...notifications,
   ];
 }
 

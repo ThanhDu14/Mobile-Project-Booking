@@ -1,0 +1,223 @@
+﻿i  emulators: Starting emulators: auth, firestore
+i  emulators: Detected demo project ID "demo-admin-repair", emulated services will use a demo configuration and attempts to access non-emulated services for this project will fail.
+i  firestore: Firestore Emulator logging to firestore-debug.log
++  firestore: Firestore Emulator was started in standard edition.
++  firestore: Firestore Emulator UI websocket is running on 9150.
+i  Running script: powershell -ExecutionPolicy Bypass -File scripts/notification/validate-device-emulator.ps1
+8080
+9099
+Performing Streamed Install
+Success
+Performing Streamed Install
+Success
+INSTRUMENTATION_STATUS: class=com.example.booking_app.feature.notification.NotificationEmulatorDeviceTest
+INSTRUMENTATION_STATUS: current=1
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=1
+INSTRUMENTATION_STATUS: stream=
+com.example.booking_app.feature.notification.NotificationEmulatorDeviceTest:
+INSTRUMENTATION_STATUS: test=serverPagingPreferencesRoutingAndAccountSwitch
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=com.example.booking_app.feature.notification.NotificationEmulatorDeviceTest
+INSTRUMENTATION_STATUS: current=1
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=1
+INSTRUMENTATION_STATUS: stack=Unknown(cause=com.google.firebase.firestore.FirebaseFirestoreException: PERMISSION_DENIED:
+false for 'get' @ L156)
+	at com.example.booking_app.core.network.TaskAwaitKt.toAppError(TaskAwait.kt:41)
+	at com.example.booking_app.core.network.TaskAwaitKt.awaitWithTimeout(TaskAwait.kt:28)
+	at com.example.booking_app.core.network.TaskAwaitKt$awaitWithTimeout$1.invokeSuspend(TaskAwait.kt:15)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+	at kotlinx.coroutines.internal.ScopeCoroutine.afterResume(Scopes.kt:35)
+	at kotlinx.coroutines.AbstractCoroutine.resumeWith(AbstractCoroutine.kt:101)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:47)
+	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:98)
+	at kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:263)
+	at kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:94)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking(Builders.kt:70)
+	at kotlinx.coroutines.BuildersKt.runBlocking(dex-id-e4502f858af1300eb2742ccb9a6ef9aa5783fe9c-18142:1)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking$default(Builders.kt:48)
+	at kotlinx.coroutines.BuildersKt.runBlocking$default(dex-id-e4502f858af1300eb2742ccb9a6ef9aa5783fe9c-18143:1)
+	at com.example.booking_app.feature.notification.NotificationEmulatorDeviceTest.serverPagingPreferencesRoutingAndAccountSwitch(NotificationEmulatorDeviceTest.kt:29)
+	... 31 trimmed
+Caused by: com.google.firebase.firestore.FirebaseFirestoreException: PERMISSION_DENIED:
+false for 'get' @ L156
+	at com.google.firebase.firestore.util.Util.exceptionFromStatus(Util.java:152)
+	at com.google.firebase.firestore.core.EventManager.onError(EventManager.java:251)
+	at com.google.firebase.firestore.core.SyncEngine.removeAndCleanupTarget(SyncEngine.java:642)
+	at com.google.firebase.firestore.core.SyncEngine.handleRejectedListen(SyncEngine.java:478)
+	at com.google.firebase.firestore.core.MemoryComponentProvider$RemoteStoreCallback.handleRejectedListen(MemoryComponentProvider.java:125)
+	at com.google.firebase.firestore.remote.RemoteStore.processTargetError(RemoteStore.java:598)
+	at com.google.firebase.firestore.remote.RemoteStore.handleWatchChange(RemoteStore.java:481)
+	at com.google.firebase.firestore.remote.RemoteStore.access$100(RemoteStore.java:62)
+	at com.google.firebase.firestore.remote.RemoteStore$1.onWatchChange(RemoteStore.java:190)
+	at com.google.firebase.firestore.remote.WatchStream.onNext(WatchStream.java:114)
+	at com.google.firebase.firestore.remote.WatchStream.onNext(WatchStream.java:38)
+	at com.google.firebase.firestore.remote.AbstractStream$StreamObserver.lambda$onNext$1$com-google-firebase-firestore-remote-AbstractStream$StreamObserver(AbstractStream.java:126)
+	at com.google.firebase.firestore.remote.AbstractStream$StreamObserver$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
+	at com.google.firebase.firestore.remote.AbstractStream$CloseGuardedRunner.run(AbstractStream.java:67)
+	at com.google.firebase.firestore.remote.AbstractStream$StreamObserver.onNext(AbstractStream.java:113)
+	at com.google.firebase.firestore.remote.FirestoreChannel$1.onMessage(FirestoreChannel.java:162)
+	at io.grpc.internal.DelayedClientCall$DelayedListener.onMessage(DelayedClientCall.java:473)
+	at io.grpc.internal.ClientCallImpl$ClientStreamListenerImpl$1MessagesAvailable.runInternal(ClientCallImpl.java:667)
+	at io.grpc.internal.ClientCallImpl$ClientStreamListenerImpl$1MessagesAvailable.runInContext(ClientCallImpl.java:654)
+	at io.grpc.internal.ContextRunnable.run(ContextRunnable.java:37)
+	at io.grpc.internal.SerializingExecutor.run(SerializingExecutor.java:133)
+	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:520)
+	at java.util.concurrent.FutureTask.run(FutureTask.java:328)
+	at java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:323)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1100)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+	at com.google.firebase.firestore.util.AsyncQueue$SynchronizedShutdownAwareExecutor$DelayedStartFactory.run(AsyncQueue.java:235)
+	at java.lang.Thread.run(Thread.java:1571)
+Caused by: io.grpc.StatusException: PERMISSION_DENIED:
+false for 'get' @ L156
+	at io.grpc.Status.asException(Status.java:541)
+	at com.google.firebase.firestore.util.Util.exceptionFromStatus(Util.java:150)
+	... 27 more
+
+INSTRUMENTATION_STATUS: stream=
+Error in serverPagingPreferencesRoutingAndAccountSwitch(com.example.booking_app.feature.notification.NotificationEmulatorDeviceTest):
+Unknown(cause=com.google.firebase.firestore.FirebaseFirestoreException: PERMISSION_DENIED:
+false for 'get' @ L156)
+	at com.example.booking_app.core.network.TaskAwaitKt.toAppError(TaskAwait.kt:41)
+	at com.example.booking_app.core.network.TaskAwaitKt.awaitWithTimeout(TaskAwait.kt:28)
+	at com.example.booking_app.core.network.TaskAwaitKt$awaitWithTimeout$1.invokeSuspend(TaskAwait.kt:15)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+	at kotlinx.coroutines.internal.ScopeCoroutine.afterResume(Scopes.kt:35)
+	at kotlinx.coroutines.AbstractCoroutine.resumeWith(AbstractCoroutine.kt:101)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:47)
+	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:98)
+	at kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:263)
+	at kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:94)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking(Builders.kt:70)
+	at kotlinx.coroutines.BuildersKt.runBlocking(dex-id-e4502f858af1300eb2742ccb9a6ef9aa5783fe9c-18142:1)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking$default(Builders.kt:48)
+	at kotlinx.coroutines.BuildersKt.runBlocking$default(dex-id-e4502f858af1300eb2742ccb9a6ef9aa5783fe9c-18143:1)
+	at com.example.booking_app.feature.notification.NotificationEmulatorDeviceTest.serverPagingPreferencesRoutingAndAccountSwitch(NotificationEmulatorDeviceTest.kt:29)
+	... 31 trimmed
+Caused by: com.google.firebase.firestore.FirebaseFirestoreException: PERMISSION_DENIED:
+false for 'get' @ L156
+	at com.google.firebase.firestore.util.Util.exceptionFromStatus(Util.java:152)
+	at com.google.firebase.firestore.core.EventManager.onError(EventManager.java:251)
+	at com.google.firebase.firestore.core.SyncEngine.removeAndCleanupTarget(SyncEngine.java:642)
+	at com.google.firebase.firestore.core.SyncEngine.handleRejectedListen(SyncEngine.java:478)
+	at com.google.firebase.firestore.core.MemoryComponentProvider$RemoteStoreCallback.handleRejectedListen(MemoryComponentProvider.java:125)
+	at com.google.firebase.firestore.remote.RemoteStore.processTargetError(RemoteStore.java:598)
+	at com.google.firebase.firestore.remote.RemoteStore.handleWatchChange(RemoteStore.java:481)
+	at com.google.firebase.firestore.remote.RemoteStore.access$100(RemoteStore.java:62)
+	at com.google.firebase.firestore.remote.RemoteStore$1.onWatchChange(RemoteStore.java:190)
+	at com.google.firebase.firestore.remote.WatchStream.onNext(WatchStream.java:114)
+	at com.google.firebase.firestore.remote.WatchStream.onNext(WatchStream.java:38)
+	at com.google.firebase.firestore.remote.AbstractStream$StreamObserver.lambda$onNext$1$com-google-firebase-firestore-remote-AbstractStream$StreamObserver(AbstractStream.java:126)
+	at com.google.firebase.firestore.remote.AbstractStream$StreamObserver$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
+	at com.google.firebase.firestore.remote.AbstractStream$CloseGuardedRunner.run(AbstractStream.java:67)
+	at com.google.firebase.firestore.remote.AbstractStream$StreamObserver.onNext(AbstractStream.java:113)
+	at com.google.firebase.firestore.remote.FirestoreChannel$1.onMessage(FirestoreChannel.java:162)
+	at io.grpc.internal.DelayedClientCall$DelayedListener.onMessage(DelayedClientCall.java:473)
+	at io.grpc.internal.ClientCallImpl$ClientStreamListenerImpl$1MessagesAvailable.runInternal(ClientCallImpl.java:667)
+	at io.grpc.internal.ClientCallImpl$ClientStreamListenerImpl$1MessagesAvailable.runInContext(ClientCallImpl.java:654)
+	at io.grpc.internal.ContextRunnable.run(ContextRunnable.java:37)
+	at io.grpc.internal.SerializingExecutor.run(SerializingExecutor.java:133)
+	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:520)
+	at java.util.concurrent.FutureTask.run(FutureTask.java:328)
+	at java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:323)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1100)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+	at com.google.firebase.firestore.util.AsyncQueue$SynchronizedShutdownAwareExecutor$DelayedStartFactory.run(AsyncQueue.java:235)
+	at java.lang.Thread.run(Thread.java:1571)
+Caused by: io.grpc.StatusException: PERMISSION_DENIED:
+false for 'get' @ L156
+	at io.grpc.Status.asException(Status.java:541)
+	at com.google.firebase.firestore.util.Util.exceptionFromStatus(Util.java:150)
+	... 27 more
+
+INSTRUMENTATION_STATUS: test=serverPagingPreferencesRoutingAndAccountSwitch
+INSTRUMENTATION_STATUS_CODE: -2
+INSTRUMENTATION_RESULT: stream=
+
+Time: 7,405
+There was 1 failure:
+1) serverPagingPreferencesRoutingAndAccountSwitch(com.example.booking_app.feature.notification.NotificationEmulatorDeviceTest)
+Unknown(cause=com.google.firebase.firestore.FirebaseFirestoreException: PERMISSION_DENIED:
+false for 'get' @ L156)
+	at com.example.booking_app.core.network.TaskAwaitKt.toAppError(TaskAwait.kt:41)
+	at com.example.booking_app.core.network.TaskAwaitKt.awaitWithTimeout(TaskAwait.kt:28)
+	at com.example.booking_app.core.network.TaskAwaitKt$awaitWithTimeout$1.invokeSuspend(TaskAwait.kt:15)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+	at kotlinx.coroutines.internal.ScopeCoroutine.afterResume(Scopes.kt:35)
+	at kotlinx.coroutines.AbstractCoroutine.resumeWith(AbstractCoroutine.kt:101)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:47)
+	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:98)
+	at kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:263)
+	at kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:94)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking(Builders.kt:70)
+	at kotlinx.coroutines.BuildersKt.runBlocking(dex-id-e4502f858af1300eb2742ccb9a6ef9aa5783fe9c-18142:1)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking$default(Builders.kt:48)
+	at kotlinx.coroutines.BuildersKt.runBlocking$default(dex-id-e4502f858af1300eb2742ccb9a6ef9aa5783fe9c-18143:1)
+	at com.example.booking_app.feature.notification.NotificationEmulatorDeviceTest.serverPagingPreferencesRoutingAndAccountSwitch(NotificationEmulatorDeviceTest.kt:29)
+	... 31 trimmed
+Caused by: com.google.firebase.firestore.FirebaseFirestoreException: PERMISSION_DENIED:
+false for 'get' @ L156
+	at com.google.firebase.firestore.util.Util.exceptionFromStatus(Util.java:152)
+	at com.google.firebase.firestore.core.EventManager.onError(EventManager.java:251)
+	at com.google.firebase.firestore.core.SyncEngine.removeAndCleanupTarget(SyncEngine.java:642)
+	at com.google.firebase.firestore.core.SyncEngine.handleRejectedListen(SyncEngine.java:478)
+	at com.google.firebase.firestore.core.MemoryComponentProvider$RemoteStoreCallback.handleRejectedListen(MemoryComponentProvider.java:125)
+	at com.google.firebase.firestore.remote.RemoteStore.processTargetError(RemoteStore.java:598)
+	at com.google.firebase.firestore.remote.RemoteStore.handleWatchChange(RemoteStore.java:481)
+	at com.google.firebase.firestore.remote.RemoteStore.access$100(RemoteStore.java:62)
+	at com.google.firebase.firestore.remote.RemoteStore$1.onWatchChange(RemoteStore.java:190)
+	at com.google.firebase.firestore.remote.WatchStream.onNext(WatchStream.java:114)
+	at com.google.firebase.firestore.remote.WatchStream.onNext(WatchStream.java:38)
+	at com.google.firebase.firestore.remote.AbstractStream$StreamObserver.lambda$onNext$1$com-google-firebase-firestore-remote-AbstractStream$StreamObserver(AbstractStream.java:126)
+	at com.google.firebase.firestore.remote.AbstractStream$StreamObserver$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
+	at com.google.firebase.firestore.remote.AbstractStream$CloseGuardedRunner.run(AbstractStream.java:67)
+	at com.google.firebase.firestore.remote.AbstractStream$StreamObserver.onNext(AbstractStream.java:113)
+	at com.google.firebase.firestore.remote.FirestoreChannel$1.onMessage(FirestoreChannel.java:162)
+	at io.grpc.internal.DelayedClientCall$DelayedListener.onMessage(DelayedClientCall.java:473)
+	at io.grpc.internal.ClientCallImpl$ClientStreamListenerImpl$1MessagesAvailable.runInternal(ClientCallImpl.java:667)
+	at io.grpc.internal.ClientCallImpl$ClientStreamListenerImpl$1MessagesAvailable.runInContext(ClientCallImpl.java:654)
+	at io.grpc.internal.ContextRunnable.run(ContextRunnable.java:37)
+	at io.grpc.internal.SerializingExecutor.run(SerializingExecutor.java:133)
+	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:520)
+	at java.util.concurrent.FutureTask.run(FutureTask.java:328)
+	at java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:323)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1100)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+	at com.google.firebase.firestore.util.AsyncQueue$SynchronizedShutdownAwareExecutor$DelayedStartFactory.run(AsyncQueue.java:235)
+	at java.lang.Thread.run(Thread.java:1571)
+Caused by: io.grpc.StatusException: PERMISSION_DENIED:
+false for 'get' @ L156
+	at io.grpc.Status.asException(Status.java:541)
+	at com.google.firebase.firestore.util.Util.exceptionFromStatus(Util.java:150)
+	... 27 more
+
+FAILURES!!!
+Tests run: 1,  Failures: 1
+
+
+INSTRUMENTATION_CODE: -1
+
+npx.cmd : Device repository test failed
+At line:2 char:105
++ ... $env:PATH"; npx.cmd --yes firebase-tools@15 emulators:exec --project  ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Device repository test failed:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+At F:\CSC_HCMUS\Mobile\datcau\scripts\notification\validate-device-emulator.ps1:28 char:70
++ ...  -notmatch 'OK \(1 test\)') { throw 'Device repository test failed' }
++                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : OperationStopped: (Device repository test failed:String) [], RuntimeException
+    + FullyQualifiedErrorId : Device repository test failed
+
+!  Script exited unsuccessfully (code 1)
+i  emulators: Shutting down emulators.
+i  firestore: Stopping Firestore Emulator
+!  Firestore Emulator has exited upon receiving signal: SIGINT
+i  auth: Stopping Authentication Emulator
+i  hub: Stopping emulator hub
+i  logging: Stopping Logging Emulator
+
+Error: Script "powershell -ExecutionPolicy Bypass -File scripts/notification/validate-device-emulator.ps1" exited with code 1

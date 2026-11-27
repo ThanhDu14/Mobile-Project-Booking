@@ -92,6 +92,7 @@ class FirestoreBookingManagementRepositoryTest {
             every { id } returns "b1"
             every { data } returns validBookingData("b1")
             every { getTimestamp("createdAt") } returns start
+            every { this@mockk.get("createdAt") } returns start
         }
         every { querySnapshot.documents } returns listOf(doc1)
 
@@ -109,11 +110,13 @@ class FirestoreBookingManagementRepositoryTest {
             every { id } returns "valid_b"
             every { data } returns validBookingData("valid_b")
             every { getTimestamp("createdAt") } returns start
+            every { this@mockk.get("createdAt") } returns start
         }
         val corruptedDoc: DocumentSnapshot = mockk {
             every { id } returns "corrupted_b"
             every { data } returns mapOf("userId" to testUid, "status" to "PENDING") // missing items, amounts, timestamps
             every { getTimestamp("createdAt") } returns null
+            every { this@mockk.get("createdAt") } returns null
         }
         every { querySnapshot.documents } returns listOf(validDoc, corruptedDoc)
 
@@ -131,6 +134,7 @@ class FirestoreBookingManagementRepositoryTest {
                 every { id } returns "b$i"
                 every { data } returns validBookingData("b$i")
                 every { getTimestamp("createdAt") } returns start
+                every { this@mockk.get("createdAt") } returns start
             }
         }
         every { querySnapshot.documents } returns docs
@@ -168,11 +172,13 @@ class FirestoreBookingManagementRepositoryTest {
             every { id } returns "hold_active"
             every { data } returns activeHoldData
             every { getTimestamp("createdAt") } returns start
+            every { this@mockk.get("createdAt") } returns start
         }
         val expiredDoc: DocumentSnapshot = mockk {
             every { id } returns "hold_expired"
             every { data } returns expiredHoldData
             every { getTimestamp("createdAt") } returns start
+            every { this@mockk.get("createdAt") } returns start
         }
         every { querySnapshot.documents } returns listOf(activeDoc, expiredDoc)
 
@@ -192,6 +198,7 @@ class FirestoreBookingManagementRepositoryTest {
             every { data } returns validBookingData("b1")
             every { getString("status") } returns "PENDING"
             every { getTimestamp("createdAt") } returns start
+            every { this@mockk.get("createdAt") } returns start
         }
         val fallbackSnapshot: QuerySnapshot = mockk()
         every { fallbackSnapshot.metadata } returns this@FirestoreBookingManagementRepositoryTest.metadata
@@ -217,6 +224,29 @@ class FirestoreBookingManagementRepositoryTest {
         every { session.currentUid() } returns null
 
         repository.getPage(BookingTab.PENDING, null, 10)
+    }
+
+    @Test
+    fun observeTabInvalidations_ignoresTheFirstSnapshotAndSnapshotsWithoutChanges() = kotlinx.coroutines.test.runTest {
+        val listenerSlot = slot<EventListener<QuerySnapshot>>()
+        every { userQuery.addSnapshotListener(capture(listenerSlot)) } returns mockk(relaxed = true)
+        fun snapshot(changes: Int): QuerySnapshot = mockk {
+            every { documentChanges } returns List(changes) { mockk<com.google.firebase.firestore.DocumentChange>() }
+        }
+
+        var reloads = 0
+        val job = launch { repository.observeTabInvalidations(BookingTab.CANCELLED).collect { reloads++ } }
+        testScheduler.advanceUntilIdle()
+
+        listenerSlot.captured.onEvent(snapshot(changes = 13), null) // dữ liệu ban đầu (từ cache)
+        listenerSlot.captured.onEvent(snapshot(changes = 0), null)  // server xác nhận, không đổi gì
+        testScheduler.advanceUntilIdle()
+        assertEquals(0, reloads)
+
+        listenerSlot.captured.onEvent(snapshot(changes = 1), null)  // một đơn vừa đổi trạng thái
+        testScheduler.advanceUntilIdle()
+        assertEquals(1, reloads)
+        job.cancel()
     }
 
     @Test

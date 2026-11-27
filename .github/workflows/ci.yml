@@ -119,6 +119,11 @@ jobs:
         working-directory: supabase/functions
         run: deno check .
 
+      # Cổng mặc định 5432x nằm trong dải cổng tạm của Linux và có thể đang được dùng.
+      # Chỉ CI dùng 1542x; URL và khóa bên dưới vẫn lấy từ supabase status.
+      - name: Cấu hình cổng Supabase cho CI
+        run: sed -i -E 's/^(port|shadow_port) = 5432([0-9])$/\1 = 1542\2/' supabase/config.toml
+
       # admin-integration.local.test.ts kiểm tra signed URL thật trên Storage local.
       - name: Khởi động Supabase local và cấu hình Storage
         run: |

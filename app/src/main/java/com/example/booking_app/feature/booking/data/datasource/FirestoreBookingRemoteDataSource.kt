@@ -1,5 +1,12 @@
 package com.example.booking_app.feature.booking.data.datasource
 
+import com.example.booking_app.core.navigation.HoldToPaymentArgs
+import com.example.booking_app.core.network.AppError
+import com.example.booking_app.core.network.DEFAULT_TIMEOUT_MS
+import com.example.booking_app.core.network.FunctionErrors
+import com.example.booking_app.core.network.FunctionHttpException
+import com.example.booking_app.core.network.parseFunctionErrorCode
+import com.example.booking_app.feature.booking.data.mapper.BookingDocumentBuilder
 import com.example.booking_app.feature.booking.data.model.BusySlotsUpdateDto
 import com.example.booking_app.feature.booking.data.model.CourtDto
 import com.example.booking_app.feature.booking.data.model.PriceRuleDto
@@ -8,15 +15,26 @@ import com.example.booking_app.feature.booking.data.model.SlotChangeTypeDto
 import com.example.booking_app.feature.booking.data.model.SlotDto
 import com.example.booking_app.feature.booking.data.time.ServerTimeOffsetProvider
 import com.example.booking_app.feature.booking.domain.model.HoldResult
+import com.example.booking_app.feature.booking.domain.model.ConfirmBookingResult
 import com.example.booking_app.feature.booking.domain.model.VenueInfo
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentChange
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
+import io.github.jan.supabase.SupabaseClient
+import io.github.jan.supabase.functions.functions
+import io.ktor.client.statement.bodyAsText
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withTimeout
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 import java.time.ZoneId
 import java.time.ZonedDateTime
 import java.util.Date
@@ -25,7 +43,9 @@ import javax.inject.Inject
 
 class FirestoreBookingRemoteDataSource @Inject constructor(
     private val firestore: FirebaseFirestore,
-    private val serverTimeOffsetProvider: ServerTimeOffsetProvider
+    private val serverTimeOffsetProvider: ServerTimeOffsetProvider,
+    private val supabase: SupabaseClient,
+    private val functionErrors: FunctionErrors,
 ) : BookingRemoteDataSource {
 
     override suspend fun getVenueOperatingHours(venueId: String): Pair<String, String> {
@@ -259,11 +279,13 @@ class FirestoreBookingRemoteDataSource @Inject constructor(
             for (slotId in slotIds) {
                 val docRef = firestore.collection(COLLECTION_SLOTS).document(slotId)
                 val snapshot = transaction.get(docRef)
-                if (snapshot.exists()) {
-                    val holdBy = snapshot.getString("holdBy")
-                    if (holdBy == userId) {
-                        validSlotRefs.add(docRef)
-                    }
+                // Chỉ nhả slot còn đang HELD do chính mình giữ. Slot đã BOOKED vẫn giữ holdBy của người đặt;
+                // trả nó về AVAILABLE sẽ mở đường đặt trùng (Rules cũng chặn).
+                if (snapshot.exists() &&
+                    snapshot.getString("status") == "HELD" &&
+                    snapshot.getString("holdBy") == userId
+                ) {
+                    validSlotRefs.add(docRef)
                 }
             }
 
@@ -281,75 +303,40 @@ class FirestoreBookingRemoteDataSource @Inject constructor(
     }
 
     override suspend fun confirmHoldToBooking(
-        args: com.example.booking_app.core.navigation.HoldToPaymentArgs,
+        args: HoldToPaymentArgs,
         paymentMethod: String,
-        userId: String
-    ): com.example.booking_app.feature.booking.domain.model.ConfirmBookingResult {
+        userId: String,
+    ): ConfirmBookingResult {
+        if (userId.isBlank() || paymentMethod != "AT_VENUE") {
+            return ConfirmBookingResult.Error("Không thể xác nhận phương thức thanh toán")
+        }
         return try {
-            com.example.booking_app.feature.booking.data.mapper.BookingDocumentBuilder.validateSlotGaps(args.slotIds)
-            val nowMillis = serverTimeOffsetProvider.now()
-            val bookingRef = firestore.collection("bookings").document(args.bookingId)
-            val venueRef = firestore.collection(COLLECTION_VENUES).document(args.venueId)
-            val slotRefs = args.slotIds.map { firestore.collection(COLLECTION_SLOTS).document(it) }
-
-            firestore.runTransaction { transaction ->
-                // Phase 1: ALL READS
-                val existingBooking = transaction.get(bookingRef)
-                if (existingBooking.exists()) {
-                    return@runTransaction com.example.booking_app.feature.booking.domain.model.ConfirmBookingResult.Success(args.bookingId)
-                }
-
-                for (slotRef in slotRefs) {
-                    val slotSnapshot = transaction.get(slotRef)
-                    if (!slotSnapshot.exists()) {
-                        throw IllegalStateException("HOLD_EXPIRED: Slot ${slotRef.id} not found")
-                    }
-                    val status = slotSnapshot.getString("status")
-                    val holdBy = slotSnapshot.getString("holdBy")
-                    val holdExpiresAt = slotSnapshot.getTimestamp("holdExpiresAt")?.toDate()?.time ?: 0L
-                    if (status != "HELD" || holdBy != userId || holdExpiresAt <= nowMillis) {
-                        throw IllegalStateException("HOLD_EXPIRED: Slot ${slotRef.id} status=$status holdBy=$holdBy expiresAt=$holdExpiresAt now=$nowMillis")
-                    }
-                }
-
-                val venueSnapshot = transaction.get(venueRef)
-                val venuePhone = if (venueSnapshot.exists()) venueSnapshot.getString("phone") else null
-
-                // Phase 2: ALL WRITES
-                val bookingDocData = com.example.booking_app.feature.booking.data.mapper.BookingDocumentBuilder.build(
-                    args = args,
-                    paymentMethod = paymentMethod,
-                    userId = userId,
-                    nowMillis = nowMillis,
-                    venuePhone = venuePhone,
-                    useServerTimestamp = true
-                )
-                transaction.set(bookingRef, bookingDocData)
-
-                for (slotRef in slotRefs) {
-                    transaction.update(
-                        slotRef,
-                        mapOf(
-                            "status" to "BOOKED",
-                            "holdExpiresAt" to null,
-                            "bookingId" to args.bookingId
-                        )
-                    )
-                }
-
-                com.example.booking_app.feature.booking.domain.model.ConfirmBookingResult.Success(args.bookingId)
-            }.await()
-        } catch (e: Exception) {
-            val message = e.message.orEmpty()
-            if (message.contains("HOLD_EXPIRED")) {
-                com.example.booking_app.feature.booking.domain.model.ConfirmBookingResult.Expired
-            } else if (e is com.google.firebase.firestore.FirebaseFirestoreException &&
-                e.code == com.google.firebase.firestore.FirebaseFirestoreException.Code.PERMISSION_DENIED
-            ) {
-                com.example.booking_app.feature.booking.domain.model.ConfirmBookingResult.Error("Quyền truy cập bị từ chối (PERMISSION_DENIED)", isPermissionDenied = true)
-            } else {
-                com.example.booking_app.feature.booking.domain.model.ConfirmBookingResult.Error(e.message ?: "Lỗi xác nhận đặt sân")
+            BookingDocumentBuilder.validateSlotGaps(args.slotIds)
+            val body = buildJsonObject {
+                put("requestId", args.bookingId)
+                put("venueId", args.venueId)
+                put("slotIds", JsonArray(args.slotIds.map { JsonPrimitive(it) }))
+                put("expectedTotal", args.subtotalAmount)
             }
+            functionErrors.invokeWithAuthRetry {
+                try {
+                    withTimeout(DEFAULT_TIMEOUT_MS) {
+                        supabase.functions.invoke("booking-payment-confirm", body = body).bodyAsText()
+                    }
+                } catch (_: TimeoutCancellationException) {
+                    throw AppError.Timeout
+                }
+            }
+            ConfirmBookingResult.Success(args.bookingId)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            val failure = (e as? AppError.Unknown)?.cause as? FunctionHttpException
+            if (parseFunctionErrorCode(failure?.body) == "HOLD_EXPIRED") ConfirmBookingResult.Expired
+            else ConfirmBookingResult.Error(
+                failure?.message ?: e.message ?: "Lỗi xác nhận đặt sân",
+                isPermissionDenied = failure?.status == 403,
+            )
         }
     }
 

@@ -29,6 +29,7 @@ Client **chỉ đọc**. Mọi ghi đi qua Edge Function `review` ([contracts/ed
 | `hasPhotos` 🔒 **[MỚI]** | Boolean | `photoPaths.size > 0`, dùng cho lọc "Có ảnh" |
 | `ownerReply` 🔒 | Map? | `text` (1–500 ký tự), `repliedAt` (Timestamp), `editedAt` (Timestamp?) **[MỚI]** |
 | `hasOwnerReply` 🔒 **[MỚI]** | Boolean | Dùng cho lọc "Chưa phản hồi" của chủ sân |
+| `notificationGeneration` 🔒 | String UUID | R1 duyệt 24/11/2026: server tạo khi create, giữ khi edit, đổi khi xóa/tạo lại; legacy chỉ gán trong first reply, không backfill thông báo. |
 | `status` 🔒 | String | `VISIBLE`, `HIDDEN` (admin ẩn, spec 120) |
 | `completedAt` 🔒 **[MỚI]** | Timestamp | Sao chép `bookings.completedAt` để tính hạn sửa mà không cần đọc lại đơn |
 | `editedAt` 🔒 **[MỚI]** | Timestamp? | Có giá trị → hiện nhãn "Đã chỉnh sửa" (FR-007) |

@@ -95,6 +95,8 @@ Deno.test("expire-holds: atomically expires stale single booking and only its he
   assertEquals(commits.length, 1);
   assertEquals(commits[0].length, 2);
   assertEquals(commits[0][0].update.fields.status.stringValue, "EXPIRED");
+  // updatedAt phải lưu thành Timestamp; chuỗi ISO làm app 060 loại đơn khỏi danh sách.
+  assertEquals(commits[0][0].update.fields.updatedAt.timestampValue, now.toISOString());
   assertEquals(commits[0].filter((w) => w.delete).length, 1);
 });
 

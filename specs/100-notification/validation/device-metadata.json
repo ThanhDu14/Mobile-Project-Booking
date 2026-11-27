@@ -1,0 +1,11 @@
+﻿{
+    "model":  "V2247",
+    "android":  "15",
+    "density":  "Physical density: 440",
+    "size":  "Physical size: 1080x2388",
+    "fontScale":  "1.0",
+    "apkHashes":  {
+                      "com.example.booking_app.adminlocal.test":  "0bf26b98c14a42249c5768a3d18dc660ec4711f1cc4bfa0d6f377d41369e5a97",
+                      "com.example.booking_app.adminlocal":  "b7c7b21768ddba4aa57d3734e8150ad33dd0478e64fb7e9adb1247069d02774f"
+                  }
+}

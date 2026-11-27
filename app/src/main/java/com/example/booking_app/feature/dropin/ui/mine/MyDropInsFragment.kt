@@ -67,6 +67,7 @@ class MyDropInsFragment : Fragment(R.layout.fragment_dropin_mine) {
                     viewModel.events.collect { event ->
                         when (event) {
                             is MyDropInsEvent.OpenTicket -> openTicket(event.sessionId)
+                            is MyDropInsEvent.OpenWaitlist -> openWaitlist(event.sessionId)
                             MyDropInsEvent.FindSessions -> openDropInList()
                             is MyDropInsEvent.OpenReview -> openReview(event.sessionId)
                             is MyDropInsEvent.LoadMoreFailed -> {
@@ -131,6 +132,13 @@ class MyDropInsFragment : Fragment(R.layout.fragment_dropin_mine) {
         if (content != null && tab == MyDropInsTab.PAST && rows.isEmpty() && content.canLoadMorePast) {
             viewModel.loadMorePast()
         }
+    }
+
+    /** Spec 081: lượt đang chờ chưa có vé nên mở màn hình lượt chờ. */
+    private fun openWaitlist(sessionId: String) {
+        val nav = findNavController()
+        if (nav.currentDestination?.id != R.id.myDropInsFragment) return
+        nav.navigate(MyDropInsFragmentDirections.actionMyDropInsToWaitlist(sessionId))
     }
 
     private fun openTicket(sessionId: String) {

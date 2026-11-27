@@ -17,8 +17,12 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import com.example.booking_app.core.catalog.CatalogRepository
+import com.example.booking_app.core.catalog.District
+import com.example.booking_app.core.catalog.Amenity
 
 data class OwnerVenueListUiState(
     val isLoading: Boolean = false,
@@ -41,7 +45,9 @@ data class OwnerVenueDetailUiState(
     val message: String? = null,
     val draft: VenueEditableFields? = null,
     val errorKind: OwnerErrorKind? = null,
-    val isFresh: Boolean = false
+    val isFresh: Boolean = false,
+    val districts: List<District> = emptyList(),
+    val amenities: List<Amenity> = emptyList(),
 )
 
 @HiltViewModel
@@ -83,14 +89,38 @@ class OwnerVenueListViewModel @Inject constructor(
 
 @HiltViewModel
 class OwnerVenueDetailViewModel @Inject constructor(
-    savedStateHandle: SavedStateHandle,
-    private val repository: OwnerVenueRepository
+    private val savedStateHandle: SavedStateHandle,
+    private val repository: OwnerVenueRepository,
+    private val catalog: CatalogRepository? = null,
 ) : ViewModel() {
     private val venueId: String = checkNotNull(savedStateHandle["venueId"])
     private val _uiState = MutableStateFlow(OwnerVenueDetailUiState())
     val uiState: StateFlow<OwnerVenueDetailUiState> = _uiState.asStateFlow()
 
-    init { load() }
+    init {
+        load()
+        viewModelScope.launch {
+            try {
+                val districts=catalog?.districts().orEmpty().filter { it.isActive }
+                val amenities=catalog?.amenities().orEmpty().filter { it.isActive }
+                _uiState.update { it.copy(districts=districts,amenities=amenities) }
+            } catch (failure: Exception) { _uiState.value = _uiState.value.copy(message = failure.message) }
+        }
+    }
+
+    fun updateDraft(fields: VenueEditableFields) { _uiState.value = _uiState.value.copy(draft = fields) }
+
+    fun uploadPhoto(mime: String, bytes: ByteArray) = viewModelScope.launch {
+        if (_uiState.value.isSubmitting) return@launch
+        val venue = _uiState.value.venue ?: return@launch
+        val draft = _uiState.value.draft ?: VenueEditableFields(venue.name,venue.address,venue.districtId,venue.location,venue.openTime,venue.closeTime,
+            venue.phone,venue.amenityIds,venue.photoPaths,venue.courtCount,venue.acceptsRecurring,venue.status)
+        if (draft.photoPaths.size >= 5) { _uiState.value = _uiState.value.copy(message = "Tối đa 5 ảnh cơ sở"); return@launch }
+        _uiState.value = _uiState.value.copy(isSubmitting = true,message = null)
+        repository.uploadPhoto(venueId,mime,bytes).onSuccess { path ->
+            _uiState.value = _uiState.value.copy(isSubmitting = false,draft = draft.copy(photoPaths = draft.photoPaths + path))
+        }.onFailure { _uiState.value = _uiState.value.copy(isSubmitting = false,message = it.message ?: "Không tải được ảnh") }
+    }
 
     fun load() = viewModelScope.launch {
         _uiState.value = _uiState.value.copy(isLoading = true, error = null, isFresh = false)
@@ -113,7 +143,7 @@ class OwnerVenueDetailViewModel @Inject constructor(
         }
         _uiState.value = _uiState.value.copy(isSubmitting = true, message = null, draft = fields)
         repository.updateVenue(venueId, fields).onSuccess {
-            _uiState.value = _uiState.value.copy(isSubmitting = false, message = "Đã cập nhật cơ sở")
+            _uiState.value = _uiState.value.copy(isSubmitting = false, message = "Đã cập nhật cơ sở", draft = null)
             load()
         }.onFailure {
             _uiState.value = _uiState.value.copy(isSubmitting = false, message = it.message ?: "Không thể cập nhật")
@@ -123,7 +153,17 @@ class OwnerVenueDetailViewModel @Inject constructor(
 
     fun addCourt(fields: CourtFields) {
         if (!validateCourt(fields)) return
-        courtAction { repository.createCourt(venueId, fields).map { Unit } }
+        val requestId = savedStateHandle.get<String>("courtCreateId") ?: java.util.UUID.randomUUID().toString().also {
+            savedStateHandle["courtCreateId"] = it
+        }
+        courtAction {
+            repository.createCourt(venueId, fields, requestId).onSuccess {
+                savedStateHandle.remove<String>("courtCreateId")
+            }.map { Unit }
+        }
+    }
+    fun acknowledgeCourtSaved() {
+        if (_uiState.value.message == "Đã lưu sân") _uiState.value = _uiState.value.copy(message = null)
     }
     fun updateCourt(courtId: String, fields: CourtFields) {
         if (!validateCourt(fields)) return
@@ -137,9 +177,7 @@ class OwnerVenueDetailViewModel @Inject constructor(
         if (index < 0 || target !in courts.indices) return@courtAction Result.success(Unit)
         val current = courts[index]
         val other = courts[target]
-        repository.updateCourt(venueId, current.id, CourtFields(current.name, current.surfaceType, current.isActive, other.sortOrder))
-            .getOrThrow()
-        repository.updateCourt(venueId, other.id, CourtFields(other.name, other.surfaceType, other.isActive, current.sortOrder))
+        repository.swapCourtOrder(venueId,current,other)
     }
 
     private fun courtAction(action: suspend () -> Result<Unit>) = viewModelScope.launch {

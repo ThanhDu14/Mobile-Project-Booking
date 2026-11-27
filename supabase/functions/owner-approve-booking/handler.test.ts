@@ -1,6 +1,7 @@
 import { assertEquals, assert } from "jsr:@std/assert@1.0.19";
 import { handleOwnerApproveBooking } from "./handler.ts";
 import type { VerifiedToken } from "../_shared/auth.ts";
+import type { FirestoreTransaction, Write } from "../_shared/firestore.ts";
 
 Deno.env.set("FIREBASE_PROJECT_ID", "demo-smashnow");
 
@@ -37,8 +38,16 @@ function mockAuth(uid = "owner-1", appRole: "OWNER" | "ADMIN" = "OWNER"): (req: 
 }
 
 function mockFirestore(store: Record<string, any>) {
+  for(const [path,data] of Object.entries(store)) {
+    if(path.startsWith("users/")) { data.role ??= "OWNER";data.accountStatus ??= "ACTIVE"; }
+    if(path.startsWith("bookings/") && data.status === "PENDING") {
+      const id=path.split("/").pop()!;
+      data.slotIds ??= [`slot-${id}`];
+      for(const slot of data.slotIds) store[`slots/${slot}`] ??= {venueId:data.venueId,bookingId:id,status:"BOOKED"};
+    }
+  }
   const commits: any[] = [];
-  return {
+  const source = {
     get: async (path: string) => store[path] ?? null,
     commit: async (writes: any[]) => {
       commits.push(...writes);
@@ -61,6 +70,12 @@ function mockFirestore(store: Record<string, any>) {
     },
     commits,
   };
+  return {...source,runTransaction:async <T>(operation:(tx:FirestoreTransaction)=>Promise<T|{result:T;writes:Write[]}>)=>{
+    const writes:Write[]=[];
+    const outcome=await operation({get:source.get,query:async()=>[],write:write=>{writes.push(write);}});
+    await source.commit(writes);
+    return outcome as T;
+  }};
 }
 
 Deno.test("owner-approve-booking: PENDING hop le -> CONFIRMED + qrToken non-empty + confirmedAt set", async () => {
@@ -91,12 +106,12 @@ Deno.test("owner-approve-booking: PENDING hop le -> CONFIRMED + qrToken non-empt
   const json = await res.json();
   assertEquals(json.success, true);
   assertEquals(json.status, "CONFIRMED");
-  assert(typeof json.qrToken === "string" && json.qrToken.length > 0, "qrToken must be non-empty string");
+  assertEquals(json.qrToken, undefined, "owner response must not expose the private QR credential");
   assert(typeof json.confirmedAt === "string" && json.confirmedAt.length > 0, "confirmedAt must be set");
 
   // Verify write occurred
   assertEquals(store["bookings/b1"].status, "CONFIRMED");
-  assertEquals(store["bookings/b1"].qrToken, json.qrToken);
+  assert(typeof store["bookings/b1"].qrToken === "string" && store["bookings/b1"].qrToken.length > 0);
 });
 
 Deno.test("owner-approve-booking: approve don da CONFIRMED -> 409 va khong doi token", async () => {

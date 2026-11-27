@@ -66,6 +66,7 @@
     <string name="owner_save_location">Lưu vị trí</string>
     <string name="common_cancel">Hủy</string>
     <string name="owner_remove_file">Xóa</string>
+    <string name="owner_location_outside_vietnam">Vị trí phải nằm ở Việt Nam. Chạm vào bản đồ để chọn đúng chỗ của sân.</string>
     <string name="owner_location_invalid">Tọa độ không hợp lệ. Vĩ độ phải từ -90 đến 90, kinh độ từ -180 đến 180.</string>
     <string name="owner_submitted_at">Nộp lúc %1$s. %2$s</string>
     <string name="owner_timeline_submitted_at">Đã nộp hồ sơ\n%1$s</string>

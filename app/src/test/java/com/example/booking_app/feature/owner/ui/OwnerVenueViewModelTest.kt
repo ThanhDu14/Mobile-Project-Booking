@@ -1,4 +1,6 @@
 package com.example.booking_app.feature.owner.ui
+import io.mockk.mockk
+import io.mockk.coEvery
 
 import androidx.lifecycle.SavedStateHandle
 import com.example.booking_app.feature.owner.domain.OwnerVenueRepository
@@ -32,6 +34,31 @@ class OwnerVenueViewModelTest {
 
     @Before fun setUp() { Dispatchers.setMain(dispatcher); repository = FakeOwnerRepository() }
     @After fun tearDown() { Dispatchers.resetMain() }
+
+    @Test fun courtRetryAfterUnknownResultRetainsIdentityAcrossViewModelRecreation() = runTest {
+        val source = mockk<OwnerVenueRepository>()
+        val venue = com.example.booking_app.feature.owner.fixture.OwnerFixtures.venue
+        coEvery { source.getVenue(venue.id) } returns Result.success(venue)
+        coEvery { source.getCourts(venue.id) } returns Result.success(emptyList())
+        val ids = mutableListOf<String>()
+        coEvery { source.createCourt(venue.id, any(), any()) } coAnswers {
+            ids += thirdArg<String>()
+            if (ids.size == 1) Result.failure(java.io.IOException("response lost")) else Result.success(ids.last())
+        }
+        val state = SavedStateHandle(mapOf("venueId" to venue.id))
+        val fields = CourtFields("TEST", "PU", true, 0)
+        val first = OwnerVenueDetailViewModel(state, source)
+        advanceUntilIdle()
+        first.addCourt(fields)
+        advanceUntilIdle()
+        val restored = OwnerVenueDetailViewModel(state, source)
+        advanceUntilIdle()
+        restored.addCourt(fields)
+        advanceUntilIdle()
+        assertEquals(2, ids.size)
+        assertEquals(ids[0], ids[1])
+        assertEquals(null, state.get<String>("courtCreateId"))
+    }
 
     @Test fun listLoadsOwnedVenuesAndExposesEmptyState() = runTest {
         repository.venues = emptyList()
@@ -116,6 +143,21 @@ class OwnerVenueViewModelTest {
         assertEquals("court-1", repository.deactivatedCourtId)
     }
 
+    @Test fun slowCatalogDoesNotEraseTheVenueOrCourtStateThatAlreadyLoaded() = runTest {
+        val catalog=mockk<com.example.booking_app.core.catalog.CatalogRepository>()
+        val gate=CompletableDeferred<List<com.example.booking_app.core.catalog.District>>()
+        coEvery { catalog.districts() } coAnswers { gate.await() }
+        coEvery { catalog.amenities() } returns emptyList()
+        val vm=OwnerVenueDetailViewModel(SavedStateHandle(mapOf("venueId" to OwnerFixtures.VENUE_A)),repository,catalog)
+        advanceUntilIdle()
+        assertEquals(OwnerFixtures.venue,vm.uiState.value.venue)
+        gate.complete(listOf(com.example.booking_app.core.catalog.District("district-1","Quận 1",0,true)))
+        advanceUntilIdle()
+        assertEquals(OwnerFixtures.venue,vm.uiState.value.venue)
+        assertEquals(OwnerFixtures.courts,vm.uiState.value.courts)
+        assertTrue(vm.uiState.value.isFresh)
+    }
+
     private class FakeOwnerRepository : OwnerVenueRepository {
         var venues = listOf(OwnerFixtures.venue)
         var listResult: Result<List<OwnerVenue>>? = null
@@ -138,6 +180,7 @@ class OwnerVenueViewModelTest {
         override suspend fun getCourts(venueId: String) = Result.success(OwnerFixtures.courts)
         override suspend fun createCourt(venueId: String, fields: CourtFields) = Result.success("court-new")
         override suspend fun updateCourt(venueId: String, courtId: String, fields: CourtFields): Result<Unit> { updatedCourtIds += courtId; return Result.success(Unit) }
+        override suspend fun swapCourtOrder(venueId: String, first: OwnerCourt, second: OwnerCourt): Result<Unit> { updatedCourtIds += listOf(first.id,second.id); return Result.success(Unit) }
         override suspend fun deactivateCourt(venueId: String, courtId: String): Result<Unit> { deactivatedCourtId = courtId; return Result.success(Unit) }
         override suspend fun getPriceRules(venueId: String): Result<List<OwnerPriceRule>> = Result.success(listOf(OwnerFixtures.priceRule))
         override suspend fun createPriceRule(venueId: String, rule: PriceRuleInput): Result<String> = Result.success("rule-new")

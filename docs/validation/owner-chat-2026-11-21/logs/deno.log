@@ -1,0 +1,449 @@
+deno.exe : Check supabase/functions/chat-media-url/index.test.ts
+At F:\CSC_HCMUS\Mobile\datcau\.gradle\owner-chat-backend-tests.ps1:4 char:1
++ & ./.gradle/edge-ci-tools/deno.exe test -A --config supabase/function ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Check supabase/...l/index.test.ts:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+Check supabase/functions/chat-action/index.test.ts
+Check supabase/functions/chat-send/index.test.ts
+Check supabase/functions/_shared/chats.test.ts
+running 3 tests from ./supabase/functions/chat-media-url/index.test.ts
+M1 upload: không trong cuộc → NOT_PARTICIPANT; gif, 3 MB, messageId sai → INVALID_ARGUMENT; hợp lệ → path ...
+------- output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- output end -----
+M1 upload: không trong cuộc → NOT_PARTICIPANT; gif, 3 MB, messageId sai → INVALID_ARGUMENT; hợp lệ → path ... ok (4s)
+M2 download: chỉ URL của tin NORMAL trong chat mình; RECALLED, HIDDEN, chat khác, path lạ không có URL ...
+------- output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- output end -----
+M2 download: chỉ URL của tin NORMAL trong chat mình; RECALLED, HIDDEN, chat khác, path lạ không có URL ... ok (762ms)
+discard: chưa có tin → xóa ảnh của tin đó (không xóa ảnh tin khác); tin đã có → không xóa ...
+------- output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- output end -----
+discard: chưa có tin → xóa ảnh của tin đó (không xóa ảnh tin khác); tin đã có → không xóa ... ok (175ms)
+running 7 tests from ./supabase/functions/chat-action/index.test.ts
+D1 hai bên mở chat riêng cùng lúc lần đầu, lặp 20 lần: đúng 1 document chat mỗi lần ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+D1 runs=20 chats=1
+----- post-test output end -----
+D1 hai bên mở chat riêng cùng lúc lần đầu, lặp 20 lần: đúng 1 document chat mỗi lần ... ok (4s)
+D1/D2 tạo mới đủ trường; mở lần 2 từ sân khác của cùng chủ: cùng chatId, venue đổi, created=false ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+D1/D2 tạo mới đủ trường; mở lần 2 từ sân khác của cùng chủ: cùng chatId, venue đổi, created=false ... ok (324ms)
+D3 chủ sân mở sân của mình / sân HIDDEN / chủ sân chưa duyệt ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+D3 chủ sân mở sân của mình / sân HIDDEN / chủ sân chưa duyệt ... ok (203ms)
+D4 chat đã có: sân bị khóa / chủ sân hết quyền sau đó vẫn mở lại được ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+D4 chat đã có: sân bị khóa / chủ sân hết quyền sau đó vẫn mở lại được ... ok (120ms)
+R1 recall sau 5 phút: RECALLED, xóa ảnh, lastMessage.preview đổi ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+R1 recall sau 5 phút: RECALLED, xóa ảnh, lastMessage.preview đổi ... ok (142ms)
+R1 recall sau 11 phút → RECALL_WINDOW_PASSED; tin người khác → FORBIDDEN; người ngoài → NOT_PARTICIPANT ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+R1 recall sau 11 phút → RECALL_WINDOW_PASSED; tin người khác → FORBIDDEN; người ngoài → NOT_PARTICIPANT ... ok (170ms)
+R2 report: lần 1 → 201; lần 2 → ALREADY_REPORTED; tin của mình → OWN_MESSAGE; tin đã thu hồi → INVALID_ARGUMENT ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+R2 report: lần 1 → 201; lần 2 → ALREADY_REPORTED; tin của mình → OWN_MESSAGE; tin đã thu hồi → INVALID_ARGUMENT ... ok (268ms)
+running 10 tests from ./supabase/functions/chat-send/index.test.ts
+C1 tin chữ hợp lệ: NORMAL, createdAt server, lastMessage đúng, unreadCounts người nhận +1 ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+C1 tin chữ hợp lệ: NORMAL, createdAt server, lastMessage đúng, unreadCounts người nhận +1 ... ok (389ms)
+C2 cùng messageId 5 lần (song song và lặp lại): 1 tin, unreadCounts +1 đúng một lần ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+C2 cùng messageId 5 lần (song song và lặp lại): 1 tin, unreadCounts +1 đúng một lần ... ok (344ms)
+C3 20 thành viên gửi song song trong chat nhóm, lặp 10 lần ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+C3 runs=10 messages=20 unreadOk=true lastOk=true
+----- post-test output end -----
+C3 20 thành viên gửi song song trong chat nhóm, lặp 10 lần ... ok (7s)
+C4 người ngoài cuộc, người đã rời nhóm, chat không có → NOT_PARTICIPANT / CHAT_NOT_FOUND ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+C4 người ngoài cuộc, người đã rời nhóm, chat không có → NOT_PARTICIPANT / CHAT_NOT_FOUND ... ok (167ms)
+C5 bị chặn / người chặn gửi / bỏ chặn rồi gửi ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+C5 bị chặn / người chặn gửi / bỏ chặn rồi gửi ... ok (154ms)
+C6 nhóm LOCKED → GROUP_LOCKED; chat READ_ONLY → CHAT_READ_ONLY ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+C6 nhóm LOCKED → GROUP_LOCKED; chat READ_ONLY → CHAT_READ_ONLY ... ok (111ms)
+C7 chữ: rỗng, chỉ khoảng trắng, 1001 ký tự → INVALID_ARGUMENT; 1000 ký tự được ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+C7 chữ: rỗng, chỉ khoảng trắng, 1001 ký tự → INVALID_ARGUMENT; 1000 ký tự được ... ok (80ms)
+C7 ảnh: chưa tải → PHOTO_MISSING; path sai → INVALID_ARGUMENT; ảnh hợp lệ không chú thích → IMAGE ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+C7 ảnh: chưa tải → PHOTO_MISSING; path sai → INVALID_ARGUMENT; ảnh hợp lệ không chú thích → IMAGE ... ok (95ms)
+C8 thông báo: chỉ người không muted và không đang xem nhận CHAT_MESSAGE ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[chat] gửi CHAT_MESSAGE cho cs21e1e85f-c8-d thất bại Error: boom
+    at Object.notify (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/chat-send/index.test.ts:177:63)
+    at file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/chat-send/handler.ts:122:20
+    at Array.map (<anonymous>)
+    at notifyRecipients (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/chat-send/handler.ts:120:59)
+    at async send (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/chat-send/handler.ts:107:3)
+    at async handleChat (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/_shared/chats.ts:98:12)
+    at async send (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/chat-send/index.test.ts:30:13)
+    at async file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/chat-send/index.test.ts:178:17
+    at async innerWrapped (ext:cli/40_test.js:300:5)
+    at async exitSanitizer (ext:cli/40_test.js:201:27)
+----- post-test output end -----
+C8 thông báo: chỉ người không muted và không đang xem nhận CHAT_MESSAGE ... ok (167ms)
+T031 tích hợp 090: group-manage join rồi chat-send được; remove rồi chat-send → NOT_PARTICIPANT ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+T031 tích hợp 090: group-manage join rồi chat-send được; remove rồi chat-send → NOT_PARTICIPANT ... ok (269ms)
+running 5 tests from ./supabase/functions/_shared/chats.test.ts
+H1 created: tạo chat nhóm + participants của chủ nhóm ... ok (75ms)
+H1 added / removed: memberIds, participants, unreadCounts khớp; người mới có lastReadAt = joinedAt ... ok (121ms)
+H1 deleted: memberIds rỗng, status DELETED; chat chưa tồn tại thì bỏ qua ... ok (44ms)
+H2 purgeChat: hết messages, participants, ảnh của chat; ảnh chat khác còn ... ok (64ms)
+A1 anonymizeCommunityChats: chat riêng READ_ONLY, memberSnapshots null; tin của uid senderDeleted ... ok (184ms)
+
+ok | 25 passed | 0 failed (21s)

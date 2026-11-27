@@ -3,9 +3,12 @@ package com.example.booking_app.feature.booking.ui
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.booking_app.core.schedule.BookingSearchWindow
+import com.example.booking_app.core.schedule.BookingWindow
 import com.example.booking_app.core.di.DefaultDispatcher
 import com.example.booking_app.core.navigation.HoldToPaymentArgs
 import com.example.booking_app.core.session.SessionManager
+import com.example.booking_app.feature.booking.data.time.ServerTimeOffsetProvider
 import com.example.booking_app.feature.booking.domain.model.BusySlotsUpdate
 import com.example.booking_app.feature.booking.domain.model.Court
 import com.example.booking_app.feature.booking.domain.model.HoldResult
@@ -40,6 +43,7 @@ import kotlinx.coroutines.withContext
 import java.text.DecimalFormat
 import java.time.LocalDate
 import java.time.ZoneId
+import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import java.util.UUID
@@ -55,6 +59,9 @@ class BookingSlotGridViewModel @Inject constructor(
     private val generateDailySlotsUseCase: GenerateDailySlotsUseCase,
     private val holdSlotsTransactionUseCase: HoldSlotsTransactionUseCase,
     private val releaseHoldUseCase: ReleaseHoldUseCase,
+    // Giờ server (bù lệch đồng hồ máy): cùng nguồn với lệnh giữ chỗ, để khung "đã qua giờ" và hạn HELD
+    // trên lưới khớp với điều server chấp nhận.
+    private val serverTime: ServerTimeOffsetProvider,
     @param:DefaultDispatcher private val defaultDispatcher: CoroutineDispatcher = Dispatchers.Default
 ) : ViewModel() {
 
@@ -65,10 +72,16 @@ class BookingSlotGridViewModel @Inject constructor(
     // Q12: Bỏ fallback "demo-venue-01" im lặng; venueId bắt buộc
     val venueId: String = savedStateHandle["venueId"] ?: ""
 
+    private val openedAt = ZonedDateTime.now(BookingWindow.ZONE)
+    private val requestedWindow = BookingSearchWindow.parse(
+        savedStateHandle["date"], savedStateHandle["startTime"], savedStateHandle["endTime"],
+    )?.takeIf { it.isBookableAt(openedAt) }
+
     private val _uiState = MutableStateFlow(
         BookingSlotUiState(
             venueId = venueId,
-            dates = generate30DaysList()
+            dates = (0..BookingWindow.ADVANCE_DAYS).map { openedAt.toLocalDate().plusDays(it.toLong()) },
+            selectedDate = requestedWindow?.date ?: openedAt.toLocalDate(),
         )
     )
     val uiState: StateFlow<BookingSlotUiState> = _uiState.asStateFlow()
@@ -105,6 +118,14 @@ class BookingSlotGridViewModel @Inject constructor(
 
     fun loadInitialData() {
         loadVenueAndSlots()
+    }
+
+    fun requestedStartFor(date: LocalDate): String? = requestedWindow
+        ?.takeIf { it.date == date && savedStateHandle.get<Boolean>("searchWindowShown") != true }
+        ?.start?.toHhmm()
+
+    fun markRequestedWindowShown() {
+        savedStateHandle["searchWindowShown"] = true
     }
 
     fun loadVenueAndSlots(forceRefresh: Boolean = false) {
@@ -214,7 +235,7 @@ class BookingSlotGridViewModel @Inject constructor(
                     val snapshotToUse = latestBusySlotsUpdate
                     val busyList = snapshotToUse?.allBusySlots ?: emptyList()
                     val selectedIds = selectionState.selectedSlots.map { it.slotId }.toSet()
-                    val now = System.currentTimeMillis()
+                    val now = serverTime.now()
 
                     val initialRows = withContext(defaultDispatcher) {
                         buildMatrix(
@@ -268,7 +289,7 @@ class BookingSlotGridViewModel @Inject constructor(
     private suspend fun renderOptimisticMatrix(dateString: String) {
         if (activeCourts.isEmpty() || priceRules.isEmpty()) return
         val selectedIds = selectionState.selectedSlots.map { it.slotId }.toSet()
-        val now = System.currentTimeMillis()
+        val now = serverTime.now()
 
         val optimisticRows = withContext(defaultDispatcher) {
             buildMatrix(
@@ -317,7 +338,7 @@ class BookingSlotGridViewModel @Inject constructor(
                 dateString = dateString,
                 busySlots = emptyList(),
                 selectedSlotIds = emptySet(),
-                currentTimeMillis = System.currentTimeMillis()
+                currentTimeMillis = serverTime.now()
             )
         } else {
             emptyList()
@@ -349,31 +370,31 @@ class BookingSlotGridViewModel @Inject constructor(
         when (clickedSlot.status) {
             SlotStatus.BOOKED -> {
                 viewModelScope.launch {
-                    _uiEffect.send(BookingSlotUiEffect.ShowErrorSnackbar("Slot này đã được đặt"))
+                    _uiEffect.send(BookingSlotUiEffect.ShowErrorSnackbar("Khung giờ này đã được đặt"))
                 }
                 return
             }
             SlotStatus.HELD -> {
-                val now = System.currentTimeMillis()
+                val now = serverTime.now()
                 val expiresAt = clickedSlot.holdExpiresAtMillis
                 if (expiresAt != null && expiresAt <= now) {
                     // Hết hạn HELD: cho phép chọn bình thường (P0-4)
                 } else {
                     viewModelScope.launch {
-                        _uiEffect.send(BookingSlotUiEffect.ShowErrorSnackbar("Slot này đang được giữ"))
+                        _uiEffect.send(BookingSlotUiEffect.ShowErrorSnackbar("Khung giờ này đang được giữ"))
                     }
                     return
                 }
             }
             SlotStatus.BLOCKED -> {
                 viewModelScope.launch {
-                    _uiEffect.send(BookingSlotUiEffect.ShowErrorSnackbar("Slot này không khả dụng"))
+                    _uiEffect.send(BookingSlotUiEffect.ShowErrorSnackbar("Khung giờ này không khả dụng"))
                 }
                 return
             }
             SlotStatus.PAST -> {
                 viewModelScope.launch {
-                    _uiEffect.send(BookingSlotUiEffect.ShowErrorSnackbar("Slot này đã qua giờ"))
+                    _uiEffect.send(BookingSlotUiEffect.ShowErrorSnackbar("Khung giờ này đã qua giờ"))
                 }
                 return
             }
@@ -840,7 +861,7 @@ class BookingSlotGridViewModel @Inject constructor(
         if (activeCourts.isEmpty() || priceRules.isEmpty()) return
 
         val selectedIds = selectionState.selectedSlots.map { it.slotId }.toSet()
-        val now = System.currentTimeMillis()
+        val now = serverTime.now()
 
         // P1-2: Sinh slot và ghép ma trận hoàn toàn trên background thread
         val builtMatrixRows = withContext(defaultDispatcher) {
@@ -932,7 +953,7 @@ class BookingSlotGridViewModel @Inject constructor(
         }
 
         val selectedIds = selectionState.selectedSlots.map { it.slotId }.toSet()
-        val now = System.currentTimeMillis()
+        val now = serverTime.now()
 
         val result = withContext(defaultDispatcher) {
             val isoDayOfWeek = generateDailySlotsUseCase.parseIsoDayOfWeek(dateString)
@@ -1205,11 +1226,6 @@ class BookingSlotGridViewModel @Inject constructor(
         val courtName = activeCourts.find { it.id == slot.courtId }?.name ?: "Sân"
         val time = formatHourMinute(slot.startTime)
         return "$time ($courtName)"
-    }
-
-    private fun generate30DaysList(): List<LocalDate> {
-        val today = LocalDate.now(zoneVietnam)
-        return (0L until 30L).map { today.plusDays(it) }
     }
 
     private fun formatHourMinute(hhmm: String): String {

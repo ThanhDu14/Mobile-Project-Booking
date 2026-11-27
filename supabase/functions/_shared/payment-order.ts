@@ -2,7 +2,7 @@
 // đọc slot đang giữ + bảng giá + cơ sở, kiểm voucher, tính lại tiền, dựng hóa đơn. Mọi hàm chạy trong transaction
 // của function gọi, không tự commit.
 import { HttpError } from "./auth.ts";
-import { createWrite, type FirestoreTransaction, updateWrite, type Write } from "./firestore.ts";
+import { type FirestoreTransaction, updateWrite, type Write } from "./firestore.ts";
 import { type PaymentBreakdown, paymentBreakdown } from "./payment-calc.ts";
 import {
   checkVoucher,
@@ -255,26 +255,6 @@ export function approvalDeadline(now: Date, startAt: Date): Date {
   return new Date(
     Math.min(now.getTime() + APPROVAL_WINDOW_MS, startAt.getTime()),
   );
-}
-
-export function notificationWrite(
-  ownerId: string,
-  key: string,
-  venueName: string,
-  recurring: boolean,
-  now: Date,
-): Write[] {
-  if (!ownerId) return [];
-  return [createWrite(`users/${ownerId}/notifications/booking_new_${key}`, {
-    type: "BOOKING_NEW",
-    title: "Có đơn đặt sân mới",
-    body: recurring
-      ? `Đơn đặt cố định mới tại ${venueName}, cần duyệt trong 60 phút`
-      : `Đơn đặt sân mới tại ${venueName}, cần duyệt trong 60 phút`,
-    data: recurring ? { recurringGroupId: key } : { bookingId: key },
-    isRead: false,
-    createdAt: now,
-  })];
 }
 
 export function deactivateCode(doc: Doc | null): Write[] {

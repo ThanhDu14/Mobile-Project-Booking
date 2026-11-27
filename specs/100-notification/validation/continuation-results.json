@@ -1,0 +1,110 @@
+﻿{
+    "date":  "2026-11-22",
+    "completedTasks":  23,
+    "totalTasks":  56,
+    "newCompletedTasks":  [
+                              "T009",
+                              "T050",
+                              "T054",
+                              "T055"
+                          ],
+    "productionCommand":  "./gradlew.bat testDebugUnitTest assembleDebug lintDebug",
+    "productionResult":  "PASS",
+    "finalHarnessLint":  "PASS",
+    "unit":  {
+                 "suites":  253,
+                 "tests":  1671,
+                 "failures":  0,
+                 "errors":  0,
+                 "skipped":  2
+             },
+    "notificationUnit":  [
+                             {
+                                 "name":  "com.example.booking_app.feature.notification.FirestoreNotificationRepositoryTest",
+                                 "tests":  9,
+                                 "failures":  0,
+                                 "errors":  0,
+                                 "skipped":  0
+                             },
+                             {
+                                 "name":  "com.example.booking_app.feature.notification.NotificationContractTest",
+                                 "tests":  5,
+                                 "failures":  0,
+                                 "errors":  0,
+                                 "skipped":  0
+                             },
+                             {
+                                 "name":  "com.example.booking_app.feature.notification.NotificationGroupsTest",
+                                 "tests":  1,
+                                 "failures":  0,
+                                 "errors":  0,
+                                 "skipped":  0
+                             },
+                             {
+                                 "name":  "com.example.booking_app.feature.notification.NotificationPermissionTest",
+                                 "tests":  3,
+                                 "failures":  0,
+                                 "errors":  0,
+                                 "skipped":  0
+                             },
+                             {
+                                 "name":  "com.example.booking_app.feature.notification.NotificationRouteTest",
+                                 "tests":  5,
+                                 "failures":  0,
+                                 "errors":  0,
+                                 "skipped":  0
+                             },
+                             {
+                                 "name":  "com.example.booking_app.feature.notification.NotificationViewModelTest",
+                                 "tests":  3,
+                                 "failures":  0,
+                                 "errors":  0,
+                                 "skipped":  0
+                             }
+                         ],
+    "lint":  {
+                 "errors":  0,
+                 "warnings":  856
+             },
+    "emulators":  {
+                      "accountDeletion":  21,
+                      "rulesProfileQuery":  28,
+                      "producerAdminOfflinePlanner":  28,
+                      "reviewReply":  5,
+                      "failures":  0
+                  },
+    "device":  {
+                   "model":  "vivo V2247",
+                   "android":  15,
+                   "package":  "com.example.booking_app.adminlocal",
+                   "baselineUi":  8,
+                   "permissionScenarios":  2,
+                   "failures":  0,
+                   "fullMatrixRerun":  false,
+                   "screenshots":  [
+                                       {
+                                           "file":  "notification-permission-denied-inbox.png",
+                                           "bytes":  57848,
+                                           "sha256":  "2d2c202bb23d55619f79758eddfb17ac2b0dd20906df2b6e1f62d7aa92d063fa"
+                                       },
+                                       {
+                                           "file":  "notification-permission-denied.png",
+                                           "bytes":  194691,
+                                           "sha256":  "1b65ebdbe9ea082832691f449b5d126be6348349dbfe7c6988b95dac5f8c0dbe"
+                                       },
+                                       {
+                                           "file":  "notification-permission-granted-prompt.png",
+                                           "bytes":  197939,
+                                           "sha256":  "9848c6f244082e9335f9db4b7b0ad88c367984b61c748655e108561e86c7e6c8"
+                                       },
+                                       {
+                                           "file":  "notification-permission-granted-return.png",
+                                           "bytes":  198175,
+                                           "sha256":  "5732e5523da36d6e577d95cd158070f5de83718c45c5f901a432acb34c0158af"
+                                       }
+                                   ]
+               },
+    "hostedMigrationExecuted":  false,
+    "backendDeployed":  false,
+    "deliverySchemaApproved":  false
+}

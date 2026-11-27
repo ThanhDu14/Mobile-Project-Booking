@@ -49,7 +49,7 @@ Người phụ trách viết bảng trường chi tiết, index, Rules và test 
 | `dropInSessions/{id}` | Buổi chơi vãng lai | **C** | 08 đọc; 11 tạo |
 | `dropInSessions/{id}/registrations/{uid}` | Đăng ký, hàng chờ | **C** | 08; 11 check-in |
 | `groups/{groupId}` (+ `members`, `posts`) | Nhóm/CLB và bảng tin | **C** | 09 |
-| `chats/{chatId}` (+ `messages`) | Hội thoại nhóm/riêng | **C** | 09 |
+| `chats/{chatId}` (+ `participants`, `messages`) | Hội thoại nhóm/riêng | **C** | 09 |
 | `reports/{reportId}` | Báo cáo vi phạm | **D** | 07, 09 tạo; 12 xử lý |
 | `users/{uid}/notifications/{id}` | Hộp thư thông báo | **D** | 10; mọi nhóm phát sinh qua Edge Functions |
 | `venues/{venueId}/dailyStats/{yyyyMMdd}` | Thống kê theo ngày | **D** | 11, 12 đọc 🔒 |
@@ -118,7 +118,7 @@ Xóa tài khoản (spec 011): Edge Function `delete-account` chạy 2 giai đo�
 
 ### 4.2. `ownerApplications/{id}` — D
 
-`uid`, `venueDraft` (Map: tên, địa chỉ, `districtId`, tọa độ, số điện thoại cơ sở, số sân, giờ mở cửa, `photoPaths` ảnh cơ sở; đủ các trường bắt buộc của `venues` để tạo cơ sở khi duyệt), `representativeName`, `representativePhone`, `documentPaths` (Array, object trong bucket private `owner-docs`), `status` 🔒 (`PENDING`, `APPROVED`, `REJECTED`), `rejectReason` 🔒 (bắt buộc khi từ chối), `reviewedBy` 🔒, `reviewedAt` 🔒, `submittedAt`.
+`uid`, `purpose` (OWNER_ONBOARDING hoặc VENUE_ADDITION; thiếu trường là onboarding cũ), `venueDraft` (Map: tên, địa chỉ, `districtId`, tọa độ, số điện thoại cơ sở, số sân, giờ mở cửa, `photoPaths` ảnh cơ sở; đủ các trường bắt buộc của `venues` để tạo cơ sở khi duyệt), `representativeName`, `representativePhone`, `documentPaths` (Array, object trong bucket private `owner-docs`), `status` 🔒 (`PENDING`, `APPROVED`, `REJECTED`), `rejectReason` 🔒 (bắt buộc khi từ chối), `reviewedBy` 🔒, `reviewedAt` 🔒, `submittedAt`.
 
 Duyệt hồ sơ chạy bằng Edge Function `review-owner-application`: set custom claim `appRole=OWNER`, cập nhật `users.role/ownerStatus`, tạo `venues` từ `venueDraft`, gửi thông báo.
 
@@ -136,7 +136,7 @@ Duyệt hồ sơ chạy bằng Edge Function `review-owner-application`: set cus
 | `phone` | String | |
 | `amenityIds` | Array\<String> | Lọc bằng `array-contains-any` |
 | `photoPaths` | Array\<String> | Bucket `venue-photos`, object `{venueId}/...`. URL công khai ghép từ path |
-| `courtCount` | Int | |
+| `courtCount` | Int | 🔒 Số court `isActive=true`, server duy trì cùng transaction khi thêm/sửa sân; có thể bằng 0 (quyết định 2026-11-21). Số khai báo trong hồ sơ vẫn ở venueDraft. |
 | `minPricePerHour` 🔒 | Long | Tính lại khi đổi bảng giá, phục vụ lọc/sắp xếp theo giá |
 | `ratingAvg` 🔒, `ratingCount` 🔒 | Double, Int | Cập nhật khi có đánh giá mới |
 | `acceptsRecurring` | Boolean | Cơ sở có nhận đặt cố định theo tuần không (spec 041). Mặc định `true`, chủ sân bật/tắt ở spec 111 |
@@ -223,6 +223,8 @@ ID document là chính mã `code` (chữ in hoa). Mã phải duy nhất trên to
 
 ### 4.7. `reviews/{reviewId}` — C
 
+`notificationGeneration` 🔒 (String UUID, R1 duyệt 24/11/2026): server tạo cùng review, giữ khi sửa, đổi khi xóa/tạo lại. Review legacy chỉ được gán trong transaction phản hồi đầu tiên, không backfill inbox/job. REVIEW_NEW và first REVIEW_REPLIED enqueue cùng transaction nguồn; client không ghi trường này.
+
 `reviewId` = `bookingId` hoặc `{sessionId}_{uid}` để mỗi đơn/lượt chỉ đánh giá một lần.
 
 `targetType` (`VENUE`, `DROP_IN`), `venueId`, `sessionId?`, `userId`, `userSnapshot` (tên, ảnh), `ratings` (Map: `court`, `cleanliness`, `service`, 1–5), `overall` (Double), `comment`, `photoPaths`, `ownerReply` (Map: `text`, `repliedAt`), `status` (`VISIBLE`, `HIDDEN` 🔒). Mọi ghi qua Edge Function `review`. Đánh giá sân: chỉ tạo khi đơn tương ứng `COMPLETED` và thuộc người viết. Đánh giá buổi vãng lai: `reviewId` = `{sessionId}_{uid}`, `targetType = DROP_IN`, `bookingId = null`, `completedAt` = `session.endAt`; chỉ tạo khi đăng ký `CHECKED_IN`, buổi đã kết thúc và trong 7 ngày kể từ `session.endAt`, người viết không phải chủ cơ sở (xem [R10](../../../specs/080-drop-in-session/research.md#r10-đánh-giá-buổi-chơi-fr-022-fr-023)).
@@ -233,21 +235,39 @@ ID document là chính mã `code` (chữ in hoa). Mã phải duy nhất trên to
 
 ### 4.9. `dropInSessions/{id}` và `registrations/{uid}` — C
 
-**Buổi:** `venueId`, `ownerId`, `districtId`, `courtIds`, `date`, `startAt`, `endAt`, `timeSlot` (String: `MORNING` 05:00–11:00, `NOON` 11:00–13:00, `AFTERNOON` 13:00–18:00, `EVENING` 18:00–23:00, theo giờ bắt đầu; D ghi qua `deriveSessionFields()`), `venueSnapshot` (Map: `name`, `address`, `districtName`, chụp lúc tạo/sửa buổi; D ghi qua `deriveSessionFields()`), `level`, `capacity`, `registeredCount` 🔒, `pricePerPerson` (Long), `status` (`OPEN`, `FULL` (server đổi theo `registeredCount`), `CANCELLED` (D hủy buổi), `COMPLETED` (cron của spec 081)), `note`.
+**Buổi:** `venueId`, `ownerId`, `districtId`, `courtIds`, `date`, `startAt`, `endAt`, `timeSlot` (String: `MORNING` 05:00–11:00, `NOON` 11:00–13:00, `AFTERNOON` 13:00–18:00, `EVENING` 18:00–23:00, theo giờ bắt đầu; D ghi qua `deriveSessionFields()`), `venueSnapshot` (Map: `name`, `address`, `districtName`, chụp lúc tạo/sửa buổi; D ghi qua `deriveSessionFields()`), `level`, `capacity`, `registeredCount` 🔒, `pricePerPerson` (Long), `status` (`OPEN`, `FULL` (server đổi theo `registeredCount`), `CANCELLED` (D hủy buổi), `COMPLETED` (cron của spec 081)), `note`, `waitlistNextTicket` 🔒 (Int, bắt đầu từ 1, chỉ tăng; số thứ tự cấp cho lượt chờ kế tiếp), `waitlistTickets` 🔒 (Array\<Int>, số vé của các lượt đang chờ, tăng dần, không có danh tính), `waitlistCount` 🔒 (Int, số lượt đang chờ).
 
-**Đăng ký** (ID = `uid`; mọi trường 🔒, client chỉ đọc, ghi qua Edge Function): `userId` (String), `sessionId` (String), `venueId` (String), `sessionStartAt`, `sessionEndAt` (Timestamp, sao từ buổi), `partySize` (Int), `status` (`REGISTERED`, `WAITLISTED`, `CANCELLED`, `CHECKED_IN`), `paymentMethod` (`MOCK_PAY`, `AT_VENUE`), `paymentStatus` (`PAID`, `UNPAID`, `REFUNDED`), `pricePerPerson` (Long, giá chốt lúc đăng ký), `amount` (Long), `refundAmount` (Long?), `qrToken` (String?, `null` khi `CANCELLED`), `ticketCode` (String?, `DI-XXXXXXXX`, `null` khi `CANCELLED`), `requestId` (String), `lastAddRequestId` (String?), `cancelRequestId` (String?), `sessionChanged` (Boolean), `registeredAt` (Timestamp), `cancelledAt` (Timestamp?), `cancelledBy` (`USER`, `OWNER`, `SYSTEM`), `checkedInAt` (Timestamp?), `waitlistedAt` (Timestamp?), `createdAt`, `updatedAt` (Timestamp). Đăng ký, hủy và đẩy người từ hàng chờ lên đều chạy trong transaction trên document buổi (`registeredCount`).
+**Đăng ký** (ID = `uid`; mọi trường 🔒, client chỉ đọc, ghi qua Edge Function): `userId` (String), `sessionId` (String), `venueId` (String), `sessionStartAt`, `sessionEndAt` (Timestamp, sao từ buổi), `partySize` (Int), `status` (`REGISTERED`, `WAITLISTED`, `CANCELLED`, `CHECKED_IN`), `paymentMethod` (`MOCK_PAY`, `AT_VENUE`), `paymentStatus` (`PAID`, `UNPAID`, `REFUNDED`), `pricePerPerson` (Long, giá chốt lúc đăng ký), `amount` (Long), `refundAmount` (Long?), `qrToken` (String?, `null` khi `CANCELLED`), `ticketCode` (String?, `DI-XXXXXXXX`, `null` khi `CANCELLED`), `requestId` (String), `lastAddRequestId` (String?), `cancelRequestId` (String?), `sessionChanged` (Boolean), `registeredAt` (Timestamp), `cancelledAt` (Timestamp?), `cancelledBy` (`USER`, `OWNER`, `SYSTEM`), `checkedInAt` (Timestamp?), `waitlistedAt` (Timestamp?), `waitlistTicket` (Int?, thứ tự trong hàng chờ), `promotedAt` (Timestamp?, lúc được đẩy từ hàng chờ lên), `waitlistEndReason` (String?: `LEFT`, `AUTO_LEFT_OVERLAP`, `CLOSED`, `SESSION_CANCELLED`; lý do rời hàng chờ mà không được nhận), `createdAt`, `updatedAt` (Timestamp). Lượt chờ dùng chung document đăng ký (`status = WAITLISTED`), giá được chốt lúc vào hàng chờ. Đăng ký, hủy và đẩy người từ hàng chờ lên đều chạy trong transaction trên document buổi (`registeredCount`).
 
 ### 4.10. `groups/{groupId}` — C
 
-**Nhóm:** `name`, `description`, `avatarUrl`, `districtId`, `ownerId`, `memberCount` 🔒, `visibility` (`PUBLIC`, `PRIVATE`). Con: `members/{uid}` (`role`: `OWNER`, `ADMIN`, `MEMBER`; `joinedAt`), `posts/{postId}` (`authorId`, `type`: `POST`, `EVENT`; `content`, `photoPaths`, `eventAt?`, `status`).
+**Nhóm:** `name`, `nameKeywords` 🔒 (tiền tố từng từ, chữ thường, bỏ dấu), `description`, `avatarPath` (path trong bucket `group-avatars`, `null` thì dùng ảnh mặc định), `districtId`, `ownerId` 🔒, `memberCount` 🔒, `pendingRequestCount` 🔒, `visibility` (`PUBLIC`, `PRIVATE`), `status` 🔒 (`ACTIVE`, `LOCKED` (admin khóa, spec 120), `DELETED` (đang xóa dở)), `createdAt`, `updatedAt`. `groupId` = `requestId` của lần bấm "Tạo nhóm". Mọi ghi qua Edge Function `group-manage` (xem [spec 090 data-model](../../../specs/090-community-group/data-model.md)).
+
+**Con:**
+- `members/{uid}`: `userId`, `groupId` (cho truy vấn collection group "Nhóm của tôi"), `role` (`OWNER`, `ADMIN`, `MEMBER`; đúng một `OWNER`), `userSnapshot` 🔒 (`displayName`, `avatarPath`), `joinedAt`.
+- `joinRequests/{uid}`: `userId`, `userSnapshot` 🔒, `wasRemoved` (từng bị mời ra), `requestId`, `createdAt`.
+- `removals/{uid}`: `userId`, `removedBy`, `removedAt`. Có document này thì `join` nhóm công khai thành yêu cầu chờ duyệt.
+- `posts/{postId}` (`postId` = `requestId` của lần bấm "Đăng"): `groupId`, `authorId`, `authorSnapshot` 🔒 (`null` khi người đăng xóa tài khoản), `authorDeleted` 🔒, `type` (`POST`, `EVENT`), `content`, `photoPaths` (0–4, bắt đầu bằng `{groupId}/{postId}/`), `eventTitle?`, `eventAt?`, `eventLocation?`, `expectedCount?` (chỉ để tham khảo), `attendeeCount` 🔒, `status` 🔒 (`VISIBLE`, `HIDDEN`), `hiddenBy` 🔒 (`GROUP`, `SYSTEM`), `hiddenByUid` 🔒, `editedAt` 🔒, `createdAt`, `updatedAt`. Bài `HIDDEN` bởi `SYSTEM` (admin, spec 120) thì nhóm không bỏ ẩn được.
+- `posts/{postId}/attendees/{uid}`: `userId`, `groupId`, `postId`, `eventAt` (chép từ bài), `userSnapshot` 🔒, `joinedAt`.
 
 ### 4.11. `chats/{chatId}` — C
 
-`type` (`GROUP`, `DIRECT`), `memberIds` (Array, dùng cho Rules và truy vấn `array-contains`), `groupId?`, `venueId?` (chat với chủ sân), `lastMessage` (Map), `updatedAt`. Chat riêng dùng ID tất định `{uidNhỏ}_{uidLớn}`. Con: `messages/{id}` (`senderId`, `text`, `imagePath`, `createdAt`, `status`).
+**Chat:** `type` 🔒 (`GROUP`, `DIRECT`), `memberIds` 🔒 (Array, dùng cho Rules và truy vấn `array-contains`; chat nhóm khớp đúng `groups/{groupId}/members`), `groupId?` 🔒 (chat nhóm), `ownerId?` 🔒 (chat riêng: chủ sân, cố định lúc tạo), `playerId?` 🔒 (chat riêng: người chơi mở chat), `venueId?` 🔒 (chat riêng: cơ sở được hỏi gần nhất), `venueSnapshot?` 🔒 (`name`, `photoPath` của cơ sở đó), `memberSnapshots?` 🔒 (chat riêng: uid → `{ displayName, avatarPath }`, `null` khi người đó xóa tài khoản), `lastMessage?` 🔒 (Map: `messageId`, `senderId`, `type` (`TEXT`, `IMAGE`), `preview` (≤ 100 ký tự đầu, hoặc "Tin nhắn đã được thu hồi"), `createdAt`), `unreadCounts` (Map uid → Int; `chat-send` tăng, chính người đó chỉ được ghi khóa của mình về 0), `status` 🔒 (`ACTIVE`, `READ_ONLY` (bên kia đã xóa tài khoản), `DELETED` (nhóm đã xóa)), `createdAt`, `updatedAt` (= `createdAt` của tin cuối; danh sách sắp `updatedAt desc`). ID: chat riêng `{uidNhỏ}_{uidLớn}`, chat nhóm `group_{groupId}`. Mọi ghi 🔒 qua Edge Function `chat-send`, `chat-action` (và hook của `group-manage`); xem [spec 091 data-model](../../../specs/091-chat/data-model.md).
+
+- `participants/{uid}`: `userId`, `chatId` (cho truy vấn collection group), `userSnapshot` 🔒 (`displayName`, `avatarPath`; nguồn của `senderSnapshot`), `joinedAt` 🔒, `lastReadAt` (phải bằng `request.time`), `muted` (tắt thông báo cuộc này), `blockedOther` (chỉ chat riêng), `viewingUntil?` (đang mở cuộc này thì không gửi thông báo; ≤ `request.time` + 10 phút). Chính người đó ghi `lastReadAt`, `muted`, `blockedOther`, `viewingUntil`; còn lại 🔒.
+- `messages/{messageId}` (`messageId` = `requestId` của lần bấm "Gửi"; mọi trường 🔒): `senderId`, `senderSnapshot?` (`displayName`, `avatarPath`; `null` khi người gửi xóa tài khoản), `senderDeleted`, `text` (tin chữ 1–1000 ký tự; tin ảnh: chú thích 0–1000), `imagePath?` (`{chatId}/{messageId}.{jpg,png,webp}` trong `chat-media`, một ảnh mỗi tin), `createdAt` (giờ server lúc commit), `status` (`NORMAL`, `RECALLED`, `HIDDEN` (admin ẩn, spec 120)), `recalledAt?`. Thu hồi trong 10 phút kể từ `createdAt`: `status = RECALLED`, `text = ""`, `imagePath = null`.
 
 ### 4.12. `reports/{reportId}` — D
 
-`reporterId`, `targetType` (`POST`, `MESSAGE`, `REVIEW`, `VENUE`, `USER`, `DROP_IN`), `targetPath` (đường dẫn document), `reason`, `detail`, `status` 🔒 (`OPEN`, `RESOLVED`, `DISMISSED`), `action` 🔒 (`NONE`, `HIDE_CONTENT`, `LOCK_USER`, `LOCK_VENUE`), `handledBy` 🔒, `handledAt` 🔒.
+`reporterId`, `targetType` (`POST`, `MESSAGE`, `REVIEW`, `VENUE`, `USER`, `GROUP`, `DROP_IN`), `targetPath` (đường dẫn document), `reason`, `detail`, `status` 🔒 (`OPEN`, `RESOLVED`, `DISMISSED`), `action` 🔒 (`NONE`, `HIDE_CONTENT`, `LOCK_USER`, `LOCK_VENUE`, `LOCK_GROUP`), `handledBy` 🔒, `handledAt` 🔒.
+
+`HIDE_CONTENT`: bài nhóm ghi `hiddenBy = SYSTEM`, `hiddenByUid = null`; tin nhắn ghi `text = ""`. `LOCK_GROUP` ghi `groups/{id}.status = LOCKED`. Chủ nhóm không được xóa nhóm đang khóa; admin mở khóa qua `admin-manage-group` với `{ groupId, status: ACTIVE }` (hoặc khóa với `LOCKED`). Mọi thao tác xóa nhóm phải kiểm tra trạng thái trong transaction theo contract 090; function `group-manage` chưa có trong repo này.
+
+Preview kiểm duyệt: admin có claim ADMIN, hồ sơ hiện tại vẫn ADMIN/ACTIVE và chưa yêu cầu xóa tài khoản được `get` từng document `groups/{id}/posts/{postId}` và `chats/{id}/messages/{messageId}`, kể cả HIDDEN. Quyền này không mở `list` hay ghi trực tiếp. Quyền đọc của thành viên nhóm/người tham gia chat thuộc contract 090/091 và chưa được triển khai qua khối preview này. Màn admin đọc nội dung từ `content`, `text`, `comment` và tên từ `authorSnapshot`/`senderSnapshot`.
+
+Báo cáo bài đăng nhóm (spec 090, Edge Function `group-post`): `reportId` = `POST_{groupId}_{postId}_{uid}` (mỗi người báo một lần), `targetPath` = `groups/{groupId}/posts/{postId}`; `reason` dùng chung `SPAM`, `OFFENSIVE`, `SCAM`, `INAPPROPRIATE`, `OTHER`; `detail` ≤ 500 ký tự (bắt buộc khi `OTHER`).
+
+Báo cáo tin nhắn (spec 091, Edge Function `chat-action`): `reportId` = `MESSAGE_{chatId}_{messageId}_{uid}` (mỗi người báo một lần), `targetType = MESSAGE`, `targetPath` = `chats/{chatId}/messages/{messageId}`; `reason`, `detail` như trên.
 
 ### 4.13. `users/{uid}/notifications/{id}` — D
 
@@ -268,6 +288,10 @@ Các `type` (đã chốt 13/10 theo yêu cầu của các spec nguồn; thêm lo
 | `CHAT_MESSAGE` | 09 |
 | `SYSTEM` | 12 |
 
+O2 thêm journal server-only `users/{uid}/ownerRevocationCommands/{requestId}`. Mỗi UUID là một lần gọi thu hồi, lưu `actorUid`, `reasonHash` và `createdAt` (Timestamp). Journal được ghi cùng role/inbox/job và được dọn khi xóa tài khoản.
+
+D4 thêm journal server-only `dropInSessions/{sessionId}/notificationCommands/{requestId}` gồm `actorUid`, `fingerprint`, `result`, `createdAt`. Transaction giữ journal theo vòng đời session. Khi không đủ ngân sách ghi từng inbox trong transaction nguồn, ghi `notificationFanouts/{eventId}` với identity, family, actorUid, content, createdAt, state, cursor và pageCount, kèm các trang `recipients/{page}` (tối đa 100 UID). Mỗi transaction worker ghi inbox/job và tiến cursor cùng lúc. Trang snapshot được dọn sau 7 ngày kể từ khi hoàn tất. Thiết kế này mới triển khai cho D4.
+
 Người dùng tự làm một thao tác (tự hủy đơn, tự hủy đăng ký vãng lai, tự vào hàng chờ) thì không nhận thông báo cho thao tác đó; app hiện kết quả ngay trên màn hình.
 
 ## 5. ID tất định
@@ -280,6 +304,10 @@ Người dùng tự làm một thao tác (tự hủy đơn, tự hủy đăng k�
 | `registrations` | `uid` | Mỗi người một đăng ký mỗi buổi |
 | `favorites` | `venueId` | Không trùng |
 | `chats` (riêng) | `{uidNhỏ}_{uidLớn}` | Không tạo hai hội thoại cho cùng một cặp |
+| `chats` (nhóm) | `group_{groupId}` | Mỗi nhóm đúng một chat |
+| `groups`, `posts` | `requestId` | Bấm nhiều lần không tạo nhóm/bài trùng |
+| `messages` | `requestId` (UUID) | Gửi lại (mạng chập chờn) không tạo tin trùng |
+| `members`, `joinRequests`, `removals`, `attendees`, `participants` | `uid` | Mỗi người một document mỗi nhóm/sự kiện |
 
 ## 6. Index dự kiến
 
@@ -304,6 +332,23 @@ Người phụ trách bổ sung vào `firestore.indexes.json` khi viết `plan.m
 | `dropInSessions` | `status`, `level`, `startAt` | Lọc trình độ (08) |
 | `dropInSessions` | `status`, `startAt`, `pricePerPerson` | Lọc giá tối đa (08) |
 | `chats` | `memberIds` (array-contains), `updatedAt desc` | Danh sách hội thoại (09) |
+| `chats` | `memberIds` (array-contains), `ownerId`, `type`, `updatedAt desc` | "Tin nhắn khách hàng" của chủ sân (09) |
+| `messages` (collection) | `createdAt desc` | Tải 30 tin mỗi trang (09, tự có) |
+| `messages` (collection group) | `senderId` | Ẩn danh khi xóa tài khoản (09, 011) |
+| `participants` (collection group) | `userId` | Ẩn danh khi xóa tài khoản, kiểm tra tắt thông báo (09, 011) |
+| `groups` | `status`, `memberCount desc` | Danh sách nhóm không lọc (09) |
+| `groups` | `status`, `districtId`, `memberCount desc` | Lọc khu vực (09) |
+| `groups` | `status`, `nameKeywords` (array-contains), `memberCount desc` | Tìm nhóm theo tên (09) |
+| `groups` | `status`, `nameKeywords` (array-contains), `districtId`, `memberCount desc` | Tên + khu vực (09) |
+| `groups` | `ownerId`, `status` | Đếm giới hạn 5 nhóm mỗi chủ (09) |
+| `members` (collection group) | `userId`, `joinedAt desc` | "Nhóm của tôi" (09) |
+| `members` (collection) | `role`, `joinedAt` | Danh sách thành viên, chuyển quyền (09) |
+| `posts` (collection) | `status`, `createdAt desc` | Bảng tin thành viên (09) |
+| `posts` (collection) | `authorId`, `status`, `createdAt desc` | Bài bị ẩn của chính mình (09) |
+| `posts` (collection group) | `authorId` | Ẩn danh khi xóa tài khoản (09, 011) |
+| `attendees` (collection group) | `userId`, `groupId`, `eventAt` | Bỏ tham gia khi rời nhóm (09) |
+| `joinRequests` (collection) | `createdAt` | Danh sách yêu cầu (09) |
+| `joinRequests` (collection group) | `userId` | Hủy yêu cầu chờ duyệt khi xóa tài khoản (09, 011) |
 | `reports` | `status`, `createdAt` | Hàng đợi xử lý (12) |
 | `ownerApplications` | `status`, `submittedAt` | Hồ sơ chờ duyệt (12) |
 | `districts` | `isActive`, `sortOrder` | Danh sách khu vực (011, 02) |
@@ -315,6 +360,8 @@ Người phụ trách bổ sung vào `firestore.indexes.json` khi viết `plan.m
 | `registrations` (collection group) | `userId`, `sessionStartAt desc` | Tab "Đã qua" (08) |
 | `registrations` (collection group) | `qrToken` | Check-in bằng QR (Edge Function của D) |
 | `registrations` (collection group) | `ticketCode` | Check-in bằng mã vé (Edge Function của D) |
+| `registrations` | `status`, `waitlistTicket` | Lấy người chờ kế tiếp theo thứ tự (081) |
+| `dropInSessions` | `status`, `endAt` | `dropin-close` tìm buổi đã qua `endAt` để chuyển `COMPLETED` (081; bước đóng hàng chờ dùng index `status`, `startAt` sẵn có) |
 
 ## 7. Phân quyền (tóm tắt Security Rules)
 
@@ -335,9 +382,10 @@ Ký hiệu: R đọc, C tạo, U sửa, D xóa. "Chủ" = người sở hữu do
 | `reviews` | C qua Edge Function `review` (đơn `COMPLETED` hoặc lượt vãng lai `CHECKED_IN` đã kết thúc), U/D của mình | U `ownerReply` cho sân mình | U `status` | Cập nhật `ratingAvg` |
 | `dropInSessions` | R (kể cả khách chưa đăng nhập) | CRUD buổi sân mình | R, khóa | Ghi `registeredCount` |
 | `registrations` | R của mình (kể cả collection group theo `userId`) | R đăng ký của buổi mình | R | Ghi toàn bộ (mọi ghi qua Edge Function) |
-| `groups`, `chats` | Thành viên R/C; nhóm `PUBLIC` ai cũng R | như người chơi | R để kiểm duyệt | |
+| `groups` | Giới thiệu nhóm (`ACTIVE`, `LOCKED`) ai cũng R, kể cả khách; bảng tin, thành viên chỉ thành viên R; `joinRequests` R của mình; mọi ghi qua Edge Function | như người chơi | R để kiểm duyệt | Ghi toàn bộ (`group-manage`, `group-post`) |
+| `chats` | Người trong cuộc R; chỉ ghi `unreadCounts.{mình} = 0` và `participants/{mình}` (`lastReadAt`, `muted`, `blockedOther`, `viewingUntil`); `messages` chỉ đọc, gửi/thu hồi/báo cáo qua Edge Function | như người chơi (R chat với khách của sân mình) | R để kiểm duyệt | Ghi toàn bộ (`chat-send`, `chat-action`) |
 | `reports` | C | C | R, U | |
-| `notifications` | R, U `isRead` của mình | như người chơi | C (thông báo hệ thống) | C |
+| `notifications` | R, U `isRead` của mình | như người chơi | Gửi SYSTEM qua Edge Function; client không C | C |
 
 Mỗi dòng trên cần ít nhất một test Emulator "được phép" và một test "bị chặn".
 
@@ -351,8 +399,9 @@ Mỗi dòng trên cần ít nhất một test Emulator "được phép" và mộ
 | `venue-photos` | public | `{venueId}/{tên file}` | Owner sân (kiểm tra qua Edge Function `sign-upload`) | Mọi người | D |
 | `review-photos` | public | `{reviewId}/{tên file}` | Người viết | Mọi người | C |
 | `owner-docs` | **private** | `{uid}/{applicationId}/{tên file}` | Chủ | **Chỉ chủ và `appRole == ADMIN`**, qua signed URL hết hạn sau 5 phút | D |
-| `group-media` | private | `{groupId}/{tên file}` | Thành viên | Thành viên, qua signed URL | C |
-| `chat-media` | private | `{chatId}/{tên file}` | Thành viên chat | Thành viên chat, qua signed URL | C |
+| `group-avatars` | public | `{groupId}/avatar.{jpg,png,webp}` | Chủ nhóm, qua signed upload URL của Edge Function `group-manage` (không có policy ghi trực tiếp) | Mọi người | C |
+| `group-media` | private | `{groupId}/{postId}/{n}.{ext}` | Thành viên, qua signed upload URL của Edge Function `group-media-url` | Thành viên, qua signed URL của `group-media-url` | C |
+| `chat-media` | private | `{chatId}/{messageId}.{jpg,png,webp}` | Thành viên chat, qua signed upload URL của Edge Function `chat-media-url` (không có policy ghi trực tiếp) | Thành viên chat, qua signed URL của `chat-media-url` (1 giờ) | C |
 
 - Chính sách RLS chỉ đọc được JWT, không đọc được Firestore. Quyền nào cần dữ liệu Firestore (owner của `venueId` nào, thành viên của `chatId` nào) thì app gọi Edge Function `sign-upload` hoặc `sign-download`; Edge Function kiểm tra Firestore rồi trả signed URL.
 - Giới hạn: ảnh ≤ 2 MB, MIME `image/jpeg`, `image/png`, `image/webp` (đặt ở cấu hình bucket). Ảnh được nén ở client trước khi upload.
@@ -374,8 +423,15 @@ Mỗi dòng trên cần ít nhất một test Emulator "được phép" và mộ
 | `booking-timeout` (pg_cron mỗi phút) | Đơn `PENDING` quá `approvalDeadline` → `REJECTED`, hoàn 100% vào ví giả lập, xóa slot, gửi `BOOKING_REJECTED` | D |
 | `booking-finalize` (pg_cron mỗi phút) | Đơn `CONFIRMED` đã qua giờ kết thúc: có `checkedInAt` → `COMPLETED` + `completedAt`; không có → `NO_SHOW` | B |
 | `checkin-booking` | Chủ sân check-in đơn đặt sân bằng QR hoặc mã đặt sân: kiểm tra quyền, trạng thái, khung giờ cho phép; ghi `checkedInAt`, và `paymentStatus = PAID` khi chủ sân xác nhận đã thu tiền | D |
-| `register-drop-in`, `cancel-drop-in` | Đăng ký/hủy, trả chỗ; hook hàng chờ của 081 | C |
+| `register-drop-in`, `cancel-drop-in` | Đăng ký/hủy, trả chỗ; vào/rời hàng chờ (081); hủy làm trả chỗ thì đẩy người chờ lên ngay trong cùng transaction | C |
+| `dropin-close` (pg_cron mỗi phút) | Đóng hàng chờ lúc T−30 phút (lượt chờ còn lại → `waitlistEndReason = CLOSED`, gửi `DROPIN_WAITLIST_CLOSED`); chuyển buổi đã qua sang `COMPLETED`; header `x-cron-secret` | C |
 | `_shared/dropin.ts` | Helper dùng chung cho 081, 112, `delete-account` (`deriveSessionFields`, `computeRefund`, `cancelRegistrationInTx`, `afterSpotsReleased`) | C |
+| `group-manage` | Nhóm/CLB: `create`, `update`, `delete`, `join`, `cancelRequest`, `leave`, `approve`, `reject`, `setRole`, `transferOwner`, `remove`; cấp signed upload URL cho ảnh đại diện | C |
+| `group-post` | Bài đăng nhóm: `create`, `update`, `delete`, `hide`, `unhide`, `attend`, `unattend`, `report` | C |
+| `group-media-url` | Signed URL ảnh bài viết `group-media`: `upload`, `download`, `discard` | C |
+| `chat-send` | Gửi tin chữ/ảnh (idempotent theo `messageId`): ghi `messages`, `lastMessage`, tăng `unreadCounts`, gửi `CHAT_MESSAGE` | C |
+| `chat-action` | Chat: `openDirect` (mở/tạo chat riêng với chủ sân), `recall`, `report` | C |
+| `chat-media-url` | Signed URL ảnh chat `chat-media`: `upload`, `download`, `discard` | C |
 | `on-review-created` | Cập nhật `ratingAvg`, `ratingCount` | C |
 | `review-owner-application` | Duyệt/từ chối chủ sân, gán `appRole=OWNER` | D |
 | `sign-upload`, `sign-download` | Cấp signed URL cho bucket cần kiểm tra Firestore | D |
@@ -392,3 +448,39 @@ Mỗi dòng trên cần ít nhất một test Emulator "được phép" và mộ
 | 4 | "Sân yêu thích" và "sân đang theo dõi" có là một không? | C, D |
 | 5 | ~~Có bật gói Blaze không?~~ Đã chốt 05/10: không dùng Blaze; Storage và Functions chuyển sang Supabase | Cả nhóm |
 | 6 | Tìm theo tên bằng `nameKeywords` hay dùng dịch vụ tìm kiếm ngoài? | A |
+
+## Quyết định mở thêm cơ sở — 2026-11-20
+
+Hồ sơ bổ sung dùng purpose VENUE_ADDITION, độc lập với quyền OWNER/APPROVED. Hồ sơ cũ thiếu purpose thuộc OWNER_ONBOARDING. Duyệt tạo venues/{applicationId} một lần; từ chối/nộp lại không đổi tài khoản hoặc venue cũ. Không giới hạn số venue/hồ sơ.
+
+Hợp đồng chi tiết: [owner-application-api.md](../../../specs/110-owner-onboarding/contracts/owner-application-api.md).
+
+## Đồng bộ vận hành OWNER — 2026-11-21
+
+Feature 111 priceRules và minPricePerHour được ghi cùng transaction sync-venue-price; client không ghi rule/aggregate trực tiếp. Không đổi collections/field schema. Feature 112 dùng owner-statistics-source projection bookings/slots với availability DTO cùng snapshot, không dailyStats; xem [contract hiện tại](../../../specs/112-owner-operations/contracts/owner-operations-boundaries.md). Check-in drop-in áp dụng [startAt - 30 phút, endAt) theo quyết định người dùng 2026-11-21, giữ enum OPEN/FULL/CANCELLED/COMPLETED và cơ chế 081.
+
+Theo quyết định cùng ngày, courtCount là số court isActive=true, cho phép 0. owner-manage-court kiểm tra quyền/ownership/LOCKED, ghi court và tính lại bộ đếm trong một transaction; Rules chặn client ghi courts/courtCount. Số khai báo dương của hồ sơ vẫn ở venueDraft; venue mới duyệt chưa cấu hình sân có courtCount=0. Mutation kế tiếp sửa bộ đếm legacy từ collection thực; chưa chạy backfill trên hosted.
+
+## Feature 100 — quyết định đã duyệt 23/11/2026
+
+Nguồn quyết định: [backend-decision-package.md](../../../specs/100-notification/backend-decision-package.md), các ID D1, D2-W1, T1, C1, P1, S1 đã được người dùng duyệt. Bảng fields, kiểu, retention, lease, token mutation và giới hạn trong tài liệu đó là contract cho phần bổ sung này; không mở rộng sang các producer ngoài W1.
+
+- `notificationDeliveries/{jobId}` và subcollection `tokens/{tokenHash}`: schema D1, server-only cả đọc lẫn ghi, kể cả Admin client. Inbox giữ đúng sáu field §4.13. Job tham chiếu inbox, không chứa raw token/body. Receipt ghi kết quả provider acceptance từng token, tối đa sáu attempt. Terminal giữ bảy ngày, xóa child trước parent; không TTL job pending. Enqueue cùng transaction source, đọc user ACTIVE/không xóa. Không backfill job cho inbox cũ hoặc inbox còn lại sau retention. Account deletion dọn toàn bộ receipt/job theo recipientUid trước final sweep.
+- D2-W1: booking terminal dùng bookingId/type; waitlist dùng sessionId/uid/waitlistTicket/type; kết quả hồ sơ dùng applicationId/submittedAt/decision; SYSTEM dùng adminUid/requestId. UUID inbox hiện có được giữ. Các generation/outbox khác vẫn chưa có schema được duyệt.
+- `users.fcmTokens`: T1 giữ Array<String>, owner mutation tối đa một token mới và một token bị gỡ; token mới không rỗng, dài tối đa 4096. Không đặt giới hạn số thiết bị. Removal-only tương thích legacy. Raw token chỉ ở Firebase SDK/profile, không local journal. `notification_device_prefs` chỉ có lastRegisteredUid/tokenHash/rotationRequired và installationId UUID, không phải credential. Logout cleanup best effort; đổi UID phải rotate trước registration, P1 chặn hiển thị sai UID nhưng không hứa chặn network traffic cũ.
+- `chats/{chatId}/participants/{uid}/presence/{installationId}`: C1 có đúng `viewingUntil: Timestamp`; own UID và current chat member, không quá request.time + 10 phút. Lease 60 giây, renew 45 giây, leave chỉ xóa installation mình; server kiểm bất kỳ lease còn hạn thì suppress push cả tài khoản. Muted/viewing không ngăn tạo inbox. Field aggregate cũ giữ cho client legacy, không đảm bảo nhiều máy trên client cũ. Account/participant deletion phải dọn presence children.
+- P1: data-only đúng hai String `recipientUid`, `notificationId`. Không notification block/title/body nguồn. Local notification generic “Bạn có thông báo mới”, PRIVATE/public generic, tap tải own inbox rồi recheck source. Sai UID hoặc không xác minh session thì bỏ hiển thị. OS force-stop/hạn chế nền có thể làm mất hoặc trễ push. S1 giữ create inbox hoàn toàn server-only, SYSTEM kiểm ADMIN claim và profile ACTIVE ADMIN hiện tại.
+## Booking decisions approved 24/11/2026
+
+User approved B1 (payment source will be supplied later) and B2 with the stated limits in specs/100-notification/booking-decision-package-2026-11-24.md. B1 authorizes the internal helper contract, not a replacement payment flow; actual HOLD-to-PENDING producer integration remains blocked. B2 authorizes one reminder per booking ID, invocation-local paginated CONFIRMED/startAt window, late catch-up only before start, data.reminderStartAt Timestamp, same-transaction recheck/enqueue, and delivery-time source/time recheck. After a reminder exists, reschedule does not generate a second inbox; stale push is skipped. No booking marker, collection or reschedule API is added. Full field/query/identity semantics are in the approved package; no deploy/live migration is authorized.
+## Approved notification continuation, 24/11/2026
+
+User explicitly approved D3, R1 and H1 in specs/100-notification/continuation-decisions-2026-11-24.md. D3 treats DROPIN_REGISTERED as the explicit confirmation exception to generic self-action exclusion: transaction identity sessionId/uid/requestId/type, deterministic inbox, no callback; join/leave waitlist/add-party/self-cancel stay silent. Stale reused request IDs with an existing event inbox are rejected before source writes. R1 adds reviews.notificationGeneration String UUID, server-only, renewed on recreate and retained on edit; legacy generation is assigned on first reply without backfill. REVIEW_NEW and first REVIEW_REPLIED enqueue in source transaction, actor excluded, data reviewId/venueId. H1 applies atomic message/inbox/job only to DIRECT chat, identity chatId/messageId/recipient/type; GROUP fanout remains unapproved. Use existing D1 job/receipts, C1 suppression and P1 payload. No outbox, group-size policy, deployment or live migration is approved. Full scope/limits are recorded in the decision package.
+
+## Cập nhật notification ngày 26/11/2026
+
+F1 bổ sung family `group` vào `notificationFanouts`, với groupId, audience, mode và cursor after cho quét theo document ID. Snapshot dùng 100 UID/trang, dọn trang sau 7 ngày và giữ marker. Journal server-only `groups/{groupId}/notificationCommands/{requestId}` ghi actor, fingerprint, kết quả và thời điểm.
+
+P2 thêm `publishedAt` server-only cho voucher sân mới. Null đăng ký vào lịch phát, Timestamp chốt lần phát duy nhất cùng outbox family `promotion`. Voucher legacy thiếu field giữ nguyên. Worker đọc favorite, quyền tài khoản và các bộ đếm Feature 050 `usedCount` và `userUsage/{uid}.count`, tính cả lượt RESERVED/USED.
+
+B1 ghi inbox/job cùng PENDING, slot và redemption trong checkout Feature 050. Giữ ID inbox `booking_new_{requestKey}` và một thông báo cho cả nhóm định kỳ theo bookingId của buổi sớm nhất.

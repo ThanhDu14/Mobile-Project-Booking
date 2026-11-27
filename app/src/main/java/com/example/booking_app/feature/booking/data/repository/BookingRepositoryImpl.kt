@@ -72,7 +72,8 @@ class BookingRepositoryImpl @Inject constructor(
     override fun getBusySlotsRealtime(venueId: String, date: String): Flow<BusySlotsUpdate> {
         return remoteDataSource.getBusySlotsRealtime(venueId, date)
             .map { dto ->
-                BookingSlotMapper.toDomain(dto)
+                // Giờ server: cùng nguồn với lệnh giữ chỗ, để máy lệch giờ không coi HELD còn hạn là đã hết
+                BookingSlotMapper.toDomain(dto, serverTimeOffsetProvider.now())
             }
             .catch { e ->
                 throw mapToAppError(e)

@@ -1,0 +1,11 @@
+
+ RUN  v5.1.0 F:/CSC_HCMUS/Mobile/datcau/firestore-tests
+
+
+ Test Files  29 passed (29)
+      Tests  304 passed | 4 skipped (308)
+   Start at  18:54:27
+   Duration  109.52s (tests 75%, import 25%)
+
+    Isolate  29 workers spawned · ~321ms startup each (spawn + environment, per file)
+             at least ~8.99s faster with isolate: false — reuses workers across files instead of one per file

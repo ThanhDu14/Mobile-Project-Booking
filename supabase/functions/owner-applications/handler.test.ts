@@ -3,6 +3,7 @@ import * as defaultFirestore from "../_shared/firestore.ts";
 import { commit, createWrite, updateWrite } from "../_shared/firestore.ts";
 import { bearer, clearEmulators, emulatorToken } from "../_shared/testing.ts";
 import { handleOwnerApplications } from "./handler.ts";
+import { handleAdminReviewApplication } from "../admin-review-application/handler.ts";
 
 const uid = "owner-application-test-user";
 const applicationId = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
@@ -47,6 +48,77 @@ function request(body: unknown, tokenRole = "PLAYER"): Request {
 Deno.test("owner-applications rejects non-POST", async () => {
   const response = await handleOwnerApplications(new Request("http://localhost", { method: "GET" }));
   assertEquals(response.status, 405);
+});
+
+Deno.test("additional venues have independent lifecycles, do not hide onboarding, and cannot be forged", async () => {
+  await seed();
+  await commit([
+    updateWrite(`users/${uid}`, {role:"OWNER",ownerStatus:"APPROVED"}),
+    createWrite("ownerApplications/initial",{uid,status:"APPROVED",submittedAt:"2026-01-01T00:00:00Z"}),
+    createWrite("venues/initial",{ownerId:uid,status:"ACTIVE",name:"Existing venue"}),
+  ]);
+  const addition = {...draft(),purpose:"VENUE_ADDITION"};
+  for (let n=0; n<2; n++) {
+    const response=await handleOwnerApplications(request(addition,"OWNER"),TEST_DEPS);
+    assertEquals(response.status,200); await response.body?.cancel();
+  }
+  assertEquals((await defaultFirestore.get(`users/${uid}`))?.ownerStatus,"APPROVED");
+  assertEquals((await defaultFirestore.get(`users/${uid}`))?.role,"OWNER");
+  assertEquals((await defaultFirestore.get("venues/initial"))?.name,"Existing venue");
+  assertEquals(await defaultFirestore.get(`venues/${applicationId}`),null);
+  const status=await handleOwnerApplications(request({action:"STATUS"},"OWNER"),TEST_DEPS);
+  assertEquals(status.status,200); assertEquals((await status.json()).application.applicationId,"initial");
+  const scoped=await handleOwnerApplications(request({action:"STATUS",purpose:"VENUE_ADDITION",applicationId},"OWNER"),TEST_DEPS);
+  assertEquals((await scoped.json()).application.status,"PENDING");
+  const secondId="bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+  const second=await handleOwnerApplications(request({...draft(secondId),purpose:"VENUE_ADDITION"},"OWNER"),TEST_DEPS);
+  assertEquals(second.status,200); await second.body?.cancel();
+  await commit([updateWrite(`ownerApplications/${applicationId}`,{status:"REJECTED",rejectReason:"TEST reason"})]);
+  const resubmit=await handleOwnerApplications(request(addition,"OWNER"),TEST_DEPS);
+  assertEquals(resubmit.status,200); await resubmit.body?.cancel();
+  assertEquals((await defaultFirestore.get(`ownerApplications/${applicationId}`))?.rejectReason,undefined);
+  assertEquals((await defaultFirestore.get(`users/${uid}`))?.ownerStatus,"APPROVED");
+  const list=await handleOwnerApplications(request({action:"LIST",purpose:"VENUE_ADDITION"},"OWNER"),TEST_DEPS);
+  assertEquals((await list.json()).applications.length,2);
+  await commit([updateWrite(`ownerApplications/${applicationId}`,{uid:"another-owner"})]);
+  const forged=await handleOwnerApplications(request(addition,"OWNER"),TEST_DEPS);
+  assertEquals(forged.status,403); await forged.body?.cancel();
+  await commit([updateWrite(`users/${uid}`,{role:"PLAYER",ownerStatus:"NONE"})]);
+  const revoked=await handleOwnerApplications(request({...draft(crypto.randomUUID()),purpose:"VENUE_ADDITION"},"OWNER"),TEST_DEPS);
+  assertEquals(revoked.status,403); await revoked.body?.cancel();
+});
+
+Deno.test("concurrent additional submit/review creates one application and one venue; revocation during publication wins", async () => {
+  await seed();
+  await commit([
+    updateWrite(`users/${uid}`,{role:"OWNER",ownerStatus:"APPROVED"}),
+    ...["addition-admin-a","addition-admin-b"].map(id=>createWrite(`users/${id}`,{role:"ADMIN",accountStatus:"ACTIVE"})),
+  ]);
+  const addition={...draft(),purpose:"VENUE_ADDITION"};
+  const submits=await Promise.all([handleOwnerApplications(request(addition,"OWNER"),TEST_DEPS),handleOwnerApplications(request(addition,"OWNER"),TEST_DEPS)]);
+  assertEquals(submits.map(r=>r.status),[200,200]);
+  await Promise.all(submits.map(r=>r.body?.cancel()));
+  assertEquals((await defaultFirestore.listOwnerApplications(uid)).length,1);
+  const app=await defaultFirestore.get(`ownerApplications/${applicationId}`);
+  const body={applicationId,decision:"APPROVE",expectedSubmittedAt:app!.submittedAt instanceof Date ? app!.submittedAt.toISOString() : app!.submittedAt};
+  const admin=(id:string, payload=body)=>bearer(emulatorToken({sub:id,appRole:"ADMIN"}),{body:JSON.stringify(payload)});
+  const deps={firestore:defaultFirestore,mergeClaims:async()=>{throw Error("Addition must not change claims");},publishPhotos:async()=>[`${applicationId}/venue.jpg`]};
+  const reviews=await Promise.all([handleAdminReviewApplication(admin("addition-admin-a"),deps),handleAdminReviewApplication(admin("addition-admin-b"),deps)]);
+  assertEquals(reviews.map(r=>r.status).sort(),[200,409]);
+  await Promise.all(reviews.map(r=>r.body?.cancel()));
+  assertEquals((await defaultFirestore.get(`venues/${applicationId}`))?.ownerId,uid);
+  assertEquals((await defaultFirestore.get(`users/${uid}`))?.role,"OWNER");
+  const id="bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb";
+  const submit=await handleOwnerApplications(request({...draft(id),purpose:"VENUE_ADDITION"},"OWNER"),TEST_DEPS);
+  assertEquals(submit.status,200); await submit.body?.cancel();
+  const pending=await defaultFirestore.get(`ownerApplications/${id}`);
+  const version=pending!.submittedAt instanceof Date ? pending!.submittedAt.toISOString() : pending!.submittedAt;
+  const revoked=await handleAdminReviewApplication(admin("addition-admin-a",{...body,applicationId:id,expectedSubmittedAt:version}),{
+    ...deps,publishPhotos:async()=>{await commit([updateWrite(`users/${uid}`,{role:"PLAYER",ownerStatus:"NONE"})]);return[];},
+  });
+  assertEquals(revoked.status,403); await revoked.body?.cancel();
+  assertEquals(await defaultFirestore.get(`venues/${id}`),null);
+  assertEquals((await defaultFirestore.get(`ownerApplications/${id}`))?.status,"PENDING");
 });
 
 Deno.test("owner-applications creates once and returns committed result after retry", async () => {

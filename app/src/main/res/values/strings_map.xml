@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Bản đồ sân (spec 021) -->
+    <string name="map_toggle_map">Bản đồ</string>
+    <string name="map_toggle_list">Danh sách</string>
+    <string name="map_cd_map">Bản đồ các sân phù hợp</string>
+    <string name="map_filters">Bộ lọc</string>
+    <string name="map_filters_count">Bộ lọc · %1$d</string>
+    <string name="map_search_area">Tìm ở khu vực này</string>
+    <string name="map_loading">Đang tải sân…</string>
+    <string name="map_empty">Không có sân phù hợp trong vùng này. Thu nhỏ bản đồ hoặc xóa bộ lọc.</string>
+    <string name="map_capped">Phóng gần hơn để xem thêm sân</string>
+    <string name="map_error">Không tải được danh sách sân.</string>
+    <string name="map_retry">Thử lại</string>
+    <string name="map_tiles_failed">Không tải được bản đồ. Đã chuyển về danh sách.</string>
+    <string name="map_offline">Không có mạng. Sân trên bản đồ có thể chưa cập nhật.</string>
+    <string name="map_district_dropped">Đã bỏ lọc quận để tìm theo vùng đang xem.</string>
+    <string name="map_my_location">Vị trí của tôi</string>
+    <string name="map_location_rationale">Cho phép vị trí để đưa bản đồ về chỗ bạn và tính khoảng cách tới các sân. Vị trí chỉ dùng trên máy, không lưu lại.</string>
+    <string name="nearby_location_rationale">Cho phép vị trí để tìm các sân trong bán kính 5 km quanh bạn. Vị trí chỉ dùng trên máy, không lưu lại.</string>
+    <string name="map_no_location">Chưa có vị trí của bạn. Bản đồ đang ở trung tâm TP.HCM.</string>
+    <string name="map_cd_marker">%1$s, chạm để xem tóm tắt</string>
+    <string name="map_cd_cluster">%1$d sân, chạm để phóng to</string>
+    <string name="map_card_distance">%1$s · %2$s</string>
+    <string name="map_card_position">%1$d/%2$d</string>
+    <string name="map_card_selected">Đang chọn trên bản đồ</string>
+
+    <!-- Sân gần bạn (spec 021 US4) -->
+    <string name="nearby_title">Sân gần bạn</string>
+    <string name="nearby_see_map">Xem tất cả trên bản đồ</string>
+    <string name="nearby_enable">Bật vị trí</string>
+    <string name="nearby_need_location">Bật vị trí để xem các sân trong bán kính 5 km quanh bạn.</string>
+    <string name="nearby_locating">Đang lấy vị trí…</string>
+    <string name="nearby_unavailable">Chưa lấy được vị trí. Kiểm tra định vị rồi thử lại.</string>
+    <string name="nearby_empty">Không có sân nào trong bán kính 5 km.</string>
+    <string name="nearby_wider">Tìm rộng hơn</string>
+    <string name="nearby_by_district">Tìm theo quận</string>
+    <string name="nearby_try_again">Thử lại</string>
+</resources>

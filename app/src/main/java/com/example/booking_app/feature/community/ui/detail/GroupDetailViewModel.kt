@@ -1,0 +1,702 @@
+package com.example.booking_app.feature.community.ui.detail
+
+import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.booking_app.core.media.SignedUrlCache
+import com.example.booking_app.core.session.SessionManager
+import com.example.booking_app.core.session.settledUid
+import com.example.booking_app.core.util.AppClock
+import com.example.booking_app.feature.community.domain.CommunityError
+import com.example.booking_app.feature.community.domain.GroupPermissions
+import com.example.booking_app.feature.community.domain.GroupRepository
+import com.example.booking_app.feature.community.domain.PostRepository
+import com.example.booking_app.feature.community.domain.model.Group
+import com.example.booking_app.feature.community.domain.model.GroupMembership
+import com.example.booking_app.feature.community.domain.model.GroupRole
+import com.example.booking_app.feature.community.domain.model.GroupVisibility
+import com.example.booking_app.feature.community.domain.model.HiddenBy
+import com.example.booking_app.feature.community.domain.model.JoinResult
+import com.example.booking_app.feature.community.domain.model.PageCursor
+import com.example.booking_app.feature.community.domain.model.Post
+import com.example.booking_app.feature.community.domain.model.PostStatus
+import com.example.booking_app.feature.community.domain.toCommunityError
+import com.example.booking_app.feature.community.domain.usecase.DeletePost
+import com.example.booking_app.feature.community.domain.usecase.JoinGroup
+import com.example.booking_app.feature.community.domain.usecase.LeaveGroup
+import com.example.booking_app.feature.community.domain.usecase.ModeratePost
+import com.example.booking_app.feature.community.domain.usecase.ToggleAttendance
+import com.example.booking_app.feature.community.ui.common.DistrictNames
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.launch
+import java.time.Instant
+import java.util.UUID
+import javax.inject.Inject
+
+/** Nút tham gia trên trang nhóm (T038). */
+enum class JoinAction {
+    /** Ẩn: đã là thành viên hoặc nhóm bị khóa. */
+    NONE,
+
+    /** "Tham gia" (nhóm công khai). */
+    JOIN,
+
+    /** "Xin tham gia" (nhóm riêng tư). */
+    REQUEST,
+
+    /** "Đang chờ duyệt" kèm "Hủy yêu cầu". */
+    PENDING,
+}
+
+/** Một bài hiển thị trên bảng tin (T050 + T056) kèm URL ảnh đã ký và quyền theo người xem. */
+data class PostItem(
+    val post: Post,
+    val photoUrls: Map<String, String> = emptyMap(),
+    val canEdit: Boolean = false,
+    val canDelete: Boolean = false,
+    val canHide: Boolean = false,
+    val canUnhide: Boolean = false,
+    val canReport: Boolean = false,
+    val canAttend: Boolean = false,
+    val isEventPast: Boolean = false,
+    val attendanceBusy: Boolean = false,
+) {
+    /** Nhãn "Đã bị ẩn" hiện với người đăng và quản trị viên. */
+    val showHiddenBadge: Boolean get() = post.isHidden
+
+    /** Tác giả đã xóa tài khoản → UI hiện "Người dùng đã xóa". */
+    val isAuthorDeleted: Boolean get() = post.author.isDeleted
+
+    /** Có ít nhất một hành động trong menu bài đăng. */
+    val hasMenuActions: Boolean get() = canEdit || canDelete || canHide || canUnhide || canReport
+}
+
+/** 4 trạng thái bảng tin (FR-020, T043/T050). */
+sealed interface FeedUiState {
+    data object Loading : FeedUiState
+    data class Content(
+        val items: List<PostItem>,
+        val canLoadMore: Boolean = false,
+        val loadingMore: Boolean = false,
+        val loadMoreError: CommunityError? = null,
+    ) : FeedUiState
+    data object Empty : FeedUiState
+    data class Error(val cause: CommunityError) : FeedUiState
+}
+
+sealed interface GroupDetailUiState {
+    data object Loading : GroupDetailUiState
+
+    /** Nhóm không có, đã `DELETED` hoặc bị Rules từ chối: "Nhóm không còn tồn tại", không phải lỗi chung. */
+    data object NotFound : GroupDetailUiState
+
+    data class Content(
+        val group: Group,
+        val membership: GroupMembership,
+        val permissions: GroupPermissions,
+        val districtName: String? = null,
+        /** Đang gửi tham gia/hủy/rời nhóm: khóa các nút để không gửi hai lần. */
+        val busy: Boolean = false,
+        val feed: FeedUiState = FeedUiState.Loading,
+    ) : GroupDetailUiState {
+        val canEdit: Boolean get() = permissions.canEdit
+
+        /**
+         * Chế độ nhóm quyết định nhãn nút; việc người từng bị mời ra phải xin duyệt do server quyết định (kết quả
+         * `REQUESTED`), app không biết trước.
+         */
+        val joinAction: JoinAction
+            get() = when {
+                membership.isMember || group.isLocked -> JoinAction.NONE
+                membership.pending -> JoinAction.PENDING
+                group.visibility == GroupVisibility.PUBLIC -> JoinAction.JOIN
+                else -> JoinAction.REQUEST
+            }
+
+        val canLeave: Boolean get() = permissions.canLeave
+        val canPost: Boolean get() = permissions.canPost
+        val showFeed: Boolean get() = membership.isMember
+
+        /** Nút "Yêu cầu tham gia (N)": chủ nhóm và quản trị viên. */
+        val canReviewRequests: Boolean get() = permissions.canModerate
+        val pendingRequestCount: Int get() = group.pendingRequestCount
+    }
+
+    data class Error(val cause: CommunityError) : GroupDetailUiState
+}
+
+sealed interface GroupDetailEvent {
+    /** Khách bấm tham gia: mở đăng nhập rồi quay lại [returnTo]. */
+    data class RequireLogin(val returnTo: String) : GroupDetailEvent
+
+    data class JoinOutcome(val result: JoinResult) : GroupDetailEvent
+    data object RequestCancelled : GroupDetailEvent
+    data object Left : GroupDetailEvent
+    data object PostDeleted : GroupDetailEvent
+    data object PostHidden : GroupDetailEvent
+    data object PostUnhidden : GroupDetailEvent
+
+    /** Chủ nhóm rời khi chưa chuyển quyền: mở chọn người nhận quyền (US5). */
+    data class OpenTransferOwner(val groupId: String) : GroupDetailEvent
+
+    /** Chủ nhóm là thành viên duy nhất: gợi ý xóa nhóm. */
+    data object SuggestDeleteGroup : GroupDetailEvent
+
+    data class ShowError(val error: CommunityError) : GroupDetailEvent
+}
+
+/**
+ * T029 + T038 + T050: trang nhóm và bảng tin. Nhóm và quan hệ thành viên nghe realtime; bảng tin chỉ nạp khi người xem
+ * là thành viên (AC 3.7), phân trang 20 bài, nghe bài mới chèn lên đầu, ký URL ảnh qua [SignedUrlCache].
+ */
+@HiltViewModel
+class GroupDetailViewModel @Inject constructor(
+    private val savedStateHandle: SavedStateHandle,
+    private val groups: GroupRepository,
+    private val posts: PostRepository,
+    private val session: SessionManager,
+    private val joinGroup: JoinGroup,
+    private val leaveGroup: LeaveGroup,
+    private val deletePost: DeletePost,
+    private val moderatePost: ModeratePost,
+    private val toggleAttendance: ToggleAttendance,
+    private val signedUrls: SignedUrlCache,
+    private val districtNames: DistrictNames,
+    private val clock: AppClock,
+) : ViewModel() {
+
+    val groupId: String = checkNotNull(savedStateHandle[ARG_GROUP_ID]) { "Thiếu groupId" }
+
+    private val _state = MutableStateFlow<GroupDetailUiState>(GroupDetailUiState.Loading)
+    val state: StateFlow<GroupDetailUiState> = _state.asStateFlow()
+
+    private val _events = Channel<GroupDetailEvent>(Channel.BUFFERED)
+    val events: Flow<GroupDetailEvent> = _events.receiveAsFlow()
+
+    private val busy = MutableStateFlow(false)
+    private val rawFeedState = MutableStateFlow<RawFeedState>(RawFeedState.Loading)
+
+    private var job: Job? = null
+    private var feedJob: Job? = null
+    private var newPostsJob: Job? = null
+    private var loadMoreJob: Job? = null
+    private val attendanceJobs = LinkedHashMap<String, Job>()
+
+    private var activeFeedKey: Pair<Boolean, Boolean>? = null
+    private var currentIsMod: Boolean = false
+    private var feedLoading: Boolean = false
+    private var rawPosts: List<Post> = emptyList()
+    private var observedNewPostIds: Set<String> = emptySet()
+    private val deletedPostIds = HashSet<String>()
+    private var mutationSeq: Long = 0L
+    private val lastMutatedSeq = HashMap<String, Long>()
+    private var photoUrls: MutableMap<String, String> = LinkedHashMap()
+    private var nextCursor: PageCursor? = null
+    private var loadingMore: Boolean = false
+    private var loadMoreError: CommunityError? = null
+    private var attendanceInFlight: Set<String> = emptySet()
+
+    private sealed interface RawFeedState {
+        data object Loading : RawFeedState
+        data class Content(
+            val posts: List<Post>,
+            val urls: Map<String, String>,
+            val canLoadMore: Boolean,
+            val loadingMore: Boolean,
+            val loadMoreError: CommunityError?,
+            val attendanceInFlight: Set<String>,
+        ) : RawFeedState
+        data object Empty : RawFeedState
+        data class Error(val cause: CommunityError) : RawFeedState
+    }
+
+    init {
+        // M4: cold start qua deep link lúc phiên chưa khôi phục thì chờ phiên chốt; đổi tài khoản thì nạp lại.
+        viewModelScope.launch { session.settledUid().collect { start() } }
+    }
+
+    fun retry() {
+        _state.value = GroupDetailUiState.Loading
+        activeFeedKey = null
+        start()
+    }
+
+    fun retryFeed() {
+        val current = _state.value as? GroupDetailUiState.Content ?: return
+        if (!current.membership.isMember) return
+        loadFeed(isMod(current.membership.role))
+    }
+
+    fun refreshFeed() = retryFeed()
+
+    fun loadMoreFeed() {
+        val cursor = nextCursor ?: return
+        if (loadingMore || loadMoreError != null) return
+        fetchNextPage(cursor)
+    }
+
+    fun retryLoadMoreFeed() {
+        val cursor = nextCursor ?: return
+        if (loadingMore) return
+        loadMoreError = null
+        fetchNextPage(cursor)
+    }
+
+    private fun fetchNextPage(cursor: PageCursor) {
+        loadingMore = true
+        loadMoreError = null
+        publishFeed()
+
+        loadMoreJob?.cancel()
+        loadMoreJob = viewModelScope.launch {
+            val uid = session.currentUid().orEmpty()
+            posts.feed(groupId, currentIsMod, cursor).fold(
+                onSuccess = { page ->
+                    val filtered = filterVisible(page.items, currentIsMod, uid)
+                    resolveUrls(filtered)
+                    rawPosts = mergePosts(rawPosts, filtered)
+                    nextCursor = page.next
+                    loadingMore = false
+                    loadMoreError = null
+                    publishFeed()
+                },
+                onFailure = { err ->
+                    loadingMore = false
+                    loadMoreError = err.toCommunityError()
+                    publishFeed()
+                },
+            )
+        }
+    }
+
+    fun onDeletePostConfirmed(postId: String) = act(
+        key = "delete_post_$postId",
+        call = { requestId -> deletePost(groupId, postId, requestId) },
+    ) {
+        deletedPostIds += postId
+        observedNewPostIds = observedNewPostIds - postId
+        rawPosts = rawPosts.filterNot { it.id == postId }
+        publishFeed()
+        _events.trySend(GroupDetailEvent.PostDeleted)
+    }
+
+    /** T068: chủ nhóm/quản trị viên ẩn bài vi phạm. */
+    fun onHidePostConfirmed(postId: String) {
+        viewModelScope.launch {
+            moderatePost.hide(groupId, postId).fold(
+                onSuccess = {
+                    lastMutatedSeq[postId] = ++mutationSeq
+                    rawPosts = rawPosts.map { p ->
+                        if (p.id == postId) p.copy(status = PostStatus.HIDDEN, hiddenBy = HiddenBy.GROUP) else p
+                    }
+                    publishFeed()
+                    _events.trySend(GroupDetailEvent.PostHidden)
+                },
+                onFailure = { err ->
+                    _events.trySend(GroupDetailEvent.ShowError(err.toCommunityError()))
+                },
+            )
+        }
+    }
+
+    /** T068: chủ nhóm/quản trị viên hiện lại bài do nhóm ẩn (bài `SYSTEM` ẩn trả `HiddenBySystem`). */
+    fun onUnhidePost(postId: String) {
+        viewModelScope.launch {
+            moderatePost.unhide(groupId, postId).fold(
+                onSuccess = {
+                    lastMutatedSeq[postId] = ++mutationSeq
+                    rawPosts = rawPosts.map { p ->
+                        if (p.id == postId) p.copy(status = PostStatus.VISIBLE, hiddenBy = null) else p
+                    }
+                    publishFeed()
+                    _events.trySend(GroupDetailEvent.PostUnhidden)
+                },
+                onFailure = { err ->
+                    _events.trySend(GroupDetailEvent.ShowError(err.toCommunityError()))
+                },
+            )
+        }
+    }
+
+    /** T055: tham gia / bỏ tham gia sự kiện lạc quan, lỗi thì hoàn lại. */
+    fun onToggleAttendance(postId: String) {
+        if (postId in attendanceInFlight) return
+        val current = rawPosts.firstOrNull { it.id == postId } ?: return
+        val originalEvent = current.event ?: return
+        val nextAttending = !originalEvent.iAmAttending
+        val optimisticCount = (originalEvent.attendeeCount + if (nextAttending) 1 else -1).coerceAtLeast(0)
+
+        attendanceInFlight = attendanceInFlight + postId
+        rawPosts = rawPosts.map { p ->
+            if (p.id == postId) p.copy(event = originalEvent.copy(iAmAttending = nextAttending, attendeeCount = optimisticCount)) else p
+        }
+        publishFeed()
+
+        attendanceJobs.remove(postId)?.cancel()
+        val job = viewModelScope.launch {
+            try {
+                val result = try {
+                    toggleAttendance(groupId, postId, attend = nextAttending)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    Result.failure(e)
+                }
+                ensureActive()
+                attendanceInFlight = attendanceInFlight - postId
+                result.fold(
+                    onSuccess = { outcome ->
+                        rawPosts = rawPosts.map { p ->
+                            if (p.id == postId && p.event != null) {
+                                p.copy(event = p.event.copy(attendeeCount = outcome.attendeeCount, iAmAttending = outcome.attending))
+                            } else {
+                                p
+                            }
+                        }
+                        publishFeed()
+                    },
+                    onFailure = { err ->
+                        rawPosts = rawPosts.map { p ->
+                            if (p.id == postId && p.event != null) {
+                                p.copy(
+                                    event = p.event.copy(
+                                        iAmAttending = originalEvent.iAmAttending,
+                                        attendeeCount = (p.event.attendeeCount + if (nextAttending) -1 else 1).coerceAtLeast(0),
+                                    ),
+                                )
+                            } else {
+                                p
+                            }
+                        }
+                        publishFeed()
+                        _events.trySend(GroupDetailEvent.ShowError(err.toCommunityError()))
+                    },
+                )
+            } finally {
+                val currentJob = coroutineContext[Job]
+                if (attendanceJobs[postId] == null || attendanceJobs[postId] === currentJob) {
+                    attendanceInFlight = attendanceInFlight - postId
+                    attendanceJobs.remove(postId)
+                }
+            }
+        }
+        if (job.isActive) {
+            attendanceJobs[postId] = job
+        }
+    }
+
+    private fun start() {
+        job?.cancel()
+        cancelFeedJobs()
+        job = viewModelScope.launch {
+            val uid = session.currentUid().orEmpty()
+            val names = districtNames.byId()
+            val membership = groups.observeMembership(groupId).catch { emit(GroupMembership.NONE) }
+            combine(groups.observeGroup(groupId), membership, busy, rawFeedState) { group, member, isBusy, rawFeed ->
+                if (group == null) {
+                    GroupDetailUiState.NotFound
+                } else {
+                    val role = member.role ?: GroupRole.OWNER.takeIf { group.ownerId == uid }
+                    val effectiveMember = if (member.role == null && role != null) {
+                        GroupMembership(role = role, pending = false)
+                    } else {
+                        member
+                    }
+                    val permissions = GroupPermissions(uid, role, group.status)
+                    GroupDetailUiState.Content(
+                        group = group,
+                        membership = effectiveMember,
+                        permissions = permissions,
+                        districtName = names[group.districtId],
+                        busy = isBusy,
+                        feed = rawFeed.toUi(permissions),
+                    )
+                }
+            }
+                .catch {
+                    val error = it.toCommunityError()
+                    _state.value = if (error is CommunityError.Forbidden || error is CommunityError.GroupNotFound) {
+                        GroupDetailUiState.NotFound
+                    } else {
+                        GroupDetailUiState.Error(error)
+                    }
+                }
+                .collect { uiState ->
+                    _state.value = uiState
+                    if (uiState is GroupDetailUiState.Content) {
+                        syncFeed(uiState.membership)
+                    } else {
+                        clearFeed()
+                    }
+                }
+        }
+    }
+
+    private fun syncFeed(membership: GroupMembership) {
+        val key = membership.isMember to isMod(membership.role)
+        if (key == activeFeedKey) return
+        activeFeedKey = key
+        if (!membership.isMember) {
+            clearFeed()
+        } else {
+            loadFeed(isMod = key.second)
+        }
+    }
+
+    private fun loadFeed(isMod: Boolean) {
+        cancelFeedJobs()
+        currentIsMod = isMod
+        feedLoading = true
+        rawPosts = emptyList()
+        observedNewPostIds = emptySet()
+        deletedPostIds.clear()
+        lastMutatedSeq.clear()
+        photoUrls.clear()
+        nextCursor = null
+        loadingMore = false
+        loadMoreError = null
+        rawFeedState.value = RawFeedState.Loading
+
+        feedJob = viewModelScope.launch {
+            val uid = session.currentUid().orEmpty()
+            posts.feed(groupId, isMod, cursor = null).fold(
+                onSuccess = { page ->
+                    val filtered = filterVisible(page.items, isMod, uid)
+                    resolveUrls(filtered)
+                    rawPosts = filtered.distinctBy { it.id }.sortedWith(POST_ORDER)
+                    nextCursor = page.next
+                    feedLoading = false
+                    publishFeed()
+                    val after = rawPosts.firstOrNull()?.createdAt ?: Instant.EPOCH
+                    listenNewPosts(isMod, after, uid)
+                },
+                onFailure = { err ->
+                    feedLoading = false
+                    rawFeedState.value = RawFeedState.Error(err.toCommunityError())
+                },
+            )
+        }
+    }
+
+    private fun listenNewPosts(isMod: Boolean, after: Instant, uid: String) {
+        newPostsJob?.cancel()
+        newPostsJob = viewModelScope.launch {
+            posts.observeNewPosts(groupId, isMod, after)
+                .catch { /* Lỗi listener bài mới không ghi đè trang đã tải. */ }
+                .collect { incoming ->
+                    val seqBeforeSuspend = mutationSeq
+                    val filtered = filterVisible(incoming, isMod, uid)
+                    if (filtered.isNotEmpty()) resolveUrls(filtered)
+                    val active = filtered.mapNotNull { post ->
+                        if (post.id in deletedPostIds) {
+                            null
+                        } else if ((lastMutatedSeq[post.id] ?: 0L) > seqBeforeSuspend) {
+                            rawPosts.firstOrNull { it.id == post.id } ?: post
+                        } else {
+                            post
+                        }
+                    }
+                    val currentIds = active.mapTo(HashSet()) { it.id }
+                    val removedIds = observedNewPostIds - currentIds
+                    if (active.isEmpty() && removedIds.isEmpty()) return@collect
+                    observedNewPostIds = currentIds
+                    val remaining = if (removedIds.isEmpty()) rawPosts else rawPosts.filterNot { it.id in removedIds }
+                    val preserved = preserveInFlightAttendance(active, remaining)
+                    rawPosts = mergePosts(preserved, remaining)
+                    publishFeed()
+                }
+        }
+    }
+
+    private suspend fun resolveUrls(items: List<Post>) {
+        val paths = items.flatMap { it.photoPaths }
+        if (paths.isEmpty()) return
+        val resolved = signedUrls.resolve(paths)
+        if (resolved.isNotEmpty()) photoUrls.putAll(resolved)
+    }
+
+    private fun filterVisible(items: List<Post>, isMod: Boolean, uid: String): List<Post> =
+        if (isMod) items else items.filter { it.status == PostStatus.VISIBLE || it.author.userId == uid }
+
+    private fun preserveInFlightAttendance(incoming: List<Post>, existing: List<Post>): List<Post> {
+        if (attendanceInFlight.isEmpty() || incoming.isEmpty()) return incoming
+        val existingById = existing.associateBy { it.id }
+        return incoming.map { post ->
+            val currentEvent = existingById[post.id]?.event
+            if (post.id in attendanceInFlight && post.event != null && currentEvent != null) {
+                post.copy(
+                    event = post.event.copy(
+                        iAmAttending = currentEvent.iAmAttending,
+                        attendeeCount = currentEvent.attendeeCount,
+                    ),
+                )
+            } else {
+                post
+            }
+        }
+    }
+
+    private fun mergePosts(preferred: List<Post>, existing: List<Post>): List<Post> {
+        val byId = LinkedHashMap<String, Post>()
+        for (p in existing) byId[p.id] = p
+        for (p in preferred) byId[p.id] = p
+        return byId.values.sortedWith(POST_ORDER)
+    }
+
+    private fun publishFeed() {
+        if (feedLoading) return
+        rawFeedState.value = if (rawPosts.isEmpty()) {
+            RawFeedState.Empty
+        } else {
+            RawFeedState.Content(
+                posts = rawPosts,
+                urls = photoUrls.toMap(),
+                canLoadMore = nextCursor != null,
+                loadingMore = loadingMore,
+                loadMoreError = loadMoreError,
+                attendanceInFlight = attendanceInFlight,
+            )
+        }
+    }
+
+    private fun clearFeed() {
+        cancelFeedJobs()
+        feedLoading = false
+        rawPosts = emptyList()
+        observedNewPostIds = emptySet()
+        deletedPostIds.clear()
+        lastMutatedSeq.clear()
+        photoUrls.clear()
+        nextCursor = null
+        loadingMore = false
+        loadMoreError = null
+        rawFeedState.value = RawFeedState.Loading
+    }
+
+    private fun cancelFeedJobs() {
+        feedJob?.cancel()
+        newPostsJob?.cancel()
+        loadMoreJob?.cancel()
+        attendanceJobs.values.forEach { it.cancel() }
+        attendanceJobs.clear()
+        attendanceInFlight = emptySet()
+    }
+
+    private fun RawFeedState.toUi(permissions: GroupPermissions): FeedUiState = when (this) {
+        RawFeedState.Loading -> FeedUiState.Loading
+        RawFeedState.Empty -> FeedUiState.Empty
+        is RawFeedState.Error -> FeedUiState.Error(cause)
+        is RawFeedState.Content -> {
+            val now = Instant.ofEpochMilli(clock.now())
+            FeedUiState.Content(
+                items = posts.map { post ->
+                    val past = post.event?.isPast(now) == true
+                    PostItem(
+                        post = post,
+                        photoUrls = post.photoPaths.mapNotNull { path -> urls[path]?.let { path to it } }.toMap(),
+                        canEdit = permissions.canEditPost(post),
+                        canDelete = permissions.canDeletePost(post),
+                        canHide = permissions.canHide(post),
+                        canUnhide = permissions.canUnhide(post),
+                        canReport = permissions.canReport(post),
+                        canAttend = permissions.canAttend && post.status == PostStatus.VISIBLE && post.event != null && !past,
+                        isEventPast = past,
+                        attendanceBusy = post.id in attendanceInFlight,
+                    )
+                },
+                canLoadMore = canLoadMore,
+                loadingMore = loadingMore,
+                loadMoreError = loadMoreError,
+            )
+        }
+    }
+
+    private fun isMod(role: GroupRole?): Boolean = role == GroupRole.OWNER || role == GroupRole.ADMIN
+
+    fun onJoinClicked() {
+        if (session.currentUid() == null) {
+            _events.trySend(GroupDetailEvent.RequireLogin(deepLink()))
+            return
+        }
+        act(KEY_JOIN_ID, { id -> joinGroup(groupId, id) }) { result ->
+            _events.trySend(GroupDetailEvent.JoinOutcome(result))
+            // L5: listener members/{uid} lúc chưa tham gia bị Rules PERMISSION_DENIED kết thúc;
+            // đăng ký lại observeMembership ngay sau khi JOINED để cập nhật UI (nút Chat nhóm, bảng tin).
+            if (result == JoinResult.JOINED) {
+                start()
+            }
+        }
+    }
+
+    fun onCancelRequestClicked() =
+        act(KEY_CANCEL_ID, { id -> joinGroup.cancel(groupId, id) }) { _events.trySend(GroupDetailEvent.RequestCancelled) }
+
+    /** Gọi sau khi người dùng xác nhận trong hộp thoại "Rời nhóm?". */
+    fun onLeaveConfirmed() = act(
+        KEY_LEAVE_ID,
+        { id -> leaveGroup(groupId, id) },
+        onError = { error ->
+            if (error is CommunityError.OwnerMustTransfer) {
+                _events.trySend(
+                    if (error.soleMember) GroupDetailEvent.SuggestDeleteGroup else GroupDetailEvent.OpenTransferOwner(groupId),
+                )
+                true
+            } else {
+                false
+            }
+        },
+    ) { _events.trySend(GroupDetailEvent.Left) }
+
+    private fun <T> act(
+        key: String,
+        call: suspend (String) -> Result<T>,
+        onError: (CommunityError) -> Boolean = { false },
+        onSuccess: (T) -> Unit,
+    ) {
+        if (busy.value) return
+        busy.value = true
+        viewModelScope.launch {
+            try {
+                val requestId = savedStateHandle.get<String>(key) ?: UUID.randomUUID().toString().also { savedStateHandle[key] = it }
+                call(requestId).fold(
+                    onSuccess = {
+                        savedStateHandle[key] = null
+                        onSuccess(it)
+                    },
+                    onFailure = {
+                        val error = it.toCommunityError()
+                        if (error !is CommunityError.Network && error !is CommunityError.Busy) savedStateHandle[key] = null
+                        if (!onError(error)) _events.trySend(GroupDetailEvent.ShowError(error))
+                    },
+                )
+            } catch (e: CancellationException) {
+                throw e
+            } finally {
+                busy.value = false
+            }
+        }
+    }
+
+    private fun deepLink() = "smashnow://community/group/$groupId"
+
+    companion object {
+        const val ARG_GROUP_ID = "groupId"
+        private const val KEY_JOIN_ID = "join_request_id"
+        private const val KEY_CANCEL_ID = "cancel_request_id"
+        private const val KEY_LEAVE_ID = "leave_request_id"
+
+        private val POST_ORDER: Comparator<Post> = compareByDescending<Post> { it.createdAt ?: Instant.EPOCH }
+            .thenByDescending { it.id }
+    }
+}

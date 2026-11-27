@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.SharedPreferences
 import com.example.booking_app.core.network.FunctionErrors
 import com.example.booking_app.feature.owner.domain.OwnerApplicationDraft
+import com.example.booking_app.feature.owner.domain.OwnerApplicationPurpose
 import com.example.booking_app.feature.owner.domain.OwnerApplicationSnapshot
 import com.example.booking_app.feature.owner.domain.OwnerApplicationState
 import com.example.booking_app.feature.owner.domain.OwnerApplicationStatus
@@ -29,6 +30,7 @@ import javax.inject.Singleton
 @Serializable
 data class OwnerApplicationRequest(
     val action: String,
+    val purpose: String = "OWNER_ONBOARDING",
     val applicationId: String? = null,
     val venueDraft: OwnerVenueRequest? = null,
     val representativeName: String? = null,
@@ -76,6 +78,7 @@ data class OwnerApplicationResponse(
 @Serializable
 data class OwnerFileRequest(
     val action: String,
+    val purpose: String = "OWNER_ONBOARDING",
     val applicationId: String? = null,
     val fileName: String? = null,
     val contentType: String? = null,
@@ -114,6 +117,9 @@ private data class LocalDraft(
     val documentPaths: List<String>,
 )
 
+@Serializable
+private data class OwnerApplicationsResponse(val applications: List<OwnerApplicationResponse> = emptyList())
+
 @Singleton
 class OwnerOnboardingDataSource @Inject constructor(
     private val supabase: SupabaseClient,
@@ -133,11 +139,20 @@ class OwnerOnboardingDataSource @Inject constructor(
         }
     }
 
-    override suspend fun refreshStatus(): Result<OwnerApplicationStatus> = runCatching {
+    override suspend fun refreshStatus(): Result<OwnerApplicationStatus> = applicationStatus(OwnerApplicationPurpose.OWNER_ONBOARDING, null)
+
+    override suspend fun applicationStatus(purpose: OwnerApplicationPurpose, applicationId: String?): Result<OwnerApplicationStatus> = runCatching {
         val response = functionErrors.invokeWithAuthRetry {
-            supabase.functions.invoke(FUNCTION_APPLICATIONS, body = OwnerApplicationRequest(action = "STATUS"))
+            supabase.functions.invoke(FUNCTION_APPLICATIONS, body = OwnerApplicationRequest(action = "STATUS", purpose = purpose.name, applicationId = applicationId))
         }
         response.body<OwnerStatusResponse>().toDomain()
+    }
+
+    override suspend fun applications(): Result<List<OwnerApplicationSnapshot>> = runCatching {
+        val response = functionErrors.invokeWithAuthRetry {
+            supabase.functions.invoke(FUNCTION_APPLICATIONS, body = OwnerApplicationRequest("LIST", purpose = "VENUE_ADDITION"))
+        }.body<OwnerApplicationsResponse>()
+        response.applications.map { OwnerStatusResponse("APPROVED", "OWNER", it).toDomain().application!! }
     }
 
     override suspend fun upload(
@@ -145,7 +160,9 @@ class OwnerOnboardingDataSource @Inject constructor(
         contentType: String,
         bytes: ByteArray,
         applicationId: String,
-    ): Result<UploadedOwnerFile> = runCatching {
+    ): Result<UploadedOwnerFile> = uploadApplication(fileName, contentType, bytes, applicationId, OwnerApplicationPurpose.OWNER_ONBOARDING)
+
+    override suspend fun uploadApplication(fileName: String, contentType: String, bytes: ByteArray, applicationId: String, purpose: OwnerApplicationPurpose): Result<UploadedOwnerFile> = runCatching {
         require(contentType in ALLOWED_MIME && bytes.isNotEmpty() && bytes.size <= MAX_BYTES) {
             "Chỉ hỗ trợ JPEG, PNG hoặc WebP tối đa 2 MB mỗi tệp"
         }
@@ -154,6 +171,7 @@ class OwnerOnboardingDataSource @Inject constructor(
                 FUNCTION_DOCS,
                 body = OwnerFileRequest(
                     action = "SIGN_UPLOAD",
+                    purpose = purpose.name,
                     applicationId = applicationId,
                     fileName = fileName,
                     contentType = contentType,
@@ -177,12 +195,15 @@ class OwnerOnboardingDataSource @Inject constructor(
         UploadedOwnerFile(path, fileName, contentType)
     }
 
-    override suspend fun submit(applicationId: String, draft: OwnerApplicationDraft): Result<OwnerApplicationStatus> = runCatching {
+    override suspend fun submit(applicationId: String, draft: OwnerApplicationDraft): Result<OwnerApplicationStatus> = submitApplication(applicationId, draft, OwnerApplicationPurpose.OWNER_ONBOARDING)
+
+    override suspend fun submitApplication(applicationId: String, draft: OwnerApplicationDraft, purpose: OwnerApplicationPurpose): Result<OwnerApplicationStatus> = runCatching {
         val response = functionErrors.invokeWithAuthRetry {
             supabase.functions.invoke(
                 FUNCTION_APPLICATIONS,
                 body = OwnerApplicationRequest(
                     action = "SUBMIT",
+                    purpose = purpose.name,
                     applicationId = applicationId,
                     venueDraft = draft.venue.toRequest(),
                     representativeName = draft.representativeName.trim(),
@@ -192,7 +213,7 @@ class OwnerOnboardingDataSource @Inject constructor(
             )
         }
         response.body<OwnerStatusResponse>().let {
-            val status = refreshStatus().getOrThrow()
+            val status = applicationStatus(purpose, if (purpose == OwnerApplicationPurpose.VENUE_ADDITION) applicationId else null).getOrThrow()
             status.copy(application = status.application?.copy(applicationId = it.applicationId ?: applicationId))
         }
     }
@@ -219,7 +240,9 @@ class OwnerOnboardingDataSource @Inject constructor(
         }
     }
 
-    override suspend fun saveLocalDraft(applicationId: String, draft: OwnerApplicationDraft): Result<Unit> = runCatching {
+    override suspend fun saveLocalDraft(applicationId: String, draft: OwnerApplicationDraft): Result<Unit> = saveDraft(applicationId, draft, OwnerApplicationPurpose.OWNER_ONBOARDING)
+
+    override suspend fun saveDraft(applicationId: String, draft: OwnerApplicationDraft, purpose: OwnerApplicationPurpose): Result<Unit> = runCatching {
         val uid = requireNotNull(firebaseAuth.currentUser?.uid)
         val local = LocalDraft(
             applicationId = applicationId,
@@ -239,12 +262,14 @@ class OwnerOnboardingDataSource @Inject constructor(
             representativePhone = draft.representativePhone,
             documentPaths = draft.documentPaths,
         )
-        check(preferences.edit().putString(uid, json.encodeToString(local)).commit())
+        check(preferences.edit().putString(draftKey(uid, purpose), json.encodeToString(local)).commit())
     }
 
-    override suspend fun loadLocalDraft(): Result<Pair<String, OwnerApplicationDraft>?> = runCatching {
+    override suspend fun loadLocalDraft(): Result<Pair<String, OwnerApplicationDraft>?> = loadDraft(OwnerApplicationPurpose.OWNER_ONBOARDING)
+
+    override suspend fun loadDraft(purpose: OwnerApplicationPurpose): Result<Pair<String, OwnerApplicationDraft>?> = runCatching {
         val uid = requireNotNull(firebaseAuth.currentUser?.uid)
-        val raw = preferences.getString(uid, null) ?: return@runCatching null
+        val raw = preferences.getString(draftKey(uid, purpose), null) ?: return@runCatching null
         val local = json.decodeFromString<LocalDraft>(raw)
         local.applicationId to OwnerApplicationDraft(
             venue = OwnerVenueDraft(
@@ -256,8 +281,8 @@ class OwnerOnboardingDataSource @Inject constructor(
                 } else null,
                 phone = local.venue.phone,
                 courtCount = local.venue.courtCount,
-                openTime = local.venue.openTime,
-                closeTime = local.venue.closeTime,
+                openTime = ownerApplicationFormTime(local.venue.openTime),
+                closeTime = ownerApplicationFormTime(local.venue.closeTime),
                 photoPaths = local.venue.photoPaths,
             ),
             representativeName = local.representativeName,
@@ -272,6 +297,7 @@ class OwnerOnboardingDataSource @Inject constructor(
     }
 
     private fun clearAllDrafts() { preferences.edit().clear().apply() }
+    private fun draftKey(uid: String, purpose: OwnerApplicationPurpose) = if (purpose == OwnerApplicationPurpose.OWNER_ONBOARDING) uid else "$uid:${purpose.name}"
 
     private fun OwnerStatusResponse.toDomain(): OwnerApplicationStatus {
         val parsedStatus = OwnerApplicationState.valueOf(ownerStatus)
@@ -286,8 +312,8 @@ class OwnerOnboardingDataSource @Inject constructor(
                         location = app.venueDraft.location?.let { GeoPoint(it.latitude, it.longitude) },
                         phone = app.venueDraft.phone,
                         courtCount = app.venueDraft.courtCount,
-                        openTime = app.venueDraft.openTime,
-                        closeTime = app.venueDraft.closeTime,
+                        openTime = ownerApplicationFormTime(app.venueDraft.openTime),
+                        closeTime = ownerApplicationFormTime(app.venueDraft.closeTime),
                         photoPaths = app.venueDraft.photoPaths,
                     ),
                     representativeName = app.representativeName,

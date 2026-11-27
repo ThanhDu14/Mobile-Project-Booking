@@ -24,7 +24,9 @@ Các màn hình nằm trong nav graph lồng `nav_review.xml`, được `include
 | B – spec 060 (lịch đặt của tôi) | Hiện nút "Đánh giá" / "Xem đánh giá của bạn" trên chi tiết đơn `COMPLETED` | `ReviewRepository.observeMyReview(bookingId): Flow<Review?>` và `ReviewEligibility.of(booking, now)` → `CAN_WRITE \| CAN_VIEW \| EXPIRED \| NOT_ELIGIBLE`; action → `WriteReviewFragment(bookingId, mode)` |
 | D – spec 111/112 (chủ sân) | Thêm mục "Đánh giá của khách" vào menu quản lý sân | action → `OwnerReviewsFragment` |
 | D – spec 120 (admin) | Ẩn/hiện đánh giá | `applyReviewVisibility()` trong `_shared/reviews.ts` ([edge-function-review.md](edge-function-review.md)) |
-| D – spec 100 (thông báo) | Gửi `REVIEW_NEW`, `REVIEW_REPLY`, `REVIEW_REMINDER`; deep link mở màn hình | Deep link: `smashnow://review/write/{bookingId}`, `smashnow://review/venue/{venueId}` |
+| D – spec 100 (thông báo) | Gửi `REVIEW_NEW`, `REVIEW_REPLIED`, `REVIEW_REMINDER`; deep link mở màn hình | Deep link: `smashnow://review/write/{bookingId}`, `smashnow://review/venue/{venueId}` |
+
+Quyết định được người dùng duyệt ngày 22/11/2026: producer phát `REVIEW_REPLIED` theo FR-026 và spec 100; Android đọc/routing chấp nhận `REVIEW_REPLY` cũ như alias của `REVIEW_REPLIED`. Payload phản hồi giữ `reviewId`, `venueId`; kiểm tra lại review thuộc người nhận, còn hiển thị/có phản hồi và venue còn truy cập được trước khi mở danh sách đánh giá. Không sửa lại thông báo đã lưu. Màn owner review chưa có identifier đích cho `REVIEW_NEW`.
 
 Interface đặt trong `feature/review/domain/` để nhóm khác inject qua Hilt:
 

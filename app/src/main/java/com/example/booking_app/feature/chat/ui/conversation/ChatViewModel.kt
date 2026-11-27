@@ -1,0 +1,754 @@
+package com.example.booking_app.feature.chat.ui.conversation
+
+import androidx.annotation.StringRes
+import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.booking_app.R
+import com.example.booking_app.core.media.SignedUrlCache
+import com.example.booking_app.core.session.SessionManager
+import com.example.booking_app.core.session.settledUid
+import com.example.booking_app.core.ui.UiState
+import com.example.booking_app.core.util.AppClock
+import com.example.booking_app.feature.chat.data.NetworkMonitor
+import com.example.booking_app.feature.chat.data.di.ChatMediaSignedUrlCache
+import com.example.booking_app.feature.chat.data.dto.toChatMessage
+import com.example.booking_app.feature.chat.domain.ChatError
+import com.example.booking_app.feature.chat.domain.ChatRepository
+import com.example.booking_app.feature.chat.domain.model.ChatDetail
+import com.example.booking_app.feature.chat.domain.model.ChatMessage
+import com.example.booking_app.feature.chat.domain.model.ChatMessageRules
+import com.example.booking_app.feature.chat.domain.model.ChatStatus
+import com.example.booking_app.feature.chat.domain.model.ChatType
+import com.example.booking_app.feature.chat.domain.model.Delivery
+import com.example.booking_app.feature.chat.domain.model.DiscardResult
+import com.example.booking_app.feature.chat.domain.model.GroupHeaderInfo
+import com.example.booking_app.feature.chat.domain.model.MessageStatus
+import com.example.booking_app.feature.chat.domain.model.OutboxEntry
+import com.example.booking_app.feature.chat.domain.model.VenueSummary
+import com.example.booking_app.feature.chat.domain.toChatError
+import com.example.booking_app.feature.chat.domain.usecase.DiscardMessage
+import com.example.booking_app.feature.chat.domain.usecase.LoadOlderMessages
+import com.example.booking_app.feature.chat.domain.usecase.MarkChatRead
+import com.example.booking_app.feature.chat.domain.usecase.ObserveMessages
+import com.example.booking_app.feature.chat.domain.usecase.OpenDirectChat
+import com.example.booking_app.feature.chat.domain.usecase.RecallMessage
+import com.example.booking_app.feature.chat.domain.usecase.RetryMessage
+import com.example.booking_app.feature.chat.domain.usecase.SendMessage
+import com.example.booking_app.feature.chat.domain.usecase.SetBlocked
+import com.example.booking_app.feature.chat.domain.usecase.SetMuted
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancelChildren
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import java.time.Instant
+import javax.inject.Inject
+
+enum class ComposerDisabledReason {
+    READ_ONLY,
+    GROUP_LOCKED,
+    BLOCKED,
+}
+
+enum class MessageMenuAction {
+    COPY,
+    RECALL,
+    REPORT,
+}
+
+data class ChatHeaderUi(
+    val chatId: String,
+    val type: ChatType,
+    val title: String,
+    val avatarPath: String? = null,
+    val avatarBucket: String = "avatars",
+    val isOwnerView: Boolean = false,
+    val groupMemberCount: Int? = null,
+    val venue: VenueSummary? = null,
+    val muted: Boolean = false,
+    val blockedOther: Boolean = false,
+    val isDeletedOtherParty: Boolean = false,
+)
+
+data class ChatUiState(
+    val header: ChatHeaderUi? = null,
+    val messages: UiState<List<ChatMessage>> = UiState.Loading,
+    val imageUrls: Map<String, String> = emptyMap(),
+    val composerText: String = "",
+    val pendingImageUri: String? = null,
+    val disabledReason: ComposerDisabledReason? = null,
+    val isOffline: Boolean = false,
+    val loadingOlder: Boolean = false,
+    val canLoadOlder: Boolean = true,
+) {
+    val rawCharCount: Int get() = ChatMessageRules.codePointLength(composerText)
+    val isOverLimit: Boolean get() = rawCharCount > ChatMessageRules.MAX_TEXT_LENGTH
+    val showCounter: Boolean get() = rawCharCount >= COUNTER_THRESHOLD || isOverLimit
+    val canSend: Boolean get() = header != null && disabledReason == null
+    val canSubmit: Boolean
+        get() = canSend && !isOverLimit && (pendingImageUri != null || ChatMessageRules.isValidText(composerText))
+
+    companion object {
+        const val COUNTER_THRESHOLD = 800
+    }
+}
+
+sealed interface ChatEvent {
+    data class RequireLogin(val returnTo: String) : ChatEvent
+    data object KickedOut : ChatEvent
+    data class ShowError(val error: ChatError) : ChatEvent
+    data class ShowMessage(@param:StringRes val resId: Int) : ChatEvent
+    data class OpenPhoto(val url: String) : ChatEvent
+    data class OpenVenue(val venueId: String) : ChatEvent
+    data class OpenReport(val chatId: String, val messageId: String) : ChatEvent
+    data object CameraPermissionDenied : ChatEvent
+}
+
+@HiltViewModel
+class ChatViewModel @Inject constructor(
+    savedStateHandle: SavedStateHandle,
+    private val repository: ChatRepository,
+    private val openDirectChat: OpenDirectChat,
+    private val observeMessages: ObserveMessages,
+    private val loadOlderMessages: LoadOlderMessages,
+    private val sendMessage: SendMessage,
+    private val retryMessage: RetryMessage,
+    private val discardMessage: DiscardMessage,
+    private val markChatRead: MarkChatRead,
+    private val setMuted: SetMuted,
+    private val setBlocked: SetBlocked,
+    private val recallMessage: RecallMessage,
+    @param:ChatMediaSignedUrlCache private val signedUrlCache: SignedUrlCache,
+    private val networkMonitor: NetworkMonitor,
+    private val sessionManager: SessionManager,
+    private val clock: AppClock,
+) : ViewModel() {
+
+    private val argChatId: String? = savedStateHandle[ARG_CHAT_ID]
+    private val argGroupId: String? = savedStateHandle[ARG_GROUP_ID]
+    private val argVenueId: String? = savedStateHandle[ARG_VENUE_ID]
+
+    private val _uiState = MutableStateFlow(ChatUiState())
+    val uiState: StateFlow<ChatUiState> = _uiState.asStateFlow()
+
+    private val _events = Channel<ChatEvent>(Channel.BUFFERED)
+    val events: Flow<ChatEvent> = _events.receiveAsFlow()
+
+    private var activeChatId: String? = null
+    private val sessionWorkJob = SupervisorJob(viewModelScope.coroutineContext[Job])
+    private val sessionScope = CoroutineScope(viewModelScope.coroutineContext + sessionWorkJob)
+    private var sessionUid: String? = null
+    private var settled = false
+    private var observeJob: Job? = null
+    private var viewingJob: Job? = null
+    private var screenVisible: Boolean = false
+    private var kickedEmitted: Boolean = false
+    private var blockedByOther: Boolean = false
+
+    /** M9: đã "Xóa" tin lỗi BLOCKED khỏi outbox nhưng vẫn đang bị chặn; giữ banner tới khi thử lại hoặc đối phương nhắn. */
+    private var blockedAfterDiscard: Boolean = false
+    private val ignoredBlockedOutboxIds = mutableSetOf<String>()
+    private var latestOutboxEntries: List<OutboxEntry> = emptyList()
+    private var lastOtherServerMessageId: String? = null
+    private var groupLockedByError: Boolean = false
+    private var readOnlyByError: Boolean = false
+    private var reachedOldestPage: Boolean = false
+    private var lastMarkedMarker: String? = null
+
+    private val olderMessages = MutableStateFlow<List<ChatMessage>>(emptyList())
+    private var currentServerMessages: List<ChatMessage> = emptyList()
+
+    init {
+        viewModelScope.launch {
+            var wasOffline = false
+            networkMonitor.isOnline.collect { online ->
+                _uiState.update { it.copy(isOffline = !online) }
+                if (online && wasOffline && currentServerMessages.isNotEmpty()) {
+                    resolveSignedImageUrls(currentServerMessages)
+                }
+                wasOffline = !online
+            }
+        }
+        // L4/M2: cold-start deep link mở màn chat trước khi phiên khôi phục xong (Loading/Initializing/NeedsConsent)
+        // thì chờ phiên chốt; đăng nhập xong quay về thì tự mở lại.
+        viewModelScope.launch {
+            sessionManager.settledUid().collect { uid ->
+                if (!settled || sessionUid != uid) {
+                    sessionWorkJob.cancelChildren()
+                    observeJob = null
+                    viewingJob = null
+                    activeChatId = null
+                    currentServerMessages = emptyList()
+                    olderMessages.value = emptyList()
+                    latestOutboxEntries = emptyList()
+                    ignoredBlockedOutboxIds.clear()
+                    lastMarkedMarker = null
+                    while (_events.tryReceive().isSuccess) { /* Drop old account's queued navigation. */ }
+                    _uiState.value = ChatUiState(isOffline = _uiState.value.isOffline)
+                    signedUrlCache.clear()
+                }
+                sessionUid = uid
+                settled = true
+                start()
+            }
+        }
+    }
+
+    fun retryLoad() {
+        start()
+    }
+
+    private fun start() {
+        if (!settled) return
+        val uid = sessionManager.currentUid()
+        if (uid == null) {
+            // Phiên kết thúc khi đang mở chat: gỡ listener và heartbeat của tài khoản cũ.
+            observeJob?.cancel()
+            viewingJob?.cancel()
+            val returnTo = when {
+                !argVenueId.isNullOrBlank() -> "smashnow://chat/direct?venueId=$argVenueId"
+                !argGroupId.isNullOrBlank() -> "smashnow://chat/group/$argGroupId"
+                !argChatId.isNullOrBlank() -> "smashnow://chat/$argChatId"
+                else -> "smashnow://chat"
+            }
+            _uiState.update { it.copy(messages = UiState.Error(ChatError.Unauthenticated().code, ::retryLoad)) }
+            _events.trySend(ChatEvent.RequireLogin(returnTo))
+            return
+        }
+        when {
+            !argVenueId.isNullOrBlank() -> openDirectAndObserve(argVenueId)
+            !argGroupId.isNullOrBlank() -> startObserving("group_$argGroupId")
+            !argChatId.isNullOrBlank() -> startObserving(argChatId)
+            else -> _uiState.update { it.copy(messages = UiState.Error(ChatError.ChatNotFound().code)) }
+        }
+    }
+
+    private fun openDirectAndObserve(venueId: String) {
+        observeJob?.cancel()
+        _uiState.update { it.copy(messages = UiState.Loading) }
+        observeJob = sessionScope.launch {
+            val result = try {
+                openDirectChat(venueId)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+            coroutineContext.ensureActive()
+            result.fold(
+                onSuccess = { opened -> startObserving(opened.chatId) },
+                onFailure = { throwable ->
+                    val err = throwable.toChatError()
+                    _uiState.update { it.copy(messages = UiState.Error(err.code, ::retryLoad)) }
+                    _events.trySend(ChatEvent.ShowError(err))
+                },
+            )
+        }
+    }
+
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    private fun startObserving(chatId: String) {
+        activeChatId = chatId
+        lastMarkedMarker = null
+        kickedEmitted = false
+        blockedByOther = false
+        blockedAfterDiscard = false
+        ignoredBlockedOutboxIds.clear()
+        latestOutboxEntries = emptyList()
+        lastOtherServerMessageId = null
+        groupLockedByError = false
+        readOnlyByError = false
+        reachedOldestPage = false
+        olderMessages.value = emptyList()
+        observeJob?.cancel()
+        _uiState.update { it.copy(messages = UiState.Loading, canLoadOlder = true) }
+
+        if (screenVisible) {
+            startViewingHeartbeat(chatId)
+        }
+
+        val uid = sessionManager.currentUid().orEmpty()
+        val chatFlow = repository.observeChat(chatId)
+        val groupHeaderFlow = chatFlow
+            .map { detail ->
+                val gid = detail?.groupId
+                    ?: argGroupId
+                    ?: chatId.takeIf { it.startsWith("group_") }?.removePrefix("group_")
+                if (detail?.type == ChatType.GROUP && !gid.isNullOrBlank()) gid else null
+            }
+            .distinctUntilChanged()
+            .flatMapLatest { gid ->
+                if (gid != null) repository.observeGroupHeader(gid) else flowOf(null)
+            }
+        val messagesFlow = observeMessages(chatId)
+        val outboxFlow = repository.observeOutbox(chatId)
+
+        observeJob = sessionScope.launch {
+            combine(chatFlow, groupHeaderFlow, messagesFlow, olderMessages, outboxFlow) { detail, groupHeader, live, older, outbox ->
+                CombinedSnapshot(detail, groupHeader, live, older, outbox)
+            }.catch { throwable ->
+                val err = throwable.toChatError()
+                if (err is ChatError.NotParticipant) {
+                    emitKickedOutOnce()
+                } else {
+                    _uiState.update { it.copy(messages = UiState.Error(err.code, ::retryLoad)) }
+                    _events.trySend(ChatEvent.ShowError(err))
+                }
+            }.collect { snap ->
+                val detail = snap.detail
+                if (detail == null) {
+                    _uiState.update { it.copy(messages = UiState.Error(ChatError.ChatNotFound().code, ::retryLoad)) }
+                    return@collect
+                }
+
+                // Kiểm tra lỗi đặc biệt từ outbox (BLOCKED, NOT_PARTICIPANT, GROUP_LOCKED, CHAT_READ_ONLY).
+                latestOutboxEntries = snap.outbox
+                val latestOtherId = snap.live.lastOrNull { !it.isMine }?.id
+                if (latestOtherId != null) {
+                    if (lastOtherServerMessageId != null && latestOtherId != lastOtherServerMessageId) {
+                        // Đối phương vừa gửi tin mới -> đã bỏ chặn; bỏ qua các lỗi BLOCKED cũ trong outbox.
+                        blockedAfterDiscard = false
+                        snap.outbox
+                            .filter { it.status == Delivery.FAILED && it.errorCode == "BLOCKED" }
+                            .forEach { ignoredBlockedOutboxIds.add(it.messageId) }
+                    }
+                    lastOtherServerMessageId = latestOtherId
+                }
+                handleOutboxErrors(snap.outbox)
+
+                currentServerMessages = mergeServerMessages(snap.older, snap.live)
+                val merged = mergeWithOutbox(currentServerMessages, snap.outbox, uid)
+                val header = buildHeader(detail, snap.groupHeader, uid)
+                val disabled = computeDisabledReason(detail, snap.groupHeader)
+
+                _uiState.update { state ->
+                    state.copy(
+                        header = header,
+                        messages = if (merged.isEmpty()) UiState.Empty else UiState.Content(merged),
+                        disabledReason = disabled,
+                        canLoadOlder = !reachedOldestPage && snap.live.size >= PAGE_SIZE,
+                    )
+                }
+
+                resolveSignedImageUrls(merged)
+            }
+        }
+    }
+
+    private fun handleOutboxErrors(entries: List<OutboxEntry>) {
+        if (entries.any { it.status == Delivery.FAILED && it.errorCode == "NOT_PARTICIPANT" }) {
+            emitKickedOutOnce()
+            return
+        }
+        val currentBlockedIds = entries
+            .filter { it.status == Delivery.FAILED && it.errorCode == "BLOCKED" }
+            .mapTo(HashSet()) { it.messageId }
+        ignoredBlockedOutboxIds.retainAll(currentBlockedIds)
+        blockedByOther = blockedAfterDiscard || currentBlockedIds.any { it !in ignoredBlockedOutboxIds }
+        groupLockedByError = entries.any { it.status == Delivery.FAILED && it.errorCode == "GROUP_LOCKED" }
+        readOnlyByError = entries.any { it.status == Delivery.FAILED && it.errorCode == "CHAT_READ_ONLY" }
+    }
+
+    private fun emitKickedOutOnce() {
+        if (kickedEmitted) return
+        kickedEmitted = true
+        viewingJob?.cancel()
+        viewingJob = null
+        _events.trySend(ChatEvent.KickedOut)
+    }
+
+    private fun mergeServerMessages(older: List<ChatMessage>, live: List<ChatMessage>): List<ChatMessage> {
+        if (older.isEmpty()) return live
+        val byId = LinkedHashMap<String, ChatMessage>(older.size + live.size)
+        for (m in older) byId[m.id] = m
+        for (m in live) byId[m.id] = m
+        return byId.values.sortedBy { it.createdAt ?: Instant.EPOCH }
+    }
+
+    private fun mergeWithOutbox(
+        server: List<ChatMessage>,
+        outbox: List<OutboxEntry>,
+        currentUid: String,
+    ): List<ChatMessage> {
+        val serverIds = server.mapTo(HashSet(server.size)) { it.id }
+        val pending = outbox
+            .filterNot { it.messageId in serverIds }
+            .sortedBy { it.createdAtLocal }
+            .map { it.toChatMessage(currentUid) }
+        return server + pending
+    }
+
+    private fun buildHeader(detail: ChatDetail, groupHeader: GroupHeaderInfo?, currentUid: String): ChatHeaderUi {
+        return when (detail.type) {
+            ChatType.GROUP -> ChatHeaderUi(
+                chatId = detail.id,
+                type = ChatType.GROUP,
+                title = groupHeader?.name.orEmpty(),
+                avatarPath = groupHeader?.avatarPath,
+                avatarBucket = "group-avatars",
+                groupMemberCount = groupHeader?.memberCount ?: detail.memberIds.size,
+                muted = detail.myParticipant.muted,
+                blockedOther = false,
+            )
+            ChatType.DIRECT -> {
+                val other = detail.otherParty
+                ChatHeaderUi(
+                    chatId = detail.id,
+                    type = ChatType.DIRECT,
+                    title = other?.displayName.orEmpty(),
+                    avatarPath = other?.avatarPath,
+                    avatarBucket = "avatars",
+                    isOwnerView = detail.ownerId == currentUid,
+                    venue = detail.venue,
+                    muted = detail.myParticipant.muted,
+                    blockedOther = detail.myParticipant.blockedOther,
+                    isDeletedOtherParty = other?.isDeleted == true,
+                )
+            }
+        }
+    }
+
+    private fun computeDisabledReason(detail: ChatDetail, groupHeader: GroupHeaderInfo?): ComposerDisabledReason? = when {
+        detail.status == ChatStatus.READ_ONLY || readOnlyByError -> ComposerDisabledReason.READ_ONLY
+        detail.type == ChatType.GROUP && (groupHeader?.isLocked == true || groupLockedByError) -> ComposerDisabledReason.GROUP_LOCKED
+        blockedByOther -> ComposerDisabledReason.BLOCKED
+        else -> null
+    }
+
+    private fun resolveSignedImageUrls(messages: List<ChatMessage>) {
+        // Chỉ giữ và xin signed URL cho tin NORMAL có imagePath (không giữ/xin cho tin HIDDEN/RECALLED, FR-015).
+        val activePaths = messages
+            .filter { it.status == MessageStatus.NORMAL && !it.imagePath.isNullOrBlank() }
+            .mapNotNull { it.imagePath }
+            .distinct()
+        val activeSet = activePaths.toSet()
+        val removedPaths = _uiState.value.imageUrls.keys.filter { it !in activeSet }
+        if (removedPaths.isNotEmpty()) {
+            _uiState.update { it.copy(imageUrls = it.imageUrls - removedPaths.toSet()) }
+        }
+        if (activePaths.isEmpty() && removedPaths.isEmpty()) return
+
+        sessionScope.launch {
+            if (removedPaths.isNotEmpty()) {
+                signedUrlCache.invalidate(removedPaths)
+            }
+            if (activePaths.isNotEmpty()) {
+                // Truyền thẳng toàn bộ activePaths để SignedUrlCache tự kiểm tra hết hạn (5 phút an toàn) và chỉ gọi mạng khi cần.
+                val resolved = signedUrlCache.resolve(activePaths)
+                coroutineContext.ensureActive()
+                if (resolved.isNotEmpty()) {
+                    _uiState.update { state ->
+                        val filtered = resolved.filterKeys { it in activeSet }
+                        state.copy(imageUrls = state.imageUrls + filtered)
+                    }
+                }
+            }
+        }
+    }
+
+    fun onComposerChanged(text: String) {
+        _uiState.update { it.copy(composerText = text) }
+    }
+
+    fun onImageSelected(uri: String) {
+        _uiState.update { it.copy(pendingImageUri = uri) }
+    }
+
+    fun onPendingImageCleared() {
+        _uiState.update { it.copy(pendingImageUri = null) }
+    }
+
+    /** Người dùng từ chối quyền camera: báo giải thích, vẫn cho chọn ảnh từ Photo Picker (AC 4.5). */
+    fun onCameraPermissionDenied() {
+        _events.trySend(ChatEvent.CameraPermissionDenied)
+    }
+
+    fun onSendClicked() {
+        val chatId = activeChatId ?: return
+        val state = _uiState.value
+        if (!state.canSubmit) return
+
+        val text = state.composerText
+        val imageUri = state.pendingImageUri
+        _uiState.update { it.copy(composerText = "", pendingImageUri = null) }
+
+        sessionScope.launch {
+            val result = try {
+                sendMessage(chatId = chatId, rawText = text, localImageUri = imageUri)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+            coroutineContext.ensureActive()
+            result.onFailure { throwable ->
+                val err = throwable.toChatError()
+                val invalidImage = err is ChatError.ImageTooLarge || err is ChatError.ImageUnreadable
+                // Nếu ảnh lỗi / quá 2 MB thì bỏ ảnh chọn nhưng giữ nguyên chú thích đang gõ (AC 4.3).
+                _uiState.update {
+                    it.copy(
+                        composerText = text,
+                        pendingImageUri = if (invalidImage) null else imageUri,
+                    )
+                }
+                _events.trySend(ChatEvent.ShowError(err))
+            }
+        }
+    }
+
+    fun onRetryMessage(messageId: String) {
+        val chatId = activeChatId ?: return
+        // Đánh dấu bỏ qua các tin lỗi BLOCKED khác trong outbox để không tự khóa lại ngay khi thử lại tin này.
+        latestOutboxEntries
+            .filter { it.status == Delivery.FAILED && it.errorCode == "BLOCKED" && it.messageId != messageId }
+            .forEach { ignoredBlockedOutboxIds.add(it.messageId) }
+        ignoredBlockedOutboxIds.remove(messageId)
+        blockedByOther = false
+        blockedAfterDiscard = false
+        sessionScope.launch {
+            retryMessage(chatId, messageId).also { coroutineContext.ensureActive() }.onFailure { err ->
+                _events.trySend(ChatEvent.ShowError(err.toChatError()))
+            }
+        }
+    }
+
+    fun onDiscardMessage(messageId: String) {
+        val chatId = activeChatId ?: return
+        val discardingBlocked = latestOutboxEntries.any {
+            it.messageId == messageId && it.status == Delivery.FAILED && it.errorCode == "BLOCKED" &&
+                it.messageId !in ignoredBlockedOutboxIds
+        }
+        if (discardingBlocked) blockedAfterDiscard = true
+        sessionScope.launch {
+            discardMessage(chatId, messageId).also { coroutineContext.ensureActive() }.fold(
+                onSuccess = { outcome ->
+                    if (outcome == DiscardResult.ALREADY_SENT) {
+                        // Tin thực ra đã gửi được -> không còn bị chặn.
+                        if (discardingBlocked) blockedAfterDiscard = false
+                        _events.trySend(ChatEvent.ShowMessage(R.string.chat_already_sent_notice))
+                    }
+                },
+                onFailure = { err ->
+                    _events.trySend(ChatEvent.ShowError(err.toChatError()))
+                },
+            )
+        }
+    }
+
+    fun onLatestMessageVisible() {
+        val chatId = activeChatId ?: return
+        val latestServerId = currentServerMessages.lastOrNull()?.id ?: "empty"
+        val marker = "$chatId:$latestServerId"
+        if (lastMarkedMarker == marker) return
+        lastMarkedMarker = marker
+        sessionScope.launch {
+            markChatRead(chatId).also { coroutineContext.ensureActive() }.onFailure {
+                if (lastMarkedMarker == marker) lastMarkedMarker = null
+            }
+        }
+    }
+
+    fun onScreenVisible() {
+        screenVisible = true
+        val chatId = activeChatId ?: return
+        startViewingHeartbeat(chatId)
+    }
+
+    fun onScreenHidden() {
+        screenVisible = false
+        viewingJob?.cancel()
+        viewingJob = null
+        if (kickedEmitted) return
+        val chatId = activeChatId ?: return
+        sessionScope.launch {
+            repository.setViewing(chatId, null)
+        }
+    }
+
+    private fun startViewingHeartbeat(chatId: String) {
+        viewingJob?.cancel()
+        viewingJob = sessionScope.launch {
+            while (true) {
+                val estimatedServerNowMs = clock.now() + repository.estimatedServerOffsetMs()
+                repository.setViewing(chatId, Instant.ofEpochMilli(estimatedServerNowMs + VIEWING_TTL_MS))
+                delay(VIEWING_RENEW_INTERVAL_MS)
+            }
+        }
+    }
+
+    fun loadOlder() {
+        val chatId = activeChatId ?: return
+        val state = _uiState.value
+        if (state.loadingOlder || !state.canLoadOlder) return
+        val oldestAt = currentServerMessages.firstOrNull { it.createdAt != null }?.createdAt ?: return
+
+        _uiState.update { it.copy(loadingOlder = true) }
+        sessionScope.launch {
+            val result = try {
+                loadOlderMessages(chatId, oldestAt)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                Result.failure(e)
+            }
+            coroutineContext.ensureActive()
+            result.fold(
+                onSuccess = { loaded ->
+                    if (loaded.size < PAGE_SIZE) {
+                        reachedOldestPage = true
+                    }
+                    olderMessages.update { existing -> mergeServerMessages(loaded, existing) }
+                    _uiState.update {
+                        it.copy(
+                            loadingOlder = false,
+                            canLoadOlder = !reachedOldestPage,
+                        )
+                    }
+                },
+                onFailure = { throwable ->
+                    _uiState.update { it.copy(loadingOlder = false) }
+                    _events.trySend(ChatEvent.ShowError(throwable.toChatError()))
+                },
+            )
+        }
+    }
+
+    fun onPhotoClicked(message: ChatMessage) {
+        if (message.status != MessageStatus.NORMAL) return
+        val path = message.imagePath
+        if (!path.isNullOrBlank()) {
+            sessionScope.launch {
+                val freshUrl = signedUrlCache.resolve(listOf(path))[path]
+                coroutineContext.ensureActive()
+                if (freshUrl != null) {
+                    _uiState.update { it.copy(imageUrls = it.imageUrls + (path to freshUrl)) }
+                    _events.trySend(ChatEvent.OpenPhoto(freshUrl))
+                } else {
+                    _events.trySend(ChatEvent.ShowError(ChatError.Network()))
+                }
+            }
+        } else {
+            val local = message.localImageUri ?: return
+            _events.trySend(ChatEvent.OpenPhoto(local))
+        }
+    }
+
+    fun onVenueClicked() {
+        val venueId = _uiState.value.header?.venue?.id ?: return
+        _events.trySend(ChatEvent.OpenVenue(venueId))
+    }
+
+    fun onToggleMuted() {
+        val chatId = activeChatId ?: return
+        val targetMuted = !(_uiState.value.header?.muted ?: false)
+        sessionScope.launch {
+            setMuted(chatId, targetMuted).also { coroutineContext.ensureActive() }.fold(
+                onSuccess = {
+                    _events.trySend(
+                        ChatEvent.ShowMessage(
+                            if (targetMuted) R.string.chat_muted_success else R.string.chat_unmuted_success,
+                        ),
+                    )
+                },
+                onFailure = { err -> _events.trySend(ChatEvent.ShowError(err.toChatError())) },
+            )
+        }
+    }
+
+    fun onToggleBlockedConfirmed() {
+        val chatId = activeChatId ?: return
+        val header = _uiState.value.header ?: return
+        if (header.type != ChatType.DIRECT || header.isDeletedOtherParty) return
+        val targetBlocked = !header.blockedOther
+        sessionScope.launch {
+            setBlocked(chatId, targetBlocked).also { coroutineContext.ensureActive() }.fold(
+                onSuccess = {
+                    _events.trySend(
+                        ChatEvent.ShowMessage(
+                            if (targetBlocked) R.string.chat_blocked_success else R.string.chat_unblocked_success,
+                        ),
+                    )
+                },
+                onFailure = { err -> _events.trySend(ChatEvent.ShowError(err.toChatError())) },
+            )
+        }
+    }
+
+    /** Tính danh sách hành động khi giữ lâu vào một tin nhắn (T048, T052). */
+    fun availableActionsFor(message: ChatMessage): List<MessageMenuAction> {
+        if (message.delivery != Delivery.SENT || message.status != MessageStatus.NORMAL) return emptyList()
+        val nowServer = Instant.ofEpochMilli(clock.now() + repository.estimatedServerOffsetMs())
+        return buildList {
+            if (message.text.isNotBlank()) add(MessageMenuAction.COPY)
+            if (message.canRecall(nowServer)) add(MessageMenuAction.RECALL)
+            if (message.canReport) add(MessageMenuAction.REPORT)
+        }
+    }
+
+    fun onRecallConfirmed(messageId: String) {
+        val chatId = activeChatId ?: return
+        sessionScope.launch {
+            recallMessage(chatId, messageId).also { coroutineContext.ensureActive() }.fold(
+                onSuccess = {
+                    olderMessages.update { list ->
+                        list.map { msg ->
+                            if (msg.id == messageId) {
+                                msg.copy(status = MessageStatus.RECALLED, text = "", imagePath = null)
+                            } else {
+                                msg
+                            }
+                        }
+                    }
+                    _events.trySend(ChatEvent.ShowMessage(R.string.chat_recalled_success))
+                },
+                onFailure = { err -> _events.trySend(ChatEvent.ShowError(err.toChatError())) },
+            )
+        }
+    }
+
+    fun onReportMessageSelected(messageId: String) {
+        val chatId = activeChatId ?: return
+        _events.trySend(ChatEvent.OpenReport(chatId, messageId))
+    }
+
+    override fun onCleared() {
+        viewingJob?.cancel()
+        observeJob?.cancel()
+        super.onCleared()
+    }
+
+    private data class CombinedSnapshot(
+        val detail: ChatDetail?,
+        val groupHeader: GroupHeaderInfo?,
+        val live: List<ChatMessage>,
+        val older: List<ChatMessage>,
+        val outbox: List<OutboxEntry>,
+    )
+
+    companion object {
+        const val ARG_CHAT_ID = "chatId"
+        const val ARG_GROUP_ID = "groupId"
+        const val ARG_VENUE_ID = "venueId"
+        const val PAGE_SIZE = 30
+        const val VIEWING_TTL_MS = 60_000L
+        const val VIEWING_RENEW_INTERVAL_MS = 45_000L
+    }
+}

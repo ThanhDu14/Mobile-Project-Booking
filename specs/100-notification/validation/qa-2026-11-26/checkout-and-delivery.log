@@ -1,0 +1,101 @@
+deno.exe : Check supabase/functions/booking-payment-transfer/handler.test.ts
+At line:2 char:87
++ ... /deno.exe"; & $deno test --allow-env supabase/functions/booking-payme ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Check supabase/...handler.test.ts:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+Check supabase/functions/booking-payment-confirm/handler.test.ts
+Check supabase/functions/owner-create-voucher/handler.test.ts
+Check supabase/functions/_shared/notification-worker.test.ts
+running 14 tests from ./supabase/functions/booking-payment-transfer/handler.test.ts
+không đăng nhập → 401; tài khoản bị khóa → 403 ... ok (76ms)
+option phải là chuyển khoản ... ok (3ms)
+cơ sở thiếu payoutAccount → 422 TRANSFER_NOT_SUPPORTED ... ok (5ms)
+tổng 0đ → 409 INVALID_STATE (phải dùng booking-payment-confirm) ... ok (4ms)
+cọc 30%: đơn HOLD chờ chuyển khoản, mã thanh toán, gia hạn 15 phút ở đơn và mọi slot ... ok (60ms)
+trả đủ: amountDue = total ... ok (3ms)
+voucher được giữ tạm (RESERVED), đếm lượt ngay ... ok (3ms)
+gọi lại cùng requestId: cùng mã, cùng hạn, không ghi thêm ... ok (6ms)
+mã trùng thì sinh lại; trùng quá 3 lần → 500 ...
+------- output -------
+[toErrorResponse] Error: Không sinh được mã thanh toán chưa dùng sau 3 lần
+    at freshCode (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/booking-payment-transfer/handler.ts:176:9)
+    at async startSingle (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/booking-payment-transfer/handler.ts:278:16)
+    at async run (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/_shared/fake-firestore.ts:129:19)
+----- output end -----
+mã trùng thì sinh lại; trùng quá 3 lần → 500 ... ok (17ms)
+giữ chỗ đã hết hạn → 409 HOLD_EXPIRED ... ok (1ms)
+giá khác app gửi → 409 PRICE_CHANGED kèm breakdown ... ok (3ms)
+đơn của người khác → 403 ... ok (1ms)
+đơn đã PENDING → 409 INVALID_STATE ... ok (8ms)
+đơn định kỳ: nhóm, các buổi và slot cùng gia hạn; mã trỏ về nhóm ... ok (8ms)
+running 24 tests from ./supabase/functions/booking-payment-confirm/handler.test.ts
+thiếu token → 401 ... ok (53ms)
+tài khoản LOCKED → 403, không ghi gì ... ok (2ms)
+body sai → 400 INVALID_ARGUMENT ... ok (32ms)
+GET → 405 ... ok (5ms)
+thành công: đơn PENDING/AT_VENUE/UNPAID, slot BOOKED, thông báo BOOKING_NEW cho chủ sân ... ok (89ms)
+approvalDeadline = startAt khi giờ chơi đến trước 60 phút ... ok (5ms)
+gọi lại cùng requestId trả lại kết quả cũ, không ghi thêm ... ok (5ms)
+đơn cùng requestId của người khác → 403 FORBIDDEN ... ok (1ms)
+slot của người khác, hết hạn, giữ cho request khác hoặc không còn HELD → 409 HOLD_EXPIRED ... ok (12ms)
+slot chưa có document → 409 HOLD_EXPIRED ... ok (1ms)
+slot của cơ sở khác → 409 HOLD_EXPIRED ... ok (1ms)
+expectedTotal lệch → 409 PRICE_CHANGED kèm breakdown, không ghi gì ... ok (2ms)
+slot ngoài bảng giá → 409 NO_PRICE ... ok (1ms)
+voucher hợp lệ: giảm tiền, redemption USED, usedCount và userUsage tăng 1 ... ok (2ms)
+voucher cơ sở thắng voucher hệ thống trùng mã ... ok (15ms)
+voucher hết lượt → 422 VOUCHER_INVALID OUT_OF_USES ... ok (1ms)
+voucher chưa đủ đơn tối thiểu → 422 MIN_ORDER kèm minOrderTotal; không có mã → NOT_FOUND ... ok (10ms)
+người chơi đã dùng hết lượt của mình → 422 PER_USER_LIMIT ... ok (1ms)
+tổng 0đ → paymentStatus PAID, paidAmount 0, remainingAmount 0 ... ok (11ms)
+đơn đang AWAITING_TRANSFER → AT_VENUE/UNPAID, mã tắt, voucher RESERVED → USED không tăng đếm lần hai ... ok (11ms)
+đơn đã EXPIRED → 409 HOLD_EXPIRED ... ok (3ms)
+đơn định kỳ: một lần chốt cho cả nhóm, nhóm DONE, mọi buổi PENDING, slot BOOKED ... ok (39ms)
+đơn định kỳ hết hạn giữ chỗ → 409 HOLD_EXPIRED; nhóm của người khác → 403 ... ok (7ms)
+đơn định kỳ: requestId phải bằng recurringGroupId ... ok (3ms)
+running 6 tests from ./supabase/functions/owner-create-voucher/handler.test.ts
+voucher validation rejects NaN, decimals, invalid dates and limits ... ok (2ms)
+voucher mutations check current ownership and preserve usage counters ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+voucher mutations check current ownership and preserve usage counters ... ok (47ms)
+stale owner claim and locked/deleting accounts cannot mutate vouchers ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+stale owner claim and locked/deleting accounts cannot mutate vouchers ... ok (4ms)
+Firestore GeoPoint encoding preserves native geographic type ... ok (817µs)
+owner-create-voucher: rejects non-POST requests ... ok (481µs)
+owner-create-voucher: rejects unauthenticated requests ... ok (1ms)
+running 19 tests from ./supabase/functions/_shared/notification-worker.test.ts
+T043: all 19 types retain inbox; defaults, saved preferences and mandatory BOOKING_NEW govern push ... ok (127ms)
+enqueue: canonical identity dedups UUID replay and never backfills retained-away job ... ok (4ms)
+enqueue: inactive/deleting recipient and invalid type never create inbox/job ... ok (4ms)
+enqueue: persists exactly six inbox fields and rejects non-map data ... ok (2ms)
+worker: partial success retries only failed token and honors Retry-After ... ok (7ms)
+worker: expired SENDING consumes reservation, caps six attempts, does not resend SENT ... ok (11ms)
+worker: recovers unknown SENDING below budget with a fresh attempt ... ok (3ms)
+worker: promotion default off, forced booking new, inbox remains regardless preference ... ok (1ms)
+worker: unregistered removes only exact token; permanent provider failures preserve token ... ok (3ms)
+worker: target initialization resumes beyond 100 and never adds tokens registered later ... ok (789ms)
+worker: deletion racing send cannot resurrect job/receipt; child-first account cleanup ... ok (2ms)
+worker: terminal retention keeps pending jobs and removes children before parent ... ok (1ms)
+worker: initialization observes deletion gate before creating receipt children ... ok (936µs)
+worker: chat suppression is account-wide across installations without dropping inbox ... ok (1ms)
+worker: target budget failure is explicit, never truncated into partial delivery ... ok (795ms)
+retention cleanup resumes at 100 child receipts per job without deleting parent early ... ok (5ms)
+FCM adapter: data-only payload and typed UNREGISTERED vs invalid arguments and Retry-After ... ok (27ms)
+worker HTTP entrypoint: POST and cron auth required; emulator cannot use real FCM ... ok (11ms)
+worker HTTP authorized harness uses fake FCM and refuses emulator calls without it ... ok (7ms)
+
+ok | 63 passed | 0 failed (3s)
+

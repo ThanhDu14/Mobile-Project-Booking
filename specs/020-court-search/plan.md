@@ -6,6 +6,27 @@
 
 ## Summary
 
+### Phần triển khai 020–040 cho RAG
+
+Mở tab Tìm kiếm và dùng chung bước lọc cho thao tác thủ công lẫn kết quả phân tích 022. Kiểm tra ngày giờ bằng `core/schedule`, tính giá bằng `SlotPricing`, đọc `slots.startTime` và trạng thái `HELD`, `BOOKED`, `BLOCKED` theo 040. Thẻ chi tiết chuyển ngày và giờ qua 030 đến lưới 040. Lưới kiểm tra lại ngày giờ, cuộn tới khung yêu cầu và giữ nguyên giao dịch kiểm tra slot khi người chơi bấm giữ chỗ.
+
+020 hiển thị danh sách trước, sau đó gửi 30 sân đầu tiên theo thứ tự hiện tại của cùng lần tìm sang bước xếp hạng (khi đã có ít nhất 30 sân hoặc danh sách đã tải xong). Mục đề xuất tách khỏi thứ tự danh sách chính. Bỏ đề xuất khi bộ lọc hoặc phiên đăng nhập thay đổi.
+
+### Đồng bộ với code (2026-11-14)
+
+Code là nguồn chuẩn. Phần "Cách làm", Technical Context và Project Structure bên dưới là thiết kế ban đầu (giữ lại để tham khảo lý do). Thực tế đã hiện thực gọn hơn:
+
+| Thiết kế ban đầu | Code hiện tại |
+|---|---|
+| `SearchCriteria`, `SearchViewModel`, `SearchFragment` | `feature/search/domain/CourtSearchCriteria.kt`, `ui/CourtSearchViewModel.kt`, `ui/CourtSearchFragment.kt`; Trang chủ là `HomeFragment`/`HomeViewModel` |
+| `VenueSearchEngine` với hai chiến lược S1/S2, `VenueQueryBuilder`, 13 index, `nameKeywords` `array-contains` | `FirestoreCourtSearchRepository`: một truy vấn `status == ACTIVE` (+ `districtId` nếu có), tối đa 150 cơ sở (`MAX_VENUES`), hoặc duyệt hết theo trang 100 khi không có bộ lọc; khớp tên (`matchesVenueName`), tiện ích, giá, giờ trống và sắp xếp đều chạy trên máy. Không dùng `nameKeywords` |
+| `VenueMatcher`, `AvailabilityEvaluator`, `ResultSorter` | `CourtSearchCriteria.kt` (`matchesVenueName`, `hasContinuousCourt`), `FirestoreCourtSearchRepository.matchWindow`, `comparator` |
+| `core/text`, `core/pricing`, `core/schedule`, `core/location`, `core/catalog` | Có `core/pricing` (`SlotPricing`, `PriceRuleMapper`), `core/schedule` (`BookingWindow`, `BookingSearchWindow`, `TimeOfDay`, `SlotMath`), `core/location` (`GeoDistance`), `core/catalog` |
+| Lịch sử tìm kiếm `users/{uid}/searchHistory` (US4) | Chưa hiện thực |
+| `applyExternal(criteria, AI)` cho 022 | `CourtSearchViewModel.applyAi(...)` |
+
+Khi sửa plan hoặc làm tiếp (lịch sử tìm kiếm, bản đồ 021), bắt đầu từ các lớp ở cột bên phải.
+
 Người chơi, kể cả khách chưa đăng nhập, tìm cơ sở sân theo tên (không dấu, khớp phần đầu của từ) và quận. Bộ lọc gồm khoảng giá, khung giờ còn trống và tiện ích; sắp xếp theo đánh giá, giá hoặc khoảng cách. Người đã đăng nhập có lịch sử 10 lần tìm gần nhất. Bộ lọc là đầu vào dùng chung với spec 022 (AI) và 021 (bản đồ).
 
 **Cách làm:**
@@ -16,7 +37,7 @@ Người chơi, kể cả khách chưa đăng nhập, tìm cơ sở sân theo t�
 - **Hai chiến lược phân trang** ([R3](research.md#r3-hai-chiến-lược-phân-trang-fr-016-khi-có-lọc-trên-máy)):
   - Sắp xếp theo đánh giá, hoặc theo giá khi không có khung giờ: Firestore `orderBy`, đọc lô 25 tới khi đủ 20 kết quả (tối đa 4 lô mỗi lần tải).
   - "Gần nhất", hoặc giá khi có khung giờ: đọc tối đa 150 ứng viên, sắp theo cận dưới (khoảng cách hoặc `minPricePerHour`), kiểm tra giờ trống lười tới khi đủ 20, chia trang trong bộ nhớ.
-- **Giờ trống và giá theo khung** ([R4](research.md#r4-lọc-khung-giờ-còn-trống-fr-006-và-giá-theo-khung-fr-005)): mỗi cơ sở ứng viên đọc `priceRules`, `courts` (cache 10 phút) và các `slots` bận trong khung (query `venueId`, `date`, `startAt`). `HOLD` quá `holdExpiresAt` coi là trống.
+- **Giờ trống và giá theo khung** ([R4](research.md#r4-lọc-khung-giờ-còn-trống-fr-006-và-giá-theo-khung-fr-005)): mỗi cơ sở ứng viên đọc `priceRules`, `courts` (cache 10 phút) và các `slots` bận trong khung (query `venueId`, `date`, `status`). `HELD` quá `holdExpiresAt` coi là trống.
   - Ước lượng 35–105 lượt đọc mỗi lần tìm có khung giờ khi đã chọn quận, khoảng 1,2–1,8 giây trên 4G.
   - Logic giá 30 phút và lưới giờ đưa lên `core/pricing`, `core/schedule` để dùng chung với 040 ([R5](research.md#r5-logic-giá-và-lưới-giờ-dùng-chung-với-spec-040-b)).
 - **Chốt mục 9 điểm 6 của đặc tả CSDL: dùng `nameKeywords`** ([R6](research.md#r6-tìm-theo-tên-dùng-namekeywords-chốt-mục-9-điểm-6-đặc-tả-csdl)). Tiền tố 2–15 ký tự của từng từ đã bỏ dấu, tối đa 60 phần tử. Có bản Kotlin (`core/text`) và TypeScript (`_shared/search-keywords.ts`) chạy chung một file vector test.
@@ -74,7 +95,7 @@ Người chơi, kể cả khách chưa đăng nhập, tìm cơ sở sân theo t�
 |---|---|---|
 | I. MVVM, package theo tính năng | ✅ | Fragment → `SearchViewModel` → UseCase → `VenueSearchEngine` / `SearchHistoryRepository` (interface) → Firestore data source. ViewModel không gọi Firestore. `StateFlow<SearchUiState>` có đủ loading/nội dung/rỗng/lỗi; sự kiện một lần qua `Channel`. 021, 022 cùng nhóm 02 nên cùng package `feature/search`. Phần dùng với nhóm khác (giá, lịch, vị trí, danh mục, chuẩn hóa chữ) đặt ở `core/` |
 | II. Bảo mật phía server | ✅ | `searchHistory` chỉ chủ đọc/ghi; Rules kiểm tra danh sách trường, kiểu, độ dài, `searchedAt == request.time` (H-1…H-15). Danh mục chỉ admin ghi. Khách chỉ đọc dữ liệu công khai, query luôn có `status == ACTIVE` để Rules chứng minh. Mọi Rules mới có test Emulator. Không có khóa bí mật mới |
-| III. Toàn vẹn dữ liệu đặt lịch | ✅ (chỉ đọc) | Không ghi slot. Coi `HOLD` hết hạn là trống theo `holdExpiresAt`, đúng quy tắc của nguyên tắc này. Tiền là `Long` VND. Ngày giờ theo `Asia/Ho_Chi_Minh`. Kiểm tra cuối cùng vẫn ở transaction của 040 |
+| III. Toàn vẹn dữ liệu đặt lịch | ✅ (chỉ đọc) | Không ghi slot. Coi `HELD` hết hạn là trống theo `holdExpiresAt`, đúng quy tắc của nguyên tắc này. Tiền là `Long` VND. Ngày giờ theo `Asia/Ho_Chi_Minh`. Kiểm tra cuối cùng vẫn ở transaction của 040 |
 | IV. Kiểm thử có trọng tâm | ✅ | Test Rules (SC-006), unit test logic lọc/giá/sắp xếp với dữ liệu giả, test ViewModel cho FR-018, bộ dữ liệu demo có đáp án (SC-003, SC-004). Không test trên project thật, trừ bước kiểm tra index trước demo (chỉ đọc, dữ liệu giả) |
 | V. Giao diện XML nhất quán | ✅ | XML + Material 3 DayNight, `strings_search.xml` tiền tố `search_`, `ListAdapter`/`DiffUtil`, đủ 4 trạng thái (FR-019), mất mạng không crash (FR-020), `w600dp` lưới 2 cột, `contentDescription` cho chip và thẻ, vùng chạm 48dp, danh sách < 3 giây |
 | VI. Quyền riêng tư | ✅ | Quyền vị trí xin lúc chọn "Gần nhất", có giải thích trước, từ chối vẫn dùng được (FR-012, FR-013). Vị trí không lưu và không gửi đi (FR-014). Khách không có lịch sử (FR-027). Lịch sử xóa cùng tài khoản |

@@ -1,0 +1,9 @@
+<navigation xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto" android:id="@+id/nav_notification" app:startDestination="@id/notificationFragment">
+ <fragment android:id="@+id/notificationFragment" android:name="com.example.booking_app.feature.notification.ui.NotificationFragment" android:label="@string/notification_title">
+  <argument android:name="recipientUid" app:argType="string" android:defaultValue="" />
+  <argument android:name="notificationId" app:argType="string" android:defaultValue="" />
+  <deepLink app:uri="smashnow://notifications"/>
+  <deepLink app:uri="smashnow://notifications/{recipientUid}/{notificationId}"/>
+ </fragment>
+ <fragment android:id="@+id/notificationSettingsFragment" android:name="com.example.booking_app.feature.notification.ui.NotificationSettingsFragment" android:label="@string/notification_settings_title"><deepLink app:uri="smashnow://notifications/settings"/></fragment>
+</navigation>

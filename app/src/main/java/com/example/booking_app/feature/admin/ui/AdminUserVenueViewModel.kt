@@ -130,19 +130,24 @@ class AdminUserVenueViewModel @Inject constructor(
         }
     }
 
+    private val pendingRevocations = mutableMapOf<Pair<String, String>, OwnerRevocationDecision>()
+
     fun revokeOwner(uid: String, reason: String) {
         if (_actionState.value == AdminActionUiState.Loading) return
-        val decision = OwnerRevocationDecision(uid = uid, reason = reason)
+        val key = uid to reason.trim()
+        val decision = pendingRevocations[key] ?: OwnerRevocationDecision(uid = key.first, reason = key.second)
         val validationErr = decision.validate()
         if (validationErr != null) {
             _actionState.value = AdminActionUiState.Error(validationErr)
             return
         }
 
+        pendingRevocations[key] = decision
         _actionState.value = AdminActionUiState.Loading
         viewModelScope.launch {
             repository.revokeOwner(decision)
                 .onSuccess {
+                    pendingRevocations.remove(key)
                     _actionState.value = AdminActionUiState.Success("Đã thu hồi quyền chủ sân thành công")
                     if (lastUserQuery.isNotEmpty()) {
                         searchUser(lastUserQuery)

@@ -33,7 +33,7 @@ Spec 020 đọc `isActive` để đếm sân con hoạt động.
 
 ### 1.4. `slots/{courtId}_{yyyyMMdd}_{HHmm}` (B)
 
-Spec 020 đọc `venueId`, `courtId`, `date`, `startAt`, `status`, `holdExpiresAt`. Bận khi `BOOKED`, `BLOCKED`, hoặc `HOLD` có `holdExpiresAt > now`. Không đọc `holdBy`, `bookingId` (vẫn nằm trong document, research R13).
+Spec 020 đọc `venueId`, `courtId`, `date`, `startTime` (`HHmm`), `status`, `holdExpiresAt`. Slot bận khi `BOOKED`, `BLOCKED`, hoặc `HELD` còn hạn. Slot `HELD` thiếu thời điểm hết hạn được coi là bận. `HOLD` là trạng thái của đơn đặt sân. 020 không sử dụng `holdBy` hoặc `bookingId`.
 
 ## 2. Firestore: dữ liệu spec 020 sở hữu (A)
 
@@ -45,7 +45,7 @@ Spec 020 đọc `venueId`, `courtId`, `date`, `startAt`, `status`, `holdExpiresA
 |---|---|---|---|
 | `keyword` | String | có (có thể rỗng) | ≤ 100 ký tự, giữ nguyên chữ người dùng gõ để hiển thị |
 | `districtId` | String? | | ID danh mục |
-| `priceMin`, `priceMax` | Long? | | ≥ 0, bội số 10.000; `priceMin ≤ priceMax` khi có cả hai |
+| `priceMin`, `priceMax` | Long? | | ≥ 0, bội số 1.000; `priceMin ≤ priceMax` khi có cả hai |
 | `date` | String? `yyyyMMdd` | Cùng có hoặc cùng không với `startTime`, `endTime` | |
 | `startTime`, `endTime` | String? `HHmm` | | Bội số 30 phút, `endTime > startTime` |
 | `amenityIds` | Array\<String> | có | ≤ 20 phần tử, đã sắp xếp |
@@ -143,7 +143,7 @@ Bảng V1–V12 và S1 ở [research R8](research.md#r8-index-cần-tạo), cú 
    - `priceRules.daysOfWeek`: ghi quy ước đã chốt (đề xuất ISO 1 = Thứ hai).
 2. **Mục 4 (thêm mục mới):** `users/{uid}/searchHistory/{id}` (A) theo §2.1; `districts`, `amenities` (A) theo §2.2.
 3. **Mục 5 (ID tất định):** thêm dòng `searchHistory`: `sha256(canonicalKey)[0..20)`, lý do "tìm lại cùng tổ hợp không tạo mục trùng".
-4. **Mục 6 (index):** thay hai dòng `venues` cũ bằng V1–V12; đổi dòng `slots` thành `venueId`, `date`, `startAt`. Dòng `venues: geohash` ghi "spec 021 quyết định".
+4. **Mục 6 (index):** chỉ mục giờ trống dùng `slots(venueId, date, status)` đã có của 040. Dòng `venues: geohash` do spec 021 quyết định.
 5. **Mục 7 (Rules):**
    - `venues`: "Mọi người (kể cả khách) R khi `ACTIVE`".
    - `courts`, `priceRules`: "Mọi người R".

@@ -1,12 +1,16 @@
 package com.example.booking_app.feature.booking.ui
 
+import android.content.res.Configuration
 import android.os.Bundle
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.core.view.isVisible
+import androidx.core.widget.NestedScrollView
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -31,6 +35,7 @@ import kotlinx.coroutines.launch
 import java.text.DecimalFormat
 import java.time.LocalDate
 import java.time.ZoneId
+import kotlin.math.roundToInt
 
 @AndroidEntryPoint
 class BookingSlotGridFragment : Fragment() {
@@ -49,6 +54,11 @@ class BookingSlotGridFragment : Fragment() {
     private lateinit var dateAdapter: DateSelectorAdapter
     private lateinit var matrixAdapter: SlotMatrixRowAdapter
     private var renderedCourts: List<Court> = emptyList()
+
+    // Bề ngang lưới đổi (lần vẽ đầu, xoay màn hình) thì tính lại độ rộng cột sân con
+    private val matrixWidthListener = View.OnLayoutChangeListener { v, left, _, right, _, oldLeft, _, oldRight, _ ->
+        if (right - left != oldRight - oldLeft) v.post { applyColumnWidths() }
+    }
 
     companion object {
         private var globalCachedView: View? = null
@@ -127,6 +137,9 @@ class BookingSlotGridFragment : Fragment() {
                 }
             }
         }
+
+        binding.scrollViewMatrix.addOnLayoutChangeListener(matrixWidthListener)
+        setupStickyCourtHeaders()
 
         setupListeners()
         observeUiState()
@@ -219,12 +232,25 @@ class BookingSlotGridFragment : Fragment() {
         }
     }
 
+    private fun focusRequestedWindow(state: BookingSlotUiState) {
+        val rootView = view ?: return
+        if (viewModel.uiState.value.selectedDate != state.selectedDate) return
+        val start = viewModel.requestedStartFor(state.selectedDate) ?: return
+        val row = matrixAdapter.currentList.indexOfFirst { it.timeRaw == start }
+        if (row < 0 || rootView !== binding.root) return
+        binding.rvSlotMatrixRows.scrollToPosition(row)
+        val day = state.dates.indexOf(state.selectedDate)
+        if (day >= 0) binding.rvDateSelector.scrollToPosition(day)
+        viewModel.markRequestedWindowShown()
+    }
+
     private fun renderUi(state: BookingSlotUiState) {
         // 1. Header (Q7: "Chọn khung giờ" + tên cơ sở + quận từ dữ liệu thật)
         binding.tvHeaderTitle.setText(R.string.booking_title)
         val venueName = state.venueName.ifEmpty { "Cơ sở ${state.venueId}" }
         val locationPart = if (state.districtName.isNotEmpty()) {
-            "Quận ${state.districtName}"
+            // Tên đã đầy đủ ("Quận 12", "Tân Bình", "TP. Thủ Đức"): thêm "Quận " từng thành "Quận Quận 12"
+            state.districtName
         } else if (state.operatingHours.isNotEmpty()) {
             state.operatingHours
         } else {
@@ -271,23 +297,25 @@ class BookingSlotGridFragment : Fragment() {
         if (state.courts.isNotEmpty() && (state.courts != renderedCourts || binding.layoutCourtHeaders.childCount == 0)) {
             renderedCourts = state.courts
             renderCourtHeaders(state.courts)
+            applyColumnWidths()
         }
 
         // 7. Lưới slot ma trận - Progressive chunked render trên cold start để tránh freeze
         if (binding.rvSlotMatrixRows.childCount == 0 && state.matrixRows.size > 12) {
             matrixAdapter.submitList(state.matrixRows.take(12)) {
                 binding.rvSlotMatrixRows.post {
-                    matrixAdapter.submitList(state.matrixRows)
+                    matrixAdapter.submitList(state.matrixRows) { focusRequestedWindow(state) }
                 }
             }
         } else {
-            matrixAdapter.submitList(state.matrixRows)
+            matrixAdapter.submitList(state.matrixRows) { focusRequestedWindow(state) }
         }
 
         // 8. Trạng thái rỗng / Đóng cửa
         val showEmpty = state.isClosed || (state.courts.isEmpty() && !state.isLoading)
         binding.layoutEmptyState.isVisible = showEmpty
         binding.scrollViewMatrix.isVisible = !showEmpty
+        updateStickyCourtHeaders()
         if (state.isClosed) {
             binding.tvEmptyTitle.setText(R.string.booking_venue_closed_title)
             binding.tvEmptyMessage.text = state.errorMessage ?: getString(R.string.booking_venue_closed_message)
@@ -327,16 +355,90 @@ class BookingSlotGridFragment : Fragment() {
     }
 
     private fun renderCourtHeaders(courts: List<Court>) {
-        val container = binding.layoutCourtHeaders
-        container.removeAllViews()
         val inflater = LayoutInflater.from(requireContext())
-
-        for (court in courts) {
-            val headerBinding = ItemCourtColumnHeaderBinding.inflate(inflater, container, false)
-            headerBinding.tvCourtName.text = court.name
-            headerBinding.tvCourtSurface.text = court.surfaceType
-            container.addView(headerBinding.root)
+        // Hàng trong lưới và bản ghim trên cùng (hiện khi cuộn xuống) dùng cùng nội dung
+        for (container in listOf(binding.layoutCourtHeaders, binding.layoutStickyCourtHeaders)) {
+            container.removeAllViews()
+            for (court in courts) {
+                val headerBinding = ItemCourtColumnHeaderBinding.inflate(inflater, container, false)
+                headerBinding.tvCourtName.text = court.name
+                headerBinding.tvCourtSurface.text = court.surfaceType
+                container.addView(headerBinding.root)
+            }
         }
+    }
+
+    /** Cuộn ngang lưới và hàng tên sân ghim luôn đi cùng nhau; cuộn dọc thì quyết định có ghim hay không. */
+    private fun setupStickyCourtHeaders() {
+        val b = binding
+        b.scrollViewMatrix.setOnScrollChangeListener { _, scrollX, _, _, _ ->
+            _binding?.scrollStickyHeaders?.scrollTo(scrollX, 0)
+        }
+        b.scrollStickyHeaders.setOnScrollChangeListener { _, scrollX, _, _, _ ->
+            _binding?.scrollViewMatrix?.scrollTo(scrollX, 0)
+        }
+        b.scrollViewContent.setOnScrollChangeListener(
+            NestedScrollView.OnScrollChangeListener { _, _, _, _, _ -> updateStickyCourtHeaders() }
+        )
+    }
+
+    /** Ghim hàng tên sân khi hàng gốc đã cuộn khuất phía trên mà lưới vẫn còn trên màn hình. */
+    private fun updateStickyCourtHeaders() {
+        val b = _binding ?: return
+        val headers = b.layoutCourtHeaders
+        val show = b.scrollViewMatrix.isVisible && headers.childCount > 0 && run {
+            val location = IntArray(2)
+            b.scrollViewContent.getLocationInWindow(location)
+            val viewportTop = location[1]
+            headers.getLocationInWindow(location)
+            val headersTop = location[1]
+            b.scrollViewMatrix.getLocationInWindow(location)
+            val matrixBottom = location[1] + b.scrollViewMatrix.height
+            headersTop < viewportTop && matrixBottom - headers.height > viewportTop
+        }
+        val sticky = b.scrollStickyHeaders
+        if (sticky.isVisible != show) {
+            sticky.isVisible = show
+            if (show) sticky.post { _binding?.let { it.scrollStickyHeaders.scrollTo(it.scrollViewMatrix.scrollX, 0) } }
+        }
+    }
+
+    /** Ít sân thì các cột chia đều bề ngang màn hình, nhiều sân thì giữ 80dp và cuộn ngang. */
+    private fun applyColumnWidths() {
+        val b = _binding ?: return
+        val courtCount = b.layoutCourtHeaders.childCount
+        val scroll = b.scrollViewMatrix
+        val available = scroll.width - scroll.paddingLeft - scroll.paddingRight
+        if (courtCount == 0 || available <= 0) return
+
+        val landscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        val width = SlotMatrixColumns.cellWidthPx(
+            available,
+            courtCount,
+            resources.displayMetrics.density,
+            maxCellDp = if (landscape) SlotMatrixColumns.LANDSCAPE_MAX_CELL_DP else null,
+        )
+        for (container in listOf(b.layoutCourtHeaders, b.layoutStickyCourtHeaders)) {
+            for (i in 0 until container.childCount) {
+                val header = container.getChildAt(i)
+                val params = header.layoutParams
+                if (params.width != width) {
+                    params.width = width
+                    header.layoutParams = params
+                }
+            }
+        }
+        // Cả lưới vừa màn hình (ô bị giới hạn 160dp khi xoay ngang) thì căn giữa; rộng hơn thì canh trái để cuộn
+        val margins = 2 * (SlotMatrixColumns.CELL_MARGIN_DP * resources.displayMetrics.density).roundToInt()
+        val gravity = if (courtCount * (width + margins) < available) Gravity.CENTER_HORIZONTAL else Gravity.START
+        for (content in listOf(b.layoutMatrixContent, b.layoutStickyCourtHeaders)) {
+            val params = content.layoutParams as FrameLayout.LayoutParams
+            if (params.gravity != gravity) {
+                params.gravity = gravity
+                content.layoutParams = params
+            }
+        }
+        matrixAdapter.setCellWidth(width)
     }
 
     private fun observeUiEffects() {
@@ -445,6 +547,14 @@ class BookingSlotGridFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        _binding?.let {
+            it.scrollViewMatrix.removeOnLayoutChangeListener(matrixWidthListener)
+            // View được cache toàn cục: gỡ listener để không giữ fragment cũ
+            it.scrollViewMatrix.setOnScrollChangeListener(null)
+            it.scrollStickyHeaders.setOnScrollChangeListener(null)
+            it.scrollViewContent.setOnScrollChangeListener(null as NestedScrollView.OnScrollChangeListener?)
+            it.scrollStickyHeaders.isVisible = false
+        }
         // Tháo view khỏi ViewGroup cha để có thể tái gắn vào container ở lần hiển thị kế tiếp
         (globalCachedView?.parent as? ViewGroup)?.removeView(globalCachedView)
         _binding = null

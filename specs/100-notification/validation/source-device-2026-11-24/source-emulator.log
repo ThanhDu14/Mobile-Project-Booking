@@ -1,0 +1,44 @@
+﻿i  emulators: Starting emulators: auth, firestore
+i  emulators: Detected demo project ID "demo-notification-source", emulated services will use a demo configuration and attempts to access non-emulated services for this project will fail.
+i  firestore: Firestore Emulator logging to firestore-debug.log
++  firestore: Firestore Emulator was started in standard edition.
++  firestore: Firestore Emulator UI websocket is running on 9150.
+i  Running script: powershell -ExecutionPolicy Bypass -File .gradle/notification-source-latest.ps1
+npx.cmd : Check supabase/functions/admin-revoke-owner/emulator.test.ts
+At line:2 char:105
++ ... $env:PATH"; npx.cmd --yes firebase-tools@15 emulators:exec --project  ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Check supabase/...mulator.test.ts:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+Check supabase/functions/complete-bookings/emulator.test.ts
+running 1 test from ./supabase/functions/admin-revoke-owner/emulator.test.ts
+O2 emulator: replay after reapproval preserves owner role and does not enqueue twice ...
+------- output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- output end -----
+O2 emulator: replay after reapproval preserves owner role and does not enqueue twice ... ok (2s)
+running 1 test from ./supabase/functions/complete-bookings/emulator.test.ts
+RR1 emulator: competing ticks complete and enqueue exactly once ... ok (2s)
+
+ok | 2 passed | 0 failed (5s)
+
+running 1 test from ./supabase/functions/delete-account/handler.test.ts
+F100 T054: deletion drains multiple notification batches and removes tokens/preferences without touching another user ...
+------- output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- output end -----
+F100 T054: deletion drains multiple notification batches and removes tokens/preferences without touching another user ... ok (1s)
+
+ok | 1 passed | 0 failed | 20 filtered out (1s)
+
++  Script exited successfully (code 0)
+i  emulators: Shutting down emulators.
+i  firestore: Stopping Firestore Emulator
+!  Firestore Emulator has exited upon receiving signal: SIGINT
+i  auth: Stopping Authentication Emulator
+i  hub: Stopping emulator hub
+i  logging: Stopping Logging Emulator

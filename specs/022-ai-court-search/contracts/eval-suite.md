@@ -2,6 +2,8 @@
 
 **Phụ trách:** A. **File:** `scripts/ai-eval/cases.json`, `scripts/ai-eval/run-eval.ts`, `scripts/ai-eval/export-metrics.mjs`.
 
+> **Đồng bộ với code (2026-11-17):** script gọi `handleAiSearch` (action `PARSE`) trong `supabase/functions/ai-search-parse/handler.ts` với `deps` giả: `db` trong bộ nhớ, `authenticate` trả người dùng giả, `providers` thật từ `providersFromEnv()` (bọc lại để ghi input LLM và độ trễ), `now` cố định. Trong `cases.json`, ngày dùng `yyyyMMdd`, giờ dùng `HHmm` như kết quả thật của `parseResult`; `preference` và `faqTopic` nằm ngoài `filter`. So sánh bỏ qua `partOfDay` (suy ra từ giờ); `keyword` so khớp không phân biệt hoa thường/dấu và bỏ chữ "sân" ở đầu. Token chưa báo cáo vì `LlmProvider` không trả số token. Có cờ `--dry-run` (LLM giả) để kiểm tra script không cần khóa.
+
 ## 1. Cách chạy không vướng giới hạn lượt
 
 **Quyết định:** script đánh giá gọi **thẳng hàm `handleAiSearchParse`** trong cùng tiến trình Deno, với:

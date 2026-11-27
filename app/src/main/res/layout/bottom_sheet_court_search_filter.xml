@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@drawable/bg_search_sheet_surface"
+    android:orientation="vertical">
+
+    <View
+        android:layout_width="32dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="@dimen/space_2"
+        android:background="@drawable/bg_search_sheet_handle" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:paddingHorizontal="@dimen/screen_gutter"
+        android:paddingTop="@dimen/space_2">
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:accessibilityHeading="true"
+            android:text="@string/search_filters_title"
+            android:textAppearance="?attr/textAppearanceTitleLarge" />
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/close"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/search_filter_close"
+            android:text="×"
+            android:textSize="24sp" />
+    </LinearLayout>
+
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingHorizontal="@dimen/screen_gutter"
+            android:paddingBottom="@dimen/space_3">
+
+            <TextView style="@style/Widget.SmashNow.FieldLabel"
+                android:text="@string/search_filter_district_full" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/district"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="start|center_vertical"
+                app:cornerRadius="8dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_4">
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:text="@string/search_price_per_hour"
+                    android:textAppearance="?attr/textAppearanceTitleMedium" />
+                <TextView android:id="@+id/priceLabel" android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:textAppearance="?attr/textAppearanceTitleMedium" />
+            </LinearLayout>
+            <com.google.android.material.slider.RangeSlider
+                android:id="@+id/priceRange"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:contentDescription="@string/search_price_per_hour"
+                android:stepSize="10000"
+                android:valueFrom="0"
+                android:valueTo="200000" />
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content">
+                <TextView android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" android:text="@string/search_price_zero"
+                    android:textAppearance="?attr/textAppearanceBodySmall" />
+                <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    android:text="@string/search_price_ceiling" android:textAppearance="?attr/textAppearanceBodySmall" />
+            </LinearLayout>
+
+            <TextView style="@style/Widget.SmashNow.FieldLabel"
+                android:text="@string/search_play_date" />
+            <HorizontalScrollView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:scrollbars="none">
+                <com.google.android.material.chip.ChipGroup android:id="@+id/days"
+                    android:layout_width="wrap_content" android:layout_height="wrap_content"
+                    app:singleLine="true" app:singleSelection="true" />
+            </HorizontalScrollView>
+            <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:orientation="horizontal">
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/start" style="?attr/materialButtonOutlinedStyle"
+                    android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_marginEnd="@dimen/space_2" android:layout_weight="1" />
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/end" style="?attr/materialButtonOutlinedStyle"
+                    android:layout_width="0dp" android:layout_height="wrap_content"
+                    android:layout_weight="1" />
+            </LinearLayout>
+            <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_2" android:text="@string/search_window_help"
+                android:textAppearance="?attr/textAppearanceBodySmall" android:textColor="?attr/colorOnSurfaceVariant" />
+            <TextView android:id="@+id/windowError" android:layout_width="match_parent"
+                android:layout_height="wrap_content" android:layout_marginTop="@dimen/space_2"
+                android:text="@string/search_invalid_window" android:textColor="?attr/colorError"
+                android:visibility="gone" />
+
+            <TextView style="@style/Widget.SmashNow.FieldLabel"
+                android:text="@string/search_filter_amenities" />
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/amenities"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
+    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+        android:padding="@dimen/screen_gutter" android:gravity="center_vertical">
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/clear" style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content" android:layout_height="wrap_content"
+            android:text="@string/search_filter_clear" />
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/apply" android:layout_width="0dp" android:layout_height="wrap_content"
+            android:layout_weight="1" android:text="@string/search_show_results" />
+    </LinearLayout>
+</LinearLayout>

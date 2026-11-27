@@ -1,0 +1,332 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Màn hình cuộc trò chuyện (spec 091 T029; wireframe buoc2, buoc3, buoc5). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="?attr/colorSurface"
+    android:orientation="vertical">
+
+    <!-- Thanh tiêu đề -->
+    <LinearLayout
+        android:id="@+id/topBar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/colorSurfaceContainerLowest"
+        android:gravity="center_vertical"
+        android:minHeight="60dp"
+        android:orientation="horizontal"
+        android:paddingHorizontal="@dimen/space_1"
+        android:paddingVertical="@dimen/space_1">
+
+        <ImageButton
+            android:id="@+id/backButton"
+            android:layout_width="@dimen/touch_min"
+            android:layout_height="@dimen/touch_min"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/chat_cd_back"
+            android:src="@drawable/ic_arrow_back_24"
+            app:tint="?attr/colorOnSurface" />
+
+        <FrameLayout
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_marginStart="@dimen/space_1">
+
+            <TextView
+                android:id="@+id/headerAvatarInitials"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@drawable/bg_account_avatar_initials"
+                android:gravity="center"
+                android:textAppearance="?attr/textAppearanceLabelLarge"
+                android:textColor="?attr/colorOnPrimaryContainer"
+                tools:text="AT" />
+
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/headerAvatar"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop"
+                app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Full" />
+        </FrameLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/space_3"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/headerTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
+                android:textColor="?attr/colorOnSurface"
+                tools:text="Anh Tuấn" />
+
+            <TextView
+                android:id="@+id/headerSubtitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:visibility="gone"
+                tools:text="Chủ sân"
+                tools:visibility="visible" />
+        </LinearLayout>
+
+        <ImageButton
+            android:id="@+id/moreButton"
+            android:layout_width="@dimen/touch_min"
+            android:layout_height="@dimen/touch_min"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/chat_cd_more"
+            android:src="@drawable/ic_more_vert_24"
+            app:tint="?attr/colorOnSurface" />
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="?attr/colorOutlineVariant" />
+
+    <!-- Thẻ cơ sở đang hỏi (chỉ hiện ở chat riêng, wireframe buoc3 & buoc5) -->
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/venueBanner"
+        style="?attr/materialCardViewOutlinedStyle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/space_3"
+        android:layout_marginTop="@dimen/space_2"
+        android:visibility="gone"
+        app:cardCornerRadius="@dimen/radius_md"
+        tools:visibility="visible">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:padding="@dimen/space_2">
+
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/venuePhoto"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:background="@drawable/bg_venue_placeholder"
+                android:scaleType="centerCrop"
+                app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Small" />
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_3"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/venueLabel"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/chat_asking_about"
+                    android:textAppearance="?attr/textAppearanceLabelSmall"
+                    android:textColor="?attr/colorOnSurfaceVariant" />
+
+                <TextView
+                    android:id="@+id/venueName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:ellipsize="end"
+                    android:maxLines="1"
+                    android:textAppearance="?attr/textAppearanceTitleSmall"
+                    android:textColor="?attr/colorOnSurface"
+                    tools:text="Sân cầu lông Hòa Bình" />
+            </LinearLayout>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/viewVenueButton"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minHeight="@dimen/touch_min"
+                android:text="@string/chat_action_view_venue" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- Thông báo mất mạng -->
+    <TextView
+        android:id="@+id/offlineBanner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/colorErrorContainer"
+        android:gravity="center"
+        android:paddingHorizontal="@dimen/space_4"
+        android:paddingVertical="@dimen/space_2"
+        android:text="@string/chat_offline_banner"
+        android:textAppearance="?attr/textAppearanceBodySmall"
+        android:textColor="?attr/colorOnErrorContainer"
+        android:visibility="gone" />
+
+    <!-- Vùng danh sách tin nhắn + 4 trạng thái -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <LinearLayout
+            android:id="@+id/messagesContainer"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <com.google.android.material.progressindicator.CircularProgressIndicator
+                android:id="@+id/loadOlderProgress"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginVertical="@dimen/space_2"
+                android:contentDescription="@string/chat_cd_loading_older"
+                android:indeterminate="true"
+                android:visibility="gone"
+                app:indicatorSize="24dp" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/messageList"
+                android:layout_width="match_parent"
+                android:layout_height="0dp"
+                android:layout_weight="1"
+                android:clipToPadding="false"
+                android:paddingHorizontal="@dimen/space_3"
+                android:paddingVertical="@dimen/space_2"
+                tools:listitem="@layout/item_message_other" />
+        </LinearLayout>
+
+        <include
+            android:id="@+id/stateViews"
+            layout="@layout/include_state_views" />
+    </FrameLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="?attr/colorOutlineVariant" />
+
+    <!-- Thông báo chỉ đọc / nhóm bị khóa / bị chặn thay thế ô nhập -->
+    <TextView
+        android:id="@+id/disabledBanner"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/colorSurfaceContainer"
+        android:gravity="center"
+        android:minHeight="@dimen/touch_min"
+        android:paddingHorizontal="@dimen/space_4"
+        android:paddingVertical="@dimen/space_3"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:visibility="gone"
+        tools:text="@string/chat_read_only" />
+
+    <!-- Ô soạn tin nhắn -->
+    <LinearLayout
+        android:id="@+id/composerContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="?attr/colorSurfaceContainerLowest"
+        android:orientation="vertical"
+        android:paddingHorizontal="@dimen/space_2"
+        android:paddingVertical="@dimen/space_2">
+
+        <!-- Ảnh đang chọn (chưa bấm gửi, hỗ trợ kèm chú thích ở US4) -->
+        <FrameLayout
+            android:id="@+id/pendingImageContainer"
+            android:layout_width="88dp"
+            android:layout_height="88dp"
+            android:layout_marginStart="@dimen/space_2"
+            android:layout_marginBottom="@dimen/space_2"
+            android:visibility="gone">
+
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/pendingImagePreview"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:contentDescription="@string/chat_cd_message_photo"
+                android:scaleType="centerCrop"
+                app:shapeAppearanceOverlay="@style/ShapeAppearance.Material3.Corner.Small" />
+
+            <ImageButton
+                android:id="@+id/removePendingImageButton"
+                android:layout_width="@dimen/touch_min"
+                android:layout_height="@dimen/touch_min"
+                android:layout_gravity="top|end"
+                android:background="@drawable/bg_remove_photo_button"
+                android:contentDescription="@string/chat_cd_remove_image"
+                android:padding="12dp"
+                android:src="@drawable/ic_close_24"
+                app:tint="@android:color/white" />
+        </FrameLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="bottom"
+            android:orientation="horizontal">
+
+            <ImageButton
+                android:id="@+id/attachImageButton"
+                android:layout_width="@dimen/touch_min"
+                android:layout_height="@dimen/touch_min"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/chat_cd_attach_image"
+                android:src="@drawable/ic_photo_library_24"
+                app:tint="?attr/colorOnSurfaceVariant" />
+
+            <EditText
+                android:id="@+id/messageInput"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="@dimen/space_1"
+                android:layout_weight="1"
+                android:background="@drawable/bg_chat_composer_input"
+                android:hint="@string/chat_input_hint_owner"
+                android:importantForAutofill="no"
+                android:inputType="textMultiLine|textCapSentences"
+                android:maxLines="4"
+                android:minHeight="@dimen/touch_min"
+                android:paddingHorizontal="@dimen/space_4"
+                android:paddingVertical="@dimen/space_2"
+                android:textAppearance="?attr/textAppearanceBodyLarge"
+                android:textColor="?attr/colorOnSurface"
+                android:textColorHint="?attr/colorOnSurfaceVariant" />
+
+            <ImageButton
+                android:id="@+id/sendButton"
+                android:layout_width="@dimen/touch_min"
+                android:layout_height="@dimen/touch_min"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/chat_cd_send"
+                android:src="@drawable/ic_send_24"
+                app:tint="?attr/colorPrimary" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/charCounter"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_1"
+            android:gravity="end"
+            android:paddingEnd="@dimen/space_2"
+            android:textAppearance="?attr/textAppearanceLabelSmall"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:visibility="gone"
+            tools:text="1005/1000"
+            tools:visibility="visible" />
+    </LinearLayout>
+
+</LinearLayout>

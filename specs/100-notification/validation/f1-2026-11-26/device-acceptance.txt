@@ -1,0 +1,9 @@
+--------- beginning of main
+11-26 16:30:08.985 20938 20989 I NotificationAcceptance: F1 real SDK: producer, replay, group/chat routes, lost access and UID isolation
+11-26 16:38:00.766 23491 23551 I NotificationAcceptance: F1 receiver signed in
+11-26 16:38:00.858 23491 23551 I NotificationAcceptance: F1 receiver found both source notifications
+11-26 16:38:01.060 23491 23551 I NotificationAcceptance: F1 routes resolved before permission change
+11-26 16:48:20.582 28559 28661 I NotificationAcceptance: P2/B1 begin with isolated emulator accounts
+11-26 16:48:22.976 28559 28661 I NotificationAcceptance: P2 and B1 real SDK: favorite voucher, checkout replay, saved details and UID isolation
+11-26 16:50:57.224 30657 30735 I NotificationAcceptance: F1 receiver signed in
+11-26 16:50:57.454 30657 30735 I NotificationAcceptance: F1 receiver found both source notifications

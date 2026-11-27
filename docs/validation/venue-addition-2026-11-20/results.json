@@ -1,0 +1,59 @@
+{
+  "date": "2026-11-20",
+  "environment": "LOCAL Firebase Emulator and Supabase",
+  "device": "vivo V2247 Android 15",
+  "android": {
+    "status": "PASS",
+    "command": "lint testDebugUnitTest assembleDebug --stacktrace",
+    "tests": 1369,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 2
+  },
+  "edge": {
+    "status": "PASS",
+    "typeCheck": true,
+    "passed": 396,
+    "failed": 0
+  },
+  "rules": {
+    "status": "PASS",
+    "files": 27,
+    "passed": 265,
+    "skipped": 4
+  },
+  "physicalDevice": {
+    "status": "PASS",
+    "tests": 2
+  },
+  "screenshots": 19,
+  "backend": {
+    "backend": "LOCAL Firebase Emulator + Supabase",
+    "owners": [
+      {
+        "uid": "venue-test-owner",
+        "role": "OWNER",
+        "ownerStatus": "APPROVED",
+        "applicationId": "ba3dc31a-22f4-44f6-a7f9-19951d59fadd",
+        "purpose": "VENUE_ADDITION",
+        "status": "APPROVED",
+        "venueCount": 2,
+        "privateDocuments": 1
+      },
+      {
+        "uid": "venue-test-player",
+        "role": "OWNER",
+        "ownerStatus": "APPROVED",
+        "applicationId": "adc67566-dfc6-4e07-8870-eb00c64f01c6",
+        "purpose": "OWNER_ONBOARDING",
+        "status": "APPROVED",
+        "venueCount": 1,
+        "privateDocuments": 1
+      }
+    ],
+    "existingVenuePreserved": true,
+    "privateDocumentsNotPublic": true
+  },
+  "githubActionsRun": false,
+  "hostedDeployment": false
+}

@@ -21,6 +21,12 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import javax.inject.Inject
+import android.widget.TextView
+import android.widget.LinearLayout
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import java.time.Duration
+import java.time.Instant
+import java.time.ZoneId
 
 /**
  * Tab Hôm nay của `nav_owner` (spec 112). Avatar ở header dùng chung (spec 011 US8) mở trang Tài khoản, nơi chủ
@@ -43,13 +49,22 @@ class OwnerHomePlaceholderFragment : Fragment(R.layout.fragment_home_placeholder
         binding.header.tabTitle.setText(R.string.owner_home_title)
         MainTabHeader.bind(this, binding.header, avatarSource, accountEntryNavigator)
         binding.retry.setOnClickListener { viewModel.refresh() }
-        binding.pendingBannerCard.setOnClickListener { findNavController().navigate(R.id.ownerBookingsFragment) }
+        binding.header.tabTitle.setOnClickListener {
+            val venues = viewModel.state.value.venues
+            MaterialAlertDialogBuilder(requireContext()).setTitle(R.string.owner_venues_title)
+                .setItems(venues.map { it.name }.toTypedArray()) { _, index -> viewModel.selectVenue(venues[index].id) }.show()
+        }
+        binding.pendingBannerCard.setOnClickListener { findNavController().navigate(R.id.ownerBookingsFragment, Bundle().apply { putString("venueId", viewModel.state.value.selectedVenueId) }) }
         binding.actionScanQrCard.setOnClickListener { findNavController().navigate(R.id.ownerBookingCheckInFragment) }
-        binding.actionLockHoursCard.setOnClickListener { findNavController().navigate(R.id.ownerCalendarFragment) }
-        binding.calendarButton.setOnClickListener { findNavController().navigate(R.id.ownerCalendarFragment) }
-        binding.dropInButton.setOnClickListener { findNavController().navigate(R.id.ownerDropInFragment) }
-        binding.vouchersButton.setOnClickListener { findNavController().navigate(R.id.ownerVouchersFragment) }
-        binding.statisticsButton.setOnClickListener { findNavController().navigate(R.id.ownerStatisticsFragment) }
+        binding.actionLockHoursCard.setOnClickListener {
+            viewModel.state.value.selectedVenueId?.let { id ->
+                findNavController().navigate(R.id.ownerSlotBlockFragment, Bundle().apply { putString("venueId", id); putString("courtId","") })
+            }
+        }
+        binding.calendarButton.setOnClickListener { findNavController().navigate(R.id.ownerCalendarFragment, Bundle().apply { putString("venueId", viewModel.state.value.selectedVenueId) }) }
+        binding.dropInButton.setOnClickListener { findNavController().navigate(R.id.ownerDropInFragment, Bundle().apply { putString("venueId", viewModel.state.value.selectedVenueId) }) }
+        binding.vouchersButton.setOnClickListener { findNavController().navigate(R.id.ownerVouchersFragment, Bundle().apply { putString("venueId", viewModel.state.value.selectedVenueId) }) }
+        binding.statisticsButton.setOnClickListener { findNavController().navigate(R.id.ownerStatisticsFragment, Bundle().apply { putString("venueId", viewModel.state.value.selectedVenueId) }) }
         binding.venuesButton.setOnClickListener { findNavController().navigate(R.id.ownerVenueListFragment) }
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -60,8 +75,26 @@ class OwnerHomePlaceholderFragment : Fragment(R.layout.fragment_home_placeholder
                         binding.errorText.text = state.error
                         binding.retry.visibility = if (state.error != null) View.VISIBLE else View.GONE
                         binding.emptyText.visibility = if (!state.isLoading && state.error == null && state.isEmpty) View.VISIBLE else View.GONE
-                        binding.header.tabTitle.text = state.venues.firstOrNull()?.name
+                        binding.header.tabTitle.text = state.venues.firstOrNull { it.id == state.selectedVenueId }?.name
                             ?: getString(R.string.owner_home_title)
+                        binding.pendingBannerCard.isVisible = !state.isLoading && state.error == null && !state.isEmpty
+                        binding.pendingCountText.text = state.pendingCount.toString()
+                        binding.pendingDeadline.text = state.nextDeadline?.let {
+                            getString(R.string.owner_today_deadline, Duration.between(Instant.now(), it).toMinutes().coerceAtLeast(0))
+                        } ?: getString(R.string.owner_today_no_pending)
+                        binding.upcomingEvents.removeAllViews()
+                        if (!state.isLoading && state.error == null) {
+                            val formatter = DateTimeFormatter.ofPattern("HH:mm").withZone(ZoneId.of("Asia/Ho_Chi_Minh"))
+                            val rows = state.upcoming.map { "${formatter.format(it.startAt)} – ${formatter.format(it.endAt)}   ${it.title}\n${it.subtitle}" }
+                                .ifEmpty { listOf(getString(R.string.owner_today_no_upcoming)) }
+                            rows.forEach { text -> binding.upcomingEvents.addView(TextView(requireContext()).apply {
+                                this.text = text
+                                setTextAppearance(com.google.android.material.R.style.TextAppearance_Material3_BodyLarge)
+                                val padding = (16 * resources.displayMetrics.density).toInt()
+                                setPadding(padding, padding, padding, padding)
+                                layoutParams = LinearLayout.LayoutParams(-1, -2)
+                            }) }
+                        }
                     }
                 }
             }

@@ -194,3 +194,7 @@ Action `create` nhận thêm dạng:
 - Điều kiện tạo: xem [research R10](../research.md#r10-đánh-giá-buổi-chơi-fr-022-fr-023).
 - Mã lỗi mới: `409 NOT_CHECKED_IN` → "Bạn chỉ đánh giá được buổi đã tham gia".
 - Các action `update`, `delete`, `reply`, `discardPhotos` dùng nguyên logic của [contract 070](../../070-review-favorite/contracts/edge-function-review.md).
+
+## Approved notification continuation, 24/11/2026
+
+User explicitly approved D3, R1 and H1 in specs/100-notification/continuation-decisions-2026-11-24.md. D3 treats DROPIN_REGISTERED as the explicit confirmation exception to generic self-action exclusion: transaction identity sessionId/uid/requestId/type, deterministic inbox, no callback; join/leave waitlist/add-party/self-cancel stay silent. Stale reused request IDs with an existing event inbox are rejected before source writes. R1 adds reviews.notificationGeneration String UUID, server-only, renewed on recreate and retained on edit; legacy generation is assigned on first reply without backfill. REVIEW_NEW and first REVIEW_REPLIED enqueue in source transaction, actor excluded, data reviewId/venueId. H1 applies atomic message/inbox/job only to DIRECT chat, identity chatId/messageId/recipient/type; GROUP fanout remains unapproved. Use existing D1 job/receipts, C1 suppression and P1 payload. No outbox, group-size policy, deployment or live migration is approved. Full scope/limits are recorded in the decision package.

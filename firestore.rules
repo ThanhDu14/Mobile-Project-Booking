@@ -49,7 +49,10 @@ service cloud.firestore {
     // value so a stale or forged role claim cannot grant owner mutations.
     function isApprovedOwner() {
       return isOwner()
-          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.ownerStatus == 'APPROVED';
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', null) == 'OWNER'
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('ownerStatus', null) == 'APPROVED'
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('accountStatus', null) == 'ACTIVE'
+          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('deletionRequestedAt', null) == null;
     }
 
     function ownsVenue(venueId) {
@@ -80,7 +83,17 @@ service cloud.firestore {
 
     // ---------- users (A, spec 010; contracts/security-rules.md) ----------
     // Tạo bởi on-signup, xóa bởi delete-account (service account, không qua Rules).
-    // Không áp dụng xuống subcollection: favorites, notifications, aiUsage có match riêng.
+    // Không áp dụng xuống subcollection. Subcollection có match riêng: favorites, searchHistory.
+    // aiUsage chỉ do Edge Function ghi/đọc (service account); client không có match
+    // nên mặc định bị từ chối. App lấy lượt AI qua function ai-search-parse.
+    match /users/{uid}/notifications/{notificationId} {
+      allow read: if isSelf(uid);
+      allow update: if isSelf(uid)
+          && onlyChanges(['isRead'])
+          && request.resource.data.isRead is bool;
+      allow create, delete: if false;
+    }
+
     match /users/{uid} {
       // Trường người dùng tự sửa được. Spec 011 bổ sung kiểm tra chi tiết từng trường.
       function selfEditableFields() {
@@ -93,6 +106,16 @@ service cloud.firestore {
             || (request.resource.data.displayName is string
                 && request.resource.data.displayName.size() >= 2
                 && request.resource.data.displayName.size() <= 50);
+      }
+
+      function validFcmTokens() {
+        let old = resource.data.get('fcmTokens', []);
+        let next = request.resource.data.get('fcmTokens', []);
+        let added = next.removeAll(old);
+        let removed = old.toSet().difference(next.toSet());
+        return !changed('fcmTokens') || (next is list && old is list
+            && added.size() <= 1 && removed.size() <= 1
+            && (added.size() == 0 || (added[0] is string && added[0].size() > 0 && added[0].size() <= 4096)));
       }
 
       // [011] contracts/security-rules.md §1
@@ -136,7 +159,7 @@ service cloud.firestore {
       allow update: if isSelf(uid) && isInitialized()
                     && onlyChanges(selfEditableFields())
                     && request.resource.data.updatedAt == request.time
-                    && validDisplayName() && validLevel() && validDistricts() && validAvatarPath();
+                    && validDisplayName() && validLevel() && validDistricts() && validAvatarPath() && validFcmTokens();
     }
 
     // ---------- districts (A, spec 011; contracts/security-rules.md §2) ----------
@@ -179,7 +202,9 @@ service cloud.firestore {
     // ---------- ownerApplications (D, spec 110/120) ----------
     // Submit/re-submit and all server-controlled status changes go through
     // owner-applications Edge Function + Firestore transaction. Clients may
-    // only read their own application; Admin review reads remain privileged.
+    // only read their own application (onboarding or additional venue).
+    // Application status is independent from account ownerStatus for additions.
+    // Admin review reads remain privileged; purpose/uid/status are server-only.
     match /ownerApplications/{applicationId} {
       allow get: if isAdmin() || (isSignedIn() && resource.data.uid == request.auth.uid);
       allow list: if isAdmin() || (isSignedIn() && resource.data.uid == request.auth.uid);
@@ -216,6 +241,58 @@ service cloud.firestore {
           && p.accountHolderName is string && p.accountHolderName.size() > 0;
     }
 
+    // ---------- users/{uid}/searchHistory (A, spec 020 US4; contracts/security-rules-and-indexes.md §1) ----------
+    // ID = 20 ký tự hex đầu SHA-256 của bộ điều kiện, nên tìm lại cùng tổ hợp ghi đè đúng document.
+    // Không có vị trí (FR-014). App giữ tối đa 10 mục; xóa cùng tài khoản do delete-account (service account).
+    match /users/{uid}/searchHistory/{historyId} {
+      function historyFields() {
+        return ['keyword', 'districtId', 'priceMin', 'priceMax', 'date', 'startTime', 'endTime',
+                'amenityIds', 'sort', 'searchedAt', 'createdAt', 'updatedAt'];
+      }
+
+      function optString(d, f, maxLen) {
+        return !(f in d) || d[f] == null || (d[f] is string && d[f].size() <= maxLen);
+      }
+
+      function optPrice(d, f) {
+        // Bội số 1.000 (không phải 10.000 như contract ban đầu): AI điền được "dưới 55k" = 55.000.
+        return !(f in d) || d[f] == null || (d[f] is int && d[f] >= 0 && d[f] % 1000 == 0);
+      }
+
+      function validWindow(d) {
+        let none = (!('date' in d) || d.date == null)
+                && (!('startTime' in d) || d.startTime == null)
+                && (!('endTime' in d) || d.endTime == null);
+        let all = d.get('date', null) is string && d.date.matches('^[0-9]{8}$')
+               && d.get('startTime', null) is string && d.startTime.matches('^[0-9]{2}(00|30)$')
+               && d.get('endTime', null) is string && d.endTime.matches('^[0-9]{2}(00|30)$')
+               && d.endTime > d.startTime;
+        return none || all;
+      }
+
+      function validHistory(d) {
+        return d.keys().hasOnly(historyFields())
+            && d.keyword is string && d.keyword.size() <= 100
+            && optString(d, 'districtId', 40)
+            && optPrice(d, 'priceMin') && optPrice(d, 'priceMax')
+            && (d.get('priceMin', null) == null || d.get('priceMax', null) == null
+                || d.priceMin <= d.priceMax)
+            && validWindow(d)
+            && d.amenityIds is list && d.amenityIds.size() <= 20
+            && d.sort in ['RATING', 'PRICE_ASC', 'NEAREST']
+            && d.searchedAt == request.time;
+      }
+
+      allow read, delete: if isSelf(uid) && isInitialized();
+      allow create: if isSelf(uid) && isInitialized()
+                    && validHistory(request.resource.data)
+                    && hasServerTimestamps();
+      allow update: if isSelf(uid) && isInitialized()
+                    && validHistory(request.resource.data)
+                    && request.resource.data.createdAt == resource.data.createdAt
+                    && request.resource.data.updatedAt == request.time;
+    }
+
     // ---------- venues, courts, priceRules (B, spec 040 / D, spec 111) ----------
     // Người chơi chỉ thấy dữ liệu công khai của venue ACTIVE. Owner đã duyệt
     // vẫn đọc được dữ liệu quản lý của venue mình.
@@ -224,46 +301,36 @@ service cloud.firestore {
       // của màn "Cơ sở của tôi" chứng minh được quyền; ownsVenue(venueId) chỉ dùng được cho get.
       allow read: if isAdmin() || (resource.data.status == 'ACTIVE')
                   || (isApprovedOwner() && resource.data.ownerId == request.auth.uid);
-      allow create: if isAdmin(); // venue đầu tiên do Feature 120 tạo; owner create chờ server boundary T003.
-      allow update: if isAdmin()
-                    || (ownsVenue(venueId)
+      allow create: if false; // Initial/additional venues are created only by trusted server review.
+      allow update: if !request.resource.data.diff(resource.data).affectedKeys().hasAny(['courtCount', 'minPricePerHour'])
+                    && (isAdmin() || (ownsVenue(venueId)
                         && resource.data.status != 'LOCKED'
                         && request.resource.data.ownerId == resource.data.ownerId
                         && request.resource.data.status in ['ACTIVE', 'HIDDEN']
                         && onlyChanges(['name', 'nameKeywords', 'address', 'districtId', 'location',
                                         'geohash', 'openTime', 'closeTime', 'phone', 'amenityIds',
-                                        'photoPaths', 'courtCount', 'acceptsRecurring', 'status',
-                                        'payoutAccount'])
-                        && validPayoutAccountChange());
+                                        'photoPaths', 'acceptsRecurring', 'status', 'payoutAccount'])
+                        && validPayoutAccountChange()));
       allow delete: if isAdmin();
 
       match /courts/{courtId} {
         allow read: if isAdmin() || (get(/databases/$(database)/documents/venues/$(venueId)).data.status == 'ACTIVE') || ownsVenue(venueId);
-        allow create: if isAdmin()
-                      || (ownsVenue(venueId)
-                          && request.resource.data.keys().hasOnly(['name', 'surfaceType', 'isActive', 'sortOrder']));
-        allow update: if isAdmin()
-                      || (ownsVenue(venueId)
-                          && onlyChanges(['name', 'surfaceType', 'isActive', 'sortOrder']));
-        allow delete: if isAdmin();
+        // Server validates court fields/current authority and updates active courtCount atomically.
+        allow write: if false;
       }
 
       match /priceRules/{ruleId} {
         allow read: if isAdmin() || (get(/databases/$(database)/documents/venues/$(venueId)).data.status == 'ACTIVE') || ownsVenue(venueId);
-        allow create: if isAdmin()
-                      || (ownsVenue(venueId)
-                          && request.resource.data.keys().hasOnly(['daysOfWeek', 'startTime', 'endTime', 'pricePerHour', 'label']));
-        allow update: if isAdmin()
-                      || (ownsVenue(venueId)
-                          && onlyChanges(['daysOfWeek', 'startTime', 'endTime', 'pricePerHour', 'label']));
-        allow delete: if isAdmin() || ownsVenue(venueId);
+        // Cross-rule overlap and the protected minimum are validated atomically by the server.
+        allow write: if false;
       }
 
-      // Voucher cơ sở (spec 050 R7): người đã đăng nhập đọc để xem trước giá ở màn thanh toán, giống
-      // systemVouchers. Tạo/sửa qua Edge Function owner-create-voucher; usedCount do server.
-      // userUsage/redemptions bên dưới không có match nên client không đọc/ghi được.
+      // Venue voucher mutations and usage counters are exclusively server-owned.
+      // Spec 050 R7: màn thanh toán đọc voucher của cơ sở ACTIVE để xem trước giá; tạo/sửa qua Edge Function
+      // owner-create-voucher. userUsage/redemptions bên dưới không có match nên client không đọc/ghi được.
       match /vouchers/{code} {
-        allow read: if isSignedIn();
+        allow read: if isSignedIn() && (isAdmin() || ownsVenue(venueId)
+            || get(/databases/$(database)/documents/venues/$(venueId)).data.status == 'ACTIVE');
         allow write: if false;
       }
     }
@@ -294,20 +361,18 @@ service cloud.firestore {
                         && (resource.data.status != 'BOOKED' && resource.data.status != 'BLOCKED')
                         && (resource.data.status != 'HELD' || resource.data.holdExpiresAt < request.time || resource.data.holdBy == request.auth.uid)
                       )
-                      // Hủy giữ chỗ hoặc nhả slot về AVAILABLE bởi chính người đang giữ
+                      // Hủy giữ chỗ: chỉ nhả slot ĐANG HELD do chính mình giữ. Slot đã BOOKED vẫn còn
+                      // holdBy của người đặt, nên thiếu điều kiện status sẽ cho phép trả sân đã đặt về trống
+                      // (đặt trùng). Hủy đơn đã đặt phải đi qua Edge Function.
                       || (
                         request.resource.data.status == 'AVAILABLE'
-                        && resource.data.holdBy == request.auth.uid
-                      )
-                      // Xác nhận đặt sân: chuyển slot đang HELD của chính mình sang BOOKED
-                      || (
-                        request.resource.data.status == 'BOOKED'
                         && resource.data.status == 'HELD'
                         && resource.data.holdBy == request.auth.uid
                       )
                     );
 
-      allow delete: if isAdmin() || (isSignedIn() && resource.data.holdBy == request.auth.uid);
+      allow delete: if isAdmin()
+                    || (isSignedIn() && resource.data.status == 'HELD' && resource.data.holdBy == request.auth.uid);
     }
 
     // ---------- recurringGroups + bookings (B, spec 041) ----------
@@ -335,7 +400,8 @@ service cloud.firestore {
       allow read: if isSignedIn() && (resource == null || resource.data.userId == request.auth.uid
           || isAdmin() || ownsVenue(resource.data.venueId));
       // Spec 050 (T017): thu hồi "lát cắt test 050". App chỉ tạo đơn HOLD khi giữ chỗ (041); chốt đơn sang
-      // PENDING, tiền, voucher chạy ở Edge Function booking-payment-confirm / booking-payment-transfer / sepay-webhook.
+      // PENDING, tiền, voucher và thông báo BOOKING_NEW chạy ở Edge Function booking-payment-confirm /
+      // booking-payment-transfer / sepay-webhook.
       allow create: if isPlayer()
           && request.resource.data.userId == request.auth.uid
           && request.resource.data.status == 'HOLD';
@@ -349,6 +415,25 @@ service cloud.firestore {
     }
 
     // ---------- reports (D, spec 120) ----------
+    // Community mutations go through server functions; a group owner cannot
+    // delete or unlock a LOCKED group directly, including by changing status.
+    match /groups/{groupId} {
+      allow read: if isAdmin();
+      allow write: if false;
+
+      // Moderation opens one reported document. Membership permissions belong
+      // to the community feature; this does not grant collection access.
+      match /posts/{postId} {
+        allow get: if isAdmin();
+        allow list, write: if false;
+      }
+    }
+
+    match /chats/{chatId}/messages/{messageId} {
+      allow get: if isAdmin();
+      allow list, write: if false;
+    }
+
     match /reports/{reportId} {
       allow read: if isAdmin();
       allow write: if false;
@@ -421,6 +506,134 @@ service cloud.firestore {
     match /{path=**}/registrations/{uid} {
       allow list: if (isSignedIn() && resource.data.userId == request.auth.uid)
           || isAdmin();
+    }
+
+    // ---------- groups + members/joinRequests/removals/posts/attendees (C, spec 090) ----------
+    // specs/090-community-group/contracts/security-rules.md. Rules chỉ MỞ QUYỀN ĐỌC;
+    // mọi ghi đi qua Edge Function group-manage/group-post (service account, bỏ qua Rules).
+    match /groups/{groupId} {
+      // Hàm dùng groupId của match này. Người chưa đăng nhập luôn là "không phải thành viên".
+      function isMember() {
+        return isSignedIn()
+            && exists(/databases/$(database)/documents/groups/$(groupId)/members/$(request.auth.uid));
+      }
+
+      function myRole() {
+        return get(/databases/$(database)/documents/groups/$(groupId)/members/$(request.auth.uid)).data.role;
+      }
+
+      // Chủ nhóm hoặc quản trị viên (&& ngắn mạch nên không get() khi chưa là thành viên).
+      function isMod() {
+        return isMember() && myRole() in ['OWNER', 'ADMIN'];
+      }
+
+      // Trang giới thiệu: ai cũng đọc nhóm ACTIVE/LOCKED, kể cả khách chưa đăng nhập.
+      // Nhóm DELETED (hoặc doc không tồn tại) thì điều kiện lỗi/sai → bị chặn.
+      allow get, list: if resource.data.status in ['ACTIVE', 'LOCKED'];
+      allow write: if false;
+
+      match /members/{uid} {
+        allow read: if isMember() || isAdmin();
+        allow write: if false;
+      }
+
+      match /joinRequests/{uid} {
+        allow read: if isSelf(uid) || isMod() || isAdmin();
+        allow write: if false;
+      }
+
+      match /removals/{uid} {
+        allow read: if isMod() || isAdmin();
+        allow write: if false;
+      }
+
+      // list của thành viên thường chỉ qua khi query có where status == 'VISIBLE'
+      // hoặc where authorId == uid mình (Rules không phải bộ lọc; research R6).
+      match /posts/{postId} {
+        // Admin chỉ get từng bài (xem bài bị báo cáo, spec 120), không list cả bảng tin.
+        allow get: if isAdmin();
+        allow read: if isMod()
+            || (isMember() && (resource.data.status == 'VISIBLE'
+                               || resource.data.authorId == request.auth.uid));
+        allow write: if false;
+
+        match /attendees/{uid} {
+          allow read: if isMember() || isAdmin();
+          allow write: if false;
+        }
+      }
+    }
+
+    // ---------- chats + participants/messages (C, spec 091) ----------
+    // specs/091-chat/contracts/security-rules.md. Tin nhắn ghi qua Edge Function chat-send/chat-action;
+    // client chỉ ghi chats.unreadCounts.{mình} = 0 và participants/{mình} (lastReadAt, muted, blockedOther, viewingUntil).
+    // Feature 100 D1: service-account only; Admin clients have no delivery/receipt access.
+    match /notificationDeliveries/{path=**} {
+      allow read, write: if false;
+    }
+    match /notificationFanouts/{path=**} {
+      allow read, write: if false;
+    }
+    match /groups/{groupId}/notificationCommands/{requestId} {
+      allow read, write: if false;
+    }
+
+    match /chats/{chatId} {
+      function inChat() {
+        return isSignedIn() && request.auth.uid in resource.data.memberIds;
+      }
+      function inChatById() {
+        return isSignedIn()
+            && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.memberIds;
+      }
+
+      allow get, list: if inChat() || isAdmin();
+      // Chỉ đặt số chưa đọc của chính mình về 0.
+      allow update: if inChat()
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['unreadCounts'])
+          && request.resource.data.unreadCounts.diff(resource.data.unreadCounts).affectedKeys().hasOnly([request.auth.uid])
+          && request.resource.data.unreadCounts[request.auth.uid] == 0;
+      allow create, delete: if false;
+
+      match /participants/{uid} {
+        match /presence/{installationId} {
+          allow read: if isSelf(uid) && inChatById();
+          allow create, update: if isSelf(uid) && inChatById()
+              && request.resource.data.keys().hasOnly(['viewingUntil'])
+              && request.resource.data.viewingUntil is timestamp
+              && request.resource.data.viewingUntil <= request.time + duration.value(10, 'm');
+          allow delete: if isSelf(uid) && inChatById();
+        }
+        allow get: if isSelf(uid) || isAdmin();
+        allow update: if isSelf(uid) && inChatById()
+            && request.resource.data.diff(resource.data).affectedKeys()
+                .hasOnly(['lastReadAt', 'muted', 'blockedOther', 'viewingUntil'])
+            && (!('lastReadAt' in request.resource.data.diff(resource.data).affectedKeys())
+                || request.resource.data.lastReadAt == request.time)
+            && (!('viewingUntil' in request.resource.data.diff(resource.data).affectedKeys())
+                || request.resource.data.viewingUntil == null
+                || request.resource.data.viewingUntil <= request.time + duration.value(10, 'm'));
+        allow create, delete: if false;
+      }
+
+      match /messages/{messageId} {
+        // Admin chỉ get từng tin bị báo cáo (spec 120), không list cả cuộc trò chuyện.
+        allow get: if isAdmin();
+        allow read: if inChatById();
+        allow write: if false;
+      }
+    }
+
+    // Ẩn danh khi xóa tài khoản / kiểm tra tắt thông báo: collection group participants chỉ list theo userId mình.
+    match /{path=**}/participants/{uid} {
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    // "Nhóm của tôi": truy vấn collection group members theo userId.
+    // Match này cũng khớp groups/{gid}/members/{uid} nhưng chỉ mở list khi
+    // userId == uid mình, không mở thêm quyền ngoài điều kiện đó.
+    match /{path=**}/members/{uid} {
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
     }
   }
 }

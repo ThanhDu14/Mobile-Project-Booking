@@ -48,6 +48,10 @@ class BookingConfirmFragment : Fragment() {
 
     private var countDownTimer: CountDownTimer? = null
     private var holdArgs: HoldToPaymentArgs? = null
+
+    // Đang ghi đơn: chặn nhả chỗ (Back, hủy, hết giờ) để lệnh nhả không chạy sau khi slot đã BOOKED
+    private var isConfirming = false
+    private var timeoutWhileConfirming = false
     private val currencyFormatter = DecimalFormat("#,###", java.text.DecimalFormatSymbols(Locale.GERMANY))
 
     override fun onCreateView(
@@ -92,7 +96,7 @@ class BookingConfirmFragment : Fragment() {
         // 1. Thẻ cơ sở
         binding.tvConfirmVenueName.text = args.venueName.ifEmpty { "Cơ sở ${args.venueId}" }
         binding.tvConfirmVenueAddress.text = args.venueAddress.ifEmpty {
-            if (args.districtName.isNotEmpty()) "Quận ${args.districtName}, TP. Hồ Chí Minh" else "TP. Hồ Chí Minh"
+            if (args.districtName.isNotEmpty()) "${args.districtName}, TP. Hồ Chí Minh" else "TP. Hồ Chí Minh"
         }
 
         // Tải ảnh cơ sở thật từ photoUrl (nếu có và bắt đầu bằng http)
@@ -289,6 +293,10 @@ class BookingConfirmFragment : Fragment() {
     private fun onCountdownTimeout() {
         countDownTimer?.cancel()
         if (!isAdded) return
+        if (isConfirming) {
+            timeoutWhileConfirming = true
+            return
+        }
 
         MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.booking_confirm_timeout_title)
@@ -303,6 +311,10 @@ class BookingConfirmFragment : Fragment() {
     }
 
     private fun handleCancelAndRelease() {
+        if (isConfirming) {
+            Toast.makeText(requireContext(), R.string.booking_confirm_in_progress, Toast.LENGTH_SHORT).show()
+            return
+        }
         countDownTimer?.cancel()
         val args = holdArgs
         val userId = sessionManager.currentUid() ?: ""
@@ -353,4 +365,9 @@ class BookingConfirmFragment : Fragment() {
         countDownTimer = null
         _binding = null
     }
+
+    private companion object {
+        const val DISABLED_PAYMENT_ALPHA = 0.45f
+    }
+
 }

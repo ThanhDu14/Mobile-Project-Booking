@@ -5,6 +5,7 @@
     <!-- Chụp ảnh đại diện (spec 011 FR-003, FR-024): xin lúc bấm "Chụp ảnh". Chọn từ thư viện dùng
          Photo Picker nên không khai báo READ_MEDIA_IMAGES. -->
     <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <uses-feature
         android:name="android.hardware.camera"
@@ -17,6 +18,16 @@
          chỉ dùng khi quyền đã được cấp từ trước (research R7). -->
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+
+    <!-- Nhập bằng giọng nói ở ô "Tìm bằng AI" (spec 022 US4, research R15): xin quyền khi bấm micro.
+         <queries> để SpeechRecognizer.isRecognitionAvailable thấy dịch vụ nhận dạng từ Android 11. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+
+    <queries>
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
+        </intent>
+    </queries>
 
     <application
         android:name=".SmashNowApp"
@@ -31,6 +42,9 @@
         <meta-data
             android:name="com.google.mlkit.vision.DEPENDENCIES"
             android:value="barcode" />
+        <service android:name=".feature.notification.data.NotificationMessagingService" android:exported="false">
+            <intent-filter><action android:name="com.google.firebase.MESSAGING_EVENT" /></intent-filter>
+        </service>
         <activity
             android:name=".MainActivity"
             android:exported="true"

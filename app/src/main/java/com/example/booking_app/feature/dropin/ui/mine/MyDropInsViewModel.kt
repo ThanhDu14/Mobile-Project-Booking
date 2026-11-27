@@ -9,6 +9,7 @@ import com.example.booking_app.feature.dropin.domain.model.MyDropInItem
 import com.example.booking_app.feature.dropin.domain.model.Page
 import com.example.booking_app.feature.dropin.domain.model.RegistrationOutcome
 import com.example.booking_app.feature.dropin.domain.model.RegistrationStatus
+import com.example.booking_app.feature.dropin.domain.model.WaitlistPosition
 import com.example.booking_app.feature.dropin.domain.usecase.LoadMyDropIns
 import com.example.booking_app.feature.review.domain.ReviewEligibility
 import com.example.booking_app.feature.review.domain.ReviewRepository
@@ -42,6 +43,10 @@ data class MyDropInRow(
     val showSessionChanged: Boolean,
     val outcome: RegistrationOutcome?,
     val reviewEligibility: ReviewEligibility = ReviewEligibility.NOT_ELIGIBLE,
+    /** Spec 081: vị trí trong hàng chờ của lượt `WAITLISTED` (tính từ `session.waitlistTickets`); `null` nếu không đang chờ hoặc chưa tính được. */
+    val waitlistPosition: WaitlistPosition? = null,
+    /** Spec 081: lượt được nhận từ hàng chờ (`promotedAt != null`), hiện nhãn "Được nhận từ hàng chờ". */
+    val fromWaitlist: Boolean = false,
 )
 
 /** Trạng thái màn hình (contracts/ui-screens.md mục 2). */
@@ -63,6 +68,9 @@ sealed interface MyDropInsUiState {
 
 sealed interface MyDropInsEvent {
     data class OpenTicket(val sessionId: String) : MyDropInsEvent
+
+    /** Spec 081: bấm lượt đang chờ mở màn hình lượt chờ (FR-015). */
+    data class OpenWaitlist(val sessionId: String) : MyDropInsEvent
 
     data object FindSessions : MyDropInsEvent
 
@@ -123,7 +131,10 @@ class MyDropInsViewModel @Inject constructor(
     }
 
     fun onItemClicked(sessionId: String) {
-        _events.trySend(MyDropInsEvent.OpenTicket(sessionId))
+        // Lượt đang chờ chưa có vé: mở màn hình lượt chờ (spec 081 FR-015).
+        val waiting = loaded.upcoming.orEmpty()
+            .any { it.sessionId == sessionId && it.registration.status == RegistrationStatus.WAITLISTED }
+        _events.trySend(if (waiting) MyDropInsEvent.OpenWaitlist(sessionId) else MyDropInsEvent.OpenTicket(sessionId))
     }
 
     fun onReviewClicked(sessionId: String) {
@@ -171,7 +182,13 @@ class MyDropInsViewModel @Inject constructor(
         upcomingJob = viewModelScope.launch {
             loadMyDropIns.upcoming()
                 .catch { error -> update { it.copy(error = error) } }
-                .collect { items -> update { it.copy(upcoming = items) } }
+                .collect { items ->
+                    val previous = loaded.upcoming
+                    update { it.copy(upcoming = items) }
+                    // Lượt rời "Sắp tới" (hết/đóng hàng chờ, hủy) sang "Đã qua": tải lại trang đầu để tab này cập nhật.
+                    val ids = items.map { it.sessionId }.toSet()
+                    if (previous != null && previous.any { it.sessionId !in ids }) refreshPast()
+                }
         }
         pastJob = viewModelScope.launch {
             safePast(null)
@@ -183,6 +200,17 @@ class MyDropInsViewModel @Inject constructor(
                     if (error is CancellationException) throw error
                     update { it.copy(error = error) }
                 }
+        }
+    }
+
+    private fun refreshPast() {
+        if (loaded.past == null || loaded.loadingMorePast) return
+        pastJob?.cancel()
+        pastJob = viewModelScope.launch {
+            safePast(null).onSuccess { page ->
+                update { it.copy(past = page.items, pastCursor = page.next) }
+                loadReviews()
+            }
         }
     }
 
@@ -248,14 +276,21 @@ class MyDropInsViewModel @Inject constructor(
     }
 
     private fun MyDropInItem.toRow(): MyDropInRow {
-        val stillUpcoming = outcome == RegistrationOutcome.UPCOMING
+        val stillUpcoming = outcome == RegistrationOutcome.UPCOMING || outcome == RegistrationOutcome.WAITING
         return MyDropInRow(
             item = this,
             showSessionChanged = registration.sessionChanged && stillUpcoming,
             // Ở "Sắp tới" chỉ hiện nhãn khi có chuyện (ví dụ buổi vừa bị hủy); ở "Đã qua" luôn có nhãn kết quả.
             outcome = if (stillUpcoming) null else outcome,
             reviewEligibility = reviewEligibility(),
+            waitlistPosition = waitlistPosition(),
+            fromWaitlist = registration.isFromWaitlist,
         )
+    }
+
+    private fun MyDropInItem.waitlistPosition(): WaitlistPosition? {
+        if (registration.status != RegistrationStatus.WAITLISTED) return null
+        return session?.let { WaitlistPosition.of(it, registration) }
     }
 
     private fun MyDropInItem.reviewEligibility(): ReviewEligibility {

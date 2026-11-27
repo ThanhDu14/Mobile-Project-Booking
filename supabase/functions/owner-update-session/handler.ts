@@ -1,3 +1,4 @@
+import { requireOwnerAuthority } from "../_shared/owner-access.ts";
 import { errorResponse, HttpError, verifyIdToken } from "../_shared/auth.ts";
 import * as defaultFirestore from "../_shared/firestore.ts";
 import {
@@ -7,10 +8,14 @@ import {
   updateWrite,
 } from "../_shared/firestore.ts";
 import { ACTIVE_STATUSES, deriveSessionFields } from "../_shared/dropin.ts";
-import { parseOwnerSessionInput } from "../_shared/owner-dropin.ts";
+import { promoteFromWaitlist } from "../_shared/waitlist.ts";
+import type { WaitlistNotification } from "../_shared/dropin-notify.ts";
+import { parseOwnerSessionInput, validateOwnerSessionSchedule } from "../_shared/owner-dropin.ts";
+import { prepareDropInChanged, readDropInCommand, requireDropInCommandId } from "../_shared/dropin-change-notification.ts";
 
 export interface OwnerUpdateSessionDeps {
   firestore: Pick<typeof defaultFirestore, "runTransaction">;
+  notify?: (notification: WaitlistNotification) => Promise<void>;
 }
 
 export async function handleOwnerUpdateSession(
@@ -27,21 +32,18 @@ export async function handleOwnerUpdateSession(
     const sessionId = typeof body.sessionId === "string"
       ? body.sessionId.trim()
       : "";
-    if (!venueId) throw new HttpError(400, "INVALID_VENUE_ID", "Thiếu venueId");
-    if (!sessionId) {
+    if (!venueId || venueId.includes("/")) throw new HttpError(400, "INVALID_VENUE_ID", "Thiếu venueId");
+    if (!sessionId || sessionId.includes("/")) {
       throw new HttpError(400, "INVALID_SESSION_ID", "Thiếu sessionId");
     }
     const input = parseOwnerSessionInput(body);
-    await firestore.runTransaction(async (tx) => {
-      if (token.appRole !== "ADMIN") {
-        const user = await tx.get(`users/${token.uid}`);
-        if (user?.ownerStatus !== "APPROVED") {
-          throw new HttpError(403, "FORBIDDEN", "Chủ sân chưa được phê duyệt");
-        }
-      }
+    const result = await firestore.runTransaction(async (transaction) => {
+      const writes: defaultFirestore.Write[] = [];
+      const tx = { ...transaction, write: (write: defaultFirestore.Write) => { writes.push(write); } };
+      const admin = await requireOwnerAuthority(tx, token);
       const venue = await tx.get(`venues/${venueId}`);
       if (
-        !venue || (venue.ownerId !== token.uid && token.appRole !== "ADMIN")
+        !venue || (venue.ownerId !== token.uid && !admin)
       ) {
         throw new HttpError(
           404,
@@ -65,6 +67,12 @@ export async function handleOwnerUpdateSession(
           "Không tìm thấy buổi chơi",
         );
       }
+      const requestId = requireDropInCommandId(body.requestId);
+      const now = new Date();
+      const command = await readDropInCommand(tx, sessionId, requestId, token.uid, ["UPDATE", venueId, input], now);
+      if (command.previous) return command.previous;
+      const priceRules = await tx.query("priceRules", [], { parent: `venues/${venueId}` });
+      validateOwnerSessionSchedule(input, venue, priceRules.map(rule => rule.data));
       if (!["OPEN", "FULL"].includes(String(session.status))) {
         throw new HttpError(
           409,
@@ -122,11 +130,11 @@ export async function handleOwnerUpdateSession(
         }
         slots.set(slotId, slot);
       }
-      const changed = !(session.startAt instanceof Date) ||
+      const timeChanged = !(session.startAt instanceof Date) ||
         session.startAt.getTime() !== input.startAt.getTime() ||
         !(session.endAt instanceof Date) ||
-        session.endAt.getTime() !== input.endAt.getTime() ||
-        session.pricePerPerson !== input.pricePerPerson ||
+        session.endAt.getTime() !== input.endAt.getTime();
+      const changed = timeChanged || session.pricePerPerson !== input.pricePerPerson ||
         JSON.stringify(
             [...(Array.isArray(session.courtIds) ? session.courtIds : [])]
               .sort(),
@@ -134,7 +142,11 @@ export async function handleOwnerUpdateSession(
       const registrations = changed
         ? await tx.query("registrations", [], { parent: path })
         : [];
-      const now = new Date();
+      const updatedSession = { ...session, ...input, id: sessionId, registeredCount,
+        status: registeredCount >= input.capacity ? "FULL" : "OPEN" };
+      const promotion = input.capacity > Number(session.capacity)
+        ? await promoteFromWaitlist(tx, updatedSession, now)
+        : { promoted: [], sessionPatch: {} };
       tx.write(updateWrite(path, {
         ...input,
         ownerId: venue.ownerId,
@@ -144,7 +156,9 @@ export async function handleOwnerUpdateSession(
           venue,
           districtName: typeof district?.name === "string" ? district.name : "",
         }),
-        status: registeredCount >= input.capacity ? "FULL" : "OPEN",
+        registeredCount: updatedSession.registeredCount,
+        status: updatedSession.status,
+        ...promotion.sessionPatch,
         updatedAt: now,
       }));
       for (const reg of registrations) {
@@ -190,8 +204,15 @@ export async function handleOwnerUpdateSession(
           sessionId,
         }));
       }
+      const response = { success: true, sessionId };
+      writes.push(command.journal(response));
+      if (timeChanged) writes.push(...await prepareDropInChanged(tx, writes, registrations,
+        { sessionId, requestId, actorUid: token.uid, cancelled: false, now }));
+      for (const write of writes) transaction.write(write);
+      return response;
     });
-    return Response.json({ success: true, sessionId });
+    // Waitlist helper enqueued inbox + delivery atomically. No duplicate post-commit callback (100 D2-W1).
+    return Response.json(result);
   } catch (err) {
     if (err instanceof HttpError) {
       return errorResponse(err.status, err.code, err.message);

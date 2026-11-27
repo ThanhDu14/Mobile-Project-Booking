@@ -1,0 +1,38 @@
+INSTRUMENTATION_STATUS: class=com.example.booking_app.feature.notification.NotificationPermissionUiTest
+INSTRUMENTATION_STATUS: current=1
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=1
+INSTRUMENTATION_STATUS: stream=
+com.example.booking_app.feature.notification.NotificationPermissionUiTest:
+INSTRUMENTATION_STATUS: test=deniedPermissionKeepsPreferencesAndInboxAndRefreshesAfterSystemSettingsGrant
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=com.example.booking_app.feature.notification.NotificationPermissionUiTest
+INSTRUMENTATION_STATUS: current=1
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=1
+INSTRUMENTATION_STATUS: stack=java.lang.AssertionError: OS settings screen: null=null, null=null, android:id/content=null, com.vivo.systemuiplugin:id/content_parent=null, com.vivo.systemuiplugin:id/toolbar=null, com.vivo.systemuiplugin:id/originui_vtoolbar_vtoolbarinternal_container_rom14_0=null, com.vivo.systemuiplugin:id/originui_vtoolbar_navigation_view_rom14_0=null, com.vivo.systemuiplugin:id/originui_vtoolbar_navigation_view_btn_rom14_0=null, com.vivo.systemuiplugin:id/originui_vtoolbar_normal_title_rom14_0=SmashNow, com.vivo.systemuiplugin:id/nested_layout=null, com.vivo.systemuiplugin:id/main_content=null, null=null, android:id/list_container=null, com.vivo.systemuiplugin:id/recycler_view=null, null=null, com.vivo.systemuiplugin:id/title=Cho phép thông báo, com.vivo.systemuiplugin:id/switch_btn=null, null=null, null=null, com.vivo.systemuiplugin:id/title=Bạn chưa cho phép ứng dụng này hiển thị thông báo, null=null, com.vivo.systemuiplugin:id/preference_divider=null, android:id/navigationBarBackground=null
+	at com.example.booking_app.feature.notification.NotificationPermissionUiTest.awaitCondition(NotificationPermissionUiTest.kt:43)
+	at com.example.booking_app.feature.notification.NotificationPermissionUiTest.deniedPermissionKeepsPreferencesAndInboxAndRefreshesAfterSystemSettingsGrant(NotificationPermissionUiTest.kt:119)
+
+INSTRUMENTATION_STATUS: stream=
+Error in deniedPermissionKeepsPreferencesAndInboxAndRefreshesAfterSystemSettingsGrant(com.example.booking_app.feature.notification.NotificationPermissionUiTest):
+java.lang.AssertionError: OS settings screen: null=null, null=null, android:id/content=null, com.vivo.systemuiplugin:id/content_parent=null, com.vivo.systemuiplugin:id/toolbar=null, com.vivo.systemuiplugin:id/originui_vtoolbar_vtoolbarinternal_container_rom14_0=null, com.vivo.systemuiplugin:id/originui_vtoolbar_navigation_view_rom14_0=null, com.vivo.systemuiplugin:id/originui_vtoolbar_navigation_view_btn_rom14_0=null, com.vivo.systemuiplugin:id/originui_vtoolbar_normal_title_rom14_0=SmashNow, com.vivo.systemuiplugin:id/nested_layout=null, com.vivo.systemuiplugin:id/main_content=null, null=null, android:id/list_container=null, com.vivo.systemuiplugin:id/recycler_view=null, null=null, com.vivo.systemuiplugin:id/title=Cho phép thông báo, com.vivo.systemuiplugin:id/switch_btn=null, null=null, null=null, com.vivo.systemuiplugin:id/title=Bạn chưa cho phép ứng dụng này hiển thị thông báo, null=null, com.vivo.systemuiplugin:id/preference_divider=null, android:id/navigationBarBackground=null
+	at com.example.booking_app.feature.notification.NotificationPermissionUiTest.awaitCondition(NotificationPermissionUiTest.kt:43)
+	at com.example.booking_app.feature.notification.NotificationPermissionUiTest.deniedPermissionKeepsPreferencesAndInboxAndRefreshesAfterSystemSettingsGrant(NotificationPermissionUiTest.kt:119)
+
+INSTRUMENTATION_STATUS: test=deniedPermissionKeepsPreferencesAndInboxAndRefreshesAfterSystemSettingsGrant
+INSTRUMENTATION_STATUS_CODE: -2
+INSTRUMENTATION_RESULT: stream=
+
+Time: 18,69
+There was 1 failure:
+1) deniedPermissionKeepsPreferencesAndInboxAndRefreshesAfterSystemSettingsGrant(com.example.booking_app.feature.notification.NotificationPermissionUiTest)
+java.lang.AssertionError: OS settings screen: null=null, null=null, android:id/content=null, com.vivo.systemuiplugin:id/content_parent=null, com.vivo.systemuiplugin:id/toolbar=null, com.vivo.systemuiplugin:id/originui_vtoolbar_vtoolbarinternal_container_rom14_0=null, com.vivo.systemuiplugin:id/originui_vtoolbar_navigation_view_rom14_0=null, com.vivo.systemuiplugin:id/originui_vtoolbar_navigation_view_btn_rom14_0=null, com.vivo.systemuiplugin:id/originui_vtoolbar_normal_title_rom14_0=SmashNow, com.vivo.systemuiplugin:id/nested_layout=null, com.vivo.systemuiplugin:id/main_content=null, null=null, android:id/list_container=null, com.vivo.systemuiplugin:id/recycler_view=null, null=null, com.vivo.systemuiplugin:id/title=Cho phép thông báo, com.vivo.systemuiplugin:id/switch_btn=null, null=null, null=null, com.vivo.systemuiplugin:id/title=Bạn chưa cho phép ứng dụng này hiển thị thông báo, null=null, com.vivo.systemuiplugin:id/preference_divider=null, android:id/navigationBarBackground=null
+	at com.example.booking_app.feature.notification.NotificationPermissionUiTest.awaitCondition(NotificationPermissionUiTest.kt:43)
+	at com.example.booking_app.feature.notification.NotificationPermissionUiTest.deniedPermissionKeepsPreferencesAndInboxAndRefreshesAfterSystemSettingsGrant(NotificationPermissionUiTest.kt:119)
+
+FAILURES!!!
+Tests run: 1,  Failures: 1
+
+
+INSTRUMENTATION_CODE: -1

@@ -7,13 +7,17 @@ import {
 } from "../_shared/firestore.ts";
 import {
   cancelRegistrationInTx,
-  closeWaitlistInTx,
   registrationPath,
 } from "../_shared/dropin.ts";
+import { closeWaitlistInTx } from "../_shared/waitlist.ts";
+import type { WaitlistNotification } from "../_shared/dropin-notify.ts";
 import { decodeFields } from "../_shared/firestore.ts";
+import { requireOwnerVenue } from "../_shared/owner-access.ts";
+import { prepareDropInChanged, readDropInCommand, requireDropInCommandId } from "../_shared/dropin-change-notification.ts";
 
 export interface OwnerCancelSessionDeps {
   firestore: Pick<typeof defaultFirestore, "get" | "runTransaction">;
+  notify?: (notification: WaitlistNotification) => Promise<void>;
 }
 
 export async function handleOwnerCancelSession(
@@ -36,33 +40,19 @@ export async function handleOwnerCancelSession(
       ? body.reason.trim()
       : "Chủ sân hủy buổi chơi";
 
-    if (!venueId) throw new HttpError(400, "INVALID_VENUE_ID", "Thiếu venueId");
-    if (!sessionId) {
+    if (!venueId || venueId.includes("/")) throw new HttpError(400, "INVALID_VENUE_ID", "Thiếu venueId");
+    if (!sessionId || sessionId.includes("/")) {
       throw new HttpError(400, "INVALID_SESSION_ID", "Thiếu sessionId");
-    }
-
-    // 1. Verify owner
-    if (token.appRole !== "ADMIN") {
-      const user = await firestore.get(`users/${token.uid}`);
-      if (user?.ownerStatus !== "APPROVED") {
-        throw new HttpError(403, "FORBIDDEN", "Chủ sân chưa được phê duyệt");
-      }
-    }
-
-    // 2. Verify venue
-    const venue = await firestore.get(`venues/${venueId}`);
-    if (!venue || (venue.ownerId !== token.uid && token.appRole !== "ADMIN")) {
-      throw new HttpError(
-        404,
-        "NOT_FOUND",
-        "Không tìm thấy cơ sở hoặc bạn không có quyền",
-      );
     }
 
     const now = new Date();
     const nowIso = now.toISOString();
     try {
-      await firestore.runTransaction(async (tx) => {
+      const response = await firestore.runTransaction(async (transaction) => {
+        const writes: defaultFirestore.Write[] = [];
+        const tx = { ...transaction, write: (write: defaultFirestore.Write) => { writes.push(write); } };
+        const venue = await requireOwnerVenue(tx, token, venueId);
+        if (venue.status !== "ACTIVE") throw new HttpError(403,"VENUE_UNAVAILABLE","Cơ sở đang ẩn hoặc bị khóa");
         // Lock session and registration query before collecting any writes.
         const session = await tx.get(`dropInSessions/${sessionId}`);
         if (!session || session.venueId !== venueId) {
@@ -73,6 +63,9 @@ export async function handleOwnerCancelSession(
           );
         }
 
+        const requestId = requireDropInCommandId(body.requestId);
+        const command = await readDropInCommand(tx, sessionId, requestId, token.uid, ["CANCEL", venueId, reason], now);
+        if (command.previous) return command.previous;
         if (session.status === "CANCELLED") {
           throw new HttpError(
             409,
@@ -81,6 +74,17 @@ export async function handleOwnerCancelSession(
           );
         }
 
+        const slotIds = Array.isArray(session.slotIds) ? [...new Set(session.slotIds)] : [];
+        for (const slotId of slotIds) {
+          if (typeof slotId !== "string" || !slotId || slotId.includes("/")) {
+            throw new HttpError(409, "SLOT_CONFLICT", "Dữ liệu khung giờ buổi chơi không hợp lệ");
+          }
+          const slot = await tx.get(`slots/${slotId}`);
+          if (!slot || slot.venueId !== venueId || slot.sessionId !== sessionId ||
+            slot.status !== "BLOCKED" || slot.blockReason !== "DROP_IN") {
+            throw new HttpError(409, "SLOT_CONFLICT", "Khung giờ không còn thuộc buổi chơi này");
+          }
+        }
         const registrations = await tx.query("registrations", [], {
           parent: `dropInSessions/${sessionId}`,
         });
@@ -97,7 +101,6 @@ export async function handleOwnerCancelSession(
             reg.data,
           ]),
         ]);
-        const writes: defaultFirestore.Write[] = [];
         const bufferedTx = {
           get: (path: string) => Promise.resolve(documents.get(path) ?? null),
           write: (write: defaultFirestore.Write) => {
@@ -121,27 +124,36 @@ export async function handleOwnerCancelSession(
             { forceFullRefund: true, now },
           );
         }
+        await closeWaitlistInTx(
+          tx, { ...session, id: sessionId }, "SESSION_CANCELLED", { now },
+        );
         writes.push(
           updateWrite(sessionPath, {
             status: "CANCELLED",
             registeredCount: 0,
+            waitlistTickets: [],
+            waitlistCount: 0,
             cancelledAt: now,
             cancelReason: reason,
             updatedAt: now,
           }),
-          closeWaitlistInTx(sessionId, "SESSION_CANCELLED"),
         );
 
         // Release all blocked slots
-        const slotIds = Array.isArray(session.slotIds) ? session.slotIds : [];
         for (const slotId of slotIds) {
           if (typeof slotId === "string" && slotId.trim()) {
             writes.push(deleteWrite(`slots/${slotId.trim()}`, true));
           }
         }
 
-        for (const write of writes) tx.write(write);
+        const result = { success: true, sessionId, status: "CANCELLED", cancelledAt: nowIso };
+        writes.push(command.journal(result));
+        writes.push(...await prepareDropInChanged(tx, writes, registrations,
+          { sessionId, requestId, actorUid: token.uid, cancelled: true, now }));
+        for (const write of writes) transaction.write(write);
+        return result;
       });
+      return Response.json(response);
     } catch (e) {
       if (
         e instanceof FirestoreError &&
@@ -156,15 +168,6 @@ export async function handleOwnerCancelSession(
       throw e;
     }
 
-    return new Response(
-      JSON.stringify({
-        success: true,
-        sessionId,
-        status: "CANCELLED",
-        cancelledAt: nowIso,
-      }),
-      { status: 200, headers: { "Content-Type": "application/json" } },
-    );
   } catch (err) {
     if (err instanceof HttpError) {
       return errorResponse(err.status, err.code, err.message);

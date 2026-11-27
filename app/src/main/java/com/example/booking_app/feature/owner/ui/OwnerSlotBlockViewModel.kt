@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.booking_app.feature.owner.domain.OwnerValidation
+import com.example.booking_app.feature.owner.domain.OwnerOperatingSlots
 import com.example.booking_app.feature.owner.domain.OwnerVenueRepository
 import com.example.booking_app.feature.owner.domain.OwnerWriteGate
 import com.example.booking_app.feature.owner.domain.SlotBlockInput
@@ -16,6 +17,8 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
+import com.example.booking_app.feature.owner.domain.model.OwnerCourt
+import kotlinx.coroutines.Job
 
 data class OwnerSlotItem(
     val slotId: String,
@@ -43,7 +46,8 @@ data class OwnerSlotBlockUiState(
     val isOffline: Boolean = false,
     val error: String? = null,
     val message: String? = null,
-    val writeGate: OwnerWriteGate = OwnerWriteGate.SLOT_ATOMIC_SERVER_CONTRACT
+    val writeGate: OwnerWriteGate = OwnerWriteGate.SLOT_ATOMIC_SERVER_CONTRACT,
+    val courts: List<OwnerCourt> = emptyList(),
 )
 
 @HiltViewModel
@@ -53,7 +57,8 @@ class OwnerSlotBlockViewModel @Inject constructor(
 ) : ViewModel() {
     private val courtIdArg: String = savedStateHandle["courtId"] ?: ""
     private val venueIdArg: String = savedStateHandle["venueId"] ?: ""
-    private val todayString: String = SimpleDateFormat("yyyyMMdd", Locale.getDefault()).format(Date())
+    private val todayString: String = java.time.LocalDate.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh")).format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE)
+    private var gridJob: Job? = null
 
     private val _uiState = MutableStateFlow(
         OwnerSlotBlockUiState(
@@ -66,9 +71,21 @@ class OwnerSlotBlockViewModel @Inject constructor(
     val uiState: StateFlow<OwnerSlotBlockUiState> = _uiState.asStateFlow()
 
     init {
+        if (repository != null && venueIdArg.isNotEmpty()) viewModelScope.launch {
+            repository.getCourts(venueIdArg).onSuccess { courts ->
+                _uiState.value = _uiState.value.copy(courts = courts.filter { it.isActive })
+                if (_uiState.value.courtId.isEmpty()) courts.firstOrNull { it.isActive }?.let { selectCourt(it.id) }
+            }
+        }
         if (venueIdArg.isNotEmpty() && courtIdArg.isNotEmpty()) {
             loadGrid(venueIdArg, courtIdArg, todayString)
         }
+    }
+
+    fun selectCourt(id: String) {
+        if (_uiState.value.courtId == id) return
+        _uiState.value = _uiState.value.copy(courtId=id,form=_uiState.value.form.copy(courtId=id),selectedSlotIds=emptySet())
+        loadGrid(venueIdArg,id,_uiState.value.selectedDate)
     }
 
     fun updateForm(form: SlotBlockInput) {
@@ -129,16 +146,24 @@ class OwnerSlotBlockViewModel @Inject constructor(
 
     fun loadGrid(venueId: String, courtId: String, date: String) {
         if (repository == null) return
-        viewModelScope.launch {
+        gridJob?.cancel()
+        gridJob = viewModelScope.launch {
             _uiState.value = _uiState.value.copy(isLoadingGrid = true, error = null)
+            val venue = repository.getVenue(venueId).getOrElse {
+                _uiState.value = _uiState.value.copy(isLoadingGrid=false,isStale=true,error=it.message ?: "Không tải được giờ hoạt động")
+                return@launch
+            }
+            val times = runCatching { OwnerOperatingSlots.startMinutes(venue.openTime, venue.closeTime) }.getOrElse {
+                _uiState.value = _uiState.value.copy(isLoadingGrid=false,isStale=true,error=it.message)
+                return@launch
+            }
             val res = repository.getSlots(venueId, date)
             res.fold(
                 onSuccess = { slots ->
                     val busyMap = slots.filter { it.courtId == courtId }.associateBy { it.id }
                     val allowedOwnerReasons = setOf("MAINTENANCE", "EVENT", "WALK_IN")
 
-                    // Generate half-hour intervals 06:00 to 22:00
-                    val items = (360 until 1320 step 30).map { minutes ->
+                    val items = times.map { minutes ->
                         val startH = minutes / 60
                         val startM = minutes % 60
                         val endMin = minutes + 30

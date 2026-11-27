@@ -456,6 +456,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.owner-create-voucher]
+verify_jwt = false
 [functions.sync-account-email]
 verify_jwt = false
 
@@ -469,6 +470,9 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.admin-moderate-report]
+verify_jwt = false
+
+[functions.admin-manage-group]
 verify_jwt = false
 
 [functions.admin-manage-user]
@@ -490,6 +494,9 @@ verify_jwt = false
 [functions.expire-holds]
 verify_jwt = false
 
+[functions.booking-timeout]
+verify_jwt = false
+
 [functions.player-cancel-booking]
 verify_jwt = false
 
@@ -499,7 +506,44 @@ verify_jwt = false
 [functions.cancel-drop-in]
 verify_jwt = false
 
+[functions.group-manage]
+verify_jwt = false
+
+[functions.group-post]
+verify_jwt = false
+
+[functions.group-media-url]
+verify_jwt = false
+
+[functions.chat-send]
+verify_jwt = false
+
+[functions.chat-action]
+verify_jwt = false
+
+[functions.chat-media-url]
+verify_jwt = false
+
+[functions.dropin-close]
+verify_jwt = false
+
 [functions.review]
+verify_jwt = false
+
+[functions.owner-statistics-source]
+verify_jwt = false
+
+[functions.owner-manage-court]
+verify_jwt = false
+
+[functions.ai-search-parse]
+verify_jwt = false
+
+# Authenticated by x-cron-secret inside the handler; schedule every minute after deployment review.
+[functions.notification-delivery]
+verify_jwt = false
+
+[functions.booking-reminders]
 verify_jwt = false
 
 # Spec 050: thanh toán chuyển khoản qua SePay Test mode. SePay không có JWT của Supabase, handler kiểm HMAC

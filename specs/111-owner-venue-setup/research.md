@@ -2,7 +2,7 @@
 
 ## R1 — Schema hiện có và ranh giới quyền sở hữu
 
-**Quyết định**: Dùng `docs/design/database/README.md` làm nguồn schema. Sử dụng `venues/{venueId}`, subcollection `courts/{courtId}` và `priceRules/{id}`, cùng `slots/{courtId}_{yyyyMMdd}_{HHmm}` ở cấp cao nhất. Không thêm trường hoặc enum. Giới hạn truy cập theo `appRole = OWNER` đã xác thực, trạng thái owner đã duyệt và quan hệ `venues.ownerId` được máy chủ đọc.
+**Quyết định**: Dùng `docs/design/database/README.md` làm nguồn schema. Sử dụng `venues/{venueId}`, subcollection `courts/{courtId}` và `priceRules/{id}`, cùng `slots/{courtId}_{yyyyMMdd}_{HHmm}` ở cấp cao nhất. Bổ sung purpose cho hồ sơ theo quyết định 2026-11-20; không đổi schema venue/booking. Giới hạn truy cập theo `appRole = OWNER` đã xác thực, trạng thái owner đã duyệt và quan hệ `venues.ownerId` được máy chủ đọc.
 
 **Lý do**: Constitution và Feature 111 yêu cầu phân quyền phía server, không tin ID hay giá trị giống role do client gửi. `firestore.rules` hiện chỉ có helper dùng chung, chưa có match cụ thể cho collection. Database README mô tả ranh giới CRUD dự kiến, nhưng chưa có Rules chi tiết cho từng collection và chưa xác định `ownerStatus` được thể hiện thế nào trong claim.
 
@@ -49,3 +49,9 @@
 - **T008 / Price rules & minPricePerHour (Quyết định 2A)**: Đã chốt thẩm quyền cập nhật là Edge Function `sync-venue-price`, chính sách no-rule trả về `null`. Mở quyền CRUD bảng giá cho Owner trên Firestore và app.
 - **T011 / Vòng đời cơ sở (Quyết định 3A)**: Đã chốt việc mở thêm cơ sở phải thông qua luồng nộp hồ sơ Onboarding (Feature 110) để Admin duyệt (Feature 120). Feature 111 chỉ quản lý các cơ sở đã duyệt.
 - **T007 / Slot Lock & Unlock (Quyết định 1A & 4A)**: Đã chốt Server Atomic Transaction qua Edge Function `manage-slot-blocks`, nhận diện slot được mở bằng `blockReason in ['MAINTENANCE', 'EVENT', 'WALK_IN']`, giữ nguyên schema không thêm field.
+
+## Quyết định mở thêm cơ sở — 2026-11-20
+
+Hồ sơ bổ sung dùng purpose VENUE_ADDITION, độc lập với quyền OWNER/APPROVED. Hồ sơ cũ thiếu purpose thuộc OWNER_ONBOARDING. Duyệt tạo venues/{applicationId} một lần; từ chối/nộp lại không đổi tài khoản hoặc venue cũ. Không giới hạn số venue/hồ sơ.
+
+Hợp đồng gửi, đọc trạng thái, upload và review: [owner-application-api.md](../110-owner-onboarding/contracts/owner-application-api.md).

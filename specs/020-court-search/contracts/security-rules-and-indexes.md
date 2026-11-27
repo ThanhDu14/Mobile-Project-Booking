@@ -28,7 +28,7 @@ match /users/{uid}/searchHistory/{historyId} {
   }
 
   function optPrice(d, f) {
-    return !(f in d) || d[f] == null || (d[f] is int && d[f] >= 0 && d[f] % 10000 == 0);
+    return !(f in d) || d[f] == null || (d[f] is int && d[f] >= 0 && d[f] % 1000 == 0);
   }
 
   function validWindow(d) {
@@ -124,13 +124,13 @@ Query của app luôn có `where("status", "==", "ACTIVE")` để Rules chứng 
     { "collectionGroup": "slots", "queryScope": "COLLECTION", "fields": [
       { "fieldPath": "venueId", "order": "ASCENDING" },
       { "fieldPath": "date", "order": "ASCENDING" },
-      { "fieldPath": "startAt", "order": "ASCENDING" } ] }
+      { "fieldPath": "status", "order": "ASCENDING" } ] }
   ],
   "fieldOverrides": []
 }
 ```
 
-Dòng chuỗi `"…"` chỉ để rút gọn tài liệu; file thật liệt kê đủ 13 index. Index `slots` thay index `venueId, date` của 040 (một index phục vụ cả hai query). Báo B trước khi merge.
+Dòng chuỗi `"…"` chỉ để rút gọn tài liệu; chỉ mục `slots(venueId, date, status)` dùng chung với 040. 020 lấy giờ từ `startTime` của các slot bận trong ngày đã chọn.
 
 ## 4. Bảng test
 
@@ -148,7 +148,7 @@ Mỗi dòng ít nhất một test. "Khách" = `testEnv.unauthenticatedContext()`
 | H-5 | Khách | Đọc hoặc ghi bất kỳ `searchHistory` | ❌ |
 | H-6 | Chủ | Tạo với trường lạ (`lat`, `lng`) | ❌ (FR-014) |
 | H-7 | Chủ | Tạo với `keyword` 101 ký tự | ❌ |
-| H-8 | Chủ | Tạo với `priceMin > priceMax` hoặc giá không chia hết 10.000 | ❌ |
+| H-8 | Chủ | Tạo với `priceMin > priceMax` hoặc giá không chia hết 1.000 (đổi từ 10.000 ngày 2026-11-17 vì AI điền được "dưới 55k") | ❌ |
 | H-9 | Chủ | Tạo với `startTime = "1915"` hoặc `endTime <= startTime` hoặc chỉ có `date` | ❌ |
 | H-10 | Chủ | Tạo với `sort = "DISTANCE"` | ❌ |
 | H-11 | Chủ | Tạo với `searchedAt` do máy đặt | ❌ |
@@ -161,5 +161,5 @@ Mỗi dòng ít nhất một test. "Khách" = `testEnv.unauthenticatedContext()`
 | V-3 | Khách | Đọc trực tiếp `venues/{id}` có `status = HIDDEN` hoặc `LOCKED` | ❌ (SC-004) |
 | V-4 | Chủ cơ sở | Đọc cơ sở `HIDDEN` của mình | ✅ |
 | V-5 | Khách | Đọc `venues/{id}/courts`, `priceRules` | ✅ |
-| S-1 | Khách | Query `slots` theo `venueId`, `date`, `startAt` | ✅ |
+| S-1 | Khách | Query `slots` theo `venueId`, `date`, `status` | ✅ |
 | S-2 | Khách | Tạo hoặc sửa `slots/{id}` | ❌ |

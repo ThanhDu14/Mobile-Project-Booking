@@ -47,6 +47,7 @@ class AdminApplicationAdapter(
             val applicant = item.applicantName.ifBlank { "Người nộp" }
             val district = item.districtName.ifBlank { item.districtId.ifBlank { "Chưa có quận/huyện" } }
             binding.textApplicantAndDistrict.text = "$applicant · $district"
+            if (item.purpose == "VENUE_ADDITION") binding.textApplicantAndDistrict.append(" · " + binding.root.context.getString(R.string.owner_venue_applications))
 
             when (item.status) {
                 "APPROVED" -> {

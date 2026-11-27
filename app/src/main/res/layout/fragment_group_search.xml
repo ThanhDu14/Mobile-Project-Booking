@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Tab "Khám phá" (spec 090 US2, T037): ô tìm theo tên, chip khu vực (điền sẵn từ khu vực hay chơi), danh sách nhóm
+    dùng item_group, tải thêm khi cuộn. 4 trạng thái: loading/lỗi qua include_state_views; rỗng là emptyView riêng vì
+    cần hai nút ("Bỏ bớt bộ lọc" khi có bộ lọc và "Tạo nhóm của bạn"). Nhúng làm child fragment trong màn Cộng đồng.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/searchLayout"
+        style="@style/Widget.SmashNow.TextInputLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/screen_gutter"
+        android:layout_marginTop="@dimen/space_3"
+        android:hint="@string/community_field_search_hint"
+        app:endIconContentDescription="@string/community_search_clear_cd"
+        app:endIconMode="clear_text"
+        app:startIconDrawable="@drawable/ic_search_24">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/searchInput"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:imeOptions="actionSearch"
+            android:inputType="text"
+            android:maxLength="50"
+            android:maxLines="1"
+            android:minHeight="@dimen/touch_min" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_1"
+        android:clipToPadding="false"
+        android:paddingHorizontal="@dimen/screen_gutter"
+        android:scrollbars="none">
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/districtChip"
+            style="@style/Widget.Material3.Chip.Assist"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/community_search_area_all"
+            app:chipIcon="@drawable/ic_location_on_24"
+            app:chipMinTouchTargetSize="@dimen/touch_min" />
+    </HorizontalScrollView>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/groupList"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingHorizontal="@dimen/screen_gutter"
+            android:paddingTop="@dimen/space_3"
+            android:paddingBottom="@dimen/space_6"
+            tools:listitem="@layout/item_group" />
+
+        <com.google.android.material.progressindicator.LinearProgressIndicator
+            android:id="@+id/loadMoreProgress"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom"
+            android:contentDescription="@string/community_search_loading_more_cd"
+            android:indeterminate="true"
+            android:visibility="gone" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/loadMoreRetry"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="bottom|center_horizontal"
+            android:minHeight="@dimen/touch_min"
+            android:text="@string/community_search_load_more_failed"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:id="@+id/emptyView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:padding="@dimen/space_6"
+            android:visibility="gone">
+
+            <ImageView
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_groups_24"
+                app:tint="?attr/colorOnSurfaceVariant" />
+
+            <TextView
+                android:id="@+id/emptyText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_3"
+                android:gravity="center"
+                android:text="@string/community_empty_search"
+                android:textAppearance="?attr/textAppearanceBodyLarge"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/clearFiltersButton"
+                style="?attr/materialButtonOutlinedStyle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_4"
+                android:minHeight="@dimen/touch_min"
+                android:text="@string/community_action_clear_filters" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/createGroupButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_2"
+                android:minHeight="@dimen/touch_min"
+                android:text="@string/community_empty_search_cta" />
+        </LinearLayout>
+
+        <include
+            android:id="@+id/stateViews"
+            layout="@layout/include_state_views" />
+    </FrameLayout>
+</LinearLayout>

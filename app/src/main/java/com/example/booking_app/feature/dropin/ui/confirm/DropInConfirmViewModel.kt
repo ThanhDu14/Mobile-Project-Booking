@@ -9,7 +9,9 @@ import com.example.booking_app.feature.dropin.domain.model.DropInSession
 import com.example.booking_app.feature.dropin.domain.model.DropInWarning
 import com.example.booking_app.feature.dropin.domain.model.PaymentMethod
 import com.example.booking_app.feature.dropin.domain.model.RegisterRequest
+import com.example.booking_app.feature.dropin.domain.model.WaitlistJoinResult
 import com.example.booking_app.feature.dropin.domain.usecase.CheckDropInWarnings
+import com.example.booking_app.feature.dropin.domain.usecase.JoinWaitlist
 import com.example.booking_app.feature.dropin.domain.usecase.ObserveDropInSession
 import com.example.booking_app.feature.dropin.domain.usecase.RegisterDropIn
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -27,15 +29,20 @@ import kotlinx.coroutines.launch
 import java.util.UUID
 import javax.inject.Inject
 
+/** Chế độ màn hình xác nhận (spec 081): đăng ký thường hoặc vào hàng chờ của buổi đã đủ người. */
+enum class ConfirmMode { REGISTER, WAITLIST }
+
 /** Lựa chọn trên màn hình xác nhận; giữ nguyên qua mọi trạng thái để thử lại không mất lựa chọn (AC 2.8). */
 data class ConfirmForm(
     val session: DropInSession,
     val partySize: Int,
-    /** `min(4, remaining)` (AC 2.2); 0 khi buổi đã hết chỗ. */
+    /** `min(4, remaining)` (AC 2.2), 0 khi buổi đã hết chỗ; ở [ConfirmMode.WAITLIST] luôn là 4, không theo chỗ trống. */
     val maxParty: Int,
     val paymentMethod: PaymentMethod,
     val warnings: List<DropInWarning> = emptyList(),
+    val mode: ConfirmMode = ConfirmMode.REGISTER,
 ) {
+    /** Tổng tiền; ở [ConfirmMode.WAITLIST] là số tiền sẽ ghi nhận khi được nhận (FR-002), chưa trừ gì. */
     val total: Long get() = session.pricePerPerson * partySize
     val canSubmit: Boolean get() = maxParty > 0 && partySize in 1..maxParty
 }
@@ -60,6 +67,12 @@ sealed interface DropInConfirmEvent {
     /** Thành công hoặc đã có vé từ trước: mở vé, bỏ màn hình xác nhận khỏi back stack (FR-025). */
     data class NavigateToTicket(val sessionId: String) : DropInConfirmEvent
 
+    /** Spec 081: vào hàng chờ thành công (hoặc đã có lượt chờ): mở màn hình lượt chờ, bỏ màn hình xác nhận khỏi back stack. */
+    data class NavigateToWaitlist(val sessionId: String) : DropInConfirmEvent
+
+    /** Spec 081: đổi chế độ, mở lại màn hình xác nhận ở chế độ [mode] (buổi còn chỗ → REGISTER; hết chỗ mà hàng chờ mở → WAITLIST). */
+    data class SwitchMode(val sessionId: String, val mode: ConfirmMode) : DropInConfirmEvent
+
     /** Mất mạng: Snackbar, lựa chọn vẫn giữ. */
     data object NetworkError : DropInConfirmEvent
 
@@ -77,9 +90,16 @@ class DropInConfirmViewModel @Inject constructor(
     private val observeSession: ObserveDropInSession,
     private val registerDropIn: RegisterDropIn,
     private val checkWarnings: CheckDropInWarnings,
+    private val joinWaitlist: JoinWaitlist,
 ) : ViewModel() {
 
     val sessionId: String = checkNotNull(savedStateHandle[ARG_SESSION_ID]) { "Thiếu sessionId" }
+
+    val mode: ConfirmMode = when (val raw = savedStateHandle.get<Any>(ARG_MODE)) {
+        is ConfirmMode -> raw
+        is String -> ConfirmMode.entries.firstOrNull { it.name == raw } ?: ConfirmMode.REGISTER
+        else -> ConfirmMode.REGISTER
+    }
 
     val requestId: String = savedStateHandle.get<String>(KEY_REQUEST_ID)
         ?: UUID.randomUUID().toString().also { savedStateHandle[KEY_REQUEST_ID] = it }
@@ -137,7 +157,8 @@ class DropInConfirmViewModel @Inject constructor(
         }
         if (!form.canSubmit) return
         _uiState.value = DropInConfirmUiState.Submitting(form)
-        val request = RegisterRequest(sessionId, form.partySize, form.paymentMethod, requestId)
+        val waitlist = mode == ConfirmMode.WAITLIST
+        val request = RegisterRequest(sessionId, form.partySize, form.paymentMethod, requestId, joinWaitlist = waitlist)
         viewModelScope.launch {
             var busyRetries = 0
             var result = send(request)
@@ -150,13 +171,32 @@ class DropInConfirmViewModel @Inject constructor(
         }
     }
 
+    /** Spec 081 AC 1.5, FR-001: buổi hết chỗ mà hàng chờ còn mở, người chơi muốn vào hàng chờ thay vì đăng ký. */
+    fun onJoinWaitlistInstead() {
+        val state = _uiState.value as? DropInConfirmUiState.Failed ?: return
+        val error = state.reason as? DropInError.SessionFull ?: return
+        if (!error.waitlistOpen) return
+        _events.trySend(DropInConfirmEvent.SwitchMode(sessionId, ConfirmMode.WAITLIST))
+    }
+
     private suspend fun onResult(result: Result<DropInRegistration>) {
         val form = currentForm() ?: return
         val error = result.exceptionOrNull()
         when {
-            error == null || error is DropInError.AlreadyRegistered ->
+            error == null -> {
                 // Giữ Submitting để nút còn khóa cho tới khi rời màn hình.
-                _events.send(DropInConfirmEvent.NavigateToTicket(sessionId))
+                if (mode == ConfirmMode.WAITLIST) {
+                    _events.send(DropInConfirmEvent.NavigateToWaitlist(sessionId))
+                } else {
+                    _events.send(DropInConfirmEvent.NavigateToTicket(sessionId))
+                }
+            }
+            error is DropInError.AlreadyRegistered -> _events.send(DropInConfirmEvent.NavigateToTicket(sessionId))
+            error is DropInError.AlreadyWaitlisted -> _events.send(DropInConfirmEvent.NavigateToWaitlist(sessionId))
+            error is DropInError.SessionHasSpots -> {
+                _uiState.value = DropInConfirmUiState.Editing(form)
+                _events.send(DropInConfirmEvent.SwitchMode(sessionId, ConfirmMode.REGISTER))
+            }
             error is DropInError.SessionFull -> {
                 val maxParty = maxPartyFor(error.remaining)
                 val size = form.partySize.coerceAtMost(maxParty).coerceAtLeast(MIN_PARTY)
@@ -181,7 +221,11 @@ class DropInConfirmViewModel @Inject constructor(
 
     private suspend fun send(request: RegisterRequest): Result<DropInRegistration> =
         try {
-            registerDropIn(request)
+            if (request.joinWaitlist) {
+                joinWaitlist(request).map(WaitlistJoinResult::registration)
+            } else {
+                registerDropIn(request)
+            }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
@@ -194,7 +238,8 @@ class DropInConfirmViewModel @Inject constructor(
             if (current == null) _uiState.value = DropInConfirmUiState.NotFound
             return
         }
-        val maxParty = maxPartyFor(session.remaining)
+        // Vào hàng chờ chưa giữ chỗ nên tối đa 4 người, không giới hạn theo chỗ trống (spec 081 FR-002).
+        val maxParty = if (mode == ConfirmMode.WAITLIST) MAX_PARTY else maxPartyFor(session.remaining)
         val wanted = current?.partySize ?: savedStateHandle.get<Int>(KEY_PARTY_SIZE) ?: MIN_PARTY
         val form = ConfirmForm(
             session = session,
@@ -202,6 +247,7 @@ class DropInConfirmViewModel @Inject constructor(
             maxParty = maxParty,
             paymentMethod = current?.paymentMethod ?: savedPayment(),
             warnings = current?.warnings.orEmpty(),
+            mode = mode,
         )
         replaceForm(form)
         if (!warningsRequested) {
@@ -256,6 +302,7 @@ class DropInConfirmViewModel @Inject constructor(
 
     companion object {
         const val ARG_SESSION_ID = "sessionId"
+        const val ARG_MODE = "mode"
         internal const val KEY_REQUEST_ID = "dropin_request_id"
         internal const val KEY_PARTY_SIZE = "dropin_party_size"
         internal const val KEY_PAYMENT = "dropin_payment_method"

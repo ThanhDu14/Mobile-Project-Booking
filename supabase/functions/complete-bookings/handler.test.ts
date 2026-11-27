@@ -1,5 +1,6 @@
 import { assertEquals, assert } from "jsr:@std/assert@1.0.19";
 import { handleCompleteBookings } from "./handler.ts";
+import { type FirestoreTransaction, type Write, decodeFields } from "../_shared/firestore.ts";
 
 Deno.env.set("FIREBASE_PROJECT_ID", "demo-smashnow");
 
@@ -12,43 +13,56 @@ interface MockDoc {
 function createMockFirestore(docs: MockDoc[]) {
   const store = new Map<string, Record<string, any>>();
   for (const d of docs) {
-    store.set(d.id, { ...d.data });
+    store.set(d.path, { ...d.data });
   }
 
   return {
     get: async (path: string) => {
-      const id = path.split("/").pop()!;
-      return store.get(id) ?? null;
+      return store.get(path) ?? null;
     },
     query: async (collectionId: string, filters: any[]) => {
       const statusFilter = filters.find((f) => f.field === "status");
       const results: MockDoc[] = [];
-      for (const [id, data] of store.entries()) {
+      for (const [path, data] of store.entries()) {
+        if (!path.startsWith(collectionId + "/")) continue;
         if (statusFilter && data.status !== statusFilter.value) continue;
-        results.push({ id, path: `${collectionId}/${id}`, data: { ...data } });
+        results.push({ id: path.split("/").pop()!, path, data: { ...data } });
       }
       return results;
     },
-    commit: async (writes: any[]) => {
-      for (const w of writes) {
+    runTransaction: async <T>(action: (tx: FirestoreTransaction) => Promise<T | { result: T; writes: Write[] }>): Promise<T> => {
+      const writes: Write[] = [];
+      const result = await action({
+        get: async path => {
+          assertEquals(writes.length, 0, "reads must precede writes");
+          return store.get(path) ?? null;
+        },
+        query: async () => { throw Error("Unexpected transaction query"); },
+        write: write => { writes.push(write); },
+      });
+      const wrapped = result != null && typeof result === "object" && "writes" in result
+        ? result as { result: T; writes: Write[] } : null;
+      for (const w of wrapped?.writes ?? writes) {
         if (w.update) {
           const path = w.update.name.replace(/^projects\/[^/]+\/databases\/\(default\)\/documents\//, "");
-          const id = path.split("/").pop()!;
-          const current = store.get(id) || {};
+          const current = store.get(path) || {};
           const fields = w.update.fields || {};
           const updated: Record<string, any> = { ...current };
           for (const [k, v] of Object.entries(fields)) {
             if (v && typeof v === "object") {
               if ("stringValue" in v) updated[k] = (v as any).stringValue;
-              else if ("timestampValue" in v) updated[k] = (v as any).timestampValue;
+              // Mốc thời gian phải là Timestamp: ghi kèm hậu tố để test phân biệt với chuỗi ISO.
+              else if ("timestampValue" in v) updated[k] = `ts:${(v as any).timestampValue}`;
               else updated[k] = v;
             }
           }
-          store.set(id, updated);
+          store.set(path, updated);
         }
       }
+      return wrapped ? wrapped.result : result as T;
     },
-    getDoc: (id: string) => store.get(id),
+    getDoc: (id: string) => store.get(`bookings/${id}`),
+    entries: () => [...store.entries()],
   };
 }
 
@@ -81,8 +95,36 @@ Deno.test("complete-bookings: da check-in + qua endAt -> COMPLETED (+ completedA
 
   const updated = fs.getDoc("b-checked-in")!;
   assertEquals(updated.status, "COMPLETED");
-  assertEquals(updated.completedAt, serverNow.toISOString());
-  assertEquals(updated.updatedAt, serverNow.toISOString());
+  assertEquals(updated.completedAt, `ts:${serverNow.toISOString()}`);
+  assertEquals(updated.updatedAt, `ts:${serverNow.toISOString()}`);
+});
+
+Deno.test("RR1: completion enqueues once, excluding reviewed, owner, inactive and no-show bookings", async () => {
+  const at = new Date("2026-11-24T03:00:00Z");
+  const booking = (id: string, uid: string, checkedIn = true) => ({
+    id, path: `bookings/${id}`,
+    data: { status: "CONFIRMED", userId: uid, venueId: "venue", endAt: at, checkedInAt: checkedIn ? at : null },
+  });
+  const fs = createMockFirestore([
+    booking("eligible", "player"), booking("reviewed", "player"), booking("own", "owner"),
+    booking("locked", "locked"), booking("absent", "player", false),
+    { id: "venue", path: "venues/venue", data: { ownerId: "owner" } },
+    { id: "player", path: "users/player", data: { accountStatus: "ACTIVE" } },
+    { id: "owner", path: "users/owner", data: { accountStatus: "ACTIVE" } },
+    { id: "locked", path: "users/locked", data: { accountStatus: "LOCKED" } },
+    { id: "reviewed", path: "reviews/reviewed", data: { userId: "player" } },
+  ]);
+  const run = () => handleCompleteBookings(new Request("http://localhost", { method: "POST" }), {
+    firestore: fs, now: () => at, cronSecret: "",
+  });
+  assertEquals((await (await run()).json()).completed, 4);
+  assertEquals((await (await run()).json()).processed, 0);
+  const inbox = fs.entries().filter(([path]) => path.includes("/notifications/"));
+  assertEquals(inbox.length, 1);
+  assert(inbox[0][0].startsWith("users/player/notifications/"));
+  assertEquals(inbox[0][1].type, "REVIEW_REMINDER");
+  assertEquals(decodeFields({ data: inbox[0][1].data }).data, { bookingId: "eligible" });
+  assertEquals(fs.entries().filter(([path]) => path.startsWith("notificationDeliveries/")).length, 1);
 });
 
 Deno.test("complete-bookings: chua check-in + qua endAt -> NO_SHOW", async () => {
@@ -115,7 +157,7 @@ Deno.test("complete-bookings: chua check-in + qua endAt -> NO_SHOW", async () =>
   const updated = fs.getDoc("b-no-checkin")!;
   assertEquals(updated.status, "NO_SHOW");
   assertEquals(updated.completedAt, undefined);
-  assertEquals(updated.updatedAt, serverNow.toISOString());
+  assertEquals(updated.updatedAt, `ts:${serverNow.toISOString()}`);
 });
 
 Deno.test("complete-bookings: CONFIRMED chua toi endAt -> giu nguyen", async () => {

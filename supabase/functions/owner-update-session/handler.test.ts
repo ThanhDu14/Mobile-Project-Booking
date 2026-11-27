@@ -23,10 +23,12 @@ const token = await new SignJWT({ appRole: "OWNER" }).setProtectedHeader({
     "https://securetoken.google.com/demo-owner-dropin",
   )
   .setExpirationTime("1h").sign(privateKey);
+const testDay = new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10);
+const testDate = testDay.replaceAll("-", "");
 const draft = {
   venueId: "v1",
   courtIds: ["c1"],
-  date: "20261115",
+  date: testDate,
   startTime: "1800",
   endTime: "1900",
   capacity: 8,
@@ -41,18 +43,19 @@ const request = (body: Record<string, unknown>) =>
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(body),
+    body: JSON.stringify({ requestId: crypto.randomUUID(), ...body }),
   });
 type Doc = Record<string, unknown>;
 class Store {
   docs = new Map<string, Doc>([
-    ["users/owner", { ownerStatus: "APPROVED" }],
+    ["users/owner", { ownerStatus: "APPROVED", role:"OWNER", accountStatus:"ACTIVE" }],
     ["venues/v1", {
       ownerId: "owner",
       districtId: "d1",
       status: "ACTIVE",
       name: "Sân A",
       address: "Địa chỉ A",
+      openTime: "0800", closeTime: "2300",
     }],
     ["venues/v1/courts/c1", { isActive: true }],
     ["venues/v1/courts/c2", { isActive: true }],
@@ -98,12 +101,14 @@ class Store {
       },
       query: (collection, filters, options) => {
         checkRead();
+        if (collection === "priceRules") return Promise.resolve([{id:"price",path:`${options?.parent}/priceRules/price`,data:{daysOfWeek:[1,2,3,4,5,6,7],startTime:"0800",endTime:"2300",pricePerHour:100000}}]);
         assertEquals(collection, "registrations");
-        assert(options?.parent?.startsWith("dropInSessions/"));
-        const prefix = `${options!.parent}/${collection}/`;
+        assert(options?.allDescendants || options?.parent?.startsWith("dropInSessions/"));
+        const prefix = options?.allDescendants ? "dropInSessions/" : `${options!.parent}/${collection}/`;
         return Promise.resolve(
           [...this.docs].filter(([path, data]) =>
-            path.startsWith(prefix) && filters.every((filter) => {
+            path.startsWith(prefix) && path.split("/").at(-2) === collection && filters.every((filter) => {
+              if (filter.op === "LESS_THAN") return data[filter.field] instanceof Date && (data[filter.field] as Date) < (filter.value as Date);
               assertEquals(filter.op, "EQUAL");
               return data[filter.field] === filter.value;
             })
@@ -111,7 +116,7 @@ class Store {
             [path, data],
           ) => ({
             path,
-            id: path.slice(prefix.length),
+            id: path.split("/").at(-1)!,
             data: structuredClone(data),
           })),
         );
@@ -138,18 +143,99 @@ async function created() {
   };
 }
 
+Deno.test("owner capacity increase promotes fitting waitlist entries; decrease preserves queue", async () => {
+  for (const capacity of [9, 7]) {
+    const { store, sessionId, path } = await created();
+    store.docs.set(path, { ...store.docs.get(path), registeredCount: 7, waitlistTickets: [1, 2], waitlistCount: 2 });
+    for (const [uid, partySize, ticket] of [["a", 3, 1], ["b", 2, 2]] as const) store.docs.set(`${path}/registrations/${uid}`, {
+      userId: uid, sessionId, status: "WAITLISTED", partySize, waitlistTicket: ticket,
+      paymentStatus: null, paymentMethod: "AT_VENUE", amount: partySize * 50000,
+    });
+    const delivered: string[] = [];
+    store.docs.set("users/b", { accountStatus: "ACTIVE" });
+    const response = await handleOwnerUpdateSession(request({ ...draft, sessionId, capacity }), {
+      firestore: store,
+      notify: async notification => {
+        assertEquals(store.docs.get(`${path}/registrations/${notification.userId}`)!.status, "REGISTERED", "Notification follows commit");
+        assertEquals(notification.type, "DROPIN_SPOT_OPENED");
+        assertEquals(notification.data.sessionId, sessionId);
+        delivered.push(notification.userId);
+      },
+    });
+    assertEquals(response.status, 200);
+    assertEquals(store.docs.get(`${path}/registrations/a`)!.status, "WAITLISTED");
+    assertEquals(store.docs.get(`${path}/registrations/b`)!.status, capacity === 9 ? "REGISTERED" : "WAITLISTED");
+    assertEquals(store.docs.get(path)!.registeredCount, capacity === 9 ? 9 : 7);
+    assertEquals(store.docs.get(path)!.waitlistTickets, capacity === 9 ? [1] : [1, 2]);
+    assertEquals(delivered, []);
+    assertEquals([...store.docs.entries()].filter(([p, d]) => p.startsWith("users/b/notifications/") &&
+      d.type === "DROPIN_SPOT_OPENED").length, capacity === 9 ? 1 : 0);
+  }
+});
+
+Deno.test("owner cancellation closes every waitlisted entry without promotion, charging or stale tickets", async () => {
+  const { store, sessionId, path } = await created();
+  store.docs.set(path, { ...store.docs.get(path), waitlistTickets: [1], waitlistCount: 1 });
+  store.docs.set(`${path}/registrations/a`, { userId: "a", sessionId, status: "WAITLISTED", partySize: 2, waitlistTicket: 1, paymentStatus: null });
+  const delivered: string[] = [];
+  store.docs.set("users/a", { accountStatus: "ACTIVE" });
+  assertEquals((await handleOwnerCancelSession(request({ venueId: "v1", sessionId }), {
+    firestore: store,
+    notify: async notification => {
+      assertEquals(store.docs.get(path)!.status, "CANCELLED", "Notification follows commit");
+      assertEquals(notification.type, "DROPIN_WAITLIST_CLOSED");
+      assertEquals(notification.data.reason, "SESSION_CANCELLED");
+      delivered.push(notification.userId);
+      throw new Error("Simulated push failure after commit");
+    },
+  })).status, 200);
+  const reg = store.docs.get(`${path}/registrations/a`)!;
+  assertEquals([reg.status, reg.waitlistEndReason, reg.cancelledBy, reg.paymentStatus], ["CANCELLED", "SESSION_CANCELLED", "OWNER", null]);
+  assertEquals(store.docs.get(path)!.waitlistTickets, []);
+  assertEquals([...store.docs.keys()].filter(p => p.includes("/notifications/")).length, 1);
+  assertEquals(delivered, []);
+});
+
+Deno.test("D4 changes and cancellation notify only previous registered players and keep replay results", async () => {
+  const { store, sessionId, path } = await created();
+  store.docs.set(path, { ...store.docs.get(path), registeredCount: 1, waitlistTickets: [1], waitlistCount: 1 });
+  for (const [uid, status] of [["player", "REGISTERED"], ["waiter", "WAITLISTED"], ["owner", "REGISTERED"]]) {
+    store.docs.set(`${path}/registrations/${uid}`, { userId: uid, status, partySize: 1, paymentMethod: "AT_VENUE", waitlistTicket: 1 });
+    if (uid !== "owner") store.docs.set(`users/${uid}`, { accountStatus: "ACTIVE" });
+  }
+  const body = { ...draft, sessionId, requestId: crypto.randomUUID(), startTime: "1830", endTime: "1930" };
+  const deps = { firestore: store };
+  const update = (fields: Record<string, unknown>) => handleOwnerUpdateSession(request(fields), deps);
+  const cancel = (fields: Record<string, unknown>) => handleOwnerCancelSession(request(fields), deps);
+  assertEquals((await update(body)).status, 200);
+  assertEquals((await update(body)).status, 200);
+  assertEquals((await update({ ...body, note: "Different" })).status, 409);
+  assertEquals((await update({ ...body, requestId: crypto.randomUUID(), note: "Note only" })).status, 200);
+  const cancellation = { venueId: "v1", sessionId, requestId: crypto.randomUUID() };
+  const first = await cancel(cancellation);
+  const replay = await cancel(cancellation);
+  assertEquals([first.status, replay.status], [200, 200]);
+  assertEquals(await first.json(), await replay.json());
+  const changes = [...store.docs.entries()].filter(([p, d]) => p.includes("/notifications/") && d.type === "DROPIN_CHANGED");
+  assertEquals(changes.length, 2);
+  assert(changes.every(([p, d]) => p.startsWith("users/player/notifications/") &&
+    (d.data as Record<string, unknown>).sessionId === sessionId));
+  assertEquals([...store.docs.entries()].filter(([p, d]) => p.startsWith("users/waiter/notifications/") &&
+    d.type === "DROPIN_WAITLIST_CLOSED").length, 1);
+});
+
 Deno.test("owner create: timestamps, array courts, owner/district and derived snapshot match spec 080", async () => {
   const { store, path } = await created();
   const session = store.docs.get(path)!;
-  assertEquals(session.startAt, new Date("2026-11-15T11:00:00Z"));
-  assertEquals(session.endAt, new Date("2026-11-15T12:00:00Z"));
+  assertEquals(session.startAt, new Date(`${testDay}T11:00:00Z`));
+  assertEquals(session.endAt, new Date(`${testDay}T12:00:00Z`));
   assertEquals(session.courtIds, ["c1"]);
   assertEquals([
     session.ownerId,
     session.districtId,
     session.timeSlot,
     session.date,
-  ], ["owner", "d1", "EVENING", "20261115"]);
+  ], ["owner", "d1", "EVENING", testDate]);
   assertEquals(session.venueSnapshot, {
     name: "Sân A",
     address: "Địa chỉ A",
@@ -226,10 +312,14 @@ Deno.test("owner cancel: multiple paid/check-in registrations refund fully, unpa
   assertEquals([
     store.docs.get(path)!.status,
     store.docs.get(path)!.registeredCount,
-    store.docs.get(path)!.waitlistStatus,
-  ], ["CANCELLED", 0, "CLOSED"]);
+    store.docs.get(path)!.waitlistCount,
+    store.docs.get(path)!.waitlistTickets,
+  ], ["CANCELLED", 0, 0, []]);
   assert(![...store.docs.keys()].some((key) => key.startsWith("slots/")));
 });
+
+// Credential/state cases run inside the agreed check-in window. Boundary cases live in owner-feature11.emulator.test.ts.
+const checkInAtStart = (store: Store, path: string) => ({firestore: store, clock: () => new Date((store.docs.get(path)!.startAt as Date).getTime())});
 
 Deno.test("owner check-in reads nested uid registration and rejects repeated/waitlisted check-in", async () => {
   const { store, sessionId, path } = await created();
@@ -241,7 +331,7 @@ Deno.test("owner check-in reads nested uid registration and rejects repeated/wai
   });
   const body = { venueId: "v1", sessionId, credential: "A".repeat(43) };
   assertEquals(
-    (await handleOwnerCheckinDropIn(request(body), { firestore: store }))
+    (await handleOwnerCheckinDropIn(request(body), checkInAtStart(store, path)))
       .status,
     200,
   );
@@ -249,7 +339,7 @@ Deno.test("owner check-in reads nested uid registration and rejects repeated/wai
     store.docs.get(`${path}/registrations/u1`)!.checkedInAt instanceof Date,
   );
   assertEquals(
-    (await handleOwnerCheckinDropIn(request(body), { firestore: store }))
+    (await handleOwnerCheckinDropIn(request(body), checkInAtStart(store, path)))
       .status,
     409,
   );
@@ -262,7 +352,7 @@ Deno.test("owner check-in reads nested uid registration and rejects repeated/wai
   assertEquals(
     (await handleOwnerCheckinDropIn(
       request({ ...body, credential: "DI-ABCDEFGH" }),
-      { firestore: store },
+      checkInAtStart(store, path),
     )).status,
     409,
   );
@@ -284,7 +374,7 @@ Deno.test("owner check-in resolves a normalized manual ticket to its UID without
   });
   const response = await handleOwnerCheckinDropIn(
     request({ venueId: "v1", sessionId, credential: "  di-23456789  " }),
-    { firestore: store },
+    checkInAtStart(store, path),
   );
   assertEquals(response.status, 200);
   const result = await response.json();
@@ -321,7 +411,7 @@ Deno.test("owner check-in rejects UID/malformed credentials and never resolves a
   ) {
     const response = await handleOwnerCheckinDropIn(
       request({ venueId: "v1", sessionId, credential }),
-      { firestore: store },
+      checkInAtStart(store, path),
     );
     assertEquals(response.status, status);
     assertEquals(store.docs, before);
@@ -331,7 +421,7 @@ Deno.test("owner check-in rejects UID/malformed credentials and never resolves a
   assertEquals(
     (await handleOwnerCheckinDropIn(
       request({ venueId: "v1", sessionId, credential: "a".repeat(43) }),
-      { firestore: store },
+      checkInAtStart(store, path),
     )).status,
     404,
   );
@@ -358,7 +448,7 @@ Deno.test("owner check-in denies foreign/unapproved owners and mismatched venue 
     const before = structuredClone(store.docs);
     const response = await handleOwnerCheckinDropIn(
       request({ venueId: "v1", sessionId, credential: "DI-ABCDEFGH" }),
-      { firestore: store },
+      checkInAtStart(store, path),
     );
     assertEquals(response.status, scenario === "unapproved" ? 403 : 404);
     assertEquals(store.docs, before);
@@ -392,7 +482,7 @@ Deno.test("owner check-in rejects used/cancelled/waitlisted registrations and cl
     assertEquals(
       (await handleOwnerCheckinDropIn(
         request({ venueId: "v1", sessionId, credential: "DI-ABCDEFGH" }),
-        { firestore: store },
+        checkInAtStart(store, path),
       )).status,
       409,
     );
@@ -421,7 +511,7 @@ Deno.test("owner check-in fails closed for duplicate credentials or mismatched r
     assertEquals(
       (await handleOwnerCheckinDropIn(
         request({ venueId: "v1", sessionId, credential: "DI-ABCDEFGH" }),
-        { firestore: store },
+        checkInAtStart(store, path),
       )).status,
       404,
     );
@@ -445,7 +535,7 @@ Deno.test("owner update moves courts/time atomically, recomputes fields, marks r
       endTime: "0900",
       pricePerPerson: 60000,
     }),
-    { firestore: store },
+    checkInAtStart(store, path),
   );
   assertEquals(response.status, 200);
   const session = store.docs.get(path)!;
@@ -454,7 +544,7 @@ Deno.test("owner update moves courts/time atomically, recomputes fields, marks r
     "MORNING",
     2,
   ]);
-  assertEquals(session.startAt, new Date("2026-11-15T01:00:00Z"));
+  assertEquals(session.startAt, new Date(`${testDay}T01:00:00Z`));
   assertEquals(store.docs.get(`${path}/registrations/u1`)!.amount, 100000);
   assertEquals(
     store.docs.get(`${path}/registrations/u1`)!.sessionChanged,
@@ -462,15 +552,37 @@ Deno.test("owner update moves courts/time atomically, recomputes fields, marks r
   );
   assertEquals(
     [...store.docs.keys()].filter((key) => key.startsWith("slots/")).sort(),
-    ["slots/c2_20261115_0800", "slots/c2_20261115_0830"],
+    [`slots/c2_${testDate}_0800`, `slots/c2_${testDate}_0830`],
   );
+});
+
+Deno.test("owner cancel and check-in enforce current authority and reject foreign slots without writes", async () => {
+  for (const scenario of ["role", "account", "owner", "slot"]) {
+    const { store, sessionId, path } = await created();
+    if (scenario === "role") store.docs.set("users/owner", { role: "PLAYER", ownerStatus: "APPROVED", accountStatus: "ACTIVE" });
+    if (scenario === "account") store.docs.set("users/owner", { role: "OWNER", ownerStatus: "APPROVED", accountStatus: "BLOCKED" });
+    if (scenario === "owner") store.docs.set("venues/v1", { ...store.docs.get("venues/v1"), ownerId: "other" });
+    if (scenario === "slot") {
+      const slotId = (store.docs.get(path)!.slotIds as string[])[0];
+      store.docs.set(`slots/${slotId}`, { status: "BOOKED", venueId: "v1", bookingId: "other" });
+    }
+    const before = structuredClone(store.docs);
+    const cancellation = await handleOwnerCancelSession(request({ venueId: "v1", sessionId, reason: "Test" }), checkInAtStart(store, path));
+    assertEquals(cancellation.status, scenario === "owner" ? 404 : scenario === "slot" ? 409 : 403);
+    assertEquals(store.docs, before);
+    if (scenario !== "slot") {
+      const checkin = await handleOwnerCheckinDropIn(request({ venueId: "v1", sessionId, credential: "A".repeat(43) }), checkInAtStart(store, path));
+      assertEquals(checkin.status, scenario === "owner" ? 404 : 403);
+      assertEquals(store.docs, before);
+    }
+  }
 });
 
 Deno.test("owner update rejects slot conflict, low capacity, wrong owner, closed session with no partial writes", async () => {
   for (const scenario of ["conflict", "capacity", "owner", "closed"]) {
     const { store, sessionId, path } = await created();
     if (scenario === "conflict") {
-      store.docs.set("slots/c2_20261115_1800", { status: "BOOKED" });
+      store.docs.set(`slots/c2_${testDate}_1800`, { status: "BOOKED" });
     }
     if (scenario === "capacity") {
       store.docs.set(path, { ...store.docs.get(path), registeredCount: 10 });
@@ -484,7 +596,7 @@ Deno.test("owner update rejects slot conflict, low capacity, wrong owner, closed
     const before = structuredClone(store.docs);
     const response = await handleOwnerUpdateSession(
       request({ ...draft, sessionId, courtIds: ["c2"] }),
-      { firestore: store },
+      checkInAtStart(store, path),
     );
     assertEquals(response.status, scenario === "owner" ? 404 : 409);
     assertEquals(store.docs, before);
@@ -501,7 +613,7 @@ Deno.test("owner update keeps own slots when only capacity changes and transitio
   assertEquals(
     (await handleOwnerUpdateSession(
       request({ ...draft, sessionId, capacity: 10 }),
-      { firestore: store },
+      checkInAtStart(store, path),
     )).status,
     200,
   );

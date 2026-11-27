@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Màn tìm sân trên máy tính bảng (spec 021 FR-023, T074): danh sách 40% (tối thiểu 320dp) bên trái, bản đồ bên
+     phải, không có nút chuyển chế độ. Bản đồ lỗi thì ẩn khung bản đồ và danh sách chiếm cả màn (code đổi tỉ lệ). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+
+    <include
+        android:id="@+id/header"
+        layout="@layout/view_main_tab_header"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/screen_gutter" />
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/results"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingHorizontal="@dimen/space_4"
+            android:paddingBottom="@dimen/space_4"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintWidth_min="320dp"
+            app:layout_constraintWidth_percent="0.4" />
+
+        <include
+            android:id="@+id/map"
+            layout="@layout/view_court_search_map"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:visibility="gone"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/results"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <!-- Giữ ID cho ViewBinding; máy tính bảng luôn hiện cả hai nên nút này không dùng -->
+        <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+            android:id="@+id/mapToggle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/map_toggle_map"
+            android:visibility="gone"
+            app:icon="@drawable/ic_map_24"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</LinearLayout>

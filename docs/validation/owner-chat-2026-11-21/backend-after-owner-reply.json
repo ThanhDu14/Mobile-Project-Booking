@@ -1,0 +1,39 @@
+{
+  "checkedAt": "2026-11-21T10:48:58.888Z",
+  "testChatCount": 1,
+  "chats": [
+    {
+      "chatId": "6GXTRepzvlbHeboyqZdBP5HIqSK2_wbQVCeaTGlXXql3EMt4ryBXpzvm1",
+      "ownerId": "wbQVCeaTGlXXql3EMt4ryBXpzvm1",
+      "playerId": "6GXTRepzvlbHeboyqZdBP5HIqSK2",
+      "venueId": "1b9faac0-11df-47c3-8110-bf928265fb4f",
+      "type": "DIRECT",
+      "status": "ACTIVE",
+      "unreadCounts": {
+        "wbQVCeaTGlXXql3EMt4ryBXpzvm1": 0,
+        "6GXTRepzvlbHeboyqZdBP5HIqSK2": 1
+      },
+      "testMessageCount": 3,
+      "testMessages": [
+        {
+          "senderId": "6GXTRepzvlbHeboyqZdBP5HIqSK2",
+          "status": "NORMAL",
+          "createdAt": "2026-11-21T10:41:23.483Z",
+          "hasImage": false
+        },
+        {
+          "senderId": "wbQVCeaTGlXXql3EMt4ryBXpzvm1",
+          "status": "NORMAL",
+          "createdAt": "2026-11-21T10:48:52.949Z",
+          "hasImage": false
+        },
+        {
+          "senderId": "6GXTRepzvlbHeboyqZdBP5HIqSK2",
+          "status": "NORMAL",
+          "createdAt": "2026-11-21T10:45:12.084Z",
+          "hasImage": true
+        }
+      ]
+    }
+  ]
+}

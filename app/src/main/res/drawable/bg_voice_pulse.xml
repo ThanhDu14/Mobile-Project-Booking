@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Vòng sáng sau micro khi đang nghe (spec 022 US4); màu do code tô bằng colorPrimary.
+     Thu vào 8dp để vòng nằm gọn trong ô, không chạm viền. -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:inset="8dp">
+    <shape android:shape="oval">
+        <solid android:color="@android:color/white" />
+    </shape>
+</inset>

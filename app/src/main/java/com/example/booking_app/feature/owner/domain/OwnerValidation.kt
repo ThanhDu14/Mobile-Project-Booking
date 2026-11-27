@@ -61,7 +61,7 @@ object OwnerValidation {
         }
         if (!phonePattern.matches(input.phone)) add(OwnerFieldError("phone", "Số điện thoại Việt Nam không hợp lệ"))
         if (input.photoPaths.isEmpty()) add(OwnerFieldError("photoPaths", "Cần ít nhất một ảnh"))
-        if (input.courtCount <= 0) add(OwnerFieldError("courtCount", "Số sân phải là số nguyên dương"))
+        if (input.courtCount < 0) add(OwnerFieldError("courtCount", "Số sân không được âm"))
     }
 
     fun court(input: CourtInput): List<OwnerFieldError> = buildList {
@@ -94,6 +94,7 @@ object OwnerValidation {
     fun slotBlock(input: SlotBlockInput): List<OwnerFieldError> = buildList {
         required(input.courtId, "courtId")
         if (!datePattern.matches(input.date)) add(OwnerFieldError("date", "Ngày phải có dạng yyyyMMdd"))
+        else if (runCatching { java.time.LocalDate.parse(input.date,java.time.format.DateTimeFormatter.BASIC_ISO_DATE) }.isFailure) add(OwnerFieldError("date","Ngày không hợp lệ"))
         halfHourTime(input.startTime, "startTime")
         halfHourTime(input.endTime, "endTime")
         if (validHalfHour(input.startTime) && validHalfHour(input.endTime) && input.startTime >= input.endTime) {

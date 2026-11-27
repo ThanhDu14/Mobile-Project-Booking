@@ -44,7 +44,7 @@
     <string name="owner_bookings_status_confirmed">Đã xác nhận</string>
     <string name="owner_bookings_status_other">Trạng thái: %1$s</string>
     <string name="owner_bookings_date_time">%1$s · %2$s–%3$s</string>
-    <string name="owner_bookings_amount_vnd">Tổng tiền: %1$s ₫</string>
+    <string name="owner_bookings_amount_vnd">Tổng tiền: %1$s đ</string>
     <string name="owner_bookings_action_unavailable">Thao tác sẽ khả dụng khi dịch vụ booking phía máy chủ được xác nhận.</string>
     <string name="owner_bookings_details_title">Chi tiết đơn đặt sân</string>
     <string name="owner_bookings_details_body">Mã đơn: %1$s\nTrạng thái: %2$s\nSố khung giờ: %3$d</string>
@@ -72,7 +72,7 @@
     <string name="owner_dropin_save">Lưu buổi</string>
     <string name="owner_dropin_session_time">%1$s · %2$s–%3$s</string>
     <string name="owner_dropin_session_status">Trạng thái: %1$s</string>
-    <string name="owner_dropin_capacity_status">Đã đăng ký %1$d/%2$d · %3$s ₫/người</string>
+    <string name="owner_dropin_capacity_status">Đã đăng ký %1$d/%2$d · %3$s đ/người</string>
     <string name="owner_dropin_scan">Quét QR đăng ký</string>
     <string name="owner_dropin_code_hint">Mã QR hoặc mã đăng ký</string>
     <string name="owner_dropin_checkin">Xác nhận check-in</string>
@@ -108,7 +108,7 @@
     <string name="owner_statistics_empty">Không có dữ liệu booking trong khoảng thời gian này.</string>
     <string name="owner_statistics_contract_error">Dịch vụ báo cáo venue-scoped chưa được triển khai. Không có số liệu giả được hiển thị.</string>
     <string name="owner_statistics_date_format_error">Nhập ngày theo định dạng yyyy-MM-dd.</string>
-    <string name="owner_statistics_revenue">Doanh thu\nĐặt cọc: %1$s ₫ · Đã thu: %2$s ₫\nHoàn tiền: %3$d đơn · %4$s ₫</string>
+    <string name="owner_statistics_revenue">Doanh thu\nĐặt cọc: %1$s đ · Đã thu: %2$s đ\nHoàn tiền: %3$d đơn · %4$s đ</string>
     <string name="owner_statistics_occupancy">Tỷ lệ lấp đầy: %1$.1f%%</string>
     <string name="owner_statistics_peak_title">Khung giờ cao điểm · mỗi cột 60 phút</string>
     <string name="owner_statistics_peak_chart">Biểu đồ thời lượng có booking theo giờ địa phương</string>
@@ -188,7 +188,7 @@
     <string name="owner_dropin_create_note_hint">Ví dụ: có sẵn cầu, mang giày đế không in vết</string>
     <string name="owner_dropin_create_lock_warning">Các khung giờ của buổi sẽ bị khóa với người đặt sân.</string>
     <string name="owner_dropin_create_submit">Mở buổi</string>
-    <string name="owner_dropin_roster_title">Buổi vãng lai hôm nay</string>
+    <string name="owner_dropin_roster_title">Buổi vãng lai</string>
     <string name="owner_dropin_roster_registered_stat">Đã đăng ký</string>
     <string name="owner_dropin_roster_entered_stat">Đã vào sân</string>
     <string name="owner_dropin_roster_waitlist_stat">Hàng chờ</string>

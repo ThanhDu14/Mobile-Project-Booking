@@ -155,6 +155,7 @@ class AdminApplicationRepositoryImpl @Inject constructor(
 
         return AdminOwnerApplication(
             id = appId,
+            purpose = getString("purpose") ?: "OWNER_ONBOARDING",
             applicantId = applicantId,
             applicantName = representativeName,
             applicantPhone = representativePhone,

@@ -80,6 +80,21 @@ interface Result {
  */
 const isolates = (n: number): KeyedSerializer[] => Array.from({ length: n }, () => createKeyedSerializer());
 
+Deno.test({ name: "D3: cancelled attempt needs new UUID; stale replay rejects before capacity/source writes", ignore: !ENABLED, async fn() {
+  await seedBase();
+  const sid = `${RUN}-d3`, uid = PLAYERS[19], old = crypto.randomUUID();
+  await seedSession(sid, 12, 0);
+  assertEquals((await register(uid, sid, 1, old)).status, 201);
+  await commit([firestore.updateWrite(`dropInSessions/${sid}/registrations/${uid}`, { status: "CANCELLED" }),
+    firestore.updateWrite(`dropInSessions/${sid}`, { registeredCount: 0 })]);
+  const stale = await register(uid, sid, 1, old);
+  assertEquals([stale.status, stale.body.error?.code], [409, "STALE_REQUEST"]);
+  assertEquals((await get(`dropInSessions/${sid}`))!.registeredCount, 0);
+  assertEquals((await register(uid, sid, 1)).status, 201);
+  const inbox = await firestore.query("notifications", [], { parent: `users/${uid}` });
+  assertEquals(inbox.filter(n => (n.data.data as Record<string, unknown>).sessionId === sid).length, 2);
+} });
+
 /** Giống app (research R2): nhận 503 BUSY thì chờ 1 giây rồi gửi lại cùng `requestId`, tối đa 2 lần. */
 async function register(
   uid: string,
@@ -175,7 +190,9 @@ Deno.test({
     for (const r of rs) assertEquals(r.body.registration, rs[0].body.registration);
     assert(!JSON.stringify(rs).includes("qrToken"));
     assertEquals((await get(`dropInSessions/${sid}`))!.registeredCount, 4);
-    assertEquals(sent, [{ type: "DROPIN_REGISTERED", userId: PLAYERS[2], data: { sessionId: sid } }]);
+    assertEquals(sent, []);
+    const inbox = await firestore.query("notifications", [], { parent: `users/${PLAYERS[2]}` });
+    assertEquals(inbox.filter(n => (n.data.data as Record<string, unknown>).sessionId === sid).length, 1);
 
     const reg = (await get(`dropInSessions/${sid}/registrations/${PLAYERS[2]}`))!;
     for (const k of ["sessionStartAt", "sessionEndAt", "registeredAt", "createdAt", "updatedAt"]) {

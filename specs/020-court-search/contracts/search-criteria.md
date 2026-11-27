@@ -9,7 +9,7 @@
 data class SearchCriteria(
     val keyword: String = "",                 // chữ người dùng gõ, chưa chuẩn hóa
     val districtId: String? = null,
-    val priceMin: Long? = null,               // VND/giờ, bội số 10_000
+    val priceMin: Long? = null,               // VND/giờ, bội số 1_000 (thanh trượt bước 10_000)
     val priceMax: Long? = null,               // null = không giới hạn trên
     val timeWindow: TimeWindow? = null,
     val amenityIds: Set<String> = emptySet(),
@@ -54,8 +54,8 @@ data class SanitizeResult(val criteria: SearchCriteria, val dropped: List<Droppe
 | `districtId` không có hoặc `isActive == false` | Bỏ quận | `UNKNOWN_DISTRICT` |
 | Mỗi `amenityId` không có hoặc ẩn | Bỏ riêng tiện ích đó | `UNKNOWN_AMENITY` |
 | Giá âm; `priceMin > priceMax` | Bỏ cả khoảng giá | `INVALID_PRICE` |
-| Giá không chia hết 10.000 | Làm tròn: `priceMin` xuống, `priceMax` lên | (không báo) |
-| `priceMax ≥ 200.000` | `priceMax = null` (không giới hạn trên, khớp thanh trượt "200.000 đ+") | (không báo) |
+| Giá không chia hết 1.000 (gõ tay, AI hiểu "dưới 55k5") | Làm tròn: `priceMin` xuống, `priceMax` lên (`CourtSearchCriteria.withRoundedPrices`, 2026-11-19; trước đây ghi 10.000, đổi theo Rules lịch sử ngày 2026-11-17) | (không báo) |
+| `priceMax ≥ 200.000` trên thanh trượt | `priceMax = null` (không giới hạn trên, khớp "200.000 đ+"); hộp nhập giá và AI giữ nguyên trần đã nhập | (không báo) |
 | `priceMin == 0` | `priceMin = null` | (không báo) |
 | `date` trước hôm nay | Bỏ khung giờ | `PAST_DATE` |
 | `date` sau hôm nay + 30 ngày (`BookingWindow.ADVANCE_DAYS`) | Bỏ khung giờ | `DATE_OUT_OF_RANGE` |
@@ -67,15 +67,21 @@ Sanitizer chạy ở **ba chỗ**: khôi phục mục lịch sử (FR-023), nh�
 
 ```kotlin
 // SearchViewModel (scope nav graph nav_search)
-fun applyExternal(criteria: SearchCriteria, source: CriteriaSource)   // source: AI, HISTORY, DEEP_LINK
+suspend fun applyExternal(criteria: SearchCriteria, source: CriteriaSource): SanitizeResult
 val criteria: StateFlow<SearchCriteria>
 ```
 
 - `applyExternal` gọi sanitizer, thay toàn bộ `criteria`, chạy tìm kiếm như người dùng tự chọn, và lưu lịch sử (đúng định nghĩa "một lần tìm" ở research R11).
-- `dropped` không rỗng → snackbar ngắn liệt kê phần bị bỏ, người chơi thấy các chip còn lại để tự chỉnh (Edge case "Bộ lọc do spec 022 điền vào").
+- Trả các điều kiện bị bỏ để nguồn gọi giải thích hoặc hỏi lại. Khung giờ đặt sân dùng bước 30 phút và phải dài ít nhất 60 phút theo FR-036.
 - 022 có ý "gần tôi" thì đặt `sort = NEAREST`; ViewModel tự chạy luồng xin quyền vị trí như khi người chơi chọn (US1-5 của 022).
 - 022 **không** gọi `VenueSearchEngine` trực tiếp, trừ gợi ý nới điều kiện (US6 của 022), khi đó dùng `VenueSearchEngine.count(criteria)` ở §4.
 - 021 đọc `criteria` để vẽ marker và gọi `VenueSearchEngine` với thêm vùng bản đồ (spec 021 mở rộng; 020 không làm).
+
+### 3.1. Đề xuất theo đánh giá của 022
+
+- `SearchCriteria` chứa các điều kiện tìm kiếm của 020. Sở thích theo đánh giá thuộc phiên tìm sân của 022 và không được lưu trong lịch sử 020.
+- 020 cung cấp 30 cơ sở đầu tiên theo thứ tự sắp xếp hiện tại của danh sách đã lọc cho bước đề xuất 022, gửi một lần khi danh sách có ít nhất 30 sân hoặc đã tải xong (code: `CourtSearchViewModel.search`). 022 trả tối đa ba đề xuất kèm đánh giá nguồn cho cùng lần tìm. Trước khi hiển thị, 020 đối chiếu cơ sở với bộ lọc hiện tại và bỏ kết quả trả về cho lần tìm cũ.
+- Mục đề xuất hiển thị riêng trong tab Tìm kiếm. Danh sách chính dùng thứ tự và phân trang của 020, đồng thời hiển thị độc lập với thời gian xử lý của 022. Xem [FR-034, FR-035](../spec.md#functional-requirements) và [US7 của 022](../../022-ai-court-search/spec.md#user-story-7---tìm-sân-theo-nội-dung-đánh-giá-priority-p3).
 
 ## 4. Engine tìm kiếm
 

@@ -114,6 +114,7 @@ function setup(
   opts: { venue?: Doc | null; registrations?: Record<string, Doc>; notifyFails?: boolean } = {},
 ): Env {
   const fs = new FakeFirestore();
+  fs.seed("users/u1", { accountStatus: "ACTIVE" });
   fs.seed(SESSION, {
     venueId: "v1",
     ownerId: "owner1",
@@ -229,7 +230,8 @@ Deno.test("201 MOCK_PAY: response đúng contract, không có qrToken; đăng k�
   assertEquals([session.registeredCount, session.status], [10, "OPEN"]);
   assert(session.updatedAt instanceof Date);
 
-  assertEquals(env.sent, [{ type: "DROPIN_REGISTERED", userId: "u1", data: { sessionId: SID } }]);
+  assertEquals(env.sent, []);
+  assertEquals([...env.fs.docs].filter(([p]) => p.startsWith("users/u1/notifications/")).map(([, d]) => d.type), ["DROPIN_REGISTERED"]);
 });
 
 Deno.test("AT_VENUE → paymentStatus UNPAID; amount = pricePerPerson × partySize", async () => {
@@ -260,7 +262,8 @@ Deno.test("E3: cùng requestId gửi 5 lần song song → 1×201, 4×200 cùng 
     assert(!r.text.includes("qrToken"));
   }
   assertEquals(env.fs.read(SESSION)!.registeredCount, 10);
-  assertEquals(env.sent.length, 1);
+  assertEquals(env.sent, []);
+  assertEquals([...env.fs.docs.keys()].filter(p => p.startsWith("notificationDeliveries/")).length, 1);
 });
 
 Deno.test("cùng requestId khi đã CHECKED_IN hoặc buổi đã FULL → 200 trả bản cũ", async () => {
@@ -332,7 +335,8 @@ Deno.test("E11: ghi đè bản CANCELLED cũ → 201, qrToken/ticketCode mới, 
   assertEquals(reg.legacyField, undefined, "ghi đè cả document");
   assertEquals((reg.createdAt as Date).toISOString(), "2026-11-01T00:00:00.000Z", "giữ createdAt cũ");
   assertEquals(env.fs.read(SESSION)!.registeredCount, 9);
-  assertEquals(env.sent.length, 1);
+  assertEquals(env.sent, []);
+  assertEquals([...env.fs.docs.keys()].filter(p => p.startsWith("notificationDeliveries/")).length, 1);
 });
 
 // ---------- Điều kiện buổi (E8) ----------
@@ -425,7 +429,8 @@ Deno.test("ACCOUNT_LOCKED từ authenticate được trả nguyên", async () =>
 Deno.test("gửi thông báo lỗi → vẫn 201", async () => {
   const env = setup({}, { notifyFails: true });
   assertEquals((await call(env, "u1", body())).status, 201);
-  assertEquals(env.sent.length, 1);
+  assertEquals(env.sent, []);
+  assertEquals([...env.fs.docs.keys()].filter(p => p.startsWith("notificationDeliveries/")).length, 1);
 });
 
 Deno.test("ABORTED 2 lần rồi thành công → 201, đếm chỉ tăng 1 lần", async () => {
@@ -520,6 +525,7 @@ Deno.test("ADD_PARTY: thêm 1 người → 200, partySize 3, amount cộng thêm
   assertEquals(reg.lastAddRequestId, RID3);
   assertEquals(env.fs.read(SESSION)!.registeredCount, 9);
   assertEquals(env.sent.length, 0);
+  assertEquals([...env.fs.docs.keys()].filter(p => p.includes("/notifications/")).length, 0);
 });
 
 Deno.test("ADD_PARTY: AT_VENUE thì vẫn UNPAID; đủ chỗ cuối → buổi FULL", async () => {

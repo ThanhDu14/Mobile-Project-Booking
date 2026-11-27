@@ -1,0 +1,9 @@
+
+ RUN  v5.1.0 F:/CSC_HCMUS/Mobile/datcau/firestore-tests
+
+
+ Test Files  5 passed (5)
+      Tests  61 passed (61)
+   Start at  17:24:12
+   Duration  85.31s (tests 88%, import 12%)
+

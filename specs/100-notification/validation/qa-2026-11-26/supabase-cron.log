@@ -1,0 +1,12 @@
+booking-reminders|* * * * *|t
+notification-delivery|* * * * *|t
+200|{"scanned":0,"created":0,"skipped":0,"budgetExhausted":false}|
+200|{"claims":0,"requests":0,"cleaned":0,"dropInPages":0,"groupPages":0,"vouchersPublished":0,"promotionPages":0}|
+200|{"claims":0,"requests":0,"cleaned":0,"dropInPages":0,"groupPages":0,"vouchersPublished":0,"promotionPages":0}|
+200|{"scanned":0,"created":0,"skipped":0,"budgetExhausted":false}|
+booking-reminders|succeeded|2
+notification-delivery|succeeded|2
+t
+t
+remaining temporary jobs|0
+remaining temporary vault keys|0

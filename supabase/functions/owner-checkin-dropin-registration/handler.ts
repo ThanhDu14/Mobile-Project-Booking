@@ -2,14 +2,16 @@ import { errorResponse, HttpError, verifyIdToken } from "../_shared/auth.ts";
 import * as defaultFirestore from "../_shared/firestore.ts";
 import { FirestoreError, updateWrite } from "../_shared/firestore.ts";
 import { registrationPath } from "../_shared/dropin.ts";
+import { requireOwnerVenue } from "../_shared/owner-access.ts";
 
 export interface OwnerCheckinDropInDeps {
   firestore: Pick<typeof defaultFirestore, "get" | "runTransaction">;
+  clock?: () => Date;
 }
 
 export async function handleOwnerCheckinDropIn(
   req: Request,
-  { firestore }: OwnerCheckinDropInDeps = { firestore: defaultFirestore },
+  { firestore, clock = () => new Date() }: OwnerCheckinDropInDeps = { firestore: defaultFirestore },
 ): Promise<Response> {
   if (req.method !== "POST") {
     return errorResponse(405, "METHOD_NOT_ALLOWED", "Chỉ hỗ trợ POST");
@@ -27,8 +29,8 @@ export async function handleOwnerCheckinDropIn(
       ? body.credential.trim()
       : "";
 
-    if (!venueId) throw new HttpError(400, "INVALID_VENUE_ID", "Thiếu venueId");
-    if (!sessionId) {
+    if (!venueId || venueId.includes("/")) throw new HttpError(400, "INVALID_VENUE_ID", "Thiếu venueId");
+    if (!sessionId || sessionId.includes("/")) {
       throw new HttpError(400, "INVALID_SESSION_ID", "Thiếu sessionId");
     }
     const ticketCode = credential.toUpperCase();
@@ -42,28 +44,11 @@ export async function handleOwnerCheckinDropIn(
       );
     }
 
-    // 1. Verify owner
-    if (token.appRole !== "ADMIN") {
-      const user = await firestore.get(`users/${token.uid}`);
-      if (user?.ownerStatus !== "APPROVED") {
-        throw new HttpError(403, "FORBIDDEN", "Chủ sân chưa được phê duyệt");
-      }
-    }
-
-    // 2. Verify venue
-    const venue = await firestore.get(`venues/${venueId}`);
-    if (!venue || (venue.ownerId !== token.uid && token.appRole !== "ADMIN")) {
-      throw new HttpError(
-        404,
-        "NOT_FOUND",
-        "Không tìm thấy cơ sở hoặc bạn không có quyền",
-      );
-    }
-
-    const now = new Date();
-    const nowIso = now.toISOString();
     try {
-      const registrationId = await firestore.runTransaction(async (tx) => {
+      const result = await firestore.runTransaction(async (tx) => {
+        const now = clock();
+        const venue = await requireOwnerVenue(tx, token, venueId);
+        if (venue.status !== "ACTIVE") throw new HttpError(403,"VENUE_UNAVAILABLE","Cơ sở đang ẩn hoặc bị khóa");
         // Read both documents in the transaction so concurrent check-ins cannot succeed twice.
         const session = await tx.get(`dropInSessions/${sessionId}`);
         if (!session || session.venueId !== venueId) {
@@ -73,6 +58,14 @@ export async function handleOwnerCheckinDropIn(
             "Không tìm thấy buổi chơi",
           );
         }
+
+        const millis = (value: unknown) => value instanceof Date ? value.getTime() : typeof value === "string" ? Date.parse(value) : NaN;
+        const start = millis(session.startAt), end = millis(session.endAt);
+        if (!Number.isFinite(start) || !Number.isFinite(end) || end <= start) {
+          throw new HttpError(409,"INVALID_SESSION_TIME","Buổi chơi chưa có thời gian hợp lệ");
+        }
+        if (now.getTime() < start - 30 * 60_000) throw new HttpError(400,"TOO_EARLY","Chỉ check-in từ 30 phút trước giờ bắt đầu buổi");
+        if (now.getTime() >= end) throw new HttpError(400,"TOO_LATE","Buổi chơi đã kết thúc thời gian check-in");
 
         // C renders the raw qrToken; manual tickets use DI-XXXXXXXX. Resolve only
         // inside this authorized session, never treat an untrusted credential as a UID.
@@ -127,14 +120,14 @@ export async function handleOwnerCheckinDropIn(
           checkedInAt: now,
           updatedAt: now,
         }));
-        return match.id;
+        return {registrationId:match.id,checkedInAt:now.toISOString()};
       });
       return Response.json({
         success: true,
-        registrationId,
+        registrationId:result.registrationId,
         sessionId,
         status: "CHECKED_IN",
-        checkedInAt: nowIso,
+        checkedInAt:result.checkedInAt,
       });
     } catch (e) {
       if (

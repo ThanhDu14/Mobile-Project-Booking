@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Spec 081: bề rộng nội dung màn hình lượt chờ ở màn rộng (layout-w600dp/fragment_dropin_waitlist.xml). -->
+<resources>
+    <dimen name="dropin_waitlist_content_width">560dp</dimen>
+</resources>

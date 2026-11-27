@@ -46,6 +46,20 @@ class OwnerBookingsViewModelTest {
     @After
     fun tearDown() = Dispatchers.resetMain()
 
+    @Test fun resumeWithNavigationVenueDoesNotCancelAuthorityContextLoading() = runTest {
+        coEvery { venueRepository.getOwnedVenues() } coAnswers {
+            kotlinx.coroutines.delay(50)
+            Result.success(listOf(OwnerFixtures.venue))
+        }
+        val saved = androidx.lifecycle.SavedStateHandle(mapOf("venueId" to OwnerFixtures.venue.id))
+        val viewModel = OwnerBookingsViewModel(venueRepository, bookingRepository, saved)
+        viewModel.refresh() // Fragment.onResume, before getOwnedVenues returns.
+        advanceUntilIdle()
+        assertEquals(listOf(OwnerFixtures.venue), viewModel.uiState.value.venues)
+        assertEquals(OwnerFixtures.venue.id, viewModel.uiState.value.selectedVenueId)
+        assertFalse(viewModel.uiState.value.isLoading)
+    }
+
     @Test
     fun initLoadsOwnedVenuesAndObservesSelectedVenue() = runTest {
         val viewModel = OwnerBookingsViewModel(venueRepository, bookingRepository)
@@ -117,6 +131,17 @@ class OwnerBookingsViewModelTest {
         assertEquals(command, bookingRepository.lastCommand)
         assertEquals("Đã cập nhật booking", viewModel.uiState.value.actionMessage)
         assertFalse(viewModel.uiState.value.actionInProgress)
+    }
+
+    @Test
+    fun blankRejectReasonDoesNotReachRepository() = runTest {
+        val viewModel = OwnerBookingsViewModel(venueRepository, bookingRepository)
+        advanceUntilIdle()
+        viewModel.submit(OwnerBookingCommand.Reject(OwnerFixtures.venue.id, "b1", "  "))
+        advanceUntilIdle()
+        assertEquals(null, bookingRepository.lastCommand)
+        assertFalse(viewModel.uiState.value.actionInProgress)
+        assertTrue(viewModel.uiState.value.error!!.contains("lý do"))
     }
 
     private fun sampleBooking(

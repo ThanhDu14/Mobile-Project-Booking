@@ -30,8 +30,10 @@
 ```
 (chưa có) ──create──▶ ACTIVE ──delete (chủ nhóm, gõ đúng tên)──▶ DELETED ──(xóa xong dữ liệu)──▶ (không còn)
                         ▲  │
-          admin mở khóa └──┴── admin khóa (spec 120) ──▶ LOCKED ──delete──▶ DELETED
+          admin mở khóa └──┴── admin khóa (spec 120) ──▶ LOCKED
 ```
+
+Nhóm `LOCKED` không xóa được (`delete` trả `423 GROUP_LOCKED`, theo bảng mục 8); chủ nhóm phải chờ admin mở khóa.
 
 ## 2. `groups/{groupId}/members/{uid}`
 
@@ -185,3 +187,5 @@ Thời gian là `Instant`, hiển thị theo `Asia/Ho_Chi_Minh` bằng `core/for
 5. **Mục 7:** sửa dòng `groups` thành "giới thiệu nhóm ai cũng R; bảng tin, thành viên chỉ thành viên R; mọi ghi qua Edge Function" (R6).
 6. **Mục 8:** thêm bucket public `group-avatars` (`{groupId}/avatar.*`, ghi qua signed URL của `group-manage`); `group-media` object là `{groupId}/{postId}/{n}.{ext}`, đọc/ghi qua `group-media-url`.
 7. **Mục 8a:** thêm `group-manage`, `group-post`, `group-media-url` (C).
+
+Chốt liên nhóm: `delete` chỉ được thực hiện khi `status == ACTIVE`. Nhóm `LOCKED` trả `423 GROUP_LOCKED`, kể cả người gọi là chủ nhóm. Kiểm tra lại trạng thái trong transaction trước khi đổi sang `DELETED`. Chỉ admin được mở khóa.

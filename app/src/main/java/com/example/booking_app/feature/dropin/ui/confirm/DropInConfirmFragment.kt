@@ -21,6 +21,7 @@ import com.example.booking_app.core.ui.EmptyStateSpec
 import com.example.booking_app.core.ui.UiState
 import com.example.booking_app.core.ui.render
 import com.example.booking_app.databinding.FragmentDropinConfirmBinding
+import com.example.booking_app.feature.dropin.domain.model.DropInError
 import com.example.booking_app.feature.dropin.domain.model.PaymentMethod
 import com.example.booking_app.feature.dropin.ui.common.DropInUiText
 import com.google.android.material.snackbar.Snackbar
@@ -50,6 +51,8 @@ class DropInConfirmFragment : Fragment(R.layout.fragment_dropin_confirm) {
         binding.payMockRow.setOnClickListener { viewModel.setPaymentMethod(PaymentMethod.MOCK_PAY) }
         binding.payAtVenueRow.setOnClickListener { viewModel.setPaymentMethod(PaymentMethod.AT_VENUE) }
         binding.submitButton.setOnClickListener { viewModel.submit() }
+        binding.joinWaitlistInstead.setOnClickListener { viewModel.onJoinWaitlistInstead() }
+        if (viewModel.mode == ConfirmMode.WAITLIST) binding.toolbar.setTitle(R.string.dropin_waitlist_confirm_title)
         markAsRadio(binding.payMockRow) { binding.payMockRadio.isChecked }
         markAsRadio(binding.payAtVenueRow) { binding.payAtVenueRadio.isChecked }
 
@@ -92,12 +95,23 @@ class DropInConfirmFragment : Fragment(R.layout.fragment_dropin_confirm) {
         bindForm(binding, form, editable = !submitting)
 
         binding.errorText.isVisible = state is DropInConfirmUiState.Failed
+        val offerWaitlist = state is DropInConfirmUiState.Failed &&
+            (state.reason as? DropInError.SessionFull)?.waitlistOpen == true
+        binding.joinWaitlistInstead.isVisible = offerWaitlist
         if (state is DropInConfirmUiState.Failed) {
             binding.errorText.text = DropInUiText.error(requireContext(), state.reason)
         }
 
         binding.submitButton.isEnabled = !submitting && form.canSubmit
-        binding.submitButton.setText(if (submitting) R.string.dropin_confirm_submitting else R.string.dropin_confirm_submit)
+        val waitlist = form.mode == ConfirmMode.WAITLIST
+        binding.submitButton.setText(
+            when {
+                submitting && waitlist -> R.string.dropin_waitlist_confirm_submitting
+                submitting -> R.string.dropin_confirm_submitting
+                waitlist -> R.string.dropin_waitlist_confirm_submit
+                else -> R.string.dropin_confirm_submit
+            },
+        )
     }
 
     private fun bindForm(binding: FragmentDropinConfirmBinding, form: ConfirmForm, editable: Boolean) {
@@ -106,21 +120,35 @@ class DropInConfirmFragment : Fragment(R.layout.fragment_dropin_confirm) {
 
         binding.sessionTitle.text = getString(R.string.dropin_confirm_session_line, session.venueName)
         binding.sessionDateTime.text = DropInUiText.dateTimeLine(context, session.startAt, session.endAt)
-        binding.sessionLevelRemaining.text = getString(
-            R.string.dropin_confirm_level_remaining,
-            getString(DropInUiText.level(session.level)),
-            session.remaining,
-        )
+        val waitlist = form.mode == ConfirmMode.WAITLIST
+        binding.sessionLevelRemaining.text = if (waitlist) {
+            getString(
+                R.string.dropin_waitlist_confirm_level_full,
+                getString(DropInUiText.level(session.level)),
+                session.waitlistCount,
+            )
+        } else {
+            getString(
+                R.string.dropin_confirm_level_remaining,
+                getString(DropInUiText.level(session.level)),
+                session.remaining,
+            )
+        }
 
         binding.partyValue.text = form.partySize.toString()
         binding.partyValue.contentDescription = getString(R.string.dropin_confirm_party_value, form.partySize)
         binding.partyDecrease.isEnabled = editable && form.partySize > DropInConfirmViewModel.MIN_PARTY
         binding.partyIncrease.isEnabled = editable && form.partySize < form.maxParty
-        binding.partyLimit.text = if (form.maxParty > 0) {
+        binding.partyLimit.text = if (waitlist) {
+            getString(R.string.dropin_waitlist_confirm_party_limit)
+        } else if (form.maxParty > 0) {
             getString(R.string.dropin_confirm_party_limit, session.remaining, form.maxParty)
         } else {
             getString(R.string.dropin_confirm_no_seat)
         }
+
+        binding.waitlistBox.isVisible = waitlist
+        binding.totalLabel.setText(if (waitlist) R.string.dropin_waitlist_confirm_total else R.string.dropin_confirm_total)
 
         binding.warningBox.isVisible = form.warnings.isNotEmpty()
         binding.warningText.text = form.warnings.joinToString("\n") { getString(DropInUiText.warning(it)) }
@@ -140,10 +168,14 @@ class DropInConfirmFragment : Fragment(R.layout.fragment_dropin_confirm) {
         binding.subtotal.text = total
         binding.total.text = total
         binding.bottomTotal.text = total
-        binding.bottomSummary.text = getString(
-            if (mock) R.string.dropin_confirm_summary_mock else R.string.dropin_confirm_summary_at_venue,
-            form.partySize,
-        )
+        binding.waitlistAmount.text = getString(R.string.dropin_waitlist_amount_note, total)
+        val summary = when {
+            waitlist && mock -> R.string.dropin_waitlist_confirm_summary_mock
+            waitlist -> R.string.dropin_waitlist_confirm_summary_at_venue
+            mock -> R.string.dropin_confirm_summary_mock
+            else -> R.string.dropin_confirm_summary_at_venue
+        }
+        binding.bottomSummary.text = getString(summary, form.partySize)
     }
 
     private fun onEvent(binding: FragmentDropinConfirmBinding, event: DropInConfirmEvent) {
@@ -155,6 +187,14 @@ class DropInConfirmFragment : Fragment(R.layout.fragment_dropin_confirm) {
                     DropInConfirmFragmentDirections.actionDropInConfirmToTicket(event.sessionId, true),
                 )
             }
+            is DropInConfirmEvent.NavigateToWaitlist -> {
+                if (nav.currentDestination?.id != R.id.dropInConfirmFragment) return
+                nav.navigate(DropInConfirmFragmentDirections.actionDropInConfirmToWaitlist(event.sessionId))
+            }
+            is DropInConfirmEvent.SwitchMode -> {
+                if (nav.currentDestination?.id != R.id.dropInConfirmFragment) return
+                nav.navigate(DropInConfirmFragmentDirections.actionDropInConfirmToConfirm(event.sessionId, event.mode))
+            }
             DropInConfirmEvent.NetworkError ->
                 Snackbar.make(binding.root, R.string.dropin_error_network, Snackbar.LENGTH_LONG)
                     .setAction(R.string.dropin_retry) { viewModel.submit() }
@@ -162,7 +202,8 @@ class DropInConfirmFragment : Fragment(R.layout.fragment_dropin_confirm) {
             is DropInConfirmEvent.RequireLogin -> {
                 Snackbar.make(binding.root, R.string.dropin_error_unauthenticated, Snackbar.LENGTH_SHORT).show()
                 // Đăng nhập xong quay lại đúng bước xác nhận (deep link khai báo trong nav_dropin.xml).
-                authNavigator.openLogin(nav, Uri.parse("smashnow://dropin/confirm/${event.sessionId}"))
+                val modeQuery = if (viewModel.mode == ConfirmMode.WAITLIST) "?mode=${ConfirmMode.WAITLIST.name}" else ""
+                authNavigator.openLogin(nav, Uri.parse("smashnow://dropin/confirm/${event.sessionId}$modeQuery"))
             }
         }
     }

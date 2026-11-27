@@ -49,6 +49,7 @@ function setup(
   } = {},
 ): Env {
   const fs = new FakeFirestore(() => NOW);
+  fs.seed(`users/${OWNER}`, { role: "OWNER", ownerStatus: "APPROVED", accountStatus: "ACTIVE" });
   fs.seed("venues/v1", {
     ownerId: OWNER,
     name: "Sân Ánh Dương",
