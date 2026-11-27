@@ -1145,7 +1145,9 @@ class BookingSlotGridViewModel @Inject constructor(
 
     private fun computePeakHourBanner(rules: List<PriceRule>, date: LocalDate): String? {
         val day = com.example.booking_app.core.pricing.DayConvention.fromDayOfWeek(date.dayOfWeek)
-        val peakRule = rules.filter { day in it.daysOfWeek }.maxByOrNull { it.pricePerHour } ?: return null
+        val dayRules = rules.filter { day in it.daysOfWeek }
+        if (dayRules.map { it.pricePerHour }.distinct().size < 2) return null
+        val peakRule = dayRules.maxByOrNull { it.pricePerHour } ?: return null
         val startFormatted = formatHourMinute(peakRule.startTime)
         val endFormatted = formatHourMinute(peakRule.endTime)
         val priceFormatted = currencyFormatter.format(peakRule.pricePerHour)
