@@ -124,15 +124,23 @@ Deno.test("R120 local Firebase: decisions, claim recovery, race, controls, moder
   assert(active.length>300);
   const broadcastBody={title:"Local test",body:"Local test only",requestId:crypto.randomUUID()};
   let batches=0;
-  await status(await broadcast(request(broadcastBody),{firestore:{...fs,commit:async(writes,transaction)=>{
-    if(++batches===2) throw new fs.FirestoreError("UNKNOWN",503,"Injected mid-batch failure");
-    await fs.commit(writes,transaction);
-  }}}),500);
+  const runTransaction: typeof fs.runTransaction = (operation, maxAttempts) => {
+    const batch = ++batches;
+    return fs.runTransaction(async (tx) => {
+      const result = await operation(tx);
+      if (batch === 2) throw new fs.FirestoreError("UNKNOWN", 503, "Injected mid-batch failure");
+      return result;
+    }, maxAttempts);
+  };
+  await status(await broadcast(request(broadcastBody), { firestore: { list: fs.list, runTransaction } }), 500);
+  const interruptedUid = active[100].__documentId;
+  assertEquals((await fs.list(`users/${interruptedUid}/notifications`)).length, 0);
   const delivered=(await fs.list("users/recipient-0/notifications"))[0];
   assert(delivered);
   await fs.commit([fs.updateWrite(`users/recipient-0/notifications/${delivered.__documentId}`,{isRead:true})]);
   const sent=await status(await broadcast(request(broadcastBody)));
   assertEquals(sent.count,active.length);
+  assertEquals((await fs.list(`users/${interruptedUid}/notifications`)).length, 1);
   await status(await broadcast(request(broadcastBody)));
   assertEquals((await fs.list("users/recipient-0/notifications")).length,1);
   assertEquals((await fs.list("users/recipient-0/notifications"))[0].isRead,true);
