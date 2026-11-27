@@ -31,7 +31,7 @@ class BookingPresentationTest {
         bookingId = "b1", userId = "u1", venueId = "v1",
         venueSnapshot = VenueSnapshot("Sân A", "1 Đường A", null), items = emptyList(),
         startAtMillis = start, endAtMillis = end, status = status,
-        finance = BookingFinance(60_000, 0, 60_000, if (method == RefundPolicy.PaymentMethod.DEPOSIT) paid else 0, paid,
+        finance = BookingFinance(60_000, 0, 60_000, if (method == RefundPolicy.PaymentMethod.TRANSFER_DEPOSIT) paid else 0, paid,
             60_000 - paid, method, if (paid > 0) PaymentStatus.PAID else PaymentStatus.UNPAID),
         checkedInAtMillis = checkedIn, approvalDeadlineMillis = deadline, cancelReason = reason,
         createdAtMillis = now - hour, updatedAtMillis = now - hour,
@@ -70,12 +70,12 @@ class BookingPresentationTest {
     fun paidRowIsHiddenWhenNothingWasPaid() {
         assertNull(BookingPresentation.paidLabel(booking(RefundPolicy.Status.PENDING).finance))
         assertEquals(
-            "Đã đặt cọc (giả lập)",
-            BookingPresentation.paidLabel(booking(RefundPolicy.Status.CONFIRMED, method = RefundPolicy.PaymentMethod.DEPOSIT, paid = 18_000).finance),
+            "Đã đặt cọc 30% (chuyển khoản)",
+            BookingPresentation.paidLabel(booking(RefundPolicy.Status.CONFIRMED, method = RefundPolicy.PaymentMethod.TRANSFER_DEPOSIT, paid = 18_000).finance),
         )
         assertEquals(
-            "Đã thanh toán (ví giả lập)",
-            BookingPresentation.paidLabel(booking(RefundPolicy.Status.CONFIRMED, method = RefundPolicy.PaymentMethod.MOCK_WALLET, paid = 60_000).finance),
+            "Đã thanh toán (chuyển khoản)",
+            BookingPresentation.paidLabel(booking(RefundPolicy.Status.CONFIRMED, method = RefundPolicy.PaymentMethod.TRANSFER_FULL, paid = 60_000).finance),
         )
     }
 
@@ -85,15 +85,15 @@ class BookingPresentationTest {
         assertFalse("đơn trả tại sân không có tiền cọc", atVenue.contains("cọc"))
 
         val deposit = BookingPresentation.cancellationPolicy(
-            booking(RefundPolicy.Status.CONFIRMED, method = RefundPolicy.PaymentMethod.DEPOSIT, paid = 18_000), time,
+            booking(RefundPolicy.Status.CONFIRMED, method = RefundPolicy.PaymentMethod.TRANSFER_DEPOSIT, paid = 18_000), time,
         )
         // Mốc hủy sớm = giờ chơi (sau 5 giờ) trừ 4 giờ.
         assertTrue(deposit.contains("hủy trước t60 ") && deposit.contains("mất tiền cọc"))
 
-        val wallet = BookingPresentation.cancellationPolicy(
-            booking(RefundPolicy.Status.CONFIRMED, method = RefundPolicy.PaymentMethod.MOCK_WALLET, paid = 60_000), time,
+        val full = BookingPresentation.cancellationPolicy(
+            booking(RefundPolicy.Status.CONFIRMED, method = RefundPolicy.PaymentMethod.TRANSFER_FULL, paid = 60_000), time,
         )
-        assertTrue(wallet.contains("phạt 30%, hoàn 70%"))
+        assertTrue(full.contains("phạt 30%, hoàn 70%"))
 
         // Đơn chờ duyệt luôn được hoàn 100% (FR-017).
         assertTrue(BookingPresentation.cancellationPolicy(booking(RefundPolicy.Status.PENDING), time).contains("hoàn 100%"))

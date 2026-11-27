@@ -6,6 +6,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.booking_app.core.schedule.BookingSearchWindow
 import com.example.booking_app.core.schedule.BookingWindow
 import com.example.booking_app.core.di.DefaultDispatcher
+import com.example.booking_app.core.navigation.HoldToPaymentArgs
 import com.example.booking_app.core.session.SessionManager
 import com.example.booking_app.feature.booking.data.time.ServerTimeOffsetProvider
 import com.example.booking_app.feature.booking.domain.model.BusySlotsUpdate

@@ -40,7 +40,6 @@ open class FakeAccountFunctionsApi : AccountFunctionsApi {
             myDropIns = emptyList(),
             waitlistCount = 0,
             ownerImpact = null,
-            walletBalance = 50_000,
         )
     }
 }

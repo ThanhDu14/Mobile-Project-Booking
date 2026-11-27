@@ -1,4 +1,4 @@
-package com.example.booking_app.feature.booking.ui
+package com.example.booking_app.core.navigation
 
 import android.os.Parcel
 import android.os.Parcelable

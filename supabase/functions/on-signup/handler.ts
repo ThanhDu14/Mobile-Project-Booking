@@ -72,7 +72,6 @@ export async function handleOnSignup(
         accountStatus: "ACTIVE",
         fcmTokens: [],
         notificationPrefs: {},
-        walletBalance: 0,
       };
       // Tạo document trước, gán claim sau: claim chỉ có khi document đã chắc chắn tồn tại.
       for (let attempt = 1; !user; attempt++) {

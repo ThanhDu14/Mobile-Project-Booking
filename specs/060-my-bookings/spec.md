@@ -10,6 +10,16 @@
 
 **Nhóm tính năng**: [06 — Quản lý lịch đặt](../../docs/features/06-booking-management/README.md) · **Phụ trách**: B · **Liên quan**: [spec 010](../010-account-auth/spec.md) (xác thực tài khoản), [spec 020](../020-court-search/spec.md) (khám phá tìm sân), [spec 040](../040-booking-slot-grid/spec.md) (đặt sân lẻ theo lưới giờ), [spec 041](../041-weekly-recurring-booking/spec.md) (đặt sân cố định theo tuần), [spec 050](../050-payment-voucher/spec.md) (thanh toán & ví giả lập), [spec 070](../070-review-favorite/spec.md) (đánh giá sau khi hoàn thành), [spec 111](../111-owner-venue-setup/spec.md) (cấu hình cơ sở & bảng giá), [spec 112](../112-owner-operations/spec.md) (chủ sân duyệt đơn & quét QR check-in)
 
+## Sửa đổi theo spec 050 (2026-11-23): bỏ ví, hoàn tiền thủ công
+
+Spec 050 bỏ ví giả lập ([spec 050](../050-payment-voucher/spec.md), [research R9](../050-payment-voucher/research.md)). Các đoạn kịch bản và Clarifications bên dưới còn nhắc "ví giả lập" thì đọc theo mục này:
+
+- Cách trả: `AT_VENUE` (trả tại sân), `TRANSFER_DEPOSIT` (chuyển khoản cọc 30%), `TRANSFER_FULL` (chuyển khoản trả đủ). "Đặt cọc" cũ là `TRANSFER_DEPOSIT`, "Ví giả lập" cũ là `TRANSFER_FULL`; đơn cũ còn lưu `DEPOSIT`/`MOCK_WALLET` được đọc theo cách này.
+- Tỷ lệ hoàn/phạt giữ nguyên (`RefundPolicy`): đơn `PENDING` hoặc hủy sớm ≥ 240 phút hoàn 100%; hủy trễ thì `TRANSFER_DEPOSIT` mất cọc, `TRANSFER_FULL` phạt 30% làm tròn xuống bội 1.000đ, `AT_VENUE` không phát sinh tiền.
+- Tiền hoàn không vào ví: khi tiền hoàn > 0, máy chủ đặt `paymentStatus = REFUND_PENDING` và tạo `refunds/refund_{bookingId}` (`status = PENDING`, `reason = CANCELLED`, `amount`, `penaltyAmount`). Chủ sân chuyển trả rồi bấm "Đã hoàn tiền" (spec 112), đơn sang `REFUNDED`. Không còn `refundStatus = COMPLETED`.
+- Chi tiết đơn hiện trạng thái "Chờ chủ sân hoàn tiền" khi `paymentStatus = REFUND_PENDING`, và nút "Báo cáo chưa nhận được tiền hoàn" gọi `refund-report` (mở khi khoản chờ quá 3 ngày hoặc chủ sân đã bấm "Đã hoàn tiền"; [contracts §6](../050-payment-voucher/contracts/edge-functions.md)).
+- Gọi lại `player-cancel-booking` sau khi đơn đã do người chơi hủy trả lại kết quả đã lưu trên đơn, không ghi thêm.
+
 ## Clarifications
 
 ### Quyết định schema và xử lý HOLD tồn đọng — 2026-11-09
@@ -208,11 +218,11 @@ Từ danh sách lịch đặt, người chơi có các đường dẫn tắt ti�
 - **FR-014**: Hệ thống PHẢI kiểm tra bảo mật: chỉ tài khoản sở hữu đơn (`uid == userId`) mới có quyền xem thông tin chi tiết và hiển thị mã QR check-in của đơn đó.
 - **FR-015**: Hệ thống PHẢI cho phép người chơi bấm "Hủy đơn" đối với các đơn ở trạng thái `PENDING` hoặc `CONFIRMED` có thời gian bắt đầu chơi chưa trôi qua và chưa được check-in.
 - **FR-016**: Khi bấm "Hủy đơn", hệ thống PHẢI hiển thị màn hình xác nhận hủy nêu rõ chính sách hoàn tiền tương ứng và bắt buộc người chơi chọn hoặc nhập lý do hủy trước khi cho phép xác nhận.
-- **FR-017**: Đối với đơn `PENDING`, khi người chơi xác nhận hủy, hệ thống PHẢI hủy đơn và tự động hoàn trả 100% số tiền đã thanh toán (cọc hoặc ví) vào ví giả lập của người chơi.
-- **FR-018**: Đối với đơn `CONFIRMED` hủy sớm từ 4 tiếng trở lên (≥ 240 phút tính từ thời điểm máy chủ tiếp nhận yêu cầu đến giờ bắt đầu chơi), hệ thống PHẢI hủy đơn và hoàn trả 100% số tiền đã thanh toán vào số dư ví giả lập.
-- **FR-019**: Đối với đơn `CONFIRMED` hủy trễ dưới 4 tiếng (< 240 phút): đơn "Đặt cọc" mất 100% tiền cọc (hoàn 0đ); đơn "Ví giả lập" bị phạt 30% số tiền thực trả sau voucher và hệ thống PHẢI hoàn 70% còn lại vào ví giả lập, với quy tắc làm tròn theo mục Clarifications; đơn "Thanh toán tại sân" không phát sinh hoàn tiền.
+- **FR-017**: Đối với đơn `PENDING`, khi người chơi xác nhận hủy, hệ thống PHẢI hủy đơn và hoàn 100% số tiền đã thanh toán qua luồng hoàn thủ công (refund `PENDING`, xem mục Sửa đổi theo spec 050).
+- **FR-018**: Đối với đơn `CONFIRMED` hủy sớm từ 4 tiếng trở lên (≥ 240 phút tính từ thời điểm máy chủ tiếp nhận yêu cầu đến giờ bắt đầu chơi), hệ thống PHẢI hủy đơn và hoàn 100% số tiền đã thanh toán qua luồng hoàn thủ công.
+- **FR-019**: Đối với đơn `CONFIRMED` hủy trễ dưới 4 tiếng (< 240 phút): đơn `TRANSFER_DEPOSIT` mất 100% tiền cọc (hoàn 0đ); đơn `TRANSFER_FULL` bị phạt 30% số tiền thực trả sau voucher và phần còn lại PHẢI được ghi thành khoản hoàn thủ công, với quy tắc làm tròn theo mục Clarifications; đơn "Thanh toán tại sân" không phát sinh hoàn tiền.
 - **FR-020**: Đối với đơn chọn phương thức "Thanh toán tại sân" (`AT_VENUE`), hệ thống PHẢI cho phép hủy đơn và giải phóng slot mà không phát sinh giao dịch hoàn tiền.
-- **FR-021**: Thao tác hủy đơn, hoàn tiền ví giả lập và giải phóng các slot sân con (`slots`) PHẢI được thực hiện trong cùng một giao dịch an toàn (transaction) ở phía máy chủ.
+- **FR-021**: Thao tác hủy đơn, tạo khoản hoàn (`refunds`) và giải phóng các slot sân con (`slots`) PHẢI được thực hiện trong cùng một giao dịch an toàn (transaction) ở phía máy chủ.
 - **FR-022**: Mọi yêu cầu hủy đơn PHẢI đi kèm mã định danh duy nhất (`requestId` UUID) để đảm bảo tính duy nhất (idempotency), ngăn chặn hoàn tiền lặp lại khi người dùng bấm liên tiếp hoặc thử lại mạng.
 - **FR-023**: Đối với chuỗi đơn đặt cố định theo tuần (`recurringGroupId`), hệ thống PHẢI hiển thị danh sách từng buổi với trạng thái riêng biệt và cho phép người chơi chọn hủy riêng lẻ từng buổi hoặc hủy toàn bộ các buổi chưa diễn ra.
 - **FR-024**: Khi hủy một buổi trong chuỗi cố định, hệ thống PHẢI tính toán số tiền hoàn dựa trên phần tiền cọc/ví đã được phân bổ cho buổi đó (chia theo tỷ lệ giá trị buổi trên tổng chuỗi, làm tròn số nguyên VND, phần dư dồn vào buổi cuối).
@@ -221,6 +231,7 @@ Từ danh sách lịch đặt, người chơi có các đường dẫn tắt ti�
 - **FR-027**: Khi đơn đặt sân được hủy thành công và hoàn tiền 100%, hệ thống PHẢI tự động hoàn trả lại lượt sử dụng voucher (`usedCount` và bản ghi redemption) để người chơi có thể sử dụng lại mã đó.
 - **FR-028**: Hệ thống PHẢI xử lý và hiển thị đầy đủ 4 trạng thái giao diện: Đang tải (shimmer/skeleton), Có dữ liệu, Rỗng (empty state thân thiện kèm nút khám phá sân), và Lỗi (kèm nút thử lại).
 - **FR-029**: Khi qua giờ kết thúc muộn nhất của một đơn `CONFIRMED`, hệ thống phía máy chủ PHẢI tự động chuyển trạng thái: đơn đã được check-in (`checkedInAt` có giá trị) sang `COMPLETED` và ghi `completedAt` (mốc tính hạn 7 ngày đánh giá ở spec 070); đơn chưa từng được check-in sang `NO_SHOW` và chặn quyền tạo đánh giá ở spec 070. Việc check-in (quét QR hoặc nhập mã) do chủ sân thực hiện ở spec 112 và không tự đổi trạng thái đơn.
+- **FR-030** (spec 050): Khi `paymentStatus = REFUND_PENDING`, chi tiết đơn PHẢI hiện "Chờ chủ sân hoàn tiền" kèm số tiền; nút "Báo cáo chưa nhận được tiền hoàn" gọi `refund-report` theo điều kiện ở mục Sửa đổi theo spec 050.
 
 ---
 
@@ -228,7 +239,7 @@ Từ danh sách lịch đặt, người chơi có các đường dẫn tắt ti�
 
 - **Booking (Đơn đặt sân)**: Thực thể trung tâm lưu trữ thông tin đơn đặt. Thuộc tính chính: `bookingId`, `userId`, `venueId`, `recurringGroupId` (nếu có), `venueSnapshot` (`name`, `address`, `phone`), `items` (danh sách slot: `courtId`, `courtName`, `slotId`, `startAt`, `endAt`, `price`), `status` (`HOLD`, `PENDING`, `CONFIRMED`, `COMPLETED`, `CANCELLED`, `REJECTED`, `EXPIRED`, `NO_SHOW`), `subtotal`, `discount`, `total`, `depositAmount`, `paymentMethod` (`AT_VENUE`, `DEPOSIT`, `MOCK_WALLET`), `paymentStatus` (`UNPAID`, `DEPOSITED`, `PAID`, `REFUNDED`), `qrToken` (chuỗi bí mật dùng sinh mã QR), `checkedInAt`, `completedAt`, `pendingAt`, `approvalDeadline`, `cancelReason`, `cancelledBy` (`USER`, `OWNER`, `SYSTEM`), `cancelledAt`, `refundAmount`, `createdAt`, `updatedAt`.
 - **CourtSlot (Khung giờ sân con)**: Bản ghi chiếm dụng giờ trong `slots/{courtId}_{yyyyMMdd}_{HHmm}`. Khi đơn bị hủy hoặc hết hạn, các document này bị xóa để giải phóng slot về trạng thái còn trống.
-- **UserWallet (Ví giả lập người dùng)**: Quản lý số dư tiền ảo trong `users/{uid}/walletBalance` (Long VND). Nhận tiền hoàn khi người chơi hủy đơn hợp lệ hoặc khi chủ sân từ chối đơn.
+- ~~**UserWallet (Ví giả lập người dùng)**~~: đã bỏ theo spec 050. Tiền hoàn là **RefundItem** `refunds/{refundId}` (spec 050 data-model §1.5).
 - **VoucherRedemption (Lượt dùng voucher)**: Bản ghi tại `redemptions/{bookingId}` dưới voucher tương ứng (`venues/{venueId}/vouchers/{code}` hoặc `systemVouchers/{code}`, đặc tả CSDL mục 4.6). Được xóa bỏ để hoàn lượt khi đơn được hoàn tiền 100%.
 
 ---
@@ -249,10 +260,10 @@ Từ danh sách lịch đặt, người chơi có các đường dẫn tắt ti�
 
 ## Assumptions
 
-- Toàn bộ giao dịch hoàn tiền và số dư ví đều là giả lập phục vụ mục đích học tập nghiên cứu theo Nguyên tắc VI Constitution, không kết nối tài khoản ngân hàng thật.
+- Chuyển khoản và hoàn tiền chạy ở chế độ sandbox (SePay Test mode) phục vụ học tập theo Nguyên tắc VI Constitution; hoàn tiền do chủ sân tự chuyển trả, app không chuyển tiền.
 - Đơn vị tiền tệ hiển thị và tính toán là Việt Nam Đồng (VND), lưu trữ dưới dạng số nguyên `Long`.
 - Mốc thời hạn 4 tiếng (240 phút) áp dụng cố định trên toàn hệ thống để phân định hủy sớm (hoàn 100%) và hủy trễ, căn cứ theo thời gian máy chủ đồng bộ múi giờ `Asia/Ho_Chi_Minh`.
-- Chính sách phạt hủy trễ: Đơn cọc mất 100% tiền cọc; đơn ví giả lập phạt 30% và hoàn 70% còn lại vào ví giả lập. Tiền phạt hủy trễ không chuyển cho bất kỳ tài khoản nào, chỉ được ghi nhận trong lịch sử đơn nhằm mô phỏng nghiệp vụ thực tế.
+- Chính sách phạt hủy trễ: Đơn cọc mất 100% tiền cọc; đơn `TRANSFER_FULL` phạt 30% và phần còn lại do chủ sân hoàn thủ công. Tiền phạt hủy trễ không chuyển cho bất kỳ tài khoản nào, chỉ được ghi nhận trong lịch sử đơn nhằm mô phỏng nghiệp vụ thực tế.
 - Đơn quá giờ kết thúc chơi mà không check-in được hệ thống tự động chuyển sang trạng thái `NO_SHOW` và khóa quyền đánh giá ở spec 070.
 - Thao tác quét mã QR check-in tại sân và duyệt đơn của chủ sân thuộc phạm vi của `specs/112-owner-operations`.
 - Đánh giá chất lượng sân sau khi hoàn thành buổi chơi thuộc phạm vi của `specs/070-review-favorite`.

@@ -50,7 +50,7 @@ class MyBookingsFragment : Fragment(R.layout.fragment_my_bookings_060) {
                 )
             },
             onContinuePayment = { booking ->
-                val args = com.example.booking_app.feature.booking.ui.HoldToPaymentArgs(
+                val args = com.example.booking_app.core.navigation.HoldToPaymentArgs(
                     bookingId = booking.bookingId,
                     venueId = booking.venueId,
                     venueName = booking.venueSnapshot.name,

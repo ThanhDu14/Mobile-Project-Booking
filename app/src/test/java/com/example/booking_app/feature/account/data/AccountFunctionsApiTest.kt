@@ -16,7 +16,7 @@ class AccountFunctionsApiTest {
         AppError.Unknown(FunctionHttpException(status, """{"error":{"code":"$code","message":"m"$extra}}"""))
 
     private val previewJson = """
-        {"impactVersion":"sha256:ab","walletBalance":50000,
+        {"impactVersion":"sha256:ab","walletBalance":50000,"_note":"server cũ còn gửi walletBalance thì bỏ qua",
          "myBookings":[{"bookingId":"b1","venueName":"Sân Hòa Bình","startAt":"2026-10-20T12:00:00Z",
                         "status":"CONFIRMED","paidAmount":60000,"refundAmount":60000}],
          "myDropIns":[{"sessionId":"s1","venueName":"Sân Kỳ Hòa","startAt":"2026-10-22T11:00:00Z",
@@ -30,7 +30,6 @@ class AccountFunctionsApiTest {
     fun `parsePreview doc du truong, ownerImpact null thi null`() {
         val impact = DeleteAccountResponses.parsePreview(previewJson)
         assertEquals("sha256:ab", impact.impactVersion)
-        assertEquals(50_000L, impact.walletBalance)
         assertEquals(Instant.parse("2026-10-20T12:00:00Z"), impact.myBookings.single().startAt)
         assertEquals(60_000L, impact.myBookings.single().refundAmount)
         assertEquals("s1", impact.myDropIns.single().sessionId)
@@ -38,7 +37,7 @@ class AccountFunctionsApiTest {
         assertEquals(9, impact.ownerImpact?.guestCount)
 
         val noOwner = DeleteAccountResponses.parsePreview(
-            """{"impactVersion":"v","walletBalance":0,"myBookings":[],"myDropIns":[],"waitlistCount":0,"ownerImpact":null}""",
+            """{"impactVersion":"v","myBookings":[],"myDropIns":[],"waitlistCount":0,"ownerImpact":null}""",
         )
         assertNull(noOwner.ownerImpact)
     }

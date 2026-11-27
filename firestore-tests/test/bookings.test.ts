@@ -100,7 +100,8 @@ describe('bookings collection (Spec 041)', () => {
       await assertFails(setDoc(doc(fs, 'bookings/booking-01'), validBookingData('owner1')));
     });
 
-    it('player must use server checkout even with valid PENDING financial fields', async () => {
+    // Spec 050 T017: thu hồi "lát cắt test 050", chốt đơn PENDING chỉ qua Edge Function booking-payment-confirm.
+    it('player cannot create booking with PENDING status even with valid financial fields (050)', async () => {
       const fs = player('player1');
       await assertFails(setDoc(doc(fs, 'bookings/booking-pending-01'), validPendingBookingData('player1')));
     });

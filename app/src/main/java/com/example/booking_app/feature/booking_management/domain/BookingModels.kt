@@ -2,7 +2,8 @@ package com.example.booking_app.feature.booking_management.domain
 
 /** Times are epoch milliseconds; monetary values are integer VND. */
 enum class BookingTab { HOLD, PENDING, UPCOMING, COMPLETED, CANCELLED }
-enum class PaymentStatus { UNPAID, DEPOSITED, PAID, REFUNDED }
+/** Theo spec 050 data-model §1.1. */
+enum class PaymentStatus { UNPAID, AWAITING_TRANSFER, DEPOSITED, PAID, REFUND_PENDING, REFUNDED }
 
 data class VenueSnapshot(val name: String, val address: String, val phone: String?)
 data class BookingSlotItem(

@@ -9,7 +9,6 @@ data class DeletionImpact(
     val myDropIns: List<ImpactDropIn>,
     val waitlistCount: Int,
     val ownerImpact: OwnerImpact?,
-    val walletBalance: Long,
 )
 
 data class ImpactBooking(

@@ -124,12 +124,10 @@ class AccountFragment : Fragment(R.layout.fragment_account) {
         if (avatarPath != null) binding.avatarImage.load(StorageUrls.publicUrl(AVATAR_BUCKET, avatarPath))
         binding.avatarFrame.contentDescription = getString(R.string.account_avatar_description, profile.displayName)
         renderChips(binding, state)
-        binding.walletBalance.text = getString(R.string.account_wallet_balance, state.walletBalance)
 
         entryViews(binding).forEach { (entry, row) -> row.isVisible = entry in state.entries }
         binding.activityGroup.isVisible = ACTIVITY_ENTRIES.any { it in state.entries }
         binding.settingsGroup.isVisible = SETTINGS_ENTRIES.any { it in state.entries }
-        binding.walletTopupButton.isVisible = AccountEntry.WALLET_TOPUP in state.entries
         binding.deleteAccountButton.isVisible = AccountEntry.DELETE_ACCOUNT in state.entries
         renderOwnerSection(binding, state)
         renderMode(binding, state)
@@ -280,7 +278,6 @@ class AccountFragment : Fragment(R.layout.fragment_account) {
         AccountEntry.CHANGE_PASSWORD to binding.entryChangePassword,
         AccountEntry.CHANGE_EMAIL to binding.entryChangeEmail,
         AccountEntry.LEGAL to binding.entryLegal,
-        AccountEntry.WALLET_TOPUP to binding.walletTopupButton,
         AccountEntry.DELETE_ACCOUNT to binding.deleteAccountButton,
     )
 

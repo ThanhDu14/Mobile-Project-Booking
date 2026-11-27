@@ -40,7 +40,7 @@ internal object BookingManagementMapper {
             items = items, startAtMillis = start, endAtMillis = end,
             status = RefundPolicy.Status.valueOf(text(data, "status")),
             finance = BookingFinance(subtotal, discount, total, deposit, paid, remaining,
-                RefundPolicy.PaymentMethod.valueOf(text(data, "paymentMethod")),
+                RefundPolicy.PaymentMethod.fromStored(text(data, "paymentMethod")),
                 PaymentStatus.valueOf(text(data, "paymentStatus")), optionalAmount("refundAmount"), optionalAmount("penaltyAmount")),
             recurringGroupId = data["recurringGroupId"] as? String, qrToken = data["qrToken"] as? String,
             checkedInAtMillis = optionalTime("checkedInAt"), holdExpiresAtMillis = optionalTime("holdExpiresAt"),

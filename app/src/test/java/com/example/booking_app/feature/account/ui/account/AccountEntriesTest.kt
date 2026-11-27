@@ -46,7 +46,11 @@ class AccountEntriesTest {
         assertEquals("smashnow://dropin/mine", AccountEntry.MY_DROPINS.deepLink)
         assertEquals("smashnow://favorites", AccountEntry.FAVORITES.deepLink)
         assertEquals("smashnow://notifications/settings", AccountEntry.NOTIFICATION_SETTINGS.deepLink)
-        assertEquals("smashnow://wallet/topup", AccountEntry.WALLET_TOPUP.deepLink)
         assertEquals("smashnow://legal/TERMS", AccountEntry.LEGAL.deepLink)
+    }
+
+    @Test
+    fun `khong con muc vi (spec 050 bo vi)`() {
+        assertEquals(emptyList<AccountEntry>(), AccountEntry.entries.filter { "wallet" in it.deepLink })
     }
 }

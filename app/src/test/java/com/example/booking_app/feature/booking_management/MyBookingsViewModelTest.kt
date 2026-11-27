@@ -67,7 +67,7 @@ class MyBookingsViewModelTest {
             depositAmount = 0L,
             paidAmount = 50_000L,
             remainingAmount = 0L,
-            paymentMethod = RefundPolicy.PaymentMethod.MOCK_WALLET,
+            paymentMethod = RefundPolicy.PaymentMethod.TRANSFER_FULL,
             paymentStatus = PaymentStatus.PAID
         ),
         createdAtMillis = 100L,

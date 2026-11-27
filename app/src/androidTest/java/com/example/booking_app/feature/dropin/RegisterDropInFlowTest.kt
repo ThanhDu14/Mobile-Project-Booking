@@ -274,7 +274,6 @@ class RegisterDropInFlowTest {
                 "accountStatus" to "ACTIVE",
                 "level" to "INTERMEDIATE",
                 "favoriteDistrictIds" to emptyList<String>(),
-                "walletBalance" to 0L,
                 "ownerStatus" to "NONE",
             ),
         )

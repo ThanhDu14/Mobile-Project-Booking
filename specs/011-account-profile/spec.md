@@ -20,7 +20,7 @@
 
 ### Session 2026-10-13
 
-- Q: Số dư ví giả lập (spec 050) hiển thị và nạp ở đâu trong trang tài khoản? → A: Trang "Tài khoản" hiện số dư `walletBalance` kèm nhãn giả lập và nút "Nạp ví giả lập" (dùng chức năng nạp của spec 050); số dư bị xóa cùng tài khoản.
+- ~~Q: Số dư ví giả lập (spec 050) hiển thị và nạp ở đâu trong trang tài khoản? → A: Trang "Tài khoản" hiện số dư `walletBalance` kèm nhãn giả lập và nút "Nạp ví giả lập".~~ **Đã bỏ (2026-11-23, spec 050 bỏ ví):** không còn ví giả lập, trang Tài khoản không hiện số dư, không có nút nạp ví.
 - Q: Trang tài khoản hiển thị gì khi admin thu hồi quyền chủ sân (spec 120)? → A: Hiện "Quyền chủ sân đã bị thu hồi" kèm lý do của admin và cho nộp hồ sơ mới; dữ liệu là `ownerStatus = NONE`, hồ sơ cũ giữ `APPROVED`.
 
 ### Session 2026-10-15 (sau `/speckit-plan`, theo research R16)
@@ -28,7 +28,7 @@
 - Q: App có báo được "email đã được sử dụng" khi đổi email không? → A: Không. Email enumeration protection đang bật nên Firebase không báo lỗi; app luôn hiện cùng một thông báo (US7-2).
 - Q: Ảnh đại diện công khai tới mức nào? → A: Bucket `avatars` public, ai có đường dẫn cũng xem được; đường dẫn chứa `uid` và mốc thời gian nên khó đoán (FR-004).
 - Q: "Toàn bộ hoặc không" của FR-021 áp dụng tới đâu? → A: Tới bước chốt: mọi thay đổi ảnh hưởng người khác nằm trong một lần ghi. Phần xóa dữ liệu cá nhân sau đó do hệ thống tự hoàn tất và thử lại.
-- Q: Tiền hoàn cho đơn của chính người xóa đi đâu? → A: Vào ví giả lập rồi bị xóa cùng ví; màn hình xác nhận ghi rõ (FR-022).
+- ~~Q: Tiền hoàn cho đơn của chính người xóa đi đâu? → A: Vào ví giả lập rồi bị xóa cùng ví.~~ **Đã bỏ (2026-11-23, spec 050 bỏ ví).** Tiền hoàn đi theo luồng hoàn thủ công của spec 050; cách xử lý khi người nhận đã xóa tài khoản: **[CẦN CHỐT]** (xem FR-022).
 - Q: Khi nào phải xác nhận lại danh tính? → A: Luôn luôn, cho cả 3 thao tác đổi mật khẩu, đổi email, xóa tài khoản (FR-017).
 - Q: Admin có tự xóa tài khoản được không? → A: Không. Admin không có nút "Xóa tài khoản"; tài khoản admin do nhóm xóa thủ công bằng script.
 
@@ -208,8 +208,8 @@ Người dùng đăng ký bằng email nhưng gõ nhầm hoặc muốn đổi em
 
 **Hồ sơ**
 
-- **FR-001**: Người dùng đã đăng nhập PHẢI xem được hồ sơ của mình gồm: ảnh đại diện, họ tên, email và/hoặc số điện thoại, trạng thái xác minh email, trình độ, khu vực hay chơi, trạng thái chủ sân, số dư ví giả lập.
-- **FR-001a**: Trang tài khoản PHẢI hiển thị số dư ví giả lập (`walletBalance`) kèm nhãn "Giả lập, không phải tiền thật" và nút "Nạp ví giả lập" mở chức năng nạp ví của spec 050. Người dùng không sửa trực tiếp số dư; mọi thay đổi số dư do máy chủ ghi (spec 050, 060).
+- **FR-001**: Người dùng đã đăng nhập PHẢI xem được hồ sơ của mình gồm: ảnh đại diện, họ tên, email và/hoặc số điện thoại, trạng thái xác minh email, trình độ, khu vực hay chơi, trạng thái chủ sân.
+- **FR-001a**: ~~Hiển thị số dư ví giả lập và nút nạp ví.~~ Đã bỏ (2026-11-23): spec 050 bỏ ví giả lập; `users` không còn `walletBalance`.
 - **FR-002**: Người dùng PHẢI sửa được họ tên (2–50 ký tự), trình độ (một trong: Mới chơi, Trung bình, Khá/Nâng cao) và khu vực hay chơi (chọn 0–5 khu vực từ danh mục khu vực của hệ thống).
 - **FR-003**: Người dùng PHẢI đổi được ảnh đại diện bằng cách chụp hoặc chọn ảnh, cắt vuông trước khi tải lên. Ảnh sau xử lý KHÔNG ĐƯỢC vượt quá 2 MB; chỉ chấp nhận JPG, PNG, WebP. Người dùng cũng PHẢI xóa được ảnh để về ảnh mặc định.
 - **FR-004**: Ảnh đại diện PHẢI công khai qua đường dẫn khó đoán (ai có đường dẫn đều xem được, kể cả người chưa đăng nhập), nhưng chỉ chủ tài khoản được thay hoặc xóa.
@@ -248,12 +248,12 @@ Người dùng đăng ký bằng email nhưng gõ nhầm hoặc muốn đổi em
 **Xóa tài khoản**
 
 - **FR-018**: Người dùng (trừ admin) PHẢI xóa được tài khoản của mình. Trước khi xóa, app PHẢI liệt kê dữ liệu sẽ bị xóa và dữ liệu được giữ ở dạng ẩn danh, yêu cầu xác nhận lại danh tính và gõ chữ "XÓA".
-- **FR-019**: Khi xóa tài khoản, hệ thống PHẢI xóa vĩnh viễn: hồ sơ cá nhân (họ tên, email, số điện thoại, ảnh đại diện, trình độ, khu vực), lịch sử tìm kiếm, danh sách sân yêu thích, thông báo, cài đặt thông báo, số dư ví giả lập, hồ sơ chủ sân và ảnh giấy tờ, và phương thức đăng nhập.
+- **FR-019**: Khi xóa tài khoản, hệ thống PHẢI xóa vĩnh viễn: hồ sơ cá nhân (họ tên, email, số điện thoại, ảnh đại diện, trình độ, khu vực), lịch sử tìm kiếm, danh sách sân yêu thích, thông báo, cài đặt thông báo, hồ sơ chủ sân và ảnh giấy tờ, và phương thức đăng nhập.
 - **FR-020**: Dữ liệu liên quan tới người khác (đơn đặt sân đã qua, đánh giá, tin nhắn, bài đăng) PHẢI được giữ lại nhưng ẩn danh: hiển thị "Người dùng đã xóa" và ảnh mặc định, không còn liên kết tới thông tin cá nhân.
 - **FR-021**: Việc xóa PHẢI được thực hiện ở phía máy chủ theo hai bước:
   - **Chốt**: mọi thay đổi ảnh hưởng tới người khác (hủy đơn, nhả khung giờ, hoàn tiền, ẩn cơ sở) và việc đánh dấu tài khoản đang bị xóa PHẢI xảy ra cùng lúc hoặc không xảy ra. Nếu bước này thất bại, tài khoản vẫn dùng được bình thường và người dùng được báo để thử lại.
   - **Hoàn tất**: sau khi chốt, tài khoản không đăng nhập hay thao tác được nữa; hệ thống PHẢI tự hoàn tất việc gửi thông báo, ẩn danh và xóa dữ liệu cá nhân (theo FR-019, FR-020), tự thử lại khi lỗi, và xóa phương thức đăng nhập sau cùng.
-- **FR-022**: Xóa tài khoản KHÔNG bị chặn bởi đơn sắp tới hay cơ sở đang hoạt động. Trước khi xác nhận, app PHẢI hiển thị tác động: số đơn đặt sân và lượt vãng lai sắp tới của người dùng sẽ bị hủy, số tiền hoàn theo chính sách hủy; với chủ sân, thêm số cơ sở sẽ bị ẩn và số đơn, buổi vãng lai của khách sẽ bị hủy. Màn hình xác nhận PHẢI ghi rõ tiền hoàn cho đơn của chính người dùng được cộng vào ví giả lập và bị xóa cùng ví, không quy đổi được. Nếu tác động thay đổi giữa lúc xem và lúc xác nhận (ví dụ có đơn mới), app PHẢI hiển thị tác động mới và yêu cầu xác nhận lại.
+- **FR-022**: Xóa tài khoản KHÔNG bị chặn bởi đơn sắp tới hay cơ sở đang hoạt động. Trước khi xác nhận, app PHẢI hiển thị tác động: số đơn đặt sân và lượt vãng lai sắp tới của người dùng sẽ bị hủy, số tiền hoàn theo chính sách hủy; với chủ sân, thêm số cơ sở sẽ bị ẩn và số đơn, buổi vãng lai của khách sẽ bị hủy. Tiền hoàn cho đơn đã chuyển khoản của chính người dùng đi theo luồng hoàn thủ công của spec 050 (chủ sân chuyển trả). **[CẦN CHỐT]** nội dung màn hình xác nhận và cách chủ sân hoàn khi người nhận đã xóa tài khoản (trước đây: cộng vào ví giả lập rồi xóa cùng ví). Nếu tác động thay đổi giữa lúc xem và lúc xác nhận (ví dụ có đơn mới), app PHẢI hiển thị tác động mới và yêu cầu xác nhận lại.
 - **FR-022a**: Khi xóa, hệ thống PHẢI trong bước chốt của FR-021: (1) hủy các đơn đặt sân và lượt vãng lai sắp tới của người dùng theo chính sách hủy thông thường (người hủy ghi là "hệ thống"); (2) nếu là chủ sân: ẩn mọi cơ sở, hủy mọi đơn đặt sân và buổi vãng lai sắp tới tại các cơ sở đó với hoàn tiền giả lập toàn bộ cho khách; (3) nhả mọi khung giờ đã bị chiếm bởi các đơn bị hủy. Nếu bất kỳ bước nào thất bại, theo FR-021 không có gì bị thay đổi. Thông báo hủy kèm lý do "Cơ sở ngừng hoạt động" cho từng khách PHẢI được gửi ở bước hoàn tất, mỗi khách đúng một lần dù hệ thống phải thử lại.
 
 **Trải nghiệm chung**
@@ -273,7 +273,7 @@ Người dùng đăng ký bằng email nhưng gõ nhầm hoặc muốn đổi em
 
 ### Key Entities *(include if feature involves data)*
 
-- **Người dùng (User)**: hồ sơ của một tài khoản. Trường người dùng sửa được: họ tên, ảnh đại diện, trình độ, khu vực hay chơi. Trường chỉ xem: email, số điện thoại, trạng thái xác minh email, vai trò, trạng thái chủ sân, trạng thái tài khoản, số dư ví giả lập. Chi tiết theo [đặc tả CSDL, mục 4.1](../../docs/design/database/README.md#41-usersuid--a).
+- **Người dùng (User)**: hồ sơ của một tài khoản. Trường người dùng sửa được: họ tên, ảnh đại diện, trình độ, khu vực hay chơi. Trường chỉ xem: email, số điện thoại, trạng thái xác minh email, vai trò, trạng thái chủ sân, trạng thái tài khoản. Chi tiết theo [đặc tả CSDL, mục 4.1](../../docs/design/database/README.md#41-usersuid--a).
 - **Hồ sơ chủ sân (Owner application)**: hồ sơ người dùng nộp để trở thành chủ sân. Spec này chỉ đọc: trạng thái (chờ duyệt / đã duyệt / bị từ chối), ngày nộp, lý do từ chối. Tạo và sửa thuộc spec 110; duyệt thuộc spec 120. Chi tiết theo [đặc tả CSDL, mục 4.2](../../docs/design/database/README.md#42-ownerapplicationsid--d).
 - **Khu vực (District)**: danh mục quận/huyện do admin quản lý; người dùng chọn từ danh sách, không tự nhập.
 - **Ảnh đại diện (Avatar)**: một ảnh cho mỗi người dùng, công khai qua đường dẫn khó đoán (FR-004).

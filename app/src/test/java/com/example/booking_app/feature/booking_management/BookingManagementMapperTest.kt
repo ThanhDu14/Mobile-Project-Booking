@@ -1,6 +1,8 @@
 package com.example.booking_app.feature.booking_management
 
 import com.example.booking_app.feature.booking_management.data.BookingManagementMapper
+import com.example.booking_app.feature.booking_management.domain.PaymentStatus
+import com.example.booking_app.feature.booking_management.domain.RefundPolicy
 import com.google.firebase.Timestamp
 import org.junit.Assert.*
 import org.junit.Test
@@ -56,5 +58,25 @@ class BookingManagementMapperTest {
     @Test fun rejectsUnknownStatus() {
         val data = booking().apply { put("status", "UNKNOWN") }
         assertThrows(IllegalArgumentException::class.java) { BookingManagementMapper.map("id", data, "user") }
+    }
+
+    // Spec 050 (T058): cách trả mới và trạng thái thanh toán mới; đơn cũ vẫn đọc được.
+    @Test fun mapsTransferMethodsAndNewPaymentStatuses() {
+        val full = BookingManagementMapper.map("id", booking().apply {
+            put("paymentMethod", "TRANSFER_FULL"); put("paymentStatus", "REFUND_PENDING")
+        }, "user")
+        assertEquals(RefundPolicy.PaymentMethod.TRANSFER_FULL, full.finance.paymentMethod)
+        assertEquals(PaymentStatus.REFUND_PENDING, full.finance.paymentStatus)
+        val awaiting = BookingManagementMapper.map("id", booking().apply {
+            put("paymentMethod", "TRANSFER_DEPOSIT"); put("paymentStatus", "AWAITING_TRANSFER")
+        }, "user")
+        assertEquals(RefundPolicy.PaymentMethod.TRANSFER_DEPOSIT, awaiting.finance.paymentMethod)
+        assertEquals(PaymentStatus.AWAITING_TRANSFER, awaiting.finance.paymentStatus)
+    }
+
+    @Test fun mapsLegacyWalletAndDepositMethods() {
+        assertEquals(RefundPolicy.PaymentMethod.TRANSFER_DEPOSIT, BookingManagementMapper.map("id", booking(), "user").finance.paymentMethod)
+        val wallet = BookingManagementMapper.map("id", booking().apply { put("paymentMethod", "MOCK_WALLET") }, "user")
+        assertEquals(RefundPolicy.PaymentMethod.TRANSFER_FULL, wallet.finance.paymentMethod)
     }
 }

@@ -58,7 +58,7 @@ class BookingDetailViewModelTest {
             depositAmount = 0L,
             paidAmount = 100_000L,
             remainingAmount = 0L,
-            paymentMethod = RefundPolicy.PaymentMethod.MOCK_WALLET,
+            paymentMethod = RefundPolicy.PaymentMethod.TRANSFER_FULL,
             paymentStatus = PaymentStatus.PAID
         ),
         qrToken = qrToken,
