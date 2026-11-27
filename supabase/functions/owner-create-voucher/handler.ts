@@ -1,6 +1,7 @@
 import { errorResponse, HttpError, verifyIdToken } from "../_shared/auth.ts";
 import * as defaultFirestore from "../_shared/firestore.ts";
 import { createWrite, updateWrite } from "../_shared/firestore.ts";
+import { preparePromotionPublication } from "../_shared/promotion-notification.ts";
 
 export interface OwnerCreateVoucherDeps {
   firestore: Pick<typeof defaultFirestore, "get" | "commit" | "runTransaction">;
@@ -71,13 +72,18 @@ export async function handleOwnerCreateVoucher(
         const system = await tx.get(`systemVouchers/${code}`);
         const venues = await tx.query("vouchers", [{ field: "code", op: "EQUAL", value: code }], { allDescendants: true, limit: 1 });
         if (existing || system || venues.length) throw new HttpError(409, "VOUCHER_EXISTS", "Mã voucher đã tồn tại trên hệ thống");
-        tx.write(createWrite(path, { ...fields, code, usedCount: 0, createdAt: now, updatedAt: now }));
+        const voucher = { ...fields, code, usedCount: 0, createdAt: now, updatedAt: now, publishedAt: null };
+        const publication = await preparePromotionPublication(voucher, venueId, code, now);
+        tx.write(createWrite(path, { ...voucher, ...(publication ? { publishedAt: now } : {}) }));
+        if (publication) tx.write(publication);
       } else {
         if (!existing) throw new HttpError(404, "NOT_FOUND", "Không tìm thấy voucher");
         if (action === "UPDATE" && Number(fields.usageLimit) < Number(existing.usedCount ?? 0)) {
           throw new HttpError(409, "LIMIT_BELOW_USAGE", "Tổng số lượt không được thấp hơn số lượt đã dùng");
         }
-        tx.write(updateWrite(path, { ...fields, updatedAt: now }));
+        const publication = await preparePromotionPublication({ ...existing, ...fields }, venueId, code, now);
+        tx.write(updateWrite(path, { ...fields, updatedAt: now, ...(publication ? { publishedAt: now } : {}) }));
+        if (publication) tx.write(publication);
       }
     });
     return new Response(JSON.stringify({ success: true, code, venueId }), { headers: { "Content-Type": "application/json" } });

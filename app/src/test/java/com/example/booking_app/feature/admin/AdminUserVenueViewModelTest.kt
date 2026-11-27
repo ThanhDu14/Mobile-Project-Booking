@@ -150,6 +150,22 @@ class AdminUserVenueViewModelTest {
     }
 
     @Test
+    fun revokeOwner_reusesRequestAfterFailureAndRenewsAfterSuccess() = runTest {
+        val vm = AdminUserVenueViewModel(fakeRepository)
+        fakeRepository.revokeResult = Result.failure(IllegalStateException("No response"))
+        vm.revokeOwner("u-123", " Vi phạm hợp đồng ")
+        advanceUntilIdle()
+        val original = fakeRepository.lastRevokedDecision!!.requestId
+        fakeRepository.revokeResult = Result.success(Unit)
+        vm.revokeOwner("u-123", "Vi phạm hợp đồng")
+        advanceUntilIdle()
+        assertEquals(original, fakeRepository.lastRevokedDecision!!.requestId)
+        vm.revokeOwner("u-123", "Vi phạm hợp đồng")
+        advanceUntilIdle()
+        assertTrue(original != fakeRepository.lastRevokedDecision!!.requestId)
+    }
+
+    @Test
     fun searchVenue_whenVenueExists_emitsSuccess() = runTest {
         val venue = AdminVenueItem(
             venueId = "v-1",
@@ -190,6 +206,7 @@ private class FakeAdminUserVenueRepository : AdminUserVenueRepository {
     var lastAccountStatus: UserAccountStatus? = null
 
     var lastRevokedDecision: OwnerRevocationDecision? = null
+    var revokeResult: Result<Unit> = Result.success(Unit)
 
     var lastVenueId: String? = null
     var lastVenueStatus: String? = null
@@ -206,7 +223,7 @@ private class FakeAdminUserVenueRepository : AdminUserVenueRepository {
 
     override suspend fun revokeOwner(decision: OwnerRevocationDecision): Result<Unit> {
         lastRevokedDecision = decision
-        return Result.success(Unit)
+        return revokeResult
     }
 
     override suspend fun getVenue(venueId: String): Result<AdminVenueItem?> {

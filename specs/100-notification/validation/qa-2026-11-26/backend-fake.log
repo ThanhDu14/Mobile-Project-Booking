@@ -1,0 +1,201 @@
+deno.exe : Check supabase/functions/admin-broadcast-notification/handler.test.ts
+At line:2 char:87
++ ... /deno.exe"; & $deno test --allow-env supabase/functions/_shared/notif ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Check supabase/...handler.test.ts:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+Check supabase/functions/admin-review-application/handler.test.ts
+Check supabase/functions/owner-approve-booking/handler.test.ts
+Check supabase/functions/owner-reject-booking/handler.test.ts
+Check supabase/functions/owner-cancel-booking/handler.test.ts
+Check supabase/functions/booking-timeout/handler.test.ts
+Check supabase/functions/_shared/notification-worker.test.ts
+Check supabase/functions/_shared/waitlist.regression.test.ts
+Check supabase/functions/notification-producers.test.ts
+running 6 tests from ./supabase/functions/admin-broadcast-notification/handler.test.ts
+R120-07: retry after partial batch sends once to all explicitly active document IDs ...
+------- output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[toErrorResponse] FirestoreError: {"error":{"status":"UNAVAILABLE"}}
+    at toError (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/_shared/firestore.ts:109:10)
+    at async commit (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/_shared/firestore.ts:170:22)
+    at async Object.runTransaction (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/_shared/firestore.ts:332:9)
+    at async handleAdminBroadcastNotification (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/admin-broadcast-notification/handler.ts:68:21)
+    at async file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/admin-broadcast-notification/handler.test.ts:12:17
+    at async adminFixture (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/_shared/admin-testing.ts:50:5)
+    at async innerWrapped (ext:cli/40_test.js:300:5)
+    at async exitSanitizer (ext:cli/40_test.js:201:27)
+    at async outerWrapped (ext:cli/40_test.js:239:22) {
+  code: "UNKNOWN",
+  status: 503
+}
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- output end -----
+R120-07: retry after partial batch sends once to all explicitly active document IDs ... ok (602ms)
+admin-broadcast-notification: rejects non-POST ... ok (1ms)
+SYSTEM rechecks current profile and never backfills an existing inbox after job retention ...
+------- output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- output end -----
+SYSTEM rechecks current profile and never backfills an existing inbox after job retention ... ok (28ms)
+SYSTEM rejects a stale ADMIN token when the current profile is locked or demoted ...
+------- output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- output end -----
+SYSTEM rejects a stale ADMIN token when the current profile is locked or demoted ... ok (4ms)
+admin-broadcast-notification: rejects unauthenticated request ... ok (1ms)
+admin-broadcast-notification: validateBroadcastContent checks non-empty title and body ... ok (2ms)
+running 15 tests from ./supabase/functions/admin-review-application/handler.test.ts
+venue addition APPROVE preserves approved owner and existing venues; retry is idempotent ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+venue addition APPROVE preserves approved owner and existing venues; retry is idempotent ... ok (58ms)
+venue addition REJECT preserves approved owner and existing venues; retry is idempotent ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+venue addition REJECT preserves approved owner and existing venues; retry is idempotent ... ok (6ms)
+pending venue addition cannot restore revoked owner rights ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+pending venue addition cannot restore revoked owner rights ... ok (6ms)
+native submitted Timestamp preserves milliseconds when validating the review version ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+native submitted Timestamp preserves milliseconds when validating the review version ... ok (7ms)
+R120-05: another current admin can recover claims after reopening a decided application ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+R120-05: another current admin can recover claims after reopening a decided application ... ok (2ms)
+R120-05: revoked admin claim cannot mutate or recover another account ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+R120-05: revoked admin claim cannot mutate or recover another account ... ok (1ms)
+R120-04/05: committed approve retry repairs failed claim without duplicate effects ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+R120-04/05: committed approve retry repairs failed claim without duplicate effects ... ok (9ms)
+R120-04: stale submitted version cannot approve a resubmission ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+R120-04: stale submitted version cannot approve a resubmission ... ok (1ms)
+R120-04: missing snapshot version cannot decide a pending application ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+R120-04: missing snapshot version cannot decide a pending application ... ok (1ms)
+R120-05: retry after owner revocation reconciles PLAYER, never old OWNER ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+R120-05: retry after owner revocation reconciles PLAYER, never old OWNER ... ok (1ms)
+R120-04: REJECT retry maps REJECTED, opposing decision conflicts ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+R120-04: REJECT retry maps REJECTED, opposing decision conflicts ... ok (3ms)
+admin-review-application: rejects non-POST ... ok (469µs)
+admin-review-application: rejects unauthenticated requests ... ok (1ms)
+admin-review-application: generateKeywords strips accents and generates prefixes ... ok (1ms)
+admin-review-application: geohash encodes coordinates correctly ... ok (252µs)
+running 5 tests from ./supabase/functions/owner-approve-booking/handler.test.ts
+owner-approve-booking: rejects non-POST requests ... ok (166ms)
+owner-approve-booking: rejects unauthenticated requests ... ok (15ms)
+owner-approve-booking: PENDING hop le -> CONFIRMED + qrToken non-empty + confirmedAt set ... ok (10ms)
+owner-approve-booking: approve don da CONFIRMED -> 409 va khong doi token ... ok (4ms)
+owner-approve-booking: approve qua approvalDeadline -> 409 va khong set token ... ok (1ms)
+running 3 tests from ./supabase/functions/owner-reject-booking/handler.test.ts
+owner-reject-booking: rejects non-POST requests ... ok (27ms)
+owner-reject-booking: rejects unauthenticated requests ... ok (7ms)
+owner-reject-booking: rejects empty reason ... ok (6ms)
+running 3 tests from ./supabase/functions/owner-cancel-booking/handler.test.ts
+owner-cancel-booking: rejects non-POST requests ... ok (32ms)
+owner-cancel-booking: rejects unauthenticated requests ... ok (2ms)
+owner-cancel-booking: rejects empty reason ... ok (4ms)
+running 5 tests from ./supabase/functions/booking-timeout/handler.test.ts
+booking-timeout: requires POST and the cron secret ... ok (28ms)
+booking-timeout: rejects an overdue unpaid booking and frees only its own slots ... ok (7ms)
+booking-timeout: refunds a paid booking with an atomic wallet increment and a ledger ... ok (1ms)
+booking-timeout: does not refund twice when a refund ledger already exists ... ok (1ms)
+booking-timeout: leaves bookings that are still within the deadline ... ok (698µs)
+running 19 tests from ./supabase/functions/_shared/notification-worker.test.ts
+T043: all 19 types retain inbox; defaults, saved preferences and mandatory BOOKING_NEW govern push ... ok (58ms)
+enqueue: canonical identity dedups UUID replay and never backfills retained-away job ... ok (2ms)
+enqueue: inactive/deleting recipient and invalid type never create inbox/job ... ok (1ms)
+enqueue: persists exactly six inbox fields and rejects non-map data ... ok (709µs)
+worker: partial success retries only failed token and honors Retry-After ... ok (8ms)
+worker: expired SENDING consumes reservation, caps six attempts, does not resend SENT ... ok (1ms)
+worker: recovers unknown SENDING below budget with a fresh attempt ... ok (1ms)
+worker: promotion default off, forced booking new, inbox remains regardless preference ... ok (1ms)
+worker: unregistered removes only exact token; permanent provider failures preserve token ... ok (1ms)
+worker: target initialization resumes beyond 100 and never adds tokens registered later ... ok (624ms)
+worker: deletion racing send cannot resurrect job/receipt; child-first account cleanup ... ok (36ms)
+worker: terminal retention keeps pending jobs and removes children before parent ... ok (29ms)
+worker: initialization observes deletion gate before creating receipt children ... ok (20ms)
+worker: chat suppression is account-wide across installations without dropping inbox ... ok (32ms)
+worker: target budget failure is explicit, never truncated into partial delivery ... ok (1s)
+retention cleanup resumes at 100 child receipts per job without deleting parent early ... ok (12ms)
+FCM adapter: data-only payload and typed UNREGISTERED vs invalid arguments and Retry-After ... ok (35ms)
+worker HTTP entrypoint: POST and cron auth required; emulator cannot use real FCM ... ok (13ms)
+worker HTTP authorized harness uses fake FCM and refuses emulator calls without it ... ok (3ms)
+running 5 tests from ./supabase/functions/_shared/waitlist.regression.test.ts
+waitlist promotion skips oversized party, preserves price, creates ticket, removes overlaps atomically ... ok (16ms)
+waitlist closes all entries without charging and sends exactly one inbox notification per entry ... ok (2ms)
+promotion respects exact T-30 cutoff and cancelled sessions ... ok (905µs)
+dropin-close authenticates, closes at T-30, completes ended sessions and is idempotent ... ok (27ms)
+dropin-close retries a failed close before marking an ended session completed ...
+------- post-test output -------
+[dropin-close] đóng hàng chờ s thất bại Error: Transient close failure
+    at Object.runTransaction (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/_shared/waitlist.regression.test.ts:244:33)
+    at handleDropInClose (file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/dropin-close/handler.ts:63:45)
+    at async file:///F:/CSC_HCMUS/Mobile/datcau/supabase/functions/_shared/waitlist.regression.test.ts:252:23
+    at async innerWrapped (ext:cli/40_test.js:300:5)
+    at async exitSanitizer (ext:cli/40_test.js:201:27)
+    at async outerWrapped (ext:cli/40_test.js:239:22)
+----- post-test output end -----
+dropin-close retries a failed close before marking an ended session completed ... ok (12ms)
+running 4 tests from ./supabase/functions/notification-producers.test.ts
+notification Timestamp: application APPROVE persists native date and retry preserves it ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+notification Timestamp: application APPROVE persists native date and retry preserves it ... ok (80ms)
+notification Timestamp: application REJECT persists native date and retry preserves it ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+notification Timestamp: application REJECT persists native date and retry preserves it ... ok (3ms)
+notification Timestamp: revoke creates one dated inbox entry across retry ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+notification Timestamp: revoke creates one dated inbox entry across retry ... ok (25ms)
+notification Timestamp: SYSTEM fanout dates every recipient and preserves read state on retry ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+notification Timestamp: SYSTEM fanout dates every recipient and preserves read state on retry ... ok (16ms)
+
+ok | 65 passed | 0 failed (7s)
+

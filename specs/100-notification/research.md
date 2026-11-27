@@ -74,3 +74,30 @@
 10. Deep-link keys/behavior cho mọi type, đặc biệt `GROUP_ACTIVITY`, `OWNER_*`, `SYSTEM`; title/body lưu đủ chi tiết fallback và chính sách nội dung nhạy cảm trên lock screen.
 11. Quy tắc cập nhật notification khi event nguồn bị đổi/hủy sau khi đã tạo; offline read/settings write conflict behavior.
 12. Chính sách permission/data ownership: Admin notification create qua callable server hay Security Rules; cập nhật DB README/120 nếu cần do người sở hữu tài liệu.
+
+## Approved implementation decisions — 2026-11-22
+
+User approved T010: own-user query, 30 items/page, createdAt descending, snapshot cursor, one-shot load and explicit refresh. Mark-all traverses all pages. This supersedes historical undecided query notes. No composite index presumed for the single-field query.
+
+User requested durable delivery-state/job design: see delivery-state-proposal.md. Schema approval remains pending.
+
+## Approved Android continuation decisions — 2026-11-23
+
+The user approved DataStore as a UID-scoped cache only: Firestore authority, update cache after server success, read-only fallback on failed server loading, retry to restore editing, no offline mutation queue, and cleanup on logout/account deletion. See data-model.md for the local namespace/epoch implementation and the distinction between network failure and missing/forbidden profiles. T012's outstanding cache policy is now confirmed; T039 closure requires implementation verification.
+
+The user separately approved GROUP_ACTIVITY Android routing according to Feature 090's existing subtype catalog. Moderator membership is required for requests; event posts must be readable/existing; removed/deleted/unknown targets fall back as specified in contracts/event-integration.md. This confirms Android routing only, not producer event transport, fanout, identity or delivery storage. Other missing source routes remain partial.
+
+
+## Backend/FCM decisions approved 23/11/2026
+
+D1, D2-W1, T1, C1, P1 and S1 were explicitly approved by the user in backend-decision-package.md. That document and CSDL now govern retry/lease/receipt retention, W1 transaction identities, token lifecycle, account-wide chat suppression, generic data-only push and server-only SYSTEM. T004/T005 remain partial for producer identities/reminders outside W1. Approval is separate from implementation/verification and does not authorize deploy or live migration.
+
+## Booking decisions approved 24/11/2026
+
+User approved B1 (payment source will be supplied later) and B2 with the stated limits in specs/100-notification/booking-decision-package-2026-11-24.md. B1 authorizes the internal helper contract, not a replacement payment flow; actual HOLD-to-PENDING producer integration remains blocked. B2 authorizes one reminder per booking ID, invocation-local paginated CONFIRMED/startAt window, late catch-up only before start, data.reminderStartAt Timestamp, same-transaction recheck/enqueue, and delivery-time source/time recheck. After a reminder exists, reschedule does not generate a second inbox; stale push is skipped. No booking marker, collection or reschedule API is added. Full field/query/identity semantics are in the approved package; no deploy/live migration is authorized.
+
+## Đối chiếu producer và replay ngày 26/11/2026
+
+Các producer booking kết quả/timeout dùng bookingId/type. B1 giữ inbox ID checkout hiện có và dùng bookingId của buổi sớm nhất cho đơn định kỳ. B2 và RR1 dùng bookingId/type cho mỗi reminder một lần. D3 dùng session/UID/requestId, D4 dùng session/requestId/type, W1 giữ identity đã chốt của waitlist. Owner review và revoke giữ identity nguồn đã chốt, R1 dùng reviewId/generation/type. SYSTEM dùng adminUid/requestId.
+
+F1 dùng groupId, type, subtype hoặc chatId và ID nguồn. P2 dùng venueId/code/type và publishedAt để bảo toàn lần phát đầu. Worker ghép family, identity, UID và type cho ID inbox/job. Cursor và writes cùng commit ở mọi nhánh phân trang. Điều kiện reminder B2, RR1 và audit chi tiết nguồn được lưu trong [event-integration](contracts/event-integration.md).

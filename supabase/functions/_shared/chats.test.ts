@@ -56,7 +56,10 @@ T("H1 added / removed: memberIds, participants, unreadCounts khớp; người m�
   assertEquals((p?.joinedAt as Date).getTime(), (p?.lastReadAt as Date).getTime());
 
   await sync(g, { added: [u("m2")] }); // thêm lại người đã có: không đổi
+  const removedPresence = `${participantPath(chatId, u("m1"))}/presence/device`;
+  await firestore.commit([firestore.createWrite(removedPresence, { viewingUntil: new Date(Date.now() + 60_000) })]);
   await sync(g, { removed: [u("m1"), u("m3")] });
+  assertEquals(await firestore.get(removedPresence), null);
   await assertChatInvariant(chatId);
   chat = await firestore.get(chatPath(chatId));
   assertEquals((chat?.memberIds as string[]).sort(), [u("m2"), u("o2")].sort());
@@ -81,7 +84,10 @@ T("H2 purgeChat: hết messages, participants, ảnh của chat; ảnh chat khá
   await seedGroupChat(g, [u("o4"), u("m5")], [{ senderId: u("o4") }, { senderId: u("m5"), imagePath: img }]);
   const other = `${groupChatId(u("g5"))}/x.jpg`;
   storage.put("chat-media", img, other);
+  const presencePath = `${participantPath(chatId, u("m5"))}/presence/device`;
+  await firestore.commit([firestore.createWrite(presencePath, { viewingUntil: new Date() })]);
   await purgeChat(chatId, d);
+  assertEquals(await firestore.get(presencePath), null);
   assertEquals((await firestore.query("messages", [], { parent: chatPath(chatId) })).length, 0);
   assertEquals((await firestore.query("participants", [], { parent: chatPath(chatId) })).length, 0);
   assert(!storage.has("chat-media", img));
@@ -93,7 +99,12 @@ T("A1 anonymizeCommunityChats: chat riêng READ_ONLY, memberSnapshots null; tin 
   const p = u("p"), o = u("o");
   const direct = await seedDirectChat(p, o, "v1", [{ senderId: p }, { senderId: o }, { senderId: p }]);
   const group = await seedGroupChat(u("g6"), [u("o6"), p], [{ senderId: p }, { senderId: u("o6") }]);
+  const lease = `${participantPath(direct, p)}/presence/device`;
+  const unrelatedLease = `${participantPath(direct, o)}/presence/device`;
+  await firestore.commit([firestore.createWrite(lease, { viewingUntil: new Date() }), firestore.createWrite(unrelatedLease, { viewingUntil: new Date() })]);
   await anonymizeCommunityChats(p, deps);
+  assertEquals(await firestore.get(lease), null);
+  assert(await firestore.get(unrelatedLease));
   const chat = await firestore.get(chatPath(direct));
   assertEquals(chat?.status, "READ_ONLY");
   const snaps = chat?.memberSnapshots as Record<string, unknown>;

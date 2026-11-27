@@ -4,6 +4,7 @@ import com.google.android.gms.tasks.Task
 import com.google.firebase.FirebaseNetworkException
 import com.google.firebase.FirebaseTooManyRequestsException
 import com.google.firebase.auth.FirebaseAuthInvalidUserException
+import com.google.firebase.firestore.FirebaseFirestoreException
 import io.github.jan.supabase.exceptions.HttpRequestException
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.tasks.await
@@ -33,6 +34,11 @@ fun Throwable.toAppError(): AppError = when (this) {
     is AppError -> this
     is FirebaseNetworkException, is IOException, is HttpRequestException -> AppError.Network
     is FirebaseTooManyRequestsException -> AppError.RateLimited
+    is FirebaseFirestoreException -> when (code) {
+        FirebaseFirestoreException.Code.UNAVAILABLE -> AppError.Network
+        FirebaseFirestoreException.Code.DEADLINE_EXCEEDED -> AppError.Timeout
+        else -> AppError.Unknown(this)
+    }
     is FirebaseAuthInvalidUserException -> when (errorCode) {
         ERROR_USER_DISABLED -> AppError.Locked
         ERROR_USER_TOKEN_EXPIRED -> AppError.SessionRevoked

@@ -84,8 +84,16 @@ service cloud.firestore {
     // ---------- users (A, spec 010; contracts/security-rules.md) ----------
     // Tạo bởi on-signup, xóa bởi delete-account (service account, không qua Rules).
     // Không áp dụng xuống subcollection. Subcollection có match riêng: favorites, searchHistory.
-    // notifications và aiUsage chỉ do Edge Function ghi/đọc (service account); client không có match
+    // aiUsage chỉ do Edge Function ghi/đọc (service account); client không có match
     // nên mặc định bị từ chối. App lấy lượt AI qua function ai-search-parse.
+    match /users/{uid}/notifications/{notificationId} {
+      allow read: if isSelf(uid);
+      allow update: if isSelf(uid)
+          && onlyChanges(['isRead'])
+          && request.resource.data.isRead is bool;
+      allow create, delete: if false;
+    }
+
     match /users/{uid} {
       // Trường người dùng tự sửa được. Spec 011 bổ sung kiểm tra chi tiết từng trường.
       function selfEditableFields() {
@@ -98,6 +106,16 @@ service cloud.firestore {
             || (request.resource.data.displayName is string
                 && request.resource.data.displayName.size() >= 2
                 && request.resource.data.displayName.size() <= 50);
+      }
+
+      function validFcmTokens() {
+        let old = resource.data.get('fcmTokens', []);
+        let next = request.resource.data.get('fcmTokens', []);
+        let added = next.removeAll(old);
+        let removed = old.toSet().difference(next.toSet());
+        return !changed('fcmTokens') || (next is list && old is list
+            && added.size() <= 1 && removed.size() <= 1
+            && (added.size() == 0 || (added[0] is string && added[0].size() > 0 && added[0].size() <= 4096)));
       }
 
       // [011] contracts/security-rules.md §1
@@ -141,7 +159,7 @@ service cloud.firestore {
       allow update: if isSelf(uid) && isInitialized()
                     && onlyChanges(selfEditableFields())
                     && request.resource.data.updatedAt == request.time
-                    && validDisplayName() && validLevel() && validDistricts() && validAvatarPath();
+                    && validDisplayName() && validLevel() && validDistricts() && validAvatarPath() && validFcmTokens();
     }
 
     // ---------- districts (A, spec 011; contracts/security-rules.md §2) ----------
@@ -331,18 +349,6 @@ service cloud.firestore {
                         && resource.data.status == 'HELD'
                         && resource.data.holdBy == request.auth.uid
                       )
-                      // Xác nhận đặt sân: slot HELD còn hạn của chính mình sang BOOKED, giữ nguyên mã đã gắn lúc
-                      // giữ chỗ, và đơn PENDING của chính mình với mã đó phải được tạo trong cùng transaction.
-                      || (
-                        request.resource.data.status == 'BOOKED'
-                        && resource.data.status == 'HELD'
-                        && resource.data.holdBy == request.auth.uid
-                        && resource.data.holdExpiresAt > request.time
-                        && request.resource.data.bookingId == resource.data.bookingId
-                        && existsAfter(/databases/$(database)/documents/bookings/$(resource.data.bookingId))
-                        && getAfter(/databases/$(database)/documents/bookings/$(resource.data.bookingId)).data.userId == request.auth.uid
-                        && getAfter(/databases/$(database)/documents/bookings/$(resource.data.bookingId)).data.status == 'PENDING'
-                      )
                     );
 
       allow delete: if isAdmin()
@@ -373,28 +379,10 @@ service cloud.firestore {
       // chạy ở Edge Function `checkin-booking`, client không query qrToken trên toàn collection.
       allow read: if isSignedIn() && (resource == null || resource.data.userId == request.auth.uid
           || isAdmin() || ownsVenue(resource.data.venueId));
-      // Lát cắt test 050: Cho phép player tạo đơn PENDING của chính mình để test 060 bằng data real.
-      // Khi 050 có server confirmation thì phải thu hồi rule này về phía server.
+      // Client tạo HOLD. Checkout đồng bộ slot, voucher và BOOKING_NEW từ server.
       allow create: if isPlayer()
           && request.resource.data.userId == request.auth.uid
-          && (
-            request.resource.data.status == 'HOLD'
-            || (
-              request.resource.data.status == 'PENDING'
-              // Chưa có thanh toán phía server (050): client chỉ được tạo đơn trả tại sân, chưa trả đồng nào.
-              // Nếu cho client tự khai paidAmount/depositAmount, hủy sớm sẽ "hoàn" số tiền chưa từng trả vào ví.
-              && request.resource.data.paymentMethod == 'AT_VENUE'
-              && request.resource.data.paidAmount == 0
-              && request.resource.data.depositAmount == 0
-              && request.resource.data.remainingAmount == request.resource.data.total
-              && request.resource.data.subtotal is number && request.resource.data.subtotal >= 0
-              && request.resource.data.discount is number && request.resource.data.discount >= 0
-              && request.resource.data.total is number && request.resource.data.total == request.resource.data.subtotal - request.resource.data.discount
-              && request.resource.data.depositAmount is number && request.resource.data.depositAmount >= 0
-              && request.resource.data.paidAmount is number && request.resource.data.paidAmount >= 0
-              && request.resource.data.remainingAmount is number && request.resource.data.remainingAmount >= 0
-            )
-          );
+          && request.resource.data.status == 'HOLD';
       // Confirmation/refund are server-owned. Clients may only expire their own
       // unconfirmed HOLD; cancellation must use the server transaction.
       allow update: if isPlayer() && resource.data.userId == request.auth.uid
@@ -538,6 +526,17 @@ service cloud.firestore {
     // ---------- chats + participants/messages (C, spec 091) ----------
     // specs/091-chat/contracts/security-rules.md. Tin nhắn ghi qua Edge Function chat-send/chat-action;
     // client chỉ ghi chats.unreadCounts.{mình} = 0 và participants/{mình} (lastReadAt, muted, blockedOther, viewingUntil).
+    // Feature 100 D1: service-account only; Admin clients have no delivery/receipt access.
+    match /notificationDeliveries/{path=**} {
+      allow read, write: if false;
+    }
+    match /notificationFanouts/{path=**} {
+      allow read, write: if false;
+    }
+    match /groups/{groupId}/notificationCommands/{requestId} {
+      allow read, write: if false;
+    }
+
     match /chats/{chatId} {
       function inChat() {
         return isSignedIn() && request.auth.uid in resource.data.memberIds;
@@ -556,6 +555,14 @@ service cloud.firestore {
       allow create, delete: if false;
 
       match /participants/{uid} {
+        match /presence/{installationId} {
+          allow read: if isSelf(uid) && inChatById();
+          allow create, update: if isSelf(uid) && inChatById()
+              && request.resource.data.keys().hasOnly(['viewingUntil'])
+              && request.resource.data.viewingUntil is timestamp
+              && request.resource.data.viewingUntil <= request.time + duration.value(10, 'm');
+          allow delete: if isSelf(uid) && inChatById();
+        }
         allow get: if isSelf(uid) || isAdmin();
         allow update: if isSelf(uid) && inChatById()
             && request.resource.data.diff(resource.data).affectedKeys()

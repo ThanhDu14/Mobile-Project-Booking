@@ -240,6 +240,7 @@ class PostComposerViewModel @Inject constructor(
             eventAt = current.eventAt,
             eventLocation = current.eventLocation.trim(),
             expectedCount = current.expectedCountText.trim().toIntOrNull(),
+            editRequestId = if (current.isEdit) editCommandId(current) else null,
         )
         _state.value = validated.copy(saving = true)
         viewModelScope.launch {
@@ -252,6 +253,7 @@ class PostComposerViewModel @Inject constructor(
             }
             result.fold(
                 onSuccess = { post ->
+                    savedStateHandle.remove<ArrayList<String>>(KEY_EDIT_COMMAND)
                     _events.trySend(PostComposerEvent.Posted(post))
                 },
                 onFailure = { err ->
@@ -273,6 +275,18 @@ class PostComposerViewModel @Inject constructor(
                     _events.trySend(PostComposerEvent.ShowError(communityError))
                 },
             )
+        }
+    }
+
+    private fun editCommandId(state: PostComposerState): String {
+        val payload = listOf(
+            state.content.trim(), state.eventTitle.trim(), state.eventAt.toString(),
+            state.eventLocation.trim(), state.expectedCountText.trim(),
+        ) + state.photos.mapNotNull { it.remotePath }
+        val previous = savedStateHandle.get<ArrayList<String>>(KEY_EDIT_COMMAND)
+        if (previous?.drop(1) == payload) return previous.first()
+        return UUID.randomUUID().toString().also { id ->
+            savedStateHandle[KEY_EDIT_COMMAND] = ArrayList(listOf(id) + payload)
         }
     }
 
@@ -406,6 +420,7 @@ class PostComposerViewModel @Inject constructor(
         const val ARG_POST_ID = "postId"
         const val ARG_TYPE = "type"
         const val KEY_REQUEST_ID = "post_request_id"
+        private const val KEY_EDIT_COMMAND = "post_edit_command"
         const val MAX_PHOTOS = 4
         const val MAX_CONTENT_LENGTH = 2000
         const val MAX_EVENT_TITLE = 100

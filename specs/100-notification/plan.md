@@ -6,6 +6,8 @@
 
 ## Summary
 
+Continuation 23/11/2026: user approved UID-scoped DataStore preference cache and Android group-event routing. Reuse existing DataStore, Hilt and Firebase transaction APIs; no dependency, module, backend storage or event protocol is added. Firestore stays authoritative; cache fallback is read-only with explicit retry. Local cache cleanup extends the existing session cleanup path so account deletion also clears it when SignOutHooks are skipped. Historical stack/discovery notes below do not describe the current dependency catalog; see implementation-review.md and validation reports for current evidence.
+
 Triển khai trung tâm thông báo Android, đọc danh sách riêng theo người dùng, đánh dấu từng mục/tất cả đã đọc, cài đặt push theo type và nhận FCM. Nguồn nghiệp vụ chỉ phát sự kiện; dịch vụ nền do nhóm D phụ trách xác định người nhận, ghi inbox và gửi push. Dùng đúng đường dẫn Firestore `users/{uid}/notifications/{id}`, các field đã chốt trong CSDL, `users.notificationPrefs`, `users.fcmTokens`; không thêm collection/field trong plan này. Push thất bại không làm mất inbox. Chi tiết idempotency, trigger/event transport và retry còn phụ thuộc các điểm cần chốt trong [research.md](research.md).
 
 ## Technical Context

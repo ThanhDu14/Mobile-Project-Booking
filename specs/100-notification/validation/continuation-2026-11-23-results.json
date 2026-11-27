@@ -1,0 +1,236 @@
+﻿{
+    "date":  "2026-11-23",
+    "completedTasks":  25,
+    "totalTasks":  56,
+    "newCompletedTasks":  [
+                              "T012",
+                              "T039"
+                          ],
+    "approvedThisTurn":  [
+                             "Android GROUP_ACTIVITY routing only",
+                             "UID DataStore cache policy only"
+                         ],
+    "unit":  {
+                 "suites":  255,
+                 "tests":  1682,
+                 "failures":  0,
+                 "errors":  0,
+                 "skipped":  2
+             },
+    "notificationUnit":  [
+                             {
+                                 "name":  "com.example.booking_app.feature.notification.FirestoreNotificationRepositoryTest",
+                                 "tests":  9,
+                                 "failures":  0,
+                                 "errors":  0,
+                                 "skipped":  0
+                             },
+                             {
+                                 "name":  "com.example.booking_app.feature.notification.NotificationContractTest",
+                                 "tests":  5,
+                                 "failures":  0,
+                                 "errors":  0,
+                                 "skipped":  0
+                             },
+                             {
+                                 "name":  "com.example.booking_app.feature.notification.NotificationGroupRouteTest",
+                                 "tests":  4,
+                                 "failures":  0,
+                                 "errors":  0,
+                                 "skipped":  0
+                             },
+                             {
+                                 "name":  "com.example.booking_app.feature.notification.NotificationGroupsTest",
+                                 "tests":  1,
+                                 "failures":  0,
+                                 "errors":  0,
+                                 "skipped":  0
+                             },
+                             {
+                                 "name":  "com.example.booking_app.feature.notification.NotificationPermissionTest",
+                                 "tests":  3,
+                                 "failures":  0,
+                                 "errors":  0,
+                                 "skipped":  0
+                             },
+                             {
+                                 "name":  "com.example.booking_app.feature.notification.NotificationPreferenceCacheTest",
+                                 "tests":  6,
+                                 "failures":  0,
+                                 "errors":  0,
+                                 "skipped":  0
+                             },
+                             {
+                                 "name":  "com.example.booking_app.feature.notification.NotificationRouteTest",
+                                 "tests":  5,
+                                 "failures":  0,
+                                 "errors":  0,
+                                 "skipped":  0
+                             },
+                             {
+                                 "name":  "com.example.booking_app.feature.notification.NotificationViewModelTest",
+                                 "tests":  4,
+                                 "failures":  0,
+                                 "errors":  0,
+                                 "skipped":  0
+                             }
+                         ],
+    "lint":  {
+                 "errors":  0,
+                 "warnings":  856
+             },
+    "rulesProfileQueryGroup":  {
+                                   "tests":  53,
+                                   "failures":  0,
+                                   "demoProject":  "demo-smashnow"
+                               },
+    "offlinePlanner":  {
+                           "tests":  6,
+                           "failures":  0,
+                           "syntheticCliPassed":  true,
+                           "hostedDataRead":  false,
+                           "migrationExecuted":  false
+                       },
+    "device":  {
+                   "model":  "vivo V2247",
+                   "android":  15,
+                   "package":  "com.example.booking_app.adminlocal",
+                   "testsPerVariant":  9,
+                   "variants":  4,
+                   "totalTests":  36,
+                   "failures":  0,
+                   "phoneDp":  393,
+                   "w600dp":  720,
+                   "simulatedTabletOnSamePhone":  true,
+                   "finalDensity":  440,
+                   "finalDensityOverride":  null,
+                   "size":  "1080x2388",
+                   "fontScale":  1,
+                   "screenshots":  [
+                                       {
+                                           "path":  "phone-dark/notification-393dp-dark-inbox.png",
+                                           "bytes":  248671,
+                                           "sha256":  "aefc6078853fd8dca3be1e04c66735573f37906122f84316c01980c91197c23a"
+                                       },
+                                       {
+                                           "path":  "phone-dark/notification-393dp-dark-inbox-shell.png",
+                                           "bytes":  196903,
+                                           "sha256":  "b4e3da337355deba15bab2559bacdc885fa59a8e93706c58ec11a46155325acd"
+                                       },
+                                       {
+                                           "path":  "phone-dark/notification-393dp-dark-settings.png",
+                                           "bytes":  199468,
+                                           "sha256":  "57f1028c93ec07ea51307853dd8b259456b853c0035d1e92c92d9c8a59972fde"
+                                       },
+                                       {
+                                           "path":  "phone-dark/notification-393dp-dark-settings-cache.png",
+                                           "bytes":  193341,
+                                           "sha256":  "b53e4a74e45e77888efa0166da020fd587930d1105f52a1a42fd0e7f9fb94c23"
+                                       },
+                                       {
+                                           "path":  "phone-dark/notification-393dp-dark-settings-extra.png",
+                                           "bytes":  198815,
+                                           "sha256":  "a558cdf65acae8b4b58a0cc6e31f52a18570b7ab7e585dfc1fd8acdc7cee9bcc"
+                                       },
+                                       {
+                                           "path":  "phone-dark/notification-393dp-dark-settings-shell.png",
+                                           "bytes":  199093,
+                                           "sha256":  "a10646cb2b407ac2ac7d0dc4926db3619d1a857f8c8e4fbe193ab329c2778936"
+                                       },
+                                       {
+                                           "path":  "phone-light/notification-393dp-light-inbox.png",
+                                           "bytes":  249859,
+                                           "sha256":  "f49752be36fbb4067b621c8a6fcdc6ad05172b5298f09a1d30e7e8ac811a4c95"
+                                       },
+                                       {
+                                           "path":  "phone-light/notification-393dp-light-inbox-shell.png",
+                                           "bytes":  197082,
+                                           "sha256":  "664aa8bb8cfb9ae428ae4ed2db98f3604d66e2275200073b4b300f76f02dcfb4"
+                                       },
+                                       {
+                                           "path":  "phone-light/notification-393dp-light-settings.png",
+                                           "bytes":  198850,
+                                           "sha256":  "a28ab748943931c028a6eab4d360f65e27f9abac18e048431d350e54b285bc7f"
+                                       },
+                                       {
+                                           "path":  "phone-light/notification-393dp-light-settings-cache.png",
+                                           "bytes":  192341,
+                                           "sha256":  "47911000e488790e700066eaef5a4c2ceac7090abdadb7ed63fba82929c7196f"
+                                       },
+                                       {
+                                           "path":  "phone-light/notification-393dp-light-settings-extra.png",
+                                           "bytes":  197602,
+                                           "sha256":  "668a93117e5a90c407d9f2d1658c93712056877a9163633b66ed94cf11743e2b"
+                                       },
+                                       {
+                                           "path":  "phone-light/notification-393dp-light-settings-shell.png",
+                                           "bytes":  196716,
+                                           "sha256":  "b5f43489f2bb78a8e0f24a768297bbd682215d255cf2f2dcec14bd06e984361c"
+                                       },
+                                       {
+                                           "path":  "tablet-dark/notification-720dp-dark-inbox.png",
+                                           "bytes":  157508,
+                                           "sha256":  "05b77c572375008b332317565f0bdfa24d13765c75e50a88040b42575bbf95c5"
+                                       },
+                                       {
+                                           "path":  "tablet-dark/notification-720dp-dark-inbox-shell.png",
+                                           "bytes":  104068,
+                                           "sha256":  "f76c10fb056b1278a4af8e28b78c1f75eb7f26922a1434da9a71e3e8c6f9dea4"
+                                       },
+                                       {
+                                           "path":  "tablet-dark/notification-720dp-dark-settings.png",
+                                           "bytes":  143630,
+                                           "sha256":  "8fc3372ac40010317b14f30a3727e27b09853ca2ef8290582eae3093a7322911"
+                                       },
+                                       {
+                                           "path":  "tablet-dark/notification-720dp-dark-settings-cache.png",
+                                           "bytes":  152767,
+                                           "sha256":  "0e37fad222fe363190cc5ebf70000331ba4a38dcad498385c2d54f05d260edbc"
+                                       },
+                                       {
+                                           "path":  "tablet-dark/notification-720dp-dark-settings-extra.png",
+                                           "bytes":  143209,
+                                           "sha256":  "1ca0cf1da101bdfd538195ab53849917eedaf137749f4909252cd810d74c01be"
+                                       },
+                                       {
+                                           "path":  "tablet-dark/notification-720dp-dark-settings-shell.png",
+                                           "bytes":  143514,
+                                           "sha256":  "75240b65f7e9bfbd1b531e6772789bc7054a78900cc40c61a80897454f0339a3"
+                                       },
+                                       {
+                                           "path":  "tablet-light/notification-720dp-light-inbox.png",
+                                           "bytes":  157938,
+                                           "sha256":  "dcfba6efb8fa5a0fd0fe5f85d3a37a65d7e2f97b8977202e85b265e0aee5a0fc"
+                                       },
+                                       {
+                                           "path":  "tablet-light/notification-720dp-light-inbox-shell.png",
+                                           "bytes":  103503,
+                                           "sha256":  "924827224a1b5de70b5b52e62f5ca900a99c583b32718325f3cd67774a408d3f"
+                                       },
+                                       {
+                                           "path":  "tablet-light/notification-720dp-light-settings.png",
+                                           "bytes":  167787,
+                                           "sha256":  "ff6954dfb107ba817f2347925a0b648df8e57ea80bde268495a063d91589178b"
+                                       },
+                                       {
+                                           "path":  "tablet-light/notification-720dp-light-settings-cache.png",
+                                           "bytes":  151984,
+                                           "sha256":  "17a825689642e40589511e9fd0591988299a38a4210716bddb2251bd8837b02e"
+                                       },
+                                       {
+                                           "path":  "tablet-light/notification-720dp-light-settings-extra.png",
+                                           "bytes":  167476,
+                                           "sha256":  "604095084a57aa677bae76c72affb4cc3e7ae6f73530835e158c6c8a31dcb564"
+                                       },
+                                       {
+                                           "path":  "tablet-light/notification-720dp-light-settings-shell.png",
+                                           "bytes":  142145,
+                                           "sha256":  "d0e447ab923a5ae34af0614ca5dc90bd3e8576967fe5a21dea4b0fe54ca2990e"
+                                       }
+                                   ]
+               },
+    "backendSchemaApproved":  false,
+    "backendDeployed":  false,
+    "commitsCreated":  0,
+    "pushes":  0
+}

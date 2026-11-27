@@ -6,7 +6,7 @@
 import { assert, assertEquals, assertInstanceOf } from "jsr:@std/assert@1.0.19";
 import { get } from "../_shared/firestore.ts";
 import { handleReview, type ReviewDeps } from "./handler.ts";
-import { call, createBody as create, DAY, deps, done, NOW, RATINGS, seed, sent, storage } from "./testing.ts";
+import { call, createBody as create, DAY, deps, done, NOW, RATINGS, seed, inbox, sent, storage } from "./testing.ts";
 
 Deno.test("create thành công: 201, review đủ trường, tổng điểm +1, gửi REVIEW_NEW cho chủ sân", async () => {
   await seed({ "b-done": done(1) });
@@ -20,7 +20,8 @@ Deno.test("create thành công: 201, review đủ trường, tổng điểm +1, 
 
   const review = await get("reviews/b-done");
   assert(review);
-  const { createdAt, updatedAt, completedAt, ...rest } = review;
+  const { createdAt, updatedAt, completedAt, notificationGeneration, ...rest } = review;
+  assert(typeof notificationGeneration === "string" && /^[0-9a-f-]{36}$/.test(notificationGeneration));
   assertEquals(rest, {
     targetType: "VENUE",
     bookingId: "b-done",
@@ -47,7 +48,8 @@ Deno.test("create thành công: 201, review đủ trường, tổng điểm +1, 
   assertEquals(venue?.ratingSums, { court: 5, cleanliness: 4, service: 3, overall10: 40 });
   assertEquals([venue?.ratingCount, venue?.ratingAvg], [1, 4]);
 
-  assertEquals(sent, [{ type: "REVIEW_NEW", recipientUid: "owner1", data: { reviewId: "b-done", venueId: "venueA" } }]);
+  assertEquals(sent, []);
+  assertEquals((await inbox("owner1", "REVIEW_NEW")).map(n => n.data.data), [{ reviewId: "b-done", venueId: "venueA" }]);
 });
 
 Deno.test("đơn không phải của mình → 403 NOT_OWNER; đơn không tồn tại → 404 NOT_FOUND", async () => {
@@ -125,7 +127,8 @@ Deno.test("gửi lại cùng nội dung → 200, không cộng điểm lần 2; 
   assertEquals(again.body.review.id, "b-done");
   assertEquals(again.body.venue, { ratingAvg: 4.0, ratingCount: 1 });
   assertEquals((await get("venues/venueA"))?.ratingCount, 1);
-  assertEquals(sent.length, 1, "không gửi thông báo lần 2");
+  assertEquals((await inbox("owner1", "REVIEW_NEW")).length, 1);
+  assertEquals(sent, []);
 
   const different = await call("player1", create("b-done", { ratings: { court: 1, cleanliness: 1, service: 1 } }));
   assertEquals([different.status, different.body.error.code], [409, "ALREADY_REVIEWED"]);

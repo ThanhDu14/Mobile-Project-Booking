@@ -204,47 +204,11 @@ export type GroupEvent =
   | "EVENT_UPDATED"
   | "EVENT_DELETED";
 
-/** Cùng envelope `{ type, recipientUid, data }` với `review` (TODO(D, spec 100): chưa chốt). */
+/** Former callback payload, kept for regression tests that assert it is never sent. */
 export interface GroupNotification {
   type: "GROUP_ACTIVITY";
   recipientUid: string;
   data: { event: GroupEvent; groupId: string; postId?: string };
-}
-
-/** Gọi Edge Function `send-notification` của D bằng service role; chưa có function thì ném lỗi (bị bỏ qua ở caller). */
-export async function sendGroupNotification(n: GroupNotification): Promise<void> {
-  const url = Deno.env.get("SUPABASE_URL");
-  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!url || !key) {
-    console.warn("[group] thiếu SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY, bỏ qua thông báo", n.data.event);
-    return;
-  }
-  const res = await fetch(`${url}/functions/v1/send-notification`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify(n),
-  });
-  await res.body?.cancel();
-  if (!res.ok) throw new Error(`send-notification ${res.status}`);
-}
-
-/**
- * Gửi `GROUP_ACTIVITY` cho từng người nhận SAU KHI commit; mỗi người một lời gọi, lỗi chỉ `console.warn`
- * (không hoàn tác thao tác). Người nhận trùng chỉ nhận một lần.
- */
-export async function notifyGroupActivity(
-  deps: Pick<GroupDeps, "notify">,
-  event: GroupEvent,
-  recipients: Iterable<string>,
-  data: { groupId: string; postId?: string },
-): Promise<void> {
-  await Promise.all([...new Set(recipients)].map(async (recipientUid) => {
-    try {
-      await deps.notify({ type: "GROUP_ACTIVITY", recipientUid, data: { event, ...data } });
-    } catch (e) {
-      console.warn(`[group] gửi GROUP_ACTIVITY/${event} cho ${recipientUid} thất bại`, e);
-    }
-  }));
 }
 
 // ---------- Deps và khung điều phối ----------
@@ -254,8 +218,7 @@ export interface GroupDeps {
   storage: GroupStorage;
   /** Xác thực người gọi; mặc định `requireUser` (401, 403 ACCOUNT_LOCKED, ...). */
   authenticate: (req: Request) => Promise<{ uid: string }>;
-  /** Gửi một thông báo sau khi commit (gọi qua `notifyGroupActivity`, lỗi chỉ ghi log). */
-  notify: (n: GroupNotification) => Promise<void>;
+  notify?: (n: GroupNotification) => Promise<void>;
   /** Hook thành viên; mặc định là bản rỗng của spec 090, test thay bằng bản ghi lại. */
   onMembershipChanged: typeof onGroupMembershipChanged;
   now: () => Date;
@@ -268,7 +231,6 @@ export function defaultGroupDeps(): GroupDeps {
     firestore: defaultFirestore,
     storage: supabaseGroupStorage(),
     authenticate: (req) => requireUser(req),
-    notify: sendGroupNotification,
     onMembershipChanged: onGroupMembershipChanged,
     now: () => new Date(),
   };

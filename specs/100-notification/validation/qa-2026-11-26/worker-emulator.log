@@ -1,0 +1,11 @@
+running 2 tests from ./supabase/functions/_shared/notification-emulator.test.ts
+D1 emulator: source rollback, concurrent replay, competing claims and per-token partial recovery ... ok (4s)
+SYSTEM emulator: current ADMIN, all active roles, atomic job/inbox, replay and fake FCM failure ...
+------- output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- output end -----
+SYSTEM emulator: current ADMIN, all active roles, atomic job/inbox, replay and fake FCM failure ... ok (534ms)
+
+ok | 2 passed | 0 failed (5s)
+

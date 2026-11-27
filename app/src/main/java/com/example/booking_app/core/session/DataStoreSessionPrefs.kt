@@ -67,15 +67,20 @@ class DataStoreSessionPrefs @Inject constructor(
             it.remove(PENDING_NAME)
             it.remove(PENDING_TERMS_AT)
             it.remove(LAST_VERIFICATION_EMAIL_AT)
+            it.asMap().keys.filter { key -> key.name.startsWith(USER_CACHE_PREFIX) }.forEach { key -> it.remove(key) }
+            it[USER_CACHE_EPOCH] = (it[USER_CACHE_EPOCH] ?: 0L) + 1L
         }
     }
 
-    private companion object {
-        val PENDING_UID = stringPreferencesKey("pending_signup_uid")
-        val PENDING_NAME = stringPreferencesKey("pending_signup_name")
-        val PENDING_TERMS_AT = longPreferencesKey("pending_signup_terms_at")
-        val LAST_VERIFICATION_EMAIL_AT = longPreferencesKey("last_verification_email_at")
-        val LAST_PASSWORD_RESET_AT = longPreferencesKey("last_password_reset_at")
-        val WELCOME_SEEN = booleanPreferencesKey("welcome_seen")
+    companion object {
+        /** Shared local cache namespace; clear even when account deletion skips authenticated hooks. */
+        const val USER_CACHE_PREFIX = "user_cache."
+        val USER_CACHE_EPOCH = longPreferencesKey("user_cache_epoch")
+        private val PENDING_UID = stringPreferencesKey("pending_signup_uid")
+        private val PENDING_NAME = stringPreferencesKey("pending_signup_name")
+        private val PENDING_TERMS_AT = longPreferencesKey("pending_signup_terms_at")
+        private val LAST_VERIFICATION_EMAIL_AT = longPreferencesKey("last_verification_email_at")
+        private val LAST_PASSWORD_RESET_AT = longPreferencesKey("last_password_reset_at")
+        private val WELCOME_SEEN = booleanPreferencesKey("welcome_seen")
     }
 }

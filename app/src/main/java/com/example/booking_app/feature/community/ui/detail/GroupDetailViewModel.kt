@@ -280,21 +280,15 @@ class GroupDetailViewModel @Inject constructor(
         }
     }
 
-    fun onDeletePostConfirmed(postId: String) {
-        viewModelScope.launch {
-            deletePost(groupId, postId).fold(
-                onSuccess = {
-                    deletedPostIds += postId
-                    observedNewPostIds = observedNewPostIds - postId
-                    rawPosts = rawPosts.filterNot { it.id == postId }
-                    publishFeed()
-                    _events.trySend(GroupDetailEvent.PostDeleted)
-                },
-                onFailure = { err ->
-                    _events.trySend(GroupDetailEvent.ShowError(err.toCommunityError()))
-                },
-            )
-        }
+    fun onDeletePostConfirmed(postId: String) = act(
+        key = "delete_post_$postId",
+        call = { requestId -> deletePost(groupId, postId, requestId) },
+    ) {
+        deletedPostIds += postId
+        observedNewPostIds = observedNewPostIds - postId
+        rawPosts = rawPosts.filterNot { it.id == postId }
+        publishFeed()
+        _events.trySend(GroupDetailEvent.PostDeleted)
     }
 
     /** T068: chủ nhóm/quản trị viên ẩn bài vi phạm. */

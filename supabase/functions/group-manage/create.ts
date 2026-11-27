@@ -9,11 +9,11 @@ import {
   joinRequestPath,
   loadGroupForWrite,
   memberPath,
-  notifyGroupActivity,
   type SignedUpload,
   userSnapshot,
 } from "../_shared/groups.ts";
 import { nameKeywords } from "../_shared/keywords.ts";
+import { enqueueGroupFanout, groupActivity, groupCommandId, groupNotificationCommand } from "../_shared/group-notification.ts";
 import { asNumber, inGroupTx, invalid, requireId, requireRequestId } from "../_shared/group-tx.ts";
 import {
   assertDistrictExists,
@@ -123,6 +123,7 @@ export const updateGroup: ActionHandler = async ({ uid, body, deps }) => {
     throw invalid("avatar phải là KEEP, REPLACE, CONFIRM hoặc REMOVE");
   }
   const ext = parseAvatarExt(body);
+  const requestId = patch.visibility === undefined ? null : groupCommandId(body);
 
   const outcome = await inGroupTx(deps, groupId, async (tx, writes) => {
     const now = deps.now();
@@ -130,6 +131,10 @@ export const updateGroup: ActionHandler = async ({ uid, body, deps }) => {
     const role = await getMembership(tx, groupId, uid);
     if (!role) throw new HttpError(403, "NOT_MEMBER", "Bạn không phải thành viên nhóm");
     if (role !== "OWNER") throw new HttpError(403, "FORBIDDEN", "Chỉ chủ nhóm được sửa nhóm");
+    const command = requestId ? await groupNotificationCommand<{ group: GroupDoc; approvedCount: number }>(
+      tx, groupId, requestId, uid, ["update-group", patch, avatar, ext], now,
+    ) : null;
+    if (command?.previous) return { ...command.previous, obsolete: [] };
 
     const changes: Record<string, unknown> = { ...patch };
     if (patch.name !== undefined) changes.nameKeywords = nameKeywords(patch.name);
@@ -164,8 +169,16 @@ export const updateGroup: ActionHandler = async ({ uid, body, deps }) => {
 
     changes.updatedAt = now;
     writes.push(updateWrite(groupPath(groupId), changes));
-    if (approved.length > 0) await deps.onMembershipChanged(tx, groupId, { added: approved });
-    return { group: { ...group, ...changes } as GroupDoc, approved, obsolete };
+    if (approved.length > 0 && requestId) {
+      await deps.onMembershipChanged(tx, groupId, { added: approved });
+      await enqueueGroupFanout(tx, writes, {
+        groupId, actorUid: uid, sourceId: requestId, audience: "TARGET", recipients: approved, now,
+        content: groupActivity("JOIN_APPROVED", groupId),
+      });
+    }
+    const result = { group: { ...group, ...changes } as GroupDoc, approvedCount: approved.length };
+    if (command) writes.push(command.write(result));
+    return { ...result, obsolete };
   });
 
   if (outcome.obsolete.length > 0) {
@@ -175,8 +188,6 @@ export const updateGroup: ActionHandler = async ({ uid, body, deps }) => {
       console.warn(`[group-manage] xóa ảnh đại diện cũ của nhóm ${groupId} thất bại`, e);
     }
   }
-  await notifyGroupActivity(deps, "JOIN_APPROVED", outcome.approved, { groupId });
-
   let avatarUpload: SignedUpload | undefined;
   if (avatar === "REPLACE") {
     avatarUpload = await deps.storage.createSignedUploadUrl(AVATAR_BUCKET, avatarObjectPath(groupId, ext), true);
@@ -184,7 +195,7 @@ export const updateGroup: ActionHandler = async ({ uid, body, deps }) => {
   return Response.json({
     group: groupJson(groupId, outcome.group),
     ...(avatarUpload ? { avatarUpload } : {}),
-    autoApproved: outcome.approved.length,
+    autoApproved: outcome.approvedCount,
   });
 };
 

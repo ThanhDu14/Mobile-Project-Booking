@@ -223,6 +223,8 @@ ID document là chính mã `code` (chữ in hoa). Mã phải duy nhất trên to
 
 ### 4.7. `reviews/{reviewId}` — C
 
+`notificationGeneration` 🔒 (String UUID, R1 duyệt 24/11/2026): server tạo cùng review, giữ khi sửa, đổi khi xóa/tạo lại. Review legacy chỉ được gán trong transaction phản hồi đầu tiên, không backfill inbox/job. REVIEW_NEW và first REVIEW_REPLIED enqueue cùng transaction nguồn; client không ghi trường này.
+
 `reviewId` = `bookingId` hoặc `{sessionId}_{uid}` để mỗi đơn/lượt chỉ đánh giá một lần.
 
 `targetType` (`VENUE`, `DROP_IN`), `venueId`, `sessionId?`, `userId`, `userSnapshot` (tên, ảnh), `ratings` (Map: `court`, `cleanliness`, `service`, 1–5), `overall` (Double), `comment`, `photoPaths`, `ownerReply` (Map: `text`, `repliedAt`), `status` (`VISIBLE`, `HIDDEN` 🔒). Mọi ghi qua Edge Function `review`. Đánh giá sân: chỉ tạo khi đơn tương ứng `COMPLETED` và thuộc người viết. Đánh giá buổi vãng lai: `reviewId` = `{sessionId}_{uid}`, `targetType = DROP_IN`, `bookingId = null`, `completedAt` = `session.endAt`; chỉ tạo khi đăng ký `CHECKED_IN`, buổi đã kết thúc và trong 7 ngày kể từ `session.endAt`, người viết không phải chủ cơ sở (xem [R10](../../../specs/080-drop-in-session/research.md#r10-đánh-giá-buổi-chơi-fr-022-fr-023)).
@@ -285,6 +287,10 @@ Các `type` (đã chốt 13/10 theo yêu cầu của các spec nguồn; thêm lo
 | `GROUP_ACTIVITY` | 09 (yêu cầu tham gia, được duyệt/từ chối, bị mời ra, sự kiện mới/sửa/xóa; `data.event` ghi loại cụ thể) |
 | `CHAT_MESSAGE` | 09 |
 | `SYSTEM` | 12 |
+
+O2 thêm journal server-only `users/{uid}/ownerRevocationCommands/{requestId}`. Mỗi UUID là một lần gọi thu hồi, lưu `actorUid`, `reasonHash` và `createdAt` (Timestamp). Journal được ghi cùng role/inbox/job và được dọn khi xóa tài khoản.
+
+D4 thêm journal server-only `dropInSessions/{sessionId}/notificationCommands/{requestId}` gồm `actorUid`, `fingerprint`, `result`, `createdAt`. Transaction giữ journal theo vòng đời session. Khi không đủ ngân sách ghi từng inbox trong transaction nguồn, ghi `notificationFanouts/{eventId}` với identity, family, actorUid, content, createdAt, state, cursor và pageCount, kèm các trang `recipients/{page}` (tối đa 100 UID). Mỗi transaction worker ghi inbox/job và tiến cursor cùng lúc. Trang snapshot được dọn sau 7 ngày kể từ khi hoàn tất. Thiết kế này mới triển khai cho D4.
 
 Người dùng tự làm một thao tác (tự hủy đơn, tự hủy đăng ký vãng lai, tự vào hàng chờ) thì không nhận thông báo cho thao tác đó; app hiện kết quả ngay trên màn hình.
 
@@ -379,7 +385,7 @@ Ký hiệu: R đọc, C tạo, U sửa, D xóa. "Chủ" = người sở hữu do
 | `groups` | Giới thiệu nhóm (`ACTIVE`, `LOCKED`) ai cũng R, kể cả khách; bảng tin, thành viên chỉ thành viên R; `joinRequests` R của mình; mọi ghi qua Edge Function | như người chơi | R để kiểm duyệt | Ghi toàn bộ (`group-manage`, `group-post`) |
 | `chats` | Người trong cuộc R; chỉ ghi `unreadCounts.{mình} = 0` và `participants/{mình}` (`lastReadAt`, `muted`, `blockedOther`, `viewingUntil`); `messages` chỉ đọc, gửi/thu hồi/báo cáo qua Edge Function | như người chơi (R chat với khách của sân mình) | R để kiểm duyệt | Ghi toàn bộ (`chat-send`, `chat-action`) |
 | `reports` | C | C | R, U | |
-| `notifications` | R, U `isRead` của mình | như người chơi | C (thông báo hệ thống) | C |
+| `notifications` | R, U `isRead` của mình | như người chơi | Gửi SYSTEM qua Edge Function; client không C | C |
 
 Mỗi dòng trên cần ít nhất một test Emulator "được phép" và một test "bị chặn".
 
@@ -454,3 +460,27 @@ Hợp đồng chi tiết: [owner-application-api.md](../../../specs/110-owner-on
 Feature 111 priceRules và minPricePerHour được ghi cùng transaction sync-venue-price; client không ghi rule/aggregate trực tiếp. Không đổi collections/field schema. Feature 112 dùng owner-statistics-source projection bookings/slots với availability DTO cùng snapshot, không dailyStats; xem [contract hiện tại](../../../specs/112-owner-operations/contracts/owner-operations-boundaries.md). Check-in drop-in áp dụng [startAt - 30 phút, endAt) theo quyết định người dùng 2026-11-21, giữ enum OPEN/FULL/CANCELLED/COMPLETED và cơ chế 081.
 
 Theo quyết định cùng ngày, courtCount là số court isActive=true, cho phép 0. owner-manage-court kiểm tra quyền/ownership/LOCKED, ghi court và tính lại bộ đếm trong một transaction; Rules chặn client ghi courts/courtCount. Số khai báo dương của hồ sơ vẫn ở venueDraft; venue mới duyệt chưa cấu hình sân có courtCount=0. Mutation kế tiếp sửa bộ đếm legacy từ collection thực; chưa chạy backfill trên hosted.
+
+## Feature 100 — quyết định đã duyệt 23/11/2026
+
+Nguồn quyết định: [backend-decision-package.md](../../../specs/100-notification/backend-decision-package.md), các ID D1, D2-W1, T1, C1, P1, S1 đã được người dùng duyệt. Bảng fields, kiểu, retention, lease, token mutation và giới hạn trong tài liệu đó là contract cho phần bổ sung này; không mở rộng sang các producer ngoài W1.
+
+- `notificationDeliveries/{jobId}` và subcollection `tokens/{tokenHash}`: schema D1, server-only cả đọc lẫn ghi, kể cả Admin client. Inbox giữ đúng sáu field §4.13. Job tham chiếu inbox, không chứa raw token/body. Receipt ghi kết quả provider acceptance từng token, tối đa sáu attempt. Terminal giữ bảy ngày, xóa child trước parent; không TTL job pending. Enqueue cùng transaction source, đọc user ACTIVE/không xóa. Không backfill job cho inbox cũ hoặc inbox còn lại sau retention. Account deletion dọn toàn bộ receipt/job theo recipientUid trước final sweep.
+- D2-W1: booking terminal dùng bookingId/type; waitlist dùng sessionId/uid/waitlistTicket/type; kết quả hồ sơ dùng applicationId/submittedAt/decision; SYSTEM dùng adminUid/requestId. UUID inbox hiện có được giữ. Các generation/outbox khác vẫn chưa có schema được duyệt.
+- `users.fcmTokens`: T1 giữ Array<String>, owner mutation tối đa một token mới và một token bị gỡ; token mới không rỗng, dài tối đa 4096. Không đặt giới hạn số thiết bị. Removal-only tương thích legacy. Raw token chỉ ở Firebase SDK/profile, không local journal. `notification_device_prefs` chỉ có lastRegisteredUid/tokenHash/rotationRequired và installationId UUID, không phải credential. Logout cleanup best effort; đổi UID phải rotate trước registration, P1 chặn hiển thị sai UID nhưng không hứa chặn network traffic cũ.
+- `chats/{chatId}/participants/{uid}/presence/{installationId}`: C1 có đúng `viewingUntil: Timestamp`; own UID và current chat member, không quá request.time + 10 phút. Lease 60 giây, renew 45 giây, leave chỉ xóa installation mình; server kiểm bất kỳ lease còn hạn thì suppress push cả tài khoản. Muted/viewing không ngăn tạo inbox. Field aggregate cũ giữ cho client legacy, không đảm bảo nhiều máy trên client cũ. Account/participant deletion phải dọn presence children.
+- P1: data-only đúng hai String `recipientUid`, `notificationId`. Không notification block/title/body nguồn. Local notification generic “Bạn có thông báo mới”, PRIVATE/public generic, tap tải own inbox rồi recheck source. Sai UID hoặc không xác minh session thì bỏ hiển thị. OS force-stop/hạn chế nền có thể làm mất hoặc trễ push. S1 giữ create inbox hoàn toàn server-only, SYSTEM kiểm ADMIN claim và profile ACTIVE ADMIN hiện tại.
+## Booking decisions approved 24/11/2026
+
+User approved B1 (payment source will be supplied later) and B2 with the stated limits in specs/100-notification/booking-decision-package-2026-11-24.md. B1 authorizes the internal helper contract, not a replacement payment flow; actual HOLD-to-PENDING producer integration remains blocked. B2 authorizes one reminder per booking ID, invocation-local paginated CONFIRMED/startAt window, late catch-up only before start, data.reminderStartAt Timestamp, same-transaction recheck/enqueue, and delivery-time source/time recheck. After a reminder exists, reschedule does not generate a second inbox; stale push is skipped. No booking marker, collection or reschedule API is added. Full field/query/identity semantics are in the approved package; no deploy/live migration is authorized.
+## Approved notification continuation, 24/11/2026
+
+User explicitly approved D3, R1 and H1 in specs/100-notification/continuation-decisions-2026-11-24.md. D3 treats DROPIN_REGISTERED as the explicit confirmation exception to generic self-action exclusion: transaction identity sessionId/uid/requestId/type, deterministic inbox, no callback; join/leave waitlist/add-party/self-cancel stay silent. Stale reused request IDs with an existing event inbox are rejected before source writes. R1 adds reviews.notificationGeneration String UUID, server-only, renewed on recreate and retained on edit; legacy generation is assigned on first reply without backfill. REVIEW_NEW and first REVIEW_REPLIED enqueue in source transaction, actor excluded, data reviewId/venueId. H1 applies atomic message/inbox/job only to DIRECT chat, identity chatId/messageId/recipient/type; GROUP fanout remains unapproved. Use existing D1 job/receipts, C1 suppression and P1 payload. No outbox, group-size policy, deployment or live migration is approved. Full scope/limits are recorded in the decision package.
+
+## Cập nhật notification ngày 26/11/2026
+
+F1 bổ sung family `group` vào `notificationFanouts`, với groupId, audience, mode và cursor after cho quét theo document ID. Snapshot dùng 100 UID/trang, dọn trang sau 7 ngày và giữ marker. Journal server-only `groups/{groupId}/notificationCommands/{requestId}` ghi actor, fingerprint, kết quả và thời điểm.
+
+P2 thêm `publishedAt` server-only cho voucher sân mới. Null đăng ký vào lịch phát, Timestamp chốt lần phát duy nhất cùng outbox family `promotion`. Voucher legacy thiếu field giữ nguyên. Worker đọc favorite, quyền tài khoản và các bộ đếm Feature 050 `usedCount` và `userUsage/{uid}.count`, tính cả lượt RESERVED/USED.
+
+B1 ghi inbox/job cùng PENDING, slot và redemption trong checkout Feature 050. Giữ ID inbox `booking_new_{requestKey}` và một thông báo cho cả nhóm định kỳ theo bookingId của buổi sớm nhất.

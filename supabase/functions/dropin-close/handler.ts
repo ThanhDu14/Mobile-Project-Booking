@@ -74,17 +74,7 @@ export async function handleDropInClose(req: Request, injected: Partial<DropInCl
           closedSessions++;
           closedEntries += closed.closed.length;
         }
-        for (const uid of closed.closed) {
-          try {
-            await deps.notify({
-              type: "DROPIN_WAITLIST_CLOSED",
-              userId: uid,
-              data: { sessionId: doc.id, reason: "CLOSED" },
-            });
-          } catch (e) {
-            console.error("[dropin-close] gửi DROPIN_WAITLIST_CLOSED thất bại", e);
-          }
-        }
+        // closeWaitlistInTx owns the inbox/job. Do not replay through the legacy callback.
       } catch (e) {
         failed++;
         console.error(`[dropin-close] đóng hàng chờ ${doc.id} thất bại`, e);

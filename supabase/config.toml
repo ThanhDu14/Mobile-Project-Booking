@@ -538,3 +538,19 @@ verify_jwt = false
 
 [functions.ai-search-parse]
 verify_jwt = false
+
+# Authenticated by x-cron-secret inside the handler; schedule every minute after deployment review.
+[functions.notification-delivery]
+verify_jwt = false
+
+[functions.booking-reminders]
+verify_jwt = false
+
+[functions.booking-payment-confirm]
+verify_jwt = false
+
+[functions.booking-payment-transfer]
+verify_jwt = false
+
+[functions.sepay-webhook]
+verify_jwt = false

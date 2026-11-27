@@ -66,6 +66,7 @@ data class PostDraft(
     val eventAt: Instant? = null,
     val eventLocation: String = "",
     val expectedCount: Int? = null,
+    val editRequestId: String? = null,
 ) {
     /** Nút "Đăng" chỉ bật khi mọi ảnh đều đã `UPLOADED` và có `remotePath`. */
     val photosReady: Boolean

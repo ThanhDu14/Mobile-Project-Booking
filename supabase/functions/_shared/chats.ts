@@ -48,27 +48,10 @@ export interface ChatDeps {
   firestore: Pick<typeof defaultFirestore, "runTransaction" | "get" | "query" | "commit">;
   storage: GroupStorage;
   authenticate: (req: Request) => Promise<{ uid: string }>;
-  /** Gửi thông báo sau commit; lỗi bị bỏ qua ở caller. */
-  notify: (n: ChatNotification) => Promise<void>;
+  /** Former callback, kept as a regression-test seam. */
+  notify?: (n: ChatNotification) => Promise<void>;
   now: () => Date;
   sleep?: (ms: number) => Promise<void>;
-}
-
-/** Gọi `send-notification` của D (spec 100) bằng service role. */
-export async function sendChatNotification(n: ChatNotification): Promise<void> {
-  const url = Deno.env.get("SUPABASE_URL");
-  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!url || !key) {
-    console.warn("[chat] thiếu SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY, bỏ qua thông báo");
-    return;
-  }
-  const res = await fetch(`${url}/functions/v1/send-notification`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify(n),
-  });
-  await res.body?.cancel();
-  if (!res.ok) throw new Error(`send-notification ${res.status}`);
 }
 
 export function defaultChatDeps(): ChatDeps {
@@ -76,7 +59,6 @@ export function defaultChatDeps(): ChatDeps {
     firestore: defaultFirestore,
     storage: supabaseGroupStorage(),
     authenticate: (req) => requireUser(req),
-    notify: sendChatNotification,
     now: () => new Date(),
   };
 }
@@ -215,6 +197,8 @@ export async function syncGroupChat(tx: FirestoreTransaction, groupId: string, c
   const joined = added.filter((u) => !members.includes(u));
   if (removed.length === 0 && joined.length === 0) return;
   const snaps = await Promise.all(joined.map((u) => userSnapshot(tx, u)));
+  // Read child leases before any write; removing a participant must not leave presence descendants.
+  const removedPresence = (await Promise.all(removed.map(uid => tx.query("presence", [], { parent: participantPath(chatId, uid) })))).flat();
   const memberIds = [...members.filter((u) => !removed.includes(u)), ...joined];
   // Khóa unreadCounts của người rời có trong mask nhưng không có trong fields nên bị xóa.
   tx.write(patchWrite(
@@ -222,6 +206,7 @@ export async function syncGroupChat(tx: FirestoreTransaction, groupId: string, c
     { memberIds, unreadCounts: Object.fromEntries(joined.map((u) => [u, 0])) },
     ["memberIds", ...[...joined, ...removed].map((u) => fp("unreadCounts", u))],
   ));
+  for (const lease of removedPresence) tx.write(deleteWrite(lease.path, false));
   for (const uid of removed) tx.write(deleteWrite(participantPath(chatId, uid), false));
   joined.forEach((uid, i) => tx.write(newParticipantWrite(chatId, uid, snaps[i])));
 }
@@ -245,6 +230,9 @@ export async function purgeChat(
   deps: Pick<ChatDeps, "firestore" | "storage"> = defaultChatDeps(),
 ): Promise<void> {
   await drain(deps, "messages", chatPath(chatId));
+  for (const participant of await deps.firestore.query("participants", [], { parent: chatPath(chatId) })) {
+    await drain(deps, "presence", participant.path);
+  }
   await drain(deps, "participants", chatPath(chatId));
   await deletePrefix(deps.storage, CHAT_MEDIA_BUCKET, chatId);
 }
@@ -262,6 +250,7 @@ export async function anonymizeCommunityChats(
   const parts = await deps.firestore.query("participants", [{ field: "userId", op: "EQUAL", value: uid }], {
     allDescendants: true,
   });
+  for (const part of parts) await drain(deps, "presence", part.path);
   for (const chatId of new Set(parts.map((p) => p.path.split("/")[1]))) {
     await inChatTx(deps, chatId, async (tx, writes) => {
       const chat = await tx.get(chatPath(chatId));

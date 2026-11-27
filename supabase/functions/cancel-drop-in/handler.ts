@@ -253,18 +253,7 @@ export async function handleCancelDropIn(req: Request, deps: CancelDeps = defaul
       const now = deps.now();
       return runWithBackoff(deps, (tx) => cancel(tx, uid, input, now));
     });
-    // Sau commit: thông báo cho người được đẩy lên; lỗi gửi bỏ qua, không hoàn tác (research R12).
-    for (const p of result.promoted) {
-      try {
-        await deps.notify?.({
-          type: "DROPIN_SPOT_OPENED",
-          userId: p.uid,
-          data: { sessionId: input.sessionId, autoLeftSessionIds: p.autoLeftSessionIds },
-        });
-      } catch (e) {
-        console.error("[cancel-drop-in] gửi DROPIN_SPOT_OPENED thất bại", e);
-      }
-    }
+    // Waitlist helper enqueued inbox + delivery in the source transaction (100 D2-W1).
     return Response.json({
       registration: toResponseRegistration(result.registration),
       quote: result.quote,

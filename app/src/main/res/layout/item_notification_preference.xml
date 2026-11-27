@@ -1,0 +1,7 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:minHeight="@dimen/touch_min" android:paddingHorizontal="@dimen/space_4" android:paddingVertical="@dimen/space_2">
+ <LinearLayout android:layout_width="0dp" android:layout_weight="1" android:layout_height="wrap_content" android:orientation="vertical">
+ <TextView android:id="@+id/title" android:layout_width="match_parent" android:layout_height="wrap_content" android:textAppearance="@style/TextAppearance.SmashNow.BodyLarge"/>
+ <TextView android:id="@+id/subtitle" android:layout_width="match_parent" android:layout_height="wrap_content" android:textAppearance="@style/TextAppearance.SmashNow.Body" android:textColor="@color/sn_ink_muted"/>
+ </LinearLayout>
+ <com.google.android.material.checkbox.MaterialCheckBox android:id="@+id/check" android:layout_width="@dimen/touch_min" android:layout_height="@dimen/touch_min" android:layout_marginStart="@dimen/space_2"/>
+</LinearLayout>

@@ -415,7 +415,8 @@ class MainActivity : AppCompatActivity() {
             ownerMode -> R.id.nav_owner
             else -> R.id.nav_player
         }
-        val visible = tab != null && hasBackStackEntry(currentRootId)
+        val notificationInbox = destination.id == R.id.notificationFragment
+        val visible = (tab != null || notificationInbox) && hasBackStackEntry(currentRootId)
         binding.bottomNavContainer.isVisible = visible
         if (!visible) return
         val menuRes = when {
@@ -431,7 +432,7 @@ class MainActivity : AppCompatActivity() {
             bottomNavMenu = menuRes
             applyChatBadge()
         }
-        binding.bottomNav.menu.findItem(tab!!).isChecked = true
+        tab?.let { binding.bottomNav.menu.findItem(it)?.isChecked = true }
         if (adminMode && (viewModel.sessionState.value as? SessionState.SignedIn)?.appRole == AppRole.ADMIN) {
             adminAppsViewModel.loadQueue()
             adminReportsViewModel.loadReports()

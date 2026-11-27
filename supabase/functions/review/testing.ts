@@ -40,6 +40,10 @@ export class FakeStorage implements ReviewStorage {
 }
 
 export const sent: Notification[] = [];
+/** Durable inbox, not the removed post-commit callback. */
+export async function inbox(uid: string, type: string) {
+  return (await firestore.query("notifications", [], { parent: "users/" + uid })).filter(n => n.data.type === type);
+}
 export const storage = new FakeStorage();
 
 export const deps: ReviewDeps = {

@@ -90,7 +90,7 @@ async function newUser(tag: string): Promise<string> {
 }
 
 const act = (t: Deps, uid: string, body: Record<string, unknown>) =>
-  call(handleGroupManage(post(tokenOf(uid), body), t.deps));
+  call(handleGroupManage(post(tokenOf(uid), { requestId: crypto.randomUUID(), ...body }), t.deps));
 
 const createBody = (over: Record<string, unknown> = {}) => ({
   action: "create",
@@ -350,7 +350,8 @@ T("G6: join nhóm riêng tư → approve; join → reject; cancelRequest", async
   const req = await get(joinRequestPath(id, a));
   assertEquals(req?.wasRemoved, false);
   assertEquals(req?.userId, a);
-  assertEquals(t.notifications.recipients("JOIN_REQUESTED").sort(), [owner, admin].sort());
+  await t.notifications.capture(id);
+assertEquals(t.notifications.recipients("JOIN_REQUESTED").sort(), [owner, admin].sort());
   assertEquals(t.hooks.calls.length, 0, "REQUESTED không đổi danh sách thành viên");
   await assertGroupInvariant(id);
 
@@ -360,25 +361,30 @@ T("G6: join nhóm riêng tư → approve; join → reject; cancelRequest", async
   assertEquals((await get(memberPath(id, a)))?.role, "MEMBER");
   const g1 = await get(groupPath(id));
   assertEquals([g1?.memberCount, g1?.pendingRequestCount], [3, 0]);
-  assertEquals(t.notifications.recipients("JOIN_APPROVED"), [a]);
+  await t.notifications.capture(id);
+assertEquals(t.notifications.recipients("JOIN_APPROVED"), [a]);
   assertEquals(t.hooks.added(id), [a]);
   await assertGroupInvariant(id);
 
-  t.notifications.reset();
+  await t.notifications.capture(id);
+t.notifications.reset();
   await act(t, b, { action: "join", groupId: id });
   const rj = await act(t, admin, { action: "reject", groupId: id, userId: b });
   assertEquals(rj.status, 200);
   assertEquals(await get(joinRequestPath(id, b)), null);
   assertEquals(await get(memberPath(id, b)), null);
-  assertEquals(t.notifications.recipients("JOIN_REJECTED"), [b]);
+  await t.notifications.capture(id);
+assertEquals(t.notifications.recipients("JOIN_REJECTED"), [b]);
   await assertGroupInvariant(id);
 
   await act(t, c, { action: "join", groupId: id });
-  t.notifications.reset();
+  await t.notifications.capture(id);
+t.notifications.reset();
   const cn = await act(t, c, { action: "cancelRequest", groupId: id });
   assertEquals(cn.status, 200);
   assertEquals(await get(joinRequestPath(id, c)), null);
-  assertEquals(t.notifications.sent.length, 0);
+  await t.notifications.capture(id);
+assertEquals(t.notifications.sent.length, 0);
   assertEquals((await get(groupPath(id)))?.pendingRequestCount, 0);
   const again = await act(t, c, { action: "cancelRequest", groupId: id });
   assertEquals([again.status, again.body.error.code], [404, "REQUEST_NOT_FOUND"]);
@@ -410,7 +416,8 @@ T("G8: người có removals join nhóm công khai → REQUESTED, wasRemoved = t
   assertEquals([j.status, j.body.result], [200, "REQUESTED"]);
   assertEquals((await get(joinRequestPath(id, u)))?.wasRemoved, true);
   assertEquals(await get(memberPath(id, u)), null);
-  assertEquals(t.notifications.recipients("JOIN_REQUESTED"), [owner]);
+  await t.notifications.capture(id);
+assertEquals(t.notifications.recipients("JOIN_REQUESTED"), [owner]);
   await assertGroupInvariant(id);
 
   await act(t, owner, { action: "approve", groupId: id, userId: u });
@@ -472,7 +479,8 @@ T("G13: update PRIVATE → PUBLIC với 3 yêu cầu (1 có removals) → 2 ngư
   }
   assertEquals(await get(memberPath(id, c)), null);
   assert(await get(joinRequestPath(id, c)));
-  assertEquals(t.notifications.recipients("JOIN_APPROVED").sort(), [a, b].sort());
+  await t.notifications.capture(id);
+assertEquals(t.notifications.recipients("JOIN_APPROVED").sort(), [a, b].sort());
   assertEquals(t.hooks.added(id).sort(), [a, b].sort());
   await assertGroupInvariant(id);
 
@@ -505,7 +513,8 @@ T("join lặp → ALREADY_MEMBER / ALREADY_REQUESTED; approve bởi MEMBER → F
 
   const noGroup = await act(t, x, { action: "join", groupId: crypto.randomUUID() });
   assertEquals([noGroup.status, noGroup.body.error.code], [404, "GROUP_NOT_FOUND"]);
-  assertEquals(t.notifications.sent.length, 0);
+  await t.notifications.capture(id);
+assertEquals(t.notifications.sent.length, 0);
   await assertGroupInvariant(id);
 });
 
@@ -523,7 +532,8 @@ T("G10: ADMIN remove OWNER/ADMIN → FORBIDDEN; remove MEMBER → xóa members, 
     const r = await act(t, admin, { action: "remove", groupId: id, userId: target });
     assertEquals([r.status, r.body.error.code], [403, "FORBIDDEN"]);
   }
-  assertEquals(t.notifications.sent.length, 0);
+  await t.notifications.capture(id);
+assertEquals(t.notifications.sent.length, 0);
 
   const r = await act(t, admin, { action: "remove", groupId: id, userId: m });
   assertEquals(r.status, 200);
@@ -535,7 +545,8 @@ T("G10: ADMIN remove OWNER/ADMIN → FORBIDDEN; remove MEMBER → xóa members, 
   assertEquals((await get(groupPath(id)))?.memberCount, 3);
   assertEquals(t.hooks.calls.at(-1)?.change, { removed: [m] });
   assertEquals(t.hooks.calls.at(-1)?.inTransaction, true);
-  assertEquals(t.notifications.recipients("REMOVED"), [m]);
+  await t.notifications.capture(id);
+assertEquals(t.notifications.recipients("REMOVED"), [m]);
   await assertGroupInvariant(id);
 
   // OWNER mời được ADMIN, không mời được chính mình; đích không phải thành viên → 404.

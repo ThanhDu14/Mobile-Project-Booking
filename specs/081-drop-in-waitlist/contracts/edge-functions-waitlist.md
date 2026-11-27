@@ -129,3 +129,10 @@ Bổ sung 2 ca vào `firestore-tests/test/dropInSessions.test.ts`:
 | Q12 | Được đẩy lên lúc T−2 giờ, hủy sau 20 phút / sau 40 phút | Hoàn 100% (`PROMOTED_GRACE`) / không hoàn (`LATE`) | FR-011 |
 | Q13 | Chủ sân tăng sức chứa thêm 3 (gọi `promoteFromWaitlist`) | Đẩy lên tối đa 3 chỗ theo thứ tự | AC 2.5 |
 | Q14 | `dropin-close` không có `CRON_SECRET` | `401` | Bảo mật |
+
+
+## Feature 100 — phê duyệt 23/11/2026
+
+D2-W1: promote/close helper tạo inbox và delivery job trong transaction nguồn, key sessionId/uid/waitlistTicket/type. Caller không gọi lại callback cho DROPIN_SPOT_OPENED/DROPIN_WAITLIST_CLOSED. Legacy thiếu ticket giữ inbox, không đoán generation/job. DROPIN_REGISTERED/CHANGED và source outbox chưa được duyệt.
+
+Nguồn: [gói quyết định đã duyệt](../../100-notification/backend-decision-package.md). Chỉ áp dụng phạm vi ID được duyệt; chưa deploy.

@@ -9,8 +9,9 @@ import {
 } from "../_shared/firestore.ts";
 import { ACTIVE_STATUSES, deriveSessionFields } from "../_shared/dropin.ts";
 import { promoteFromWaitlist } from "../_shared/waitlist.ts";
-import { sendDropInNotification, type WaitlistNotification } from "../_shared/dropin-notify.ts";
+import type { WaitlistNotification } from "../_shared/dropin-notify.ts";
 import { parseOwnerSessionInput, validateOwnerSessionSchedule } from "../_shared/owner-dropin.ts";
+import { prepareDropInChanged, readDropInCommand, requireDropInCommandId } from "../_shared/dropin-change-notification.ts";
 
 export interface OwnerUpdateSessionDeps {
   firestore: Pick<typeof defaultFirestore, "runTransaction">;
@@ -19,7 +20,7 @@ export interface OwnerUpdateSessionDeps {
 
 export async function handleOwnerUpdateSession(
   req: Request,
-  { firestore, notify = sendDropInNotification }: OwnerUpdateSessionDeps = { firestore: defaultFirestore },
+  { firestore }: OwnerUpdateSessionDeps = { firestore: defaultFirestore },
 ): Promise<Response> {
   if (req.method !== "POST") {
     return errorResponse(405, "METHOD_NOT_ALLOWED", "Chỉ hỗ trợ POST");
@@ -36,7 +37,9 @@ export async function handleOwnerUpdateSession(
       throw new HttpError(400, "INVALID_SESSION_ID", "Thiếu sessionId");
     }
     const input = parseOwnerSessionInput(body);
-    const promoted = await firestore.runTransaction(async (tx) => {
+    const result = await firestore.runTransaction(async (transaction) => {
+      const writes: defaultFirestore.Write[] = [];
+      const tx = { ...transaction, write: (write: defaultFirestore.Write) => { writes.push(write); } };
       const admin = await requireOwnerAuthority(tx, token);
       const venue = await tx.get(`venues/${venueId}`);
       if (
@@ -56,8 +59,6 @@ export async function handleOwnerUpdateSession(
         );
       }
       const path = `dropInSessions/${sessionId}`;
-      const priceRules=await tx.query("priceRules",[],{parent:`venues/${venueId}`});
-      validateOwnerSessionSchedule(input,venue,priceRules.map(rule=>rule.data));
       const session = await tx.get(path);
       if (!session || session.venueId !== venueId) {
         throw new HttpError(
@@ -66,6 +67,12 @@ export async function handleOwnerUpdateSession(
           "Không tìm thấy buổi chơi",
         );
       }
+      const requestId = requireDropInCommandId(body.requestId);
+      const now = new Date();
+      const command = await readDropInCommand(tx, sessionId, requestId, token.uid, ["UPDATE", venueId, input], now);
+      if (command.previous) return command.previous;
+      const priceRules = await tx.query("priceRules", [], { parent: `venues/${venueId}` });
+      validateOwnerSessionSchedule(input, venue, priceRules.map(rule => rule.data));
       if (!["OPEN", "FULL"].includes(String(session.status))) {
         throw new HttpError(
           409,
@@ -123,11 +130,11 @@ export async function handleOwnerUpdateSession(
         }
         slots.set(slotId, slot);
       }
-      const changed = !(session.startAt instanceof Date) ||
+      const timeChanged = !(session.startAt instanceof Date) ||
         session.startAt.getTime() !== input.startAt.getTime() ||
         !(session.endAt instanceof Date) ||
-        session.endAt.getTime() !== input.endAt.getTime() ||
-        session.pricePerPerson !== input.pricePerPerson ||
+        session.endAt.getTime() !== input.endAt.getTime();
+      const changed = timeChanged || session.pricePerPerson !== input.pricePerPerson ||
         JSON.stringify(
             [...(Array.isArray(session.courtIds) ? session.courtIds : [])]
               .sort(),
@@ -135,7 +142,6 @@ export async function handleOwnerUpdateSession(
       const registrations = changed
         ? await tx.query("registrations", [], { parent: path })
         : [];
-      const now = new Date();
       const updatedSession = { ...session, ...input, id: sessionId, registeredCount,
         status: registeredCount >= input.capacity ? "FULL" : "OPEN" };
       const promotion = input.capacity > Number(session.capacity)
@@ -198,15 +204,15 @@ export async function handleOwnerUpdateSession(
           sessionId,
         }));
       }
-      return promotion.promoted;
+      const response = { success: true, sessionId };
+      writes.push(command.journal(response));
+      if (timeChanged) writes.push(...await prepareDropInChanged(tx, writes, registrations,
+        { sessionId, requestId, actorUid: token.uid, cancelled: false, now }));
+      for (const write of writes) transaction.write(write);
+      return response;
     });
-    for (const person of promoted) {
-      try {
-        await notify({ type: "DROPIN_SPOT_OPENED", userId: person.uid,
-          data: { sessionId, autoLeftSessionIds: person.autoLeftSessionIds } });
-      } catch (error) { console.warn("[owner-update-session] notification delivery failed", error); }
-    }
-    return Response.json({ success: true, sessionId });
+    // Waitlist helper enqueued inbox + delivery atomically. No duplicate post-commit callback (100 D2-W1).
+    return Response.json(result);
   } catch (err) {
     if (err instanceof HttpError) {
       return errorResponse(err.status, err.code, err.message);

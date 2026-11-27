@@ -1,4 +1,5 @@
 import { requireCurrentAdmin } from "../_shared/admin-authorization.ts";
+import { prepareNotification } from "../_shared/notification-enqueue.ts";
 import { HttpError, requireRole, requireUser, toErrorResponse } from "../_shared/auth.ts";
 import * as defaultFirestore from "../_shared/firestore.ts";
 import { createWrite, updateWrite, FirestoreError, FirestoreGeoPoint } from "../_shared/firestore.ts";
@@ -167,6 +168,19 @@ export async function handleAdminReviewApplication(
       if (addition) requireApprovedApplicant(applicant);
 
       const notificationId = crypto.randomUUID();
+      const draftName = ((app.venueDraft ?? {}) as Record<string, unknown>).name;
+      const venueNotificationName = typeof draftName === "string" ? draftName.trim() : "Cơ sở cầu lông";
+      const notificationWrites = await prepareNotification(tx, "owner-application",
+        JSON.stringify([applicationId, new Date(submittedMillis).toISOString(), decision]), applicantUid, notificationId,
+        decision === "APPROVE" ? {
+          type: "OWNER_APPROVED", title: "Hồ sơ chủ sân đã được duyệt",
+          body: `Chúc mừng! Hồ sơ đăng ký cơ sở ${venueNotificationName} của bạn đã được phê duyệt.`,
+          data: { applicationId, venueId: applicationId },
+        } : {
+          type: "OWNER_REJECTED", title: "Hồ sơ chủ sân bị từ chối",
+          body: `Hồ sơ đăng ký của bạn không được duyệt. Lý do: ${rejectReason}`,
+          data: { applicationId, rejectReason },
+        }, new Date(nowIso));
 
       if (decision === "APPROVE") {
         tx.write(updateWrite(`ownerApplications/${applicationId}`, {
@@ -215,14 +229,6 @@ export async function handleAdminReviewApplication(
         };
         tx.write(createWrite(`venues/${applicationId}`, venueData));
 
-        tx.write(createWrite(`users/${applicantUid}/notifications/${notificationId}`, {
-          type: "OWNER_APPROVED",
-          title: "Hồ sơ chủ sân đã được duyệt",
-          body: `Chúc mừng! Hồ sơ đăng ký cơ sở ${venueName} của bạn đã được phê duyệt.`,
-          data: { applicationId, venueId: applicationId },
-          isRead: false,
-          createdAt: nowIso,
-        }));
       } else {
         tx.write(updateWrite(`ownerApplications/${applicationId}`, {
           status: "REJECTED",
@@ -237,16 +243,9 @@ export async function handleAdminReviewApplication(
           updatedAt: nowIso,
         }));
 
-        tx.write(createWrite(`users/${applicantUid}/notifications/${notificationId}`, {
-          type: "OWNER_REJECTED",
-          title: "Hồ sơ chủ sân bị từ chối",
-          body: `Hồ sơ đăng ký của bạn không được duyệt. Lý do: ${rejectReason}`,
-          data: { applicationId, rejectReason },
-          isRead: false,
-          createdAt: nowIso,
-        }));
       }
 
+      for (const write of notificationWrites) tx.write(write);
       return { success: true, status: targetStatus, applicationId };
     });
 

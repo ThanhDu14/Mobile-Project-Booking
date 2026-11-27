@@ -96,3 +96,10 @@ match /accountDeletions/{uid} {
 | A1 | Chủ tài khoản | `get accountDeletions/{mình}` | Bị chặn |
 
 SC-006 (không tự đổi vai trò, trạng thái): P16–P18 cộng U9–U13, U16 của 010.
+
+
+## Feature 100 — phê duyệt 23/11/2026
+
+T1/P1: owner fcmTokens diff thêm tối đa một String không rỗng <=4096 ký tự, gỡ tối đa một token; giữ removal-only legacy/P15. Coordinator pause qua FcmRegistrationGuard trước FcmSignOutHook hiện có, không thêm hook gỡ token trùng. Logout best effort, UID switch rotate trước register, không queue offline; data-only + UID guard chặn hiển thị sai tài khoản, không đảm bảo cắt network traffic cũ.
+
+Nguồn: [gói quyết định đã duyệt](../../100-notification/backend-decision-package.md). Chỉ áp dụng phạm vi ID được duyệt; chưa deploy.

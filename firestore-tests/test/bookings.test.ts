@@ -100,9 +100,9 @@ describe('bookings collection (Spec 041)', () => {
       await assertFails(setDoc(doc(fs, 'bookings/booking-01'), validBookingData('owner1')));
     });
 
-    it('player can create booking with PENDING status and valid financial fields', async () => {
+    it('player must use server checkout even with valid PENDING financial fields', async () => {
       const fs = player('player1');
-      await assertSucceeds(setDoc(doc(fs, 'bookings/booking-pending-01'), validPendingBookingData('player1')));
+      await assertFails(setDoc(doc(fs, 'bookings/booking-pending-01'), validPendingBookingData('player1')));
     });
 
     it('create PENDING fails when userId does not match auth uid', async () => {

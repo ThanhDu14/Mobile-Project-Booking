@@ -1,0 +1,236 @@
+{
+    "date":  "2026-11-23",
+    "progress":  "36/56",
+    "approvals":  [
+                      "D1",
+                      "D2-W1",
+                      "T1",
+                      "C1",
+                      "P1",
+                      "S1"
+                  ],
+    "unitSuites":  [
+                       {
+                           "name":  "com.example.booking_app.core.session.FcmSignOutHookTest",
+                           "tests":  5,
+                           "failures":  0,
+                           "errors":  0,
+                           "skipped":  0,
+                           "timestamp":  "2026-11-23T14:53:17.205Z"
+                       },
+                       {
+                           "name":  "com.example.booking_app.feature.chat.data.FirestoreChatRepositoryTest",
+                           "tests":  6,
+                           "failures":  0,
+                           "errors":  0,
+                           "skipped":  0,
+                           "timestamp":  "2026-11-23T14:53:18.028Z"
+                       },
+                       {
+                           "name":  "com.example.booking_app.feature.notification.data.FirestoreTokenRegistrationStoreTest",
+                           "tests":  4,
+                           "failures":  0,
+                           "errors":  0,
+                           "skipped":  0,
+                           "timestamp":  "2026-11-23T14:53:26.600Z"
+                       },
+                       {
+                           "name":  "com.example.booking_app.feature.notification.data.NotificationTokenEngineTest",
+                           "tests":  10,
+                           "failures":  0,
+                           "errors":  0,
+                           "skipped":  0,
+                           "timestamp":  "2026-11-23T14:53:26.686Z"
+                       },
+                       {
+                           "name":  "com.example.booking_app.feature.notification.FirestoreNotificationRepositoryTest",
+                           "tests":  10,
+                           "failures":  0,
+                           "errors":  0,
+                           "skipped":  0,
+                           "timestamp":  "2026-11-23T14:53:24.321Z"
+                       },
+                       {
+                           "name":  "com.example.booking_app.feature.notification.NotificationContractTest",
+                           "tests":  5,
+                           "failures":  0,
+                           "errors":  0,
+                           "skipped":  0,
+                           "timestamp":  "2026-11-23T14:53:25.507Z"
+                       },
+                       {
+                           "name":  "com.example.booking_app.feature.notification.NotificationGroupRouteTest",
+                           "tests":  4,
+                           "failures":  0,
+                           "errors":  0,
+                           "skipped":  0,
+                           "timestamp":  "2026-11-23T14:53:25.525Z"
+                       },
+                       {
+                           "name":  "com.example.booking_app.feature.notification.NotificationGroupsTest",
+                           "tests":  1,
+                           "failures":  0,
+                           "errors":  0,
+                           "skipped":  0,
+                           "timestamp":  "2026-11-23T14:53:25.650Z"
+                       },
+                       {
+                           "name":  "com.example.booking_app.feature.notification.NotificationPermissionTest",
+                           "tests":  3,
+                           "failures":  0,
+                           "errors":  0,
+                           "skipped":  0,
+                           "timestamp":  "2026-11-23T14:53:25.658Z"
+                       },
+                       {
+                           "name":  "com.example.booking_app.feature.notification.NotificationPreferenceCacheTest",
+                           "tests":  6,
+                           "failures":  0,
+                           "errors":  0,
+                           "skipped":  0,
+                           "timestamp":  "2026-11-23T14:53:25.669Z"
+                       },
+                       {
+                           "name":  "com.example.booking_app.feature.notification.NotificationRouteTest",
+                           "tests":  5,
+                           "failures":  0,
+                           "errors":  0,
+                           "skipped":  0,
+                           "timestamp":  "2026-11-23T14:53:25.860Z"
+                       },
+                       {
+                           "name":  "com.example.booking_app.feature.notification.NotificationViewModelTest",
+                           "tests":  5,
+                           "failures":  0,
+                           "errors":  0,
+                           "skipped":  0,
+                           "timestamp":  "2026-11-23T14:53:25.971Z"
+                       }
+                   ],
+    "lint":  {
+                 "errors":  0,
+                 "warnings":  858
+             },
+    "commands":  [
+                     ".\\gradlew.bat testDebugUnitTest --tests *feature.notification.* --tests *FcmSignOutHookTest* --tests *FirestoreChatRepositoryTest* assembleDebug lintDebug",
+                     ".\\gradlew.bat assembleDebug lintDebug",
+                     "scripts/notification/validate-backend.ps1 -Suite Fake",
+                     "scripts/notification/validate-backend.ps1 -Suite Emulator",
+                     "scripts/notification/validate-backend.ps1 -Suite Affected",
+                     "vitest run test/notification-delivery-security.test.ts test/notification-security.test.ts test/users-profile.test.ts test/chats.test.ts"
+                 ],
+    "emulatorEnvironment":  {
+                                "FIREBASE_PROJECT_ID":  "demo-f100-backend (initial), demo-f100-final (affected)",
+                                "FIRESTORE_EMULATOR_HOST":  "127.0.0.1:8080",
+                                "FIREBASE_AUTH_EMULATOR_HOST":  "127.0.0.1:9099",
+                                "rulesProject":  "demo-smashnow"
+                            },
+    "denoExecutable":  "C:/Users/ACER/AppData/Local/npm-cache/_npx/05b6ef7b13673c57/node_modules/deno/deno.exe",
+    "executed":  {
+                     "backendFake":  64,
+                     "rules":  48,
+                     "initialWorker":  1,
+                     "extendedDeletion":  1,
+                     "sourceIntegration":  42,
+                     "finalAffected":  7,
+                     "deviceInitial":  14,
+                     "devicePushTap":  1
+                 },
+    "device":  {
+                   "model":  "vivo V2247",
+                   "android":  15,
+                   "serial":  "10ADBY2GH30038C",
+                   "package":  "com.example.booking_app.adminlocal",
+                   "widthDp":  393,
+                   "theme":  "light",
+                   "densityChanged":  false,
+                   "matrixRerun":  false,
+                   "hostedDataAccess":  false,
+                   "realFcm":  false
+               },
+    "unavailable":  [
+                        "Docker daemon absent: Supabase local runtime and cron SQL not executed"
+                    ],
+    "notPerformed":  [
+                         "commit",
+                         "push",
+                         "deploy",
+                         "live migration",
+                         "production index deployment",
+                         "real push"
+                     ],
+    "files":  [
+                  {
+                      "path":  "notification-backend-android.log",
+                      "sha256":  "22f3cd898e55d1e197abd48353a3e1fd416b7d97e1f8b699e196c9006996fa4f"
+                  },
+                  {
+                      "path":  "notification-backend-emulator.log",
+                      "sha256":  "e1420ff60ca99b2984e8dbf82f0c610ae186fa60d1713b0d37d945be3baa42b8"
+                  },
+                  {
+                      "path":  "notification-backend-final-build.log",
+                      "sha256":  "3d9b73a978cb1f343e2a0c2f992575f43b272e73dfe5a2ca67eb3d786b8a0278"
+                  },
+                  {
+                      "path":  "notification-backend-rules.log",
+                      "sha256":  "59ab4ce6209bdf0253e31f2fdf86bf0bfa17abe096fc4f118803a2d94515270c"
+                  },
+                  {
+                      "path":  "notification-diff-check.log",
+                      "sha256":  "1b3ad2726fb57806dd2776e31818619a9ab0cd9314745967e6b21588dcc8167d"
+                  },
+                  {
+                      "path":  "notification-emulator-final.log",
+                      "sha256":  "27f91958233240d970b50a7e81282efb4d9d008524fcd93794ad8a1fe6e63e4c"
+                  },
+                  {
+                      "path":  "notification-fcm-device-build.log",
+                      "sha256":  "dfbdb5958ca814e7edfe62eb2393c0d0171a400ae5b6f831183891dfeae88476"
+                  },
+                  {
+                      "path":  "notification-fcm-device.log",
+                      "sha256":  "1fcca1d1774425d912ca0fa2c17d831c1b80ef863843b6ccbb82b040229b3fd1"
+                  },
+                  {
+                      "path":  "notification-harness-check.log",
+                      "sha256":  "c2aaff60646f03ed1cf056b3e06adfcaf1991f9b00f9e8808829e03bdc6607d8"
+                  },
+                  {
+                      "path":  "notification-push-tap-build.log",
+                      "sha256":  "a601afa02e06082f18c643d5de80998ffd87a54054dd5b2c6d01ff5a447152ec"
+                  },
+                  {
+                      "path":  "notification-push-tap-device.log",
+                      "sha256":  "778407ef47a52c24885ec0a053297d2bb7ac0254d972c609cb048563380c223a"
+                  },
+                  {
+                      "path":  "notification-w1-tests.log",
+                      "sha256":  "1e3cfd72fe4bfc00006d38b66c51a93de47cbd30059f4b8f90b79a270d172922"
+                  },
+                  {
+                      "path":  "device-phone/notification-393dp-light-inbox-shell.png",
+                      "sha256":  "ad408c3b92a771c7e9390eec93d312caeb4095e0f0e90644e45c10d804e6e7f4"
+                  },
+                  {
+                      "path":  "device-phone/notification-393dp-light-inbox.png",
+                      "sha256":  "117bda9a62b04d5e3b8f5c76cc6e9cc9c9e8633fe3eea077caf69c16db67d5d0"
+                  },
+                  {
+                      "path":  "device-phone/notification-393dp-light-settings-cache.png",
+                      "sha256":  "aea89bea60935efb1fef5f900709ef3d9fe60d2c697887d32a38baef0ed659a1"
+                  },
+                  {
+                      "path":  "device-phone/notification-393dp-light-settings-extra.png",
+                      "sha256":  "5c576e9bc8992c18954f1ebe721cce59b1e3d3e667c9aeaccf2bf620a917f601"
+                  },
+                  {
+                      "path":  "device-phone/notification-393dp-light-settings-shell.png",
+                      "sha256":  "539165f8d054f0b99f66c11cdc546402c77cc46bd3eed5ebf2425056e31e774e"
+                  },
+                  {
+                      "path":  "device-phone/notification-393dp-light-settings.png",
+                      "sha256":  "a8e0b6d7b5eac678f7f3f38f3f5c3c231f273ebc8181a0aa042c3980276c7f35"
+                  }
+              ]
+}

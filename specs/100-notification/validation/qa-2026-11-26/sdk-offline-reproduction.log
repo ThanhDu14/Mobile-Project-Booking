@@ -1,0 +1,164 @@
+8080
+9099
+INSTRUMENTATION_STATUS: class=com.example.booking_app.feature.notification.NotificationEmulatorDeviceTest
+INSTRUMENTATION_STATUS: current=1
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=1
+INSTRUMENTATION_STATUS: stream=
+com.example.booking_app.feature.notification.NotificationEmulatorDeviceTest:
+INSTRUMENTATION_STATUS: test=serverPagingPreferencesRoutingAndAccountSwitch
+INSTRUMENTATION_STATUS_CODE: 1
+INSTRUMENTATION_STATUS: class=com.example.booking_app.feature.notification.NotificationEmulatorDeviceTest
+INSTRUMENTATION_STATUS: current=1
+INSTRUMENTATION_STATUS: id=AndroidJUnitRunner
+INSTRUMENTATION_STATUS: numtests=1
+INSTRUMENTATION_STATUS: stack=Unknown(cause=com.google.firebase.firestore.FirebaseFirestoreException: Failed to get document from server. (However, this document does exist in the local cache. Run again without setting source to SERVER to retrieve the cached document.))
+	at com.example.booking_app.core.network.TaskAwaitKt.toAppError(TaskAwait.kt:41)
+	at com.example.booking_app.core.network.TaskAwaitKt.awaitWithTimeout(TaskAwait.kt:28)
+	at com.example.booking_app.core.network.TaskAwaitKt$awaitWithTimeout$1.invokeSuspend(TaskAwait.kt:15)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+	at kotlinx.coroutines.internal.ScopeCoroutine.afterResume(Scopes.kt:35)
+	at kotlinx.coroutines.AbstractCoroutine.resumeWith(AbstractCoroutine.kt:101)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:47)
+	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:98)
+	at kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:263)
+	at kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:94)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking(Builders.kt:70)
+	at kotlinx.coroutines.BuildersKt.runBlocking(dex-id-e4502f858af1300eb2742ccb9a6ef9aa5783fe9c-18142:1)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking$default(Builders.kt:48)
+	at kotlinx.coroutines.BuildersKt.runBlocking$default(dex-id-e4502f858af1300eb2742ccb9a6ef9aa5783fe9c-18143:1)
+	at com.example.booking_app.feature.notification.NotificationEmulatorDeviceTest.serverPagingPreferencesRoutingAndAccountSwitch(NotificationEmulatorDeviceTest.kt:41)
+	... 31 trimmed
+Caused by: com.google.firebase.firestore.FirebaseFirestoreException: Failed to get document from server. (However, this document does exist in the local cache. Run again without setting source to SERVER to retrieve the cached document.)
+	at com.google.firebase.firestore.DocumentReference.lambda$getViaSnapshotListener$5(DocumentReference.java:347)
+	at com.google.firebase.firestore.DocumentReference$$ExternalSyntheticLambda7.onEvent(D8$$SyntheticClass:0)
+	at com.google.firebase.firestore.DocumentReference.lambda$addSnapshotListenerInternal$6$com-google-firebase-firestore-DocumentReference(DocumentReference.java:535)
+	at com.google.firebase.firestore.DocumentReference$$ExternalSyntheticLambda5.onEvent(D8$$SyntheticClass:0)
+	at com.google.firebase.firestore.core.AsyncEventListener.lambda$onEvent$0$com-google-firebase-firestore-core-AsyncEventListener(AsyncEventListener.java:42)
+	at com.google.firebase.firestore.core.AsyncEventListener$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
+	at com.google.firebase.firestore.util.Executors$$ExternalSyntheticLambda0.execute(D8$$SyntheticClass:0)
+	at com.google.firebase.firestore.core.AsyncEventListener.onEvent(AsyncEventListener.java:39)
+	at com.google.firebase.firestore.core.QueryListener.raiseInitialEvent(QueryListener.java:206)
+	at com.google.firebase.firestore.core.QueryListener.onViewSnapshot(QueryListener.java:116)
+	at com.google.firebase.firestore.core.EventManager.onViewSnapshots(EventManager.java:234)
+	at com.google.firebase.firestore.core.SyncEngine.listen(SyncEngine.java:212)
+	at com.google.firebase.firestore.core.EventManager.addQueryListener(EventManager.java:146)
+	at com.google.firebase.firestore.core.FirestoreClient.lambda$listen$7$com-google-firebase-firestore-core-FirestoreClient(FirestoreClient.java:179)
+	at com.google.firebase.firestore.core.FirestoreClient$$ExternalSyntheticLambda5.run(D8$$SyntheticClass:0)
+	at com.google.firebase.firestore.util.AsyncQueue.lambda$enqueue$2(AsyncQueue.java:445)
+	at com.google.firebase.firestore.util.AsyncQueue$$ExternalSyntheticLambda4.call(D8$$SyntheticClass:0)
+	at com.google.firebase.firestore.util.AsyncQueue$SynchronizedShutdownAwareExecutor.lambda$executeAndReportResult$1(AsyncQueue.java:330)
+	at com.google.firebase.firestore.util.AsyncQueue$SynchronizedShutdownAwareExecutor$$ExternalSyntheticLambda2.run(D8$$SyntheticClass:0)
+	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:520)
+	at java.util.concurrent.FutureTask.run(FutureTask.java:328)
+	at java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:323)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1100)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+	at com.google.firebase.firestore.util.AsyncQueue$SynchronizedShutdownAwareExecutor$DelayedStartFactory.run(AsyncQueue.java:235)
+	at java.lang.Thread.run(Thread.java:1571)
+
+INSTRUMENTATION_STATUS: stream=
+Error in serverPagingPreferencesRoutingAndAccountSwitch(com.example.booking_app.feature.notification.NotificationEmulatorDeviceTest):
+Unknown(cause=com.google.firebase.firestore.FirebaseFirestoreException: Failed to get document from server. (However, this document does exist in the local cache. Run again without setting source to SERVER to retrieve the cached document.))
+	at com.example.booking_app.core.network.TaskAwaitKt.toAppError(TaskAwait.kt:41)
+	at com.example.booking_app.core.network.TaskAwaitKt.awaitWithTimeout(TaskAwait.kt:28)
+	at com.example.booking_app.core.network.TaskAwaitKt$awaitWithTimeout$1.invokeSuspend(TaskAwait.kt:15)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+	at kotlinx.coroutines.internal.ScopeCoroutine.afterResume(Scopes.kt:35)
+	at kotlinx.coroutines.AbstractCoroutine.resumeWith(AbstractCoroutine.kt:101)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:47)
+	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:98)
+	at kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:263)
+	at kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:94)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking(Builders.kt:70)
+	at kotlinx.coroutines.BuildersKt.runBlocking(dex-id-e4502f858af1300eb2742ccb9a6ef9aa5783fe9c-18142:1)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking$default(Builders.kt:48)
+	at kotlinx.coroutines.BuildersKt.runBlocking$default(dex-id-e4502f858af1300eb2742ccb9a6ef9aa5783fe9c-18143:1)
+	at com.example.booking_app.feature.notification.NotificationEmulatorDeviceTest.serverPagingPreferencesRoutingAndAccountSwitch(NotificationEmulatorDeviceTest.kt:41)
+	... 31 trimmed
+Caused by: com.google.firebase.firestore.FirebaseFirestoreException: Failed to get document from server. (However, this document does exist in the local cache. Run again without setting source to SERVER to retrieve the cached document.)
+	at com.google.firebase.firestore.DocumentReference.lambda$getViaSnapshotListener$5(DocumentReference.java:347)
+	at com.google.firebase.firestore.DocumentReference$$ExternalSyntheticLambda7.onEvent(D8$$SyntheticClass:0)
+	at com.google.firebase.firestore.DocumentReference.lambda$addSnapshotListenerInternal$6$com-google-firebase-firestore-DocumentReference(DocumentReference.java:535)
+	at com.google.firebase.firestore.DocumentReference$$ExternalSyntheticLambda5.onEvent(D8$$SyntheticClass:0)
+	at com.google.firebase.firestore.core.AsyncEventListener.lambda$onEvent$0$com-google-firebase-firestore-core-AsyncEventListener(AsyncEventListener.java:42)
+	at com.google.firebase.firestore.core.AsyncEventListener$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
+	at com.google.firebase.firestore.util.Executors$$ExternalSyntheticLambda0.execute(D8$$SyntheticClass:0)
+	at com.google.firebase.firestore.core.AsyncEventListener.onEvent(AsyncEventListener.java:39)
+	at com.google.firebase.firestore.core.QueryListener.raiseInitialEvent(QueryListener.java:206)
+	at com.google.firebase.firestore.core.QueryListener.onViewSnapshot(QueryListener.java:116)
+	at com.google.firebase.firestore.core.EventManager.onViewSnapshots(EventManager.java:234)
+	at com.google.firebase.firestore.core.SyncEngine.listen(SyncEngine.java:212)
+	at com.google.firebase.firestore.core.EventManager.addQueryListener(EventManager.java:146)
+	at com.google.firebase.firestore.core.FirestoreClient.lambda$listen$7$com-google-firebase-firestore-core-FirestoreClient(FirestoreClient.java:179)
+	at com.google.firebase.firestore.core.FirestoreClient$$ExternalSyntheticLambda5.run(D8$$SyntheticClass:0)
+	at com.google.firebase.firestore.util.AsyncQueue.lambda$enqueue$2(AsyncQueue.java:445)
+	at com.google.firebase.firestore.util.AsyncQueue$$ExternalSyntheticLambda4.call(D8$$SyntheticClass:0)
+	at com.google.firebase.firestore.util.AsyncQueue$SynchronizedShutdownAwareExecutor.lambda$executeAndReportResult$1(AsyncQueue.java:330)
+	at com.google.firebase.firestore.util.AsyncQueue$SynchronizedShutdownAwareExecutor$$ExternalSyntheticLambda2.run(D8$$SyntheticClass:0)
+	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:520)
+	at java.util.concurrent.FutureTask.run(FutureTask.java:328)
+	at java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:323)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1100)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+	at com.google.firebase.firestore.util.AsyncQueue$SynchronizedShutdownAwareExecutor$DelayedStartFactory.run(AsyncQueue.java:235)
+	at java.lang.Thread.run(Thread.java:1571)
+
+INSTRUMENTATION_STATUS: test=serverPagingPreferencesRoutingAndAccountSwitch
+INSTRUMENTATION_STATUS_CODE: -2
+INSTRUMENTATION_RESULT: stream=
+
+Time: 6,899
+There was 1 failure:
+1) serverPagingPreferencesRoutingAndAccountSwitch(com.example.booking_app.feature.notification.NotificationEmulatorDeviceTest)
+Unknown(cause=com.google.firebase.firestore.FirebaseFirestoreException: Failed to get document from server. (However, this document does exist in the local cache. Run again without setting source to SERVER to retrieve the cached document.))
+	at com.example.booking_app.core.network.TaskAwaitKt.toAppError(TaskAwait.kt:41)
+	at com.example.booking_app.core.network.TaskAwaitKt.awaitWithTimeout(TaskAwait.kt:28)
+	at com.example.booking_app.core.network.TaskAwaitKt$awaitWithTimeout$1.invokeSuspend(TaskAwait.kt:15)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+	at kotlinx.coroutines.internal.ScopeCoroutine.afterResume(Scopes.kt:35)
+	at kotlinx.coroutines.AbstractCoroutine.resumeWith(AbstractCoroutine.kt:101)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:47)
+	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:98)
+	at kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:263)
+	at kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:94)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking(Builders.kt:70)
+	at kotlinx.coroutines.BuildersKt.runBlocking(dex-id-e4502f858af1300eb2742ccb9a6ef9aa5783fe9c-18142:1)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking$default(Builders.kt:48)
+	at kotlinx.coroutines.BuildersKt.runBlocking$default(dex-id-e4502f858af1300eb2742ccb9a6ef9aa5783fe9c-18143:1)
+	at com.example.booking_app.feature.notification.NotificationEmulatorDeviceTest.serverPagingPreferencesRoutingAndAccountSwitch(NotificationEmulatorDeviceTest.kt:41)
+	... 31 trimmed
+Caused by: com.google.firebase.firestore.FirebaseFirestoreException: Failed to get document from server. (However, this document does exist in the local cache. Run again without setting source to SERVER to retrieve the cached document.)
+	at com.google.firebase.firestore.DocumentReference.lambda$getViaSnapshotListener$5(DocumentReference.java:347)
+	at com.google.firebase.firestore.DocumentReference$$ExternalSyntheticLambda7.onEvent(D8$$SyntheticClass:0)
+	at com.google.firebase.firestore.DocumentReference.lambda$addSnapshotListenerInternal$6$com-google-firebase-firestore-DocumentReference(DocumentReference.java:535)
+	at com.google.firebase.firestore.DocumentReference$$ExternalSyntheticLambda5.onEvent(D8$$SyntheticClass:0)
+	at com.google.firebase.firestore.core.AsyncEventListener.lambda$onEvent$0$com-google-firebase-firestore-core-AsyncEventListener(AsyncEventListener.java:42)
+	at com.google.firebase.firestore.core.AsyncEventListener$$ExternalSyntheticLambda0.run(D8$$SyntheticClass:0)
+	at com.google.firebase.firestore.util.Executors$$ExternalSyntheticLambda0.execute(D8$$SyntheticClass:0)
+	at com.google.firebase.firestore.core.AsyncEventListener.onEvent(AsyncEventListener.java:39)
+	at com.google.firebase.firestore.core.QueryListener.raiseInitialEvent(QueryListener.java:206)
+	at com.google.firebase.firestore.core.QueryListener.onViewSnapshot(QueryListener.java:116)
+	at com.google.firebase.firestore.core.EventManager.onViewSnapshots(EventManager.java:234)
+	at com.google.firebase.firestore.core.SyncEngine.listen(SyncEngine.java:212)
+	at com.google.firebase.firestore.core.EventManager.addQueryListener(EventManager.java:146)
+	at com.google.firebase.firestore.core.FirestoreClient.lambda$listen$7$com-google-firebase-firestore-core-FirestoreClient(FirestoreClient.java:179)
+	at com.google.firebase.firestore.core.FirestoreClient$$ExternalSyntheticLambda5.run(D8$$SyntheticClass:0)
+	at com.google.firebase.firestore.util.AsyncQueue.lambda$enqueue$2(AsyncQueue.java:445)
+	at com.google.firebase.firestore.util.AsyncQueue$$ExternalSyntheticLambda4.call(D8$$SyntheticClass:0)
+	at com.google.firebase.firestore.util.AsyncQueue$SynchronizedShutdownAwareExecutor.lambda$executeAndReportResult$1(AsyncQueue.java:330)
+	at com.google.firebase.firestore.util.AsyncQueue$SynchronizedShutdownAwareExecutor$$ExternalSyntheticLambda2.run(D8$$SyntheticClass:0)
+	at java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:520)
+	at java.util.concurrent.FutureTask.run(FutureTask.java:328)
+	at java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:323)
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1100)
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+	at com.google.firebase.firestore.util.AsyncQueue$SynchronizedShutdownAwareExecutor$DelayedStartFactory.run(AsyncQueue.java:235)
+	at java.lang.Thread.run(Thread.java:1571)
+
+FAILURES!!!
+Tests run: 1,  Failures: 1
+
+
+INSTRUMENTATION_CODE: -1
+

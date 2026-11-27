@@ -122,6 +122,10 @@ T("Q1: 3 người lần lượt vào hàng chờ buổi FULL → vị trí 1, 2,
   );
   assert(reg.waitlistedAt instanceof Date);
   assertEquals(sent, [], "vào hàng chờ không gửi thông báo");
+  for (const uid of JOINERS.slice(0, 3)) {
+    const inbox = await firestore.query("notifications", [], { parent: `users/${uid}` });
+    assertEquals(inbox.filter(n => (n.data.data as Record<string, unknown>).sessionId === s.sessionId).length, 0);
+  }
 });
 
 T("Q2: cùng requestId 5 lần song song → 1×201, 4×200, waitlistCount tăng 1 lần", async () => {

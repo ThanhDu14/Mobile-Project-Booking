@@ -22,6 +22,7 @@ import {
   sessionPath,
 } from "../_shared/dropin.ts";
 import { isWaitlistOpen } from "../_shared/waitlist.ts";
+import { notificationInboxId, prepareNotification } from "../_shared/notification-enqueue.ts";
 
 export interface Notification {
   type: "DROPIN_REGISTERED";
@@ -33,7 +34,7 @@ export interface RegisterDeps {
   firestore: Pick<typeof defaultFirestore, "runTransaction">;
   /** Xác thực người gọi; mặc định `requireUser` (401 UNAUTHENTICATED, 403 ACCOUNT_LOCKED, ...). */
   authenticate: (req: Request) => Promise<{ uid: string }>;
-  /** Gửi thông báo sau khi commit; lỗi chỉ ghi log. */
+  /** Retired callback seam retained for source test compatibility; D3 never invokes it. */
   notify: (n: Notification) => Promise<void>;
   /** Giờ server (`serverNow`). */
   now: () => Date;
@@ -190,6 +191,16 @@ async function register(
     throw new HttpError(409, "ALREADY_WAITLISTED", "Bạn đang ở hàng chờ của buổi này");
   }
 
+  const identity = JSON.stringify([input.sessionId, uid, input.requestId, "DROPIN_REGISTERED"]);
+  const notificationId = await notificationInboxId("dropin-registration", identity, uid, "DROPIN_REGISTERED");
+  if (await tx.get(`users/${uid}/notifications/${notificationId}`)) {
+    throw new HttpError(409, "STALE_REQUEST", "Lần đăng ký cũ đã kết thúc; hãy dùng mã yêu cầu mới");
+  }
+  const notificationWrites = await prepareNotification(tx, "dropin-registration", identity, uid, notificationId, {
+    type: "DROPIN_REGISTERED", title: "Đăng ký buổi chơi thành công",
+    body: "Mở vé để xem thông tin buổi chơi.", data: { sessionId: input.sessionId },
+  }, now);
+
   const capacity = asNumber(session.capacity);
   const registeredCount = asNumber(session.registeredCount);
   const remaining = Math.max(0, capacity - registeredCount);
@@ -246,6 +257,7 @@ async function register(
         update: { name: documentName(regPath), fields: encodeFields(registration) },
         currentDocument: { exists: existing != null },
       },
+      ...notificationWrites,
     ],
   };
 }
@@ -440,14 +452,7 @@ export async function handleRegisterDropIn(req: Request, deps: RegisterDeps = de
       );
     });
 
-    // Vào hàng chờ không gửi thông báo vì người chơi tự vào (contract §1).
-    if (result.created && !(input.kind === "REGISTER" && input.joinWaitlist)) {
-      try {
-        await deps.notify({ type: "DROPIN_REGISTERED", userId: uid, data: { sessionId: input.sessionId } });
-      } catch (e) {
-        console.error("[register-drop-in] gửi DROPIN_REGISTERED thất bại", e);
-      }
-    }
+    // REGISTER enqueues atomically; waitlist and ADD_PARTY are silent self actions (D3).
     return Response.json(
       {
         registration: toResponseRegistration(result.registration),
@@ -463,31 +468,12 @@ export async function handleRegisterDropIn(req: Request, deps: RegisterDeps = de
 
 // ---------- Mặc định khi chạy thật ----------
 
-/**
- * Gọi Edge Function `send-notification` của D bằng service role với `{ type, userId, data }` (contract §1).
- * TODO(D, spec 100): envelope chưa chốt; `review` (070) đang gửi `recipientUid`. Chưa có function thì 404, chỉ ghi log.
- */
-async function sendNotification(n: Notification): Promise<void> {
-  const url = Deno.env.get("SUPABASE_URL");
-  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!url || !key) {
-    console.warn("[register-drop-in] thiếu SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY, bỏ qua thông báo", n.type);
-    return;
-  }
-  const res = await fetch(`${url}/functions/v1/send-notification`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify(n),
-  });
-  await res.body?.cancel();
-  if (!res.ok) throw new Error(`send-notification ${res.status}`);
-}
 
 export function defaultDeps(): RegisterDeps {
   return {
     firestore: defaultFirestore,
     authenticate: (req) => requireUser(req),
-    notify: sendNotification,
+    notify: async () => {},
     now: () => new Date(),
   };
 }

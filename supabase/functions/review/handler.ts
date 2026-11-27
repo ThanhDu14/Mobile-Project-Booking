@@ -16,9 +16,10 @@ import {
   type Write,
 } from "../_shared/firestore.ts";
 import { applyDelta, computeOverall, parseRatings, type Ratings, starBucket, type VenueRating } from "../_shared/reviews.ts";
+import { notificationInboxId, prepareNotification } from "../_shared/notification-enqueue.ts";
 
 export interface Notification {
-  type: "REVIEW_NEW" | "REVIEW_REPLY";
+  type: "REVIEW_NEW" | "REVIEW_REPLIED";
   recipientUid: string;
   data: Record<string, string>;
 }
@@ -35,7 +36,7 @@ export interface ReviewStorage {
 export interface ReviewDeps {
   firestore: Pick<typeof defaultFirestore, "get" | "runTransaction">;
   storage: ReviewStorage;
-  /** Gửi thông báo sau khi commit; lỗi chỉ ghi log (research R8). */
+  /** Retired callback seam kept for source test compatibility; R1 enqueues inside the transaction. */
   notify: (n: Notification) => Promise<void>;
   now: () => Date;
 }
@@ -140,14 +141,6 @@ async function removePhotosQuietly(storage: ReviewStorage, paths: string[]): Pro
     await storage.remove(paths);
   } catch (e) {
     console.error("[review] xóa ảnh thất bại", paths, e);
-  }
-}
-
-async function notifyQuietly(deps: ReviewDeps, n: Notification): Promise<void> {
-  try {
-    await deps.notify(n);
-  } catch (e) {
-    console.error(`[review] gửi ${n.type} thất bại`, e);
   }
 }
 
@@ -285,6 +278,13 @@ async function create(uid: string, body: Record<string, unknown>, deps: ReviewDe
 
     const overall = computeOverall(input.ratings);
     const rating = applyDelta(venue, null, { ratings: input.ratings, status: "VISIBLE" });
+    const notificationGeneration = crypto.randomUUID();
+    const identity = JSON.stringify([input.reviewId, notificationGeneration, "REVIEW_NEW"]);
+    const notificationWrites = ownerId ? await prepareNotification(tx, "review", identity, ownerId,
+      await notificationInboxId("review", identity, ownerId, "REVIEW_NEW"), {
+        type: "REVIEW_NEW", title: "Đánh giá mới", body: "Sân của bạn có đánh giá mới.",
+        data: { reviewId: input.reviewId, venueId },
+      }, now) : [];
     return {
       result: {
         created: true,
@@ -307,6 +307,7 @@ async function create(uid: string, body: Record<string, unknown>, deps: ReviewDe
             avatarPath: typeof user?.avatarPath === "string" ? user.avatarPath : null,
           },
           authorDeleted: false,
+          notificationGeneration,
           ratings: input.ratings,
           overall,
           starBucket: starBucket(overall),
@@ -324,17 +325,11 @@ async function create(uid: string, body: Record<string, unknown>, deps: ReviewDe
           ratingCount: rating.ratingCount,
           ratingAvg: rating.ratingAvg,
         }),
+        ...notificationWrites,
       ],
     };
   });
 
-  if (result.created && result.ownerId) {
-    await notifyQuietly(deps, {
-      type: "REVIEW_NEW",
-      recipientUid: result.ownerId,
-      data: { reviewId: input.reviewId, venueId: result.venueId },
-    });
-  }
 
   return Response.json({
     review: {
@@ -504,6 +499,16 @@ async function reply(uid: string, appRole: AppRole, body: Record<string, unknown
       : null;
     const repliedAt = (existing && asDate(existing.repliedAt)) || now;
     const editedAt = existing ? now : null;
+    const recipientUid = typeof review.userId === "string" ? review.userId : null;
+    const generation = typeof review.notificationGeneration === "string" && review.notificationGeneration
+      ? review.notificationGeneration : crypto.randomUUID();
+    const identity = JSON.stringify([reviewId, generation, "REVIEW_REPLIED"]);
+    const notificationWrites = !existing && recipientUid && recipientUid !== uid
+      ? await prepareNotification(tx, "review", identity, recipientUid,
+        await notificationInboxId("review", identity, recipientUid, "REVIEW_REPLIED"), {
+          type: "REVIEW_REPLIED", title: "Chủ sân đã phản hồi", body: "Đánh giá của bạn đã được phản hồi.",
+          data: { reviewId, venueId },
+        }, now) : [];
     return {
       result: {
         text,
@@ -517,18 +522,13 @@ async function reply(uid: string, appRole: AppRole, body: Record<string, unknown
         updateWrite(`reviews/${reviewId}`, {
           ownerReply: { text, repliedAt, editedAt },
           hasOwnerReply: true,
+          ...(!existing ? { notificationGeneration: generation } : {}),
         }, ["updatedAt"]),
+        ...notificationWrites,
       ],
     };
   });
 
-  if (result.first && result.recipientUid) {
-    await notifyQuietly(deps, {
-      type: "REVIEW_REPLY",
-      recipientUid: result.recipientUid,
-      data: { reviewId, venueId: result.venueId },
-    });
-  }
   return Response.json({
     ownerReply: {
       text: result.text,
@@ -557,26 +557,6 @@ async function discardPhotos(uid: string, body: Record<string, unknown>, deps: R
 
 // ---------- Mặc định khi chạy thật ----------
 
-/**
- * Gọi Edge Function `send-notification` của D bằng service role. TODO(D, spec 100): envelope chưa chốt
- * (contracts/event-integration.md của 100); đây là đề xuất `{ type, recipientUid, data }`. Chưa có
- * function thì lời gọi trả 404 và chỉ ghi log.
- */
-async function sendNotification(n: Notification): Promise<void> {
-  const url = Deno.env.get("SUPABASE_URL");
-  const key = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-  if (!url || !key) {
-    console.warn("[review] thiếu SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY, bỏ qua thông báo", n.type);
-    return;
-  }
-  const res = await fetch(`${url}/functions/v1/send-notification`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-    body: JSON.stringify(n),
-  });
-  await res.body?.cancel();
-  if (!res.ok) throw new Error(`send-notification ${res.status}`);
-}
 
 /**
  * Supabase Storage REST với service role (bỏ qua RLS). Bucket `review-photos` (migration
@@ -622,6 +602,6 @@ export function supabaseStorage(
 }
 
 function defaultDeps(): ReviewDeps {
-  return { firestore: defaultFirestore, storage: supabaseStorage(), notify: sendNotification, now: () => new Date() };
+  return { firestore: defaultFirestore, storage: supabaseStorage(), notify: async () => {}, now: () => new Date() };
 }
 

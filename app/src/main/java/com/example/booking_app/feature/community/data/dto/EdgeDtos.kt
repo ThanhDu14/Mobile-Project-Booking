@@ -161,6 +161,7 @@ data class GroupPostRequest(
         fun update(
             groupId: String,
             postId: String,
+            requestId: String?,
             content: String,
             photoPaths: List<String>,
             eventTitle: String?,
@@ -168,11 +169,12 @@ data class GroupPostRequest(
             eventLocation: String?,
             expectedCount: Int?,
         ) = GroupPostRequest(
-            action = "update", groupId = groupId, postId = postId, content = content, photoPaths = photoPaths,
+            action = "update", groupId = groupId, postId = postId, requestId = requestId, content = content, photoPaths = photoPaths,
             eventTitle = eventTitle, eventAt = eventAt, eventLocation = eventLocation, expectedCount = expectedCount,
         )
 
-        fun delete(groupId: String, postId: String) = GroupPostRequest("delete", groupId, postId = postId)
+        fun delete(groupId: String, postId: String, requestId: String) =
+            GroupPostRequest("delete", groupId, postId = postId, requestId = requestId)
         fun hide(groupId: String, postId: String) = GroupPostRequest("hide", groupId, postId = postId)
         fun unhide(groupId: String, postId: String) = GroupPostRequest("unhide", groupId, postId = postId)
         fun attend(groupId: String, postId: String) = GroupPostRequest("attend", groupId, postId = postId)

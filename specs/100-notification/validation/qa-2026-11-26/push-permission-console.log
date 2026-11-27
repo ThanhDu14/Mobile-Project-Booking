@@ -1,0 +1,4 @@
+channels-renderer-handler passed (6)
+denied-handler passed (1)
+grantedPermissionHidesNoticeWithoutChangingPreferences passed (1)
+deniedPermissionKeepsPreferencesAndInboxAndRefreshesAfterSystemSettingsGrant passed (1)

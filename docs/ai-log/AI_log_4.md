@@ -53,12 +53,21 @@ Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 | 47  | 2026-11-13 | Rà soát và sửa Feature 120 Admin theo spec/contracts/wireframe; regression, Emulator/local integration, kiểm thử máy thật; xử lý lệch quyền ADMIN và tạo index Firebase theo yêu cầu bổ sung                       | 12             |
 | 48  | 2026-11-15 | Rà soát và sửa Feature 110, 111, 112 trên máy Android thật; thay dữ liệu mẫu bằng Firebase/Supabase, deploy backend được cho phép, kiểm thử vòng duyệt hồ sơ và vận hành chủ sân; sửa nút và dòng giờ bị vỡ bố cục | 11, 12         |
 | 49  | 2026-11-20 | Sửa kiểm duyệt và tích hợp hàng chờ theo tin nhắn của C; kiểm tra đủ ba job CI tại local, deploy và bật cron `dropin-close`                                                                                        | 08, 09, 11, 12 |
-| 50  | 2026-11-20 | Kiểm thử kiểm duyệt và hàng chờ trên máy vivo V2247 với backend local; lưu kết quả, ảnh và kiểm tra cron có lượt chờ | 08, 09, 11, 12 |
-| 51  | 2026-11-20 | Bổ sung Rules đọc nội dung cho admin, sửa preview bài/tin nhắn và kiểm thử lại trên vivo V2247 | 09, 12 |
-| 52  | 2026-11-20 | Resolve conflict khi gộp main, giữ luồng hàng chờ 081 và tích hợp owner/admin; kiểm tra đủ ba job CI | 08, 11, 12 |
-| 53  | 2026-11-20 | Triển khai Thêm cơ sở từ form Android tới xét duyệt backend, giữ quyền OWNER và kiểm thử máy thật | 11, 12 |
-| 54  | 2026-11-21 | Tiếp tục Feature 11, tích hợp bản đồ và kiểm chứng vận hành OWNER | 11, 12 |
-| 55  | 2026-11-21 | Tích hợp tin nhắn OWNER với module chat 091, sửa lỗi phiên/outbox và kiểm thử Firebase/Supabase trên máy thật | 09, 11 |
+| 50  | 2026-11-20 | Kiểm thử kiểm duyệt và hàng chờ trên máy vivo V2247 với backend local; lưu kết quả, ảnh và kiểm tra cron có lượt chờ                                                                                               | 08, 09, 11, 12 |
+| 51  | 2026-11-20 | Bổ sung Rules đọc nội dung cho admin, sửa preview bài/tin nhắn và kiểm thử lại trên vivo V2247                                                                                                                     | 09, 12         |
+| 52  | 2026-11-20 | Resolve conflict khi gộp main, giữ luồng hàng chờ 081 và tích hợp owner/admin; kiểm tra đủ ba job CI                                                                                                               | 08, 11, 12     |
+| 53  | 2026-11-20 | Triển khai Thêm cơ sở từ form Android tới xét duyệt backend, giữ quyền OWNER và kiểm thử máy thật                                                                                                                  | 11, 12         |
+| 54  | 2026-11-21 | Tiếp tục Feature 11, tích hợp bản đồ và kiểm chứng vận hành OWNER                                                                                                                                                  | 11, 12         |
+| 55  | 2026-11-21 | Tích hợp tin nhắn OWNER với module chat 091, sửa lỗi phiên/outbox và kiểm thử Firebase/Supabase trên máy thật                                                                                                      | 09, 11         |
+| 56  | 2026-11-22 | Triển khai domain, repository inbox/preference và Rules Feature 100; kiểm thử, ghi quyết định và đề xuất job phục hồi push                                                                                         | 10             |
+| 57  | 2026-11-22 | Tiếp tục Feature 100: inbox/settings Android, route an toàn và kiểm thử phone/w600dp light/dark; lưu ảnh và kết quả                                                                                                | 10             |
+| 58  | 2026-11-22 | Tiếp tục Feature 100: routing review, quyền thông báo, kiểm thử xóa tài khoản/index, sửa Timestamp và bổ sung đề xuất delivery từng token | 10             |
+| 59  | 2026-11-23 | Tiếp tục Feature 100: cache DataStore theo UID, routing nhóm, rà token/delivery, sửa planner và kiểm thử phone/w600dp light/dark | 10             |
+| 60  | 2026-11-23 | Tiếp tục Feature 100: chốt quyết định backend/FCM, triển khai W1, token/presence, push an toàn và kiểm chứng tiến độ 36/56 | 10             |
+| 61  | 2026-11-24 | Tiếp tục Feature 100: kiểm chứng booking W1, chốt B1/B2, triển khai reminder và xác minh tiến độ 39/56 | 10             |
+| 62  | 2026-11-24 | Tiếp tục Feature 100: D3/R1/H1, kiểm thử vivo và xác minh tiến độ 41/56 | 10             |
+| 63  | 2026-11-26 | Hoàn tất Feature 100 từ 43/56 đến 56/56, kiểm thử vivo và triển khai production theo giai đoạn | 10             |
+| 64  | 2026-11-27 | Kiểm thử hồi quy Feature 100 trên vivo, sửa hai lỗi Settings offline và mở lại T056 | 10             |
 
 ---
 
@@ -5082,14 +5091,14 @@ phải đảm bảo pass hết 3 ci
 
 ## Mục 50: Kiểm thử kiểm duyệt và hàng chờ trên máy vivo V2247
 
-| Trường | Nội dung |
-| ------ | -------- |
-| Ngày | 2026-11-20 |
-| Người thực hiện | Minh Nhựt |
-| Nhóm tính năng liên quan | 08 (hàng chờ), 09 (nhóm/tin nhắn), 11 (vận hành chủ sân), 12 (kiểm duyệt) |
-| Công cụ AI | Codex (GPT-6) |
-| Mục đích | Kiểm tra các thay đổi ở mục 49 bằng thao tác UI trên điện thoại và đọc lại dữ liệu backend |
-| Nhánh Git | `fix-feature/11-owner` |
+| Trường                   | Nội dung                                                                                   |
+| ------------------------ | ------------------------------------------------------------------------------------------ |
+| Ngày                     | 2026-11-20                                                                                 |
+| Người thực hiện          | Minh Nhựt                                                                                  |
+| Nhóm tính năng liên quan | 08 (hàng chờ), 09 (nhóm/tin nhắn), 11 (vận hành chủ sân), 12 (kiểm duyệt)                  |
+| Công cụ AI               | Codex (GPT-6)                                                                              |
+| Mục đích                 | Kiểm tra các thay đổi ở mục 49 bằng thao tác UI trên điện thoại và đọc lại dữ liệu backend |
+| Nhánh Git                | `fix-feature/11-owner`                                                                     |
 
 ### Prompt đã dùng
 
@@ -5107,15 +5116,15 @@ test trên máy thật
 
 ### Phần đã sử dụng / chỉnh sửa / bỏ
 
-| Phần | Quyết định | Lý do |
-| ---- | ---------- | ----- |
-| `app/src/adminLocalAndroidTest/java/com/example/booking_app/feature/admin/HandoffDeviceInteractionTest.kt` | Tạo mới | Kiểm tra các luồng vừa sửa trên máy thật, với backend local và dữ liệu đã biết. |
-| `scripts/admin/seed-handoff-device.ts` | Tạo mới | Chuẩn bị fixture, từ chối chạy nếu project hoặc host không đúng demo local. |
-| `scripts/admin/verify-handoff-device.ts` | Tạo mới | Đối chiếu dữ liệu sau UI, kiểm tra cron local và xuất kết quả không chứa token/QR. |
-| Điều kiện chờ sau khi xử lý báo cáo cuối | Chỉnh bài kiểm thử | Lượt đầu có 2/3 ca pass; ca kiểm duyệt đã xử lý xong nhưng test vẫn đợi danh sách đang mở khi danh sách đã rỗng. Đổi sang đợi thanh tab của màn hàng đợi, giữ nguyên kiểm tra dữ liệu RESOLVED. |
-| Gói instrumentation `.adminlocal.test` cũ | Thay gói test | Bản cũ khác chữ ký; chỉ gỡ gói test để cài bản mới, giữ ứng dụng chính và dữ liệu của người dùng. |
-| Mã production | Giữ nguyên | Phiên này bổ sung kiểm thử và bằng chứng; không phát hiện lỗi production cần sửa trong các ca đã chạy. |
-| [Kết quả và dữ liệu đối chiếu](../validation/handoff-2026-11-20/results.json), ảnh và log cùng thư mục | Lưu mới | Phân biệt bằng chứng máy thật, kết quả backend local và giới hạn chưa kiểm chứng. |
+| Phần                                                                                                       | Quyết định         | Lý do                                                                                                                                                                                           |
+| ---------------------------------------------------------------------------------------------------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `app/src/adminLocalAndroidTest/java/com/example/booking_app/feature/admin/HandoffDeviceInteractionTest.kt` | Tạo mới            | Kiểm tra các luồng vừa sửa trên máy thật, với backend local và dữ liệu đã biết.                                                                                                                 |
+| `scripts/admin/seed-handoff-device.ts`                                                                     | Tạo mới            | Chuẩn bị fixture, từ chối chạy nếu project hoặc host không đúng demo local.                                                                                                                     |
+| `scripts/admin/verify-handoff-device.ts`                                                                   | Tạo mới            | Đối chiếu dữ liệu sau UI, kiểm tra cron local và xuất kết quả không chứa token/QR.                                                                                                              |
+| Điều kiện chờ sau khi xử lý báo cáo cuối                                                                   | Chỉnh bài kiểm thử | Lượt đầu có 2/3 ca pass; ca kiểm duyệt đã xử lý xong nhưng test vẫn đợi danh sách đang mở khi danh sách đã rỗng. Đổi sang đợi thanh tab của màn hàng đợi, giữ nguyên kiểm tra dữ liệu RESOLVED. |
+| Gói instrumentation `.adminlocal.test` cũ                                                                  | Thay gói test      | Bản cũ khác chữ ký; chỉ gỡ gói test để cài bản mới, giữ ứng dụng chính và dữ liệu của người dùng.                                                                                               |
+| Mã production                                                                                              | Giữ nguyên         | Phiên này bổ sung kiểm thử và bằng chứng; không phát hiện lỗi production cần sửa trong các ca đã chạy.                                                                                          |
+| [Kết quả và dữ liệu đối chiếu](../validation/handoff-2026-11-20/results.json), ảnh và log cùng thư mục     | Lưu mới            | Phân biệt bằng chứng máy thật, kết quả backend local và giới hạn chưa kiểm chứng.                                                                                                               |
 
 ### Cách kiểm chứng
 
@@ -5129,14 +5138,14 @@ test trên máy thật
 
 ## Mục 51: Bổ sung Rules và kiểm thử preview nội dung trên màn admin
 
-| Trường | Nội dung |
-| ------ | -------- |
-| Ngày | 2026-11-20 |
-| Người thực hiện | Minh Nhựt |
-| Nhóm tính năng liên quan | 09 (bài nhóm/tin nhắn), 12 (kiểm duyệt báo cáo) |
-| Công cụ AI | Codex (GPT-6) |
-| Mục đích | Sửa giới hạn preview phát hiện ở mục 50 và kiểm tra quyền truy cập, nội dung hiển thị trên máy thật |
-| Nhánh Git | `fix-feature/11-owner` |
+| Trường                   | Nội dung                                                                                            |
+| ------------------------ | --------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-11-20                                                                                          |
+| Người thực hiện          | Minh Nhựt                                                                                           |
+| Nhóm tính năng liên quan | 09 (bài nhóm/tin nhắn), 12 (kiểm duyệt báo cáo)                                                     |
+| Công cụ AI               | Codex (GPT-6)                                                                                       |
+| Mục đích                 | Sửa giới hạn preview phát hiện ở mục 50 và kiểm tra quyền truy cập, nội dung hiển thị trên máy thật |
+| Nhánh Git                | `fix-feature/11-owner`                                                                              |
 
 ### Prompt đã dùng
 
@@ -5154,13 +5163,13 @@ cập nhật rules tương ứng và test màn admin
 
 ### Phần đã sử dụng / chỉnh sửa / bỏ
 
-| Phần | Quyết định | Lý do |
-| ---- | ---------- | ----- |
-| `firestore.rules` | Bổ sung quyền get có kiểm tra admin hiện tại | Cho phép đọc đúng document cần kiểm duyệt; giữ cấm ghi trực tiếp và không mở quyền liệt kê bài/tin nhắn. |
-| `firestore-tests/test/report-moderation.test.ts` | Thêm 9 ca | Kiểm tra cả quyền được phép và bị chặn, gồm claim ADMIN đã mất hiệu lực. |
-| `AdminReportDetailFragment.kt` | Chỉnh mapper nội dung và tên | Hiển thị đúng dữ liệu theo schema của bài nhóm, tin nhắn và đánh giá. |
+| Phần                                                          | Quyết định                                         | Lý do                                                                                                                    |
+| ------------------------------------------------------------- | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `firestore.rules`                                             | Bổ sung quyền get có kiểm tra admin hiện tại       | Cho phép đọc đúng document cần kiểm duyệt; giữ cấm ghi trực tiếp và không mở quyền liệt kê bài/tin nhắn.                 |
+| `firestore-tests/test/report-moderation.test.ts`              | Thêm 9 ca                                          | Kiểm tra cả quyền được phép và bị chặn, gồm claim ADMIN đã mất hiệu lực.                                                 |
+| `AdminReportDetailFragment.kt`                                | Chỉnh mapper nội dung và tên                       | Hiển thị đúng dữ liệu theo schema của bài nhóm, tin nhắn và đánh giá.                                                    |
 | `HandoffDeviceInteractionTest.kt`, fixture và script xác minh | Bổ sung assertion, tách thư mục ảnh theo lượt chạy | Bài test sẽ thất bại nếu màn admin vẫn hiện thiếu nội dung/tên; giữ ảnh cũ và lấy số test/thời gian từ log của lượt mới. |
-| Tài liệu database | Cập nhật | Ghi rõ phạm vi get dành cho preview; quyền đọc của thành viên nhóm/chat vẫn thuộc contract 090/091. |
+| Tài liệu database                                             | Cập nhật                                           | Ghi rõ phạm vi get dành cho preview; quyền đọc của thành viên nhóm/chat vẫn thuộc contract 090/091.                      |
 
 ### Cách kiểm chứng
 
@@ -5175,14 +5184,14 @@ cập nhật rules tương ứng và test màn admin
 
 ## Mục 52: Gộp main và giữ luồng hàng chờ, owner/admin của hai nhánh
 
-| Trường | Nội dung |
-| ------ | -------- |
-| Ngày | 2026-11-20 |
-| Người thực hiện | Minh Nhựt |
+| Trường                   | Nội dung                                                                                    |
+| ------------------------ | ------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-11-20                                                                                  |
+| Người thực hiện          | Minh Nhựt                                                                                   |
 | Nhóm tính năng liên quan | 08 (hàng chờ 081), 11 (owner operations), 12 (admin); kiểm tra hồi quy các phần mới từ main |
-| Công cụ AI | Codex (GPT-6) |
-| Mục đích | Resolve conflict, đối chiếu hành vi của cả hai nhánh và chạy các kiểm tra tương ứng CI |
-| Nhánh Git | `fix-feature/11-owner`, gộp `main` tại `8495c272` vào HEAD `f8d906ef` |
+| Công cụ AI               | Codex (GPT-6)                                                                               |
+| Mục đích                 | Resolve conflict, đối chiếu hành vi của cả hai nhánh và chạy các kiểm tra tương ứng CI      |
+| Nhánh Git                | `fix-feature/11-owner`, gộp `main` tại `8495c272` vào HEAD `f8d906ef`                       |
 
 ### Prompt đã dùng
 
@@ -5201,15 +5210,15 @@ resolve conflict dam bao giu code cua ca 2 nhanh, dam bao pass all ci
 
 ### Phần đã sử dụng / chỉnh sửa / bỏ
 
-| Phần | Quyết định | Lý do |
-| ---- | ---------- | ----- |
-| Bảy file conflict | Gộp theo hợp đồng và hành vi | Giữ API 081 đầy đủ, phần tích hợp owner/admin và tương thích tên handler cron đang được các caller cũ dùng. |
-| `owner-update-session/handler.ts` | Điều chỉnh theo `PromoteResult` | Ghi đúng waitlistTickets/waitlistCount cùng capacity và số đăng ký; trả người nhận thông báo ra ngoài transaction. |
-| `owner-cancel-session/handler.ts` | Điều chỉnh helper và hook thông báo | Đóng lượt chờ bằng transaction thật, giữ hoàn tiền đầy đủ và thông báo sau commit. |
-| `waitlist.regression.test.ts`, test owner | Giữ, điều chỉnh và bổ sung | Không mất bộ test của nhánh hiện tại; kiểm tra gửi sau commit, lỗi gửi, đóng cron thất bại và retry. |
-| Helper legacy `closeWaitlistInTx` trong `dropin.ts` | Giữ để tương thích | Các owner handlers dùng helper mới trong `waitlist.ts`; giữ export và test legacy từ main. |
-| Các thay đổi không conflict của main và nhánh hiện tại | Giữ | Bảo toàn tính năng tìm kiếm/bản đồ, booking, hàng chờ và các sửa admin/owner đã kiểm chứng trước đó. |
-| Handoff 081 | Thêm trạng thái tích hợp hiện tại | Tránh tiếp tục hiểu các prompt bàn giao ban đầu là mô tả của owner handlers sau merge. |
+| Phần                                                   | Quyết định                          | Lý do                                                                                                              |
+| ------------------------------------------------------ | ----------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Bảy file conflict                                      | Gộp theo hợp đồng và hành vi        | Giữ API 081 đầy đủ, phần tích hợp owner/admin và tương thích tên handler cron đang được các caller cũ dùng.        |
+| `owner-update-session/handler.ts`                      | Điều chỉnh theo `PromoteResult`     | Ghi đúng waitlistTickets/waitlistCount cùng capacity và số đăng ký; trả người nhận thông báo ra ngoài transaction. |
+| `owner-cancel-session/handler.ts`                      | Điều chỉnh helper và hook thông báo | Đóng lượt chờ bằng transaction thật, giữ hoàn tiền đầy đủ và thông báo sau commit.                                 |
+| `waitlist.regression.test.ts`, test owner              | Giữ, điều chỉnh và bổ sung          | Không mất bộ test của nhánh hiện tại; kiểm tra gửi sau commit, lỗi gửi, đóng cron thất bại và retry.               |
+| Helper legacy `closeWaitlistInTx` trong `dropin.ts`    | Giữ để tương thích                  | Các owner handlers dùng helper mới trong `waitlist.ts`; giữ export và test legacy từ main.                         |
+| Các thay đổi không conflict của main và nhánh hiện tại | Giữ                                 | Bảo toàn tính năng tìm kiếm/bản đồ, booking, hàng chờ và các sửa admin/owner đã kiểm chứng trước đó.               |
+| Handoff 081                                            | Thêm trạng thái tích hợp hiện tại   | Tránh tiếp tục hiểu các prompt bàn giao ban đầu là mô tả của owner handlers sau merge.                             |
 
 ### Cách kiểm chứng
 
@@ -5224,14 +5233,14 @@ resolve conflict dam bao giu code cua ca 2 nhanh, dam bao pass all ci
 
 ## Mục 53: Hoàn thiện Thêm cơ sở trong Cơ sở của tôi
 
-| Thông tin | Nội dung |
-| --- | --- |
-| Ngày | 2026-11-20 |
-| Người thực hiện | Minh Nhựt |
-| Nhóm tính năng liên quan | 11 (onboarding, cơ sở), 12 (xét duyệt) |
-| Công cụ AI | Codex (GPT-6), speckit-implement, humanizer |
-| Mục đích | Cho OWNER đã được duyệt mở thêm cơ sở qua hồ sơ riêng, giữ quyền và dữ liệu cơ sở cũ |
-| Nhánh Git | fix-feature/11-owner |
+| Thông tin                | Nội dung                                                                             |
+| ------------------------ | ------------------------------------------------------------------------------------ |
+| Ngày                     | 2026-11-20                                                                           |
+| Người thực hiện          | Minh Nhựt                                                                            |
+| Nhóm tính năng liên quan | 11 (onboarding, cơ sở), 12 (xét duyệt)                                               |
+| Công cụ AI               | Codex (GPT-6), speckit-implement, humanizer                                          |
+| Mục đích                 | Cho OWNER đã được duyệt mở thêm cơ sở qua hồ sơ riêng, giữ quyền và dữ liệu cơ sở cũ |
+| Nhánh Git                | fix-feature/11-owner                                                                 |
 
 ### Prompt đã dùng
 
@@ -5251,14 +5260,14 @@ Yêu cầu kèm theo gồm sáu quyết định nghiệp vụ, đọc Feature 11
 
 ### Phần đã sử dụng / chỉnh sửa / bỏ
 
-| Phần | Quyết định | Lý do |
-| --- | --- | --- |
-| Luồng onboarding hiện có | Tái sử dụng theo mode | Giữ validation, review, upload, retry và đăng ký lần đầu. |
-| Trạng thái hồ sơ bổ sung | Tách khỏi ownerStatus tài khoản | Tránh hạ quyền hoặc chuyển nhầm màn OWNER khi hồ sơ mới bị từ chối. |
-| Quyền tạo venue phía client | Giữ bị chặn | Venue mới phải qua admin review và transaction/create precondition. |
-| Rules và Storage | Giữ boundary, bổ sung hồi quy | Owner chỉ đọc hồ sơ của mình; giấy tờ không public; không tự sửa metadata server. |
-| Kiểm thử máy thật | Dùng package adminlocal và backend local | Kiểm tra UI/API thật bằng tài khoản, ảnh và giấy tờ TEST, không ghi dữ liệu production. |
-| Các thay đổi hàng chờ/admin trước đó | Giữ nguyên | Chạy toàn bộ CI để phát hiện hồi quy ngoài phạm vi thêm cơ sở. |
+| Phần                                 | Quyết định                               | Lý do                                                                                   |
+| ------------------------------------ | ---------------------------------------- | --------------------------------------------------------------------------------------- |
+| Luồng onboarding hiện có             | Tái sử dụng theo mode                    | Giữ validation, review, upload, retry và đăng ký lần đầu.                               |
+| Trạng thái hồ sơ bổ sung             | Tách khỏi ownerStatus tài khoản          | Tránh hạ quyền hoặc chuyển nhầm màn OWNER khi hồ sơ mới bị từ chối.                     |
+| Quyền tạo venue phía client          | Giữ bị chặn                              | Venue mới phải qua admin review và transaction/create precondition.                     |
+| Rules và Storage                     | Giữ boundary, bổ sung hồi quy            | Owner chỉ đọc hồ sơ của mình; giấy tờ không public; không tự sửa metadata server.       |
+| Kiểm thử máy thật                    | Dùng package adminlocal và backend local | Kiểm tra UI/API thật bằng tài khoản, ảnh và giấy tờ TEST, không ghi dữ liệu production. |
+| Các thay đổi hàng chờ/admin trước đó | Giữ nguyên                               | Chạy toàn bộ CI để phát hiện hồi quy ngoài phạm vi thêm cơ sở.                          |
 
 ### Cách kiểm chứng
 
@@ -5272,18 +5281,19 @@ Trong các lượt đầu, kiểm thử phát hiện lỗi loading, bộ chọn 
 
 ## Mục 54: Tiếp tục Feature 11, tích hợp bản đồ và kiểm chứng vận hành OWNER
 
-| Thông tin | Nội dung |
-| --- | --- |
-| Ngày | 2026-11-21 |
-| Người thực hiện | Minh Nhựt |
-| Nhóm tính năng liên quan | 11 (110, 111, 112), 12 (duyệt hồ sơ); kiểm tra hồi quy hàng chờ 081 và community/chat 090/091 |
-| Công cụ AI | Codex (GPT-6), `$speckit-converge`, `$speckit-implement`, `$humanizer:humanizer` |
-| Mục đích | Đối chiếu yêu cầu với luồng production, sửa phần vận hành OWNER còn lỗi, dùng chung bản đồ với phần B và kiểm chứng bằng CI local cùng điện thoại thật |
-| Nhánh Git | `fix-feature/11-owner` |
+| Thông tin                | Nội dung                                                                                                                                               |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Ngày                     | 2026-11-21                                                                                                                                             |
+| Người thực hiện          | Minh Nhựt                                                                                                                                              |
+| Nhóm tính năng liên quan | 11 (110, 111, 112), 12 (duyệt hồ sơ); kiểm tra hồi quy hàng chờ 081 và community/chat 090/091                                                          |
+| Công cụ AI               | Codex (GPT-6), `$speckit-converge`, `$speckit-implement`, `$humanizer:humanizer`                                                                       |
+| Mục đích                 | Đối chiếu yêu cầu với luồng production, sửa phần vận hành OWNER còn lỗi, dùng chung bản đồ với phần B và kiểm chứng bằng CI local cùng điện thoại thật |
+| Nhánh Git                | `fix-feature/11-owner`                                                                                                                                 |
 
 ### Prompt đã dùng
 
 > Hãy tiếp tục triển khai hoàn chỉnh Feature 11 — Quản lý sân dành cho OWNER, bao gồm:
+>
 > - 110: Đăng ký chủ sân và hồ sơ mở thêm cơ sở.
 > - 111: Quản lý cơ sở, sân con, bảng giá, khóa/mở giờ.
 > - 112: Vận hành booking, lịch, drop-in, check-in, voucher và thống kê.
@@ -5315,17 +5325,17 @@ Sau khi nhận bàn giao, người dùng yêu cầu cập nhật AI_log cho lầ
 
 ### Phần đã sử dụng / chỉnh sửa / bỏ
 
-| Phần | Quyết định | Lý do |
-| --- | --- | --- |
-| `sync-venue-price`, `SyncVenuePriceApi`, owner venue repository và Rules | Chỉnh sửa boundary ghi giá | Ghi rule/minimum cùng transaction, kiểm tra overlap và xử lý retry mà không để ghi một phần. |
-| `owner-manage-court`, `OwnerCourtApi`, `admin-review-application`, validation và Rules | Bổ sung, chỉnh sửa theo quyết định người dùng | Tính count từ sân hoạt động, cho phép 0, bảo vệ bộ đếm và giữ lịch sử; tách số khai hồ sơ khỏi số sân đã cấu hình. |
-| Dashboard, ViewModel, repository và form booking/calendar/drop-in/voucher/statistics | Chỉnh context, draft và trạng thái tải | Giữ đúng venue đang chọn, tránh mất dữ liệu nhập hoặc dùng kết quả cũ sau lỗi. |
-| `_shared/owner-access.ts`, owner session/check-in handlers | Chỉnh kiểm tra quyền và idempotency | Dùng quyền/trạng thái hiện tại trong transaction, trả kết quả server thật và áp dụng cửa sổ check-in đã chốt. |
-| `owner-statistics-source`, statistics repository, `OwnerOperatingSlots` | Chỉnh nguồn cấu hình và cách sinh slot | Đối chiếu được tiền/occupancy/peak với fixture, không treo ở giờ đóng 23:59 và không làm mất hàng lịch sử. |
-| `LocationPickerDialog`, `LocationPickerFragment`, `OwnerLocationMapController`, layout phone/w600dp | Tái sử dụng cấu hình map chung của B | Có tile thật, giữ ghim qua xoay, hỗ trợ xác nhận/hủy và lưu GeoPoint; không nhập UI riêng của feature khác. |
-| Luồng onboarding/addition, owner-docs và tích hợp 081/090/091/admin đã merge | Giữ và kiểm tra hồi quy | Bảo toàn quyền OWNER, venue cũ, giấy tờ private và các hành vi liên feature. |
-| Unit/Edge/Rules tests, instrumentation, seed/verify scripts và tài liệu | Bổ sung, cập nhật | Kiểm tra race/retry/quyền, chạy UI với dữ liệu TEST và lưu bằng chứng có đối chiếu backend. |
-| Tạo venue từ client, ghi trực tiếp aggregate, giới hạn mới về số cơ sở/hồ sơ, deploy hosted | Không thực hiện | Giữ hợp đồng xét duyệt, dữ liệu server quản lý và phạm vi người dùng đã cho phép. |
+| Phần                                                                                                | Quyết định                                    | Lý do                                                                                                              |
+| --------------------------------------------------------------------------------------------------- | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `sync-venue-price`, `SyncVenuePriceApi`, owner venue repository và Rules                            | Chỉnh sửa boundary ghi giá                    | Ghi rule/minimum cùng transaction, kiểm tra overlap và xử lý retry mà không để ghi một phần.                       |
+| `owner-manage-court`, `OwnerCourtApi`, `admin-review-application`, validation và Rules              | Bổ sung, chỉnh sửa theo quyết định người dùng | Tính count từ sân hoạt động, cho phép 0, bảo vệ bộ đếm và giữ lịch sử; tách số khai hồ sơ khỏi số sân đã cấu hình. |
+| Dashboard, ViewModel, repository và form booking/calendar/drop-in/voucher/statistics                | Chỉnh context, draft và trạng thái tải        | Giữ đúng venue đang chọn, tránh mất dữ liệu nhập hoặc dùng kết quả cũ sau lỗi.                                     |
+| `_shared/owner-access.ts`, owner session/check-in handlers                                          | Chỉnh kiểm tra quyền và idempotency           | Dùng quyền/trạng thái hiện tại trong transaction, trả kết quả server thật và áp dụng cửa sổ check-in đã chốt.      |
+| `owner-statistics-source`, statistics repository, `OwnerOperatingSlots`                             | Chỉnh nguồn cấu hình và cách sinh slot        | Đối chiếu được tiền/occupancy/peak với fixture, không treo ở giờ đóng 23:59 và không làm mất hàng lịch sử.         |
+| `LocationPickerDialog`, `LocationPickerFragment`, `OwnerLocationMapController`, layout phone/w600dp | Tái sử dụng cấu hình map chung của B          | Có tile thật, giữ ghim qua xoay, hỗ trợ xác nhận/hủy và lưu GeoPoint; không nhập UI riêng của feature khác.        |
+| Luồng onboarding/addition, owner-docs và tích hợp 081/090/091/admin đã merge                        | Giữ và kiểm tra hồi quy                       | Bảo toàn quyền OWNER, venue cũ, giấy tờ private và các hành vi liên feature.                                       |
+| Unit/Edge/Rules tests, instrumentation, seed/verify scripts và tài liệu                             | Bổ sung, cập nhật                             | Kiểm tra race/retry/quyền, chạy UI với dữ liệu TEST và lưu bằng chứng có đối chiếu backend.                        |
+| Tạo venue từ client, ghi trực tiếp aggregate, giới hạn mới về số cơ sở/hồ sơ, deploy hosted         | Không thực hiện                               | Giữ hợp đồng xét duyệt, dữ liệu server quản lý và phạm vi người dùng đã cho phép.                                  |
 
 ### Cách kiểm chứng
 
@@ -5342,14 +5352,14 @@ Sau khi nhận bàn giao, người dùng yêu cầu cập nhật AI_log cho lầ
 
 ## Mục 55: Tích hợp tin nhắn OWNER và kiểm thử trao đổi PLAYER ↔ OWNER
 
-| Thông tin | Nội dung |
-| --- | --- |
-| Ngày | 2026-11-21 |
-| Người thực hiện | Minh Nhựt |
-| Nhóm tính năng liên quan | 09 (091 chat), 11 (112 vận hành chủ sân); đối chiếu 011 chế độ tài khoản, 030 nhắn chủ sân và 100 thông báo |
-| Công cụ AI | Codex (GPT-6), `$speckit-implement` |
-| Mục đích | Nối tab Tin nhắn OWNER với module chat và backend hiện có, hoàn thiện hộp thư khách hàng, sửa lỗi phân tách phiên và kiểm chứng trao đổi hai chiều trên điện thoại thật |
-| Nhánh Git | `fix-feature/11-owner` |
+| Thông tin                | Nội dung                                                                                                                                                                |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-11-21                                                                                                                                                              |
+| Người thực hiện          | Minh Nhựt                                                                                                                                                               |
+| Nhóm tính năng liên quan | 09 (091 chat), 11 (112 vận hành chủ sân); đối chiếu 011 chế độ tài khoản, 030 nhắn chủ sân và 100 thông báo                                                             |
+| Công cụ AI               | Codex (GPT-6), `$speckit-implement`                                                                                                                                     |
+| Mục đích                 | Nối tab Tin nhắn OWNER với module chat và backend hiện có, hoàn thiện hộp thư khách hàng, sửa lỗi phân tách phiên và kiểm chứng trao đổi hai chiều trên điện thoại thật |
+| Nhánh Git                | `fix-feature/11-owner`                                                                                                                                                  |
 
 ### Prompt đã dùng
 
@@ -5424,16 +5434,16 @@ Bắt đầu bằng khảo sát module chat và đường điều hướng tab_o
 
 ### Phần đã sử dụng / chỉnh sửa / bỏ
 
-| Phần | Quyết định | Lý do |
-| --- | --- | --- |
-| `MainActivity`, `tab_owner_messages`, `ownerChatListFragment`, `nav_chat.xml` | Nối tab và tái sử dụng destination/graph hiện có | Bỏ placeholder, giữ đúng tab và Back, tránh tạo màn hình chat OWNER trùng lặp. |
-| `ChatListViewModel`, `ChatListFragment`, layout và strings chat | Bổ sung bộ lọc và trạng thái OWNER | Hiển thị đúng khách/cơ sở/tin cuối, phân biệt rỗng thật với không có kết quả lọc và giải thích ngữ cảnh tài khoản. |
-| `UnreadChatsReaderImpl`, `ChatViewModel`, `SignedUrlCache` | Chỉnh vòng đời và state theo phiên | Không giữ badge/draft/media của tài khoản trước hoặc áp dụng kết quả bất đồng bộ đã bị hủy. |
-| `ChatOutbox` | Kiểm tra chủ sở hữu entry và kiểm tra lại trước gửi | Chặn gửi khi đã đăng xuất hoặc đổi tài khoản trong lúc upload; giữ retry của đúng tài khoản. |
-| `FirestoreChatRepository` | Chỉnh ánh xạ lỗi quyền inbox | Không biến lỗi permission thành hộp thư rỗng và làm mất khả năng báo lỗi/thử lại. |
-| Firestore, Supabase Storage và ba Edge Functions chat | Tái sử dụng backend thật | Giữ một chat cho mỗi cặp PLAYER–OWNER, dữ liệu tin/read ở Firestore và ảnh ở bucket private `chat-media`. Không tạo migration hoặc nới quyền. |
-| JVM tests, Deno/Rules tests hiện có, tasks 112 và bằng chứng | Bổ sung regression, chạy kiểm tra và ghi kết quả | Phân biệt lỗi tái hiện trước sửa, test đạt sau sửa, thao tác thật và giới hạn chưa xác minh. |
-| Hệ thống thông báo 100, schema song song, dữ liệu booking/venue legacy | Không mở rộng hoặc chỉnh sửa | Phần thông báo đầy đủ là phụ thuộc còn thiếu; hosted chỉ kiểm thử chat của cơ sở AUDIT đã được cho phép. |
+| Phần                                                                          | Quyết định                                          | Lý do                                                                                                                                         |
+| ----------------------------------------------------------------------------- | --------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `MainActivity`, `tab_owner_messages`, `ownerChatListFragment`, `nav_chat.xml` | Nối tab và tái sử dụng destination/graph hiện có    | Bỏ placeholder, giữ đúng tab và Back, tránh tạo màn hình chat OWNER trùng lặp.                                                                |
+| `ChatListViewModel`, `ChatListFragment`, layout và strings chat               | Bổ sung bộ lọc và trạng thái OWNER                  | Hiển thị đúng khách/cơ sở/tin cuối, phân biệt rỗng thật với không có kết quả lọc và giải thích ngữ cảnh tài khoản.                            |
+| `UnreadChatsReaderImpl`, `ChatViewModel`, `SignedUrlCache`                    | Chỉnh vòng đời và state theo phiên                  | Không giữ badge/draft/media của tài khoản trước hoặc áp dụng kết quả bất đồng bộ đã bị hủy.                                                   |
+| `ChatOutbox`                                                                  | Kiểm tra chủ sở hữu entry và kiểm tra lại trước gửi | Chặn gửi khi đã đăng xuất hoặc đổi tài khoản trong lúc upload; giữ retry của đúng tài khoản.                                                  |
+| `FirestoreChatRepository`                                                     | Chỉnh ánh xạ lỗi quyền inbox                        | Không biến lỗi permission thành hộp thư rỗng và làm mất khả năng báo lỗi/thử lại.                                                             |
+| Firestore, Supabase Storage và ba Edge Functions chat                         | Tái sử dụng backend thật                            | Giữ một chat cho mỗi cặp PLAYER–OWNER, dữ liệu tin/read ở Firestore và ảnh ở bucket private `chat-media`. Không tạo migration hoặc nới quyền. |
+| JVM tests, Deno/Rules tests hiện có, tasks 112 và bằng chứng                  | Bổ sung regression, chạy kiểm tra và ghi kết quả    | Phân biệt lỗi tái hiện trước sửa, test đạt sau sửa, thao tác thật và giới hạn chưa xác minh.                                                  |
+| Hệ thống thông báo 100, schema song song, dữ liệu booking/venue legacy        | Không mở rộng hoặc chỉnh sửa                        | Phần thông báo đầy đủ là phụ thuộc còn thiếu; hosted chỉ kiểm thử chat của cơ sở AUDIT đã được cho phép.                                      |
 
 ### Cách kiểm chứng
 
@@ -5444,5 +5454,681 @@ Bắt đầu bằng khảo sát module chat và đường điều hướng tab_o
 - Đối chiếu hosted backend xác nhận 1 chat DIRECT và 4 message ID khác nhau, đều `NORMAL`: 3 tin PLAYER gồm ảnh/tin offline và 1 phản hồi OWNER. Unread OWNER lần đầu là 2, sau trả lời PLAYER là 1; cuối phiên cả hai bằng 0. Ảnh hiển thị được cho hai thành viên, HEAD không đăng nhập qua endpoint public trả 400. Chỉ lưu metadata TEST, không token/signed URL/nội dung cá nhân. [Metadata cuối](../validation/owner-chat-2026-11-21/backend-final.json).
 - Bước cuối trên OWNER: badge 1 và bộ lọc Chưa đọc hiện đúng chat TEST; đọc xong badge biến mất và bộ lọc rỗng. Kết thúc ở OWNER, chọn Tất cả. [Ảnh badge](../validation/owner-chat-2026-11-21/screenshots/owner-unread-tab-badge.png), [ảnh sau đọc](../validation/owner-chat-2026-11-21/screenshots/owner-read-clears-filter-and-badge.png). Snapshot logcat cuối phiên không có dòng khớp AndroidRuntime:E/Firestore:W trong 2000 dòng gần nhất; không coi đây là thu log liên tục cả phiên.
 - Danh sách file sửa, bảng đối chiếu yêu cầu, ảnh và log đã lọc nằm trong [báo cáo tích hợp OWNER chat](../validation/owner-chat-2026-11-21/README.md). Chưa xác minh giao nhận/bấm thông báo FCM, SLA với hai máy mở chat đồng thời, hay thao tác tay các ca phân trang trên 30 tin, timeout offline đủ 60 giây, từ chối camera, report/recall/block và khóa/xóa tài khoản hoặc thu hồi OWNER thật. Nhiều cơ sở cùng OWNER được kiểm tra bằng Deno D1/D2, chưa đổi ngữ cảnh sang venue legacy trên hosted. Không đánh đồng các test tự động đó với kiểm thử máy thật.
+
+---
+
+## Mục 56: Triển khai phần dữ liệu, phân quyền và đề xuất phục hồi push Feature 100
+
+| Thông tin                | Nội dung                                                                                                                                                        |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-11-22                                                                                                                                                      |
+| Người thực hiện          | Minh Nhựt                                                                                                                                                       |
+| Nhóm tính năng liên quan | 10 (100 thông báo); đối chiếu 011 tài khoản, 091 chat, 112 vận hành chủ sân và 120 quản trị                                                                     |
+| Công cụ AI               | Codex (GPT-6), `$speckit-implement`, `$humanizer:humanizer`                                                                                                     |
+| Mục đích                 | Kiểm tra implementation hiện có, triển khai domain, repository inbox/preference và quyền truy cập; ghi lại quyết định còn thiếu cùng thiết kế job phục hồi push |
+| Nhánh Git                | `feat/100-notification`                                                                                                                                         |
+
+### Prompt đã dùng
+
+```text
+$speckit-implement
+
+Triển khai Feature 100 – Thông báo theo specs/100-notification/tasks.md.
+
+Đọc hướng dẫn repository, constitution và các tài liệu trong specs/100-notification/ trước khi sửa code. Kiểm tra implementation hiện tại để tái sử dụng phần đã có và xác định task còn thiếu.
+
+Yêu cầu về UI:
+- Đọc specs/100-notification/ui/README.md và mở trực tiếp hai ảnh:
+  - specs/100-notification/ui/10_notification_buoc1_trung-tam-thong-bao.png
+  - specs/100-notification/ui/10_notification_buoc2_cai-dat-thong-bao.png
+- Dùng các ảnh này làm chuẩn cho bố cục, màu sắc, typography, khoảng cách, icon, nội dung và trạng thái tương tác. Giữ thiết kế của màn hình trung tâm thông báo và cài đặt thông báo; tái sử dụng theme, resource và component hiện có.
+- Với trạng thái chưa được vẽ, triển khai theo spec và quy ước UI của ứng dụng. Đáp ứng loading, empty, error/retry, đã đọc/chưa đọc, light/dark và phone/w600dp.
+- Nếu ảnh và yêu cầu nghiệp vụ mâu thuẫn, nêu rõ điểm mâu thuẫn trước khi sửa phần liên quan. Không tự sửa tài liệu UI để hợp thức hóa implementation.
+
+Thực hiện theo dependency trong tasks.md, cập nhật [X] khi task đã hoàn thành và được kiểm chứng. Với các mục NEEDS DECISION, kiểm tra code và contract hiện hành để tìm quyết định đã được xác nhận, ghi lại bằng chứng. Nếu vẫn thiếu quyết định, báo rõ task bị chặn và tiếp tục phần độc lập; không tự đặt schema, quyền truy cập hay giao thức sự kiện.
+
+Triển khai cả luồng dữ liệu và hành vi theo spec. Chú ý việc tắt một loại chỉ ngăn push, thông báo vẫn được lưu trong trung tâm; BOOKING_NEW không cho tắt và PROMOTION mặc định tắt với tài khoản mới.
+
+Chạy build và các kiểm thử phù hợp theo quickstart.md. Đối chiếu screenshot hai màn hình với ảnh UI gốc, sửa các sai lệch trước khi kết thúc. Báo rõ kiểm tra nào chưa chạy được và lý do.
+
+Khi hoàn tất, tóm tắt phần đã triển khai, kết quả kiểm thử, bằng chứng đối chiếu UI và các task còn bị chặn. Chỉ báo hoàn thành toàn bộ khi các task bắt buộc đã được thực hiện và xác minh
+```
+
+### Tóm tắt phản hồi của AI
+
+- Đọc constitution, tài liệu Feature 100 và mở trực tiếp hai ảnh UI. Checklist yêu cầu có 24/24 mục đã đánh dấu. Script prerequisite ban đầu trỏ tới Feature 112; chạy lại với đường dẫn Feature 100 và không sửa context đã lưu.
+- Kiểm tra stack hiện có, xác nhận Hilt, Coroutines, Firebase và các thư viện test đã có. Tìm thấy hook gỡ token khi đăng xuất và logic xóa subcollection notifications khi xóa tài khoản; chưa kiểm thử đầy đủ hai luồng này trong phạm vi Feature 100.
+- Thêm domain đủ 19 type, interface repository và quy tắc preference. Viết repository Firestore tải inbox theo trang 30 mục, mới nhất trước; đánh dấu một hoặc toàn bộ inbox đã đọc, kể cả các trang chưa hiển thị. Repository preference cập nhật từng key và giữ các key ngoài nhóm; `BOOKING_NEW` không cho tắt.
+- Bổ sung Rules để chủ hộp thư đọc và chỉ sửa `isRead` dạng boolean; chặn tạo/xóa từ client, sửa nội dung và truy cập chéo tài khoản. Tái sử dụng quyền sửa `notificationPrefs` đã có trong Rules hồ sơ và kiểm tra các trường được bảo vệ vẫn bị chặn.
+- Ghi bằng chứng cho các task NEEDS DECISION. Producer đang dùng cả `userId` và `recipientUid`; contract chat loại người mute/đang xem trước khi gọi notification, trong khi spec 100 yêu cầu vẫn lưu inbox. Chưa coi các cách xử lý riêng ở producer là contract chung đã được xác nhận.
+- Soạn thiết kế job server ghi cùng transaction với inbox, có lease, retry và phục hồi sau crash. Tài liệu nêu khả năng gửi push lặp nếu worker chết sau khi FCM nhận nhưng trước khi ghi kết quả; còn thiếu quyết định về receipt theo token, event identity và quyền riêng tư payload.
+- Cập nhật 9/56 task đã đủ bằng chứng. Feature 100 còn thiếu UI, điều hướng, backend delivery/reminder và kiểm thử tích hợp; chưa báo hoàn thành toàn bộ.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần                                                                                     | Quyết định                                      | Lý do                                                                                                                                                 |
+| ---------------------------------------------------------------------------------------- | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Notification.kt`, domain repository interfaces và preference mapping                    | Bổ sung theo danh mục và quyết định đã duyệt    | Giữ đủ 19 type, mặc định tắt PROMOTION, khóa BOOKING_NEW và xác định trạng thái nhóm ON/OFF/MIXED.                                                    |
+| `FirestoreNotificationRepository.kt`                                                     | Bổ sung query, cursor và thao tác đọc           | Chỉ truy cập inbox của tài khoản hiện tại, tải 30 mục/trang và duyệt toàn bộ trang khi đánh dấu tất cả đã đọc. Kiểm thử hành vi repository còn thiếu. |
+| `FirestoreNotificationPreferencesRepository.kt`                                          | Bổ sung đọc/lưu từng key                        | Áp dụng fallback đã duyệt, giữ preference ngoài nhóm và tuân thủ server updatedAt của Rules hồ sơ.                                                    |
+| `firestore.rules`, `notification-security.test.ts`                                       | Thêm quyền inbox và kiểm thử hồi quy preference | Cho phép đúng chủ hộp thư, chỉ sửa isRead; không mở quyền tạo notification cho client hoặc nới trường hồ sơ được bảo vệ.                              |
+| `NotificationContractTest.kt`                                                            | Bổ sung unit test                               | Kiểm tra catalog, mặc định, khóa BOOKING_NEW, fallback thiếu key và trạng thái checkbox gộp.                                                          |
+| `implementation-review.md`, `research.md`, `data-model.md`, `tasks.md` trong Feature 100 | Ghi bằng chứng, quyết định và tiến độ           | Phân biệt phần đã xác minh với contract còn thiếu; giữ nguyên marker checklist của reviewer.                                                          |
+| `delivery-state-proposal.md`                                                             | Soạn đề xuất để duyệt                           | Cần chốt schema job và giao kèo producer trước khi triển khai phục hồi push bền vững. Chưa thêm collection vào CSDL hoặc code.                        |
+| `.gitignore`                                                                             | Thêm `.kotlin/`                                 | Bỏ qua trạng thái compiler sinh ra khi kiểm chứng.                                                                                                    |
+| Hai ảnh UI gốc và tài liệu `ui/`                                                         | Đọc, giữ nguyên                                 | Dùng làm nguồn đối chiếu; chưa có màn hình đã triển khai để chụp ảnh nghiệm thu.                                                                      |
+| Backend notification, schema delivery mới và deploy                                      | Chưa thực hiện                                  | Event identity, retry, receipt theo token và payload privacy chưa được chốt đầy đủ; không tự mở rộng schema hoặc giao thức.                           |
+
+### Cách kiểm chứng
+
+- Chạy `testDebugUnitTest assembleDebug lintDebug` trước khi thêm hai data repository: BUILD SUCCESSFUL, 1.648 test, 0 failure/error, 2 skipped; lint mới có 0 errors và 849 warnings. Trong lúc chờ, AI đã đọc nhầm báo cáo lint cũ và đính chính trước khi xác nhận kết quả lượt chạy mới.
+- Sau khi thêm repository và quy tắc preference đã duyệt, chạy `:app:testDebugUnitTest --tests com.example.booking_app.feature.notification.NotificationContractTest :app:assembleDebug`: BUILD SUCCESSFUL, 5/5 test tập trung đạt. Kết quả này kiểm tra logic thuần và khả năng build; chưa thay thế test hành vi repository hoặc lint lại sau các thay đổi cuối.
+- Firebase Emulator project `demo-smashnow` chạy `vitest run test/notification-security.test.ts test/users-profile.test.ts`: 2 file, 26/26 test đạt. Các ca kiểm tra đọc/list, mark-one/mark-all, chặn người khác/khách/admin đọc chéo, chặn sửa field server hoặc isRead sai kiểu, sửa preference đúng chủ và bảo vệ trường hồ sơ.
+- Lần chạy CLI trong sandbox lỗi quyền truy cập registry/cache; lần chạy ngoài sandbox với Java mặc định bị chặn vì firebase-tools yêu cầu Java 21 trở lên. Chạy lại bằng JBR 25 của Android Studio thì Emulator đạt. Không dùng project Firebase thật để chạy test.
+- Đã chạy `git diff --check`. Bằng chứng và giới hạn được ghi trong [implementation review](../../specs/100-notification/implementation-review.md); thiết kế chờ duyệt nằm trong [delivery-state proposal](../../specs/100-notification/delivery-state-proposal.md).
+- Chưa chạy connected UI tests, đối chiếu screenshot phone/w600dp ở light/dark, Supabase local delivery/reminder, FCM thật hoặc đầy đủ quickstart. Hai màn hình, các trạng thái tương tác và điều hướng chưa được triển khai. DataStore cache, lifecycle token đầy đủ, event identity và schema phục hồi còn việc cần chốt hoặc kiểm chứng. Không tính việc mở ảnh tham khảo là bằng chứng UI đã đạt.
+
+---
+
+## Mục 57: Tiếp tục Feature 100, hoàn thiện inbox/settings và kiểm thử Android
+
+| Thông tin                | Nội dung                                                                                                                                     |
+| ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Ngày                     | 2026-11-22                                                                                                                                   |
+| Người thực hiện          | Minh Nhựt                                                                                                                                   |
+| Nhóm tính năng liên quan | 10 (100 thông báo); đối chiếu 011 tài khoản, booking/drop-in, 070 đánh giá, 091 chat và các nguồn owner/admin                                |
+| Công cụ AI               | Codex (GPT-6), `$speckit-implement`, `$humanizer:humanizer`                                                                                  |
+| Mục đích                 | Hoàn thiện luồng Android xem và cài đặt thông báo, kiểm thử repository/state/route, đối chiếu ảnh trên điện thoại và ghi rõ phần còn bị chặn |
+| Nhánh Git                | `feat/100-notification`                                                                                                                      |
+
+### Prompt đã dùng
+
+```text
+$speckit-implement
+
+Tiếp tục Feature 100 từ tiến độ hiện tại. Đọc specs/100-notification/implementation-review.md, tasks.md và code đã có trước khi sửa.
+
+Ưu tiên hoàn thiện luồng Android xem thông báo và cài đặt thông báo:
+
+1. Kiểm tra hai Firestore repository hiện có. Bổ sung kiểm thử hành vi cho phân trang 30 mục, thứ tự mới nhất trước, đánh dấu một/tất cả đã đọc qua nhiều trang, lỗi mạng và đổi tài khoản. Kiểm thử preference mặc định, cập nhật từng loại và BOOKING_NEW luôn bật. Chỉ đóng T027/T030/T036/T039 khi phần việc tương ứng đã đủ bằng chứng; giữ rõ phần còn phụ thuộc quyết định DataStore trong T012.
+
+2. Triển khai inbox và settings: DI, ViewModel, Fragment, adapter, XML resources và navigation theo T032–T034, T041–T042. Đọc ui/README.md và mở trực tiếp hai PNG trong specs/100-notification/ui/ trước khi làm giao diện. Giữ bố cục và các nhóm cài đặt như ảnh, theo lựa chọn đã ghi trong implementation-review.md. Áp dụng hành vi nhóm đã được duyệt, lưu preference theo từng type và giữ BOOKING_NEW không thể tắt.
+
+3. Hoàn thiện loading, content, empty, error/retry và trạng thái đã đọc/chưa đọc. Với T035, triển khai route có identifier và quyền truy cập đã xác nhận; dùng chi tiết title/body đã lưu làm fallback khi nguồn không còn khả dụng. Ghi rõ loại thông báo nào còn thiếu contract.
+
+4. Bổ sung kiểm thử UI theo T028/T038. Chạy trên phone và w600dp ở light/dark, chụp hai màn hình rồi đối chiếu với ảnh gốc. Sửa sai lệch và lưu bằng chứng cùng kết quả kiểm thử.
+
+Các quyết định đã duyệt về phân trang, fallback preference và hành vi nhóm được ghi trong implementation-review.md; tiếp tục dùng chúng. Delivery-state-proposal.md vẫn là đề xuất chờ duyệt schema. Tiếp tục phần Android độc lập trong khi giữ nguyên trạng thái chặn của backend.
+
+Chạy kiểm thử phù hợp, assembleDebug và lintDebug sau thay đổi. Cập nhật tasks.md và implementation-review.md theo kết quả thực tế. Khi kết thúc, báo task đã hoàn thành, kết quả kiểm thử, đường dẫn screenshot và phần còn bị chặn.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Rà lại code và quyết định đã duyệt, mở trực tiếp hai PNG gốc. Chuyển hai repository sang `SessionManager`, dùng đọc SERVER, kiểm tra UID sau thao tác bất đồng bộ và từ chối cursor của tài khoản cũ. Bổ sung test cho query 30 mục, thứ tự, mark-one/mark-all qua nhiều trang, lỗi mạng và preference.
+- Thêm DI, ViewModel StateFlow, Fragment, ListAdapter/DiffUtil, XML/resources và navigation cho inbox/settings. Màn hình có loading, content, empty và error/retry; thao tác lưu lỗi giữ giá trị trước đó. Cài đặt hệ điều hành được hiển thị riêng với preference trong hồ sơ.
+- Giữ các nhóm cài đặt như ảnh và hành vi nhóm đã duyệt. Khi phát hiện ảnh chỉ bao phủ 15/19 type, AI nêu phần thiếu; người dùng duyệt thêm hàng Kết quả hồ sơ chủ sân trong nhóm Chủ sân và hàng Thông báo hệ thống cuối màn hình. Hai hàng này bao phủ ba OWNER type còn lại và SYSTEM; BOOKING_NEW vẫn khóa bật.
+- Nối nút chuông trong header chung, deep link settings từ tài khoản và toolbar inbox. Giữ footer ở inbox, ẩn khi vào settings. Route cho bốn loại kết quả/nhắc booking, bốn loại drop-in và CHAT_MESSAGE đọc lại nguồn từ SERVER, kiểm tra quyền rồi mở màn liên quan; các trường hợp chưa đủ contract dùng title/body đã lưu.
+- Kiểm thử máy thật tìm ra lỗi tải thành công vẫn giữ `loading=true`, làm spinner không tắt và che trạng thái rỗng. AI sửa state và thêm test hồi quy. Sau khi mở ảnh chụp, tiếp tục chỉnh inset, kích thước icon 40dp, khoảng cách hàng và tint để icon hiện đúng ở light/dark.
+- Cập nhật thêm T027, T028, T030, T032 đến T034, T036, T038, T041 và T042, đưa tiến độ lên 19/56 task. T012/T039 còn phần quyết định DataStore cache; T035 còn mười type chưa đủ hợp đồng route. Ghi nhận producer admin đang lưu createdAt dạng chuỗi ISO, trái contract Timestamp; luồng dữ liệu thực cần được chuẩn hóa trước khi nghiệm thu.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần                                                                                      | Quyết định                                   | Lý do                                                                                                                      |
+| ----------------------------------------------------------------------------------------- | -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Hai Firestore repository và `SessionManager`                                              | Chỉnh cách lấy UID, bổ sung kiểm thử hành vi | Dùng phiên chung, giữ query 30 mục mới nhất trước, chặn kết quả/cursor của tài khoản cũ và đánh dấu đọc qua toàn bộ trang. |
+| `NotificationModule`, `NotificationSession`, ViewModel và Fragment inbox/settings         | Bổ sung DI, state và xử lý sự kiện           | Tách Firebase khỏi UI, thu thập flow theo lifecycle, giữ giá trị trước lỗi và thử lại đúng thao tác.                       |
+| `NotificationAdapter`, XML và resources notification                                      | Bổ sung theo ảnh và theme ứng dụng           | Hiển thị đọc/chưa đọc, đủ trạng thái tải/rỗng/lỗi, dùng lại typography, màu DayNight và gutter phone/w600dp.               |
+| `notificationGroups` và hai hàng cài đặt bổ sung                                          | Triển khai theo duyệt của người dùng         | Bao phủ đủ 19 type, lưu từng key, hỗ trợ trạng thái nhóm trung gian và giữ BOOKING_NEW riêng, luôn bật.                    |
+| `MainTabHeader`, `MainActivity`, `nav_main.xml`, `nav_player.xml`, `nav_notification.xml` | Nối điểm vào, deep link và footer            | Mở inbox từ nút chuông, mở settings từ toolbar/tài khoản; giữ menu điều hướng dùng chung và Back đúng inbox.               |
+| `FirestoreNotificationRouteResolver` và fallback title/body                               | Bổ sung route cho nguồn đã xác nhận          | Đọc lại source bằng SERVER, kiểm tra quyền/ownership/membership; dùng chi tiết đã lưu khi không mở được nguồn.             |
+| JVM tests, `NotificationUiTest`, host debug và `validate-device.ps1`                      | Bổ sung kiểm thử và lưu bằng chứng           | Kiểm tra repository/state/route, thao tác Fragment và MainActivity thật với dữ liệu TEST, chụp ảnh và khôi phục density.   |
+| `tasks.md`, `implementation-review.md`, contract/data-model và `validation/`              | Cập nhật tiến độ, quyết định và kết quả      | Đánh dấu task đã đủ bằng chứng; giữ rõ DataStore, route còn thiếu và vấn đề kiểu createdAt từ producer.                    |
+| Backend delivery/reminder, schema job, Rules và index                                     | Giữ phạm vi Android của lượt này             | Delivery-state vẫn chờ duyệt; việc chuẩn hóa dữ liệu producer và nghiệm thu luồng backend còn mở.                          |
+
+### Cách kiểm chứng
+
+- Lệnh `testDebugUnitTest assembleDebug lintDebug` cuối cùng báo BUILD SUCCESSFUL: 252 suite, 1.666 ca, 0 failure/error và 2 skipped. Hai ca trong `DataStoreSessionPrefsTest` có điều kiện bỏ qua Windows từ trước vì thao tác đổi tên file đích của bộ test; lượt này giữ nguyên điều kiện đó. Năm suite notification có 21/21 ca đạt, không skip. Lint có 0 errors và 856 warnings. [Kết quả tổng hợp](../../specs/100-notification/validation/results.json), [tóm tắt build](../../specs/100-notification/validation/android-build-summary.log).
+- Ban đầu chưa có thiết bị/AVD; sau khi người dùng kết nối vivo V2247 Android 15, chạy package TEST riêng `com.example.booking_app.adminlocal`. Bộ 8 ca chạy trên phone 393dp và w600dp 720dp, mỗi cấu hình có light/dark, tổng 32/32 ca đạt. w600dp dùng density 240 trên cùng điện thoại, không phải tablet vật lý. Các ca kiểm tra tải/rỗng/lỗi/retry, đọc một/tất cả, lỗi lưu, nhóm trung gian, BOOKING_NEW khóa bật, hai hàng mới, navigation/Back và điểm vào/footer của MainActivity.
+- Repository thông báo, UID stream và resolver trong UI test dùng fake. Phần core dùng cấu hình demo/local với project `demo-admin-repair`; ca MainActivity chạy phần core ở chế độ khách cùng dữ liệu thông báo giả. Kiểm thử quyền nguồn trong JVM dùng SDK mock. Kết quả UI chưa nghiệm thu đọc inbox/nguồn từ backend thực; lượt này không chạy server delivery/reminder, FCM thật hay triển khai schema job.
+- Ca rỗng thất bại ở lượt đầu. AI ban đầu nhận định assertion chạy sớm, nhưng bước chờ vẫn tái hiện lỗi; kiểm tra state mới xác định được `loading=true` còn sót sau tải thành công. Đã giữ [log thất bại ban đầu](../../specs/100-notification/validation/device/phone-light/initial-failure.log) và [log tái hiện lỗi loading](../../specs/100-notification/validation/device/phone-light/loading-regression-failure.log); các file `instrumentation.log` của bốn cấu hình là kết quả đạt trên bản cuối.
+- Mở ảnh gốc và ảnh TEST để đối chiếu header, hàng xanh chưa đọc, hàng đã đọc, chấm vàng, icon, typography, card và checkbox. Đã lưu 20 PNG gồm ảnh Fragment, khung MainActivity và phần cài đặt bổ sung sau tương tác. Menu mẫu có Tài khoản, còn menu hiện hành dùng Tìm kiếm và avatar tài khoản; giữ menu chung theo ứng dụng và ghi rõ khác biệt. Hai hàng mới có duyệt riêng của người dùng; tài liệu UI gốc giữ nguyên. [Ảnh inbox phone light](../../specs/100-notification/validation/device/phone-light/notification-393dp-light-inbox-shell.png), [ảnh settings đủ nhóm ở w600dp dark](../../specs/100-notification/validation/device/tablet-dark/notification-720dp-dark-settings.png), [báo cáo đối chiếu](../../specs/100-notification/validation/android-2026-11-22.md).
+- Lưu hash ảnh và APK TEST, kiểm tra hash sau khi ghi kết quả. Khôi phục density về 440, không còn override; kích thước vẫn 1080x2388 và font scale 1.0. [Metadata thiết bị và APK](../../specs/100-notification/validation/device-metadata.json). Đã chạy `git diff --check`; checklist reviewer và trạng thái chặn backend/schema được giữ nguyên.
+
+---
+
+## Mục 58: Tiếp tục Feature 100, hoàn thiện quyền thông báo và kiểm chứng producer
+
+| Thông tin                | Nội dung |
+| ------------------------ | -------- |
+| Ngày                     | 2026-11-22 |
+| Người thực hiện          | Minh Nhựt |
+| Nhóm tính năng liên quan | 10 (100 thông báo); đối chiếu 011 tài khoản, 070 đánh giá, 090 nhóm, 091 chat và các nguồn owner/admin |
+| Công cụ AI               | Codex (GPT-6), `$speckit-implement`, `$humanizer:humanizer` |
+| Mục đích                 | Bổ sung routing và quyền Android, kiểm chứng xóa tài khoản/index, sửa kiểu createdAt ở producer và chuẩn bị các đề xuất backend còn thiếu |
+| Nhánh Git                | `feat/100-notification` |
+
+### Prompt đã dùng
+
+```text
+$speckit-implement
+
+Tiếp tục Feature 100 từ trạng thái hiện tại trong specs/100-notification/implementation-review.md và tasks.md. Đọc phần Android continuation và validation/android-2026-11-22.md trước khi làm. Hiện đã hoàn thành 19/56 task.
+
+Ưu tiên phần còn thiếu có thể triển khai độc lập:
+
+1. Rà soát T013/T035, đối chiếu producer, payload và navigation hiện có để hoàn thiện routing cho các loại còn thiếu. Kiểm tra quyền truy cập trước khi mở nguồn; fallback về title/body đã lưu nếu nguồn không còn khả dụng. Ghi rõ contract chưa xác nhận, đặc biệt REVIEW_REPLY/REVIEW_REPLIED và routing hồ sơ chủ sân.
+
+2. Triển khai T050: xin quyền POST_NOTIFICATIONS theo quy ước ứng dụng, xử lý từ chối và quay lại từ cài đặt hệ thống. Inbox và preference vẫn hoạt động khi chưa được cấp quyền. Bổ sung kiểm thử cho các nhánh này.
+
+3. Kiểm tra T054 bằng harness local/emulator: xóa tài khoản phải dọn inbox, token và preference liên quan. Với T055, xác minh query đã duyệt có cần index bổ sung hay không và ghi kết luận có bằng chứng.
+
+4. Điều tra các producer ghi notification.createdAt dạng chuỗi. Xác định phạm vi ảnh hưởng, bổ sung kiểm thử và sửa producer theo contract Timestamp hiện hành. Chuẩn bị phương án chuyển đổi dữ liệu cũ có thể review; chưa chạy migration trên dữ liệu thật.
+
+Với backend và các mục NEEDS DECISION:
+- Đối chiếu code/contract mới nhất để tìm quyết định đã được xác nhận.
+- delivery-state-proposal.md vẫn chờ duyệt schema; không coi việc chọn hướng delivery job là phê duyệt collection/fields.
+- Hoàn thiện đề xuất còn thiếu, gồm theo dõi thành công/thất bại theo từng token, event identity và ranh giới transaction của producer.
+- Tiếp tục phần độc lập. Khi cần người dùng quyết định, trình bày lựa chọn cụ thể, phương án đề xuất và task được mở khóa.
+
+Giữ UI theo specs/100-notification/ui/ và các ngoại lệ đã được duyệt trong báo cáo validation. Chạy kiểm thử phù hợp với thay đổi; chỉ chạy lại ma trận UI khi có thay đổi ảnh hưởng giao diện.
+
+Cập nhật tasks.md và implementation-review.md theo bằng chứng thực tế. Cuối lượt báo rõ task hoàn thành thêm, kết quả kiểm thử, phần còn bị chặn và quyết định cần chốt để triển khai backend.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Đọc lại tài liệu và code, mở hai ảnh UI gốc. Bổ sung route REVIEW_REMINDER qua bookingId và route phản hồi đánh giá qua reviewId/venueId. Trước khi mở nguồn, đọc từ SERVER và kiểm tra quyền của phiên hiện tại; review bị ẩn, nguồn bị xóa hoặc không còn quyền thì dùng title/body đã lưu.
+- Phát hiện producer và contract tích hợp 070 dùng REVIEW_REPLY trong khi spec dùng REVIEW_REPLIED. Sau khi người dùng duyệt, đổi producer sang tên chuẩn và cho Android đọc/routing tên cũ. Mười một type đã có route nguồn; T013/T035 còn mở vì một số loại chưa đủ identifier hoặc màn đích. SYSTEM dùng chi tiết đã lưu.
+- Thêm xin quyền Android 13+ tại nút trong màn cài đặt. Khi từ chối, giữ cảnh báo trên màn hình và chuyển nút sang mở cài đặt hệ thống. Preference và inbox vẫn dùng được; trạng thái quyền cập nhật khi quay về ứng dụng. Lưu trạng thái từ chối qua việc tạo lại Fragment, giữ riêng quyết định DataStore cache còn thiếu.
+- Kiểm thử luồng delete-account trên emulator với 405 thông báo, vượt một batch dọn dẹp. Profile chứa token/preference và toàn bộ inbox được xóa, dữ liệu của người khác còn nguyên. Query 30 mục dùng index đơn mặc định; không cần thêm index. Contract Broadcast hiện có của Feature 120 xác nhận điều kiện ACTIVE, không đang xóa và cách retry fan-out, đủ bằng chứng đóng T009.
+- Sửa riêng createdAt của notification ở ba producer admin, bao phủ SYSTEM và ba OWNER type, sang Timestamp. Thêm kiểm thử handler, tái hiện lỗi thứ tự khi trộn chuỗi/Timestamp và chuẩn bị planner sửa dữ liệu cũ offline với điều kiện updateTime. Chưa đọc hoặc chuyển đổi dữ liệu thật.
+- Bổ sung đề xuất receipt từng token, retry khi chỉ một phần thiết bị gửi thành công và ranh giới transaction của từng producer. Job/receipt schema cùng các quyết định identity, token, chat, quyền Admin và nội dung lock screen vẫn chờ duyệt. Hoàn thành thêm T009, T050, T054, T055, đưa tiến độ từ 19/56 lên 23/56 task.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+| ---- | ---------- | ----- |
+| `FirestoreNotificationRouteResolver`, `NotificationType` và route tests | Thêm route review và đọc tên sự kiện cũ | Dùng identifier đã xác nhận, kiểm tra lại nguồn/quyền và giữ fallback cho dữ liệu cũ hoặc nguồn không còn truy cập được. |
+| Producer `review`, reply tests và contract tích hợp 070 | Chuẩn hóa REVIEW_REPLIED theo duyệt của người dùng | Thống nhất tên với spec; Android vẫn nhận REVIEW_REPLY đã lưu. |
+| `NotificationSettingsFragment`, permission policy, manifest và resource | Thêm xin quyền, xử lý từ chối và quay về từ OS settings | Quyền hệ điều hành không ngăn người dùng đọc inbox hoặc sửa preference. |
+| `NotificationPermissionUiTest` và `validate-permission.ps1` | Thêm kiểm thử máy thật trên package cô lập | Kiểm tra từ chối/cấp quyền, tạo lại màn hình, mở cài đặt thật và cập nhật trạng thái khi quay về. |
+| Delete-account và Firestore query tests | Thêm ca dọn nhiều batch, phân trang có Timestamp trùng và dữ liệu cũ sai kiểu | Xác minh dọn đúng tài khoản, không lặp mục qua trang và thấy rõ ảnh hưởng của chuỗi thời gian. |
+| Ba handler admin và producer regression tests | Sửa riêng notification.createdAt sang Date/Timestamp | Giữ thời điểm gốc, retry không nhân đôi thông báo hoặc đặt lại isRead. |
+| `plan-timestamp-repair.ts`, planner tests và đề xuất chuyển đổi | Chuẩn bị kế hoạch offline để review | Chỉ sửa createdAt với precondition updateTime; giữ nguyên nội dung và trạng thái đọc, chưa thực thi trên dữ liệu thật. |
+| `delivery-state-proposal.md` | Bổ sung receipt từng token và bảng identity/transaction | Làm rõ giới hạn phục hồi sau crash, phần đã gửi thành công và những quyết định từng producer còn thiếu; chưa tạo storage mới. |
+| `tasks.md`, `implementation-review.md` và `validation/` | Cập nhật task cùng bằng chứng cuối | Phân biệt phần đã kiểm chứng với routing, DataStore và backend còn bị chặn; giữ nguyên hai PNG và tài liệu UI gốc. |
+
+### Cách kiểm chứng
+
+- `testDebugUnitTest assembleDebug lintDebug` đạt trên code ứng dụng cuối: 253 suite, 1.671 ca, 0 failure/error, 2 skip Windows cũ của DataStore session. Sáu suite notification có 26/26 ca đạt. Lint có 0 lỗi, 856 cảnh báo; thêm guard API 33 để tránh cảnh báo quyền không có ở Android cũ. Sau chỉnh harness chụp ảnh, build instrumentation và lint cũng đạt. [Kết quả tổng hợp](../../specs/100-notification/validation/continuation-results.json), [tóm tắt kiểm chứng](../../specs/100-notification/validation/continuation-verification.log).
+- Deno đạt 21/21 ca delete-account trên Auth/Firestore Emulator, 28/28 ca producer/admin/planner và 5/5 ca review reply. Firestore Rules/profile/query đạt 28/28, gồm phân trang 65 mục thành 30/30/5 không trùng và ca sửa riêng createdAt khôi phục thứ tự. Test dùng project demo, emulator loopback hoặc transport REST giả, không gửi FCM thật. Pre-33 có kiểm thử policy JVM, chưa chạy trên thiết bị Android cũ riêng.
+- Trên vivo V2247 Android 15, package `com.example.booking_app.adminlocal` đạt 8/8 ca UI regression phone/light và hai ca permission. Hai ca mới kiểm tra từ chối vẫn sửa preference/mở inbox được, tạo lại màn hình giữ nút OS settings, quay về sau cấp quyền cập nhật đúng và cấp quyền từ hộp thoại Android giữ mặc định PROMOTION/BOOKING_NEW. Repository và dữ liệu UI dùng fake; quyền Android và trang cài đặt hệ thống là thật. Ma trận phone/w600dp light/dark của lượt trước được giữ vì bố cục không đổi.
+- Giữ log các lượt thất bại do chờ UI từ chối, lồng ActivityScenario và nhận diện sai package cài đặt vivo. Đã sửa harness dùng một ActivityScenario cùng Fragment back stack và nhận diện trang quyền OEM. Một lượt bị gián đoạn do điện thoại được sử dụng; chạy lại sau khi người dùng xác nhận thời điểm. Lint từng gặp lỗi detector ExperimentalDetector; các lượt sau đạt mà không tắt detector hoặc thêm skip.
+- Mở trực tiếp ảnh sau kiểm thử, phát hiện ảnh quay về bị chụp giữa animation, rồi thêm thời gian chờ và chụp lại. Bốn ảnh cuối có SHA-256 trong file kết quả; ảnh lỗi chẩn đoán được tách khỏi bằng chứng cuối. [Ảnh từ chối quyền](../../specs/100-notification/validation/continuation-device/notification-permission-denied.png), [inbox khi chưa có quyền](../../specs/100-notification/validation/continuation-device/notification-permission-denied-inbox.png), [quay về từ cài đặt](../../specs/100-notification/validation/continuation-device/notification-permission-granted-return.png), [báo cáo validation](../../specs/100-notification/validation/continuation-2026-11-22.md).
+- Đối chiếu code và contract để đóng T009; T007 vẫn chờ giải quyết mâu thuẫn quyền Admin trong CSDL. T013/T035 còn thiếu contract route, T012/T039 còn quyết định DataStore cache. [Đề xuất delivery](../../specs/100-notification/delivery-state-proposal.md) và [đề xuất chuyển đổi Timestamp](../../specs/100-notification/timestamp-repair-proposal.md) ghi rõ phần chưa duyệt. Chưa triển khai job/receipt, chưa deploy backend hoặc chạy migration dữ liệu thật; chưa nghiệm thu toàn bộ Feature 100.
+
+---
+
+## Mục 59: Tiếp tục Feature 100, cache DataStore theo UID và routing nhóm
+
+| Thông tin                | Nội dung |
+| ------------------------ | -------- |
+| Ngày                     | 2026-11-23 |
+| Người thực hiện          | Minh Nhựt |
+| Nhóm tính năng liên quan | 10 (100 thông báo); đối chiếu 011 tài khoản, 090 nhóm, 070 đánh giá, 091 chat và các nguồn owner/admin |
+| Công cụ AI               | Codex (GPT-6), `$speckit-implement`, `$humanizer:humanizer` |
+| Mục đích                 | Triển khai cache và routing đã được duyệt, rà lifecycle token và thiết kế delivery, kiểm chứng planner offline cùng giao diện |
+| Nhánh Git                | `feat/100-notification` |
+
+### Prompt đã dùng
+
+```text
+$speckit-implement
+
+Tiếp tục Feature 100 từ tiến độ 23/56 task. Đọc hướng dẫn repository, constitution, tasks.md, implementation-review.md và validation/continuation-2026-11-22.md trước khi sửa code. Kiểm tra implementation hiện có để tái sử dụng và xác định phần còn thiếu.
+
+Ưu tiên:
+
+1. Rà soát T013/T035 với producer, payload, navigation và quyền truy cập hiện hành. Hoàn thiện route đã đủ contract; ghi rõ phần còn thiếu của BOOKING_NEW, PROMOTION, REVIEW_NEW, GROUP_ACTIVITY và OWNER_*. Giữ REVIEW_REPLIED là tên chuẩn, tương thích REVIEW_REPLY cũ khi đọc/routing. Nguồn không còn truy cập được phải fallback về title/body đã lưu.
+
+2. Đối chiếu các task NEEDS DECISION với contract mới nhất. Với quyết định chưa có, trình bày lựa chọn cụ thể, phương án đề xuất, thay đổi contract/schema cần thiết và task được mở khóa. Tiếp tục phần độc lập trong lúc chờ phản hồi.
+
+3. Hoàn thiện phần thiết kế backend trong delivery-state-proposal.md: kiểm tra receipt từng token, retry/lease, partial success, event identity, ranh giới transaction và cleanup khi xóa tài khoản. Phân biệt producer đang ghi inbox trong transaction với callback sau commit. Đề xuất vẫn chưa được duyệt schema; không tự tạo collection, fields, event protocol hoặc worker.
+
+4. Làm rõ phần DataStore cache còn thiếu trong T012/T039 và lifecycle token T011/T051/T052 bằng code/contract Feature 011. Không tự đặt chính sách cache, logout/account-switch hoặc quyền ghi token.
+
+5. Rà soát timestamp-repair-proposal.md và planner offline. Bổ sung kiểm thử nếu phát hiện thiếu sót; chưa đọc hoặc chạy migration trên dữ liệu thật.
+
+Giữ UI và các ngoại lệ đã được duyệt trong specs/100-notification/ui/ và báo cáo validation. Nếu sửa giao diện, đọc ui/README.md, mở trực tiếp hai PNG gốc và đối chiếu screenshot sau thay đổi. Chỉ chạy lại ma trận phone/w600dp light/dark khi thay đổi ảnh hưởng giao diện.
+
+Bổ sung kiểm thử hành vi cho phần triển khai mới. Chạy kiểm thử phù hợp, assembleDebug và lintDebug; dùng emulator/fake cho backend. Chỉ đánh dấu [X] khi toàn bộ phần việc của task đã được kiểm chứng. Giữ nguyên các task còn thiếu contract hoặc bằng chứng.
+
+Cập nhật tasks.md và implementation-review.md theo kết quả thực tế. Cuối lượt báo task hoàn thành thêm, kết quả kiểm thử, đường dẫn bằng chứng, phần còn bị chặn và quyết định cần chốt tiếp theo. Không tự commit, push, deploy hoặc chạy migration thật.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Rà tài liệu và code hiện tại, kiểm tra checklist đạt 24/24. Người dùng duyệt routing GROUP_ACTIVITY theo catalog 090 và chính sách DataStore cache trong lượt này. Hai quyết định chỉ áp dụng cho Android; schema delivery và giao thức sự kiện vẫn chờ duyệt.
+- Bổ sung routing nhóm bằng đọc SERVER. JOIN_REQUESTED cần membership OWNER/ADMIN hiện tại; quyết định tham gia hoặc mời ra mở trang nhóm còn đọc được; sự kiện tạo/sửa phải có bài nguồn còn tồn tại và có quyền đọc. Sự kiện đã xóa, subtype không biết, identifier sai hoặc phiên đổi tài khoản dùng title/body đã lưu. Giữ tên chuẩn REVIEW_REPLIED và alias đọc/routing REVIEW_REPLY cũ.
+- Thêm cache preference theo UID vào DataStore đang có. Firestore là nguồn chuẩn; chỉ dùng cache khi đọc server lỗi mạng/timeout, hiện cảnh báo và khóa chỉnh sửa. Retry server thành công mở lại checkbox. BOOKING_NEW luôn bật, PROMOTION mặc định tắt. Cache cập nhật sau server thành công và không biến lỗi quyền hoặc profile mất thành dữ liệu tải thành công.
+- Chuyển ghi preference sang transaction, chỉ sửa các key được chọn và updatedAt, để tránh queue ghi offline của direct update(). Dọn namespace cache qua đường session cleanup hiện có, gồm cả ACCOUNT_DELETED khi hook có auth bị bỏ qua. Epoch cục bộ chặn request bắt đầu trước logout ghi lại cache đã xóa; dữ liệu welcome và password-reset được giữ theo quy ước cũ.
+- Tái hiện ba lỗi planner: nhận snapshot lẫn project, giữ bản đầu khi duplicate mâu thuẫn và chấp nhận updateTime sai. Đã thêm kiểm tra toàn bộ đầu vào, project pin bắt buộc ở CLI, kiểm tra REST Value và giữ nguyên độ chính xác nanosecond của precondition. Planner vẫn chỉ xuất kế hoạch offline; ca CLI dùng snapshot demo tự tạo.
+- Đối chiếu Feature 011 xác nhận FcmSignOutHook và quyền arrayRemove P15 đã có. Giới hạn năm giây cho cả hook và cách bỏ qua lỗi không đủ để cam kết detach/rotate luôn hoàn tất. Registration, refresh, chuyển UID, chính sách quyền OS và Rules token chi tiết còn thiếu quyết định; AI ghi lựa chọn và task được mở khóa, giữ nguyên các phần này.
+- Bổ sung thiết kế delivery về receipt SENDING sau crash, nonce riêng mỗi lần claim, khởi tạo target theo trang và chống tái tạo job sau xóa tài khoản. Chưa tạo collection, worker hoặc field server mới. Hoàn thành T012/T039, đưa tiến độ lên 25/56; T013/T035 còn thiếu contract cho các route khác và T056 chưa nghiệm thu toàn bộ luồng backend.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+| ---- | ---------- | ----- |
+| `FirestoreNotificationRouteResolver` và `NotificationGroupRouteTest` | Thêm route nhóm theo duyệt của người dùng | Kiểm tra nhóm, membership quản trị và bài nguồn; giữ fallback khi không mở được nội dung. |
+| `NotificationPreferenceCache.kt`, `NotificationModule` và model snapshot | Thêm cache có UID và thông tin nguồn dữ liệu | Tách giá trị đã lưu khỏi kết quả server để UI biết lúc nào phải khóa chỉnh sửa. |
+| `FirestoreNotificationPreferencesRepository` | Thêm cache fallback và chuyển mutation sang transaction | Firestore giữ quyền quyết định, bảo toàn key khác và tránh ghi chờ offline. |
+| `DataStoreSessionPrefs.clearOnSignOut()` | Dọn namespace cache và tăng epoch | Xóa dữ liệu cục bộ cả khi xóa tài khoản, ngăn request cũ ghi lại sau cleanup, giữ các key phiên khác theo quy ước. |
+| `NotificationSettingsViewModel`, Fragment và resource cảnh báo | Hiển thị cache ở chế độ chỉ đọc, retry để chỉnh sửa | Người dùng thấy cài đặt đã lưu và biết cần tải server lại; nhóm/checkbox/theme giữ theo thiết kế đã duyệt. |
+| JVM, Rules/transport và `NotificationUiTest` | Thêm ca cache, quyền nhóm và transaction lỗi mạng | Kiểm chứng UID isolation, cleanup, lỗi đọc/ghi, trạng thái chỉ đọc và mở lại chỉnh sửa sau retry. |
+| Planner Timestamp, tests và đề xuất chuyển đổi | Kiểm tra project, duplicate, kiểu dữ liệu và updateTime | Kế hoạch có thể review trước khi thực thi; giữ đúng thời điểm và precondition, chưa đọc hoặc sửa dữ liệu thật. |
+| `delivery-state-proposal.md` và `decision-review-2026-11-23.md` | Bổ sung thiết kế, bằng chứng và lựa chọn chưa chốt | Làm rõ token lifecycle, transaction của producer và giới hạn phục hồi; giữ schema chưa duyệt ở dạng đề xuất. |
+| `tasks.md`, `implementation-review.md`, data-model/research/plan và `validation/` | Ghi quyết định, task và bằng chứng mới | Đóng T012/T039 sau kiểm chứng, lưu rõ phần còn mở và ma trận UI mới, giữ nguyên tài liệu/ảnh UI gốc. |
+
+### Cách kiểm chứng
+
+- Lệnh `testDebugUnitTest assembleDebug lintDebug` đạt: 255 suite, 1.682 ca, 0 failure/error và 2 skip Windows cũ. Tám suite notification có 37/37 ca đạt, không skip. Lint có 0 lỗi, 856 cảnh báo. Build app/test cô lập cũng đạt; không thêm dependency, tắt detector hoặc bỏ test mới. [Kết quả tổng hợp](../../specs/100-notification/validation/continuation-2026-11-23-results.json), [tóm tắt kiểm chứng](../../specs/100-notification/validation/continuation-2026-11-23-verification.log).
+- Sáu ca cache dùng production cache trên DataStore trong bộ nhớ, kiểm tra UID isolation, logout/deletion cleanup, epoch của request cũ, fallback, transaction và lỗi IO. ViewModel test kiểm tra khóa ghi khi dùng cache, retry và reset theo tài khoản; bốn ca route nhóm kiểm tra quyền quản trị, nguồn bài, subtype đã xóa/không biết và đổi phiên. Firebase SDK trong JVM được mock, không đọc backend thật.
+- Firestore notification/profile/query/group đạt 53/53 trên emulator demo-smashnow. Ca đầu dùng disableNetwork() nhưng transaction JS vẫn thành công vì RPC chưa bị ngắt. Đã sửa harness sang client demo trỏ cổng loopback đóng, xác nhận UNAVAILABLE và preference server không đổi, rồi kiểm tra transaction online cập nhật một key. Kết quả này kiểm chứng transport lỗi thực sự, giữ riêng với bộ test Android dùng SDK mock.
+- Planner Deno đạt 6/6. Kiểm thử mới tái hiện lỗi trước khi sửa, gồm project sai/lẫn, duplicate mâu thuẫn, REST Value không hợp lệ và updateTime sai. Precondition có chín chữ số phần lẻ được giữ nguyên. CLI chạy với snapshot demo tự tạo và project pin, xuất một write đề xuất trong chế độ REVIEW_ONLY_NO_COMMIT, không có quyền mạng hoặc bước gửi commit.
+- Chạy chín ca UI trên vivo V2247 Android 15 với package `com.example.booking_app.adminlocal`: phone 393dp và w600dp 720dp, mỗi cấu hình light/dark, tổng 36/36 đạt. Ca mới kiểm tra cảnh báo cache, checkbox bị khóa và retry mở lại chỉnh sửa. w600dp dùng density 240 trên cùng điện thoại; sau lượt cuối readback là 440, không override, kích thước 1080x2388, font scale 1.0.
+- Mở hai PNG gốc và ảnh sau test để đối chiếu. Giữ bố cục, theme, nhóm và các ngoại lệ đã được duyệt; cache dùng khu vực lỗi/thử lại cùng checkbox disabled của Material. Lưu 24 PNG và SHA-256. [Cache phone light](../../specs/100-notification/validation/device-2026-11-23/phone-light/notification-393dp-light-settings-cache.png), [cache w600dp dark](../../specs/100-notification/validation/device-2026-11-23/tablet-dark/notification-720dp-dark-settings-cache.png), [báo cáo đối chiếu](../../specs/100-notification/validation/continuation-2026-11-23.md). Repository/UID stream/resolver trong UI test vẫn dùng fake; điện thoại không được dùng để nghiệm thu pipeline backend hoặc lỗi đĩa thật.
+- Kiểm tra lại đủ 25/56 marker task, hash của 24 ảnh, các link báo cáo và `git diff --check`. [Decision review](../../specs/100-notification/decision-review-2026-11-23.md) ghi phần token và route chưa chốt; [đề xuất delivery](../../specs/100-notification/delivery-state-proposal.md) giữ trạng thái chưa duyệt. Checklist reviewer không đổi. Chưa commit, push, deploy, gửi FCM thật hoặc chạy migration dữ liệu thật.
+
+---
+
+## Mục 60: Tiếp tục Feature 100, triển khai backend W1 và luồng FCM đã được duyệt
+
+| Thông tin                | Nội dung |
+| ------------------------ | -------- |
+| Ngày                     | 2026-11-23 |
+| Người thực hiện          | Minh Nhựt |
+| Nhóm tính năng liên quan | 10 (100 thông báo); phối hợp 011 tài khoản, 081 hàng chờ, 091 chat, 110 hồ sơ chủ sân, 112 vận hành và 120 quản trị |
+| Công cụ AI               | Codex (GPT-6), `$speckit-implement`, `$humanizer:humanizer` |
+| Mục đích                 | Chốt quyết định backend/FCM trước khi triển khai, nối producer W1, kiểm chứng bằng fake/emulator và ghi phần còn thiếu contract |
+| Nhánh Git                | `feat/100-notification` |
+
+### Prompt đã dùng
+
+```text
+$speckit-implement
+
+Tiếp tục Feature 100 theo tiến độ hiện tại, đã hoàn thành 25/56 task.
+
+Đọc:
+- specs/100-notification/tasks.md
+- specs/100-notification/implementation-review.md, ưu tiên cập nhật ngày 23/11
+- specs/100-notification/decision-review-2026-11-23.md
+- specs/100-notification/delivery-state-proposal.md
+- Các contract liên quan của feature nguồn.
+
+Mục tiêu lượt này là mở đường triển khai backend và FCM, đồng thời hoàn thiện phần độc lập còn lại.
+
+1. Rà soát các quyết định đang chặn implementation bằng code và contract mới nhất. Giữ các phê duyệt đã được ghi nhận; phân biệt rõ đề xuất với quyết định đã duyệt.
+
+2. Chuẩn bị gói quyết định cụ thể cho backend:
+   - Schema delivery job và receipt theo từng token, retry, lease recovery, retention và account deletion.
+   - Event identity và transaction enqueue của từng producer; bảo toàn inbox hiện có, tránh tạo thông báo trùng.
+   - Vòng đời token khi đăng nhập, refresh, logout, đổi tài khoản và từ chối/cấp lại quyền hệ điều hành.
+   - Chat foreground suppression trên nhiều thiết bị.
+   - Nội dung lock screen và quyền tạo thông báo SYSTEM.
+
+Mỗi quyết định cần nêu phương án đề xuất, ảnh hưởng tới code/schema, giới hạn và task được mở khóa. Chỉ hỏi những điểm chưa được phê duyệt, gom các câu hỏi liên quan để người dùng dễ trả lời. Hoàn thiện tài liệu đủ để review trước khi xin duyệt.
+
+3. Trong lúc chờ quyết định, tiếp tục phần không phụ thuộc:
+   - Tách phần notification channel có thể làm theo quy ước hiện hành khỏi phần payload còn chờ T014.
+   - Rà soát routing còn thiếu trong T013/T035. Chỉ triển khai khi destination, identifier và quyền truy cập đã được xác nhận; giữ fallback title/body cho phần chưa đủ contract.
+   - Bổ sung kiểm thử cho thay đổi thực tế, tránh chạy lại các bộ kiểm thử đã qua nếu không có ảnh hưởng mới.
+
+Sau khi nhận phê duyệt, cập nhật contract và tài liệu CSDL liên quan rồi triển khai các task vừa được mở khóa bằng harness local/emulator. Không coi prompt này là phê duyệt schema, token policy hoặc migration dữ liệu thật.
+
+Giữ UI theo specs/100-notification/ui/ và các ngoại lệ đã được duyệt. Cập nhật tasks.md cùng implementation-review.md theo bằng chứng. Kết thúc bằng phần đã làm thêm, kết quả kiểm thử và quyết định còn cần chốt. Không tự commit, push, deploy hoặc chạy migration dữ liệu thật.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Đọc code và contract hiện hành, lập `backend-decision-package.md` rồi gom thành ba câu hỏi. Người dùng duyệt D1/D2-W1, T1/P1 với giới hạn đã nêu và C1/P1/S1. AI ghi quyết định vào contract Feature 100/CSDL trước phần code phụ thuộc, sau đó đối chiếu và cập nhật contract của các feature nguồn trong quá trình triển khai. Các identity, generation và outbox ngoài W1 vẫn chờ duyệt.
+- Thêm helper chuẩn bị inbox và delivery job trong transaction nguồn. Owner booking, timeout, promotion/closure hàng chờ, kết quả duyệt hồ sơ và SYSTEM giữ inbox hiện có, không tạo thêm qua một callback thứ hai. Job dùng identity đã duyệt; inbox còn tồn tại sau retention không được tự tạo lại job. Legacy hàng chờ thiếu ticket chỉ giữ inbox cho người nhận hợp lệ.
+- Triển khai worker với receipt từng token, lease hai phút, nonce kiểm tra quyền xử lý và tối đa sáu lần gửi cho mỗi token. Worker giữ kết quả token đã thành công khi token khác cần retry, tôn trọng Retry-After và chỉ gỡ đúng token khi FCM trả UNREGISTERED. Khởi tạo receipt theo trang 100 mục, giữ kết quả terminal bảy ngày và xóa child trước parent. Transaction khởi tạo đọc lại trạng thái user để tránh tạo receipt sau khi tài khoản bắt đầu bị xóa.
+- Thêm coordinator đăng ký/refresh token bằng transaction, kiểm tra UID và epoch, giữ token máy khác. Khi đổi UID phải xoay token trước đăng ký; retry lỗi đăng ký dùng lại lần xoay SDK đã thành công để tránh lặp onNewToken. Hook đăng xuất cũ dừng registration trước bước gỡ token, không thêm hook gỡ trùng. Metadata cục bộ chỉ lưu UID/hash/trạng thái xoay cùng installationId và đã loại khỏi backup. Inbox và preference vẫn hoạt động khi chưa được cấp quyền OS.
+- Đổi chat presence sang lease theo installation. Rời một máy chỉ xóa lease của máy đó; worker ngăn push cho cả tài khoản khi bất kỳ máy nào đang xem chat. Muted/viewing vẫn nằm trong danh sách người nhận inbox. Có cleanup presence khi xóa participant, purge và xóa tài khoản. Callback chat còn chạy sau commit và chưa có durable enqueue/fanout, nên T048 vẫn mở.
+- Tạo channel theo quy ước Android và giữ cấu hình channel đã có. Payload FCM chỉ chứa recipientUid/notificationId; service kiểm tra UID/quyền OS, hiển thị nội dung generic PRIVATE và dùng PendingIntent bất biến. Chạm push tải inbox của đúng tài khoản từ SERVER, kể cả thông báo ngoài trang đầu, rồi dùng resolver và title/body đã lưu. Giữ BOOKING_NEW luôn bật, PROMOTION mặc định tắt; tắt push không ngăn lưu inbox.
+- Hoàn thành thêm T006, T007, T008, T011, T014, T017, T020, T049, T051, T052 và T053, đưa tiến độ lên 36/56. T004/T005 còn thiếu quyết định ngoài W1; T013/T035 vẫn thiếu contract cho BOOKING_NEW, PROMOTION, REVIEW_NEW và OWNER_*. Người dùng yêu cầu trình bày tin nhắn trực tiếp trong cuộc hội thoại, nêu việc A/B/C cần cập nhật và phần còn phải chốt contract. File tin nhắn riêng đã được bỏ, chưa gửi cho ai.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+| ---- | ---------- | ----- |
+| `backend-decision-package.md`, CSDL và contract nguồn | Ghi phạm vi đã duyệt, giữ riêng phần ngoài W1 | Có căn cứ triển khai schema, token policy, presence và SYSTEM; tránh coi phê duyệt một đợt là phê duyệt toàn bộ producer. |
+| `notification-enqueue.ts` và các producer W1 | Nối inbox/job trong transaction, giữ UUID inbox cũ | Tránh trùng thông báo và tránh mất enqueue khi tiến trình chết sau commit nghiệp vụ. |
+| `notification-worker.ts`, `notification-fcm.ts` và `notification-delivery/` | Thêm xử lý theo từng token và endpoint có cron secret | Phục hồi partial success/crash, giới hạn retry và giữ inbox khi FCM lỗi; không tạo HTTP event envelope cho callback chưa được duyệt. |
+| `FcmSignOutHook`, `NotificationTokenEngine` và coordinator/store | Phối hợp registration với session và hook đăng xuất hiện có | Kiểm tra đổi tài khoản, giữ token máy khác, tránh ghi chờ offline và tránh vòng lặp xoay token khi đăng ký lỗi. |
+| `FirestoreChatRepository`, chat helpers và Rules presence | Tách lease theo installation, thêm cleanup và kiểm tra suppression | Một máy rời chat không xóa trạng thái máy đang xem; vẫn giữ giới hạn callback chat chưa bền vững. |
+| Channel, messaging service, push renderer và inbox lookup/navigation | Hiển thị push generic và tải lại đúng inbox khi chạm | Không đưa title/body nguồn lên lock screen, kiểm tra UID trước hiển thị và trước truy vấn, giữ fallback khi không mở được nguồn. |
+| Rules token/job/receipt và `firestore.indexes.json` | Thêm quyền theo quyết định cùng index cho query worker thực tế | Client, kể cả ADMIN, không truy cập job/receipt; token mutation bảo toàn phạm vi own-user và hỗ trợ removal legacy. |
+| Account deletion và cron SQL | Thêm dọn receipt/job; chuẩn bị lịch worker để review | Cleanup phải bao phủ storage mới. SQL chưa được áp dụng vì Supabase local cần Docker daemon đang chưa hoạt động. |
+| `validate-backend.ps1`, tests và `validation/backend-2026-11-23/` | Lưu harness, log, kết quả và screenshot | Có thể đối chiếu từng kiểm tra đã chạy, phân biệt fake/emulator với dữ liệu thật và ma trận UI cũ. |
+| Tin nhắn phối hợp A/B/C | Bỏ file riêng, trình bày trực tiếp trong cuộc hội thoại | Nêu rõ code/contract mỗi người cần cập nhật, tách phần đã duyệt khỏi phần cần chốt trước khi triển khai. |
+
+### Cách kiểm chứng
+
+- JVM liên quan đạt 64/64 qua 12 suite, không failure/error/skip. Phạm vi gồm notification, FcmSignOutHook và FirestoreChatRepository; không chạy lại toàn bộ 1.682 test của lượt trước. `assembleDebug` và `lintDebug` đạt, lint có 0 lỗi và 858 cảnh báo. APK app/test cô lập cũng build thành công.
+- Backend fake đạt 64/64. Kiểm tra handler W1 và REST codec, duplicate replay, Timestamp, partial token failure, retry/lease, retention, giới hạn target, profile đổi trạng thái và HTTP/auth adapter. Harness fake chạy không có quyền mạng; log lỗi được chủ động tạo trong fixture được giữ để đối chiếu.
+- Auth/Firestore emulator đạt một ca worker transaction, một ca account deletion mở rộng và 42 ca nguồn/waitlist/chat ở lượt đầu. Sau thay đổi liên quan, bảy ca worker/SYSTEM/presence đạt ở lượt kiểm tra cuối. Account deletion dọn 405 inbox và 205 receipt cùng parent job, giữ tài khoản không liên quan. SYSTEM được kiểm tra với ADMIN hiện tại, nhiều role ACTIVE, retry và FCM lỗi nhưng inbox vẫn còn.
+- Rules emulator đạt 48/48 qua bốn suite: token rotate/remove, từ chối UID khác và mutation không hợp lệ, removal legacy, quyền job/receipt kể cả ADMIN, lease của hai installation cùng các ca hồi quy inbox/profile/chat. [Báo cáo kiểm chứng](../../specs/100-notification/validation/backend-2026-11-23.md), [kết quả và hash](../../specs/100-notification/validation/backend-2026-11-23/results.json).
+- Trên vivo V2247 Android 15, package `com.example.booking_app.adminlocal` đạt 14/14 ca channel/renderer/inbox/settings và 1/1 ca deep link push mới. Ca chạm push mở được nội dung đã lưu ngoài trang đầu, đánh dấu đã đọc và không truy vấn UID khác. Repository/session trong UI test dùng fake; không gửi FCM thật hoặc đọc dữ liệu hosted để nghiệm thu.
+- Mở lại hai PNG gốc và screenshot phone light để so sánh. Không đổi layout/theme nên giữ bằng chứng ma trận phone/w600dp light/dark của lượt trước, không tính thành kết quả mới. Lượt này lưu sáu ảnh 393dp/light cùng hash. [Inbox](../../specs/100-notification/validation/backend-2026-11-23/device-phone/notification-393dp-light-inbox.png), [settings](../../specs/100-notification/validation/backend-2026-11-23/device-phone/notification-393dp-light-settings.png). Các ngoại lệ UI đã ghi nhận được giữ nguyên; tài liệu và PNG gốc không đổi.
+- Kiểm tra Docker cả trong và ngoài sandbox xác nhận daemon chưa hoạt động, nên chưa chạy Supabase local runtime hoặc cron SQL. File `20261123220000_cron_notification_delivery.sql` mới được chuẩn bị để review. T056 cùng các adapter/routing còn thiếu contract tiếp tục mở; không báo hoàn tất cả Feature 100. [Gói quyết định](../../specs/100-notification/backend-decision-package.md). Tin nhắn phối hợp được trình bày trực tiếp trong cuộc hội thoại theo yêu cầu của người dùng.
+- Đếm lại 36/56 marker task, kiểm tra checklist 24/24 và `git diff --check`. Chưa commit, push, deploy, áp dụng index trên production hoặc chạy migration dữ liệu thật.
+
+---
+
+## Mục 61: Tiếp tục Feature 100, kiểm chứng booking W1 và triển khai nhắc lịch
+
+| Thông tin                | Nội dung |
+| ------------------------ | -------- |
+| Ngày                     | 2026-11-24 |
+| Người thực hiện          | Minh Nhựt |
+| Nhóm tính năng liên quan | 10 (100 thông báo); phối hợp 050 thanh toán, 060 quản lý lịch đặt và 112 vận hành chủ sân |
+| Công cụ AI               | Codex (GPT-6), `$speckit-implement`, `$humanizer:humanizer` |
+| Mục đích                 | Rà nguồn booking, chốt contract B1/B2, triển khai reminder và kiểm chứng bằng emulator cùng FCM fake |
+| Nhánh Git                | `feat/100-notification` |
+
+### Prompt đã dùng
+
+```text
+$speckit-implement
+
+Tiếp tục Feature 100 từ tiến độ 36/56 task trong specs/100-notification/tasks.md.
+
+Đọc phần Backend/FCM continuation mới nhất trong implementation-review.md, backend-decision-package.md, contracts/ và validation/backend-2026-11-23.md trước khi sửa code.
+
+Giữ các quyết định đã được duyệt: D1, D2-W1, T1, C1, P1, S1. Tái sử dụng shared writer, delivery worker và FCM coordinator hiện có.
+
+Ưu tiên hoàn thiện luồng booking theo T015/T016/T018/T019:
+
+1. Rà soát phần booking đã triển khai trong W1 và xác định chính xác phần còn thiếu. Bổ sung kiểm thử cho recipient/type, tự hủy không phát thông báo, timeout/refund, replay và lỗi FCM sau khi inbox đã commit.
+
+2. Với BOOKING_NEW, tìm transaction chuyển booking sang PENDING trong payment/booking flow. Chuẩn bị contract event identity và enqueue ngay trong transaction đó, giữ inbox ID hiện có và tránh callback tạo trùng.
+
+3. Với BOOKING_REMINDER, hoàn thiện phương án query, thời điểm hai giờ trước items.startAt sớm nhất, kiểm tra CONFIRMED và dedup khi scheduler chạy lại hoặc chạy đồng thời. Nêu rõ cách xử lý booking đổi giờ, chạy trễ và event identity.
+
+Kiểm tra phê duyệt hiện có trước khi triển khai hai producer trên. Nếu còn thiếu quyết định ngoài W1, hoàn thiện đề xuất đủ để review rồi hỏi gộp những điểm cần chốt. Tiếp tục kiểm thử và phần độc lập trong lúc chờ; không coi D1/D2-W1 là phê duyệt toàn bộ producer.
+
+Sau khi được duyệt, cập nhật contract trước code phụ thuộc rồi triển khai trọn luồng bằng emulator và fake FCM. Chỉ đóng task khi toàn bộ yêu cầu của task đã được kiểm chứng.
+
+Kiểm tra lại khả năng chạy Supabase local. Nếu Docker đã sẵn sàng, xác minh cron migration và endpoint trong môi trường local; nếu vẫn thiếu Docker, ghi rõ phần chưa kiểm chứng và tiếp tục harness độc lập.
+
+Giữ UI theo specs/100-notification/ui/ cùng các ngoại lệ đã duyệt. Với T013/T035, chỉ bổ sung route có destination và quyền truy cập đã xác nhận; phần còn thiếu dùng saved detail.
+
+Chạy kiểm thử phù hợp với phạm vi thay đổi. Cập nhật tasks.md và implementation-review.md, báo số task hoàn thành thêm, bằng chứng kiểm thử và blocker còn lại. Không tự deploy, gửi push thật hoặc chạy migration dữ liệu thật.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Rà code booking, payment contract và phần đã triển khai trong W1. Checkout có owner booking command, booking-timeout và player-cancel-booking; chưa có transaction payment chuyển HOLD sang PENDING. HoldToPaymentArgs chỉ là DTO, các script seed PENDING phục vụ fixture. AI ghi rõ nguồn còn thiếu và giữ T018 mở.
+- Lập `booking-decision-package-2026-11-24.md` rồi hỏi gộp B1/B2. Người dùng duyệt B1, nguồn payment sẽ cung cấp sau, và duyệt B2 với các giới hạn đã nêu. Sau đó cập nhật CSDL và contract nguồn trước phần code phụ thuộc. Các phê duyệt D1/D2-W1/T1/C1/P1/S1 được giữ nguyên.
+- Thêm helper BOOKING_NEW lấy chủ sân từ venue trong transaction, kiểm tra venue và owner hiện tại, giữ inbox ID do caller cung cấp hoặc dùng ID tất định. Kiểm thử mô phỏng xác nhận inbox/job cùng rollback với thay đổi nguồn. Helper chưa được nối vào payment producer thật; không tạo flow thanh toán thay thế.
+- Triển khai scheduler reminder có cron authentication. Query cửa sổ hai giờ cho đơn CONFIRMED, phân trang 100 mục theo startAt và document ID, rồi đọc lại booking/recipient trong transaction. Lấy thời điểm sớm nhất từ items, kiểm tra khớp startAt dẫn xuất và loại dữ liệu không hợp lệ. Tick chạy trễ chỉ tạo nhắc khi chưa bắt đầu chơi.
+- Dùng một identity reminder cho suốt đời booking ID. Trước nhắc đầu tiên lấy giờ mới nhất; sau khi đã có inbox, đổi giờ không tạo nhắc thứ hai. Worker kiểm tra lại người đặt, trạng thái và thời gian trước mỗi token; bỏ push cũ khi nguồn đã đổi nhưng giữ inbox đã lưu. Inbox còn tồn tại cũng ngăn tạo lại job sau retention.
+- Giữ cursor Timestamp/reference thô từ REST để không mất nanosecond khi phân trang, thêm index khớp query và chuẩn bị cron SQL. Trong kiểm thử bổ sung, ba ca ban đầu lỗi do fixture bị lọc sau giới hạn query; đã sửa cách cô lập fixture trước giới hạn, còn ca 205 đơn dùng query production không bọc.
+- Hoàn thành T015/T016/T019, đưa tiến độ lên 39/56. T018 chờ nguồn payment, T013/T035 giữ các route còn thiếu contract ở saved detail. UI không đổi. Tin đề nghị B cung cấp file/commit và nối helper vào transaction được trình bày trực tiếp trong cuộc hội thoại, không tạo file tin nhắn riêng.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+| ---- | ---------- | ----- |
+| Gói quyết định booking, CSDL và contract 050/060/100 | Ghi phê duyệt B1/B2 trước triển khai | Chốt identity, recipient, lịch nhắc, đổi giờ và chạy trễ; giữ riêng phần payment chưa có nguồn. |
+| `booking-notification.ts` | Thêm helper BOOKING_NEW và hàm lấy giờ sớm nhất | Tái sử dụng shared writer, lấy owner từ server và không đoán transaction payment. |
+| `booking-reminders/handler.ts` và `index.ts` | Thêm scheduler theo B2 | Kiểm tra nguồn trong cùng transaction enqueue, chống trùng khi replay hoặc chạy đồng thời. |
+| `_shared/firestore.ts` | Bổ sung cursor query tùy chọn, giữ Timestamp/reference thô | Phân trang ổn định qua nhiều document trùng thời gian và không làm tròn nanosecond. |
+| `notification-worker.ts` | Kiểm tra lại nguồn của BOOKING_REMINDER trước gửi | Tránh gửi nhắc cũ sau đổi giờ, hủy hoặc qua giờ bắt đầu; inbox vẫn giữ nội dung đã lưu. |
+| `firestore.indexes.json`, config và cron SQL | Thêm index và cấu hình endpoint/lịch chạy để review | Khớp query thực tế; SQL chưa áp dụng vì Docker daemon chưa hoạt động. |
+| `booking-reminders/handler.test.ts` | Thêm kiểm thử W1, helper B1 và reminder B2 | Kiểm tra recipient/type, tự hủy, hoàn tiền, replay, rollback, concurrency và lỗi FCM trên emulator. |
+| `validate-backend.ps1` và `validation/booking-2026-11-24/` | Thêm suite Booking, lưu log và hash | Có lệnh tái hiện và phân biệt các ca đã qua với lỗi fixture ban đầu. |
+| `tasks.md`, `implementation-review.md` và báo cáo booking | Ghi 39/56 task, bằng chứng và phần bị chặn | Không đóng T018 bằng kết quả transaction mô phỏng, không tính ma trận UI cũ thành kiểm thử mới. |
+
+### Cách kiểm chứng
+
+- Bộ booking đạt 14/14 trên Auth/Firestore emulator, dùng project demo và FCM fake. Các ca kiểm tra APPROVE/REJECT/CANCEL, recipient/type, timeout/refund một lần, replay và tự hủy không tạo inbox/job cho chính người hủy. Ca B1 kiểm tra owner hợp lệ, giữ ID caller và rollback trong transaction mô phỏng; chưa chứng minh payment integration thật.
+- Kiểm tra reminder ở đúng mốc hai giờ, tick chạy trễ, sau giờ bắt đầu, items không theo thứ tự, các trạng thái ngoài CONFIRMED, dữ liệu sai và recipient không hoạt động. Hai scheduler chạy đồng thời chỉ tạo một inbox; reschedule và job retention không tạo nhắc thứ hai. Ca query REST phân trang 205 đơn có Timestamp trùng nhau với nanosecond xác nhận không bỏ sót người nhận.
+- Ba ca bổ sung ban đầu thất bại vì fixture scope được lọc sau limit, đã được sửa trước khi chạy lại đạt 14/14. Ca gửi reminder hợp lệ chạy riêng đạt 1/1, 14 ca còn lại được lọc: hai token fake mỗi token được nhận một lần qua worker replay, inbox vẫn chưa đọc. Tổng bằng chứng booking gồm 15 ca riêng biệt, không cộng các lượt chạy lại.
+- Bộ hồi quy shared Firestore/delivery đạt 22/22. Deno check/test biên dịch helper, handler và test. `assembleDebug` cùng `lintDebug` đạt; lint có 0 lỗi và 858 cảnh báo. Không chạy lại JVM/Rules/UI matrix vì không thay Android hoặc quyền client. [Báo cáo kiểm chứng](../../specs/100-notification/validation/booking-2026-11-24.md), [kết quả và hash](../../specs/100-notification/validation/booking-2026-11-24/results.json).
+- Kiểm tra Docker trong và ngoài sandbox vẫn báo thiếu daemon, nên Supabase local runtime, pg_cron/pg_net/Vault và cron SQL chưa được xác minh. File `20261124100000_cron_booking_reminders.sql` mới được chuẩn bị, chưa áp dụng. Kiểm thử Deno/emulator không được tính thành kiểm chứng triển khai HTTP trên Supabase.
+- Đếm lại 39/56 marker task và kiểm tra `git diff --check`; checklist giữ 24/24, không có extension hook. Scheduler trả budgetExhausted khi hết ngân sách 90 giây; chưa cam kết xử lý mọi backlog trong một lượt. T056 còn mở cho nghiệm thu runtime đầy đủ. [Contract B1/B2](../../specs/100-notification/booking-decision-package-2026-11-24.md) ghi phần đã duyệt và T018 chờ nguồn payment. Chưa commit, push, deploy, gửi FCM thật hoặc chạy migration dữ liệu thật.
+
+---
+
+## Mục 62: Tiếp tục Feature 100, tích hợp drop-in/review/DIRECT chat và kiểm thử trên máy thật
+
+| Thông tin                | Nội dung |
+| ------------------------ | -------- |
+| Ngày                     | 2026-11-24 |
+| Người thực hiện          | Minh Nhựt |
+| Nhóm tính năng liên quan | 10 (100 thông báo); phối hợp 070 đánh giá, 080/081 vãng lai/hàng chờ và 091 chat |
+| Công cụ AI               | Codex (GPT-6), `$speckit-implement`, `$humanizer:humanizer` |
+| Mục đích                 | Triển khai producer đã được duyệt, bổ sung kiểm thử transaction và kiểm chứng inbox/settings/push handler trên điện thoại |
+| Nhánh Git                | `feat/100-notification` |
+
+### Prompt đã dùng
+
+```text
+$speckit-implement
+
+Tiếp tục Feature 100 từ tiến độ thực tế trong repository. Mục tiêu là hoàn thành nhiều task còn lại nhất có thể và kiểm thử trực tiếp trên điện thoại thật đang kết nối.
+
+Đọc tasks.md, phần cập nhật mới nhất trong implementation-review.md, backend-decision-package.md và các contract liên quan. Kiểm tra code và bằng chứng hiện có trước khi xác định phần còn thiếu.
+
+Làm xuyên suốt các task đủ điều kiện, theo dependency:
+- Hoàn thiện booking events, BOOKING_NEW và reminder.
+- Tiếp tục drop-in/waitlist, promotion, review/owner, group và chat.
+- Hoàn thiện push eligibility, routing và các hành trình trong quickstart.md.
+- Tái sử dụng shared writer, durable delivery worker, FCM coordinator và harness hiện có.
+
+Giữ các quyết định đã duyệt, gồm D1, D2-W1, T1, C1, P1, S1 và các phê duyệt được ghi nhận sau đó. Với phần ngoài phạm vi đã duyệt, hoàn thiện đề xuất cụ thể rồi gom các quyết định cần người dùng chốt thành một đợt hỏi sớm. Trong lúc chờ, tiếp tục task độc lập. Không dừng cả lượt chỉ vì một producer bị chặn.
+
+Tôi cho phép kiểm thử trên điện thoại thật đang kết nối:
+- Dùng biến thể ứng dụng kiểm thử cô lập và tài khoản/dữ liệu demo.
+- Build, cài APK và APK instrumentation; chạy các luồng đã triển khai trên thiết bị.
+- Kiểm tra inbox, phân trang, đọc một/tất cả, settings, cache offline/retry, permission từ chối/cấp lại, notification channel, push tap và kiểm tra đúng tài khoản.
+- Kiểm tra logout/đổi tài khoản, nguồn bị xóa hoặc mất quyền, fallback chi tiết và các routing mới.
+- Dùng fake FCM hoặc công cụ inject payload cho kiểm thử local. Phân biệt rõ kiểm thử handler trên máy thật với việc nhận push qua dịch vụ FCM thật.
+- Chụp screenshot, lưu log và kết quả. Nếu đổi density để kiểm tra w600dp, khôi phục trong finally; giữ nguyên các thiết lập khác của thiết bị sau kiểm thử.
+
+Giữ UI theo specs/100-notification/ui/ và các ngoại lệ đã được duyệt. Nếu thay đổi ảnh hưởng giao diện, đối chiếu screenshot với ảnh gốc và chạy lại các cấu hình liên quan.
+
+Chạy backend/Rules trên local hoặc emulator. Nếu Docker đã hoạt động, kiểm chứng Supabase local và cron migration. Nếu môi trường còn thiếu, báo chính xác giới hạn và tiếp tục những kiểm thử có thể chạy.
+
+Mỗi lỗi phát hiện cần được sửa và kiểm thử lại trước khi đóng task. Chỉ đánh dấu [X] khi toàn bộ yêu cầu của task có bằng chứng; ghi rõ phần đã làm của task còn dang dở. Tiếp tục sang task đủ điều kiện tiếp theo sau mỗi nhóm hoàn thành.
+
+Không tự deploy, chạy migration dữ liệu thật, gửi push thật, commit hoặc push Git.
+
+Kết thúc bằng số task hoàn thành trên tổng số, các task vừa đóng, kết quả kiểm thử trên điện thoại thật, đường dẫn bằng chứng và danh sách blocker cụ thể còn lại.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Đọc tiến độ 39/56, code nguồn và các contract đã có, rồi lập `continuation-decisions-2026-11-24.md`. Người dùng duyệt riêng D3 cho đăng ký vãng lai, R1 cho review mới/phản hồi đầu tiên và H1 cho DIRECT chat. AI ghi quyết định vào CSDL và contract nguồn trước khi sửa phần code phụ thuộc; giữ các giới hạn của D1/D2-W1/T1/C1/P1/S1/B1/B2.
+- Chuyển DROPIN_REGISTERED sang ghi inbox/job cùng transaction đăng ký, dùng request UUID hiện có. Replay trả kết quả cũ; đăng ký lại sau hủy cần UUID mới, còn request cũ đã có inbox bị từ chối trước khi ghi. Thông báo xác nhận này là ngoại lệ tự thao tác được duyệt trong D3. Vào/rời hàng chờ, thêm người và tự hủy vẫn không tạo thông báo cho người thao tác.
+- Thêm `reviews.notificationGeneration` UUID do server tạo. Sửa review giữ generation, xóa/tạo lại nhận generation mới; review cũ chỉ được gán khi phản hồi đầu tiên, không tạo bù REVIEW_NEW. REVIEW_NEW và first REVIEW_REPLIED ghi cùng transaction nguồn, loại actor và người nhận không còn hợp lệ. Bỏ callback tương ứng; tên chuẩn REVIEW_REPLIED và tương thích đọc/routing REVIEW_REPLY cũ được giữ nguyên.
+- Với DIRECT chat, ghi inbox/job của thành viên còn lại cùng transaction message, loại sender và chống trùng theo message ID. Muted hoặc đang xem chat vẫn có inbox; worker áp dụng suppression C1. GROUP chat giữ callback hiện có và tiếp tục chờ thiết kế fanout/outbox. Các nguồn chưa được duyệt không có schema hay worker mới.
+- Kiểm tra worker qua đủ 19 loại với preference thiếu key, tắt và bật. Tắt loại chỉ ngăn push; BOOKING_NEW vẫn đủ điều kiện push và PROMOTION mặc định tắt. Đóng T021 và T043, đưa tiến độ lên 41/56; các task chứa nguồn chưa hoàn tất tiếp tục mở.
+- Tách `NotificationPushHandler` để kiểm thử đúng đường xử lý của FCM service bằng payload local. Bổ sung UI test phân trang 30/30/5, đọc một/tất cả qua nhiều trang và đổi tài khoản. Trên máy thật, phát hiện hàng cũ còn hiển thị trong hiệu ứng xóa của RecyclerView sau logout; đã sửa việc ẩn danh sách rỗng, xóa adapter ngay và kết thúc animation. Ca push tap còn gặp lỗi đồng bộ khi Espresso chọn cửa sổ trước lúc dialog mở; đã thêm bước chờ cửa sổ dialog rồi kiểm thử lại.
+- Chạy lại phone/w600dp light/dark, lưu ảnh và đối chiếu hai PNG gốc. Giữ layout, các nhóm cài đặt và ngoại lệ đã duyệt; xác minh density cùng quyền thông báo trở về trạng thái ban đầu sau kiểm thử. Các ca dùng repository/session fake và inject handler được ghi rõ, tách khỏi việc nhận push qua FCM thật.
+- BOOKING_NEW vẫn thiếu transaction payment HOLD sang PENDING; promotion, DROPIN_CHANGED, GROUP fanout, OWNER_REVOKED và REVIEW_REMINDER còn cần contract riêng. Giữ fallback title/body cho route chưa đủ destination/identifier/quyền truy cập. Gợi ý B cung cấp nguồn payment và C đồng bộ producer/generation được gửi trực tiếp trong cuộc hội thoại, không tạo file tin nhắn hoặc gửi cho thành viên khác.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+| ---- | ---------- | ----- |
+| Gói quyết định D3/R1/H1, CSDL và contract 070/080/091/100 | Ghi phê duyệt và phạm vi trước triển khai | Chốt identity, generation và transaction cho từng producer, giữ riêng GROUP fanout cùng nguồn chưa duyệt. |
+| `_shared/notification-enqueue.ts` | Thêm helper inbox ID tất định, dùng lại shared writer | Giữ chung cách xác định event/inbox/job và kiểm tra người nhận trong transaction nguồn. |
+| `register-drop-in/handler.ts` | Ghi DROPIN_REGISTERED cùng đăng ký, kiểm tra request cũ, bỏ callback | Giữ inbox/job cùng kết quả nghiệp vụ và tránh phát lại thông báo cho một lần đăng ký. |
+| `review/handler.ts`, data model và Rules tests | Thêm generation, enqueue create/first reply, bỏ callback | Phân biệt xóa/tạo lại; giữ replay, sửa phản hồi và dữ liệu legacy theo R1. Client không được ghi generation. |
+| `chat-send/handler.ts` | Enqueue trong transaction cho DIRECT; giữ GROUP chưa hoàn tất | H1 chỉ duyệt DIRECT, còn GROUP cần thiết kế fanout/outbox riêng. |
+| Worker và các bộ kiểm thử backend | Bổ sung bảng preference 19 loại và kiểm tra nguồn/retry/rollback | Xác minh inbox vẫn được lưu khi push tắt, actor/recipient đúng và token đã thành công không gửi lại khi retry. |
+| `NotificationPushHandler`, service và instrumentation | Tách handler dùng chung, thêm kiểm thử payload local | Kiểm tra UID, logout, permission và nội dung chung trên điện thoại mà không gọi FCM thật. |
+| `NotificationFragment` và `NotificationUiTest` | Sửa xóa hàng cũ khi logout, thêm paging/account-switch và chờ dialog | Hai lỗi phát hiện được sửa trước lượt nghiệm thu UI cuối. |
+| Harness thiết bị và `validation/continuation-2026-11-24/` | Lưu log, screenshot, kết quả/hash; khôi phục density/quyền trong finally | Có bằng chứng cho từng cấu hình và tách các lượt lỗi khỏi kết quả đạt. |
+| `tasks.md`, `implementation-review.md`, quickstart và đề xuất delivery | Ghi 41/56 task, phần đã làm và blocker | Chỉ đóng T021/T043; tiếp tục giữ các task chưa đủ contract hoặc bằng chứng ở trạng thái mở. |
+
+### Cách kiểm chứng
+
+- Đăng ký vãng lai đạt 29/29 ca fake; hồi quy backend đạt 65/65. Bộ nguồn trên Auth/Firestore Emulator đạt 89/89, lượt kiểm tra bổ sung R1/waitlist đạt 12/12, và tự hủy/rời hàng chờ đạt 5/5. Các lượt có ca chạy chồng lặp, không cộng thành số test riêng biệt. Một bộ lọc Deno ban đầu không chọn được ca nào; chỉ dùng kết quả bộ lọc đã sửa, thực thi đủ năm ca, làm bằng chứng tự thao tác.
+- Rules đạt 25/25, gồm inbox/delivery và quyền ghi `notificationGeneration`: player, owner và admin client đều không được tự tạo/sửa trường này. Emulator kiểm tra generation khi xóa/tạo lại, phản hồi legacy không tạo bù, actor/recipient, transaction bị hủy sau bước chuẩn bị và lỗi FCM fake sau khi inbox đã commit. Token đã thành công không gửi lại khi token còn lại retry.
+- JVM đạt 64/64 trong 12 suite, không lỗi hoặc skip. `assembleDebug`, build APK/instrumentation cô lập và `lintDebug` đều đạt; lint có 0 lỗi và 858 cảnh báo hiện có. `git diff --check` đạt. [Báo cáo kiểm chứng](../../specs/100-notification/validation/continuation-2026-11-24.md), [kết quả](../../specs/100-notification/validation/continuation-2026-11-24/results.json) và [hash bằng chứng](../../specs/100-notification/validation/continuation-2026-11-24/sha256.txt).
+- Vivo V2247 Android 15, package `com.example.booking_app.adminlocal`: ma trận phone 393dp/w600dp 720dp ở light/dark đạt 12/12 mỗi cấu hình, tổng 48/48. Channel/renderer/handler đạt 6/6, handler khi từ chối quyền đạt 1/1, hai luồng prompt grant và deny/quay về từ cài đặt hệ thống đạt 2/2. Tổng cộng 57 ca trên máy thật; các lượt lỗi trước khi sửa được giữ riêng và không tính là nghiệm thu đạt.
+- Mở hai PNG gốc và screenshot inbox/settings của cả bốn cấu hình để đối chiếu. Lưu 24 ảnh UI và bốn ảnh permission. Giữ các khác biệt đã ghi nhận về font/icon native, thời gian fixture, thanh hệ thống và sidebar của thiết bị; không sửa tài liệu UI để bổ sung ngoại lệ. [Inbox phone light](../../specs/100-notification/validation/continuation-2026-11-24/device/phone-light/notification-393dp-light-inbox.png), [settings phone light](../../specs/100-notification/validation/continuation-2026-11-24/device/phone-light/notification-393dp-light-settings.png); bảng ảnh đủ bốn cấu hình nằm trong báo cáo.
+- Kiểm tra lại sau ma trận: density trở về 440, không còn override; grant và các cờ POST_NOTIFICATIONS của ứng dụng kiểm thử khớp trước khi chạy. [Trạng thái cuối](../../specs/100-notification/validation/continuation-2026-11-24/device/device-final.txt). UI test dùng repository/session fake; inject payload vào handler dùng chung với FCM service chỉ xác minh xử lý local, chưa chứng minh nhận push qua FCM thật hoặc transport repository từ điện thoại tới emulator.
+- Kiểm tra Docker ngoài sandbox vẫn báo thiếu pipe daemon `dockerDesktopLinuxEngine`. Supabase local endpoint và cron SQL chưa chạy, migration chưa áp dụng; T056 tiếp tục mở. Còn 15 task chưa hoàn tất vì thiếu nguồn/contract hoặc bằng chứng, gồm payment BOOKING_NEW, các producer/fanout chưa duyệt và routing nguồn. Checklist giữ nguyên, không có extension hook. Chưa commit, push, deploy, đọc dữ liệu hosted, gửi FCM thật hoặc chạy migration thật.
+
+---
+
+## Mục 63: Hoàn tất Feature 100, kiểm thử vivo và triển khai production theo giai đoạn
+
+| Thông tin                | Nội dung |
+| ------------------------ | -------- |
+| Ngày                     | 2026-11-26 |
+| Người thực hiện          | Minh Nhựt |
+| Nhóm tính năng liên quan | 10 (100 thông báo), phối hợp 050 thanh toán/voucher, 070 sân yêu thích, 090 nhóm và 091 chat |
+| Công cụ AI               | Codex (GPT-6), `$speckit-implement` |
+| Mục đích                 | Hoàn tất F1/P2/B1 và routing, kiểm chứng trên emulator và điện thoại thật, triển khai backend theo phạm vi được duyệt |
+| Nhánh Git                | `feat/100-notification` |
+
+### Prompt đã dùng
+
+```text
+Tiếp tục Feature 100 từ tiến độ hiện tại: 43/56 task. Mục tiêu là hoàn thành tối đa task đủ điều kiện và kiểm thử trên điện thoại thật.
+
+Đọc tasks.md, cập nhật mới nhất trong implementation-review.md và remaining-source-proposals-2026-11-24.md. Giữ toàn bộ quyết định đã duyệt, đặc biệt D4/F1, P2, O2 và RR1. Không hỏi lại những phần đã được phê duyệt.
+
+Ưu tiên F1 để hoàn thiện T044/T045/T047/T048:
+- Nối producer GROUP chat và GROUP_ACTIVITY với durable fanout/worker.
+- Thực hiện nhánh quét theo trang cho nhóm lớn theo phương án đã duyệt.
+- Kiểm chứng recipient/subtype, loại trừ sender, membership/permission, replay, hai worker đồng thời, retry và phục hồi sau lỗi.
+- Inbox vẫn được lưu cho muted/viewing recipients; worker áp dụng suppression theo contract.
+- Loại bỏ callback trùng ở các đường đã chuyển sang durable delivery.
+- Chỉ đóng từng task khi toàn bộ phạm vi của task đã được kiểm chứng.
+
+Sau đó tiếp tục các phần còn lại:
+1. P2/T022/T024/T025: kiểm tra contract và implementation bộ đếm lượt theo UID của Feature 050. Nếu đã đủ, triển khai PROMOTION và kiểm thử eligibility/replay. Nếu còn thiếu, nêu chính xác contract cần bổ sung rồi tiếp tục phần độc lập.
+2. T018: kiểm tra lại transaction HOLD → PENDING. Nếu đã có, tích hợp helper B1 trong transaction. Nếu vẫn thiếu, giữ task partial và ghi điểm tích hợp cụ thể.
+3. T013/T035: hoàn thiện các route có destination, identifier và quyền truy cập được xác nhận. Phần chưa đủ contract giữ fallback title/body; gom các quyết định còn thiếu thành một đợt hỏi sớm.
+4. Rà soát T004/T005 theo toàn bộ producer còn lại, cập nhật bằng chứng và chỉ đóng khi đủ phạm vi.
+
+Tiếp tục kiểm thử trên điện thoại thật bằng app cô lập và dữ liệu demo:
+- Dùng SDK/repository thật kết nối Auth/Firestore Emulator qua USB như harness hiện có.
+- Kiểm tra các luồng mới, notification tap, mất quyền, logout/đổi tài khoản và không hiển thị dữ liệu tài khoản cũ.
+- Phân biệt kết quả device-to-emulator, local payload injection và nhận FCM thật.
+- Lưu log/screenshot; khôi phục density và thiết lập kiểm thử sau khi chạy.
+
+Giữ UI theo specs/100-notification/ui/ và các ngoại lệ đã duyệt. Chạy lại cấu hình UI bị ảnh hưởng khi có thay đổi.
+
+Kiểm tra Docker/Supabase local. Nếu đã chạy được, kiểm chứng cron và các hành trình còn thiếu trong T056. Nếu chưa được, báo giới hạn cụ thể và tiếp tục các harness khác.
+
+Sửa lỗi, kiểm thử lại và cập nhật tasks.md cùng implementation-review.md. Tiếp tục sang nhóm đủ điều kiện tiếp theo, không dừng sau một nhóm nhỏ.
+
+Tự deploy, chạy migration dữ liệu thật (xin quyền) , không gửi push thật, commit hoặc push Git.
+
+Cuối lượt báo số task hoàn thành, task vừa đóng, kết quả điện thoại thật, đường dẫn bằng chứng và blocker còn lại.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Từ mốc 43/56 sau khi nghiệm thu D4/O2/RR1, chuyển GROUP chat và bảy subtype GROUP_ACTIVITY sang durable outbox, bỏ callback cũ ở các đường đã chuyển. Nhánh snapshot cố định tập người nhận, nhánh quét theo trang xử lý nhóm lớn. Worker loại actor, kiểm tra membership và quyền hiện tại, ghi inbox/job cùng cursor trong một transaction. C1 áp dụng suppression ở đường push cho recipient mute hoặc đang xem chat.
+- Tìm thấy checkout thật trong nhánh Feature 050 và xác minh bộ đếm theo UID gồm cả lượt RESERVED và USED. P2 dùng bộ đếm này cùng favorite hiện tại, mốc follow, quyền và quota. `publishedAt` chốt lần phát đầu tiên qua producer hoặc cron và ngăn phát lại.
+- Nối B1 vào transaction checkout trả tại sân và webhook xác nhận chuyển khoản. Giữ inbox ID của checkout và tạo inbox/job cùng các ghi PENDING và BOOKED. APK của nhánh chuyển checkout tại sân sang Edge Function. Webhook SePay có bằng chứng kiểm thử local.
+- Người dùng chọn giữ chi tiết title/body đã lưu cho BOOKING_NEW, REVIEW_NEW, OWNER_APPROVED/REJECTED và PROMOTION. Các route có hợp đồng kiểm tra quyền hiện tại trước khi mở. Hoàn tất 13 task và cập nhật tiến độ 56/56 trong [tasks](../../specs/100-notification/tasks.md) và [implementation review](../../specs/100-notification/implementation-review.md).
+- Deploy và hậu kiểm bảy Edge Function, Firestore indexes và Rules notification. Hai migration cron được áp dụng trên production sau phê duyệt, với cả hai job tạm dừng. Quyền checkout trực tiếp trên production được giữ cho APK cũ cho đến đợt chuyển đổi ứng dụng. Thay đổi Git được giữ ở working tree.
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+| ---- | ---------- | ----- |
+| Producer GROUP chat/GROUP_ACTIVITY, outbox và worker | Dùng F1 với snapshot và quét theo trang, bỏ callback cũ | Giữ replay an toàn, kiểm tra đúng người nhận và lưu inbox khi push bị suppression. |
+| Producer PROMOTION và lịch phát voucher | Dùng hợp đồng checkout Feature 050 và `publishedAt` | Xét đúng lượt khả dụng theo UID và chỉ phát lần đầu cho follower đủ điều kiện. |
+| Checkout tại sân, webhook và Rules trong repo | Nối helper B1 trong transaction, giữ inbox ID, chuyển APK nhánh này sang Edge Function | Booking, slot, redemption và notification được ghi cùng nhau. |
+| Routing và chi tiết dự phòng | Giữ route đã xác nhận và lưu quyết định title/body | Dùng được nội dung thông báo khi nguồn thiếu, quyền bị thu hồi hoặc đích chưa được chốt. |
+| Harness thiết bị và backend demo | Tách phase nhóm và payment, lưu log và ảnh | Đối chiếu kết quả Firebase SDK qua USB với ma trận UI, payload injection và fake FCM. |
+| Deploy và cron production | Giới hạn Rules production ở notification, token và presence, giữ hai cron tạm dừng | Tiếp tục hỗ trợ APK cũ trong giai đoạn triển khai và giữ kiểm thử push ở môi trường demo. |
+
+### Cách kiểm chứng
+
+- F1 đạt 70 ca producer/emulator, gồm nhóm 505 thành viên, xóa sự kiện có 501 người tham dự, kiểm tra quyền, replay, rollback và hai worker chạy đồng thời. P2/B1 đạt 3 ca emulator, bộ payment/worker đạt 86 ca và bộ D4/B2/F1 đạt 19 ca có chồng lấp. Firestore Rules đạt 52 ca. Build APK cô lập, APK instrumentation và unit test Android đạt. [Báo cáo và log](../../specs/100-notification/validation/f1-2026-11-26/README.md#backend)
+- Vivo V2247 xác nhận F1 bằng Firebase SDK thật qua USB, gồm inbox, route, fallback khi mất quyền và tách UID. Lượt chạy lại dùng `group-manage` bị dừng khi chờ instrumentation. Lượt riêng P2/B1 đạt JUnit 1/1, gồm voucher follower, replay checkout, chi tiết đã lưu và tách tài khoản PLAYER/OWNER. [Mốc F1 và P2/B1](../../specs/100-notification/validation/f1-2026-11-26/device-acceptance.txt), [JUnit P2/B1](../../specs/100-notification/validation/f1-2026-11-26/device-producers-payment.log)
+- Bốn cấu hình phone/w600dp sáng/tối đạt 48 ca UI. Thêm 9 ca quyền, channel và payload injection cục bộ. Lưu 28 screenshot, khôi phục density 440 và trạng thái quyền, gỡ USB reverse thử nghiệm. Push được kiểm chứng bằng fake sender và payload injection cục bộ. [Bằng chứng thiết bị](../../specs/100-notification/validation/f1-2026-11-26/README.md#điện-thoại-thật)
+- Supabase local chạy hai lượt cho mỗi cron qua pg_cron/pg_net, cả bốn lượt trả HTTP 200 từ handler demo. Đã dọn cron và khóa Vault tạm. Hậu kiểm production cho thấy bảy Edge Function ACTIVE, hai phiên bản migration có trong lịch sử, cả hai cron có `active=false` và endpoint trả 401 khi thiếu secret. Rollout APK checkout và thu hồi quyền ghi PENDING trực tiếp trên production còn cần thực hiện đồng bộ. [Cron local](../../specs/100-notification/validation/f1-2026-11-26/supabase-cron.log), [Hậu kiểm production](../../specs/100-notification/validation/f1-2026-11-26/README.md#production)
+
+---
+
+## Mục 64: Kiểm thử hồi quy Feature 100 trên vivo và sửa Settings offline
+
+| Thông tin                | Nội dung |
+| ------------------------ | -------- |
+| Ngày                     | 2026-11-27 |
+| Người thực hiện          | Minh Nhựt |
+| Nhóm tính năng liên quan | 10 (100 thông báo) |
+| Công cụ AI               | Codex (GPT-6), `$speckit-implement` |
+| Mục đích                 | Kiểm thử hồi quy Feature 100 trên điện thoại thật, sửa lỗi phát hiện và cập nhật trạng thái theo bằng chứng |
+| Nhánh Git                | `feat/100-notification` |
+
+### Prompt đã dùng
+
+```text
+Kiểm thử toàn bộ Feature 100 trên điện thoại thật đang kết nối và sửa các lỗi phát hiện được.
+
+Đọc spec, tasks.md, quickstart.md, implementation-review.md và các quyết định đã duyệt trong specs/100-notification/. Lập danh sách kiểm thử bao phủ các yêu cầu, ghi rõ phần đã triển khai và phần còn thiếu hoặc bị chặn.
+
+Build và cài bản mới nhất vào ứng dụng kiểm thử cô lập. Dùng tài khoản demo và SDK/repository thật kết nối môi trường local/emulator khi có thể.
+
+Kiểm tra đầy đủ:
+- Inbox: tải, phân trang, thứ tự, trạng thái rỗng, lỗi/retry, đọc một và đọc tất cả qua nhiều trang.
+- Settings: các nhóm bật/tắt, BOOKING_NEW luôn bật, mặc định PROMOTION, lưu và tải lại, cache offline và đồng bộ sau khi có mạng.
+- Permission, channel, hiển thị thông báo và thao tác chạm khi app đang mở, chạy nền hoặc được mở lại.
+- Routing của các loại thông báo, kiểm tra quyền truy cập, nguồn bị xóa và fallback chi tiết.
+- Đăng xuất, đăng nhập và đổi tài khoản; không để lộ inbox, cache hoặc thông báo của tài khoản trước.
+- Các sự kiện booking, reminder, drop-in/waitlist, promotion, review, owner, group/chat và SYSTEM trong phạm vi đã triển khai.
+- Replay, thông báo trùng, retry, lỗi gửi push và suppression khi muted/đang xem chat; inbox vẫn phải được lưu theo spec.
+- UI light/dark, phone và w600dp; đối chiếu với specs/100-notification/ui/ cùng các ngoại lệ đã duyệt.
+
+Với mỗi lỗi, tái hiện, tìm nguyên nhân, sửa code và chạy lại ca lỗi cùng kiểm thử hồi quy liên quan. Tiếp tục đến khi các lỗi trong phạm vi đã được xử lý hoặc có blocker cụ thể. Giữ nguyên yêu cầu kiểm thử; mọi sửa đổi kỳ vọng phải có căn cứ từ spec hoặc quyết định đã duyệt.
+
+Chạy các bộ unit, Rules, backend và integration liên quan. Kiểm tra Supabase local/cron nếu môi trường hỗ trợ. Phân biệt rõ bằng chứng từ fake, local payload injection, điện thoại kết nối emulator và nhận push qua FCM thật.
+
+Lưu log, screenshot và kết quả của bản code cuối cùng. Khôi phục density, permission và các thiết lập thiết bị đã thay đổi khi kết thúc.
+
+Không tự deploy, chạy migration dữ liệu thật, gửi push thật, commit hoặc push Git. Nếu thiếu quyền hay cấu hình để kiểm thử một phần, báo chính xác phần đó và tiếp tục những phần còn chạy được.
+
+Cập nhật tasks.md và implementation-review.md theo bằng chứng. Báo cáo cuối gồm phạm vi đã kiểm thử, lỗi đã sửa, kết quả trên điện thoại thật, đường dẫn bằng chứng và các ca chưa thể kiểm chứng. Chỉ báo hoàn tất khi mọi ca trong phạm vi đều có kết quả rõ ràng.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Lập ma trận theo spec và các quyết định đã duyệt. Build APK cô lập `com.example.booking_app.adminlocal` và chạy trên vivo V2247 bằng tài khoản demo, kết nối Auth/Firestore Emulator qua USB reverse.
+- Tái hiện hai lỗi Settings bằng SDK thật. Firestore `UNAVAILABLE` bị phân loại thành lỗi không xác định khiến Settings bỏ qua cache. Sau khi dùng được cache, transaction vẫn có thể ghi khi mạng của SDK bị tắt. Sửa ánh xạ lỗi và yêu cầu đọc profile từ server thành công, kiểm tra lại UID trước khi bắt đầu transaction. Ca hồi quy xác nhận cache chỉ đọc, tải lại từ server khi kết nối và xóa cache cũ khi đổi UID.
+- Xác nhận đọc một và đọc tất cả qua 65 mục inbox, điều hướng khi nguồn còn quyền hoặc fallback khi nguồn bị xóa hay mất quyền. F1 chạy qua producer thu hồi thành viên. P2/B1 kiểm tra voucher follower, replay checkout và inbox của chủ sân.
+- Cập nhật tiến độ **55/56**. Mở lại T056 vì bộ kiểm thử mở được khay SystemUI nhưng chưa tìm thấy mục demo để chạm trực tiếp. `PendingIntent` của thông báo cục bộ đã mở đúng chi tiết và đánh dấu đã đọc ở cả ba trạng thái. FCM thật nằm ngoài lượt kiểm thử. [Tasks](../../specs/100-notification/tasks.md) và [implementation review](../../specs/100-notification/implementation-review.md)
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+| ---- | ---------- | ----- |
+| `TaskAwait.kt` và repository Settings | Ánh xạ `UNAVAILABLE` sang lỗi mạng, `DEADLINE_EXCEEDED` sang timeout. Đọc profile từ server trước khi ghi | Cho phép đọc cache khi mất kết nối, giữ lỗi quyền riêng và chặn transaction ghi lúc SDK offline. |
+| Kiểm thử Android và harness lấy ảnh | Dùng SDK thật cho ba hành trình, repository giả cho ma trận UI. Kiểm tra mã thoát khi `adb pull` | Tách bằng chứng theo lớp và lưu đủ ảnh quyền. |
+| Quyết định nguồn và routing | Giữ các hợp đồng đã duyệt và fallback chi tiết đã lưu | Đối chiếu hồi quy theo đúng hành vi được duyệt. |
+| `tasks.md` và `implementation-review.md` | Ghi kết quả T039 và mở lại T056 | Phản ánh ca chạm trực tiếp từ khay vivo còn thiếu bằng chứng. |
+
+### Cách kiểm chứng
+
+- Build APK cô lập và instrumentation đạt. JVM ghi 1.702 ca, 2 bỏ qua, 0 failure/error. Lint 0 lỗi và 851 cảnh báo. Firestore Rules đạt 61 ca. Các bộ backend fake và Emulator kiểm tra producer, replay, cạnh tranh giữa hai worker, retry và suppression. [Ma trận và log](../../specs/100-notification/validation/qa-2026-11-26/README.md)
+- Vivo đạt 3/3 hành trình SDK, 52/52 ca UI qua phone/w600dp sáng/tối và 9/9 ca quyền, channel, payload injection cục bộ. Lưu 40 ảnh và SHA-256 APK. Density trở về 440, cờ quyền thông báo khớp trạng thái ban đầu và USB reverse thử nghiệm đã được gỡ. [SDK](../../specs/100-notification/validation/qa-2026-11-26/sdk-milestones.log) và [trạng thái thiết bị](../../specs/100-notification/validation/qa-2026-11-26/device-after.txt)
+- Supabase local chạy hai lượt mỗi cron qua pg_cron/pg_net với booking demo. Xác nhận đúng một inbox reminder, một job gửi và một receipt gửi giả lập. Các cron, khóa Vault và fixture tạm đã được dọn. [Cron local với dữ liệu demo](../../specs/100-notification/validation/qa-2026-11-26/supabase-cron-seeded.log)
+- Kiểm thử `PendingIntent` đạt ở foreground, background và khi mở lại Activity. Lượt kiểm thử chạm trực tiếp ghi nhận SystemUI mở nhưng chưa thấy mục demo. [PendingIntent](../../specs/100-notification/validation/qa-2026-11-26/posted-pending-intent-final.log) và [khay SystemUI](../../specs/100-notification/validation/qa-2026-11-26/shade-touch-final.log)
 
 ---

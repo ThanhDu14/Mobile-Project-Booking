@@ -5,6 +5,7 @@
 // `tx.write`, không tự commit. Mọi thao tác đọc nằm trước mọi thao tác ghi: transaction của `_shared/firestore.ts`
 // không cho đọc sau khi đã ghi, nên mỗi hàm đọc hết rồi mới ghi một lượt ở cuối.
 import { HttpError } from "./auth.ts";
+import { activeRecipient, prepareNotification } from "./notification-enqueue.ts";
 import { createWrite, updateWrite, type QueryDocument, type QueryFilter, type QueryOptions, type Write } from "./firestore.ts";
 import {
   type CancelledBy,
@@ -60,12 +61,18 @@ const byTicket = (a: QueryDocument, b: QueryDocument) =>
   asNumber(a.data.waitlistTicket, Number.MAX_SAFE_INTEGER) - asNumber(b.data.waitlistTicket, Number.MAX_SAFE_INTEGER);
 
 // Persist the inbox entry with the state change; callers may deliver push after commit.
-function inboxWrite(uid: string, sessionId: string, type: "DROPIN_SPOT_OPENED" | "DROPIN_WAITLIST_CLOSED", data: Record<string, unknown>, now: Date): Write {
-  return createWrite(`users/${uid}/notifications/${crypto.randomUUID()}`, {
+async function inboxWrites(tx: WaitlistTx, uid: string, sessionId: string, ticket: unknown, type: "DROPIN_SPOT_OPENED" | "DROPIN_WAITLIST_CLOSED", data: Record<string, unknown>, now: Date): Promise<Write[]> {
+  const content = {
     type, title: type === "DROPIN_SPOT_OPENED" ? "Bạn đã được nhận vào buổi" : "Hàng chờ đã đóng",
     body: type === "DROPIN_SPOT_OPENED" ? "Mở vé để xem thông tin buổi chơi." : "Lượt chờ của bạn đã kết thúc.",
-    data: { sessionId, ...data }, isRead: false, createdAt: now,
-  });
+    data: { sessionId, ...data },
+  };
+  const id = crypto.randomUUID();
+  if (typeof ticket === "number" && Number.isSafeInteger(ticket) && ticket >= 0) return await prepareNotification(
+    tx, "waitlist", JSON.stringify([sessionId, uid, ticket, type]), uid, id, content, now);
+  // Legacy registration without a ticket: preserve inbox, never guess a delivery generation.
+  return activeRecipient(await tx.get(`users/${uid}`))
+    ? [createWrite(`users/${uid}/notifications/${id}`, { ...content, isRead: false, createdAt: now })] : [];
 }
 
 /**
@@ -132,6 +139,9 @@ export async function promoteFromWaitlist(tx: WaitlistTx, session: SessionDoc, s
   const otherSessions = new Map<string, SessionDoc | null>();
   for (const x of leavingBySession.keys()) otherSessions.set(x, await tx.get(sessionPath(x)) as SessionDoc | null);
 
+  const notifications = new Map<string, Write[]>();
+  for (const c of chosen) notifications.set(c.id, await inboxWrites(tx, c.id, sessionId, c.data.waitlistTicket,
+    "DROPIN_SPOT_OPENED", { autoLeftSessionIds: (overlaps.get(c.id) ?? []).map(d => String(d.data.sessionId ?? d.path.split("/")[1])) }, serverNow));
   // ---- Ghi ----
   const promoted: PromoteResult["promoted"] = [];
   for (const c of chosen) {
@@ -159,7 +169,7 @@ export async function promoteFromWaitlist(tx: WaitlistTx, session: SessionDoc, s
       }));
     }
     const autoLeftSessionIds = left.map((d) => String(d.data.sessionId ?? d.path.split("/")[1]));
-    tx.write(inboxWrite(c.id, sessionId, "DROPIN_SPOT_OPENED", { autoLeftSessionIds }, serverNow));
+    for (const write of notifications.get(c.id) ?? []) tx.write(write);
     promoted.push({ uid: c.id, autoLeftSessionIds });
   }
   for (const [x, docs] of leavingBySession) {
@@ -207,6 +217,9 @@ export async function closeWaitlistInTx(
   const stale = ticketsOf(session).length > 0 || asNumber(session.waitlistCount) !== 0;
   if (docs.length === 0 && !stale) return { closed: [] };
   const cancelledBy: CancelledBy = reason === "CLOSED" ? "SYSTEM" : "OWNER";
+  const notifications = new Map<string, Write[]>();
+  for (const d of docs) notifications.set(d.id, await inboxWrites(tx, d.id, sessionId, d.data.waitlistTicket,
+    "DROPIN_WAITLIST_CLOSED", { reason }, now));
   for (const d of docs) {
     tx.write(updateWrite(d.path, {
       status: "CANCELLED",
@@ -215,7 +228,7 @@ export async function closeWaitlistInTx(
       waitlistEndReason: reason,
       updatedAt: now,
     }));
-    tx.write(inboxWrite(d.id, sessionId, "DROPIN_WAITLIST_CLOSED", { reason }, now));
+    for (const write of notifications.get(d.id) ?? []) tx.write(write);
   }
   tx.write(updateWrite(sessionPath(sessionId), { waitlistTickets: [], waitlistCount: 0, updatedAt: now }));
   session.waitlistTickets = [];

@@ -30,6 +30,9 @@ class EmulatorAdmin(private val projectId: String, private val host: String = "1
         val connection = url(path).openConnection() as HttpURLConnection
         try {
             connection.requestMethod = method
+            connection.connectTimeout = 5_000
+            connection.readTimeout = 10_000
+            connection.setRequestProperty("Connection", "close")
             connection.setRequestProperty("Authorization", "Bearer owner")
             connection.setRequestProperty("Content-Type", "application/json")
             if (body != null) {

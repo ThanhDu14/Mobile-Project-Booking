@@ -1,0 +1,49 @@
+﻿deno.exe : Check supabase/functions/admin-revoke-owner/handler.test.ts
+At line:2 char:1
++ & 'C:/Users/ACER/AppData/Local/npm-cache/_npx/05b6ef7b13673c57/node_m ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Check supabase/...handler.test.ts:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+
+Check supabase/functions/complete-bookings/handler.test.ts
+Check supabase/functions/notification-producers.test.ts
+running 3 tests from ./supabase/functions/admin-revoke-owner/handler.test.ts
+admin-revoke-owner: rejects non-POST ... ok (10ms)
+admin-revoke-owner: rejects unauthenticated request ... ok (1ms)
+admin-revoke-owner: validateRevokeReason trims whitespace and rejects empty ... ok (256µs)
+running 6 tests from ./supabase/functions/complete-bookings/handler.test.ts
+complete-bookings: da check-in + qua endAt -> COMPLETED (+ completedAt) ... ok (8ms)
+RR1: completion enqueues once, excluding reviewed, owner, inactive and no-show bookings ... ok (3ms)
+complete-bookings: chua check-in + qua endAt -> NO_SHOW ... ok (409µs)
+complete-bookings: CONFIRMED chua toi endAt -> giu nguyen ... ok (296µs)
+complete-bookings: PENDING va HOLD khong bi anh huong ... ok (239µs)
+complete-bookings: chay lai lan 2 (idempotent) -> khong doi gi ... ok (302µs)
+running 4 tests from ./supabase/functions/notification-producers.test.ts
+notification Timestamp: application APPROVE persists native date and retry preserves it ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+notification Timestamp: application APPROVE persists native date and retry preserves it ... ok (18ms)
+notification Timestamp: application REJECT persists native date and retry preserves it ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+notification Timestamp: application REJECT persists native date and retry preserves it ... ok (1ms)
+notification Timestamp: revoke creates one dated inbox entry across retry ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+notification Timestamp: revoke creates one dated inbox entry across retry ... ok (4ms)
+notification Timestamp: SYSTEM fanout dates every recipient and preserves read state on retry ...
+------- post-test output -------
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+[auth] FIREBASE_AUTH_EMULATOR_HOST đang bật: bỏ qua kiểm tra chữ ký token
+----- post-test output end -----
+notification Timestamp: SYSTEM fanout dates every recipient and preserves read state on retry ... ok (2ms)
+
+ok | 13 passed | 0 failed (268ms)

@@ -1,9 +1,10 @@
 import { errorResponse, toErrorResponse } from "../_shared/auth.ts";
 import * as defaultFirestore from "../_shared/firestore.ts";
 import { updateWrite } from "../_shared/firestore.ts";
+import { notificationInboxId, prepareNotification } from "../_shared/notification-enqueue.ts";
 
 export interface CompleteBookingsDeps {
-  firestore?: Pick<typeof defaultFirestore, "query" | "commit" | "get">;
+  firestore?: Pick<typeof defaultFirestore, "query" | "runTransaction">;
   now?: () => Date;
   cronSecret?: string;
 }
@@ -57,36 +58,46 @@ export async function handleCompleteBookings(
 
     let completed = 0;
     let noShow = 0;
-    const writes: defaultFirestore.Write[] = [];
-
     for (const doc of confirmedDocs) {
-      const data = doc.data;
-      const endAtMs = getEpochMillis(data.endAt);
-      if (endAtMs > 0 && endAtMs <= serverNowMs) {
-        const isCheckedIn = data.checkedInAt !== null && data.checkedInAt !== undefined && data.checkedInAt !== "";
-        if (isCheckedIn) {
-          writes.push(
-            updateWrite(`bookings/${doc.id}`, {
-              status: "COMPLETED",
-              completedAt: serverNow,
-              updatedAt: serverNow,
-            })
-          );
-          completed++;
-        } else {
-          writes.push(
-            updateWrite(`bookings/${doc.id}`, {
-              status: "NO_SHOW",
-              updatedAt: serverNow,
-            })
-          );
-          noShow++;
+      const scannedEndAt = getEpochMillis(doc.data.endAt);
+      if (!(scannedEndAt > 0 && scannedEndAt <= serverNowMs)) continue;
+      const status = await deps.firestore.runTransaction(async tx => {
+        const path = `bookings/${doc.id}`;
+        const current = await tx.get(path);
+        if (current?.status !== "CONFIRMED") return null;
+        const endAt = getEpochMillis(current.endAt);
+        if (!(endAt > 0 && endAt <= serverNowMs)) return null;
+        const checkedIn = current.checkedInAt != null && current.checkedInAt !== "";
+        if (!checkedIn) {
+          tx.write(updateWrite(path, { status: "NO_SHOW", updatedAt: serverNow }));
+          return "NO_SHOW";
         }
-      }
-    }
 
-    if (writes.length > 0) {
-      await deps.firestore.commit(writes);
+        const uid = current.userId;
+        const venueId = current.venueId;
+        const validId = (value: unknown): value is string =>
+          typeof value === "string" && value.length > 0 && !value.includes("/");
+        if (validId(uid) && validId(venueId)) {
+          const [venue, review] = await Promise.all([tx.get(`venues/${venueId}`), tx.get(`reviews/${doc.id}`)]);
+          if (venue && venue.ownerId !== uid && !review) {
+            const type = "REVIEW_REMINDER";
+            const family = "review-reminder";
+            const identity = JSON.stringify([doc.id, type]);
+            const id = await notificationInboxId(family, identity, uid, type);
+            const notification = await prepareNotification(tx, family, identity, uid, id, {
+              type,
+              title: "Đánh giá buổi chơi của bạn",
+              body: "Bạn có thể đánh giá sân sau buổi chơi.",
+              data: { bookingId: doc.id },
+            }, serverNow);
+            for (const write of notification) tx.write(write);
+          }
+        }
+        tx.write(updateWrite(path, { status: "COMPLETED", completedAt: serverNow, updatedAt: serverNow }));
+        return "COMPLETED";
+      });
+      if (status === "COMPLETED") completed++;
+      if (status === "NO_SHOW") noShow++;
     }
 
     return Response.json({

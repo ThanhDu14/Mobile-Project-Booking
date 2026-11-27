@@ -155,8 +155,8 @@ class FirestorePostRepository @Inject constructor(
     override suspend fun update(groupId: String, draft: PostDraft): Result<Post> =
         callPost(draft.toUpdateRequest(groupId)) { it.post?.toDomain() }
 
-    override suspend fun delete(groupId: String, postId: String): Result<Unit> =
-        callPost(GroupPostRequest.delete(groupId, postId)) { }
+    override suspend fun delete(groupId: String, postId: String, requestId: String): Result<Unit> =
+        callPost(GroupPostRequest.delete(groupId, postId, requestId)) { }
 
     // ---------- US4: tham gia sự kiện ----------
 

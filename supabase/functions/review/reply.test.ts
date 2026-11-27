@@ -2,7 +2,7 @@
 // Chạy giống create.test.ts (cần Firebase Emulator).
 import { assert, assertEquals, assertInstanceOf } from "jsr:@std/assert@1.0.19";
 import { get } from "../_shared/firestore.ts";
-import { call, createBody, done, NOW, seed, sent } from "./testing.ts";
+import { call, createBody, done, NOW, seed, inbox, sent } from "./testing.ts";
 
 const reply = (reviewId: string, text: unknown) => ({ action: "reply", reviewId, text });
 
@@ -13,7 +13,7 @@ async function seedWithReview() {
   sent.length = 0;
 }
 
-Deno.test("chủ đúng cơ sở phản hồi lần đầu: hasOwnerReply = true, gửi REVIEW_REPLY, tổng điểm không đổi", async () => {
+Deno.test("chủ đúng cơ sở phản hồi lần đầu: hasOwnerReply = true, gửi REVIEW_REPLIED, tổng điểm không đổi", async () => {
   await seedWithReview();
   const before = await get("venues/venueA");
 
@@ -34,7 +34,8 @@ Deno.test("chủ đúng cơ sở phản hồi lần đầu: hasOwnerReply = true
 
   const after = await get("venues/venueA");
   assertEquals([after?.ratingSums, after?.ratingCount, after?.ratingAvg], [before?.ratingSums, before?.ratingCount, before?.ratingAvg]);
-  assertEquals(sent, [{ type: "REVIEW_REPLY", recipientUid: "player1", data: { reviewId: "b-done", venueId: "venueA" } }]);
+  assertEquals(sent, []);
+  assertEquals((await inbox("player1", "REVIEW_REPLIED")).map(n => n.data.data), [{ reviewId: "b-done", venueId: "venueA" }]);
 });
 
 Deno.test("sửa phản hồi lần 2: editedAt có giá trị, repliedAt giữ nguyên, không gửi thông báo lại", async () => {

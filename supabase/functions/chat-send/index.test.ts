@@ -17,6 +17,7 @@ import { makeTestDeps, seedGroup } from "../_shared/groups_fixtures.ts";
 import { handleGroupManage } from "../group-manage/handler.ts";
 import { bearer, emulatorToken } from "../_shared/testing.ts";
 import { handleChatSend } from "./handler.ts";
+import { processGroupFanouts } from "../_shared/group-notification.ts";
 
 Deno.env.set("FIREBASE_PROJECT_ID", Deno.env.get("FIREBASE_PROJECT_ID") ?? "demo-smashnow");
 const ENABLED = !!Deno.env.get("FIRESTORE_EMULATOR_HOST") && !!Deno.env.get("FIREBASE_AUTH_EMULATOR_HOST");
@@ -57,6 +58,27 @@ T("C1 tin chữ hợp lệ: NORMAL, createdAt server, lastMessage đúng, unread
   assertEquals((chat?.updatedAt as Date).getTime(), (msg?.createdAt as Date).getTime());
   assertEquals(chat?.unreadCounts, { [s.p]: 0, [s.o]: 1 });
   await assertChatInvariant(s.chatId);
+});
+
+T("H1 DIRECT: atomic inbox/job survives muted/viewing, excludes sender; replay and callback failure cannot duplicate", async () => {
+  const s = await direct("h1");
+  await firestore.commit([firestore.updateWrite(participantPath(s.chatId, s.o), { muted: true, viewingUntil: new Date(Date.now() + 60000) })]);
+  const messageId = crypto.randomUUID();
+  const deps = { ...s.deps, notify: () => Promise.reject(new Error("must not call legacy callback")) };
+  const body = { chatId: s.chatId, messageId, text: "Private text" };
+  assertEquals((await send(deps, s.p, body)).status, 201);
+  assertEquals((await send(deps, s.p, body)).status, 200);
+  const inbox = await firestore.query("notifications", [], { parent: `users/${s.o}` });
+  assertEquals(inbox.length, 1);
+  assertEquals(inbox[0].data.type, "CHAT_MESSAGE");
+  assertEquals(inbox[0].data.body, "Bạn có tin nhắn mới.");
+  assertEquals(inbox[0].data.data, { chatId: s.chatId, messageId });
+  assert(inbox[0].data.createdAt instanceof Date);
+  assertEquals((await firestore.query("notifications", [], { parent: `users/${s.p}` })).length, 0);
+  const jobs = await firestore.query("notificationDeliveries", [{ field: "recipientUid", op: "EQUAL", value: s.o }]);
+  assertEquals(jobs.length, 1);
+  assertEquals(jobs[0].data.notificationId, inbox[0].id);
+  assertEquals(s.notifications.sent, []);
 });
 
 T("C2 cùng messageId 5 lần (song song và lặp lại): 1 tin, unreadCounts +1 đúng một lần", async () => {
@@ -153,7 +175,7 @@ T("C7 ảnh: chưa tải → PHOTO_MISSING; path sai → INVALID_ARGUMENT; ảnh
   await assertChatInvariant(s.chatId);
 });
 
-T("C8 thông báo: chỉ người không muted và không đang xem nhận CHAT_MESSAGE", async () => {
+T("C8 durable group inbox includes muted/viewing recipients and excludes sender", async () => {
   const tag = "c8";
   const [a, b, c, d] = ["a", "b", "c", "d"].map((n) => u(tag, n));
   const gid = await seedGroup({ owner: a, members: [b, c, d] });
@@ -167,15 +189,17 @@ T("C8 thông báo: chỉ người không muted và không đang xem nhận CHAT_
   ]);
   const messageId = crypto.randomUUID();
   assertEquals((await send(deps, a, { chatId, messageId, text: "hello" })).status, 201);
-  assertEquals(notifications.recipients(), [d]);
-  assertEquals(notifications.sent[0], { type: "CHAT_MESSAGE", recipientUid: d, data: { chatId, messageId } });
-  // gửi lại (200) không thông báo lần nữa; unreadCounts không phụ thuộc muted
-  await send(deps, a, { chatId, messageId, text: "hello" });
-  assertEquals(notifications.sent.length, 1);
+  assertEquals((await send(deps, a, { chatId, messageId, text: "hello" })).status, 200);
+  await processGroupFanouts({ ...firestore, query: (collection, filters, options) =>
+    firestore.query(collection, [...filters, { field: "groupId", op: "EQUAL", value: gid }], options) }, new Date());
+  for (const uid of [b, c, d]) {
+    const rows = await firestore.query("notifications", [], { parent: `users/${uid}` });
+    assertEquals(rows.map(r => r.data.data), [{ chatId, messageId }]);
+    assertEquals(rows[0].data.type, "CHAT_MESSAGE");
+  }
+  assertEquals(await firestore.query("notifications", [], { parent: `users/${a}` }), []);
+  assertEquals(notifications.sent, []);
   assertEquals((await firestore.get(chatPath(chatId)))?.unreadCounts, { [a]: 0, [b]: 1, [c]: 1, [d]: 1 });
-  // lỗi gửi thông báo bị bỏ qua
-  const failing = makeChatDeps({ notify: () => Promise.reject(new Error("boom")) }).deps;
-  assertEquals((await send(failing, a, { chatId, messageId: crypto.randomUUID(), text: "x" })).status, 201);
   await assertChatInvariant(chatId);
 });
 
@@ -187,7 +211,7 @@ T("T031 tích hợp 090: group-manage join rồi chat-send được; remove rồ
   // Hook thật của 090 (syncGroupChat) thay cho bản ghi lại của makeTestDeps.
   const g = makeTestDeps({ onMembershipChanged: onGroupMembershipChanged });
   const manage = async (uid: string, body: Record<string, unknown>) => {
-    const r = await handleGroupManage(bearer(tokenOf(uid), { body: JSON.stringify(body) }), g.deps);
+    const r = await handleGroupManage(bearer(tokenOf(uid), { body: JSON.stringify({ requestId: crypto.randomUUID(), ...body }) }), g.deps);
     return { status: r.status, body: await r.json() };
   };
   const { deps } = makeChatDeps();

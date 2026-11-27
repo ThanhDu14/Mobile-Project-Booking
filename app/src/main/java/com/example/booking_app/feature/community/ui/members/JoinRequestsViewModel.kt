@@ -39,7 +39,7 @@ sealed interface JoinRequestsEvent {
  */
 @HiltViewModel
 class JoinRequestsViewModel @Inject constructor(
-    savedStateHandle: SavedStateHandle,
+    private val savedStateHandle: SavedStateHandle,
     private val groups: GroupRepository,
     private val review: ReviewJoinRequest,
 ) : ViewModel() {
@@ -82,22 +82,29 @@ class JoinRequestsViewModel @Inject constructor(
         }
     }
 
-    fun onApprove(userId: String) = review(userId) { id -> review.approve(groupId, userId, id) }
+    fun onApprove(userId: String) = review(userId, "approve") { id -> review.approve(groupId, userId, id) }
 
-    fun onReject(userId: String) = review(userId) { id -> review.reject(groupId, userId, id) }
+    fun onReject(userId: String) = review(userId, "reject") { id -> review.reject(groupId, userId, id) }
 
-    private fun review(userId: String, call: suspend (String) -> Result<Unit>) {
+    private fun review(userId: String, action: String, call: suspend (String) -> Result<Unit>) {
         if (userId in hidden) return
         hidden = hidden + userId
         publish()
+        val key = "join_${action}_${userId}_${source.firstOrNull { it.userId == userId }?.createdAt}"
         viewModelScope.launch {
             val result = try {
-                call(UUID.randomUUID().toString())
+                val requestId = savedStateHandle.get<String>(key)
+                    ?: UUID.randomUUID().toString().also { savedStateHandle[key] = it }
+                call(requestId)
             } catch (e: CancellationException) {
                 throw e
             }
+            result.onSuccess { savedStateHandle.remove<String>(key) }
             result.onFailure {
                 val error = it.toCommunityError()
+                if (error !is CommunityError.Network && error !is CommunityError.Busy) {
+                    savedStateHandle.remove<String>(key)
+                }
                 // Yêu cầu không còn: giữ ẩn, danh sách realtime sẽ phản ánh.
                 if (error !is CommunityError.RequestNotFound) hidden = hidden - userId
                 publish()

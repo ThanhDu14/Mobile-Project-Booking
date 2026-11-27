@@ -1,0 +1,166 @@
+﻿{
+    "date":  "2026-11-22",
+    "build":  "PASS",
+    "command":  "./gradlew.bat testDebugUnitTest assembleDebug lintDebug",
+    "unit":  {
+                 "suites":  252,
+                 "tests":  1666,
+                 "failures":  0,
+                 "errors":  0,
+                 "skipped":  2
+             },
+    "notificationSuites":  [
+                               {
+                                   "suite":  "com.example.booking_app.feature.notification.FirestoreNotificationRepositoryTest",
+                                   "tests":  9,
+                                   "failures":  0,
+                                   "errors":  0,
+                                   "skipped":  0
+                               },
+                               {
+                                   "suite":  "com.example.booking_app.feature.notification.NotificationContractTest",
+                                   "tests":  5,
+                                   "failures":  0,
+                                   "errors":  0,
+                                   "skipped":  0
+                               },
+                               {
+                                   "suite":  "com.example.booking_app.feature.notification.NotificationGroupsTest",
+                                   "tests":  1,
+                                   "failures":  0,
+                                   "errors":  0,
+                                   "skipped":  0
+                               },
+                               {
+                                   "suite":  "com.example.booking_app.feature.notification.NotificationRouteTest",
+                                   "tests":  3,
+                                   "failures":  0,
+                                   "errors":  0,
+                                   "skipped":  0
+                               },
+                               {
+                                   "suite":  "com.example.booking_app.feature.notification.NotificationViewModelTest",
+                                   "tests":  3,
+                                   "failures":  0,
+                                   "errors":  0,
+                                   "skipped":  0
+                               }
+                           ],
+    "lint":  "0 errors, 856 warnings",
+    "ui":  [
+               {
+                   "variant":  "phone-light",
+                   "tests":  8,
+                   "failures":  0,
+                   "log":  "device/phone-light/instrumentation.log",
+                   "screenshots":  [
+                                       {
+                                           "name":  "notification-393dp-light-inbox-shell.png",
+                                           "sha256":  "5d205c9a5caa1bb82922f73fd9dc8f75c11abb3c95d8b0ea7f6912900561d150"
+                                       },
+                                       {
+                                           "name":  "notification-393dp-light-inbox.png",
+                                           "sha256":  "9f3526354f45617001225c17212023d0b5faef96a8e4c65966c985adb34b32e3"
+                                       },
+                                       {
+                                           "name":  "notification-393dp-light-settings-extra.png",
+                                           "sha256":  "1aaacf5135e7e8707ae95480ab854fc509dba9d5ee02bc6ba47512509e3b2b98"
+                                       },
+                                       {
+                                           "name":  "notification-393dp-light-settings-shell.png",
+                                           "sha256":  "fb96b5aa8ad0488e6d33b4972bed81d261c7969e090564ead5f773daf0cfc659"
+                                       },
+                                       {
+                                           "name":  "notification-393dp-light-settings.png",
+                                           "sha256":  "6d21963b2a17c2f20ca04a478e64dcaaf3051c8fe9bbb09cda09b036043ab33c"
+                                       }
+                                   ]
+               },
+               {
+                   "variant":  "phone-dark",
+                   "tests":  8,
+                   "failures":  0,
+                   "log":  "device/phone-dark/instrumentation.log",
+                   "screenshots":  [
+                                       {
+                                           "name":  "notification-393dp-dark-inbox-shell.png",
+                                           "sha256":  "0c7bcbc7c22ae1b9af366c958767d05ce6f0bff04eddd3d50007fd0814f13c69"
+                                       },
+                                       {
+                                           "name":  "notification-393dp-dark-inbox.png",
+                                           "sha256":  "1f3de44705914e402315e1b2b8da226acd481b151c15c8f32874b98854e958c4"
+                                       },
+                                       {
+                                           "name":  "notification-393dp-dark-settings-extra.png",
+                                           "sha256":  "033cf59ae9b8bc6ed3d70406a912bc36047b15b3bd1cfae17358614ffe63d818"
+                                       },
+                                       {
+                                           "name":  "notification-393dp-dark-settings-shell.png",
+                                           "sha256":  "dbc71aada727a124f4ff85ba2961f3f93b986d926091d908f058baeb3381999c"
+                                       },
+                                       {
+                                           "name":  "notification-393dp-dark-settings.png",
+                                           "sha256":  "4f144019dbf4402979f74a5ab07ffffc548d979309e42c82994960fa6aac6b47"
+                                       }
+                                   ]
+               },
+               {
+                   "variant":  "tablet-light",
+                   "tests":  8,
+                   "failures":  0,
+                   "log":  "device/tablet-light/instrumentation.log",
+                   "screenshots":  [
+                                       {
+                                           "name":  "notification-720dp-light-inbox-shell.png",
+                                           "sha256":  "6d3de9dcf817749d28bdf5d1a41ea06fd4ea0bc9e43450fbffe7c220fcffbb1b"
+                                       },
+                                       {
+                                           "name":  "notification-720dp-light-inbox.png",
+                                           "sha256":  "96cb61c1335d6a1814f4f7f059ed28146f2cf0915e837cf0070018a4cc967435"
+                                       },
+                                       {
+                                           "name":  "notification-720dp-light-settings-extra.png",
+                                           "sha256":  "ac966b0c07062f93852b85ced00e010f1484705f2b2d230cf55d306f30bd69ac"
+                                       },
+                                       {
+                                           "name":  "notification-720dp-light-settings-shell.png",
+                                           "sha256":  "eacfee16d10af51812fb91d2471075277bff4148dd74ea55a42d81fe9e06b8f0"
+                                       },
+                                       {
+                                           "name":  "notification-720dp-light-settings.png",
+                                           "sha256":  "769cf9e498fc830dbe34ea8208b01ed72e83381b6d7cacb14f81a386775bd31b"
+                                       }
+                                   ]
+               },
+               {
+                   "variant":  "tablet-dark",
+                   "tests":  8,
+                   "failures":  0,
+                   "log":  "device/tablet-dark/instrumentation.log",
+                   "screenshots":  [
+                                       {
+                                           "name":  "notification-720dp-dark-inbox-shell.png",
+                                           "sha256":  "f4eb4b6291734ee6283509fc1983b70f152122c6c13f3693ff35eb07e744d1e3"
+                                       },
+                                       {
+                                           "name":  "notification-720dp-dark-inbox.png",
+                                           "sha256":  "a03c0677030e3aa2d84581e5e2b5ac18243715819da48c566b180ba95eb2bc9b"
+                                       },
+                                       {
+                                           "name":  "notification-720dp-dark-settings-extra.png",
+                                           "sha256":  "a6360885bb3e365677a0f5d01152f7e0fe9635e013b9060bceb7885ec0e22a41"
+                                       },
+                                       {
+                                           "name":  "notification-720dp-dark-settings-shell.png",
+                                           "sha256":  "78cbe2fe4fb59b694ac88a420dc4c1ec0f1d7f859da0f8ce27bc253ae950cd50"
+                                       },
+                                       {
+                                           "name":  "notification-720dp-dark-settings.png",
+                                           "sha256":  "78cbe2fe4fb59b694ac88a420dc4c1ec0f1d7f859da0f8ce27bc253ae950cd50"
+                                       }
+                                   ]
+               }
+           ],
+    "deviceMetadata":  "device-metadata.json",
+    "backend":  "not run: notification pipeline/schema pending"
+}

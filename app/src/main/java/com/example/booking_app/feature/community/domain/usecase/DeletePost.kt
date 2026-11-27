@@ -7,5 +7,6 @@ import javax.inject.Inject
 class DeletePost @Inject constructor(
     private val posts: PostRepository,
 ) {
-    suspend operator fun invoke(groupId: String, postId: String): Result<Unit> = posts.delete(groupId, postId)
+    suspend operator fun invoke(groupId: String, postId: String, requestId: String): Result<Unit> =
+        posts.delete(groupId, postId, requestId)
 }

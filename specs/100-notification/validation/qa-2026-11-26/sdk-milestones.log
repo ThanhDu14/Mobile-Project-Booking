@@ -1,0 +1,32 @@
+11-27 10:03:01.997 26256 26299 I NotificationAcceptance: Starting emulator SDK journey
+11-27 10:03:04.562 26256 26299 I NotificationAcceptance: Demo SDK account and profile ready
+11-27 10:03:06.930 26256 26299 I NotificationAcceptance: Core seeded 65 inbox rows
+11-27 10:03:09.627 26256 26299 I NotificationAcceptance: Core checked source and saved-detail routes
+11-27 10:03:12.539 26256 26299 I NotificationAcceptance: Core server state saved, disabling SDK network
+11-27 10:03:12.549 26256 26299 I NotificationAcceptance: Core loaded read-only preference cache while offline
+11-27 10:03:12.698 26256 26299 I NotificationAcceptance: Core loaded server settings after reconnect
+11-27 10:03:13.414 26256 26299 I NotificationAcceptance: Core SDK: paging, reads, offline cache, reconnect, source and account isolation
+11-27 10:03:17.471 26525 26569 I NotificationAcceptance: Starting emulator SDK journey
+11-27 10:03:19.375 26525 26569 I NotificationAcceptance: Demo SDK account and profile ready
+11-27 10:03:20.830 26525 26569 I NotificationAcceptance: F1 receiver signed in
+11-27 10:03:20.919 26525 26569 I NotificationAcceptance: F1 receiver found both source notifications
+11-27 10:03:21.165 26525 26569 I NotificationAcceptance: F1 routes resolved before permission change
+11-27 10:03:21.223 26525 26569 I NotificationAcceptance: F1 producer removed receiver from the group and chat
+11-27 10:03:21.763 26525 26569 I NotificationAcceptance: F1 real SDK: producer, replay, group/chat routes, lost access and UID isolation
+11-27 10:03:25.648 26676 26710 I NotificationAcceptance: Starting emulator SDK journey
+11-27 10:03:27.506 26676 26710 I NotificationAcceptance: Demo SDK account and profile ready
+11-27 10:03:27.755 26676 26710 I NotificationAcceptance: P2/B1 begin with isolated emulator accounts
+11-27 10:03:28.995 26676 26710 I NotificationAcceptance: P2 and B1 real SDK: favorite voucher, checkout replay, saved details and UID isolation
+11-27 10:03:39.069 26826 26871 I NotificationAcceptance: Posted notification opened and marked read: foreground (shade=false)
+11-27 10:05:52.160 28934 28969 I NotificationAcceptance: Posted notification opened and marked read: foreground (shade=false)
+11-27 10:05:54.929 28934 28969 I NotificationAcceptance: Posted notification opened and marked read: background (shade=false)
+11-27 10:05:56.420 28934 28969 I NotificationAcceptance: Posted notification opened and marked read: reopened (shade=false)
+11-27 10:07:08.805 30511 30608 I NotificationAcceptance: Posted notification opened and marked read: foreground (shade=false)
+11-27 10:07:11.943 30511 30608 I NotificationAcceptance: Posted notification opened and marked read: background (shade=false)
+11-27 10:07:13.465 30511 30608 I NotificationAcceptance: Posted notification opened and marked read: reopened (shade=false)
+11-27 10:08:24.234 32169 32312 I NotificationAcceptance: Posted notification opened and marked read: foreground (shade=false)
+11-27 10:08:27.156 32169 32312 I NotificationAcceptance: Posted notification opened and marked read: background (shade=false)
+11-27 10:08:28.681 32169 32312 I NotificationAcceptance: Posted notification opened and marked read: reopened (shade=false)
+11-27 10:13:01.094  5114  5208 I NotificationAcceptance: Posted notification opened and marked read: foreground (shade=false)
+11-27 10:13:04.336  5114  5208 I NotificationAcceptance: Posted notification opened and marked read: background (shade=false)
+11-27 10:13:06.048  5114  5208 I NotificationAcceptance: Posted notification opened and marked read: reopened (shade=false)

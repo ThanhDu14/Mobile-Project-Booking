@@ -42,6 +42,24 @@ class FirestoreChatRepositoryTest {
     private val outbox = mockk<ChatOutbox>(relaxed = true)
     private val sessionManager = mockk<SessionManager>(relaxed = true)
     private val clock = FakeClock()
+    @Test fun `viewing lease is scoped to this installation and leave deletes only that lease`() = runTest {
+        every { sessionManager.currentUid() } returns "alice"
+        val participant = mockk<DocumentReference>()
+        val presence = mockk<CollectionReference>()
+        val own = mockk<DocumentReference>()
+        every { firestore.collection("chats").document("c").collection("participants").document("alice") } returns participant
+        every { participant.collection("presence") } returns presence
+        every { presence.document("device-one") } returns own
+        every { own.set(any<Any>()) } returns Tasks.forResult(null)
+        every { own.delete() } returns Tasks.forResult(null)
+        val repo = FirestoreChatRepository(firestore, actionApi, outbox, sessionManager, clock,
+            object : com.example.booking_app.core.session.InstallationIdentity { override fun installationId() = "device-one" })
+        assertEquals(true, repo.setViewing("c", Instant.ofEpochSecond(60)).isSuccess)
+        assertEquals(true, repo.setViewing("c", null).isSuccess)
+        verify(exactly = 1) { own.set(mapOf("viewingUntil" to Timestamp(60, 0))) }
+        verify(exactly = 1) { own.delete() }
+        verify(exactly = 0) { participant.update(any<String>(), any()) }
+    }
 
     private fun createRepo() = FirestoreChatRepository(
         firestore = firestore,

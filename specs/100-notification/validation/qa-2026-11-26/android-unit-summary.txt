@@ -1,0 +1,8 @@
+Gradle isolated app build, testDebugUnitTest and lintDebug
+JUnit suites: 257
+tests=1702
+failures=0
+errors=0
+skipped=2
+Notification and TaskAwait: 60 tests in 11 suites
+0 errors, 851 warnings

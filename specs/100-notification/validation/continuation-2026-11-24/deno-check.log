@@ -1,0 +1,9 @@
+deno.exe : Check supabase/functions/register-drop-in/handler.ts
+At line:2 char:57
++ ... lbacks.cjs; & 'C:/Users/ACER/AppData/Local/npm-cache/_npx/05b6ef7b136 ...
++                 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Check supabase/...p-in/handler.ts:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+Check supabase/functions/review/handler.ts
+Check supabase/functions/chat-send/handler.ts

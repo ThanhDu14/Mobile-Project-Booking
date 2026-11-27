@@ -39,6 +39,7 @@ private data class CreateDropInWireRequest(
 private data class UpdateDropInWireRequest(
     val venueId: String,
     val sessionId: String,
+    val requestId: String,
     val courtIds: List<String>,
     val date: String,
     val startTime: String,
@@ -54,6 +55,7 @@ private data class CancelDropInWireRequest(
     val venueId: String,
     val sessionId: String,
     val reason: String,
+    val requestId: String,
 )
 
 @Serializable
@@ -149,13 +151,19 @@ class OwnerDropInRepositoryImpl @Inject constructor(
         }
     }
 
+    private val updateRequestIds = java.util.concurrent.ConcurrentHashMap<Triple<String, String, OwnerDropInDraft>, String>()
+    private val cancelRequestIds = java.util.concurrent.ConcurrentHashMap<Triple<String, String, String>, String>()
+
     override suspend fun updateSession(venueId: String, sessionId: String, draft: OwnerDropInDraft): Result<Unit> = runCatching {
+        val key = Triple(venueId, sessionId, draft)
+        val requestId = updateRequestIds.computeIfAbsent(key) { java.util.UUID.randomUUID().toString() }
         functionErrors.invokeWithAuthRetry {
             supabase.functions.invoke(
                 "owner-update-session",
                 body = UpdateDropInWireRequest(
                     venueId = venueId,
                     sessionId = sessionId,
+                    requestId = requestId,
                     courtIds = draft.courtIds,
                     date = draft.date,
                     startTime = draft.startTime.replace(":", ""),
@@ -167,10 +175,13 @@ class OwnerDropInRepositoryImpl @Inject constructor(
                 ),
             )
         }
+        updateRequestIds.remove(key, requestId)
         Unit
     }
 
     override suspend fun cancelSession(venueId: String, sessionId: String, reason: String): Result<Unit> = runCatching {
+        val key = Triple(venueId, sessionId, reason)
+        val requestId = cancelRequestIds.computeIfAbsent(key) { java.util.UUID.randomUUID().toString() }
         functionErrors.invokeWithAuthRetry {
             supabase.functions.invoke(
                 "owner-cancel-session",
@@ -178,9 +189,12 @@ class OwnerDropInRepositoryImpl @Inject constructor(
                     venueId = venueId,
                     sessionId = sessionId,
                     reason = reason,
+                    requestId = requestId,
                 ),
             )
         }
+        cancelRequestIds.remove(key, requestId)
+        Unit
     }
 
     override suspend fun checkIn(venueId: String, sessionId: String, credential: String): Result<Unit> = runCatching {
