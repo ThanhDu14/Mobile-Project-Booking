@@ -47,7 +47,7 @@ import org.osmdroid.views.overlay.TilesOverlay
  * - Báo vùng đang xem qua [Listener.onViewportChanged], phân biệt người dùng kéo/phóng với lệnh từ code (FR-004).
  * - Vẽ marker quả cầu lông cho các sân được giao; marker đang chọn to hơn và đổi màu (FR-007).
  * - Chạm marker → [Listener.onMarkerTapped]; chạm vùng trống → [Listener.onEmptyTapped] (FR-010).
- * - Tile đầu tiên lỗi khi chưa có tile nào thành công → [Listener.onTilesFailed] để quay về danh sách (FR-020).
+ * - Chỉ báo lỗi sau một khoảng chờ nếu chưa có tile nào tải thành công (FR-020).
  */
 class CourtMapController(
     host: FrameLayout,
@@ -64,8 +64,8 @@ class CourtMapController(
 
     private val mapView: MapView
     private var userGesture = false
-    private var anyTileLoaded = false
-    private var tilesFailed = false
+    private val tileFailureGate = TileFailureGate()
+    private var visible = false
     private var shownKey: Any? = null
     private var lastVenues: List<HomeVenue> = emptyList()
     private var lastSelected: String? = null
@@ -73,15 +73,30 @@ class CourtMapController(
     /** Đã `onDetach`: việc hẹn trước (post, DelayedMapListener) không được chạm vào MapView nữa. */
     private var destroyed = false
 
+    private val failAfterGracePeriod = Runnable {
+        if (!destroyed && tileFailureGate.timeout()) listener.onTilesFailed()
+    }
     private val tileHandler = object : Handler(Looper.getMainLooper()) {
         override fun handleMessage(msg: Message) {
             when (msg.what) {
-                MapTileProviderBase.MAPTILE_SUCCESS_ID -> anyTileLoaded = true
-                MapTileProviderBase.MAPTILE_FAIL_ID -> if (!anyTileLoaded && !tilesFailed) {
-                    tilesFailed = true
-                    listener.onTilesFailed()
+                MapTileProviderBase.MAPTILE_SUCCESS_ID -> {
+                    tileFailureGate.success()
+                    removeCallbacks(failAfterGracePeriod)
+                }
+                MapTileProviderBase.MAPTILE_FAIL_ID -> if (tileFailureGate.failure()) {
+                    postDelayed(failAfterGracePeriod, TILE_FAILURE_GRACE_MS)
                 }
             }
+        }
+    }
+
+    fun setVisible(isVisible: Boolean) {
+        if (visible == isVisible) return
+        visible = isVisible
+        tileFailureGate.setVisible(isVisible)
+        tileHandler.removeCallbacks(failAfterGracePeriod)
+        if (isVisible) {
+            mapView.invalidate()
         }
     }
 
@@ -320,6 +335,7 @@ class CourtMapController(
         const val MIN_ZOOM = 10.0
         const val MAX_ZOOM = 19.0
         const val VIEWPORT_DELAY_MS = 250L
+        const val TILE_FAILURE_GRACE_MS = 5_000L
         const val FOCUS_ANIMATION_MS = 600L
         /** Hai marker cách nhau dưới khoảng này trên màn hình thì gộp (marker rộng 36dp). */
         const val CLUSTER_RADIUS_DP = 40f
