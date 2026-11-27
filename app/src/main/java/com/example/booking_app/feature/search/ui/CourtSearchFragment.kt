@@ -1148,13 +1148,17 @@ class CourtSearchFragment : Fragment(R.layout.fragment_court_search) {
         // Điện thoại xoay ngang: ẩn dòng tiêu đề khi xem bản đồ để bản đồ đủ cao (FR-023).
         binding.header.root.isVisible = !(map.visible && compactLandscape)
         if (twoPane) renderListPane(binding, map) else binding.results.isVisible = !map.visible
-        if (!map.visible) return
+        if (!map.visible) {
+            mapController?.setVisible(false)
+            return
+        }
 
         val controller = mapController ?: CourtMapController(binding.map.mapHost, viewLifecycleOwner, mapListener)
             .also {
                 mapController = it
                 it.restore(map.viewport)
             }
+        controller.setVisible(true)
         map.focus?.takeIf { it.id != lastFocusId }?.let {
             lastFocusId = it.id
             controller.focus(it.center, it.zoom)

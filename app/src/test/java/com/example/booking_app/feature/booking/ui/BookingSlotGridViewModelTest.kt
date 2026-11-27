@@ -104,6 +104,28 @@ class BookingSlotGridViewModelTest {
         )
     )
 
+    @Test
+    fun peakBannerFollowsSelectedDate() = runTest {
+        val today = LocalDate.now(com.example.booking_app.core.schedule.BookingWindow.ZONE)
+        val tomorrow = today.plusDays(1)
+        val day = com.example.booking_app.core.pricing.DayConvention::fromDayOfWeek
+        val rules = listOf(
+            PriceRule("today-normal", listOf(day(today.dayOfWeek)), "0500", "1800", 80_000L, "NORMAL"),
+            PriceRule("today", listOf(day(today.dayOfWeek)), "1800", "2400", 130_000L, "PEAK"),
+            PriceRule("tomorrow-normal", listOf(day(tomorrow.dayOfWeek)), "0500", "1800", 80_000L, "NORMAL"),
+            PriceRule("tomorrow", listOf(day(tomorrow.dayOfWeek)), "1800", "2400", 100_000L, "PEAK"),
+            PriceRule("flat-day", listOf(day(tomorrow.plusDays(1).dayOfWeek)), "0500", "2400", 100_000L, "NORMAL"),
+        )
+        coEvery { repository.getPriceRules(venueId) } returns Result.success(rules)
+        val vm = createViewModel()
+        testScheduler.advanceUntilIdle()
+        assertTrue(vm.uiState.value.peakHourBannerText!!.contains("130.000"))
+        vm.selectDate(tomorrow)
+        assertTrue(vm.uiState.value.peakHourBannerText!!.contains("100.000"))
+        vm.selectDate(tomorrow.plusDays(1))
+        assertEquals(null, vm.uiState.value.peakHourBannerText)
+    }
+
     @Before
     fun setUp() {
         holdSlotsTransactionUseCase = HoldSlotsTransactionUseCase(repository)

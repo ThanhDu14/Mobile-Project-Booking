@@ -198,7 +198,7 @@ class BookingSlotGridViewModel @Inject constructor(
                     return@onSuccess
                 }
                 priceRules = rules
-                peakBannerVal = computePeakHourBanner(rules)
+                peakBannerVal = computePeakHourBanner(rules, _uiState.value.selectedDate)
             }.onFailure { error ->
                 _uiState.update {
                     it.copy(
@@ -350,6 +350,7 @@ class BookingSlotGridViewModel @Inject constructor(
         _uiState.update {
             it.copy(
                 selectedDate = newDate,
+                peakHourBannerText = computePeakHourBanner(priceRules, newDate),
                 matrixRows = optimisticRows,
                 slots = allSlotsFlat,
                 selectedSlots = emptyList(),
@@ -1142,9 +1143,11 @@ class BookingSlotGridViewModel @Inject constructor(
         }
     }
 
-    private fun computePeakHourBanner(rules: List<PriceRule>): String? {
-        if (rules.isEmpty()) return null
-        val peakRule = rules.maxByOrNull { it.pricePerHour } ?: return null
+    private fun computePeakHourBanner(rules: List<PriceRule>, date: LocalDate): String? {
+        val day = com.example.booking_app.core.pricing.DayConvention.fromDayOfWeek(date.dayOfWeek)
+        val dayRules = rules.filter { day in it.daysOfWeek }
+        if (dayRules.map { it.pricePerHour }.distinct().size < 2) return null
+        val peakRule = dayRules.maxByOrNull { it.pricePerHour } ?: return null
         val startFormatted = formatHourMinute(peakRule.startTime)
         val endFormatted = formatHourMinute(peakRule.endTime)
         val priceFormatted = currencyFormatter.format(peakRule.pricePerHour)

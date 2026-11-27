@@ -17,14 +17,14 @@
         android:layout_height="0dp"
         android:layout_weight="1">
 
-        <!-- paddingBottom chừa chỗ cho nút nổi Bản đồ / Danh sách -->
+        <!-- Nút chuyển chế độ nằm ngoài vùng danh sách. -->
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/results"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:clipToPadding="false"
             android:paddingHorizontal="@dimen/screen_gutter"
-            android:paddingBottom="88dp" />
+            android:paddingBottom="@dimen/space_4" />
 
         <include
             android:id="@+id/map"
@@ -33,14 +33,14 @@
             android:layout_height="match_parent"
             android:visibility="gone" />
 
-        <!-- Nút nổi chuyển Danh sách / Bản đồ (spec 021 FR-001), luôn thấy khi cuộn -->
-        <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
-            android:id="@+id/mapToggle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="bottom|center_horizontal"
-            android:layout_marginBottom="@dimen/space_4"
-            android:text="@string/map_toggle_map"
-            app:icon="@drawable/ic_map_24" />
     </FrameLayout>
+    <!-- Vùng riêng để nút luôn thấy mà không che thẻ hoặc chip trong danh sách. -->
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+        android:id="@+id/mapToggle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginVertical="@dimen/space_3"
+        android:text="@string/map_toggle_map"
+        app:icon="@drawable/ic_map_24" />
 </LinearLayout>

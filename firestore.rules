@@ -164,13 +164,13 @@ service cloud.firestore {
 
     // ---------- districts (A, spec 011; contracts/security-rules.md §2) ----------
     match /districts/{id} {
-      allow get, list: if isInitialized();
+      allow get, list: if !isSignedIn() || isInitialized();
       allow write: if isAdmin();                      // spec 120 làm màn hình quản lý
     }
 
     // ---------- amenities (D, spec 120) ----------
     match /amenities/{id} {
-      allow get, list: if isInitialized();
+      allow get, list: if !isSignedIn() || isInitialized();
       allow write: if isAdmin();                      // spec 120 làm màn hình quản lý
     }
 
