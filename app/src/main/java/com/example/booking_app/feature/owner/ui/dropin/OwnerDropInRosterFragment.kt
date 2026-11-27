@@ -11,6 +11,8 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.example.booking_app.R
+import com.example.booking_app.core.ui.keepFormAboveKeyboard
+import com.example.booking_app.feature.owner.ui.setOwnerDialogInput
 import com.example.booking_app.databinding.FragmentOwnerDropinRosterBinding
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.codescanner.GmsBarcodeScanner
@@ -33,6 +35,7 @@ class OwnerDropInRosterFragment : Fragment(R.layout.fragment_owner_dropin_roster
     private val sessionId get() = requireArguments().getString(ARG_SESSION_ID).orEmpty()
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        view.keepFormAboveKeyboard()
         super.onViewCreated(view, savedInstanceState)
         _binding = FragmentOwnerDropinRosterBinding.bind(view)
         val options = GmsBarcodeScannerOptions.Builder().setBarcodeFormats(Barcode.FORMAT_QR_CODE).build()
@@ -51,7 +54,7 @@ class OwnerDropInRosterFragment : Fragment(R.layout.fragment_owner_dropin_roster
         }
         binding.cancelSession.setOnClickListener {
             val reason=EditText(requireContext()).apply { hint=getString(R.string.owner_cancel_reason) }
-            val dialog=MaterialAlertDialogBuilder(requireContext()).setTitle(R.string.owner_cancel_session).setView(reason)
+            val dialog=MaterialAlertDialogBuilder(requireContext()).setTitle(R.string.owner_cancel_session).setOwnerDialogInput(reason)
                 .setNegativeButton(R.string.common_cancel,null).setPositiveButton(R.string.confirm,null).create()
             dialog.setOnShowListener { dialog.getButton(-1).setOnClickListener {
                 if(reason.text.isNullOrBlank()) reason.error=getString(R.string.owner_cancel_reason)

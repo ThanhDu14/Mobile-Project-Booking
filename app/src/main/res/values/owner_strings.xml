@@ -14,8 +14,8 @@
     <string name="owner_hide">Ẩn cơ sở</string>
     <string name="owner_name">Tên cơ sở</string>
     <string name="owner_address">Địa chỉ</string>
-    <string name="owner_open_time">Giờ mở cửa (HHmm)</string>
-    <string name="owner_close_time">Giờ đóng cửa (HHmm)</string>
+    <string name="owner_open_time">Giờ mở cửa</string>
+    <string name="owner_close_time">Giờ đóng cửa</string>
     <string name="owner_phone">Số điện thoại</string>
     <string name="owner_courts_title">Danh sách sân</string>
     <string name="owner_court_name">Tên sân</string>
@@ -33,8 +33,9 @@
     <string name="cancel">Hủy</string>
     <string name="owner_slot_block_title">Khóa giờ sân</string>
     <string name="owner_slot_date">Ngày (yyyyMMdd)</string>
-    <string name="owner_slot_start">Giờ bắt đầu (HHmm)</string>
-    <string name="owner_slot_end">Giờ kết thúc (HHmm)</string>
+    <string name="owner_slot_start">Giờ bắt đầu</string>
+    <string name="owner_slot_end">Giờ kết thúc</string>
+    <string name="owner_slot_time_example" translatable="false">HHmm</string>
     <string name="owner_slot_reason">Lý do</string>
     <string name="owner_slot_preview">Kiểm tra khoảng giờ</string>
     <string name="owner_slot_submit">Gửi yêu cầu khóa</string>

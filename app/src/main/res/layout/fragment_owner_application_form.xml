@@ -65,7 +65,7 @@
             </com.google.android.material.textfield.TextInputLayout>
             <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal">
                 <com.google.android.material.textfield.TextInputLayout android:id="@+id/districtLayout" style="@style/OwnerApplicationInput" android:layout_width="0dp" android:layout_weight="1" android:hint="@string/owner_district" app:endIconMode="dropdown_menu">
-                    <com.google.android.material.textfield.MaterialAutoCompleteTextView android:id="@+id/district" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="none" />
+                    <com.google.android.material.textfield.MaterialAutoCompleteTextView android:id="@+id/district" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="none" android:minHeight="@dimen/touch_min" android:paddingStart="@dimen/space_4" />
                 </com.google.android.material.textfield.TextInputLayout>
                 <com.google.android.material.textfield.TextInputLayout android:id="@+id/venuePhoneLayout" style="@style/OwnerApplicationInput" android:layout_width="0dp" android:layout_marginStart="10dp" android:layout_weight="1" android:hint="@string/owner_venue_phone">
                     <com.google.android.material.textfield.TextInputEditText android:id="@+id/venuePhone" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="phone" />
@@ -112,7 +112,7 @@
     </androidx.core.widget.NestedScrollView>
 
     <LinearLayout android:id="@+id/formFooter" android:layout_width="0dp" android:layout_height="wrap_content" android:background="?attr/colorSurface" android:elevation="8dp" android:gravity="center_vertical" android:orientation="horizontal" android:paddingHorizontal="18dp" android:paddingVertical="12dp" app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent" app:layout_constraintStart_toStartOf="parent">
-        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/owner_draft_offline_hint" android:textAppearance="?attr/textAppearanceBodySmall" android:textColor="@color/sn_ink_muted" />
+        <TextView android:layout_width="0dp" android:layout_height="wrap_content" android:layout_marginEnd="@dimen/space_3" android:layout_weight="1" android:text="@string/owner_draft_offline_hint" android:textAppearance="?attr/textAppearanceBodySmall" android:textColor="@color/sn_ink_muted" />
         <com.google.android.material.button.MaterialButton android:id="@+id/reviewButton" android:layout_width="wrap_content" android:layout_height="52dp" android:minHeight="48dp" android:minWidth="140dp" android:text="@string/owner_review" app:cornerRadius="28dp" />
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

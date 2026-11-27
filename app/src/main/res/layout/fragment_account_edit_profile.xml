@@ -196,24 +196,30 @@
                         android:id="@+id/levelBeginner"
                         style="@style/Widget.SmashNow.Button.Outlined"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
+                        android:layout_height="match_parent"
                         android:layout_weight="1"
+                        android:minHeight="@dimen/touch_min"
+                        android:paddingHorizontal="@dimen/space_2"
                         android:text="@string/account_level_beginner" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/levelIntermediate"
                         style="@style/Widget.SmashNow.Button.Outlined"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
+                        android:layout_height="match_parent"
                         android:layout_weight="1"
+                        android:minHeight="@dimen/touch_min"
+                        android:paddingHorizontal="@dimen/space_2"
                         android:text="@string/account_level_intermediate" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/levelAdvanced"
                         style="@style/Widget.SmashNow.Button.Outlined"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
+                        android:layout_height="match_parent"
                         android:layout_weight="1"
+                        android:minHeight="@dimen/touch_min"
+                        android:paddingHorizontal="@dimen/space_2"
                         android:text="@string/account_level_advanced" />
                 </com.google.android.material.button.MaterialButtonToggleGroup>
 

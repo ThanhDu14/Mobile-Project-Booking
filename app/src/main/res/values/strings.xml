@@ -74,7 +74,7 @@
     <string name="owner_dropin_session_status">Trạng thái: %1$s</string>
     <string name="owner_dropin_capacity_status">Đã đăng ký %1$d/%2$d · %3$s đ/người</string>
     <string name="owner_dropin_scan">Quét QR đăng ký</string>
-    <string name="owner_dropin_code_hint">Mã QR hoặc mã đăng ký</string>
+    <string name="owner_dropin_code_hint">Mã đăng ký</string>
     <string name="owner_dropin_checkin">Xác nhận check-in</string>
     <string name="owner_dropin_roster_empty">Chưa có đăng ký cho buổi này.</string>
     <string name="owner_dropin_roster_entry">%1$s · %2$d người · %3$s</string>
@@ -103,8 +103,9 @@
     <string name="owner_statistics_title">Thống kê</string>
     <string name="owner_statistics_period">Chọn khoảng thống kê</string>
     <string name="owner_statistics_custom">Khoảng ngày</string>
-    <string name="owner_statistics_from">Từ ngày (yyyy-MM-dd)</string>
-    <string name="owner_statistics_to">Đến ngày (yyyy-MM-dd)</string>
+    <string name="owner_statistics_from">Từ ngày</string>
+    <string name="owner_statistics_to">Đến ngày</string>
+    <string name="owner_statistics_date_example" translatable="false">yyyy-MM-dd</string>
     <string name="owner_statistics_empty">Không có dữ liệu booking trong khoảng thời gian này.</string>
     <string name="owner_statistics_contract_error">Dịch vụ báo cáo venue-scoped chưa được triển khai. Không có số liệu giả được hiển thị.</string>
     <string name="owner_statistics_date_format_error">Nhập ngày theo định dạng yyyy-MM-dd.</string>
@@ -148,7 +149,8 @@
     <string name="owner_calendar_legend_hold">Đang giữ</string>
     <string name="owner_checkin_tab_booking">Đơn đặt sân</string>
     <string name="owner_checkin_tab_dropin">Vé vãng lai</string>
-    <string name="owner_checkin_code_hint_example">Nhập mã đặt sân, ví dụ SN-41F7</string>
+    <string name="owner_checkin_code_label">Mã đặt sân</string>
+    <string name="owner_checkin_code_example" translatable="false">SN-41F7</string>
     <string name="owner_checkin_verify">Kiểm tra</string>
     <string name="owner_checkin_success_title">Check-in thành công</string>
     <string name="owner_checkin_remaining_label">Còn phải thu</string>

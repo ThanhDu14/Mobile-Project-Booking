@@ -69,7 +69,7 @@
                 android:id="@+id/day"
                 style="@style/Widget.SmashNow.Button.Outlined"
                 android:layout_width="wrap_content"
-                android:layout_height="48dp"
+                android:layout_height="match_parent"
                 android:minHeight="48dp"
                 android:paddingHorizontal="@dimen/space_6"
                 android:text="@string/owner_statistics_day" />
@@ -78,7 +78,7 @@
                 android:id="@+id/week"
                 style="@style/Widget.SmashNow.Button.Outlined"
                 android:layout_width="wrap_content"
-                android:layout_height="48dp"
+                android:layout_height="match_parent"
                 android:minHeight="48dp"
                 android:paddingHorizontal="@dimen/space_6"
                 android:text="@string/owner_statistics_week" />
@@ -87,7 +87,7 @@
                 android:id="@+id/custom"
                 style="@style/Widget.SmashNow.Button.Outlined"
                 android:layout_width="wrap_content"
-                android:layout_height="48dp"
+                android:layout_height="match_parent"
                 android:minHeight="48dp"
                 android:paddingHorizontal="@dimen/space_6"
                 android:text="@string/owner_stats_custom"
@@ -139,16 +139,18 @@
         android:id="@+id/customRange"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_3"
         android:orientation="horizontal"
         android:paddingHorizontal="@dimen/space_8"
         android:visibility="gone">
 
         <com.google.android.material.textfield.TextInputLayout
-            style="@style/Widget.SmashNow.TextInputLayout"
+            style="@style/Widget.SmashNow.TextInputLayout.OwnerLabeled"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:hint="@string/owner_statistics_from">
+            android:hint="@string/owner_statistics_from"
+            app:placeholderText="@string/owner_statistics_date_example">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/fromDate"
@@ -159,12 +161,13 @@
         </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.textfield.TextInputLayout
-            style="@style/Widget.SmashNow.TextInputLayout"
+            style="@style/Widget.SmashNow.TextInputLayout.OwnerLabeled"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/space_2"
             android:layout_weight="1"
-            android:hint="@string/owner_statistics_to">
+            android:hint="@string/owner_statistics_to"
+            app:placeholderText="@string/owner_statistics_date_example">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/toDate"

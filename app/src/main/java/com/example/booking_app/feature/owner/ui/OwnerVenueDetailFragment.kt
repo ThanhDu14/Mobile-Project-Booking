@@ -9,6 +9,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.example.booking_app.R
+import com.example.booking_app.core.ui.keepFormAboveKeyboard
 import com.example.booking_app.databinding.FragmentOwnerVenueDetailBinding
 import com.example.booking_app.feature.owner.domain.model.CourtFields
 import com.example.booking_app.feature.owner.domain.model.VenueEditableFields
@@ -70,6 +71,7 @@ class OwnerVenueDetailFragment : Fragment(R.layout.fragment_owner_venue_detail) 
     )
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        view.keepFormAboveKeyboard()
         _binding = FragmentOwnerVenueDetailBinding.bind(view)
         editingCourtId = savedInstanceState?.getString("editingCourtId") ?: editingCourtId
         renderedPhotos = null

@@ -9,6 +9,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.example.booking_app.R
+import com.example.booking_app.core.ui.keepFormAboveKeyboard
 import com.example.booking_app.databinding.FragmentOwnerPriceRuleBinding
 import com.example.booking_app.feature.owner.domain.OwnerErrorKind
 import com.example.booking_app.feature.owner.domain.PriceRuleInput
@@ -45,6 +46,7 @@ class OwnerPriceRuleFragment : Fragment(R.layout.fragment_owner_price_rule) {
     )
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        view.keepFormAboveKeyboard()
         _binding = FragmentOwnerPriceRuleBinding.bind(view)
         binding.rules.adapter = adapter
         binding.retry.setOnClickListener { viewModel.load() }

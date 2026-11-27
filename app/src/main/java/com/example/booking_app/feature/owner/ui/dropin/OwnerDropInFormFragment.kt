@@ -11,6 +11,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.example.booking_app.R
+import com.example.booking_app.core.ui.keepFormAboveKeyboard
 import com.example.booking_app.databinding.FragmentOwnerDropinFormBinding
 import com.example.booking_app.feature.owner.domain.dropin.OwnerDropInDraft
 import com.example.booking_app.feature.owner.domain.model.OwnerCourt
@@ -39,6 +40,7 @@ class OwnerDropInFormFragment : Fragment(R.layout.fragment_owner_dropin_form) {
     private val sessionId get() = arguments?.getString("sessionId")
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        view.keepFormAboveKeyboard()
         super.onViewCreated(view, savedInstanceState)
         _binding = FragmentOwnerDropinFormBinding.bind(view)
         venues = emptyList()

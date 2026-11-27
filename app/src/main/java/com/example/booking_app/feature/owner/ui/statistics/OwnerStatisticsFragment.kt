@@ -11,6 +11,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.example.booking_app.R
+import com.example.booking_app.core.ui.keepFormAboveKeyboard
 import com.example.booking_app.databinding.FragmentOwnerStatisticsBinding
 import com.example.booking_app.feature.owner.domain.model.OwnerVenue
 import com.example.booking_app.feature.owner.domain.statistics.OwnerStatisticsPeriod
@@ -38,6 +39,10 @@ class OwnerStatisticsFragment : Fragment(R.layout.fragment_owner_statistics) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         _binding = FragmentOwnerStatisticsBinding.bind(view)
+        view.keepFormAboveKeyboard()
+        // The Material toggle group defaults its children to a single ellipsized line.
+        binding.custom.maxLines = 2
+        binding.custom.ellipsize = null
         binding.periodGroup.isSingleSelection = true
         binding.day.setOnClickListener { viewModel.setPeriod(OwnerStatisticsPeriod.DAY) }
         binding.week.setOnClickListener { viewModel.setPeriod(OwnerStatisticsPeriod.WEEK) }

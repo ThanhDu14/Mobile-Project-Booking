@@ -152,7 +152,10 @@ class OwnerMapDeviceTest {
     private fun shot(name:String) {
         val instrument=InstrumentationRegistry.getInstrumentation()
         if(android.os.Looper.myLooper()!=android.os.Looper.getMainLooper())instrument.waitForIdleSync()
-        val dir=File(instrument.targetContext.getExternalFilesDir(null),"feature11-device").apply {mkdirs()}
+        val run = InstrumentationRegistry.getArguments().getString("ownerUiAuditRun")
+        require(run == null || run.matches(Regex("[A-Za-z0-9-]+")))
+        val path = run?.let { "owner-ui-audit/$it" } ?: "feature11-device"
+        val dir=File(instrument.targetContext.getExternalFilesDir(null),path).apply {mkdirs()}
         instrument.uiAutomation.takeScreenshot().let {bitmap ->File(dir,"$name.png").outputStream().use {bitmap.compress(Bitmap.CompressFormat.PNG,100,it)};bitmap.recycle()}
     }
 }
