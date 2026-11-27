@@ -250,7 +250,10 @@ class VenueAdditionDeviceTest {
     }
     private fun screenshot(name:String) {
         val instrumentation=InstrumentationRegistry.getInstrumentation()
-        val directory=File(instrumentation.targetContext.getExternalFilesDir(null),"venue-addition-device").apply { mkdirs() }
+        val auditRun = InstrumentationRegistry.getArguments().getString("ownerUiAuditRun")
+        require(auditRun == null || auditRun.matches(Regex("[A-Za-z0-9-]+")))
+        val folder = if (auditRun == null) "venue-addition-device" else "owner-ui-audit/$auditRun"
+        val directory=File(instrumentation.targetContext.getExternalFilesDir(null),folder).apply { mkdirs() }
         val bitmap=instrumentation.uiAutomation.takeScreenshot()
         File(directory,name.replace(Regex("[^A-Za-z0-9_-]"),"_")+".png").outputStream().use { bitmap.compress(Bitmap.CompressFormat.PNG,100,it) };bitmap.recycle()
     }

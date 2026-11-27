@@ -14,6 +14,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.example.booking_app.R
+import com.example.booking_app.feature.owner.ui.setOwnerDialogInput
 import com.example.booking_app.databinding.FragmentOwnerBookingsBinding
 import com.example.booking_app.databinding.ItemOwnerBookingBinding
 import com.example.booking_app.feature.owner.domain.booking.OwnerBooking
@@ -204,7 +205,7 @@ class OwnerBookingsFragment : Fragment(R.layout.fragment_owner_bookings) {
             minLines = 2
             inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_MULTI_LINE
         }
-        val dialog = MaterialAlertDialogBuilder(requireContext()).setTitle(title).setView(input)
+        val dialog = MaterialAlertDialogBuilder(requireContext()).setTitle(title).setOwnerDialogInput(input)
             .setNegativeButton(R.string.common_cancel, null).setPositiveButton(R.string.confirm, null).create()
         dialog.setOnShowListener { dialog.getButton(-1).setOnClickListener {
             val reason = input.text.toString().trim()

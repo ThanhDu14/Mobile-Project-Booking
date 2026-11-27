@@ -12,6 +12,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.booking_app.R
+import com.example.booking_app.core.ui.keepFormAboveKeyboard
 import com.example.booking_app.databinding.FragmentOwnerSlotBlockBinding
 import com.example.booking_app.feature.owner.domain.SlotBlockInput
 import dagger.hilt.android.AndroidEntryPoint
@@ -27,6 +28,7 @@ class OwnerSlotBlockFragment : Fragment(R.layout.fragment_owner_slot_block) {
     private var renderedCourts: List<com.example.booking_app.feature.owner.domain.model.OwnerCourt> = emptyList()
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        view.keepFormAboveKeyboard()
         _binding = FragmentOwnerSlotBlockBinding.bind(view)
 
         val reasons = arrayOf(getString(R.string.owner_reason_maintenance),getString(R.string.owner_reason_event),getString(R.string.owner_reason_walk_in))

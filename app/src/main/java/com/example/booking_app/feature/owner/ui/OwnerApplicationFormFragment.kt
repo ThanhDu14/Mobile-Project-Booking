@@ -21,6 +21,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import com.example.booking_app.R
+import com.example.booking_app.core.ui.keepFormAboveKeyboard
 import com.example.booking_app.databinding.FragmentOwnerApplicationFormBinding
 import com.example.booking_app.feature.owner.domain.OwnerApplicationState
 import com.google.android.material.button.MaterialButton
@@ -48,6 +49,7 @@ class OwnerApplicationFormFragment : Fragment(R.layout.fragment_owner_applicatio
     private val documents = registerForActivityResult(ActivityResultContracts.GetMultipleContents()) { uris -> handlePicked(uris, document = true) }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        view.keepFormAboveKeyboard()
         _binding = FragmentOwnerApplicationFormBinding.bind(view)
         renderedDistricts = null
         com.example.booking_app.core.ui.LocationPickerDialog.bind(this) { point -> viewModel.updateLocation(point.latitude,point.longitude) }

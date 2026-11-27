@@ -68,6 +68,7 @@ Mỗi lần dùng AI là một mục mới, mục mới nhất ở cuối.
 | 62  | 2026-11-24 | Tiếp tục Feature 100: D3/R1/H1, kiểm thử vivo và xác minh tiến độ 41/56 | 10             |
 | 63  | 2026-11-26 | Hoàn tất Feature 100 từ 43/56 đến 56/56, kiểm thử vivo và triển khai production theo giai đoạn | 10             |
 | 64  | 2026-11-27 | Kiểm thử hồi quy Feature 100 trên vivo, sửa hai lỗi Settings offline và mở lại T056 | 10             |
+| 65  | 2026-11-27 | Rà soát 36 mục giao diện OWNER, sửa 14 mục theo wireframe và kiểm thử hồi quy trên vivo | 11             |
 
 ---
 
@@ -6130,5 +6131,70 @@ Cập nhật tasks.md và implementation-review.md theo bằng chứng. Báo cá
 - Vivo đạt 3/3 hành trình SDK, 52/52 ca UI qua phone/w600dp sáng/tối và 9/9 ca quyền, channel, payload injection cục bộ. Lưu 40 ảnh và SHA-256 APK. Density trở về 440, cờ quyền thông báo khớp trạng thái ban đầu và USB reverse thử nghiệm đã được gỡ. [SDK](../../specs/100-notification/validation/qa-2026-11-26/sdk-milestones.log) và [trạng thái thiết bị](../../specs/100-notification/validation/qa-2026-11-26/device-after.txt)
 - Supabase local chạy hai lượt mỗi cron qua pg_cron/pg_net với booking demo. Xác nhận đúng một inbox reminder, một job gửi và một receipt gửi giả lập. Các cron, khóa Vault và fixture tạm đã được dọn. [Cron local với dữ liệu demo](../../specs/100-notification/validation/qa-2026-11-26/supabase-cron-seeded.log)
 - Kiểm thử `PendingIntent` đạt ở foreground, background và khi mở lại Activity. Lượt kiểm thử chạm trực tiếp ghi nhận SystemUI mở nhưng chưa thấy mục demo. [PendingIntent](../../specs/100-notification/validation/qa-2026-11-26/posted-pending-intent-final.log) và [khay SystemUI](../../specs/100-notification/validation/qa-2026-11-26/shade-touch-final.log)
+
+---
+
+## Mục 65: Rà soát và chỉnh giao diện OWNER trên vivo
+
+| Thông tin                | Nội dung |
+| ------------------------ | -------- |
+| Ngày                     | 2026-11-27 |
+| Người thực hiện          | Minh Nhựt |
+| Nhóm tính năng liên quan | 11 (110 đăng ký chủ sân, 111 thiết lập cơ sở, 112 vận hành), đối chiếu các màn dùng chung 011, 070, 091 và 100 |
+| Công cụ AI               | Codex (GPT-6), `$speckit-implement` |
+| Mục đích                 | Đối chiếu giao diện OWNER với wireframe, sửa lỗi bố cục và kiểm thử lại trên điện thoại thật |
+| Nhánh Git                | `main` |
+
+### Prompt đã dùng
+
+```text
+$speckit-implement Rà soát và chỉnh toàn bộ giao diện OWNER trên Android. Bắt đầu từ code hiện tại trên `main`. Mục tiêu là bám sát thiết kế trong `specs/*/ui/` và sửa những chỗ chữ, nút, thẻ hoặc thanh điều hướng bị dồn sát, chồng lên nhau, cắt mất hoặc khó bấm.
+
+## Xác định phạm vi và mẫu đối chiếu
+
+- Lần theo các điểm vào và luồng điều hướng của OWNER để lập danh sách màn hình thực tế. Bắt đầu từ Feature 110, 111 và 112, rồi kiểm tra các màn dùng chung mà OWNER có thể mở, như tin nhắn và thông báo.
+- Đọc spec, ảnh mẫu và các quyết định đã duyệt cho từng màn. Ghi rõ màn nào có mẫu tương ứng, màn nào dùng layout chung và chỗ nào đã có ngoại lệ được duyệt.
+- Với màn thiếu ảnh mẫu, dùng component, màu, chữ và khoảng cách đang có trong các màn OWNER tương tự. Ghi rõ cách đối chiếu đã dùng.
+
+## Rà soát và sửa trực tiếp
+
+- Ưu tiên lỗi nhìn thấy trên máy thật. Kiểm tra tiêu đề dài, tên sân dài, nhiều badge, danh sách đông mục, form có nhiều trường và các màn có nút cố định ở đáy.
+- Sửa các trường hợp chữ đè icon, nút đè nội dung, hai nút đứng quá sát, hàng danh sách bị cắt, thanh cuộn che nội dung hoặc bàn phím che trường đang nhập và nút lưu.
+- Kiểm tra khoảng cách giữa các nhóm nội dung, căn lề, thứ bậc tiêu đề, kích thước vùng bấm và phần chừa cho status bar, navigation bar, bàn phím. Dùng lại component và token hiện có. Với lỗi lặp lại, sửa ở layout hoặc component dùng chung nếu phù hợp.
+- Giữ hành vi, điều hướng và quyền truy cập theo spec. Xử lý cả trạng thái đang tải, rỗng, lỗi và nội dung dài. Gặp điểm chưa có quyết định thiết kế mà việc sửa sẽ đổi hành vi, ghi lại điểm đó và tiếp tục các phần độc lập.
+
+## Kiểm thử và bàn giao
+
+- Build APK debug và cài lên vivo đang kết nối. Dùng tài khoản OWNER demo và dữ liệu đủ dài để tái hiện các lỗi bố cục.
+- Chạy lại các cấu hình bị ảnh hưởng ở phone và w600dp, sáng và tối. Kiểm tra thêm font hệ thống lớn và bàn phím mở ở các màn nhập liệu. Với mỗi lỗi đã sửa, chạy lại đúng thao tác từng gây lỗi.
+- Lưu ảnh trước và sau của các màn đã sửa, kèm ảnh mẫu dùng để đối chiếu. Khôi phục density, theme và cỡ chữ thiết bị nếu đã thay đổi để kiểm thử.
+- Báo cáo theo từng màn với các cột `Màn hình | Mẫu UI | Lỗi phát hiện | Thay đổi | Kết quả kiểm thử | Ảnh`. Nêu tổng số màn đã rà soát, số màn đã sửa và các ca còn thiếu bằng chứng.
+
+Tiếp tục qua các nhóm màn cho đến khi rà hết luồng OWNER. Báo cáo dựa trên kết quả nhìn thấy và thao tác lại trên thiết bị.
+```
+
+### Tóm tắt phản hồi của AI
+
+- Rà 36 mục giao diện và chỉnh 14 mục, gồm màn chính, phần Sân con và các hộp thoại. Đối chiếu spec, wireframe và các điểm vào của OWNER. Với màn thiếu artboard, dùng thành phần và khoảng cách của màn cùng nhóm để đối chiếu.
+- Khôi phục nhãn ô nhập, rút gọn nhãn giờ và ngày, giãn lề ô chọn quận/huyện và phần chữ cạnh nút đáy. Xử lý IME dùng chung để cuộn tới ô đang nhập và đưa nút lưu lên vùng có thể chạm. Cho các nhóm nút xuống dòng và căn đều chiều cao.
+- Sửa độ tương phản của nhãn đếm ngược trên giao diện tối, thêm lề cho ô lý do từ chối booking và hủy buổi vãng lai. Bỏ cập nhật giao diện từ lượt đọc sân đã bị hủy để danh sách đăng ký vãng lai hiển thị đúng.
+- Lưu ảnh trước/sau, đường dẫn wireframe và kết quả từng cấu hình trong [báo cáo rà soát OWNER](../validation/owner-ui-audit-2026-11-27/README.md).
+
+### Phần đã sử dụng / chỉnh sửa / bỏ
+
+| Phần | Quyết định | Lý do |
+| ---- | ---------- | ----- |
+| Form OWNER và Sửa hồ sơ | Dùng chung xử lý IME, bổ sung nhãn nổi và lề ở các form bị ảnh hưởng | Giữ ô đang nhập và nút lưu trong vùng thao tác khi bàn phím mở. |
+| Tài khoản, Sửa hồ sơ và Thống kê | Cho nhãn nút xuống dòng và căn đều chiều cao nhóm nút cần chỉnh | Hiển thị đủ chữ ở cỡ chữ 135% và giữ đường viền liền mạch. |
+| Danh sách booking và hộp thoại nhập lý do | Dùng cặp màu cảnh báo của theme và lề chung cho ô lý do | Cải thiện độ đọc ở giao diện tối và khoảng cách khi nhập lý do. |
+| Danh sách đăng ký vãng lai | Bỏ kết quả cập nhật từ coroutine đã bị hủy | Tránh hiển thị lỗi kỹ thuật của lượt tải sân cũ. |
+| APK cô lập và harness trên vivo | Dùng Auth/Firestore Emulator, Supabase local và dữ liệu demo qua USB, dùng fixture cho UI thông báo | Gắn kết quả với đúng nguồn dữ liệu và lưu riêng log của từng lượt chạy. |
+
+### Cách kiểm chứng
+
+- Build APK debug cô lập, APK instrumentation và lint đạt. Unit test ghi nhận 1.700 ca đạt, 2 ca bỏ qua. [Build và lint](../validation/owner-ui-audit-2026-11-27/android-build.log), [unit test](../validation/owner-ui-audit-2026-11-27/android-unit-summary.txt) và [SHA-256 APK](../validation/owner-ui-audit-2026-11-27/apk-sha256.txt)
+- Vivo V2247 chạy các ca hồi quy ở phone/w600dp sáng/tối và cỡ chữ 135%. Xác nhận thao tác cuộn khi bàn phím mở để thấy nút lưu hồ sơ, nút mở buổi và nút tạo voucher. Kiểm thử bản đồ đạt 2/2 ca, hồ sơ đăng ký và thêm cơ sở đạt 2/2 ca. [Ma trận thiết bị](../validation/owner-ui-audit-2026-11-27/README.md#ma-trận-thiết-bị)
+- Khôi phục density 440, cỡ chữ 100%, giao diện sáng và thiết lập giữ sáng qua USB, gỡ các cổng USB reverse thử nghiệm. [Trạng thái thiết bị](../validation/owner-ui-audit-2026-11-27/device-settings-after.txt)
+- Còn thiếu bằng chứng cho quét QR bằng camera, lỗi mạng và retry trên từng màn, danh sách rất dài hoặc nhiều badge, đánh giá khách có nội dung dài, cắt ảnh đại diện và xác thực lại khi xóa tài khoản. [Ca còn thiếu bằng chứng](../validation/owner-ui-audit-2026-11-27/README.md#ca-còn-thiếu-bằng-chứng)
 
 ---

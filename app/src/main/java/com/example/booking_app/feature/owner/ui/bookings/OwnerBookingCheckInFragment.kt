@@ -9,6 +9,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.example.booking_app.R
+import com.example.booking_app.core.ui.keepFormAboveKeyboard
 import com.example.booking_app.databinding.FragmentOwnerBookingCheckinBinding
 import com.google.mlkit.vision.codescanner.GmsBarcodeScanner
 import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
@@ -25,6 +26,7 @@ class OwnerBookingCheckInFragment : Fragment(R.layout.fragment_owner_booking_che
     private var scanner: GmsBarcodeScanner? = null
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        view.keepFormAboveKeyboard()
         super.onViewCreated(view, savedInstanceState)
         _binding = FragmentOwnerBookingCheckinBinding.bind(view)
         val options = GmsBarcodeScannerOptions.Builder().setBarcodeFormats(Barcode.FORMAT_QR_CODE).build()

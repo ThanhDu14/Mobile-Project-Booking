@@ -67,12 +67,12 @@
                 android:background="@drawable/bg_pill_countdown"
                 android:drawableStart="@drawable/ic_timer_24"
                 android:drawablePadding="@dimen/space_1"
-                android:drawableTint="@color/sn_danger"
+                android:drawableTint="?attr/colorOnErrorContainer"
                 android:gravity="center_vertical"
                 android:paddingHorizontal="@dimen/space_2"
                 android:paddingVertical="@dimen/space_1"
                 android:textAppearance="?attr/textAppearanceLabelSmall"
-                android:textColor="@color/sn_danger"
+                android:textColor="?attr/colorOnErrorContainer"
                 android:textStyle="bold"
                 tools:text="Còn 12 phút" />
         </LinearLayout>

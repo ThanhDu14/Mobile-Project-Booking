@@ -12,7 +12,7 @@
                 <com.google.android.material.textfield.TextInputEditText android:id="@+id/address" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="textPostalAddress" />
             </com.google.android.material.textfield.TextInputLayout>
             <com.google.android.material.textfield.TextInputLayout style="@style/OwnerApplicationInput" android:hint="@string/owner_district" android:layout_marginTop="12dp" app:endIconMode="dropdown_menu">
-                <com.google.android.material.textfield.MaterialAutoCompleteTextView android:id="@+id/district" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="none" />
+                <com.google.android.material.textfield.MaterialAutoCompleteTextView android:id="@+id/district" android:layout_width="match_parent" android:layout_height="wrap_content" android:inputType="none" android:minHeight="@dimen/touch_min" android:paddingStart="@dimen/space_4" />
             </com.google.android.material.textfield.TextInputLayout>
             <com.google.android.material.button.MaterialButton android:id="@+id/location" style="@style/Widget.SmashNow.Button.Outlined" android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="64dp" android:text="@string/owner_map_location" android:layout_marginTop="12dp" app:icon="@drawable/ic_location_pin_24" />
             <include android:id="@+id/locationPreview" layout="@layout/view_owner_location_preview" />

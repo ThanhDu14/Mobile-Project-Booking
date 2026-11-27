@@ -10,6 +10,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.example.booking_app.R
+import com.example.booking_app.core.ui.keepFormAboveKeyboard
 import com.example.booking_app.databinding.FragmentOwnerVoucherFormBinding
 import com.example.booking_app.feature.owner.domain.voucher.OwnerVoucherDraft
 import com.example.booking_app.feature.owner.domain.voucher.OwnerVoucherType
@@ -34,6 +35,7 @@ class OwnerVoucherFormFragment : Fragment(R.layout.fragment_owner_voucher_form) 
     private var navigatedAfterSave = false
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        view.keepFormAboveKeyboard()
         super.onViewCreated(view, savedInstanceState)
         _binding = FragmentOwnerVoucherFormBinding.bind(view)
         populated = savedInstanceState?.getBoolean("populated") ?: populated

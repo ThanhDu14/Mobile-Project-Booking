@@ -23,6 +23,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import coil3.load
 import com.example.booking_app.R
+import com.example.booking_app.core.ui.keepFormAboveKeyboard
 import com.example.booking_app.core.media.StorageUrls
 import com.example.booking_app.databinding.FragmentAccountEditProfileBinding
 import com.example.booking_app.feature.account.data.ImageProcessor
@@ -89,6 +90,7 @@ class EditProfileFragment : Fragment(R.layout.fragment_account_edit_profile) {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        view.keepFormAboveKeyboard()
         val binding = FragmentAccountEditProfileBinding.bind(view).also { binding = it }
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, backCallback)
         renderedChipIds = null
@@ -99,6 +101,10 @@ class EditProfileFragment : Fragment(R.layout.fragment_account_edit_profile) {
         }
         binding.removeAvatarButton.setOnClickListener { viewModel.onRemoveAvatar() }
         binding.nameInput.doAfterTextChanged { if (!isRendering) viewModel.onNameChange(it?.toString().orEmpty()) }
+        listOf(binding.levelBeginner, binding.levelIntermediate, binding.levelAdvanced).forEach { button ->
+            button.maxLines = 2
+            button.ellipsize = null
+        }
         binding.levelGroup.addOnButtonCheckedListener { group, _, _ ->
             if (!isRendering) viewModel.onLevelSelected(levelFor(group.checkedButtonId))
         }

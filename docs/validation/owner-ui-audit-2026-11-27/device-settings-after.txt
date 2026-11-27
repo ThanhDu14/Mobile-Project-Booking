@@ -1,0 +1,7 @@
+Device: vivo V2247
+Physical density: 440
+font_scale: 1.0
+Night mode: no
+stay_on_while_plugged_in: 0
+ADB reverse ports: (none)
+package:/data/app/~~eRKSLXPaoiOVBi0b0JAVhQ==/com.example.booking_app.adminlocal-McrKq-Y2ULb39ddeD1d3Fw==/base.apk

@@ -61,6 +61,10 @@ class AccountFragment : Fragment(R.layout.fragment_account) {
         entryViews(binding).forEach { (entry, row) -> row.setOnClickListener { viewModel.onEntryClick(entry) } }
         binding.ownerActionButton.setOnClickListener { viewModel.onOwnerActionClick() }
         ownerLinkViews(binding).forEach { (link, row) -> row.setOnClickListener { viewModel.onOwnerLinkClick(link) } }
+        listOf(binding.modePlayerButton, binding.modeOwnerButton).forEach { button ->
+            button.maxLines = 2
+            button.ellipsize = null
+        }
         binding.modeToggle.addOnButtonCheckedListener { _, checkedId, isChecked ->
             if (!isChecked || renderingMode) return@addOnButtonCheckedListener
             viewModel.onModeSelected(if (checkedId == R.id.modeOwnerButton) AppMode.OWNER else AppMode.PLAYER)

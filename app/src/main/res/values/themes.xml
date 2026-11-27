@@ -114,6 +114,11 @@
         <item name="errorIconDrawable">@drawable/ic_error_24</item>
     </style>
 
+    <style name="Widget.SmashNow.TextInputLayout.OwnerLabeled" parent="Widget.SmashNow.TextInputLayout">
+        <item name="hintEnabled">true</item>
+        <item name="expandedHintEnabled">false</item>
+    </style>
+
     <!-- Lỗi chung của form, không gắn với ô nào (FR-011) -->
     <style name="Widget.SmashNow.FormError" parent="">
         <item name="android:layout_width">match_parent</item>

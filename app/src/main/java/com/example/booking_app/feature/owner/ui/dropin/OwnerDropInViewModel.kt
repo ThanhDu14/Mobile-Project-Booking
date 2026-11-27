@@ -18,6 +18,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.ensureActive
 
 data class OwnerDropInUiState(
     val venues: List<OwnerVenue> = emptyList(),
@@ -145,7 +146,9 @@ class OwnerDropInViewModel @Inject constructor(
     private fun loadCourts(venueId: String) {
         courtJob?.cancel()
         courtJob = viewModelScope.launch {
-            venueRepository.getCourts(venueId)
+            val result = venueRepository.getCourts(venueId)
+            ensureActive()
+            result
                 .onSuccess { courts -> _uiState.value = _uiState.value.copy(courts = courts.filter(OwnerCourt::isActive)) }
                 .onFailure { failure -> _uiState.value = _uiState.value.copy(error = failure.message ?: "Không tải được danh sách sân") }
         }

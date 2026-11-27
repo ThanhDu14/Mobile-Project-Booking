@@ -55,7 +55,7 @@
 
         <!-- Field: Ngày -->
         <com.google.android.material.textfield.TextInputLayout
-            style="@style/Widget.SmashNow.TextInputLayout"
+            style="@style/Widget.SmashNow.TextInputLayout.OwnerLabeled"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/space_2"
@@ -79,7 +79,7 @@
             android:orientation="horizontal">
 
             <com.google.android.material.textfield.TextInputLayout
-                style="@style/Widget.SmashNow.TextInputLayout"
+                style="@style/Widget.SmashNow.TextInputLayout.OwnerLabeled"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="@dimen/space_1"
@@ -98,7 +98,7 @@
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.textfield.TextInputLayout
-                style="@style/Widget.SmashNow.TextInputLayout"
+                style="@style/Widget.SmashNow.TextInputLayout.OwnerLabeled"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="@dimen/space_1"
@@ -148,7 +148,7 @@
             android:orientation="horizontal">
 
             <com.google.android.material.textfield.TextInputLayout
-                style="@style/Widget.SmashNow.TextInputLayout"
+                style="@style/Widget.SmashNow.TextInputLayout.OwnerLabeled"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginEnd="@dimen/space_1"
@@ -165,7 +165,7 @@
             </com.google.android.material.textfield.TextInputLayout>
 
             <com.google.android.material.textfield.TextInputLayout
-                style="@style/Widget.SmashNow.TextInputLayout"
+                style="@style/Widget.SmashNow.TextInputLayout.OwnerLabeled"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="@dimen/space_1"
@@ -192,7 +192,7 @@
 
         <!-- Ghi chú (Wireframe 7) -->
         <com.google.android.material.textfield.TextInputLayout
-            style="@style/Widget.SmashNow.TextInputLayout"
+            style="@style/Widget.SmashNow.TextInputLayout.OwnerLabeled"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/space_3"
