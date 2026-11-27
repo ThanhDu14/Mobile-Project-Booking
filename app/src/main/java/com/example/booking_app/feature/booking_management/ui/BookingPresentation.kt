@@ -81,8 +81,8 @@ object BookingPresentation {
     /** Nhãn dòng "đã trả"; null khi chưa trả đồng nào (ví dụ đơn trả tại sân). */
     fun paidLabel(finance: BookingFinance): String? = when {
         finance.paidAmount <= 0 -> null
-        finance.paymentMethod == RefundPolicy.PaymentMethod.DEPOSIT -> "Đã đặt cọc (giả lập)"
-        else -> "Đã thanh toán (ví giả lập)"
+        finance.paymentMethod == RefundPolicy.PaymentMethod.TRANSFER_DEPOSIT -> "Đã đặt cọc 30% (chuyển khoản)"
+        else -> "Đã thanh toán (chuyển khoản)"
     }
 
     /** Chính sách hủy theo đúng phương thức thanh toán của đơn (FR-017 đến FR-020). */
@@ -94,12 +94,12 @@ object BookingPresentation {
         return when (booking.finance.paymentMethod) {
             RefundPolicy.PaymentMethod.AT_VENUE ->
                 "Chính sách hủy: đơn trả tại sân hủy trước giờ chơi không mất phí. Đơn đã check-in không hủy được."
-            RefundPolicy.PaymentMethod.DEPOSIT ->
+            RefundPolicy.PaymentMethod.TRANSFER_DEPOSIT ->
                 "Chính sách hủy: hủy trước $deadline hôm chơi (từ 4 giờ trở lên) được hoàn 100% tiền cọc. " +
-                    "Hủy sau mốc đó mất tiền cọc. Đơn đã check-in không hủy được."
-            RefundPolicy.PaymentMethod.MOCK_WALLET ->
-                "Chính sách hủy: hủy trước $deadline hôm chơi (từ 4 giờ trở lên) được hoàn 100% vào ví. " +
-                    "Hủy sau mốc đó phạt 30%, hoàn 70%. Đơn đã check-in không hủy được."
+                    "Hủy sau mốc đó mất tiền cọc. Chủ sân hoàn tiền bằng chuyển khoản. Đơn đã check-in không hủy được."
+            RefundPolicy.PaymentMethod.TRANSFER_FULL ->
+                "Chính sách hủy: hủy trước $deadline hôm chơi (từ 4 giờ trở lên) được hoàn 100%. " +
+                    "Hủy sau mốc đó phạt 30%, hoàn 70%. Chủ sân hoàn tiền bằng chuyển khoản. Đơn đã check-in không hủy được."
         }
     }
 }

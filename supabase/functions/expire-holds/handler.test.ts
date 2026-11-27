@@ -246,3 +246,85 @@ Deno.test("expire-holds: atomically expires recurring group, sessions, and match
   assertEquals(commits.length, 1);
   assertEquals(commits[0].length, 3);
 });
+
+// ---------- T050 (spec 050 US3): đơn chờ chuyển khoản hết hạn ----------
+import { type Doc, FakeFirestore } from "../_shared/fake-firestore.ts";
+
+function paymentSetup(seed: Record<string, Doc>) {
+  const fs = new FakeFirestore(() => now);
+  for (const [p, d] of Object.entries(seed)) fs.seed(p, d);
+  const firestore = {
+    query: (...a: Parameters<FakeFirestore["query"]>) => Promise.resolve(fs.query(...a)),
+    runTransaction: fs.runTransaction,
+  } as any;
+  return { fs, run: () => handleExpireHolds(request(), { firestore, cronSecret, now: () => now }) };
+}
+
+const stale = new Date(now.getTime() - 60_000);
+const fresh = new Date(now.getTime() + 60_000);
+
+Deno.test("expire-holds: đơn HOLD chờ chuyển khoản hết hạn → EXPIRED, nhả voucher RESERVED, tắt mã", async () => {
+  const { fs, run } = paymentSetup({
+    "bookings/b1": {
+      userId: "p1", venueId: "v1", status: "HOLD", paymentStatus: "AWAITING_TRANSFER", paymentCode: "SNPAAAA2222",
+      voucherCode: "SALE20", voucherScope: "SYSTEM", holdExpiresAt: stale, items: [{ slotId: "c1_20261110_1800" }],
+    },
+    "slots/c1_20261110_1800": { status: "HELD", holdBy: "p1", bookingId: "b1", holdExpiresAt: stale },
+    "paymentCodes/SNPAAAA2222": { bookingId: "b1", active: true },
+    "systemVouchers/SALE20": { usedCount: 3 },
+    "systemVouchers/SALE20/userUsage/p1": { count: 1 },
+    "systemVouchers/SALE20/redemptions/b1": { userId: "p1", status: "RESERVED" },
+  });
+  assertEquals((await run()).status, 200);
+  assertEquals(fs.read("bookings/b1")!.status, "EXPIRED");
+  assertEquals(fs.read("slots/c1_20261110_1800"), null);
+  assertEquals(fs.read("paymentCodes/SNPAAAA2222")!.active, false);
+  assertEquals(fs.read("systemVouchers/SALE20")!.usedCount, 2);
+  assertEquals(fs.read("systemVouchers/SALE20/userUsage/p1")!.count, 0);
+  assertEquals(fs.read("systemVouchers/SALE20/redemptions/b1"), null);
+});
+
+Deno.test("expire-holds: voucher đã USED thì giữ nguyên lượt", async () => {
+  const { fs, run } = paymentSetup({
+    "bookings/b1": { userId: "p1", status: "HOLD", voucherCode: "SALE20", voucherScope: "SYSTEM", holdExpiresAt: stale },
+    "systemVouchers/SALE20": { usedCount: 3 },
+    "systemVouchers/SALE20/redemptions/b1": { userId: "p1", status: "USED" },
+  });
+  await run();
+  assertEquals(fs.read("systemVouchers/SALE20")!.usedCount, 3);
+  assertEquals(fs.read("systemVouchers/SALE20/redemptions/b1")!.status, "USED");
+});
+
+Deno.test("expire-holds: nhóm định kỳ chờ chuyển khoản hết hạn → nhả voucher cơ sở, tắt mã", async () => {
+  const { fs, run } = paymentSetup({
+    "recurringGroups/g1": {
+      userId: "p1", venueId: "v1", status: "HOLD", paymentStatus: "AWAITING_TRANSFER", paymentCode: "SNPBBBB3333",
+      voucherCode: "VIP", voucherScope: "VENUE", holdExpiresAt: stale,
+    },
+    "bookings/s1": { userId: "p1", recurringGroupId: "g1", status: "HOLD", slotIds: ["c1_20261117_1800"], holdExpiresAt: stale },
+    "slots/c1_20261117_1800": { status: "HELD", holdBy: "p1", bookingId: "g1", holdExpiresAt: stale },
+    "paymentCodes/SNPBBBB3333": { recurringGroupId: "g1", active: true },
+    "venues/v1/vouchers/VIP": { usedCount: 1 },
+    "venues/v1/vouchers/VIP/userUsage/p1": { count: 1 },
+    "venues/v1/vouchers/VIP/redemptions/g1": { userId: "p1", status: "RESERVED" },
+  });
+  await run();
+  assertEquals(fs.read("recurringGroups/g1")!.status, "EXPIRED");
+  assertEquals(fs.read("bookings/s1")!.status, "EXPIRED");
+  assertEquals(fs.read("slots/c1_20261117_1800"), null);
+  assertEquals(fs.read("paymentCodes/SNPBBBB3333")!.active, false);
+  assertEquals(fs.read("venues/v1/vouchers/VIP")!.usedCount, 0);
+  assertEquals(fs.read("venues/v1/vouchers/VIP/redemptions/g1"), null);
+});
+
+Deno.test("expire-holds: đơn chờ chuyển khoản còn hạn thì không đổi", async () => {
+  const { fs, run } = paymentSetup({
+    "bookings/b1": { userId: "p1", status: "HOLD", paymentCode: "SNPAAAA2222", voucherCode: "SALE20", voucherScope: "SYSTEM", holdExpiresAt: fresh },
+    "paymentCodes/SNPAAAA2222": { bookingId: "b1", active: true },
+    "systemVouchers/SALE20/redemptions/b1": { userId: "p1", status: "RESERVED" },
+  });
+  await run();
+  assertEquals(fs.read("bookings/b1")!.status, "HOLD");
+  assertEquals(fs.read("paymentCodes/SNPAAAA2222")!.active, true);
+  assertEquals(fs.read("systemVouchers/SALE20/redemptions/b1")!.status, "RESERVED");
+});

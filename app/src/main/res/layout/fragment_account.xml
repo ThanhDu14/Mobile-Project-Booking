@@ -230,58 +230,6 @@
                         app:iconGravity="textStart"
                         app:iconTint="?attr/colorOnSurface" />
 
-                    <!-- Thẻ ví giả lập (FR-001a). -->
-                    <LinearLayout
-                        android:id="@+id/walletCard"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/space_4"
-                        android:background="@drawable/bg_account_card"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal"
-                        android:padding="@dimen/space_4">
-
-                        <ImageView
-                            android:layout_width="@dimen/account_icon_box"
-                            android:layout_height="@dimen/account_icon_box"
-                            android:background="@drawable/bg_account_icon_box"
-                            android:importantForAccessibility="no"
-                            android:padding="@dimen/space_3"
-                            android:src="@drawable/ic_wallet_24"
-                            app:tint="@color/sn_on_court_container" />
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="@dimen/space_4"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:text="@string/account_wallet_label"
-                                android:textAppearance="?attr/textAppearanceBodyMedium"
-                                android:textColor="?attr/colorOnSurfaceVariant" />
-
-                            <TextView
-                                android:id="@+id/walletBalance"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:textAppearance="?attr/textAppearanceTitleLarge"
-                                android:textColor="?attr/colorOnSurface"
-                                tools:text="50.000 đ" />
-                        </LinearLayout>
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/walletTopupButton"
-                            style="@style/Widget.Material3.Button.TonalButton"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:minHeight="@dimen/touch_min"
-                            android:text="@string/account_wallet_topup" />
-                    </LinearLayout>
-
                     <!-- Dùng lại banner của 010; chỉ hiện với tài khoản mật khẩu chưa xác minh. -->
                     <com.example.booking_app.core.ui.VerifyEmailBannerView
                         android:id="@+id/verifyEmailBanner"

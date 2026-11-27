@@ -12,9 +12,6 @@
     <string name="account_avatar_cd_guest">Đăng nhập</string>
     <string name="account_edit_profile">Sửa hồ sơ</string>
     <string name="account_district_separator">" · "</string>
-    <string name="account_wallet_label">Ví giả lập · không phải tiền thật</string>
-    <string name="account_wallet_balance">%1$s đ</string>
-    <string name="account_wallet_topup">Nạp ví</string>
     <string name="account_load_error">Không tải được thông tin tài khoản</string>
     <string name="account_retry">Thử lại</string>
     <string name="account_loading">Đang tải thông tin tài khoản</string>
@@ -142,7 +139,6 @@
     <string name="account_delete_confirm_word">XÓA</string>
     <string name="account_delete_submit">Xóa vĩnh viễn tài khoản</string>
     <string name="account_delete_keep">Giữ tài khoản</string>
-    <string name="account_delete_wallet_notice">Số dư ví giả lập %1$s đ và tiền hoàn sẽ bị xóa, không quy đổi được</string>
     <string name="account_deleted">Tài khoản đã được xóa</string>
     <string name="account_error_delete_confirm">Gõ đúng chữ XÓA để xác nhận</string>
     <string name="account_error_admin_self_delete">Tài khoản quản trị không tự xóa được, liên hệ nhóm phát triển</string>
@@ -168,7 +164,6 @@
     <string name="account_delete_removed_profile">Hồ sơ: họ tên, email, ảnh đại diện, trình độ, khu vực</string>
     <string name="account_delete_removed_history">Lịch sử tìm kiếm và danh sách sân yêu thích</string>
     <string name="account_delete_removed_notifications">Thông báo, cài đặt thông báo và lượt dùng trợ lý AI</string>
-    <string name="account_delete_removed_wallet">Số dư ví giả lập (không quy đổi được)</string>
     <string name="account_delete_removed_owner">Hồ sơ chủ sân và ảnh giấy tờ (nếu có)</string>
     <string name="account_delete_kept_title">Được giữ lại ở dạng ẩn danh</string>
     <string name="account_delete_kept_body">Đơn đặt sân đã qua, đánh giá, tin nhắn và bài đăng, hiện là "Người dùng đã xóa"</string>

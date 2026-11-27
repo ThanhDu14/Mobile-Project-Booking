@@ -53,8 +53,6 @@ sealed interface AccountUiState {
         /** Tên khu vực theo thứ tự `favoriteDistrictIds`; ID không còn trong danh mục thì bỏ qua. */
         val districtNames: List<String> = emptyList(),
         val level: PlayerLevel? = null,
-        /** Số dư ví đã định dạng, ví dụ `50.000` (chuỗi `account_wallet_balance` thêm " đ"). */
-        val walletBalance: String = "0",
         val showVerifyBanner: Boolean = false,
         val ownerSection: OwnerSection = OwnerSection.Hidden,
         /** Lối sang màn hình chủ sân đã có destination (R14). */
@@ -204,7 +202,6 @@ class AccountViewModel @Inject constructor(
                     entries = accountEntries(providers, session.appRole) { it in links },
                     districtNames = profile.districtNames,
                     level = PlayerLevel.fromValue(profile.profile.level),
-                    walletBalance = formatVnd(profile.profile.walletBalance),
                     showVerifyBanner = PASSWORD_PROVIDER in providers && !session.emailVerified,
                     ownerSection = OwnerSectionResolver.resolve(
                         session.appRole, profile.profile.ownerStatus, profile.profile.ownerRevokedReason, application,

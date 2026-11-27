@@ -1,6 +1,6 @@
 package com.example.booking_app.feature.booking.data.mapper
 
-import com.example.booking_app.feature.booking.ui.HoldToPaymentArgs
+import com.example.booking_app.core.navigation.HoldToPaymentArgs
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FieldValue
 import java.time.ZoneId

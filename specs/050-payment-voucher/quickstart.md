@@ -1,77 +1,49 @@
-# Quickstart: Thanh toán và Khuyến mãi giả lập (spec 050)
+# Quickstart: Thanh toán và Khuyến mãi (spec 050, bản 2026-11-16)
 
-**Ngày**: 2026-10-15 · **Spec**: [spec.md](spec.md) · **Plan**: [plan.md](plan.md)
+**Ngày**: 2026-11-16 · **Spec**: [spec.md](spec.md) · **Plan**: [plan.md](plan.md) · **API**: [contracts/edge-functions.md](contracts/edge-functions.md)
 
-Tài liệu này hướng dẫn cách chạy thử, kiểm thử tự động (Unit Test / UI Test) và kiểm tra xác minh các kịch bản chính của tính năng `050-payment-voucher`.
-
----
-
-## 1. Yêu cầu môi trường (Prerequisites)
-
-- **Android Studio**: Ladybug (2024.2+) hoặc Jellyfish.
-- **JDK**: Java 11 (khớp `compileOptions` trong `app/build.gradle.kts`).
-- **Android SDK**: `minSdk 29`, `targetSdk 37`.
-- **Firebase Emulator Suite** (Khuyến nghị để kiểm thử Transaction thanh toán & trừ ví):
-  ```bash
-  firebase emulators:start --only firestore,auth
-  ```
+Hướng dẫn chạy và kiểm chứng. Không chứa code cài đặt.
 
 ---
 
-## 2. Kiểm thử tự động (Automated Testing)
+## 1. Chuẩn bị
 
-### 2.1. Chạy Unit Test logic cốt lõi
-Kiểm tra tính toán cọc 30%, điều kiện áp dụng voucher và Transaction thanh toán:
-```bash
-./gradlew testDebugUnitTest --tests "com.example.booking_app.feature.payment.*"
-```
+- JDK 11, Android SDK (minSdk 29), Deno 2, Node 20, Firebase CLI, Supabase CLI.
+- Tài khoản **SePay Test mode** của nhóm (không bao giờ dùng Live):
+  1. Trên my.sepay.vn (chế độ Test), thêm tài khoản ngân hàng test. Ở mục "Cấu trúc mã thanh toán", khai tiền tố `SNP` và 8 ký tự.
+  2. Tạo webhook "Tiền vào" trỏ tới `https://<supabase-ref>.functions.supabase.co/sepay-webhook`, bật chữ ký HMAC, chép secret.
+  3. `supabase secrets set SEPAY_WEBHOOK_SECRET=<secret>`. Không đưa secret vào app hay repo.
+- Seed một cơ sở demo có `payoutAccount` là số tài khoản test ở bước 1, và một cơ sở **không có** `payoutAccount`.
 
-Các ca kiểm thử trọng tâm trong Unit Test:
-1. `CalculatePaymentBreakdownTest`:
-   - Đơn 200.000đ $\rightarrow$ Cọc 30% = 60.000đ, còn lại tại sân = 140.000đ.
-   - Đơn 175.000đ $\rightarrow$ Cọc $175.000 \times 0.3 = 52.500đ \rightarrow$ Làm tròn thành 53.000đ, còn lại = 122.000đ.
-   - Đơn áp voucher giảm 100% (`payableAmount == 0đ`) $\rightarrow$ Cọc 0đ, phương thức tự chuyển sang `FREE`.
-2. `ValidateAndApplyVoucherTest`:
-   - Voucher yêu cầu đơn tối thiểu 300.000đ, áp vào đơn 200.000đ $\rightarrow$ Bị từ chối (`MinOrderNotMet`).
-   - Voucher giảm 50% trần 40.000đ áp vào đơn 150.000đ $\rightarrow$ Giảm đúng 40.000đ.
-   - Voucher đã dùng hết lượt cá nhân (`userUsageCount >= perUserLimit`) $\rightarrow$ Bị từ chối (`PerUserLimitReached`).
-3. `ProcessMockPaymentTest`:
-   - Số dư ví < tiền cần trả $\rightarrow$ Ném `InsufficientBalanceException`, Transaction rollback, số dư ví không đổi.
-   - Hết hạn giữ chỗ (`holdExpiresAt < now`) $\rightarrow$ Ném `HoldExpiredException`, không trừ tiền ví.
-   - Thanh toán thành công $\rightarrow$ Số dư ví bị trừ chính xác, đơn chuyển sang `PENDING`, slot chuyển sang `BOOKED`.
+## 2. Test tự động
 
-### 2.2. Chạy UI Test (Espresso)
-Kiểm tra tương tác chọn phương thức, áp voucher và nạp ví giả lập:
-```bash
-./gradlew connectedDebugAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.example.booking_app.feature.payment.PaymentVoucherFragmentTest
-```
+| Lệnh | Kiểm gì |
+|---|---|
+| `./gradlew testDebugUnitTest --tests "com.example.booking_app.feature.payment.*"` | `PaymentCalculator` (bảng ca test chung), `PreviewVoucherUseCase`, các ViewModel (đếm ngược, đổi cách trả, chuyển màn khi listener báo `PENDING`/`EXPIRED`, ánh xạ lỗi) |
+| `cd supabase/functions && deno test -A _shared/payment-calc.test.ts` | Bản TS chạy **cùng bảng ca test** với Kotlin |
+| `deno test -A booking-payment-confirm/ booking-payment-transfer/ sepay-webhook/ owner-mark-refunded/ refund-report/ refund-reminders/ expire-holds/` | Handler với Firestore giả: idempotent theo `requestId`, gia hạn 15 phút, giữ/nhả voucher, đủ 7 outcome của webhook, webhook gửi lại 3 lần chỉ ghi nhận 1, quyền chủ sân/chủ đơn |
+| `cd firestore-tests && npm test` (Firebase Emulator) | Rules: app không ghi được `bookings` `PENDING`, `paymentCodes`, `sepayTransactions`, `refunds`, `userUsage`, `redemptions`; đọc được voucher cơ sở; chỉ chủ venue ghi `payoutAccount` |
 
----
+Bảng ca test chung tối thiểu (spec SC, edge cases):
 
-## 3. Các kịch bản kiểm tra thủ công (Manual Verification Scenarios)
+| subtotal | voucher | total | cọc 30% | còn lại |
+|---|---|---|---|---|
+| 200.000 | – | 200.000 | 60.000 | 140.000 |
+| 175.000 | – | 175.000 | 53.000 | 122.000 |
+| 300.000 | 10%, không trần | 270.000 | 81.000 | 189.000 |
+| 150.000 | 50%, trần 40.000 | 110.000 | 33.000 | 77.000 |
+| 80.000 | cố định 100.000 | 0 | 0 (miễn phí) | 0 |
+| 1.000 | – | 1.000 | 1.000 (không cọc 0đ) | 0 |
 
-### Kịch bản 1: Áp dụng voucher cơ sở và thanh toán ví giả lập
-1. Từ màn hình đặt sân (040), bấm "Tiếp tục" sang màn hình thanh toán đơn 200.000đ.
-2. Bấm "Chọn mã khuyến mãi", chọn voucher `GIAM20` (giảm 20%).
-3. **Kỳ vọng**: Mức giảm 40.000đ, tổng tiền hiển thị giảm còn 160.000đ.
-4. Chọn phương thức "Ví giả lập", bấm "Xác nhận thanh toán".
-5. **Kỳ vọng**:
-   - Trừ 160.000đ từ ví giả lập.
-   - Chuyển sang màn hình Hóa đơn điện tử (E-Receipt) ghi nhận trạng thái `PENDING`.
-   - Có dòng chữ nổi bật: "Giao dịch giả lập phục vụ học tập - Không thu tiền thật".
-   - Bấm nút "Xem lịch đặt của tôi" $\rightarrow$ Điều hướng sang Spec 060 tại tab "Chờ duyệt".
+## 3. Kịch bản thủ công (máy ảo + Supabase cloud + SePay Test)
 
-### Kịch bản 2: Đặt cọc 30% và kiểm tra làm tròn
-1. Tạo đơn có tiền tạm tính 175.000đ.
-2. Chọn phương thức "Đặt cọc".
-3. **Kỳ vọng**:
-   - Hiển thị tiền cọc: 53.000đ.
-   - Hiển thị số tiền còn lại trả tại sân: 122.000đ.
-4. Bấm "Xác nhận đặt cọc" $\rightarrow$ Ví chỉ bị trừ 53.000đ, hóa đơn ghi rõ đã cọc 53.000đ.
-
-### Kịch bản 3: Xử lý hết hạn 5 phút giữ chỗ
-1. Mở màn hình thanh toán, chờ đồng hồ đếm ngược chạm mốc 00:00.
-2. **Kỳ vọng**:
-   - Nút "Xác nhận thanh toán" tự động bị vô hiệu hóa (disabled).
-   - Hiển thị thông báo: "Đã hết thời gian giữ chỗ. Đơn đặt sân đã tự động hủy".
-   - Hệ thống tự động giải phóng các slot đang `HOLD` về `AVAILABLE`.
+1. **Trả tại sân**: giữ chỗ một đơn 200.000đ, chọn "Thanh toán tại sân", bấm xác nhận. Kỳ vọng phiếu đặt sân "Chưa thanh toán", đơn ở `PENDING`, slot `BOOKED`.
+2. **Chuyển khoản cọc**: đơn 175.000đ, chọn chuyển khoản cọc 30%. Kỳ vọng màn QR hiện 53.000đ, mã `SNP…`, tên ngân hàng, số tài khoản, tên chủ tài khoản của cơ sở, banner sandbox, đồng hồ khoảng 15:00. Trên my.sepay.vn chọn "Mô phỏng giao dịch" tiền vào 53.000đ với nội dung là mã đó. Kỳ vọng trong vòng 10 giây app tự sang hóa đơn "Đã cọc 53.000đ, còn 122.000đ".
+3. **Webhook gửi lại**: trên SePay bấm gửi lại webhook của giao dịch ở bước 2. Kỳ vọng `sepayTransactions/{id}` có một bản ghi, đơn không đổi.
+4. **Sai số tiền**: đơn mới, mô phỏng 50.000đ thay vì 60.000đ. Kỳ vọng đơn vẫn chờ, có refund `PENDING` lý do `AMOUNT_MISMATCH` trong danh sách cần hoàn của chủ sân. Mô phỏng thêm 60.000đ đúng mã thì đơn sang `PENDING`.
+5. **Tiền về muộn**: đơn mới, chờ hết 15 phút (đơn sang `EXPIRED`, slot trống, voucher được nhả), rồi mới mô phỏng tiền vào. Kỳ vọng refund `LATE_TRANSFER`, người chơi nhận "Đơn không thành công, chủ sân sẽ hoàn tiền".
+6. **Đổi ý**: đang ở màn QR thì bấm back, chọn "Thanh toán tại sân". Kỳ vọng đơn `PENDING`/`UNPAID`. Mô phỏng tiền theo mã cũ thì ra refund `LATE_TRANSFER`.
+7. **Voucher lượt cuối**: voucher `usageLimit = 1`. Tài khoản A bắt đầu chuyển khoản với mã này. Tài khoản B áp cùng mã rồi bấm chuyển khoản. Kỳ vọng B bị báo hết lượt và giá được tính lại. A để hết hạn thì B dùng lại được.
+8. **Cơ sở chưa có tài khoản**: kỳ vọng chỉ còn "Thanh toán tại sân" với ghi chú "Cơ sở chưa hỗ trợ chuyển khoản".
+9. **Hoàn tiền thủ công**: chủ sân từ chối đơn đã cọc (112). Kỳ vọng `paymentStatus = REFUND_PENDING` và có refund `PENDING`. Chủ sân bấm "Đã hoàn tiền" thì đơn chuyển `REFUNDED`.
+10. **Nhắc và báo cáo**: sửa `createdAt` của refund lùi 25 giờ rồi chạy `refund-reminders`: chủ sân nhận nhắc một lần. Lùi 4 ngày: người chơi thấy nút "Báo cáo chưa nhận được tiền hoàn", bấm thì Admin thấy báo cáo ở màn 120.

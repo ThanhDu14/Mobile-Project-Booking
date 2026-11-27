@@ -1,5 +1,6 @@
 package com.example.booking_app.feature.booking.data.datasource
 
+import com.example.booking_app.core.navigation.HoldToPaymentArgs
 import com.example.booking_app.core.network.AppError
 import com.example.booking_app.core.network.DEFAULT_TIMEOUT_MS
 import com.example.booking_app.core.network.FunctionErrors
@@ -16,7 +17,6 @@ import com.example.booking_app.feature.booking.data.time.ServerTimeOffsetProvide
 import com.example.booking_app.feature.booking.domain.model.HoldResult
 import com.example.booking_app.feature.booking.domain.model.ConfirmBookingResult
 import com.example.booking_app.feature.booking.domain.model.VenueInfo
-import com.example.booking_app.feature.booking.ui.HoldToPaymentArgs
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.DocumentChange
 import com.google.firebase.firestore.DocumentSnapshot
@@ -308,7 +308,7 @@ class FirestoreBookingRemoteDataSource @Inject constructor(
         userId: String,
     ): ConfirmBookingResult {
         if (userId.isBlank() || paymentMethod != "AT_VENUE") {
-            return ConfirmBookingResult.Error("Kh?ng th? x?c nh?n ph??ng th?c thanh to?n")
+            return ConfirmBookingResult.Error("Không thể xác nhận phương thức thanh toán")
         }
         return try {
             BookingDocumentBuilder.validateSlotGaps(args.slotIds)
@@ -334,7 +334,7 @@ class FirestoreBookingRemoteDataSource @Inject constructor(
             val failure = (e as? AppError.Unknown)?.cause as? FunctionHttpException
             if (parseFunctionErrorCode(failure?.body) == "HOLD_EXPIRED") ConfirmBookingResult.Expired
             else ConfirmBookingResult.Error(
-                failure?.message ?: e.message ?: "L?i x?c nh?n ??t s?n",
+                failure?.message ?: e.message ?: "Lỗi xác nhận đặt sân",
                 isPermissionDenied = failure?.status == 403,
             )
         }

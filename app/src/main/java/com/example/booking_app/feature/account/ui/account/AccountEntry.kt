@@ -18,7 +18,6 @@ enum class AccountEntry(val deepLink: String, @StringRes val label: Int) {
     CHANGE_PASSWORD("smashnow://account/password", R.string.account_entry_change_password),
     CHANGE_EMAIL("smashnow://account/email", R.string.account_entry_change_email),
     LEGAL("smashnow://legal/TERMS", R.string.account_entry_legal),
-    WALLET_TOPUP("smashnow://wallet/topup", R.string.account_wallet_topup),
     DELETE_ACCOUNT("smashnow://account/delete", R.string.account_delete_account),
 }
 

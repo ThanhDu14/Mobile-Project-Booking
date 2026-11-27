@@ -62,8 +62,8 @@ async function loadTarget(tx: FirestoreTransaction, code: Doc): Promise<Target |
     const doc = await tx.get(`recurringGroups/${groupId}`);
     const sessions = (await tx.query("bookings", [{ field: "recurringGroupId", op: "EQUAL", value: groupId }]))
       .map((d) => ({ id: d.id, data: d.data }))
-        .sort((a, b) => (asDate(a.data.startAt)?.getTime() ?? 0) - (asDate(b.data.startAt)?.getTime() ?? 0) ||
-          a.id.localeCompare(b.id));
+      .sort((a, b) => (asDate(a.data.startAt)?.getTime() ?? 0) - (asDate(b.data.startAt)?.getTime() ?? 0) ||
+        a.id.localeCompare(b.id));
     const slotIds = sessions.flatMap((s) => ((s.data.slotIds as unknown[] | undefined) ?? []).map(String));
     return { path: `recurringGroups/${groupId}`, key: groupId, recurring: true, doc, sessions, slotIds };
   }

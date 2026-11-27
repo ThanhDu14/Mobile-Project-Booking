@@ -147,7 +147,6 @@ export interface GuestSession {
 
 export interface Impact {
   version: string;
-  walletBalance: number;
   myBookings: QueryDocument[];
   /** Lượt `REGISTERED` của buổi chưa bắt đầu (kèm document buổi). */
   myRegistrations: { registration: QueryDocument; session: Doc }[];
@@ -184,7 +183,6 @@ async function sha256(text: string): Promise<string> {
 const byId = (a: QueryDocument, b: QueryDocument) => a.path.localeCompare(b.path);
 
 export async function computeImpact(uid: string, now: Date, reader: Reader): Promise<Impact> {
-  const user = await reader.get(`users/${uid}`);
   const myBookings = (await reader.query("bookings", [
     { field: "userId", op: "EQUAL", value: uid },
     { field: "status", op: "IN", value: UPCOMING_BOOKING },
@@ -238,7 +236,6 @@ export async function computeImpact(uid: string, now: Date, reader: Reader): Pro
   ].sort();
   return {
     version: `sha256:${await sha256(ids.join("\n"))}`,
-    walletBalance: Number(user?.walletBalance ?? 0),
     myBookings,
     myRegistrations,
     myWaitlists,
@@ -257,7 +254,6 @@ export function toPreview(impact: Impact, now: Date, helpers: DeletionHelpers) {
   ]);
   return {
     impactVersion: impact.version,
-    walletBalance: impact.walletBalance,
     myBookings: impact.myBookings.map((b) => ({
       bookingId: b.id,
       venueName: String((b.data.venueSnapshot as Doc | undefined)?.name ?? ""),

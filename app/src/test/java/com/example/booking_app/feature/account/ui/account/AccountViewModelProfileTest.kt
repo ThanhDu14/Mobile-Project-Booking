@@ -39,7 +39,7 @@ class AccountViewModelProfileTest {
         MyProfile(
             displayName = "Lê Hoàng Nam", level = "INTERMEDIATE",
             favoriteDistrictIds = listOf("q10", "khong-con", "q-cu", "q3"), avatarPath = null,
-            role = "PLAYER", accountStatus = "ACTIVE", email = "nam@example.com", walletBalance = 50_000,
+            role = "PLAYER", accountStatus = "ACTIVE", email = "nam@example.com",
         ),
     )
     private val reader = object : UserProfileReader {
@@ -67,8 +67,8 @@ class AccountViewModelProfileTest {
     }
 
     @Test
-    fun `so du vi dinh dang 50_000`() = runTest(mainRule.dispatcher) {
-        assertEquals("50.000", content().walletBalance)
+    fun `formatVnd dinh dang so tien`() = runTest(mainRule.dispatcher) {
+        assertEquals("50.000", formatVnd(50_000))
         assertEquals("0", formatVnd(0))
         assertEquals("1.250.000", formatVnd(1_250_000))
         assertEquals("999", formatVnd(999))

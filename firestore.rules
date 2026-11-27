@@ -224,6 +224,23 @@ service cloud.firestore {
           && request.resource.data.venueSnapshot.keys().hasOnly(['name', 'photoPath', 'address']);
     }
 
+    // Spec 050 data-model §1.7: tài khoản nhận chuyển khoản của chủ sân (form ở 111). Không đổi thì bỏ qua;
+    // có đổi thì phải đủ đúng 4 trường: BIN NAPAS 6 số, số tài khoản 6–19 chữ số, tên ngân hàng và chủ tài khoản.
+    function validPayoutAccountChange() {
+      return request.resource.data.get('payoutAccount', null) == resource.data.get('payoutAccount', null)
+          || isValidPayoutAccount(request.resource.data.get('payoutAccount', null));
+    }
+
+    function isValidPayoutAccount(p) {
+      return p is map
+          && p.keys().hasOnly(['bankBin', 'bankShortName', 'accountNumber', 'accountHolderName'])
+          && p.keys().hasAll(['bankBin', 'bankShortName', 'accountNumber', 'accountHolderName'])
+          && p.bankBin is string && p.bankBin.matches('^[0-9]{6}$')
+          && p.accountNumber is string && p.accountNumber.matches('^[0-9]{6,19}$')
+          && p.bankShortName is string && p.bankShortName.size() > 0
+          && p.accountHolderName is string && p.accountHolderName.size() > 0;
+    }
+
     // ---------- users/{uid}/searchHistory (A, spec 020 US4; contracts/security-rules-and-indexes.md §1) ----------
     // ID = 20 ký tự hex đầu SHA-256 của bộ điều kiện, nên tìm lại cùng tổ hợp ghi đè đúng document.
     // Không có vị trí (FR-014). App giữ tối đa 10 mục; xóa cùng tài khoản do delete-account (service account).
@@ -292,7 +309,8 @@ service cloud.firestore {
                         && request.resource.data.status in ['ACTIVE', 'HIDDEN']
                         && onlyChanges(['name', 'nameKeywords', 'address', 'districtId', 'location',
                                         'geohash', 'openTime', 'closeTime', 'phone', 'amenityIds',
-                                        'photoPaths', 'acceptsRecurring', 'status'])));
+                                        'photoPaths', 'acceptsRecurring', 'status', 'payoutAccount'])
+                        && validPayoutAccountChange()));
       allow delete: if isAdmin();
 
       match /courts/{courtId} {
@@ -308,6 +326,8 @@ service cloud.firestore {
       }
 
       // Venue voucher mutations and usage counters are exclusively server-owned.
+      // Spec 050 R7: màn thanh toán đọc voucher của cơ sở ACTIVE để xem trước giá; tạo/sửa qua Edge Function
+      // owner-create-voucher. userUsage/redemptions bên dưới không có match nên client không đọc/ghi được.
       match /vouchers/{code} {
         allow read: if isSignedIn() && (isAdmin() || ownsVenue(venueId)
             || get(/databases/$(database)/documents/venues/$(venueId)).data.status == 'ACTIVE');
@@ -379,7 +399,9 @@ service cloud.firestore {
       // chạy ở Edge Function `checkin-booking`, client không query qrToken trên toàn collection.
       allow read: if isSignedIn() && (resource == null || resource.data.userId == request.auth.uid
           || isAdmin() || ownsVenue(resource.data.venueId));
-      // Client tạo HOLD. Checkout đồng bộ slot, voucher và BOOKING_NEW từ server.
+      // Spec 050 (T017): thu hồi "lát cắt test 050". App chỉ tạo đơn HOLD khi giữ chỗ (041); chốt đơn sang
+      // PENDING, tiền, voucher và thông báo BOOKING_NEW chạy ở Edge Function booking-payment-confirm /
+      // booking-payment-transfer / sepay-webhook.
       allow create: if isPlayer()
           && request.resource.data.userId == request.auth.uid
           && request.resource.data.status == 'HOLD';
@@ -426,6 +448,25 @@ service cloud.firestore {
     // ---------- systemVouchers (D, spec 120 / Feature 050) ----------
     match /systemVouchers/{code} {
       allow read: if isSignedIn();
+      allow write: if false;
+    }
+
+    // ---------- thanh toán chuyển khoản, hoàn tiền (spec 050) ----------
+    // paymentCodes (bảng tra mã SNP… → đơn) và sepayTransactions (sổ chống trùng của webhook) chỉ Edge Function
+    // đọc/ghi. Viết match chặn hết cho rõ ý, dù không có match cũng đã bị chặn.
+    match /paymentCodes/{code} {
+      allow read, write: if false;
+    }
+
+    match /sepayTransactions/{sepayId} {
+      allow read, write: if false;
+    }
+
+    // Khoản cần hoàn thủ công (data-model §1.5). Người chơi đọc khoản của mình, chủ sân đọc khoản của cơ sở mình
+    // (query phải có where userId / where venueId). Tạo, "Đã hoàn tiền", báo cáo đều qua Edge Function.
+    match /refunds/{refundId} {
+      allow read: if isSignedIn()
+          && (resource.data.userId == request.auth.uid || ownsVenue(resource.data.venueId) || isAdmin());
       allow write: if false;
     }
 

@@ -3,7 +3,19 @@ package com.example.booking_app.feature.booking_management.domain
 /** A local estimate; the server makes the final cancellation decision. Times are epoch milliseconds. */
 object RefundPolicy {
     enum class Status { PENDING, CONFIRMED, HOLD, COMPLETED, CANCELLED, REJECTED, EXPIRED, NO_SHOW }
-    enum class PaymentMethod { DEPOSIT, MOCK_WALLET, AT_VENUE }
+    /** Cách trả của spec 050. `DEPOSIT`/`MOCK_WALLET` là tên cũ trước khi bỏ ví, đọc qua [fromStored]. */
+    enum class PaymentMethod {
+        AT_VENUE, TRANSFER_DEPOSIT, TRANSFER_FULL;
+
+        companion object {
+            fun fromStored(raw: String?): PaymentMethod = when (raw) {
+                "TRANSFER_DEPOSIT", "DEPOSIT" -> TRANSFER_DEPOSIT
+                "TRANSFER_FULL", "MOCK_WALLET" -> TRANSFER_FULL
+                "AT_VENUE" -> AT_VENUE
+                else -> throw IllegalArgumentException("paymentMethod không hợp lệ: $raw")
+            }
+        }
+    }
 
     data class Result(val refundAmount: Long, val penaltyAmount: Long)
 
@@ -27,8 +39,8 @@ object RefundPolicy {
         val penalty = if (status == Status.PENDING || early) {
             0L
         } else when (paymentMethod) {
-            PaymentMethod.DEPOSIT -> paidAmount
-            PaymentMethod.MOCK_WALLET -> {
+            PaymentMethod.TRANSFER_DEPOSIT -> paidAmount
+            PaymentMethod.TRANSFER_FULL -> {
                 // floor(30% / 1000) * 1000, without multiplying paidAmount by 30.
                 (paidAmount / 10_000L * 3L + paidAmount % 10_000L * 3L / 10_000L) * 1_000L
             }

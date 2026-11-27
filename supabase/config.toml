@@ -546,11 +546,22 @@ verify_jwt = false
 [functions.booking-reminders]
 verify_jwt = false
 
+# Spec 050: thanh toán chuyển khoản qua SePay Test mode. SePay không có JWT của Supabase, handler kiểm HMAC
+# (SEPAY_WEBHOOK_SECRET); các function còn lại kiểm Firebase ID token (refund-reminders kiểm x-cron-secret).
+[functions.sepay-webhook]
+verify_jwt = false
+
 [functions.booking-payment-confirm]
 verify_jwt = false
 
 [functions.booking-payment-transfer]
 verify_jwt = false
 
-[functions.sepay-webhook]
+[functions.owner-mark-refunded]
+verify_jwt = false
+
+[functions.refund-report]
+verify_jwt = false
+
+[functions.refund-reminders]
 verify_jwt = false

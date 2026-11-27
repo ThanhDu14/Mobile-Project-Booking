@@ -1,161 +1,79 @@
-# UI & Domain Contracts: Thanh toán và Khuyến mãi giả lập (spec 050)
+# UI & Domain Contracts: Thanh toán và Khuyến mãi (spec 050, bản 2026-11-16)
 
-**Ngày**: 2026-10-15 · **Spec**: [spec.md](../spec.md) · **Plan**: [plan.md](../plan.md)
-
-Tài liệu này xác lập các hợp đồng giao tiếp giữa các tầng kiến trúc trong tính năng `050-payment-voucher` và điểm giao thoa với các tính năng khác (`040`, `041`, `060`).
+**Ngày**: 2026-11-16 · **Spec**: [spec.md](../spec.md) · **Plan**: [plan.md](../plan.md) · **API**: [edge-functions.md](edge-functions.md)
 
 ---
 
-## 1. Hợp đồng Điều hướng (Navigation Safe Args)
+## 1. Điều hướng
 
-### 1.1. Tiếp nhận dữ liệu đầu vào (Từ `040`, `041`, hoặc `060` - Tab Chờ thanh toán)
-Thống nhất sử dụng chung lớp Safe Args `HoldToPaymentArgs` cho mọi luồng chuyển tới màn hình thanh toán (đơn ngày lẻ từ `[040]`, đơn chu kỳ từ `[041]`, hoặc bấm "Thanh toán tiếp" từ `[060]` theo FR-027):
-```kotlin
-@Parcelize
-data class HoldToPaymentArgs(
-    val bookingId: String,               // ID đơn lẻ hoặc recurringGroupId
-    val venueId: String,
-    val venueName: String,
-    val isRecurring: Boolean,
-    val totalSessions: Int,              // 1 (nếu đơn lẻ) hoặc N >= 4 (đơn cố định)
-    val subtotalAmount: Long,
-    val slotIds: Array<String>,          // Danh sách slot để cập nhật BOOKED khi trả xong
-    val holdExpiresAtMillis: Long        // Mốc thời gian đếm ngược còn lại
-) : Parcelable
-```
+### 1.1. Vào màn thanh toán (từ 040, 041, hoặc "Thanh toán tiếp" ở 060)
 
-### 1.2. Điều hướng sang Màn hình Quản lý đơn (`060-my-bookings`)
-Khi người dùng bấm "Xem lịch đặt của tôi" từ màn hình Hóa đơn điện tử (`PaymentReceiptFragment`):
-```kotlin
-@Parcelize
-data class ReceiptToMyBookingsArgs(
-    val bookingId: String,               // ID đơn lẻ hoặc recurringGroupId
-    val isRecurring: Boolean = false,
-    val initialTab: String = "PENDING"   // Mở ngay tab "Chờ duyệt" (60 phút)
-) : Parcelable
-```
+`HoldToPaymentArgs` hiện nằm ở `feature/booking/ui`. Theo constitution I, một tính năng không được import `ui/` của tính năng khác, nên chuyển lớp này sang `core/navigation/HoldToPaymentArgs.kt` và **giữ nguyên các trường** (`bookingId`, `venueId`, `venueName`, `venueAddress`, `districtName`, `photoUrl`, `isRecurring`, `totalSessions`, `subtotalAmount`, `slotIds`, `holdExpiresAtMillis`, `courtDetails`, `depositAmount`). Với đơn định kỳ, `bookingId` là `recurringGroupId`.
+
+040/041 điều hướng `action_*_to_payment` sang `nav_payment` (graph lồng) thay vì tự gọi `ConfirmHoldToBookingUseCase`. Khi 050 xong thì bỏ `ConfirmHoldToBookingUseCase` cùng transaction ở app.
+
+### 1.2. Các màn trong `nav_payment`
+
+| Màn | Fragment | Vào khi |
+|---|---|---|
+| Thanh toán | `PaymentFragment` | Từ 040/041/060 với `HoldToPaymentArgs` |
+| Chuyển khoản | `TransferFragment` | Sau khi `booking-payment-transfer` trả 200; arg `TransferArgs(bookingId, isRecurring, paymentCode, amountDue, holdExpiresAtMillis, qrUrl, bankShortName, accountNumber, accountHolderName)` |
+| Hóa đơn | `PaymentReceiptFragment` | Khi đơn sang `PENDING`; arg `ReceiptArgs(bookingId, isRecurring)`, màn đọc lại đơn để hiển thị |
+
+Back từ `TransferFragment` về `PaymentFragment` để đổi sang trả tại sân. Back từ hóa đơn thì xóa cả `nav_payment` khỏi back stack.
+
+### 1.3. Sang 060
+
+Nút "Xem lịch đặt của tôi" trên hóa đơn điều hướng `ReceiptToMyBookingsArgs(bookingId, isRecurring, initialTab = "PENDING")`, giữ nguyên như bản cũ.
 
 ---
 
-## 2. Hợp đồng Tầng Domain (Domain Repository Interface)
-
-Đặt tại `com.example.booking_app.feature.payment.domain.repository.PaymentRepository`:
+## 2. Repository (`feature/payment/domain/repository`)
 
 ```kotlin
-package com.example.booking_app.feature.payment.domain.repository
+interface VoucherRepository {
+    /** Voucher cơ sở + hệ thống còn hiệu lực, cho danh sách chọn. */
+    suspend fun available(venueId: String): Result<List<Voucher>>
+    /** Tìm theo mã: cơ sở trước, hệ thống sau. null = không có. */
+    suspend fun findByCode(venueId: String, code: String): Result<Voucher?>
+}
 
-import com.example.booking_app.feature.payment.domain.model.PaymentMethod
-import com.example.booking_app.feature.payment.domain.model.PaymentReceipt
-import com.example.booking_app.feature.payment.domain.model.Voucher
+interface VenuePayoutRepository {
+    suspend fun payoutAccount(venueId: String): Result<PayoutAccount?>
+}
 
 interface PaymentRepository {
-    /**
-     * Lấy số dư ví giả lập hiện tại của người dùng
-     */
-    suspend fun getWalletBalance(userId: String): Result<Long>
-
-    /**
-     * Nạp tiền ảo vào ví giả lập (ghi log TOP_UP)
-     */
-    suspend fun topUpMockWallet(userId: String, amount: Long): Result<Long>
-
-    /**
-     * Đọc song song danh sách voucher khả dụng từ cả 2 nguồn (Cơ sở & Hệ thống)
-     */
-    suspend fun getAvailableVouchers(venueId: String): Result<List<Voucher>>
-
-    /**
-     * Tra cứu một voucher theo mã code từ 2 nguồn (ưu tiên cơ sở trước)
-     */
-    suspend fun getVoucherByCode(code: String, venueId: String): Result<Voucher?>
-
-    /**
-     * Kiểm tra số lần người dùng đã sử dụng mã voucher này
-     */
-    suspend fun getUserVoucherUsageCount(code: String, userId: String): Result<Int>
-
-    /**
-     * Thực thi Firestore Transaction nguyên tử thanh toán, trừ ví, tăng lượt voucher và khóa slot sang BOOKED
-     */
-    suspend fun processPaymentTransaction(
-        userId: String,
-        bookingId: String,
-        isRecurring: Boolean,
-        method: PaymentMethod,
-        requiredAmount: Long,
-        voucher: Voucher?,
-        depositAmount: Long,
-        discountAmount: Long,
-        payableAmount: Long,
-        slotIds: List<String>
-    ): Result<PaymentReceipt>
-
-    /**
-     * Chủ động hủy phiên giữ chỗ và nhả các slot khi chạm mốc 00:00 hoặc người dùng bấm Hủy
-     */
-    suspend fun cancelPaymentHold(
-        bookingId: String,
-        isRecurring: Boolean,
-        slotIds: List<String>
-    ): Result<Unit>
+    suspend fun confirmAtVenue(req: ConfirmRequest): Result<PaymentReceipt>      // booking-payment-confirm
+    suspend fun startTransfer(req: TransferRequest): Result<TransferInstruction> // booking-payment-transfer
+    /** Listener realtime bookings/{id} hoặc recurringGroups/{id}. */
+    fun observe(bookingId: String, isRecurring: Boolean): Flow<BookingPaymentState>
 }
 ```
 
----
+Lỗi từ Edge Function được ánh xạ thành `PaymentError` (sealed): `HoldExpired`, `PriceChanged(breakdown)`, `VoucherInvalid(reason)`, `TransferNotSupported`, `Network`, `Unknown`.
 
-## 3. Hợp đồng các UseCase cốt lõi
+## 3. Use case
 
-### 3.1. `ValidateAndApplyVoucherUseCase`
-Kiểm tra tính hợp lệ và tính số tiền giảm giá:
-```kotlin
-class ValidateAndApplyVoucherUseCase {
-    operator fun invoke(
-        voucher: Voucher,
-        subtotalAmount: Long,
-        userUsageCount: Int
-    ): VoucherValidationResult
-}
-```
+| Use case | Việc |
+|---|---|
+| `PreviewVoucherUseCase(voucher, subtotal)` → `VoucherCheck` | Kiểm tra hạn, đơn tối thiểu, `isActive` ở app (server kiểm lại, kể cả số lượt) |
+| `PaymentCalculator.breakdown(subtotal, voucher)` → `PaymentBreakdown` | Công thức R7, dùng chung bảng ca test với TS |
+| `ConfirmAtVenueUseCase` | Gọi `confirmAtVenue` với `requestId` cố định của phiên |
+| `StartTransferUseCase` | Gọi `startTransfer` |
+| `ObserveBookingPaymentUseCase` | Bọc `observe`, cấp trạng thái cho màn chuyển khoản |
 
-### 3.2. `CalculatePaymentBreakdownUseCase`
-Tính toán phân bổ số tiền theo các phương thức và quy tắc cọc 30% làm tròn:
-```kotlin
-class CalculatePaymentBreakdownUseCase {
-    operator fun invoke(
-        subtotalAmount: Long,
-        discountAmount: Long,
-        isRecurring: Boolean
-    ): PaymentBreakdown
-}
-```
+`requestId`: lấy `HoldToPaymentArgs.bookingId` nếu có, không thì sinh UUID một lần và giữ trong `SavedStateHandle`, để bấm lại hoặc thử lại không tạo đơn trùng.
 
-### 3.3. `ProcessMockPaymentUseCase`
-Thực thi toàn bộ luồng thanh toán trong Firestore Transaction:
-```kotlin
-class ProcessMockPaymentUseCase {
-    suspend operator fun invoke(
-        userId: String,
-        bookingId: String,
-        isRecurring: Boolean,
-        method: PaymentMethod,
-        breakdown: PaymentBreakdown,
-        appliedVoucher: Voucher?,
-        slotIds: List<String>
-    ): Result<PaymentReceipt>
-}
-```
+## 4. Chuỗi hiển thị bắt buộc
 
-### 3.4. `CancelPaymentHoldUseCase`
-Giải phóng giữ chỗ khi hết hạn hoặc hủy:
-```kotlin
-class CancelPaymentHoldUseCase {
-    suspend operator fun invoke(
-        bookingId: String,
-        isRecurring: Boolean,
-        slotIds: List<String>
-    ): Result<Unit>
-}
-```
+| Key | Nội dung |
+|---|---|
+| `payment_mock_banner` | "Hệ thống thanh toán giả lập phục vụ học tập - Không thu tiền thật" |
+| `payment_sandbox_banner` | "Môi trường thử nghiệm (sandbox) - Không chuyển tiền thật, dùng Mô phỏng giao dịch" |
+| `payment_transfer_unsupported` | "Cơ sở chưa hỗ trợ chuyển khoản" |
+| `payment_hold_expired` | "Đã hết thời gian giữ chỗ" |
+| `receipt_mock_note` | "Giao dịch giả lập phục vụ học tập - Không thu tiền thật" |
+| `payment_late_refund` | "Đơn không thành công, chủ sân sẽ hoàn tiền" |
 
 ## Booking decisions approved 24/11/2026
 

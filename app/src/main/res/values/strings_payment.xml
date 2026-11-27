@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Chuỗi của spec 050 (thanh toán và khuyến mãi); contracts/ui-contracts.md §4. -->
+<resources>
+    <!-- Tiêu đề màn trong nav_payment -->
+    <string name="payment_title">Thanh toán</string>
+    <string name="payment_transfer_title">Chuyển khoản</string>
+    <string name="payment_receipt_title">Hóa đơn</string>
+
+    <!-- Chuỗi bắt buộc (ui-contracts.md §4) -->
+    <string name="payment_mock_banner">Hệ thống thanh toán giả lập phục vụ học tập - Không thu tiền thật</string>
+    <string name="payment_sandbox_banner">Môi trường thử nghiệm (sandbox) - Không chuyển tiền thật, dùng Mô phỏng giao dịch</string>
+    <string name="payment_transfer_unsupported">Cơ sở chưa hỗ trợ chuyển khoản</string>
+    <string name="payment_hold_expired">Đã hết thời gian giữ chỗ</string>
+    <string name="receipt_mock_note">Giao dịch giả lập phục vụ học tập - Không thu tiền thật</string>
+    <string name="payment_late_refund">Đơn không thành công, chủ sân sẽ hoàn tiền</string>
+    <!-- Màn thanh toán: tóm tắt đơn (US1) -->
+    <string name="payment_order_summary">Tóm tắt đơn</string>
+    <string name="payment_slots_count">%1$d khung giờ</string>
+    <string name="payment_recurring_sessions">Đặt cố định · %1$d buổi</string>
+    <string name="payment_subtotal">Tạm tính</string>
+    <string name="payment_discount">Giảm giá</string>
+    <string name="payment_discount_with_code">Giảm giá (%1$s)</string>
+    <string name="payment_total">Tổng cộng</string>
+    <string name="payment_free_badge">Miễn phí</string>
+    <string name="payment_free_note">Mã khuyến mãi đã trừ hết tiền sân, bạn không cần thanh toán.</string>
+    <string name="payment_item_bullet">• %1$s</string>
+    <string name="payment_amount_vnd">%1$sđ</string>
+    <string name="payment_amount_minus_vnd">-%1$sđ</string>
+    <string name="payment_missing_order">Không tìm thấy thông tin đơn giữ chỗ. Vui lòng chọn lại khung giờ.</string>
+    <string name="payment_back_to_booking">Quay lại chọn giờ</string>
+    <string name="payment_confirm_button">Xác nhận đặt sân</string>
+    <string name="payment_confirm_free_button">Xác nhận (miễn phí)</string>
+    <string name="payment_transfer_button">Chuyển khoản %1$sđ</string>
+
+    <!-- Cách thanh toán (US2, FR-009 – FR-012) -->
+    <string name="payment_method_title">Cách thanh toán</string>
+    <string name="payment_option_at_venue">Thanh toán tại sân</string>
+    <string name="payment_option_at_venue_desc">Trả toàn bộ %1$sđ khi đến sân</string>
+    <string name="payment_option_transfer">Chuyển khoản cho chủ sân (VietQR)</string>
+    <string name="payment_option_deposit">Đặt cọc 30%%</string>
+    <string name="payment_option_deposit_desc">Chuyển trước %1$sđ, còn lại %2$sđ trả tại sân</string>
+    <string name="payment_option_full">Trả đủ</string>
+    <string name="payment_option_full_desc">Chuyển trước toàn bộ %1$sđ</string>
+    <string name="payment_bottom_at_venue">Trả tại sân</string>
+    <string name="payment_bottom_deposit">Cọc 30%% · chuyển khoản</string>
+    <string name="payment_bottom_full">Trả đủ · chuyển khoản</string>
+    <string name="payment_submitting">Đang xác nhận…</string>
+    <string name="payment_price_changed">Giá đơn vừa thay đổi, vui lòng xem lại tổng tiền rồi xác nhận lại</string>
+    <string name="payment_no_price">Khung giờ không còn trong bảng giá của cơ sở. Vui lòng chọn lại giờ</string>
+    <string name="payment_confirm_network">Không kết nối được máy chủ, vui lòng thử lại</string>
+    <string name="payment_confirm_failed">Không xác nhận được đơn, vui lòng thử lại</string>
+
+    <!-- Màn chuyển khoản VietQR (US4, T047) -->
+    <string name="transfer_qr_description">Mã QR chuyển khoản %1$sđ tới %2$s, nội dung %3$s</string>
+    <string name="transfer_scan_hint">Quét mã bằng ứng dụng ngân hàng. Giữ nguyên nội dung chuyển khoản để hệ thống tự xác nhận</string>
+    <string name="transfer_amount">Số tiền</string>
+    <string name="transfer_bank">Ngân hàng</string>
+    <string name="transfer_account_number">Số tài khoản</string>
+    <string name="transfer_account_holder">Chủ tài khoản</string>
+    <string name="transfer_content">Nội dung chuyển khoản</string>
+    <string name="transfer_copy">Sao chép</string>
+    <string name="transfer_copy_account">Sao chép số tài khoản</string>
+    <string name="transfer_copy_content">Sao chép nội dung chuyển khoản</string>
+    <string name="payment_copied">Đã sao chép</string>
+    <string name="transfer_waiting">Đang chờ xác nhận chuyển khoản…</string>
+    <string name="transfer_countdown">Giữ chỗ còn %1$s</string>
+    <string name="transfer_expired_note">Hết thời gian giữ chỗ. Nếu bạn đã chuyển tiền, chủ sân sẽ hoàn lại theo quy trình hoàn tiền</string>
+    <string name="transfer_switch_to_venue">Đổi sang thanh toán tại sân</string>
+    <string name="transfer_back_to_grid">Chọn lại khung giờ</string>
+
+    <!-- Hóa đơn / Phiếu đặt sân (T033) -->
+    <string name="receipt_title_paid">Hóa đơn điện tử</string>
+    <string name="receipt_title_unpaid">Phiếu đặt sân</string>
+    <string name="receipt_pending_note">Đơn đang chờ chủ sân duyệt (tối đa 60 phút)</string>
+    <string name="receipt_booking_code">Mã đơn</string>
+    <string name="receipt_group_code">Mã nhóm đặt cố định</string>
+    <string name="receipt_payment_method">Cách thanh toán</string>
+    <string name="receipt_status_unpaid">Chưa thanh toán</string>
+    <string name="receipt_status_paid">Đã thanh toán</string>
+    <string name="receipt_status_deposited">Đã đặt cọc</string>
+    <string name="receipt_paid_amount">Đã trả</string>
+    <string name="receipt_remaining_amount">Còn lại trả tại sân</string>
+    <string name="receipt_view_bookings">Xem lịch đặt của tôi</string>
+    <string name="receipt_load_failed">Không tải được hóa đơn</string>
+    <string name="receipt_retry">Thử lại</string>
+
+    <!-- Voucher (US1, FR-005 – FR-008) -->
+    <string name="payment_voucher_title">Mã khuyến mãi</string>
+    <string name="payment_voucher_hint">Nhập mã khuyến mãi</string>
+    <string name="payment_voucher_apply">Áp dụng</string>
+    <string name="payment_voucher_remove">Gỡ bỏ</string>
+    <string name="payment_voucher_choose">Chọn mã có sẵn</string>
+    <string name="payment_voucher_applied">Đã áp dụng %1$s · giảm %2$sđ</string>
+    <string name="payment_voucher_min_order">Đơn hàng chưa đạt giá trị tối thiểu %1$sđ</string>
+    <string name="payment_voucher_expired_or_out">Mã khuyến mãi đã hết hạn hoặc hết lượt sử dụng</string>
+    <string name="payment_voucher_per_user">Bạn đã sử dụng hết lượt của mã khuyến mãi này</string>
+    <string name="payment_voucher_not_found">Mã khuyến mãi không tồn tại</string>
+    <string name="payment_voucher_empty_code">Vui lòng nhập mã khuyến mãi</string>
+    <string name="payment_voucher_check_failed">Không kiểm tra được mã, vui lòng thử lại</string>
+
+    <!-- Bottom sheet chọn voucher -->
+    <string name="payment_voucher_picker_title">Mã khuyến mãi khả dụng</string>
+    <string name="payment_voucher_list_failed">Không tải được danh sách mã khuyến mãi</string>
+    <string name="payment_voucher_list_empty">Chưa có mã khuyến mãi nào cho cơ sở này</string>
+    <string name="payment_voucher_retry">Thử lại</string>
+    <string name="payment_voucher_scope_venue">Của cơ sở</string>
+    <string name="payment_voucher_scope_system">SmashNow</string>
+    <string name="payment_voucher_percent">Giảm %1$d%%</string>
+    <string name="payment_voucher_percent_cap">Giảm %1$d%%, tối đa %2$sđ</string>
+    <string name="payment_voucher_fixed">Giảm %1$sđ</string>
+    <string name="payment_voucher_min_order_label">Đơn từ %1$sđ</string>
+    <string name="payment_voucher_no_min">Không yêu cầu đơn tối thiểu</string>
+    <string name="payment_voucher_valid_to">HSD %1$s</string>
+    <string name="payment_voucher_not_eligible">Chưa đủ điều kiện</string>
+    <string name="payment_voucher_use">Dùng</string>
+</resources>

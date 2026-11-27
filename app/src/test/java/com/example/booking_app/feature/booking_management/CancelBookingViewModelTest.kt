@@ -66,7 +66,7 @@ class CancelBookingViewModelTest {
             depositAmount = 0L,
             paidAmount = paidAmount,
             remainingAmount = 0L,
-            paymentMethod = RefundPolicy.PaymentMethod.MOCK_WALLET,
+            paymentMethod = RefundPolicy.PaymentMethod.TRANSFER_FULL,
             paymentStatus = PaymentStatus.PAID
         ),
         createdAtMillis = 500L,

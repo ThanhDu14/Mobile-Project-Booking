@@ -137,7 +137,6 @@ class DeleteAccountFragment : Fragment(R.layout.fragment_account_delete) {
                 owner.guestCount,
             )
         }
-        binding.walletNotice.text = getString(R.string.account_delete_wallet_notice, formatVnd(impact.walletBalance))
         binding.ackCheck.text = if (bookingCount == 0) {
             getString(R.string.account_delete_ack)
         } else {

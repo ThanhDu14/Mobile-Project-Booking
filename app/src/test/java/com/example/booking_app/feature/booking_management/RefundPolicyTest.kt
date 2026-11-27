@@ -10,7 +10,7 @@ import org.junit.Test
 class RefundPolicyTest {
     private fun calculate(
         status: Status = Status.CONFIRMED,
-        method: PaymentMethod = PaymentMethod.MOCK_WALLET,
+        method: PaymentMethod = PaymentMethod.TRANSFER_FULL,
         paid: Long = 111_111L,
         now: Long = 0L,
         start: Long = 1L,
@@ -18,7 +18,7 @@ class RefundPolicyTest {
     ) = RefundPolicy.calculate(status, method, paid, now, start, checkedIn)
 
     @Test fun pendingAlwaysRefundsPaidBeforeStart() {
-        for (method in listOf(PaymentMethod.DEPOSIT, PaymentMethod.MOCK_WALLET)) {
+        for (method in listOf(PaymentMethod.TRANSFER_DEPOSIT, PaymentMethod.TRANSFER_FULL)) {
             assertEquals(RefundPolicy.Result(111_111L, 0L), calculate(Status.PENDING, method))
         }
         assertEquals(RefundPolicy.Result(0, 0), calculate(Status.PENDING, PaymentMethod.AT_VENUE, 0))
@@ -32,7 +32,7 @@ class RefundPolicyTest {
     }
 
     @Test fun latePaymentMethods() {
-        assertEquals(RefundPolicy.Result(0, 111_111), calculate(method = PaymentMethod.DEPOSIT))
+        assertEquals(RefundPolicy.Result(0, 111_111), calculate(method = PaymentMethod.TRANSFER_DEPOSIT))
         assertEquals(RefundPolicy.Result(0, 0), calculate(method = PaymentMethod.AT_VENUE, paid = 0))
         assertEquals(RefundPolicy.Result(140_000, 60_000), calculate(paid = 200_000))
         assertEquals(RefundPolicy.Result(999, 0), calculate(paid = 999))

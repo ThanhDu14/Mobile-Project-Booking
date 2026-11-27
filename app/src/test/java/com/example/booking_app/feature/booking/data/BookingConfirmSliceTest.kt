@@ -4,7 +4,7 @@ import com.example.booking_app.feature.booking.data.mapper.BookingDocumentBuilde
 import com.example.booking_app.feature.booking.domain.model.ConfirmBookingResult
 import com.example.booking_app.feature.booking.domain.repository.BookingRepository
 import com.example.booking_app.feature.booking.domain.usecase.ConfirmHoldToBookingUseCase
-import com.example.booking_app.feature.booking.ui.HoldToPaymentArgs
+import com.example.booking_app.core.navigation.HoldToPaymentArgs
 import com.example.booking_app.feature.booking_management.data.BookingManagementMapper
 import com.example.booking_app.feature.booking_management.domain.PaymentStatus
 import com.example.booking_app.feature.booking_management.domain.RefundPolicy
@@ -128,7 +128,7 @@ class BookingConfirmSliceTest {
         assertEquals(54_000L, booking.finance.depositAmount)
         assertEquals(54_000L, booking.finance.paidAmount)
         assertEquals(126_000L, booking.finance.remainingAmount)
-        assertEquals(RefundPolicy.PaymentMethod.DEPOSIT, booking.finance.paymentMethod)
+        assertEquals(RefundPolicy.PaymentMethod.TRANSFER_DEPOSIT, booking.finance.paymentMethod)
         assertEquals(PaymentStatus.DEPOSITED, booking.finance.paymentStatus)
     }
 
@@ -150,7 +150,7 @@ class BookingConfirmSliceTest {
         assertEquals(0L, booking.finance.depositAmount)
         assertEquals(180_000L, booking.finance.paidAmount)
         assertEquals(0L, booking.finance.remainingAmount)
-        assertEquals(RefundPolicy.PaymentMethod.MOCK_WALLET, booking.finance.paymentMethod)
+        assertEquals(RefundPolicy.PaymentMethod.TRANSFER_FULL, booking.finance.paymentMethod)
         assertEquals(PaymentStatus.PAID, booking.finance.paymentStatus)
     }
 

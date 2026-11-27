@@ -1,5 +1,6 @@
 package com.example.booking_app.feature.booking.ui
 
+import com.example.booking_app.core.navigation.HoldToPaymentArgs
 import com.example.booking_app.feature.booking.domain.model.TimeSlot
 import com.example.booking_app.feature.booking.domain.usecase.GapInfo
 
