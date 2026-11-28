@@ -37,7 +37,6 @@
     <string name="my_bookings_060_close">Đóng</string>
     <string name="my_bookings_060_other_hint">Nhập lý do khác</string>
     <string name="my_bookings_060_qr_description">Mã QR đặt sân</string>
-    <string name="my_bookings_060_policy_footer" formatted="false">Hủy trước giờ chơi từ 4 giờ trở lên được hoàn 100%. Hủy trễ mất tiền cọc, hoặc phạt 30% nếu trả bằng ví. Giao dịch giả lập phục vụ học tập.</string>
     <string name="my_bookings_060_btn_checkin_code">Mã check-in</string>
     <string name="my_bookings_060_btn_view_detail">Xem chi tiết</string>
     <string name="my_bookings_060_badge_confirmed">Đã xác nhận</string>

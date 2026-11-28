@@ -90,6 +90,9 @@ class OwnerVenueDetailFragment : Fragment(R.layout.fragment_owner_venue_detail) 
         val courtsOnly = arguments?.getString("section") == "courts"
         binding.venueFields.isVisible = !courtsOnly
         binding.screenTitle.setText(if (courtsOnly) R.string.owner_courts_title else R.string.owner_venue_info)
+        binding.courtFields.isVisible = courtsOnly
+        binding.courtsSectionTitle.isVisible = false
+        binding.back.setOnClickListener { findNavController().navigateUp() }
         binding.addPhoto.setOnClickListener { photoPicker.launch("image/*") }
         binding.location.setOnClickListener { pickLocation() }
         binding.district.setOnItemClickListener { _,_,position,_ ->
@@ -107,7 +110,7 @@ class OwnerVenueDetailFragment : Fragment(R.layout.fragment_owner_venue_detail) 
                 val picker=MaterialTimePicker.Builder().setTimeFormat(TimeFormat.CLOCK_24H)
                     .setHour(value.take(2).toIntOrNull() ?: 6).setMinute(value.takeLast(2).toIntOrNull() ?: 0).build()
                 picker.addOnPositiveButtonClickListener {
-                    field.setText("%02d%02d".format(picker.hour,picker.minute))
+                    field.setText("%02d:%02d".format(picker.hour,picker.minute))
                     readFields()?.let(viewModel::updateDraft)
                 }
                 picker.show(parentFragmentManager,"venue-time")
@@ -116,19 +119,6 @@ class OwnerVenueDetailFragment : Fragment(R.layout.fragment_owner_venue_detail) 
         binding.retry.setOnClickListener { viewModel.load() }
         binding.save.setOnClickListener { saveVenue() }
         binding.addCourt.setOnClickListener { addCourt() }
-        binding.managePrices.setOnClickListener {
-            findNavController().navigate(R.id.action_ownerVenueDetail_to_priceRule, Bundle().apply {
-                putString("venueId", requireArguments().getString("venueId"))
-            })
-        }
-        binding.blockSlots.setOnClickListener {
-            viewModel.uiState.value.courts.firstOrNull()?.let { court ->
-                findNavController().navigate(R.id.action_ownerVenueDetail_to_slotBlock, Bundle().apply {
-                    putString("venueId", requireArguments().getString("venueId"))
-                    putString("courtId", court.id)
-                })
-            }
-        }
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) { viewModel.uiState.collect(::render) }
         }
@@ -144,7 +134,7 @@ class OwnerVenueDetailFragment : Fragment(R.layout.fragment_owner_venue_detail) 
         return VenueEditableFields(
             name = binding.name.text.toString(), address = binding.address.text.toString(),
             districtId = draft?.districtId ?: current.districtId, location = draft?.location ?: current.location,
-            openTime = binding.openTime.text.toString(), closeTime = binding.closeTime.text.toString(),
+            openTime = binding.openTime.text.toString().replace(":", ""), closeTime = binding.closeTime.text.toString().replace(":", ""),
             phone = binding.phone.text.toString(), amenityIds = draft?.amenityIds ?: current.amenityIds,
             photoPaths = draft?.photoPaths ?: current.photoPaths, courtCount = current.courtCount,
             acceptsRecurring = binding.recurring.isChecked, status = if (current.status == "LOCKED") "LOCKED" else if(binding.hidden.isChecked) "HIDDEN" else "ACTIVE"
@@ -177,7 +167,8 @@ class OwnerVenueDetailFragment : Fragment(R.layout.fragment_owner_venue_detail) 
             OwnerErrorKind.NETWORK -> getString(R.string.owner_network_error)
             else -> if (state.isSubmitting) getString(R.string.owner_processing) else state.error ?: state.message.orEmpty()
         }
-        binding.freshness.text = if (state.isFresh) getString(R.string.owner_data_fresh) else if (state.error != null) getString(R.string.owner_data_not_fresh) else ""
+        binding.freshness.text = if (!state.isFresh && state.error != null) getString(R.string.owner_data_not_fresh) else ""
+        binding.freshness.isVisible = binding.freshness.text.isNotEmpty()
         val canPickLocation = state.venue != null && !state.isLoading && !state.isSubmitting && state.venue.status != "LOCKED"
         binding.location.isEnabled = canPickLocation
         locationMap?.setEditable(canPickLocation)
@@ -185,8 +176,8 @@ class OwnerVenueDetailFragment : Fragment(R.layout.fragment_owner_venue_detail) 
             val draft = state.draft
             if (!binding.name.hasFocus()) binding.name.setText(draft?.name ?: it.name)
             if (!binding.address.hasFocus()) binding.address.setText(draft?.address ?: it.address)
-            if (!binding.openTime.hasFocus()) binding.openTime.setText(draft?.openTime ?: it.openTime)
-            if (!binding.closeTime.hasFocus()) binding.closeTime.setText(draft?.closeTime ?: it.closeTime)
+            if (!binding.openTime.hasFocus()) binding.openTime.setText(OwnerVenueAdapter.clock(draft?.openTime ?: it.openTime))
+            if (!binding.closeTime.hasFocus()) binding.closeTime.setText(OwnerVenueAdapter.clock(draft?.closeTime ?: it.closeTime))
             if (!binding.phone.hasFocus()) binding.phone.setText(draft?.phone ?: it.phone)
             binding.recurring.isChecked = draft?.acceptsRecurring ?: it.acceptsRecurring
             binding.hidden.isChecked = (draft?.status ?: it.status) == "HIDDEN"

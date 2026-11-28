@@ -1,5 +1,7 @@
 package com.example.booking_app.feature.owner.ui.dropin
 
+import androidx.core.content.ContextCompat
+import android.content.res.ColorStateList
 import android.os.Bundle
 import android.view.View
 import android.view.ViewGroup
@@ -36,6 +38,7 @@ class OwnerDropInFragment : Fragment(R.layout.fragment_owner_dropin) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         _binding = FragmentOwnerDropinBinding.bind(view)
+        binding.back.setOnClickListener { findNavController().navigateUp() }
         binding.refresh.setOnClickListener { viewModel.refresh() }
         binding.createSession.setOnClickListener { findNavController().navigate(R.id.action_ownerDropIn_to_form,
             Bundle().apply { putString("venueId", viewModel.uiState.value.selectedVenueId) }) }
@@ -93,7 +96,17 @@ class OwnerDropInFragment : Fragment(R.layout.fragment_owner_dropin) {
             val start = session.startAt.atZone(VIETNAM_ZONE)
             val end = session.endAt.atZone(VIETNAM_ZONE)
             row.time.text = getString(R.string.owner_dropin_session_time, start.format(DATE_FORMAT), start.format(TIME_FORMAT), end.format(TIME_FORMAT))
-            row.status.text = getString(R.string.owner_dropin_session_status, session.status)
+            val (label, chip, ink) = when (session.status) {
+                "OPEN" -> Triple(R.string.owner_dropin_status_open, R.color.sn_court_container, R.color.sn_on_court_container)
+                "FULL" -> Triple(R.string.owner_dropin_status_full, R.color.sn_lamp_container, R.color.sn_on_lamp_container)
+                "CLOSED" -> Triple(R.string.owner_dropin_status_closed, R.color.sn_surface_sunken, R.color.sn_ink_muted)
+                "COMPLETED" -> Triple(R.string.owner_dropin_status_completed, R.color.sn_surface_sunken, R.color.sn_ink_muted)
+                "CANCELLED" -> Triple(R.string.owner_dropin_status_cancelled, R.color.sn_danger, R.color.sn_on_danger)
+                else -> Triple(null, R.color.sn_surface_sunken, R.color.sn_ink_muted)
+            }
+            row.status.text = label?.let(::getString) ?: getString(R.string.owner_dropin_session_status, session.status)
+            row.status.backgroundTintList = ColorStateList.valueOf(ContextCompat.getColor(requireContext(), chip))
+            row.status.setTextColor(ContextCompat.getColor(requireContext(), ink))
             row.capacity.text = getString(R.string.owner_dropin_capacity_status, session.registeredCount, session.capacity, NUMBER_FORMAT.format(session.pricePerPersonVnd))
             row.roster.setOnClickListener {
                 findNavController().navigate(

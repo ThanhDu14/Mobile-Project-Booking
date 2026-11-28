@@ -55,8 +55,10 @@ object OwnerValidation {
             add(OwnerFieldError("location", "Vị trí không hợp lệ"))
         }
         time(input.openTime, "openTime")
-        time(input.closeTime, "closeTime")
-        if (validTime(input.openTime) && validTime(input.closeTime) && input.openTime >= input.closeTime) {
+        // "2400" = đóng cửa lúc hết ngày (cùng quy ước với OwnerOperatingSlots và bảng giá).
+        val closesAtEndOfDay = input.closeTime == "2400"
+        if (!closesAtEndOfDay) time(input.closeTime, "closeTime")
+        if (validTime(input.openTime) && (closesAtEndOfDay || validTime(input.closeTime)) && input.openTime >= input.closeTime) {
             add(OwnerFieldError("closeTime", "Giờ đóng cửa phải sau giờ mở cửa"))
         }
         if (!phonePattern.matches(input.phone)) add(OwnerFieldError("phone", "Số điện thoại Việt Nam không hợp lệ"))

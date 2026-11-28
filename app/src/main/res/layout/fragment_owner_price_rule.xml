@@ -1,116 +1,277 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Bảng giá cơ sở (spec 111): danh sách khung giá (item_owner_price_rule) và thẻ thêm/sửa khung giá. -->
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="?attr/colorSurface">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="24dp"
-        android:background="?attr/colorSurface">
+        android:paddingHorizontal="@dimen/screen_gutter"
+        android:paddingTop="@dimen/space_4"
+        android:paddingBottom="@dimen/space_6">
 
-        <TextView
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/owner_prices_title"
-            android:textAppearance="?attr/textAppearanceHeadlineSmall"
-            android:textStyle="bold" />
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageButton
+            android:minWidth="@dimen/touch_min"
+            android:minHeight="@dimen/touch_min"
+                android:id="@+id/back"
+                android:layout_width="@dimen/touch_min"
+                android:layout_height="@dimen/touch_min"
+                android:layout_marginStart="-12dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/owner_back"
+                android:src="@drawable/ic_arrow_back_24"
+                app:tint="?attr/colorOnSurface" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:accessibilityHeading="true"
+                android:text="@string/owner_prices_title"
+                android:textAppearance="?attr/textAppearanceHeadlineSmall"
+                android:textColor="?attr/colorOnSurface"
+                android:textStyle="bold" />
+        </LinearLayout>
 
         <ProgressBar
             android:id="@+id/progress"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal" />
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="@dimen/space_4" />
 
         <TextView
             android:id="@+id/empty"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_4"
             android:text="@string/owner_prices_empty"
-            android:visibility="gone"
-            android:padding="8dp" />
+            android:textAppearance="?attr/textAppearanceBodyLarge"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:visibility="gone" />
 
         <TextView
             android:id="@+id/message"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:accessibilityLiveRegion="polite" />
+            android:layout_marginTop="@dimen/space_2"
+            android:accessibilityLiveRegion="polite"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="?attr/colorError" />
 
         <TextView
             android:id="@+id/freshness"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:accessibilityLiveRegion="polite" />
+            android:accessibilityLiveRegion="polite"
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            android:visibility="gone" />
 
-        <androidx.recyclerview.widget.RecyclerView app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+        <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rules"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_2"
             android:nestedScrollingEnabled="false"
-            android:layout_marginBottom="16dp" />
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
 
-        <TextView
-            android:id="@+id/formTitle"
+        <com.google.android.material.card.MaterialCardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/owner_price_rule_add"
-            android:textAppearance="?attr/textAppearanceTitleMedium" />
+            android:layout_marginTop="@dimen/space_4"
+            app:cardBackgroundColor="@color/sn_surface_raised"
+            app:cardCornerRadius="20dp"
+            app:cardElevation="0dp"
+            app:strokeColor="@color/sn_line"
+            app:strokeWidth="1dp">
 
-        <EditText
-            android:id="@+id/daysInput"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="@string/owner_price_days"
-            android:minHeight="48dp" />
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="@dimen/space_4">
 
-        <EditText
-            android:id="@+id/startTimeInput"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="@string/owner_price_start"
-            android:inputType="number"
-            android:minHeight="48dp" />
+                <TextView
+                    android:id="@+id/formTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:accessibilityHeading="true"
+                    android:text="@string/owner_price_rule_add"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textStyle="bold" />
 
-        <EditText
-            android:id="@+id/endTimeInput"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="@string/owner_price_end"
-            android:inputType="number"
-            android:minHeight="48dp" />
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_3"
+                    android:text="@string/owner_price_days"
+                    android:textAppearance="?attr/textAppearanceLabelLarge"
+                    android:textColor="?attr/colorOnSurfaceVariant" />
 
-        <EditText
-            android:id="@+id/priceInput"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="@string/owner_price_per_hour"
-            android:inputType="number"
-            android:minHeight="48dp" />
+                <com.google.android.material.chip.ChipGroup
+                    android:id="@+id/daysChips"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_1"
+                    app:chipSpacingHorizontal="@dimen/space_1">
 
-        <EditText
-            android:id="@+id/labelInput"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="@string/owner_price_label"
-            android:minHeight="48dp" />
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/day1"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="T2" />
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/saveRule"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/save"
-            android:minHeight="48dp"
-            android:layout_marginTop="8dp" />
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/day2"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="T3" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/day3"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="T4" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/day4"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="T5" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/day5"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="T6" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/day6"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="T7" />
+
+                    <com.google.android.material.chip.Chip
+                        android:id="@+id/day7"
+                        style="@style/Widget.Material3.Chip.Filter"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="CN" />
+                </com.google.android.material.chip.ChipGroup>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_3"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:hint="@string/owner_price_start"
+                        app:startIconDrawable="@drawable/ic_schedule_24">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/startTimeInput"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:focusable="false"
+                            android:inputType="none"
+                            android:minHeight="@dimen/touch_min" />
+                    </com.google.android.material.textfield.TextInputLayout>
+
+                    <com.google.android.material.textfield.TextInputLayout
+                        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/space_3"
+                        android:layout_weight="1"
+                        android:hint="@string/owner_price_end"
+                        app:startIconDrawable="@drawable/ic_schedule_24">
+
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/endTimeInput"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:focusable="false"
+                            android:inputType="none"
+                            android:minHeight="@dimen/touch_min" />
+                    </com.google.android.material.textfield.TextInputLayout>
+                </LinearLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_3"
+                    android:hint="@string/owner_price_per_hour"
+                    app:helperText="@string/owner_price_per_hour_helper"
+                    app:suffixText="đ/giờ">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/priceInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:inputType="number"
+                        android:minHeight="@dimen/touch_min" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.textfield.TextInputLayout
+                    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_3"
+                    android:hint="@string/owner_price_label"
+                    app:endIconDrawable="@drawable/ic_chevron_right_24"
+                    app:endIconMode="custom">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/labelInput"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:focusable="false"
+                        android:inputType="none"
+                        android:minHeight="@dimen/touch_min" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/saveRule"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/space_4"
+                    android:minHeight="@dimen/touch_min"
+                    android:text="@string/save" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/retry"
+            style="?attr/materialButtonOutlinedStyle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_2"
+            android:minHeight="@dimen/touch_min"
             android:text="@string/retry"
-            android:minHeight="48dp"
-            android:visibility="gone"
-            android:layout_marginTop="8dp" />
+            android:visibility="gone" />
     </LinearLayout>
 </ScrollView>

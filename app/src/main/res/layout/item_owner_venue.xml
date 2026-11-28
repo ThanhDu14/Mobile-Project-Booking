@@ -1,30 +1,199 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Thẻ cơ sở ở tab Cơ sở: ảnh bìa + chip trạng thái, tên/địa chỉ/số sân và giờ mở cửa (chạm để mở Thông tin cơ sở),
+     lưới 6 chức năng, công tắc nhận đặt cố định và nút Ẩn cơ sở. -->
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:layout_width="match_parent" android:layout_height="wrap_content"
-    android:layout_marginBottom="16dp" android:contentDescription="@string/owner_open_venue"
-    app:cardBackgroundColor="?attr/colorSurfaceContainerLow" app:cardCornerRadius="20dp"
-    app:cardElevation="0dp" app:strokeColor="?attr/colorOutlineVariant" app:strokeWidth="1dp">
-    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-        android:orientation="vertical" android:padding="16dp">
-        <TextView android:id="@+id/name" android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:textAppearance="?attr/textAppearanceTitleLarge" android:textStyle="bold" />
-        <TextView android:id="@+id/address" android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:layout_marginTop="4dp" android:textAppearance="?attr/textAppearanceBodyLarge" android:textColor="?attr/colorOnSurfaceVariant" />
-        <TextView android:id="@+id/status" android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:layout_marginTop="8dp" android:textAppearance="?attr/textAppearanceLabelLarge" />
-        <com.google.android.material.button.MaterialButton android:id="@+id/info" style="@style/Widget.SmashNow.Button.Link" android:layout_width="match_parent" android:layout_height="48dp" android:text="@string/owner_venue_info" />
-        <com.google.android.material.button.MaterialButton android:id="@+id/courts" style="@style/Widget.SmashNow.Button.Link" android:layout_width="match_parent" android:layout_height="48dp" android:text="@string/owner_courts_title" />
-        <com.google.android.material.button.MaterialButton android:id="@+id/prices" style="@style/Widget.SmashNow.Button.Link" android:layout_width="match_parent" android:layout_height="48dp" android:text="@string/owner_manage_prices" />
-        <com.google.android.material.button.MaterialButton android:id="@+id/slots" style="@style/Widget.SmashNow.Button.Link" android:layout_width="match_parent" android:layout_height="48dp" android:text="@string/owner_slot_block_title" />
-        <com.google.android.material.button.MaterialButton android:id="@+id/dropIns" style="@style/Widget.SmashNow.Button.Link" android:layout_width="match_parent" android:layout_height="48dp" android:text="@string/owner_today_action_open_dropin" />
-        <com.google.android.material.button.MaterialButton android:id="@+id/vouchers" style="@style/Widget.SmashNow.Button.Link" android:layout_width="match_parent" android:layout_height="48dp" android:text="@string/owner_voucher_title" />
-        <com.google.android.material.button.MaterialButton android:id="@+id/statistics" style="@style/Widget.SmashNow.Button.Link" android:layout_width="match_parent" android:layout_height="48dp" android:text="@string/owner_statistics_title" />
-        <com.google.android.material.switchmaterial.SwitchMaterial android:id="@+id/recurring"
-            android:layout_width="match_parent" android:layout_height="wrap_content" android:minHeight="56dp"
-            android:text="@string/owner_accepts_recurring" />
-        <com.google.android.material.button.MaterialButton android:id="@+id/hide"
-            style="?attr/materialButtonOutlinedStyle" android:layout_width="match_parent" android:layout_height="wrap_content"
-            android:text="@string/owner_hide" android:minHeight="48dp" />
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="@dimen/space_4"
+    app:cardBackgroundColor="@color/sn_surface_raised"
+    app:cardCornerRadius="20dp"
+    app:cardElevation="0dp"
+    app:strokeColor="@color/sn_line"
+    app:strokeWidth="1dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- Phần đầu thẻ: chạm để mở Thông tin cơ sở. -->
+        <LinearLayout
+            android:id="@+id/info"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:contentDescription="@string/owner_open_venue"
+            android:focusable="true"
+            android:orientation="vertical">
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="132dp">
+
+                <ImageView
+                    android:id="@+id/photo"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:importantForAccessibility="no"
+                    android:scaleType="centerCrop"
+                    tools:src="@drawable/img_venue_placeholder" />
+
+                <TextView
+                    android:id="@+id/status"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="@dimen/space_3"
+                    android:background="@drawable/bg_owner_status_chip"
+                    android:paddingHorizontal="@dimen/space_3"
+                    android:paddingVertical="@dimen/space_1"
+                    android:textAppearance="?attr/textAppearanceLabelMedium"
+                    tools:backgroundTint="@color/sn_court_container"
+                    tools:text="Đang hoạt động"
+                    tools:textColor="@color/sn_on_court_container" />
+            </FrameLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="@dimen/space_4"
+                android:paddingTop="@dimen/space_4"
+                android:paddingEnd="@dimen/space_3">
+
+                <TextView
+                    android:id="@+id/name"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:ellipsize="end"
+                    android:maxLines="2"
+                    android:textAppearance="?attr/textAppearanceTitleLarge"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textStyle="bold"
+                    tools:text="Sân cầu lông K3" />
+
+                <ImageView
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_chevron_right_24"
+                    app:tint="?attr/colorOnSurfaceVariant" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/address"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_1"
+                android:drawablePadding="@dimen/space_1"
+                android:ellipsize="end"
+                android:maxLines="2"
+                android:paddingHorizontal="@dimen/space_4"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                app:drawableStartCompat="@drawable/ic_location_on_24"
+                app:drawableTint="?attr/colorOnSurfaceVariant"
+                tools:text="147 Nguyễn Đức Thuận, Phường 13, Quận Tân Bình" />
+
+            <TextView
+                android:id="@+id/meta"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_1"
+                android:drawablePadding="@dimen/space_1"
+                android:paddingHorizontal="@dimen/space_4"
+                android:paddingBottom="@dimen/space_4"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                app:drawableStartCompat="@drawable/ic_schedule_24"
+                app:drawableTint="?attr/colorOnSurfaceVariant"
+                tools:text="4 sân · 05:30–22:30" />
+        </LinearLayout>
+
+        <!-- Lưới chức năng 3×2. -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:paddingHorizontal="@dimen/space_3">
+
+            <TextView
+                android:id="@+id/courts"
+                style="@style/Widget.SmashNow.OwnerVenueAction"
+                android:text="@string/owner_venue_action_courts"
+                app:drawableTopCompat="@drawable/ic_sports_court_24" />
+
+            <TextView
+                android:id="@+id/prices"
+                style="@style/Widget.SmashNow.OwnerVenueAction"
+                android:layout_marginHorizontal="@dimen/space_2"
+                android:text="@string/owner_venue_action_prices"
+                app:drawableTopCompat="@drawable/ic_wallet_24" />
+
+            <TextView
+                android:id="@+id/slots"
+                style="@style/Widget.SmashNow.OwnerVenueAction"
+                android:text="@string/owner_venue_action_slots"
+                app:drawableTopCompat="@drawable/ic_lock_outline_24" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_2"
+            android:orientation="horizontal"
+            android:paddingHorizontal="@dimen/space_3">
+
+            <TextView
+                android:id="@+id/dropIns"
+                style="@style/Widget.SmashNow.OwnerVenueAction"
+                android:text="@string/owner_venue_action_dropin"
+                app:drawableTopCompat="@drawable/ic_groups_24" />
+
+            <TextView
+                android:id="@+id/vouchers"
+                style="@style/Widget.SmashNow.OwnerVenueAction"
+                android:layout_marginHorizontal="@dimen/space_2"
+                android:text="@string/owner_voucher_title"
+                app:drawableTopCompat="@drawable/ic_admin_voucher_ticket" />
+
+            <TextView
+                android:id="@+id/statistics"
+                style="@style/Widget.SmashNow.OwnerVenueAction"
+                android:text="@string/owner_statistics_title"
+                app:drawableTopCompat="@drawable/ic_bar_chart_24" />
+        </LinearLayout>
+
+        <com.google.android.material.divider.MaterialDivider
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_4"
+            app:dividerColor="@color/sn_line" />
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/recurring"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="56dp"
+            android:paddingHorizontal="@dimen/space_4"
+            android:text="@string/owner_accepts_recurring"
+            android:textAppearance="?attr/textAppearanceBodyLarge" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/hide"
+            style="@style/Widget.SmashNow.Button.Text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/space_2"
+            android:layout_marginBottom="@dimen/space_2"
+            android:minHeight="@dimen/touch_min"
+            android:text="@string/owner_hide"
+            android:textColor="@color/sn_danger"
+            app:icon="@drawable/ic_visibility_off_24"
+            app:iconTint="@color/sn_danger" />
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

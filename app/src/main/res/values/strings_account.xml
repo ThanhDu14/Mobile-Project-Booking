@@ -56,7 +56,6 @@
     <string name="account_owner_revoked_reason">Lý do của admin: %1$s</string>
     <string name="account_owner_reapply">Đăng ký làm chủ sân lại</string>
     <string name="account_owner_revoked_snackbar">Quyền chủ sân đã bị thu hồi. %1$s</string>
-    <string name="account_mode_subtitle">Một tài khoản, hai giao diện. Chuyển không cần đăng nhập lại.</string>
     <string name="account_mode_switch_failed">Chưa chuyển được chế độ, thử lại sau</string>
     <string name="account_player_group">NGƯỜI CHƠI</string>
 

@@ -84,7 +84,6 @@ class MyBookingsScreensUiTest {
             assertNotNull("Empty layout must exist", list.findViewById<View>(R.id.layoutBookingsEmpty))
             assertNotNull("Error layout must exist", list.findViewById<View>(R.id.layoutBookingsError))
             assertNotNull("Retry button must exist", list.findViewById<View>(R.id.buttonRetry))
-            assertNotNull("Policy footer must exist", list.findViewById<View>(R.id.textBookingsPolicy))
 
             // 2. Booking Detail screen verification (T027, T030, T043)
             assertNotNull(detailView)

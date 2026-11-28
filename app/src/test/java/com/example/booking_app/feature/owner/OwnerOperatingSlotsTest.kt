@@ -19,6 +19,14 @@ class OwnerOperatingSlotsTest {
     @Test fun midnightOpeningAndExactClosingBoundaryAreIncludedCorrectly() {
         assertEquals(listOf(0), OwnerOperatingSlots.startMinutes("0000", "0030"))
     }
+    @Test fun closingAt2400MeansEndOfDayAndKeepsTheLastSlot() {
+        val slots = OwnerOperatingSlots.startMinutes("0400", "2400")
+        assertEquals(240, slots.first())
+        assertEquals(1410, slots.last())
+    }
+    @Test fun openingAt2400IsStillInvalid() {
+        assertTrue(runCatching { OwnerOperatingSlots.startMinutes("2400", "2400") }.isFailure)
+    }
     @Test fun invalidOrOvernightHoursFailInsteadOfFabricatingAvailability() {
         for ((open,close) in listOf("2400" to "2500", "2200" to "0600", "oops" to "2200")) {
             assertTrue(runCatching { OwnerOperatingSlots.startMinutes(open,close) }.isFailure)

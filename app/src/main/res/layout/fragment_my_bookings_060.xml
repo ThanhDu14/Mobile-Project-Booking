@@ -168,15 +168,4 @@
         </LinearLayout>
     </FrameLayout>
 
-    <!-- Footer Policy Notice per Mockup 1 -->
-    <TextView
-        android:id="@+id/textBookingsPolicy"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:lineSpacingExtra="3dp"
-        android:paddingHorizontal="16dp"
-        android:paddingVertical="12dp"
-        android:text="@string/my_bookings_060_policy_footer"
-        android:textAppearance="?attr/textAppearanceBodySmall"
-        android:textColor="@color/sn_ink_muted" />
 </LinearLayout>

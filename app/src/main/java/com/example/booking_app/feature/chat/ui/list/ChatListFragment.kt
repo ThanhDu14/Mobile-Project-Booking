@@ -69,7 +69,6 @@ open class ChatListFragment : Fragment(R.layout.fragment_chat_list) {
         binding.chatList.addItemDecoration(DividerItemDecoration(requireContext(), lm.orientation))
 
         val isOwner = viewModel.mode == ChatMode.OWNER
-        binding.ownerSubtitle.isVisible = isOwner
         binding.ownerFiltersScroll.isVisible = isOwner
         binding.listFooter.setText(if (isOwner) R.string.chat_list_owner_footer else R.string.chat_list_player_footer)
         binding.emptyTitle.setText(if (isOwner) R.string.chat_empty_owner_title else R.string.chat_empty_player_title)

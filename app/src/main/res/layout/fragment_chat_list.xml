@@ -24,16 +24,6 @@
         android:layout_height="1dp"
         android:background="?attr/colorOutlineVariant" />
 
-    <TextView
-        android:id="@+id/ownerSubtitle"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingHorizontal="@dimen/screen_gutter"
-        android:paddingTop="@dimen/space_3"
-        android:text="@string/chat_owner_inbox_subtitle"
-        android:textAppearance="?attr/textAppearanceBodyMedium"
-        android:textColor="?attr/colorOnSurfaceVariant"
-        android:visibility="gone" />
 
     <HorizontalScrollView
         android:id="@+id/ownerFiltersScroll"

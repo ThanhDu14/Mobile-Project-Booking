@@ -1,5 +1,6 @@
 package com.example.booking_app.feature.owner.ui.statistics
 
+import androidx.navigation.fragment.findNavController
 import android.os.Bundle
 import android.view.View
 import android.widget.AdapterView
@@ -49,6 +50,7 @@ class OwnerStatisticsFragment : Fragment(R.layout.fragment_owner_statistics) {
         binding.custom.setOnClickListener { viewModel.setPeriod(OwnerStatisticsPeriod.CUSTOM) }
         binding.previous.setOnClickListener { viewModel.movePeriod(-1) }
         binding.next.setOnClickListener { viewModel.movePeriod(1) }
+        binding.back.setOnClickListener { findNavController().navigateUp() }
         binding.refresh.setOnClickListener {
             if (viewModel.uiState.value.period == OwnerStatisticsPeriod.CUSTOM) applyCustomRange() else viewModel.refresh()
         }
@@ -81,7 +83,14 @@ class OwnerStatisticsFragment : Fragment(R.layout.fragment_owner_statistics) {
         binding.custom.isChecked = state.period == OwnerStatisticsPeriod.CUSTOM
         binding.navigationRow.isVisible = state.period != OwnerStatisticsPeriod.CUSTOM
         binding.customRange.isVisible = state.period == OwnerStatisticsPeriod.CUSTOM
-        binding.refresh.setText(if (state.period == OwnerStatisticsPeriod.CUSTOM) R.string.confirm else R.string.common_retry)
+        // Khoảng tùy chọn cần bấm "Xác nhận"; các chế độ khác chỉ là nút làm mới dạng icon.
+        if (state.period == OwnerStatisticsPeriod.CUSTOM) {
+            binding.refresh.setText(R.string.confirm)
+            binding.refresh.icon = null
+        } else {
+            binding.refresh.text = null
+            binding.refresh.setIconResource(R.drawable.ic_refresh_24)
+        }
         binding.periodLabel.text = when (state.period) {
             OwnerStatisticsPeriod.DAY -> state.selectedDate.format(DATE_FORMAT)
             OwnerStatisticsPeriod.WEEK -> {
@@ -116,20 +125,34 @@ class OwnerStatisticsFragment : Fragment(R.layout.fragment_owner_statistics) {
         binding.revenue.text = getString(R.string.owner_amount_vnd, NUMBER_FORMAT.format(result.revenue.paidVnd))
         binding.revenueSubtitle.setText(R.string.owner_stats_paid_explanation)
         binding.depositAmount.text = getString(R.string.owner_amount_vnd, NUMBER_FORMAT.format(result.revenue.depositedVnd))
-        binding.depositBookingCount.isVisible = false
-        binding.refundCount.text = getString(R.string.owner_stats_refund_count, result.revenue.refundedBookingCount)
+        binding.depositBookingCount.setText(R.string.owner_stats_deposit_note)
         binding.refundAmount.text = getString(R.string.owner_amount_vnd, NUMBER_FORMAT.format(result.revenue.refundedVnd))
-        binding.occupancyProgress.progress = result.occupancyPercent.toInt().coerceIn(0,100)
-        binding.occupancy.text = getString(R.string.owner_statistics_occupancy, result.occupancyPercent)
+        binding.refundCount.text = getString(R.string.owner_stats_refund_count, result.revenue.refundedBookingCount)
+        binding.occupancyProgress.setProgressCompat(occupancyBar(result.occupancyPercent), false)
+        binding.occupancy.text = formatPercent(result.occupancyPercent)
+        binding.peakSummary.text = result.peakHours.maxByOrNull { it.occupiedDurationMinutes }
+            ?.takeIf { it.occupiedDurationMinutes > 0 }
+            ?.let { getString(R.string.owner_stats_peak_summary, it.localHour, (it.localHour + 1) % 24, it.occupiedDurationMinutes) }
+            ?: getString(R.string.owner_stats_peak_none)
         val freshness = result.computedAt.atZone(LOCAL_ZONE).format(DATE_TIME_FORMAT)
         binding.freshness.text = getString(if (result.isPartialPeriod) R.string.owner_statistics_partial_freshness else R.string.owner_statistics_freshness, freshness)
         binding.peakChart.submit(result.peakHours)
     }
 
-    private companion object {
-        val LOCAL_ZONE: ZoneId = ZoneId.of("Asia/Ho_Chi_Minh")
-        val DATE_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.forLanguageTag("vi"))
-        val DATE_TIME_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy", Locale.forLanguageTag("vi"))
-        val NUMBER_FORMAT: NumberFormat = NumberFormat.getIntegerInstance(Locale.forLanguageTag("vi"))
+    internal companion object {
+        /** "0,1%" theo kiểu Việt Nam; bỏ phần thập phân khi tròn số. */
+        fun formatPercent(value: Double): String =
+            java.text.DecimalFormat("#,##0.#", java.text.DecimalFormatSymbols(Locale.forLanguageTag("vi"))).format(value) + "%"
+
+        /** Có đặt thì thanh luôn hiện ít nhất 1 vạch, không bị trông như 0%. */
+        fun occupancyBar(value: Double): Int = when {
+            value <= 0.0 -> 0
+            else -> kotlin.math.ceil(value).toInt().coerceIn(1, 100)
+        }
+
+        private val LOCAL_ZONE: ZoneId = ZoneId.of("Asia/Ho_Chi_Minh")
+        private val DATE_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.forLanguageTag("vi"))
+        private val DATE_TIME_FORMAT: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm dd/MM/yyyy", Locale.forLanguageTag("vi"))
+        private val NUMBER_FORMAT: NumberFormat = NumberFormat.getIntegerInstance(Locale.forLanguageTag("vi"))
     }
 }

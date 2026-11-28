@@ -262,13 +262,6 @@
             </com.google.android.material.card.MaterialCardView>
         </ScrollView>
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_3"
-            android:text="@string/owner_dropin_roster_note"
-            android:textAppearance="?attr/textAppearanceBodySmall"
-            android:textColor="?attr/colorOnSurfaceVariant" />
 
         <TextView
             android:layout_width="match_parent"

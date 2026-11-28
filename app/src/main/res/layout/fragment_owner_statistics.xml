@@ -7,45 +7,63 @@
     android:background="?android:attr/colorBackground"
     android:orientation="vertical">
 
-    <!-- Top Header: Thống kê & Cơ sở (Wireframe 5) -->
+    <!-- Header: quay lại · Thống kê · làm mới; chọn cơ sở ở hàng dưới. -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:paddingHorizontal="@dimen/screen_gutter"
-        android:paddingTop="@dimen/space_4">
+        android:paddingStart="@dimen/space_1"
+        android:paddingTop="@dimen/space_3"
+        android:paddingEnd="@dimen/space_2">
 
-        <LinearLayout
+        <ImageButton
+            android:id="@+id/back"
+            android:layout_width="@dimen/touch_min"
+            android:layout_height="@dimen/touch_min"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/owner_back"
+            android:minWidth="@dimen/touch_min"
+            android:minHeight="@dimen/touch_min"
+            android:src="@drawable/ic_arrow_back_24"
+            app:tint="?attr/colorOnSurface" />
+
+        <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/space_2"
             android:layout_weight="1"
-            android:orientation="vertical">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:accessibilityHeading="true"
-                android:text="@string/owner_statistics_title"
-                android:textAppearance="?attr/textAppearanceHeadlineMedium"
-                android:textColor="?attr/colorOnSurface"
-                android:textStyle="bold" />
-
-            <Spinner
-                android:id="@+id/venueSpinner"
-                android:layout_width="wrap_content"
-                android:layout_height="@dimen/touch_min"
-                android:contentDescription="@string/owner_calendar_select_venue" />
-        </LinearLayout>
+            android:accessibilityHeading="true"
+            android:text="@string/owner_statistics_title"
+            android:textAppearance="?attr/textAppearanceTitleLarge"
+            android:textColor="?attr/colorOnSurface"
+            android:textStyle="bold" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/refresh"
-            style="@style/Widget.SmashNow.Button.Text"
+            style="?attr/materialIconButtonStyle"
             android:layout_width="wrap_content"
-            android:layout_height="48dp"
+            android:layout_height="@dimen/touch_min"
+            android:contentDescription="@string/booking_refresh_action"
             android:minHeight="@dimen/touch_min"
-            android:text="@string/common_retry" />
+            app:icon="@drawable/ic_refresh_24"
+            app:iconTint="?attr/colorOnSurface" />
     </LinearLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/screen_gutter"
+        android:layout_marginTop="@dimen/space_2"
+        android:background="@drawable/bg_owner_link_row">
+
+        <Spinner
+            android:id="@+id/venueSpinner"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/touch_min"
+            android:contentDescription="@string/owner_calendar_select_venue"
+            android:minHeight="@dimen/touch_min" />
+    </FrameLayout>
 
     <!-- Period Chips (Wireframe 5): 7 ngày | 30 ngày | Tùy chọn -->
     <com.google.android.material.button.MaterialButtonToggleGroup
@@ -53,7 +71,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="@dimen/screen_gutter"
-        android:layout_marginTop="@dimen/space_2"
+        android:layout_marginTop="@dimen/space_3"
         android:contentDescription="@string/owner_statistics_period"
         app:checkedButton="@id/day"
         app:selectionRequired="true"
@@ -218,48 +236,40 @@
             android:paddingHorizontal="@dimen/screen_gutter"
             android:paddingBottom="@dimen/space_6">
 
-            <!-- Section: Tiền đã ghi nhận -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_3"
-                android:accessibilityHeading="true"
-                android:text="@string/owner_stats_revenue_recorded"
-                android:textAppearance="?attr/textAppearanceTitleMedium"
-                android:textColor="?attr/colorOnSurface"
-                android:textStyle="bold" />
-
-            <!-- Big Revenue Card -->
+            <!-- Doanh thu: thẻ nổi bật + 2 thẻ phụ cùng chiều cao. -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/space_2"
-                app:cardBackgroundColor="?attr/colorSurface"
-                app:cardCornerRadius="@dimen/radius_md"
+                app:cardBackgroundColor="@color/sn_court_container"
+                app:cardCornerRadius="20dp"
                 app:cardElevation="0dp"
-                app:strokeColor="@color/sn_line"
-                app:strokeWidth="1dp">
+                app:strokeWidth="0dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="@dimen/space_4">
+                    android:padding="20dp">
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="@string/owner_stats_full_paid"
-                        android:textAppearance="?attr/textAppearanceBodyMedium"
-                        android:textColor="?attr/colorOnSurfaceVariant" />
+                        android:drawablePadding="@dimen/space_2"
+                        android:gravity="center_vertical"
+                        android:text="@string/owner_stats_revenue_recorded"
+                        android:textAppearance="?attr/textAppearanceLabelLarge"
+                        android:textColor="@color/sn_on_court_container"
+                        app:drawableStartCompat="@drawable/ic_wallet_24"
+                        app:drawableTint="@color/sn_on_court_container" />
 
                     <TextView
                         android:id="@+id/revenue"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/space_1"
-                        android:textAppearance="?attr/textAppearanceHeadlineMedium"
-                        android:textColor="?attr/colorOnSurface"
+                        android:layout_marginTop="@dimen/space_2"
+                        android:textAppearance="?attr/textAppearanceDisplaySmall"
+                        android:textColor="@color/sn_on_court_container"
                         android:textStyle="bold"
                         tools:text="8.640.000 đ" />
 
@@ -267,28 +277,27 @@
                         android:id="@+id/revenueSubtitle"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
+                        android:layout_marginTop="@dimen/space_1"
                         android:text="@string/owner_stats_paid_explanation"
                         android:textAppearance="?attr/textAppearanceBodySmall"
-                        android:textColor="?attr/colorOnSurfaceVariant" />
+                        android:textColor="@color/sn_on_court_container" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- 2 Cards side-by-side: Tiền cọc & Đã hoàn tiền -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_2"
+                android:layout_marginTop="@dimen/space_3"
+                android:baselineAligned="false"
                 android:orientation="horizontal">
 
-                <!-- Tiền cọc -->
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginEnd="@dimen/space_2"
+                    android:layout_height="match_parent"
                     android:layout_weight="1"
-                    app:cardBackgroundColor="?attr/colorSurface"
-                    app:cardCornerRadius="@dimen/radius_md"
+                    android:layout_marginEnd="@dimen/space_2"
+                    app:cardBackgroundColor="@color/sn_surface_raised"
+                    app:cardCornerRadius="20dp"
                     app:cardElevation="0dp"
                     app:strokeColor="@color/sn_line"
                     app:strokeWidth="1dp">
@@ -297,44 +306,43 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
-                        android:padding="@dimen/space_3">
+                        android:padding="@dimen/space_4">
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/owner_stats_deposit"
-                            android:textAppearance="?attr/textAppearanceBodySmall"
+                            android:textAppearance="?attr/textAppearanceLabelLarge"
                             android:textColor="?attr/colorOnSurfaceVariant" />
 
                         <TextView
                             android:id="@+id/depositAmount"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:textAppearance="?attr/textAppearanceTitleMedium"
+                            android:layout_marginTop="@dimen/space_1"
+                            android:textAppearance="?attr/textAppearanceTitleLarge"
                             android:textColor="?attr/colorOnSurface"
                             android:textStyle="bold"
-                            tools:text="1.320.000 đ" />
+                            tools:text="0 đ" />
 
                         <TextView
                             android:id="@+id/depositBookingCount"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
-                            tools:text="11 đơn"
                             android:textAppearance="?attr/textAppearanceBodySmall"
-                            android:textColor="?attr/colorOnSurfaceVariant" />
+                            android:textColor="?attr/colorOnSurfaceVariant"
+                            tools:text="0 đơn" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
-                <!-- Đã hoàn tiền -->
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="@dimen/space_1"
+                    android:layout_height="match_parent"
                     android:layout_weight="1"
-                    app:cardBackgroundColor="?attr/colorSurface"
-                    app:cardCornerRadius="@dimen/radius_md"
+                    android:layout_marginStart="@dimen/space_1"
+                    app:cardBackgroundColor="@color/sn_surface_raised"
+                    app:cardCornerRadius="20dp"
                     app:cardElevation="0dp"
                     app:strokeColor="@color/sn_line"
                     app:strokeWidth="1dp">
@@ -343,54 +351,44 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="vertical"
-                        android:padding="@dimen/space_3">
+                        android:padding="@dimen/space_4">
 
                         <TextView
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/owner_stats_refunded"
-                            android:textAppearance="?attr/textAppearanceBodySmall"
+                            android:textAppearance="?attr/textAppearanceLabelLarge"
                             android:textColor="?attr/colorOnSurfaceVariant" />
+
+                        <TextView
+                            android:id="@+id/refundAmount"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="@dimen/space_1"
+                            android:textAppearance="?attr/textAppearanceTitleLarge"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textStyle="bold"
+                            tools:text="0 đ" />
 
                         <TextView
                             android:id="@+id/refundCount"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
-                            android:textAppearance="?attr/textAppearanceTitleMedium"
-                            android:textColor="?attr/colorOnSurface"
-                            android:textStyle="bold"
-                            tools:text="2 đơn" />
-
-                        <TextView
-                            android:id="@+id/refundAmount"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            tools:text="210.000 đ"
                             android:textAppearance="?attr/textAppearanceBodySmall"
-                            android:textColor="?attr/colorOnSurfaceVariant" />
+                            android:textColor="?attr/colorOnSurfaceVariant"
+                            tools:text="0 đơn" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
             </LinearLayout>
 
-            <!-- Section: Tỷ lệ lấp đầy (Wireframe 5) -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_4"
-                android:accessibilityHeading="true"
-                android:text="@string/owner_stats_occupancy_title"
-                android:textAppearance="?attr/textAppearanceTitleMedium"
-                android:textColor="?attr/colorOnSurface"
-                android:textStyle="bold" />
-
+            <!-- Tỷ lệ lấp đầy -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_2"
-                app:cardBackgroundColor="?attr/colorSurface"
-                app:cardCornerRadius="@dimen/radius_md"
+                android:layout_marginTop="@dimen/space_3"
+                app:cardBackgroundColor="@color/sn_surface_raised"
+                app:cardCornerRadius="20dp"
                 app:cardElevation="0dp"
                 app:strokeColor="@color/sn_line"
                 app:strokeWidth="1dp">
@@ -401,24 +399,43 @@
                     android:orientation="vertical"
                     android:padding="@dimen/space_4">
 
-                    <TextView
-                        android:id="@+id/occupancy"
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:textAppearance="?attr/textAppearanceHeadlineMedium"
-                        android:textColor="?attr/colorOnSurface"
-                        android:textStyle="bold"
-                        tools:text="62%  278 / 448 giờ sân" />
+                        android:baselineAligned="true"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:accessibilityHeading="true"
+                            android:text="@string/owner_stats_occupancy_title"
+                            android:textAppearance="?attr/textAppearanceTitleMedium"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textStyle="bold" />
+
+                        <TextView
+                            android:id="@+id/occupancy"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textAppearance="?attr/textAppearanceHeadlineSmall"
+                            android:textColor="@color/sn_court"
+                            android:textStyle="bold"
+                            tools:text="62%" />
+                    </LinearLayout>
 
                     <com.google.android.material.progressindicator.LinearProgressIndicator
                         android:id="@+id/occupancyProgress"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/space_2"
+                        android:layout_marginTop="@dimen/space_3"
                         app:indicatorColor="@color/sn_court"
-                        app:trackColor="@color/sn_line"
-                        app:trackCornerRadius="4dp"
-                        app:trackThickness="8dp" />
+                        app:indicatorTrackGapSize="0dp"
+                        app:trackColor="@color/sn_surface_sunken"
+                        app:trackCornerRadius="5dp"
+                        app:trackStopIndicatorSize="0dp"
+                        app:trackThickness="10dp" />
 
                     <TextView
                         android:layout_width="match_parent"
@@ -430,23 +447,13 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Section: Giờ cao điểm (Wireframe 5) -->
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_4"
-                android:accessibilityHeading="true"
-                android:text="@string/owner_stats_peak_title"
-                android:textAppearance="?attr/textAppearanceTitleMedium"
-                android:textColor="?attr/colorOnSurface"
-                android:textStyle="bold" />
-
+            <!-- Giờ cao điểm -->
             <com.google.android.material.card.MaterialCardView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="@dimen/space_2"
-                app:cardBackgroundColor="?attr/colorSurface"
-                app:cardCornerRadius="@dimen/radius_md"
+                android:layout_marginTop="@dimen/space_3"
+                app:cardBackgroundColor="@color/sn_surface_raised"
+                app:cardCornerRadius="20dp"
                 app:cardElevation="0dp"
                 app:strokeColor="@color/sn_line"
                 app:strokeWidth="1dp">
@@ -457,19 +464,30 @@
                     android:orientation="vertical"
                     android:padding="@dimen/space_4">
 
-                    <com.example.booking_app.feature.owner.ui.statistics.PeakHoursChartView
-                        android:id="@+id/peakChart"
-                        android:layout_width="match_parent"
-                        android:layout_height="220dp"
-                        android:contentDescription="@string/owner_statistics_peak_chart" />
-
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="@dimen/space_2"
-                        android:text="@string/owner_stats_peak_note"
-                        android:textAppearance="?attr/textAppearanceBodySmall"
-                        android:textColor="?attr/colorOnSurfaceVariant" />
+                        android:accessibilityHeading="true"
+                        android:text="@string/owner_stats_peak_title"
+                        android:textAppearance="?attr/textAppearanceTitleMedium"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/peakSummary"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="?attr/colorOnSurfaceVariant"
+                        tools:text="Đông nhất 08:00–09:00 · 60 phút" />
+
+                    <com.example.booking_app.feature.owner.ui.statistics.PeakHoursChartView
+                        android:id="@+id/peakChart"
+                        android:layout_width="match_parent"
+                        android:layout_height="160dp"
+                        android:layout_marginTop="@dimen/space_3"
+                        android:contentDescription="@string/owner_statistics_peak_chart" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -479,9 +497,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/space_3"
-                android:drawableStart="@drawable/ic_timer_24"
+                app:drawableStartCompat="@drawable/ic_timer_24"
                 android:drawablePadding="@dimen/space_1"
-                android:drawableTint="?attr/colorOnSurfaceVariant"
+                app:drawableTint="?attr/colorOnSurfaceVariant"
                 android:gravity="center_vertical"
                 android:text="@string/owner_stats_freshness_footer"
                 android:textAppearance="?attr/textAppearanceBodySmall"
