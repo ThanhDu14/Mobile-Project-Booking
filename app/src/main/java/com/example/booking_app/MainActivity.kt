@@ -12,8 +12,10 @@ import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.annotation.IdRes
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination
+import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavDeepLinkRequest
 import androidx.navigation.fragment.NavHostFragment
 import androidx.navigation.navOptions
@@ -206,25 +208,11 @@ class MainActivity : AppCompatActivity() {
                     true
                 }
                 R.id.tab_owner_schedule -> {
-                    navController.navigate(
-                        R.id.ownerCalendarFragment,
-                        null,
-                        navOptions {
-                            launchSingleTop = true
-                            popUpTo(R.id.ownerHomePlaceholderFragment)
-                        },
-                    )
+                    openOwnerTab(R.id.ownerCalendarFragment)
                     true
                 }
                 R.id.tab_owner_bookings -> {
-                    navController.navigate(
-                        R.id.ownerBookingsFragment,
-                        null,
-                        navOptions {
-                            launchSingleTop = true
-                            popUpTo(R.id.ownerHomePlaceholderFragment)
-                        },
-                    )
+                    openOwnerTab(R.id.ownerBookingsFragment)
                     true
                 }
                 R.id.tab_admin_home -> {
@@ -344,9 +332,17 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    private fun openOwnerVenues() {
+    private fun openOwnerVenues() = openOwnerTab(R.id.ownerVenueListFragment)
+
+    /**
+     * Mở màn gốc một tab chủ sân. Tab Tin nhắn nằm ở `nav_chat`, ngang hàng với `nav_owner`, nên từ đó NavController
+     * không tìm thấy id màn trong `nav_owner` và crash: về màn Hôm nay trước rồi mới điều hướng.
+     */
+    private fun openOwnerTab(@IdRes destinationId: Int) {
+        val inOwnerGraph = navController.currentDestination?.hierarchy?.any { it.id == R.id.nav_owner } == true
+        if (!inOwnerGraph) navController.popBackStack(R.id.ownerHomePlaceholderFragment, false)
         navController.navigate(
-            R.id.ownerVenueListFragment,
+            destinationId,
             null,
             navOptions {
                 launchSingleTop = true

@@ -1,71 +1,82 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Một khung giá: chip loại giá, giá mỗi giờ, ngày + giờ áp dụng; nút sửa và xóa dạng icon. -->
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="12dp"
-    app:cardBackgroundColor="?attr/colorSurfaceContainerLow"
+    android:layout_marginBottom="@dimen/space_2"
+    app:cardBackgroundColor="@color/sn_surface_raised"
+    app:cardCornerRadius="@dimen/radius_md"
     app:cardElevation="0dp"
-    app:strokeColor="?attr/colorOutlineVariant"
-    app:strokeWidth="1dp"
-    app:cardCornerRadius="16dp">
+    app:strokeColor="@color/sn_line"
+    app:strokeWidth="1dp">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp">
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingVertical="@dimen/space_3"
+        android:paddingStart="@dimen/space_4"
+        android:paddingEnd="@dimen/space_1">
 
         <LinearLayout
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:orientation="horizontal">
+            android:layout_weight="1"
+            android:orientation="vertical">
 
             <TextView
                 android:id="@+id/ruleLabel"
-                android:layout_width="0dp"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:textStyle="bold"
-                android:textAppearance="?attr/textAppearanceTitleMedium" />
+                android:background="@drawable/bg_owner_status_chip"
+                android:paddingHorizontal="@dimen/space_2"
+                android:paddingVertical="2dp"
+                android:textAppearance="?attr/textAppearanceLabelSmall"
+                tools:backgroundTint="@color/sn_court_container"
+                tools:text="Giờ thường" />
 
             <TextView
                 android:id="@+id/rulePrice"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textAppearance="?attr/textAppearanceBodyMedium" />
+                android:layout_marginTop="@dimen/space_1"
+                android:textAppearance="?attr/textAppearanceTitleLarge"
+                android:textColor="?attr/colorOnSurface"
+                android:textStyle="bold"
+                tools:text="100.000 đ/giờ" />
+
+            <TextView
+                android:id="@+id/ruleDaysAndTime"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                tools:text="T2–T6 · 04:00–06:00" />
         </LinearLayout>
 
-        <TextView
-            android:id="@+id/ruleDaysAndTime"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="4dp"
-            android:textAppearance="?attr/textAppearanceBodySmall" />
+        <ImageButton
+            android:minWidth="@dimen/touch_min"
+            android:minHeight="@dimen/touch_min"
+            android:id="@+id/editRule"
+            android:layout_width="@dimen/touch_min"
+            android:layout_height="@dimen/touch_min"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/edit"
+            android:src="@drawable/ic_edit_24"
+            app:tint="?attr/colorOnSurfaceVariant" />
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="end"
-            android:layout_marginTop="8dp">
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/editRule"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/edit"
-                android:minHeight="48dp"
-                style="?attr/materialButtonOutlinedStyle" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/deleteRule"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:text="@string/owner_price_delete"
-                android:minHeight="48dp"
-                style="?attr/materialButtonOutlinedStyle" />
-        </LinearLayout>
+        <ImageButton
+            android:minWidth="@dimen/touch_min"
+            android:minHeight="@dimen/touch_min"
+            android:id="@+id/deleteRule"
+            android:layout_width="@dimen/touch_min"
+            android:layout_height="@dimen/touch_min"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/owner_price_delete"
+            android:src="@drawable/ic_delete_24"
+            app:tint="@color/sn_danger" />
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

@@ -32,7 +32,6 @@
 
     <!-- Artboard 2: AdminApplications (Bước 2) -->
     <string name="admin_queue_title">Hồ sơ chủ sân</string>
-    <string name="admin_queue_subtitle">Sắp theo thời điểm nộp, hồ sơ chờ lâu nhất ở trên</string>
     <string name="admin_queue_empty">Không có hồ sơ nào</string>
     <string name="admin_queue_loading">Đang tải danh sách hồ sơ...</string>
     <string name="admin_queue_retry">Thử lại</string>

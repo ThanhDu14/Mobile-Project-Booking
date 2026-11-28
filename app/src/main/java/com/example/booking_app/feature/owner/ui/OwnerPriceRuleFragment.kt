@@ -1,5 +1,7 @@
 package com.example.booking_app.feature.owner.ui
 
+import androidx.navigation.fragment.findNavController
+import androidx.core.view.isVisible
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AlertDialog
@@ -33,9 +35,9 @@ class OwnerPriceRuleFragment : Fragment(R.layout.fragment_owner_price_rule) {
         onEdit = { rule ->
             editingRuleId = rule.id
             binding.formTitle.setText(R.string.edit)
-            binding.daysInput.setText(rule.daysOfWeek.sorted().joinToString(","))
-            binding.startTimeInput.setText(rule.startTime)
-            binding.endTimeInput.setText(rule.endTime)
+            setCheckedDays(rule.daysOfWeek)
+            binding.startTimeInput.setText(OwnerVenueAdapter.clock(rule.startTime))
+            binding.endTimeInput.setText(OwnerVenueAdapter.clock(rule.endTime))
             binding.priceInput.setText(rule.pricePerHour.toString())
             selectedLabel=rule.label
             binding.labelInput.setText(priceLabels()[listOf("NORMAL","PEAK","WEEKEND").indexOf(rule.label).coerceAtLeast(0)])
@@ -49,6 +51,7 @@ class OwnerPriceRuleFragment : Fragment(R.layout.fragment_owner_price_rule) {
         view.keepFormAboveKeyboard()
         _binding = FragmentOwnerPriceRuleBinding.bind(view)
         binding.rules.adapter = adapter
+        binding.back.setOnClickListener { findNavController().navigateUp() }
         binding.retry.setOnClickListener { viewModel.load() }
         binding.labelInput.showSoftInputOnFocus=false
         editingRuleId = savedInstanceState?.getString("editingRuleId") ?: editingRuleId
@@ -61,19 +64,18 @@ class OwnerPriceRuleFragment : Fragment(R.layout.fragment_owner_price_rule) {
         listOf(binding.startTimeInput,binding.endTimeInput).forEach { field ->
             field.showSoftInputOnFocus=false
             field.setOnClickListener {
-                val raw=field.text.toString().padEnd(4,'0')
+                val raw=field.text.toString().replace(":", "").padEnd(4,'0')
                 val picker=MaterialTimePicker.Builder().setTimeFormat(TimeFormat.CLOCK_24H)
                     .setHour(raw.take(2).toIntOrNull() ?: 8).setMinute(raw.takeLast(2).toIntOrNull() ?: 0).build()
-                picker.addOnPositiveButtonClickListener { field.setText("%02d%02d".format(picker.hour,picker.minute)) }
+                picker.addOnPositiveButtonClickListener { field.setText("%02d:%02d".format(picker.hour,picker.minute)) }
                 picker.show(parentFragmentManager,"owner-price-time")
             }
         }
 
         binding.saveRule.setOnClickListener {
-            val days = binding.daysInput.text.toString().split(",")
-                .mapNotNull { it.trim().toIntOrNull() }
-            val startTime = binding.startTimeInput.text.toString().trim()
-            val endTime = binding.endTimeInput.text.toString().trim()
+            val days = checkedDays()
+            val startTime = binding.startTimeInput.text.toString().trim().replace(":", "")
+            val endTime = binding.endTimeInput.text.toString().trim().replace(":", "")
             val price = binding.priceInput.text.toString().trim().toLongOrNull() ?: 0L
             val label = selectedLabel
 
@@ -90,7 +92,7 @@ class OwnerPriceRuleFragment : Fragment(R.layout.fragment_owner_price_rule) {
 
     private fun render(state: OwnerPriceRuleUiState) {
         binding.saveRule.isEnabled = state.isFresh && !state.isSubmitting && !state.isLoading
-        listOf(binding.daysInput,binding.startTimeInput,binding.endTimeInput,binding.priceInput,binding.labelInput)
+        (listOf(binding.startTimeInput,binding.endTimeInput,binding.priceInput,binding.labelInput) + dayChips())
             .forEach { it.isEnabled = binding.saveRule.isEnabled }
         binding.progress.visibility = if (state.isLoading) View.VISIBLE else View.GONE
         binding.retry.visibility = if (state.error != null) View.VISIBLE else View.GONE
@@ -102,11 +104,8 @@ class OwnerPriceRuleFragment : Fragment(R.layout.fragment_owner_price_rule) {
             else -> state.error ?: state.message.orEmpty()
         }
 
-        binding.freshness.text = if (state.isFresh) {
-            getString(R.string.owner_data_fresh)
-        } else if (state.error != null) {
-            getString(R.string.owner_data_not_fresh)
-        } else ""
+        binding.freshness.text = if (!state.isFresh && state.error != null) getString(R.string.owner_data_not_fresh) else ""
+        binding.freshness.isVisible = binding.freshness.text.isNotEmpty()
 
         adapter.submitList(state.rules)
 
@@ -146,13 +145,20 @@ class OwnerPriceRuleFragment : Fragment(R.layout.fragment_owner_price_rule) {
     private fun clearForm() {
         editingRuleId = null
         binding.formTitle.setText(R.string.owner_price_rule_add)
-        binding.daysInput.text.clear()
-        binding.startTimeInput.text.clear()
-        binding.endTimeInput.text.clear()
-        binding.priceInput.text.clear()
+        setCheckedDays(emptyList())
+        binding.startTimeInput.text?.clear()
+        binding.endTimeInput.text?.clear()
+        binding.priceInput.text?.clear()
         selectedLabel="NORMAL"
         binding.labelInput.setText(priceLabels()[0])
     }
+
+    /** Chip T2…CN theo thứ tự 1…7 (1 = Thứ Hai, 7 = Chủ nhật), khớp `daysOfWeek` của khung giá. */
+    private fun dayChips() = listOf(binding.day1, binding.day2, binding.day3, binding.day4, binding.day5, binding.day6, binding.day7)
+
+    private fun checkedDays() = dayChips().mapIndexedNotNull { index, chip -> (index + 1).takeIf { chip.isChecked } }
+
+    private fun setCheckedDays(days: List<Int>) = dayChips().forEachIndexed { index, chip -> chip.isChecked = (index + 1) in days }
 
     private fun priceLabels()=arrayOf(getString(R.string.owner_price_normal_label),getString(R.string.owner_price_peak_label),getString(R.string.owner_price_weekend_label))
 

@@ -12,12 +12,51 @@
         android:padding="32dp"
         android:background="?attr/colorSurface">
 
-        <TextView
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/owner_slot_block_title"
-            android:textAppearance="?attr/textAppearanceHeadlineMedium"
-            android:paddingBottom="16dp" /><com.google.android.material.chip.ChipGroup android:id="@+id/courtChoices" android:layout_width="match_parent" android:layout_height="wrap_content" app:singleSelection="true" />
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageButton
+            android:minWidth="@dimen/touch_min"
+            android:minHeight="@dimen/touch_min"
+                android:id="@+id/back"
+                android:layout_width="@dimen/touch_min"
+                android:layout_height="@dimen/touch_min"
+                android:layout_marginStart="-12dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/owner_back"
+                android:src="@drawable/ic_arrow_back_24"
+                app:tint="?attr/colorOnSurface" />
+
+            <TextView
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:accessibilityHeading="true"
+                android:text="@string/owner_slot_block_title"
+                android:textAppearance="?attr/textAppearanceHeadlineSmall"
+                android:textColor="?attr/colorOnSurface"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <!-- Chọn sân: một hàng cuộn ngang thay cho lưới chip nhiều dòng. -->
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_2"
+            android:layout_marginBottom="@dimen/space_3"
+            android:scrollbars="none">
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/courtChoices"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:selectionRequired="true"
+                app:singleLine="true"
+                app:singleSelection="true" />
+        </HorizontalScrollView>
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -34,16 +73,19 @@
                 android:layout_marginEnd="16dp">
 
                 <com.google.android.material.textfield.TextInputLayout
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:hint="@string/owner_slot_date"
-                    android:layout_marginBottom="8dp">
+                    android:layout_marginBottom="8dp"
+            app:startIconDrawable="@drawable/ic_calendar_24">
 
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/date"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:inputType="number"
+                        android:focusable="false"
+                android:inputType="none"
                         android:minHeight="48dp" />
                 </com.google.android.material.textfield.TextInputLayout>
 
@@ -53,46 +95,52 @@
                     android:orientation="horizontal">
 
                     <com.google.android.material.textfield.TextInputLayout
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:hint="@string/owner_slot_start"
                         android:layout_marginEnd="4dp"
-                        app:placeholderText="@string/owner_slot_time_example">
+            app:startIconDrawable="@drawable/ic_schedule_24">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/startTime"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:inputType="number"
+                            android:focusable="false"
+                android:inputType="none"
                             android:minHeight="48dp" />
                     </com.google.android.material.textfield.TextInputLayout>
 
                     <com.google.android.material.textfield.TextInputLayout
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:hint="@string/owner_slot_end"
                         android:layout_marginStart="4dp"
-                        app:placeholderText="@string/owner_slot_time_example">
+            app:startIconDrawable="@drawable/ic_schedule_24">
 
                         <com.google.android.material.textfield.TextInputEditText
                             android:id="@+id/endTime"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:inputType="number"
+                            android:focusable="false"
+                android:inputType="none"
                             android:minHeight="48dp" />
                     </com.google.android.material.textfield.TextInputLayout>
                 </LinearLayout>
 
                 <com.google.android.material.textfield.TextInputLayout
+            style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:hint="@string/owner_slot_reason"
                     android:layout_marginTop="8dp"
-                    android:layout_marginBottom="8dp">
+                    android:layout_marginBottom="8dp"
+            app:endIconMode="dropdown_menu">
 
-                    <AutoCompleteTextView
+                    <com.google.android.material.textfield.MaterialAutoCompleteTextView
                         android:id="@+id/reason"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"

@@ -215,6 +215,42 @@ describe('slot integrity after booking (review 2026-11-18)', () => {
     await assertFails(deleteDoc(doc(player('player1'), SLOT)));
   });
 
+  // Người chơi B không được chen vào giờ người chơi A đã đặt (kiểm thử demo 2026-11-27).
+  it('another player cannot re-hold a BOOKED slot', async () => {
+    await seedSlot('BOOKED', { holdExpiresAt: null });
+    await assertFails(
+      updateDoc(doc(otherPlayer('player2'), SLOT), {
+        status: 'HELD',
+        holdBy: 'player2',
+        bookingId: 'req-b',
+        holdExpiresAt: Timestamp.fromMillis(Date.now() + 4 * 60 * 1000),
+      })
+    );
+  });
+
+  it('another player cannot overwrite a BOOKED slot with a fresh hold document', async () => {
+    await seedSlot('BOOKED', { holdExpiresAt: null });
+    await assertFails(
+      setDoc(doc(otherPlayer('player2'), SLOT), {
+        venueId: 'demo-venue-01',
+        courtId: 'court-01',
+        date: '20261027',
+        startTime: '0600',
+        endTime: '0630',
+        status: 'HELD',
+        holdBy: 'player2',
+        bookingId: 'req-b',
+        holdExpiresAt: Timestamp.fromMillis(Date.now() + 4 * 60 * 1000),
+      })
+    );
+  });
+
+  it('another player cannot release or delete a BOOKED slot', async () => {
+    await seedSlot('BOOKED', { holdExpiresAt: null });
+    await assertFails(updateDoc(doc(otherPlayer('player2'), SLOT), { status: 'AVAILABLE' }));
+    await assertFails(deleteDoc(doc(otherPlayer('player2'), SLOT)));
+  });
+
   it('holder can still release their own HELD slot', async () => {
     await seedSlot('HELD');
     await assertSucceeds(

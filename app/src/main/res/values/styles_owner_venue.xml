@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Ô chức năng 3×2 trong thẻ cơ sở (tab Cơ sở): icon trên, nhãn dưới. -->
+    <style name="Widget.SmashNow.OwnerVenueAction" parent="">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:minHeight">76dp</item>
+        <item name="android:background">@drawable/bg_owner_action_tile</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="android:gravity">center</item>
+        <item name="android:paddingTop">@dimen/space_3</item>
+        <item name="android:paddingBottom">@dimen/space_3</item>
+        <item name="android:paddingStart">@dimen/space_1</item>
+        <item name="android:paddingEnd">@dimen/space_1</item>
+        <item name="android:drawablePadding">@dimen/space_2</item>
+        <item name="drawableTint">@color/sn_court</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:ellipsize">end</item>
+        <item name="android:textAppearance">?attr/textAppearanceLabelLarge</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+    </style>
+</resources>

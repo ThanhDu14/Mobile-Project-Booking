@@ -41,7 +41,6 @@
     <string name="dropin_slot_noon">Trưa 11–13</string>
     <string name="dropin_slot_afternoon">Chiều 13–18</string>
     <string name="dropin_slot_evening">Tối 18–23</string>
-    <string name="dropin_slot_hint">Khung giờ theo giờ bắt đầu: Sáng 05–11 · Trưa 11–13 · Chiều 13–18 · Tối 18–23.</string>
 
     <!-- Nhãn (Chip Material 3) -->
     <string name="dropin_label_full">Đã đủ người</string>
@@ -55,7 +54,6 @@
     <string name="dropin_label_no_show">Không đến</string>
 
     <!-- Màn hình 1: danh sách buổi -->
-    <string name="dropin_list_intro">Chơi theo lượt, không cần đủ người hay đặt cả sân. Chủ sân xếp cặp tại chỗ.</string>
     <string name="dropin_list_open_filter">Bộ lọc</string>
     <plurals name="dropin_list_count">
         <item quantity="other">%d buổi phù hợp · gần nhất trước</item>

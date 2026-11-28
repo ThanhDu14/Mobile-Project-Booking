@@ -15,6 +15,18 @@
         android:paddingHorizontal="@dimen/space_8"
         android:paddingTop="@dimen/space_6">
 
+        <ImageButton
+            android:minWidth="@dimen/touch_min"
+            android:minHeight="@dimen/touch_min"
+            android:id="@+id/back"
+            android:layout_width="@dimen/touch_min"
+            android:layout_height="@dimen/touch_min"
+            android:layout_marginStart="-12dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/owner_back"
+            android:src="@drawable/ic_arrow_back_24"
+            app:tint="?attr/colorOnSurface" />
+
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -39,11 +51,13 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/refresh"
-            style="@style/Widget.SmashNow.Button.Text"
+            style="?attr/materialIconButtonStyle"
             android:layout_width="wrap_content"
-            android:layout_height="48dp"
+            android:layout_height="@dimen/touch_min"
+            android:contentDescription="@string/booking_refresh_action"
             android:minHeight="@dimen/touch_min"
-            android:text="@string/common_retry" />
+            app:icon="@drawable/ic_refresh_24"
+            app:iconTint="?attr/colorOnSurface" />
     </LinearLayout>
 
     <!-- Filter Tabs (Tablet) -->

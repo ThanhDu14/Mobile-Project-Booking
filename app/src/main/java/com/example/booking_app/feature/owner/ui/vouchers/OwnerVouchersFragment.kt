@@ -34,6 +34,7 @@ class OwnerVouchersFragment : Fragment(R.layout.fragment_owner_vouchers) {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         _binding = FragmentOwnerVouchersBinding.bind(view)
+        binding.back.setOnClickListener { findNavController().navigateUp() }
         binding.retry.setOnClickListener { viewModel.refresh() }
         binding.createVoucher.setOnClickListener {
             selectedVenueId?.let { id ->

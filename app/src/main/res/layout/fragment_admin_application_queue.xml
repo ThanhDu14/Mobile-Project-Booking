@@ -27,14 +27,6 @@
                 android:textAppearance="?attr/textAppearanceHeadlineMedium"
                 android:textStyle="bold" />
 
-            <TextView
-                android:id="@+id/textQueueSubtitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="@string/admin_queue_subtitle"
-                android:textAppearance="?attr/textAppearanceBodyMedium"
-                android:textColor="?attr/colorOnSurfaceVariant" />
 
             <!-- Filter Chips Row -->
             <HorizontalScrollView

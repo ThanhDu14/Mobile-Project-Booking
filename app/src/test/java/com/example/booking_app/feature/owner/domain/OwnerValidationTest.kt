@@ -18,6 +18,12 @@ class OwnerValidationTest {
         assertTrue(OwnerValidation.venue(VenueInput("Sân", "Q1", "d1", GeoPoint(10.7, 106.7), "0600", "2200", "0912345678", emptyList(), listOf("venue/a.jpg"), 2)).isEmpty())
     }
 
+    @Test fun venueMayCloseAt2400ButNotOpenAtIt() {
+        val input = VenueInput("Sân", "Q1", "d1", GeoPoint(10.7, 106.7), "0400", "2400", "0912345678", emptyList(), listOf("venue/a.jpg"), 2)
+        assertTrue(OwnerValidation.venue(input).isEmpty())
+        assertTrue(OwnerValidation.venue(input.copy(openTime = "2400")).any { it.field == "openTime" })
+    }
+
     @Test fun venueWithNoActiveCourtsRemainsEditableButNegativeCountIsInvalid() {
         val input = VenueInput("Sân", "Q1", "d1", GeoPoint(10.7, 106.7), "0600", "2200", "0912345678", emptyList(), listOf("venue/a.jpg"), 0)
         assertTrue(OwnerValidation.venue(input).isEmpty())

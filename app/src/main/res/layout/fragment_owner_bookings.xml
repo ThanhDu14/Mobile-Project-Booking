@@ -26,7 +26,7 @@
                 android:layout_height="wrap_content"
                 android:accessibilityHeading="true"
                 android:text="@string/owner_bookings_title"
-                android:textAppearance="?attr/textAppearanceHeadlineMedium"
+                android:textAppearance="?attr/textAppearanceHeadlineSmall"
                 android:textColor="?attr/colorOnSurface"
                 android:textStyle="bold" />
 
@@ -39,11 +39,13 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/refresh"
-            style="@style/Widget.SmashNow.Button.Text"
+            style="?attr/materialIconButtonStyle"
             android:layout_width="wrap_content"
-            android:layout_height="48dp"
+            android:layout_height="@dimen/touch_min"
+            android:contentDescription="@string/booking_refresh_action"
             android:minHeight="@dimen/touch_min"
-            android:text="@string/common_retry" />
+            app:icon="@drawable/ic_refresh_24"
+            app:iconTint="?attr/colorOnSurface" />
     </LinearLayout>
 
     <!-- Filter Chips (Wireframe 2): Chờ duyệt | Sắp tới | Đã qua -->
@@ -92,17 +94,6 @@
             android:text="@string/owner_bookings_past" />
     </com.google.android.material.button.MaterialButtonToggleGroup>
 
-    <!-- Helpful Policy Note (Wireframe 2) -->
-    <TextView
-        android:id="@+id/bookingsNote"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingHorizontal="@dimen/screen_gutter"
-        android:paddingTop="@dimen/space_3"
-        android:paddingBottom="@dimen/space_1"
-        android:text="@string/owner_bookings_note"
-        android:textAppearance="?attr/textAppearanceBodySmall"
-        android:textColor="?attr/colorOnSurfaceVariant" />
 
     <ProgressBar
         android:id="@+id/loading"

@@ -49,7 +49,7 @@
     <string name="owner_bookings_details_title">Chi tiết đơn đặt sân</string>
     <string name="owner_bookings_details_body">Mã đơn: %1$s\nTrạng thái: %2$s\nSố khung giờ: %3$d</string>
     <string name="owner_booking_checkin_title">Check-in đơn đặt sân</string>
-    <string name="owner_booking_checkin_help">Quét QR hoặc nhập mã đặt sân. Thông tin sẽ được xác minh bởi máy chủ.</string>
+    <string name="owner_booking_checkin_help">Quét QR hoặc nhập mã đặt sân.</string>
     <string name="owner_booking_checkin_scan">Quét mã QR</string>
     <string name="owner_booking_checkin_scan_error">Không thể mở máy quét QR.</string>
     <string name="owner_booking_checkin_code_label">Mã QR hoặc mã đặt sân</string>
@@ -138,7 +138,6 @@
     <string name="owner_status_confirmed">Đã xác nhận</string>
     <string name="owner_status_dropin">Vãng lai</string>
     <string name="owner_status_maintenance">Bảo trì</string>
-    <string name="owner_bookings_note">Mỗi đơn có tối đa 60 phút để duyệt, không quá giờ bắt đầu. Quá hạn, hệ thống tự từ chối và hoàn tiền cho khách.</string>
     <string name="owner_bookings_timeout_alert">Quá hạn duyệt. Hệ thống đã tự từ chối và hoàn tiền cho khách.</string>
     <string name="owner_bookings_hide">Ẩn</string>
     <string name="owner_bookings_pending_with_count">Chờ duyệt %1$d</string>
@@ -167,13 +166,18 @@
     <string name="owner_stats_occupancy_title">Tỷ lệ lấp đầy</string>
     <string name="owner_stats_occupancy_note">Giờ đã khóa không tính vào tổng giờ có thể đặt.</string>
     <string name="owner_stats_peak_title">Giờ cao điểm</string>
-    <string name="owner_stats_peak_note">Tổng giờ sân của đơn đã xác nhận, đã hoàn thành và vắng mặt trong mỗi khung 60 phút.</string>
+    <string name="owner_stats_peak_summary">Đông nhất %1$02d:00–%2$02d:00 · %3$d phút có đặt</string>
+    <string name="owner_stats_peak_none">Chưa có giờ nào có người đặt</string>
+    <string name="owner_stats_deposit_note">Khách đã đặt cọc</string>
     <string name="owner_stats_freshness_footer">Cập nhật lúc 00:15 hôm nay. Đơn trong ngày chưa được cộng.</string>
     <string name="owner_dropin_tab_upcoming">Sắp tới</string>
     <string name="owner_dropin_tab_past">Đã qua</string>
     <string name="owner_dropin_open_new">+ Mở buổi</string>
     <string name="owner_dropin_status_open">Đang mở</string>
     <string name="owner_dropin_status_full">Đã đầy</string>
+    <string name="owner_dropin_status_closed">Đã đóng đăng ký</string>
+    <string name="owner_dropin_status_completed">Đã kết thúc</string>
+    <string name="owner_dropin_status_cancelled">Đã hủy</string>
     <string name="owner_dropin_entered">%1$d đã vào sân</string>
     <string name="owner_dropin_waitlist_count">%1$d trong hàng chờ</string>
     <string name="owner_dropin_create_title">Mở buổi vãng lai</string>
@@ -197,7 +201,6 @@
     <string name="owner_dropin_roster_tab_all">Tất cả</string>
     <string name="owner_dropin_roster_tab_not_arrived">Chưa đến</string>
     <string name="owner_dropin_roster_tab_arrived">Đã vào</string>
-    <string name="owner_dropin_roster_note">Người chơi đăng ký và vào hàng chờ tự động. Chủ sân chỉ check-in, không duyệt từng người.</string>
     <string name="owner_dropin_roster_edit_session">Sửa buổi</string>
     <string name="owner_dropin_roster_cancel_session">Hủy buổi</string>
     <string name="owner_dropin_roster_policy_note" formatted="false">Sửa giờ, sân hoặc giá: người đã đăng ký giữ giá cũ và được hủy hoàn 100%. Tăng sức chứa thì người trong hàng chờ được nhận chỗ. Hủy buổi: mọi người được hoàn 100%, hàng chờ đóng và ai cũng được báo.</string>
@@ -207,7 +210,7 @@
     <string name="owner_voucher_status_on">Đang bật</string>
     <string name="owner_voucher_status_off">Đã tắt</string>
     <string name="owner_voucher_create_title">Tạo voucher</string>
-    <string name="owner_voucher_create_code_note">Chữ và số, không dấu cách. Thử gõ SANGSOM20 để xem lỗi trùng mã.</string>
+    <string name="owner_voucher_create_code_note">Chữ và số, không dấu cách.</string>
     <string name="owner_voucher_create_type_label">Kiểu giảm</string>
     <string name="owner_voucher_create_type_percent">Theo phần trăm</string>
     <string name="owner_voucher_create_type_fixed">Số tiền cố định</string>

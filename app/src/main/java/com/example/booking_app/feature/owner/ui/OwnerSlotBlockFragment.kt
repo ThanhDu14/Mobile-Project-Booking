@@ -1,9 +1,17 @@
 package com.example.booking_app.feature.owner.ui
 
+import java.time.format.DateTimeFormatter
+import java.time.ZoneOffset
+import java.time.ZoneId
+import java.time.LocalDate
+import java.time.Instant
+import com.google.android.material.timepicker.TimeFormat
+import com.google.android.material.timepicker.MaterialTimePicker
+import com.google.android.material.datepicker.MaterialDatePicker
+import androidx.navigation.fragment.findNavController
 import android.os.Bundle
 import android.view.View
 import android.widget.ArrayAdapter
-import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -43,10 +51,28 @@ class OwnerSlotBlockFragment : Fragment(R.layout.fragment_owner_slot_block) {
             adapter = gridAdapter
         }
 
-        binding.date.doAfterTextChanged { text ->
-            val dateStr = text?.toString().orEmpty().trim()
-            if (dateStr.length == 8) {
-                viewModel.selectDate(dateStr)
+        binding.back.setOnClickListener { findNavController().navigateUp() }
+        // Ngày hiện "dd/MM/yyyy", ViewModel vẫn nhận "yyyyMMdd".
+        binding.date.setOnClickListener {
+            val current = parseRawDate(viewModel.uiState.value.selectedDate) ?: LocalDate.now(VIETNAM_ZONE)
+            val picker = MaterialDatePicker.Builder.datePicker()
+                .setTitleText(R.string.owner_slot_date)
+                .setSelection(current.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli())
+                .build()
+            picker.addOnPositiveButtonClickListener { millis ->
+                val picked = Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate()
+                binding.date.setText(picked.format(DISPLAY_DATE))
+                viewModel.selectDate(picked.format(RAW_DATE))
+            }
+            picker.show(parentFragmentManager, "owner-slot-date")
+        }
+        listOf(binding.startTime, binding.endTime).forEach { field ->
+            field.setOnClickListener {
+                val raw = field.text?.toString().orEmpty().replace(":", "").padEnd(4, '0')
+                val picker = MaterialTimePicker.Builder().setTimeFormat(TimeFormat.CLOCK_24H)
+                    .setHour(raw.take(2).toIntOrNull() ?: 8).setMinute(raw.takeLast(2).toIntOrNull() ?: 0).build()
+                picker.addOnPositiveButtonClickListener { field.setText("%02d:%02d".format(picker.hour, picker.minute)) }
+                picker.show(parentFragmentManager, "owner-slot-time")
             }
         }
 
@@ -82,9 +108,9 @@ class OwnerSlotBlockFragment : Fragment(R.layout.fragment_owner_slot_block) {
 
     private fun readForm() = SlotBlockInput(
         courtId = viewModel.uiState.value.courtId,
-        date = binding.date.text.toString().trim(),
-        startTime = binding.startTime.text.toString().trim(),
-        endTime = binding.endTime.text.toString().trim(),
+        date = viewModel.uiState.value.selectedDate,
+        startTime = binding.startTime.text.toString().trim().replace(":", ""),
+        endTime = binding.endTime.text.toString().trim().replace(":", ""),
         reason = viewModel.uiState.value.selectedReason
     )
 
@@ -110,13 +136,21 @@ class OwnerSlotBlockFragment : Fragment(R.layout.fragment_owner_slot_block) {
         binding.unlockSelected.isEnabled = canOperate
 
         if (binding.date.text.isNullOrEmpty() && state.selectedDate.isNotEmpty()) {
-            binding.date.setText(state.selectedDate)
+            binding.date.setText(parseRawDate(state.selectedDate)?.format(DISPLAY_DATE) ?: state.selectedDate)
         }
         if (binding.reason.text.isNullOrEmpty() && state.selectedReason.isNotEmpty()) {
             binding.reason.setText(getString(when(state.selectedReason) {"EVENT"->R.string.owner_reason_event;"WALK_IN"->R.string.owner_reason_walk_in;else->R.string.owner_reason_maintenance}), false)
         }
 
         gridAdapter.submitList(state.gridSlots)
+    }
+
+    private fun parseRawDate(raw: String): LocalDate? = runCatching { LocalDate.parse(raw, RAW_DATE) }.getOrNull()
+
+    private companion object {
+        val VIETNAM_ZONE: ZoneId = ZoneId.of("Asia/Ho_Chi_Minh")
+        val RAW_DATE: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd")
+        val DISPLAY_DATE: DateTimeFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy")
     }
 
     override fun onDestroyView() {

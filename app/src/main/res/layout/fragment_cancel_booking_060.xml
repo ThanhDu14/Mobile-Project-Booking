@@ -279,7 +279,7 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:lineSpacingExtra="3dp"
-                    android:text="Nếu hủy dưới 4 giờ trước giờ chơi: mất tiền cọc; đơn trả bằng ví bị phạt 30% và được hoàn 70%. Server quyết định theo giờ máy chủ lúc nhận yêu cầu."
+                    android:text="Hủy dưới 4 giờ trước giờ chơi sẽ mất tiền cọc."
                     android:textAppearance="?attr/textAppearanceBodySmall"
                     android:textColor="@color/sn_ink" />
             </LinearLayout>
