@@ -74,4 +74,12 @@
     <string name="owner_price_per_hour_helper">Chia hết cho 2.000 đ</string>
     <string name="owner_price_per_hour_value">%1$s đ/giờ</string>
     <string name="owner_price_days_time">%1$s · %2$s–%3$s</string>
+    <string name="owner_payout_title">Tài khoản nhận tiền</string>
+    <string name="owner_payout_sandbox_note">Bản thử nghiệm: người chơi chỉ giả lập chuyển khoản, không có tiền thật vào tài khoản này.</string>
+    <string name="owner_payout_bank">Ngân hàng</string>
+    <string name="owner_payout_account_number">Số tài khoản</string>
+    <string name="owner_payout_holder">Tên chủ tài khoản</string>
+    <string name="owner_payout_save">Lưu tài khoản nhận tiền</string>
+    <string name="owner_payout_none">Chưa có tài khoản: người chơi chỉ thanh toán tại sân được</string>
+    <string name="owner_payout_current">Đang nhận chuyển khoản: %1$s · %2$s</string>
 </resources>

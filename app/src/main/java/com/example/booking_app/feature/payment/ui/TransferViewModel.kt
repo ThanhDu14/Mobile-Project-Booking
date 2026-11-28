@@ -7,6 +7,7 @@ import com.example.booking_app.feature.payment.domain.HoldClock
 import com.example.booking_app.feature.payment.domain.model.BookingPaymentState
 import com.example.booking_app.feature.payment.domain.model.PayoutAccount
 import com.example.booking_app.feature.payment.domain.model.TransferInstruction
+import com.example.booking_app.feature.payment.domain.repository.PaymentRepository
 import com.example.booking_app.feature.payment.domain.usecase.ObserveBookingPaymentUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -25,6 +26,10 @@ data class TransferUiState(
     val instruction: TransferInstruction? = null,
     val holdRemainingSeconds: Long = 0,
     val expired: Boolean = false,
+    /** Đang gọi giả lập chuyển khoản. */
+    val simulating: Boolean = false,
+    /** Giả lập vừa thất bại; màn hình báo rồi gọi [TransferViewModel.consumeSimulateError]. */
+    val simulateError: Boolean = false,
 )
 
 /**
@@ -38,6 +43,7 @@ class TransferViewModel @Inject constructor(
     private val observePayment: ObserveBookingPaymentUseCase,
     private val clock: HoldClock,
     private val messages: PaymentMessages,
+    private val repository: PaymentRepository? = null,
 ) : ViewModel() {
 
     val bookingId: String = savedStateHandle["bookingId"] ?: ""
@@ -77,6 +83,20 @@ class TransferViewModel @Inject constructor(
     }
 
     fun copiedMessage(): String = messages.string(PaymentMessages.Key.COPIED)
+
+    /** Thanh toán giả lập: server chốt đơn như khi SePay báo tiền vào; listener mở hóa đơn. */
+    fun simulatePaid() {
+        val state = _uiState.value
+        val code = state.instruction?.paymentCode
+        if (state.simulating || state.expired || done || code.isNullOrEmpty() || repository == null) return
+        _uiState.update { it.copy(simulating = true, simulateError = false) }
+        viewModelScope.launch {
+            val result = repository.simulateTransfer(code)
+            _uiState.update { it.copy(simulating = false, simulateError = result.isFailure) }
+        }
+    }
+
+    fun consumeSimulateError() = _uiState.update { it.copy(simulateError = false) }
 
     private suspend fun onState(state: BookingPaymentState) {
         if (done) return

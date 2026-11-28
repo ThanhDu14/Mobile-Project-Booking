@@ -156,6 +156,81 @@ async function confirmWrites(
   ];
 }
 
+/**
+ * Lõi xử lý một giao dịch "Tiền vào" trong transaction: chống trùng theo `sepayTransactions/{id}`, tìm đơn theo mã,
+ * chốt đơn hoặc sinh khoản hoàn. Dùng chung cho webhook SePay và function giả lập `booking-payment-simulate`;
+ * `ledgerExtra` ghi thêm vào sổ giao dịch (vd. `simulated: true`).
+ */
+export async function processSepayTransaction(
+  tx: FirestoreTransaction,
+  sepay: SepayTransaction,
+  now: Date,
+  ledgerExtra: Doc = {},
+): Promise<{ result: WebhookOutcome; writes: Write[] }> {
+  const ledgerPath = `sepayTransactions/${sepay.id}`;
+  if (await tx.get(ledgerPath)) return { result: "DUPLICATE", writes: [] };
+
+  const ledger = (outcome: WebhookOutcome, extra: Doc = {}): Write =>
+    createWrite(ledgerPath, {
+      sepayId: sepay.id,
+      transferType: sepay.transferType,
+      transferAmount: sepay.transferAmount,
+      content: sepay.content,
+      referenceCode: sepay.referenceCode,
+      transactionDate: sepay.transactionDate,
+      paymentCode: sepay.code,
+      bookingId: null,
+      recurringGroupId: null,
+      refundId: null,
+      outcome,
+      ...ledgerExtra,
+      ...extra,
+    }, ["receivedAt"]);
+  const only = (outcome: WebhookOutcome) => ({ result: outcome, writes: [ledger(outcome)] });
+
+  if (sepay.transferType !== "in") return only("NOT_INCOMING");
+  if (!sepay.code) return only("NO_CODE");
+  const code = await tx.get(`paymentCodes/${sepay.code}`);
+  if (!code) return only("CODE_NOT_FOUND");
+
+  const target = await loadTarget(tx, code);
+  const venueId = asString(code.venueId) ?? asString(target?.doc?.venueId) ?? "";
+  const userId = asString(code.userId) ?? asString(target?.doc?.userId) ?? "";
+  const links = {
+    bookingId: target && !target.recurring ? target.key : null,
+    recurringGroupId: target?.recurring ? target.key : null,
+  };
+  const refund = (reason: "LATE_TRANSFER" | "AMOUNT_MISMATCH") => {
+    const refundId = refundIdFor({ sepayTransactionId: sepay.id });
+    return {
+      result: reason,
+      writes: [
+        ledger(reason, { ...links, refundId }),
+        refundCreateWrite({
+          id: refundId,
+          ...links,
+          venueId,
+          userId,
+          amount: sepay.transferAmount,
+          penaltyAmount: 0,
+          reason,
+          sepayTransactionId: sepay.id,
+        }),
+      ],
+    };
+  };
+
+  if (!target || !(await stillWaiting(tx, target, code, sepay.code))) return refund("LATE_TRANSFER");
+  if (sepay.transferAmount !== asNumber(target.doc!.amountDue)) return refund("AMOUNT_MISMATCH");
+  return {
+    result: "CONFIRMED",
+    writes: [
+      ledger("CONFIRMED", links),
+      ...await confirmWrites(tx, target, sepay, sepay.code, venueId, now),
+    ],
+  };
+}
+
 export async function handleSepayWebhook(req: Request, injected: SepayWebhookDeps = {}): Promise<Response> {
   const deps = { ...defaults(), ...injected };
   if (req.method !== "POST") return json(405, { success: false, error: "METHOD_NOT_ALLOWED" });
@@ -188,69 +263,7 @@ export async function handleSepayWebhook(req: Request, injected: SepayWebhookDep
 
   try {
     const now = deps.now();
-    const outcome = await deps.firestore.runTransaction<WebhookOutcome>(async (tx) => {
-      const ledgerPath = `sepayTransactions/${sepay.id}`;
-      if (await tx.get(ledgerPath)) return { result: "DUPLICATE", writes: [] };
-
-      const ledger = (outcome: WebhookOutcome, extra: Doc = {}): Write =>
-        createWrite(ledgerPath, {
-          sepayId: sepay.id,
-          transferType: sepay.transferType,
-          transferAmount: sepay.transferAmount,
-          content: sepay.content,
-          referenceCode: sepay.referenceCode,
-          transactionDate: sepay.transactionDate,
-          paymentCode: sepay.code,
-          bookingId: null,
-          recurringGroupId: null,
-          refundId: null,
-          outcome,
-          ...extra,
-        }, ["receivedAt"]);
-      const only = (outcome: WebhookOutcome) => ({ result: outcome, writes: [ledger(outcome)] });
-
-      if (sepay.transferType !== "in") return only("NOT_INCOMING");
-      if (!sepay.code) return only("NO_CODE");
-      const code = await tx.get(`paymentCodes/${sepay.code}`);
-      if (!code) return only("CODE_NOT_FOUND");
-
-      const target = await loadTarget(tx, code);
-      const venueId = asString(code.venueId) ?? asString(target?.doc?.venueId) ?? "";
-      const userId = asString(code.userId) ?? asString(target?.doc?.userId) ?? "";
-      const links = {
-        bookingId: target && !target.recurring ? target.key : null,
-        recurringGroupId: target?.recurring ? target.key : null,
-      };
-      const refund = (reason: "LATE_TRANSFER" | "AMOUNT_MISMATCH") => {
-        const refundId = refundIdFor({ sepayTransactionId: sepay.id });
-        return {
-          result: reason,
-          writes: [
-            ledger(reason, { ...links, refundId }),
-            refundCreateWrite({
-              id: refundId,
-              ...links,
-              venueId,
-              userId,
-              amount: sepay.transferAmount,
-              penaltyAmount: 0,
-              reason,
-              sepayTransactionId: sepay.id,
-            }),
-          ],
-        };
-      };
-
-      if (!target || !(await stillWaiting(tx, target, code, sepay.code))) return refund("LATE_TRANSFER");
-      if (sepay.transferAmount !== asNumber(target.doc!.amountDue)) return refund("AMOUNT_MISMATCH");
-      return {
-        result: "CONFIRMED",
-        writes: [
-          ledger("CONFIRMED", links),
-          ...await confirmWrites(tx, target, sepay, sepay.code, venueId, now),
-        ],
-      };
-    });
+    const outcome = await deps.firestore.runTransaction<WebhookOutcome>((tx) => processSepayTransaction(tx, sepay, now));
     console.log(`[sepay-webhook] giao dịch ${sepay.id} (${sepay.code ?? "không mã"}): ${outcome}`);
     return json(200, { success: true, outcome });
   } catch (e) {

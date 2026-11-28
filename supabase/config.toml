@@ -557,6 +557,10 @@ verify_jwt = false
 [functions.booking-payment-transfer]
 verify_jwt = false
 
+# Thanh toán giả lập (thử luồng chuyển khoản khi chưa có SePay); chỉ chạy khi PAYMENT_SIMULATOR_ENABLED=true.
+[functions.booking-payment-simulate]
+verify_jwt = false
+
 [functions.owner-mark-refunded]
 verify_jwt = false
 

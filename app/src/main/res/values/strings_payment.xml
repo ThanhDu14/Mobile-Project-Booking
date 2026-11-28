@@ -67,6 +67,10 @@
     <string name="transfer_expired_note">Hết thời gian giữ chỗ. Nếu bạn đã chuyển tiền, chủ sân sẽ hoàn lại theo quy trình hoàn tiền</string>
     <string name="transfer_switch_to_venue">Đổi sang thanh toán tại sân</string>
     <string name="transfer_back_to_grid">Chọn lại khung giờ</string>
+    <string name="transfer_simulate_paid">Giả lập đã chuyển khoản</string>
+    <string name="transfer_simulating">Đang giả lập…</string>
+    <string name="transfer_simulate_note">Chế độ thử nghiệm: không có tiền thật được chuyển</string>
+    <string name="transfer_simulate_failed">Không giả lập được thanh toán. Kiểm tra server đã bật thanh toán giả lập chưa</string>
 
     <!-- Hóa đơn / Phiếu đặt sân (T033) -->
     <string name="receipt_title_paid">Hóa đơn điện tử</string>

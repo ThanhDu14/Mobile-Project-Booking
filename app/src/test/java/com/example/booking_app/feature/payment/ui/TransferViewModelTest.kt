@@ -41,6 +41,12 @@ class TransferViewModelTest {
 
     private inner class FakeRepo : PaymentRepository {
         val observed = mutableListOf<Pair<String, Boolean>>()
+        val simulated = mutableListOf<String>()
+        var simulateResult: Result<Unit> = Result.success(Unit)
+        override suspend fun simulateTransfer(paymentCode: String): Result<Unit> {
+            simulated += paymentCode
+            return simulateResult
+        }
         override suspend fun confirmAtVenue(req: ConfirmRequest) = Result.failure<PaymentReceipt>(UnsupportedOperationException())
         override suspend fun receipt(bookingId: String, isRecurring: Boolean) = Result.failure<PaymentReceipt>(UnsupportedOperationException())
         override suspend fun startTransfer(req: ConfirmRequest, option: PaymentOption) =
@@ -71,6 +77,7 @@ class TransferViewModelTest {
         ObserveBookingPaymentUseCase(repo),
         HoldClock { testScheduler.currentTime },
         messages,
+        repo,
     )
 
     @Test
@@ -103,6 +110,40 @@ class TransferViewModelTest {
         }
         assertEquals(0L, vm.uiState.value.holdRemainingSeconds)
         assertTrue(vm.uiState.value.expired)
+    }
+
+    @Test
+    fun `gia lap chuyen khoan goi server dung ma thanh toan`() = runTest {
+        val vm = viewModel()
+        runCurrent()
+        vm.simulatePaid()
+        runCurrent()
+        assertEquals(listOf("SNPAAAA2222"), repo.simulated)
+        assertFalse(vm.uiState.value.simulating)
+        assertFalse(vm.uiState.value.simulateError)
+    }
+
+    @Test
+    fun `gia lap that bai thi bao loi mot lan`() = runTest {
+        repo.simulateResult = Result.failure(IllegalStateException("SIMULATOR_DISABLED"))
+        val vm = viewModel()
+        runCurrent()
+        vm.simulatePaid()
+        runCurrent()
+        assertTrue(vm.uiState.value.simulateError)
+        vm.consumeSimulateError()
+        assertFalse(vm.uiState.value.simulateError)
+    }
+
+    @Test
+    fun `het giu cho thi khong gia lap nua`() = runTest {
+        val vm = viewModel()
+        runCurrent()
+        advanceTimeBy(91_000)
+        runCurrent()
+        vm.simulatePaid()
+        runCurrent()
+        assertTrue(repo.simulated.isEmpty())
     }
 
     @Test

@@ -20,6 +20,12 @@ interface PaymentRepository {
     /** `booking-payment-transfer`: cọc 30% hoặc trả đủ; gọi lại cùng `requestId` nhận lại cùng mã. */
     suspend fun startTransfer(req: ConfirmRequest, option: PaymentOption): Result<TransferInstruction>
 
+    /**
+     * `booking-payment-simulate`: giả lập người chơi đã chuyển khoản đúng mã. Server chốt đơn như webhook SePay,
+     * listener [observe] nhận trạng thái mới. Chỉ dùng để thử nghiệm, không có tiền thật.
+     */
+    suspend fun simulateTransfer(paymentCode: String): Result<Unit> = Result.failure(UnsupportedOperationException())
+
     /** Listener realtime trên `bookings/{id}` hoặc `recurringGroups/{id}`; ngừng thu thì gỡ listener. */
     fun observe(bookingId: String, isRecurring: Boolean): Flow<BookingPaymentState>
 }
