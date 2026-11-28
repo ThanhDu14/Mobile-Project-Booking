@@ -6,12 +6,15 @@ import com.example.booking_app.feature.owner.domain.model.OwnerVenue
 import com.example.booking_app.feature.owner.domain.model.OwnerPriceRule
 import com.example.booking_app.feature.owner.domain.model.OwnerSlot
 import com.example.booking_app.feature.owner.domain.model.VenueEditableFields
+import com.example.booking_app.feature.payment.domain.model.PayoutAccount
 
 interface OwnerVenueRepository {
     suspend fun getOwnedVenues(): Result<List<OwnerVenue>>
     suspend fun getVenue(venueId: String): Result<OwnerVenue>
     suspend fun updateVenue(venueId: String, fields: VenueEditableFields): Result<Unit>
     suspend fun hideVenue(venueId: String): Result<Unit>
+    suspend fun updatePayoutAccount(venueId: String, account: PayoutAccount): Result<Unit> =
+        Result.failure(IllegalStateException("Chưa thể lưu tài khoản nhận tiền"))
     suspend fun setAcceptsRecurring(venueId: String, accepts: Boolean): Result<Unit>
     suspend fun uploadPhoto(venueId: String, mime: String, bytes: ByteArray): Result<String> =
         Result.failure(IllegalStateException("Chưa thể tải ảnh"))

@@ -17,7 +17,9 @@ data class OwnerVenue(
     val photoPaths: List<String>,
     val courtCount: Int,
     val acceptsRecurring: Boolean,
-    val status: String
+    val status: String,
+    /** Tài khoản nhận tiền (chuyển khoản giả lập); `null` khi chưa thiết lập. */
+    val payoutAccount: com.example.booking_app.feature.payment.domain.model.PayoutAccount? = null,
 )
 
 data class VenueEditableFields(

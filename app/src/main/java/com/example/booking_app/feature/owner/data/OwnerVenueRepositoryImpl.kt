@@ -8,6 +8,7 @@ import com.example.booking_app.feature.owner.domain.model.OwnerVenue
 import com.example.booking_app.feature.owner.domain.model.OwnerPriceRule
 import com.example.booking_app.feature.owner.domain.model.OwnerSlot
 import com.example.booking_app.feature.owner.domain.model.VenueEditableFields
+import com.example.booking_app.feature.payment.domain.model.PayoutAccount
 import javax.inject.Inject
 
 class OwnerVenueRepositoryImpl @Inject constructor(
@@ -24,6 +25,8 @@ class OwnerVenueRepositoryImpl @Inject constructor(
         source.updateVenue(venueId, fields.copy(photoPaths=fields.photoPaths.map { mapping[it] ?: it }))
     }
     override suspend fun hideVenue(venueId: String): Result<Unit> = runCatching { source.hideVenue(venueId) }
+    override suspend fun updatePayoutAccount(venueId: String, account: PayoutAccount): Result<Unit> =
+        runCatching { source.updatePayoutAccount(venueId, account) }
     override suspend fun setAcceptsRecurring(venueId: String, accepts: Boolean): Result<Unit> = runCatching { source.setAcceptsRecurring(venueId, accepts) }
     override suspend fun uploadPhoto(venueId: String, mime: String, bytes: ByteArray): Result<String> = runCatching { photos.upload(venueId,mime,bytes) }
     override suspend fun getCourts(venueId: String): Result<List<OwnerCourt>> = runCatching { source.getCourts(venueId) }

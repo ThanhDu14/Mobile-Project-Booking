@@ -336,6 +336,33 @@
                     android:textColor="@color/sn_ink_muted"
                     android:textSize="14sp" />
             </LinearLayout>
+
+            <!-- Thanh toán giả lập (bản debug): thay cho việc chuyển khoản thật khi thử nghiệm. -->
+            <LinearLayout
+                android:id="@+id/simulateGroup"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnSimulatePaid"
+                    style="@style/Widget.Material3.Button.TonalButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:text="@string/transfer_simulate_paid"
+                    app:cornerRadius="26dp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:gravity="center"
+                    android:text="@string/transfer_simulate_note"
+                    android:textColor="@color/sn_ink_muted"
+                    android:textSize="12sp" />
+            </LinearLayout>
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 

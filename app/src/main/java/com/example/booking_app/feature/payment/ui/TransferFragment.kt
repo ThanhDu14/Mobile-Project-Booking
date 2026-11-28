@@ -17,6 +17,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.fragment.findNavController
 import coil3.load
 import coil3.request.crossfade
+import com.example.booking_app.BuildConfig
 import com.example.booking_app.R
 import com.example.booking_app.core.format.MoneyFormat
 import com.example.booking_app.databinding.FragmentPaymentTransferBinding
@@ -46,6 +47,7 @@ class TransferFragment : Fragment() {
             btnBack.setOnClickListener { findNavController().navigateUp() }
             btnCopyAccount.setOnClickListener { copy(tvAccountNumber.text) }
             btnCopyCode.setOnClickListener { copy(tvPaymentCode.text) }
+            btnSimulatePaid.setOnClickListener { viewModel.simulatePaid() }
             btnSwitchToVenue.setOnClickListener {
                 if (viewModel.uiState.value.expired) backToGrid() else findNavController().navigateUp()
             }
@@ -91,6 +93,14 @@ class TransferFragment : Fragment() {
         waitingRow.isVisible = !state.expired
         ivQr.alpha = if (state.expired) 0.3f else 1f
         btnSwitchToVenue.setText(if (state.expired) R.string.transfer_back_to_grid else R.string.transfer_switch_to_venue)
+        // Thanh toán giả lập chỉ có ở bản debug; server cũng chỉ nhận khi bật PAYMENT_SIMULATOR_ENABLED.
+        simulateGroup.isVisible = BuildConfig.DEBUG && !state.expired
+        btnSimulatePaid.isEnabled = !state.simulating
+        btnSimulatePaid.setText(if (state.simulating) R.string.transfer_simulating else R.string.transfer_simulate_paid)
+        if (state.simulateError) {
+            Snackbar.make(root, R.string.transfer_simulate_failed, Snackbar.LENGTH_LONG).show()
+            viewModel.consumeSimulateError()
+        }
     }
 
     private fun handle(effect: PaymentEffect) {

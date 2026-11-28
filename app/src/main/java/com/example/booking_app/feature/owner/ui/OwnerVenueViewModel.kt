@@ -7,6 +7,7 @@ import com.example.booking_app.feature.owner.domain.OwnerVenueRepository
 import com.example.booking_app.feature.owner.domain.OwnerErrorClassifier
 import com.example.booking_app.feature.owner.domain.OwnerErrorKind
 import com.example.booking_app.feature.owner.domain.CourtInput
+import com.example.booking_app.feature.owner.domain.OwnerPayoutAccount
 import com.example.booking_app.feature.owner.domain.OwnerValidation
 import com.example.booking_app.feature.owner.domain.VenueInput
 import com.example.booking_app.feature.owner.domain.model.CourtFields
@@ -151,6 +152,28 @@ class OwnerVenueDetailViewModel @Inject constructor(
         }
     }
 
+    /** Lưu tài khoản nhận tiền (chuyển khoản giả lập). Kiểm cùng điều kiện với Firestore Rules trước khi ghi. */
+    fun savePayoutAccount(bankBin: String?, accountNumber: String, holderName: String) = viewModelScope.launch {
+        if (_uiState.value.isSubmitting) return@launch
+        val errors = OwnerPayoutAccount.validate(bankBin, accountNumber, holderName)
+        val account = OwnerPayoutAccount.build(bankBin, accountNumber, holderName)
+        if (errors.isNotEmpty() || account == null) {
+            _uiState.value = _uiState.value.copy(message = errors.firstOrNull()?.message)
+            return@launch
+        }
+        _uiState.value = _uiState.value.copy(isSubmitting = true, message = null)
+        repository.updatePayoutAccount(venueId, account).onSuccess {
+            _uiState.value = _uiState.value.copy(
+                isSubmitting = false,
+                message = PAYOUT_SAVED,
+                venue = _uiState.value.venue?.copy(payoutAccount = account),
+            )
+        }.onFailure {
+            _uiState.value = _uiState.value.copy(isSubmitting = false, message = it.message ?: "Không thể lưu tài khoản nhận tiền")
+            if (OwnerErrorClassifier.kind(it) == OwnerErrorKind.CONFLICT) load()
+        }
+    }
+
     fun addCourt(fields: CourtFields) {
         if (!validateCourt(fields)) return
         val requestId = savedStateHandle.get<String>("courtCreateId") ?: java.util.UUID.randomUUID().toString().also {
@@ -199,5 +222,9 @@ class OwnerVenueDetailViewModel @Inject constructor(
             return false
         }
         return true
+    }
+
+    companion object {
+        const val PAYOUT_SAVED = "Đã lưu tài khoản nhận tiền"
     }
 }

@@ -30,6 +30,8 @@ class PaymentRepositoryImpl @Inject constructor(
     override suspend fun startTransfer(req: ConfirmRequest, option: PaymentOption): Result<TransferInstruction> =
         safe { api.startTransfer(req, option) }
 
+    override suspend fun simulateTransfer(paymentCode: String): Result<Unit> = safe { api.simulateTransfer(paymentCode) }
+
     /**
      * Listener trên document đơn/nhóm; gỡ khi ngừng thu (`awaitClose`). Lỗi listener (mất quyền, mạng) thì đóng
      * flow im lặng: màn chuyển khoản vẫn còn đồng hồ, và hóa đơn đọc lại được ở 060.

@@ -14,6 +14,7 @@ import com.example.booking_app.databinding.FragmentOwnerVenueDetailBinding
 import com.example.booking_app.feature.owner.domain.model.CourtFields
 import com.example.booking_app.feature.owner.domain.model.VenueEditableFields
 import com.example.booking_app.feature.owner.domain.OwnerErrorKind
+import com.example.booking_app.feature.owner.domain.OwnerPayoutAccount
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import androidx.core.view.isVisible
@@ -40,6 +41,10 @@ class OwnerVenueDetailFragment : Fragment(R.layout.fragment_owner_venue_detail) 
     private var editingCourtId: String? = null
     private var rendering = false
     private var renderedPhotos: List<String>? = null
+    /** BIN ngân hàng đang chọn ở form tài khoản nhận tiền; null khi chưa chọn. */
+    private var payoutBankBin: String? = null
+    /** Đã đổ dữ liệu tài khoản nhận tiền từ server vào form (chỉ một lần, để không đè chữ đang gõ). */
+    private var payoutFilled = false
     private var locationMap: OwnerLocationMapController? = null
     @Inject lateinit var photoUrls: PhotoUrlResolver
     private val photoPicker = registerForActivityResult(ActivityResultContracts.GetContent()) { uri ->
@@ -116,6 +121,13 @@ class OwnerVenueDetailFragment : Fragment(R.layout.fragment_owner_venue_detail) 
                 picker.show(parentFragmentManager,"venue-time")
             }
         }
+        payoutBankBin = savedInstanceState?.getString("payoutBankBin")
+        payoutFilled = savedInstanceState?.getBoolean("payoutFilled") ?: false
+        binding.payoutBank.setAdapter(ArrayAdapter(requireContext(), android.R.layout.simple_list_item_1, OwnerPayoutAccount.banks.map { it.shortName }))
+        binding.payoutBank.setOnItemClickListener { _, _, position, _ -> payoutBankBin = OwnerPayoutAccount.banks.getOrNull(position)?.bin }
+        binding.savePayout.setOnClickListener {
+            viewModel.savePayoutAccount(payoutBankBin, binding.payoutAccountNumber.text.toString(), binding.payoutHolder.text.toString())
+        }
         binding.retry.setOnClickListener { viewModel.load() }
         binding.save.setOnClickListener { saveVenue() }
         binding.addCourt.setOnClickListener { addCourt() }
@@ -187,6 +199,22 @@ class OwnerVenueDetailFragment : Fragment(R.layout.fragment_owner_venue_detail) 
             binding.courtName.isEnabled = !state.isSubmitting && it.status != "LOCKED"
             binding.courtSurface.isEnabled = !state.isSubmitting && it.status != "LOCKED"
             binding.addPhoto.isEnabled = !state.isSubmitting && it.status != "LOCKED"
+            binding.savePayout.isEnabled = !state.isSubmitting && it.status != "LOCKED"
+            val payout = it.payoutAccount
+            binding.payoutStatus.text = payout?.let { account -> getString(R.string.owner_payout_current, account.bankShortName, account.accountNumber) }
+                ?: getString(R.string.owner_payout_none)
+            if (!payoutFilled) {
+                payoutFilled = true
+                if (payout != null) {
+                    payoutBankBin = payout.bankBin
+                    binding.payoutBank.setText(payout.bankShortName, false)
+                    binding.payoutAccountNumber.setText(payout.accountNumber)
+                    binding.payoutHolder.setText(payout.accountHolderName)
+                }
+            }
+            if (state.message == OwnerVenueDetailViewModel.PAYOUT_SAVED && payout != null && !binding.payoutHolder.hasFocus()) {
+                binding.payoutHolder.setText(payout.accountHolderName)
+            }
             binding.location.text = (draft?.location ?: it.location)?.let { point -> "${getString(R.string.owner_map_location)}\n${point.latitude}, ${point.longitude}" } ?: getString(R.string.owner_map_location)
             locationMap?.show(draft?.location ?: it.location,draft?.name ?: it.name)
             val district = draft?.districtId ?: it.districtId
@@ -229,5 +257,7 @@ class OwnerVenueDetailFragment : Fragment(R.layout.fragment_owner_venue_detail) 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putString("editingCourtId", editingCourtId)
+        outState.putString("payoutBankBin", payoutBankBin)
+        outState.putBoolean("payoutFilled", payoutFilled)
     }
 }

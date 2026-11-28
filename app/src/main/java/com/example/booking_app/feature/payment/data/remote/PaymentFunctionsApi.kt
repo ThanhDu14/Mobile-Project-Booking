@@ -34,7 +34,13 @@ interface PaymentFunctionsApi {
 
     /** `booking-payment-transfer` (§2). */
     suspend fun startTransfer(req: ConfirmRequest, option: PaymentOption): TransferInstruction
+
+    /** `booking-payment-simulate`: giả lập đã chuyển khoản (chỉ khi server bật thanh toán giả lập). */
+    suspend fun simulateTransfer(paymentCode: String): Unit = throw UnsupportedOperationException()
 }
+
+@Serializable
+internal data class SimulateBody(val paymentCode: String)
 
 @Serializable
 internal data class TransferBody(
@@ -184,6 +190,10 @@ class SupabasePaymentFunctionsApi @Inject constructor(
         return PaymentFunctionResponses.parseTransfer(call(TRANSFER) { supabase.functions.invoke(TRANSFER, body = body) })
     }
 
+    override suspend fun simulateTransfer(paymentCode: String) {
+        call(SIMULATE) { supabase.functions.invoke(SIMULATE, body = SimulateBody(paymentCode)) }
+    }
+
     /** Gọi function qua `FunctionErrors` (tự làm mới token, báo khóa tài khoản), ánh xạ lỗi sang [PaymentError]. */
     private suspend fun call(name: String, invoke: suspend () -> HttpResponse): String = try {
         functionErrors.invokeWithAuthRetry {
@@ -204,6 +214,7 @@ class SupabasePaymentFunctionsApi @Inject constructor(
         const val TAG = "PaymentFunctions"
         const val CONFIRM = "booking-payment-confirm"
         const val TRANSFER = "booking-payment-transfer"
+        const val SIMULATE = "booking-payment-simulate"
         /** Transaction ghi nhiều document, có thể cold start: rộng hơn mặc định 15 giây. */
         const val TIMEOUT_MS = 30_000L
     }

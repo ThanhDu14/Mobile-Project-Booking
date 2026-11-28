@@ -8,6 +8,8 @@ import com.example.booking_app.feature.owner.domain.model.OwnerVenue
 import com.example.booking_app.feature.owner.domain.model.OwnerPriceRule
 import com.example.booking_app.feature.owner.domain.model.OwnerSlot
 import com.example.booking_app.feature.owner.domain.model.VenueEditableFields
+import com.example.booking_app.feature.payment.data.FirestoreVenuePayoutRepository
+import com.example.booking_app.feature.payment.domain.model.PayoutAccount
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.tasks.await
 import javax.inject.Inject
@@ -32,6 +34,19 @@ class FirestoreOwnerVenueDataSource @Inject constructor(
 
     suspend fun updateVenue(venueId: String, fields: VenueEditableFields) {
         firestore.collection(VENUES).document(venueId).update(fields.toMap()).await()
+    }
+
+    /** Chỉ ghi `payoutAccount`; Rules kiểm đủ 4 trường hợp lệ. */
+    suspend fun updatePayoutAccount(venueId: String, account: PayoutAccount) {
+        firestore.collection(VENUES).document(venueId).update(
+            "payoutAccount",
+            mapOf(
+                "bankBin" to account.bankBin,
+                "bankShortName" to account.bankShortName,
+                "accountNumber" to account.accountNumber,
+                "accountHolderName" to account.accountHolderName,
+            ),
+        ).await()
     }
 
     suspend fun hideVenue(venueId: String) {
@@ -121,7 +136,8 @@ class FirestoreOwnerVenueDataSource @Inject constructor(
         photoPaths = doc.get("photoPaths") as? List<String> ?: emptyList(),
         courtCount = (doc.getLong("courtCount") ?: 0L).toInt(),
         acceptsRecurring = doc.getBoolean("acceptsRecurring") ?: true,
-        status = doc.getString("status").orEmpty()
+        status = doc.getString("status").orEmpty(),
+        payoutAccount = FirestoreVenuePayoutRepository.toPayoutAccount(doc.get("payoutAccount") as? Map<*, *>),
     )
 
     private fun toCourt(doc: com.google.firebase.firestore.DocumentSnapshot) = OwnerCourt(
